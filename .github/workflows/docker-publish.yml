@@ -34,7 +34,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }} 
 
       - name: Build image
-        run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
+        run: |
+          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-12)
+          docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}" --build-arg GIT_SHA=${SHORT_SHA}
 
       - name: Push image to GitHub Container Registry
         run: |
