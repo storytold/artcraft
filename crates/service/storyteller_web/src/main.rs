@@ -402,7 +402,7 @@ async fn main() -> AnyhowResult<()> {
       },
       redirect_landing_url: twitch_oauth_redirect_landing_url,
       redirect_landing_finished_url: twitch_oauth_redirect_landing_finished_url,
-    },
+    }
   };
 
   serve(server_state)

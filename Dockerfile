@@ -58,9 +58,8 @@ COPY db/ ./db
 
 RUN $HOME/.cargo/bin/cargo fetch
 
-
 ARG GIT_SHA
-RUN echo -n ${GIT_SHA} > GIT_SHA
+RUN echo -n ${GIT_SHA} > /GIT_SHA
 
 # Run all of the tests
 RUN SQLX_OFFLINE=true \
@@ -179,4 +178,3 @@ RUN touch .env-secrets
 
 EXPOSE 8080
 CMD LD_LIBRARY_PATH=/usr/lib /storyteller-web
-
