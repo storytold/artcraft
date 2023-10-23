@@ -30,7 +30,7 @@ newrelic-telemetry = { path = "../../../vendor/newrelic-telemetry-sdk-rust" }
 # External
 anyhow = "1.0.75"
 chrono = { version = "0.4.19", features = ["serde"] }
-clap = "2.34.0" # TODO: This is really out of date, but has conflicts when updated
+clap = "4.4.6" # TODO: This is really out of date, but has conflicts when updated
 dotenv = "0.15.0"
 hostname = "0.3.1"
 lfu = "0.2.5"

@@ -22,7 +22,7 @@ easyenv = { path = "../../lib/easyenv" }
 # External
 anyhow = "1.0.75"
 chrono = { version = "0.4.19", features = ["serde"] }
-clap = "2.34.0" # TODO: This is really out of date, but has conflicts when updated
+clap = "4.4.6" # TODO: This is really out of date, but has conflicts when updated
 # TODO/NB: Commenting out clap4 as it prevents windows builds
 # NB: clap4 = { package = "clap", version = "4.0" }
 dotenv = "0.15.0"

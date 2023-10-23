@@ -27,7 +27,7 @@ mysql_queries = { path = "../../lib/mysql_queries" }
 tokens = { path = "../../_types/tokens" }
 
 # External
-clap = "2.34.0" # TODO: This is really out of date, but has conflicts when updated
+clap = "4.4.6" # TODO: This is really out of date, but has conflicts when updated
 log = "0.4.14"
 
 # Runtime
