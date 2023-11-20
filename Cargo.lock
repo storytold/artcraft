@@ -731,15 +731,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ansi_term"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
-dependencies = [
- "winapi 0.3.9",
-]
-
-[[package]]
 name = "anstream"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1379,21 +1370,6 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "2.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c"
-dependencies = [
- "ansi_term",
- "atty",
- "bitflags 1.3.2",
- "strsim 0.8.0",
- "textwrap",
- "unicode-width",
- "vec_map",
-]
-
-[[package]]
-name = "clap"
 version = "4.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac495e00dcec98c83465d5ad66c5c4fabd652fd6686e7c6269b117e729a6f17b"
@@ -1411,7 +1387,7 @@ dependencies = [
  "anstream",
  "anstyle",
  "clap_lex",
- "strsim 0.10.0",
+ "strsim",
 ]
 
 [[package]]
@@ -1821,7 +1797,7 @@ dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
- "strsim 0.10.0",
+ "strsim",
  "syn 1.0.107",
 ]
 
@@ -1835,7 +1811,7 @@ dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
- "strsim 0.10.0",
+ "strsim",
  "syn 1.0.107",
 ]
 
@@ -1992,7 +1968,7 @@ name = "dev-database-seed"
 version = "0.0.1"
 dependencies = [
  "buckets",
- "clap 2.34.0",
+ "clap",
  "cloud_storage",
  "config",
  "easyenv",
@@ -2017,7 +1993,7 @@ name = "dev-upload-media-file"
 version = "0.0.1"
 dependencies = [
  "buckets",
- "clap 2.34.0",
+ "clap",
  "cloud_storage",
  "config",
  "easyenv",
@@ -2300,7 +2276,7 @@ name = "elasticsearch-cli"
 version = "0.0.1"
 dependencies = [
  "buckets",
- "clap 2.34.0",
+ "clap",
  "config",
  "easyenv",
  "elasticsearch",
@@ -2356,7 +2332,7 @@ dependencies = [
  "bootstrap",
  "buckets",
  "chrono",
- "clap 2.34.0",
+ "clap",
  "cloud_storage",
  "concurrency",
  "config",
@@ -3749,7 +3725,7 @@ dependencies = [
 name = "lru-delete-models"
 version = "0.0.1"
 dependencies = [
- "clap 4.4.7",
+ "clap",
  "errors",
  "logging",
  "my-workspace-hack",
@@ -5459,7 +5435,7 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 name = "scrape_test"
 version = "0.0.1"
 dependencies = [
- "clap 2.34.0",
+ "clap",
  "errors",
  "my-workspace-hack",
  "tokio 1.34.0",
@@ -6351,12 +6327,6 @@ dependencies = [
 
 [[package]]
 name = "strsim"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
-
-[[package]]
-name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
@@ -6652,15 +6622,6 @@ version = "0.0.1"
 dependencies = [
  "errors",
  "my-workspace-hack",
-]
-
-[[package]]
-name = "textwrap"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
-dependencies = [
- "unicode-width",
 ]
 
 [[package]]
@@ -7185,7 +7146,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "chrono",
- "clap 2.34.0",
+ "clap",
  "cloud_storage",
  "config",
  "container_common",
@@ -7566,12 +7527,6 @@ name = "vcpkg"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cbdbff6266a24120518560b5dc983096efb98462e51d0d68169895b237be3e5d"
-
-[[package]]
-name = "vec_map"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "version_check"

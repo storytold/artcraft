@@ -30,7 +30,7 @@ tokens = { path = "../../_types/tokens" }
 
 # External
 log = "0.4.14"
-clap = "2.34.0" # TODO: This is really out of date, but has conflicts when updated
+clap = "4.4.7" # TODO: This is really out of date, but has conflicts when updated
 
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.
