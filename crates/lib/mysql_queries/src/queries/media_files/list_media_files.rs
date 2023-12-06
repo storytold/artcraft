@@ -44,6 +44,9 @@ pub struct MediaFileListItem {
 
   pub creator_set_visibility: Visibility,
 
+  pub comment_count: u64,
+  pub favorite_count: u64,
+
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
@@ -100,6 +103,8 @@ pub async fn list_media_files(args: ListMediaFilesArgs<'_>) -> AnyhowResult<Medi
           maybe_creator_display_name: record.maybe_creator_display_name,
           maybe_creator_gravatar_hash: record.maybe_creator_gravatar_hash,
           creator_set_visibility: record.creator_set_visibility,
+          comment_count: record.comment_count as u64,
+          favorite_count: record.favorite_count as u64,
           created_at: record.created_at,
           updated_at: record.updated_at,
         }
@@ -148,14 +153,22 @@ SELECT
 
   m.creator_set_visibility,
   m.created_at,
-  m.updated_at
+  m.updated_at,
+
+  COUNT(f.id) as favorite_count,
+  COUNT(c.id) as comment_count
 
 FROM media_files AS m
+
 LEFT OUTER JOIN users AS u
     ON m.maybe_creator_user_token = u.token
-
-WHERE m.user_deleted_at IS NULL
-AND m.mod_deleted_at IS NULL
+LEFT OUTER JOIN favorites as f
+    ON f.entity_type = 'media_file' AND f.entity_token = m.token
+LEFT OUTER JOIN comments as c
+    ON c.entity_type = 'media_file' AND c.entity_token  = c.token
+WHERE
+    m.user_deleted_at IS NULL
+    AND m.mod_deleted_at IS NULL
     "#
   );
 
@@ -185,6 +198,9 @@ AND m.mod_deleted_at IS NULL
       query_builder.push(format!(" AND m.id > {offset} "));
     }
   }
+
+
+  query_builder.push(" GROUP BY m.id");
 
   if cursor_is_reversed {
     query_builder.push(" ORDER BY m.id ASC ");
@@ -217,6 +233,9 @@ struct MediaFileListItemInternal {
   maybe_creator_gravatar_hash: Option<String>,
 
   creator_set_visibility: Visibility,
+
+  comment_count: i64,
+  favorite_count: i64,
 
   created_at: DateTime<Utc>,
   updated_at: DateTime<Utc>,
@@ -257,6 +276,8 @@ impl FromRow<'_, MySqlRow> for MediaFileListItemInternal {
       creator_set_visibility: Visibility::try_from_mysql_row(row, "creator_set_visibility")?,
       created_at: row.try_get("created_at")?,
       updated_at: row.try_get("updated_at")?,
+      comment_count: row.try_get("comment_count")?,
+      favorite_count: row.try_get("favorite_count")?,
     })
   }
 }

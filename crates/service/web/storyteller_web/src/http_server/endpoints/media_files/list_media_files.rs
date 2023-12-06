@@ -14,6 +14,7 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::media_files::list_media_files::{list_media_files, ListMediaFilesArgs, ViewAs};
 use tokens::tokens::media_files::MediaFileToken;
+use crate::http_server::common_responses::media_file_social_meta_lite::MediaFileSocialMetaLight;
 
 use crate::http_server::common_responses::pagination_cursors::PaginationCursors;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
@@ -51,6 +52,7 @@ pub struct MediaFileListItem {
   pub maybe_public_bucket_extension: Option<String>,
 
   pub maybe_creator: Option<UserDetailsLight>,
+  pub maybe_social_meta: Option<MediaFileSocialMetaLight>,
 
   pub creator_set_visibility: Visibility,
 
@@ -174,7 +176,7 @@ pub async fn list_media_files_handler(
 
   let results = results_page.records.into_iter()
       .map(|record| MediaFileListItem {
-        token: record.token,
+        token: record.token.clone(),
         origin_category: record.origin_category,
         origin_product_category: record.origin_product_category,
         maybe_origin_model_type: record.maybe_origin_model_type,
@@ -189,6 +191,10 @@ pub async fn list_media_files_handler(
           record.maybe_creator_display_name,
           record.maybe_creator_gravatar_hash,
         ),
+        maybe_social_meta: Option::from(MediaFileSocialMetaLight::from_db_fields(
+            record.favorite_count,
+            record.comment_count,
+        )),
         creator_set_visibility: record.creator_set_visibility,
         created_at: record.created_at,
         updated_at: record.updated_at,
