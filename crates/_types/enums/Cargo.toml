@@ -17,7 +17,7 @@ path = "src/lib.rs"
 serde = "1.0.125"
 serde_derive = "1.0.125"
 
-sqlx = { version = "0.7.2", features = [ "mysql", "sqlite", "runtime-tokio-native-tls", "chrono" ] }
+sqlx = { version = "0.7.2", features = ["mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 sqlx-core = { version = "0.7.2" }
 sqlx-mysql= { version = "0.7.2" }
 my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }

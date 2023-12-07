@@ -42,7 +42,7 @@ serde_json = "1.0.108"
 toml = "0.5.8"
 
 # Money
-async-stripe = { version = "0.25.2", default-features = false, features = ["runtime-tokio-hyper", "connect", "billing", "checkout", "webhook-events"] }
+async-stripe = { version = "0.25.2", default-features = false, features = ["runtime-tokio-hyper-rustls-webpki", "connect", "billing", "checkout", "webhook-events"] }
 
 # Async traits
 # NB: note: `async` trait functions are not currently supported

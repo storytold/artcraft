@@ -90,7 +90,7 @@ language-tags = "0.3.2" # Parsing single tags richly
 
 # HTTP
 # TODO/NB: This is just for Twitch, but we might need it later.
-reqwest = { version = "0.11.4" }
+reqwest = { version = "0.11.4", default-features = false, features = ["json", "blocking", "rustls-tls"] }
 native-tls = { version = "0.2.8", features = ["vendored"] }
 
 # Runtime
@@ -123,7 +123,7 @@ infer = "0.5.0"
 
 # The "never-encode-slash" feature seems to have been removed:
 # https://github.com/durch/rust-s3/pull/254
-rust-s3 = { version = "0.33.0" }
+rust-s3 = { version = "0.33.0" , default-features = false, features = ["tokio-rustls-tls"] }
 
 actix-cors = "0.6.4"
 actix-http = "3.4.0"
@@ -139,7 +139,7 @@ jwt = "0.13.0"
 hyper = { version = "0.14.24" }
 
 # Money
-async-stripe = { version = "0.25.2", default-features = false, features = ["runtime-tokio-hyper", "connect", "billing", "checkout", "webhook-events"] }
+async-stripe = { version = "0.25.2", default-features = false, features = ["runtime-tokio-hyper-rustls-webpki", "connect", "billing", "checkout", "webhook-events"] }
 
 # Crypto
 bcrypt = "0.8" # password hashes
