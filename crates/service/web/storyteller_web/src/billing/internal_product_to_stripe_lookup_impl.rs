@@ -1,3 +1,5 @@
+
+#[cfg(feature = "billing")]
 use billing_component::stripe::traits::internal_product_to_stripe_lookup::{InternalProductToStripeLookup, StripeProduct, StripeProductLookupError};
 use reusable_types::server_environment::ServerEnvironment;
 
@@ -7,6 +9,8 @@ use crate::configs::plans::plan_list::{DEVELOPMENT_PREMIUM_PLANS_BY_SLUG, PRODUC
 #[derive(Clone, Copy)]
 pub struct InternalProductToStripeLookupImpl;
 
+
+#[cfg(feature = "billing")]
 impl InternalProductToStripeLookup for InternalProductToStripeLookupImpl {
     fn lookup_stripe_product_from_internal_product_key(&self, server_environment: ServerEnvironment, internal_product_key: &str) -> Result<Option<StripeProduct>, StripeProductLookupError> {
         let plans_by_slug = match server_environment {

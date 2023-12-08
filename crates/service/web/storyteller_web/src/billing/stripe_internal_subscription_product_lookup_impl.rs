@@ -1,3 +1,5 @@
+
+#[cfg(feature = "billing")]
 use billing_component::stripe::traits::internal_subscription_product_lookup::{InternalProductLookupError, InternalSubscriptionProduct, InternalSubscriptionProductLookup};
 
 use crate::configs::plans::plan_list::{PLANS_BY_STRIPE_PRICE_ID, PLANS_BY_STRIPE_PRODUCT_ID};
@@ -8,6 +10,7 @@ const SUBSCRIPTION_CATEGORY : &str = "fakeyou";
 #[derive(Clone, Copy)]
 pub struct StripeInternalSubscriptionProductLookupImpl;
 
+#[cfg(feature = "billing")]
 impl InternalSubscriptionProductLookup for StripeInternalSubscriptionProductLookupImpl {
     fn lookup_internal_product_from_stripe_product_id(&self, stripe_product_id: &str) -> Result<Option<InternalSubscriptionProduct>, InternalProductLookupError> {
         Ok(PLANS_BY_STRIPE_PRODUCT_ID.get(stripe_product_id)

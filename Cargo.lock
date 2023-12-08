@@ -5969,7 +5969,6 @@ dependencies = [
  "actix-web",
  "actix_helpers",
  "anyhow",
- "async-stripe",
  "async-trait",
  "base64 0.21.5",
  "bcrypt",

@@ -3,6 +3,7 @@ use async_trait::async_trait;
 use chrono::Utc;
 use log::warn;
 
+#[cfg(feature = "billing")]
 use billing_component::stripe::traits::internal_user_lookup::{InternalUserLookup, InternalUserLookupError, SubscriptionKey, UserMetadata};
 use users_component::utils::session_checker::SessionChecker;
 
@@ -25,6 +26,7 @@ impl StripeInternalUserLookupImpl {
 }
 
 // NB: Marking async_trait as not needing Sync/Send. Hopefully this doesn't blow up on us.
+#[cfg(feature = "billing")]
 #[async_trait(?Send)]
 impl InternalUserLookup for StripeInternalUserLookupImpl {
     async fn lookup_user_from_http_request(&self, http_request: &HttpRequest) -> Result<Option<UserMetadata>, InternalUserLookupError> {

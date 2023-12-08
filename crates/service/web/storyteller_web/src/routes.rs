@@ -5,6 +5,7 @@ use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::error::Error;
 
 use actix_helpers::route_builder::RouteBuilder;
+#[cfg(feature = "billing")]
 use billing_component::default_routes::add_suggested_stripe_billing_routes;
 use reusable_types::server_environment::ServerEnvironment;
 use users_component::default_routes::add_suggested_api_v1_account_creation_and_session_routes;
@@ -218,15 +219,20 @@ pub fn add_routes<T, B> (app: App<T>, server_environment: ServerEnvironment) -> 
 
   // ==================== Stats ====================
 
+
   let mut app = RouteBuilder::from_app(app)
       .add_get("/v1/stats/queues", get_unified_queue_stats_handler)
       .into_app();
 
   // ==================== COMPONENTS ====================
-
   app = add_suggested_api_v1_account_creation_and_session_routes(app); // /create_account, /session, /login, /logout
-  app = add_suggested_stripe_billing_routes(app); // /stripe, billing, webhooks, etc.
- 
+
+  #[cfg(feature = "billing")]
+  let mut app = add_suggested_stripe_billing_routes(app); // /stripe, billing, webhooks, etc.
+
+  #[cfg(not(feature = "billing"))]
+  let mut app = app;
+
   // ==================== SERVICE ====================
   app.service(
     web::resource("/_status")

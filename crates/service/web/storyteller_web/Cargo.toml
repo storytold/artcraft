@@ -51,7 +51,7 @@ url_config = { path = "../../../lib/url_config" }
 user_input_common = { path = "../../../lib/user_input_common" }
 
 # Internal Components
-billing_component = { path = "../../plugins/billing" }
+billing_component = { path = "../../plugins/billing", optional = true }
 users_component = { path = "../../plugins/users" }
 
 # Workspace hack (faster compile times)
@@ -139,7 +139,7 @@ jwt = "0.13.0"
 hyper = { version = "0.14.24" }
 
 # Money
-async-stripe = { version = "0.25.2", default-features = false, features = ["runtime-tokio-hyper-rustls-webpki", "connect", "billing", "checkout", "webhook-events"] }
+#async-stripe = { version = "0.25.2", default-features = false, features = ["runtime-tokio-hyper-rustls-webpki", "connect", "billing", "checkout", "webhook-events"] }
 
 # Crypto
 bcrypt = "0.8" # password hashes
@@ -171,3 +171,9 @@ diesel = { version = "2.1.3", features = ["mysql"] }
 
 [dev-dependencies]
 speculoos = "0.9.0" # Fluent assertions
+
+
+[features]
+default = ["billing", "dep:billing_component"]
+billing = ["dep:billing_component"]
+all_except_billing = []

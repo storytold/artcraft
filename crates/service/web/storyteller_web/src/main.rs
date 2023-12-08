@@ -46,11 +46,6 @@ use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoint_filte
 use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoints::disabled_endpoints::DisabledEndpoints;
 use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoints::exact_match_disabled_endpoints::ExactMatchDisabledEndpoints;
 use actix_helpers::middleware::disabled_endpoint_filter::disabled_endpoints::prefix_disabled_endpoints::PrefixDisabledEndpoints;
-use billing_component::stripe::stripe_config::{FullUrlOrPath, StripeCheckoutConfigs, StripeConfig, StripeCustomerPortalConfigs, StripeSecrets};
-use billing_component::stripe::traits::internal_product_to_stripe_lookup::InternalProductToStripeLookup;
-use billing_component::stripe::traits::internal_session_cache_purge::InternalSessionCachePurge;
-use billing_component::stripe::traits::internal_subscription_product_lookup::InternalSubscriptionProductLookup;
-use billing_component::stripe::traits::internal_user_lookup::InternalUserLookup;
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use cloud_storage::bucket_client::BucketClient;
 use config::common_env::CommonEnv;
@@ -71,10 +66,19 @@ use users_component::cookies::anonymous_visitor_tracking::avt_cookie_manager::Av
 use users_component::cookies::session::session_cookie_manager::SessionCookieManager;
 use users_component::utils::session_checker::SessionChecker;
 
-use crate::billing::internal_product_to_stripe_lookup_impl::InternalProductToStripeLookupImpl;
-use crate::billing::internal_session_cache_purge_impl::InternalSessionCachePurgeImpl;
-use crate::billing::stripe_internal_subscription_product_lookup_impl::StripeInternalSubscriptionProductLookupImpl;
-use crate::billing::stripe_internal_user_lookup_impl::StripeInternalUserLookupImpl;
+#[cfg(feature = "billing")]
+use
+{
+  crate::billing::internal_product_to_stripe_lookup_impl::InternalProductToStripeLookupImpl,
+  crate::billing::internal_session_cache_purge_impl::InternalSessionCachePurgeImpl,
+  crate::billing::stripe_internal_subscription_product_lookup_impl::StripeInternalSubscriptionProductLookupImpl,
+  crate::billing::stripe_internal_user_lookup_impl::StripeInternalUserLookupImpl,
+  billing_component::stripe::stripe_config::{FullUrlOrPath, StripeCheckoutConfigs, StripeConfig, StripeCustomerPortalConfigs, StripeSecrets},
+  billing_component::stripe::traits::internal_product_to_stripe_lookup::InternalProductToStripeLookup,
+  billing_component::stripe::traits::internal_session_cache_purge::InternalSessionCachePurge,
+  billing_component::stripe::traits::internal_subscription_product_lookup::InternalSubscriptionProductLookup,
+  billing_component::stripe::traits::internal_user_lookup::InternalUserLookup,
+};
 use crate::configs::static_api_tokens::{StaticApiTokenConfig, StaticApiTokens, StaticApiTokenSet};
 use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
 use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
@@ -382,6 +386,7 @@ async fn main() -> AnyhowResult<()> {
   });
 
 
+  #[cfg(feature = "billing")]
   let stripe_configs = StripeConfig {
     checkout: StripeCheckoutConfigs {
       success_url: FullUrlOrPath::Path(easyenv::get_env_string_required("STRIPE_CHECKOUT_SUCCESS_URL_PATH")?),
@@ -397,6 +402,9 @@ async fn main() -> AnyhowResult<()> {
       secret_webhook_signing_key: easyenv::get_env_string_required("STRIPE_SECRET_WEBHOOK_SIGNING_KEY")?,
     },
   };
+
+  #[cfg(not(feature = "billing"))]
+  let stripe_configs = ();
 
   let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
       .ok_or(anyhow!("invalid server environment"))?;
@@ -424,10 +432,6 @@ async fn main() -> AnyhowResult<()> {
 
   let third_party_url_redirector = ThirdPartyUrlRedirector::new(server_environment);
 
-  let stripe_client = {
-    let api_secret = stripe_configs.secrets.secret_key.clone();
-    stripe::Client::new(api_secret)
-  };
 
   // NB: Docker creates this file within container builds.
   let build_sha = std::fs::read_to_string("/GIT_SHA")
@@ -455,7 +459,6 @@ async fn main() -> AnyhowResult<()> {
     },
     stripe: StripeSettings {
       config: stripe_configs,
-      client: stripe_client,
     },
     hostname: server_hostname,
     server_environment,
@@ -636,62 +639,105 @@ pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
   //let log_format = "[%{HOSTNAME}e] %a \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %T";
   let log_format = "[%{HOSTNAME}e] IP=[%{X-Forwarded-For}i] \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %T";
 
-  HttpServer::new(move || {
-    // NB: Safe to clone due to internal arc
-    let ip_ban_list = server_state_arc.ip_ban_list.clone();
-    let cidr_ban_set= server_state_arc.cidr_ban_set.clone();
+  #[cfg(feature = "billing")]
+  {
+    let server = HttpServer::new(move || {
+      // NB: Safe to clone due to internal arc
+      let ip_ban_list = server_state_arc.ip_ban_list.clone();
+      let cidr_ban_set= server_state_arc.cidr_ban_set.clone();
 
-    // NB: Dynamic dispatch needs to be wrapped with Arc.
-    let product_lookup : Arc<dyn InternalSubscriptionProductLookup> = Arc::new(StripeInternalSubscriptionProductLookupImpl {});
-    let stripe_lookup : Arc<dyn InternalProductToStripeLookup> = Arc::new(InternalProductToStripeLookupImpl{});
-    let user_lookup : Arc<dyn InternalUserLookup> = Arc::new(StripeInternalUserLookupImpl::new(
-      server_state_arc.session_checker.clone(),
-      server_state_arc.mysql_pool.clone(),
-    ));
-    let session_cache_purge : Arc<dyn InternalSessionCachePurge> = Arc::new(InternalSessionCachePurgeImpl::new(
-      server_state_arc.session_checker.clone(),
-      server_state_arc.redis_ttl_cache.clone(),
-    ));
+      // NB: Dynamic dispatch needs to be wrapped with Arc.
+      let product_lookup : Arc<dyn InternalSubscriptionProductLookup> = Arc::new(StripeInternalSubscriptionProductLookupImpl {});
+      let stripe_lookup : Arc<dyn InternalProductToStripeLookup> = Arc::new(InternalProductToStripeLookupImpl{});
+      let user_lookup : Arc<dyn InternalUserLookup> = Arc::new(StripeInternalUserLookupImpl::new(
+        server_state_arc.session_checker.clone(),
+        server_state_arc.mysql_pool.clone(),
+      ));
+      let session_cache_purge : Arc<dyn InternalSessionCachePurge> = Arc::new(InternalSessionCachePurgeImpl::new(
+        server_state_arc.session_checker.clone(),
+        server_state_arc.redis_ttl_cache.clone(),
+      ));
 
-    // NB: app_data being clone()'d below should all be safe (dependencies included)
-    let app = App::new()
-      .app_data(web::Data::new(server_state_arc.firehose_publisher.clone()))
-      .app_data(web::Data::new(server_state_arc.mysql_pool.clone()))
-      .app_data(web::Data::new(server_state_arc.redis_pool.clone()))
-      .app_data(web::Data::new(server_state_arc.redis_ttl_cache.clone()))
-      .app_data(web::Data::new(server_state_arc.session_checker.clone()))
-      .app_data(web::Data::new(server_state_arc.avt_cookie_manager.clone()))
-      .app_data(web::Data::new(server_state_arc.session_cookie_manager.clone()))
-      .app_data(web::Data::new(server_state_arc.stripe.clone().config.clone()))
-      .app_data(web::Data::new(server_state_arc.stripe.clone().client.clone()))
-      .app_data(web::Data::new(server_state_arc.third_party_url_redirector.clone()))
-      .app_data(web::Data::new(server_state_arc.email_sender.clone()))
-      .app_data(web::Data::new(old_server_environment))
-      .app_data(web::Data::new(new_server_environment))
-      .app_data(web::Data::from(product_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
-      .app_data(web::Data::from(stripe_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
-      .app_data(web::Data::from(user_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
-      .app_data(web::Data::from(session_cache_purge)) // NB: Data::from(Arc<T>) for dynamic dispatch
-      .app_data(server_state_arc.clone())
-      .wrap(build_cors_config(old_server_environment))
-      .wrap(DefaultHeaders::new()
-        .header("X-Backend-Hostname", &hostname)
-        .header("X-Build-Sha", server_state_arc.server_info.build_sha.clone()))
-      .wrap(PushbackFilter::new(&server_state_arc.flags.clone()))
-      .wrap(DisabledEndpointFilter::new(disabled_endpoints.clone()))
-      .wrap(BannedIpFilter::new(ip_ban_list))
-      .wrap(BannedCidrFilter::new(cidr_ban_set))
-      .wrap(Logger::new(&log_format)
-        .exclude("/liveness")
-        .exclude("/readiness"))
-      .wrap(middleware::Compress::default());
+      // NB: app_data being clone()'d below should all be safe (dependencies included)
+      let app = App::new()
+          .app_data(web::Data::new(server_state_arc.firehose_publisher.clone()))
+          .app_data(web::Data::new(server_state_arc.mysql_pool.clone()))
+          .app_data(web::Data::new(server_state_arc.redis_pool.clone()))
+          .app_data(web::Data::new(server_state_arc.redis_ttl_cache.clone()))
+          .app_data(web::Data::new(server_state_arc.session_checker.clone()))
+          .app_data(web::Data::new(server_state_arc.avt_cookie_manager.clone()))
+          .app_data(web::Data::new(server_state_arc.session_cookie_manager.clone()))
+          .app_data(web::Data::new(server_state_arc.stripe.clone().config.clone()))
+          .app_data(web::Data::new(server_state_arc.third_party_url_redirector.clone()))
+          .app_data(web::Data::new(server_state_arc.email_sender.clone()))
+          .app_data(web::Data::new(old_server_environment))
+          .app_data(web::Data::new(new_server_environment))
+          .app_data(web::Data::from(product_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
+          .app_data(web::Data::from(stripe_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
+          .app_data(web::Data::from(user_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
+          .app_data(web::Data::from(session_cache_purge)) // NB: Data::from(Arc<T>) for dynamic dispatch
+          .app_data(server_state_arc.clone())
+          .wrap(build_cors_config(old_server_environment))
+          .wrap(DefaultHeaders::new()
+              .header("X-Backend-Hostname", &hostname)
+              .header("X-Build-Sha", server_state_arc.server_info.build_sha.clone()))
+          .wrap(PushbackFilter::new(&server_state_arc.flags.clone()))
+          .wrap(DisabledEndpointFilter::new(disabled_endpoints.clone()))
+          .wrap(BannedIpFilter::new(ip_ban_list))
+          .wrap(BannedCidrFilter::new(cidr_ban_set))
+          .wrap(Logger::new(&log_format)
+              .exclude("/liveness")
+              .exclude("/readiness"))
+          .wrap(middleware::Compress::default());
 
-    add_routes(app, old_server_environment)
-  })
-  .bind(bind_address)?
-  .workers(num_workers)
-  .run()
-  .await?;
+      crate::routes::add_routes(app, old_server_environment)
+    });
+
+    server.bind(bind_address)?
+        .workers(num_workers)
+        .run()
+        .await?;
+  }
+  #[cfg(not(feature = "billing"))] {
+    let server = HttpServer::new(move || {
+      // NB: Safe to clone due to internal arc
+      let ip_ban_list = server_state_arc.ip_ban_list.clone();
+      let cidr_ban_set= server_state_arc.cidr_ban_set.clone();
+
+      // NB: app_data being clone()'d below should all be safe (dependencies included)
+      let app = App::new()
+          .app_data(web::Data::new(server_state_arc.firehose_publisher.clone()))
+          .app_data(web::Data::new(server_state_arc.mysql_pool.clone()))
+          .app_data(web::Data::new(server_state_arc.redis_pool.clone()))
+          .app_data(web::Data::new(server_state_arc.redis_ttl_cache.clone()))
+          .app_data(web::Data::new(server_state_arc.session_checker.clone()))
+          .app_data(web::Data::new(server_state_arc.avt_cookie_manager.clone()))
+          .app_data(web::Data::new(server_state_arc.session_cookie_manager.clone()))
+          .app_data(web::Data::new(server_state_arc.third_party_url_redirector.clone()))
+          .app_data(web::Data::new(server_state_arc.email_sender.clone()))
+          .app_data(web::Data::new(old_server_environment))
+          .app_data(web::Data::new(new_server_environment))
+          .app_data(server_state_arc.clone())
+          .wrap(build_cors_config(old_server_environment))
+          .wrap(DefaultHeaders::new()
+              .header("X-Backend-Hostname", &hostname)
+              .header("X-Build-Sha", server_state_arc.server_info.build_sha.clone()))
+          .wrap(PushbackFilter::new(&server_state_arc.flags.clone()))
+          .wrap(DisabledEndpointFilter::new(disabled_endpoints.clone()))
+          .wrap(BannedIpFilter::new(ip_ban_list))
+          .wrap(BannedCidrFilter::new(cidr_ban_set))
+          .wrap(Logger::new(&log_format)
+              .exclude("/liveness")
+              .exclude("/readiness"))
+          .wrap(middleware::Compress::default());
+
+      add_routes(app, old_server_environment)
+    });
+    server.bind(bind_address)?
+        .workers(num_workers)
+        .run()
+        .await?;
+  }
 
   Ok(())
 }

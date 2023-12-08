@@ -1,5 +1,6 @@
 use actix_web::HttpRequest;
 
+#[cfg(feature = "billing")]
 use billing_component::stripe::traits::internal_session_cache_purge::InternalSessionCachePurge;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
 use redis_common::redis_cache_keys::RedisCacheKeys;
@@ -19,6 +20,7 @@ impl InternalSessionCachePurgeImpl {
   }
 }
 
+#[cfg(feature = "billing")]
 impl InternalSessionCachePurge for InternalSessionCachePurgeImpl {
   fn best_effort_purge_session_cache(&self, http_request: &HttpRequest) {
     // TODO: Clear Redis cache of sessions

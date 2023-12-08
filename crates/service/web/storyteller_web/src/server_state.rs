@@ -4,6 +4,7 @@ use sqlx::MySqlPool;
 
 use actix_helpers::middleware::banned_cidr_filter::banned_cidr_set::BannedCidrSet;
 use actix_helpers::middleware::banned_ip_filter::ip_ban_list::ip_ban_list::IpBanList;
+#[cfg(feature = "billing")]
 use billing_component::stripe::stripe_config::StripeConfig;
 use cloud_storage::bucket_client::BucketClient;
 use email_sender::smtp_email_sender::SmtpEmailSender;
@@ -197,10 +198,16 @@ pub struct EphemeralInMemoryCaches {
   pub leaderboard: SingleItemTtlCache<LeaderboardInfo>,
 }
 
+#[cfg(feature = "billing")]
 #[derive(Clone)]
 pub struct StripeSettings {
   pub config: StripeConfig,
-  pub client: stripe::Client,
+}
+
+#[cfg(not(feature = "billing"))]
+#[derive(Clone)]
+pub struct StripeSettings {
+  pub config: ()
 }
 
 /// Flags set at service startup
