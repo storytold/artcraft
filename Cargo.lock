@@ -3716,7 +3716,7 @@ dependencies = [
  "url",
  "void",
  "winapi 0.3.9",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
  "zip",
 ]
 
