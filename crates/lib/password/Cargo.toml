@@ -21,7 +21,7 @@ errors = { path = "../errors" }
 my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }
 
 # External
-bcrypt = "0.8" # password hashes
+bcrypt = "0.15" # password hashes
 #hmac = "0.10.0" # jwt signing
 #jwt = "0.13.0"
 #sha2 = "0.9.5" # hmac signing
