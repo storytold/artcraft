@@ -49,7 +49,7 @@ libc = { version = "0.2.150", features = ["extra_traits"] }
 log = { version = "0.4.20", default-features = false, features = ["std"] }
 memchr = { version = "2.6.4", features = ["use_std"] }
 miniz_oxide = { version = "0.7.1", features = ["simd"] }
-mio = { version = "0.8.9", features = ["net", "os-ext"] }
+mio = { version = "0.8.10", features = ["net", "os-ext"] }
 native-tls = { version = "0.2.11", default-features = false, features = ["vendored"] }
 num-integer = { version = "0.1.45", features = ["i128"] }
 num-iter = { version = "0.1.43" }
@@ -114,7 +114,7 @@ libc = { version = "0.2.150", features = ["extra_traits"] }
 log = { version = "0.4.20", default-features = false, features = ["std"] }
 memchr = { version = "2.6.4", features = ["use_std"] }
 miniz_oxide = { version = "0.7.1", features = ["simd"] }
-mio = { version = "0.8.9", features = ["net", "os-ext"] }
+mio = { version = "0.8.10", features = ["net", "os-ext"] }
 native-tls = { version = "0.2.11", default-features = false, features = ["vendored"] }
 num-integer = { version = "0.1.45", features = ["i128"] }
 num-iter = { version = "0.1.43" }
