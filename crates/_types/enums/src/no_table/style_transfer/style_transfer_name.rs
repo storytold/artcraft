@@ -197,7 +197,7 @@ impl StyleTransferName {
       Self::Carnage => "19_carnage.json",
       Self::AnimePastelCute => "20_pastel_cute_anime.json",
       Self::BloomLighting => "21_bloom_lighting.json",
-      Self::Horror2_5D => "22_25d_Horror.json",
+      Self::Horror2_5D => "22_25D_Horror.json",
       Self::Creepy => "23_creepy.json",
       Self::CreepyVhs => "24_creepy_vhs.json",
       Self::TrailCamFootage => "25_trail_cam_footage.json",
