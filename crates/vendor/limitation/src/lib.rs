@@ -325,7 +325,7 @@ pub enum Error {
     /// The limit is exceeded for a key.
     LimitExceeded(Status),
     /// A time conversion failed.
-    Time(time::OutOfRangeError),
+    Time(time::Error),
     /// A time conversion failed (Chrono).
     ChronoTime(chrono::OutOfRangeError),
 }
@@ -358,8 +358,8 @@ impl From<redis::RedisError> for Error {
     }
 }
 
-impl From<time::OutOfRangeError> for Error {
-    fn from(err: time::OutOfRangeError) -> Self {
+impl From<time::Error> for Error {
+    fn from(err: time::Error) -> Self {
         Error::Time(err)
     }
 }
