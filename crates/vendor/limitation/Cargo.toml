@@ -24,7 +24,7 @@ normal = ["my-workspace-hack"]
 chrono = "0.4.9"
 futures = "0.1.29"
 redis = "0.13.0"
-time = "0.1.42"
+time = "0.3.30"
 
 # Workspace hack (faster compile times)
 my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }

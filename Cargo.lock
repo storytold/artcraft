@@ -267,7 +267,7 @@ dependencies = [
  "serde_urlencoded",
  "smallvec 1.11.2",
  "socket2 0.5.5",
- "time 0.3.30",
+ "time",
  "url",
 ]
 
@@ -764,7 +764,7 @@ dependencies = [
  "rust-ini",
  "serde",
  "thiserror",
- "time 0.3.30",
+ "time",
  "url",
 ]
 
@@ -1383,7 +1383,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e859cd57d0710d9e06c381b550c06e76992472a8c6d527aecd2fc673dcc231fb"
 dependencies = [
  "percent-encoding",
- "time 0.3.30",
+ "time",
  "version_check",
 ]
 
@@ -3203,7 +3203,7 @@ dependencies = [
  "subprocess_common",
  "tempdir",
  "thumbnail_generator",
- "time 0.3.30",
+ "time",
  "tokens",
  "tokio",
  "tts_common",
@@ -3482,7 +3482,7 @@ dependencies = [
  "futures 0.1.31",
  "my-workspace-hack",
  "redis 0.13.0",
- "time 0.1.45",
+ "time",
  "version-sync",
 ]
 
@@ -3992,7 +3992,7 @@ dependencies = [
  "sqlx-sqlite",
  "syn 1.0.109",
  "syn 2.0.49",
- "time 0.3.30",
+ "time",
  "time-macros",
  "tokio",
  "tokio-stream",
@@ -5073,7 +5073,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "time 0.3.30",
+ "time",
 ]
 
 [[package]]
@@ -5328,7 +5328,7 @@ dependencies = [
  "serde_derive",
  "sha2 0.10.8",
  "thiserror",
- "time 0.3.30",
+ "time",
  "tokio",
  "tokio-stream",
  "url",
@@ -6357,7 +6357,7 @@ dependencies = [
  "sqlx",
  "strum",
  "symphonia",
- "time 0.3.30",
+ "time",
  "tokens",
  "tokio",
  "toml 0.5.11",
@@ -6800,17 +6800,6 @@ dependencies = [
  "block-buffer 0.9.0",
  "byteorder",
  "digest 0.9.0",
-]
-
-[[package]]
-name = "time"
-version = "0.1.45"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b797afad3f312d1c66a56d11d0316f916356d11bd158fbc6ca6389ff6bf805a"
-dependencies = [
- "libc",
- "wasi 0.10.0+wasi-snapshot-preview1",
- "winapi 0.3.9",
 ]
 
 [[package]]
@@ -7350,7 +7339,7 @@ dependencies = [
  "serde_json",
  "sha2 0.9.9",
  "sqlx",
- "time 0.3.30",
+ "time",
  "tokens",
  "tokio",
  "tokio-tungstenite",
@@ -7598,7 +7587,7 @@ dependencies = [
  "sha2 0.9.9",
  "sqlx",
  "strum_macros",
- "time 0.3.30",
+ "time",
  "tokens",
  "toml 0.5.11",
  "user_input_common",
@@ -7811,12 +7800,6 @@ checksum = "cccddf32554fecc6acb585f82a32a72e28b48f8c4c1883ddfeeeaa96f7d8e519"
 
 [[package]]
 name = "wasi"
-version = "0.10.0+wasi-snapshot-preview1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
-
-[[package]]
-name = "wasi"
 version = "0.11.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
@@ -8010,7 +7993,7 @@ dependencies = [
  "serde_json",
  "sha2 0.9.9",
  "sqlx",
- "time 0.3.30",
+ "time",
  "tokio",
  "toml 0.5.11",
  "twitch_api2",
@@ -8290,7 +8273,7 @@ dependencies = [
  "hmac 0.12.1",
  "pbkdf2",
  "sha1 0.10.6",
- "time 0.3.30",
+ "time",
  "zstd 0.11.2+zstd.1.5.2",
 ]
 
