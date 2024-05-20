@@ -33,4 +33,4 @@ toml = "0.5.8"
 [dev-dependencies]
 
 # For testing
-tempfile = "3.8.1"
+tempfile = "3.10.1"
