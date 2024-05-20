@@ -30,7 +30,7 @@ storyteller_root = { path = "../../../lib/storyteller_root" }
 my-workspace-hack = { version = "0.1", path = "../../../my-workspace-hack" }
 
 # External
-anyhow = "1.0.75"
+anyhow = "1.0.86"
 log = "0.4.14"
 env_logger = "0.10.1"
 async-trait = "0.1.75"

@@ -27,7 +27,7 @@ mysql_queries = { path = "../../lib/mysql_queries" }
 tokens = { path = "../../_types/tokens" }
 
 # External
-anyhow = "1.0.75"
+anyhow = "1.0.86"
 chrono = { version = "0.4.22", features = ["serde"] }
 once_cell = "1.18.0"
 

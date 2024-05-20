@@ -25,7 +25,7 @@ easyenv = { path = "../../../lib/easyenv" }
 my-workspace-hack = { version = "0.1", path = "../../../my-workspace-hack" }
 
 # External
-anyhow = "1.0.75"
+anyhow = "1.0.86"
 # TODO/NB: Commenting out clap4 as it prevents windows builds
 # NB: clap4 = { package = "clap", version = "4.0" }
 dotenv = "0.15.0"

@@ -25,5 +25,5 @@ easyenv = { path = "../../../lib/easyenv" }
 my-workspace-hack = { version = "0.1", path = "../../../my-workspace-hack" }
 
 # External
-anyhow = "1.0.75"
+anyhow = "1.0.86"
 url = "2.4.1"

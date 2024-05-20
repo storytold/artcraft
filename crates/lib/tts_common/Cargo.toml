@@ -25,7 +25,7 @@ user_input_common = { path = "../user_input_common" }
 my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }
 
 # External
-anyhow = "1.0.75"
+anyhow = "1.0.86"
 chrono = { version = "0.4.22", features = ["serde"] }
 log = "0.4.14"
 once_cell = "1.18.0"

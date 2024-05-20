@@ -24,7 +24,7 @@ container_common = { path = "../deprecated/container_common" }
 my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }
 
 # External
-anyhow = "1.0.75"
+anyhow = "1.0.86"
 
 # Serialization
 serde = "1.0.125"

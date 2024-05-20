@@ -47,7 +47,7 @@ tts_common = { path = "../../../lib/tts_common" }
 videos = { path = "../../../lib/files/videos" }
 
 # External
-anyhow = "1.0.75"
+anyhow = "1.0.86"
 chrono = { version = "0.4.22", features = ["serde"] }
 dotenv = "0.15.0"
 hostname = "0.3.1"
