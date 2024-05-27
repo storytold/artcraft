@@ -20,7 +20,7 @@ base64 = { version = "0.21.5" }
 base64ct = { version = "1.6.0", default-features = false, features = ["alloc"] }
 bitflags = { version = "2.4.1", default-features = false, features = ["serde", "std"] }
 block-buffer = { version = "0.9.0", default-features = false, features = ["block-padding"] }
-bytemuck = { version = "1.14.0", default-features = false, features = ["extern_crate_alloc"] }
+bytemuck = { version = "1.16.0", default-features = false, features = ["extern_crate_alloc"] }
 byteorder = { version = "1.5.0" }
 chrono = { version = "0.4.31", features = ["alloc", "serde"] }
 clap = { version = "4.4.8", features = ["derive"] }
