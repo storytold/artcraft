@@ -154,7 +154,7 @@ jwt = "0.13.0"
 
 # NB: Hyper is just for HTTP client use in jobs. I'd use Actix client, but I need tokio runtime
 # NB: Furthermore, the Tokio runtime is old, so I have to use an older Hyper.
-hyper = { version = "0.14.24" }
+hyper = { version = "1.1.0" }
 
 # Money
 async-stripe = { version = "0.26.0", default-features = false, features = ["runtime-tokio-hyper", "connect", "billing", "checkout", "webhook-events"] }

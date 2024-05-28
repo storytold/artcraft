@@ -45,7 +45,7 @@ getrandom = { version = "0.2.11", default-features = false, features = ["std"] }
 hashbrown-582f2526e08bb6a0 = { package = "hashbrown", version = "0.14.5", features = ["raw"] }
 hashbrown-5ef9efb8ec2df382 = { package = "hashbrown", version = "0.12.3", features = ["raw"] }
 hmac = { version = "0.12.1", default-features = false, features = ["reset"] }
-hyper = { version = "0.14.27", features = ["full"] }
+hyper = { version = "1.1.0", features = ["full"] }
 indexmap = { version = "2.2.3", features = ["serde"] }
 itertools = { version = "0.10.5" }
 lazy_static = { version = "1.4.0", default-features = false, features = ["spin_no_std"] }

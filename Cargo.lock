@@ -102,8 +102,8 @@ dependencies = [
  "encoding_rs",
  "flate2",
  "futures-core",
- "h2",
- "http",
+ "h2 0.3.26",
+ "http 0.2.11",
  "httparse",
  "httpdate",
  "itoa 1.0.9",
@@ -176,7 +176,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d66ff4d247d2b160861fa2866457e85706833527840e4133f8f49aa423a38799"
 dependencies = [
  "bytestring",
- "http",
+ "http 0.2.11",
  "regex",
  "serde",
  "tracing",
@@ -205,7 +205,7 @@ dependencies = [
  "futures-core",
  "futures-util",
  "mio 0.8.11",
- "socket2 0.5.5",
+ "socket2",
  "tokio",
  "tracing",
 ]
@@ -266,7 +266,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "smallvec 1.11.2",
- "socket2 0.5.5",
+ "socket2",
  "time",
  "url",
 ]
@@ -322,7 +322,7 @@ dependencies = [
  "derive_more",
  "futures-core",
  "futures-util",
- "http",
+ "http 0.2.11",
  "impl-more",
  "itertools 0.11.0",
  "local-channel",
@@ -701,7 +701,7 @@ dependencies = [
  "hex",
  "hmac 0.12.1",
  "http-types",
- "hyper",
+ "hyper 0.14.28",
  "hyper-tls",
  "serde",
  "serde_json",
@@ -748,6 +748,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "atomic-waker"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
+
+[[package]]
 name = "atomic-write-file"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -763,7 +769,7 @@ version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fcf00bc6d5abb29b5f97e3c61a90b6d3caa12f3faf897d4a3e3607c050a35a7"
 dependencies = [
- "http",
+ "http 0.2.11",
  "log",
  "native-tls",
  "serde",
@@ -838,9 +844,9 @@ dependencies = [
  "bitflags 1.3.2",
  "bytes 1.6.0",
  "futures-util",
- "http",
- "http-body",
- "hyper",
+ "http 0.2.11",
+ "http-body 0.4.5",
+ "hyper 0.14.28",
  "itoa 1.0.9",
  "matchit",
  "memchr",
@@ -864,8 +870,8 @@ dependencies = [
  "async-trait",
  "bytes 1.6.0",
  "futures-util",
- "http",
- "http-body",
+ "http 0.2.11",
+ "http-body 0.4.5",
  "mime",
  "rustversion",
  "tower-layer",
@@ -2135,7 +2141,7 @@ dependencies = [
  "google_drive_common",
  "hashing",
  "hostname",
- "hyper",
+ "hyper 1.1.0",
  "jobs_common",
  "log",
  "mimetypes",
@@ -2837,7 +2843,26 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "futures-util",
- "http",
+ "http 0.2.11",
+ "indexmap 2.2.3",
+ "slab",
+ "tokio",
+ "tokio-util",
+ "tracing",
+]
+
+[[package]]
+name = "h2"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa82e28a107a8cc405f0839610bdc9b15f1e25ec7d696aa5cf173edbcb1486ab"
+dependencies = [
+ "atomic-waker",
+ "bytes 1.6.0",
+ "fnv",
+ "futures-core",
+ "futures-sink",
+ "http 1.1.0",
  "indexmap 2.2.3",
  "slab",
  "tokio",
@@ -2995,14 +3020,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "http"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21b9ddb458710bc376481b842f5da65cdf31522de232c1ca8146abce2a358258"
+dependencies = [
+ "bytes 1.6.0",
+ "fnv",
+ "itoa 1.0.9",
+]
+
+[[package]]
 name = "http-body"
 version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5f38f16d184e36f2408a55281cd658ecbd3ca05cce6d6510a176eca393e26d1"
 dependencies = [
  "bytes 1.6.0",
- "http",
+ "http 0.2.11",
  "pin-project-lite",
+]
+
+[[package]]
+name = "http-body"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cac85db508abc24a2e48553ba12a996e87244a0395ce011e62b37158745d643"
+dependencies = [
+ "bytes 1.6.0",
+ "http 1.1.0",
 ]
 
 [[package]]
@@ -3021,7 +3067,7 @@ dependencies = [
  "async-channel",
  "base64 0.13.1",
  "futures-lite",
- "http",
+ "http 0.2.11",
  "infer 0.2.3",
  "pin-project-lite",
  "rand 0.7.3",
@@ -3072,25 +3118,45 @@ checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hyper"
-version = "0.14.27"
+version = "0.14.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffb1cfd654a8219eaef89881fdb3bb3b1cdc5fa75ded05d6933b2b382e395468"
+checksum = "bf96e135eb83a2a8ddf766e426a841d8ddd7449d5f00d34ea02b41d2f19eef80"
 dependencies = [
  "bytes 1.6.0",
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2",
- "http",
- "http-body",
+ "h2 0.3.26",
+ "http 0.2.11",
+ "http-body 0.4.5",
  "httparse",
  "httpdate",
  "itoa 1.0.9",
  "pin-project-lite",
- "socket2 0.4.10",
+ "socket2",
  "tokio",
  "tower-service",
  "tracing",
+ "want",
+]
+
+[[package]]
+name = "hyper"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb5aa53871fc917b1a9ed87b683a5d86db645e23acb32c2e0785a353e522fb75"
+dependencies = [
+ "bytes 1.6.0",
+ "futures-channel",
+ "futures-util",
+ "h2 0.4.5",
+ "http 1.1.0",
+ "http-body 1.0.0",
+ "httparse",
+ "httpdate",
+ "itoa 1.0.9",
+ "pin-project-lite",
+ "tokio",
  "want",
 ]
 
@@ -3100,7 +3166,7 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbb958482e8c7be4bc3cf272a766a2b0bf1a6755e7a6ae777f017a31d11b13b1"
 dependencies = [
- "hyper",
+ "hyper 0.14.28",
  "pin-project-lite",
  "tokio",
  "tokio-io-timeout",
@@ -3113,7 +3179,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6183ddfa99b85da61a140bea0efc93fdf56ceaa041b37d553518030827f9905"
 dependencies = [
  "bytes 1.6.0",
- "hyper",
+ "hyper 0.14.28",
  "native-tls",
  "tokio",
  "tokio-native-tls",
@@ -3290,7 +3356,7 @@ dependencies = [
  "google_drive_common",
  "hashing",
  "hostname",
- "hyper",
+ "hyper 1.1.0",
  "images",
  "jobs_common",
  "jsonpath_lib",
@@ -3541,7 +3607,7 @@ dependencies = [
  "nom",
  "once_cell",
  "quoted_printable",
- "socket2 0.5.5",
+ "socket2",
  "tokio",
  "url",
 ]
@@ -4114,7 +4180,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "heck 0.4.1",
  "hmac 0.12.1",
- "hyper",
+ "hyper 1.1.0",
  "indexmap 2.2.3",
  "itertools 0.10.5",
  "lazy_static",
@@ -4146,7 +4212,7 @@ dependencies = [
  "sha1 0.10.6",
  "sha2 0.10.8",
  "simd-adler32",
- "socket2 0.5.5",
+ "socket2",
  "spin 0.9.8",
  "sqlx",
  "sqlx-core",
@@ -4501,7 +4567,7 @@ checksum = "f24cda83b20ed2433c68241f918d0f6fdec8b1d43b7a9590ab4420c5095ca930"
 dependencies = [
  "async-trait",
  "futures-core",
- "http",
+ "http 0.2.11",
  "opentelemetry",
  "opentelemetry-proto",
  "opentelemetry-semantic-conventions",
@@ -5390,10 +5456,10 @@ dependencies = [
  "encoding_rs",
  "futures-core",
  "futures-util",
- "h2",
- "http",
- "http-body",
- "hyper",
+ "h2 0.3.26",
+ "http 0.2.11",
+ "http-body 0.4.5",
+ "hyper 0.14.28",
  "hyper-tls",
  "ipnet",
  "js-sys",
@@ -5563,7 +5629,7 @@ dependencies = [
  "futures 0.3.29",
  "hex",
  "hmac 0.12.1",
- "http",
+ "http 0.2.11",
  "log",
  "maybe-async",
  "md5",
@@ -6246,16 +6312,6 @@ dependencies = [
 
 [[package]]
 name = "socket2"
-version = "0.4.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f7916fc008ca5542385b89a3d3ce689953c143e9304a9bf8beec1de48994c0d"
-dependencies = [
- "libc",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "socket2"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b5fac59a5cb5dd637972e5fca70daf0523c9067fcdc4842f053dae04a18f8e9"
@@ -6596,9 +6652,9 @@ dependencies = [
  "hashing",
  "hex",
  "hostname",
- "http",
+ "http 0.2.11",
  "http_server_common",
- "hyper",
+ "hyper 1.1.0",
  "infer 0.5.0",
  "jwt",
  "language-tags",
@@ -7180,7 +7236,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "pin-project-lite",
  "signal-hook-registry",
- "socket2 0.5.5",
+ "socket2",
  "tokio-macros",
  "windows-sys 0.48.0",
 ]
@@ -7442,10 +7498,10 @@ dependencies = [
  "bytes 1.6.0",
  "futures-core",
  "futures-util",
- "h2",
- "http",
- "http-body",
- "hyper",
+ "h2 0.3.26",
+ "http 0.2.11",
+ "http-body 0.4.5",
+ "hyper 0.14.28",
  "hyper-timeout",
  "percent-encoding",
  "pin-project",
@@ -7544,7 +7600,7 @@ dependencies = [
  "google_drive_common",
  "hashing",
  "hostname",
- "hyper",
+ "hyper 1.1.0",
  "jobs_common",
  "log",
  "my-workspace-hack",
@@ -7574,7 +7630,7 @@ dependencies = [
  "filesys",
  "hashing",
  "hostname",
- "hyper",
+ "hyper 1.1.0",
  "jobs_common",
  "lfu",
  "log",
@@ -7617,7 +7673,7 @@ dependencies = [
  "base64 0.13.1",
  "byteorder",
  "bytes 1.6.0",
- "http",
+ "http 0.2.11",
  "httparse",
  "log",
  "rand 0.8.5",
@@ -7647,7 +7703,7 @@ dependencies = [
  "futures 0.3.29",
  "futures-util",
  "hostname",
- "hyper",
+ "hyper 1.1.0",
  "lazy_static",
  "log",
  "magic-crypt",
@@ -7689,7 +7745,7 @@ dependencies = [
  "chrono",
  "displaydoc",
  "futures 0.3.29",
- "http",
+ "http 0.2.11",
  "once_cell",
  "reqwest",
  "serde",
@@ -7729,7 +7785,7 @@ dependencies = [
  "async-trait",
  "base64 0.13.1",
  "displaydoc",
- "http",
+ "http 0.2.11",
  "once_cell",
  "rand 0.8.5",
  "reqwest",
@@ -8067,7 +8123,7 @@ dependencies = [
  "google_drive_common",
  "hashing",
  "hostname",
- "hyper",
+ "hyper 1.1.0",
  "jobs_common",
  "log",
  "my-workspace-hack",
@@ -8096,7 +8152,7 @@ dependencies = [
  "filesys",
  "google_drive_common",
  "hostname",
- "hyper",
+ "hyper 1.1.0",
  "jobs_common",
  "log",
  "my-workspace-hack",
@@ -8317,7 +8373,7 @@ dependencies = [
  "futures-util",
  "hostname",
  "http_server_common",
- "hyper",
+ "hyper 1.1.0",
  "lazy_static",
  "limitation",
  "log",
