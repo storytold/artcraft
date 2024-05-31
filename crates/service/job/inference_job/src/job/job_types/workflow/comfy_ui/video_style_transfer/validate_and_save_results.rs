@@ -142,13 +142,20 @@ pub async fn validate_and_save_results(args: SaveResultsArgs<'_>) -> Result<Medi
   info!("Generating thumbnail tasks...");
 
   for output_type in thumbnail_types {
+    let output_ext = match get_file_extension(output_type) {
+        Ok(ext) => format!(".{}", ext),
+        Err(e) => {
+            error!("Failed to get extension for output type: {:?}", e);
+            continue;
+        }
+    };
     let thumbnail_task_result = ThumbnailTaskBuilder::new()
         .with_bucket(&*args.deps.buckets.public_bucket_client.bucket_name())
         .with_path(&*path_to_string(result_bucket_object_pathbuf.clone()))
         .with_source_mimetype(mimetype.as_str())
         .with_output_mimetype(output_type)
         .with_output_suffix("thumb")
-        .with_output_extension(&ext)
+        .with_output_extension(&output_ext)
         .with_event_id(&args.job.id.0.to_string())
         .send()
         .await;
