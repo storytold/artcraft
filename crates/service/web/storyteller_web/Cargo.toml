@@ -143,7 +143,7 @@ infer = "0.5.0"
 rust-s3 = { version = "0.33.0" }
 
 actix-cors = "0.6.4"
-actix-http = "3.4.0"
+actix-http = "3.7.0"
 actix-multipart = "0.6.1"
 actix-rt = "2.9.0"
 actix-service = "2.0.2"

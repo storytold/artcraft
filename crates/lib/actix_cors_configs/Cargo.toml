@@ -29,7 +29,7 @@ log = "0.4.14"
 
 # Actix
 actix-cors = "0.6.4"
-actix-http = "3.4.0"
+actix-http = "3.7.0"
 actix-web = "4.4.0"
 url = { version = "2.5.0", features = [] }
 

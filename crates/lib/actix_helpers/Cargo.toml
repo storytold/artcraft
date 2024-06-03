@@ -24,7 +24,7 @@ errors = { path = "../../lib/errors" }
 my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }
 
 # Actix
-actix-http = "3.4.0"
+actix-http = "3.7.0"
 actix-rt = "2.9.0"
 actix-service = "2.0.2"
 actix-utils = "3.0.1"
