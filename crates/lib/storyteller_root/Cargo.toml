@@ -26,4 +26,4 @@ my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }
 # (None yet)
 
 [dev-dependencies]
-serial_test = "2.0.0"
+serial_test = "3.0.0"
