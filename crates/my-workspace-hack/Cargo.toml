@@ -86,7 +86,7 @@ tokio-stream = { version = "0.1.15", features = ["fs"] }
 tracing = { version = "0.1.40", features = ["log"] }
 twitch_oauth2 = { version = "0.6.1", features = ["reqwest_client"] }
 unicode-bidi = { version = "0.3.13" }
-unicode-normalization = { version = "0.1.22" }
+unicode-normalization = { version = "0.1.23" }
 url = { version = "2.5.0", features = ["serde"] }
 void = { version = "1.0.2" }
 zip = { version = "0.6.6" }
@@ -156,7 +156,7 @@ tokio = { version = "1.34.0", features = ["full"] }
 tokio-stream = { version = "0.1.15", features = ["fs"] }
 tracing = { version = "0.1.40", features = ["log"] }
 unicode-bidi = { version = "0.3.13" }
-unicode-normalization = { version = "0.1.22" }
+unicode-normalization = { version = "0.1.23" }
 url = { version = "2.5.0", features = ["serde"] }
 zip = { version = "0.6.6" }
 
