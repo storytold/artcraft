@@ -24,7 +24,7 @@ normal = ["my-workspace-hack"]
 my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }
 
 # External
-env_logger = "0.10.1"
+env_logger = "0.10.2"
 log = "0.4.20"
 
 [dev-dependencies]

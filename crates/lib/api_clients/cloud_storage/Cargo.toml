@@ -32,7 +32,7 @@ my-workspace-hack = { version = "0.1", path = "../../../my-workspace-hack" }
 # External
 anyhow = "1.0.86"
 log = "0.4.14"
-env_logger = "0.10.1"
+env_logger = "0.10.2"
 async-trait = "0.1.75"
 # The "never-encode-slash" feature seems to have been removed:
 # https://github.com/durch/rust-s3/pull/254

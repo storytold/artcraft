@@ -24,7 +24,7 @@ my-workspace-hack = { version = "0.1", path = "../../my-workspace-hack" }
 
 # External
 dotenv = "0.15.0"
-env_logger = "0.10.1"
+env_logger = "0.10.2"
 log = "0.4.14"
 
 [dev-dependencies]
