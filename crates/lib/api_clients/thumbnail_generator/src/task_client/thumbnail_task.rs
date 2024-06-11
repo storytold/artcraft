@@ -143,9 +143,15 @@ impl ThumbnailTask{
             "http://media-server.thumbnail-generator/tasks",
         );
 
+        let basic_auth = easyenv::get_env_string_or_default(
+            "THUMBNAIL_GENERATOR_API_BASIC_AUTH",
+            "",
+        );
+
         let client = reqwest::Client::new();
         let task_json = self.request_json();
         client.post(url)
+            .header("Authorization", "Basic ".to_owned() + &basic_auth)
             .json(&task_json)
             .send()
             .await?

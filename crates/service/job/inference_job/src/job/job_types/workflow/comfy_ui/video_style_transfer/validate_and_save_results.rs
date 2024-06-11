@@ -143,7 +143,7 @@ pub async fn validate_and_save_results(args: SaveResultsArgs<'_>) -> Result<Medi
 
   for output_type in thumbnail_types {
     let output_ext = match get_file_extension(output_type) {
-        Ok(ext) => format!(".{}", ext),
+        Ok(ext) => format!("{}", ext),
         Err(e) => {
             error!("Failed to get extension for output type: {:?}", e);
             continue;
