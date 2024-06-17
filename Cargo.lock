@@ -666,7 +666,7 @@ dependencies = [
  "derive_builder",
  "diligent-date-parser",
  "never",
- "quick-xml",
+ "quick-xml 0.30.0",
 ]
 
 [[package]]
@@ -738,7 +738,7 @@ dependencies = [
  "attohttpc",
  "home",
  "log",
- "quick-xml",
+ "quick-xml 0.30.0",
  "rust-ini",
  "serde",
  "thiserror",
@@ -4328,7 +4328,7 @@ dependencies = [
  "openssl",
  "openssl-sys",
  "proc-macro2",
- "quick-xml",
+ "quick-xml 0.32.0",
  "quote",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
@@ -5242,6 +5242,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-xml"
+version = "0.32.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d3a6e5838b60e0e8fa7a43f22ade549a37d61f8bdbe636d0d7816191de969c2"
+dependencies = [
+ "encoding_rs",
+ "memchr",
+ "serde",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5741,7 +5752,7 @@ dependencies = [
  "atom_syndication",
  "derive_builder",
  "never",
- "quick-xml",
+ "quick-xml 0.30.0",
 ]
 
 [[package]]
@@ -5812,7 +5823,7 @@ dependencies = [
  "minidom",
  "native-tls",
  "percent-encoding",
- "quick-xml",
+ "quick-xml 0.30.0",
  "serde",
  "serde_derive",
  "serde_json",
