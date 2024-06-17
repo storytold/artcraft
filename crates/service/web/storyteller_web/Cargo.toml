@@ -136,7 +136,7 @@ infer = "0.16.0"
 # https://github.com/durch/rust-s3/pull/254
 rust-s3 = { version = "0.34.0" }
 
-actix-cors = "0.6.4"
+actix-cors = "0.7.0"
 actix-http = "3.7.0"
 actix-multipart = "0.6.2"
 actix-rt = "2.10.0"
