@@ -173,7 +173,7 @@ zip = "0.6.6"
 
 [build-dependencies]
 # NB: Only using diesel for migrations support
-diesel = { version = "2.1.3", features = ["mysql"] }
+diesel = { version = "2.2.1", features = ["mysql"] }
 
 [dev-dependencies]
 speculoos = "0.11.0" # Fluent assertions
