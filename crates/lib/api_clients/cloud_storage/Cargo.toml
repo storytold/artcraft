@@ -40,5 +40,5 @@ rust-s3 = { version = "0.34.0" }
 
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.
-tokio = { version = "1.34.0", features = ["macros"] }
+tokio = { version = "1.38.0", features = ["macros"] }
 

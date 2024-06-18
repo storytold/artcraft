@@ -87,7 +87,7 @@ sqlx-sqlite = { version = "0.7.3", default-features = false, features = ["any", 
 stable_deref_trait = { version = "1.2.0" }
 syn-f595c2ba2a3f28df = { package = "syn", version = "2.0.66", features = ["extra-traits", "fold", "full", "visit", "visit-mut"] }
 time = { version = "0.3.36", features = ["macros", "serde-well-known"] }
-tokio = { version = "1.37.0", features = ["full"] }
+tokio = { version = "1.38.0", features = ["full"] }
 tokio-stream = { version = "0.1.15", features = ["fs"] }
 tracing = { version = "0.1.40", features = ["log"] }
 unicode-bidi = { version = "0.3.15" }
@@ -160,7 +160,7 @@ stable_deref_trait = { version = "1.2.0" }
 syn-dff4ba8e3ae991db = { package = "syn", version = "1.0.109", features = ["extra-traits", "fold", "full", "visit-mut"] }
 syn-f595c2ba2a3f28df = { package = "syn", version = "2.0.66", features = ["extra-traits", "fold", "full", "visit", "visit-mut"] }
 time-macros = { version = "0.2.18", default-features = false, features = ["formatting", "parsing", "serde"] }
-tokio = { version = "1.37.0", features = ["full"] }
+tokio = { version = "1.38.0", features = ["full"] }
 tokio-stream = { version = "0.1.15", features = ["fs"] }
 tracing = { version = "0.1.40", features = ["log"] }
 unicode-bidi = { version = "0.3.15" }

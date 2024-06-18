@@ -49,7 +49,7 @@ elasticsearch = "8.5.0-alpha.1"
 
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.
-tokio = { version = "1.34.0", features = ["macros"] }
+tokio = { version = "1.38.0", features = ["macros"] }
 
 # Serialization
 serde = "1.0.125"

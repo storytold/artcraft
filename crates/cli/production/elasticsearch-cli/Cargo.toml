@@ -36,7 +36,7 @@ log = "0.4.14"
 strum = { version = "0.26", features = ["derive"] }
 
 # Bigger pieces
-tokio = { version = "1.34.0", features = ["macros"] }
+tokio = { version = "1.38.0", features = ["macros"] }
 sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 elasticsearch = "8.5.0-alpha.1"
 

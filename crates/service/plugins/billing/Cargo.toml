@@ -64,4 +64,4 @@ utoipa = { version = "4", features = ["chrono","actix_extras"] }
 mockall = "0.12.1"
 
 # NB: Tokio version matches `async-stripe` transitive dep; features are for testing
-tokio = { version = "1.34.0", features = ["rt", "macros"] }
+tokio = { version = "1.38.0", features = ["rt", "macros"] }
