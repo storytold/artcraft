@@ -55,6 +55,8 @@ pub struct ComfyInferenceCommand {
 
     pub(crate) mappings_directory: PathBuf,
 
+    pub(crate) comfy_startup_healthcheck_enabled: bool,
+
     /// Config file to use
     config_path: Option<PathBuf>,
 
@@ -154,6 +156,9 @@ impl ComfyInferenceCommand {
         let comfy_launch_command = easyenv::get_env_pathbuf_required(
             "COMFY_LAUNCH_COMMAND")?;
 
+        let comfy_startup_healthcheck_enabled =  easyenv::get_env_bool_or_default(
+            "COMFY_STARTUP_HEALTHCHECK_ENABLED", true);
+
         let maybe_virtual_env_activation_command = easyenv::get_env_string_optional(
             "COMFY_INFERENCE_MAYBE_VENV_COMMAND");
 
@@ -194,6 +199,7 @@ impl ComfyInferenceCommand {
             processing_script,
             comfy_setup_script,
             comfy_launch_command,
+            comfy_startup_healthcheck_enabled,
             maybe_virtual_env_activation_command,
             maybe_docker_options,
             maybe_execution_timeout,

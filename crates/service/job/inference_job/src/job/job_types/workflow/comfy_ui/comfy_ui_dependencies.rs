@@ -49,36 +49,43 @@ impl ComfyDependencies {
             inference_command.clone().comfy_launch_command.display()
         );
 
-        let _ = Command::new("sh")
-            .arg("-c")
-            .arg(&launch_command)
-            .stdout(std::process::Stdio::inherit())  // Inherit the stdout to stream the output
-            .spawn()
-            .expect("failed to start comfy start script");
+        match inference_command.clone().comfy_startup_healthcheck_enabled {
+            true => {
+                let _ = Command::new("sh")
+                    .arg("-c")
+                    .arg(&launch_command)
+                    .stdout(std::process::Stdio::inherit())  // Inherit the stdout to stream the output
+                    .spawn()
+                    .expect("failed to start comfy start script");
 
-        let mut success = false;
+                let mut success = false;
 
-        let client = reqwest::Client::new();
-        let start = Instant::now();
-        let timeout = Duration::from_secs(60);
-        while Instant::now().duration_since(start) < timeout {
-            let response = client.get("http://127.0.0.1:8188/prompt").send().await;
-            match response {
-                Ok(r) if r.status() == StatusCode::OK => {
-                    println!("Received 200 response from http://127.0.0.1:8188/prompt");
-                    success = true;
-                    break;
-                },
-                _ => {
-                    println!("Did not receive 200 response, retrying...");
-                    sleep(Duration::from_secs(5)).await;
+                let client = reqwest::Client::new();
+                let start = Instant::now();
+                let timeout = Duration::from_secs(60);
+                while Instant::now().duration_since(start) < timeout {
+                    let response = client.get("http://127.0.0.1:8188/prompt").send().await;
+                    match response {
+                        Ok(r) if r.status() == StatusCode::OK => {
+                            println!("Received 200 response from http://127.0.0.1:8188/prompt");
+                            success = true;
+                            break;
+                        },
+                        _ => {
+                            println!("Did not receive 200 response, retrying...");
+                            sleep(Duration::from_secs(5)).await;
+                        }
+                    }
                 }
-            }
-        }
 
-        if !success {
-            println!("Timeout reached without receiving a 200 response.");
-            panic!("Comfy start failed");
+                if !success {
+                    println!("Timeout reached without receiving a 200 response.");
+                    panic!("Comfy start failed");
+                }
+            },
+            false => {
+                println!("Skipping Comfy server healthcheck");
+            }
         }
 
         Ok(Self {
