@@ -18,7 +18,6 @@ impl CommandArgs for FfmpegExtractAudioArgs<'_> {
         command.push_str(" -i ");
         command.push_str(&path_to_string(self.input_video_file));
 
-        command.push_str(" -c copy ");
         command.push_str(" -map 0:a ");
 
         command.push_str(&path_to_string(self.output_file));
