@@ -63,7 +63,7 @@ num-iter = { version = "0.1.43", default-features = false, features = ["i128", "
 num-rational = { version = "0.4.1", features = ["serde"] }
 num-traits = { version = "0.2.19", features = ["i128", "libm"] }
 proc-macro2 = { version = "1.0.85", features = ["span-locations"] }
-quick-xml = { version = "0.30.0", features = ["encoding", "serialize"] }
+quick-xml = { version = "0.35.0", features = ["encoding", "serialize"] }
 quote = { version = "1.0.36" }
 rand = { version = "0.8.5", features = ["small_rng"] }
 rand_chacha = { version = "0.3.1" }
