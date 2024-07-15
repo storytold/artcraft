@@ -110,7 +110,7 @@ native-tls = { version = "0.2.8", features = ["vendored"] }
 tokio = { version = "1.38.0", features = ["macros"] }
 
 # Futures
-futures = { version = "0.3.17", features = ["thread-pool"] } # feature for ThreadPool
+futures = { version = "0.3.29", features = ["thread-pool"] } # feature for ThreadPool
 futures-util = "0.3.29"
 futures_old_for_limiter = { package = "futures", version = "0.1.29" } # Older version of futures for `limiter` crate
 futures-core = "0.3.29" # NB: For middleware/futures upgrade

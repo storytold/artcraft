@@ -3828,7 +3828,7 @@ name = "limitation"
 version = "0.1.1"
 dependencies = [
  "chrono",
- "futures 0.1.31",
+ "futures 0.3.29",
  "my-workspace-hack",
  "redis 0.13.0",
  "time",
