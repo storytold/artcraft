@@ -15,7 +15,7 @@ use hashing::sha256::sha256_hash_file::sha256_hash_file;
 use mimetypes::mimetype_for_file::get_mimetype_for_file;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::media_files::create::insert_media_file_from_face_animation::{insert_media_file_from_face_animation, InsertArgs};
-use thumbnail_generator::task_client::thumbnail_task::ThumbnailTaskBuilder;
+use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::users::UserToken;
 
 use crate::job::job_loop::job_success_result::{JobSuccessResult, ResultEntity};
@@ -320,37 +320,21 @@ pub async fn process_job(args: SadTalkerProcessJobArgs<'_>) -> Result<JobSuccess
       .await
       .map_err(|e| ProcessSingleJobError::Other(e))?;
 
-  let thumbnail_types = match mimetype.as_str() {
-    "video/mp4" => vec!["image/gif", "image/jpeg"],
-    _ => vec![],
-  };
 
-  for output_type in thumbnail_types {
-    match get_output_file_extension_from_mimetype(output_type) {
-      Ok(output_extension) => {
-        let thumbnail_task_result = ThumbnailTaskBuilder::new()
-            .with_bucket(&*args.job_dependencies.buckets.public_bucket_client.bucket_name())
-            .with_path(&*path_to_string(result_bucket_object_pathbuf.clone()))
-            .with_source_mimetype(mimetype.as_str())
-            .with_output_mimetype(output_type)
-            .with_output_suffix("thumb")
-            .with_output_extension(output_extension)
-            .with_event_id(&job.id.0.to_string())
-            .send()
-            .await;
+  let thumbnail_task_result = ThumbnailTaskBuilder::new_for_source_mimetype(ThumbnailTaskInputMimeType::MP4)
+      .with_bucket(&*args.job_dependencies.buckets.public_bucket_client.bucket_name())
+      .with_path(&*path_to_string(result_bucket_object_pathbuf.clone()))
+      .with_output_suffix("thumb")
+      .with_event_id(&job.id.0.to_string())
+      .send_all()
+      .await;
 
-        match thumbnail_task_result {
-          Ok(thumbnail_task) => {
-            debug!("Thumbnail task created: {:?}", thumbnail_task);
-          },
-          Err(e) => {
-            error!("Failed to create thumbnail task: {:?}", e);
-          }
-        }
-      },
-      Err(e) => {
-          error!("Failed to get output file extension from mimetype: {:?}", e);
-      }
+  match thumbnail_task_result {
+    Ok(thumbnail_task) => {
+      debug!("Thumbnail tasks sent: {:?}", thumbnail_task);
+    },
+    Err(e) => {
+      error!("Failed to create some/all thumbnail tasks: {:?}", e);
     }
   }
   // ==================== DELETE TEMP FILES ==================== //

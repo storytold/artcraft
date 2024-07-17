@@ -36,7 +36,7 @@ use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use subprocess_common::command_runner::command_runner_args::{RunAsSubprocessArgs, StreamRedirection};
-use thumbnail_generator::task_client::thumbnail_task::ThumbnailTaskBuilder;
+use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
 use videos::ffprobe_get_dimensions::ffprobe_get_dimensions;
@@ -299,11 +299,31 @@ pub async fn process_live_portrait_job(
         ProcessSingleJobError::Other(e)
       })?;
 
+
   // ==================== (OPTIONAL) DEBUG SLEEP ==================== //
 
   if let Some(sleep_millis) = job_payload.sleep_millis {
     info!("Sleeping for millis: {sleep_millis}");
     thread::sleep(Duration::from_millis(sleep_millis));
+  }
+
+  // ==================== GENERATE THUMBNAILS ==================== //
+
+  let thumbnail_task_result = ThumbnailTaskBuilder::new_for_source_mimetype(ThumbnailTaskInputMimeType::MP4)
+    .with_bucket(&*deps.buckets.public_bucket_client.bucket_name())
+    .with_path(&*path_to_string(result_bucket_object_pathbuf.clone()))
+    .with_output_suffix("thumb")
+    .with_event_id(&job.id.0.to_string())
+    .send_all()
+    .await;
+
+  match thumbnail_task_result {
+    Ok(thumbnail_task) => {
+      debug!("Thumbnail tasks sent: {:?}", thumbnail_task);
+    },
+    Err(e) => {
+      error!("Failed to create some/all thumbnail tasks: {:?}", e);
+    }
   }
 
   // ==================== CLEANUP/ DELETE TEMP FILES ==================== //

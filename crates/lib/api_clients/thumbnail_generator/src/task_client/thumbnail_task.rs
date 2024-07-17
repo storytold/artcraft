@@ -1,6 +1,62 @@
 use log::error;
 use serde_json::{json, Value};
 
+
+#[derive(Debug)]
+pub enum ThumbnailTaskInputMimeType {
+    MP4
+}
+
+pub enum ThumbnailTaskOutputMimeType {
+    PNG,
+    JPEG,
+    GIF,
+}
+
+impl ThumbnailTaskInputMimeType {
+    fn as_str(&self) -> &str {
+        match self {
+            ThumbnailTaskInputMimeType::MP4 => "video/mp4",
+        }
+    }
+
+    fn as_string(&self) -> String {
+        self.as_str().to_string()
+    }
+
+    fn to_output_mimetypes(&self) -> Vec<ThumbnailTaskOutputMimeType> {
+        match self {
+            ThumbnailTaskInputMimeType::MP4 => vec![
+                ThumbnailTaskOutputMimeType::JPEG,
+                ThumbnailTaskOutputMimeType::GIF,
+            ],
+        }
+    }
+}
+
+impl ThumbnailTaskOutputMimeType {
+    fn as_str(&self) -> &str {
+        match self {
+            ThumbnailTaskOutputMimeType::PNG => "image/png",
+            ThumbnailTaskOutputMimeType::JPEG => "image/jpeg",
+            ThumbnailTaskOutputMimeType::GIF => "image/gif",
+        }
+    }
+
+    fn as_string(&self) -> String {
+        self.as_str().to_string()
+    }
+
+    fn to_extension(&self) -> &str {
+        match self {
+            ThumbnailTaskOutputMimeType::PNG => "png",
+            ThumbnailTaskOutputMimeType::JPEG => "jpg",
+            ThumbnailTaskOutputMimeType::GIF => "gif",
+        }
+    }
+}
+
+
 #[derive(Debug)]
 pub enum ThumbnailTaskError {
     InvalidTask,
@@ -19,22 +75,20 @@ struct ThumbnailTask{
 
 #[derive(Debug)]
 pub struct ThumbnailTaskBuilder{
+    source_mimetype: ThumbnailTaskInputMimeType,
     bucket: Option<String>,
     path: Option<String>,
-    source_mimetype: Option<String>,
-    output_mimetype: Option<String>,
     output_extension: Option<String>,
     output_suffix: Option<String>,
     event_id: Option<String>,
 }
 
 impl ThumbnailTaskBuilder {
-    pub fn new() -> Self {
+    pub fn new_for_source_mimetype(source_mimetype: ThumbnailTaskInputMimeType) -> Self {
         Self {
+            source_mimetype,
             bucket: None,
             path: None,
-            source_mimetype: None,
-            output_mimetype: None,
             output_extension: None,
             output_suffix: None,
             event_id: None,
@@ -48,16 +102,6 @@ impl ThumbnailTaskBuilder {
 
     pub fn with_path(&mut self, path: &str) -> &mut Self {
         self.path = Some(path.to_string());
-        self
-    }
-
-    pub fn with_source_mimetype(&mut self, source_mimetype: &str) -> &mut Self {
-        self.source_mimetype = Some(source_mimetype.to_string());
-        self
-    }
-
-    pub fn with_output_mimetype(&mut self, output_mimetype: &str) -> &mut Self {
-        self.output_mimetype = Some(output_mimetype.to_string());
         self
     }
 
@@ -76,30 +120,43 @@ impl ThumbnailTaskBuilder {
         self
     }
 
-    fn build(&self) -> Result<ThumbnailTask, String> {
+    fn build(&self, thumbnail_task_output_mime_type: ThumbnailTaskOutputMimeType) -> Result<ThumbnailTask, String> {
         Ok(ThumbnailTask {
+            source_mimetype: self.source_mimetype.as_string(),
+            output_mimetype: thumbnail_task_output_mime_type.as_string(),
             bucket: self.bucket.clone().ok_or("bucket is required")?,
             path: self.path.clone().ok_or("path is required")?,
-            source_mimetype: self.source_mimetype.clone().ok_or("source_mimetype is required")?,
-            output_mimetype: self.output_mimetype.clone().ok_or("output_mimetype is required")?,
             output_extension: self.output_extension.clone().ok_or("output_extension is required")?,
             output_suffix: self.output_suffix.clone().unwrap_or("".to_string()),
             event_id: self.event_id.clone().ok_or("event_id is required")?,
         })
     }
 
-    pub async fn send(&self) -> Result<(), ThumbnailTaskError> {
-        match self.build() {
-            Ok(task) => {
-                match task.send().await {
-                    Ok(_) => Ok(()),
-                    Err(_) => Err(ThumbnailTaskError::RequestError),
+    pub async fn send_all(&self) -> Result<(), ThumbnailTaskError> {
+        let mut results: Vec<Result<(), ThumbnailTaskError>> = vec![];
+        for output_mimetype in self.source_mimetype.to_output_mimetypes() {
+            match self.build(output_mimetype) {
+                Ok(task) => {
+                    match task.send().await {
+                        Ok(_) => {},
+                        Err(_) => {
+                            error!("Failed to send thumbnail task: {:?}", self);
+                            results.push(Err(ThumbnailTaskError::RequestError));
+                        },
+                    }
                 }
-            }
-            Err(_) => {
-                error!("Invalid thumbnail task: {:?}", self);
-                Err(ThumbnailTaskError::InvalidTask)
-            },
+                Err(_) => {
+                    error!("Invalid thumbnail task: {:?}", self);
+                    results.push(Err(ThumbnailTaskError::InvalidTask));
+                },
+            };
+
+        }
+
+        if results.iter().any(|r| r.is_err()) {
+            Err(ThumbnailTaskError::RequestError)
+        } else {
+            Ok(())
         }
     }
 }

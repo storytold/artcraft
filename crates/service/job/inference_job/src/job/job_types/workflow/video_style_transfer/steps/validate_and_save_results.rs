@@ -24,7 +24,7 @@ use mysql_queries::payloads::prompt_args::prompt_inner_payload::PromptInnerPaylo
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::media_files::create::insert_media_file_from_comfy_ui::{insert_media_file_from_comfy_ui, InsertArgs};
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
-use thumbnail_generator::task_client::thumbnail_task::ThumbnailTaskBuilder;
+use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
 
@@ -130,40 +130,20 @@ pub async fn validate_and_save_results(args: SaveResultsArgs<'_>) -> Result<Medi
       .await
       .map_err(|e| ProcessSingleJobError::Other(e))?;
 
-  // generate thumbnail using thumbnail service
-  let thumbnail_types = match mimetype.as_str() {
-    "video/mp4" => vec!["image/gif", "image/jpeg"],
-    _ => vec![],
-  };
+  let thumbnail_task_result = ThumbnailTaskBuilder::new_for_source_mimetype(ThumbnailTaskInputMimeType::MP4)
+      .with_bucket(&*args.deps.buckets.public_bucket_client.bucket_name())
+      .with_path(&*path_to_string(result_bucket_object_pathbuf.clone()))
+      .with_output_suffix("thumb")
+      .with_event_id(&args.job.id.0.to_string())
+      .send_all()
+      .await;
 
-  info!("Generating thumbnail tasks...");
-
-  for output_type in thumbnail_types {
-    let output_ext = match get_file_extension(output_type) {
-        Ok(ext) => format!("{}", ext),
-        Err(e) => {
-            error!("Failed to get extension for output type: {:?}", e);
-            continue;
-        }
-    };
-    let thumbnail_task_result = ThumbnailTaskBuilder::new()
-        .with_bucket(&*args.deps.buckets.public_bucket_client.bucket_name())
-        .with_path(&*path_to_string(result_bucket_object_pathbuf.clone()))
-        .with_source_mimetype(mimetype.as_str())
-        .with_output_mimetype(output_type)
-        .with_output_suffix("thumb")
-        .with_output_extension(&output_ext)
-        .with_event_id(&args.job.id.0.to_string())
-        .send()
-        .await;
-
-    match thumbnail_task_result {
-      Ok(thumbnail_task) => {
-        debug!("Thumbnail task created: {:?}", thumbnail_task);
-      },
-      Err(e) => {
-        error!("Failed to create thumbnail task: {:?}", e);
-      }
+  match thumbnail_task_result {
+    Ok(thumbnail_task) => {
+      debug!("Thumbnail tasks sent: {:?}", thumbnail_task);
+    },
+    Err(e) => {
+      error!("Failed to create some/all thumbnail tasks: {:?}", e);
     }
   }
 
