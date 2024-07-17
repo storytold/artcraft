@@ -63,6 +63,7 @@ redis_common = { path = "../../../lib/redis_common" }
 reusable_types = { path = "../../../_types/reusable_types" }
 server_environment = { path = "../../../lib/server_environment" }
 tokens = { path = "../../../_types/tokens" }
+thumbnail_generator = { path = "../../../lib/api_clients/thumbnail_generator" }
 tts_common = { path = "../../../lib/tts_common" }
 url_config = { path = "../../../lib/url_config" }
 user_input_common = { path = "../../../lib/user_input_common" }

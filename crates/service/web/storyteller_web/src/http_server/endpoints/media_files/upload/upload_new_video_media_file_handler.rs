@@ -8,7 +8,7 @@ use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::text::Text;
 use actix_multipart::Multipart;
 use actix_web::{HttpRequest, HttpResponse, web};
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use once_cell::sync::Lazy;
 use stripe::CreatePaymentLinkShippingAddressCollectionAllowedCountries::Mf;
 use utoipa::ToSchema;
@@ -20,6 +20,7 @@ use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
 use media::decode_basic_audio_info::decode_basic_audio_bytes_info;
@@ -30,6 +31,7 @@ use mysql_queries::queries::media_files::create::insert_media_file_from_file_upl
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use tokens::tokens::media_files::MediaFileToken;
 use videos::get_mp4_info::{get_mp4_info, get_mp4_info_for_bytes, get_mp4_info_for_bytes_and_len};
+use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::state::server_state::ServerState;
@@ -318,6 +320,23 @@ pub async fn upload_new_video_media_file_handler(
       })?;
 
   info!("new media file id: {} token: {:?}", record_id, &token);
+
+  let thumbnail_task_result = ThumbnailTaskBuilder::new_for_source_mimetype(ThumbnailTaskInputMimeType::MP4)
+    .with_bucket(server_state.public_bucket_client.bucket_name().as_str())
+    .with_path(&*path_to_string(public_upload_path.to_full_object_pathbuf()))
+    .with_output_suffix("thumb")
+    .with_event_id(&token.to_string())
+    .send_all()
+    .await;
+
+  match thumbnail_task_result {
+    Ok(thumbnail_task) => {
+      debug!("Thumbnail tasks sent: {:?}", thumbnail_task);
+    },
+    Err(e) => {
+      error!("Failed to create some/all thumbnail tasks: {:?}", e);
+    }
+  }
 
   let response = UploadNewVideoMediaFileSuccessResponse {
     success: true,
