@@ -105,11 +105,6 @@ impl ThumbnailTaskBuilder {
         self
     }
 
-    pub fn with_output_extension(&mut self, output_extension: &str) -> &mut Self {
-        self.output_extension = Some(output_extension.to_string());
-        self
-    }
-
     pub fn with_output_suffix(&mut self, output_suffix: &str) -> &mut Self {
         self.output_suffix = Some(output_suffix.to_string());
         self
@@ -124,9 +119,9 @@ impl ThumbnailTaskBuilder {
         Ok(ThumbnailTask {
             source_mimetype: self.source_mimetype.as_string(),
             output_mimetype: thumbnail_task_output_mime_type.as_string(),
+            output_extension: thumbnail_task_output_mime_type.to_extension().to_string(),
             bucket: self.bucket.clone().ok_or("bucket is required")?,
             path: self.path.clone().ok_or("path is required")?,
-            output_extension: self.output_extension.clone().ok_or("output_extension is required")?,
             output_suffix: self.output_suffix.clone().unwrap_or("".to_string()),
             event_id: self.event_id.clone().ok_or("event_id is required")?,
         })
@@ -139,14 +134,14 @@ impl ThumbnailTaskBuilder {
                 Ok(task) => {
                     match task.send().await {
                         Ok(_) => {},
-                        Err(_) => {
-                            error!("Failed to send thumbnail task: {:?}", self);
+                        Err(err) => {
+                            error!("Failed to send thumbnail task: {:?} with err {:?}", self, err);
                             results.push(Err(ThumbnailTaskError::RequestError));
                         },
                     }
                 }
-                Err(_) => {
-                    error!("Invalid thumbnail task: {:?}", self);
+                Err(err) => {
+                    error!("Invalid thumbnail task: {:?} with err {:?}", self, err);
                     results.push(Err(ThumbnailTaskError::InvalidTask));
                 },
             };
