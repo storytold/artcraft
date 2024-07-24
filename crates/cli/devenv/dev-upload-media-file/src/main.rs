@@ -43,6 +43,8 @@ pub async fn main() -> AnyhowResult<()> {
   let region_name = easyenv::get_env_string_required("REGION_NAME")?;
   let public_bucket_name = easyenv::get_env_string_required("PUBLIC_BUCKET_NAME")?;
 
+  let s3_compatible_endpoint_url = easyenv::get_env_string_or_default(
+    "S3_COMPATIBLE_ENDPOINT_URL", "");
   let bucket_timeout = easyenv::get_env_duration_seconds_or_default(
     "BUCKET_TIMEOUT_SECONDS", Duration::from_secs(60 * 5));
 
@@ -53,6 +55,7 @@ pub async fn main() -> AnyhowResult<()> {
     &secret_key,
     &region_name,
     &public_bucket_name,
+    &s3_compatible_endpoint_url,
     None,
     Some(bucket_timeout),
   )?;

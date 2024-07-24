@@ -28,6 +28,38 @@ spec:
           - containerPort: 3306 
 
 ---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ssd-hostpath
+provisioner: microk8s.io/hostpath
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  pvDir: /home/kasisnu/microk8s/hostpath-provisioner
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-pvc
+spec:
+  storageClassName: ssd-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storyteller-config
+data:
+  buckets.vocodes_bucket_region: us-east1
+  buckets.vocodes_private_bucket_name: kasisnu-test-area-private
+  buckets.vocodes_public_bucket_name: kasisnu-test-area-public
+
+---
 
 apiVersion: apps/v1
 kind: Deployment
@@ -65,29 +97,57 @@ spec:
       labels:
         app: storyteller-web
     spec:
+      runtimeClassName: nvidia
       containers:
+      - name: gpt-sovitsdir
+        image: localhost:32000/some-gpt-sovits:latest
+        imagePullPolicy: Always
+        command: ["sleep", "infinity"]
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+          requests:
+            nvidia.com/gpu: "1"
+        volumeMounts:
+          - mountPath: /application-dir
+            name: application-dir
       - name: storyteller-web
         image: storyteller-web:latest
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         env:
           - name: MYSQL_URL
-            value: mysql://storyteller:password@mysql.default/storyteller
+            value: mysql://storyteller:password@mysql/storyteller
           - name: REDIS_0_URL
-            value: redis://redisd@redis.default/0
+            value: redis://redisd@redis/0
           - name: REDIS_1_URL
-            value: redis://redisd@redis.default/1
+            value: redis://redisd@redis/1
           - name: ACCESS_KEY
-            value: garbage
+            valueFrom:
+              secretKeyRef:
+                name: bucket-secrets
+                key: access-key
           - name: SECRET_KEY
-            value: garbage
+            valueFrom:
+              secretKeyRef:
+                name: bucket-secrets
+                key: secret-key
           - name: REGION_NAME
-            value: garbage
+            valueFrom:
+              configMapKeyRef:
+                name: storyteller-config
+                key: buckets.vocodes_bucket_region
           - name: W2L_PRIVATE_DOWNLOAD_BUCKET_NAME
-            value: garbage
+            valueFrom:
+              configMapKeyRef:
+                name: storyteller-config
+                key: buckets.vocodes_private_bucket_name
           - name: W2L_PUBLIC_DOWNLOAD_BUCKET_NAME
-            value: garbage
+            valueFrom:
+              configMapKeyRef:
+                name: storyteller-config
+                key: buckets.vocodes_public_bucket_name
           - name: AUDIO_UPLOADS_BUCKET_ROOT
-            value: garbage
+            value: /user_uploaded_w2l_audio
           - name: TWITCH_USERNAME
             value: garbage
           - name: TWITCH_STREAM_KEY
@@ -101,10 +161,14 @@ spec:
         volumeMounts:
           - mountPath: /storyteller-rust
             name: storyteller-rust-folder
+          - mountPath: /application-dir
+            name: application-dir
       volumes:
         - name: storyteller-rust-folder
-          hostPath:
-            path: /storyteller-rust
+          persistentVolumeClaim:
+            claimName: test-pvc
+        - name: application-dir
+          emptyDir: {}
 ---
 
 apiVersion: v1
@@ -116,7 +180,7 @@ spec:
   ports:
     - name: mysql
       port: 3306
-      nodePort: 3306
+      nodePort: 32206
   selector:
     app: mysql
 
@@ -131,7 +195,7 @@ spec:
   ports:
     - name: redis
       port: 6379
-      nodePort: 6379
+      nodePort: 32379
   selector:
     app: redis
 
@@ -146,7 +210,7 @@ spec:
   ports:
     - name: storyteller-web
       port: 12345
-      nodePort: 12345
+      nodePort: 32345
   selector:
     app: storyteller-web
 

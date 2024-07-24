@@ -47,6 +47,7 @@ impl BucketClient {
     secret_key: &str,
     region_name: &str,
     bucket_name: &str,
+    s3_endpoint: &str,
     optional_bucket_root: Option<&str>,
     // See underlying docs for timeout details.
     bucket_request_timeout: Option<Duration>,
@@ -63,14 +64,14 @@ impl BucketClient {
     // NB: The GCS buckets aren't supported by default.
     let region = Region::Custom {
       region: region_name.to_owned(),
-      endpoint: "https://storage.googleapis.com".to_owned(),
+      endpoint: s3_endpoint.to_owned(),
     };
 
     let mut bucket = Bucket::new(&bucket_name, region, credentials)?;
 
     bucket.set_request_timeout(bucket_request_timeout);
     bucket.set_path_style();
-    bucket.set_subdomain_style();
+    // bucket.set_subdomain_style();
 
     let optional_bucket_root = optional_bucket_root.map(|s| s.to_string());
 

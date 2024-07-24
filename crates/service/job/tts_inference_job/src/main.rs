@@ -120,6 +120,9 @@ async fn main() -> AnyhowResult<()> {
   let private_bucket_name = easyenv::get_env_string_required(ENV_PRIVATE_BUCKET_NAME)?;
   let public_bucket_name = easyenv::get_env_string_required(ENV_PUBLIC_BUCKET_NAME)?;
 
+  let s3_compatible_endpoint_url = easyenv::get_env_string_or_default(
+    "S3_COMPATIBLE_ENDPOINT_URL",
+    "https://storage.googleapis.com");
   let bucket_timeout = easyenv::get_env_duration_seconds_or_default("BUCKET_TIMEOUT_SECONDS",
     Duration::from_secs(60 * 5));
 
@@ -128,6 +131,7 @@ async fn main() -> AnyhowResult<()> {
     &secret_key,
     &region_name,
     &private_bucket_name,
+    &s3_compatible_endpoint_url,
     None,
     Some(bucket_timeout),
   )?;
@@ -137,6 +141,7 @@ async fn main() -> AnyhowResult<()> {
     &secret_key,
     &region_name,
     &public_bucket_name,
+    &s3_compatible_endpoint_url,
     None,
     Some(bucket_timeout),
   )?;

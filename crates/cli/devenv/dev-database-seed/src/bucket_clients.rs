@@ -16,6 +16,7 @@ pub fn get_bucket_clients() -> AnyhowResult<BucketClients> {
   let region_name = easyenv::get_env_string_required("REGION_NAME")?;
   let public_bucket_name = easyenv::get_env_string_required("PUBLIC_BUCKET_NAME")?;
   let private_bucket_name = easyenv::get_env_string_required("PRIVATE_BUCKET_NAME")?;
+  let s3_compatible_endpoint_url = easyenv::get_env_string_or_default("S3_COMPATIBLE_ENDPOINT_URL", "https://storage.googleapis.com");
 
   // NB: Long timeout for dev rust builds to upload to cloud buckets.
   // Unoptimized binaries sometimes take a lot of time to upload, presumably due to unoptimized code.
@@ -29,6 +30,7 @@ pub fn get_bucket_clients() -> AnyhowResult<BucketClients> {
     &secret_key,
     &region_name,
     &public_bucket_name,
+    &s3_compatible_endpoint_url,
     None,
     Some(bucket_timeout),
   )?;
@@ -40,6 +42,7 @@ pub fn get_bucket_clients() -> AnyhowResult<BucketClients> {
     &secret_key,
     &region_name,
     &private_bucket_name,
+    &s3_compatible_endpoint_url,
     None,
     Some(bucket_timeout),
   )?;

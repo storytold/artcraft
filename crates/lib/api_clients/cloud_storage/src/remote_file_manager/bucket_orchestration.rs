@@ -28,6 +28,7 @@ pub struct BucketOrchestration {
     region_name: String,
     public_bucket_name: String,
     private_bucket_name: String,
+    s3_compatible_endpoint_url: String,
 }
 
 #[async_trait]
@@ -63,12 +64,17 @@ impl BucketOrchestration {
         let region_name = easyenv::get_env_string_required("REGION_NAME")?;
         let public_bucket_name = easyenv::get_env_string_required("PUBLIC_BUCKET_NAME")?;
         let private_bucket_name = easyenv::get_env_string_required("PRIVATE_BUCKET_NAME")?;
+        let s3_compatible_endpoint_url = easyenv::get_env_string_or_default(
+            "S3_COMPATIBLE_ENDPOINT_URL",
+            "https://storage.googleapis.com",
+        );
 
 
         let bucket_orchestration = BucketOrchestration::new(
             access_key,
             secret_key,
             region_name,
+            s3_compatible_endpoint_url,
             public_bucket_name,
             private_bucket_name,
         );
@@ -80,6 +86,7 @@ impl BucketOrchestration {
         access_key: String,
         secret_key: String,
         region_name: String,
+        s3_compatible_endpoint_url: String,
         public_bucket_name: String,
         private_bucket_name: String) -> Self {
         Self {
@@ -88,6 +95,7 @@ impl BucketOrchestration {
             region_name,
             public_bucket_name,
             private_bucket_name,
+            s3_compatible_endpoint_url,
         }
     }
 
@@ -102,6 +110,7 @@ impl BucketOrchestration {
                 &self.access_key,
                 &self.secret_key,
                 &self.region_name,
+                &self.s3_compatible_endpoint_url,
                 &self.public_bucket_name,
                 None,
                 Some(bucket_timeout),
@@ -112,6 +121,7 @@ impl BucketOrchestration {
                 &self.access_key,
                 &self.secret_key,
                 &self.region_name,
+                &self.s3_compatible_endpoint_url,
                 &self.private_bucket_name,
                 None,
                 Some(bucket_timeout),
