@@ -139,7 +139,7 @@ rust-s3 = { version = "0.34.0" }
 
 actix-cors = "0.6.4"
 actix-http = "3.7.0"
-actix-multipart = "0.6.2"
+actix-multipart = "0.7.2"
 actix-rt = "2.10.0"
 actix-service = "2.0.2"
 actix-utils = "3.0.1"
