@@ -3,22 +3,23 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Add;
 use std::path::PathBuf;
 
-use buckets::public::media_files::bucket_directory::MediaFileBucketDirectory;
-use buckets::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::Utc;
-use cloud_storage::bucket_client::BucketClient;
-use crockford::crockford_entropy_lower;
-use filesys::file_read_bytes::file_read_bytes;
-use jobs_common::redis_job_status_logger::RedisPool;
 use log::{debug, info, warn};
 use once_cell::sync::Lazy;
 use r2d2_redis::r2d2::PooledConnection;
 use r2d2_redis::redis::Commands;
 use r2d2_redis::RedisConnectionManager;
+use url::Url;
+
+use buckets::public::media_files::bucket_directory::MediaFileBucketDirectory;
+use buckets::public::media_files::bucket_file_path::MediaFileBucketPath;
+use cloud_storage::bucket_client::BucketClient;
+use crockford::crockford_entropy_lower;
+use filesys::file_read_bytes::file_read_bytes;
+use jobs_common::redis_job_status_logger::RedisPool;
 use redis_schema::keys::inference_job::style_transfer_progress_key::StyleTransferProgressKey;
 use redis_schema::payloads::inference_job::style_transfer_progress_state::{InferenceProgressDetailsResponse, InferenceStageDetails};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-use url::Url;
 
 static ALLOWED_TYPES_FRAMES : Lazy<HashSet<&'static str>> = Lazy::new(|| {
   HashSet::from([
@@ -287,6 +288,10 @@ impl PreviewProcessor {
 
 
   async fn persist_redis_update(&mut self) {
+    let base_url = easyenv::get_env_string_or_default(
+      "EPHEMERAL_BUCKET_BASE_URL",
+      "https://cdn.storyteller.ai/studio",
+    );
     let status = InferenceProgressDetailsResponse {
       expected_stages: 3,
       currently_active_stage: self.stages.iter().filter(|(_, state)| state.state == PreviewStageState::UploadComplete).count() as u32,
@@ -300,7 +305,7 @@ impl PreviewProcessor {
             expected_frame_count: self.expected_frame_count,
             stage_complete: state.all_frames_uploaded(),
             frames: state.all_object_paths().iter().map(|object_path| {
-              let url_str = format!("https://some-path.com{}", object_path.get_full_object_path_str());
+              let url_str = format!("{}/{}", base_url, object_path.get_full_object_path_str());
               Url::parse(&url_str).unwrap()
             }).collect()
           }
