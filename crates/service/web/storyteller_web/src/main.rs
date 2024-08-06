@@ -18,8 +18,10 @@
 #[macro_use] extern crate serde_derive;
 
 use std::sync::Arc;
+use std::sync::atomic::AtomicUsize;
 use std::time::Duration;
 
+use actix::Actor;
 use actix_multipart::form::MultipartFormConfig;
 use actix_web::{App, HttpServer, middleware, web};
 use actix_web::middleware::{DefaultHeaders, Logger};
@@ -74,6 +76,7 @@ use crate::billing::stripe_internal_user_lookup_impl::StripeInternalUserLookupIm
 use crate::configs::app_startup::redis_rate_limiters::configure_redis_rate_limiters;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
 use crate::http_server::cookies::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
+use crate::http_server::endpoints::workflows::enqueue::progress_tracker_server;
 use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
 use crate::http_server::routes::add_routes::add_routes;
 use crate::http_server::session::http::http_user_session_manager::HttpUserSessionManager;
@@ -107,6 +110,8 @@ const ENV_REGION_NAME : &str = "REGION_NAME";
 const ENV_PRIVATE_BUCKET_NAME : &str = "W2L_PRIVATE_DOWNLOAD_BUCKET_NAME";
 // Buckets (public data)
 const ENV_PUBLIC_BUCKET_NAME : &str = "W2L_PUBLIC_DOWNLOAD_BUCKET_NAME";
+
+const ENV_GC_ENABLED_PUBLIC_BUCKET_NAME : &str = "GC_ENABLED_PUBLIC_BUCKET_NAME";
 
 // Various bucket roots
 const ENV_AUDIO_UPLOADS_BUCKET_ROOT : &str = "AUDIO_UPLOADS_BUCKET_ROOT";
@@ -198,6 +203,7 @@ async fn main() -> AnyhowResult<()> {
   // Private and Public Buckets
   let private_bucket_name = easyenv::get_env_string_required(ENV_PRIVATE_BUCKET_NAME)?;
   let public_bucket_name = easyenv::get_env_string_required(ENV_PUBLIC_BUCKET_NAME)?;
+  let gc_enabled_public_bucket_name = easyenv::get_env_string_required(ENV_GC_ENABLED_PUBLIC_BUCKET_NAME)?;
 
   // Bucket roots
   let audio_uploads_bucket_root= easyenv::get_env_string_required(ENV_AUDIO_UPLOADS_BUCKET_ROOT)?;
@@ -221,6 +227,16 @@ async fn main() -> AnyhowResult<()> {
     &secret_key,
     &region_name,
     &public_bucket_name,
+    &s3_compatible_endpoint_url,
+    None,
+    Some(bucket_timeout),
+  )?;
+
+  let auto_gc_bucket_client = BucketClient::create(
+    &access_key,
+    &secret_key,
+    &region_name,
+    &gc_enabled_public_bucket_name,
     &s3_compatible_endpoint_url,
     None,
     Some(bucket_timeout),
@@ -408,6 +424,7 @@ async fn main() -> AnyhowResult<()> {
     session_checker,
     private_bucket_client,
     public_bucket_client,
+    auto_gc_bucket_client,
     audio_uploads_bucket_root,
     sort_key_crypto,
     static_api_token_set,

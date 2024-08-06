@@ -26,6 +26,7 @@ collections = { path = "../../../lib/data/collections" }
 composite_identifiers = { path = "../../../_types/composite_identifiers" }
 concurrency = { path = "../../../lib/concurrency" }
 config = { path = "../../../lib/deprecated/config" }
+crockford = { path = "../../../lib/data/crockford" }
 easyenv = { path = "../../../lib/easyenv" }
 enums = { path = "../../../_types/enums" }
 errors = { path = "../../../lib/errors" }
@@ -41,6 +42,7 @@ mimetypes = { path = "../../../lib/files/mimetypes" }
 mysql_queries = { path = "../../../lib/mysql_queries" }
 primitives = { path = "../../../lib/data/primitives" }
 redis_common = { path = "../../../lib/redis_common" }
+redis_schema = { path = "../../../lib/redis_schema" }
 subprocess_common = { path = "../../../lib/subprocess_common" }
 thumbnail_generator = { path = "../../../lib/api_clients/thumbnail_generator"}
 tokens = { path = "../../../_types/tokens" }
@@ -65,7 +67,7 @@ r2d2_redis = "0.14.0"
 
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.
-tokio = { version = "1.38.0", features = ["macros"] }
+tokio = { version = "1.38.0", features = ["macros", "sync"] }
 
 # HTTP Client
 reqwest = { version = "0.12.4", features = ["blocking"] }
@@ -93,3 +95,4 @@ opentelemetry = {version = "0.23.0", features = ["metrics"]}
 opentelemetry-otlp = { version = "0.16.0", features = ["metrics"] }
 opentelemetry_sdk = { version = "0.23.0", features = ["metrics", "rt-tokio"] }
 zip = "2.1.3"
+url = "2.5.1"

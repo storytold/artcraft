@@ -180,7 +180,7 @@ pub async fn process_live_portrait_job(
         stderr_output_file: &stderr_output_file,
         stdout_output_file: &stdout_output_file,
         input_is_image,
-      });
+      }).await;
 
   let inference_duration = Instant::now().duration_since(inference_start_time);
 
@@ -191,6 +191,10 @@ pub async fn process_live_portrait_job(
   // check stdout for success and check if file exists
   if let Ok(contents) = read_to_string(&stdout_output_file) {
     info!("Captured stduout output: {}", contents);
+  }
+
+  if let Ok(contents) = read_to_string(&stderr_output_file) {
+    info!("Captured stderr output: {}", contents);
   }
 
   if let Ok(Some(dimensions)) = ffprobe_get_dimensions(&output_file_path) {
@@ -210,6 +214,7 @@ pub async fn process_live_portrait_job(
     error!("Inference failed with exit status: {:?}", command_exit_status);
 
     print_and_detect_stderr_issues(&stderr_output_file)?;
+    print_and_detect_stderr_issues(&stdout_output_file)?;
 
     safe_delete_temp_file(&stderr_output_file);
     safe_delete_temp_file(&stdout_output_file);

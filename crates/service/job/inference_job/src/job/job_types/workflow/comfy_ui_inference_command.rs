@@ -1,14 +1,24 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::ffi::OsString;
 use std::fs::File;
+use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::time::Duration;
 
 use anyhow::anyhow;
-use log::info;
+// These environment vars are not copied over to the subprocess
+use log::{debug, info};
 use once_cell::sync::Lazy;
+// TODO/FIXME(bt, 2023-05-28): This is horrific security!
+use r2d2_redis::r2d2::PooledConnection;
+use r2d2_redis::redis::Commands;
+use r2d2_redis::RedisConnectionManager;
 use subprocess::{Popen, PopenConfig};
+use tokio::fs::OpenOptions;
+use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::process::Command;
 
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
@@ -18,7 +28,7 @@ use subprocess_common::command_runner::command_args::CommandArgs;
 use subprocess_common::docker_options::{DockerFilesystemMount, DockerGpu, DockerOptions};
 
 use crate::job::job_types::workflow::live_portrait::command_args::LivePortraitCommandArgs;
-use crate::util::get_filtered_env_vars::get_filtered_env_vars;
+use crate::util::get_filtered_env_vars::{get_filtered_env_vars, get_filtered_env_vars_hashmap};
 
 #[derive(Clone)]
 pub struct ComfyInferenceCommand {
@@ -89,6 +99,10 @@ pub struct InferenceArgs<'s> {
     pub maybe_strength: Option<f32>,
 
     pub frame_skip: Option<u8>,
+
+    pub generate_previews: bool,
+
+    pub preview_frames_directory: Option<&'s Path>,
 
     pub global_ipa_image_filename: Option<String>,
     pub global_ipa_strength: Option<f32>,
@@ -209,18 +223,21 @@ impl ComfyInferenceCommand {
         })
     }
 
-    pub fn execute_inference(
-        &self,
-        args: InferenceArgs,
+    pub async fn execute_inference<'a, 'b>(
+        &'a self,
+        frames_tx: tokio::sync::mpsc::Sender<Result<PathBuf,()>>,
+        cancellation_receiver: &mut tokio::sync::oneshot::Receiver<()>,
+        args: InferenceArgs<'b>,
     ) -> CommandExitStatus {
-        self.do_execute_inference(args).unwrap_or_else(|error| CommandExitStatus::FailureWithReason { reason: format!("error: {:?}", error) })
+        self.do_execute_inference(frames_tx, cancellation_receiver, args).await.unwrap_or_else(|error| CommandExitStatus::FailureWithReason { reason: format!("error: {:?}", error) })
     }
 
-    fn do_execute_inference(
-        &self,
-        args: InferenceArgs,
+    async fn do_execute_inference<'a, 'b>(
+        &'a self,
+        frames_tx: tokio::sync::mpsc::Sender<Result<PathBuf,()>>,
+        cancellation_receiver: &mut tokio::sync::oneshot::Receiver<()>,
+        args: InferenceArgs<'b>,
     ) -> AnyhowResult<CommandExitStatus> {
-
         info!("InferenceArgs: {:?}", &args);
 
         let mut command = String::new();
@@ -346,76 +363,164 @@ impl ComfyInferenceCommand {
             command.push_str(" ");
         }
 
+        if args.generate_previews {
+            command.push_str(" --generate-previews ");
+            if let Some(preview_frames_directory) = args.preview_frames_directory {
+                command.push_str(" --preview-frames-directory ");
+                command.push_str(&path_to_string(preview_frames_directory));
+            }
+        }
+
         if let Some(docker_options) = self.maybe_docker_options.as_ref() {
             command = docker_options.to_command_string(&command);
         }
 
         info!("Command: {:?}", command);
 
-        let command_parts = [
-            "bash",
-            "-c",
-            &command
-        ];
-
-        let env_vars = get_filtered_env_vars();
-
-        let mut config = PopenConfig::default();
+        let env_vars = get_filtered_env_vars_hashmap();
 
         info!("stderr will be written to file: {:?}", args.stderr_output_file.as_os_str());
 
-        let _stderr_file = File::create(&args.stderr_output_file)?;
-        let _stdout_file = File::create(&args.stdout_output_file)?;
+        // let mut stderr_file = tokio::fs::OpenOptions::new()
+        //   .create(true)
+        //   .read(true)
+        //   .write(true)
+        //   .open(&args.stderr_output_file)
+        //   .await?;
+        // let mut stdout_file = tokio::fs::OpenOptions::new()
+        //   .create(true)
+        //   .read(true)
+        //   .write(true)
+        //   .open(&args.stdout_output_file)
+        //   .await?;
 
-        // NB(bt, 2024-03-01): Let's actually emit these lots to the rust logs so we can see what happens.
-        //config.stderr = Redirection::File(stderr_file);
-        //config.stdout = Redirection::File(stdout_file);
+        // let stderr_file = File::create(&args.stderr_output_file)?;
+        // let stdout_file = File::create(&args.stdout_output_file)?;
+        let mut c = Command::new("bash")
+          .arg("-c")
+          .arg(&command)
+          .envs(env_vars)
+          .spawn()
+          .expect("failed to execute process");
 
-        if !env_vars.is_empty() {
-            config.env = Some(env_vars);
-        }
 
-        let mut p = Popen::create(&command_parts, config)?;
+        let mut status = None;
+        let execution_start_time = std::time::Instant::now();
 
-        info!("Subprocess PID: {:?}", p.pid());
+        loop {
 
-        match self.maybe_execution_timeout {
-            None => {
-                let exit_status = p.wait()?;
-                info!("Subprocess exit status: {:?}", exit_status);
-                Ok(CommandExitStatus::from_exit_status(exit_status))
-            }
-            Some(timeout) => {
-                info!("Executing with timeout: {:?}", &timeout);
-                let exit_status = p.wait_timeout(timeout)?;
-
-                match exit_status {
-                    None => {
-                        // NB: If the program didn't successfully terminate, kill it.
-                        info!("Subprocess didn't end after timeout: {:?}; terminating...", &timeout);
-                        let _r = p.terminate()?;
-                        Ok(CommandExitStatus::Timeout)
+            if let Some(execution_timeout) = self.maybe_execution_timeout {
+                let now = std::time::Instant::now();
+                if now.duration_since(execution_start_time) > execution_timeout {
+                    info!("Execution timeout reached");
+                    let res = c.kill().await;
+                    match res {
+                        Ok(_) => {
+                            info!("Killed Comfy process");
+                        }
+                        Err(e) => {
+                            info!("Error killing Comfy process: {:?}, this might leak resources", e);
+                        }
                     }
-                    Some(exit_status) => {
-                        info!("Subprocess timed wait exit status: {:?}", exit_status);
-                        Ok(CommandExitStatus::from_exit_status(exit_status))
+                    status = Some(CommandExitStatus::Timeout);
+                    break;
+                }
+            }
+
+            // Check if the process has been cancelled
+            match cancellation_receiver.try_recv() {
+                Ok(_) => {
+                    info!("Cancelling Comfy process");
+                    let res = c.kill().await;
+                    match res {
+                        Ok(_) => {
+                            info!("Killed Comfy process");
+                        }
+                        Err(e) => {
+                            info!("Error killing Comfy process: {:?}, this might leak resources", e);
+                        }
+                    }
+                    status = Some(CommandExitStatus::Timeout);
+                    break;
+                }
+                Err(tokio::sync::oneshot::error::TryRecvError::Empty) => {
+                    // Do nothing
+                }
+                Err(tokio::sync::oneshot::error::TryRecvError::Closed) => {
+                    info!("Cancellation channel closed");
+                    break;
+                }
+            }
+
+            match c.try_wait() {
+                Ok(Some(exit_status)) => {
+                    match exit_status.success() {
+                        true => {
+                            status = Some(CommandExitStatus::Success);
+                        }
+                        false => {
+                            status = Some(CommandExitStatus::Failure);
+                        }
+                    }
+                }
+                Ok(None) => {
+                    debug!("ComfyUI process is still running");
+                }
+                Err(e) => {
+                    info!("Error attempting to wait: {:?}", e);
+                    break;
+                }
+            }
+
+            //  Check if preview_frames_directory has any files
+            if let Some(preview_frames_directory) = args.preview_frames_directory {
+                let dir = std::fs::read_dir(preview_frames_directory);
+                match dir {
+                    Ok(dir) => {
+                        if dir.count() > 0 {
+                            for entry in std::fs::read_dir(preview_frames_directory).unwrap() {
+                                let entry = entry.unwrap();
+                                let path = entry.path();
+                                if path.is_dir() {
+                                    for entry in std::fs::read_dir(&path).unwrap() {
+                                        let entry = entry.unwrap();
+                                        let path = entry.path();
+
+                                        let tx = frames_tx.clone();
+                                        tokio::spawn(async move {
+                                            tx.send(Ok(path)).await.unwrap();
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        info!("Error reading preview frames directory: {:?}", e);
                     }
                 }
             }
+            if status.is_some() {
+                break;
+            }
+
+            tokio::time::sleep(Duration::from_secs(2)).await;
         }
+
+        return Ok(status.unwrap());
     }
 
     // TODO(bt,2024-07-16): This belongs in another module / runner, and all of these need to be consolidated
-    pub fn execute_live_portrait_inference(
-        &self,
-        args: LivePortraitCommandArgs,
+    pub async fn execute_live_portrait_inference<'a, 'b>(
+        &'a self,
+        args: LivePortraitCommandArgs<'b>,
     ) -> CommandExitStatus {
-        self.do_execute_live_portrait_inference(args).unwrap_or_else(|error| CommandExitStatus::FailureWithReason { reason: format!("error: {:?}", error) })
+        self.do_execute_live_portrait_inference(args).await.unwrap_or_else(|error| CommandExitStatus::FailureWithReason { reason: format!("error: {:?}", error) })
     }
 
-    fn do_execute_live_portrait_inference(
-        &self,
-        args: LivePortraitCommandArgs,
+    async fn do_execute_live_portrait_inference<'a, 'b>(
+        &'a self,
+        args: LivePortraitCommandArgs<'b>,
     ) -> AnyhowResult<CommandExitStatus> {
 
         info!("InferenceArgs: {:?}", &args);
@@ -452,57 +557,72 @@ impl ComfyInferenceCommand {
 
         info!("Command: {:?}", command);
 
-        let command_parts = [
-            "bash",
-            "-c",
-            &command
-        ];
 
-        let env_vars = get_filtered_env_vars();
+        let env_vars = get_filtered_env_vars_hashmap();
 
-        let mut config = PopenConfig::default();
 
         info!("stderr will be written to file: {:?}", args.stderr_output_file.as_os_str());
 
-        let _stderr_file = File::create(&args.stderr_output_file)?;
-        let _stdout_file = File::create(&args.stdout_output_file)?;
+        let stderr_file = File::create(&args.stderr_output_file)?;
+        let stdout_file = File::create(&args.stdout_output_file)?;
 
-        // NB(bt, 2024-03-01): Let's actually emit these lots to the rust logs so we can see what happens.
-        //config.stderr = Redirection::File(stderr_file);
-        //config.stdout = Redirection::File(stdout_file);
+        let mut c = Command::new("bash")
+          .arg("-c")
+          .arg(&command)
+          .envs(env_vars)
+          .spawn()
+          .expect("failed to execute process");
 
-        if !env_vars.is_empty() {
-            config.env = Some(env_vars);
-        }
+        let mut status = None;
+        let execution_start_time = std::time::Instant::now();
 
-        let mut p = Popen::create(&command_parts, config)?;
+        loop {
 
-        info!("Subprocess PID: {:?}", p.pid());
-
-        match self.maybe_execution_timeout {
-            None => {
-                let exit_status = p.wait()?;
-                info!("Subprocess exit status: {:?}", exit_status);
-                Ok(CommandExitStatus::from_exit_status(exit_status))
-            }
-            Some(timeout) => {
-                info!("Executing with timeout: {:?}", &timeout);
-                let exit_status = p.wait_timeout(timeout)?;
-
-                match exit_status {
-                    None => {
-                        // NB: If the program didn't successfully terminate, kill it.
-                        info!("Subprocess didn't end after timeout: {:?}; terminating...", &timeout);
-                        let _r = p.terminate()?;
-                        Ok(CommandExitStatus::Timeout)
+            if let Some(execution_timeout) = self.maybe_execution_timeout {
+                let now = std::time::Instant::now();
+                if now.duration_since(execution_start_time) > execution_timeout {
+                    info!("Execution timeout reached");
+                    let res = c.kill().await;
+                    match res {
+                        Ok(_) => {
+                            info!("Killed Comfy process");
+                        }
+                        Err(e) => {
+                            info!("Error killing Comfy process: {:?}, this might leak resources", e);
+                        }
                     }
-                    Some(exit_status) => {
-                        info!("Subprocess timed wait exit status: {:?}", exit_status);
-                        Ok(CommandExitStatus::from_exit_status(exit_status))
-                    }
+                    status = Some(CommandExitStatus::Timeout);
+                    break;
                 }
             }
+
+            match c.try_wait() {
+                Ok(Some(exit_status)) => {
+                    match exit_status.success() {
+                        true => {
+                            status = Some(CommandExitStatus::Success);
+                        }
+                        false => {
+                            status = Some(CommandExitStatus::Failure);
+                        }
+                    }
+                }
+                Ok(None) => {
+                    debug!("ComfyUI process is still running");
+                }
+                Err(e) => {
+                    info!("Error attempting to wait: {:?}", e);
+                    break;
+                }
+            }
+            if status.is_some() {
+                break;
+            }
+
+            tokio::time::sleep(Duration::from_secs(2)).await;
         }
+
+        return Ok(status.unwrap());
     }
 
 }

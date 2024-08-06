@@ -1,7 +1,8 @@
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
 
 pub fn categorize_live_portrait_error(stderr_contents: &str) -> Option<ProcessSingleJobError> {
-  if stderr_contents.contains("No face detected in the source image!") {
+  if stderr_contents.contains("No face detected in the source image!") ||
+      stderr_contents.contains("Error in LivePortraitCropper") {
     return Some(ProcessSingleJobError::FaceDetectionFailure);
   }
   None

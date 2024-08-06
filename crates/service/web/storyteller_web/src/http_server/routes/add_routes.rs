@@ -123,6 +123,7 @@ use crate::http_server::endpoints::w2l::get_w2l_template_use_count::get_w2l_temp
 use crate::http_server::endpoints::w2l::get_w2l_upload_template_job_status::get_w2l_upload_template_job_status_handler;
 use crate::http_server::endpoints::w2l::list_w2l_templates::list_w2l_templates_handler;
 use crate::http_server::endpoints::w2l::set_w2l_template_mod_approval::set_w2l_template_mod_approval_handler;
+use crate::http_server::endpoints::workflows::enqueue::get_inference_preview_status_ws::ws_progress_route;
 use crate::http_server::routes::beta_key_routes::add_beta_key_routes;
 use crate::http_server::routes::job_routes::add_job_routes;
 use crate::http_server::routes::media_files_routes::add_media_file_routes;

@@ -6,8 +6,8 @@ use actix_web::dev::{ServiceRequest, ServiceResponse};
 use crate::http_server::endpoints::workflows::enqueue::enqueue_live_portrait_workflow_handler::enqueue_live_portrait_workflow_handler;
 use crate::http_server::endpoints::workflows::enqueue::enqueue_studio_workflow_handler::enqueue_studio_workflow_handler;
 use crate::http_server::endpoints::workflows::enqueue::enqueue_video_style_transfer_workflow_handler::enqueue_video_style_transfer_workflow_handler;
+use crate::http_server::endpoints::workflows::enqueue::get_inference_preview_status::get_inference_preview_status_handler;
 use crate::http_server::endpoints::workflows::enqueue_comfy_ui_handler::enqueue_comfy_ui_handler;
-use crate::http_server::endpoints::workflows::enqueue_video_style_transfer_handler::enqueue_video_style_transfer_handler;
 use crate::http_server::endpoints::workflows::enqueue_workflow_upload_request::enqueue_workflow_upload_request;
 
 pub fn add_workflow_routes<T, B> (app: App<T>) -> App<T>
@@ -38,7 +38,18 @@ where
           .route(web::post().to(enqueue_video_style_transfer_workflow_handler))
           .route(web::head().to(|| HttpResponse::Ok()))
       )
-  );
+      .service(web::resource("/preview_status/{token}")
+        .route(web::get().to(get_inference_preview_status_handler))
+        .route(web::head().to(|| HttpResponse::Ok()))
+      )
+  )
+    // .service(web::resource("/ws")
+    //   .route(web::get().to(ws_progress_route))
+    //   .route(web::head().to(|| HttpResponse::Ok()))
+    // )
+    //
+
+    ;
 
   add_legacy_workflow_routes(app)
 }

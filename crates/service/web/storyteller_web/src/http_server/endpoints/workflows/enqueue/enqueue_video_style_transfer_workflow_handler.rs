@@ -312,6 +312,7 @@ pub async fn enqueue_video_style_transfer_workflow_handler(
     trim_start_seconds: None,
     trim_end_seconds: None,
     target_fps: None,
+    generate_fast_previews: Some(false),
   };
 
   info!("Creating ComfyUI job record...");

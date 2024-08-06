@@ -7,18 +7,24 @@ use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Result};
 use log::{debug, error, info, warn};
+use r2d2_redis::redis::Commands;
 use serde_json::Value;
+use tokio::sync::mpsc;
+use tokio::sync::oneshot;
 use walkdir::WalkDir;
 
+use buckets::public::media_files::bucket_directory::MediaFileBucketDirectory;
 use buckets::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::remote_file_manager::remote_cloud_bucket_details::RemoteCloudBucketDetails;
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;
 use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::prompts::prompt_type::PromptType;
+use enums::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use filesys::check_file_exists::check_file_exists;
 use filesys::file_exists::file_exists;
+use filesys::file_read_bytes::file_read_bytes;
 use filesys::file_size::file_size;
 use filesys::path_to_string::path_to_string;
 use filesys::safe_delete_temp_directory::safe_delete_temp_directory;
@@ -31,6 +37,8 @@ use mysql_queries::payloads::generic_inference_args::workflow_payload::NewValue;
 use mysql_queries::payloads::prompt_args::encoded_style_transfer_name::EncodedStyleTransferName;
 use mysql_queries::payloads::prompt_args::prompt_inner_payload::{PromptInnerPayload, PromptInnerPayloadBuilder};
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
+use mysql_queries::queries::generic_inference::web::get_inference_job_status::get_inference_job_status;
+use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
@@ -52,6 +60,7 @@ use crate::job::job_types::workflow::video_style_transfer::steps::preprocess_sav
 use crate::job::job_types::workflow::video_style_transfer::steps::preprocess_trim_and_resample_videos::{preprocess_trim_and_resample_videos, ProcessTrimAndResampleVideoArgs};
 use crate::job::job_types::workflow::video_style_transfer::steps::validate_and_save_results::{SaveResultsArgs, validate_and_save_results};
 use crate::job::job_types::workflow::video_style_transfer::util::comfy_dirs::ComfyDirs;
+use crate::job::job_types::workflow::video_style_transfer::util::process_preview_updates::PreviewProcessor;
 use crate::job::job_types::workflow::video_style_transfer::util::video_pathing::{PrimaryInputVideoAndPaths, SecondaryInputVideoAndPaths, VideoPathing};
 use crate::job::job_types::workflow::video_style_transfer::util::write_workflow_prompt::{WorkflowPromptArgs, write_workflow_prompt};
 use crate::state::job_dependencies::JobDependencies;
@@ -114,6 +123,16 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
     }
 
     let mut workflow_path = workflow_dir.join("prompt.json").to_str().unwrap().to_string();
+    let redis_pool = deps
+      .db
+      .maybe_keepalive_redis_pool
+      .as_ref()
+      .map(|redis| redis.get())
+      .transpose()
+      .map_err(|err| ProcessSingleJobError::Other(anyhow!("redis pool error: {:?}", err)))?;
+
+
+
 
     // download workflow if not none
     match job_args.workflow_source {
@@ -252,12 +271,13 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
 
     // ========================= TRIM AND PREPROCESS VIDEO ======================== //
 
-    preprocess_trim_and_resample_videos(ProcessTrimAndResampleVideoArgs {
+    let expected_frame_count = preprocess_trim_and_resample_videos(ProcessTrimAndResampleVideoArgs {
         comfy_args,
         comfy_deps,
         comfy_dirs: &comfy_dirs,
         videos: &mut videos,
     })?;
+
 
     // ========================= PREPROCESS AUDIO ======================== //
 
@@ -293,6 +313,7 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
     let positive_prompt_file = work_temp_dir.path().join("positive_prompt.txt");
     let negative_prompt_file = work_temp_dir.path().join("negative_prompt.txt");
     let travel_prompt_file = work_temp_dir.path().join("travel_prompt.txt");
+    let preview_frames_dir = work_temp_dir.path().join("preview_frames");
 
     let maybe_positive_prompt_filename = comfy_args.positive_prompt
         .as_deref()
@@ -329,12 +350,81 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
     };
 
     let inference_start_time = Instant::now();
+    
+    let ephemeral_bucket_client = deps.buckets.auto_gc_bucket_client.clone();
+    let previews_media_file_directory = MediaFileBucketDirectory::generate_new();
+
+    let redis = match redis_pool {
+        Some(redis) => redis,
+        None => return Err(ProcessSingleJobError::Other(anyhow!("failed to get redis pool"))),
+    };
+
+    let mysql_pool = deps.db.mysql_pool.clone();
+    let (cancel_tx, mut cancel_rx) = oneshot::channel();
+    let mut interval = tokio::time::interval(Duration::from_millis(30_000));
+    let job_token = job.inference_job_token.clone();
+
+    let cancellation_watcher = tokio::spawn(async move {
+        loop {
+            interval.tick().await;
+            let current_status = get_inference_job_status(
+                &job_token,
+                &mysql_pool
+            ).await;
+            let current_status = match current_status {
+                Ok(status) => status,
+                Err(e) => {
+                    error!("Error getting job status: {:?}", e);
+                    continue
+                }
+            };
+            match current_status {
+                Some(status) => {
+                    if status.status == JobStatusPlus::CancelledByUser {
+                        cancel_tx.send(()).unwrap();
+                        break
+                    }
+                }
+                None => {
+                    debug!("Job status not found. This has to be an error");
+                }
+            }
+        }
+    });
+
+
+    let mut preview_processor = PreviewProcessor::new(
+        job.inference_job_token.clone(),
+        redis,
+        preview_frames_dir.clone(),
+        previews_media_file_directory,
+        expected_frame_count as u32
+    );
+
+    let (tx, mut rx) = mpsc::channel(500);
+    let preview_frames_uploader = tokio::spawn(async move {
+        while let Some(i) = rx.recv().await {
+            match i {
+                Ok(frame_path) => {
+                    preview_processor.process_frame_from_disk(&ephemeral_bucket_client, frame_path).await;
+                }
+                Err(e) => {
+                    info!("got = Err: {:?}", e);
+                }
+            }
+        }
+    });
 
     info!("Running ComfyUI inference...");
 
     let command_exit_status = comfy_deps
         .inference_command
-        .execute_inference(InferenceArgs {
+        .execute_inference(
+                           tx,
+                           &mut cancel_rx,
+                          InferenceArgs {
+            generate_previews: comfy_args.generate_fast_previews.unwrap_or(false),
+            preview_frames_directory: Some(preview_frames_dir.as_ref()),
             stderr_output_file: &stderr_output_file,
             stdout_output_file: &stdout_output_file,
             inference_details,
@@ -358,7 +448,7 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
             outline_video_path: videos.maybe_outline.as_ref()
                 .map(|v| v.maybe_processed_path.as_deref())
                 .flatten(),
-        });
+        }).await;
 
     let inference_duration = Instant::now().duration_since(inference_start_time);
 
@@ -368,7 +458,11 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
 
     // check stdout for success and check if file exists
     if let Ok(contents) = read_to_string(&stdout_output_file) {
-        info!("Captured stduout output: {}", contents);
+        info!("Captured stdout output: {}", contents);
+    }
+
+    if let Ok(contents) = read_to_string(&stderr_output_file) {
+        info!("Captured stderr output: {}", contents);
     }
 
     videos.debug_print_video_paths();
@@ -376,6 +470,9 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
     if let Ok(Some(dimensions)) = ffprobe_get_dimensions(&videos.primary_video.comfy_output_video_path) {
         info!("Comfy output video dimensions: {}x{}", dimensions.width, dimensions.height);
     }
+
+
+    preview_frames_uploader.await.map_err(|e| ProcessSingleJobError::Other(anyhow!("bucket uploader error: {:?}", e)))?;
 
     // ==================== CHECK OUTPUT FILE ======================== //
 

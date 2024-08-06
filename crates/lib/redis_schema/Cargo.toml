@@ -29,6 +29,8 @@ chrono = { version = "0.4.22", features = ["serde"] }
 
 # Redis
 r2d2_redis = "0.14.0"
+url = "2.5.1"
+serde = { version = "1.0.203", features = ["derive"] }
 
 [dev-dependencies]
 # None yet

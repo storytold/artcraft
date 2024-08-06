@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::ffi::OsString;
 
@@ -32,6 +32,21 @@ pub fn get_filtered_env_vars() -> Vec<(OsString, OsString)> {
       OsString::from(env_key),
       OsString::from(env_value),
     ));
+  }
+
+  env_vars
+}
+
+pub fn get_filtered_env_vars_hashmap() -> HashMap<String, String> {
+  let mut env_vars = HashMap::new();
+
+  // Copy all environment variables from the parent process.
+  // This is necessary to send all the kubernetes settings for Nvidia / CUDA.
+  for (env_key, env_value) in env::vars() {
+    if IGNORED_ENVIRONMENT_VARS.contains(&env_key) {
+      continue;
+    }
+    env_vars.insert(env_key, env_value);
   }
 
   env_vars

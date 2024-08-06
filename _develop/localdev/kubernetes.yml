@@ -51,6 +51,18 @@ spec:
       storage: 10Gi
 ---
 apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-support-pvc
+spec:
+  storageClassName: ssd-hostpath
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: storyteller-config
@@ -58,6 +70,7 @@ data:
   buckets.vocodes_bucket_region: us-east1
   buckets.vocodes_private_bucket_name: kasisnu-test-area-private
   buckets.vocodes_public_bucket_name: kasisnu-test-area-public
+  buckets.vocodes_ephemeral_bucket_name: kasisnu-test-area-ephemeral-public
 
 ---
 
@@ -89,6 +102,11 @@ metadata:
   name: storyteller-web
 spec:
   replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 5
+      maxUnavailable: 2
+    type: RollingUpdate
   selector:
     matchLabels:
       app: storyteller-web
@@ -100,7 +118,8 @@ spec:
       runtimeClassName: nvidia
       containers:
       - name: gpt-sovitsdir
-        image: localhost:32000/some-gpt-sovits:latest
+#        image: localhost:32000/some-gpt-sovits:latest
+        image: localhost:32000/some-comfy:latest
         imagePullPolicy: Always
         command: ["sleep", "infinity"]
         resources:
@@ -111,6 +130,8 @@ spec:
         volumeMounts:
           - mountPath: /application-dir
             name: application-dir
+          - mountPath: /ml-support
+            name: ml-support-dir
       - name: storyteller-web
         image: storyteller-web:latest
         imagePullPolicy: Always
@@ -136,6 +157,11 @@ spec:
               configMapKeyRef:
                 name: storyteller-config
                 key: buckets.vocodes_bucket_region
+          - name: GC_ENABLED_PUBLIC_BUCKET_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: storyteller-config
+                key: buckets.vocodes_ephemeral_bucket_name
           - name: W2L_PRIVATE_DOWNLOAD_BUCKET_NAME
             valueFrom:
               configMapKeyRef:
@@ -169,6 +195,9 @@ spec:
             claimName: test-pvc
         - name: application-dir
           emptyDir: {}
+        - name: ml-support-dir
+          persistentVolumeClaim:
+            claimName: ml-support-pvc
 ---
 
 apiVersion: v1

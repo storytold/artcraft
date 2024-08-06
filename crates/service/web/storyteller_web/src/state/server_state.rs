@@ -77,6 +77,7 @@ pub struct ServerState {
 
   pub private_bucket_client: BucketClient,
   pub public_bucket_client: BucketClient,
+  pub auto_gc_bucket_client: BucketClient,
 
   /// Where to store audio uploads for w2l
   pub audio_uploads_bucket_root: String,

@@ -71,6 +71,7 @@ const ENV_REGION_NAME : &str = "REGION_NAME";
 // Bucket names
 const ENV_PRIVATE_BUCKET_NAME : &str = "PRIVATE_BUCKET_NAME";
 const ENV_PUBLIC_BUCKET_NAME : &str = "PUBLIC_BUCKET_NAME";
+const ENV_GC_ENABLED_PUBLIC_BUCKET_NAME : &str = "GC_ENABLED_PUBLIC_BUCKET_NAME";
 
 // HTTP sidecar
 const ENV_TTS_INFERENCE_SIDECAR_HOSTNAME: &str = "TTS_INFERENCE_SIDECAR_HOSTNAME";
@@ -106,6 +107,7 @@ async fn main() -> AnyhowResult<()> {
   // Private and Public Buckets
   let private_bucket_name = easyenv::get_env_string_required(ENV_PRIVATE_BUCKET_NAME)?;
   let public_bucket_name = easyenv::get_env_string_required(ENV_PUBLIC_BUCKET_NAME)?;
+  let gc_enabled_public_bucket_name = easyenv::get_env_string_required(ENV_GC_ENABLED_PUBLIC_BUCKET_NAME)?;
 
   let s3_compatible_endpoint_url = easyenv::get_env_string_or_default("S3_COMPATIBLE_ENDPOINT_URL",
     "https://storage.googleapis.com");
@@ -127,6 +129,16 @@ async fn main() -> AnyhowResult<()> {
     &secret_key,
     &region_name,
     &public_bucket_name,
+    &s3_compatible_endpoint_url,
+    None,
+    Some(bucket_timeout),
+  )?;
+
+  let auto_gc_bucket_client = BucketClient::create(
+    &access_key,
+    &secret_key,
+    &region_name,
+    &gc_enabled_public_bucket_name,
     &s3_compatible_endpoint_url,
     None,
     Some(bucket_timeout),
@@ -274,6 +286,7 @@ async fn main() -> AnyhowResult<()> {
     buckets: BucketDependencies {
       public_bucket_client,
       private_bucket_client,
+      auto_gc_bucket_client,
       bucket_path_unifier: BucketPathUnifier::default_paths(),
     },
     clients: ClientDependencies {

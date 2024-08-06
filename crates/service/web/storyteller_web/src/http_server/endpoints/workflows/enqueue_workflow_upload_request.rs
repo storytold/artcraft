@@ -258,6 +258,7 @@ pub async fn enqueue_workflow_upload_request(
         strength: None,
         frame_skip: None,
         watermark_type: None,
+        generate_fast_previews: Some(false),
     };
    
     // create the inference args here

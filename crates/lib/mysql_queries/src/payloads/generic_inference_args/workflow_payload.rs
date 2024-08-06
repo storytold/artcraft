@@ -4,6 +4,7 @@ use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
+
 use crate::payloads::generic_inference_args::common::watermark_type::WatermarkType;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -217,4 +218,8 @@ pub struct WorkflowArgs {
     #[serde(rename = "fs")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub frame_skip: Option<u8>,
+
+    #[serde(rename = "fp")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub generate_fast_previews: Option<bool>,
 }

@@ -107,4 +107,7 @@ pub struct VstRequest {
   /// The default, if not specified, is 2, which means
   /// every 2nd frame is skipped.
   pub frame_skip: Option<u8>,
+
+  /// If this workflow should try to write store preview frames
+  pub previews_enabled: Option<bool>,
 }

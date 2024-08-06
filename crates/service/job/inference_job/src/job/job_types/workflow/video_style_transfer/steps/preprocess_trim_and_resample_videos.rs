@@ -25,7 +25,7 @@ pub struct ProcessTrimAndResampleVideoArgs<'a> {
 
 pub fn preprocess_trim_and_resample_videos(
   args: ProcessTrimAndResampleVideoArgs<'_>
-) -> Result<(), ProcessSingleJobError> {
+) -> Result<u64, ProcessSingleJobError> {
   let target_fps = args.comfy_args.target_fps.unwrap_or(24);
 
   let trim_start_millis = args.comfy_args.trim_start_milliseconds
@@ -35,6 +35,8 @@ pub fn preprocess_trim_and_resample_videos(
   let trim_end_millis = args.comfy_args.trim_end_milliseconds
       .or_else(|| args.comfy_args.trim_end_seconds.map(|s| s as u64 * 1_000))
       .unwrap_or(3_000);
+
+  let expected_frames = (trim_end_millis - trim_start_millis) * (target_fps as u64) / 1_000;
 
   info!("trim start millis: {trim_start_millis}");
   info!("trim end millis: {trim_end_millis}");
@@ -62,7 +64,7 @@ pub fn preprocess_trim_and_resample_videos(
       args.videos)?;
   }
 
-  Ok(())
+  Ok(expected_frames)
 }
 
 struct ResampleDetails {

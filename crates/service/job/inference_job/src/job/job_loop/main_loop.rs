@@ -130,8 +130,11 @@ async fn process_job_batch(job_dependencies: &JobDependencies, jobs: Vec<Availab
   let job_count = jobs.len();
 
   for (i, job) in jobs.into_iter().enumerate() {
+    if job_dependencies.job.system.application_shutdown.get() {
+      warn!("Application shutdown detected. Exiting job loop.");
+      return Ok(());
+    }
     job_dependencies.job_instruments.total_job_count.add(1, &[]);
-
     let start_time = Instant::now();
     let result = process_single_job(job_dependencies, &job).await;
     let job_duration = Instant::now().duration_since(start_time);

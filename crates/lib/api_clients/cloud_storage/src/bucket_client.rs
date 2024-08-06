@@ -71,7 +71,7 @@ impl BucketClient {
 
     bucket.set_request_timeout(bucket_request_timeout);
     bucket.set_path_style();
-    // bucket.set_subdomain_style();
+    bucket.set_subdomain_style();
 
     let optional_bucket_root = optional_bucket_root.map(|s| s.to_string());
 
@@ -251,7 +251,6 @@ impl BucketClient {
     info!("download code: {}", status_code);
     Ok(())
   }
-
 
   // NB: New version has blocking client rather than blocking calls.
   // pub fn download_file_blocking(&self, path: &str) -> anyhow::Result<Vec<u8>> {

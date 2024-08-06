@@ -110,8 +110,8 @@ impl BucketOrchestration {
                 &self.access_key,
                 &self.secret_key,
                 &self.region_name,
-                &self.s3_compatible_endpoint_url,
                 &self.public_bucket_name,
+                &self.s3_compatible_endpoint_url,
                 None,
                 Some(bucket_timeout),
             )?
@@ -121,8 +121,8 @@ impl BucketOrchestration {
                 &self.access_key,
                 &self.secret_key,
                 &self.region_name,
-                &self.s3_compatible_endpoint_url,
                 &self.private_bucket_name,
+                &self.s3_compatible_endpoint_url,
                 None,
                 Some(bucket_timeout),
             )?

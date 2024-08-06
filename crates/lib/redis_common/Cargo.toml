@@ -33,3 +33,4 @@ serde_json = "1.0.108"
 
 # TODO: Get rid of in favor of std::time
 time = "0.3.30"
+url = "2.5.1"

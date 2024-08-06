@@ -60,6 +60,7 @@ primitives = { path = "../../../lib/data/primitives" }
 prompt_engineering = { path = "../../../lib/prompt_engineering" }
 redis_caching = { path = "../../../lib/caching/redis_caching" }
 redis_common = { path = "../../../lib/redis_common" }
+redis_schema = { path = "../../../lib/redis_schema" }
 reusable_types = { path = "../../../_types/reusable_types" }
 server_environment = { path = "../../../lib/server_environment" }
 tokens = { path = "../../../_types/tokens" }
@@ -173,6 +174,8 @@ utoipa-swagger-ui = { version = "7", features = ["actix-web"] }
 
 # TODO: move zip pieces into a separate library that encapsulates calls to this lib
 zip = "0.6.6"
+actix-web-actors = "4.3.0"
+actix = "0.13.5"
 
 [build-dependencies]
 # NB: Only using diesel for migrations support
