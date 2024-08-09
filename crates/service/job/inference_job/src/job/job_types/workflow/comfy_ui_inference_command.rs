@@ -657,6 +657,8 @@ impl ComfyInferenceCommand {
         let mut c = Command::new("bash")
           .arg("-c")
           .arg(&command)
+          .stdout(Stdio::piped())
+          .stderr(Stdio::piped())
           .envs(env_vars)
           .spawn()
           .expect("failed to execute process");
