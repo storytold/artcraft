@@ -68,6 +68,7 @@ r2d2_redis = "0.14.0"
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.
 tokio = { version = "1.38.0", features = ["macros", "sync"] }
+tokio-util = "0.7.10"
 
 # HTTP Client
 reqwest = { version = "0.12.4", features = ["blocking"] }

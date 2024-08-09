@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 // These environment vars are not copied over to the subprocess
-use log::{debug, info};
+use log::{debug, info, warn};
 use once_cell::sync::Lazy;
 // TODO/FIXME(bt, 2023-05-28): This is horrific security!
 use r2d2_redis::r2d2::PooledConnection;
@@ -17,8 +17,9 @@ use r2d2_redis::redis::Commands;
 use r2d2_redis::RedisConnectionManager;
 use subprocess::{Popen, PopenConfig};
 use tokio::fs::OpenOptions;
-use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader, Stdout};
 use tokio::process::Command;
+use tokio_util::codec::{FramedRead, FramedWrite, LinesCodec};
 
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
@@ -381,28 +382,104 @@ impl ComfyInferenceCommand {
 
         info!("stderr will be written to file: {:?}", args.stderr_output_file.as_os_str());
 
-        // let mut stderr_file = tokio::fs::OpenOptions::new()
-        //   .create(true)
-        //   .read(true)
-        //   .write(true)
-        //   .open(&args.stderr_output_file)
-        //   .await?;
-        // let mut stdout_file = tokio::fs::OpenOptions::new()
-        //   .create(true)
-        //   .read(true)
-        //   .write(true)
-        //   .open(&args.stdout_output_file)
-        //   .await?;
+        let mut stderr_file = tokio::fs::OpenOptions::new()
+          .create(true)
+          .read(true)
+          .write(true)
+          .open(&args.stderr_output_file)
+          .await?;
 
-        // let stderr_file = File::create(&args.stderr_output_file)?;
-        // let stdout_file = File::create(&args.stdout_output_file)?;
+        let mut stdout_file = tokio::fs::OpenOptions::new()
+          .create(true)
+          .read(true)
+          .write(true)
+          .open(&args.stdout_output_file)
+          .await?;
+
         let mut c = Command::new("bash")
           .arg("-c")
           .arg(&command)
+          .stdout(Stdio::piped())
+          .stderr(Stdio::piped())
           .envs(env_vars)
           .spawn()
           .expect("failed to execute process");
 
+        let stdout = c.stdout.take();
+        // (Kasisnu, 9/08/24) these are safe to leave dangling, when stdout is dropped,
+        // the reader will be dropped and the pipe will be closed
+        tokio::spawn(async move {
+            match stdout {
+                Some(stdout) => {
+                    let mut reader = BufReader::new(stdout);
+                    let mut line = String::new();
+                    loop {
+                        let bytes_read = reader.read_line(&mut line).await;
+                        match bytes_read {
+                            Ok(bytes_read) => {
+                                if bytes_read == 0 {
+                                    break;
+                                }
+                                let write_result = stdout_file.write_all(line.as_bytes()).await;
+                                match write_result {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        warn!("Error writing stdout: {:?}", e);
+                                        break;
+                                    }
+                                }
+                                print!("{}", line);
+                                line.clear();
+                            }
+                            Err(e) => {
+                                warn!("Error reading stdout: {:?}", e);
+                                break;
+                            }
+                        }
+                    }
+                }
+                None => {
+                    warn!("No stdout available to read");
+                }
+            }
+        });
+
+        let stderr = c.stderr.take();
+        tokio::spawn(async move {
+            match stderr {
+                Some(stderr) => {
+                    let mut reader = BufReader::new(stderr);
+                    let mut line = String::new();
+                    loop {
+                        let bytes_read = reader.read_line(&mut line).await;
+                        match bytes_read {
+                            Ok(bytes_read) => {
+                                if bytes_read == 0 {
+                                    break;
+                                }
+                                let write_result = stderr_file.write_all(line.as_bytes()).await;
+                                match write_result {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        warn!("Error writing stderr: {:?}", e);
+                                        break;
+                                    }
+                                }
+                                println!("here: {}", line);
+                                line.clear();
+                            }
+                            Err(e) => {
+                                warn!("Error reading stderr: {:?}", e);
+                                break;
+                            }
+                        }
+                    }
+                }
+                None => {
+                    warn!("No stderr available to read");
+                }
+            }
+        });
 
         let mut status = None;
         let execution_start_time = std::time::Instant::now();
@@ -563,8 +640,19 @@ impl ComfyInferenceCommand {
 
         info!("stderr will be written to file: {:?}", args.stderr_output_file.as_os_str());
 
-        let stderr_file = File::create(&args.stderr_output_file)?;
-        let stdout_file = File::create(&args.stdout_output_file)?;
+        let mut stderr_file = tokio::fs::OpenOptions::new()
+          .create(true)
+          .read(true)
+          .write(true)
+          .open(&args.stderr_output_file)
+          .await?;
+
+        let mut stdout_file = tokio::fs::OpenOptions::new()
+          .create(true)
+          .read(true)
+          .write(true)
+          .open(&args.stdout_output_file)
+          .await?;
 
         let mut c = Command::new("bash")
           .arg("-c")
@@ -573,11 +661,86 @@ impl ComfyInferenceCommand {
           .spawn()
           .expect("failed to execute process");
 
+        let stdout = c.stdout.take();
+        // (Kasisnu, 9/08/24) these are safe to leave dangling, when stdout is dropped,
+        // the reader will be dropped and the pipe will be closed
+        tokio::spawn(async move {
+            match stdout {
+                Some(stdout) => {
+                    let mut reader = BufReader::new(stdout);
+                    let mut line = String::new();
+                    loop {
+                        let bytes_read = reader.read_line(&mut line).await;
+                        match bytes_read {
+                            Ok(bytes_read) => {
+                                if bytes_read == 0 {
+                                    break;
+                                }
+                                let write_result = stdout_file.write_all(line.as_bytes()).await;
+                                match write_result {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        warn!("Error writing stdout: {:?}", e);
+                                        break;
+                                    }
+                                }
+                                print!("{}", line);
+                                line.clear();
+                            }
+                            Err(e) => {
+                                warn!("Error reading stdout: {:?}", e);
+                                break;
+                            }
+                        }
+                    }
+                }
+                None => {
+                    warn!("No stdout available to read");
+                }
+            }
+        });
+
+        let stderr = c.stderr.take();
+        tokio::spawn(async move {
+            match stderr {
+                Some(stderr) => {
+                    let mut reader = BufReader::new(stderr);
+                    let mut line = String::new();
+                    loop {
+                        let bytes_read = reader.read_line(&mut line).await;
+                        match bytes_read {
+                            Ok(bytes_read) => {
+                                if bytes_read == 0 {
+                                    break;
+                                }
+                                let write_result = stderr_file.write_all(line.as_bytes()).await;
+                                match write_result {
+                                    Ok(_) => {}
+                                    Err(e) => {
+                                        warn!("Error writing stderr: {:?}", e);
+                                        break;
+                                    }
+                                }
+                                println!("here: {}", line);
+                                line.clear();
+                            }
+                            Err(e) => {
+                                warn!("Error reading stderr: {:?}", e);
+                                break;
+                            }
+                        }
+                    }
+                }
+                None => {
+                    warn!("No stderr available to read");
+                }
+            }
+        });
+
         let mut status = None;
         let execution_start_time = std::time::Instant::now();
 
         loop {
-
             if let Some(execution_timeout) = self.maybe_execution_timeout {
                 let now = std::time::Instant::now();
                 if now.duration_since(execution_start_time) > execution_timeout {
