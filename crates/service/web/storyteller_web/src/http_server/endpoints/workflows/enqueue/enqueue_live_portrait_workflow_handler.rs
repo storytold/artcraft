@@ -257,7 +257,7 @@ pub async fn enqueue_live_portrait_workflow_handler(
   let query_result = insert_generic_inference_job(InsertGenericInferenceArgs {
     uuid_idempotency_token: &request.uuid_idempotency_token,
     job_type: InferenceJobType::LivePortrait,
-    inference_category: InferenceCategory::DeprecatedField,
+    inference_category: InferenceCategory::LivePortrait,
     maybe_model_type: None,
     maybe_model_token: None,
     maybe_input_source_token: None,

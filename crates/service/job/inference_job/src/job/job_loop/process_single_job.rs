@@ -317,6 +317,9 @@ async fn old_dispatch(
     InferenceCategory::Workflow => {
       process_single_workflow_job(job_dependencies, job).await?
     }
+    InferenceCategory::LivePortrait => {
+      process_single_workflow_job(job_dependencies, job).await?
+    }
     InferenceCategory::DeprecatedField => {
       return Err(ProcessSingleJobError::InvalidJob(
         anyhow!("invalid job category for dispatch: {:?}", job.inference_category)))

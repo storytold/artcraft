@@ -52,6 +52,10 @@ pub enum InferenceCategory {
   #[serde(rename = "format_conversion")]
   FormatConversion,
 
+  /// Live portrait
+  #[serde(rename = "live_portrait")]
+  LivePortrait,
+
   /// DEPRECATED. Do not use.
   /// This was for ReRenderAVideo, which we never productionized.
   #[deprecated(note = "This was for ReRenderAVideo, which we never productionized.")]
@@ -81,6 +85,7 @@ impl InferenceCategory {
       Self::Mocap => "mocap",
       Self::Workflow => "workflow",
       Self::FormatConversion => "format_conversion",
+      Self::LivePortrait => "live_portrait",
       Self::VideoFilter => "video_filter",
       Self::ConvertBvhToWorkflow => "convert_bvh_to_workflow",
     }
@@ -96,6 +101,7 @@ impl InferenceCategory {
       "mocap" => Ok(Self::Mocap),
       "workflow" => Ok(Self::Workflow),
       "format_conversion" => Ok(Self::FormatConversion),
+      "live_portrait" => Ok(Self::LivePortrait),
       "video_filter" => Ok(Self::VideoFilter),
       "convert_bvh_to_workflow" => Ok(Self::ConvertBvhToWorkflow),
       _ => Err(format!("invalid value: {:?}", value)),
@@ -114,6 +120,7 @@ impl InferenceCategory {
       Self::Mocap,
       Self::Workflow,
       Self::FormatConversion,
+      Self::LivePortrait,
       Self::VideoFilter,
       Self::ConvertBvhToWorkflow,
     ])
@@ -138,6 +145,7 @@ mod tests {
       assert_serialization(InferenceCategory::Mocap, "mocap");
       assert_serialization(InferenceCategory::Workflow, "workflow");
       assert_serialization(InferenceCategory::FormatConversion, "format_conversion");
+      assert_serialization(InferenceCategory::LivePortrait, "live_portrait");
       assert_serialization(InferenceCategory::VideoFilter, "video_filter");
       assert_serialization(InferenceCategory::ConvertBvhToWorkflow, "convert_bvh_to_workflow");
     }
@@ -152,6 +160,7 @@ mod tests {
       assert_eq!(InferenceCategory::Mocap.to_str(), "mocap");
       assert_eq!(InferenceCategory::Workflow.to_str(), "workflow");
       assert_eq!(InferenceCategory::FormatConversion.to_str(), "format_conversion");
+      assert_eq!(InferenceCategory::LivePortrait.to_str(), "live_portrait");
       assert_eq!(InferenceCategory::VideoFilter.to_str(), "video_filter");
       assert_eq!(InferenceCategory::ConvertBvhToWorkflow.to_str(), "convert_bvh_to_workflow");
     }
@@ -166,6 +175,7 @@ mod tests {
       assert_eq!(InferenceCategory::from_str("mocap").unwrap(), InferenceCategory::Mocap);
       assert_eq!(InferenceCategory::from_str("workflow").unwrap(), InferenceCategory::Workflow);
       assert_eq!(InferenceCategory::from_str("format_conversion").unwrap(), InferenceCategory::FormatConversion);
+      assert_eq!(InferenceCategory::from_str("live_portrait").unwrap(), InferenceCategory::LivePortrait);
       assert_eq!(InferenceCategory::from_str("video_filter").unwrap(), InferenceCategory::VideoFilter);
       assert_eq!(InferenceCategory::from_str("convert_bvh_to_workflow").unwrap(), InferenceCategory::ConvertBvhToWorkflow);
     }
@@ -174,7 +184,7 @@ mod tests {
     fn all_variants() {
       // Static check
       let mut variants = InferenceCategory::all_variants();
-      assert_eq!(variants.len(), 10);
+      assert_eq!(variants.len(), 11);
       assert_eq!(variants.pop_first(), Some(InferenceCategory::DeprecatedField));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::LipsyncAnimation));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::TextToSpeech));
@@ -183,6 +193,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(InferenceCategory::Mocap));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::Workflow));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::FormatConversion));
+      assert_eq!(variants.pop_first(), Some(InferenceCategory::LivePortrait));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::VideoFilter));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::ConvertBvhToWorkflow));
       assert_eq!(variants.pop_first(), None);

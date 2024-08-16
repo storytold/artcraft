@@ -151,6 +151,7 @@ fn raw_record_to_public_result(record: RawGenericInferenceJobStatus) -> GenericI
       InferenceCategory::Mocap => Some("Mocap"),
       InferenceCategory::Workflow => Some("Workflow"),
       InferenceCategory::FormatConversion => Some("format conversion"),
+      InferenceCategory::LivePortrait => Some("Live Portrait"),
       InferenceCategory::ConvertBvhToWorkflow => Some("BVH to Workflow"),
       InferenceCategory::DeprecatedField => Some("Job"), // TODO(bt,2024-07-16): Fix
     };
@@ -167,6 +168,7 @@ fn raw_record_to_public_result(record: RawGenericInferenceJobStatus) -> GenericI
     InferenceCategory::Mocap => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
     InferenceCategory::Workflow => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
     InferenceCategory::FormatConversion => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
+    InferenceCategory::LivePortrait => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
     InferenceCategory::ConvertBvhToWorkflow => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
     InferenceCategory::DeprecatedField => (true, None), // TODO(bt,2024-07-16): We'll need to read another field!
   };
