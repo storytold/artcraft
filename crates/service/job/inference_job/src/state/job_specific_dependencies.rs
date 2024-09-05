@@ -60,6 +60,7 @@ impl JobSpecificDependencies {
     if scoped_model_type_execution.can_run_job(InferenceModelType::ComfyUi)
         || scoped_job_type_execution.can_run_job(InferenceJobType::LivePortrait)
         || scoped_job_type_execution.can_run_job(InferenceJobType::VideoRender)
+        || scoped_job_type_execution.can_run_job(InferenceJobType::FaceFusion)
         || scoped_job_type_execution.can_run_job(InferenceJobType::ComfyUi)
     {
       print_with_space("Setting ComfyUI dependencies...");

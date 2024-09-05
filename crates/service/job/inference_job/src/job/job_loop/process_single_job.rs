@@ -254,6 +254,7 @@ async fn do_process_single_job(
 
 fn can_use_new_dispatch(job: &AvailableInferenceJob) -> bool {
   match job.job_type {
+    InferenceJobType::FaceFusion => true,
     InferenceJobType::GptSovits => true,
     InferenceJobType::LivePortrait => true,
     InferenceJobType::RvcV2 => true,
@@ -270,6 +271,7 @@ async fn new_dispatch(
   let job_success_result = match job.job_type {
     InferenceJobType::VideoRender
     | InferenceJobType::LivePortrait
+    | InferenceJobType::FaceFusion
     | InferenceJobType::ComfyUi => {
       // NB: These are all comfy workflow jobs too
       process_single_workflow_job(job_dependencies, job).await?

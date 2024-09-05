@@ -24,21 +24,21 @@ impl CommandArgs for FaceFusionCommandArgs<'_> {
   fn to_command_string(&self) -> String {
     let mut command = String::new();
 
-    command.push_str(" --audio-filename ");
+    command.push_str(" --input_audio ");
     command.push_str(&path_to_string(self.audio_file));
 
-    command.push_str(" --image-or-video-file ");
+    command.push_str(" --input_video ");
     command.push_str(&path_to_string(self.image_or_video_file));
 
     command.push_str(" --tmpdir ");
     command.push_str(&path_to_string(self.tempdir));
 
-    command.push_str(" --output-filename ");
+    command.push_str(" --output ");
     command.push_str(&path_to_string(self.output_file));
 
-    if self.input_is_image {
-      command.push_str(" --input-is-image ");
-    }
+    // if self.input_is_image {
+    //   command.push_str(" --input-is-image ");
+    // }
 
     command.push_str(" ");
 
