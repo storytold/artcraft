@@ -29,14 +29,14 @@ pub async fn poll_model_token_info_thread(
   let interval_wait = easyenv::get_env_duration_seconds_or_default(
     "POLL_MODEL_TOKEN_INTERVAL_SECS", Duration::from_secs(10 * 60));
 
-  std::thread::sleep(startup_wait);
+  tokio::time::sleep(startup_wait).await;
 
   loop {
     let token_info_items = match query_voice_conversion_models(&mysql_pool).await {
       Ok(infos) => infos,
       Err(err) => {
         error!("Error polling voice conversion model token info: {:?}", err);
-        std::thread::sleep(error_wait);
+        tokio::time::sleep(error_wait).await;
         continue;
       }
     };
@@ -49,13 +49,13 @@ pub async fn poll_model_token_info_thread(
       error!("Error inserting model token info: {:?}", err);
     }
 
-    std::thread::sleep(between_wait);
+    tokio::time::sleep(between_wait).await;
 
     let token_info_items = match query_model_weight_models(&mysql_pool).await {
       Ok(infos) => infos,
       Err(err) => {
         error!("Error polling model weight token info: {:?}", err);
-        std::thread::sleep(error_wait);
+        tokio::time::sleep(error_wait).await;
         continue;
       }
     };
@@ -68,7 +68,7 @@ pub async fn poll_model_token_info_thread(
       error!("Error inserting model token info: {:?}", err);
     }
 
-    std::thread::sleep(interval_wait);
+    tokio::time::sleep(interval_wait).await;
   }
 }
 

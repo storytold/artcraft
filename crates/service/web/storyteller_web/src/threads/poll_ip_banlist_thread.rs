@@ -2,8 +2,8 @@ use std::collections::HashSet;
 use std::thread;
 use std::time::Duration;
 
-use log::{debug, error, info};
 use log::warn;
+use log::{debug, error, info};
 use sqlx::MySqlPool;
 
 use actix_helpers::middleware::banned_ip_filter::ip_ban_list::ip_ban_list::IpBanList;
@@ -23,7 +23,7 @@ pub async fn poll_ip_bans(
       Ok(bans) => bans,
       Err(e) => {
         error!("Error polling IP bans: {:?}", e);
-        thread::sleep(Duration::from_millis(30_000));
+        tokio::time::sleep(Duration::from_millis(30_000)).await;
         continue;
       }
     };
@@ -49,6 +49,6 @@ pub async fn poll_ip_bans(
       },
     }
 
-    thread::sleep(Duration::from_millis(20_000));
+    tokio::time::sleep(Duration::from_millis(20_000)).await;
   }
 }

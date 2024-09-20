@@ -1,12 +1,10 @@
-use std::thread;
 use std::time::Duration;
 
 use log::debug;
 use log::error;
 use log::warn;
-use sqlx::MySqlPool;
-
 use mysql_queries::queries::health_check::health_check_query::health_check_db;
+use sqlx::MySqlPool;
 
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 
@@ -34,7 +32,7 @@ pub async fn db_health_checker_thread(
       }
     }
 
-    thread::sleep(check_duration);
+    tokio::time::sleep(check_duration).await;
   }
 
   warn!("Should never happen: Health Checker Exits");
