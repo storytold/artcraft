@@ -125,6 +125,29 @@ impl StageDirectoryState {
     self.frame_states.insert(frame_number, PreviewFrameUploadResult::AttemptFailed);
   }
 
+  fn pending_frames(&self) -> Vec<u32> {
+    (0..self.expected_frame_count).filter(|frame_number| {
+      !self.frame_states.contains_key(frame_number)
+    }).collect()
+  }
+
+  fn successfully_uploaded_frames(&self) -> Vec<u32> {
+    (0..self.expected_frame_count).filter(|frame_number| {
+      match self.frame_states.get(frame_number) {
+        Some(s) => *s == PreviewFrameUploadResult::UploadComplete,
+        None => false,
+      }
+    }).collect()
+  }
+
+  fn is_frame_upload_pending(&self, frame_number: &u32) -> bool {
+    let state = self.frame_states.get(&frame_number);
+    match state {
+      Some(s) => *s != PreviewFrameUploadResult::UploadComplete,
+      None => true,
+    }
+  }
+
   fn default_frame_extension(&self) -> &str {
     match self.stage {
       PreviewStage::FirstPass => "jpg",
@@ -177,20 +200,13 @@ impl StageDirectoryState {
   }
 
   fn all_object_paths (&self) -> Vec<MediaFileBucketPath> {
-    (0..self.expected_frame_count).map(|frame_number| {
+    let frame_numbers = self.successfully_uploaded_frames();
+    frame_numbers.into_iter().map(|frame_number| {
       self.expected_media_file_object_path(frame_number)
     }).collect()
   }
 
-  async fn upload_frame_from_disk(&mut self, bucket_client: &BucketClient, disk_path: PathBuf) -> PreviewFrameUpdate {
-    let frame_number = match disk_path.file_stem().and_then(|s| s.to_str()).and_then(|s| s.parse::<u32>().ok()) {
-      Some(n) => n,
-      None => {
-        log::error!("Invalid frame number in path: {:?}", disk_path);
-        return PreviewFrameUpdate { stage: self.stage, frame_number: 0, state: PreviewFrameUploadResult::InvalidInputName, disk_path, object_path: None };
-      }
-    };
-
+  async fn upload_frame_from_disk(&mut self, bucket_client: &BucketClient, frame_number: u32, disk_path: PathBuf) -> PreviewFrameUpdate {
     let local_file_extension = match disk_path.extension().and_then(|s| s.to_str()) {
       Some(e) => {
         if ALLOWED_TYPES_FRAMES.contains(e) {
@@ -286,6 +302,23 @@ impl PreviewProcessor {
     }
   }
 
+  fn infer_frame_number(&self, disk_path: &PathBuf) -> Option<u32> {
+    let relative_path = disk_path.strip_prefix(&self.base_directory);
+    match relative_path {
+      Ok(p) => {
+        let parts: Vec<&str> = p.to_str().unwrap().split('/').collect();
+        if parts.len() != 2 {
+          return None;
+        }
+        let frame_number = parts[1].split('.').next().unwrap();
+        match frame_number.parse::<u32>() {
+          Ok(n) => Some(n),
+          Err(_) => None,
+        }
+      }
+      Err(_) => None,
+    }
+  }
 
   async fn persist_redis_update(&mut self) {
     let base_url = easyenv::get_env_string_or_default(
@@ -329,23 +362,37 @@ impl PreviewProcessor {
         return;
       }
     };
+    let frame_number = match self.infer_frame_number(&disk_path) {
+      Some(n) => n.clone(),
+      None => {
+        log::error!("Invalid frame number in path: {:?}", disk_path);
+        return;
+      }
+    };
     let stage_state = self.stages.get_mut(&stage).unwrap();
     if stage_state.state == PreviewStageState::UploadComplete {
       log::debug!("Skipped re-uploading frame: {:?}", disk_path);
+      return;
+    }
+    if !stage_state.is_frame_upload_pending(&frame_number) {
+      log::debug!("Frame already uploaded: {:?}", disk_path);
       return;
     }
     if !stage_state.is_disk_path_valid(&disk_path) {
       log::warn!("Invalid disk path: {:?}", disk_path);
       return;
     }
-    let result = stage_state.upload_frame_from_disk(bucket_client, disk_path).await;
+
+    let result = stage_state.upload_frame_from_disk(bucket_client, frame_number.clone(), disk_path).await;
     if result.state == PreviewFrameUploadResult::UploadComplete {
       // (KS): We can add frames one at a time but for now Comfy is generating all frames at once
       // so this check helps
+      log::info!("Frame upload complete: {:?} for stage {:?}", result.frame_number, stage);
       if stage_state.all_frames_uploaded() {
         stage_state.state = PreviewStageState::UploadComplete;
       }
     }
+    log::info!("Pending frames for stage {:?}: {:?}", stage, stage_state.pending_frames());
     self.persist_redis_update().await;
   }
 }

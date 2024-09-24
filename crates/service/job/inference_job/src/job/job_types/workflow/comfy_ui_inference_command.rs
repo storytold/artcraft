@@ -581,7 +581,7 @@ impl ComfyInferenceCommand {
                 break;
             }
 
-            tokio::time::sleep(Duration::from_secs(2)).await;
+            tokio::time::sleep(Duration::from_secs(5)).await;
         }
 
         return Ok(status.unwrap());

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::fs::{File, read_to_string};
+use std::fs::{read_to_string, File};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -23,10 +23,10 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use filesys::check_file_exists::check_file_exists;
-use filesys::file_deletion::safe_delete_files_and_directories::safe_delete_files_and_directories;
-use filesys::file_deletion::safe_delete_possible_files_and_directories::safe_delete_possible_files_and_directories;
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;
 use filesys::file_deletion::safe_delete_file::safe_delete_file;
+use filesys::file_deletion::safe_delete_files_and_directories::safe_delete_files_and_directories;
+use filesys::file_deletion::safe_delete_possible_files_and_directories::safe_delete_possible_files_and_directories;
 use filesys::file_deletion::safe_recursively_delete_files::safe_recursively_delete_files;
 use filesys::file_exists::file_exists;
 use filesys::file_read_bytes::file_read_bytes;
@@ -60,11 +60,11 @@ use crate::job::job_types::workflow::video_style_transfer::steps::post_process_a
 use crate::job::job_types::workflow::video_style_transfer::steps::post_process_restore_audio::{post_process_restore_audio, PostProcessRestoreVideoArgs};
 use crate::job::job_types::workflow::video_style_transfer::steps::preprocess_save_audio::{preprocess_save_audio, ProcessSaveAudioArgs};
 use crate::job::job_types::workflow::video_style_transfer::steps::preprocess_trim_and_resample_videos::{preprocess_trim_and_resample_videos, ProcessTrimAndResampleVideoArgs};
-use crate::job::job_types::workflow::video_style_transfer::steps::validate_and_save_results::{SaveResultsArgs, validate_and_save_results};
+use crate::job::job_types::workflow::video_style_transfer::steps::validate_and_save_results::{validate_and_save_results, SaveResultsArgs};
 use crate::job::job_types::workflow::video_style_transfer::util::comfy_dirs::ComfyDirs;
 use crate::job::job_types::workflow::video_style_transfer::util::process_preview_updates::PreviewProcessor;
 use crate::job::job_types::workflow::video_style_transfer::util::video_pathing::{PrimaryInputVideoAndPaths, SecondaryInputVideoAndPaths, VideoPathing};
-use crate::job::job_types::workflow::video_style_transfer::util::write_workflow_prompt::{WorkflowPromptArgs, write_workflow_prompt};
+use crate::job::job_types::workflow::video_style_transfer::util::write_workflow_prompt::{write_workflow_prompt, WorkflowPromptArgs};
 use crate::state::job_dependencies::JobDependencies;
 
 pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &AvailableInferenceJob) -> Result<JobSuccessResult, ProcessSingleJobError> {
