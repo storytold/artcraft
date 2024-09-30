@@ -367,53 +367,53 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
         None => return Err(ProcessSingleJobError::Other(anyhow!("failed to get redis pool"))),
     };
 
-    let mysql_pool = deps.db.mysql_pool.clone();
-    let (cancel_tx, mut cancel_rx) = oneshot::channel();
-    let mut interval = tokio::time::interval(Duration::from_millis(30_000));
-    let job_token = job.inference_job_token.clone();
-
-    let _cancellation_watcher = tokio::spawn(async move {
-        let mut connection = match mysql_pool.acquire().await {
-            Ok(connection) => connection,
-            Err(e) => {
-                error!("Error acquiring mysql connection: {:?}", e);
-                return
-            }
-        };
-        let mut fail_count = 0;
-        loop {
-            interval.tick().await;
-            let current_status = get_inference_job_status_from_connection(
-                &job_token,
-                &mut connection
-            ).await;
-            let current_status = match current_status {
-                Ok(status) => status,
-                Err(e) => {
-                    fail_count += 1;
-                    error!("Error #{fail_count} getting job status: {:?}", e);
-                    if fail_count > 3 {
-                        return;
-                    }
-                    tokio::time::sleep(Duration::from_secs(3)).await;
-                    continue
-                }
-            };
-            fail_count = 0;
-            match current_status {
-                Some(status) => {
-                    if status.status == JobStatusPlus::CancelledByUser {
-                        cancel_tx.send(()).unwrap();
-                        break
-                    }
-                }
-                None => {
-                    debug!("Job status not found. This has to be an error");
-                }
-            }
-        }
-    });
-
+    // let mysql_pool = deps.db.mysql_pool.clone();
+    let (_cancel_tx, mut cancel_rx) = oneshot::channel();
+    // let mut interval = tokio::time::interval(Duration::from_millis(30_000));
+    // let job_token = job.inference_job_token.clone();
+    // 
+    // let _cancellation_watcher = tokio::spawn(async move {
+    //     let mut connection = match mysql_pool.acquire().await {
+    //         Ok(connection) => connection,
+    //         Err(e) => {
+    //             error!("Error acquiring mysql connection: {:?}", e);
+    //             return
+    //         }
+    //     };
+    //     let mut fail_count = 0;
+    //     loop {
+    //         interval.tick().await;
+    //         let current_status = get_inference_job_status_from_connection(
+    //             &job_token,
+    //             &mut connection
+    //         ).await;
+    //         let current_status = match current_status {
+    //             Ok(status) => status,
+    //             Err(e) => {
+    //                 fail_count += 1;
+    //                 error!("Error #{fail_count} getting job status: {:?}", e);
+    //                 if fail_count > 3 {
+    //                     return;
+    //                 }
+    //                 tokio::time::sleep(Duration::from_secs(3)).await;
+    //                 continue
+    //             }
+    //         };
+    //         fail_count = 0;
+    //         match current_status {
+    //             Some(status) => {
+    //                 if status.status == JobStatusPlus::CancelledByUser {
+    //                     cancel_tx.send(()).unwrap();
+    //                     break
+    //                 }
+    //             }
+    //             None => {
+    //                 debug!("Job status not found. This has to be an error");
+    //             }
+    //         }
+    //     }
+    // });
+    //
     let mut preview_processor = PreviewProcessor::new(
         job.inference_job_token.clone(),
         redis,
