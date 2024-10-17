@@ -27,8 +27,8 @@ use r2d2_redis::RedisConnectionManager;
 use sqlx::mysql::MySqlPoolOptions;
 
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
-use cloud_storage::bucket_client::BucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
+use cloud_storage::bucket_client::BucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use config::common_env::CommonEnv;
 use config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
@@ -46,16 +46,16 @@ use memory_caching::ttl_key_counter::TtlKeyCounter;
 use mysql_queries::common_inputs::container_environment_arg::ContainerEnvironmentArg;
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 
-use crate::http_server::run_http_server::CreateServerArgs;
 use crate::http_server::run_http_server::launch_http_server;
+use crate::http_server::run_http_server::CreateServerArgs;
 use crate::job::job_loop::main_loop::main_loop;
 use crate::state::job_dependencies::{BucketDependencies, ClientDependencies, DatabaseDependencies, FileSystemDetails, JobCaches, JobDependencies, JobInstanceInfo, JobSystemControls, JobSystemDependencies};
 use crate::state::job_specific_dependencies::JobSpecificDependencies;
 use crate::state::scoped_job_type_execution::ScopedJobTypeExecution;
 use crate::state::scoped_model_type_execution::ScopedModelTypeExecution;
 use crate::util::filesystem::scoped_temp_dir_creator::ScopedTempDirCreator;
-use crate::util::instrumentation::{init_otel_metrics_pipeline, JobInstrumentLabels};
 use crate::util::instrumentation::JobInstruments;
+use crate::util::instrumentation::{init_otel_metrics_pipeline, JobInstrumentLabels};
 use crate::util::model_weights_cache::model_weights_cache_directory::ModelWeightsCacheDirectory;
 
 pub mod http_server;
@@ -80,8 +80,8 @@ const OTEL_METER_NAME: &str = "inference-job";
 
 
 
-//#[tokio::main]
-#[actix_web::main]
+#[tokio::main]
+// #[actix_web::main]
 async fn main() -> AnyhowResult<()> {
 
   let app_name = "inference-job";

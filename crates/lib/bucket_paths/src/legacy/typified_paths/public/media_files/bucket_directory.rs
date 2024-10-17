@@ -10,7 +10,7 @@ const MEDIA_FILE_DIRECTORY: &str = "/media";
 /// Directory for user media uploads.
 /// Each uploaded file gets its own directory so that we can store the original
 /// file alongside re-processed derivatives.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MediaFileBucketDirectory {
   object_hash: String,
   directory: String,

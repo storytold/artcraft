@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Result};
 use log::{debug, error, info, warn};
+use oneshot::channel;
 use r2d2_redis::redis::Commands;
 use serde_json::Value;
 use tokio::sync::mpsc;
@@ -39,7 +40,7 @@ use mysql_queries::payloads::generic_inference_args::inner_payloads::workflow_pa
 use mysql_queries::payloads::prompt_args::encoded_style_transfer_name::EncodedStyleTransferName;
 use mysql_queries::payloads::prompt_args::prompt_inner_payload::{PromptInnerPayload, PromptInnerPayloadBuilder};
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
-use mysql_queries::queries::generic_inference::web::get_inference_job_status::{get_inference_job_status, get_inference_job_status_from_connection};
+use mysql_queries::queries::generic_inference::web::get_inference_job_status::get_inference_job_status;
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use mysql_queries::queries::model_weights::get::get_weight::{get_weight_by_token, get_weight_by_token_with_transactor};
@@ -126,13 +127,16 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
     let mut workflow_path = workflow_dir.join("prompt.json").to_str().unwrap().to_string();
 
     info!("Grabbing redis connection from pool");
-    let redis_pool = deps
+
+    let redis_pool_dep = deps
       .db
-      .maybe_keepalive_redis_pool
-      .as_ref()
-      .map(|redis| redis.get())
-      .transpose()
-      .map_err(|err| ProcessSingleJobError::Other(anyhow!("redis pool error: {:?}", err)))?;
+      .maybe_keepalive_redis_pool.clone();
+
+    let redis_pool = redis_pool_dep
+      .ok_or_else(|| ProcessSingleJobError::Other(anyhow!("failed to get redis pool")))?;
+      // .map(|redis| redis.get())
+      // .transpose()
+      // .map_err(|err| ProcessSingleJobError::Other(anyhow!("redis pool error: {:?}", err)))?;
 
     info!("Grabbing mysql connection from pool");
 
@@ -362,16 +366,12 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
     let ephemeral_bucket_client = deps.buckets.auto_gc_bucket_client.clone();
     let previews_media_file_directory = MediaFileBucketDirectory::generate_new();
 
-    let redis = match redis_pool {
-        Some(redis) => redis,
-        None => return Err(ProcessSingleJobError::Other(anyhow!("failed to get redis pool"))),
-    };
 
     // let mysql_pool = deps.db.mysql_pool.clone();
     let (_cancel_tx, mut cancel_rx) = oneshot::channel();
     // let mut interval = tokio::time::interval(Duration::from_millis(30_000));
     // let job_token = job.inference_job_token.clone();
-    // 
+    //
     // let _cancellation_watcher = tokio::spawn(async move {
     //     let mut connection = match mysql_pool.acquire().await {
     //         Ok(connection) => connection,
@@ -414,34 +414,27 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
     //     }
     // });
     //
+    let preview_frames_enabled = comfy_args.generate_fast_previews.unwrap_or(false);
+    let (preview_cancellation_tx, rx) = channel();
     let mut preview_processor = PreviewProcessor::new(
         job.inference_job_token.clone(),
-        redis,
+        redis_pool,
         preview_frames_dir.clone(),
         previews_media_file_directory,
-        expected_frame_count as u32
+        expected_frame_count as u32,
+        rx,
     );
 
-    let (tx, mut rx) = mpsc::channel(500);
-    let preview_frames_uploader = tokio::spawn(async move {
-        while let Some(i) = rx.recv().await {
-            match i {
-                Ok(frame_path) => {
-                    preview_processor.process_frame_from_disk(&ephemeral_bucket_client, frame_path).await;
-                }
-                Err(e) => {
-                    info!("got = Err: {:?}", e);
-                }
-            }
-        }
+    tokio::spawn(async move {
+        preview_processor.start_processing(&ephemeral_bucket_client).await;;
     });
 
     info!("Running ComfyUI inference...");
 
+    // tokio::time::sleep(Duration::from_secs(30)).await;
     let command_exit_status = comfy_deps
         .inference_command
         .execute_inference(
-            tx,
             &mut cancel_rx,
             InferenceArgs {
                 generate_previews: comfy_args.generate_fast_previews.unwrap_or(false),
@@ -471,6 +464,7 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
                     .flatten(),
         }).await;
 
+    // tokio::time::sleep(Duration::from_secs(60)).await;
     let inference_duration = Instant::now().duration_since(inference_start_time);
 
     info!("Inference command exited with status: {:?}", command_exit_status);
@@ -492,7 +486,9 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
         info!("Comfy output video dimensions: {}x{}", dimensions.width, dimensions.height);
     }
 
-    preview_frames_uploader.await.map_err(|e| ProcessSingleJobError::Other(anyhow!("bucket uploader error: {:?}", e)))?;
+    // tokio::time::sleep(Duration::from_secs(10)).await;
+    // preview_frames_uploader.await.map_err(|e| ProcessSingleJobError::Other(anyhow!("bucket uploader error: {:?}", e)))?;
+    let _ = preview_cancellation_tx.send(());
 
     // ==================== CHECK OUTPUT FILE ======================== //
 

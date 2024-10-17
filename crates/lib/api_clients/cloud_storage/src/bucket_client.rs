@@ -4,8 +4,8 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use anyhow::bail;
-use log::info;
 use log::warn;
+use log::{debug, info};
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use s3::region::Region;
@@ -70,8 +70,15 @@ impl BucketClient {
     let mut bucket = Bucket::new(&bucket_name, region, credentials)?;
 
     bucket.set_request_timeout(bucket_request_timeout);
-    bucket.set_path_style();
-    bucket.set_subdomain_style();
+
+    match s3_endpoint {
+      "https://storage.googleapis.com" => {
+        bucket.set_subdomain_style();
+      },
+      _ => {
+        bucket.set_path_style();
+      }
+    }
 
     let optional_bucket_root = optional_bucket_root.map(|s| s.to_string());
 
@@ -89,22 +96,24 @@ impl BucketClient {
   }
 
   pub async fn upload_file(&self, object_name: &str, bytes: &[u8]) -> anyhow::Result<()> {
-    info!("Filename for bucket: {}", object_name);
+    debug!("Filename for bucket: {}", object_name);
 
     let object_name = self.get_rooted_object_name(object_name);
-    info!("Rooted filename for bucket: {}", object_name);
+    debug!("Rooted filename for bucket: {}", object_name);
 
     let response = self.bucket.put_object(&object_name, bytes).await?;
 
     let body_bytes = response.bytes();
     let code = response.status_code();
 
-    info!("upload code: {}", code);
+    debug!("upload code for {}: {}", object_name, code);
 
     if code != 200 {
       let body = String::from_utf8_lossy(body_bytes);
-      warn!("upload body: {}", body);
+      warn!("failed upload body: {}", body);
     }
+
+    info!("Successfully uploaded file to bucket: {}", object_name);
 
     Ok(())
   }

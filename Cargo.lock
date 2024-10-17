@@ -3703,6 +3703,7 @@ dependencies = [
  "time",
  "tokens",
  "tokio",
+ "tokio-stream",
  "tokio-util",
  "tts_common",
  "url",

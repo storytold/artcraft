@@ -226,16 +226,14 @@ impl ComfyInferenceCommand {
 
     pub async fn execute_inference<'a, 'b>(
         &'a self,
-        frames_tx: tokio::sync::mpsc::Sender<Result<PathBuf,()>>,
         cancellation_receiver: &mut tokio::sync::oneshot::Receiver<()>,
         args: InferenceArgs<'b>,
     ) -> CommandExitStatus {
-        self.do_execute_inference(frames_tx, cancellation_receiver, args).await.unwrap_or_else(|error| CommandExitStatus::FailureWithReason { reason: format!("error: {:?}", error) })
+        self.do_execute_inference(cancellation_receiver, args).await.unwrap_or_else(|error| CommandExitStatus::FailureWithReason { reason: format!("error: {:?}", error) })
     }
 
     async fn do_execute_inference<'a, 'b>(
         &'a self,
-        frames_tx: tokio::sync::mpsc::Sender<Result<PathBuf,()>>,
         cancellation_receiver: &mut tokio::sync::oneshot::Receiver<()>,
         args: InferenceArgs<'b>,
     ) -> AnyhowResult<CommandExitStatus> {
@@ -549,34 +547,6 @@ impl ComfyInferenceCommand {
                 }
             }
 
-            //  Check if preview_frames_directory has any files
-            if let Some(preview_frames_directory) = args.preview_frames_directory {
-                let dir = std::fs::read_dir(preview_frames_directory);
-                match dir {
-                    Ok(dir) => {
-                        if dir.count() > 0 {
-                            for entry in std::fs::read_dir(preview_frames_directory).unwrap() {
-                                let entry = entry.unwrap();
-                                let path = entry.path();
-                                if path.is_dir() {
-                                    for entry in std::fs::read_dir(&path).unwrap() {
-                                        let entry = entry.unwrap();
-                                        let path = entry.path();
-
-                                        let tx = frames_tx.clone();
-                                        tokio::spawn(async move {
-                                            tx.send(Ok(path)).await.unwrap();
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    Err(e) => {
-                        info!("Error reading preview frames directory: {:?}", e);
-                    }
-                }
-            }
             if status.is_some() {
                 break;
             }
