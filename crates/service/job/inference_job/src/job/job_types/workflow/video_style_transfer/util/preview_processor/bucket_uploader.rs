@@ -87,7 +87,7 @@ impl BucketUploadActor {
       }
       
       BucketUploadMessage::UploadMultipleFrames { requests, bucket_client, result } => {
-        let max_concurrent_uploads = 50;
+        let max_concurrent_uploads = 20;
         let mut join_set:JoinSet<(PathBuf,BucketUploadResult)> = JoinSet::new();
         let mut results = vec![];
         for request in requests {
