@@ -20,7 +20,8 @@ actix-rt = { version = "2.10.0" }
 ahash = { version = "0.8.11" }
 anstream = { version = "0.6.14" }
 arrayvec = { version = "0.7.4", features = ["serde"] }
-base64 = { version = "0.21.7" }
+base64-3c51e837cfc5589a = { package = "base64", version = "0.22.1" }
+base64-647d43efb71741da = { package = "base64", version = "0.21.7" }
 base64ct = { version = "1.6.0", default-features = false, features = ["alloc"] }
 bitflags = { version = "2.5.0", default-features = false, features = ["serde", "std"] }
 block-buffer = { version = "0.9.0", default-features = false, features = ["block-padding"] }
@@ -101,7 +102,7 @@ zeroize = { version = "1.8.1", features = ["zeroize_derive"] }
 [build-dependencies]
 actix-router = { version = "0.5.3" }
 ahash = { version = "0.8.11" }
-base64 = { version = "0.21.7" }
+base64-647d43efb71741da = { package = "base64", version = "0.21.7" }
 base64ct = { version = "1.6.0", default-features = false, features = ["alloc"] }
 bitflags = { version = "2.5.0", default-features = false, features = ["serde", "std"] }
 byteorder = { version = "1.5.0" }
@@ -214,6 +215,7 @@ windows-sys-b21d60becc0929df = { package = "windows-sys", version = "0.52.0", fe
 windows-sys-c8eced492e86ede7 = { package = "windows-sys", version = "0.48.0", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_Console", "Win32_System_Diagnostics_Debug", "Win32_System_IO", "Win32_System_Pipes", "Win32_System_Registry", "Win32_System_SystemServices", "Win32_System_Threading", "Win32_System_Time", "Win32_System_WindowsProgramming", "Win32_UI_Shell"] }
 
 [target.x86_64-pc-windows-msvc.build-dependencies]
+base64-3c51e837cfc5589a = { package = "base64", version = "0.22.1" }
 hyper-dff4ba8e3ae991db = { package = "hyper", version = "1.3.1", features = ["client", "http1", "http2"] }
 hyper-util = { version = "0.1.5", features = ["client-legacy", "http1", "http2"] }
 reqwest = { version = "0.12.7", features = ["blocking", "json", "native-tls", "rustls-tls", "stream"] }

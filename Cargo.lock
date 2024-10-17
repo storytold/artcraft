@@ -4529,6 +4529,7 @@ dependencies = [
  "anstream",
  "arrayvec",
  "base64 0.21.7",
+ "base64 0.22.1",
  "base64ct",
  "bitflags 2.5.0",
  "block-buffer 0.9.0",
