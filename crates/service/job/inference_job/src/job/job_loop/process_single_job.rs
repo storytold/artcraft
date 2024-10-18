@@ -309,6 +309,9 @@ async fn old_dispatch(
     InferenceCategory::TextToSpeech => {
       process_single_tts_job(job_dependencies, job).await?
     }
+    InferenceCategory::F5TTS => {
+      process_single_f5_tts_job(job_dependencies, job).await?
+    }
     InferenceCategory::VoiceConversion => {
       process_single_vc_job(job_dependencies, job).await?
     }
