@@ -1,5 +1,4 @@
-use errors::AnyhowResult;
-
+use crate::payloads::generic_inference_args::inner_payloads::f5_tts_payload::F5TTSPayload;
 use crate::payloads::generic_inference_args::inner_payloads::face_fusion_payload::FaceFusionPayload;
 use crate::payloads::generic_inference_args::inner_payloads::gptsovits_payload::GptSovitsPayload;
 use crate::payloads::generic_inference_args::inner_payloads::image_generation_payload::StableDiffusionArgs;
@@ -10,6 +9,7 @@ use crate::payloads::generic_inference_args::inner_payloads::render_engine_scene
 use crate::payloads::generic_inference_args::inner_payloads::tts_payload::TTSArgs;
 use crate::payloads::generic_inference_args::inner_payloads::videofilter_payload::RerenderArgs;
 use crate::payloads::generic_inference_args::inner_payloads::workflow_payload::WorkflowArgs;
+use errors::AnyhowResult;
 
 /// Used to encode extra state for the `generic_inference_jobs` table.
 /// This should act somewhat like a serialized protobuf stored inside a record.
@@ -150,6 +150,8 @@ pub enum PolymorphicInferenceArgs {
 
   /// GPT Sovits
   Gs(GptSovitsPayload),
+
+  Ft(F5TTSPayload),
 }
 
 impl GenericInferenceArgs {

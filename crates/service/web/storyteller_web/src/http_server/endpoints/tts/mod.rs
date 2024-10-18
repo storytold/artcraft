@@ -14,3 +14,4 @@ pub mod list_tts_models;
 pub mod list_user_tts_inference_results;
 pub mod list_user_tts_models;
 pub mod search_tts_models_handler;
+pub mod enqueue_infer_f5_tts_handler;

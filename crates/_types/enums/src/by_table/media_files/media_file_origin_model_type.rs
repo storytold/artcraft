@@ -18,6 +18,9 @@ pub enum MediaFileOriginModelType {
   #[serde(rename = "face_fusion")]
   FaceFusion,
 
+  #[serde(rename = "f5_tts")]
+  F5TTS,
+
   #[serde(rename = "live_portrait")]
   LivePortrait,
 
@@ -77,6 +80,7 @@ impl MediaFileOriginModelType {
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::FaceFusion => "face_fusion",
+      Self::F5TTS => "f5_tts",
       Self::LivePortrait => "live_portrait",
       Self::RvcV2  => "rvc_v2",
       Self::SadTalker => "sad_talker",
@@ -97,6 +101,7 @@ impl MediaFileOriginModelType {
   pub fn from_str(value: &str) -> Result<Self, String> {
     match value {
       "face_fusion" => Ok(Self::FaceFusion),
+      "f5_tts" => Ok(Self::F5TTS),
       "live_portrait" => Ok(Self::LivePortrait),
       "rvc_v2" => Ok(Self::RvcV2),
       "sad_talker" => Ok(Self::SadTalker),
@@ -120,6 +125,7 @@ impl MediaFileOriginModelType {
     // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
       Self::FaceFusion,
+      Self::F5TTS,
       Self::LivePortrait,
       Self::RvcV2,
       Self::SadTalker,
@@ -155,6 +161,7 @@ mod tests {
     #[test]
     fn test_to_str() {
       assert_eq!(MediaFileOriginModelType::FaceFusion.to_str(), "face_fusion");
+      assert_eq!(MediaFileOriginModelType::F5TTS.to_str(), "f5_tts");
       assert_eq!(MediaFileOriginModelType::LivePortrait.to_str(), "live_portrait");
       assert_eq!(MediaFileOriginModelType::RvcV2.to_str(), "rvc_v2");
       assert_eq!(MediaFileOriginModelType::SadTalker.to_str(), "sad_talker");
@@ -174,6 +181,7 @@ mod tests {
     #[test]
     fn test_from_str() {
       assert_eq!(MediaFileOriginModelType::from_str("face_fusion").unwrap(), MediaFileOriginModelType::FaceFusion);
+      assert_eq!(MediaFileOriginModelType::from_str("f5_tts").unwrap(), MediaFileOriginModelType::F5TTS);
       assert_eq!(MediaFileOriginModelType::from_str("live_portrait").unwrap(), MediaFileOriginModelType::LivePortrait);
       assert_eq!(MediaFileOriginModelType::from_str("rvc_v2").unwrap(), MediaFileOriginModelType::RvcV2);
       assert_eq!(MediaFileOriginModelType::from_str("sad_talker").unwrap(), MediaFileOriginModelType::SadTalker);
@@ -196,6 +204,7 @@ mod tests {
       let mut variants = MediaFileOriginModelType::all_variants();
       assert_eq!(variants.len(), 15);
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::FaceFusion));
+      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::F5TTS));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::LivePortrait));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::RvcV2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SadTalker));

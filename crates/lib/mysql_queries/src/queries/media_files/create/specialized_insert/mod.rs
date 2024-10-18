@@ -7,3 +7,4 @@ pub mod insert_media_file_from_rerender;
 pub mod insert_media_file_from_tacotron2;
 pub mod insert_media_file_from_voice_conversion;
 pub mod insert_media_file_from_zero_shot_tts;
+pub mod insert_media_file_from_f5_tts;

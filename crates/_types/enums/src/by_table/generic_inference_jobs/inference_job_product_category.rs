@@ -27,6 +27,9 @@ pub enum InferenceJobProductCategory {
   /// TTS: GptSoVits
   TtsGptSoVits,
 
+  /// TTS: F5Tts (Zero Shot)
+  TtsF5,
+
   /// TTS: StyleTts2 (Zero Shot)
   TtsStyleTts2,
   
@@ -108,6 +111,7 @@ impl InferenceJobProductCategory {
       Self::TtsGptSoVits => "tts_gpt_so_vits",
       Self::TtsStyleTts2 => "tts_style_tts2",
       Self::TtsTacotron2 => "tts_tacotron2",
+      Self::TtsF5 => "tts_f5",
       Self::VcSvc => "vc_svc",
       Self::VcRvc2 => "vc_rvc2",
       Self::VidLipsyncFaceFusion => "vid_lipsync_face_fusion",
@@ -133,6 +137,7 @@ impl InferenceJobProductCategory {
       "tts_gpt_so_vits" => Ok(Self::TtsGptSoVits),
       "tts_style_tts2" => Ok(Self::TtsStyleTts2),
       "tts_tacotron2" => Ok(Self::TtsTacotron2),
+      "tts_f5" => Ok(Self::TtsF5),
       "vc_svc" => Ok(Self::VcSvc),
       "vc_rvc2" => Ok(Self::VcRvc2),
       "vid_lipsync_face_fusion" => Ok(Self::VidLipsyncFaceFusion),
@@ -161,6 +166,7 @@ impl InferenceJobProductCategory {
       Self::TtsGptSoVits,
       Self::TtsStyleTts2,
       Self::TtsTacotron2,
+      Self::TtsF5,
       Self::VcSvc,
       Self::VcRvc2,
       Self::VidLipsyncFaceFusion,
@@ -195,6 +201,7 @@ mod tests {
       assert_serialization(InferenceJobProductCategory::TtsGptSoVits, "tts_gpt_so_vits");
       assert_serialization(InferenceJobProductCategory::TtsStyleTts2, "tts_style_tts2");
       assert_serialization(InferenceJobProductCategory::TtsTacotron2, "tts_tacotron2");
+      assert_serialization(InferenceJobProductCategory::TtsF5, "tts_f5");
       assert_serialization(InferenceJobProductCategory::VcRvc2, "vc_rvc2");
       assert_serialization(InferenceJobProductCategory::VcSvc, "vc_svc");
       assert_serialization(InferenceJobProductCategory::VidLipsyncFaceFusion, "vid_lipsync_face_fusion");

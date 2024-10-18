@@ -37,7 +37,6 @@ use crate::http_server::endpoints::featured_items::delete_featured_item_handler:
 use crate::http_server::endpoints::featured_items::get_is_featured_item_handler::get_is_featured_item_handler;
 use crate::http_server::endpoints::flags::design_refresh_flag::disable_design_refresh_flag_handler::disable_design_refresh_flag_handler;
 use crate::http_server::endpoints::flags::design_refresh_flag::enable_design_refresh_flag_handler::enable_design_refresh_flag_handler;
-use crate::http_server::endpoints::image_gen::enqueue_image_generation::enqueue_image_generation_request;
 use crate::http_server::endpoints::investor_demo::disable_demo_mode_handler::disable_demo_mode_handler;
 use crate::http_server::endpoints::investor_demo::enable_demo_mode_handler::enable_demo_mode_handler;
 use crate::http_server::endpoints::leaderboard::get_leaderboard::leaderboard_handler;
@@ -66,6 +65,7 @@ use crate::http_server::endpoints::tts::delete_tts_model::delete_tts_model_handl
 use crate::http_server::endpoints::tts::delete_tts_result::delete_tts_inference_result_handler;
 use crate::http_server::endpoints::tts::edit_tts_model::edit_tts_model_handler;
 use crate::http_server::endpoints::tts::edit_tts_result::edit_tts_inference_result_handler;
+use crate::http_server::endpoints::tts::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler;
 use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::enqueue_infer_tts_handler;
 use crate::http_server::endpoints::tts::enqueue_upload_tts_model::upload_tts_model_handler;
 use crate::http_server::endpoints::tts::get_pending_tts_inference_job_count::get_pending_tts_inference_job_count_handler;
@@ -80,7 +80,6 @@ use crate::http_server::endpoints::user_bookmarks::batch_get_user_bookmarks_hand
 use crate::http_server::endpoints::user_bookmarks::create_user_bookmark_handler::create_user_bookmark_handler;
 use crate::http_server::endpoints::user_bookmarks::delete_user_bookmark_handler::delete_user_bookmark_handler;
 use crate::http_server::endpoints::user_bookmarks::list_user_bookmarks_for_entity_handler::list_user_bookmarks_for_entity_handler;
-use crate::http_server::endpoints::user_bookmarks::list_user_bookmarks_for_session_handler::list_user_bookmarks_for_session_handler;
 use crate::http_server::endpoints::user_bookmarks::list_user_bookmarks_for_user_handler::list_user_bookmarks_for_user_handler;
 use crate::http_server::endpoints::user_ratings::batch_get_user_rating_handler::batch_get_user_rating_handler;
 use crate::http_server::endpoints::user_ratings::get_user_rating_handler::get_user_rating_handler;
@@ -309,6 +308,11 @@ fn add_tts_routes<T, B> (app: App<T>) -> App<T>
         web::resource("/upload")
             .route(web::post().to(upload_tts_model_handler))
             .route(web::head().to(|| HttpResponse::Ok()))
+      )
+      .service(
+        web::resource("/f5_inference")
+          .route(web::post().to(enqueue_infer_f5_tts_handler))
+          .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(
         web::resource("/inference")

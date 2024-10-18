@@ -8,3 +8,4 @@ pub mod render_engine_scene_to_video_payload;
 pub mod tts_payload;
 pub mod videofilter_payload;
 pub mod workflow_payload;
+pub mod f5_tts_payload;

@@ -43,6 +43,10 @@ pub enum InferenceJobType {
   /// Process a video into BVH mocap animation data for game engines
   MocapNet,
 
+  /// Jobs that run F5TTS
+  #[serde(rename = "f5_tts")]
+  F5TTS,
+
   /// RVC is a voice conversion model. RVCv2 is the most popular such model currently.
   #[serde(rename = "rvc_v2")]
   RvcV2,
@@ -93,6 +97,7 @@ impl InferenceJobType {
       Self::VideoRender => "video_render",
       Self::LivePortrait => "live_portrait",
       Self::FaceFusion => "face_fusion",
+      Self::F5TTS => "f5_tts",
       Self::GptSovits => "gpt_sovits",
       Self::ComfyUi => "comfy_ui",
       Self::ConvertFbxToGltf => "convert_fbx_gltf",
@@ -114,6 +119,7 @@ impl InferenceJobType {
       "video_render" => Ok(Self::VideoRender),
       "live_portrait" => Ok(Self::LivePortrait),
       "face_fusion" => Ok(Self::FaceFusion),
+      "f5_tts" => Ok(Self::F5TTS),
       "gpt_sovits" => Ok(Self::GptSovits),
       "comfy_ui" => Ok(Self::ComfyUi),
       "convert_fbx_gltf" => Ok(Self::ConvertFbxToGltf),
@@ -138,6 +144,7 @@ impl InferenceJobType {
       Self::VideoRender,
       Self::LivePortrait,
       Self::FaceFusion,
+      Self::F5TTS,
       Self::GptSovits,
       Self::ComfyUi,
       Self::ConvertFbxToGltf,
@@ -173,6 +180,7 @@ mod tests {
       assert_serialization(InferenceJobType::VideoRender, "video_render");
       assert_serialization(InferenceJobType::LivePortrait, "live_portrait");
       assert_serialization(InferenceJobType::FaceFusion, "face_fusion");
+      assert_serialization(InferenceJobType::F5TTS, "f5_tts");
       assert_serialization(InferenceJobType::GptSovits, "gpt_sovits");
       assert_serialization(InferenceJobType::ComfyUi, "comfy_ui");
       assert_serialization(InferenceJobType::ConvertFbxToGltf, "convert_fbx_gltf");
@@ -193,6 +201,7 @@ mod tests {
       assert_eq!(InferenceJobType::VideoRender.to_str(), "video_render");
       assert_eq!(InferenceJobType::LivePortrait.to_str(), "live_portrait");
       assert_eq!(InferenceJobType::FaceFusion.to_str(), "face_fusion");
+      assert_eq!(InferenceJobType::F5TTS.to_str(), "f5_tts");
       assert_eq!(InferenceJobType::GptSovits.to_str(), "gpt_sovits");
       assert_eq!(InferenceJobType::ComfyUi.to_str(), "comfy_ui");
       assert_eq!(InferenceJobType::ConvertFbxToGltf.to_str(), "convert_fbx_gltf");
@@ -213,6 +222,7 @@ mod tests {
       assert_eq!(InferenceJobType::from_str("video_render").unwrap(), InferenceJobType::VideoRender);
       assert_eq!(InferenceJobType::from_str("live_portrait").unwrap(), InferenceJobType::LivePortrait);
       assert_eq!(InferenceJobType::from_str("face_fusion").unwrap(), InferenceJobType::FaceFusion);
+      assert_eq!(InferenceJobType::from_str("f5_tts").unwrap(), InferenceJobType::F5TTS);
       assert_eq!(InferenceJobType::from_str("gpt_sovits").unwrap(), InferenceJobType::GptSovits);
       assert_eq!(InferenceJobType::from_str("comfy_ui").unwrap(), InferenceJobType::ComfyUi);
       assert_eq!(InferenceJobType::from_str("convert_fbx_gltf").unwrap(), InferenceJobType::ConvertFbxToGltf);
@@ -236,6 +246,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(InferenceJobType::VideoRender));
       assert_eq!(variants.pop_first(), Some(InferenceJobType::LivePortrait));
       assert_eq!(variants.pop_first(), Some(InferenceJobType::FaceFusion));
+      assert_eq!(variants.pop_first(), Some(InferenceJobType::F5TTS));
       assert_eq!(variants.pop_first(), Some(InferenceJobType::GptSovits));
       assert_eq!(variants.pop_first(), Some(InferenceJobType::ComfyUi));
       assert_eq!(variants.pop_first(), Some(InferenceJobType::ConvertFbxToGltf));

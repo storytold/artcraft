@@ -30,6 +30,8 @@ pub enum PublicInferenceJobType {
 
   GptSovits,
 
+  #[serde(rename = "f5_tts")]
+  F5TTS,
   // ======= Everything else is the same =======
 
   /// Jobs that run ComfyUI workflows
@@ -94,6 +96,7 @@ impl PublicInferenceJobType {
       // Conserved variants
       InferenceJobType::VideoRender => Self::VideoRender,
       InferenceJobType::GptSovits => Self::GptSovits,
+      InferenceJobType::F5TTS => Self::F5TTS,
       InferenceJobType::ComfyUi => Self::ComfyUi,
       InferenceJobType::ConvertFbxToGltf => Self::ConvertFbxToGltf,
       InferenceJobType::MocapNet => Self::MocapNet,
@@ -117,6 +120,7 @@ impl PublicInferenceJobType {
       // Conserved variants
       Self::VideoRender => InferenceJobType::VideoRender,
       Self::GptSovits => InferenceJobType::GptSovits,
+      Self::F5TTS => InferenceJobType::F5TTS,
       Self::ComfyUi => InferenceJobType::ComfyUi,
       Self::ConvertFbxToGltf => InferenceJobType::ConvertFbxToGltf,
       Self::MocapNet => InferenceJobType::MocapNet,

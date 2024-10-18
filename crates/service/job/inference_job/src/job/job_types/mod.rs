@@ -8,3 +8,4 @@ pub mod vc;
 pub mod videofilter;
 pub mod workflow;
 pub mod gpt_sovits;
+pub mod f5_tts;

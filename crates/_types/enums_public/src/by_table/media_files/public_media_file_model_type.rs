@@ -55,6 +55,9 @@ pub enum PublicMediaFileModelType {
   #[serde(rename = "gpt_sovits")]
   GptSovits,
 
+  #[serde(rename = "f5_tts")]
+  F5TTS,
+
   #[serde(rename = "studio")]
   StorytellerStudio,
 
@@ -90,6 +93,7 @@ impl PublicMediaFileModelType {
       MediaFileOriginModelType::MocapNet => Self::MocapNet,
       MediaFileOriginModelType::StableDiffusion15 => Self::StableDiffusion15,
       MediaFileOriginModelType::GptSovits => Self::GptSovits,
+      MediaFileOriginModelType::F5TTS => Self::F5TTS,
       MediaFileOriginModelType::StorytellerStudio => Self::StorytellerStudio,
       MediaFileOriginModelType::VideoStyleTransfer => Self::VideoStyleTransfer,
       MediaFileOriginModelType::ComfyUi => Self::ComfyUi,
@@ -112,6 +116,7 @@ impl PublicMediaFileModelType {
       Self::MocapNet => MediaFileOriginModelType::MocapNet,
       Self::StableDiffusion15 => MediaFileOriginModelType::StableDiffusion15,
       Self::GptSovits => MediaFileOriginModelType::GptSovits,
+      Self::F5TTS => MediaFileOriginModelType::F5TTS,
       Self::StorytellerStudio => MediaFileOriginModelType::StorytellerStudio,
       Self::VideoStyleTransfer => MediaFileOriginModelType::VideoStyleTransfer,
       Self::ComfyUi => MediaFileOriginModelType::ComfyUi,

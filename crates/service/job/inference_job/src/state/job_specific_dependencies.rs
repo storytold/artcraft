@@ -1,7 +1,4 @@
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use errors::AnyhowResult;
-
+use crate::job::job_types::f5_tts::f5_tts_dependencies::F5TTSDependencies;
 use crate::job::job_types::format_conversion::fbx_to_gltf::dependencies::FbxToGltfDependencies;
 use crate::job::job_types::gpt_sovits::gpt_sovits_dependencies::GptSovitsDependencies;
 use crate::job::job_types::image_generation::sd::stable_diffusion_dependencies::StableDiffusionDependencies;
@@ -18,6 +15,9 @@ use crate::job::job_types::videofilter::rerender_a_video::rerender_dependencies:
 use crate::job::job_types::workflow::comfy_ui_dependencies::ComfyDependencies;
 use crate::state::scoped_job_type_execution::ScopedJobTypeExecution;
 use crate::state::scoped_model_type_execution::ScopedModelTypeExecution;
+use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use errors::AnyhowResult;
 
 pub struct JobSpecificDependencies {
   pub maybe_rvc_v2_dependencies: Option<RvcV2Dependencies>,
@@ -34,6 +34,7 @@ pub struct JobSpecificDependencies {
   pub maybe_convert_fbx_to_gltf_dependencies: Option<FbxToGltfDependencies>,
   pub maybe_convert_bvh_to_workflow_dependencies: Option<RenderEngineSceneToVideoDependencies>,
   pub maybe_gpt_sovits_dependencies: Option<GptSovitsDependencies>,
+  pub maybe_f5_tts_dependencies: Option<F5TTSDependencies>,
 }
 
 impl JobSpecificDependencies {
@@ -56,6 +57,7 @@ impl JobSpecificDependencies {
     let mut maybe_convert_fbx_to_gltf_dependencies = None;
     let mut maybe_convert_bvh_to_workflow_dependencies = None;
     let mut maybe_gpt_sovits_dependencies = None;
+    let mut maybe_f5_tts_dependencies = None;
 
     if scoped_model_type_execution.can_run_job(InferenceModelType::ComfyUi)
         || scoped_job_type_execution.can_run_job(InferenceJobType::LivePortrait)
@@ -70,6 +72,11 @@ impl JobSpecificDependencies {
     if scoped_job_type_execution.can_run_job(InferenceJobType::GptSovits) {
       print_with_space("Setting GPT-SoViTS dependencies...");
       maybe_gpt_sovits_dependencies = Some(GptSovitsDependencies::setup()?);
+    }
+
+    if scoped_job_type_execution.can_run_job(InferenceJobType::F5TTS) {
+      print_with_space("Setting F5TTS dependencies...");
+      maybe_f5_tts_dependencies = Some(F5TTSDependencies::setup()?);
     }
 
     if scoped_model_type_execution.can_run_job(InferenceModelType::RvcV2)
@@ -157,6 +164,7 @@ impl JobSpecificDependencies {
       maybe_convert_fbx_to_gltf_dependencies,
       maybe_convert_bvh_to_workflow_dependencies,
       maybe_gpt_sovits_dependencies,
+      maybe_f5_tts_dependencies,
     })
   }
 }
