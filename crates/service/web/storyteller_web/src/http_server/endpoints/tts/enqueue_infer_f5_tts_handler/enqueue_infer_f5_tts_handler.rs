@@ -338,7 +338,7 @@ pub async fn enqueue_infer_f5_tts_handler(
   let maybe_model_type = None;
   
   let maybe_inference_args = Some(GenericInferenceArgs{
-    inference_category: Some(InferenceCategoryAbbreviated::TextToSpeech),
+    inference_category: Some(InferenceCategoryAbbreviated::F5TTS),
     args: Some(PolymorphicInferenceArgs::Ft(F5TTSPayload{})),
   });
 

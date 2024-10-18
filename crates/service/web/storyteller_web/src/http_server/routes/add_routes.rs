@@ -314,11 +314,6 @@ fn add_tts_routes<T, B> (app: App<T>) -> App<T>
             .route(web::head().to(|| HttpResponse::Ok()))
       )
       .service(
-        web::resource("/f5_inference")
-          .route(web::post().to(enqueue_infer_f5_tts_handler))
-          .route(web::head().to(|| HttpResponse::Ok()))
-      )
-      .service(
         web::resource("/inference")
             .route(web::post().to(enqueue_infer_tts_handler))
             .route(web::head().to(|| HttpResponse::Ok()))

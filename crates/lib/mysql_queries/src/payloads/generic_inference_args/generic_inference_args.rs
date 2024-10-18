@@ -76,7 +76,11 @@ pub enum InferenceCategoryAbbreviated {
 
   #[serde(rename = "gs")] // NB: DO NOT CHANGE. It could break live jobs. Renamed to be fewer bytes.
   #[serde(alias = "gpt_sovits")]
-  GptSovits
+  GptSovits,
+
+  #[serde(rename = "ft")] // NB: DO NOT CHANGE. It could break live jobs. Renamed to be fewer bytes.
+  #[serde(alias = "f5_tts")]
+  F5TTS,
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]

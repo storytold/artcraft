@@ -19,7 +19,7 @@ pub fn check_and_validate_job(job: &AvailableInferenceJob) -> Result<JobArgs, Pr
     .flatten();
 
   match inference_category {
-    Some(InferenceCategoryAbbreviated::TextToSpeech) => {},
+    Some(InferenceCategoryAbbreviated::TextToSpeech) | Some(InferenceCategoryAbbreviated::F5TTS) => {},
     _ => {
       return Err(ProcessSingleJobError::from_anyhow_error(anyhow!("wrong inference category for job!")));
     }
