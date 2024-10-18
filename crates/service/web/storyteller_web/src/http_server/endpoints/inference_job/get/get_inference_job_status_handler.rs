@@ -337,7 +337,8 @@ fn record_to_payload(
               .get_full_object_path_str()
               .to_string()
         }
-        InferenceCategory::TextToSpeech => {
+        InferenceCategory::TextToSpeech
+        | InferenceCategory::F5TTS => {
           match result_details.entity_type.as_str() {
             "media_file" => {
               // NB: We're migrating TTS to media_files.

@@ -1,8 +1,8 @@
 use anyhow::anyhow;
 use chrono::{DateTime, Utc};
-use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 use sqlx::pool::PoolConnection;
+use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
@@ -178,6 +178,7 @@ fn raw_records_to_public_result(records: Vec<RawGenericInferenceJobStatus>) -> V
             InferenceCategory::Workflow => Some("Workflow"),
             InferenceCategory::FormatConversion => Some("format conversion"),
             InferenceCategory::LivePortrait => Some("Live Portrait"),
+            InferenceCategory::F5TTS => Some("F5 TTS"),
             InferenceCategory::ConvertBvhToWorkflow => Some("BVH to Workflow"),
             InferenceCategory::DeprecatedField => Some("Job"), // TODO(bt,2024-07-16): Fix
           };
@@ -188,6 +189,7 @@ fn raw_records_to_public_result(records: Vec<RawGenericInferenceJobStatus>) -> V
         let (mut bucket_path_is_hash, mut maybe_public_bucket_hash) = match record.inference_category {
           InferenceCategory::LipsyncAnimation => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
           InferenceCategory::TextToSpeech => (false, record.maybe_tts_public_bucket_path.as_deref()),
+          InferenceCategory::F5TTS => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
           InferenceCategory::VoiceConversion => (true, record.maybe_voice_conversion_public_bucket_hash.as_deref()),
           InferenceCategory::VideoFilter => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
           InferenceCategory::ImageGeneration => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),

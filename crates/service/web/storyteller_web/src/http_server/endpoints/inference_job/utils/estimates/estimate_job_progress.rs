@@ -21,6 +21,8 @@ const VID_FACE_FUSION_AVERAGE_SECONDS : u64 = 45;
 /// Lipsync with SadTalker (super old and slow)
 const LIPSYNC_JOB_AVERAGE_SECONDS : u64 = 60 * 3;
 
+const F5_TTS_JOB_AVERAGE_SECONDS : u64 = 12;
+
 pub fn estimate_job_progress(job: &GenericInferenceJobStatus, maybe_args: Option<&PolymorphicInferenceArgs>) -> u8 {
   match job.status {
     // Jobs that haven't started
@@ -61,6 +63,7 @@ pub fn estimate_job_progress(job: &GenericInferenceJobStatus, maybe_args: Option
     InferenceCategory::TextToSpeech => percent(duration_seconds, TTS_JOB_AVERAGE_SECONDS),
     InferenceCategory::VoiceConversion => percent(duration_seconds, VC_JOB_AVERAGE_SECONDS),
     InferenceCategory::LivePortrait => percent(duration_seconds, LIVE_PORTRAIT_JOB_AVERAGE_SECONDS),
+    InferenceCategory::F5TTS => percent(duration_seconds, F5_TTS_JOB_AVERAGE_SECONDS),
 
     // TODO: Better estimate using video duration, params, etc.
     InferenceCategory::Workflow => comfy_workflow_estimate(maybe_args, duration_seconds),

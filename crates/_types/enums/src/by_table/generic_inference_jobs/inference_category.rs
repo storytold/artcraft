@@ -67,6 +67,9 @@ pub enum InferenceCategory {
   #[deprecated(note = "This was for Bevy engine's server side rendering.")]
   #[serde(rename = "convert_bvh_to_workflow")]
   ConvertBvhToWorkflow,
+
+  #[serde(rename = "f5_tts")]
+  F5TTS,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -85,6 +88,7 @@ impl InferenceCategory {
       Self::ImageGeneration => "image_generation",
       Self::Mocap => "mocap",
       Self::Workflow => "workflow",
+      Self::F5TTS => "f5_tts",
       Self::FormatConversion => "format_conversion",
       Self::LivePortrait => "live_portrait",
       Self::VideoFilter => "video_filter",
@@ -99,6 +103,7 @@ impl InferenceCategory {
       "text_to_speech" => Ok(Self::TextToSpeech),
       "voice_conversion" => Ok(Self::VoiceConversion),
       "image_generation" => Ok(Self::ImageGeneration),
+      "f5_tts" => Ok(Self::F5TTS),
       "mocap" => Ok(Self::Mocap),
       "workflow" => Ok(Self::Workflow),
       "format_conversion" => Ok(Self::FormatConversion),
@@ -119,6 +124,7 @@ impl InferenceCategory {
       Self::VoiceConversion,
       Self::ImageGeneration,
       Self::Mocap,
+      Self::F5TTS,
       Self::Workflow,
       Self::FormatConversion,
       Self::LivePortrait,
@@ -144,6 +150,7 @@ mod tests {
       assert_serialization(InferenceCategory::VoiceConversion, "voice_conversion");
       assert_serialization(InferenceCategory::ImageGeneration, "image_generation");
       assert_serialization(InferenceCategory::Mocap, "mocap");
+      assert_serialization(InferenceCategory::F5TTS, "f5_tts");
       assert_serialization(InferenceCategory::Workflow, "workflow");
       assert_serialization(InferenceCategory::FormatConversion, "format_conversion");
       assert_serialization(InferenceCategory::LivePortrait, "live_portrait");
@@ -158,6 +165,7 @@ mod tests {
       assert_eq!(InferenceCategory::TextToSpeech.to_str(), "text_to_speech");
       assert_eq!(InferenceCategory::VoiceConversion.to_str(), "voice_conversion");
       assert_eq!(InferenceCategory::ImageGeneration.to_str(), "image_generation");
+      assert_eq!(InferenceCategory::F5TTS.to_str(), "f5_tts");
       assert_eq!(InferenceCategory::Mocap.to_str(), "mocap");
       assert_eq!(InferenceCategory::Workflow.to_str(), "workflow");
       assert_eq!(InferenceCategory::FormatConversion.to_str(), "format_conversion");
@@ -173,6 +181,7 @@ mod tests {
       assert_eq!(InferenceCategory::from_str("text_to_speech").unwrap(), InferenceCategory::TextToSpeech);
       assert_eq!(InferenceCategory::from_str("voice_conversion").unwrap(), InferenceCategory::VoiceConversion);
       assert_eq!(InferenceCategory::from_str("image_generation").unwrap(), InferenceCategory::ImageGeneration);
+      assert_eq!(InferenceCategory::from_str("f5_tts").unwrap(), InferenceCategory::F5TTS);
       assert_eq!(InferenceCategory::from_str("mocap").unwrap(), InferenceCategory::Mocap);
       assert_eq!(InferenceCategory::from_str("workflow").unwrap(), InferenceCategory::Workflow);
       assert_eq!(InferenceCategory::from_str("format_conversion").unwrap(), InferenceCategory::FormatConversion);
@@ -185,12 +194,13 @@ mod tests {
     fn all_variants() {
       // Static check
       let mut variants = InferenceCategory::all_variants();
-      assert_eq!(variants.len(), 11);
+      assert_eq!(variants.len(), 12);
       assert_eq!(variants.pop_first(), Some(InferenceCategory::DeprecatedField));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::LipsyncAnimation));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::TextToSpeech));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::VoiceConversion));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::ImageGeneration));
+      assert_eq!(variants.pop_first(), Some(InferenceCategory::F5TTS));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::Mocap));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::Workflow));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::FormatConversion));

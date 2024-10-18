@@ -354,23 +354,6 @@ pub async fn enqueue_infer_f5_tts_handler(
         "input token is not a media_upload or media_file token".to_string()));
     };
 
-  // let maybe_inference_args = match tts_model.job_type() {
-  //   InferenceJobType::Tacotron2 => Some(GenericInferenceArgs {
-  //     inference_category: Some(InferenceCategoryAbbreviated::TextToSpeech),
-  //     args: None, // NB: We don't need to encode any args yet for TT2.
-  //   }),
-  //   InferenceJobType::GptSovits => Some(GenericInferenceArgs {
-  //     inference_category: Some(InferenceCategoryAbbreviated::GptSovits),
-  //     args: Some(PolymorphicInferenceArgs::Gs(GptSovitsPayload {
-  //       append_advertisement: None,
-  //       // Model download only args:
-  //       creator_visibility: None,
-  //       maybe_title: None,
-  //       maybe_description: None,
-  //     })),
-  //   }),
-  //   _ => None, // NB: Shouldn't occur
-  // };
 
   let maybe_product_category = Some(InferenceJobProductCategory::TtsF5);
 
@@ -378,7 +361,7 @@ pub async fn enqueue_infer_f5_tts_handler(
     uuid_idempotency_token: &request.uuid_idempotency_token,
     job_type: InferenceJobType::F5TTS,
     maybe_product_category,
-    inference_category: InferenceCategory::TextToSpeech,
+    inference_category: InferenceCategory::F5TTS,
     maybe_model_type,
     maybe_model_token: None,
     maybe_input_source_token: Some(&media_token),
