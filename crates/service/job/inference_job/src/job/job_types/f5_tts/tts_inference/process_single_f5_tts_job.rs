@@ -68,7 +68,7 @@ pub async fn process_single_f5_tts_inference_job(
     .map_err(|e| ProcessSingleJobError::from_io_error(e))?;
 
   let output_dir = work_temp_dir.path().join("output");
-  let output_file_path = output_dir.join("GPTSoVITS_1.wav");
+  let output_file_path = output_dir.join("out.wav");
 
   if !output_dir.exists() {
     std::fs::create_dir_all(&output_dir)
@@ -164,7 +164,6 @@ pub async fn process_single_f5_tts_inference_job(
     original_media_upload_fs_path
   };
 
-  const DEFAULT_LANGUAGE : &str = "english";
 
   let inference_start_time = Instant::now();
 
@@ -176,11 +175,7 @@ pub async fn process_single_f5_tts_inference_job(
       reference_audio_path: &original_media_upload_fs_path,
       input_text_file: &text_input_fs_path,
       reference_transcript_path: None,
-      reference_language: Some(DEFAULT_LANGUAGE),
-      output_file_path: &output_file_path,
-      maybe_reference_free: None,
-      maybe_temperature: None,
-      maybe_target_language: Some(DEFAULT_LANGUAGE),
+      output_audio_directory: &output_dir,
     });
 
   let inference_duration = Instant::now().duration_since(inference_start_time);

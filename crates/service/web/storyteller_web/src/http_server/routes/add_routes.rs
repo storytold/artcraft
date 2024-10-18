@@ -301,6 +301,10 @@ fn add_tts_routes<T, B> (app: App<T>) -> App<T>
       .route(web::post().to(enqueue_infer_tts_handler))
       .route(web::head().to(|| HttpResponse::Ok()))
   )
+    .service(web::resource("/v1/tts/f5_inference")
+    .route(web::post().to(enqueue_infer_f5_tts_handler))
+    .route(web::head().to(|| HttpResponse::Ok()))
+  )
   // NB(bt,2024-04-03): Older root /tts/* routes should be drained of traffic. They are used in the Twitch Streamer API though.
   .service(
     web::scope("/tts")

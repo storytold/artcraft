@@ -52,14 +52,9 @@ pub struct InferenceArgs<'s> {
   pub reference_audio_path: &'s Path,
 
   pub reference_transcript_path: Option<&'s Path>,
-  pub reference_language : Option<&'s str>,
 
-  //pub output_audio_directory: &'s Path,
-  pub output_file_path: &'s Path,
-
-  pub maybe_reference_free: Option<bool>,
-  pub maybe_temperature: Option<f32>,
-  pub maybe_target_language: Option<&'s str>,
+  pub output_audio_directory: &'s Path,
+  // pub output_file_path: &'s Path,
 }
 
 impl F5TTSInferenceCommand {
@@ -153,24 +148,12 @@ impl F5TTSInferenceCommand {
       }
     }
 
-    command.push_str(&format!(" --target_text {}", path_to_string(args.input_text_file)));
+    command.push_str(&format!(" --gen_file {}", path_to_string(args.input_text_file)));
     command.push_str(&format!(" --ref_audio {}", path_to_string(args.reference_audio_path)));
 
 
     //command.push_str(&format!(" --output_path {}", path_to_string(args.output_audio_directory)));
-    command.push_str(&format!(" --output_path {}", path_to_string(args.output_file_path)));
-
-    if let Some(reference_free) = args.maybe_reference_free {
-      command.push_str(&format!(" --ref_free {}", reference_free));
-    }
-
-    if let Some(temperature) = args.maybe_temperature {
-      command.push_str(&format!(" --temperature {}", temperature));
-    }
-
-    if let Some(target_language) = args.maybe_target_language {
-      command.push_str(&format!(" --target_language {}", target_language));
-    }
+    command.push_str(&format!(" --output_dir {}", path_to_string(args.output_audio_directory)));
 
     if let Some(maybe_docker_options) = self.maybe_docker_options.as_ref() {
       command = maybe_docker_options.to_command_string(&command);
