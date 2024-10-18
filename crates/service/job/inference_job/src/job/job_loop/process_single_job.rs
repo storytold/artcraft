@@ -16,6 +16,7 @@ use crate::job::job_loop::determine_dependency_status::determine_dependency_stat
 use crate::job::job_loop::job_success_result::JobSuccessResult;
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
 use crate::job::job_loop::process_single_job_success_case::ProcessSingleJobSuccessCase;
+use crate::job::job_types::f5_tts::process_single_f5_tts_job::process_single_f5_tts_job;
 use crate::job::job_types::format_conversion::process_single_format_conversion_job::process_single_format_conversion_job;
 use crate::job::job_types::gpt_sovits::process_single_gpt_sovits_job::process_single_gpt_sovits_job;
 use crate::job::job_types::image_generation::process_single_ig_job::process_single_ig_job;
@@ -255,6 +256,7 @@ async fn do_process_single_job(
 fn can_use_new_dispatch(job: &AvailableInferenceJob) -> bool {
   match job.job_type {
     InferenceJobType::FaceFusion => true,
+    InferenceJobType::F5TTS => true,
     InferenceJobType::GptSovits => true,
     InferenceJobType::LivePortrait => true,
     InferenceJobType::RvcV2 => true,
@@ -278,6 +280,9 @@ async fn new_dispatch(
     },
     InferenceJobType::GptSovits => {
       process_single_gpt_sovits_job(job_dependencies, job).await?
+    },
+    InferenceJobType::F5TTS => {
+      process_single_f5_tts_job(job_dependencies, job).await?
     },
     InferenceJobType::RvcV2 => {
       dispatch_rvc_v2_job(job_dependencies, job).await?
