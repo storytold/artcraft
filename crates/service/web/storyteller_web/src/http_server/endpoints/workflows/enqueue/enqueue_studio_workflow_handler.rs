@@ -313,7 +313,7 @@ pub async fn enqueue_studio_workflow_handler(
     trim_start_seconds: None,
     trim_end_seconds: None,
     target_fps: None,
-    generate_fast_previews: Some(true),
+    generate_fast_previews: Some(false),
   };
 
   info!("Creating ComfyUI job record...");
