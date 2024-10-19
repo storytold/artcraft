@@ -24,7 +24,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokio::sync::oneshot::Sender;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinSet;
-
+use tokio::time::MissedTickBehavior;
 static ALLOWED_TYPES_FRAMES : Lazy<HashSet<&'static str>> = Lazy::new(|| {
   HashSet::from([
     "jpg",
@@ -39,6 +39,17 @@ enum PreviewStage {
   SecondPass,
   FinalPass,
 }
+
+impl PreviewStage {
+  fn iter() -> Vec<PreviewStage> {
+    vec![
+      PreviewStage::FirstPass,
+      PreviewStage::SecondPass,
+      PreviewStage::FinalPass,
+    ]
+  }
+}
+
 impl PreviewStage {
   fn expected_directory_name(&self) -> &'static str {
     match self {
@@ -379,8 +390,8 @@ impl StageDirectoryState {
 
 
   async fn upload_multiple_frames_from_disk(&self, bucket_client: &BucketClient, frames: Vec<(u32, PathBuf)>) -> (Vec<PreviewFrameUpdate>) {
-    let mut bucket_upload_requests = Vec::new();
-    let mut updates = Vec::new();
+    let mut bucket_upload_requests = Vec::with_capacity(frames.len());
+    let mut updates = Vec::with_capacity(frames.len());
 
     for (frame_number, disk_path) in frames.iter() {
       let local_file_extension = match disk_path.extension().and_then(|s| s.to_str()) {
@@ -630,8 +641,9 @@ impl PreviewProcessor {
 
   pub async fn start_processing(&mut self, bucket_client: &BucketClient) -> () {
     let (frames_tx, mut frames_rx) = mpsc::channel(100);
-    let walker = DirWalker::new_with_batch_size(self.base_directory.clone(), frames_tx.clone(), 50);
+    let walker = DirWalker::new_with_batch_size(self.base_directory.clone(), frames_tx.clone(), 30);
     let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
+    interval.set_missed_tick_behavior(MissedTickBehavior::Skip);
     loop {
       let walker = walker.clone();
       log::debug!("Processing preview frames loop ticked at {:?}", Utc::now());
@@ -754,19 +766,5 @@ impl PreviewProcessor {
 
     let result = stage_state.upload_frame_from_disk_with_retry(bucket_client, frame_number.clone(), disk_path).await;
     result.state
-  }
-
-
-  async fn process_frame_from_disk(&self, stage: PreviewStage, frame_number: u32, bucket_client: &BucketClient, disk_path: PathBuf) -> () {
-    let result = self.upload_frame_from_disk(stage, frame_number, bucket_client, disk_path).await;
-
-    if result == PreviewFrameUploadResult::UploadComplete {
-    self.stages.with_mut(&stage, |stage_state| {
-      stage_state.mark_frame_uploaded(frame_number);
-      if stage_state.all_frames_uploaded() {
-        stage_state.state = PreviewStageState::UploadComplete;
-      }
-    });
-    }
   }
 }

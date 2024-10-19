@@ -19,7 +19,7 @@ RUN apt-get update \
         curl \
         fontconfig \
         libfontconfig1-dev \
-        pkg-config
+        pkg-config musl musl-dev musl-tools
 
 # NB: Fix for fontconfig (servo-fontconfig-sys): https://github.com/alacritty/alacritty/issues/4423#issuecomment-727277235
 # TODO(bt, 2023-02-23): This has not been verified to work yet.
@@ -31,8 +31,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
     | sh  -s -- --default-toolchain $RUST_TOOLCHAIN -y
 
 # Install correct Rust version
-#RUN $HOME/.cargo/bin/rustup install $RUST_VERSION
-#RUN $HOME/.cargo/bin/rustup default $RUST_VERSION
+#RUN $HOME/.cargo/bin/rustup default stable-x86_64-unknown-linux-gnu
 
 # Report Rust version for build debugging
 RUN $HOME/.cargo/bin/rustup show
@@ -115,6 +114,15 @@ RUN RUSTFLAGS="-C target-feature=+crt-static" SQLX_OFFLINE=true \
   --release --target=x86_64-unknown-linux-gnu \
   --bin inference-job
 
+RUN ls -lR $HOME/.cargo/bin
+RUN $HOME/.cargo/bin/rustup target add x86_64-unknown-linux-musl
+
+
+RUN RUSTFLAGS="-C target-feature=+crt-static" SQLX_OFFLINE=true \
+  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
+  $HOME/.cargo/bin/cargo build \
+  --release --target=x86_64-unknown-linux-musl \
+  --bin inference-job
 # Print a report on disk space
 RUN echo "Disk usage at current directory (after all builds):"
 RUN pwd
@@ -155,6 +163,7 @@ RUN echo -n ${GIT_SHA} > GIT_SHA
 COPY --from=builder /tmp/target/x86_64-unknown-linux-gnu/release/dummy-service /
 COPY --from=builder /tmp/target/x86_64-unknown-linux-gnu/release/download-job /
 COPY --from=builder /tmp/target/x86_64-unknown-linux-gnu/release/inference-job /
+COPY --from=builder /tmp/target/x86_64-unknown-linux-musl/release/inference-job /inference-job-musl
 
 # Container includes
 COPY includes/ /includes

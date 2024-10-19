@@ -90,7 +90,7 @@ impl BucketUploadActor {
       }
       
       BucketUploadMessage::UploadMultipleFrames { requests, bucket_client, result } => {
-        let max_concurrent_uploads = 50;
+        let max_concurrent_uploads = 20;
         let mut join_set:JoinSet<(PathBuf,BucketUploadResult)> = JoinSet::new();
         let mut results = vec![];
         for request in requests {
@@ -130,7 +130,7 @@ pub struct BucketUploadActorHandle {
 
 impl BucketUploadActorHandle {
   pub fn new() -> Self {
-    let (tx, rx) = mpsc::channel(500);
+    let (tx, rx) = mpsc::channel(20);
     let actor = BucketUploadActor::new(rx);
     tokio::spawn(async move {
       run_bucket_upload_actor(actor).await;
