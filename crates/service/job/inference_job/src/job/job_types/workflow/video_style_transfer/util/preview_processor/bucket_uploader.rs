@@ -40,11 +40,15 @@ struct BucketUploadActor {
   rx: mpsc::Receiver<BucketUploadMessage>,
 }
 
-async fn handle_single_frame_upload(disk_path: PathBuf, bucket_path: MediaFileBucketPath, bucket_client: BucketClient) -> (PathBuf,BucketUploadResult) {
-  let attempt = bucket_client.upload_file(
-    bucket_path.get_full_object_path_str(),
-    &file_read_bytes(&disk_path).unwrap(),
-  ).await;
+fn handle_single_frame_upload(disk_path: PathBuf, bucket_path: MediaFileBucketPath, bucket_client: BucketClient) -> (PathBuf,BucketUploadResult) {
+  let disk_path2 = disk_path.clone();
+  let handle = tokio::runtime::Handle::current();
+  let attempt = handle.block_on(
+    bucket_client.upload_file(
+      bucket_path.get_full_object_path_str(),
+      &file_read_bytes(&disk_path2).unwrap(),
+    )
+  );
   // tokio::time::sleep(Duration::from_secs(1)).await;
   match attempt {
     Ok(_) => {
@@ -73,7 +77,6 @@ impl BucketUploadActor {
           bucket_path.get_full_object_path_str(),
           &file_read_bytes(&disk_path).unwrap(),
         ).await;
-        tokio::time::sleep(Duration::from_secs(1)).await;
         match attempt {
           Ok(_) => {
             debug!("Uploaded frame to bucket: {:?}", disk_path);
@@ -87,7 +90,7 @@ impl BucketUploadActor {
       }
       
       BucketUploadMessage::UploadMultipleFrames { requests, bucket_client, result } => {
-        let max_concurrent_uploads = 20;
+        let max_concurrent_uploads = 50;
         let mut join_set:JoinSet<(PathBuf,BucketUploadResult)> = JoinSet::new();
         let mut results = vec![];
         for request in requests {
@@ -99,7 +102,9 @@ impl BucketUploadActor {
           let bucket_path = request.bucket_path;
           let bucket_client = bucket_client.clone();
 
-          join_set.spawn(handle_single_frame_upload(disk_path, bucket_path, bucket_client));
+          join_set.spawn_blocking(move || {
+            handle_single_frame_upload(disk_path, bucket_path, bucket_client)
+          });
         }
         
         while join_set.len() > 0 {
