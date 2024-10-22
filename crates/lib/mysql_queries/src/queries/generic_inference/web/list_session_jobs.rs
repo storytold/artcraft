@@ -226,6 +226,7 @@ fn raw_records_to_public_result(records: Vec<RawGenericInferenceJobStatus>) -> V
             InferenceCategory::FormatConversion => Some("format conversion"),
             InferenceCategory::ConvertBvhToWorkflow => Some("BVH to Workflow"),
             InferenceCategory::LivePortrait => Some("Live Portrait"),
+            InferenceCategory::SeedVc => Some("Seed VC"),
             InferenceCategory::DeprecatedField => Some("Job"), // TODO(bt,2024-07-16): Fix
           };
         }
@@ -243,6 +244,7 @@ fn raw_records_to_public_result(records: Vec<RawGenericInferenceJobStatus>) -> V
           InferenceCategory::Workflow => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
           InferenceCategory::FormatConversion => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
           InferenceCategory::LivePortrait => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
+          InferenceCategory::SeedVc => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
           InferenceCategory::ConvertBvhToWorkflow => (true, record.maybe_media_file_public_bucket_directory_hash.as_deref()),
           InferenceCategory::DeprecatedField => (true, None), // TODO(bt,2024-07-16): We'll need to read another field!
         };

@@ -449,7 +449,7 @@ fn db_record_to_response_payload(
             }
           }
         }
-        InferenceCategory::VoiceConversion => {
+        InferenceCategory::VoiceConversion | InferenceCategory::SeedVc => {
           match result_details.entity_type.as_str() {
             "media_file" => {
               // NB: We're migrating voice conversion to media_files.

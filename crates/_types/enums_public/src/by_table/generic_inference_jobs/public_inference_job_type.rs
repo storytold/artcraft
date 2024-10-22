@@ -53,6 +53,10 @@ pub enum PublicInferenceJobType {
   /// SadTalker does image-to-video lip-syncing when given an audio file and image.
   SadTalker,
 
+  /// Seed-VC
+  #[serde(rename = "seed_vc")]
+  SeedVc,
+
   /// so-vits-svc voice conversion. This predates RVCv2.
   SoVitsSvc,
 
@@ -102,6 +106,7 @@ impl PublicInferenceJobType {
       InferenceJobType::MocapNet => Self::MocapNet,
       InferenceJobType::RvcV2 => Self::RvcV2,
       InferenceJobType::SadTalker => Self::SadTalker,
+      InferenceJobType::SeedVc => Self::SeedVc,
       InferenceJobType::SoVitsSvc => Self::SoVitsSvc,
       InferenceJobType::StableDiffusion => Self::StableDiffusion,
       InferenceJobType::StyleTTS2 => Self::StyleTTS2,
@@ -126,6 +131,7 @@ impl PublicInferenceJobType {
       Self::MocapNet => InferenceJobType::MocapNet,
       Self::RvcV2 => InferenceJobType::RvcV2,
       Self::SadTalker => InferenceJobType::SadTalker,
+      Self::SeedVc => InferenceJobType::SeedVc,
       Self::SoVitsSvc => InferenceJobType::SoVitsSvc,
       Self::StableDiffusion => InferenceJobType::StableDiffusion,
       Self::StyleTTS2 => InferenceJobType::StyleTTS2,

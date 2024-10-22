@@ -23,6 +23,8 @@ const LIPSYNC_JOB_AVERAGE_SECONDS : u64 = 60 * 3;
 
 const F5_TTS_JOB_AVERAGE_SECONDS : u64 = 12;
 
+const SEED_VC_JOB_AVERAGE_SECONDS : u64 = 60;
+
 pub fn estimate_job_progress(job: &GenericInferenceJobStatus, maybe_args: Option<&PolymorphicInferenceArgs>) -> u8 {
   match job.status {
     // Jobs that haven't started
@@ -64,6 +66,7 @@ pub fn estimate_job_progress(job: &GenericInferenceJobStatus, maybe_args: Option
     InferenceCategory::VoiceConversion => percent(duration_seconds, VC_JOB_AVERAGE_SECONDS),
     InferenceCategory::LivePortrait => percent(duration_seconds, LIVE_PORTRAIT_JOB_AVERAGE_SECONDS),
     InferenceCategory::F5TTS => percent(duration_seconds, F5_TTS_JOB_AVERAGE_SECONDS),
+    InferenceCategory::SeedVc => percent(duration_seconds, SEED_VC_JOB_AVERAGE_SECONDS),
 
     // TODO: Better estimate using video duration, params, etc.
     InferenceCategory::Workflow => comfy_workflow_estimate(maybe_args, duration_seconds),

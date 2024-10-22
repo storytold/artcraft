@@ -57,6 +57,9 @@ pub enum InferenceCategory {
   #[serde(rename = "live_portrait")]
   LivePortrait,
 
+  #[serde(rename="seed_vc")]
+  SeedVc,
+
   /// DEPRECATED. Do not use.
   /// This was for ReRenderAVideo, which we never productionized.
   #[deprecated(note = "This was for ReRenderAVideo, which we never productionized.")]
@@ -91,6 +94,7 @@ impl InferenceCategory {
       Self::F5TTS => "f5_tts",
       Self::FormatConversion => "format_conversion",
       Self::LivePortrait => "live_portrait",
+      Self::SeedVc => "seed_vc",
       Self::VideoFilter => "video_filter",
       Self::ConvertBvhToWorkflow => "convert_bvh_to_workflow",
     }
@@ -108,6 +112,7 @@ impl InferenceCategory {
       "workflow" => Ok(Self::Workflow),
       "format_conversion" => Ok(Self::FormatConversion),
       "live_portrait" => Ok(Self::LivePortrait),
+      "seed_vc" => Ok(Self::SeedVc),
       "video_filter" => Ok(Self::VideoFilter),
       "convert_bvh_to_workflow" => Ok(Self::ConvertBvhToWorkflow),
       _ => Err(format!("invalid value: {:?}", value)),
@@ -125,6 +130,7 @@ impl InferenceCategory {
       Self::ImageGeneration,
       Self::Mocap,
       Self::F5TTS,
+      Self::SeedVc,
       Self::Workflow,
       Self::FormatConversion,
       Self::LivePortrait,
@@ -151,6 +157,7 @@ mod tests {
       assert_serialization(InferenceCategory::ImageGeneration, "image_generation");
       assert_serialization(InferenceCategory::Mocap, "mocap");
       assert_serialization(InferenceCategory::F5TTS, "f5_tts");
+      assert_serialization(InferenceCategory::SeedVc, "seed_vc");
       assert_serialization(InferenceCategory::Workflow, "workflow");
       assert_serialization(InferenceCategory::FormatConversion, "format_conversion");
       assert_serialization(InferenceCategory::LivePortrait, "live_portrait");
@@ -166,6 +173,7 @@ mod tests {
       assert_eq!(InferenceCategory::VoiceConversion.to_str(), "voice_conversion");
       assert_eq!(InferenceCategory::ImageGeneration.to_str(), "image_generation");
       assert_eq!(InferenceCategory::F5TTS.to_str(), "f5_tts");
+      assert_eq!(InferenceCategory::SeedVc.to_str(), "seed_vc");
       assert_eq!(InferenceCategory::Mocap.to_str(), "mocap");
       assert_eq!(InferenceCategory::Workflow.to_str(), "workflow");
       assert_eq!(InferenceCategory::FormatConversion.to_str(), "format_conversion");
@@ -182,6 +190,7 @@ mod tests {
       assert_eq!(InferenceCategory::from_str("voice_conversion").unwrap(), InferenceCategory::VoiceConversion);
       assert_eq!(InferenceCategory::from_str("image_generation").unwrap(), InferenceCategory::ImageGeneration);
       assert_eq!(InferenceCategory::from_str("f5_tts").unwrap(), InferenceCategory::F5TTS);
+      assert_eq!(InferenceCategory::from_str("seed_vc").unwrap(), InferenceCategory::SeedVc);
       assert_eq!(InferenceCategory::from_str("mocap").unwrap(), InferenceCategory::Mocap);
       assert_eq!(InferenceCategory::from_str("workflow").unwrap(), InferenceCategory::Workflow);
       assert_eq!(InferenceCategory::from_str("format_conversion").unwrap(), InferenceCategory::FormatConversion);
@@ -202,6 +211,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(InferenceCategory::ImageGeneration));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::F5TTS));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::Mocap));
+      assert_eq!(variants.pop_first(), Some(InferenceCategory::SeedVc));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::Workflow));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::FormatConversion));
       assert_eq!(variants.pop_first(), Some(InferenceCategory::LivePortrait));

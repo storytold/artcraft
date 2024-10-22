@@ -6,6 +6,7 @@ use crate::payloads::generic_inference_args::inner_payloads::lipsync_payload::Li
 use crate::payloads::generic_inference_args::inner_payloads::live_portrait_payload::LivePortraitPayload;
 use crate::payloads::generic_inference_args::inner_payloads::mocap_payload::MocapArgs;
 use crate::payloads::generic_inference_args::inner_payloads::render_engine_scene_to_video_payload::RenderEngineSceneToVideoArgs;
+use crate::payloads::generic_inference_args::inner_payloads::seed_vc_payload::SeedVcPayload;
 use crate::payloads::generic_inference_args::inner_payloads::tts_payload::TTSArgs;
 use crate::payloads::generic_inference_args::inner_payloads::videofilter_payload::RerenderArgs;
 use crate::payloads::generic_inference_args::inner_payloads::workflow_payload::WorkflowArgs;
@@ -81,6 +82,10 @@ pub enum InferenceCategoryAbbreviated {
   #[serde(rename = "ft")] // NB: DO NOT CHANGE. It could break live jobs. Renamed to be fewer bytes.
   #[serde(alias = "f5_tts")]
   F5TTS,
+
+  #[serde(rename = "sv")] // NB: DO NOT CHANGE. It could break live jobs. Renamed to be fewer bytes.
+  #[serde(alias = "seed_vc")]
+  SeedVc
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
@@ -156,6 +161,8 @@ pub enum PolymorphicInferenceArgs {
   Gs(GptSovitsPayload),
 
   Ft(F5TTSPayload),
+
+  Sv(SeedVcPayload),
 }
 
 impl GenericInferenceArgs {

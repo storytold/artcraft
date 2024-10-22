@@ -88,6 +88,7 @@ use crate::http_server::endpoints::vocoders::get_vocoder::get_vocoder_handler;
 use crate::http_server::endpoints::vocoders::list_vocoders::list_vocoders_handler;
 use crate::http_server::endpoints::voice_clone_requests::check_if_voice_clone_request_submitted::check_if_voice_clone_request_submitted_handler;
 use crate::http_server::endpoints::voice_clone_requests::create_voice_clone_request::create_voice_clone_request_handler;
+use crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::enqueue_infer_seed_vc_handler;
 use crate::http_server::endpoints::voice_conversion::enqueue_voice_conversion_inference_handler::enqueue_voice_conversion_inference_handler;
 use crate::http_server::endpoints::voice_conversion::list_voice_conversion_models_handler::list_voice_conversion_models_handler;
 use crate::http_server::endpoints::voice_designer::inference::enqueue_tts_request::enqueue_tts_request;
@@ -483,6 +484,11 @@ fn add_web_vc_routes<T, B> (app: App<T>) -> App<T>
           web::resource("/inference")
               .route(web::post().to(enqueue_voice_conversion_inference_handler))
               .route(web::head().to(|| HttpResponse::Ok()))
+        )
+        .service(
+          web::resource("/seed_vc_inference")
+            .route(web::post().to(enqueue_infer_seed_vc_handler))
+            .route(web::head().to(|| HttpResponse::Ok()))
         )
         .service(
           web::resource("/model_list")

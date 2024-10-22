@@ -9,3 +9,4 @@ pub mod tts_payload;
 pub mod videofilter_payload;
 pub mod workflow_payload;
 pub mod f5_tts_payload;
+pub mod seed_vc_payload;

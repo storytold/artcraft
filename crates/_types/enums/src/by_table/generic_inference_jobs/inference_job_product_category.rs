@@ -44,6 +44,8 @@ pub enum InferenceJobProductCategory {
   /// Voice Conversion: SoVitsSvc
   VcSvc,
 
+  VcSeedVc, // Ugh
+
   // =============== VIDEO ===============
 
   /// Video: Face Fusion (Lipsync)
@@ -114,6 +116,7 @@ impl InferenceJobProductCategory {
       Self::TtsF5 => "tts_f5",
       Self::VcSvc => "vc_svc",
       Self::VcRvc2 => "vc_rvc2",
+      Self::VcSeedVc => "vc_seed_vc",
       Self::VidLipsyncFaceFusion => "vid_lipsync_face_fusion",
       Self::VidLipsyncSadTalker => "vid_lipsync_sad_talker",
       Self::VidLivePortrait => "vid_live_portrait",
@@ -140,6 +143,7 @@ impl InferenceJobProductCategory {
       "tts_f5" => Ok(Self::TtsF5),
       "vc_svc" => Ok(Self::VcSvc),
       "vc_rvc2" => Ok(Self::VcRvc2),
+      "vc_seed_vc" => Ok(Self::VcSeedVc),
       "vid_lipsync_face_fusion" => Ok(Self::VidLipsyncFaceFusion),
       "vid_lipsync_sad_talker" => Ok(Self::VidLipsyncSadTalker),
       "vid_live_portrait" => Ok(Self::VidLivePortrait),
@@ -167,6 +171,7 @@ impl InferenceJobProductCategory {
       Self::TtsStyleTts2,
       Self::TtsTacotron2,
       Self::TtsF5,
+      Self::VcSeedVc,
       Self::VcSvc,
       Self::VcRvc2,
       Self::VidLipsyncFaceFusion,
@@ -204,6 +209,7 @@ mod tests {
       assert_serialization(InferenceJobProductCategory::TtsF5, "tts_f5");
       assert_serialization(InferenceJobProductCategory::VcRvc2, "vc_rvc2");
       assert_serialization(InferenceJobProductCategory::VcSvc, "vc_svc");
+      assert_serialization(InferenceJobProductCategory::VcSvc, "vc_svc");
       assert_serialization(InferenceJobProductCategory::VidLipsyncFaceFusion, "vid_lipsync_face_fusion");
       assert_serialization(InferenceJobProductCategory::VidLipsyncSadTalker, "vid_lipsync_sad_talker");
       assert_serialization(InferenceJobProductCategory::VidLivePortrait, "vid_live_portrait");
@@ -228,6 +234,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::TtsTacotron2.to_str(), "tts_tacotron2");
       assert_eq!(InferenceJobProductCategory::VcRvc2.to_str(), "vc_rvc2");
       assert_eq!(InferenceJobProductCategory::VcSvc.to_str(), "vc_svc");
+      assert_eq!(InferenceJobProductCategory::VcSvc.to_str(), "vc_svc");
       assert_eq!(InferenceJobProductCategory::VidLipsyncFaceFusion.to_str(), "vid_lipsync_face_fusion");
       assert_eq!(InferenceJobProductCategory::VidLipsyncSadTalker.to_str(), "vid_lipsync_sad_talker");
       assert_eq!(InferenceJobProductCategory::VidLivePortrait.to_str(), "vid_live_portrait");
@@ -251,6 +258,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::from_str("tts_style_tts2").unwrap(), InferenceJobProductCategory::TtsStyleTts2);
       assert_eq!(InferenceJobProductCategory::from_str("tts_tacotron2").unwrap(), InferenceJobProductCategory::TtsTacotron2);
       assert_eq!(InferenceJobProductCategory::from_str("vc_rvc2").unwrap(), InferenceJobProductCategory::VcRvc2);
+      assert_eq!(InferenceJobProductCategory::from_str("vc_svc").unwrap(), InferenceJobProductCategory::VcSvc);
       assert_eq!(InferenceJobProductCategory::from_str("vc_svc").unwrap(), InferenceJobProductCategory::VcSvc);
       assert_eq!(InferenceJobProductCategory::from_str("vid_lipsync_face_fusion").unwrap(), InferenceJobProductCategory::VidLipsyncFaceFusion);
       assert_eq!(InferenceJobProductCategory::from_str("vid_lipsync_sad_talker").unwrap(), InferenceJobProductCategory::VidLipsyncSadTalker);
@@ -278,6 +286,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(InferenceJobProductCategory::TtsStyleTts2));
       assert_eq!(variants.pop_first(), Some(InferenceJobProductCategory::TtsTacotron2));
       assert_eq!(variants.pop_first(), Some(InferenceJobProductCategory::VcRvc2));
+      assert_eq!(variants.pop_first(), Some(InferenceJobProductCategory::VcSeedVc));
       assert_eq!(variants.pop_first(), Some(InferenceJobProductCategory::VcSvc));
       assert_eq!(variants.pop_first(), Some(InferenceJobProductCategory::VidLipsyncFaceFusion));
       assert_eq!(variants.pop_first(), Some(InferenceJobProductCategory::VidLipsyncSadTalker));

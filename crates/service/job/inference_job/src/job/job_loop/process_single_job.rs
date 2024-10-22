@@ -260,6 +260,7 @@ fn can_use_new_dispatch(job: &AvailableInferenceJob) -> bool {
     InferenceJobType::GptSovits => true,
     InferenceJobType::LivePortrait => true,
     InferenceJobType::RvcV2 => true,
+    InferenceJobType::SeedVc => true,
     InferenceJobType::VideoRender => true,
     _ => false,
   }
@@ -283,6 +284,9 @@ async fn new_dispatch(
     },
     InferenceJobType::F5TTS => {
       process_single_f5_tts_job(job_dependencies, job).await?
+    },
+    InferenceJobType::SeedVc => {
+      process_single_vc_job(job_dependencies, job).await?
     },
     InferenceJobType::RvcV2 => {
       dispatch_rvc_v2_job(job_dependencies, job).await?
@@ -335,6 +339,9 @@ async fn old_dispatch(
     }
     InferenceCategory::LivePortrait => {
       process_single_workflow_job(job_dependencies, job).await?
+    }
+    InferenceCategory::SeedVc => {
+      process_single_vc_job(job_dependencies, job).await?
     }
     InferenceCategory::DeprecatedField => {
       return Err(ProcessSingleJobError::InvalidJob(

@@ -4582,7 +4582,6 @@ dependencies = [
  "md-5 0.10.6",
  "memchr",
  "miniz_oxide",
- "mio 0.8.11",
  "native-tls",
  "num-bigint",
  "num-integer",

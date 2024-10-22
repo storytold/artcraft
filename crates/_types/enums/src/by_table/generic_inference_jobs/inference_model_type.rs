@@ -29,6 +29,10 @@ pub enum InferenceModelType {
   #[serde(rename = "so_vits_svc")]
   SoVitsSvc,
   // TODO: Does this need to be "legacy_tacotron2" ?
+
+  #[serde(rename = "seed_vc")]
+  SeedVc,
+
   #[serde(rename = "tacotron2")]
   Tacotron2,
   #[serde(rename = "vits")]
@@ -66,6 +70,7 @@ impl InferenceModelType {
       Self::VallEX => "vall_e_x",
       Self::RerenderAVideo => "rerender_a_video",
       Self::StableDiffusion => "stable_diffusion",
+      Self::SeedVc => "seed_vc",
       Self::MocapNet => "mocap_net",
       Self::StyleTTS2 => "styletts2",
       Self::ComfyUi => "comfy_ui",
@@ -79,6 +84,7 @@ impl InferenceModelType {
       "rvc_v2" => Ok(Self::RvcV2),
       "sad_talker" => Ok(Self::SadTalker),
       "so_vits_svc" => Ok(Self::SoVitsSvc),
+      "seed_vc" => Ok(Self::SeedVc),
       "tacotron2" => Ok(Self::Tacotron2),
       "vits" => Ok(Self::Vits),
       "vall_e_x" => Ok(Self::VallEX),
@@ -101,6 +107,7 @@ impl InferenceModelType {
       Self::RvcV2,
       Self::SadTalker,
       Self::SoVitsSvc,
+      Self::SeedVc,
       Self::Tacotron2,
       Self::Vits,
       Self::VallEX,
@@ -126,6 +133,7 @@ mod tests {
     fn test_serialization() {
       assert_serialization(InferenceModelType::RvcV2, "rvc_v2");
       assert_serialization(InferenceModelType::SadTalker, "sad_talker");
+      assert_serialization(InferenceModelType::SeedVc, "seed_vc");
       assert_serialization(InferenceModelType::SoVitsSvc, "so_vits_svc");
       assert_serialization(InferenceModelType::Tacotron2, "tacotron2");
       assert_serialization(InferenceModelType::Vits, "vits");
@@ -145,6 +153,7 @@ mod tests {
       assert_eq!(InferenceModelType::RvcV2.to_str(), "rvc_v2");
       assert_eq!(InferenceModelType::SadTalker.to_str(), "sad_talker");
       assert_eq!(InferenceModelType::SoVitsSvc.to_str(), "so_vits_svc");
+      assert_eq!(InferenceModelType::SoVitsSvc.to_str(), "so_vits_svc");
       assert_eq!(InferenceModelType::Tacotron2.to_str(), "tacotron2");
       assert_eq!(InferenceModelType::Vits.to_str(), "vits");
       assert_eq!(InferenceModelType::VallEX.to_str(), "vall_e_x");
@@ -160,6 +169,7 @@ mod tests {
     fn from_str() {
       assert_eq!(InferenceModelType::from_str("rvc_v2").unwrap(), InferenceModelType::RvcV2);
       assert_eq!(InferenceModelType::from_str("sad_talker").unwrap(), InferenceModelType::SadTalker);
+      assert_eq!(InferenceModelType::from_str("seed_vc").unwrap(), InferenceModelType::SeedVc);
       assert_eq!(InferenceModelType::from_str("so_vits_svc").unwrap(), InferenceModelType::SoVitsSvc);
       assert_eq!(InferenceModelType::from_str("tacotron2").unwrap(), InferenceModelType::Tacotron2);
       assert_eq!(InferenceModelType::from_str("vits").unwrap(), InferenceModelType::Vits);
@@ -181,6 +191,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(InferenceModelType::ComfyUi));
       assert_eq!(variants.pop_first(), Some(InferenceModelType::RvcV2));
       assert_eq!(variants.pop_first(), Some(InferenceModelType::SadTalker));
+      assert_eq!(variants.pop_first(), Some(InferenceModelType::SeedVc));
       assert_eq!(variants.pop_first(), Some(InferenceModelType::SoVitsSvc));
       assert_eq!(variants.pop_first(), Some(InferenceModelType::Tacotron2));
       assert_eq!(variants.pop_first(), Some(InferenceModelType::Vits));

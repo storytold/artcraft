@@ -10,6 +10,7 @@ use crate::job::job_types::tts::tacotron2::tacotron2_dependencies::Tacotron2Depe
 use crate::job::job_types::tts::vall_e_x::vall_e_x_dependencies::VallExDependencies;
 use crate::job::job_types::tts::vits::vits_dependencies::VitsDependencies;
 use crate::job::job_types::vc::rvc_v2::rvc_v2_dependencies::RvcV2Dependencies;
+use crate::job::job_types::vc::seed_vc::seed_vc_dependencies::SeedVcDependencies;
 use crate::job::job_types::vc::so_vits_svc::svc_dependencies::SvcDependencies;
 use crate::job::job_types::videofilter::rerender_a_video::rerender_dependencies::RerenderDependencies;
 use crate::job::job_types::workflow::comfy_ui_dependencies::ComfyDependencies;
@@ -35,6 +36,7 @@ pub struct JobSpecificDependencies {
   pub maybe_convert_bvh_to_workflow_dependencies: Option<RenderEngineSceneToVideoDependencies>,
   pub maybe_gpt_sovits_dependencies: Option<GptSovitsDependencies>,
   pub maybe_f5_tts_dependencies: Option<F5TTSDependencies>,
+  pub maybe_seed_vc_dependencies: Option<SeedVcDependencies>,
 }
 
 impl JobSpecificDependencies {
@@ -58,6 +60,7 @@ impl JobSpecificDependencies {
     let mut maybe_convert_bvh_to_workflow_dependencies = None;
     let mut maybe_gpt_sovits_dependencies = None;
     let mut maybe_f5_tts_dependencies = None;
+    let mut maybe_seed_vc_dependencies = None;
 
     if scoped_model_type_execution.can_run_job(InferenceModelType::ComfyUi)
         || scoped_job_type_execution.can_run_job(InferenceJobType::LivePortrait)
@@ -77,6 +80,11 @@ impl JobSpecificDependencies {
     if scoped_job_type_execution.can_run_job(InferenceJobType::F5TTS) {
       print_with_space("Setting F5TTS dependencies...");
       maybe_f5_tts_dependencies = Some(F5TTSDependencies::setup()?);
+    }
+
+    if scoped_job_type_execution.can_run_job(InferenceJobType::SeedVc) {
+      print_with_space("Setting SeedVC dependencies...");
+      maybe_seed_vc_dependencies = Some(SeedVcDependencies::setup()?);
     }
 
     if scoped_model_type_execution.can_run_job(InferenceModelType::RvcV2)
@@ -165,6 +173,7 @@ impl JobSpecificDependencies {
       maybe_convert_bvh_to_workflow_dependencies,
       maybe_gpt_sovits_dependencies,
       maybe_f5_tts_dependencies,
+      maybe_seed_vc_dependencies,
     })
   }
 }
