@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use log::{error, info};
-use sqlx::MySqlPool;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;
@@ -10,10 +9,8 @@ use filesys::path_to_string::path_to_string;
 use mysql_queries::queries::media_files::get::get_media_file::{get_media_file_with_transactor, MediaFile};
 use mysql_queries::utils::transactor::Transactor;
 use tokens::tokens::media_files::MediaFileToken;
-use videos::ffprobe_get_dimensions::ffprobe_get_dimensions;
 
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
-use crate::job::job_types::workflow::video_style_transfer::steps::check_and_validate_job::JobArgs;
 
 const DEFAULT_SUFFIX : &str = ".jpg";
 

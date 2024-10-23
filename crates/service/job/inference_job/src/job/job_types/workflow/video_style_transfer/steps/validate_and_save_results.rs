@@ -1,23 +1,15 @@
-use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
 use anyhow::anyhow;
 use log::{debug, error, info};
-use tempdir::TempDir;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
-use errors::AnyhowResult;
 use filesys::file_size::file_size;
 use filesys::path_to_string::path_to_string;
-use filesys::file_deletion::safe_delete_directory::safe_delete_directory;
-use filesys::file_deletion::safe_delete_file::safe_delete_file;
-use filesys::file_deletion::safe_recursively_delete_files::safe_recursively_delete_files;
 use hashing::sha256::sha256_hash_file::sha256_hash_file;
 use jobs_common::job_progress_reporter::job_progress_reporter::JobProgressReporter;
 use mimetypes::mimetype_for_file::get_mimetype_for_file;
@@ -30,7 +22,6 @@ use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, Thu
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
 
-use crate::job::job_loop::job_success_result::{JobSuccessResult, ResultEntity};
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
 use crate::job::job_types::workflow::comfy_ui_dependencies::ComfyDependencies;
 use crate::job::job_types::workflow::video_style_transfer::steps::check_and_validate_job::JobArgs;

@@ -3,7 +3,6 @@ use std::time::Instant;
 
 use anyhow::anyhow;
 use log::{error, info, warn};
-use serde_json;
 
 use bucket_paths::legacy::remote_file_manager_paths::media_descriptor::MediaImagePngDescriptor;
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;

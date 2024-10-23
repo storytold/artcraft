@@ -1,7 +1,3 @@
-use std::collections::{HashMap, HashSet};
-use std::env;
-use std::ffi::OsString;
-use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -10,20 +6,13 @@ use std::time::Duration;
 use anyhow::anyhow;
 // These environment vars are not copied over to the subprocess
 use log::{debug, info, warn};
-use once_cell::sync::Lazy;
 // TODO/FIXME(bt, 2023-05-28): This is horrific security!
-use r2d2_redis::r2d2::PooledConnection;
-use r2d2_redis::redis::Commands;
-use r2d2_redis::RedisConnectionManager;
-use subprocess::{Popen, PopenConfig};
-use tokio::fs::OpenOptions;
-use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader, Stdout};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
-use tokio_util::codec::{FramedRead, FramedWrite, LinesCodec};
 
 use crate::job::job_types::workflow::face_fusion::command_args::FaceFusionCommandArgs;
 use crate::job::job_types::workflow::live_portrait::command_args::LivePortraitCommandArgs;
-use crate::util::get_filtered_env_vars::{get_filtered_env_vars, get_filtered_env_vars_hashmap};
+use crate::util::get_filtered_env_vars::get_filtered_env_vars_hashmap;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
 use filesys::path_to_string::path_to_string;

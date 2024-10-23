@@ -18,11 +18,9 @@ use mysql_queries::queries::generic_inference::job::list_available_generic_infer
 use mysql_queries::queries::model_weights::create::create_weight;
 use mysql_queries::queries::model_weights::create::create_weight::CreateModelWeightsArgs;
 use tokens::tokens::model_weights::ModelWeightToken;
-use tokens::tokens::users::UserToken;
 
 use crate::job::job_loop::job_success_result::{JobSuccessResult, ResultEntity};
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
-use crate::job::job_types::gpt_sovits::model_package::model_package::SUFFIX;
 use crate::job::job_types::gpt_sovits::upload_model::extract_and_upload_gpt_sovits_package::extract_and_upload_gpt_sovits_package_files;
 use crate::job::job_types::gpt_sovits::upload_model::extract_gpt_sovits_payload_from_job::extract_gpt_sovits_payload_from_job;
 use crate::state::job_dependencies::JobDependencies;

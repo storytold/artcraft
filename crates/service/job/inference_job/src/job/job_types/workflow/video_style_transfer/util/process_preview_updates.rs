@@ -1,7 +1,7 @@
 use chrono::Utc;
-use log::{debug, info, warn};
+use log::debug;
 use once_cell::sync::Lazy;
-use r2d2_redis::r2d2::{Pool, PooledConnection};
+use r2d2_redis::r2d2::Pool;
 use r2d2_redis::redis::Commands;
 use r2d2_redis::RedisConnectionManager;
 use std::cmp::PartialEq;
@@ -16,14 +16,10 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_directory:
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::bucket_client::BucketClient;
 use crockford::crockford_entropy_lower;
-use filesys::file_read_bytes::file_read_bytes;
-use jobs_common::redis_job_status_logger::RedisPool;
 use redis_schema::keys::inference_job::style_transfer_progress_key::StyleTransferProgressKey;
 use redis_schema::payloads::inference_job::style_transfer_progress_state::{InferenceProgressDetailsResponse, InferenceStageDetails};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-use tokio::sync::oneshot::Sender;
 use tokio::sync::{mpsc, oneshot};
-use tokio::task::JoinSet;
 use tokio::time::MissedTickBehavior;
 static ALLOWED_TYPES_FRAMES : Lazy<HashSet<&'static str>> = Lazy::new(|| {
   HashSet::from([
@@ -389,7 +385,7 @@ impl StageDirectoryState {
   }
 
 
-  async fn upload_multiple_frames_from_disk(&self, bucket_client: &BucketClient, frames: Vec<(u32, PathBuf)>) -> (Vec<PreviewFrameUpdate>) {
+  async fn upload_multiple_frames_from_disk(&self, bucket_client: &BucketClient, frames: Vec<(u32, PathBuf)>) -> Vec<PreviewFrameUpdate> {
     let mut bucket_upload_requests = Vec::with_capacity(frames.len());
     let mut updates = Vec::with_capacity(frames.len());
 
@@ -753,7 +749,7 @@ impl PreviewProcessor {
     }
   }
 
- async fn upload_frame_from_disk(&self, stage: PreviewStage, frame_number: u32, bucket_client: &BucketClient, disk_path: PathBuf) -> (PreviewFrameUploadResult) {
+ async fn upload_frame_from_disk(&self, stage: PreviewStage, frame_number: u32, bucket_client: &BucketClient, disk_path: PathBuf) -> PreviewFrameUploadResult {
     let stage_state = self.stages.get(&stage).unwrap();
     if stage_state.state == PreviewStageState::UploadComplete {
       log::debug!("Skipped re-uploading frame: {:?}", disk_path);

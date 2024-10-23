@@ -6,18 +6,11 @@ use sqlx::MySqlPool;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;
-use errors::AnyhowResult;
 use filesys::path_to_string::path_to_string;
-use mysql_queries::queries::media_files::get::batch_get_media_files_by_tokens::{batch_get_media_files_by_tokens, MediaFilesByTokensRecord};
 use mysql_queries::queries::media_files::get::get_media_file::{get_media_file, MediaFile};
 use tokens::tokens::media_files::MediaFileToken;
-use videos::ffprobe_get_dimensions::ffprobe_get_dimensions;
 
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
-use crate::job::job_types::workflow::comfy_ui_dependencies::ComfyDependencies;
-use crate::job::job_types::workflow::video_style_transfer::steps::check_and_validate_job::JobArgs;
-use crate::job::job_types::workflow::video_style_transfer::util::comfy_dirs::ComfyDirs;
-use crate::job::job_types::workflow::video_style_transfer::util::video_pathing::{PrimaryInputVideoAndPaths, SecondaryInputVideoAndPaths, VideoPathing};
 
 pub struct DownloadMediaFileArgs<'a> {
   pub mysql_pool: &'a MySqlPool,
@@ -44,7 +37,7 @@ pub async fn download_media_file(
 
   info!("Querying media file by token: {:?} ...", &args.media_file_token);
 
-  let mut media_file =  get_media_file(
+  let media_file =  get_media_file(
     &args.media_file_token,
     args.can_see_deleted,
     args.mysql_pool

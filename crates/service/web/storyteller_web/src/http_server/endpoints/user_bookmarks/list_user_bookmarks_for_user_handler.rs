@@ -305,7 +305,7 @@ pub async fn list_user_bookmarks_for_user_handler(
               },
               maybe_weight_data: match user_bookmark.entity_type {
                 UserBookmarkEntityType::ModelWeight =>
-                  match (maybe_model_weight_cover) {
+                  match maybe_model_weight_cover {
                     Some(cover) => Some(WeightsData {
                       // TODO(bt,2023-12-28): Proper default, optional, or "unknown" values would be better.
                       title: user_bookmark.maybe_entity_descriptive_text.clone().unwrap_or_else(|| "weight".to_string()),

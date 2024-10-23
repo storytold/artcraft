@@ -1,5 +1,4 @@
-use std::io::{BufReader, Cursor, Read, Seek};
-use std::path::PathBuf;
+use std::io::{BufReader, Cursor, Read};
 
 use log::{error, info, warn};
 use zip::ZipArchive;

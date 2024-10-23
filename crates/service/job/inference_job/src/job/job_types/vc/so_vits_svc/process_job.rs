@@ -5,7 +5,6 @@ use anyhow::anyhow;
 use log::{error, info, warn};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use bucket_paths::legacy::typified_paths::public::media_uploads::bucket_file_path::MediaUploadOriginalFilePath;
 use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use filesys::check_file_exists::check_file_exists;
 use filesys::create_dir_all_if_missing::create_dir_all_if_missing;
@@ -19,8 +18,6 @@ use mimetypes::mimetype_for_file::get_mimetype_for_file;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::PolymorphicInferenceArgs;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::media_files::create::specialized_insert::insert_media_file_from_voice_conversion::{insert_media_file_from_voice_conversion, InsertMediaFileArgs, VoiceConversionModelType};
-use mysql_queries::queries::media_uploads::get_media_upload_for_inference::MediaUploadRecordForInference;
-use tokens::tokens::media_uploads::MediaUploadToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
 

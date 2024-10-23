@@ -11,10 +11,9 @@ use tokens::tokens::media_uploads::MediaUploadToken;
 
 use crate::job::job_loop::job_success_result::JobSuccessResult;
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
-use crate::job::job_types::vc::{rvc_v2, so_vits_svc};
+use crate::job::job_types::vc::rvc_v2;
 use crate::job::job_types::vc::media_for_inference::MediaForInference;
 use crate::job::job_types::vc::rvc_v2::process_rvc_job::RvcV2ProcessJobArgs;
-use crate::job::job_types::vc::so_vits_svc::process_job::SoVitsSvcProcessJobArgs;
 use crate::state::job_dependencies::JobDependencies;
 
 /// This is meant to take over from the `process_single_vc_job` function for a short bit

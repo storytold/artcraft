@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-use std::env;
 use std::ffi::OsString;
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -7,7 +5,6 @@ use std::time::Duration;
 
 use anyhow::anyhow;
 use log::info;
-use once_cell::sync::Lazy;
 use subprocess::{Popen, PopenConfig, Redirection};
 
 use errors::AnyhowResult;

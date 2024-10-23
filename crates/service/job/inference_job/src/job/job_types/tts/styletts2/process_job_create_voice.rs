@@ -271,7 +271,7 @@ pub async fn process_create_voice(
     model_version: CURRENT_STYLE_TTS2_MODEL_VERSION,
     model_encoding_type: ZsVoiceEncodingType::Encodec,
     voice_title: &voice_name,
-    bucket_hash: embedding_bucket_location.get_object_hash().clone(),
+    bucket_hash: embedding_bucket_location.get_object_hash(),
     maybe_creator_user_token: Some(&creator_user_token),
     creator_ip_address: &creator_ip_address,
     creator_set_visibility: Visibility::Public,

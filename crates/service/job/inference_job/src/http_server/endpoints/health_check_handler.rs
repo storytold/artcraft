@@ -4,7 +4,7 @@ use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::error::ResponseError;
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Utc};
 use log::error;
 
 use actix_helpers::response_serializers::error_to_json_http_response::error_to_json_http_response;

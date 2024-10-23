@@ -1,10 +1,8 @@
-use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use anyhow::anyhow;
 use log::{info, warn};
-use once_cell::sync::Lazy;
 use subprocess::{Popen, PopenConfig};
 
 use errors::AnyhowResult;
