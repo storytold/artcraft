@@ -62,7 +62,7 @@ pub async fn process_single_seed_vc_inference_job(
     .map_err(|e| ProcessSingleJobError::from_io_error(e))?;
 
   let output_dir = work_temp_dir.path().join("output");
-  let output_file_path = output_dir.join("out.wav");
+  let output_file_path = output_dir.join("vc_out.wav");
 
   if !output_dir.exists() {
     std::fs::create_dir_all(&output_dir)
@@ -80,11 +80,21 @@ pub async fn process_single_seed_vc_inference_job(
   let reference_media_token = job_args.reference_inference_media
     .as_str();
 
-  let token_type = job.maybe_input_source_token_type
+  let source_media_token_type = job.maybe_input_source_token_type
     .ok_or_else(|| ProcessSingleJobError::Other(anyhow!(
         "no associated media token type for vc job: {:?}", job.inference_job_token)))?;
 
-  let source_inference_media = match token_type {
+  let reference_media_token_type =
+    if reference_media_token.starts_with(MediaUploadToken::token_prefix()) {
+      InferenceInputSourceTokenType::MediaUpload
+    } else if reference_media_token.starts_with(MediaFileToken::token_prefix()) {
+      InferenceInputSourceTokenType::MediaFile
+    } else {
+      return Err(ProcessSingleJobError::from_anyhow_error(
+       anyhow!("reference token is not a media_upload or media_file token".to_string())));
+    };
+
+  let source_inference_media = match source_media_token_type {
     InferenceInputSourceTokenType::MediaFile => {
       // media_files case
       let media_file_token = MediaFileToken::new_from_str(source_media_token);
@@ -127,17 +137,19 @@ pub async fn process_single_seed_vc_inference_job(
       MediaForInference::LegacyMediaUpload(media_upload)
     }
   };
-  
-  let reference_inference_media = {
-      let media_file_token = MediaFileToken::new_from_str(reference_media_token);
+
+  let reference_inference_media = match reference_media_token_type {
+    InferenceInputSourceTokenType::MediaFile => {
+      // media_files case
+      let media_file_token = MediaFileToken::new_from_str(source_media_token);
       let maybe_media_file = get_media_file_for_inference(&media_file_token, &job_dependencies.db.mysql_pool).await;
 
       let media_file = match maybe_media_file {
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
-          error!("no media file record found for token: {:?}", reference_media_token);
+          error!("no media file record found for token: {:?}", source_media_token);
           return Err(ProcessSingleJobError::Other(
-            anyhow!("no media file record found for token: {:?}", reference_media_token)));
+            anyhow!("no media file record found for token: {:?}", source_media_token)));
         }
         Err(err) => {
           error!("error fetching media file record from db: {:?}", err);
@@ -146,6 +158,28 @@ pub async fn process_single_seed_vc_inference_job(
       };
 
       MediaForInference::MediaFile(media_file)
+    }
+    InferenceInputSourceTokenType::MediaUpload => {
+      // media_uploads case
+      let media_upload_token = MediaUploadToken::new_from_str(source_media_token);
+      let maybe_media_upload_result =
+        get_media_upload_for_inference(&media_upload_token, &job_dependencies.db.mysql_pool).await;
+
+      let media_upload = match maybe_media_upload_result {
+        Ok(Some(media_upload)) => media_upload,
+        Ok(None) => {
+          error!("no media upload record found for token: {:?}", source_media_token);
+          return Err(ProcessSingleJobError::Other(
+            anyhow!("no media upload record found for token: {:?}", source_media_token)));
+        }
+        Err(err) => {
+          error!("error fetching media upload record from db: {:?}", err);
+          return Err(ProcessSingleJobError::Other(err));
+        }
+      };
+
+      MediaForInference::LegacyMediaUpload(media_upload)
+    }
   };
 
   let original_source_media_upload_fs_path = {

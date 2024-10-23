@@ -26,6 +26,7 @@ use crate::job::job_types::render_engine_scene::process_render_engine_scene::pro
 use crate::job::job_types::tts::process_single_tts_job::process_single_tts_job;
 use crate::job::job_types::vc::process_single_vc_job::process_single_vc_job;
 use crate::job::job_types::vc::rvc_v2::dispatch_rvc_v2_job::dispatch_rvc_v2_job;
+use crate::job::job_types::vc::seed_vc::process_single_seed_vc_job::process_single_seed_vc_job;
 use crate::job::job_types::videofilter::process_single_vf_job::process_single_vf_job;
 use crate::job::job_types::workflow::process_single_workflow_job::process_single_workflow_job;
 use crate::state::job_dependencies::JobDependencies;
@@ -286,7 +287,7 @@ async fn new_dispatch(
       process_single_f5_tts_job(job_dependencies, job).await?
     },
     InferenceJobType::SeedVc => {
-      process_single_vc_job(job_dependencies, job).await?
+      process_single_seed_vc_job(job_dependencies, job).await?
     },
     InferenceJobType::RvcV2 => {
       dispatch_rvc_v2_job(job_dependencies, job).await?
@@ -341,7 +342,7 @@ async fn old_dispatch(
       process_single_workflow_job(job_dependencies, job).await?
     }
     InferenceCategory::SeedVc => {
-      process_single_vc_job(job_dependencies, job).await?
+      process_single_seed_vc_job(job_dependencies, job).await?
     }
     InferenceCategory::DeprecatedField => {
       return Err(ProcessSingleJobError::InvalidJob(
