@@ -42,6 +42,9 @@ pub enum MediaFileOriginModelType {
   #[serde(rename = "mocap_net")]
   MocapNet,
 
+  #[serde(rename = "seed_vc")]
+  SeedVc,
+
   #[serde(rename = "styletts2")]
   StyleTTS2,
 
@@ -84,6 +87,7 @@ impl MediaFileOriginModelType {
       Self::LivePortrait => "live_portrait",
       Self::RvcV2  => "rvc_v2",
       Self::SadTalker => "sad_talker",
+      Self::SeedVc => "seed_vc",
       Self::SoVitsSvc => "so_vits_svc",
       Self::Tacotron2 => "tacotron2",
       Self::MocapNet => "mocap_net",
@@ -105,6 +109,7 @@ impl MediaFileOriginModelType {
       "live_portrait" => Ok(Self::LivePortrait),
       "rvc_v2" => Ok(Self::RvcV2),
       "sad_talker" => Ok(Self::SadTalker),
+      "seed_vc" => Ok(Self::SeedVc),
       "so_vits_svc" => Ok(Self::SoVitsSvc),
       "tacotron2" => Ok(Self::Tacotron2),
       "mocap_net" => Ok(Self::MocapNet),
@@ -129,6 +134,7 @@ impl MediaFileOriginModelType {
       Self::LivePortrait,
       Self::RvcV2,
       Self::SadTalker,
+      Self::SeedVc,
       Self::SoVitsSvc,
       Self::Tacotron2,
       Self::MocapNet,
@@ -165,6 +171,7 @@ mod tests {
       assert_eq!(MediaFileOriginModelType::LivePortrait.to_str(), "live_portrait");
       assert_eq!(MediaFileOriginModelType::RvcV2.to_str(), "rvc_v2");
       assert_eq!(MediaFileOriginModelType::SadTalker.to_str(), "sad_talker");
+      assert_eq!(MediaFileOriginModelType::SeedVc.to_str(), "seed_vc");
       assert_eq!(MediaFileOriginModelType::SoVitsSvc.to_str(), "so_vits_svc");
       assert_eq!(MediaFileOriginModelType::Tacotron2.to_str(), "tacotron2");
       assert_eq!(MediaFileOriginModelType::MocapNet.to_str(), "mocap_net");
@@ -185,6 +192,7 @@ mod tests {
       assert_eq!(MediaFileOriginModelType::from_str("live_portrait").unwrap(), MediaFileOriginModelType::LivePortrait);
       assert_eq!(MediaFileOriginModelType::from_str("rvc_v2").unwrap(), MediaFileOriginModelType::RvcV2);
       assert_eq!(MediaFileOriginModelType::from_str("sad_talker").unwrap(), MediaFileOriginModelType::SadTalker);
+      assert_eq!(MediaFileOriginModelType::from_str("seed_vc").unwrap(), MediaFileOriginModelType::SeedVc);
       assert_eq!(MediaFileOriginModelType::from_str("so_vits_svc").unwrap(), MediaFileOriginModelType::SoVitsSvc);
       assert_eq!(MediaFileOriginModelType::from_str("tacotron2").unwrap(), MediaFileOriginModelType::Tacotron2);
       assert_eq!(MediaFileOriginModelType::from_str("mocap_net").unwrap(), MediaFileOriginModelType::MocapNet);
@@ -208,6 +216,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::LivePortrait));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::RvcV2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SadTalker));
+      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SeedVc));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SoVitsSvc));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::Tacotron2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::MocapNet));

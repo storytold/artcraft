@@ -58,6 +58,9 @@ pub enum PublicMediaFileModelType {
   #[serde(rename = "f5_tts")]
   F5TTS,
 
+  #[serde(rename = "seed_vc")]
+  SeedVc,
+
   #[serde(rename = "studio")]
   StorytellerStudio,
 
@@ -89,6 +92,7 @@ impl PublicMediaFileModelType {
       // Conserved variants
       MediaFileOriginModelType::RvcV2 => Self::RvcV2,
       MediaFileOriginModelType::SoVitsSvc => Self::SoVitsSvc,
+      MediaFileOriginModelType::SeedVc => Self::SeedVc,
       MediaFileOriginModelType::Tacotron2 => Self::Tacotron2,
       MediaFileOriginModelType::MocapNet => Self::MocapNet,
       MediaFileOriginModelType::StableDiffusion15 => Self::StableDiffusion15,
@@ -112,6 +116,7 @@ impl PublicMediaFileModelType {
       // Conserved variants
       Self::RvcV2 => MediaFileOriginModelType::RvcV2,
       Self::SoVitsSvc => MediaFileOriginModelType::SoVitsSvc,
+      Self::SeedVc => MediaFileOriginModelType::SeedVc,
       Self::Tacotron2 => MediaFileOriginModelType::Tacotron2,
       Self::MocapNet => MediaFileOriginModelType::MocapNet,
       Self::StableDiffusion15 => MediaFileOriginModelType::StableDiffusion15,

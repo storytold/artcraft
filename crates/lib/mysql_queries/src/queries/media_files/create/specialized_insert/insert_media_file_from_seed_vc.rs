@@ -40,7 +40,7 @@ pub async fn insert_media_file_from_seed_vc(
 {
   let result_token = MediaFileToken::generate();
 
-  let origin_model_type = MediaFileOriginModelType::F5TTS;
+  let origin_model_type = MediaFileOriginModelType::SeedVc;
 
   let mut maybe_creator_file_synthetic_id : Option<u64> = None;
   let mut maybe_creator_category_synthetic_id : Option<u64> = None;
@@ -58,7 +58,7 @@ pub async fn insert_media_file_from_seed_vc(
 
     let next_voice_conversion_id = transactional_increment_generic_synthetic_id(
       &user_token,
-      IdCategory::TtsResult,
+      IdCategory::VoiceConversionResult,
       &mut transaction
     ).await?;
 
