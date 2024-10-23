@@ -141,15 +141,15 @@ pub async fn process_single_seed_vc_inference_job(
   let reference_inference_media = match reference_media_token_type {
     InferenceInputSourceTokenType::MediaFile => {
       // media_files case
-      let media_file_token = MediaFileToken::new_from_str(source_media_token);
+      let media_file_token = MediaFileToken::new_from_str(reference_media_token);
       let maybe_media_file = get_media_file_for_inference(&media_file_token, &job_dependencies.db.mysql_pool).await;
 
       let media_file = match maybe_media_file {
         Ok(Some(media_file)) => media_file,
         Ok(None) => {
-          error!("no media file record found for token: {:?}", source_media_token);
+          error!("no media file record found for token: {:?}", reference_media_token);
           return Err(ProcessSingleJobError::Other(
-            anyhow!("no media file record found for token: {:?}", source_media_token)));
+            anyhow!("no media file record found for token: {:?}", reference_media_token)));
         }
         Err(err) => {
           error!("error fetching media file record from db: {:?}", err);
@@ -161,16 +161,16 @@ pub async fn process_single_seed_vc_inference_job(
     }
     InferenceInputSourceTokenType::MediaUpload => {
       // media_uploads case
-      let media_upload_token = MediaUploadToken::new_from_str(source_media_token);
+      let media_upload_token = MediaUploadToken::new_from_str(reference_media_token);
       let maybe_media_upload_result =
         get_media_upload_for_inference(&media_upload_token, &job_dependencies.db.mysql_pool).await;
 
       let media_upload = match maybe_media_upload_result {
         Ok(Some(media_upload)) => media_upload,
         Ok(None) => {
-          error!("no media upload record found for token: {:?}", source_media_token);
+          error!("no media upload record found for token: {:?}", reference_media_token);
           return Err(ProcessSingleJobError::Other(
-            anyhow!("no media upload record found for token: {:?}", source_media_token)));
+            anyhow!("no media upload record found for token: {:?}", reference_media_token)));
         }
         Err(err) => {
           error!("error fetching media upload record from db: {:?}", err);
