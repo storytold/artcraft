@@ -86,6 +86,8 @@ pub struct InferenceArgs<'s> {
 
     pub use_cinematic: bool,
 
+    pub use_cogvideo: bool,
+
     pub maybe_strength: Option<f32>,
 
     pub frame_skip: Option<u8>,
@@ -306,6 +308,10 @@ impl ComfyInferenceCommand {
 
         if args.use_cinematic {
             command.push_str(" --enable-cinematic ");
+        }
+
+        if args.use_cogvideo {
+            command.push_str(" --enable-cogvideo ");
         }
 
         if let Some(strength) = args.maybe_strength {

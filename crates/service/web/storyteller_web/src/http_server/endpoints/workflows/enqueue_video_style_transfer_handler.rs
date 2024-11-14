@@ -381,6 +381,7 @@ pub async fn enqueue_video_style_transfer_handler(
         ]),
         use_face_detailer: request.use_face_detailer,
         use_upscaler: request.use_upscaler,
+        use_cogvideo: None,
         remove_watermark: request.remove_watermark,
     };
 
@@ -442,6 +443,7 @@ pub async fn enqueue_video_style_transfer_handler(
         target_fps: None,
         watermark_type: None,
         generate_fast_previews: Some(false),
+        use_cogvideo: None,
     };
 
     info!("Creating ComfyUI job record...");

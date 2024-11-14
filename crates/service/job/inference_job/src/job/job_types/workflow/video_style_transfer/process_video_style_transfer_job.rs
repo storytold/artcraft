@@ -402,7 +402,6 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
 
     info!("Running ComfyUI inference...");
 
-    // tokio::time::sleep(Duration::from_secs(30)).await;
     let command_exit_status = comfy_deps
         .inference_command
         .execute_inference(
@@ -418,6 +417,7 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
                 lipsync_enabled,
                 disable_lcm: comfy_args.disable_lcm.unwrap_or(false),
                 use_cinematic: comfy_args.use_cinematic.unwrap_or(false),
+                use_cogvideo: comfy_args.use_cogvideo.unwrap_or(false),
                 maybe_strength: comfy_args.strength,
                 frame_skip: comfy_args.frame_skip,
                 global_ipa_image_filename: global_ipa_image
@@ -435,7 +435,6 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
                     .flatten(),
         }).await;
 
-    // tokio::time::sleep(Duration::from_secs(60)).await;
     let inference_duration = Instant::now().duration_since(inference_start_time);
 
     info!("Inference command exited with status: {:?}", command_exit_status);
@@ -457,8 +456,6 @@ pub async fn process_video_style_transfer_job(deps: &JobDependencies, job: &Avai
         info!("Comfy output video dimensions: {}x{}", dimensions.width, dimensions.height);
     }
 
-    // tokio::time::sleep(Duration::from_secs(10)).await;
-    // preview_frames_uploader.await.map_err(|e| ProcessSingleJobError::Other(anyhow!("bucket uploader error: {:?}", e)))?;
     let _ = preview_cancellation_tx.send(());
 
     // ==================== CHECK OUTPUT FILE ======================== //

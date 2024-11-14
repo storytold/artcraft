@@ -253,6 +253,11 @@ pub async fn enqueue_studio_workflow_handler(
     ]),
     use_face_detailer: request.use_face_detailer,
     use_upscaler: request.use_upscaler,
+    use_cogvideo: lazy_any_option_true(&[
+      Box::new(|| request.use_cogvideo),
+      Box::new(|| get_request_header_optional(&http_request, "USE-COGVIDEO")
+        .map(|value| str_to_bool(&value)))
+    ]),
     remove_watermark,
   };
 
@@ -314,6 +319,7 @@ pub async fn enqueue_studio_workflow_handler(
     trim_end_seconds: None,
     target_fps: None,
     generate_fast_previews: Some(false),
+    use_cogvideo: coordinated_args.use_cogvideo,
   };
 
   info!("Creating ComfyUI job record...");

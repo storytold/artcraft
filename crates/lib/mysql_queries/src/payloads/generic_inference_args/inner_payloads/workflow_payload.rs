@@ -211,6 +211,10 @@ pub struct WorkflowArgs {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub use_cinematic: Option<bool>,
 
+    #[serde(rename = "uv")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub use_cogvideo: Option<bool>,
+
     #[serde(rename = "s")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub strength: Option<f32>,

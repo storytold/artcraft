@@ -28,6 +28,10 @@ pub struct CoordinatedWorkflowArgs {
   /// Don't let ordinary users do this.
   pub use_cinematic: Option<bool>,
 
+  /// Use cogvideo
+  /// Only for staff
+  pub use_cogvideo: Option<bool>,
+
   /// Remove watermark from the output
   /// Only for premium accounts
   pub remove_watermark: Option<bool>,
@@ -74,6 +78,7 @@ fn handle_flags(args: &mut CoordinatedWorkflowArgs, is_staff: bool) {
     // Non-staff cannot use these workflows
     args.disable_lcm = None;
     args.remove_watermark = None;
+    args.use_cogvideo = None;
   }
 
   if args.use_upscaler == Some(true) {
@@ -109,7 +114,7 @@ fn handle_flags(args: &mut CoordinatedWorkflowArgs, is_staff: bool) {
 
 #[cfg(test)]
 mod tests {
-  use super::{CoordinatedWorkflowArgs, coordinate_workflow_args};
+  use super::{coordinate_workflow_args, CoordinatedWorkflowArgs};
 
   mod prompts {
     use super::*;
@@ -183,6 +188,7 @@ mod tests {
         use_upscaler: None,
         disable_lcm: None,
         use_cinematic: None,
+        use_cogvideo: None,
         remove_watermark: None,
       };
 
@@ -196,6 +202,7 @@ mod tests {
       assert_eq!(coordinated_args.use_face_detailer, None);
       assert_eq!(coordinated_args.use_upscaler, None);
       assert_eq!(coordinated_args.disable_lcm, None);
+      assert_eq!(coordinated_args.use_cogvideo, None);
     }
 
     #[test]
@@ -208,6 +215,7 @@ mod tests {
         use_upscaler: Some(true),
         disable_lcm: None,
         use_cinematic: None,
+        use_cogvideo: None,
         remove_watermark: None,
       };
 
@@ -218,6 +226,7 @@ mod tests {
       assert_eq!(coordinated_args.use_upscaler, Some(true));
       assert_eq!(coordinated_args.disable_lcm, None);
       assert_eq!(coordinated_args.use_cinematic, None);
+      assert_eq!(coordinated_args.use_cogvideo, None);
     }
 
     #[test]
@@ -230,6 +239,7 @@ mod tests {
         use_upscaler: Some(true),
         disable_lcm: None,
         use_cinematic: Some(true),
+        use_cogvideo: None,
         remove_watermark: None,
       };
 
@@ -240,6 +250,7 @@ mod tests {
       assert_eq!(coordinated_args.use_upscaler, Some(true));
       assert_eq!(coordinated_args.disable_lcm, None);
       assert_eq!(coordinated_args.use_cinematic, None);
+      assert_eq!(coordinated_args.use_cogvideo, None);
     }
 
     #[test]
@@ -252,6 +263,7 @@ mod tests {
         use_upscaler: None,
         disable_lcm: Some(true),
         use_cinematic: Some(true),
+        use_cogvideo: None,
         remove_watermark: None,
       };
 
@@ -262,6 +274,7 @@ mod tests {
       assert_eq!(coordinated_args.use_upscaler, None);
       assert_eq!(coordinated_args.disable_lcm, None);
       assert_eq!(coordinated_args.use_cinematic, Some(true));
+      assert_eq!(coordinated_args.use_cogvideo, None);
     }
 
     #[test]
@@ -274,6 +287,7 @@ mod tests {
         use_upscaler: None,
         disable_lcm: None,
         use_cinematic: None,
+        use_cogvideo: None,
         remove_watermark: None,
       };
 
@@ -284,6 +298,7 @@ mod tests {
       assert_eq!(coordinated_args.use_upscaler, None);
       assert_eq!(coordinated_args.disable_lcm, None);
       assert_eq!(coordinated_args.use_cinematic, Some(true));
+      assert_eq!(coordinated_args.use_cogvideo, None);
     }
   }
 }

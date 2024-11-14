@@ -76,6 +76,9 @@ pub struct VstRequest {
   /// Only for premium accounts
   pub use_upscaler: Option<bool>,
 
+  /// Use cogvideo
+  pub use_cogvideo: Option<bool>,
+
   /// Optional visibility setting override.
   pub creator_set_visibility: Option<Visibility>,
 
