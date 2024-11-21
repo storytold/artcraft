@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 use url::Url;
 
 //const FAKEYOU_CDN_STR: &str = "https://storage.googleapis.com/dev-vocodes-public";
-const FAKEYOU_CDN_STR: &str = "https://cdn.fakeyou.com";
+const FAKEYOU_CDN_STR: &str = "https://cdn-2.fakeyou.com";
 
 const STORYTELLER_CDN_STR: &str = "https://cdn.storyteller.ai";
 

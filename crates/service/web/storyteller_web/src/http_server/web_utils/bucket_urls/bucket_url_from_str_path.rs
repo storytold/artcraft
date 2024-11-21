@@ -5,7 +5,7 @@ use errors::AnyhowResult;
 pub fn bucket_url_from_str_path(
   bucket_path: &str,
 ) -> AnyhowResult<Url> {
-  let url = format!("https://storage.googleapis.com/vocodes-public{}", bucket_path);
+  let url = format!("https://cdn-2.fakeyou.com{}", bucket_path);
   let url = Url::parse(&url)?;
   Ok(url)
 }
@@ -14,7 +14,6 @@ pub fn bucket_url_from_str_path(
 mod tests {
   use url::Url;
 
-  use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
   use crate::http_server::web_utils::bucket_urls::bucket_url_from_str_path::bucket_url_from_str_path;
 
   #[test]
