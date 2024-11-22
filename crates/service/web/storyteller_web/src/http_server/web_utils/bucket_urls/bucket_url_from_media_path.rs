@@ -8,7 +8,7 @@ pub fn bucket_url_from_media_path(
   bucket_path: &MediaFileBucketPath,
 ) -> AnyhowResult<Url> {
   let path = bucket_path.get_full_object_path_str();
-  let url = format!("https://storage.googleapis.com/vocodes-public{}", path);
+  let url = format!("https://cdn-2.fakeyou.com{}", path);
   let url = Url::parse(&url)?;
   Ok(url)
 }

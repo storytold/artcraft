@@ -5,7 +5,7 @@ pub fn bucket_url_string_from_media_path(
   bucket_path: &MediaFileBucketPath,
 ) -> String {
   let path = bucket_path.get_full_object_path_str();
-  format!("https://storage.googleapis.com/vocodes-public{}", path)
+  format!("https://cdn-2.fakeyou.com{}", path)
 }
 
 #[cfg(test)]
