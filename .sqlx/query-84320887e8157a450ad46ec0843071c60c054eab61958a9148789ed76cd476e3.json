@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE generic_inference_jobs\nSET\n  status = 'cancelled_by_user',\n  retry_at = NULL\nWHERE status IN (\n  'pending',\n  'started',\n  'attempt_failed'\n )\nLIMIT 100\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": []
+  },
+  "hash": "84320887e8157a450ad46ec0843071c60c054eab61958a9148789ed76cd476e3"
+}

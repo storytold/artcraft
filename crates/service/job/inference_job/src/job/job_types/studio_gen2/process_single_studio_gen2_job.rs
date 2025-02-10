@@ -1,7 +1,10 @@
 use crate::job::job_loop::job_success_result::{JobSuccessResult, ResultEntity};
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
 use crate::job::job_types::studio_gen2::animate_x::animate_x_dependencies::AnimateXDependencies;
+use crate::job::job_types::studio_gen2::animate_x::animate_x_inference_command::AnimateXInferenceArgs;
+use crate::job::job_types::studio_gen2::animate_x::animate_x_process_frames_command::{AnimateXProcessFramesCommand, ProcessFramesArgs};
 use crate::job::job_types::studio_gen2::download_file_for_studio::{download_file_for_studio, DownloadFileForStudioArgs};
+use crate::job::job_types::studio_gen2::resize_image_for_studio::{resize_image_for_studio, ImageResizeType};
 use crate::job::job_types::studio_gen2::stable_animator::stable_animator_command::InferenceArgs;
 use crate::job::job_types::studio_gen2::stable_animator::stable_animator_dependencies::StableAnimatorDependencies;
 use crate::job::job_types::studio_gen2::studio_gen2_dirs::StudioGen2Dirs;
@@ -27,9 +30,6 @@ use std::path::Path;
 use std::time::{Duration, Instant};
 use subprocess_common::command_runner::command_runner_args::{RunAsSubprocessArgs, StreamRedirection};
 use videos::ffprobe_get_dimensions::ffprobe_get_dimensions;
-use crate::job::job_types::studio_gen2::animate_x::animate_x_inference_command::AnimateXInferenceArgs;
-use crate::job::job_types::studio_gen2::animate_x::animate_x_process_frames_command::{AnimateXProcessFramesCommand, ProcessFramesArgs};
-use crate::job::job_types::studio_gen2::resize_image_for_studio::{resize_image_for_studio, ImageResizeType};
 
 enum StudioModelPipeline<'a> {
   None,
@@ -175,7 +175,7 @@ pub async fn process_single_studio_gen2_job(
     StudioModelPipeline::StableAnimator(_) => ImageResizeType::StableAnimator,
   };
 
-  let dimensions = resize_image_for_studio(&resized_image_path, &unaltered_image_file.file_path, image_resize_type)?;
+  let dimensions = resize_image_for_studio(&unaltered_image_file.file_path, &resized_image_path, image_resize_type)?;
 
   // ==================== RUN INFERENCE ==================== //
 
