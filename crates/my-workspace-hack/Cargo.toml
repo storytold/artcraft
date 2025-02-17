@@ -175,7 +175,7 @@ zeroize = { version = "1.8.1", features = ["zeroize_derive"] }
 hyper-dff4ba8e3ae991db = { package = "hyper", version = "1.3.1", features = ["client", "http1", "http2"] }
 hyper-util = { version = "0.1.5", features = ["client-legacy", "http1", "http2"] }
 openssl = { version = "0.10.64", features = ["vendored"] }
-openssl-sys = { version = "0.9.102", default-features = false, features = ["vendored"] }
+openssl-sys = { version = "0.9.106", default-features = false, features = ["vendored"] }
 rustls-pki-types = { version = "1.7.0", features = ["std"] }
 spin = { version = "0.9.8" }
 tokio-util = { version = "0.7.12", features = ["codec", "io"] }
@@ -184,7 +184,7 @@ tower = { version = "0.4.13", default-features = false, features = ["balance", "
 [target.x86_64-unknown-linux-gnu.build-dependencies]
 libc = { version = "0.2.155", features = ["extra_traits"] }
 openssl = { version = "0.10.64", features = ["vendored"] }
-openssl-sys = { version = "0.9.102", default-features = false, features = ["vendored"] }
+openssl-sys = { version = "0.9.106", default-features = false, features = ["vendored"] }
 socket2 = { version = "0.5.7", default-features = false, features = ["all"] }
 spin = { version = "0.9.8" }
 
