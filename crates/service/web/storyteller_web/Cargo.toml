@@ -181,7 +181,7 @@ actix = "0.13.5"
 
 [build-dependencies]
 # NB: Only using diesel for migrations support
-diesel = { version = "2.2.4", features = ["mysql"] }
+diesel = { version = "2.2.8", features = ["mysql"] }
 
 [dev-dependencies]
 # Testing/Dev Deps: Internal
