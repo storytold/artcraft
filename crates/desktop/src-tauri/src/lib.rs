@@ -75,6 +75,7 @@ pub fn run() {
       flip_image,
       infer_image,
       inpaint_image,
+      text_to_image,
       remove_background,
       text_to_image,
     ])

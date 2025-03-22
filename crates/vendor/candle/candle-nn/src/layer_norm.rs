@@ -28,7 +28,8 @@
 //! ```
 //!
 //! [`Layer Normalization`]: https://arxiv.org/abs/1607.06450
-use candle::{DType, Module, Result, Tensor, D};
+use candle::{DType, Module, Result, Tensor, D, Device};
+use crate::offload::DeviceTransferable;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LayerNormConfig {
@@ -200,4 +201,21 @@ pub fn rms_norm(size: usize, eps: f64, vb: crate::VarBuilder) -> Result<RmsNorm>
         affine: false,
     };
     Ok(RmsNorm(layer_norm(size, config, vb)?))
+}
+
+impl DeviceTransferable for LayerNorm {
+    fn to_device(&self, device: &Device) -> Result<Self> {
+        Ok(Self {
+            weight: self.weight.to_device(device)?,
+            bias: self.bias.as_ref().map(|b| b.to_device(device)).transpose()?,
+            remove_mean: self.remove_mean,
+            eps: self.eps,
+        })
+    }
+}
+
+impl DeviceTransferable for RmsNorm {
+    fn to_device(&self, device: &Device) -> Result<Self> {
+        Ok(Self(self.0.to_device(device)?))
+    }
 }

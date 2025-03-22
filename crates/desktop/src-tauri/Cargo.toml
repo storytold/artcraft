@@ -29,6 +29,8 @@ primitives = { path = "../../lib/data/primitives" }
 # Internal ML
 # TODO: Only on Windows and Linux
 #ml_models = { path = "../ml_models", optional = true }
+# Bypass cudarc issues on Windows https://github.com/coreylowman/cudarc/issues/332
+cudarc = { version = "0.13.5", features = ["std", "cublas", "cublaslt", "curand", "driver", "nvrtc", "f16", "cuda-version-from-build-system", "dynamic-linking"], default-features=false }
 
 # External
 #openssl = { version = "0.10", features = ["vendored"] }
@@ -43,6 +45,7 @@ half = { version = "2.3.1", features = ["num-traits", "use-intrinsics", "rand_di
 image = "0.25.5"
 log = "0.4"
 once_cell = "1.20.3"
+ort = { version = "1.16.2", features = ["cuda", "load-dynamic"] }
 rand = "0.8.5"
 # NB(bt,2025-03-10): default-features = false on Windows while I debug openssl / rustls
 reqwest = { version = "0.12.12", features = ["stream"], default-features = false }

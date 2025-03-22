@@ -824,31 +824,32 @@
   resolved "https://registry.npmjs.org/@tauri-apps/api/-/api-2.2.0.tgz"
   integrity sha512-R8epOeZl1eJEl603aUMIGb4RXlhPjpgxbGVEaqY+0G5JG9vzV/clNlzTeqc+NLYXVqXcn8mb4c5b9pJIUDEyAg==
 
-"@tauri-apps/cli-linux-x64-gnu@2.2.7":
-  version "2.2.7"
-  resolved "https://registry.npmjs.org/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.2.7.tgz"
-  integrity sha512-ahlSnuCnUntblp9dG7/w5ZWZOdzRFi3zl0oScgt7GF4KNAOEa7duADsxPA4/FT2hLRa0SvpqtD4IYFvCxoVv3Q==
+"@tauri-apps/cli-linux-x64-gnu@2.4.0":
+  version "2.4.0"
+  resolved "https://registry.npmjs.org/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.4.0.tgz"
+  integrity sha512-ebRmV2HLIVms1KlNNueQCp3OrXBv6cimU3mYEh5NbZ8dH88f2sF46dFCyPq8Qr/Zti4qPEaAArVG7RYFjfECPw==
 
-"@tauri-apps/cli-linux-x64-musl@2.2.7":
-  version "2.2.7"
-  resolved "https://registry.npmjs.org/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-2.2.7.tgz"
-  integrity sha512-+qKAWnJRSX+pjjRbKAQgTdFY8ecdcu8UdJ69i7wn3ZcRn2nMMzOO2LOMOTQV42B7/Q64D1pIpmZj9yblTMvadA==
+"@tauri-apps/cli-linux-x64-musl@2.4.0":
+  version "2.4.0"
+  resolved "https://registry.npmjs.org/@tauri-apps/cli-linux-x64-musl/-/cli-linux-x64-musl-2.4.0.tgz"
+  integrity sha512-FOp2cBFyq5LnUr3he95Z99PQm3nCSJv2GZNeH7UqmUpeHwdcYuhBERU7C+8VDJJPR98Q5fkcoV00Pc4nw0v5KQ==
 
-"@tauri-apps/cli@^2.2.7":
-  version "2.2.7"
-  resolved "https://registry.npmjs.org/@tauri-apps/cli/-/cli-2.2.7.tgz"
-  integrity sha512-ZnsS2B4BplwXP37celanNANiIy8TCYhvg5RT09n72uR/o+navFZtGpFSqljV8fy1Y4ixIPds8FrGSXJCN2BerA==
+"@tauri-apps/cli@^2.4.0":
+  version "2.4.0"
+  resolved "https://registry.npmjs.org/@tauri-apps/cli/-/cli-2.4.0.tgz"
+  integrity sha512-Esg7s20tuSULd2YF3lmtMa1vF7yr5eh/TlBHXjEyrC+XSD9aBxHVoXb6oz7oKybDY9Jf9OiBa0bf2PbybcmOLA==
   optionalDependencies:
-    "@tauri-apps/cli-darwin-arm64" "2.2.7"
-    "@tauri-apps/cli-darwin-x64" "2.2.7"
-    "@tauri-apps/cli-linux-arm-gnueabihf" "2.2.7"
-    "@tauri-apps/cli-linux-arm64-gnu" "2.2.7"
-    "@tauri-apps/cli-linux-arm64-musl" "2.2.7"
-    "@tauri-apps/cli-linux-x64-gnu" "2.2.7"
-    "@tauri-apps/cli-linux-x64-musl" "2.2.7"
-    "@tauri-apps/cli-win32-arm64-msvc" "2.2.7"
-    "@tauri-apps/cli-win32-ia32-msvc" "2.2.7"
-    "@tauri-apps/cli-win32-x64-msvc" "2.2.7"
+    "@tauri-apps/cli-darwin-arm64" "2.4.0"
+    "@tauri-apps/cli-darwin-x64" "2.4.0"
+    "@tauri-apps/cli-linux-arm-gnueabihf" "2.4.0"
+    "@tauri-apps/cli-linux-arm64-gnu" "2.4.0"
+    "@tauri-apps/cli-linux-arm64-musl" "2.4.0"
+    "@tauri-apps/cli-linux-riscv64-gnu" "2.4.0"
+    "@tauri-apps/cli-linux-x64-gnu" "2.4.0"
+    "@tauri-apps/cli-linux-x64-musl" "2.4.0"
+    "@tauri-apps/cli-win32-arm64-msvc" "2.4.0"
+    "@tauri-apps/cli-win32-ia32-msvc" "2.4.0"
+    "@tauri-apps/cli-win32-x64-msvc" "2.4.0"
 
 "@techstark/opencv-js@^4.10.0-release.1":
   version "4.10.0-release.1"

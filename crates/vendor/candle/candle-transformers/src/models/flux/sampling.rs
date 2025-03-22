@@ -93,7 +93,7 @@ pub fn unpack(xs: &Tensor, height: usize, width: usize) -> Result<Tensor> {
 
 #[allow(clippy::too_many_arguments)]
 pub fn denoise<M: super::WithForward>(
-    model: &M,
+    model: &mut M,
     img: &Tensor,
     img_ids: &Tensor,
     txt: &Tensor,

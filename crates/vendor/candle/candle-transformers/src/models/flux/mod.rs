@@ -24,9 +24,39 @@
 use candle::{Result, Tensor};
 
 pub trait WithForward {
+    /// The forward pass for the Flux model.
+    ///
+    /// # Arguments
+    ///
+    /// * `img` - The input image tensor
+    /// * `img_ids` - The image position ids
+    /// * `txt` - The text tensor
+    /// * `txt_ids` - The text position ids
+    /// * `timesteps` - The timesteps tensor
+    /// * `y` - The conditioning vector
+    /// * `guidance` - An optional guidance vector
+    ///
+    /// # Returns
+    ///
+    /// The result of the forward pass
+    ///
+    /// # Note on Memory Optimization
+    ///
+    /// To optimize memory usage, we could implement a mechanism to move model blocks 
+    /// to CPU when not in use. This would require:
+    ///
+    /// 1. Adding `to_device` methods to all model blocks (DoubleStreamBlock, SingleStreamBlock, etc.)
+    /// 2. Implementing these methods by moving all tensors inside each block to the target device
+    /// 3. Modifying the forward method to:
+    ///    - Move each block to GPU when needed
+    ///    - Process the block
+    ///    - Move the block back to CPU when done
+    ///
+    /// This pattern could significantly reduce GPU memory usage for large models by
+    /// keeping only the currently active block in GPU memory.
     #[allow(clippy::too_many_arguments)]
     fn forward(
-        &self,
+        &mut self,
         img: &Tensor,
         img_ids: &Tensor,
         txt: &Tensor,

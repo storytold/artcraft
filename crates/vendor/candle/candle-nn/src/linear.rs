@@ -17,7 +17,9 @@
 //! assert_eq!(ys.to_vec2::<f32>()?, &[[210.0, 430.0, 650.0]]);
 //! # Ok(()) }
 //! ```
-use candle::{Result, Tensor};
+use candle::{Result, Tensor, Device};
+use crate::offload::DeviceTransferable;
+
 
 #[derive(Clone, Debug)]
 pub struct Linear {
@@ -86,5 +88,14 @@ pub fn linear_b(
         linear(in_dim, out_dim, vb)
     } else {
         linear_no_bias(in_dim, out_dim, vb)
+    }
+}
+
+impl DeviceTransferable for Linear {
+    fn to_device(&self, device: &Device) -> Result<Self> {
+        Ok(Self {
+            weight: self.weight.to_device(device)?,
+            bias: self.bias.as_ref().map(|b| b.to_device(device)).transpose()?,
+        })
     }
 }

@@ -1,5 +1,5 @@
 #[cfg(not(target_os = "macos"))]
-use ml_models::ml::stable_diffusion::lcm_pipeline::{lcm_pipeline, Args};
+use ml_models::ml::flux::flux_pipeline::{flux_pipeline, FluxPipelineArgs, FluxModel};
 
 use crate::state::app_config::AppConfig;
 use crate::state::app_dir::AppDataRoot;
@@ -84,31 +84,24 @@ async fn text_to_image_impl(
   app_data_root: &AppDataRoot,
 ) -> Result<RgbImage, String> {
   
-  let weights_dir = app_data_root.weights_dir();
-  let vae_path = weights_dir.weight_path(&LYKON_DEAMSHAPER_7_VAE);
-  let unet_path = weights_dir.weight_path(&SIMIANLUO_LCM_DREAMSHAPER_V7_UNET);
-  let clip_json_path = weights_dir.weight_path(&CLIP_JSON);
-  let clip_weights_path= weights_dir.weight_path(&SDXL_TURBO_CLIP_TEXT_ENCODER);
-
-  let args = Args {
+  let args = FluxPipelineArgs {
     image: &image,
     prompt: prompt.to_string(),
-    uncond_prompt: "".to_string(),
     model_cache,
     prompt_cache: &prompt_cache,
+    app: &app,
+    flux_model: FluxModel::Schnell,
+    active_blocks: None,
+    use_cuda_stream: Some(true),
+    prefetch_next_batch: Some(false),
+    use_full_gpu: Some(true),
     img2img_strength: strength,
-    cfg_scale: config.cfg_scale,
-    use_flash_attn: true,
+    seed: None,
+    use_quantized_model: Some(true),
     model_config: &config.model_config,
-    maybe_seed: None,
-    scheduler_steps: config.scheduler_steps,
-    vae_path: &vae_path,
-    unet_path: &unet_path,
-    clip_json_path: &clip_json_path,
-    clip_weights_path: &clip_weights_path,
   };
 
-  let image = lcm_pipeline(args)
+  let image = flux_pipeline(args)
     .map_err(|err| format!("failure to encode image: {:?}", err))?;
 
   Ok(image)

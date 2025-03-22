@@ -8,6 +8,9 @@ pub enum NotificationModelType {
   TextTokenizer,
   Unet,
   Vae,
+  Json,
+  ClipEncoder,
+  FluxModel,
 }
 
 #[derive(Clone, Serialize)]
@@ -26,5 +29,17 @@ pub enum NotificationEvent<'a> {
   ModelDownloadComplete {
     model_name: &'a str,
     model_type: NotificationModelType,
-  }
+  },
+  ModelLoading {
+    model_name: String,
+    model_type: NotificationModelType,
+  },
+  ModelInference {
+    model_name: String,
+    model_type: NotificationModelType,
+  },
+  ModelInferenceComplete {
+    model_name: String,
+    model_type: NotificationModelType,
+  },
 }

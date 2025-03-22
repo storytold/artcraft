@@ -26,7 +26,7 @@ import {
   loadingProgress,
 } from "~/signals/uiEvents/loadingIndicator";
 import { ensureBase64Prefix } from "../EngineUtitlities/Base64Helpers";
-import {DecodeBase64ToImage} from "~/utilities/DecodeBase64ToImage.ts";
+import { DecodeBase64ToImage } from "~/utilities/DecodeBase64ToImage.ts";
 
 interface ServerSettings {
   model_path: string;
@@ -65,10 +65,10 @@ export class RealTimeDrawEngine {
   private port: MessagePort | undefined;
   public captureCanvas: Konva.Rect;
   public backgroundRasterRect: Konva.Image;
-  
+
 
   public previewCanvas: Konva.Image;
-  
+
 
 
   public videoLoadingCanvas: VideoNode | undefined;
@@ -205,7 +205,7 @@ export class RealTimeDrawEngine {
       strokeWidth: 1,
       draggable: false,
     });
- 
+
     this.mediaLayerRef.add(this.captureCanvas);
     this.mediaLayerRef.add(this.backgroundRasterRect);
     this.mediaLayerRef.add(this.previewCanvas);
@@ -215,9 +215,9 @@ export class RealTimeDrawEngine {
     this.previewCanvas.setZIndex(1);
     // Add mouse events for preview canvas copying
     this.previewCopyListener();
-    
+
     this.listenToServerEvents();
-   
+
   }
 
   public async listenToServerEvents() {
@@ -1027,7 +1027,7 @@ export class RealTimeDrawEngine {
     const imageSource = new Image();
     imageSource.src = captureCanvasImage;
 
-    imageSource.onload = () => {      
+    imageSource.onload = () => {
       this.backgroundRasterRect.fill(color);
       this.backgroundRasterRect.image(imageSource)
 

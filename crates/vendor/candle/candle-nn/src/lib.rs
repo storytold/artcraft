@@ -27,6 +27,7 @@ pub mod kv_cache;
 pub mod layer_norm;
 pub mod linear;
 pub mod loss;
+pub mod offload;
 pub mod ops;
 pub mod optim;
 pub mod rnn;
@@ -58,3 +59,4 @@ pub use var_builder::VarBuilder;
 pub use var_map::VarMap;
 
 pub use candle::{Module, ModuleT};
+pub use offload::DeviceTransferable;

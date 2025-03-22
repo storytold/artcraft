@@ -419,7 +419,7 @@ impl Flux {
 impl super::WithForward for Flux {
     #[allow(clippy::too_many_arguments)]
     fn forward(
-        &self,
+        &mut self,
         img: &Tensor,
         img_ids: &Tensor,
         txt: &Tensor,

@@ -38,7 +38,7 @@
     "@fortawesome/pro-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@preact/signals-react-transform": "^0.4.0",
-    "@tauri-apps/cli": "^2.2.7",
+    "@tauri-apps/cli": "^2.4.0",
     "@types/deep-equal": "^1.0.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
