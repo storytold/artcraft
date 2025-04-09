@@ -148,7 +148,7 @@ export class ApiManager {
       formData.append("file", blob);
     }
 
-    console.log(`HELLO${formData}`);
+    // console.log(`HELLO${formData}`);
     return this.fetchMultipartFormData<T>(endpoint, {
       method: "POST",
       headers: {
@@ -248,7 +248,6 @@ export class Api extends ApiManager {
       formData.append("scene_media_token", sceneMediaToken);
     }
 
-    // for now ...
     const uuidIdempotencyToken = crypto.randomUUID(); // Generate a new UUID
     formData.append("uuid_idempotency_token", uuidIdempotencyToken); // Added uuid_idempotency_token
 
@@ -262,9 +261,7 @@ export class Api extends ApiManager {
     });
 
     const postResponse = await response.json();
-
     console.log(postResponse);
-
     let result: { success: boolean; data?: string; errorMessage?: string };
 
     if (postResponse.success) {
@@ -276,7 +273,7 @@ export class Api extends ApiManager {
     } else {
       result = {
         success: false,
-        errorMessage: postResponse.BadInput,
+        errorMessage: "Failed to generate snapshot.",
       };
     }
 
@@ -293,7 +290,7 @@ export class Api extends ApiManager {
     additionalImages?: string[];
   }): Promise<ApiResponse<string>> {
     const endpoint = `${this.ApiTargets.BaseApi}/v1/image_studio/prompt`;
-    // for now ...
+
     const uuidIdempotencyToken = crypto.randomUUID(); // Generate a new UUID
     const body = {
       uuid_idempotency_token: uuidIdempotencyToken,
@@ -317,11 +314,13 @@ export class Api extends ApiManager {
 
     // Check if the response is successful
     const isSuccess = postResponse.success ?? false;
-
     // Prepare the result object
+    console.log("postResponse FOR ENQUEUE IMAGE GENERATION");
+    console.log(postResponse);
+
     const result = {
       success: isSuccess,
-      data: isSuccess ? postResponse.job_token : undefined,
+      data: isSuccess ? postResponse.inference_job_token : undefined,
       errorMessage: isSuccess ? undefined : postResponse.BadInput,
     };
 
@@ -330,14 +329,21 @@ export class Api extends ApiManager {
 
   public async pollJobSession(jobToken: string): Promise<
     ApiResponse<{
-      status: string;
+      job_token: string;
+      request: {
+        maybe_model_title: string;
+      };
+      status: {
+        status: string;
+        progress_percentage: number;
+      };
       result: {
         generated_images?: string[];
         error?: string;
       };
     }>
   > {
-    const endpoint = `${this.ApiTargets.BaseApi}/v1/jobs/session/${jobToken}`;
+    const endpoint = `${this.ApiTargets.BaseApi}/v1/jobs/job/${jobToken}`;
 
     const response = await this.get<{
       success?: boolean;
@@ -351,17 +357,31 @@ export class Api extends ApiManager {
       endpoint,
     });
 
+    console.log("response FROM JOBS");
+    console.log(response);
+
     const success = response.success ?? false;
     const status = response.status ?? "";
     const result = response.result ?? {
       generated_images: [],
       error: undefined,
     };
+
     const errorMessage = response.BadInput;
 
     return {
       success,
-      data: { status, result },
+      data: {
+        result,
+        job_token: jobToken,
+        request: {
+          maybe_model_title: "Image Generation",
+        },
+        status: {
+          status: status.toLowerCase(),
+          progress_percentage: 0,
+        },
+      },
       errorMessage,
     };
   }

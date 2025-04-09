@@ -5,6 +5,7 @@ import { PopoverMenu } from "~/components/reusable/Popover";
 import { CompletedCard } from "./CompletedCard";
 import { InProgressCard } from "./InProgressCard";
 import { useJobContext } from "~/components/JobContext";
+import { Api } from "~/KonvaApp/Api";
 // Dummy data types
 interface CompletedItem {
   token: string;
@@ -40,28 +41,28 @@ const dummyCompletedItems: CompletedItem[] = [
   },
 ];
 
-const dummyJobs: ActiveJob[] = [
-  {
-    job_token: "job1",
-    request: {
-      maybe_model_title: "In Progress Job 1",
-    },
-    status: {
-      status: "STARTED",
-      progress_percentage: 45,
-    },
-  },
-  {
-    job_token: "job2",
-    request: {
-      maybe_model_title: "In Progress Job 2",
-    },
-    status: {
-      status: "PENDING",
-      progress_percentage: 0,
-    },
-  },
-];
+// const dummyJobs: ActiveJob[] = [
+//   {
+//     job_token: "job1",
+//     request: {
+//       maybe_model_title: "In Progress Job 1",
+//     },
+//     status: {
+//       status: "STARTED",
+//       progress_percentage: 45,
+//     },
+//   },
+//   {
+//     job_token: "job2",
+//     request: {
+//       maybe_model_title: "In Progress Job 2",
+//     },
+//     status: {
+//       status: "PENDING",
+//       progress_percentage: 0,
+//     },
+//   },
+// ];
 
 export function Activity() {
   const { jobToken, setJobToken } = useJobContext();
@@ -71,26 +72,98 @@ export function Activity() {
 
   // Dummy polling function
   useEffect(() => {
-    const pollData = () => {
-      // Simulate API calls
+    const pollData = async () => {
       if (jobToken) {
         console.log("Current Job Token:", jobToken);
+        const api = new Api();
+        const job = await api.pollJobSession(jobToken);
+        console.log("Job response:", job);
+
+        if (job.success && job.data) {
+          const { status, progress_percentage } = job.data.status;
+          const { job_token } = job.data;
+
+          console.log("Job status:", status);
+          console.log("Progress percentage:", progress_percentage);
+          console.log("Job token:", job_token);
+
+          // Update jobs with real job data
+          if (
+            status.toLowerCase() === "completed" ||
+            status.toLowerCase() === "failed"
+          ) {
+            // If job is completed or failed, remove it from active jobs
+            setJobs((prevJobs) =>
+              prevJobs.filter((j) => j.job_token !== job_token),
+            );
+
+            // Add to completed items if it was successful
+            if (
+              status.toLowerCase() === "completed" &&
+              job.data.result.generated_images
+            ) {
+              const newCompletedItem: CompletedItem = {
+                id: job_token,
+                title: job.data.request.maybe_model_title || "Image Generation",
+                timestamp: new Date().toISOString(),
+                type: "image",
+                imageUrl: job.data.result.generated_images[0] || "",
+              };
+
+              setCompletedItems((prev) => [newCompletedItem, ...prev]);
+            }
+          } else {
+            // Update or add the job to the active jobs list
+            const updatedJob: ActiveJob = {
+              job_token,
+              request: {
+                maybe_model_title:
+                  job.data.request.maybe_model_title || "Image Generation",
+              },
+              status: {
+                status: status.toUpperCase(),
+                progress_percentage: progress_percentage || 0,
+              },
+            };
+
+            setJobs((prevJobs) => {
+              const existingJobIndex = prevJobs.findIndex(
+                (j) => j.job_token === job_token,
+              );
+              if (existingJobIndex >= 0) {
+                // Update existing job
+                const newJobs = [...prevJobs];
+                newJobs[existingJobIndex] = updatedJob;
+                return newJobs;
+              } else {
+                // Add new job
+                return [updatedJob, ...prevJobs];
+              }
+            });
+          }
+        } else {
+          console.error("Failed to fetch job status:", job.errorMessage);
+        }
       } else {
         console.log("No Job Token available.");
       }
-      setCompletedItems(dummyCompletedItems);
-      setJobs(dummyJobs);
-      setLoading(false);
+
+      if (jobs.length === 0) {
+        setLoading(false);
+      }
     };
 
     // Initial load
+    // Initial call to pollData
     pollData();
 
     // Set up polling interval (every 5 seconds)
-    const interval = setInterval(pollData, 5000);
+    const interval = setInterval(async () => {
+      await pollData();
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [jobToken]);
 
   return (
     <PopoverMenu

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useSignals } from "@preact/signals-react/runtime";
+import { toast } from "sonner";
 import {
   UploaderStates,
   // UploaderState,
@@ -11,7 +12,7 @@ import { PopoverMenu } from "~/components/reusable/Popover";
 import { Tooltip } from "~/components/reusable/Tooltip";
 import { Button } from "~/components/reusable/Button";
 import { ToggleButton } from "~/components/reusable/ToggleButton";
-
+import { Toaster } from "~/components/ui/Toast";
 import {
   faMessageXmark,
   faMessageCheck,
@@ -245,20 +246,25 @@ export const PromptBox = () => {
           additionalImages: referenceImages.map((image) => image.mediaToken),
         });
 
-        console.log("Response:", response);
-
         if (response.success === true) {
           console.error("Successfully enqueued image generation.");
 
           if (response.data) {
+            console.log("Response:", response.data);
             setJobToken(response.data);
           }
 
           return;
         } else {
           console.log("Image generation Not Successful.");
+          toast.error("Failed to generate image. Please try again.");
         }
       }
+    } catch (error) {
+      console.error("Error during image generation:", error);
+      toast.error(
+        "An error occurred while generating the image. Please try again.",
+      );
     } finally {
       setisEnqueueing(false);
     }
