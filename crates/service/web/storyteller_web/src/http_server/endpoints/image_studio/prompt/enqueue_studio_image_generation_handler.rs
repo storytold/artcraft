@@ -15,6 +15,8 @@ use log::{debug, error, info};
 use log::warn;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use openai_sora_client::credentials::SoraCredentials;
+use openai_sora_client::image_gen::SoraError;
+use openai_sora_client::sentinel_refresh::refresh_sentinel;
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::MySqlPool;
@@ -28,16 +30,9 @@ use enums::by_table::generic_inference_jobs::inference_model_type::InferenceMode
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
-use mysql_queries::payloads::generic_inference_args::generic_inference_args::{
-  GenericInferenceArgs,
-  InferenceCategoryAbbreviated,
-  PolymorphicInferenceArgs,
-};
+use mysql_queries::payloads::generic_inference_args::generic_inference_args::{GenericInferenceArgs, InferenceCategoryAbbreviated, PolymorphicInferenceArgs};
 use mysql_queries::payloads::generic_inference_args::inner_payloads::sora_image_gen_args::SoraImageGenArgs;
-use mysql_queries::queries::generic_inference::web::insert_generic_inference_job::{
-  insert_generic_inference_job,
-  InsertGenericInferenceArgs,
-};
+use mysql_queries::queries::generic_inference::web::insert_generic_inference_job::{insert_generic_inference_job, InsertGenericInferenceArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use openai_sora_client::image_gen::common::{ImageSize, NumImages};
 use openai_sora_client::image_gen::sora_image_gen_remix::{sora_image_gen_remix, SoraImageGenRemixRequest};
@@ -58,10 +53,10 @@ use crate::util::allowed_studio_access::allowed_studio_access;
 /// This is the number of images (batch size) to generate for each request.
 /// We should allow all users to have multiple images generated at once as this
 /// is what other providers do.
-const MINIMUM_IMAGE_COUNT : u32 = 1;
+const MINIMUM_IMAGE_COUNT: u32 = 1;
 
 /// The maximum number of images (batch size) to generate for each request.
-const MAXIMUM_IMAGE_COUNT : u32 = 2;
+const MAXIMUM_IMAGE_COUNT: u32 = 2;
 
 /// Debug requests can get routed to special "debug-only" workers, which can
 /// be used to trial new code, run debugging, etc.
@@ -147,12 +142,7 @@ impl Display for EnqueueImageGenRequestError {
   ),
   params(("request" = EnqueueStudioImageGenRequest, description = "Payload for Image Generation Request"))
 )]
-pub async fn enqueue_studio_image_generation_handler(
-  http_request: HttpRequest,
-  request: Json<EnqueueStudioImageGenRequest>,
-  server_state: Data<Arc<ServerState>>
-) -> Result<HttpResponse, EnqueueImageGenRequestError> {
-
+pub async fn enqueue_studio_image_generation_handler(http_request: HttpRequest, request: Json<EnqueueStudioImageGenRequest>, server_state: Data<Arc<ServerState>>) -> Result<HttpResponse, EnqueueImageGenRequestError> {
   validate_request(&request)?;
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await.map_err(|err| {
@@ -162,12 +152,10 @@ pub async fn enqueue_studio_image_generation_handler(
 
   // ==================== USER SESSION ==================== //
 
-  let maybe_user_session = server_state.session_checker
-    .maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection).await
-    .map_err(|e| {
-      warn!("Session checker error: {:?}", e);
-      EnqueueImageGenRequestError::ServerError
-    })?;
+  let maybe_user_session = server_state.session_checker.maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection).await.map_err(|e| {
+    warn!("Session checker error: {:?}", e);
+    EnqueueImageGenRequestError::ServerError
+  })?;
 
   let mut maybe_user_token: Option<UserToken> = None;
 
@@ -178,10 +166,7 @@ pub async fn enqueue_studio_image_generation_handler(
   // ==================== PLANS ==================== //
 
   // Plan should handle "first anonymous use" and "investor" cases.
-  let plan = get_correct_plan_for_session(
-    server_state.server_environment_old,
-    maybe_user_session.as_ref()
-  );
+  let plan = get_correct_plan_for_session(server_state.server_environment_old, maybe_user_session.as_ref());
 
   // Separate priority for animation.
   let priority_level = plan.web_vc_base_priority_level();
@@ -190,9 +175,7 @@ pub async fn enqueue_studio_image_generation_handler(
 
   let is_debug_request = get_request_header_optional(&http_request, DEBUG_HEADER_NAME).is_some();
 
-  let maybe_routing_tag = get_request_header_optional(&http_request, ROUTING_TAG_HEADER_NAME).map(
-    |routing_tag| routing_tag.trim().to_string()
-  );
+  let maybe_routing_tag = get_request_header_optional(&http_request, ROUTING_TAG_HEADER_NAME).map(|routing_tag| routing_tag.trim().to_string());
 
   // ==================== BANNED USERS ==================== //
 
@@ -224,12 +207,10 @@ pub async fn enqueue_studio_image_generation_handler(
     return Err(EnqueueImageGenRequestError::BadInput(reason));
   }
 
-  insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
-    .await
-    .map_err(|err| {
-      error!("Error inserting idempotency token: {:?}", err);
-      EnqueueImageGenRequestError::BadInput("invalid idempotency token".to_string())
-    })?;
+  insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection).await.map_err(|err| {
+    error!("Error inserting idempotency token: {:?}", err);
+    EnqueueImageGenRequestError::BadInput("invalid idempotency token".to_string())
+  })?;
 
   // ==================== DOWNLOAD FILES AND UPLOAD TO SORA ==================== //
 
@@ -241,30 +222,19 @@ pub async fn enqueue_studio_image_generation_handler(
 
   let scene_media_token = request.snapshot_media_token.clone();
 
-  let scene_media_path = query_and_download_media_file(
-    &scene_media_token,
-    &work_temp_dir,
-    &public_bucket_client,
-    &server_state.mysql_pool
-  ).await.map_err(|err| {
+  let scene_media_path = query_and_download_media_file(&scene_media_token, &work_temp_dir, &public_bucket_client, &server_state.mysql_pool).await.map_err(|err| {
     error!("Failed to download scene media file: {:?}", err);
     EnqueueImageGenRequestError::ServerError
   })?;
 
-  let mut files_to_upload = Vec::with_capacity(1 + request.maybe_additional_images
-      .as_ref().map(|v| v.len()).unwrap_or(0));
+  let mut files_to_upload = Vec::with_capacity(1 + request.maybe_additional_images.as_ref().map(|v| v.len()).unwrap_or(0));
 
   files_to_upload.push(scene_media_path.clone());
 
   let additional_images = request.maybe_additional_images.clone().unwrap_or_else(|| vec![]);
 
   for media_file_token in &additional_images {
-    let media_file_path = query_and_download_media_file(
-      &media_file_token,
-      &work_temp_dir,
-      &public_bucket_client,
-      &server_state.mysql_pool
-    ).await.map_err(|err| {
+    let media_file_path = query_and_download_media_file(&media_file_token, &work_temp_dir, &public_bucket_client, &server_state.mysql_pool).await.map_err(|err| {
       error!("Failed to download additional media file: {:?}", err);
       EnqueueImageGenRequestError::ServerError
     })?;
@@ -274,30 +244,25 @@ pub async fn enqueue_studio_image_generation_handler(
 
   // ==================== HANDLE SORA CREDENTIALS ==================== //
 
-  let mut redis = server_state.redis_pool
-      .get()
-      .map_err(|e| {
-        error!("redis error: {:?}", e);
-        EnqueueImageGenRequestError::ServerError
-      })?;
+  let mut redis = server_state.redis_pool.get().map_err(|e| {
+    error!("redis error: {:?}", e);
+    EnqueueImageGenRequestError::ServerError
+  })?;
 
-  let sora_credentials = get_sora_credentials_from_request(&http_request, &mut redis)
-      .map_err(|e| {
-        error!("sora credential error: {:?}", e);
-        EnqueueImageGenRequestError::ServerError
-      })?;
+  let sora_credentials = get_sora_credentials_from_request(&http_request, &mut redis).map_err(|e| {
+    error!("sora credential error: {:?}", e);
+    EnqueueImageGenRequestError::ServerError
+  })?;
 
   // ==================== HANDLE SORA UPLOAD ==================== //
 
   let mut sora_media_tokens = Vec::with_capacity(files_to_upload.len());
 
   for file_path in files_to_upload {
-    let sora_upload_response = sora_media_upload_from_file(file_path, &sora_credentials)
-        .await
-        .map_err(|err| {
-          error!("Failed to upload scene media to Sora: {:?}", err);
-          EnqueueImageGenRequestError::ServerError
-        })?;
+    let sora_upload_response = sora_media_upload_from_file(file_path, &sora_credentials).await.map_err(|err| {
+      error!("Failed to upload scene media to Sora: {:?}", err);
+      EnqueueImageGenRequestError::ServerError
+    })?;
 
     debug!("Uploaded media to Sora : {:?}", sora_upload_response);
     sora_media_tokens.push(sora_upload_response.id);
@@ -306,41 +271,65 @@ pub async fn enqueue_studio_image_generation_handler(
   // ==================== HANDLE SORA PROMPT ==================== //
 
   let number_of_samples = match request.maybe_number_of_samples {
-    Some(val) => if val > MAXIMUM_IMAGE_COUNT {
-      MAXIMUM_IMAGE_COUNT
-    } else if val < MINIMUM_IMAGE_COUNT {
-      MINIMUM_IMAGE_COUNT
-    } else {
-      val
+    Some(val) => {
+      if val > MAXIMUM_IMAGE_COUNT {
+        MAXIMUM_IMAGE_COUNT
+      } else if val < MINIMUM_IMAGE_COUNT {
+        MINIMUM_IMAGE_COUNT
+      } else {
+        val
+      }
     },
     None => 1,
   };
 
   let prompt = request.prompt.clone();
 
-  let response = sora_image_gen_remix(SoraImageGenRemixRequest {
-    prompt: prompt.clone(),
-    num_images: NumImages::One,
-    image_size: ImageSize::Square,
-    sora_media_tokens: sora_media_tokens.clone(),
-    credentials: &sora_credentials,
-  }).await
-    .map_err(|err| {
-      error!("Failed to call Sora image generation: {:?}", err);
-      EnqueueImageGenRequestError::ServerError
-    })?;
+  let mut response = sora_image_gen_remix(SoraImageGenRemixRequest { prompt: prompt.clone(), num_images: NumImages::One, image_size: ImageSize::Square, sora_media_tokens: sora_media_tokens.clone(), credentials: &sora_credentials }).await;
+
+  debug!("Sora image gen response: {:?}", response);
+
+  if let Err(SoraError::SentinelBlock(msg)) = &response {
+    error!("Sora sentinel block, attempting refresh: {}", msg);
+
+    // Try to refresh sentinel
+    match refresh_sentinel().await {
+      Ok(new_sentinel) => {
+        // Update the credentials with new sentinel
+
+        let updated_sora_credentials = get_sora_credentials_from_request(&http_request, &mut redis).map_err(|e| {
+          error!("sora credential error: {:?}", e);
+          EnqueueImageGenRequestError::ServerError
+        })?;
+        // Retry the request with new sentinel
+        response = sora_image_gen_remix(SoraImageGenRemixRequest { prompt: prompt.clone(), num_images: NumImages::One, image_size: ImageSize::Square, sora_media_tokens: sora_media_tokens.clone(), credentials: &updated_sora_credentials }).await;
+      },
+      Err(e) => {
+        error!("Failed to refresh Sora sentinel: {:?}", e);
+      },
+    }
+  }
+
+  let response = response.map_err(|err| {
+    match err {
+      SoraError::TokenExpired(msg) => {
+        error!("Sora token expired, needs refresh: {}", msg);
+        // TODO: Implement token refresh logic here
+      },
+      SoraError::SentinelBlock(msg) => {
+        error!("Sora sentinel block still occurring after refresh: {}", msg);
+      },
+      _ => {
+        error!("Failed to call Sora image generation: {:?}", err);
+      },
+    }
+    EnqueueImageGenRequestError::ServerError
+  })?;
 
   debug!("Sora image gen response: {:?}", response);
 
   // Store the actual inference args that will go to the database
-  let inference_args = SoraImageGenArgs {
-    prompt: Some(prompt),
-    scene_snapshot_media_token: Some(request.snapshot_media_token.clone()),
-    maybe_additional_media_file_tokens: Some(additional_images),
-    maybe_number_of_samples: Some(number_of_samples),
-    maybe_sora_media_upload_tokens: Some(sora_media_tokens),
-    maybe_sora_task_id: Some(response.task_id),
-  };
+  let inference_args = SoraImageGenArgs { prompt: Some(prompt), scene_snapshot_media_token: Some(request.snapshot_media_token.clone()), maybe_additional_media_file_tokens: Some(additional_images), maybe_number_of_samples: Some(number_of_samples), maybe_sora_media_upload_tokens: Some(sora_media_tokens), maybe_sora_task_id: Some(response.task_id) };
 
   // create the inference args here
   let maybe_avt_token = server_state.avt_cookie_manager.get_avt_token_from_request(&http_request);
@@ -352,17 +341,14 @@ pub async fn enqueue_studio_image_generation_handler(
     maybe_product_category: None, // This is not a product anymore
     inference_category: InferenceCategory::ImageGeneration,
     maybe_model_type: Some(InferenceModelType::ImageGenApi), // NB: Model is static during inference
-    maybe_model_token: None, // NB: Model is static during inference
+    maybe_model_token: None,                                 // NB: Model is static during inference
     maybe_input_source_token: None,
     maybe_input_source_token_type: None,
     maybe_download_url: None,
     maybe_cover_image_media_file_token: None,
     maybe_raw_inference_text: None,
     maybe_max_duration_seconds: None,
-    maybe_inference_args: Some(GenericInferenceArgs {
-      inference_category: Some(InferenceCategoryAbbreviated::ImageGeneration),
-      args: Some(PolymorphicInferenceArgs::Sg(inference_args)),
-    }),
+    maybe_inference_args: Some(GenericInferenceArgs { inference_category: Some(InferenceCategoryAbbreviated::ImageGeneration), args: Some(PolymorphicInferenceArgs::Sg(inference_args)) }),
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
@@ -372,7 +358,8 @@ pub async fn enqueue_studio_image_generation_handler(
     is_debug_request,
     maybe_routing_tag: maybe_routing_tag.as_deref(),
     mysql_pool: &server_state.mysql_pool,
-  }).await;
+  })
+  .await;
 
   let job_token = match query_result {
     Ok((job_token, _id)) => job_token,
@@ -382,24 +369,18 @@ pub async fn enqueue_studio_image_generation_handler(
         return Err(EnqueueImageGenRequestError::BadInput("Duplicate idempotency token".to_string()));
       }
       return Err(EnqueueImageGenRequestError::ServerError);
-    }
+    },
   };
 
-  let response: EnqueueImageGenRequestSuccessResponse = EnqueueImageGenRequestSuccessResponse {
-    success: true,
-    inference_job_token: job_token,
-  };
+  let response: EnqueueImageGenRequestSuccessResponse = EnqueueImageGenRequestSuccessResponse { success: true, inference_job_token: job_token };
 
-  let body = serde_json::to_string(&response)
-    .map_err(|_e| EnqueueImageGenRequestError::ServerError)?;
+  let body = serde_json::to_string(&response).map_err(|_e| EnqueueImageGenRequestError::ServerError)?;
 
   // Error handling 101 rust result type returned like so.
   Ok(HttpResponse::Ok().content_type("application/json").body(body))
 }
 
-fn validate_request(
-  request: &Json<EnqueueStudioImageGenRequest>,
-) -> Result<(), EnqueueImageGenRequestError> {
+fn validate_request(request: &Json<EnqueueStudioImageGenRequest>) -> Result<(), EnqueueImageGenRequestError> {
   Ok(())
 }
 
@@ -416,34 +397,22 @@ impl From<anyhow::Error> for DownloadMediaFileError {
   }
 }
 
-async fn query_and_download_media_file(
-  media_file_token: &MediaFileToken,
-  download_dir: &TempDir,
-  bucket_client: &BucketClient,
-  mysql_pool: &MySqlPool,
-) -> Result<PathBuf, DownloadMediaFileError> {
-  let media_file_result = get_media_file(
-    &media_file_token,
-    false,
-    mysql_pool
-  ).await;
+async fn query_and_download_media_file(media_file_token: &MediaFileToken, download_dir: &TempDir, bucket_client: &BucketClient, mysql_pool: &MySqlPool) -> Result<PathBuf, DownloadMediaFileError> {
+  let media_file_result = get_media_file(&media_file_token, false, mysql_pool).await;
 
-  let media_file= match media_file_result {
+  let media_file = match media_file_result {
     Ok(Some(result)) => result,
     Ok(None) => {
       warn!("could not find media file in database: {:?}", media_file_token);
-      return Err(DownloadMediaFileError::MediaFileNotFound)
-    }
+      return Err(DownloadMediaFileError::MediaFileNotFound);
+    },
     Err(e) => {
       error!("could not query media file: {:?}", e);
-      return Err(DownloadMediaFileError::Other(e))
-    }
+      return Err(DownloadMediaFileError::Other(e));
+    },
   };
 
-  let media_file_bucket_path = MediaFileBucketPath::from_object_hash(
-    &media_file.public_bucket_directory_hash,
-    media_file.maybe_public_bucket_prefix.as_deref(),
-    media_file.maybe_public_bucket_extension.as_deref());
+  let media_file_bucket_path = MediaFileBucketPath::from_object_hash(&media_file.public_bucket_directory_hash, media_file.maybe_public_bucket_prefix.as_deref(), media_file.maybe_public_bucket_extension.as_deref());
 
   let extension = media_file.maybe_public_bucket_extension.clone().unwrap_or_else(|| ".jpg".to_string());
   let download_filename = format!("download_file_{}.{}", media_file.token.as_str(), extension);
@@ -451,10 +420,7 @@ async fn query_and_download_media_file(
 
   info!("Downloading from bucket...");
 
-  bucket_client.download_file_to_disk(
-    &media_file_bucket_path.to_full_object_pathbuf(),
-    &download_file_path,
-  ).await?;
+  bucket_client.download_file_to_disk(&media_file_bucket_path.to_full_object_pathbuf(), &download_file_path).await?;
 
   Ok(download_file_path)
 }

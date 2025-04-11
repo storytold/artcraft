@@ -30,6 +30,7 @@ serde_derive = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1.38.0", features = ["macros"] }
 toml = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 testing = { path = "../../testing" }

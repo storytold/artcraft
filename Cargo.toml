@@ -117,7 +117,7 @@ members = [
   "crates/vendor/candle/tensor-tools",
   "crates/vendor/limitation",
   # NB(bt,2023-12-12): Newrelic keeps breaking with upgrades. Kill for now.
-  #"crates/vendor/newrelic-telemetry-sdk-rust", 
+  #"crates/vendor/newrelic-telemetry-sdk-rust",
 
   # cargo-hakari workspace hack (compilation speedup hack)
   # see usage: https://crates.io/crates/cargo-hakari
@@ -131,12 +131,12 @@ publish = false
 [workspace.dependencies]
 # Hakari workspace hack (faster compile times)
 #
-# If an unrelated leaf package starts causing general build problems, 
+# If an unrelated leaf package starts causing general build problems,
 # for packages including hakari, look up what depends on the bad package:
 #
 #   `cargo tree --target all  -p {BAD_PACKAGE_NAME} -i`
 #
-# Packages to remove from hakari to ensure we can build in Netlify, 
+# Packages to remove from hakari to ensure we can build in Netlify,
 # Github Actions (without package installs), etc.:
 #
 #  - cudarc
@@ -162,6 +162,7 @@ serde = {  version = "1.0.219", features = ["derive"] }
 serde_derive = "1.0.219"
 serde_json = "1.0.140"
 serde_yaml = "0.9.1"
+thiserror = "2"
 toml = "0.7.4"
 url = "2.5.4"
 

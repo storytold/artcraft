@@ -1,7 +1,7 @@
 use errors::AnyhowResult;
 use crate::credentials::SoraCredentials;
 use crate::image_gen::common::{ImageSize, NumImages, SoraImageGenResponse};
-use crate::image_gen::image_gen_http_request::{image_gen_http_request, InpaintItem, InpaintItemType, OperationType, RawSoraImageGenRequest, VideoGenType};
+use crate::image_gen::image_gen_http_request::{image_gen_http_request, InpaintItem, InpaintItemType, OperationType, RawSoraImageGenRequest, SoraError, VideoGenType};
 
 pub struct SoraImageGenRemixRequest<'a> {
   pub prompt: String,
@@ -13,7 +13,7 @@ pub struct SoraImageGenRemixRequest<'a> {
 
 /// The "remix" commands let you supply additional images as context.
 /// Sora "media tokens" of previously uploaded images must be supplied.
-pub async fn sora_image_gen_remix(request: SoraImageGenRemixRequest<'_>) -> AnyhowResult<SoraImageGenResponse> {
+pub async fn sora_image_gen_remix(request: SoraImageGenRemixRequest<'_>) -> Result<SoraImageGenResponse, SoraError> {
   let args = RawSoraImageGenRequest {
     r#type: VideoGenType::ImageGen,
     operation: OperationType::Remix,
@@ -36,7 +36,6 @@ pub async fn sora_image_gen_remix(request: SoraImageGenRemixRequest<'_>) -> Anyh
     }).collect(),
   };
 
-  // TODO: Error handling.
   let result = image_gen_http_request(args, &request.credentials).await?;
 
   Ok(SoraImageGenResponse {
