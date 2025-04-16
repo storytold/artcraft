@@ -669,7 +669,3 @@ pub fn get_random_document_key() -> String {
 pub fn get_random_window_key() -> String {
   return WINDOW_KEY[rand::rng().random_range(0..WINDOW_KEY.len())].to_string();
 }
-
-pub fn get_random_cached_script() -> String {
-  return CACHED_SCRIPTS[rand::rng().random_range(0..CACHED_SCRIPTS.len())].to_string();
-}

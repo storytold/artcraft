@@ -48,7 +48,6 @@ pub struct GenerateSentinelRefreshRequest {
 
 fn generate_date() -> String {
   let now_utc = Utc::now();
-  let today_utc = now_utc.date_naive();
   let offset = FixedOffset::west_opt(5 * 60 * 60).unwrap();
   let now_with_offset = Utc::now().with_timezone(&offset);
 

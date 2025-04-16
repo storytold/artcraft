@@ -3,6 +3,8 @@ use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;
 use idempotency::uuid::generate_random_uuid;
 
+use super::request::GenerateSentinelRefreshRequest;
+
 const SORA_IMAGE_GEN_URL: &str = "https://chatgpt.com/backend-api/sentinel/req";
 
 /// This user agent is tied to the sentinel generation. If we need to change it, we may need to change sentinel generation too.
@@ -39,8 +41,9 @@ pub struct SentinelResponse {
 }
 
 
-pub async fn generate_token(problem: String) -> AnyhowResult<String> {
-  let request = SentinelRequest::new(problem);
+pub async fn generate_token() -> AnyhowResult<String> {
+  let (_request, base64_request) = GenerateSentinelRefreshRequest::new().with_fourth_and_tenth();
+  let request = SentinelRequest::new(base64_request);
   let client = reqwest::Client::new();
   let response = client.post(SORA_IMAGE_GEN_URL)
     .header("User-Agent", USER_AGENT)
@@ -57,12 +60,10 @@ pub async fn generate_token(problem: String) -> AnyhowResult<String> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::sentinel_refresh::generate::request::GenerateSentinelRefreshRequest;
 
   #[tokio::test]
   async fn test_generate_token() {
-    let (_request, base64_request) = GenerateSentinelRefreshRequest::new().with_fourth_and_tenth();
-    let token = generate_token(base64_request.to_string()).await.unwrap();
+    let token = generate_token().await.unwrap();
     println!("{}", token);
   }
 }

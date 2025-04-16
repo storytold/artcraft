@@ -16,9 +16,12 @@ use log::warn;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use openai_sora_client::credentials::SoraCredentials;
 use openai_sora_client::image_gen::SoraError;
+use openai_sora_client::sentinel_refresh::generate::token::generate_token;
 use openai_sora_client::sentinel_refresh::refresh_sentinel;
 use serde::Deserialize;
 use serde::Serialize;
+use shared_service_components::sora_redis_credentials::set_sora_credential_field_in_redis::set_sora_credential_field_in_redis;
+use shared_service_components::sora_redis_credentials::keys::RedisSoraCredentialSubkey;
 use sqlx::MySqlPool;
 use tempdir::TempDir;
 use utoipa::ToSchema;
@@ -97,6 +100,7 @@ pub enum EnqueueImageGenRequestError {
   NotAuthorized,
   ServerError,
   RateLimited,
+  TooManyConcurrentTasks,
 }
 
 impl ResponseError for EnqueueImageGenRequestError {
@@ -106,6 +110,7 @@ impl ResponseError for EnqueueImageGenRequestError {
       EnqueueImageGenRequestError::NotAuthorized => StatusCode::UNAUTHORIZED,
       EnqueueImageGenRequestError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
       EnqueueImageGenRequestError::RateLimited => StatusCode::TOO_MANY_REQUESTS,
+      EnqueueImageGenRequestError::TooManyConcurrentTasks => StatusCode::TOO_MANY_REQUESTS,
     }
   }
 
@@ -115,6 +120,7 @@ impl ResponseError for EnqueueImageGenRequestError {
       EnqueueImageGenRequestError::NotAuthorized => "unauthorized".to_string(),
       EnqueueImageGenRequestError::ServerError => "server error".to_string(),
       EnqueueImageGenRequestError::RateLimited => "rate limited".to_string(),
+      EnqueueImageGenRequestError::TooManyConcurrentTasks => "too many concurrent tasks".to_string(),
     };
 
     to_simple_json_error(&error_reason, self.status_code())
@@ -288,12 +294,12 @@ pub async fn enqueue_studio_image_generation_handler(http_request: HttpRequest, 
 
   let prompt = create_prompt(&request);
 
-  let mut response = sora_image_gen_remix(SoraImageGenRemixRequest { 
-    prompt: prompt.clone(), 
-    num_images: NumImages::One, 
-    image_size: ImageSize::Square, 
-    sora_media_tokens: sora_media_tokens.clone(), 
-    credentials: &sora_credentials 
+  let mut response = sora_image_gen_remix(SoraImageGenRemixRequest {
+    prompt: prompt.clone(),
+    num_images: NumImages::One,
+    image_size: ImageSize::Square,
+    sora_media_tokens: sora_media_tokens.clone(),
+    credentials: &sora_credentials
   }).await;
 
   debug!("Sora image gen response: {:?}", response);
@@ -301,27 +307,54 @@ pub async fn enqueue_studio_image_generation_handler(http_request: HttpRequest, 
   if let Err(SoraError::SentinelBlock(msg)) = &response {
     error!("Sora sentinel block, attempting refresh: {}", msg);
 
-    // Try to refresh sentinel
-    match refresh_sentinel().await {
-      Ok(new_sentinel) => {
-        // Update the credentials with new sentinel
+    match generate_token().await {
+      Ok(sentinel_token) => {
+        set_sora_credential_field_in_redis(
+          &mut redis,
+          RedisSoraCredentialSubkey::Sentinel,
+          &sentinel_token
+        ).map_err(|e| {
+          EnqueueImageGenRequestError::ServerError
+        })?;
+
         let updated_sora_credentials = get_sora_credentials_from_request(&http_request, &mut redis).map_err(|e| {
           error!("sora credential error: {:?}", e);
           EnqueueImageGenRequestError::ServerError
         })?;
 
         // Retry the request with new sentinel
-        response = sora_image_gen_remix(SoraImageGenRemixRequest { 
-          prompt: prompt.clone(), 
-          num_images: NumImages::One, 
-          image_size: ImageSize::Square, 
-          sora_media_tokens: sora_media_tokens.clone(), 
-          credentials: &updated_sora_credentials 
+        response = sora_image_gen_remix(SoraImageGenRemixRequest {
+          prompt: prompt.clone(),
+          num_images: NumImages::One,
+          image_size: ImageSize::Square,
+          sora_media_tokens: sora_media_tokens.clone(),
+          credentials: &updated_sora_credentials
         }).await;
       },
       Err(e) => {
-        error!("Failed to refresh Sora sentinel: {:?}", e);
-      },
+        //  Fallback to the old refresh stragegy relying on the external service
+        match refresh_sentinel().await {
+          Ok(new_sentinel) => {
+            // Update the credentials with new sentinel
+            let updated_sora_credentials = get_sora_credentials_from_request(&http_request, &mut redis).map_err(|e| {
+              error!("sora credential error: {:?}", e);
+              EnqueueImageGenRequestError::ServerError
+            })?;
+
+            // Retry the request with new sentinel
+            response = sora_image_gen_remix(SoraImageGenRemixRequest {
+              prompt: prompt.clone(),
+              num_images: NumImages::One,
+              image_size: ImageSize::Square,
+              sora_media_tokens: sora_media_tokens.clone(),
+              credentials: &updated_sora_credentials
+            }).await;
+          },
+          Err(e) => {
+            error!("Failed to refresh Sora sentinel: {:?}", e);
+          }
+        }
+      }
     }
   }
 
@@ -330,27 +363,33 @@ pub async fn enqueue_studio_image_generation_handler(http_request: HttpRequest, 
       SoraError::TokenExpired(msg) => {
         error!("Sora token expired, needs refresh: {}", msg);
         // TODO: Implement token refresh logic here
+        EnqueueImageGenRequestError::ServerError
       },
       SoraError::SentinelBlock(msg) => {
         error!("Sora sentinel block still occurring after refresh: {}", msg);
+        EnqueueImageGenRequestError::ServerError
+      },
+      SoraError::TooManyConcurrentTasks(msg) => {
+        error!("Sora too many concurrent tasks: {}", msg);
+        EnqueueImageGenRequestError::TooManyConcurrentTasks
       },
       _ => {
         error!("Failed to call Sora image generation: {:?}", err);
+        EnqueueImageGenRequestError::ServerError
       },
     }
-    EnqueueImageGenRequestError::ServerError
   })?;
 
   debug!("Sora image gen response: {:?}", response);
 
   // Store the actual inference args that will go to the database
-  let inference_args = SoraImageGenArgs { 
-    prompt: Some(prompt), 
-    scene_snapshot_media_token: Some(request.snapshot_media_token.clone()), 
-    maybe_additional_media_file_tokens: Some(additional_images), 
-    maybe_number_of_samples: Some(number_of_samples), 
-    maybe_sora_media_upload_tokens: Some(sora_media_tokens), 
-    maybe_sora_task_id: Some(response.task_id) 
+  let inference_args = SoraImageGenArgs {
+    prompt: Some(prompt),
+    scene_snapshot_media_token: Some(request.snapshot_media_token.clone()),
+    maybe_additional_media_file_tokens: Some(additional_images),
+    maybe_number_of_samples: Some(number_of_samples),
+    maybe_sora_media_upload_tokens: Some(sora_media_tokens),
+    maybe_sora_task_id: Some(response.task_id)
   };
 
   // create the inference args here
@@ -370,8 +409,8 @@ pub async fn enqueue_studio_image_generation_handler(http_request: HttpRequest, 
     maybe_cover_image_media_file_token: None,
     maybe_raw_inference_text: None,
     maybe_max_duration_seconds: None,
-    maybe_inference_args: Some(GenericInferenceArgs { 
-      inference_category: Some(InferenceCategoryAbbreviated::ImageGeneration), 
+    maybe_inference_args: Some(GenericInferenceArgs {
+      inference_category: Some(InferenceCategoryAbbreviated::ImageGeneration),
       args: Some(PolymorphicInferenceArgs::Sg(inference_args)),
     }),
     maybe_creator_user_token: maybe_user_token.as_ref(),
