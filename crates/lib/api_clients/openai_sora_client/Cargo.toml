@@ -25,7 +25,7 @@ idempotency = { path = "../../idempotency" }
 # External
 anyhow = { workspace = true }
 log = { workspace = true }
-reqwest = { workspace = true, features = ["multipart"] }
+reqwest = { workspace = true, features = ["multipart", "gzip"] }
 serde = { workspace = true }
 serde_derive = { workspace = true }
 serde_json = { workspace = true }

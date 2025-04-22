@@ -1,3 +1,4 @@
+pub mod bearer;
 pub mod credentials;
 pub mod image_gen;
 pub mod job;
