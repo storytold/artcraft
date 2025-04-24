@@ -24,7 +24,7 @@
     "react-dom": "^18.3.1",
     "react-drag-drop-files": "^2.3.10",
     "react-easy-crop": "^5.1.0",
-    "react-router-dom": "^6.26.1",
+    "react-router-dom": "^7.5.2",
     "tailwind-merge": "^2.5.2",
     "uuid": "^10.0.0",
     "yarn": "^1.22.22"
