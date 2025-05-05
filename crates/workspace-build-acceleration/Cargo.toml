@@ -233,7 +233,7 @@ hyper-dff4ba8e3ae991db = { package = "hyper", version = "1.6.0", features = ["cl
 hyper-util = { version = "0.1.10", features = ["client-legacy", "http1", "http2"] }
 miniz_oxide = { version = "0.7.2", default-features = false, features = ["with-alloc"] }
 openssl = { version = "0.10.71", features = ["vendored"] }
-openssl-sys = { version = "0.9.106", default-features = false, features = ["vendored"] }
+openssl-sys = { version = "0.9.108", default-features = false, features = ["vendored"] }
 rustls = { version = "0.23.13", default-features = false, features = ["logging", "ring", "std", "tls12"] }
 rustls-pki-types = { version = "1.7.0", features = ["std"] }
 spin = { version = "0.9.8" }
@@ -246,7 +246,7 @@ getrandom-468e82937335b1c9 = { package = "getrandom", version = "0.3.1", default
 heck = { version = "0.4.1", features = ["unicode"] }
 miniz_oxide = { version = "0.7.2", default-features = false, features = ["with-alloc"] }
 openssl = { version = "0.10.71", features = ["vendored"] }
-openssl-sys = { version = "0.9.106", default-features = false, features = ["vendored"] }
+openssl-sys = { version = "0.9.108", default-features = false, features = ["vendored"] }
 rustls = { version = "0.23.13", default-features = false, features = ["logging", "ring", "std", "tls12"] }
 rustls-pki-types = { version = "1.7.0", features = ["std"] }
 socket2 = { version = "0.5.7", default-features = false, features = ["all"] }
