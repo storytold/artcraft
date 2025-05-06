@@ -114,7 +114,7 @@ syn-f595c2ba2a3f28df = { package = "syn", version = "2.0.87", features = ["extra
 #tauri-runtime-wry = { version = "2.5.1", default-features = false, features = ["unstable"] }
 #tauri-utils = { version = "2.3.1", default-features = false, features = ["build", "compression", "resources"] }
 time = { version = "0.3.36", features = ["local-offset", "macros", "serde-well-known"] }
-tokio = { version = "1.43.0", features = ["full"] }
+tokio = { version = "1.44.2", features = ["full"] }
 tokio-stream = { version = "0.1.16", features = ["fs"] }
 toml_datetime = { version = "0.6.6", default-features = false, features = ["serde"] }
 tracing = { version = "0.1.40", features = ["log"] }
@@ -212,7 +212,7 @@ tauri-build = { version = "2.1.1" }
 tauri-utils = { version = "2.3.1", default-features = false, features = ["build", "compression", "resources"] }
 time = { version = "0.3.36", features = ["local-offset", "macros", "serde-well-known"] }
 time-macros = { version = "0.2.18", default-features = false, features = ["formatting", "parsing", "serde"] }
-tokio = { version = "1.43.0", features = ["full"] }
+tokio = { version = "1.44.2", features = ["full"] }
 tokio-stream = { version = "0.1.16", features = ["fs"] }
 toml_datetime = { version = "0.6.6", default-features = false, features = ["serde"] }
 tracing = { version = "0.1.40", features = ["log"] }

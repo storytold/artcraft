@@ -47,7 +47,7 @@ serial_test = "3.0.0"
 # BigNum
 num-traits = "0.2.19"
 
-tokio = { version = "1.38.0", features = ["full"] }
+tokio = { version = "1.44.2", features = ["full"] }
 rand = "0.8"
 sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono", "bigdecimal" ] }
 

@@ -41,4 +41,4 @@ backoff = { version = "0.4.0", features = ["futures"] }
 uuid = { version = "1.8.0", features = ["v4"] } # Exponential backoff retry
 
 [dev-dependencies]
-tokio = { version = "1.38.0", features = ["macros"] }
+tokio = { version = "1.44.2", features = ["macros"] }

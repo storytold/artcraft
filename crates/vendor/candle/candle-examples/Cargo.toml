@@ -43,7 +43,7 @@ tracing = "0.1.37"
 tracing-chrome = "0.7.1"
 tracing-subscriber = "0.3.7"
 # Necessary to disambiguate with tokio in wasm examples which are 1.28.1
-tokio = "1.43.0"
+tokio = "1.44.2"
 
 [build-dependencies]
 anyhow = { version = "1", features = ["backtrace"] }

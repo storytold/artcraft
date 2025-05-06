@@ -58,7 +58,7 @@ tauri-plugin-log = "2.3.1"
 tauri-plugin-upload = "2.2.1"
 tempdir = "0.3.7"
 tempfile = "3.18.0"
-tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "fs"] }
+tokio = { version = "1.44", features = ["rt", "rt-multi-thread", "fs"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 
 # NB: We need to vendor this in so that we can access the cookies inside via the private API

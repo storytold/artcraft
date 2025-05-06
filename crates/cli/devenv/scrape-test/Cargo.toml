@@ -26,4 +26,4 @@ workspace-build-acceleration = { version = "0.1", path = "../../../workspace-bui
 
 # External
 clap = "4.4.8"
-tokio = { version = "1.38.0", features = ["macros"] }
+tokio = { version = "1.44.2", features = ["macros"] }
