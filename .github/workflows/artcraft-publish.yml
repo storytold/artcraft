@@ -48,43 +48,76 @@ jobs:
 
       - name: install frontend dependencies
         run: |
-          cd ./crates/desktop/artcraft
+          # Install Nx globally first
+          npm install -g nx@latest
+          
+          # Navigate to the project root to install dependencies
+          cd ./frontend
           yarn install
+          
+          # Verify Nx is accessible
+          nx --version
 
       - name: import Apple Developer Certificate
         if: matrix.platform == 'macos-latest'
-        # Prevents keychain from locking automatically for 3600 seconds.
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
+          echo "Starting certificate import process..."
+          
+          # Create certificate file
           echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          
+          # Create temporary keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security set-keychain-settings -t 3600 -u build.keychain
-          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          
+          # Import certificate with all necessary permissions
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/productbuild
+          
+          # Set key partition list to allow access
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-          security find-identity -v -p codesigning build.keychain
+          
+          # List all certificates to debug
+          echo "Listing all certificates in keychain:"
+          security list-keychain
+          security find-certificate -a build.keychain
+          
+          # Try to find codesigning identities
+          echo "Finding codesigning identities:"
+          security find-identity -v build.keychain
 
       - name: verify certificate
         if: matrix.platform == 'macos-latest'
         run: |
-          echo "Available certificates:"
-          security find-identity -v -p codesigning build.keychain
+          echo "Available codesigning certificates:"
+          security find-identity -v -p codesigning build.keychain || true
           
-          # Try multiple certificate patterns
-          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep -E "(Developer ID Application|Apple Development|Storyteller Developer)" | head -1)
+          echo "All certificates in keychain:"
+          security find-identity -v build.keychain || true
           
-          if [ -z "$CERT_INFO" ]; then
-            echo "No matching certificate found. Using first available certificate."
-            CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep -v "Policy" | head -1)
+          # Try to extract certificate ID from any available certificate
+          CERT_INFO=$(security find-identity -v build.keychain | grep -E "1\)" | head -1)
+          
+          if [ -n "$CERT_INFO" ]; then
+            # Extract the certificate hash (40-character hex string)
+            CERT_ID=$(echo "$CERT_INFO" | awk '{print $2}')
+            echo "CERT_ID=$CERT_ID" >> $GITHUB_ENV
+            echo "Using certificate hash: $CERT_ID"
+            
+            # Also try to extract the certificate name for APPLE_SIGNING_IDENTITY
+            CERT_NAME=$(echo "$CERT_INFO" | sed -n 's/.*"\(.*\)".*/\1/p')
+            echo "APPLE_SIGNING_IDENTITY=$CERT_NAME" >> $GITHUB_ENV
+            echo "Certificate name: $CERT_NAME"
+          else
+            echo "Warning: No valid certificate found"
+            echo "CERT_ID=" >> $GITHUB_ENV
+            echo "APPLE_SIGNING_IDENTITY=" >> $GITHUB_ENV
           fi
-          
-          CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
-          echo "CERT_ID=$CERT_ID" >> $GITHUB_ENV
-          echo "Using certificate: $CERT_ID"
 
       - name: build and publish
         uses: tauri-apps/tauri-action@v0
@@ -96,7 +129,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ env.CERT_ID }}
+          APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
         with:
           projectPath: ./crates/desktop/artcraft
           tagName: artcraft-v__VERSION__ # the action automatically replaces __VERSION__ with the app version.
