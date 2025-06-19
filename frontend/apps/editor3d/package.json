@@ -131,7 +131,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "",
+  "version": "0.0.1",
   "lint-staged": {
     "*.js": "eslint --cache --fix --ignore-pattern 'playground/**'",
     "*.{js,css,md}": "prettier --write"
