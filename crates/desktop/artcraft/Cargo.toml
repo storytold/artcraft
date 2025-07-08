@@ -51,9 +51,11 @@ futures = "0.3"
 image = "0.25.5"
 indexmap = { workspace = true }
 log = { workspace = true }
+multi_index_map = "0.15.0"
 once_cell = { workspace = true }
 rand = { workspace = true }
 reqwest = { workspace = true, features = ["multipart", "stream"], default-features = false } # NB(bt,2025-03-10): default-features = false on Windows while I debug openssl / rustls
+rustc-hash = "2.1.1"
 serde = { workspace = true }
 serde_derive = { workspace = true }
 serde_json = { workspace = true }

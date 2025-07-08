@@ -6,3 +6,4 @@ pub mod task_id;
 pub mod task_pool;
 pub mod task_type;
 mod task_provider_job_id;
+mod task_state;

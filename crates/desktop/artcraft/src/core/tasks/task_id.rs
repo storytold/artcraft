@@ -2,7 +2,7 @@ use idempotency::uuid::generate_random_uuid;
 
 /// Our identifier for tasks.
 /// These are ephemeral (for now), but may be peristed later on.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TaskId(String);
 
 impl TaskId {

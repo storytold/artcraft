@@ -1,6 +1,6 @@
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TaskProviderJobId(String);
 
 impl TaskProviderJobId {
