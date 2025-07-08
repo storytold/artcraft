@@ -63,6 +63,12 @@ pub enum EnqueueImageBgRemovalErrorType {
   /// No model available for image generation
   NoProviderAvailable,
 
+  /// No image was provided for background removal
+  MissingImage,
+  
+  /// Bad base64 image data
+  Base64DecodeError,
+  
   /// Generic bad request error
   BadRequest,
 

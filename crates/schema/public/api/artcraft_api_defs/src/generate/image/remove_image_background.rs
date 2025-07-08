@@ -3,6 +3,8 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
+pub const REMOVE_IMAGE_BACKGROUND_PATH: &str = "/v1/generate/image/remove_background";
+
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RemoveImageBackgroundRequest {
   /// Idempotency token to prevent duplicate requests.

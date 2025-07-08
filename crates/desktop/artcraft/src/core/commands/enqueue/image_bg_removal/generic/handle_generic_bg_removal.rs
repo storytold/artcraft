@@ -1,5 +1,7 @@
 use crate::core::commands::enqueue::image_bg_removal::enqueue_image_bg_removal_command::EnqueueImageBgRemovalCommand;
 use crate::core::commands::enqueue::image_bg_removal::errors::InternalBgRemovalError;
+use crate::core::commands::enqueue::image_bg_removal::generic::handle_generic_bg_removal_artcraft::handle_generic_bg_removal_artcraft;
+use crate::core::commands::enqueue::image_bg_removal::generic::handle_generic_bg_removal_fal::handle_generic_bg_removal_fal;
 use crate::core::commands::enqueue::image_bg_removal::success_event::EnqueueImageBgRemovalSuccessEvent;
 use crate::core::commands::enqueue::image_edit::enqueue_contextual_edit_image_command::EnqueueContextualEditImageCommand;
 use crate::core::commands::enqueue::image_edit::errors::InternalContextualEditImageError;
@@ -41,27 +43,25 @@ pub async fn handle_generic_bg_removal(
         // Sora doesn't have background removal
       }
       Provider::Artcraft => {
-        // info!("Dispatching gpt-image-1 via Artcraft...");
-        // return handle_gpt_image_1_artcraft(
-        //   request,
-        //   app,
-        //   app_data_root,
-        //   app_env_configs,
-        //   storyteller_creds_manager
-        // ).await;
-        unimplemented!("todo");
+        info!("Removing background via Artcraft...");
+        return handle_generic_bg_removal_artcraft(
+          request,
+          app,
+          app_data_root,
+          app_env_configs,
+          storyteller_creds_manager
+        ).await;
       }
       Provider::Fal => {
-        // info!("Dispatching gpt-image-1 via Sora...");
-        // return handle_gpt_image_1_sora(
-        //   request,
-        //   app,
-        //   app_data_root,
-        //   app_env_configs,
-        //   sora_creds_manager,
-        //   sora_task_queue,
-        // ).await;
-        unimplemented!("todo");
+        info!("Removing background via Fal...");
+        return handle_generic_bg_removal_fal(
+          request,
+          app,
+          app_data_root,
+          app_env_configs,
+          fal_creds_manager,
+          fal_task_queue,
+        ).await;
       }
     }
   }

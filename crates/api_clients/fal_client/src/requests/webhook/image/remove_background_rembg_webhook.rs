@@ -37,6 +37,7 @@ mod tests {
   use crate::requests::webhook::image::remove_background_rembg_webhook::remove_background_rembg_webhook;
   use crate::requests::webhook::image::remove_background_rembg_webhook::RemoveBackgroundRembgWebhookArgs;
   use std::fs::read_to_string;
+  use test_data::web::image_urls::ERNEST_SCARED_STUPID_IMAGE_URL;
 
   #[tokio::test]
   #[ignore] // NB: Manually test, don't run in CI!
@@ -46,7 +47,7 @@ mod tests {
     let api_key = FalApiKey::from_str(&api_key);
     
     let args = RemoveBackgroundRembgWebhookArgs {
-      image_url: "https://cdn-2.fakeyou.com/media/b/2/p/b/0/b2pb09bcbxdqjzgbnsapvfs1t897wdnx/image_b2pb09bcbxdqjzgbnsapvfs1t897wdnx.png",
+      image_url: ERNEST_SCARED_STUPID_IMAGE_URL,
       webhook_url: "https://api.storyteller.ai/webhook",
       api_key: &api_key,
     };

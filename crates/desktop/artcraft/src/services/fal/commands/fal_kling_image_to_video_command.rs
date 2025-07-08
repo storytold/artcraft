@@ -198,7 +198,7 @@ pub async fn image_to_video(
     ).await?;
 
   } else if let Some(base64_bytes) = request.base64_image {
-    temp_download = save_base64_image_to_temp_dir(&app_data_root, base64_bytes).await?;
+    temp_download = save_base64_image_to_temp_dir(&app_data_root, &base64_bytes).await?;
   } else {
     return Err(InnerError::AnyhowError(anyhow!("No image media token or base64 image provided")));
   }

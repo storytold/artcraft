@@ -5,8 +5,8 @@ use std::io::Write;
 use tempfile::NamedTempFile;
 use web_base64::web_base64_decode::web_base64_decode;
 
-pub async fn save_base64_image_to_temp_dir(app_data_root: &AppDataRoot, base64_image: String) -> Result<NamedTempFile, ArtcraftError> {
-  let bytes = web_base64_decode(&base64_image)?;
+pub async fn save_base64_image_to_temp_dir(app_data_root: &AppDataRoot, base64_image: &str) -> Result<NamedTempFile, ArtcraftError> {
+  let bytes = web_base64_decode(base64_image)?;
 
   let extension = MimetypeInfo::get_for_bytes(&bytes)
       .map(|info| info.file_extension())

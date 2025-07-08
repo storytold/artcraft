@@ -12,6 +12,12 @@ pub enum InternalBgRemovalError {
   /// No storyteller credentials are set.
   NeedsStorytellerCredentials,
   
+  /// No image was provided for background removal.
+  MissingImage,
+  
+  /// Could not decode the base64 image data.
+  Base64DecodeError,
+  
   AnyhowError(AnyhowError),
   StorytellerError(StorytellerError),
 }
@@ -39,6 +45,16 @@ impl InternalBgRemovalError {
         status = CommandErrorStatus::ServerError;
         error_type = EnqueueImageBgRemovalErrorType::NoProviderAvailable;
         error_message = "No configured provider available for background removal".to_string();
+      }
+      InternalBgRemovalError::MissingImage => {
+        status = CommandErrorStatus::BadRequest;
+        error_type = EnqueueImageBgRemovalErrorType::MissingImage;
+        error_message = "No image provided for background removal".to_string();
+      }
+      InternalBgRemovalError::Base64DecodeError => {
+        status = CommandErrorStatus::BadRequest;
+        error_type = EnqueueImageBgRemovalErrorType::Base64DecodeError;
+        error_message = "Failed to decode base64 image data".to_string();
       }
       InternalBgRemovalError::AnyhowError(_) => {}
       InternalBgRemovalError::StorytellerError(_) => {}
