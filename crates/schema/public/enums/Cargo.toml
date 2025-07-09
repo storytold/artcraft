@@ -15,6 +15,10 @@ path = "src/lib.rs"
 [package.metadata.cargo-udeps.ignore]
 normal = ["workspace-build-acceleration"]
 
+#[features]
+#default = []
+#database_conversion = ["sqlx", "sqlx-core", "sqlx-mysql"]
+
 [dependencies]
 # Workspace hack (faster compile times)
 workspace-build-acceleration = { workspace = true }
@@ -26,9 +30,9 @@ workspace-build-acceleration = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }
 
-sqlx = { version = "0.7.2", features = [ "mysql", "sqlite", "runtime-tokio-native-tls", "chrono" ] }
-sqlx-core = { version = "0.7.2" }
-sqlx-mysql= { version = "0.7.2" }
+#sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio-native-tls", "chrono" ], optional = true }
+#sqlx-core = { version = "0.7.2" , optional = true }
+#sqlx-mysql = { version = "0.7.2" , optional = true }
 
 utoipa = { version = "4", features = ["chrono","actix_extras"] }
 
