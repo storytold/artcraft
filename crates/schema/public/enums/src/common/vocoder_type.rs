@@ -1,19 +1,21 @@
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, sqlx::Type)]
+#[cfg_attr(not(feature = "database"), derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize))]
+#[cfg_attr(feature = "database", derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, sqlx::Type))]
 pub enum VocoderType {
   /// NB: Note - this is hifigan for Tacotron2.
   /// Some work will be needed to unify this with other hifigan types.
   #[serde(rename = "hifigan")]
-  #[sqlx(rename = "hifigan")]
+  #[cfg_attr(feature = "database", sqlx(rename = "hifigan"))]
   HifiGan,
 
   #[serde(rename = "hifigan-superres")]
-  #[sqlx(rename = "hifigan-superres")]
+  #[cfg_attr(feature = "database", sqlx(rename = "hifigan-superres"))]
   HifiGanSuperResolution,
 
   /// NB: Note - this is hifigan for SoftVC (our internal codename is "rocketvc").
   /// Some work will need to be done to unify this with other hifigan types.
+  /// NB(bt, 2025-07-09): It was so silly to try to obscure this. Both FakeYou and Uberduck are irrelevant now.
   #[serde(rename = "hifigan_rocket_vc")]
-  #[sqlx(rename = "hifigan_rocket_vc")]
+  #[cfg_attr(feature = "database", sqlx(rename = "hifigan_rocket_vc"))]
   HifiGanRocketVc,
 
 }

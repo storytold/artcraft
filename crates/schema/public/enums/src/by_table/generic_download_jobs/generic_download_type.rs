@@ -15,24 +15,25 @@ use strum::EnumIter;
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, sqlx::Type, Hash, Ord, PartialOrd)]
+#[cfg_attr(not(feature = "database"), derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, Hash, Ord, PartialOrd))]
+#[cfg_attr(feature = "database", derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, sqlx::Type, Hash, Ord, PartialOrd))]
 pub enum GenericDownloadType {
   /// NB: Note - this is hifigan for Tacotron2.
   /// Some work will be needed to unify this with other hifigan types.
   #[serde(rename = "hifigan")]
-  #[sqlx(rename = "hifigan")]
+  #[cfg_attr(feature = "database", sqlx(rename = "hifigan"))]
   HifiGan,
 
   /// NB: Note - this is hifigan for SoftVC (our internal codename is "rocketvc").
   /// Some work will need to be done to unify this with other hifigan types.
   #[serde(rename = "hifigan_rocket_vc")]
-  #[sqlx(rename = "hifigan_rocket_vc")]
+  #[cfg_attr(feature = "database", sqlx(rename = "hifigan_rocket_vc"))]
   HifiGanRocketVc,
 
   /// NB: Note - this is hifigan for SoVitsSvc
   /// Some work will need to be done to unify this with other hifigan types.
   #[serde(rename = "hifigan_so_vits_svc")]
-  #[sqlx(rename = "hifigan_so_vits_svc")]
+  #[cfg_attr(feature = "database", sqlx(rename = "hifigan_so_vits_svc"))]
   HifiGanSoVitsSvc,
 
   //#[serde(rename = "melgan_vocodes")]
@@ -42,27 +43,27 @@ pub enum GenericDownloadType {
   /// NB: Our external-facing name for "softvc" is rocketvc.
   /// I wish we could stop being stupid about this.
   #[serde(rename = "rocket_vc")]
-  #[sqlx(rename = "rocket_vc")]
+  #[cfg_attr(feature = "database", sqlx(rename = "rocket_vc"))]
   RocketVc,
 
   /// RVC (v2) voice conversion models
   #[serde(rename = "rvc_v2")]
-  #[sqlx(rename = "rvc_v2")]
+  #[cfg_attr(feature = "database", sqlx(rename = "rvc_v2"))]
   RvcV2,
 
   /// so-vits-svc voice conversion models
   #[serde(rename = "so_vits_svc")]
-  #[sqlx(rename = "so_vits_svc")]
+  #[cfg_attr(feature = "database", sqlx(rename = "so_vits_svc"))]
   SoVitsSvc,
 
   /// Tacotron TTS models.
   #[serde(rename = "tacotron2")]
-  #[sqlx(rename = "tacotron2")]
+  #[cfg_attr(feature = "database", sqlx(rename = "tacotron2"))]
   Tacotron2,
 
   /// VITS TTS models.
   #[serde(rename = "vits")]
-  #[sqlx(rename = "vits")]
+  #[cfg_attr(feature = "database", sqlx(rename = "vits"))]
   Vits,
 }
 

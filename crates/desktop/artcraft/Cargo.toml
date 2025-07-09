@@ -69,7 +69,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 url = { workspace = true }
 
 # We're going to embed in-memory SQLite
-sqlx_artcraft = { package = "sqlx", version = "0.8.6", features = ["runtime-tokio", "sqlite", "chrono"] }
+#sqlx_artcraft = { package = "sqlx", version = "0.8.6", features = ["runtime-tokio", "sqlite", "chrono"] }
 
 # NB: We need to vendor this in so that we can access the cookies inside via the private API
 tauri-plugin-http = { path = "../../vendor/tauri-plugin-http" }

@@ -1,4 +1,5 @@
 
+#[cfg(feature = "database")]
 /// Implement `MySqlFromRow` on a type.
 macro_rules! impl_mysql_from_row {
   ($t:ident) => {
@@ -59,5 +60,12 @@ macro_rules! impl_mysql_from_row {
     //  }
     //}
 
+  }
+}
+
+#[cfg(not(feature = "database"))]
+macro_rules! impl_mysql_from_row {
+  ($t:ident) => {
+    // Intentionally empty
   }
 }

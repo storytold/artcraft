@@ -1,3 +1,4 @@
+#[cfg(feature = "database")]
 /// This overt approach is being taken because of the following error:
 ///
 ///   `MySqlDatabaseError { code: Some("HY000"), number: 1210, message: "Incorrect arguments to mysqld_stmt_execute" }`
@@ -59,3 +60,9 @@ macro_rules! impl_mysql_enum_coders {
   }
 }
 
+#[cfg(not(feature = "database"))]
+macro_rules! impl_mysql_enum_coders {
+  ($t:ident) => {
+    // Intentionally empty
+  }
+}  

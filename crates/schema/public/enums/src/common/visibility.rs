@@ -18,9 +18,10 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, sqlx::Type,ToSchema)]
+#[cfg_attr(not(feature = "database"), derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, ToSchema))]
+#[cfg_attr(feature = "database", derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, sqlx::Type, ToSchema))]
+#[cfg_attr(feature = "database", sqlx(rename_all = "lowercase"))]
 #[serde(rename_all = "lowercase")]
-#[sqlx(rename_all = "lowercase")]
 pub enum Visibility {
   /// Public entities are able to be listed in public lists.
   /// It does not mean that they necessarily will be (eg. they could be "mod unapproved" or deleted).
