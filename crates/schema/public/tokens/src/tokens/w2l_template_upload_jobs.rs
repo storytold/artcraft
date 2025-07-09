@@ -6,8 +6,8 @@ use serde::Serialize;
 use crate::prefixes::LegacyTokenPrefix;
 
 /// Primary key for the `w2l_template_upload_jobs` table.
-#[cfg_attr(not(feature = "database"), derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize))]
-#[cfg_attr(feature = "database", derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, sqlx::Type, Debug, Serialize, Deserialize))]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "database", derive(sqlx::Type))]
 #[cfg_attr(feature = "database", sqlx(transparent))]
 pub struct W2lTemplateUploadJobToken(pub String);
 
