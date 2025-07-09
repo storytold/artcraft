@@ -17,10 +17,10 @@ use strum::EnumIter;
 
 use utoipa::ToSchema;
 
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(not(feature = "database"), derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, ToSchema))]
-#[cfg_attr(feature = "database", derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, sqlx::Type, ToSchema))]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, ToSchema)]
+#[cfg_attr(feature = "database", derive(sqlx::Type))]
 #[cfg_attr(feature = "database", sqlx(rename_all = "lowercase"))]
+#[cfg_attr(test, derive(EnumIter, EnumCount))]
 #[serde(rename_all = "lowercase")]
 pub enum Visibility {
   /// Public entities are able to be listed in public lists.

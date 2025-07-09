@@ -1,5 +1,5 @@
-#[cfg_attr(not(feature = "database"), derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize))]
-#[cfg_attr(feature = "database", derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, sqlx::Type))]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "database", derive(sqlx::Type))]
 pub enum VocoderType {
   /// NB: Note - this is hifigan for Tacotron2.
   /// Some work will be needed to unify this with other hifigan types.

@@ -14,9 +14,9 @@ use strum::EnumIter;
 /// These types are present in the HTTP API and database columns as serialized here.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, Hash, Ord, PartialOrd)]
+#[cfg_attr(feature = "database", derive(sqlx::Type))]
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(not(feature = "database"), derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, Hash, Ord, PartialOrd))]
-#[cfg_attr(feature = "database", derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, sqlx::Type, Hash, Ord, PartialOrd))]
 pub enum GenericDownloadType {
   /// NB: Note - this is hifigan for Tacotron2.
   /// Some work will be needed to unify this with other hifigan types.
