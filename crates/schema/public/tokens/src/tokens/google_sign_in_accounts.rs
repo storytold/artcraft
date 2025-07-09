@@ -7,8 +7,9 @@ use utoipa::ToSchema;
 use crate::prefixes::TokenPrefix;
 
 /// The primary key for google_sign_in_accounts
-#[derive(Clone, PartialEq, Eq, sqlx::Type, Debug, Serialize, Deserialize, Default, ToSchema)]
-#[sqlx(transparent)]
+#[cfg_attr(not(feature = "database"), derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize, Default, ToSchema))]
+#[cfg_attr(feature = "database", derive(Clone, PartialEq, Eq, sqlx::Type, Debug, Serialize, Deserialize, Default, ToSchema))]
+#[cfg_attr(feature = "database", sqlx(transparent))]
 pub struct GoogleSignInAccountToken(String);
 
 impl_crockford_generator!(GoogleSignInAccountToken, 32usize, TokenPrefix::GoogleSignInAccount, CrockfordLower);

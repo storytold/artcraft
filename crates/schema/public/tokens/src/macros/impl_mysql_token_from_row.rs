@@ -1,4 +1,5 @@
 
+#[cfg(feature = "database")]
 /// Implement `MySqlTokenFromRow` on a type.
 macro_rules! impl_mysql_token_from_row {
   ($t:ident) => {
@@ -43,5 +44,12 @@ macro_rules! impl_mysql_token_from_row {
     //  }
     //}
 
+  }
+}
+
+#[cfg(not(feature = "database"))]
+macro_rules! impl_mysql_token_from_row {
+  ($t:ident) => {
+    // Intentionally empty
   }
 }

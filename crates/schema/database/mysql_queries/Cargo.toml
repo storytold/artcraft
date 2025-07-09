@@ -8,45 +8,45 @@ authors = [
 ]
 publish = false
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
 [lib]
 name = "mysql_queries"
 path = "src/lib.rs"
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
-
 [dependencies]
 # cargo-hakari workspace hack (faster compile times)
-workspace-build-acceleration = { workspace = true }
+workspace-build-acceleration.workspace = true
 
 # Internal
 bucket_paths = { path = "../../../lib/bucket_paths" }
 composite_identifiers = { path = "../../../schema/public/composite_identifiers" }
-enums = { workspace = true }
-errors = { workspace = true }
-idempotency = { workspace = true }
+enums = { workspace = true, features = ["database"] }
+errors.workspace = true
+idempotency.workspace = true
 reusable_types = { path = "../../../schema/public/reusable_types" }
-tokens = { workspace = true }
+tokens = { workspace = true, features = ["database"] }
 
 # External
-anyhow = { workspace = true }
-chrono = { workspace = true }
-log = { workspace = true }
+anyhow.workspace = true
+chrono.workspace = true
+log.workspace = true
 
 # Needed to safety check some queries we can't use escaping for
-once_cell = { workspace = true }
-regex = { workspace = true }
+once_cell.workspace = true
+regex.workspace = true
 
 # Serialization
-serde = { workspace = true }
-serde_derive = { workspace = true }
-serde_json = { workspace = true }
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true
 
 # BigNum
 num-traits = "0.2.19"
 
 tokio = { version = "1.38.0", features = ["full"] }
-rand = { workspace = true }
+rand.workspace = true
 sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono", "bigdecimal" ] }
 
 [dev-dependencies]

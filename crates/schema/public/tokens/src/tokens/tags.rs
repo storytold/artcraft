@@ -7,8 +7,9 @@ use utoipa::ToSchema;
 use crate::prefixes::TokenPrefix;
 
 /// The primary key for Prompts
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, sqlx::Type, Debug, Serialize, Deserialize, ToSchema)]
-#[sqlx(transparent)]
+#[cfg_attr(not(feature = "database"), derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize, ToSchema))]
+#[cfg_attr(feature = "database", derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, sqlx::Type, Debug, Serialize, Deserialize, ToSchema))]
+#[cfg_attr(feature = "database", sqlx(transparent))]
 pub struct TagToken(pub String);
 
 impl_crockford_generator!(TagToken, 32usize, TokenPrefix::Tag, CrockfordLower);

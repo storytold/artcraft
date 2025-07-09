@@ -6,8 +6,9 @@ use serde::Serialize;
 use crate::prefixes::TokenPrefix;
 
 /// The primary key for "generic" inference jobs.
-#[derive(Clone, PartialEq, Eq, sqlx::Type, Debug, Serialize, Deserialize)]
-#[sqlx(transparent)]
+#[cfg_attr(not(feature = "database"), derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize))]
+#[cfg_attr(feature = "database", derive(Clone, PartialEq, Eq, sqlx::Type, Debug, Serialize, Deserialize))]
+#[cfg_attr(feature = "database", sqlx(transparent))]
 pub struct DownloadJobToken(String);
 
 impl_string_token!(DownloadJobToken);

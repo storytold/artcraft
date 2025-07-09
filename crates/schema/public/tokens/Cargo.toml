@@ -8,32 +8,36 @@ authors = [
 ]
 publish = false
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
 [lib]
 name = "tokens"
 path = "src/lib.rs"
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["workspace-build-acceleration"]
+[features]
+default = []
+database = ["sqlx", "sqlx-core", "sqlx-mysql"]
 
 [dependencies]
 # Workspace hack (faster compile times)
-workspace-build-acceleration = { workspace = true }
+workspace-build-acceleration.workspace = true
 
 # Internal
 # (none)
 
 # Serialization
-serde = { workspace = true }
-serde_derive = { workspace = true }
+serde.workspace = true
+serde_derive.workspace = true
 
 # Random
 rand = {  version = "0.8.5", features = ["std_rng"] }
 
-once_cell = { workspace = true }
+once_cell.workspace = true
 
-sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
-sqlx-core = { version = "0.7.2" }
-sqlx-mysql= { version = "0.7.2" }
+sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ], optional = true }
+sqlx-core = { version = "0.7.2", optional = true }
+sqlx-mysql= { version = "0.7.2", optional = true }
 
 utoipa = { version = "4", features = ["chrono","actix_extras"] }
 
@@ -43,4 +47,4 @@ utoipa = { version = "4", features = ["chrono","actix_extras"] }
 strum = { version = "0.26", features = ["derive"] }
 
 # Test serialization
-serde_json = { workspace = true }
+serde_json.workspace = true
