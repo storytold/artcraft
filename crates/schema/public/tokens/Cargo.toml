@@ -35,6 +35,7 @@ rand = {  version = "0.8.5", features = ["std_rng"] }
 
 once_cell.workspace = true
 
+# Database conversion of enum types is optional
 sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ], optional = true }
 sqlx-core = { version = "0.7.2", optional = true }
 sqlx-mysql= { version = "0.7.2", optional = true }
