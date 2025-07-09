@@ -39,7 +39,7 @@ log.workspace = true
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.
 tokio.workspace = true
 
-sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 
 [dev-dependencies]
 # None yet

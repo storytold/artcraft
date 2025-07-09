@@ -28,9 +28,9 @@ tokens = { workspace = true }
 serde = "1.0.125"
 serde_derive = "1.0.125"
 
-sqlx = { version = "0.7.2", features = [ "mysql", "sqlite", "runtime-tokio-native-tls", "chrono" ] }
-sqlx-core = { version = "0.7.2" }
-sqlx-mysql= { version = "0.7.2" }
+sqlx = { version = "0.7.4", features = [ "mysql", "sqlite", "runtime-tokio-native-tls", "chrono" ] }
+sqlx-core = { version = "0.7.4" }
+sqlx-mysql= { version = "0.7.4" }
 
 utoipa = { version = "4", features = ["chrono","actix_extras"] }
 

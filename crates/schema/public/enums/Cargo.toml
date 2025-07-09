@@ -31,9 +31,9 @@ serde.workspace = true
 serde_derive.workspace = true
 
 # Database conversion of enum types is optional
-sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio-native-tls", "chrono" ], optional = true }
-sqlx-core = { version = "0.7.2" , optional = true }
-sqlx-mysql = { version = "0.7.2" , optional = true }
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-native-tls", "chrono" ], optional = true }
+sqlx-core = { version = "0.7.4" , optional = true }
+sqlx-mysql = { version = "0.7.4" , optional = true }
 
 utoipa = { version = "4", features = ["chrono","actix_extras"] }
 

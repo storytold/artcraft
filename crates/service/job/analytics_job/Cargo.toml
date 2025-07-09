@@ -21,11 +21,11 @@ normal = ["workspace-build-acceleration"]
 config = { path = "../../../lib/deprecated/config" }
 datetimes = { path = "../../../lib/data/datetimes" }
 easyenv = { path = "../../../lib/easyenv" }
-enums = { path = "../../../schema/public/enums" }
+enums = { workspace = true, default-features = false, features = [] }
 errors = { path = "../../../lib/errors" }
 mysql_queries = { path = "../../../schema/database/mysql_queries" }
 reusable_types = { path = "../../../schema/public/reusable_types" }
-tokens = { path = "../../../schema/public/tokens" }
+tokens = { workspace = true, default-features = false, features = [] }
 
 # Workspace hack (faster compile times)
 workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
@@ -38,7 +38,7 @@ hostname = "0.4.0"
 log = "0.4.14"
 rand = "0.8.5"
 
-sqlx = { version = "0.7.2", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono" ] }
 
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.
