@@ -72,7 +72,7 @@ tauri-plugin-http = { path = "../../vendor/tauri-plugin-http" }
 
 # TODO(bt,2025-07-09): Update sqlx ASAP. We're stuck on 0.7 because of the complex use of internal types and macros in the database crate.
 # We're going to embed in-memory SQLite
-sqlx_artcraft = { package = "sqlx", version = "0.7.4", features = ["runtime-tokio", "sqlite", "chrono"] }
+sqlx = { package = "sqlx", version = "0.7.4", features = ["runtime-tokio", "sqlite", "chrono"] }
 
 # NB: The version of the `discord-rich-presence` crate (0.2.5) last published has non-Send/Sync error
 # types and can't do threading. We need to wait for a new version to unpin from Git.
