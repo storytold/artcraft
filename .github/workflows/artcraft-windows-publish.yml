@@ -39,24 +39,22 @@ jobs:
           # Navigate to the frontend directory to install dependencies
           cd ./frontend
 
-          yarn cache clean
+          npm cache clean --force
 
           echo "Installing all workspace dependencies..."
-          yarn install --production=false --frozen-lockfile
+          npm ci
 
           echo "=== Version Information ==="
           echo "Node version:"
           node --version
           echo "NPM version:"
           npm --version
-          echo "Yarn version:"
-          yarn --version
 
           # Remove mismatched @nx packages and reinstall with correct versions
-          yarn add @nx/remix@20.7.2 @nx/js@20.7.2 @nx/react@20.7.2 @nx/vite@20.7.2 @nx/eslint@20.7.2 --dev -W
+          npm install --save-dev @nx/remix@20.7.2 @nx/js@20.7.2 @nx/react@20.7.2 @nx/vite@20.7.2 @nx/eslint@20.7.2
 
           echo "=== Nx versions after adjustment ==="
-          yarn list --pattern "nx" --depth=0
+          npm list --depth=0 | findstr nx
 
       - name: Pre-build frontend to avoid Tauri build issues
         run: |
