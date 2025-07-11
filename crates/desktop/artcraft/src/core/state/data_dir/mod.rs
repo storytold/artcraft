@@ -3,6 +3,7 @@ pub mod app_credentials_dir;
 pub mod app_data_root;
 pub mod app_downloads_dir;
 pub mod app_settings_dir;
+pub mod app_state_dir;
 pub mod app_weights_dir;
 pub mod temporary_dir;
 pub mod trait_data_subdir;

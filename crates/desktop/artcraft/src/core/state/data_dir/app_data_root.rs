@@ -2,7 +2,7 @@ use crate::core::state::data_dir::app_assets_dir::AppAssetsDir;
 use crate::core::state::data_dir::app_credentials_dir::AppCredentialsDir;
 use crate::core::state::data_dir::app_downloads_dir::AppDownloadsDir;
 use crate::core::state::data_dir::app_settings_dir::AppSettingsDir;
-use crate::core::state::data_dir::app_weights_dir::AppWeightsDir;
+use crate::core::state::data_dir::app_state_dir::AppStateDir;
 use crate::core::state::data_dir::temporary_dir::TemporaryDir;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::expanduser::expanduser;
@@ -20,14 +20,16 @@ const LOG_FILE_NAME : &str = "application_debug";
 #[derive(Clone)]
 pub struct AppDataRoot {
   path: PathBuf,
+  
+  log_file_name: PathBuf,
+  log_file_name_string: String,
+  
   assets_dir: AppAssetsDir,
   credentials_dir: AppCredentialsDir,
   downloads_dir: AppDownloadsDir,
   settings_dir: AppSettingsDir,
-  weights_dir: AppWeightsDir,
+  state_dir: AppStateDir,
   temp_dir: TemporaryDir,
-  log_file_name: PathBuf,
-  log_file_name_string: String,
 }
 
 impl AppDataRoot {
@@ -65,8 +67,8 @@ impl AppDataRoot {
     let credentials_dir = AppCredentialsDir::get_or_create_in_root_dir(&dir)?;
     let downloads_dir = AppDownloadsDir::get_or_create_in_root_dir(&dir)?;
     let settings_dir = AppSettingsDir::get_or_create_in_root_dir(&dir)?;
+    let state_dir = AppStateDir::get_or_create_in_root_dir(&dir)?;
     let temp_dir = TemporaryDir::get_or_create_in_root_dir(&dir)?;
-    let weights_dir = AppWeightsDir::get_or_create_in_root_dir(&dir)?;
     let log_file_name = dir.join(LOG_FILE_NAME);
     let log_file_name_string = log_file_name
         .to_str()
@@ -75,14 +77,14 @@ impl AppDataRoot {
 
     Ok(Self {
       path: dir,
+      log_file_name,
+      log_file_name_string,
       assets_dir,
       credentials_dir,
       downloads_dir,
       settings_dir,
-      weights_dir,
+      state_dir,
       temp_dir,
-      log_file_name,
-      log_file_name_string,
     })
   }
   
@@ -101,9 +103,9 @@ impl AppDataRoot {
   pub fn settings_dir(&self) -> &AppSettingsDir {
     &self.settings_dir
   }
-
-  pub fn weights_dir(&self) -> &AppWeightsDir {
-    &self.weights_dir
+  
+  pub fn state_dir(&self) -> &AppStateDir {
+    &self.state_dir
   }
 
   pub fn temp_dir(&self) -> &TemporaryDir {
@@ -135,15 +137,15 @@ impl AppDataRoot {
   }
 
   pub fn get_window_size_config_file(&self) -> PathBuf {
-    self.path.join("window_size.json")
+    self.state_dir.get_window_size_config_file()
   }
   
   pub fn get_window_position_config_file(&self) -> PathBuf {
-    self.path.join("window_position.json")
+    self.state_dir.get_window_position_config_file()
   }
 }
 
-// eg. /home/bob/artcraft, /Users/bob/artcraft, or C:\Users\Alice\artcraft
+// eg. /home/bob/artcraft, /Users/alice/artcraft, or C:\Users\Taylor\artcraft
 fn get_default_data_dir() -> anyhow::Result<PathBuf> {
   Ok(UserDirs::new()
       .ok_or_else(|| anyhow!("could not determine user home directory"))?

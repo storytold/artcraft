@@ -15,6 +15,7 @@ use crate::core::commands::get_app_info_command::get_app_info_command;
 use crate::core::commands::platform_info_command::platform_info_command;
 use crate::core::commands::providers::get_provider_order_command::get_provider_order_command;
 use crate::core::commands::providers::set_provider_order_command::set_provider_order_command;
+use crate::core::lifecycle::startup::handle_tauri_startup::handle_tauri_startup;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::app_preferences::app_preferences_manager::load_app_preferences_or_default;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
@@ -41,6 +42,7 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::sora::threads::sora_task_polling_thread::sora_task_polling_thread;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
+use log::error;
 
 use tauri_plugin_dialog;
 use tauri_plugin_http;
@@ -127,6 +129,15 @@ pub fn run() {
       //  )?;
       //}
       let app = app.handle().clone();
+      let app2 = app.clone();
+      let root = app_data_root_2.clone();
+
+      tauri::async_runtime::block_on(async move {
+        if let Err(err) = handle_tauri_startup(app2, root).await {
+          error!("Failed to handle Tauri startup: {:?}", err);
+          panic!("Failed to handle Tauri startup: {:?}", err);
+        }
+      });
       
       let result = webview_unsafe_for_app(&app);
       if let Err(err) = result {
