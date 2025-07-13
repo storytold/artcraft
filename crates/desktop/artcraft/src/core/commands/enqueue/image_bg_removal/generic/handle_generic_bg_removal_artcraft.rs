@@ -2,10 +2,10 @@ use crate::core::commands::enqueue::image::enqueue_text_to_image_command::Enqueu
 use crate::core::commands::enqueue::image::internal_image_error::InternalImageError;
 use crate::core::commands::enqueue::image_bg_removal::enqueue_image_bg_removal_command::EnqueueImageBgRemovalCommand;
 use crate::core::commands::enqueue::image_bg_removal::errors::InternalBgRemovalError;
-use crate::core::commands::enqueue::image_bg_removal::success_event::EnqueueImageBgRemovalSuccessEvent;
 use crate::core::commands::enqueue::image_edit::enqueue_contextual_edit_image_command::{EditImageQuality, EditImageSize, EnqueueContextualEditImageCommand};
 use crate::core::commands::enqueue::image_edit::errors::InternalContextualEditImageError;
 use crate::core::commands::enqueue::image_edit::success_event::ContextualEditImageSuccessEvent;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_enqueue_failure_event::GenerationEnqueueFailureEvent;
@@ -27,6 +27,8 @@ use artcraft_api_defs::generate::image::generate_flux_1_schnell_text_to_image::G
 use artcraft_api_defs::generate::image::generate_flux_pro_11_text_to_image::GenerateFluxPro11TextToImageRequest;
 use artcraft_api_defs::generate::image::generate_flux_pro_11_ultra_text_to_image::GenerateFluxPro11UltraTextToImageRequest;
 use artcraft_api_defs::generate::image::remove_image_background::RemoveImageBackgroundRequest;
+use enums::common::generation_provider::GenerationProvider;
+use enums::tauri::tasks::task_type::TaskType;
 use fal_client::requests::queue::image_gen::enqueue_flux_pro_11_ultra_text_to_image::{enqueue_flux_pro_11_ultra_text_to_image, FluxPro11UltraTextToImageArgs};
 use fal_client::requests::webhook::image::enqueue_gpt_image_1_edit_image_webhook::GptEditImageQuality;
 use idempotency::uuid::generate_random_uuid;
@@ -48,7 +50,7 @@ pub async fn handle_generic_bg_removal_artcraft(
   app_data_root: &AppDataRoot,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
-) -> Result<EnqueueImageBgRemovalSuccessEvent, InternalBgRemovalError> {
+) -> Result<TaskEnqueueSuccess, InternalBgRemovalError> {
 
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,
@@ -79,20 +81,23 @@ pub async fn handle_generic_bg_removal_artcraft(
     request,
   ).await;
 
-  match result {
+  let success_result = match result {
     Ok(enqueued) => {
       // TODO(bt,2025-07-05): Enqueue job token?
       info!("Successfully enqueued Artcraft background removal. Job token: {}", 
         enqueued.inference_job_token);
+      enqueued
     }
     Err(err) => {
       error!("Failed to use Artcraft background removal: {:?}", err);
       return Err(InternalBgRemovalError::StorytellerError(err));
     }
-  }
+  };
 
-  Ok(EnqueueImageBgRemovalSuccessEvent {
-    service_provider: GenerationServiceProvider::Artcraft,
+  Ok(TaskEnqueueSuccess {
+    provider: GenerationProvider::Artcraft,
+    task_type: TaskType::BackgroundRemoval,
+    provider_job_id: Some(success_result.inference_job_token.to_string()),
   })
 }
 

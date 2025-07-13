@@ -2,10 +2,10 @@ use crate::core::commands::enqueue::image::enqueue_text_to_image_command::{Enque
 use crate::core::commands::enqueue::image::internal_image_error::InternalImageError;
 use crate::core::commands::enqueue::image_bg_removal::errors::InternalBgRemovalError;
 use crate::core::commands::enqueue::image_bg_removal::generic::handle_generic_bg_removal::handle_generic_bg_removal;
-use crate::core::commands::enqueue::image_bg_removal::success_event::EnqueueImageBgRemovalSuccessEvent;
 use crate::core::commands::enqueue::image_edit::errors::InternalContextualEditImageError;
 use crate::core::commands::enqueue::image_edit::gpt_image_1::handle_gpt_image_1::handle_gpt_image_1;
 use crate::core::commands::enqueue::image_edit::success_event::ContextualEditImageSuccessEvent;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::{Response, ResponseOrErrorType};
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
@@ -20,6 +20,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
+use crate::core::state::task_database::TaskDatabase;
 use crate::core::utils::get_url_file_extension::get_url_file_extension;
 use crate::core::utils::simple_http_download::simple_http_download;
 use crate::services::fal::state::fal_credential_manager::FalCredentialManager;
@@ -27,6 +28,8 @@ use crate::services::fal::state::fal_task_queue::FalTaskQueue;
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
+use enums::tauri::tasks::task_status::TaskStatus;
+use enums::tauri::tasks::task_type::TaskType;
 use errors::AnyhowError;
 use log::{error, info, warn};
 use openai_sora_client::recipes::image_remix_with_session_auto_renew::{image_remix_with_session_auto_renew, ImageRemixAutoRenewRequest};
@@ -35,6 +38,7 @@ use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_o
 use openai_sora_client::requests::image_gen::common::{ImageSize, NumImages};
 use openai_sora_client::sora_error::SoraError;
 use serde_derive::{Deserialize, Serialize};
+use sqlite_tasks::queries::create_task::{create_task, CreateTaskArgs};
 use std::time::Duration;
 use storyteller_client::error::storyteller_error::StorytellerError;
 use storyteller_client::media_files::get_media_file::get_media_file;
@@ -86,6 +90,7 @@ pub async fn enqueue_image_bg_removal_command(
   app_data_root: State<'_, AppDataRoot>,
   app_env_configs: State<'_, AppEnvConfigs>,
   provider_priority_store: State<'_, ProviderPriorityStore>,
+  task_database: State<'_, TaskDatabase>,
   storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
   fal_creds_manager: State<'_, FalCredentialManager>,
   fal_task_queue: State<'_, FalTaskQueue>,
@@ -99,6 +104,7 @@ pub async fn enqueue_image_bg_removal_command(
     &app_data_root,
     &app_env_configs,
     &provider_priority_store,
+    &task_database,
     &storyteller_creds_manager,
     &fal_creds_manager,
     &fal_task_queue,
@@ -124,8 +130,8 @@ pub async fn enqueue_image_bg_removal_command(
     }
     Ok(event) => {
       let event = GenerationEnqueueSuccessEvent {
-        action: GenerationAction::RemoveBackground,
-        service: event.service_provider,
+        action: event.to_frontend_event_action(),
+        service: event.to_frontend_event_service(),
         model: None, // FIXME: This isn't right, though we probably don't care for simple bg removal.
       };
 
@@ -144,14 +150,15 @@ pub async fn handle_request(
   app_data_root: &AppDataRoot,
   app_env_configs: &AppEnvConfigs,
   provider_priority_store: &ProviderPriorityStore,
+  task_database: &TaskDatabase,
   storyteller_creds_manager: &StorytellerCredentialManager,
   fal_creds_manager: &FalCredentialManager,
   fal_task_queue: &FalTaskQueue,
-) -> Result<EnqueueImageBgRemovalSuccessEvent, InternalBgRemovalError> {
+) -> Result<TaskEnqueueSuccess, InternalBgRemovalError> {
   
   // TODO(bt,2025-07-07): Other model/provider routing...
   
-  handle_generic_bg_removal(
+  let success_event = handle_generic_bg_removal(
     request,
     app,
     app_data_root,
@@ -160,5 +167,22 @@ pub async fn handle_request(
     storyteller_creds_manager,
     fal_creds_manager,
     fal_task_queue,
-  ).await
+  ).await?;
+
+  let result = create_task(CreateTaskArgs {
+    db: task_database.get_connection(),
+    status: TaskStatus::Pending,
+    task_type: success_event.task_type,
+    provider: success_event.provider,
+    provider_job_id: success_event.provider_job_id.as_deref(),
+    frontend_subscriber_id: None,
+    frontend_subscriber_payload: None,
+  }).await;
+
+  if let Err(err) = result {
+    error!("Failed to create task in database: {:?}", err);
+    // NB: Fail open, but find a way to flag this.
+  }
+
+  Ok(success_event)
 }
