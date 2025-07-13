@@ -166,5 +166,6 @@ pub async fn handle_image_artcraft(
   Ok(SuccessEvent {
     service_provider: GenerationServiceProvider::Artcraft,
     model:selected_model,
+    provider_job_id: Some(job_token.to_string()),
   })
 }

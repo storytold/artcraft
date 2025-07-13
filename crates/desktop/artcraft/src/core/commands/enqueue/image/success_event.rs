@@ -4,6 +4,7 @@ use crate::core::model::image_models::ImageModel;
 pub struct SuccessEvent {
   pub service_provider: GenerationServiceProvider,
   pub model: ImageModel,
+  pub provider_job_id: Option<String>,
 }
 
 impl SuccessEvent {

@@ -77,7 +77,7 @@ pub async fn handle_image_fal(
     }
   };
 
-  match result {
+  let success_result = match result {
     Ok(enqueued) => {
       info!("Successfully enqueued text to image");
 
@@ -95,6 +95,8 @@ pub async fn handle_image_fal(
         error!("Failed to enqueue task: {:?}", err);
         return Err(InternalImageError::AnyhowError(anyhow!("Failed to enqueue task: {:?}", err)));
       }
+      
+      enqueued
     }
     Err(err) => {
       error!("Failed to enqueue text to image: {:?}", err);
@@ -112,10 +114,11 @@ pub async fn handle_image_fal(
 
       return Err(InternalImageError::FalError(err));
     }
-  }
+  };
 
   Ok(SuccessEvent {
     service_provider: GenerationServiceProvider::Fal,
     model,
+    provider_job_id: Some(success_result.request_id.to_string()),
   })
 }

@@ -12,6 +12,8 @@ use openai_sora_client::recipes::simple_image_gen_with_session_auto_renew::{simp
 use openai_sora_client::requests::image_gen::common::{ImageSize, NumImages};
 use std::time::Duration;
 use tauri::AppHandle;
+use crate::core::commands::enqueue::image::success_event::SuccessEvent;
+use crate::core::model::image_models::ImageModel;
 
 const SORA_SIMPLE_IMAGE_GEN_TIMEOUT : Duration = Duration::from_millis(1000 * 30); // 30 seconds
 
@@ -20,7 +22,7 @@ pub async fn handle_image_sora(
   request: EnqueueTextToImageRequest,
   sora_creds_manager: &SoraCredentialManager,
   sora_task_queue: &SoraTaskQueue,
-) -> Result<(), InternalImageError> {
+) -> Result<SuccessEvent, InternalImageError> {
 
   let mut creds = sora_creds_manager
       .get_credentials_required()
@@ -80,5 +82,9 @@ pub async fn handle_image_sora(
 
   sora_task_queue.insert(&response.task_id)?;
 
-  Ok(())
+  Ok(SuccessEvent {
+    service_provider: GenerationServiceProvider::Sora,
+    model: ImageModel::GptImage1,
+    provider_job_id: Some(response.task_id.to_string()),
+  })
 }

@@ -1,6 +1,6 @@
-use crate::core::commands::enqueue::image::handle_image_artcraft::handle_image_artcraft;
-use crate::core::commands::enqueue::image::handle_image_fal::handle_image_fal;
-use crate::core::commands::enqueue::image::handle_image_sora::handle_image_sora;
+use crate::core::commands::enqueue::image::generic::handle_image_artcraft::handle_image_artcraft;
+use crate::core::commands::enqueue::image::generic::handle_image_fal::handle_image_fal;
+use crate::core::commands::enqueue::image::gpt_image_1::handle_image_sora::handle_image_sora;
 use crate::core::commands::enqueue::image::internal_image_error::InternalImageError;
 use crate::core::commands::enqueue::image::success_event::SuccessEvent;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
@@ -14,14 +14,19 @@ use crate::core::model::image_models::ImageModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
+use crate::core::state::task_database::TaskDatabase;
 use crate::services::fal::state::fal_credential_manager::FalCredentialManager;
 use crate::services::fal::state::fal_task_queue::FalTaskQueue;
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
+use enums::common::generation_provider::GenerationProvider;
+use enums::tauri::tasks::task_status::TaskStatus;
+use enums::tauri::tasks::task_type::TaskType;
 use fal_client::requests::queue::image_gen::enqueue_flux_pro_11_ultra_text_to_image::{enqueue_flux_pro_11_ultra_text_to_image, FluxPro11UltraTextToImageArgs};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
+use sqlite_tasks::queries::create_task::{create_task, CreateTaskArgs};
 use tauri::{AppHandle, State};
 
 #[derive(Deserialize)]
@@ -65,6 +70,7 @@ pub async fn enqueue_text_to_image_command(
   app_data_root: State<'_, AppDataRoot>,
   app_env_configs: State<'_, AppEnvConfigs>,
   provider_priority_store: State<'_, ProviderPriorityStore>,
+  task_database: State<'_, TaskDatabase>,
   fal_creds_manager: State<'_, FalCredentialManager>,
   storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
   fal_task_queue: State<'_, FalTaskQueue>,
@@ -79,6 +85,7 @@ pub async fn enqueue_text_to_image_command(
     request,
     &app_data_root,
     &provider_priority_store,
+    &task_database,
     &fal_creds_manager,
     &storyteller_creds_manager,
     &app_env_configs,
@@ -143,6 +150,62 @@ pub async fn handle_request(
   request: EnqueueTextToImageRequest,
   app_data_root: &AppDataRoot,
   provider_priority_store: &ProviderPriorityStore,
+  task_database: &TaskDatabase,
+  fal_creds_manager: &FalCredentialManager,
+  storyteller_creds_manager: &StorytellerCredentialManager,
+  app_env_configs: &AppEnvConfigs,
+  fal_task_queue: &FalTaskQueue,
+  sora_creds_manager: &SoraCredentialManager,
+  sora_task_queue: &SoraTaskQueue,
+) -> Result<SuccessEvent, InternalImageError> {
+  
+  let result = dispatch_request(
+    &app,
+    request,
+    &app_data_root,
+    &provider_priority_store,
+    &fal_creds_manager,
+    &storyteller_creds_manager,
+    &app_env_configs,
+    &fal_task_queue,
+    &sora_creds_manager,
+    &sora_task_queue,
+  ).await;
+  
+  let success_event = match result {
+    Err(err) => return Err(err),
+    Ok(event) => event,
+  };
+  
+  let provider = match success_event.service_provider {
+    GenerationServiceProvider::Sora => GenerationProvider::Sora,
+    GenerationServiceProvider::Artcraft => GenerationProvider::Artcraft,
+    GenerationServiceProvider::Fal => GenerationProvider::Fal,
+  };
+
+  let result = create_task(CreateTaskArgs {
+    db: task_database.get_connection(),
+    status: TaskStatus::Pending,
+    task_type: TaskType::ImageGeneration,
+    provider,
+    provider_job_id: success_event.provider_job_id.as_deref(),
+    frontend_subscriber_id: None,
+    frontend_subscriber_payload: None,
+  }).await;
+
+  if let Err(err) = result {
+    error!("Failed to create task in database: {:?}", err);
+    // NB: Fail open, but find a way to flag this.
+  }
+  
+  Ok(success_event)
+}
+
+pub async fn dispatch_request(
+  app: &AppHandle,
+  request: EnqueueTextToImageRequest,
+  app_data_root: &AppDataRoot,
+  provider_priority_store: &ProviderPriorityStore,
   fal_creds_manager: &FalCredentialManager,
   storyteller_creds_manager: &StorytellerCredentialManager,
   app_env_configs: &AppEnvConfigs,
@@ -156,11 +219,7 @@ pub async fn handle_request(
       return Err(InternalImageError::NoModelSpecified);
     }
     Some(ImageModel::GptImage1) => {
-      handle_image_sora(&app, request, sora_creds_manager, sora_task_queue).await?;
-      return Ok(SuccessEvent {
-        service_provider: GenerationServiceProvider::Sora,
-        model: ImageModel::GptImage1,
-      });
+      return handle_image_sora(&app, request, sora_creds_manager, sora_task_queue).await;
     }
     _ => {
       // Fall-through
