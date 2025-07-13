@@ -4,9 +4,10 @@ use crate::core::commands::enqueue::image_edit::enqueue_contextual_edit_image_co
 use crate::core::commands::enqueue::image_edit::errors::InternalContextualEditImageError;
 use crate::core::commands::enqueue::image_edit::gpt_image_1::handle_gpt_image_1::MAX_IMAGES;
 use crate::core::commands::enqueue::image_edit::success_event::ContextualEditImageSuccessEvent;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
+use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_enqueue_failure_event::GenerationEnqueueFailureEvent;
 use crate::core::events::generation_events::generation_enqueue_success_event::GenerationEnqueueSuccessEvent;
 use crate::core::model::contextual_image_edit_models::ContextualImageEditModel;
@@ -27,6 +28,8 @@ use artcraft_api_defs::generate::image::generate_flux_1_dev_text_to_image::Gener
 use artcraft_api_defs::generate::image::generate_flux_1_schnell_text_to_image::GenerateFlux1SchnellTextToImageRequest;
 use artcraft_api_defs::generate::image::generate_flux_pro_11_text_to_image::GenerateFluxPro11TextToImageRequest;
 use artcraft_api_defs::generate::image::generate_flux_pro_11_ultra_text_to_image::GenerateFluxPro11UltraTextToImageRequest;
+use enums::common::generation_provider::GenerationProvider;
+use enums::tauri::tasks::task_type::TaskType;
 use errors::AnyhowResult;
 use fal_client::requests::queue::image_gen::enqueue_flux_pro_11_ultra_text_to_image::{enqueue_flux_pro_11_ultra_text_to_image, FluxPro11UltraTextToImageArgs};
 use idempotency::uuid::generate_random_uuid;
@@ -53,8 +56,7 @@ pub async fn handle_gpt_image_1_sora(
   app_env_configs: &AppEnvConfigs,
   sora_creds_manager: &SoraCredentialManager,
   sora_task_queue: &SoraTaskQueue,
-
-) -> Result<ContextualEditImageSuccessEvent, InternalContextualEditImageError> {
+) -> Result<TaskEnqueueSuccess, InternalContextualEditImageError> {
 
   let sora_creds = match sora_creds_manager.get_credentials() {
     Ok(Some(creds)) => creds,
@@ -182,9 +184,10 @@ pub async fn handle_gpt_image_1_sora(
 
   sora_task_queue.insert(&response.task_id)?;
 
-  Ok(ContextualEditImageSuccessEvent {
-    service_provider: GenerationServiceProvider::Sora,
-    model: ContextualImageEditModel::GptImage1,
+  Ok(TaskEnqueueSuccess {
+    task_type: TaskType::ImageGeneration,
+    model: Some(GenerationModel::GptImage1),
+    provider: GenerationProvider::Sora,
     provider_job_id: Some(response.task_id.to_string()),
   })
 }

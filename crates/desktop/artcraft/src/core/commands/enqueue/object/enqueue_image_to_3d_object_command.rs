@@ -1,9 +1,10 @@
-use crate::core::commands::enqueue::object::handle_object_artcraft::handle_object_artcraft;
-use crate::core::commands::enqueue::object::handle_object_fal::handle_object_fal;
+use crate::core::commands::enqueue::object::generic::handle_object::handle_object;
 use crate::core::commands::enqueue::object::internal_object_error::InternalObjectError;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::Response;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
+use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
 use crate::services::fal::state::fal_credential_manager::FalCredentialManager;
@@ -15,7 +16,9 @@ use log::{error, info, warn};
 use serde_derive::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 use tokens::tokens::media_files::MediaFileToken;
-use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
+use crate::core::events::generation_events::generation_enqueue_success_event::GenerationEnqueueSuccessEvent;
+use crate::core::state::task_database::TaskDatabase;
 
 #[derive(Deserialize)]
 pub struct EnqueueImageTo3dObjectRequest {
@@ -69,6 +72,7 @@ pub async fn enqueue_image_to_3d_object_command(
   app_env_configs: State<'_, AppEnvConfigs>,
   app_data_root: State<'_, AppDataRoot>,
   provider_priority_store: State<'_, ProviderPriorityStore>,
+  task_database: State<'_, TaskDatabase>,
   fal_creds_manager: State<'_, FalCredentialManager>,
   fal_task_queue: State<'_, FalTaskQueue>,
   storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
@@ -83,6 +87,7 @@ pub async fn enqueue_image_to_3d_object_command(
     &app_env_configs,
     &app_data_root,
     &provider_priority_store,
+    &task_database,
     &fal_creds_manager,
     &storyteller_creds_manager,
     &fal_task_queue,
@@ -127,7 +132,17 @@ pub async fn enqueue_image_to_3d_object_command(
         error_details: None,
       })
     }
-    Ok(()) => {
+    Ok(event) => {
+      let event = GenerationEnqueueSuccessEvent {
+        action: event.to_frontend_event_action(),
+        service: event.to_frontend_event_service(),
+        model: event.model,
+      };
+
+      if let Err(err) = event.send(&app) {
+        error!("Failed to emit event: {:?}", err); // Fail open.
+      }
+      
       Ok(EnqueueImageTo3dObjectSuccessResponse {}.into())
     }
   }
@@ -140,39 +155,37 @@ pub async fn handle_request(
   app_env_configs: &AppEnvConfigs,
   app_data_root: &AppDataRoot,
   provider_priority_store: &ProviderPriorityStore,
+  task_database: &TaskDatabase,
   fal_creds_manager: &FalCredentialManager,
   storyteller_creds_manager: &StorytellerCredentialManager,
   fal_task_queue: &FalTaskQueue,
-) -> Result<(), InternalObjectError> {
+) -> Result<TaskEnqueueSuccess, InternalObjectError> {
 
-  let priority = provider_priority_store.get_priority()?;
+  let result = handle_object(
+    request,
+    &app,
+    &app_env_configs,
+    &app_data_root,
+    &provider_priority_store,
+    &fal_creds_manager,
+    &storyteller_creds_manager,
+    &fal_task_queue,
+  ).await;
+  
+  let success_event = match result {
+    Err(err) => return Err(err),
+    Ok(event) => event,
+  };
 
-  for provider in priority.iter() {
-    match provider {
-      Provider::Sora => {} // Fallthrough
-      Provider::Artcraft => {
-        return Ok(handle_object_artcraft(
-          request, 
-          app, 
-          app_env_configs,
-          app_data_root, 
-          storyteller_creds_manager
-        ).await?);
-      }
-      Provider::Fal => {
-        if fal_creds_manager.has_apparent_api_token()? {
-          return Ok(handle_object_fal(
-            &app, 
-            app_env_configs,
-            app_data_root, 
-            request, 
-            fal_creds_manager, 
-            fal_task_queue
-          ).await?);
-        }
-      }
-    }
+  let result = success_event
+      .insert_into_task_database(task_database)
+      .await;
+
+  if let Err(err) = result {
+    error!("Failed to create task in database: {:?}", err);
+    // NB: Fail open, but find a way to flag this.
   }
 
-  Err(InternalObjectError::NoProviderAvailable)
+
+  Ok(success_event)
 }

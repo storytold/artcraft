@@ -3,6 +3,7 @@ use crate::core::commands::enqueue::image::internal_image_error::InternalImageEr
 use crate::core::commands::enqueue::image_edit::errors::InternalContextualEditImageError;
 use crate::core::commands::enqueue::image_edit::gpt_image_1::handle_gpt_image_1::handle_gpt_image_1;
 use crate::core::commands::enqueue::image_edit::success_event::ContextualEditImageSuccessEvent;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::{Response, ResponseOrErrorType};
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
@@ -176,9 +177,9 @@ pub async fn enqueue_contextual_edit_image_command(
     }
     Ok(event) => {
       let event = GenerationEnqueueSuccessEvent {
-        action: GenerationAction::GenerateImage,
-        service: event.service_provider,
-        model: Some(event.tauri_event_model()),
+        action: event.to_frontend_event_action(),
+        service: event.to_frontend_event_service(),
+        model: event.model,
       };
 
       if let Err(err) = event.send(&app) {
@@ -202,7 +203,7 @@ pub async fn handle_request(
   fal_task_queue: &FalTaskQueue,
   sora_creds_manager: &SoraCredentialManager,
   sora_task_queue: &SoraTaskQueue,
-) -> Result<ContextualEditImageSuccessEvent, InternalContextualEditImageError> {
+) -> Result<TaskEnqueueSuccess, InternalContextualEditImageError> {
   let success_event= match request.model {
     None => {
       return Err(InternalContextualEditImageError::NoModelSpecified)
@@ -224,21 +225,9 @@ pub async fn handle_request(
     // TODO(bt,2025-07-05): Flux Kontext, etc.
   };
   
-  let provider = match success_event.service_provider {
-    GenerationServiceProvider::Artcraft => GenerationProvider::Artcraft,
-    GenerationServiceProvider::Fal => GenerationProvider::Fal,
-    GenerationServiceProvider::Sora => GenerationProvider::Sora,
-  };
-  
-  let result = create_task(CreateTaskArgs {
-    db: task_database.get_connection(),
-    status: TaskStatus::Pending,
-    task_type: TaskType::ImageGeneration,
-    provider,
-    provider_job_id: success_event.provider_job_id.as_deref(),
-    frontend_subscriber_id: None,
-    frontend_subscriber_payload: None,
-  }).await;
+  let result = success_event
+      .insert_into_task_database(task_database)
+      .await;
   
   if let Err(err) = result {
     error!("Failed to create task in database: {:?}", err);

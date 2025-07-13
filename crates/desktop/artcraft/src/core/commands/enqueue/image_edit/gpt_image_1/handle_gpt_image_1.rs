@@ -3,6 +3,7 @@ use crate::core::commands::enqueue::image_edit::errors::InternalContextualEditIm
 use crate::core::commands::enqueue::image_edit::gpt_image_1::handle_gpt_image_1_artcraft::handle_gpt_image_1_artcraft;
 use crate::core::commands::enqueue::image_edit::gpt_image_1::handle_gpt_image_1_sora::handle_gpt_image_1_sora;
 use crate::core::commands::enqueue::image_edit::success_event::ContextualEditImageSuccessEvent;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
@@ -27,7 +28,7 @@ pub async fn handle_gpt_image_1(
   fal_task_queue: &FalTaskQueue,
   sora_creds_manager: &SoraCredentialManager,
   sora_task_queue: &SoraTaskQueue,
-) -> Result<ContextualEditImageSuccessEvent, InternalContextualEditImageError> {
+) -> Result<TaskEnqueueSuccess, InternalContextualEditImageError> {
 
   let priority = provider_priority_store.get_priority()?;
   

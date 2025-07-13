@@ -169,15 +169,9 @@ pub async fn handle_request(
     fal_task_queue,
   ).await?;
 
-  let result = create_task(CreateTaskArgs {
-    db: task_database.get_connection(),
-    status: TaskStatus::Pending,
-    task_type: success_event.task_type,
-    provider: success_event.provider,
-    provider_job_id: success_event.provider_job_id.as_deref(),
-    frontend_subscriber_id: None,
-    frontend_subscriber_payload: None,
-  }).await;
+  let result = success_event
+      .insert_into_task_database(task_database)
+      .await;
 
   if let Err(err) = result {
     error!("Failed to create task in database: {:?}", err);

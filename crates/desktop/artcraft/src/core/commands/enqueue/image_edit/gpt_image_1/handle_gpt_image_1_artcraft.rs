@@ -4,8 +4,9 @@ use crate::core::commands::enqueue::image_edit::enqueue_contextual_edit_image_co
 use crate::core::commands::enqueue::image_edit::errors::InternalContextualEditImageError;
 use crate::core::commands::enqueue::image_edit::gpt_image_1::handle_gpt_image_1::MAX_IMAGES;
 use crate::core::commands::enqueue::image_edit::success_event::ContextualEditImageSuccessEvent;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
+use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_enqueue_failure_event::GenerationEnqueueFailureEvent;
 use crate::core::model::contextual_image_edit_models::ContextualImageEditModel;
 use crate::core::model::image_models::ImageModel;
@@ -33,6 +34,8 @@ use storyteller_client::generate::image::generate_flux_1_schnell_text_to_image::
 use storyteller_client::generate::image::generate_flux_pro_11_text_to_image::generate_flux_pro_11_text_to_image;
 use storyteller_client::generate::image::generate_flux_pro_11_ultra_text_to_image::generate_flux_pro_11_ultra_text_to_image;
 use tauri::AppHandle;
+use enums::common::generation_provider::GenerationProvider;
+use enums::tauri::tasks::task_type::TaskType;
 
 pub async fn handle_gpt_image_1_artcraft(
   request: &EnqueueContextualEditImageCommand,
@@ -40,7 +43,7 @@ pub async fn handle_gpt_image_1_artcraft(
   app_data_root: &AppDataRoot,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
-) -> Result<ContextualEditImageSuccessEvent, InternalContextualEditImageError> {
+) -> Result<TaskEnqueueSuccess, InternalContextualEditImageError> {
 
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,
@@ -130,9 +133,10 @@ pub async fn handle_gpt_image_1_artcraft(
     }
   };
   
-  Ok(ContextualEditImageSuccessEvent {
-    service_provider: GenerationServiceProvider::Artcraft,
-    model: ContextualImageEditModel::GptImage1,
+  Ok(TaskEnqueueSuccess {
+    provider: GenerationProvider::Artcraft,
+    model: Some(GenerationModel::GptImage1),
     provider_job_id: Some(job_id.to_string()),
+    task_type: TaskType::ImageGeneration,
   })
 }

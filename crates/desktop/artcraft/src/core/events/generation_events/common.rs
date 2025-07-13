@@ -21,6 +21,10 @@ pub enum GenerationModel {
   FluxPro11Ultra,
   #[serde(rename = "gpt_image_1")]
   GptImage1,
+  #[serde(rename = "hunyuan_3d_2_0")]
+  Hunyuan3d2_0,
+  #[serde(rename = "hunyuan_3d_2_1")]
+  Hunyuan3d2_1,
   #[serde(rename = "kling_1.6")]
   Kling1_6,
   #[serde(rename = "kling_2.0")]
