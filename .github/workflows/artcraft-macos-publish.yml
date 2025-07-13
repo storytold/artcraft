@@ -1,10 +1,11 @@
-name: "Artcraft Publish"
+name: "Artcraft MacOS Publish"
 
 on:
   push:
     branches:
       - release
       - artcraft-release
+      - artcraft-macos  # Additional branch for MacOS testing
 
 # This workflow creates Universal macOS builds with signing certificate support.
 # On each push to the release branches it will create or update a GitHub release, build your app, and upload the artifacts to the release.
