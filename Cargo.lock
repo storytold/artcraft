@@ -656,6 +656,7 @@ dependencies = [
  "directories",
  "dirs",
  "discord-rich-presence",
+ "enums",
  "errors",
  "fal_client",
  "filesys",
@@ -675,7 +676,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "serial_test",
- "sqlx",
+ "sqlite_tasks",
  "storyteller_client",
  "tauri",
  "tauri-build",
@@ -9612,6 +9613,27 @@ dependencies = [
  "itertools 0.11.0",
  "nom",
  "unicode_categories",
+]
+
+[[package]]
+name = "sqlite_tasks"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "enums",
+ "errors",
+ "log",
+ "once_cell",
+ "regex",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "sqlx",
+ "tempfile",
+ "tokens",
+ "tokio",
+ "workspace-build-acceleration",
 ]
 
 [[package]]

@@ -90,6 +90,7 @@ members = [
   "crates/schema/database/mysql_queries",
   "crates/schema/database/redis_common",
   "crates/schema/database/redis_schema",
+  "crates/schema/database/sqlite_tasks",
   #"crates/schema/database/sqlite_queries",
 
   # Schema (public): common strongly-typed tokens, ids, payloads, etc.
@@ -231,6 +232,7 @@ mimetypes = { path = "crates/lib/files/mimetypes" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }
 shared_service_components = { path = "crates/lib/shared_service_components" }
+sqlite_tasks = { path = "crates/schema/database/sqlite_tasks" }
 storyteller_client = { path = "crates/api_clients/storyteller_client" }
 subprocess_common = { path = "crates/lib/subprocess_common" }
 test_data = { path = "crates/lib/test_data" }

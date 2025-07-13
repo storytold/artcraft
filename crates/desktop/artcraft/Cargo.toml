@@ -28,6 +28,7 @@ workspace-build-acceleration = { workspace =  true }
 # Internal
 artcraft_api_defs = { workspace = true }
 build_metadata = { workspace = true }
+enums = { workspace = true }
 errors = { workspace = true }
 fal_client = { workspace = true }
 filesys = { workspace = true }
@@ -36,6 +37,7 @@ memory_store = { workspace = true }
 mimetypes = { workspace = true }
 openai_sora_client = { workspace = true }
 primitives = { workspace = true }
+sqlite_tasks.workspace = true
 storyteller_client = { workspace = true }
 tokens = { workspace = true }
 web_base64 = { workspace = true }
@@ -69,10 +71,6 @@ url = { workspace = true }
 
 # NB: We need to vendor this in so that we can access the cookies inside via the private API
 tauri-plugin-http = { path = "../../vendor/tauri-plugin-http" }
-
-# TODO(bt,2025-07-09): Update sqlx ASAP. We're stuck on 0.7 because of the complex use of internal types and macros in the database crate.
-# We're going to embed in-memory SQLite
-sqlx = { package = "sqlx", version = "0.7.4", features = ["runtime-tokio", "sqlite", "chrono"] }
 
 # NB: The version of the `discord-rich-presence` crate (0.2.5) last published has non-Send/Sync error
 # types and can't do threading. We need to wait for a new version to unpin from Git.
