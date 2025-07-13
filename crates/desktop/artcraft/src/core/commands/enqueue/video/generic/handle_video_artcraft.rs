@@ -1,3 +1,4 @@
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::enqueue::video::enqueue_image_to_video_command::EnqueueImageToVideoRequest;
 use crate::core::commands::enqueue::video::internal_video_error::InternalVideoError;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
@@ -13,6 +14,8 @@ use artcraft_api_defs::generate::video::generate_kling_2_1_master_image_to_video
 use artcraft_api_defs::generate::video::generate_kling_2_1_pro_image_to_video::{GenerateKling21ProAspectRatio, GenerateKling21ProImageToVideoRequest};
 use artcraft_api_defs::generate::video::generate_seedance_1_0_lite_image_to_video::GenerateSeedance10LiteImageToVideoRequest;
 use artcraft_api_defs::generate::video::generate_veo_2_image_to_video::{GenerateVeo2AspectRatio, GenerateVeo2ImageToVideoRequest};
+use enums::common::generation_provider::GenerationProvider;
+use enums::tauri::tasks::task_type::TaskType;
 use fal_client::requests::queue::image_gen::enqueue_flux_pro_11_ultra_text_to_image::{enqueue_flux_pro_11_ultra_text_to_image, FluxPro11UltraTextToImageArgs};
 use fal_client::requests::queue::video_gen::enqueue_kling_16_pro_image_to_video::Kling16ProAspectRatio;
 use fal_client::requests::webhook::video::enqueue_veo_2_image_to_video_webhook::Veo2AspectRatio;
@@ -32,7 +35,7 @@ pub async fn handle_video_artcraft(
   app_env_configs: &AppEnvConfigs,
   app_data_root: &AppDataRoot,
   storyteller_creds_manager: &StorytellerCredentialManager,
-) -> Result<(), InternalVideoError> {
+) -> Result<TaskEnqueueSuccess, InternalVideoError> {
 
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,
@@ -201,41 +204,10 @@ pub async fn handle_video_artcraft(
 
   info!("Successfully enqueued video generation");
   
-  let event = GenerationEnqueueSuccessEvent {
-    action: GenerationAction::GenerateVideo,
-    service: GenerationServiceProvider::Artcraft,
+  Ok(TaskEnqueueSuccess {
+    task_type: TaskType::VideoGeneration,
     model: selected_model,
-  };
-  
-  if let Err(err) = event.send(app) {
-    error!("Failed to emit event: {:?}", err); // Fail open.
-  }
-  
-  //if let Err(err) = fal_task_queue.insert(&enqueued) {
-  //  error!("Failed to enqueue task: {:?}", err);
-  //  return Err(InternalVideoError::AnyhowError(anyhow!("Failed to enqueue task: {:?}", err)));
-  //}
-
-//  match result {
-//    Ok(enqueued) => {
-//    }
-//    Err(err) => {
-//      error!("Failed to enqueue image to 3d: {:?}", err);
-//
-//      let event = GenerationEnqueueFailureEvent {
-//        action: GenerationAction::ImageTo3d,
-//        service: GenerationServiceProvider::Fal,
-//        model: None,
-//        reason: None,
-//      };
-//
-//      if let Err(err) = event.send(app) {
-//        error!("Failed to emit event: {:?}", err); // Fail open.
-//      }
-//
-//      return Err(InternalVideoError::FalError(err));
-//    }
-//  }
-
-  Ok(())
+    provider: GenerationProvider::Artcraft,
+    provider_job_id: Some(job_token.to_string()),
+  })
 }

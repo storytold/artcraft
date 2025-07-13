@@ -2,7 +2,6 @@ use crate::core::commands::enqueue::image::enqueue_text_to_image_command::{Enque
 use crate::core::commands::enqueue::image::internal_image_error::InternalImageError;
 use crate::core::commands::enqueue::image_edit::errors::InternalContextualEditImageError;
 use crate::core::commands::enqueue::image_edit::gpt_image_1::handle_gpt_image_1::handle_gpt_image_1;
-use crate::core::commands::enqueue::image_edit::success_event::ContextualEditImageSuccessEvent;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::{Response, ResponseOrErrorType};
