@@ -1,4 +1,4 @@
-use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
+use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 
@@ -6,6 +6,8 @@ pub struct TaskEnqueueSuccess {
   pub provider: GenerationProvider,
   pub task_type: TaskType,
   pub provider_job_id: Option<String>,
+  // TODO: We may want to change the `model` type - this has weird ownership and semantics
+  pub model: Option<GenerationModel>, 
 }
 
 impl TaskEnqueueSuccess{

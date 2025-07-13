@@ -1,8 +1,8 @@
 use crate::core::commands::enqueue::image::enqueue_text_to_image_command::EnqueueTextToImageRequest;
 use crate::core::commands::enqueue::image::internal_image_error::InternalImageError;
-use crate::core::commands::enqueue::image::success_event::SuccessEvent;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
-use crate::core::events::generation_events::common::{GenerationAction, GenerationServiceProvider};
+use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
 use crate::core::events::generation_events::generation_enqueue_failure_event::GenerationEnqueueFailureEvent;
 use crate::core::model::image_models::ImageModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
@@ -13,6 +13,8 @@ use artcraft_api_defs::generate::image::generate_flux_1_dev_text_to_image::Gener
 use artcraft_api_defs::generate::image::generate_flux_1_schnell_text_to_image::GenerateFlux1SchnellTextToImageRequest;
 use artcraft_api_defs::generate::image::generate_flux_pro_11_text_to_image::GenerateFluxPro11TextToImageRequest;
 use artcraft_api_defs::generate::image::generate_flux_pro_11_ultra_text_to_image::GenerateFluxPro11UltraTextToImageRequest;
+use enums::common::generation_provider::GenerationProvider;
+use enums::tauri::tasks::task_type::TaskType;
 use fal_client::requests::queue::image_gen::enqueue_flux_pro_11_ultra_text_to_image::{enqueue_flux_pro_11_ultra_text_to_image, FluxPro11UltraTextToImageArgs};
 use idempotency::uuid::generate_random_uuid;
 use log::{error, info};
@@ -28,7 +30,7 @@ pub async fn handle_image_artcraft(
   app_env_configs: &AppEnvConfigs,
   app_data_root: &AppDataRoot,
   storyteller_creds_manager: &StorytellerCredentialManager,
-) -> Result<SuccessEvent, InternalImageError> {
+) -> Result<TaskEnqueueSuccess, InternalImageError> {
 
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,
@@ -63,7 +65,7 @@ pub async fn handle_image_artcraft(
     }
     Some(ImageModel::Flux1Dev) => {
       info!("enqueue Flux 1 Dev");
-      selected_model = ImageModel::Flux1Dev;
+      selected_model = GenerationModel::Flux1Dev;
       let request = GenerateFlux1DevTextToImageRequest {
         uuid_idempotency_token,
         prompt: request.prompt,
@@ -88,7 +90,7 @@ pub async fn handle_image_artcraft(
     }
     Some(ImageModel::Flux1Schnell) => {
       info!("enqueue Flux 1 Schnell");
-      selected_model = ImageModel::Flux1Schnell;
+      selected_model = GenerationModel::Flux1Schnell;
       let request = GenerateFlux1SchnellTextToImageRequest {
         uuid_idempotency_token,
         prompt: request.prompt,
@@ -113,7 +115,7 @@ pub async fn handle_image_artcraft(
     }
     Some(ImageModel::FluxPro11) => {
       info!("enqueue Flux Pro 1.1");
-      selected_model = ImageModel::FluxPro11;
+      selected_model = GenerationModel::FluxPro11;
       let request = GenerateFluxPro11TextToImageRequest {
         uuid_idempotency_token,
         prompt: request.prompt,
@@ -138,7 +140,7 @@ pub async fn handle_image_artcraft(
     }
     Some(ImageModel::FluxPro11Ultra) => {
       info!("enqueue Flux Pro 1.1 Ultra");
-      selected_model = ImageModel::FluxPro11Ultra;
+      selected_model = GenerationModel::FluxPro11Ultra;
       let request = GenerateFluxPro11UltraTextToImageRequest {
         uuid_idempotency_token,
         prompt: request.prompt,
@@ -163,9 +165,10 @@ pub async fn handle_image_artcraft(
     }
   };
 
-  Ok(SuccessEvent {
-    service_provider: GenerationServiceProvider::Artcraft,
-    model:selected_model,
+  Ok(TaskEnqueueSuccess {
+    provider: GenerationProvider::Artcraft,
+    task_type: TaskType::ImageGeneration,
+    model: Some(selected_model),
     provider_job_id: Some(job_token.to_string()),
   })
 }

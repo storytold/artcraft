@@ -2,7 +2,7 @@ use crate::core::commands::enqueue::image::generic::handle_image_artcraft::handl
 use crate::core::commands::enqueue::image::generic::handle_image_fal::handle_image_fal;
 use crate::core::commands::enqueue::image::gpt_image_1::handle_image_sora::handle_image_sora;
 use crate::core::commands::enqueue::image::internal_image_error::InternalImageError;
-use crate::core::commands::enqueue::image::success_event::SuccessEvent;
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::Response;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
@@ -130,9 +130,9 @@ pub async fn enqueue_text_to_image_command(
     }
     Ok(event) => {
       let event = GenerationEnqueueSuccessEvent {
-        action: GenerationAction::GenerateImage,
-        service: event.service_provider,
-        model: Some(event.tauri_event_model()),
+        action: event.to_frontend_event_action(),
+        service: event.to_frontend_event_service(),
+        model: event.model,
       };
 
       if let Err(err) = event.send(&app) {
@@ -157,7 +157,7 @@ pub async fn handle_request(
   fal_task_queue: &FalTaskQueue,
   sora_creds_manager: &SoraCredentialManager,
   sora_task_queue: &SoraTaskQueue,
-) -> Result<SuccessEvent, InternalImageError> {
+) -> Result<TaskEnqueueSuccess, InternalImageError> {
   
   let result = dispatch_request(
     &app,
@@ -176,18 +176,12 @@ pub async fn handle_request(
     Err(err) => return Err(err),
     Ok(event) => event,
   };
-  
-  let provider = match success_event.service_provider {
-    GenerationServiceProvider::Sora => GenerationProvider::Sora,
-    GenerationServiceProvider::Artcraft => GenerationProvider::Artcraft,
-    GenerationServiceProvider::Fal => GenerationProvider::Fal,
-  };
 
   let result = create_task(CreateTaskArgs {
     db: task_database.get_connection(),
     status: TaskStatus::Pending,
-    task_type: TaskType::ImageGeneration,
-    provider,
+    task_type: success_event.task_type,
+    provider: success_event.provider,
     provider_job_id: success_event.provider_job_id.as_deref(),
     frontend_subscriber_id: None,
     frontend_subscriber_payload: None,
@@ -212,7 +206,7 @@ pub async fn dispatch_request(
   fal_task_queue: &FalTaskQueue,
   sora_creds_manager: &SoraCredentialManager,
   sora_task_queue: &SoraTaskQueue,
-) -> Result<SuccessEvent, InternalImageError> {
+) -> Result<TaskEnqueueSuccess, InternalImageError> {
 
   match request.model {
     None => {
