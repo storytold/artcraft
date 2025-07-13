@@ -32,6 +32,8 @@ sqlx migrate run \
   --database-url "sqlite:${sqlite_db_file}" \
   --source "${root_dir}/_sql/artcraft_migrations"
 
+export DATABASE_URL="${sqlite_db_file}"
+
 echo "Build and run..."
 RUSTFLAGS="-Awarnings" cargo tauri dev \
   --no-dev-server \
