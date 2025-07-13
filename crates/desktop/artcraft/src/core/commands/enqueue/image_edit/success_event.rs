@@ -5,6 +5,7 @@ use crate::core::model::image_models::ImageModel;
 pub struct ContextualEditImageSuccessEvent {
   pub service_provider: GenerationServiceProvider,
   pub model: ContextualImageEditModel,
+  pub provider_job_id: Option<String>,
 }
 
 impl ContextualEditImageSuccessEvent {

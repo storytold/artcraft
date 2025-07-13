@@ -11,10 +11,6 @@ normal = ["workspace-build-acceleration"]
 name = "sqlite_tasks"
 path = "src/lib.rs"
 
-[[bin]]
-name = "sqlite_tasks_bootstrap"
-path = "src/sqlite_tasks_bootstrap.rs"
-
 [dependencies]
 # cargo-hakari workspace hack (faster compile times)
 workspace-build-acceleration.workspace = true

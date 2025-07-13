@@ -185,5 +185,6 @@ pub async fn handle_gpt_image_1_sora(
   Ok(ContextualEditImageSuccessEvent {
     service_provider: GenerationServiceProvider::Sora,
     model: ContextualImageEditModel::GptImage1,
+    provider_job_id: Some(response.task_id.to_string()),
   })
 }

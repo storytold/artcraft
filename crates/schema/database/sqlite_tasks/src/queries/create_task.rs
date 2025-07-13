@@ -1,4 +1,5 @@
 use crate::connection::TaskDbConnection;
+use crate::error::SqliteTasksError;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_status::TaskStatus;
 use enums::tauri::tasks::task_type::TaskType;
@@ -16,7 +17,7 @@ pub struct CreateTaskArgs<'a> {
 
 pub async fn create_task(
   args: CreateTaskArgs<'_>,
-) -> Result<TaskId, sqlx::Error> {
+) -> Result<TaskId, SqliteTasksError> {
   let task_id = TaskId::generate();
   
   // TODO(bt,2025-07-12): Fix this. The sqlx mysql queries never required temporaries

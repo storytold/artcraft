@@ -117,20 +117,22 @@ pub async fn handle_gpt_image_1_artcraft(
     request,
   ).await;
   
-  match result {
+  let job_id = match result {
     Ok(enqueued) => {
       // TODO(bt,2025-07-05): Enqueue job token?
       info!("Successfully enqueued Artcraft gpt-image-1. Job token: {}", 
         enqueued.inference_job_token);
+      enqueued.inference_job_token
     }
     Err(err) => {
       error!("Failed to use Artcraft gpt-image-1: {:?}", err);
       return Err(InternalContextualEditImageError::StorytellerError(err));
     }
-  }
+  };
   
   Ok(ContextualEditImageSuccessEvent {
     service_provider: GenerationServiceProvider::Artcraft,
     model: ContextualImageEditModel::GptImage1,
+    provider_job_id: Some(job_id.to_string()),
   })
 }
