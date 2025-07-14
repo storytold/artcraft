@@ -28,7 +28,7 @@ pub async fn create_task(
 
   let query = sqlx::query!(r#"
     INSERT INTO tasks (
-      id, 
+      id,
       task_status,
       task_type,
       provider,
@@ -46,7 +46,7 @@ pub async fn create_task(
       args.frontend_subscriber_id,
       args.frontend_subscriber_payload
   );
-  
+
   let _r = query.execute(args.db.get_pool()).await?;
   
   Ok(task_id)
