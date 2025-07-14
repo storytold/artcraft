@@ -6,14 +6,16 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
+use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
-use log::info;
+use log::{error, info};
 use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use serde_json::{Map, Value};
 use std::io::Write;
 use tempfile::NamedTempFile;
+use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::media_files::MediaFileToken;
 use videos::ffprobe_get_info::ffprobe_get_info;
 
@@ -121,6 +123,20 @@ pub async fn handle_video_payload(
       .await?;
   
   info!("Video media file uploaded with token: {}", media_token);
+
+  let thumbnail_task_result =
+      ThumbnailTaskBuilder::new_for_source_mimetype(ThumbnailTaskInputMimeType::MP4)
+          .with_bucket(server_state.public_bucket_client.bucket_name().as_str())
+          .with_path(&*path_to_string(public_upload_path.to_full_object_pathbuf()))
+          .with_output_suffix("thumb")
+          .with_event_id(&media_token.to_string())
+          .send_all()
+          .await;
+
+  if let Err(err) = thumbnail_task_result {
+    // Fail open
+    error!("Failed to create some/all thumbnail tasks: {:?}", err);
+  }
 
   Ok(media_token)
 }
