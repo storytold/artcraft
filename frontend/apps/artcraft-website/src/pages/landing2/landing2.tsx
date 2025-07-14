@@ -8,9 +8,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Footer from "../../components/footer";
 import { useState, useRef, useEffect } from "react";
 
-const MAC_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_2025.06.04.dmg";
+//const MAC_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_2025.06.04.dmg";
+const MAC_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_2025.07.13.dmg";
 
-const WINDOWS_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.06.04.exe";
+//const WINDOWS_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.06.04.exe";
+const WINDOWS_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.07.13.exe";
 
 const fadeUpVariants = {
   hidden: { opacity: 0, y: 20 },
