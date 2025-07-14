@@ -84,6 +84,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use the SQLx query cache for SQLite
+          SQLX_OFFLINE: true
         with:
           projectPath: ./crates/desktop/artcraft
           tagName: artcraft-windows-v__VERSION__ # the action automatically replaces __VERSION__ with the app version.

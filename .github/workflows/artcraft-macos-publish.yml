@@ -220,6 +220,8 @@ jobs:
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
           APPLE_DEVELOPMENT_TEAM: ${{ env.APPLE_DEVELOPMENT_TEAM }}
+          # Use the SQLx query cache for SQLite
+          SQLX_OFFLINE: true
         with:
           projectPath: ./crates/desktop/artcraft
           tagName: artcraft-v__VERSION__ # the action automatically replaces __VERSION__ with the app version.
