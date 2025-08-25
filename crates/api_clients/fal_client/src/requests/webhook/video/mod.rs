@@ -3,4 +3,5 @@ pub mod enqueue_kling_21_master_image_to_video_webhook;
 pub mod enqueue_kling_21_pro_image_to_video_webhook;
 pub mod enqueue_seedance_1_lite_image_to_video_webhook;
 pub mod enqueue_veo_2_image_to_video_webhook;
+pub mod enqueue_veo_3_fast_image_to_video_webhook;
 pub mod enqueue_veo_3_image_to_video_webhook;

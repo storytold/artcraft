@@ -9,6 +9,8 @@ pub enum FalErrorPlus {
   FalError(fal::FalError),
   /// The fal API key is invalid.
   FalApiKeyError(String),
+  /// The fal account has a billing issue
+  FalBillingError(String),
   /// Another error we didn't handle.
   AnyhowError(anyhow::Error),
   /// URL parse errors.
@@ -24,6 +26,7 @@ impl Display for FalErrorPlus {
     match self {
       Self::FalError(err) => write!(f, "FalErrorPlus::FalError: {:?}", err),
       Self::FalApiKeyError(reason) => write!(f, "FalErrorPlus::FalApiKeyError: {}", reason),
+      Self::FalBillingError(reason) => write!(f, "FalErrorPlus::FalBillingError: {}", reason),
       Self::AnyhowError(err) => write!(f, "FalErrorPlus::AnyhowError: {:?}", err),
       Self::UrlParseError(err) => write!(f, "FalErrorPlus::UrlParseError: {:?}", err),
       Self::UnhandledEndpoint(endpoint) => write!(f, "FalErrorPlus::UnhandledEndpoint: {:?}", endpoint),
