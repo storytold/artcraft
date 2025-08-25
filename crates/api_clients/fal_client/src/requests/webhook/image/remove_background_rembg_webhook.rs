@@ -41,7 +41,7 @@ mod tests {
 
   #[tokio::test]
   #[ignore] // NB: Manually test, don't run in CI!
-  async fn test_rembg_request() -> anyhow::Result<()> {
+  async fn test() -> anyhow::Result<()> {
     // XXX: Don't commit secrets!
     let api_key = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
     let api_key = FalApiKey::from_str(&api_key);

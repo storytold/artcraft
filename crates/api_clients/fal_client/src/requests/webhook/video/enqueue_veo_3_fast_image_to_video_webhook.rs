@@ -67,12 +67,12 @@ mod tests {
   use crate::requests::webhook::video::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastDuration, Veo3FastResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
-  use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
+  use test_data::web::image_urls::ERNEST_GHOST_TREX_IMAGE_URL;
 
   #[tokio::test]
   #[ignore]
   async fn test() -> AnyhowResult<()> {
-    let image_url = JUNO_AT_LAKE_IMAGE_URL;
+    let image_url = ERNEST_GHOST_TREX_IMAGE_URL;
 
     // XXX: Don't commit secrets!
     let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
@@ -81,7 +81,7 @@ mod tests {
 
     let args = Veo3FastArgs {
       image_url: image_url,
-      prompt: "corgi at the lake. the corgi turns to say, 'hello, how are you?'",
+      prompt: "man is standing next to a ghost and t-rex, they begin to chase him as the camera pulls back to show the wider scene",
       api_key: &api_key,
       duration: Veo3FastDuration::EightSeconds,
       generate_audio: true,

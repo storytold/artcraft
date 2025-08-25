@@ -99,7 +99,7 @@ mod tests {
 
   #[tokio::test]
   #[ignore]
-  async fn test_gpt_image_1_edit_image() -> AnyhowResult<()> {
+  async fn test() -> AnyhowResult<()> {
     let image_url = "https://cdn-2.fakeyou.com/media/3/4/h/f/s/34hfsmt8e38rvne6mwa4pwbxr6292sgy/image_34hfsmt8e38rvne6mwa4pwbxr6292sgy.png";
 
     // XXX: Don't commit secrets!

@@ -96,7 +96,7 @@ mod tests {
 
   #[tokio::test]
   #[ignore]
-  async fn test_gpt_image_1_edit_image() -> AnyhowResult<()> {
+  async fn test() -> AnyhowResult<()> {
     // XXX: Don't commit secrets!
     let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
 

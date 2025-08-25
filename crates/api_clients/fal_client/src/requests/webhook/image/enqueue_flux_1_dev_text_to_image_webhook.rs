@@ -85,7 +85,7 @@ mod tests {
 
   #[tokio::test]
   #[ignore]
-  async fn test_flux_1_dev() -> AnyhowResult<()> {
+  async fn test() -> AnyhowResult<()> {
     // XXX: Don't commit secrets!
     let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
 
