@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, ReactNode } from "react";
 import { unstable_batchedUpdates } from "react-dom";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
@@ -88,7 +88,7 @@ export const PromptBoxImage = ({
   }, [imageMediaId, url]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState<ReactNode>(null);
 
   const prompt = usePromptImageStore((s) => s.prompt);
   const setPrompt = usePromptImageStore((s) => s.setPrompt);
@@ -458,8 +458,9 @@ export const PromptBoxImage = ({
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          setContent("");
+          setContent(null);
         }}
+        className="max-w-4xl max-h-[80vh]"
       >
         {content}
       </Modal>
@@ -501,7 +502,17 @@ export const PromptBoxImage = ({
                     .map((image) => (
                       <div
                         key={image.id}
-                        className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group"
+                        className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                        onClick={() => {
+                          setContent(
+                            <img
+                              src={image.url}
+                              alt="Reference preview"
+                              className="w-full h-full object-contain"
+                            />
+                          );
+                          setIsModalOpen(true);
+                        }}
                       >
                         <img
                           src={image.url}
@@ -509,8 +520,11 @@ export const PromptBoxImage = ({
                           className="h-full w-full object-cover"
                         />
                         <button
-                          onClick={() => handleRemoveReference(image.id)}
-                          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveReference(image.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
                         >
                           <FontAwesomeIcon
                             icon={faXmark}
