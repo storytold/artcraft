@@ -89,6 +89,7 @@ export const PopoverMenu = ({
     "flex gap-2 items-center justify-center outline-none",
     "transition-all duration-150",
     "bg-[#5F5F68]/60 px-3 text-white hover:bg-[#5F5F68]/90",
+    "active:scale-95 transform",
     buttonClassName
   );
 
