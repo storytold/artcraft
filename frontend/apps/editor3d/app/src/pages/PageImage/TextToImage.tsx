@@ -21,6 +21,7 @@ import {
   galleryModalLightboxVisible,
 } from "@storyteller/ui-gallery-modal";
 import { Badge } from "@storyteller/ui-badge";
+import { twMerge } from "tailwind-merge";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
 
@@ -30,8 +31,12 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   const startBatch = useTextToImageStore((s) => s.startBatch);
   const completeBatch = useTextToImageStore((s) => s.completeBatch);
   const resetBatches = useTextToImageStore((s) => s.reset);
+  const [imageRowVisible, setImageRowVisible] = useState(false);
+  const promptContentRef = useRef<HTMLDivElement>(null);
+  const [promptHeight, setPromptHeight] = useState<number>(138);
 
-  const selectedImageModel : ImageModel | undefined = getSelectedImageModel(PAGE_ID);
+  const selectedImageModel: ImageModel | undefined =
+    getSelectedImageModel(PAGE_ID);
 
   const jobContext: JobContextType = {
     jobTokens: [],
@@ -59,7 +64,18 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const bottomOffsetPx = 138;
+  useEffect(() => {
+    const el = promptContentRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const update = () => setPromptHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(() => update());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const bottomMarginPx = 24;
+  const bottomOffsetPx = promptHeight + bottomMarginPx;
   const targetTop = showPromptAtBottom
     ? Math.max(0, vh - bottomOffsetPx)
     : Math.floor(vh / 2);
@@ -80,7 +96,12 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
       <div className="relative h-full w-full p-16">
         <div className="flex h-full w-full flex-col items-center justify-center rounded-md pb-12">
           {!showPromptAtBottom && (
-            <div className="relative z-20 mb-52 flex flex-col items-center justify-center text-center drop-shadow-xl">
+            <div
+              className={twMerge(
+                "relative z-20 mb-52 flex flex-col items-center justify-center text-center drop-shadow-xl",
+                imageRowVisible && "mb-80",
+              )}
+            >
               <span className="text-7xl font-bold">Generate Image</span>
               <span className="pt-2 text-xl opacity-80">
                 Add a prompt, then generate
@@ -89,7 +110,10 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
           )}
 
           {hasAnyBatches && (
-            <div className="h-full w-full overflow-y-auto pb-40">
+            <div
+              className="h-full w-full overflow-y-auto"
+              style={{ paddingBottom: bottomOffsetPx + 24 }}
+            >
               <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 pr-2">
                 {inverseBatch.map((batch) => (
                   <div key={batch.id} className="flex items-start gap-4">
@@ -154,7 +178,9 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
             style={promptAnim}
           >
             {showPromptAtBottom && batches.length > 0 && (
-              <div className="absolute -top-9 flex w-full justify-end">
+              <div
+                className={`absolute ${imageRowVisible ? "-top-[108px]" : "-top-9"} flex w-full justify-end`}
+              >
                 <button
                   onClick={() => resetBatches()}
                   className="rounded-md bg-red/20 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/30"
@@ -163,18 +189,21 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                 </button>
               </div>
             )}
-            <PromptBoxImage
-              useJobContext={() => {
-                return jobContext;
-              }}
-              selectedModel={selectedImageModel}
-              imageMediaId={imageMediaId}
-              url={imageUrl ?? undefined}
-              onEnqueuePressed={async (prompt, count, subscriberId) => {
-                const modelLabel = selectedImageModel?.fullName ?? "";
-                startBatch(prompt, count, modelLabel, subscriberId);
-              }}
-            />
+            <div ref={promptContentRef}>
+              <PromptBoxImage
+                useJobContext={() => {
+                  return jobContext;
+                }}
+                selectedModel={selectedImageModel}
+                imageMediaId={imageMediaId}
+                url={imageUrl ?? undefined}
+                onImageRowVisibilityChange={setImageRowVisible}
+                onEnqueuePressed={async (prompt, count, subscriberId) => {
+                  const modelLabel = selectedImageModel?.fullName ?? "";
+                  startBatch(prompt, count, modelLabel, subscriberId);
+                }}
+              />
+            </div>
           </animated.div>
 
           {!showPromptAtBottom && <BackgroundGallery />}
