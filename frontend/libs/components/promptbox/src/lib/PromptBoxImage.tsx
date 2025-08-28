@@ -417,6 +417,7 @@ export const PromptBoxImage = ({
       number_images: generationCount,
       frontend_caller: "text_to_image",
       frontend_subscriber_id: subscriberId,
+      // image_prompts: referenceImages.map((image) => image.mediaToken), TODO (BFlat): ADD THIS FOR IMAGE PROMPTS
     });
 
     console.log("PromptBoxImage - generateResponse", generateResponse);
