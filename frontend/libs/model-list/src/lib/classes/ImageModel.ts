@@ -16,6 +16,12 @@ export class ImageModel extends Model {
   // For inpainting models, does it require sending a mask?
   readonly usesInpaintingMask: boolean;
 
+  // Whether this model supports additional image prompts (reference images)
+  readonly canUseImagePrompt: boolean;
+
+  // Maximum number of image prompts that can be attached
+  readonly maxImagePromptCount: number;
+
   constructor(args: {
     id: string;
     tauriId: string;
@@ -29,6 +35,8 @@ export class ImageModel extends Model {
     defaultGenerationCount: number;
     canEditImages?: boolean;
     usesInpaintingMask?: boolean;
+    canUseImagePrompt?: boolean;
+    maxImagePromptCount?: number;
     tags?: ModelTag[];
   }) {
     if (args.maxGenerationCount < 1) {
@@ -38,12 +46,16 @@ export class ImageModel extends Model {
       throw new Error("defaultGenerationCount must be at least 1");
     }
     if (args.defaultGenerationCount > args.maxGenerationCount) {
-      throw new Error("defaultGenerationCount must be less than or equal to maxGenerationCount");
+      throw new Error(
+        "defaultGenerationCount must be less than or equal to maxGenerationCount"
+      );
     }
     super(args);
     this.maxGenerationCount = args.maxGenerationCount;
     this.defaultGenerationCount = args.defaultGenerationCount;
     this.canEditImages = args.canEditImages ?? false;
-    this.usesInpaintingMask = args.usesInpaintingMask ?? false; 
-  } 
+    this.usesInpaintingMask = args.usesInpaintingMask ?? false;
+    this.canUseImagePrompt = args.canUseImagePrompt ?? false;
+    this.maxImagePromptCount = Math.max(0, args.maxImagePromptCount ?? 1);
+  }
 }

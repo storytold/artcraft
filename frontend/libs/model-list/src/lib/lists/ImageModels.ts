@@ -14,6 +14,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["15 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
+    canUseImagePrompt: true,
+    maxImagePromptCount: 6,
   }),
   new ImageModel({
     id: "flux_pro_1_1_ultra",
@@ -26,6 +28,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["15 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
+    canUseImagePrompt: true,
+    maxImagePromptCount: 6,
   }),
   new ImageModel({
     id: "flux_pro_1_1",
@@ -38,6 +42,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["15 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
+    canUseImagePrompt: true,
+    maxImagePromptCount: 6,
   }),
   new ImageModel({
     id: "flux_1_dev",
@@ -50,6 +56,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["15 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
+    canUseImagePrompt: true,
+    maxImagePromptCount: 6,
   }),
   new ImageModel({
     id: "flux_1_schnell",
@@ -62,6 +70,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["15 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
+    canUseImagePrompt: true,
+    maxImagePromptCount: 6,
   }),
   new ImageModel({
     id: "gemini_25_flash",
@@ -89,6 +99,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxGenerationCount: 1,
     defaultGenerationCount: 1,
     tags: [ModelTag.InstructiveEdit],
+    canUseImagePrompt: true,
+    maxImagePromptCount: 6,
   }),
   new ImageModel({
     id: "flux_pro_kontext_max",

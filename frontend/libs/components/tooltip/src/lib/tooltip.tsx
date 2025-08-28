@@ -11,6 +11,11 @@ interface TooltipProps {
   closeOnClick?: boolean;
   imageSrc?: string;
   description?: string;
+  /**
+   * When true, the tooltip can be hovered and clicked without closing
+   * immediately when the cursor leaves the trigger. Useful for menus.
+   */
+  interactive?: boolean;
 }
 
 export const Tooltip = ({
@@ -22,10 +27,13 @@ export const Tooltip = ({
   closeOnClick = false,
   imageSrc,
   description,
+  interactive = false,
 }: TooltipProps) => {
   const [isShowing, setIsShowing] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const [isHoveringTrigger, setIsHoveringTrigger] = useState(false);
+  const [isHoveringTooltip, setIsHoveringTooltip] = useState(false);
 
   const checkForOpenPopovers = () => {
     if (!triggerRef.current) return false;
@@ -105,16 +113,29 @@ export const Tooltip = ({
     }
   };
 
+  useEffect(() => {
+    if (!checkForOpenPopovers()) {
+      const shouldShow =
+        isHoveringTrigger || (interactive && isHoveringTooltip);
+      setIsShowing(shouldShow);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHoveringTrigger, isHoveringTooltip, interactive]);
+
   return (
     <div
       ref={triggerRef}
       onMouseEnter={() => {
+        setIsHoveringTrigger(true);
         if (!checkForOpenPopovers()) {
           setIsShowing(true);
         }
       }}
       onMouseLeave={() => {
-        setIsShowing(false);
+        setIsHoveringTrigger(false);
+        if (!interactive) {
+          setIsShowing(false);
+        }
       }}
       onClick={handleClick}
       className="relative"
@@ -134,6 +155,8 @@ export const Tooltip = ({
       >
         <div
           ref={tooltipRef}
+          onMouseEnter={() => interactive && setIsHoveringTooltip(true)}
+          onMouseLeave={() => interactive && setIsHoveringTooltip(false)}
           style={{
             ...getStyleForPosition(),
             transitionDelay: `${delay}ms`,
@@ -142,7 +165,8 @@ export const Tooltip = ({
             transitionTimingFunction: "ease-out",
           }}
           className={twMerge(
-            "pointer-events-none absolute z-10 w-max rounded-lg bg-[#5F5F68] px-2.5 py-1.5 text-[13px] font-medium text-white shadow-xl",
+            "absolute z-10 w-max rounded-lg bg-[#5F5F68] px-2.5 py-1.5 text-[13px] font-medium text-white shadow-xl",
+            interactive ? "pointer-events-auto" : "pointer-events-none",
             className ? className : ""
           )}
         >

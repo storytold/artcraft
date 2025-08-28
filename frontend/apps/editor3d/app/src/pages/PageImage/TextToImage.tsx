@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { JobContextType } from "@storyteller/common";
 import { PromptBoxImage } from "@storyteller/ui-promptbox";
+import { uploadImage } from "../../components/reusable/UploadModalMedia/uploadImage";
 import BackgroundGallery from "./BackgroundGallery";
 import {
   TEXT_TO_IMAGE_PAGE_MODEL_LIST,
@@ -194,6 +195,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                 useJobContext={() => {
                   return jobContext;
                 }}
+                uploadImage={uploadImage}
                 selectedModel={selectedImageModel}
                 imageMediaId={imageMediaId}
                 url={imageUrl ?? undefined}
