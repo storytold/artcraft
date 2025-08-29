@@ -14,7 +14,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["15 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
-    canUseImagePrompt: true,
+    canUseImagePrompt: false,
     maxImagePromptCount: 6,
   }),
   new ImageModel({
@@ -85,6 +85,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxGenerationCount: 4,
     defaultGenerationCount: 1,
     canEditImages: true,
+    canUseImagePrompt: true,
+    maxImagePromptCount: 6,
     tags: [ModelTag.InstructiveEdit],
   }),
   new ImageModel({

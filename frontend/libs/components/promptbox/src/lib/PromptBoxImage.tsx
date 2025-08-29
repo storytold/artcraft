@@ -14,6 +14,7 @@ import { Button, ToggleButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import {
   EnqueueTextToImage,
+  EnqueueTextToImageRequest,
   EnqueueTextToImageSize,
 } from "@storyteller/tauri-api";
 import {
@@ -409,16 +410,21 @@ export const PromptBoxImage = ({
     }, 10000);
 
     const aspectRatio = getCurrentAspectRatio();
-
-    const generateResponse = await EnqueueTextToImage({
+    
+    const request : EnqueueTextToImageRequest = {
       prompt: prompt,
       model: selectedModel,
       aspect_ratio: aspectRatio,
       number_images: generationCount,
       frontend_caller: "text_to_image",
       frontend_subscriber_id: subscriberId,
-      // image_prompts: referenceImages.map((image) => image.mediaToken), TODO (BFlat): ADD THIS FOR IMAGE PROMPTS
-    });
+    };
+
+    if (selectedModel?.canUseImagePrompt && !!referenceImages && referenceImages.length > 0) {
+      request.image_media_tokens = referenceImages.map((image) => image.mediaToken);
+    }
+
+    const generateResponse = await EnqueueTextToImage(request);
 
     console.log("PromptBoxImage - generateResponse", generateResponse);
 

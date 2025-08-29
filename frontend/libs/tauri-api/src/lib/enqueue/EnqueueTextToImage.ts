@@ -14,11 +14,25 @@ export enum EnqueueTextToImageErrorType {
 }
 
 export interface EnqueueTextToImageRequest {
-  prompt?: string;
+  // The model to use.
   model?: Model | ModelInfo | EnqueueTextToImageModel;
+
+  // The text prompt.
+  prompt?: string;
+
+  // The desired output aspect ratio.
   aspect_ratio?: EnqueueTextToImageSize;
+
+  // The number of images to generate.
   number_images?: number;
 
+  // Optional image-to-image prompts
+  // These are not semantic buckets, but rather just "reference images",
+  // and models do not have any further instruction about them. (ie. they 
+  // are not "style", "character", etc. references)
+  image_media_tokens?: string[];
+
+  // Optional frontend state to return later.
   // TODO: Actual enum.
   frontend_caller?: string;
 
@@ -33,6 +47,7 @@ interface EnqueueTextToImageRawRequest {
   model?: EnqueueTextToImageModel | string; // TODO: Shouldn't allow string
   aspect_ratio?: EnqueueTextToImageSize;
   number_images?: number;
+  image_media_tokens?: string[];
   frontend_caller?: string;
   frontend_subscriber_id?: string;
 }
@@ -91,6 +106,10 @@ export const EnqueueTextToImage = async (request: EnqueueTextToImageRequest) : P
 
   if (!!request.number_images) {
     mutableRequest.number_images = request.number_images;
+  }
+
+  if (!!request.image_media_tokens && request.image_media_tokens.length > 0) {
+    mutableRequest.image_media_tokens = request.image_media_tokens;
   }
 
   if (!!request.frontend_caller) {

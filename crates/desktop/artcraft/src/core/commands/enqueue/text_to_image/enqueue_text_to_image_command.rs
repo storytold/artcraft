@@ -32,6 +32,7 @@ use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use sqlite_tasks::queries::create_task::{create_task, CreateTaskArgs};
 use tauri::{AppHandle, State};
+use tokens::tokens::media_files::MediaFileToken;
 
 /// This is used in the Tauri command bridge.
 /// Don't change the serializations without coordinating with the frontend.
@@ -72,6 +73,13 @@ pub struct EnqueueTextToImageRequest {
 
   /// The number of images to generate.
   pub number_images: Option<u32>,
+
+  /// OPTIONAL.
+  /// Reference images (without semantics)
+  /// The purpose varies on a model-by-model basis, but they
+  /// are not semantically treated as "style reference",
+  /// "character/object reference", etc.
+  pub image_media_tokens: Option<Vec<MediaFileToken>>,
 
   /// OPTIONAL.
   /// Name of the frontend caller.

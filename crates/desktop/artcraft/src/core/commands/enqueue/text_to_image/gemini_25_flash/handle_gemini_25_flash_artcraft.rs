@@ -46,13 +46,6 @@ pub async fn handle_gemini_25_flash_artcraft(
 
   let uuid_idempotency_token = generate_random_uuid();
 
-  // let image_media_token = match &request.image_media_token {
-  //   Some(token) => token.clone(),
-  //   None => {
-  //     return Err(InternalImageInpaintError::NoSourceImageSpecified);
-  //   },
-  // };
-
   let num_images = match request.number_images{
     None => None,
     Some(1) => Some(Gemini25FlashEditImageNumImages::One),
@@ -65,7 +58,7 @@ pub async fn handle_gemini_25_flash_artcraft(
   let request = Gemini25FlashEditImageRequest {
     uuid_idempotency_token,
     prompt: request.prompt.clone(),
-    image_media_tokens: Some(vec![]), // TODO: Needs image media tokens.
+    image_media_tokens: request.image_media_tokens.clone(),
     num_images,
     image_quality: None,
   };
