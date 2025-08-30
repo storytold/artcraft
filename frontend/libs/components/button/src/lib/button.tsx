@@ -14,7 +14,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   iconClassName?: string;
   iconFlip?: boolean;
   htmlFor?: string;
-  variant?: "primary" | "secondary" | "action" | "destructive";
+  variant?: "primary" | "secondary" | "action" | "destructive" | "ghost";
   loading?: boolean;
   as?: "button" | "link";
   href?: string;
@@ -46,6 +46,9 @@ export const Button = ({
       }
       case "destructive": {
         return "bg-red/70 hover:bg-red/50 text-white focus-visible:outline-red";
+      }
+      case "ghost": {
+        return "bg-transparent hover:bg-white/[8%] text-white focus-visible:outline-primary-600";
       }
       case "primary":
       default: {

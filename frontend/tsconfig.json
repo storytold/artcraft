@@ -157,6 +157,9 @@
       "path": "./libs/components/provider-setup-modal"
     },
     {
+      "path": "./libs/components/progress"
+    },
+    {
       "path": "./libs/components/provider-billing-modal"
     }
   ]

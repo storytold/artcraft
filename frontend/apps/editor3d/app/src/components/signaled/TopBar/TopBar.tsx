@@ -35,6 +35,7 @@ import {
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { setLogoutStates } from "~/signals/authentication/utilities";
+import { ProgressCircle } from "@storyteller/ui-progress";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { TabId, useTabStore } from "~/pages/Stores/TabState";
@@ -60,6 +61,15 @@ interface Props {
   pageName: string;
   loginSignUpPressed: () => void;
 }
+
+// Settings section type to match the SettingsModal component
+type SettingsSection =
+  | "general"
+  | "accounts"
+  | "alerts"
+  | "about"
+  | "provider_priority"
+  | "billing";
 
 const SWITCHER_THROTTLE_TIME = 500; // milliseconds
 
@@ -108,6 +118,18 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
   useSignals();
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection>("general");
+
+  // Credit state (replace with real data fetch)
+  const [credits, setCredits] = useState({
+    used: 800,
+    total: 1000,
+  });
+
+  const creditsRemaining = credits.total - credits.used;
+  const creditsRemainingPercentage = (creditsRemaining / credits.total) * 100;
+  const isLowCredit = creditsRemainingPercentage < 20; // Less than 20% credits remaining
 
   const { isDesktop, isMaximized, minimize, toggleMaximize, close } =
     useTauriWindowControls();
@@ -117,6 +139,16 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
     galleryModalVisibleViewMode.value = true;
     galleryModalVisibleDuringDrag.value = true;
     gtagEvent("open_gallery_modal", { tab: tabStore.activeTabId });
+  };
+
+  // Force recreation of the modal when switching to billing
+  const handleOpenBillingSettings = () => {
+    setIsSettingsModalOpen(false);
+    setTimeout(() => {
+      setSettingsSection("billing");
+      setIsSettingsModalOpen(true);
+      gtagEvent("open_billing_settings");
+    }, 50);
   };
 
   const tabStore = useTabStore();
@@ -263,7 +295,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
           </div>
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
-            <div className="no-drag flex gap-2">
+            <div className="no-drag flex items-center gap-1.5">
               {/* - Uncomment for pricing modal - BFlat */}
               <Button
                 variant="primary"
@@ -273,23 +305,50 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
               >
                 Upgrade Now
               </Button>
+
+              <Tooltip
+                content={`${creditsRemaining}/${credits.total} credits remaining`}
+                position="bottom"
+                delay={300}
+              >
+                <Button
+                  variant="ghost"
+                  className="h-[30px] px-2 ps-1.5"
+                  onClick={handleOpenBillingSettings}
+                >
+                  <ProgressCircle
+                    value={creditsRemainingPercentage}
+                    isLow={isLowCredit}
+                    size="small"
+                  />
+                  <span className="whitespace-nowrap text-sm font-medium">
+                    {creditsRemaining} Credits
+                  </span>
+                </Button>
+              </Tooltip>
+
               <Tooltip content="Settings" position="bottom" delay={300}>
                 <Button
                   variant="secondary"
                   icon={faGear}
                   className="h-[38px] w-[38px]"
                   onClick={() => {
+                    setSettingsSection("general");
                     setIsSettingsModalOpen(true);
                     gtagEvent("open_settings_modal");
                   }}
                 />
               </Tooltip>
+
               <Button
                 variant="secondary"
+                className="h-[38px]"
                 icon={faImages}
                 onClick={handleOpenGalleryModal}
               >
-                My Library
+                <span className="hidden whitespace-nowrap xl:block">
+                  My Library
+                </span>
               </Button>
 
               <Activity />
@@ -333,6 +392,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         globalAccountLogoutCallback={() => setLogoutStates()}
+        initialSection={settingsSection}
       />
 
       <GalleryModal
@@ -342,7 +402,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
       />
 
       <ProviderSetupModal />
-      <ProviderBillingModal />  
+      <ProviderBillingModal />
     </>
   );
 };

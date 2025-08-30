@@ -1,5 +1,5 @@
 import { Modal } from "@storyteller/ui-modal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUser,
@@ -7,6 +7,7 @@ import {
   faVolumeHigh,
   faCircleInfo,
   faRoute,
+  faCreditCard,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { MiscSettingsPane } from "./panes/MiscSettingsPane";
@@ -15,6 +16,7 @@ import { AccountSettingsPane } from "./panes/AccountSettings/AccountSettingsPane
 import { AboutSettingsPane } from "./panes/AboutSettingsPane";
 import { ProviderPrioritySettingsPane } from "./panes/ProviderPrioritySettingsPane";
 import { gtagEvent } from "@storyteller/google-analytics";
+import { BillingSettingsPane } from "./panes/BillingSettingsPane";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -28,7 +30,8 @@ type SettingsSection =
   | "accounts"
   | "alerts"
   | "about"
-  | "provider_priority";
+  | "provider_priority"
+  | "billing";
 
 export const SettingsModal = ({
   isOpen,
@@ -39,9 +42,17 @@ export const SettingsModal = ({
   const [selectedSection, setSelectedSection] =
     useState<SettingsSection>(initialSection);
 
+  // Sync the selected section with incoming prop when modal opens or prop changes
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedSection(initialSection);
+    }
+  }, [isOpen, initialSection]);
+
   const sections = [
     { id: "general" as const, label: "General", icon: faCog },
     { id: "accounts" as const, label: "Accounts", icon: faUser },
+    { id: "billing" as const, label: "Plan and Credits", icon: faCreditCard },
     {
       id: "provider_priority" as const,
       label: "Provider Priority",
@@ -69,6 +80,8 @@ export const SettingsModal = ({
         return <AboutSettingsPane />;
       case "provider_priority":
         return <ProviderPrioritySettingsPane />;
+      case "billing":
+        return <BillingSettingsPane />;
     }
   };
 
@@ -95,7 +108,9 @@ export const SettingsModal = ({
                     section.id === selectedSection ? "bg-[#63636B]/40" : ""
                   )}
                   onClick={() => {
-                    gtagEvent("switch_settings_section", { "section": section.id });
+                    gtagEvent("switch_settings_section", {
+                      section: section.id,
+                    });
                     setSelectedSection(section.id);
                   }}
                 >

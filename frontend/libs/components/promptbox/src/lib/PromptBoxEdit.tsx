@@ -176,7 +176,7 @@ export const PromptBoxEdit = ({
             <textarea
               ref={textareaRef}
               rows={1}
-              placeholder="Describe your image..."
+              placeholder="Write what you want to change in your image and click generate..."
               className="text-md mb-2 max-h-[5.5em] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none"
               value={prompt}
               onChange={handleChange}
