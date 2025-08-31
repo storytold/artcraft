@@ -296,16 +296,6 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
-              {/* - Uncomment for pricing modal - BFlat */}
-              <Button
-                variant="primary"
-                icon={faGem}
-                onClick={toggleModal}
-                className="shadow-md shadow-primary-500/50 transition-all duration-300 hover:shadow-md hover:shadow-primary-500/75"
-              >
-                Upgrade Now
-              </Button>
-
               <Tooltip
                 content={`${creditsRemaining}/${credits.total} credits remaining`}
                 position="bottom"
@@ -326,6 +316,15 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                   </span>
                 </Button>
               </Tooltip>
+
+              <Button
+                variant="primary"
+                icon={faGem}
+                onClick={toggleModal}
+                className="h-[38px] shadow-md shadow-primary-500/50 transition-all duration-300 hover:shadow-md hover:shadow-primary-500/75"
+              >
+                Upgrade Now
+              </Button>
 
               <Tooltip content="Settings" position="bottom" delay={300}>
                 <Button
