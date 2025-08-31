@@ -35,8 +35,6 @@ import {
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { setLogoutStates } from "~/signals/authentication/utilities";
-import { ProgressCircle } from "@storyteller/ui-progress";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { TabId, useTabStore } from "~/pages/Stores/TabState";
 import {
@@ -44,7 +42,6 @@ import {
   is3DSceneLoaded,
   set3DPageMounted,
 } from "~/pages/PageEnigma/Editor/editor";
-// import { usePricingModalStore } from "@storyteller/ui-pricing-modal"; - Uncomment for pricing modal - BFlat
 import toast from "react-hot-toast";
 import { gtagEvent } from "@storyteller/google-analytics";
 import {
@@ -56,6 +53,7 @@ import { BaseSelectorImage } from "../../../pages/PageEdit/BaseImageSelector";
 import { ProviderSetupModal } from "@storyteller/provider-setup-modal";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
 import { usePricingModalStore } from "@storyteller/ui-pricing-modal";
+// import { ProgressCircle } from "@storyteller/ui-progress"; // Uncomment this for Credits indicator - BFlat
 
 interface Props {
   pageName: string;
@@ -296,7 +294,8 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
-              <Tooltip
+              {/* Uncomment this for Credits indicator - BFlat */}
+              {/* <Tooltip
                 content={`${creditsRemaining}/${credits.total} credits remaining`}
                 position="bottom"
                 delay={300}
@@ -315,7 +314,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                     {creditsRemaining} Credits
                   </span>
                 </Button>
-              </Tooltip>
+              </Tooltip> */}
 
               <Button
                 variant="primary"
