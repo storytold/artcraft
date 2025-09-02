@@ -52,7 +52,7 @@ export const SettingsModal = ({
   const sections = [
     { id: "general" as const, label: "General", icon: faCog },
     { id: "accounts" as const, label: "Accounts", icon: faUser },
-    // { id: "billing" as const, label: "Plan & Credits", icon: faCreditCard }, // Uncomment this for billing - BFlat
+    { id: "billing" as const, label: "Plan & Credits", icon: faCreditCard },
     {
       id: "provider_priority" as const,
       label: "Provider Priority",

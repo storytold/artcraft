@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { Label } from "@storyteller/ui-label";
-import { Progress } from "@storyteller/ui-progress";
 import {
-  faCircleDollar,
+  faCoinFront,
   faInfoCircle,
   faStar,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { usePricingModalStore } from "@storyteller/ui-pricing-modal";
+import { useCreditsModalStore } from "@storyteller/ui-pricing-modal";
 
 interface BillingSettingsPaneProps {}
 
@@ -45,45 +46,34 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
     fetchBillingData();
   }, []);
 
-  const creditPercentage =
-    (billingInfo.credits.remaining / billingInfo.credits.total) * 100;
-  const isLowCredit = creditPercentage < 20; // If used more than 80% of credits, consider it low
+  const { toggleModal } = usePricingModalStore();
+  const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
 
   return (
     <>
       <div className="space-y-4">
-        <div className="flex flex-col">
-          <Label htmlFor="credits" className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faCircleDollar} />
-            Monthly credits left
-          </Label>
-          <div className="flex items-center gap-2">
-            <Progress
-              value={creditPercentage}
-              isLow={isLowCredit}
-              className="h-2 w-full"
-            />
-            <span className="text-sm text-muted-foreground font-medium">
-              {billingInfo.credits.remaining}/{billingInfo.credits.total}
-            </span>
-          </div>
-        </div>
-
-        <hr className="border-white/10" />
-
-        <div className="space-y-1">
+        <div className="space-y-2">
           <Label>Current Plan</Label>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faStar} className="text-purple/70" />
+            <div className="flex items-center gap-2 text-xl font-semibold ">
+              <FontAwesomeIcon
+                icon={faStar}
+                className="text-[#C03FFF] text-lg"
+              />
               {billingInfo.plan}
             </div>
             <div className="flex gap-2">
               <Button variant="secondary" className="h-[30px]">
                 Cancel plan
               </Button>
-              <Button variant="primary" className="h-[30px]">
-                Change plan
+              <Button
+                variant="primary"
+                className="h-[30px]"
+                onClick={() => {
+                  toggleModal();
+                }}
+              >
+                Upgrade plan
               </Button>
             </div>
           </div>
@@ -93,6 +83,34 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
           <FontAwesomeIcon icon={faInfoCircle} />
           Next {billingInfo.nextPayment.amount} payment due{" "}
           {billingInfo.nextPayment.date}
+        </div>
+
+        <hr className="border-white/10" />
+
+        <div className="flex flex-col">
+          <Label htmlFor="credits" className="flex items-center gap-2">
+            Your credit balance
+          </Label>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon
+                icon={faCoinFront}
+                className="text-primary text-lg"
+              />
+              <span className="text-2xl font-bold">
+                {billingInfo.credits.remaining}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                className="h-[30px]"
+                onClick={() => toggleCreditsModal()}
+              >
+                Buy credits
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </>

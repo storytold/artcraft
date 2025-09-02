@@ -8,6 +8,7 @@ import {
   faImage,
   faPenNib,
   faGem,
+  faCoinFront,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   faWindowRestore,
@@ -16,6 +17,7 @@ import {
   faDash,
 } from "@fortawesome/pro-regular-svg-icons";
 import { Button } from "@storyteller/ui-button";
+import { PopoverMenu } from "@storyteller/ui-popover";
 import { AuthButtons } from "./AuthButtons";
 import { SceneTitleInput } from "./SceneTitleInput";
 import { Activity } from "~/pages/PageEnigma/comps/GenerateModals/Activity";
@@ -52,8 +54,10 @@ import { useEditStore } from "../../../pages/PageEdit/stores/EditState";
 import { BaseSelectorImage } from "../../../pages/PageEdit/BaseImageSelector";
 import { ProviderSetupModal } from "@storyteller/provider-setup-modal";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
-import { usePricingModalStore } from "@storyteller/ui-pricing-modal";
-// import { ProgressCircle } from "@storyteller/ui-progress"; // Uncomment this for Credits indicator - BFlat
+import {
+  usePricingModalStore,
+  useCreditsModalStore,
+} from "@storyteller/ui-pricing-modal";
 
 interface Props {
   pageName: string;
@@ -118,16 +122,6 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("general");
-
-  // Credit state (replace with real data fetch)
-  const [credits, setCredits] = useState({
-    used: 800,
-    total: 1000,
-  });
-
-  const creditsRemaining = credits.total - credits.used;
-  const creditsRemainingPercentage = (creditsRemaining / credits.total) * 100;
-  const isLowCredit = creditsRemainingPercentage < 20; // Less than 20% credits remaining
 
   const { isDesktop, isMaximized, minimize, toggleMaximize, close } =
     useTauriWindowControls();
@@ -225,6 +219,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
   const pageTitle = getPageTitle();
 
   const { toggleModal } = usePricingModalStore();
+  const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
 
   return (
     <>
@@ -294,27 +289,72 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
-              {/* Uncomment this for Credits indicator - BFlat */}
-              {/* <Tooltip
-                content={`${creditsRemaining}/${credits.total} credits remaining`}
+              <PopoverMenu
                 position="bottom"
-                delay={300}
-              >
-                <Button
-                  variant="ghost"
-                  className="h-[30px] px-2 ps-1.5"
-                  onClick={handleOpenBillingSettings}
-                >
-                  <ProgressCircle
-                    value={creditsRemainingPercentage}
-                    isLow={isLowCredit}
-                    size="small"
+                align="center"
+                triggerIcon={
+                  <FontAwesomeIcon
+                    icon={faCoinFront}
+                    className="text-primary"
                   />
+                }
+                triggerLabel={
                   <span className="whitespace-nowrap text-sm font-medium">
-                    {creditsRemaining} Credits
+                    180 Credits
                   </span>
-                </Button>
-              </Tooltip> */}
+                }
+                buttonClassName="h-[30px] px-2 ps-1.5 bg-transparent hover:bg-white/10"
+                panelClassName="mt-3"
+              >
+                {(close) => (
+                  <div className="w-72 p-2.5 text-white">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-sm font-medium text-white/80">
+                        Your credit balance
+                      </span>
+                      <button
+                        className="text-sm font-medium text-primary-300 transition-all hover:text-primary-200"
+                        onClick={() => {
+                          close();
+                          toggleCreditsModal();
+                        }}
+                      >
+                        Buy credits
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 text-4xl font-bold">
+                      <FontAwesomeIcon
+                        icon={faCoinFront}
+                        className="text-2xl text-primary"
+                      />
+                      180
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="action"
+                        className="h-9 grow bg-white/15 hover:bg-white/20"
+                        onClick={() => {
+                          close();
+                          handleOpenBillingSettings();
+                        }}
+                      >
+                        See details
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="h-9 grow"
+                        onClick={() => {
+                          close();
+                          toggleModal();
+                        }}
+                        icon={faGem}
+                      >
+                        Upgrade
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </PopoverMenu>
 
               <Button
                 variant="primary"
@@ -322,7 +362,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 onClick={toggleModal}
                 className="h-[38px] shadow-md shadow-primary-500/50 transition-all duration-300 hover:shadow-md hover:shadow-primary-500/75"
               >
-                Upgrade Now
+                Upgrade
               </Button>
 
               <Tooltip content="Settings" position="bottom" delay={300}>

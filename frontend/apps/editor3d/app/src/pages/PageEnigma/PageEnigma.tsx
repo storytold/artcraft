@@ -23,7 +23,11 @@ import { InstallSounds } from "~/pages/PageEnigma/InstallSounds";
 import { PageEditor } from "~/pages/PageEnigma/PageEditor";
 import { GalleryDragComponent } from "@storyteller/ui-gallery-modal";
 import { LoadingDots } from "@storyteller/ui-loading";
-import { PricingModal } from "@storyteller/ui-pricing-modal";
+import {
+  PricingModal,
+  CreditsModal,
+  useCreditsModalStore,
+} from "@storyteller/ui-pricing-modal";
 import {
   isActionReminderOpen,
   actionReminderProps,
@@ -40,6 +44,10 @@ export const PageEnigma = ({ sceneToken }: { sceneToken?: string }) => {
   useActiveJobs();
   useBackgroundLoadingMedia();
   useQueueHandler();
+
+  // Credits modal state (must be before any early returns)
+  const { isOpen: isCreditsOpen, closeModal: closeCreditsModal } =
+    useCreditsModalStore();
 
   const [validGpu, setValidGpu] = useState("unknown");
 
@@ -144,6 +152,7 @@ export const PageEnigma = ({ sceneToken }: { sceneToken?: string }) => {
       )}
 
       <PricingModal />
+      <CreditsModal isOpen={isCreditsOpen} onClose={closeCreditsModal} />
     </EngineProvider>
   );
 };

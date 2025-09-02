@@ -161,7 +161,7 @@ export function PricingModal({
       isOpen={isOpen}
       onClose={closeModal}
       className="rounded-xl bg-[#1A1A1A] max-h-[90vh] max-w-screen-2xl overflow-y-auto flex flex-col"
-      allowBackgroundInteraction={true}
+      allowBackgroundInteraction={false}
       showClose={true}
       closeOnOutsideClick={true}
       resizable={false}
