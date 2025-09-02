@@ -24,7 +24,6 @@ const creditPacks: CreditPack[] = [
     base: 3300,
     bonus: 200,
     priceUsd: 50,
-    badge: "Flash Sale",
   },
   {
     id: "c_100",
@@ -32,7 +31,6 @@ const creditPacks: CreditPack[] = [
     base: 6600,
     bonus: 900,
     priceUsd: 100,
-    badge: "Flash Sale",
   },
   {
     id: "c_200",
@@ -40,7 +38,6 @@ const creditPacks: CreditPack[] = [
     base: 13200,
     bonus: 2800,
     priceUsd: 200,
-    badge: "Flash Sale",
   },
   {
     id: "c_600",
@@ -48,7 +45,6 @@ const creditPacks: CreditPack[] = [
     base: 39600,
     bonus: 8400,
     priceUsd: 600,
-    badge: "Flash Sale",
   },
   {
     id: "c_1200",
@@ -56,7 +52,6 @@ const creditPacks: CreditPack[] = [
     base: 79200,
     bonus: 16800,
     priceUsd: 1200,
-    badge: "Flash Sale",
   },
 ];
 
@@ -128,7 +123,7 @@ export function CreditsModal({
               <CoinIcon />
 
               <div>
-                <div className="text-white text-5xl font-bold tracking-tight flex items-center gap-2">
+                <div className="text-white text-5xl font-bold tracking-tight flex items-center gap-2.5">
                   <FontAwesomeIcon
                     icon={faCoinFront}
                     className="text-primary text-3xl"
