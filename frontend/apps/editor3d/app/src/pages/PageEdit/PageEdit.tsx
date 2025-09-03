@@ -220,13 +220,8 @@ const PageEdit = () => {
           : undefined) ||
         `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-      setPendingGenerations((prev) => [
-        ...prev,
-        { id: subscriberId as string, count: generationCount },
-      ]);
-
       try {
-        await EnqueueImageInpaint({
+        const result = await EnqueueImageInpaint({
           model: selectedImageModel,
           image_media_token: editedImageToken,
           mask_image_raw_bytes: arrayBuffer,
@@ -235,6 +230,12 @@ const PageEdit = () => {
           frontend_caller: "image_editor",
           frontend_subscriber_id: subscriberId,
         });
+        if (result.status === "success") {
+          setPendingGenerations((prev) => [
+            ...prev,
+            { id: subscriberId as string, count: generationCount },
+          ]);
+        }
       } catch (error) {
         setPendingGenerations((prev) =>
           prev.filter((p) => p.id !== subscriberId),
