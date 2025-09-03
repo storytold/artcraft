@@ -5,7 +5,7 @@ import {
   faTrashXmark,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
-import { Fragment, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { twMerge } from "tailwind-merge";
 import { BaseSelectorImage } from "./BaseImageSelector";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -24,7 +24,10 @@ interface HistoryStackProps {
   onImageSelect?: (image: BaseSelectorImage) => void;
   imageBundles: ImageBundle[];
   onNewImageBundle?: (newBundle: ImageBundle) => void;
+  pendingPlaceholders?: { id: string; count: number }[];
+  onResolvePending?: (id: string) => void;
   selectedImageToken?: string;
+  blurredBackgroundUrl?: string;
 }
 
 export const HistoryStack = ({
@@ -32,7 +35,10 @@ export const HistoryStack = ({
   onImageSelect = () => {},
   imageBundles,
   onNewImageBundle = () => {},
+  pendingPlaceholders = [],
+  onResolvePending = () => {},
   selectedImageToken,
+  blurredBackgroundUrl,
 }: HistoryStackProps) => {
   useImageEditCompleteEvent(async (event) => {
     const newBundle: ImageBundle = {
@@ -46,23 +52,36 @@ export const HistoryStack = ({
     };
 
     onNewImageBundle(newBundle);
-    if (newBundle.images.length > 0) {
-      onImageSelect(newBundle.images[0]);
-      // ensure the scroll container jumps to top for latest bundle
-      setTimeout(() => {
-        scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-      }, 0);
+    // Resolve any matching pending placeholders using subscriber id
+    if (event.maybe_frontend_subscriber_id) {
+      onResolvePending(event.maybe_frontend_subscriber_id);
     }
+    // Do not auto-select the new image; only scroll to top for visibility
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }, 0);
   });
 
   // This is used to force image reloads in different sessions
   // and prevent fetching CORS-tainted images from cache
   const sessionRandBuster = useRef(Math.random());
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const prevPendingCountRef = useRef<number>(0);
 
   const handleClear = () => {
     onClear();
   };
+
+  // Scroll to top when new pending placeholders are added (after enqueue)
+  useEffect(() => {
+    const current = pendingPlaceholders.length;
+    if (current > prevPendingCountRef.current) {
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      }, 0);
+    }
+    prevPendingCountRef.current = current;
+  }, [pendingPlaceholders.length]);
 
   return (
     <div className="h-auto w-20 rounded-lg">
@@ -76,9 +95,65 @@ export const HistoryStack = ({
         <div
           ref={scrollRef}
           className={
-            "scrollbar-hidden flex max-h-[50vh] flex-col items-center justify-start gap-2 overflow-y-auto"
+            "scrollbar-hidden flex max-h-[50vh] flex-col items-center justify-start gap-1 overflow-y-auto"
           }
         >
+          {/* Pending placeholders first (newest at top) */}
+          {(() => {
+            const reversed = [...pendingPlaceholders].slice().reverse();
+            return reversed.map((p, idx) => (
+              <Fragment key={`pending-group-${p.id}`}>
+                {Array.from({ length: Math.max(1, p.count || 1) }).map(
+                  (_, i) => (
+                    <div
+                      key={`pending-${p.id}-${i}`}
+                      className="relative w-full"
+                    >
+                      <div className="st-loading-tile relative aspect-square w-full overflow-hidden rounded-lg">
+                        {blurredBackgroundUrl && (
+                          <img
+                            src={`${blurredBackgroundUrl}?placeholderbg`}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover opacity-80 blur-lg"
+                            crossOrigin="anonymous"
+                          />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        </div>
+                        {/* SVG running border (single solid line) */}
+                        <svg
+                          className="st-border-svg"
+                          viewBox="0 0 100 100"
+                          preserveAspectRatio="none"
+                        >
+                          <rect
+                            className="st-border-solid"
+                            x="1"
+                            y="1"
+                            width="98"
+                            height="98"
+                            rx="16"
+                            ry="16"
+                            pathLength="200"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  ),
+                )}
+                {idx < reversed.length - 1 && (
+                  <hr className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-white/15" />
+                )}
+              </Fragment>
+            ));
+          })()}
+
+          {pendingPlaceholders.length > 0 && (
+            <hr className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-white/15" />
+          )}
+
+          {/* Completed images below placeholders, newest bundles first */}
           {[...imageBundles]
             .slice()
             .reverse()
@@ -96,7 +171,6 @@ export const HistoryStack = ({
                       onImageSelect(image);
                     }}
                   >
-                    {/* TODO: Fix CORS issue here */}
                     <img
                       src={
                         image.url + "?historystack+" + sessionRandBuster.current
@@ -109,7 +183,7 @@ export const HistoryStack = ({
                 ))}
                 {index < imageBundles.length - 1 && (
                   <hr
-                    className="h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-white/15"
+                    className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-white/15"
                     key={"hr" + index}
                   />
                 )}

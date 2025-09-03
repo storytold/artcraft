@@ -40,12 +40,14 @@ const PageEdit = () => {
   const leftPanelRef = useRef<Konva.Layer>({} as Konva.Layer);
   const baseImageKonvaRef = useRef<Konva.Image>({} as Konva.Image);
   const transformerRefs = useRef<{ [key: string]: Konva.Transformer }>({});
-  const [isEnqueuing, setIsEnqueuing] = useState<boolean>(false);
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [pendingGenerations, setPendingGenerations] = useState<
+    { id: string; count: number }[]
+  >([]);
   const [generationCount, setGenerationCount] = useState<number>(1);
 
   // Use the Zustand store
   const store = useEditStore();
+  const baseImageUrl = store.baseImageInfo?.url;
   const addHistoryImageBundle = useEditStore(
     (state) => state.addHistoryImageBundle,
   );
@@ -203,14 +205,6 @@ const PageEdit = () => {
 
   const handleGenerate = useCallback(
     async (prompt: string) => {
-      if (isEnqueuing) {
-        console.warn("Already enqueuing an image, please wait.");
-        return;
-      }
-
-      setIsEnqueuing(true);
-      setIsGenerating(true);
-
       const editedImageToken = store.baseImageInfo?.mediaToken;
 
       if (!editedImageToken) {
@@ -218,8 +212,18 @@ const PageEdit = () => {
         return;
       }
 
-      // TODO: Call inference API here
       const arrayBuffer = await getMaskArrayBuffer();
+
+      const subscriberId =
+        (typeof crypto !== "undefined" && (crypto as any).randomUUID
+          ? (crypto as any).randomUUID()
+          : undefined) ||
+        `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      setPendingGenerations((prev) => [
+        ...prev,
+        { id: subscriberId as string, count: generationCount },
+      ]);
 
       try {
         await EnqueueImageInpaint({
@@ -229,20 +233,16 @@ const PageEdit = () => {
           prompt: prompt,
           image_count: generationCount,
           frontend_caller: "image_editor",
+          frontend_subscriber_id: subscriberId,
         });
       } catch (error) {
-        setIsGenerating(false);
+        setPendingGenerations((prev) =>
+          prev.filter((p) => p.id !== subscriberId),
+        );
         throw error;
-      } finally {
-        setIsEnqueuing(false);
       }
     },
-    [
-      generationCount,
-      isEnqueuing,
-      selectedImageModel,
-      store.baseImageInfo?.mediaToken,
-    ],
+    [generationCount, selectedImageModel, store.baseImageInfo?.mediaToken],
   );
 
   //const modelConfig = lookupModelByTauriId(selectedImageModel!.tauriId);
@@ -315,17 +315,21 @@ const PageEdit = () => {
         <HistoryStack
           onClear={() => {
             store.RESET();
-            setIsGenerating(false);
+            setPendingGenerations([]);
           }}
           imageBundles={historyImageBundles}
+          pendingPlaceholders={pendingGenerations}
+          blurredBackgroundUrl={baseImageUrl}
           onImageSelect={(baseImage) => {
             store.clearLineNodes();
             store.setBaseImageInfo(baseImage);
           }}
           onNewImageBundle={(newBundle: ImageBundle) => {
             addHistoryImageBundle(newBundle);
-            setIsGenerating(false);
           }}
+          onResolvePending={(id: string) =>
+            setPendingGenerations((prev) => prev.filter((p) => p.id !== id))
+          }
           selectedImageToken={store.baseImageInfo?.mediaToken}
         />
       </div>
@@ -342,7 +346,7 @@ const PageEdit = () => {
           selectedMode={store.activeTool}
           onGenerateClick={handleGenerate}
           onFitPressed={onFitPressed}
-          isDisabled={isEnqueuing || isGenerating}
+          isDisabled={false}
           generationCount={generationCount}
           onGenerationCountChange={setGenerationCount}
           supportsMaskedInpainting={supportsMaskedInpainting}
@@ -399,7 +403,6 @@ const PageEdit = () => {
             transformerRefs={transformerRefs}
             leftPanelRef={leftPanelRef}
             baseImageRef={baseImageKonvaRef}
-            isGenerating={isGenerating}
           />
         </ContextMenuContainer>
       </div>

@@ -276,3 +276,43 @@ img {
 .ReactCrop__crop-selection:focus {
   outline: none !important;
 }
+
+/* Editor3D HistoryStack pending running border (continuous) */
+.st-loading-tile {
+  position: relative;
+}
+.st-border-svg {
+  position: absolute;
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  pointer-events: none;
+}
+
+/* base rect style for runner */
+.st-border-svg rect {
+  fill: none;
+  stroke: rgba(59, 130, 246, 1);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Single runner: a solid line chasing its tail */
+/* Continuous runner with wrapping to avoid flicker at corners */
+.st-border-solid {
+  stroke-dasharray: 90 110; /* shorter visible segment + larger gap = clearer motion */
+  stroke-dashoffset: 0;
+  animation: st-solid-wrap 1.6s linear infinite;
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))
+    drop-shadow(0 0 18px rgba(59, 130, 246, 0.5));
+}
+
+@keyframes st-solid-wrap {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -200;
+  }
+}
