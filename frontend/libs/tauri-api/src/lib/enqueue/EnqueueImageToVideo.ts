@@ -25,6 +25,12 @@ export interface EnqueueImageToVideoRequest {
 
   // Optional. Text prompt to direct the video.
   prompt?: string;
+
+  // Optional frontend state to return later.
+  frontend_caller?: string;
+
+  // Optional frontend state to return later.
+  frontend_subscriber_id?: string;
 }
 
 interface RawEnqueueImageToVideoRequest {
@@ -32,6 +38,8 @@ interface RawEnqueueImageToVideoRequest {
   image_media_token?: string;
   end_frame_image_media_token?: string;
   prompt?: string;
+  frontend_caller?: string;
+  frontend_subscriber_id?: string;
 }
 
 export interface EnqueueImageToVideoError extends CommandResult {
@@ -39,18 +47,20 @@ export interface EnqueueImageToVideoError extends CommandResult {
   error_message?: string;
 }
 
-export interface EnqueueImageToVideoPayload {
-}
+export interface EnqueueImageToVideoPayload {}
 
 export interface EnqueueImageToVideoSuccess extends CommandResult {
   payload: EnqueueImageToVideoPayload;
 }
 
-export type EnqueueImageToVideoResult = EnqueueImageToVideoSuccess | EnqueueImageToVideoError;
+export type EnqueueImageToVideoResult =
+  | EnqueueImageToVideoSuccess
+  | EnqueueImageToVideoError;
 
-export const EnqueueImageToVideo = async (request: EnqueueImageToVideoRequest) : Promise<EnqueueImageToVideoResult> => {
-  
-  let mutableRequest : RawEnqueueImageToVideoRequest = {
+export const EnqueueImageToVideo = async (
+  request: EnqueueImageToVideoRequest
+): Promise<EnqueueImageToVideoResult> => {
+  let mutableRequest: RawEnqueueImageToVideoRequest = {
     model: request.model?.tauriId,
     image_media_token: request.image_media_token,
   };
@@ -60,12 +70,21 @@ export const EnqueueImageToVideo = async (request: EnqueueImageToVideoRequest) :
   }
 
   if (!!request.end_frame_image_media_token) {
-    mutableRequest.end_frame_image_media_token = request.end_frame_image_media_token;
+    mutableRequest.end_frame_image_media_token =
+      request.end_frame_image_media_token;
   }
 
-  const result = await invoke("enqueue_image_to_video_command", { 
+  if (!!request.frontend_caller) {
+    mutableRequest.frontend_caller = request.frontend_caller;
+  }
+
+  if (!!request.frontend_subscriber_id) {
+    mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
+  }
+
+  const result = await invoke("enqueue_image_to_video_command", {
     request: mutableRequest,
   });
 
-  return (result as EnqueueImageToVideoResult);
-}
+  return result as EnqueueImageToVideoResult;
+};

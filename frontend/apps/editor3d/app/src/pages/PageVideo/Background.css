@@ -1,19 +1,11 @@
-
-.tile-background-animation {
-  background-image: url('/resources/images/tilebg.png');
-  background-repeat: repeat;
-  background-size: 512px;
-  animation: background-animation-scrolling 60s linear infinite;
-  -webkit-animation: background-animation-scrolling 60s linear infinite;
-  filter: grayscale(100%);
-  -webkit-filter: grayscale(100%);
-}
-
-@keyframes background-animation-scrolling {
-  0% {
-    background-position: 0 0;
-  }
-	100% {
-    background-position: 512px 512px;
-  }
+.video-background-image {
+  background-image: url("/resources/images/forest-trees.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  filter: grayscale(1);
 }
