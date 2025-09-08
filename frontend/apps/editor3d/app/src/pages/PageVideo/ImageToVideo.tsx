@@ -32,7 +32,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
   const startBatch = useImageToVideoStore((s) => s.startBatch);
   const completeBatch = useImageToVideoStore((s) => s.completeBatch);
   const resetBatches = useImageToVideoStore((s) => s.reset);
-  const [imageRowVisible, setImageRowVisible] = useState(false);
+  const [imageRowVisible, setImageRowVisible] = useState(true);
   const promptContentRef = useRef<HTMLDivElement>(null);
   const [promptHeight, setPromptHeight] = useState<number>(138);
 

@@ -36,6 +36,10 @@ interface ImagePromptRowProps {
   onVisibilityChange?: (visible: boolean) => void;
   uploadImage?: UploadImageFn;
   onImageClick?: (image: RefImage) => void;
+  isVideo?: boolean;
+  endFrameImage?: RefImage;
+  setEndFrameImage?: (image?: RefImage) => void;
+  allowUploadEnd?: boolean;
 }
 
 export const ImagePromptRow = ({
@@ -48,15 +52,25 @@ export const ImagePromptRow = ({
   onVisibilityChange,
   uploadImage,
   onImageClick,
+  isVideo,
+  endFrameImage,
+  setEndFrameImage,
+  allowUploadEnd,
 }: ImagePromptRowProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImages, setUploadingImages] = useState<
     { id: string; file: File }[]
   >([]);
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [galleryTarget, setGalleryTarget] = useState<"start" | "end">("start");
+  const [uploadTarget, setUploadTarget] = useState<"start" | "end">("start");
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     []
   );
+  const [uploadingEnd, setUploadingEnd] = useState<{
+    id: string;
+    file: File;
+  } | null>(null);
 
   const usedSlotsRender = useMemo(
     () =>
@@ -94,6 +108,14 @@ export const ImagePromptRow = ({
   };
 
   const handleUploadClick = () => fileInputRef.current?.click();
+  const handleUploadClickStart = () => {
+    setUploadTarget("start");
+    handleUploadClick();
+  };
+  const handleUploadClickEnd = () => {
+    setUploadTarget("end");
+    handleUploadClick();
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -101,16 +123,23 @@ export const ImagePromptRow = ({
 
     const currentCount = referenceImages.length + uploadingImages.length;
     const availableSlots = Math.max(0, maxImagePromptCount - currentCount);
-    if (availableSlots <= 0) {
+    if (availableSlots <= 0 && uploadTarget !== "end") {
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
-    const filesToProcess = files.slice(0, availableSlots);
+    const filesToProcess =
+      uploadTarget === "end"
+        ? files.slice(0, 1)
+        : files.slice(0, availableSlots);
 
     filesToProcess.forEach((file) => {
       const uploadId = Math.random().toString(36).substring(7);
-      setUploadingImages((prev) => [...prev, { id: uploadId, file }]);
+      if (uploadTarget === "end") {
+        setUploadingEnd({ id: uploadId, file });
+      } else {
+        setUploadingImages((prev) => [...prev, { id: uploadId, file }]);
+      }
 
       const reader = new FileReader();
       reader.onloadend = async () => {
@@ -128,17 +157,29 @@ export const ImagePromptRow = ({
                   file,
                   mediaToken: newState.data,
                 };
-                setUploadingImages((prev) =>
-                  prev.filter((img) => img.id !== uploadId)
-                );
-                setReferenceImages([...referenceImages, referenceImage]);
+                if (uploadTarget === "end") {
+                  setUploadingEnd(null);
+                } else {
+                  setUploadingImages((prev) =>
+                    prev.filter((img) => img.id !== uploadId)
+                  );
+                }
+                if (uploadTarget === "end") {
+                  setEndFrameImage?.(referenceImage);
+                } else {
+                  setReferenceImages([...referenceImages, referenceImage]);
+                }
               } else if (
                 newState.status === UploaderStates.assetError ||
                 newState.status === UploaderStates.imageCreateError
               ) {
-                setUploadingImages((prev) =>
-                  prev.filter((img) => img.id !== uploadId)
-                );
+                if (uploadTarget === "end") {
+                  setUploadingEnd(null);
+                } else {
+                  setUploadingImages((prev) =>
+                    prev.filter((img) => img.id !== uploadId)
+                  );
+                }
               }
             },
           });
@@ -149,10 +190,18 @@ export const ImagePromptRow = ({
             file,
             mediaToken: "",
           };
-          setUploadingImages((prev) =>
-            prev.filter((img) => img.id !== uploadId)
-          );
-          setReferenceImages([...referenceImages, referenceImage]);
+          if (uploadTarget === "end") {
+            setUploadingEnd(null);
+          } else {
+            setUploadingImages((prev) =>
+              prev.filter((img) => img.id !== uploadId)
+            );
+          }
+          if (uploadTarget === "end") {
+            setEndFrameImage?.(referenceImage);
+          } else {
+            setReferenceImages([...referenceImages, referenceImage]);
+          }
         }
 
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -175,6 +224,20 @@ export const ImagePromptRow = ({
   };
 
   const handleGalleryImages = (selectedItems: GalleryItem[]) => {
+    if (galleryTarget === "end") {
+      const item = selectedItems[0];
+      if (item && item.fullImage) {
+        setEndFrameImage?.({
+          id: Math.random().toString(36).substring(7),
+          url: item.fullImage,
+          file: new File([], "library-image"),
+          mediaToken: item.id,
+        });
+      }
+      setIsGalleryModalOpen(false);
+      setSelectedGalleryImages([]);
+      return;
+    }
     const availableSlots = Math.max(
       0,
       maxImagePromptCount - referenceImages.length
@@ -220,20 +283,27 @@ export const ImagePromptRow = ({
           className
         )}
       >
-        <div className="grow grid grid-cols-1 gap-1 py-2 px-3">
+        <div
+          className={twMerge(
+            "grow grid py-2 px-3 grid-cols-1",
+            isVideo && "grid-cols-2 gap-5"
+          )}
+        >
           <div className="flex gap-2">
             <div className="flex flex-col grow gap-1">
               <div className="flex items-center gap-2 opacity-90">
                 <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
                 <span className="text-sm text-white font-medium flex items-center gap-1.5">
-                  Image Prompts
-                  <span className="text-white/60 font-semibold">
-                    ({usedSlotsRender}/{maxImagePromptCount})
-                  </span>
+                  {isVideo ? "Starting Frame" : "Image Prompts"}
+                  {!isVideo && (
+                    <span className="text-white/60 font-semibold">
+                      ({usedSlotsRender}/{maxImagePromptCount})
+                    </span>
+                  )}
                 </span>
               </div>
               <span className="text-[13px] text-white/60">
-                Use the elements of an image
+                {isVideo ? "Animate an image" : "Use the elements of an image"}
               </span>
             </div>
 
@@ -303,7 +373,7 @@ export const ImagePromptRow = ({
                       {allowUpload && (
                         <Button
                           variant="primary"
-                          onClick={handleUploadClick}
+                          onClick={handleUploadClickStart}
                           icon={faPlus}
                           className="w-full"
                         >
@@ -312,7 +382,10 @@ export const ImagePromptRow = ({
                       )}
                       <Button
                         variant="action"
-                        onClick={() => setIsGalleryModalOpen(true)}
+                        onClick={() => {
+                          setGalleryTarget("start");
+                          setIsGalleryModalOpen(true);
+                        }}
                         icon={faImages}
                         className="w-full bg-[#686870] hover:bg-[#78787F]"
                       >
@@ -324,11 +397,13 @@ export const ImagePromptRow = ({
                   <Button
                     variant="action"
                     className="bg-white/10 hover:bg-white/20 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-white/30 hover:border-white/50 transition-all"
-                    onClick={() =>
-                      allowUpload
-                        ? handleUploadClick()
-                        : setIsGalleryModalOpen(true)
-                    }
+                    onClick={() => {
+                      if (allowUpload) handleUploadClickStart();
+                      else {
+                        setGalleryTarget("start");
+                        setIsGalleryModalOpen(true);
+                      }
+                    }}
                   >
                     <FontAwesomeIcon
                       icon={faPlus}
@@ -339,6 +414,110 @@ export const ImagePromptRow = ({
               )}
             </div>
           </div>
+          {isVideo && (
+            <div className="flex gap-2">
+              <div className="flex flex-col grow gap-1">
+                <div className="flex items-center gap-2 opacity-90">
+                  <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+                  <span className="text-sm text-white font-medium flex items-center gap-1.5">
+                    Ending Frame
+                  </span>
+                </div>
+                <span className="text-[13px] text-white/60">
+                  Optional end frame
+                </span>
+              </div>
+              <div className="flex gap-2 items-center">
+                {endFrameImage ? (
+                  <div
+                    className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                    onClick={() => onImageClick?.(endFrameImage)}
+                  >
+                    <img
+                      src={endFrameImage.url}
+                      alt="Ending Frame"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEndFrameImage?.(undefined);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                    >
+                      <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
+                ) : uploadingEnd ? (
+                  <div className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30">
+                    <div className="absolute inset-0">
+                      <img
+                        src={URL.createObjectURL(uploadingEnd.file)}
+                        alt="Uploading preview"
+                        className="h-full w-full object-cover blur-sm"
+                      />
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <FontAwesomeIcon
+                        icon={faSpinnerThird}
+                        className="h-6 w-6 animate-spin text-white"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <Tooltip
+                    interactive={true}
+                    position="top"
+                    delay={100}
+                    className="bg-[#46464B] p-2 -mb-0.5"
+                    closeOnClick={true}
+                    content={
+                      <div className="flex flex-col gap-1.5">
+                        {allowUploadEnd && (
+                          <Button
+                            variant="primary"
+                            onClick={handleUploadClickEnd}
+                            icon={faPlus}
+                            className="w-full"
+                          >
+                            Upload
+                          </Button>
+                        )}
+                        <Button
+                          variant="action"
+                          onClick={() => {
+                            setGalleryTarget("end");
+                            setIsGalleryModalOpen(true);
+                          }}
+                          icon={faImages}
+                          className="w-full bg-[#686870] hover:bg-[#78787F]"
+                        >
+                          Pick from library
+                        </Button>
+                      </div>
+                    }
+                  >
+                    <Button
+                      variant="action"
+                      className="bg-white/10 hover:bg-white/20 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-white/30 hover:border-white/50 transition-all"
+                      onClick={() => {
+                        if (allowUploadEnd) handleUploadClickEnd();
+                        else {
+                          setGalleryTarget("end");
+                          setIsGalleryModalOpen(true);
+                        }
+                      }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faPlus}
+                        className="text-2xl opacity-80"
+                      />
+                    </Button>
+                  </Tooltip>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         <div className="col-span-2 flex items-center">
           <div className="flex items-center gap-2 w-[1px] h-full bg-white/10 rounded-lg" />
@@ -358,7 +537,9 @@ export const ImagePromptRow = ({
         mode="select"
         selectedItemIds={selectedGalleryImages}
         onSelectItem={handleImageSelect}
-        maxSelections={Math.max(1, availableSlotsRender)}
+        maxSelections={
+          galleryTarget === "end" ? 1 : Math.max(1, availableSlotsRender)
+        }
         onUseSelected={handleGalleryImages}
         onDownloadClicked={downloadFileFromUrl}
         forceFilter="image"

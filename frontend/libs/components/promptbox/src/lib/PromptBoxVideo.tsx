@@ -78,6 +78,8 @@ export const PromptBoxVideo = ({
   );
   const referenceImages = usePromptVideoStore((s) => s.referenceImages);
   const setReferenceImages = usePromptVideoStore((s) => s.setReferenceImages);
+  const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
+  const setEndFrameImage = usePromptVideoStore((s) => s.setEndFrameImage);
   const [uploadingImages, _setUploadingImages] = useState<
     { id: string; file: File }[]
   >([]);
@@ -174,6 +176,7 @@ export const PromptBoxVideo = ({
       model: selectedModel,
       image_media_token: referenceImages[0].mediaToken,
       prompt: prompt,
+      end_frame_image_media_token: endFrameImage?.mediaToken,
       frontend_caller: "image_to_video",
       frontend_subscriber_id: subscriberId,
     });
@@ -216,6 +219,7 @@ export const PromptBoxVideo = ({
         {isImageRowVisible && (
           <ImagePromptRow
             visible={true}
+            isVideo={true}
             maxImagePromptCount={1}
             allowUpload={true}
             referenceImages={referenceImages}
@@ -231,6 +235,9 @@ export const PromptBoxVideo = ({
               setIsModalOpen(true);
             }}
             uploadImage={uploadImage}
+            endFrameImage={endFrameImage}
+            setEndFrameImage={setEndFrameImage}
+            allowUploadEnd
           />
         )}
         <div

@@ -92,10 +92,12 @@ interface PromptVideoStore {
   resolution: Resolution;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
+  endFrameImage?: RefImage;
   setPrompt: (prompt: string) => void;
   setResolution: (resolution: Resolution) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
+  setEndFrameImage: (image?: RefImage) => void;
 }
 
 export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
@@ -103,8 +105,10 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   resolution: "720p",
   useSystemPrompt: true,
   referenceImages: [],
+  endFrameImage: undefined,
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
+  setEndFrameImage: (endFrameImage) => set({ endFrameImage }),
 }));
