@@ -327,7 +327,11 @@ const PageEdit = () => {
             store.setBaseImageInfo(baseImage);
           }}
           onImageRemove={(baseImage) => {
-            removeHistoryImage(baseImage);
+            if (pendingGenerations.length === 0 && store.historyImageBundles.length === 1 && store.historyImageBundles[0].images.length <= 1) {
+              store.RESET();
+            } else {
+              removeHistoryImage(baseImage);
+            }
           }}
           onNewImageBundle={(newBundle: ImageBundle) => {
             addHistoryImageBundle(newBundle);

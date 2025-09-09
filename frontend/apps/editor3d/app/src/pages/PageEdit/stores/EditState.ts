@@ -1030,6 +1030,7 @@ export const useEditStore = create<EditState>((set, get, store) => ({
   },
 
   removeHistoryImage(image) {
+    console.log("Removing history image:", image);
     set((state) => {
       const updatedBundles = state.historyImageBundles.map((bundle) => {
         return {
@@ -1037,6 +1038,7 @@ export const useEditStore = create<EditState>((set, get, store) => ({
           images: bundle.images.filter((img) => img.mediaToken !== image.mediaToken),
         };
       }).filter((bundle) => bundle.images.length > 0); // Remove empty bundles
+      console.log("Updated history image bundles:", updatedBundles);
       return { historyImageBundles: updatedBundles };
     })
   },

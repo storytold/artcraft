@@ -14,6 +14,7 @@ import {
   showActionReminder,
 } from "@storyteller/ui-action-reminder-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ButtonIcon } from "node_modules/@storyteller/ui-button-icon/src/lib/button-icon";
 
 export interface ImageBundle {
   images: BaseSelectorImage[];
@@ -74,8 +75,7 @@ export const HistoryStack = ({
     onClear();
   };
 
-  const handleOnImageRemove = (baseImage: BaseSelectorImage, event: Event | undefined) => {
-    event?.stopPropagation();
+  const handleOnImageRemove = (baseImage: BaseSelectorImage) => {
     onImageRemove(baseImage);
   }
 
@@ -186,8 +186,8 @@ export const HistoryStack = ({
                       crossOrigin="anonymous"
                       className="absolute inset-0 h-full w-full object-cover"
                     />
-                    <div className="absolute -top-0 -right-0 h-6 w-6 bg-red opacity-0 hover:opacity-100 transition-opacity flex justify-center items-center rounded-bl-lg">
-                      <FontAwesomeIcon icon={faXmark} className="h-full w-full text-lg text-white" onClick={handleOnImageRemove(image, event)} />
+                    <div className="absolute -top-0 -right-0 h-6 w-6 bg-red opacity-0 hover:opacity-100 transition-opacity flex justify-center items-center rounded-bl-lg" onClick={(e) => { e.stopPropagation(); handleOnImageRemove(image) }} >
+                      <FontAwesomeIcon icon={faXmark} className="h-full w-full text-lg text-white" />
                     </div>
                   </Button>
                 ))}
