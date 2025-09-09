@@ -132,6 +132,7 @@ interface EditState {
   historyImageBundles: ImageBundle[];
   clearHistoryImages: () => void;
   addHistoryImageBundle: (bundle: ImageBundle) => void;
+  removeHistoryImage: (image: BaseSelectorImage) => void;
 }
 
 // Add a flag to prevent saving state during restoration
@@ -1026,5 +1027,17 @@ export const useEditStore = create<EditState>((set, get, store) => ({
 
   addHistoryImageBundle(bundle) {
     set((state) => ({ historyImageBundles: [...state.historyImageBundles, bundle] }));
+  },
+
+  removeHistoryImage(image) {
+    set((state) => {
+      const updatedBundles = state.historyImageBundles.map((bundle) => {
+        return {
+          ...bundle,
+          images: bundle.images.filter((img) => img.mediaToken !== image.mediaToken),
+        };
+      }).filter((bundle) => bundle.images.length > 0); // Remove empty bundles
+      return { historyImageBundles: updatedBundles };
+    })
   },
 }));
