@@ -33,11 +33,12 @@ interface HistoryStackProps {
 
 export const HistoryStack = ({
   onClear,
-  onImageSelect = () => {},
+  onImageSelect = () => { },
+  onImageRemove = () => { },
   imageBundles,
-  onNewImageBundle = () => {},
+  onNewImageBundle = () => { },
   pendingPlaceholders = [],
-  onResolvePending = () => {},
+  onResolvePending = () => { },
   selectedImageToken,
   blurredBackgroundUrl,
 }: HistoryStackProps) => {
@@ -72,6 +73,11 @@ export const HistoryStack = ({
   const handleClear = () => {
     onClear();
   };
+
+  const handleOnImageRemove = (baseImage: BaseSelectorImage, event: Event | undefined) => {
+    event?.stopPropagation();
+    onImageRemove(baseImage);
+  }
 
   // Scroll to top when new pending placeholders are added (after enqueue)
   useEffect(() => {
@@ -166,7 +172,7 @@ export const HistoryStack = ({
                     className={twMerge(
                       "relative aspect-square h-full w-full border-2 bg-transparent p-0 hover:bg-transparent hover:opacity-80",
                       selectedImageToken === image.mediaToken &&
-                        "border-primary hover:opacity-100",
+                      "border-primary hover:opacity-100 rounded-lg overflow-hidden",
                     )}
                     onClick={() => {
                       onImageSelect(image);
@@ -178,9 +184,11 @@ export const HistoryStack = ({
                       }
                       alt=""
                       crossOrigin="anonymous"
-                      className="absolute inset-0 h-full w-full rounded-lg object-cover"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
-                    <FontAwesomeIcon icon={faXmark} className="absolute top-0 right-0 h-4 w-4 text-lg text-danger" />
+                    <div className="absolute -top-0 -right-0 h-6 w-6 bg-red opacity-0 hover:opacity-100 transition-opacity flex justify-center items-center rounded-bl-lg">
+                      <FontAwesomeIcon icon={faXmark} className="h-full w-full text-lg text-white" onClick={handleOnImageRemove(image, event)} />
+                    </div>
                   </Button>
                 ))}
                 {index < imageBundles.length - 1 && (
