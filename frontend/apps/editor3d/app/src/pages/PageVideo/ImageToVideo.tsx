@@ -15,7 +15,7 @@ import {
   useImageToVideoGenerationCompleteEvent,
   ImageToVideoGenerationCompleteEvent,
 } from "@storyteller/tauri-events";
-import { Badge } from "@storyteller/ui-badge";
+// import { Badge } from "@storyteller/ui-badge";
 import { twMerge } from "tailwind-merge";
 import { uploadImage } from "../../components/reusable/UploadModalMedia/uploadImage";
 
@@ -31,7 +31,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
   const batches = useImageToVideoStore((s) => s.batches);
   const startBatch = useImageToVideoStore((s) => s.startBatch);
   const completeBatch = useImageToVideoStore((s) => s.completeBatch);
-  const resetBatches = useImageToVideoStore((s) => s.reset);
+  // const resetBatches = useImageToVideoStore((s) => s.reset);
   const [imageRowVisible, setImageRowVisible] = useState(true);
   const promptContentRef = useRef<HTMLDivElement>(null);
   const [promptHeight, setPromptHeight] = useState<number>(138);
@@ -81,17 +81,18 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
     return () => ro.disconnect();
   }, []);
 
-  const bottomMarginPx = 24;
-  const bottomOffsetPx = promptHeight + bottomMarginPx;
+  // TODO: Uncomment when backend supports history frontend id
+  // const bottomMarginPx = 24;
+  // const bottomOffsetPx = promptHeight + bottomMarginPx;
   const targetTop = showPromptAtBottom
-    ? Math.max(0, vh - bottomOffsetPx)
+    ? Math.floor(vh / 2) //change to Math.max(0, vh - bottomOffsetPx) when backend supports history frontend id
     : Math.floor(vh / 2);
   const promptAnim = useSpring({
     top: targetTop,
     config: { tension: 200, friction: 28, mass: 1.1 },
   });
 
-  const inverseBatch = batches.toReversed();
+  // const inverseBatch = batches.toReversed();
 
   return (
     <div
@@ -114,7 +115,8 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
             </div>
           )}
 
-          {hasAnyBatches && (
+          {/* TODO: Uncomment when backend supports history frontend id */}
+          {/* {hasAnyBatches && (
             <div
               className="h-full w-full overflow-y-auto"
               style={{ paddingBottom: bottomOffsetPx + 24 }}
@@ -155,13 +157,14 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
                 ))}
               </div>
             </div>
-          )}
+          )} */}
 
           <animated.div
             className="fixed left-1/2 z-20 w-[730px] -translate-x-1/2"
             style={promptAnim}
           >
-            {showPromptAtBottom && batches.length > 0 && (
+            {/* TODO: Uncomment when backend supports history frontend id */}
+            {/* {showPromptAtBottom && batches.length > 0 && (
               <div
                 className={`absolute ${imageRowVisible ? "-top-[108px]" : "-top-9"} flex w-full justify-end`}
               >
@@ -172,7 +175,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
                   Clear session
                 </button>
               </div>
-            )}
+            )} */}
             <div ref={promptContentRef}>
               <PromptBoxVideo
                 useJobContext={() => jobContext}
@@ -189,7 +192,10 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
             </div>
           </animated.div>
 
-          {!showPromptAtBottom && <BackgroundGallery />}
+          {/* TODO: Uncomment when backend supports history frontend id */}
+          {/* {!showPromptAtBottom && */}
+          <BackgroundGallery />
+          {/* } */}
 
           <div className="absolute bottom-6 left-6 z-20 flex items-center gap-2">
             <ClassyModelSelector
