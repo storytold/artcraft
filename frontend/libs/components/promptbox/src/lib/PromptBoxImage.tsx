@@ -223,6 +223,16 @@ export const PromptBoxImage = ({
   };
 
   const handleEnqueue = async () => {
+    if (!prompt.trim()) {
+      console.warn("Cannot generate image: prompt is empty");
+      return;
+    }
+
+    if (!selectedModel) {
+      console.warn("Cannot generate image: no model selected");
+      return;
+    }
+
     setIsEnqueueing(true);
 
     gtagEvent("enqueue_image");

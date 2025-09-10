@@ -24,6 +24,7 @@ import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
 import type { UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
+import { toast } from "@storyteller/ui-toaster";
 
 interface PromptBoxVideoProps {
   useJobContext: () => JobContextType;
@@ -83,7 +84,7 @@ export const PromptBoxVideo = ({
   const [uploadingImages, _setUploadingImages] = useState<
     { id: string; file: File }[]
   >([]);
-  const [showImagePrompts, setShowImagePrompts] = useState(false);
+  const [showImagePrompts, _setShowImagePrompts] = useState(true);
   const isImageRowVisible =
     showImagePrompts ||
     referenceImages.length > 0 ||
@@ -155,9 +156,22 @@ export const PromptBoxVideo = ({
   };
 
   const handleEnqueue = async () => {
-    setIsEnqueueing(true);
+    if (!prompt.trim()) {
+      console.warn("Cannot generate video: prompt is empty");
+      return;
+    }
 
-    console.log("PromptBoxVideo - Prompting with model", selectedModel);
+    if (referenceImages.length === 0) {
+      console.warn("Cannot generate video: no reference image provided");
+      return;
+    }
+
+    if (!selectedModel) {
+      console.warn("Cannot generate video: no model selected");
+      return;
+    }
+
+    setIsEnqueueing(true);
 
     gtagEvent("enqueue_video");
 
@@ -172,7 +186,7 @@ export const PromptBoxVideo = ({
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2);
 
-    const generateResponse = await EnqueueImageToVideo({
+    await EnqueueImageToVideo({
       model: selectedModel,
       image_media_token: referenceImages[0].mediaToken,
       prompt: prompt,
@@ -180,8 +194,6 @@ export const PromptBoxVideo = ({
       frontend_caller: "image_to_video",
       frontend_subscriber_id: subscriberId,
     });
-
-    console.log("generateResponse", generateResponse);
 
     onEnqueuePressed?.(prompt, subscriberId);
 
@@ -198,6 +210,12 @@ export const PromptBoxVideo = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+
+      if (prompt.trim() && referenceImages.length === 0) {
+        toast.error("Please choose a starting frame image to generate video");
+        return;
+      }
+
       handleEnqueue();
     }
   };
@@ -250,7 +268,8 @@ export const PromptBoxVideo = ({
           )}
         >
           <div className="flex justify-center gap-2">
-            <Tooltip
+            {/* Hide the Add image button for video for now */}
+            {/* <Tooltip
               content="Add Image"
               position="top"
               closeOnClick={true}
@@ -278,7 +297,7 @@ export const PromptBoxVideo = ({
                   />
                 </svg>
               </Button>
-            </Tooltip>
+            </Tooltip> */}
 
             <textarea
               ref={textareaRef}
@@ -339,7 +358,10 @@ export const PromptBoxVideo = ({
                 icon={!isEnqueueing ? faSparkles : undefined}
                 onClick={handleEnqueue}
                 disabled={
-                  isEnqueueing || !prompt.trim() || referenceImages.length === 0
+                  isEnqueueing ||
+                  !prompt.trim() ||
+                  referenceImages.length === 0 ||
+                  !selectedModel
                 }
               >
                 {isEnqueueing ? (

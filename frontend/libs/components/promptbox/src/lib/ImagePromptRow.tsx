@@ -420,11 +420,12 @@ export const ImagePromptRow = ({
                 <div className="flex items-center gap-2 opacity-90">
                   <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
                   <span className="text-sm text-white font-medium flex items-center gap-1.5">
-                    Ending Frame
+                    Ending Frame{" "}
+                    <span className="text-white/60 text-xs">(optional)</span>
                   </span>
                 </div>
                 <span className="text-[13px] text-white/60">
-                  Optional end frame
+                  How the animation ends
                 </span>
               </div>
               <div className="flex gap-2 items-center">
