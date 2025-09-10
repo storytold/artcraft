@@ -2,6 +2,7 @@ import { Button } from "@storyteller/ui-button";
 import { useImageEditCompleteEvent } from "@storyteller/tauri-events";
 import {
   faClockRotateLeft,
+  faTrashAlt,
   faTrashXmark,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -14,7 +15,6 @@ import {
   showActionReminder,
 } from "@storyteller/ui-action-reminder-modal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ButtonIcon } from "node_modules/@storyteller/ui-button-icon/src/lib/button-icon";
 
 export interface ImageBundle {
   images: BaseSelectorImage[];
@@ -34,12 +34,12 @@ interface HistoryStackProps {
 
 export const HistoryStack = ({
   onClear,
-  onImageSelect = () => { },
-  onImageRemove = () => { },
+  onImageSelect = () => {},
+  onImageRemove = () => {},
   imageBundles,
-  onNewImageBundle = () => { },
+  onNewImageBundle = () => {},
   pendingPlaceholders = [],
-  onResolvePending = () => { },
+  onResolvePending = () => {},
   selectedImageToken,
   blurredBackgroundUrl,
 }: HistoryStackProps) => {
@@ -77,7 +77,7 @@ export const HistoryStack = ({
 
   const handleOnImageRemove = (baseImage: BaseSelectorImage) => {
     onImageRemove(baseImage);
-  }
+  };
 
   // Scroll to top when new pending placeholders are added (after enqueue)
   useEffect(() => {
@@ -170,9 +170,9 @@ export const HistoryStack = ({
                   <Button
                     key={image.mediaToken}
                     className={twMerge(
-                      "relative aspect-square h-full w-full border-2 bg-transparent p-0 hover:bg-transparent hover:opacity-80",
+                      "group relative aspect-square h-full w-full overflow-hidden rounded-lg border-2 bg-transparent p-0 hover:bg-transparent hover:opacity-80",
                       selectedImageToken === image.mediaToken &&
-                      "border-primary hover:opacity-100 rounded-lg overflow-hidden",
+                        "border-primary hover:opacity-100",
                     )}
                     onClick={() => {
                       onImageSelect(image);
@@ -186,8 +186,33 @@ export const HistoryStack = ({
                       crossOrigin="anonymous"
                       className="absolute inset-0 h-full w-full object-cover"
                     />
-                    <div className="absolute -top-0 -right-0 h-6 w-6 bg-red opacity-0 hover:opacity-100 transition-opacity flex justify-center items-center rounded-bl-lg" onClick={(e) => { e.stopPropagation(); handleOnImageRemove(image) }} >
-                      <FontAwesomeIcon icon={faXmark} className="h-full w-full text-lg text-white" />
+                    <div
+                      className="absolute -right-0 -top-0 flex h-5 w-5 items-center justify-center rounded-bl-lg bg-red/50 opacity-0 transition-opacity hover:bg-red/80 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        showActionReminder({
+                          reminderType: "default",
+                          title: "Delete Image",
+                          primaryActionIcon: faTrashXmark,
+                          primaryActionBtnClassName: "bg-red hover:bg-red/80",
+                          message: (
+                            <p className="text-sm text-white/70">
+                              Are you sure you want to delete this image? This
+                              action cannot be undone.
+                            </p>
+                          ),
+                          primaryActionText: "Delete",
+                          onPrimaryAction: () => {
+                            handleOnImageRemove(image);
+                            isActionReminderOpen.value = false;
+                          },
+                        });
+                      }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faTrashAlt}
+                        className="h-full w-full text-[13px] text-white"
+                      />
                     </div>
                   </Button>
                 ))}

@@ -16,23 +16,26 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
 import { ImageModel, getCapabilitiesForModel } from "@storyteller/model-list";
+import { twMerge } from "tailwind-merge";
 
 export interface PromptBoxEditProps {
   onModeChange?: (mode: string) => void;
   selectedMode?: string;
-  onGenerateClick: (prompt: string) => void;
+  onGenerateClick: (prompt: string) => void | Promise<void>;
   isDisabled?: boolean;
   onFitPressed?: () => void | Promise<void>;
   selectedImageModel?: ImageModel;
   generationCount?: number;
   onGenerationCountChange?: (count: number) => void;
   supportsMaskedInpainting?: boolean;
+  isEnqueueing?: boolean;
 }
 
 export const PromptBoxEdit = ({
   onModeChange: onModeSelectionChange,
   selectedMode,
   onGenerateClick,
+  isEnqueueing,
   isDisabled,
   onFitPressed,
   selectedImageModel,
@@ -42,10 +45,11 @@ export const PromptBoxEdit = ({
 }: PromptBoxEditProps) => {
   const [prompt, setPrompt] = useState("");
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
-
+  const [isFocused, setIsFocused] = useState(false);
   const [generationCount, setGenerationCount] = useState<number>(
     typeof generationCountProp === "number" ? generationCountProp : 1
   );
+  const [internalEnqueueing, setInternalEnqueueing] = useState(false);
 
   const [generationCountList, setGenerationCountList] = useState<PopoverItem[]>(
     []
@@ -130,7 +134,10 @@ export const PromptBoxEdit = ({
 
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      // handleEnqueue();
+      // Block Enter if requirements are not met
+      const busy = Boolean(isEnqueueing ?? internalEnqueueing);
+      if (!prompt.trim() || isDisabled || busy) return;
+      void handleGenerate();
     }
   };
 
@@ -144,6 +151,21 @@ export const PromptBoxEdit = ({
         selected: item.label === selectedItem.label,
       }))
     );
+  };
+
+  const handleGenerate = async () => {
+    const busy = Boolean(isEnqueueing ?? internalEnqueueing);
+    if (busy || isDisabled || !prompt.trim()) return;
+    setInternalEnqueueing(true);
+    const timeout = setTimeout(() => {
+      setInternalEnqueueing(false);
+    }, 10000);
+    try {
+      await Promise.resolve(onGenerateClick(prompt));
+    } finally {
+      clearTimeout(timeout);
+      setInternalEnqueueing(false);
+    }
   };
 
   const modes = [
@@ -171,7 +193,12 @@ export const PromptBoxEdit = ({
   return (
     <>
       <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col gap-3">
-        <div className="glass w-[730px] rounded-xl p-4">
+        <div
+          className={twMerge(
+            "glass w-[730px] rounded-xl p-4",
+            isFocused && "ring-1 ring-primary border-primary"
+          )}
+        >
           <div className="flex justify-center gap-2">
             <textarea
               ref={textareaRef}
@@ -182,8 +209,8 @@ export const PromptBoxEdit = ({
               onChange={handleChange}
               onPaste={handlePaste}
               onKeyDown={handleKeyDown}
-              onFocus={() => {}}
-              onBlur={() => {}}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
             />
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
@@ -252,18 +279,23 @@ export const PromptBoxEdit = ({
               </Tooltip>
               <Button
                 className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                icon={!isDisabled ? faSparkles : undefined}
-                onClick={() => onGenerateClick(prompt)}
-                disabled={isDisabled || !prompt.trim()}
+                icon={
+                  !(isEnqueueing ?? internalEnqueueing) && !isDisabled
+                    ? faSparkles
+                    : undefined
+                }
+                onClick={handleGenerate}
+                disabled={
+                  (isEnqueueing ?? internalEnqueueing) ||
+                  isDisabled ||
+                  !prompt.trim()
+                }
               >
-                {isDisabled ? (
-                  <>
-                    <FontAwesomeIcon
-                      icon={faSpinnerThird}
-                      className="animate-spin text-lg"
-                    />
-                    <span className="ml-2">Generating</span>
-                  </>
+                {isEnqueueing ?? internalEnqueueing ? (
+                  <FontAwesomeIcon
+                    icon={faSpinnerThird}
+                    className="animate-spin text-lg"
+                  />
                 ) : (
                   "Generate"
                 )}
