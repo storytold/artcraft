@@ -19,13 +19,15 @@ import ModelBadgeGrid from "../../components/model-badge-grid";
 //const MAC_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_2025.07.13.dmg";
 //const MAC_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_2025.07.17.dmg";
 //const MAC_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_2025.07.28.dmg";
-const MAC_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_2025.08.23.dmg"; // NB: The "08.22 (twenty two)" release is broken.
+const MAC_LINK =
+  "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_2025.08.23.dmg"; // NB: The "08.22 (twenty two)" release is broken.
 
 //const WINDOWS_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.06.04.exe";
 //const WINDOWS_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.07.13.exe";
 //const WINDOWS_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.07.17.exe";
 //const WINDOWS_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.07.28.exe";
-const WINDOWS_LINK = "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.08.22.exe";
+const WINDOWS_LINK =
+  "https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_2025.08.22.exe";
 
 const fadeUpVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -541,7 +543,7 @@ const Landing = () => {
               <div className="relative isolate overflow-hidden bg-indigo-500 sm:mx-auto sm:max-w-2xl sm:rounded-3xl sm:pr-0 lg:mx-0 lg:max-w-none">
                 <div className="mx-auto max-w-full sm:mx-0 sm:max-w-none p-2 sm:p-4 bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
                   <video
-                    src="/videos/artcraft-3d-demo.mp4"
+                    src="/videos/3d_canvas_demo.mp4"
                     autoPlay
                     muted
                     loop
@@ -573,7 +575,7 @@ const Landing = () => {
               >
                 <div className="mx-auto max-w-full sm:mx-0 sm:max-w-none p-2 sm:p-4 bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
                   <video
-                    src="/videos/artcraft-canvas-demo.mp4"
+                    src="/videos/2d_canvas_demo.mp4"
                     autoPlay
                     muted
                     loop
@@ -595,6 +597,47 @@ const Landing = () => {
               </div>
               <DiscordButton />
             </motion.div>
+          </div>
+        </motion.div>
+      </div>
+
+      <div className="overflow-visible py-10 sm:py-20 md:py-28 lg:py-32 relative px-4">
+        {/* Gradient Orb for Section */}
+        <div className="absolute left-[-150px] bottom-[-100px] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-blue-700 opacity-10 blur-[110px] z-0 pointer-events-none" />
+        <motion.div
+          className="mx-auto max-w-[88rem] md:px-6 lg:px-8"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeUpVariants}
+        >
+          <div className="grid grid-cols-1 gap-10 sm:gap-20 lg:grid-cols-2 lg:items-center">
+            <motion.div
+              className="px-2 sm:px-6 lg:px-0 lg:pt-4 lg:pr-4"
+              variants={fadeUpVariants}
+            >
+              <div className="max-w-2xl lg:mx-0 mb-10 md:mb-16">
+                <h2 className="relative font-bold text-4xl md:text-5xl !leading-tight">
+                  <span className="text-primary">AI inpainting</span> allows you
+                  to edit any image into whatever you imagine
+                </h2>
+              </div>
+              <DiscordButton />
+            </motion.div>
+            <div className="sm:px-2 sm:mx-auto lg:px-0">
+              <div className="relative isolate overflow-hidden bg-indigo-500 sm:mx-auto sm:max-w-2xl sm:rounded-3xl sm:pr-0 lg:mx-0 lg:max-w-none">
+                <div className="mx-auto max-w-full sm:mx-0 sm:max-w-none p-2 sm:p-4 bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
+                  <video
+                    src="/videos/inpainting_demo.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="aspect-square w-full max-w-none rounded-lg bg-gray-800 object-cover h-full overflow-hidden"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
