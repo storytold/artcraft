@@ -222,6 +222,13 @@ export const PromptBoxVideo = ({
 
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
+  // Hide/clear ending frame if model doesn't support it
+  useEffect(() => {
+    if (selectedModel && !selectedModel.endFrame && endFrameImage) {
+      setEndFrameImage(undefined);
+    }
+  }, [selectedModel, endFrameImage, setEndFrameImage]);
+
   return (
     <>
       <Modal
@@ -255,7 +262,8 @@ export const PromptBoxVideo = ({
             uploadImage={uploadImage}
             endFrameImage={endFrameImage}
             setEndFrameImage={setEndFrameImage}
-            allowUploadEnd
+            allowUploadEnd={!!selectedModel?.endFrame}
+            showEndFrameSection={!!selectedModel?.endFrame}
           />
         )}
         <div

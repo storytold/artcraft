@@ -63,6 +63,7 @@ interface ImagePromptRowProps {
   endFrameImage?: RefImage;
   setEndFrameImage?: (image?: RefImage) => void;
   allowUploadEnd?: boolean;
+  showEndFrameSection?: boolean;
 }
 
 export const ImagePromptRow = ({
@@ -79,6 +80,7 @@ export const ImagePromptRow = ({
   endFrameImage,
   setEndFrameImage,
   allowUploadEnd,
+  showEndFrameSection = true,
 }: ImagePromptRowProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImages, setUploadingImages] = useState<
@@ -395,7 +397,7 @@ export const ImagePromptRow = ({
         <div
           className={twMerge(
             "grow grid py-2 px-3 grid-cols-1",
-            isVideo && "grid-cols-2 gap-5"
+            isVideo && showEndFrameSection && "grid-cols-2 gap-5"
           )}
         >
           <div className="flex gap-2">
@@ -547,7 +549,7 @@ export const ImagePromptRow = ({
               )}
             </div>
           </div>
-          {isVideo && (
+          {isVideo && showEndFrameSection && (
             <div className="flex gap-2">
               <div className="flex flex-col grow gap-1">
                 <div className="flex items-center gap-2 opacity-90">
