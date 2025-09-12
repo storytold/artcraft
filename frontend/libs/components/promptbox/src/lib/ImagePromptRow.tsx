@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
@@ -15,6 +21,23 @@ import { faImage } from "@fortawesome/pro-regular-svg-icons";
 import { RefImage } from "./promptStore";
 import { twMerge } from "tailwind-merge";
 import { UploaderState, UploaderStates } from "@storyteller/common";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export type UploadImageFn = ({
   title,
@@ -71,6 +94,89 @@ export const ImagePromptRow = ({
     id: string;
     file: File;
   } | null>(null);
+
+  const referenceImagesRef = useRef(referenceImages);
+  useEffect(() => {
+    referenceImagesRef.current = referenceImages;
+  }, [referenceImages]);
+
+  const allowReorder = useMemo(
+    () => maxImagePromptCount > 1 && referenceImages.length > 1,
+    [maxImagePromptCount, referenceImages.length]
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const SortableImage = ({ image }: { image: RefImage }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: image.id });
+
+    const style: CSSProperties = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      zIndex: isDragging ? 9999 : undefined,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...(allowReorder ? { ...attributes, ...listeners } : {})}
+        className={twMerge(
+          "glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 transition-opacity group",
+          allowReorder
+            ? "cursor-move hover:border-white/80"
+            : "cursor-pointer hover:border-white/80",
+          isDragging ? "opacity-50 shadow-lg" : ""
+        )}
+        onClick={() => onImageClick?.(image)}
+      >
+        <img
+          src={image.url}
+          alt="Reference"
+          className="h-full w-full object-cover"
+        />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemoveReference(image.id);
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}
+          className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+        >
+          <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+        </button>
+      </div>
+    );
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = referenceImages.findIndex((img) => img.id === active.id);
+    const newIndex = referenceImages.findIndex((img) => img.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const newOrder = arrayMove(referenceImages, oldIndex, newIndex);
+    setReferenceImages(newOrder);
+  };
 
   const usedSlotsRender = useMemo(
     () =>
@@ -167,7 +273,10 @@ export const ImagePromptRow = ({
                 if (uploadTarget === "end") {
                   setEndFrameImage?.(referenceImage);
                 } else {
-                  setReferenceImages([...referenceImages, referenceImage]);
+                  setReferenceImages([
+                    ...referenceImagesRef.current,
+                    referenceImage,
+                  ]);
                 }
               } else if (
                 newState.status === UploaderStates.assetError ||
@@ -200,7 +309,7 @@ export const ImagePromptRow = ({
           if (uploadTarget === "end") {
             setEndFrameImage?.(referenceImage);
           } else {
-            setReferenceImages([...referenceImages, referenceImage]);
+            setReferenceImages([...referenceImagesRef.current, referenceImage]);
           }
         }
 
@@ -308,30 +417,54 @@ export const ImagePromptRow = ({
             </div>
 
             <div className="flex gap-2">
-              {referenceImages
-                .slice(0, Math.max(0, maxImagePromptCount))
-                .map((image) => (
-                  <div
-                    key={image.id}
-                    className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
-                    onClick={() => onImageClick?.(image)}
+              {allowReorder ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={referenceImages
+                      .slice(0, Math.max(0, maxImagePromptCount))
+                      .map((img) => img.id)}
+                    strategy={horizontalListSortingStrategy}
                   >
-                    <img
-                      src={image.url}
-                      alt="Reference"
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveReference(image.id);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                    {referenceImages
+                      .slice(0, Math.max(0, maxImagePromptCount))
+                      .map((image) => (
+                        <SortableImage key={image.id} image={image} />
+                      ))}
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                referenceImages
+                  .slice(0, Math.max(0, maxImagePromptCount))
+                  .map((image) => (
+                    <div
+                      key={image.id}
+                      className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                      onClick={() => onImageClick?.(image)}
                     >
-                      <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
-                    </button>
-                  </div>
-                ))}
+                      <img
+                        src={image.url}
+                        alt="Reference"
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveReference(image.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/50 hover:bg-red/70 text-white backdrop-blur-md transition-colors hover:bg-black cursor-pointer"
+                      >
+                        <FontAwesomeIcon
+                          icon={faXmark}
+                          className="h-2.5 w-2.5"
+                        />
+                      </button>
+                    </div>
+                  ))
+              )}
               {uploadingImages
                 .slice(
                   0,
