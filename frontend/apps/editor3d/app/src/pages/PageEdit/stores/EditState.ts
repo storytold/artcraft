@@ -637,7 +637,9 @@ export const useEditStore = create<EditState>((set, get, store) => ({
       imgBitmap.onerror = null;
     };
     imgBitmap.crossOrigin = "anonymous";
-    imgBitmap.src = image.url + "?basecanvasimg";
+    const isDataUrl =
+      typeof image.url === "string" && image.url.startsWith("data:");
+    imgBitmap.src = isDataUrl ? image.url : image.url + "?basecanvasimg";
   },
 
   // Action for deleting selected items
@@ -826,7 +828,7 @@ export const useEditStore = create<EditState>((set, get, store) => ({
       return;
     }
 
-    set({ activeTool: tool })
+    set({ activeTool: tool });
   },
   setEditOperation: (mode: EditOperation) => set({ editOperation: mode }),
   setBrushColor: (color: string) => set({ brushColor: color }),
@@ -1026,20 +1028,26 @@ export const useEditStore = create<EditState>((set, get, store) => ({
   },
 
   addHistoryImageBundle(bundle) {
-    set((state) => ({ historyImageBundles: [...state.historyImageBundles, bundle] }));
+    set((state) => ({
+      historyImageBundles: [...state.historyImageBundles, bundle],
+    }));
   },
 
   removeHistoryImage(image) {
     console.log("Removing history image:", image);
     set((state) => {
-      const updatedBundles = state.historyImageBundles.map((bundle) => {
-        return {
-          ...bundle,
-          images: bundle.images.filter((img) => img.mediaToken !== image.mediaToken),
-        };
-      }).filter((bundle) => bundle.images.length > 0); // Remove empty bundles
+      const updatedBundles = state.historyImageBundles
+        .map((bundle) => {
+          return {
+            ...bundle,
+            images: bundle.images.filter(
+              (img) => img.mediaToken !== image.mediaToken,
+            ),
+          };
+        })
+        .filter((bundle) => bundle.images.length > 0); // Remove empty bundles
       console.log("Updated history image bundles:", updatedBundles);
       return { historyImageBundles: updatedBundles };
-    })
+    });
   },
 }));

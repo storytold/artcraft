@@ -119,7 +119,11 @@ export const HistoryStack = ({
                       <div className="st-loading-tile relative aspect-square w-full overflow-hidden rounded-lg">
                         {blurredBackgroundUrl && (
                           <img
-                            src={`${blurredBackgroundUrl}?placeholderbg`}
+                            src={
+                              blurredBackgroundUrl?.startsWith("data:")
+                                ? blurredBackgroundUrl
+                                : `${blurredBackgroundUrl}?placeholderbg`
+                            }
                             alt=""
                             className="absolute inset-0 h-full w-full object-cover opacity-80 blur-lg"
                             crossOrigin="anonymous"
@@ -180,7 +184,9 @@ export const HistoryStack = ({
                   >
                     <img
                       src={
-                        image.url + "?historystack+" + sessionRandBuster.current
+                        image.url.startsWith("data:")
+                          ? image.url
+                          : `${image.url}?historystack+${sessionRandBuster.current}`
                       }
                       alt=""
                       crossOrigin="anonymous"

@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { UploaderStates } from "~/enums";
+import { MediaFilesApi } from "@storyteller/api";
 
 export interface BaseSelectorImage {
   url: string;
@@ -86,13 +87,37 @@ export const BaseImageSelector = ({
             progressCallback: (newState) => {
               console.debug("Upload progress:", newState.data);
               if (newState.status === UploaderStates.success && newState.data) {
-                const referenceImage: BaseSelectorImage = {
-                  url: reader.result as string,
-                  mediaToken: newState.data || "",
-                };
+                const mediaToken = newState.data || "";
+                // Attempt to resolve the CDN URL for the uploaded image token; fallback to data URL
+                (async () => {
+                  let finalUrl = reader.result as string;
+                  try {
+                    const api = new MediaFilesApi();
+                    const result = await api.GetMediaFileByToken({
+                      mediaFileToken: mediaToken,
+                    });
+                    if (result.success && result.data) {
+                      finalUrl =
+                        result.data.media_links?.cdn_url ||
+                        result.data.public_bucket_url ||
+                        finalUrl;
+                    }
+                  } catch (e) {
+                    console.warn(
+                      "Falling back to data URL for uploaded image",
+                      e,
+                    );
+                  }
 
-                toast.success("Image uploaded successfully!");
-                sendImageEvent(referenceImage);
+                  const referenceImage: BaseSelectorImage = {
+                    url: finalUrl,
+                    mediaToken,
+                  };
+
+                  toast.success("Image uploaded successfully!");
+                  sendImageEvent(referenceImage);
+                  setIsLoading(false);
+                })();
               } else if (
                 newState.status === UploaderStates.assetError ||
                 newState.status === UploaderStates.imageCreateError
