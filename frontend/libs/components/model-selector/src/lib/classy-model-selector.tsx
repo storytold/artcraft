@@ -49,7 +49,7 @@ export function ClassyModelSelector({
       onSelect={handleModelSelect}
       mode="hoverSelect"
       {...popoverProps}
-      buttonClassName="border-0 bg-transparent p-0 hover:bg-transparent text-lg hover:opacity-80"
+      buttonClassName="border-0 bg-transparent p-0 hover:bg-transparent text-lg hover:opacity-80 shadow-none"
     />
   );
 }
