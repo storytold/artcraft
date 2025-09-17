@@ -85,13 +85,13 @@ body {
 .theme-gray {
   --st-bg: #242424;
   --st-panel: #1f1f1f;
-  --st-panel-border: #3f3f3f;
+  --st-panel-border: #303030;
   --st-modal: #1f1f1f;
   --st-controls: #3e3e41;
   --st-controls-rgb: 62 62 65;
-  --st-controls-border: #3f3f3f;
+  --st-controls-border: #303030;
   --st-fg: #ffffff;
-  --st-divider: #515168;
+  --st-divider: #303030;
   --st-color-scheme: dark;
   --st-photo-tint-rgb: 0 0 0;
   --st-photo-tint-alpha: 0;
