@@ -8,6 +8,7 @@ import {
   faCircleInfo,
   faRoute,
   faCreditCard,
+  faPalette,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { MiscSettingsPane } from "./panes/MiscSettingsPane";
@@ -62,7 +63,7 @@ export const SettingsModal = ({
       label: "Provider Priority",
       icon: faRoute,
     },
-    { id: "appearance" as const, label: "Appearance", icon: faCog },
+    { id: "appearance" as const, label: "Appearance", icon: faPalette },
     { id: "alerts" as const, label: "Alerts", icon: faVolumeHigh },
     { id: "about" as const, label: "About", icon: faCircleInfo },
     //{ id: "video" as const, label: "Video", icon: faVideo },
