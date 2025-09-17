@@ -10,6 +10,7 @@ import {
   faChevronRight,
   faMountainCity,
   faDog,
+  faFaceGrinStars,
   faUpFromLine,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -29,6 +30,7 @@ import {
   demoSkyboxItems,
   demoShapeItems,
   demoCharacterItems,
+  demoMemeItems,
   assetModalVisibleDuringDrag,
   reopenAfterDragSignal,
   assetModalVisible,
@@ -246,10 +248,10 @@ export const AssetModal = () => {
     featuredImagePlanesFetchStatus,
   ]);
 
-  const libraryTabs = [
-    { id: "library", label: "Library" },
-    { id: "mine", label: "Mine" },
-  ];
+  // const libraryTabs = [
+  //   { id: "library", label: "Library" },
+  //   { id: "mine", label: "Mine" },
+  // ];
 
   const assetTabs = useMemo<AssetTab[]>(
     () => [
@@ -275,6 +277,14 @@ export const AssetModal = () => {
           activeLibraryTab === "library"
             ? [...demoShapeItems.value, ...(featuredObjects ?? [])]
             : (userObjects ?? []),
+      },
+      {
+        id: "memes",
+        label: "Memes",
+        labelSingle: "Meme",
+        icon: faFaceGrinStars,
+        engineCategory: FilterEngineCategories.CHARACTER,
+        items: activeLibraryTab === "library" ? demoMemeItems.value : [],
       },
       {
         id: "sets",
@@ -323,6 +333,7 @@ export const AssetModal = () => {
       demoCharacterItems.value,
       demoShapeItems.value,
       demoSkyboxItems.value,
+      demoMemeItems.value,
       featuredCharacters,
       featuredCreatures,
       featuredObjects,
@@ -426,19 +437,19 @@ export const AssetModal = () => {
     );
   };
 
-  const handleAddAsset = () => {
-    handleClose();
-    setIsUploadModalOpen(true);
-    setSelectedCategory(null);
-    setIsSelectVisible(true);
-  };
+  // const handleAddAsset = () => {
+  //   handleClose();
+  //   setIsUploadModalOpen(true);
+  //   setSelectedCategory(null);
+  //   setIsSelectVisible(true);
+  // };
 
-  const handleAddSpecificAsset = (category: FilterEngineCategories) => {
-    handleClose();
-    setIsUploadModalOpen(true);
-    setSelectedCategory(category);
-    setIsSelectVisible(false);
-  };
+  // const handleAddSpecificAsset = (category: FilterEngineCategories) => {
+  //   handleClose();
+  //   setIsUploadModalOpen(true);
+  //   setSelectedCategory(category);
+  //   setIsSelectVisible(false);
+  // };
 
   const handleUploadSuccess = (category: FilterEngineCategories) => {
     if (reopenAfterDragSignal.value) {

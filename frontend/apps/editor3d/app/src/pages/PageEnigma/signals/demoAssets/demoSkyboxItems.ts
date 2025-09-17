@@ -8,7 +8,7 @@ export const demoSkyboxItems = signal<MediaItem[]>([
     media_id: "SKY::m_1",
     type: AssetType.SKYBOX,
     name: "Empty Skybox",
-    thumbnail: "/resources/skybox/empty.jpg",
+    thumbnail: "/resources/placeholders/placeholder.png",
   },
   {
     version: 1,

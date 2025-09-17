@@ -83,6 +83,18 @@ export const UploadFiles3D = ({
   };
 
   useEffect(() => {
+    // Reset subtype when fileSubtypes set changes (e.g., toggling character)
+    if (!fileSubtypes || fileSubtypes.length === 0) {
+      setSubtype(undefined);
+      return;
+    }
+    const nextDefault = Object.values(fileSubtypes[0])[0] as
+      | MediaFileAnimationType
+      | undefined;
+    setSubtype(nextDefault);
+  }, [fileSubtypes]);
+
+  useEffect(() => {
     if (canvasRef.current && assetFile.value) {
       loadPreviewOnCanvas({
         file: assetFile.value,

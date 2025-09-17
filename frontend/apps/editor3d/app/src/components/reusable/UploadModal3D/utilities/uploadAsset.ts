@@ -33,6 +33,7 @@ export const uploadAsset = async ({
           fileName: file.name,
           engine_category: engineCategory,
           maybe_title: title,
+          maybe_animation_type: animationType,
           uuid: uuidv4(),
         });
     }

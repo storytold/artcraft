@@ -50,6 +50,7 @@ export interface GalleryItem {
   fullImage?: string | null;
   createdAt: string;
   mediaClass?: string;
+  assetType?: string;
 }
 
 interface GroupedItems {
@@ -256,6 +257,16 @@ export const GalleryModal = React.memo(
                 (item.filter_media_classes
                   ? item.filter_media_classes[0]
                   : "image"),
+              // assetType for 3D assets so drop handlers can decide between character vs object
+              assetType:
+                item.media_class === "dimensional"
+                  ? item.maybe_animation_type ||
+                    item.origin_product_category === "character" ||
+                    (item.origin &&
+                      item.origin.product_category === "character")
+                    ? "character"
+                    : "object"
+                  : undefined,
             }));
           setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
           // Pagination logic

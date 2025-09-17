@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { Modal } from "@storyteller/ui-modal";
 import { UploadAssetError, UploadSuccess } from "@storyteller/ui-upload-modal";
@@ -8,6 +8,7 @@ import {
   FilterEngineCategories,
   UploaderStates,
   OBJECT_FILE_TYPE,
+  MediaFileAnimationType,
 } from "../../../enums";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
@@ -34,9 +35,26 @@ export function UploadModal3D(props: Props) {
   const { isOpen, onClose, onSuccess, title, titleIcon, options } = props;
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
+  const [isCharacter, setIsCharacter] = useState(false);
 
-  // Category fixed to OBJECT
-  const selectedCategory = FilterEngineCategories.OBJECT;
+  const selectedCategory = isCharacter
+    ? FilterEngineCategories.CHARACTER
+    : FilterEngineCategories.OBJECT;
+
+  const characterAnimationOptions = useMemo(() => {
+    if (!isCharacter) return undefined;
+    const values = Object.values(MediaFileAnimationType);
+    const sorted = values.sort((a, b) =>
+      a === MediaFileAnimationType.MixamoArKit
+        ? -1
+        : b === MediaFileAnimationType.MixamoArKit
+          ? 1
+          : a.localeCompare(b),
+    );
+    const toLabel = (v: string) =>
+      v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    return sorted.map((v) => ({ [toLabel(v)]: v }));
+  }, [isCharacter]);
 
   const updateUploaderState = (newState: UploaderState) => {
     setUploaderState(newState);
@@ -49,6 +67,7 @@ export function UploadModal3D(props: Props) {
   useEffect(() => {
     if (isOpen) {
       resetModalState();
+      setIsCharacter(false);
     }
   }, [isOpen]);
 
@@ -69,11 +88,23 @@ export function UploadModal3D(props: Props) {
       case UploaderStates.ready:
         return (
           <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <input
+                id="upload-as-character"
+                type="checkbox"
+                checked={isCharacter}
+                onChange={(e) => setIsCharacter(e.target.checked)}
+              />
+              <label htmlFor="upload-as-character">Upload as Character</label>
+            </div>
             <UploadFiles3D
               title={title}
               engineCategory={selectedCategory}
               fileTypes={objectFileTypes}
-              options={options}
+              options={{
+                ...(options ?? {}),
+                fileSubtypes: characterAnimationOptions,
+              }}
               onClose={onClose}
               onUploadProgress={updateUploaderState}
             />

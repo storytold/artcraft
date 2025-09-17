@@ -55,6 +55,7 @@ import {
 } from "~/components/signaled/TopBar/TopBar";
 import { uploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
 import { addObject } from "./signals/objectGroup/addObject";
+import { addCharacter } from "./signals/characterGroups/addCharacter";
 import { AssetType, AUTH_STATUS } from "~/enums";
 import { v4 as uuidv4 } from "uuid";
 import { MediaItem } from "~/pages/PageEnigma/models";
@@ -77,7 +78,7 @@ import { useTabStore } from "../Stores/TabState";
 import PageEdit from "../PageEdit/PageEdit";
 import { ImageModel } from "@storyteller/model-list";
 
-const PAGE_ID : ModelPage = ModelPage.Stage3D;
+const PAGE_ID: ModelPage = ModelPage.Stage3D;
 
 export const PageEditor = () => {
   useSignals();
@@ -103,7 +104,8 @@ export const PageEditor = () => {
     };
   }, []);
 
-  const selectedImageModel : ImageModel | undefined = getSelectedImageModel(PAGE_ID);
+  const selectedImageModel: ImageModel | undefined =
+    getSelectedImageModel(PAGE_ID);
 
   const height =
     dndTimelineHeight.value > -1
@@ -305,11 +307,12 @@ export const PageEditor = () => {
             try {
               if (item.mediaClass === "dimensional") {
                 // Handle 3D models
+                const isCharacter = item.assetType === "character";
                 const mediaItem: MediaItem = {
                   version: 1,
-                  type: AssetType.OBJECT,
+                  type: isCharacter ? AssetType.CHARACTER : AssetType.OBJECT,
                   media_id: item.id || uuidv4(),
-                  name: item.label || "3D Object",
+                  name: item.label || (isCharacter ? "Character" : "3D Object"),
                   ...(worldPosition && {
                     position: {
                       x: worldPosition.x,
@@ -318,7 +321,11 @@ export const PageEditor = () => {
                     },
                   }),
                 };
-                addObject(mediaItem);
+                if (isCharacter) {
+                  addCharacter(mediaItem);
+                } else {
+                  addObject(mediaItem);
+                }
               } else {
                 // Handle images (create image planes)
                 const mediaItem: MediaItem = {
