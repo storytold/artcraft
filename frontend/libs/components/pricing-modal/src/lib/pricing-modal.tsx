@@ -315,7 +315,7 @@ export function PricingModal({}: PricingModalProps = {}) {
                 <Button
                   onClick={() => handleSetPlan(plan.slug)}
                   disabled={isCurrentPlan(plan.slug)}
-                  className="w-full h-12 rounded-xl bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80"
+                  className="w-full h-12 rounded-xl bg-white text-black border hover:bg-white/90"
                 >
                   {getButtonText(plan)}
                 </Button>
