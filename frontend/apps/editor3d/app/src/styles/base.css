@@ -102,13 +102,13 @@ body {
 .theme-black {
   --st-bg: #000000;
   --st-panel: #0a0a0a;
-  --st-panel-border: #1f2937;
+  --st-panel-border: #242424;
   --st-modal: #0a0a0a;
   --st-controls: #111111;
   --st-controls-rgb: 17 17 17;
-  --st-controls-border: #1f2937;
+  --st-controls-border: #242424;
   --st-fg: #ffffff;
-  --st-divider: #1f2937;
+  --st-divider: #242424;
   --st-color-scheme: dark;
   --st-photo-tint-rgb: 0 0 0;
   --st-photo-tint-alpha: 0;
