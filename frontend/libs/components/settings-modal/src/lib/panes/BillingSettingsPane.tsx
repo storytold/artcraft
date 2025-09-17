@@ -10,7 +10,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { usePricingModalStore } from "@storyteller/ui-pricing-modal";
 import { useCreditsModalStore } from "@storyteller/ui-pricing-modal";
 import { useCreditsState, CreditsState } from "@storyteller/credits";
-import { FREE_PLAN, SubscriptionPlanDetails, useSubscriptionState } from "@storyteller/subscription";
+import {
+  FREE_PLAN,
+  SubscriptionPlanDetails,
+  useSubscriptionState,
+} from "@storyteller/subscription";
 import { SUBSCRIPTION_PLANS_BY_SLUG } from "@storyteller/subscription";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -26,16 +30,20 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 
   const maybePlanSlug = subscriptionStore.subscriptionInfo?.productSlug;
 
-  const currentPlanDetails : SubscriptionPlanDetails = maybePlanSlug ? 
-    SUBSCRIPTION_PLANS_BY_SLUG.get(maybePlanSlug) || FREE_PLAN : 
-    FREE_PLAN;
+  const currentPlanDetails: SubscriptionPlanDetails = maybePlanSlug
+    ? SUBSCRIPTION_PLANS_BY_SLUG.get(maybePlanSlug) || FREE_PLAN
+    : FREE_PLAN;
 
   const canCancelPlan = subscriptionStore.canCancelPlan();
 
-  const nextBillAt = subscriptionStore.subscriptionInfo?.nextBillAt?.toLocaleDateString();
-  const subscriptionEndAt = subscriptionStore.subscriptionInfo?.subscriptionEndAt?.toLocaleDateString();
+  const nextBillAt =
+    subscriptionStore.subscriptionInfo?.nextBillAt?.toLocaleDateString();
+  const subscriptionEndAt =
+    subscriptionStore.subscriptionInfo?.subscriptionEndAt?.toLocaleDateString();
 
-  const changeOrUpgradePlanButtonLabel = canCancelPlan ? "Change plan" : "Upgrade plan";
+  const changeOrUpgradePlanButtonLabel = canCancelPlan
+    ? "Change plan"
+    : "Upgrade plan";
 
   useEffect(() => {
     creditsStore.fetchFromServer();
@@ -44,7 +52,7 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-4 text-base-fg">
         <div className="space-y-2">
           <Label>Current Plan</Label>
           <div className="flex items-center justify-between">
@@ -56,9 +64,7 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
               {currentPlanDetails.name}
             </div>
             <div className="flex gap-2">
-              {canCancelPlan && (
-                <CancelPlanButton />
-              )}
+              {canCancelPlan && <CancelPlanButton />}
 
               <Button
                 variant="primary"
@@ -67,7 +73,6 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
               >
                 {changeOrUpgradePlanButtonLabel}
               </Button>
-
             </div>
           </div>
         </div>
@@ -83,20 +88,18 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
         {subscriptionEndAt && (
           <div className="flex items-center gap-2 text-white/50">
             <FontAwesomeIcon icon={faInfoCircle} />
-            Subscription ends on{" "}
-            {subscriptionEndAt}
+            Subscription ends on {subscriptionEndAt}
           </div>
         )}
 
         {nextBillAt && (
           <div className="flex items-center gap-2 text-white/50">
             <FontAwesomeIcon icon={faInfoCircle} />
-            Next payment on{" "}
-            {nextBillAt}
+            Next payment on {nextBillAt}
           </div>
         )}
 
-        <hr className="border-white/10" />
+        <hr className="border-ui-panel-border" />
 
         <div className="flex flex-col">
           <Label htmlFor="credits" className="flex items-center gap-2">
@@ -108,9 +111,7 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
                 icon={faCoinFront}
                 className="text-primary text-lg"
               />
-              <span className="text-2xl font-bold">
-                {sumTotalCredits}
-              </span>
+              <span className="text-2xl font-bold">{sumTotalCredits}</span>
             </div>
             <div className="flex gap-2">
               <BuyCreditsButton />
@@ -118,7 +119,6 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
           </div>
 
           <CreditsTally creditsStore={creditsStore} />
-
         </div>
       </div>
     </>
@@ -128,18 +128,14 @@ export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
 const CancelPlanButton = () => {
   const handleClick = async () => {
     await invoke("storyteller_open_customer_portal_cancel_plan_command");
-  }
+  };
 
   return (
-    <Button 
-      variant="secondary" 
-      className="h-[30px]"
-      onClick={handleClick}
-    >
+    <Button variant="secondary" className="h-[30px]" onClick={handleClick}>
       Cancel plan
     </Button>
-  )
-}
+  );
+};
 
 const BuyCreditsButton = () => {
   const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
@@ -152,16 +148,19 @@ const BuyCreditsButton = () => {
     >
       Buy credits
     </Button>
-  )
-}
+  );
+};
 
-const CreditsTally = ({creditsStore}: {creditsStore: CreditsState}) => {
+const CreditsTally = ({ creditsStore }: { creditsStore: CreditsState }) => {
   return (
     <div className="flex pl-5 pt-3">
       <ul className="list-disc">
-        <li> {creditsStore.monthlyCredits} monthly credits (refilled monthly) </li>
+        <li>
+          {" "}
+          {creditsStore.monthlyCredits} monthly credits (refilled monthly){" "}
+        </li>
         <li> {creditsStore.bankedCredits} purchased credits </li>
       </ul>
     </div>
-  )
-}
+  );
+};

@@ -92,7 +92,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   return (
     <div
       ref={containerRef}
-      className="flex h-[calc(100vh-56px)] w-full bg-[#121212]"
+      className="flex h-[calc(100vh-56px)] w-full bg-ui-background"
     >
       <div className="relative h-full w-full p-16">
         <div className="flex h-full w-full flex-col items-center justify-center rounded-md pb-12">
@@ -103,8 +103,10 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                 imageRowVisible && "mb-80",
               )}
             >
-              <span className="text-7xl font-bold">Generate Image</span>
-              <span className="pt-2 text-xl opacity-80">
+              <span className="text-base-fg text-7xl font-bold">
+                Generate Image
+              </span>
+              <span className="text-base-fg pt-2 text-xl opacity-80">
                 Add a prompt, then generate
               </span>
             </div>
@@ -158,7 +160,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                           ))}
                     </div>
                     <div>
-                      <div className="glass inline-block w-[320px] shrink-0 rounded-xl px-4 py-3 text-left text-sm text-white/90">
+                      <div className="glass text-base-fg/90 inline-block w-[320px] shrink-0 rounded-xl px-4 py-3 text-left text-sm">
                         <div>{batch.prompt}</div>
                       </div>
                       <div className="mt-2 flex justify-end">
@@ -184,7 +186,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
               >
                 <button
                   onClick={() => resetBatches()}
-                  className="rounded-md bg-red/20 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/30"
+                  className="bg-red/20 hover:bg-red/30 rounded-md px-3 py-1 text-xs text-white/70 transition-colors"
                 >
                   Clear session
                 </button>

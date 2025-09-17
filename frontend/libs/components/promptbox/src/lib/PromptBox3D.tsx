@@ -649,7 +649,7 @@ export const PromptBox3D = ({
               ref={textareaRef}
               rows={1}
               placeholder="Describe your image..."
-              className="text-md mb-2 max-h-[5.5em] min-h-[36px] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none"
+              className="text-md mb-2 max-h-[5.5em] min-h-[36px] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
               value={prompt}
               onChange={handleChange}
               onPaste={handlePaste}
@@ -761,7 +761,7 @@ export const PromptBox3D = ({
                 delay={200}
               >
                 <Button
-                  className="flex h-9 items-center border-none bg-[#5F5F68]/60 px-3 text-sm text-white backdrop-blur-lg hover:bg-[#5F5F68]/90"
+                  className="flex h-9 items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg backdrop-blur-lg hover:bg-ui-controls/90"
                   variant="secondary"
                   icon={faDownload}
                   onClick={handleDownloadFrame}
@@ -769,7 +769,7 @@ export const PromptBox3D = ({
               </Tooltip>
 
               <Button
-                className="flex items-center border-none bg-[#5F5F68]/60 px-3 text-sm text-white backdrop-blur-lg hover:bg-[#5F5F68]/90"
+                className="flex items-center border border-ui-controls-border bg-ui-controls/60 px-3 text-sm text-base-fg backdrop-blur-lg hover:bg-ui-controls/90"
                 variant="secondary"
                 icon={faSave}
                 onClick={handleSaveFrame}

@@ -17,6 +17,7 @@ import { AboutSettingsPane } from "./panes/AboutSettingsPane";
 import { ProviderPrioritySettingsPane } from "./panes/ProviderPrioritySettingsPane";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { BillingSettingsPane } from "./panes/BillingSettingsPane";
+import { AppearanceSettingsPane } from "./panes/AppearanceSettingsPane";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface SettingsModalProps {
 
 type SettingsSection =
   | "general"
+  | "appearance"
   | "accounts"
   | "alerts"
   | "about"
@@ -51,13 +53,16 @@ export const SettingsModal = ({
 
   const sections = [
     { id: "general" as const, label: "General", icon: faCog },
+
     { id: "accounts" as const, label: "Accounts", icon: faUser },
     { id: "billing" as const, label: "Plan & Credits", icon: faCreditCard },
+
     {
       id: "provider_priority" as const,
       label: "Provider Priority",
       icon: faRoute,
     },
+    { id: "appearance" as const, label: "Appearance", icon: faCog },
     { id: "alerts" as const, label: "Alerts", icon: faVolumeHigh },
     { id: "about" as const, label: "About", icon: faCircleInfo },
     //{ id: "video" as const, label: "Video", icon: faVideo },
@@ -66,6 +71,8 @@ export const SettingsModal = ({
 
   const renderContent = () => {
     switch (selectedSection) {
+      case "appearance":
+        return <AppearanceSettingsPane />;
       case "alerts":
         return <AudioSettingsPane />;
       case "general":
@@ -94,18 +101,18 @@ export const SettingsModal = ({
     >
       <div className="h-[560px]">
         <div className="grid h-full grid-cols-12 gap-3">
-          <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-gray-200 after:bg-white/10">
+          <div className="relative col-span-4 p-3 pt-2 after:absolute after:right-0 after:top-0 after:h-full after:w-px after:bg-ui-panel-border">
             <div className="flex items-center justify-between gap-2.5 py-0.5">
               <h2 className="text-[18px] font-semibold opacity-80">Settings</h2>
             </div>
-            <hr className="my-2 w-full border-white/10" />
+            <hr className="my-2 w-full border-ui-panel-border" />
             <div className="space-y-1">
               {sections.map((section) => (
                 <button
                   key={section.id}
                   className={twMerge(
-                    "h-9 w-full rounded-lg p-2 text-left transition-colors duration-100 hover:bg-[#63636B]/40",
-                    section.id === selectedSection ? "bg-[#63636B]/40" : ""
+                    "h-9 w-full rounded-lg p-2 text-left transition-colors duration-100 hover:bg-[#63636B]/30",
+                    section.id === selectedSection ? "bg-[#63636B]/20" : ""
                   )}
                   onClick={() => {
                     gtagEvent("switch_settings_section", {
@@ -123,7 +130,7 @@ export const SettingsModal = ({
             </div>
           </div>
           <div className="col-span-8 flex h-full flex-col">
-            <div className="w-full border-b border-white/10 py-2.5 ps-0">
+            <div className="w-full border-b border-ui-panel-border py-2.5 ps-0">
               <h2 className="text-[18px] font-semibold">
                 {sections.find((s) => s.id === selectedSection)?.label}
               </h2>

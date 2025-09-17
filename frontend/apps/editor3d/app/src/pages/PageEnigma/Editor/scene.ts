@@ -199,9 +199,9 @@ class Scene {
         obj.userData["media_id"] = name;
       } else {
         const loader = new THREE.TextureLoader();
-        // NB(bt,2025-08-26): Images loaded throughout the rest of ArtCraft with the <img> tag set 
-        // the "sec-fetch-mode: no-cors" header. On Safari (Mac), this is cached and makes the image 
-        // permanently impossible to use in Three.js. We bypass this by appending a query parameter 
+        // NB(bt,2025-08-26): Images loaded throughout the rest of ArtCraft with the <img> tag set
+        // the "sec-fetch-mode: no-cors" header. On Safari (Mac), this is cached and makes the image
+        // permanently impossible to use in Three.js. We bypass this by appending a query parameter
         // to the URL.
         const modifiedUrl = image_token + "?threejs=true";
         texture = loader.load(modifiedUrl);
@@ -629,7 +629,6 @@ class Scene {
 
     // await this.delay(3000); // artificial delay.
 
-    
     // NB(bt,2025-07-22): This is causing a lot of CORS errors in dev, so I'm starting
     // to funnel everything through Tauri. Not sure if that'll be more inefficient due
     // to spinning up new HTTP clients with new SSL handshakes without caching, but at
@@ -773,7 +772,7 @@ class Scene {
       try {
         buffer = await LoadWithoutCors(media_url); // Load via Tauri!
       } catch (error) {
-        console.error("load GLB from Tauri error:", error)
+        console.error("load GLB from Tauri error:", error);
         reject(error);
         return;
       }
@@ -786,7 +785,7 @@ class Scene {
           onComplete();
         },
         (error) => {
-          console.error("GLTF loader error:", error)
+          console.error("GLTF loader error:", error);
           reject(error);
         },
       );
@@ -869,6 +868,22 @@ class Scene {
   // default skybox.
   _create_skybox() {
     const loader = new THREE.CubeTextureLoader();
+
+    // Theme-aware: in light mode, use a near-white background for better contrast with UI
+    try {
+      if (
+        typeof document !== "undefined" &&
+        document.documentElement.classList.contains("theme-light")
+      ) {
+        this.scene.background = new THREE.Color("#f5f6f8");
+        if (this.ambientLight) this.scene.add(this.ambientLight);
+        if (this.directional_light) this.scene.remove(this.directional_light);
+        if (this.hemisphereLight) this.scene.add(this.hemisphereLight);
+        return;
+      }
+    } catch (_) {
+      // no-op: fallback to defaults below
+    }
 
     if (this.skybox == "Default") {
       const texture = loader.load([

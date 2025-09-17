@@ -586,7 +586,7 @@ export const PromptBox2D = ({
               ref={textareaRef}
               rows={1}
               placeholder="Describe your image..."
-              className="text-md mb-2 max-h-[5.5em] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none"
+              className="text-md mb-2 max-h-[5.5em] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
               value={prompt}
               onChange={handleChange}
               onPaste={handlePaste}
@@ -645,7 +645,7 @@ export const PromptBox2D = ({
                 >
                   <Button
                     variant="secondary"
-                    className="h-9 bg-[#5F5F68]/60 px-3 text-white hover:bg-[#5F5F68]/90"
+                    className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
                     onClick={onFitPressed}
                   >
                     <FontAwesomeIcon icon={faFrame} className="h-4 w-4" />

@@ -72,14 +72,14 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-base-fg">
       <div className="space-y-2">
         <Label htmlFor="download-path">Default Download Directory</Label>
-        <p className="text-white/80">
+        <p className="opacity-80">
           This is where downloads are placed after downloading. The current path
           is:
         </p>
-        <div className="bg-black/20 py-1.5 px-2 rounded-md mt-1 text-white/90">
+        <div className="py-1.5 px-2 rounded-md mt-1 bg-ui-panel border border-ui-panel-border text-base-fg">
           <pre>{currentDownloadLabel}</pre>
         </div>
       </div>

@@ -99,23 +99,23 @@ export function CreditsModal({
   };
 
   const cardBase =
-    "relative rounded-xl border p-6 h-full flex flex-col justify-between bg-[#1F1F1F] border-white/10 hover:border-white/20 transition-all";
+    "relative rounded-xl border p-6 h-full flex flex-col justify-between bg-ui-panel border-ui-panel-border hover:bg-ui-controls/10 transition-all";
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose ?? (() => {})}
-      className="rounded-xl bg-[#1A1A1A] max-h-[90vh] max-w-screen-2xl overflow-y-auto flex flex-col"
+      className="rounded-xl bg-ui-panel border border-ui-panel-border max-h-[90vh] max-w-screen-2xl overflow-y-auto flex flex-col"
       allowBackgroundInteraction={false}
       showClose={true}
       closeOnOutsideClick={true}
       resizable={false}
-      backdropClassName="bg-black/80"
+      backdropClassName=""
     >
-      <div className="p-16 py-24 flex-1 overflow-y-auto min-h-0">
+      <div className="p-16 py-24 flex-1 overflow-y-auto min-h-0 text-base-fg">
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold text-white mb-4">Buy credits</h1>
-          <p className="text-gray-400 text-lg">
+          <h1 className="text-5xl font-bold text-base-fg mb-4">Buy credits</h1>
+          <p className="text-base-fg/60 text-lg">
             Choose a one-time credits package. No subscription required.
           </p>
         </div>
@@ -124,7 +124,7 @@ export function CreditsModal({
           {creditPacks.map((pack) => (
             <div key={pack.id} className={cardBase}>
               {pack.badge && (
-                <div className="absolute -top-3 right-4 bg-white text-black px-3 py-1 rounded-full text-xs font-semibold shadow-xl">
+                <div className="absolute -top-3 right-4 bg-ui-controls text-base-fg border border-ui-controls-border px-3 py-1 rounded-full text-xs font-semibold shadow-xl">
                   {pack.badge}
                 </div>
               )}
@@ -132,7 +132,7 @@ export function CreditsModal({
               <CoinIcon />
 
               <div>
-                <div className="text-white text-5xl font-bold tracking-tight flex items-center gap-2.5">
+                <div className="text-base-fg text-5xl font-bold tracking-tight flex items-center gap-2.5">
                   <FontAwesomeIcon
                     icon={faCoinFront}
                     className="text-primary text-3xl"
@@ -140,9 +140,9 @@ export function CreditsModal({
                   {pack.total.toLocaleString()}
                 </div>
                 {pack.bonus > 0 && (
-                  <div className="text-gray-400 text-sm mt-2">
+                  <div className="text-base-fg/60 text-sm mt-2">
                     Total: {pack.base.toLocaleString()} {" + "}
-                    <span className="text-[#faca5a]">
+                    <span className="text-primary-300">
                       {pack.bonus.toLocaleString()} Bonus
                     </span>
                   </div>
@@ -150,12 +150,12 @@ export function CreditsModal({
               </div>
 
               <div className="flex items-center justify-between pt-6">
-                <div className="text-white text-xl font-semibold">
+                <div className="text-base-fg text-xl font-semibold">
                   ${pack.priceUsd}
                 </div>
                 <Button
                   onClick={() => handlePurchase(pack)}
-                  className="bg-white text-black hover:bg-white/90 px-5 h-10 rounded-xl"
+                  className="px-5 h-10 rounded-xl bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80"
                 >
                   Purchase
                 </Button>

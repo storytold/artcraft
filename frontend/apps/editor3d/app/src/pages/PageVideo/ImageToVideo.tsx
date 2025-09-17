@@ -97,7 +97,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
   return (
     <div
       ref={containerRef}
-      className="flex h-[calc(100vh-56px)] w-full bg-[#121212]"
+      className="flex h-[calc(100vh-56px)] w-full bg-ui-background"
     >
       <div className="relative h-full w-full p-16">
         <div className="flex h-full w-full flex-col items-center justify-center rounded-md pb-12">
@@ -109,8 +109,10 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
               imageRowVisible && "mb-80",
             )}
           >
-            <span className="text-7xl font-bold">Generate Video</span>
-            <span className="pt-2 text-xl opacity-80">
+            <span className="text-base-fg text-7xl font-bold">
+              Generate Video
+            </span>
+            <span className="text-base-fg pt-2 text-xl opacity-80">
               Choose an image, add a prompt, then generate
             </span>
           </div>

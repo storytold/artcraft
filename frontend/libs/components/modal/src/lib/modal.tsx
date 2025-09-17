@@ -98,13 +98,12 @@ const AnimatedBackdrop = ({
   return (
     <Dialog.Overlay forceMount asChild>
       <animated.div
-        className={twMerge(
-          "fixed inset-0 bg-black/60 z-[69]",
-          backdropClassName
-        )}
+        className={twMerge("fixed inset-0 z-[69]", backdropClassName)}
         style={{
           opacity: styles.opacity,
           pointerEvents: "none",
+          background:
+            "radial-gradient(800px 400px at 10% -10%, rgba(45,129,255,0.10), transparent), radial-gradient(600px 320px at 110% 110%, rgba(28,182,190,0.10), transparent), rgba(0,0,0,0.60)",
         }}
       />
     </Dialog.Overlay>
@@ -925,7 +924,7 @@ export const Modal = ({
                   >
                     <animated.div
                       className={twMerge(
-                        "w-full max-w-lg rounded-xl relative border border-ui-panel-border bg-[#2C2C2C] text-left align-middle shadow-2xl z-[70]",
+                        "w-full max-w-lg rounded-xl relative border border-ui-panel-border bg-ui-modal text-left align-middle shadow-2xl z-[70]",
                         childPadding && !expanded ? "p-4" : "",
                         className,
                         "!transition-none", // Always disable CSS transitions for spring animations
@@ -952,7 +951,7 @@ export const Modal = ({
                         {title ? (
                           <Dialog.Title
                             className={twMerge(
-                              "mb-4 flex justify-between pb-0 text-xl font-bold text-white"
+                              "mb-4 flex justify-between pb-0 text-xl font-bold text-base-fg"
                             )}
                           >
                             <>

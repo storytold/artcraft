@@ -88,7 +88,7 @@ export const PopoverMenu = ({
     "text-sm font-medium rounded-lg px-3 py-2 shadow-sm",
     "flex gap-2 items-center justify-center outline-none",
     "transition-all duration-150",
-    "bg-[#5F5F68]/60 px-3 text-white hover:bg-[#5F5F68]/90",
+    "bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90 border border-ui-controls-border",
     "active:scale-95 transform",
     buttonClassName
   );
@@ -247,7 +247,7 @@ export const PopoverMenu = ({
               >
                 <div
                   className={twMerge(
-                    "z-10 min-w-48 mt-2 rounded-lg bg-[#46464B] p-1.5 shadow-lg",
+                    "z-10 min-w-48 mt-2 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border",
                     position === "top" ? "mb-2" : "mt-2",
                     panelClassName
                   )}
@@ -255,7 +255,7 @@ export const PopoverMenu = ({
                   onMouseLeave={() => handlePanelMouseLeave(close)}
                 >
                   {panelTitle && (
-                    <div className="mb-2 mt-0.5 flex justify-between px-1.5 text-sm font-normal text-white opacity-70">
+                    <div className="mb-2 mt-0.5 flex justify-between px-1.5 text-sm font-normal text-base-fg opacity-70">
                       {panelTitle}
                       {panelActionLabel && (
                         <button
@@ -263,7 +263,7 @@ export const PopoverMenu = ({
                             onPanelAction?.(panelActionLabel);
                             close();
                           }}
-                          className="text-end text-sm text-white/85 hover:underline"
+                          className="text-end text-sm text-base-fg/85 hover:underline"
                         >
                           {panelActionLabel}
                         </button>
@@ -271,13 +271,13 @@ export const PopoverMenu = ({
                     </div>
                   )}
                   {mode === "default" && children ? (
-                    <div className="text-sm text-white">
+                    <div className="text-sm text-base-fg">
                       {typeof children === "function"
                         ? children(close)
                         : children}
                     </div>
                   ) : mode === "hoverSelect" ? (
-                    <div className="flex flex-col gap-0 text-sm text-white">
+                    <div className="flex flex-col gap-0 text-sm text-base-fg">
                       {items.map((item, index) => (
                         <div key={index}>
                           <div
@@ -300,19 +300,19 @@ export const PopoverMenu = ({
                             <div className="flex items-center gap-2 w-full">
                               <div className="flex items-start gap-2 grow">
                                 {showIconsInList && (
-                                  <span className="mt-1 flex h-5 w-5 items-center justify-center text-lg text-white/80">
+                                  <span className="mt-1 flex h-5 w-5 items-center justify-center text-lg text-base-fg/80">
                                     {item.icon}
                                   </span>
                                 )}
                                 <div className="flex flex-1 flex-col min-w-0">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <span className="truncate font-semibold text-white text-base">
+                                    <span className="truncate font-semibold text-base-fg text-base">
                                       {item.label}
                                     </span>
                                   </div>
 
                                   {item.description && (
-                                    <div className="truncate text-xs text-white/60 mt-0.5">
+                                    <div className="truncate text-xs text-base-fg/60 mt-0.5">
                                       {item.description}
                                     </div>
                                   )}
@@ -325,7 +325,7 @@ export const PopoverMenu = ({
                                           key={i}
                                           className="flex items-center gap-1 min-w-0"
                                         >
-                                          <span className="inline-flex items-center rounded bg-black/40 px-1.5 py-0.5 text-xs font-medium text-white gap-1">
+                                          <span className="inline-flex items-center rounded bg-black/40 px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
                                             {badge?.icon && (
                                               <span>{badge.icon}</span>
                                             )}
@@ -366,19 +366,20 @@ export const PopoverMenu = ({
                       )}
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-0 text-sm text-white">
+                    <div className="flex flex-col gap-0 text-sm text-base-fg">
                       {items.map((item, index) => (
                         <div key={index}>
                           <Button
                             className={twMerge(
-                              "flex w-full items-center shadow-none justify-between border-transparent bg-transparent px-1.5",
-                              "hover:bg-[#63636B]/60",
+                              "flex w-full items-center shadow-none justify-between px-1.5",
+                              "bg-transparent hover:bg-ui-controls/60",
                               mode === "toggle" && item.selected
-                                ? "hover:bg-[#63636B]"
-                                : "bg-transparent",
+                                ? "hover:bg-ui-controls/80"
+                                : "",
                               item.disabled
                                 ? "!cursor-not-allowed opacity-50"
-                                : ""
+                                : "",
+                              "border-0"
                             )}
                             onClick={() =>
                               !item.disabled && handleItemClick(item, close)
@@ -393,8 +394,8 @@ export const PopoverMenu = ({
                                   className={twMerge(
                                     "truncate",
                                     item.selected
-                                      ? "text-white"
-                                      : "text-white/70"
+                                      ? "text-base-fg"
+                                      : "text-base-fg/70"
                                   )}
                                 >
                                   {item.label}
@@ -415,7 +416,7 @@ export const PopoverMenu = ({
                                 {item.selected && (
                                   <FontAwesomeIcon
                                     icon={faCheck}
-                                    className="text-white text-xs font-bold"
+                                    className="text-base-fg text-xs font-bold"
                                   />
                                 )}
                               </span>
@@ -430,10 +431,10 @@ export const PopoverMenu = ({
                         <Button
                           variant="secondary"
                           className={twMerge(
-                            "w-full mb-0.5 mt-2 border-none py-1",
+                            "w-full mb-0.5 mt-2 py-1 border-0",
                             disableAddButton
-                              ? "cursor-not-allowed bg-[#7B7B84]/50 opacity-50"
-                              : "bg-[#7B7B84] hover:bg-[#8c8c96]"
+                              ? "cursor-not-allowed opacity-50"
+                              : ""
                           )}
                           onClick={onAdd}
                           disabled={disableAddButton}

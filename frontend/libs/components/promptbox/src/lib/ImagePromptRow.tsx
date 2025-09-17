@@ -402,18 +402,18 @@ export const ImagePromptRow = ({
         >
           <div className="flex gap-2">
             <div className="flex flex-col grow gap-1">
-              <div className="flex items-center gap-2 opacity-90">
+              <div className="flex items-center gap-2 opacity-90 text-base-fg">
                 <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
-                <span className="text-sm text-white font-medium flex items-center gap-1.5">
+                <span className="text-sm font-medium flex items-center gap-1.5">
                   {isVideo ? "Starting Frame" : "Image Prompts"}
                   {!isVideo && (
-                    <span className="text-white/60 font-semibold">
+                    <span className="text-base-fg/60 font-semibold">
                       ({usedSlotsRender}/{maxImagePromptCount})
                     </span>
                   )}
                 </span>
               </div>
-              <span className="text-[13px] text-white/60">
+              <span className="text-[13px] text-base-fg/60">
                 {isVideo ? "Animate an image" : "Use the elements of an image"}
               </span>
             </div>
@@ -522,7 +522,7 @@ export const ImagePromptRow = ({
                           setIsGalleryModalOpen(true);
                         }}
                         icon={faImages}
-                        className="w-full bg-[#686870] hover:bg-[#78787F]"
+                        className="w-full"
                       >
                         Pick from library
                       </Button>
@@ -531,7 +531,7 @@ export const ImagePromptRow = ({
                 >
                   <Button
                     variant="action"
-                    className="bg-white/10 hover:bg-white/20 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-white/30 hover:border-white/50 transition-all"
+                    className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border border-ui-controls-border transition-all"
                     onClick={() => {
                       if (allowUpload) handleUploadClickStart();
                       else {
@@ -542,7 +542,7 @@ export const ImagePromptRow = ({
                   >
                     <FontAwesomeIcon
                       icon={faPlus}
-                      className="text-2xl opacity-80"
+                      className="text-2xl opacity-80 text-base-fg"
                     />
                   </Button>
                 </Tooltip>
@@ -552,14 +552,14 @@ export const ImagePromptRow = ({
           {isVideo && showEndFrameSection && (
             <div className="flex gap-2">
               <div className="flex flex-col grow gap-1">
-                <div className="flex items-center gap-2 opacity-90">
+                <div className="flex items-center gap-2 opacity-90 text-base-fg">
                   <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
-                  <span className="text-sm text-white font-medium flex items-center gap-1.5">
+                  <span className="text-sm font-medium flex items-center gap-1.5">
                     Ending Frame{" "}
-                    <span className="text-white/60 text-xs">(optional)</span>
+                    <span className="text-base-fg/60 text-xs">(optional)</span>
                   </span>
                 </div>
-                <span className="text-[13px] text-white/60">
+                <span className="text-[13px] text-base-fg/60">
                   How the animation ends
                 </span>
               </div>
@@ -605,7 +605,7 @@ export const ImagePromptRow = ({
                     interactive={true}
                     position="top"
                     delay={100}
-                    className="bg-[#46464B] p-2 -mb-0.5"
+                    className="bg-ui-controls text-base-fg border border-ui-panel-border p-2 -mb-0.5"
                     closeOnClick={true}
                     content={
                       <div className="flex flex-col gap-1.5">
@@ -626,7 +626,7 @@ export const ImagePromptRow = ({
                             setIsGalleryModalOpen(true);
                           }}
                           icon={faImages}
-                          className="w-full bg-[#686870] hover:bg-[#78787F]"
+                          className="w-full"
                         >
                           Pick from library
                         </Button>
@@ -635,7 +635,7 @@ export const ImagePromptRow = ({
                   >
                     <Button
                       variant="action"
-                      className="bg-white/10 hover:bg-white/20 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-white/30 hover:border-white/50 transition-all"
+                      className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border border-ui-controls-border transition-all"
                       onClick={() => {
                         if (allowUploadEnd) handleUploadClickEnd();
                         else {
@@ -646,7 +646,7 @@ export const ImagePromptRow = ({
                     >
                       <FontAwesomeIcon
                         icon={faPlus}
-                        className="text-2xl opacity-80"
+                        className="text-2xl opacity-80 text-base-fg"
                       />
                     </Button>
                   </Tooltip>
@@ -656,12 +656,12 @@ export const ImagePromptRow = ({
           )}
         </div>
         <div className="col-span-2 flex items-center">
-          <div className="flex items-center gap-2 w-[1px] h-full bg-white/10 rounded-lg" />
+          <div className="flex items-center gap-2 w-[1px] h-full bg-base-fg/20 dark:bg-base-fg/10 rounded-lg" />
           <div className="p-2">
             <Button
               variant="action"
               icon={faTrashAlt}
-              className="h-8 w-3 bg-[#5F5F68]/60 hover:bg-[#5F5F68]/90"
+              className="h-8 w-3"
               onClick={() => setReferenceImages([])}
             />
           </div>

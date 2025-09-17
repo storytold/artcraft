@@ -34,7 +34,7 @@ const PromptEditor: React.FC<PromptEditorProps> = ({
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col space-y-2">
+    <div className="text-base-fg mx-auto flex w-full max-w-3xl flex-col space-y-2">
       <div className="flex w-full justify-center"></div>
 
       <JobProvider>

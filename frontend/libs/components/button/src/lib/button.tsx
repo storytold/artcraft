@@ -39,16 +39,16 @@ export const Button = ({
   function getVariantClassNames(variant: string) {
     switch (variant) {
       case "secondary": {
-        return "bg-secondary hover:bg-secondary-700 text-white focus-visible:outline-secondary";
+        return "bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80 focus-visible:outline-secondary";
       }
       case "action": {
-        return "bg-action hover:bg-action-900 text-white focus-visible:outline-action";
+        return "bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80 focus-visible:outline-action";
       }
       case "destructive": {
-        return "bg-red/70 hover:bg-red/50 text-white focus-visible:outline-red";
+        return "bg-red hover:bg-red/90 text-white focus-visible:outline-red";
       }
       case "ghost": {
-        return "bg-transparent hover:bg-white/[8%] text-white focus-visible:outline-primary-600";
+        return "bg-transparent text-base-fg border border-ui-controls-border/70 hover:bg-ui-controls/30 focus-visible:outline-primary-600";
       }
       case "primary":
       default: {

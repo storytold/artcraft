@@ -297,6 +297,7 @@ const PageEdit = () => {
 
   return (
     <>
+      <div className="fixed inset-0 -z-10 bg-ui-background" />
       <div
         className={`preserve-aspect-ratio fixed left-1/2 top-0 z-10 -translate-x-1/2 transform ${
           isSelecting ? "pointer-events-none" : "pointer-events-auto"

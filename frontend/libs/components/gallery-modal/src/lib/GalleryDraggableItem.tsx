@@ -112,7 +112,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               <img
                 data-gallery-draggable-1="true"
                 // NB: "loading=lazy" is necessary to prevent loading GIGABYTES of images!
-                // It is a bit finnicky, too: you must include this attribute 
+                // It is a bit finnicky, too: you must include this attribute
                 // BEFORE the `src` attribute, or it won't work.
                 loading="lazy"
                 ref={imgRef}
@@ -137,7 +137,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         <Tooltip
           position="bottom"
           delay={200}
-          className="-mt-3 bg-black/90"
+          className="-mt-3 bg-ui-controls text-base-fg border border-ui-panel-border"
           content={
             <div className="flex flex-col items-center text-xs whitespace-nowrap">
               {item.mediaClass !== "video" && (
@@ -184,7 +184,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                 <img
                   data-gallery-draggable-2="true"
                   // NB: "loading=lazy" is necessary to prevent loading GIGABYTES of images!
-                  // It is a bit finnicky, too: you must include this attribute 
+                  // It is a bit finnicky, too: you must include this attribute
                   // BEFORE the `src` attribute, or it won't work.
                   loading="lazy"
                   ref={imgRef}

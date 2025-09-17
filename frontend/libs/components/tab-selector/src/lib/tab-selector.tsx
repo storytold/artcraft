@@ -93,8 +93,8 @@ export const TabSelector: React.FC<TabSelectorProps> = ({
                   "relative z-20 mx-0.5 min-w-max rounded-md border-2 border-transparent px-4 py-0.5 text-center text-sm font-semibold transition-all duration-200 ease-in-out",
                   "focus-visible:outline-none focus-visible:ring-0",
                   selected
-                    ? twMerge("text-white", selectedTabClassName)
-                    : "text-gray-300 hover:text-white",
+                    ? twMerge("text-base-fg", selectedTabClassName)
+                    : "text-base-fg/70 hover:text-base-fg",
                   disabled ? "cursor-not-allowed opacity-60" : "",
                   tabClassName
                 )

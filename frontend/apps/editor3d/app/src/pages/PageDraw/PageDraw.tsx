@@ -20,7 +20,7 @@ import {
 import { useCanvasBgRemovedEvent } from "@storyteller/tauri-api";
 import { getSelectedImageModel } from "@storyteller/ui-model-selector";
 
-const PAGE_ID : ModelPage = ModelPage.Canvas2D;
+const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 
 export const DecodeBase64ToImage = async (
   base64String: string,
@@ -55,7 +55,8 @@ const PageDraw = () => {
   const transformerRefs = useRef<{ [key: string]: Konva.Transformer }>({});
   const store = useSceneStore();
 
-  const selectedImageModel : ImageModel | undefined = getSelectedImageModel(PAGE_ID);
+  const selectedImageModel: ImageModel | undefined =
+    getSelectedImageModel(PAGE_ID);
 
   useDeleteHotkeys({ onDelete: store.deleteSelectedItems });
   useUndoRedoHotkeys({ undo: store.undo, redo: store.redo });
@@ -259,6 +260,7 @@ const PageDraw = () => {
 
   return (
     <>
+      <div className="fixed inset-0 -z-10 bg-ui-background" />
       <div
         className={`preserve-aspect-ratio fixed bottom-0 left-1/2 z-10 -translate-x-1/2 transform ${
           isSelecting ? "pointer-events-none" : "pointer-events-auto"

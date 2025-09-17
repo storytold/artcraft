@@ -158,7 +158,7 @@ export function Activity() {
             maybe_result: job.maybe_result,
           }));
 
-          // NB(bt,2025-07-28): Don't use eventing from here anymore. 
+          // NB(bt,2025-07-28): Don't use eventing from here anymore.
           // Tauri is sending direct events we can bind toasts to.
           // // Show toast only if not first load
           // if (!isFirstLoad.current) {
@@ -210,7 +210,7 @@ export function Activity() {
       <PopoverMenu
         mode="default"
         buttonClassName="h-[38px] w-[38px] !p-0"
-        panelClassName="w-[360px] p-2"
+        panelClassName="w-[360px] p-2 bg-ui-panel"
         position="bottom"
         align="end"
         triggerIcon={
@@ -242,13 +242,13 @@ export function Activity() {
                   icon={faSpinnerThird}
                   spin
                   size="2x"
-                  className="text-gray-400"
+                  className="text-base-fg/40"
                 />
-                <h3 className="text-gray-300">Retrieving Activities</h3>
+                <h3 className="text-base-fg/60">Retrieving Activities</h3>
               </div>
             ) : jobs.length === 0 && completedItems.length === 0 ? (
               <div className="flex h-48 w-full flex-col justify-center gap-4 p-4 text-center align-middle">
-                <h3 className="text-lg text-gray-300">No activities yet</h3>
+                <h3 className="text-base-fg/60 text-lg">No activities yet</h3>
               </div>
             ) : (
               <div>

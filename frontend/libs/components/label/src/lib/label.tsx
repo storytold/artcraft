@@ -14,7 +14,7 @@ export const Label = ({
   ...rest
 }: LabelProps) => (
   <label
-    className={twMerge("text-white mb-2 text-[15px] font-medium", className)}
+    className={twMerge("text-base-fg mb-2 text-[15px] font-medium", className)}
     {...rest}
   >
     {children}

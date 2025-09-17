@@ -1,5 +1,11 @@
 .video-background-image {
-  background-image: url("/resources/images/forest-trees.png");
+  background-image:
+    linear-gradient(
+      0deg,
+      rgb(var(--st-photo-tint-rgb) / var(--st-photo-tint-alpha)),
+      rgb(var(--st-photo-tint-rgb) / var(--st-photo-tint-alpha))
+    ),
+    url("/resources/images/forest-trees.png");
   background-repeat: no-repeat;
   background-size: cover;
   position: fixed;
@@ -7,5 +13,5 @@
   bottom: 0;
   min-width: 100%;
   min-height: 100%;
-  filter: grayscale(1);
+  filter: grayscale(var(--st-photo-grayscale));
 }

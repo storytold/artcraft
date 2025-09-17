@@ -29,7 +29,7 @@ export const AccountSettingsPane = ({
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="space-y-4 text-base-fg">
         {/*
         <div className="flex justify-between">
           <span>ArtCraft Account:</span>
@@ -55,7 +55,9 @@ export const AccountSettingsPane = ({
         </div>
         */}
 
-        <ArtcraftAccountBlock globalAccountLogoutCallback={globalAccountLogoutCallback}/>
+        <ArtcraftAccountBlock
+          globalAccountLogoutCallback={globalAccountLogoutCallback}
+        />
         <MidjourneyAccountBlock />
         <SoraAccountBlock />
         <FalApiKeyBlock />

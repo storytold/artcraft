@@ -5,7 +5,10 @@ import { twMerge } from "tailwind-merge";
 import { usePricingModalStore } from "./pricing-modal-store";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { invoke } from "@tauri-apps/api/core";
-import { SUBSCRIPTION_PLANS, SubscriptionPlanDetails } from "@storyteller/subscription";
+import {
+  SUBSCRIPTION_PLANS,
+  SubscriptionPlanDetails,
+} from "@storyteller/subscription";
 import { useSubscriptionState } from "@storyteller/subscription";
 
 const billingTabs = [
@@ -20,10 +23,9 @@ const pricingConfig = {
       "Upgrade to gain access to Pro features and generate more, faster.",
   },
   yearlyDiscount: 20,
-}
+};
 
-interface PricingModalProps {
-}
+interface PricingModalProps {}
 
 export function PricingModal({}: PricingModalProps = {}) {
   const { isOpen, closeModal } = usePricingModalStore();
@@ -39,20 +41,22 @@ export function PricingModal({}: PricingModalProps = {}) {
 
   const handleUnsubscribe = async () => {
     await invoke("storyteller_open_customer_portal_cancel_plan_command");
-  }
+  };
 
   const handleManageSubscription = async () => {
     await invoke("storyteller_open_customer_portal_manage_plan_command");
   };
 
   const handleUpdatePaymentMethod = async () => {
-    await invoke("storyteller_open_customer_portal_update_payment_method_command");
+    await invoke(
+      "storyteller_open_customer_portal_update_payment_method_command"
+    );
   };
 
   const handleSetPlan = async (tierSlug: string) => {
     const tier = SUBSCRIPTION_PLANS.find((t) => t.slug === tierSlug);
     const planSlug = tier?.slug;
-    const cadence = isYearly? "yearly" : "monthly";
+    const cadence = isYearly ? "yearly" : "monthly";
 
     if (planSlug === "free") {
       if (hasActiveSub) {
@@ -68,19 +72,24 @@ export function PricingModal({}: PricingModalProps = {}) {
         request: {
           plan: planSlug,
           cadence: cadence,
-        }
+        },
       });
     } else {
       await invoke("storyteller_open_subscription_purchase_command", {
         request: {
           plan: planSlug,
           cadence: cadence,
-        }
+        },
       });
     }
   };
 
-  const tierHierarchy = { free: 0, artcraft_basic: 1, artcraft_pro: 2, artcraft_max: 3 };
+  const tierHierarchy = {
+    free: 0,
+    artcraft_basic: 1,
+    artcraft_pro: 2,
+    artcraft_max: 3,
+  };
 
   const isCurrentPlan = (tierId: string) => {
     return tierId === activePlanId;
@@ -188,20 +197,20 @@ export function PricingModal({}: PricingModalProps = {}) {
     <Modal
       isOpen={isOpen}
       onClose={closeModal}
-      className="rounded-xl bg-[#1A1A1A] max-h-[90vh] max-w-screen-2xl overflow-y-auto flex flex-col"
+      className="rounded-xl bg-ui-panel max-h-[90vh] max-w-screen-2xl overflow-y-auto flex flex-col border border-ui-panel-border"
       allowBackgroundInteraction={false}
       showClose={true}
       closeOnOutsideClick={true}
       resizable={false}
-      backdropClassName="bg-black/80"
+      backdropClassName=""
     >
-      <div className="p-16 py-24 flex-1 overflow-y-auto min-h-0">
+      <div className="p-16 py-24 flex-1 overflow-y-auto min-h-0 text-base-fg">
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold text-white mb-4">
+          <h1 className="text-5xl font-bold text-base-fg mb-4">
             {pricingConfig.header.title}
           </h1>
-          <p className="text-gray-400 text-lg mb-6">
+          <p className="text-base-fg/60 text-lg mb-6">
             {pricingConfig.header.subtitle}
           </p>
 
@@ -211,10 +220,10 @@ export function PricingModal({}: PricingModalProps = {}) {
               tabs={billingTabs}
               activeTab={billingType}
               onTabChange={setBillingType}
-              className="w-fit"
+              className="w-fit border border-base-fg/20 rounded-lg"
               tabClassName="w-24 text-md"
-              indicatorClassName="bg-white"
-              selectedTabClassName="text-black"
+              indicatorClassName="bg-primary/30 border border-primary"
+              selectedTabClassName="text-base-fg"
             />
             <span className="bg-primary text-white px-3 py-0.5 rounded-full text-sm font-medium -top-3 -left-6 absolute pointer-events-none">
               -{pricingConfig.yearlyDiscount}%
@@ -259,7 +268,7 @@ export function PricingModal({}: PricingModalProps = {}) {
                     <span className="text-white/60 text-sm">/month</span>
                   </div>
 
-                  <p className="text-gray-300 text-xs mt-1">
+                  <p className="text-white/60 text-xs mt-1">
                     {isYearly ? "billed yearly" : "billed monthly"}
                   </p>
                 </div>
@@ -293,7 +302,7 @@ export function PricingModal({}: PricingModalProps = {}) {
                       <span
                         className={twMerge(
                           "text-sm mt-0.5",
-                          feature.included ? "text-white" : "text-gray-400"
+                          feature.included ? "text-white" : "text-white/60"
                         )}
                       >
                         {feature.text}
@@ -306,7 +315,7 @@ export function PricingModal({}: PricingModalProps = {}) {
                 <Button
                   onClick={() => handleSetPlan(plan.slug)}
                   disabled={isCurrentPlan(plan.slug)}
-                  className="w-full bg-white text-black hover:bg-white/90 h-12 rounded-xl"
+                  className="w-full h-12 rounded-xl bg-ui-controls text-base-fg border border-ui-controls-border hover:bg-ui-controls/80"
                 >
                   {getButtonText(plan)}
                 </Button>

@@ -67,9 +67,13 @@ const SortableItem = ({
       {...attributes}
       {...listeners}
       className={`
-        flex items-center justify-between rounded-lg bg-white/5 p-3 transition-colors duration-200
-        ${isUpdating ? "opacity-60" : "cursor-move hover:bg-white/10"}
-        ${isDragging ? "opacity-50 shadow-lg" : ""}
+        flex items-center justify-between rounded-lg p-3 transition-colors duration-200 border border-ui-controls-border bg-ui-controls/60 text-base-fg
+        ${
+          isUpdating
+            ? "opacity-60 cursor-not-allowed"
+            : "cursor-move hover:bg-ui-controls/80"
+        }
+        ${isDragging ? "opacity-70 shadow-lg" : ""}
       `}
     >
       <div className="flex items-center gap-3">
@@ -81,7 +85,7 @@ const SortableItem = ({
       <div className="flex items-center">
         <FontAwesomeIcon
           icon={faGripVertical}
-          className="text-white/40 text-sm"
+          className="text-base-fg/40 text-sm"
         />
       </div>
     </div>
@@ -102,12 +106,12 @@ const PROVIDER_TO_CREATOR: Partial<Record<Provider, ModelCreator>> = {
 
 const getProviderIcon = (provider: Provider): ReactNode => {
   const creator = PROVIDER_TO_CREATOR[provider];
-  if (creator) return getCreatorIcon(creator, "h-4 w-4 invert");
+  if (creator) return getCreatorIcon(creator, "h-4 w-4");
   return (
     <img
       src="/resources/images/services/generic.svg"
       alt="generic logo"
-      className="h-4 w-4 invert"
+      className="h-4 w-4"
     />
   );
 };
@@ -186,7 +190,7 @@ export const ProviderPrioritySettingsPane = () => {
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-sm text-white/70 mb-4">
+        <p className="text-sm text-base-fg/70 mb-4">
           Drag and drop to reorder model provider priority. Higher items will be
           tried first. You can use this to control favorite services and
           spending.
@@ -214,7 +218,7 @@ export const ProviderPrioritySettingsPane = () => {
       </DndContext>
 
       {isUpdating && (
-        <div className="text-xs rounded-full animate-pulse mt-4 flex items-center gap-2">
+        <div className="text-xs rounded-full animate-pulse mt-4 flex items-center gap-2 text-base-fg/70">
           <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
           Updating...
         </div>

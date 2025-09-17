@@ -389,7 +389,7 @@ export const GalleryModal = React.memo(
             }
           }}
           className={twMerge(
-            "h-[620px] max-w-4xl",
+            "h-[620px] max-w-4xl rounded-xl",
             mode === "view" &&
               "h-[640px] min-h-[640px] min-w-[56rem] w-[56rem] max-w-none"
           )}
@@ -405,7 +405,7 @@ export const GalleryModal = React.memo(
             </Modal.DragHandle>
           )}
           <div className="flex h-full flex-col">
-            <div className="border-b border-white/10 p-4 py-3">
+            <div className="border-b border-ui-panel-border p-4 py-3 bg-ui-panel rounded-t-xl">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <h2 className="text-xl font-semibold">
@@ -425,7 +425,7 @@ export const GalleryModal = React.memo(
                       />
                       <label
                         htmlFor="gallery-reopen-after-drag"
-                        className="ml-2 cursor-pointer select-none text-sm text-white/70"
+                        className="ml-2 cursor-pointer select-none text-sm text-base-fg/70"
                       >
                         Reopen after adding
                       </label>
@@ -442,13 +442,13 @@ export const GalleryModal = React.memo(
                     <Button
                       variant="action"
                       onClick={refreshGallery}
-                      className="relative z-[51] h-9 w-9 bg-[#5F5F68]/60 hover:bg-[#5F5F68]/90"
+                      className="relative z-[51] h-9 w-9 bg-ui-controls/60 hover:bg-ui-controls/90"
                       disabled={loading}
                       aria-label="Refresh list"
                     >
                       <FontAwesomeIcon
                         icon={faArrowsRotate}
-                        className="text-lg text-white"
+                        className="text-lg text-base-fg"
                       />
                     </Button>
                   </Tooltip>
@@ -465,11 +465,11 @@ export const GalleryModal = React.memo(
                           fit === "cover" ? "contain" : "cover"
                         )
                       }
-                      className="relative z-[51] h-9 w-9 bg-[#5F5F68]/60 hover:bg-[#5F5F68]/90"
+                      className="relative z-[51] h-9 w-9 bg-ui-controls/60 hover:bg-ui-controls/90"
                     >
                       <FontAwesomeIcon
                         icon={imageFit === "cover" ? faExpand : faCompress}
-                        className="text-lg text-white"
+                        className="text-lg text-base-fg"
                       />
                     </Button>
                   </Tooltip>
@@ -550,10 +550,13 @@ export const GalleryModal = React.memo(
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
+            <div
+              className="flex-1 overflow-y-auto bg-ui-panel"
+              onScroll={handleScroll}
+            >
               {loading && allItems.length === 0 ? (
                 <div className="flex h-full items-center justify-center">
-                  <div className="text-white/60">
+                  <div className="text-base-fg/60">
                     <LoadingSpinner className="h-12 w-12" />
                   </div>
                 </div>
@@ -584,7 +587,7 @@ export const GalleryModal = React.memo(
                       if (filteredItems.length === 0) return null;
                       return (
                         <div key={date}>
-                          <h3 className="text-md mb-2 font-medium text-white/60">
+                          <h3 className="text-md mb-2 font-medium text-base-fg/60">
                             {date}
                           </h3>
                           <div
@@ -619,7 +622,7 @@ export const GalleryModal = React.memo(
                     </div>
                   )}
                   {!hasMore && allItems.length > 0 && (
-                    <div className="flex justify-center py-4 text-white/40 text-xs">
+                    <div className="flex justify-center py-4 text-base-fg/40 text-xs">
                       No more items
                     </div>
                   )}
@@ -628,18 +631,18 @@ export const GalleryModal = React.memo(
             </div>
 
             {mode === "select" && (
-              <div className="flex items-center justify-between border-t border-white/10 bg-black/25 p-4">
+              <div className="flex items-center justify-between border-t border-ui-panel-border bg-ui-panel p-4 rounded-b-xl">
                 <div className="flex items-center gap-3">
-                  <div className="text-sm font-semibold text-white/80">
+                  <div className="text-sm font-semibold text-base-fg/80">
                     {selectedItemIds.length}/{maxSelections} selected
                   </div>
                   {selectedItemIds.length > 0 && (
-                    <span className="text-white/10">|</span>
+                    <span className="text-base-fg/10">|</span>
                   )}
                   {selectedItemIds.length > 0 && (
                     <button
                       onClick={handleDeselectAll}
-                      className="text-sm text-white/60 hover:text-white"
+                      className="text-sm text-base-fg/60 hover:text-base-fg"
                     >
                       Deselect All
                     </button>

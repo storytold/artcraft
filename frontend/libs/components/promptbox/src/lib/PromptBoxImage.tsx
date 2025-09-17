@@ -369,7 +369,7 @@ export const PromptBoxImage = ({
                 <Button
                   variant="action"
                   className={twMerge(
-                    "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all",
+                    "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
                     isImageRowVisible && "text-primary"
                   )}
                   onClick={() => setShowImagePrompts((prev) => !prev)}
@@ -396,7 +396,7 @@ export const PromptBoxImage = ({
               ref={textareaRef}
               rows={1}
               placeholder="Describe what you want in the image..."
-              className="text-md mb-2 max-h-[5.5em] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none"
+              className="text-md mb-2 max-h-[5.5em] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
               value={prompt}
               onChange={handleChange}
               onPaste={handlePaste}

@@ -57,10 +57,10 @@ import {
   usePricingModalStore,
   useCreditsModalStore,
 } from "@storyteller/ui-pricing-modal";
-import { useCreditsBalanceChangedEvent } from "@storyteller/tauri-events"
-import { useSubscriptionPlanChangedEvent } from "@storyteller/tauri-events"
-import { useCreditsState } from "@storyteller/credits"
-import { useSubscriptionState } from "@storyteller/subscription"
+import { useCreditsBalanceChangedEvent } from "@storyteller/tauri-events";
+import { useSubscriptionPlanChangedEvent } from "@storyteller/tauri-events";
+import { useCreditsState } from "@storyteller/credits";
+import { useSubscriptionState } from "@storyteller/subscription";
 
 interface Props {
   pageName: string;
@@ -79,7 +79,7 @@ type SettingsSection =
 const SWITCHER_THROTTLE_TIME = 500; // milliseconds
 
 // NB: See `TabState` for the default tab.
-const appMenuTabs: MenuIconItem<TabId>[] = [
+const appMenuTabs: MenuIconItem[] = [
   {
     id: "IMAGE",
     label: "Text to Image",
@@ -243,10 +243,40 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
   const { toggleModal: toggleSubscriptionModal } = usePricingModalStore();
   const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
 
+  // Pick logo based on current theme (light uses black logo; others use white)
+  const [logoSrc, setLogoSrc] = useState<string>(
+    "/resources/logo/artcraft-logo-color-white.svg",
+  );
+  useEffect(() => {
+    const computeLogo = () => {
+      const root = document.documentElement;
+      const isLight = root.classList.contains("theme-light");
+      setLogoSrc(
+        isLight
+          ? "/resources/logo/artcraft-logo-color-black.svg"
+          : "/resources/logo/artcraft-logo-color-white.svg",
+      );
+    };
+    computeLogo();
+    const mo = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === "attributes" && m.attributeName === "class") {
+          computeLogo();
+          break;
+        }
+      }
+    });
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => mo.disconnect();
+  }, []);
+
   return (
     <>
       <header
-        className="fixed left-0 top-0 z-[60] w-full border-b border-white/5 bg-ui-background"
+        className="fixed left-0 top-0 z-[60] w-full border-b border-ui-panel-border bg-ui-background"
         data-tauri-drag-region
       >
         <nav
@@ -261,8 +291,8 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
               </span>
               <img
                 className="h-[24px] w-auto"
-                src="/resources/images/artcraft-logo-3.png"
-                alt="Logo ArtCraft"
+                src={logoSrc}
+                alt="ArtCraft Logo"
                 data-tauri-drag-region
               />
             </div>
@@ -286,7 +316,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 } else {
                   set3DPageMounted(false);
                 }
-                useTabStore.getState().setActiveTab(tabId);
+                useTabStore.getState().setActiveTab(tabId as TabId);
                 setTimeout(() => {
                   // Clear the throttle
                   switcherThrottle.current = false;
@@ -305,7 +335,9 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
             {tabStore.activeTabId === "3D" ? (
               <SceneTitleInput pageName={pageName} />
             ) : (
-              <h1 data-tauri-drag-region>{pageTitle}</h1>
+              <h1 className="text-base-fg" data-tauri-drag-region>
+                {pageTitle}
+              </h1>
             )}
           </div>
 
@@ -325,17 +357,17 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                     {sumTotalCredits} Credits
                   </span>
                 }
-                buttonClassName="h-[30px] px-2 ps-1.5 bg-transparent hover:bg-white/10"
-                panelClassName="mt-3"
+                buttonClassName="h-[30px] px-2 ps-1.5 bg-transparent hover:bg-ui-controls/30 border-0 shadow-none"
+                panelClassName="mt-3 bg-ui-panel border border-ui-panel-border text-base-fg"
               >
                 {(close) => (
-                  <div className="w-72 p-2.5 text-white">
+                  <div className="text-base-fg w-72 p-2.5">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-sm font-medium text-white/80">
+                      <span className="text-base-fg/80 flex items-center gap-1.5 text-sm font-medium">
                         Your credit balance
                       </span>
                       <button
-                        className="text-sm font-medium text-primary-300 transition-all hover:text-primary-200"
+                        className="text-sm font-medium text-primary-400 transition-all hover:text-primary-300"
                         onClick={() => {
                           close();
                           toggleCreditsModal();
@@ -344,7 +376,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                         Buy credits
                       </button>
                     </div>
-                    <div className="flex items-center gap-2 text-4xl font-bold">
+                    <div className="text-base-fg flex items-center gap-2 text-4xl font-bold">
                       <FontAwesomeIcon
                         icon={faCoinFront}
                         className="text-2xl text-primary"
@@ -354,7 +386,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                     <div className="mt-3 flex gap-2">
                       <Button
                         variant="action"
-                        className="h-9 grow bg-white/15 hover:bg-white/20"
+                        className="h-9 grow"
                         onClick={() => {
                           close();
                           handleOpenBillingSettings();
@@ -408,7 +440,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 icon={faImages}
                 onClick={handleOpenGalleryModal}
               >
-                <span className="hidden whitespace-nowrap xl:block">
+                <span className="text-base-fg hidden whitespace-nowrap xl:block">
                   My Library
                 </span>
               </Button>
@@ -424,14 +456,14 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
               <div className="no-drag flex items-center">
                 <Button
                   variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none bg-transparent text-white/70 hover:bg-white/10 hover:text-white"
+                  className="text-base-fg h-[32px] w-[44px] rounded-none border-0 bg-transparent opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
                   onClick={minimize}
                 >
                   <FontAwesomeIcon icon={faDash} className="text-xs" />
                 </Button>
                 <Button
                   variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none bg-transparent text-white/70 hover:bg-white/10 hover:text-white"
+                  className="text-base-fg h-[32px] w-[44px] rounded-none border-0 bg-transparent opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
                   onClick={toggleMaximize}
                 >
                   <FontAwesomeIcon
@@ -441,7 +473,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 </Button>
                 <Button
                   variant="secondary"
-                  className="h-[32px] w-[44px] rounded-none bg-transparent text-white/70 hover:bg-red/40 hover:text-white"
+                  className="text-base-fg h-[32px] w-[44px] rounded-none border-0 bg-transparent opacity-70 shadow-none hover:bg-red/10 hover:text-red"
                   onClick={close}
                 >
                   <FontAwesomeIcon icon={faXmark} className="text-lg" />

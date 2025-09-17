@@ -52,6 +52,22 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
     PostHogInit();
   }, [env]);
 
+  // Apply stored theme early on mount
+  useEffect(() => {
+    const key = "st-theme";
+    const value = (localStorage.getItem(key) || "gray").trim();
+    const allowed = ["light", "gray", "black", "aurora", "sunset", "gradient"];
+    const normalized = value === "gradient" ? "aurora" : value;
+    const theme = allowed.includes(value) ? (normalized as string) : "gray";
+    const root = document.documentElement;
+    const toRemove: string[] = [];
+    root.classList.forEach((c) => {
+      if (c.startsWith("theme-")) toRemove.push(c);
+    });
+    toRemove.forEach((c) => root.classList.remove(c));
+    root.classList.add(`theme-${theme}`);
+  }, []);
+
   /// Initizations that run only once on 1ST mount ///
   function setPage() {
     // TODO address this issue with zooming
@@ -76,10 +92,7 @@ createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <BrowserRouter>
         <GlobalSettingsManager env={ENV} />
-        <div className="topbar-spacer" 
-
-         data-tauri-drag-region={true}
-        />
+        <div className="topbar-spacer" data-tauri-drag-region={true} />
         <PageEnigma />
       </BrowserRouter>
     </StrictMode>
