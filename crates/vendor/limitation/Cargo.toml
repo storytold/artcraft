@@ -1,0 +1,34 @@
+[package]
+name = "limitation"
+version = "0.1.1"
+authors = ["Fletcher Nichol <fnichol@nichol.ca>"]
+edition = "2018"
+license = "MPL-2.0"
+repository = "https://github.com/fnichol/limitation"
+documentation = "https://docs.rs/limitation"
+readme = "README.md"
+keywords = ["rate-limit", "rate-limiting", "limiter", "redis"]
+categories = ["asynchronous", "web-programming"]
+description = """
+A rate limiter using a fixed window counter for arbitrary keys, backed by
+Redis.
+"""
+
+[badges]
+cirrus-ci = { repository = "fnichol/limitation" }
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+chrono = "0.4.9"
+futures = "0.1.29"
+redis = "0.13.0"
+time = "0.3.30"
+
+# Workspace hack (faster compile times)
+workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }
+
+[dev-dependencies]
+#tokio = "1.34.0" # NB(bt,2024-05-16): Dependency fix recommends this is unused
+version-sync = "0.9.5"

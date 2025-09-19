@@ -1,0 +1,34 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../slider-v2"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../label"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../popover"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

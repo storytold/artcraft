@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ubuntu_build:
+    name: Ubuntu Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install latest rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+          default: true
+          override: true
+    - name: run tests
+      run: cargo test --all-features -- --test-threads=1
+
+  windows_build:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install latest rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+          default: true
+          override: true
+    - name: run tests
+      run: cargo test --all-features -- --test-threads=1 

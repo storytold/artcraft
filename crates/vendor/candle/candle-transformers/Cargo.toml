@@ -1,0 +1,29 @@
+[package]
+name = "candle-transformers"
+edition = "2021"
+
+[dependencies]
+accelerate-src = { version = "0.3.2", optional = true }
+byteorder = "1.4.3"
+candle = { path = "../candle-core", package = "candle-core" }
+candle-flash-attn = { path = "../candle-flash-attn", optional = true }
+candle-nn = { path = "../candle-nn", package = "candle-nn" }
+fancy-regex = "0.13.0"
+half = { version = "2.3.1", features = ["num-traits", "use-intrinsics", "rand_distr"] }
+intel-mkl-src = { version = "0.8.1", features = ["mkl-static-lp64-iomp"], optional = true }
+log = "0.4.27"
+num-traits = "0.2.15"
+rand = "0.8.5"
+rayon = "1.7.0"
+serde = { version = "1.0.171", features = ["derive"] }
+serde_json = "1.0.99"
+serde_plain = "1.0.2"
+tracing = "0.1.37"
+
+[features]
+default = []
+accelerate = ["dep:accelerate-src", "candle/accelerate", "candle-nn/accelerate"]
+cuda = ["candle/cuda", "candle-nn/cuda"]
+flash-attn = ["cuda", "dep:candle-flash-attn"]
+mkl = ["dep:intel-mkl-src", "candle/mkl", "candle-nn/mkl"]
+metal = ["candle/metal", "candle-nn/metal"]

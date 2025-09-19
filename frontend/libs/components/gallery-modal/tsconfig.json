@@ -1,0 +1,40 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../slider-v2"
+    },
+    {
+      "path": "../popover"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../loading-spinner"
+    },
+    {
+      "path": "../close-button"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../lightbox-modal"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

@@ -1,0 +1,1 @@
+{"version":3,"file":"MiscApi.d.ts","sourceRoot":"","sources":["../../src/lib/MiscApi.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,EAAE,WAAW,EAAE,MAAM,iBAAiB,CAAC;AAC1D,OAAO,EAAE,WAAW,EAAE,MAAM,yBAAyB,CAAC;AAEtD,qBAAa,OAAQ,SAAQ,UAAU;IAC9B,mBAAmB,IAAI,OAAO,CAAC,WAAW,CAAC,WAAW,CAAC,CAAC;CAqBhE"}

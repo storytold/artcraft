@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-fetch-send"
+description = "Enables the fetch_send command without any pre-configured scope."
+commands.allow = ["fetch_send"]
+
+[[permission]]
+identifier = "deny-fetch-send"
+description = "Denies the fetch_send command without any pre-configured scope."
+commands.deny = ["fetch_send"]

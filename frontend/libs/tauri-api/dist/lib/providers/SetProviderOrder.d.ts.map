@@ -1,0 +1,1 @@
+{"version":3,"file":"SetProviderOrder.d.ts","sourceRoot":"","sources":["../../../src/lib/providers/SetProviderOrder.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,aAAa,EAAE,MAAM,yBAAyB,CAAC;AACxD,OAAO,EAAE,QAAQ,EAAE,MAAM,YAAY,CAAC;AAEtC,MAAM,WAAW,uBAAuB;IACtC,SAAS,EAAE,QAAQ,EAAE,CAAC;CACvB;AAED,eAAO,MAAM,gBAAgB,GAAU,SAAS,uBAAuB,KAAI,OAAO,CAAC,aAAa,CAQ/F,CAAA"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"close-button.d.ts","sourceRoot":"","sources":["../../src/lib/close-button.tsx"],"names":[],"mappings":"AAIA,UAAU,gBAAgB;IACxB,OAAO,EAAE,MAAM,IAAI,CAAC;IACpB,SAAS,CAAC,EAAE,MAAM,CAAC;IACnB,IAAI,CAAC,EAAE,IAAI,GAAG,IAAI,GAAG,IAAI,CAAC;CAC3B;AAED,eAAO,MAAM,WAAW,GAAI,+BAIzB,gBAAgB,4CAmBlB,CAAC;AAEF,eAAe,WAAW,CAAC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"CommandStatus.d.ts","sourceRoot":"","sources":["../../../src/lib/common/CommandStatus.ts"],"names":[],"mappings":"AAEA,oBAAY,oBAAoB;IAC9B,OAAO,YAAY;CACpB;AAED,oBAAY,kBAAkB;IAC5B,UAAU,gBAAgB;IAC1B,YAAY,iBAAiB;IAC7B,WAAW,iBAAiB;CAC7B;AAED,MAAM,MAAM,aAAa,GAAG,oBAAoB,GAAG,kBAAkB,CAAC;AAEtE,MAAM,WAAW,aAAa;IAC5B,MAAM,EAAE,aAAa,CAAC;CACvB"}

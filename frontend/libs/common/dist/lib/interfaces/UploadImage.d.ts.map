@@ -1,0 +1,1 @@
+{"version":3,"file":"UploadImage.d.ts","sourceRoot":"","sources":["../../../src/lib/interfaces/UploadImage.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,aAAa,EAAE,MAAM,iBAAiB,CAAC;AAEhD,MAAM,WAAW,eAAe;IAC9B,KAAK,EAAE,MAAM,CAAC;IACd,SAAS,EAAE,IAAI,CAAC;IAChB,gBAAgB,EAAE,CAAC,QAAQ,EAAE,aAAa,KAAK,IAAI,CAAC;CACrD"}

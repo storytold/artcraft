@@ -1,0 +1,257 @@
+[workspace]
+resolver = "2"
+
+# This block defines the workspace members.
+# When we add a library or binary crate, it needs an entry here.
+members = [
+  # API clients for external services
+  # These might be custom implementations or wrappers over other client libraries.
+  "crates/api_clients/artcraft_api_defs", # TODO: api_clients/{artcraft}/{api_defs,client}
+  "crates/api_clients/cloud_storage",
+  "crates/api_clients/fal_client",
+  "crates/api_clients/google_drive_common",
+  "crates/api_clients/google_sign_in",
+  "crates/api_clients/midjourney_client",
+  "crates/api_clients/openai_sora_client",
+  "crates/api_clients/openart_client",
+  "crates/api_clients/runwayml_client",
+  "crates/api_clients/storyteller_client",
+  "crates/api_clients/thumbnail_generator",
+
+  # CLI tools for operations, etc.
+  "crates/cli/devenv/dev-database-seed",
+  "crates/cli/devenv/dev-upload-media-file",
+  "crates/cli/devenv/scrape-test",
+  "crates/cli/production/db-backfill",
+  "crates/cli/production/db-backup",
+  "crates/cli/production/db-cleanup",
+  "crates/cli/production/elasticsearch-cli",
+  "crates/cli/production/kubectl-pod-cleanup",
+  "crates/cli/production/lru-delete-models",
+  "crates/cli/production/migration-tool",
+
+  # Desktop apps
+  "crates/desktop/artcraft",
+
+  # Shared libraries
+  "crates/lib/actix_cors_configs",
+  "crates/lib/actix_helpers",
+  "crates/lib/bootstrap",
+  "crates/lib/bucket_paths",
+  "crates/lib/build_metadata",
+  "crates/lib/caching/memory_caching",
+  "crates/lib/caching/memory_store",
+  "crates/lib/caching/redis_caching",
+  "crates/lib/cloudflare_errors",
+  "crates/lib/concurrency",
+  "crates/lib/cookie_store",
+  "crates/lib/cookies",
+  "crates/lib/data/collections",
+  "crates/lib/data/crockford",
+  "crates/lib/data/datetimes",
+  "crates/lib/data/primitives",
+  "crates/lib/data/web_base64",
+  "crates/lib/deprecated/config", # TODO(bt, 2023-02-13): Deprecate or repurpose
+  "crates/lib/deprecated/http_server_common", # TODO(bt, 2023-03-20): Move useful pieces to actix_helpers
+  "crates/lib/dimensions",
+  "crates/lib/easyenv", # NB: Vendored version of https://github.com/echelon/easyenv.rs that we'll improve.
+  "crates/lib/email_sender",
+  "crates/lib/errors",
+  "crates/lib/files/archives",
+  "crates/lib/files/file_to_base64_url",
+  "crates/lib/files/filesys",
+  "crates/lib/files/hashing",
+  "crates/lib/files/images",
+  "crates/lib/files/media",
+  "crates/lib/files/mimetypes",
+  "crates/lib/files/videos",
+  "crates/lib/idempotency",
+  "crates/lib/image_algorithms",
+  "crates/lib/jobs_common",
+  "crates/lib/jwt_light",
+  "crates/lib/logging",
+  "crates/lib/machine_learning/ml_weights_registry",
+  "crates/lib/machine_learning/prompt_engineering",
+  "crates/lib/markdown",
+  "crates/lib/migration",
+  "crates/lib/password",
+  "crates/lib/server_environment",
+  "crates/lib/shared_service_components",
+  "crates/lib/sqlx_mysql_helpers",
+  "crates/lib/storyteller_root",
+  "crates/lib/subprocess_common",
+  "crates/lib/test_data",
+  "crates/lib/testing",
+  "crates/lib/tts_common",
+  "crates/lib/url_config",
+  "crates/lib/user_input_common",
+  "crates/lib/web_scrapers",
+  #"crates/lib/api_clients/fakeyou_client",
+  #"crates/lib/machine_learning/ml_models",
+
+  # Schema (database): queries, database layouts, Redis keys, etc.
+  "crates/schema/database/elasticsearch_schema",
+  "crates/schema/database/mysql_queries",
+  "crates/schema/database/redis_common",
+  "crates/schema/database/redis_schema",
+  "crates/schema/database/sqlite_tasks",
+  #"crates/schema/database/sqlite_queries",
+
+  # Schema (public): common strongly-typed tokens, ids, payloads, etc.
+  "crates/schema/public/composite_identifiers",
+  "crates/schema/public/enums",
+  "crates/schema/public/enums_public",
+  "crates/schema/public/reusable_types", # TODO(bt, 2022-12-21): Deprecate
+  "crates/schema/public/tokens",
+
+  # Services: API servers, jobs, workers, etc.
+  "crates/service/job/analytics_job",
+  "crates/service/job/download_job",
+  "crates/service/job/email_sender_job",
+  "crates/service/job/es-update-job",
+  "crates/service/job/inference_job",
+  "crates/service/job/tts_download_job",
+  "crates/service/job/tts_inference_job",
+  "crates/service/job/w2l_download_job",
+  "crates/service/job/w2l_inference_job",
+  "crates/service/web/dummy_service",
+  "crates/service/web/storyteller_web",
+
+  # Service Plugins: complete subsystems that can be plugged into services (users, billing, etc.)
+  "crates/service/plugins/billing",
+  "crates/service/plugins/billing_artcraft",
+  "crates/service/plugins/component_traits",
+  "crates/service/plugins/inference_workloads",
+  "crates/service/plugins/user_traits_component",
+
+  # Vendored code
+  "crates/vendor/fal-rs",
+  "crates/vendor/fal-rs/fal-derive",
+  "crates/vendor/fal-rs/generate",
+  "crates/vendor/limitation",
+  "crates/vendor/tauri-plugin-http",
+  # NB(bt,2025-05-25): Too many failures on Mac. Disable for now.
+  #"crates/vendor/candle/candle-core",
+  #"crates/vendor/candle/candle-datasets",
+  #"crates/vendor/candle/candle-examples",
+  #"crates/vendor/candle/candle-flash-attn",
+  #"crates/vendor/candle/candle-kernels",
+  #"crates/vendor/candle/candle-metal-kernels",
+  #"crates/vendor/candle/candle-nn",
+  #"crates/vendor/candle/candle-onnx",
+  #"crates/vendor/candle/candle-pyo3",
+  #"crates/vendor/candle/candle-transformers",
+  #"crates/vendor/candle/tensor-tools",
+  # NB(bt,2023-12-12): Newrelic keeps breaking with upgrades. Kill for now.
+  #"crates/vendor/newrelic-telemetry-sdk-rust",
+
+  # cargo-hakari workspace hack (compilation speedup hack)
+  # see usage: https://crates.io/crates/cargo-hakari
+  "crates/workspace-build-acceleration",
+]
+
+[workspace.package]
+# Common inheritable settings for monorepo packages
+publish = false
+
+[workspace.dependencies]
+# Hakari workspace hack (faster compile times)
+#
+# If an unrelated leaf package starts causing general build problems,
+# for packages including hakari, look up what depends on the bad package:
+#
+#   `cargo tree --target all  -p {BAD_PACKAGE_NAME} -i`
+#
+# Packages to remove from hakari to ensure we can build in Netlify,
+# Github Actions (without package installs), etc.:
+#
+#  - cudarc
+#  - esaxx-rs
+#  - ort
+#  - tauri
+#  - tauri-runtime-wry
+#  - tauri-utils
+#
+# Broken on Windows:
+#  - core-foundation
+#  - core-foundation-sys
+#
+workspace-build-acceleration = { path = "crates/workspace-build-acceleration" }
+
+# Internal libs
+# Setting paths here ensures we don't need to do so in every crate's Cargo.toml
+# It makes refactoring much easier.
+artcraft_api_defs = { path = "crates/api_clients/artcraft_api_defs" }
+build_metadata = { path = "crates/lib/build_metadata" }
+cloud_storage = { path = "crates/api_clients/cloud_storage" }
+cloudflare_errors = { path = "crates/lib/cloudflare_errors" }
+component_traits = { path = "crates/service/plugins/component_traits" }
+cookie_store = { path = "crates/lib/cookie_store" }
+crockford = { path = "crates/lib/data/crockford" }
+enums = { path = "crates/schema/public/enums" }
+enums_public = { path = "crates/schema/public/enums_public" }
+errors = { path = "crates/lib/errors" }
+fal_client = { path = "crates/api_clients/fal_client" }
+file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }
+filesys = { path = "crates/lib/files/filesys" }
+idempotency = { path = "crates/lib/idempotency" }
+images = { path = "crates/lib/files/images" }
+jwt_light = { path = "crates/lib/jwt_light" }
+memory_caching = { path = "crates/lib/caching/memory_caching" }
+memory_store = { path = "crates/lib/caching/memory_store" }
+midjourney_client = { path = "crates/api_clients/midjourney_client" }
+mimetypes = { path = "crates/lib/files/mimetypes" }
+openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
+primitives = { path = "crates/lib/data/primitives" }
+shared_service_components = { path = "crates/lib/shared_service_components" }
+sqlite_tasks = { path = "crates/schema/database/sqlite_tasks" }
+storyteller_client = { path = "crates/api_clients/storyteller_client" }
+subprocess_common = { path = "crates/lib/subprocess_common" }
+test_data = { path = "crates/lib/test_data" }
+testing = { path = "crates/lib/testing" }
+tokens = { path = "crates/schema/public/tokens" }
+web_base64 = { path = "crates/lib/data/web_base64" }
+
+# External libs
+# Centrally pinned versions so that we can uniformly upgrade/downgrade versions across the workspace
+# If a crate needs to use an older/newer version, the dependency should be managed in that crate's own Cargo.toml
+actix = "0.13.5"
+actix-cors = "0.6.4" # TODO(bt): Carefully upgrade this. CORS broke last time.
+actix-http = "3.7.0"
+actix-multipart = "0.6.2"
+actix-rt = "2.10.0"
+actix-service = "2.0.3"
+actix-utils = "3.0.1"
+actix-web = "4.7.0" # TODO(bt): We're behind and need to bump versions.
+actix-web-actors = "4.3.1+deprecated"
+actix-web-lab = "0.20.2"
+anyhow = "1.0.98"
+base64 = "0.22.1"
+bytes = "1.10.1"
+chrono = { version = "0.4.41", features = ["serde"] }
+cookie = "0.18.1"
+futures = { version = "0.3.31" }
+hex-literal = "1.0.0"
+indexmap = "2.9.0"
+log = "0.4.27"
+once_cell = "1.21.3"
+rand = "0.9.1"
+regex = "1.11.1"
+reqwest = { version = "0.12.22", features = ["json", "cookies"] }
+reqwest-websocket = {  version = "0.5.0" }
+serde = {  version = "1.0.219", features = ["derive"] }
+serde_derive = "1.0.219"
+serde_json = "1.0.140"
+serde_yaml = "0.9.34+deprecated"
+sha3 = "0.10.8"
+tauri = { version = "2.8.3", features = ["unstable", "devtools"] } # NB: "devtools" prevents App Store distribution; "ubstable" is needed for window access
+tauri-plugin-dialog = "2.3.3"
+tauri-plugin-fs = "2.4.2"
+tauri-plugin-log = "2.6.0"
+tauri-plugin-upload = "2.3.1"
+tempdir = "0.3.7"
+tempfile = "3.20.0"
+thiserror = "2.0.12"
+tokio = { version = "1.45.1", features = ["macros"] }
+toml = "0.8.22"
+url = { version = "2.5.4", features = ["serde"] }

@@ -1,0 +1,1 @@
+{"version":3,"file":"FlashUserInputErrorEvent.d.ts","sourceRoot":"","sources":["../../../../src/lib/events/warning/FlashUserInputErrorEvent.ts"],"names":[],"mappings":"AAMA,MAAM,WAAW,wBAAwB;IACvC,OAAO,EAAE,MAAM,CAAC;CACjB;AAED,eAAO,MAAM,2BAA2B,GAAI,eAAe,CAAC,KAAK,EAAE,wBAAwB,KAAK,OAAO,CAAC,IAAI,CAAC,SAuB5G,CAAA"}

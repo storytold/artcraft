@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-fetch-read-body"
+description = "Enables the fetch_read_body command without any pre-configured scope."
+commands.allow = ["fetch_read_body"]
+
+[[permission]]
+identifier = "deny-fetch-read-body"
+description = "Denies the fetch_read_body command without any pre-configured scope."
+commands.deny = ["fetch_read_body"]

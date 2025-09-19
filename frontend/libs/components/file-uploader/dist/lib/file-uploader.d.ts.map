@@ -1,0 +1,1 @@
+{"version":3,"file":"file-uploader.d.ts","sourceRoot":"","sources":["../../src/lib/file-uploader.tsx"],"names":[],"mappings":"AAKA,eAAO,MAAM,YAAY,GAAI,oCAI1B;IACD,IAAI,EAAE,IAAI,GAAG,SAAS,CAAC;IACvB,YAAY,EAAE,CAAC,IAAI,EAAE,IAAI,KAAK,IAAI,CAAC;IACnC,SAAS,EAAE,MAAM,EAAE,CAAC;CACrB,4CASA,CAAC"}

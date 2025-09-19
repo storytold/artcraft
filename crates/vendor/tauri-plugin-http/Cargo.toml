@@ -1,0 +1,88 @@
+# NB(bt): We've made some changes to the packages and directives.
+# The original values are commented out.
+
+[package]
+name = "tauri-plugin-http"
+version = "2.4.3"
+description = "Access an HTTP client written in Rust."
+#edition = { workspace = true }
+edition = "2021"
+#authors = { workspace = true }
+#license = { workspace = true }
+#rust-version = { workspace = true }
+rust-version = "1.77.2"
+#repository = { workspace = true }
+links = "tauri-plugin-http"
+
+[package.metadata.docs.rs]
+rustc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.platforms.support]
+windows = { level = "full", notes = "" }
+linux = { level = "full", notes = "" }
+macos = { level = "full", notes = "" }
+android = { level = "full", notes = "" }
+ios = { level = "full", notes = "" }
+
+[build-dependencies]
+#tauri-plugin = { workspace = true, features = ["build"] }
+tauri-plugin = { version = "2.2.0", features = ["build"] }
+#schemars = { workspace = true }
+schemars = { version = "0.8" }
+serde = { workspace = true }
+url = { workspace = true }
+urlpattern = "0.3"
+regex = "1"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+tauri = { workspace = true }
+thiserror = { workspace = true }
+tokio = { version = "1", features = ["sync", "macros"] }
+#tauri-plugin-fs = { path = "../fs", version = "2.2.1" }
+tauri-plugin-fs = { workspace = true }
+urlpattern = "0.3"
+regex = "1"
+http = "1"
+reqwest = { version = "0.12", default-features = false }
+url = { workspace = true }
+data-url = "0.3"
+cookie_store = { version = "0.21.1", optional = true, features = ["serde"] }
+bytes = { version = "1.9", optional = true }
+#tracing = { workspace = true, optional = true }
+tracing = { version = "0.1", optional = true }
+
+[features]
+default = [
+  "rustls-tls",
+  "http2",
+  "charset",
+  "macos-system-configuration",
+  "cookies",
+]
+multipart = ["reqwest/multipart"]
+json = ["reqwest/json"]
+stream = ["reqwest/stream"]
+native-tls = ["reqwest/native-tls"]
+native-tls-vendored = ["reqwest/native-tls-vendored"]
+native-tls-alpn = ["reqwest/native-tls-alpn"]
+rustls-tls = ["reqwest/rustls-tls"]
+rustls-tls-manual-roots = ["reqwest/rustls-tls-manual-roots"]
+rustls-tls-webpki-roots = ["reqwest/rustls-tls-webpki-roots"]
+rustls-tls-native-roots = ["reqwest/rustls-tls-native-roots"]
+blocking = ["reqwest/blocking"]
+cookies = ["reqwest/cookies", "dep:cookie_store", "dep:bytes"]
+gzip = ["reqwest/gzip"]
+brotli = ["reqwest/brotli"]
+deflate = ["reqwest/deflate"]
+zstd = ["reqwest/zstd"]
+trust-dns = ["reqwest/trust-dns"]
+socks = ["reqwest/socks"]
+http2 = ["reqwest/http2"]
+charset = ["reqwest/charset"]
+macos-system-configuration = ["reqwest/macos-system-configuration"]
+unsafe-headers = []
+tracing = ["dep:tracing"]
+dangerous-settings = []

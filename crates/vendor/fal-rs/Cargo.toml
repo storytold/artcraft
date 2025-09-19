@@ -1,0 +1,284 @@
+[package]
+name = "fal"
+edition = "2021"
+version = "0.3.6"
+authors = ["Carlos Diaz-Padron"]
+description = "A Rust crate for the fal.ai API, including generated, typed functions for all public models"
+keywords = [
+    "fal",
+    "ai",
+    "generative-ai",
+]
+categories = ["api-bindings"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/carlosdp/fal-rs"
+
+[package.metadata.docs.rs]
+all-features = true
+
+#[workspace]
+#members = [
+#    "fal-derive",
+#    "generate",
+#]
+#resolver = "2"
+
+#[workspace.dependencies]
+#reqwest = "0.12"
+#serde = "1"
+#serde_json = "1"
+#tokio = "1"
+
+[dependencies]
+eventsource-stream = "0.2"
+smart-default = "0.7"
+thiserror = "1"
+percent-encoding-rfc3986 = "0.1.3"
+log = "0.4.27"
+
+[dependencies.base64]
+version = "0.22"
+optional = true
+
+[dependencies.fal-derive]
+version = "0.1"
+path = "./fal-derive"
+
+[dependencies.futures]
+version = "0.3"
+optional = true
+
+[dependencies.image]
+version = "0.25"
+optional = true
+
+[dependencies.reqwest]
+workspace = true
+features = [
+    "json",
+    "stream",
+]
+
+[dependencies.serde]
+workspace = true
+features = ["derive"]
+
+[dependencies.serde_json]
+workspace = true
+
+[dev-dependencies.tokio]
+workspace = true
+features = ["full"]
+
+[features]
+default = ["image"]
+endpoints = []
+endpoints_easel-ai = []
+endpoints_easel-ai_advanced-face-swap = []
+endpoints_fal-ai = []
+endpoints_fal-ai_amt-interpolation = []
+endpoints_fal-ai_animatediff-sparsectrl-lcm = []
+endpoints_fal-ai_animatediff-v2v = []
+endpoints_fal-ai_any-llm = []
+endpoints_fal-ai_aura-flow = []
+endpoints_fal-ai_aura-sr = []
+endpoints_fal-ai_auto-caption = []
+endpoints_fal-ai_ben = []
+endpoints_fal-ai_birefnet = []
+endpoints_fal-ai_bria = []
+endpoints_fal-ai_bytedance = []
+endpoints_fal-ai_cat-vton = []
+endpoints_fal-ai_ccsr = []
+endpoints_fal-ai_clarity-upscaler = []
+endpoints_fal-ai_codeformer = []
+endpoints_fal-ai_cogvideox-5b = []
+endpoints_fal-ai_cogview4 = []
+endpoints_fal-ai_controlnext = []
+endpoints_fal-ai_creative-upscaler = []
+endpoints_fal-ai_csm-1b = []
+endpoints_fal-ai_ddcolor = []
+endpoints_fal-ai_diffrhythm = []
+endpoints_fal-ai_diffusion-edge = []
+endpoints_fal-ai_docres = []
+endpoints_fal-ai_drct-super-resolution = []
+endpoints_fal-ai_dreamshaper = []
+endpoints_fal-ai_dubbing = []
+endpoints_fal-ai_dwpose = []
+endpoints_fal-ai_elevenlabs = []
+endpoints_fal-ai_era-3d = []
+endpoints_fal-ai_esrgan = []
+endpoints_fal-ai_evf-sam = []
+endpoints_fal-ai_eye-correct = []
+endpoints_fal-ai_f5-tts = []
+endpoints_fal-ai_face-to-sticker = []
+endpoints_fal-ai_fast-animatediff = []
+endpoints_fal-ai_fast-fooocus-sdxl = []
+endpoints_fal-ai_fast-lcm-diffusion = []
+endpoints_fal-ai_fast-lightning-sdxl = []
+endpoints_fal-ai_fast-sdxl = []
+endpoints_fal-ai_fast-sdxl-controlnet-canny = []
+endpoints_fal-ai_fast-svd = []
+endpoints_fal-ai_fast-svd-lcm = []
+endpoints_fal-ai_fast-turbo-diffusion = []
+endpoints_fal-ai_ffmpeg-api = []
+endpoints_fal-ai_florence-2-large = []
+endpoints_fal-ai_flowedit = []
+endpoints_fal-ai_flux = []
+endpoints_fal-ai_flux-control-lora-canny = []
+endpoints_fal-ai_flux-control-lora-depth = []
+endpoints_fal-ai_flux-differential-diffusion = []
+endpoints_fal-ai_flux-general = []
+endpoints_fal-ai_flux-lora = []
+endpoints_fal-ai_flux-lora-canny = []
+endpoints_fal-ai_flux-lora-depth = []
+endpoints_fal-ai_flux-lora-fast-training = []
+endpoints_fal-ai_flux-lora-fill = []
+endpoints_fal-ai_flux-lora-portrait-trainer = []
+endpoints_fal-ai_flux-pro = []
+endpoints_fal-ai_flux-pro-trainer = []
+endpoints_fal-ai_flux-pulid = []
+endpoints_fal-ai_flux-subject = []
+endpoints_fal-ai_fooocus = []
+endpoints_fal-ai_gemini-flash-edit = []
+endpoints_fal-ai_got-ocr = []
+endpoints_fal-ai_gpt = []
+endpoints_fal-ai_hunyuan-video = []
+endpoints_fal-ai_hunyuan-video-image-to-video = []
+endpoints_fal-ai_hunyuan-video-img2vid-lora = []
+endpoints_fal-ai_hunyuan-video-lora = []
+endpoints_fal-ai_hunyuan-video-lora-training = []
+endpoints_fal-ai_hunyuan3d = []
+endpoints_fal-ai_hyper-sdxl = []
+endpoints_fal-ai_hyper3d = []
+endpoints_fal-ai_iclight-v2 = []
+endpoints_fal-ai_ideogram = []
+endpoints_fal-ai_illusion-diffusion = []
+endpoints_fal-ai_image-preprocessors = []
+endpoints_fal-ai_imagen3 = []
+endpoints_fal-ai_imageutils = []
+endpoints_fal-ai_inpaint = []
+endpoints_fal-ai_invisible-watermark = []
+endpoints_fal-ai_ip-adapter-face-id = []
+endpoints_fal-ai_janus = []
+endpoints_fal-ai_kling = []
+endpoints_fal-ai_kling-video = []
+endpoints_fal-ai_kokoro = []
+endpoints_fal-ai_kolors = []
+endpoints_fal-ai_latentsync = []
+endpoints_fal-ai_layer-diffusion = []
+endpoints_fal-ai_lcm = []
+endpoints_fal-ai_lcm-sd15-i2i = []
+endpoints_fal-ai_leffa = []
+endpoints_fal-ai_lightning-models = []
+endpoints_fal-ai_live-portrait = []
+endpoints_fal-ai_llava-next = []
+endpoints_fal-ai_llavav15-13b = []
+endpoints_fal-ai_lora = []
+endpoints_fal-ai_ltx-video = []
+endpoints_fal-ai_ltx-video-v095 = []
+endpoints_fal-ai_luma-dream-machine = []
+endpoints_fal-ai_luma-photon = []
+endpoints_fal-ai_lumina-image = []
+endpoints_fal-ai_mini-cpm = []
+endpoints_fal-ai_minimax = []
+endpoints_fal-ai_minimax-image = []
+endpoints_fal-ai_minimax-music = []
+endpoints_fal-ai_mix-dehaze-net = []
+endpoints_fal-ai_mmaudio-v2 = []
+endpoints_fal-ai_mochi-v1 = []
+endpoints_fal-ai_moondream = []
+endpoints_fal-ai_moondream-next = []
+endpoints_fal-ai_musetalk = []
+endpoints_fal-ai_nafnet = []
+endpoints_fal-ai_omni-zero = []
+endpoints_fal-ai_omnigen-v1 = []
+endpoints_fal-ai_photomaker = []
+endpoints_fal-ai_pika = []
+endpoints_fal-ai_pixart-sigma = []
+endpoints_fal-ai_pixverse = []
+endpoints_fal-ai_playai = []
+endpoints_fal-ai_playground-v25 = []
+endpoints_fal-ai_post-processing = []
+endpoints_fal-ai_pulid = []
+endpoints_fal-ai_realistic-vision = []
+endpoints_fal-ai_recraft-20b = []
+endpoints_fal-ai_recraft-clarity-upscale = []
+endpoints_fal-ai_recraft-creative-upscale = []
+endpoints_fal-ai_recraft-v3 = []
+endpoints_fal-ai_retoucher = []
+endpoints_fal-ai_sa2va = []
+endpoints_fal-ai_sadtalker = []
+endpoints_fal-ai_sam2 = []
+endpoints_fal-ai_sana = []
+endpoints_fal-ai_sd15-depth-controlnet = []
+endpoints_fal-ai_sdxl-controlnet-union = []
+endpoints_fal-ai_skyreels-i2v = []
+endpoints_fal-ai_stable-audio = []
+endpoints_fal-ai_stable-cascade = []
+endpoints_fal-ai_stable-diffusion-v15 = []
+endpoints_fal-ai_stable-diffusion-v3-medium = []
+endpoints_fal-ai_stable-diffusion-v35-large = []
+endpoints_fal-ai_stable-diffusion-v35-medium = []
+endpoints_fal-ai_stable-video = []
+endpoints_fal-ai_stepfun-video = []
+endpoints_fal-ai_swin2sr = []
+endpoints_fal-ai_switti = []
+endpoints_fal-ai_sync-lipsync = []
+endpoints_fal-ai_t2v-turbo = []
+endpoints_fal-ai_thera = []
+endpoints_fal-ai_topaz = []
+endpoints_fal-ai_transpixar = []
+endpoints_fal-ai_trellis = []
+endpoints_fal-ai_triposr = []
+endpoints_fal-ai_veo2 = []
+endpoints_fal-ai_video-prompt-generator = []
+endpoints_fal-ai_video-upscaler = []
+endpoints_fal-ai_vidu = []
+endpoints_fal-ai_wan = []
+endpoints_fal-ai_wan-effects = []
+endpoints_fal-ai_wan-i2v = []
+endpoints_fal-ai_wan-i2v-lora = []
+endpoints_fal-ai_wan-pro = []
+endpoints_fal-ai_wan-t2v = []
+endpoints_fal-ai_wan-trainer = []
+endpoints_fal-ai_whisper = []
+endpoints_fal-ai_wizper = []
+endpoints_fal-ai_workflowutils = []
+endpoints_fal-ai_yue = []
+endpoints_fal-ai_zonos = []
+endpoints_fashn = []
+endpoints_fashn_tryon = []
+endpoints_rundiffusion-fal = []
+endpoints_rundiffusion-fal_juggernaut-flux = []
+endpoints_rundiffusion-fal_juggernaut-flux-lora = []
+endpoints_rundiffusion-fal_rundiffusion-photo-flux = []
+image = [
+    "dep:image",
+    "futures",
+    "base64",
+]
+
+[[test]]
+path = "tests/endpoints.rs"
+name = "endpoints"
+edition = "2021"
+required-features = ["endpoints_fal-ai_flux"]
+
+[[test]]
+path = "tests/queue.rs"
+name = "queue"
+edition = "2021"
+required-features = []
+
+[[test]]
+path = "tests/send.rs"
+name = "send"
+edition = "2021"
+required-features = []
+
+[lib]
+path = "src/lib.rs"
+name = "fal"
+edition = "2021"
+required-features = []
+crate-type = ["lib"]

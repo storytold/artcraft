@@ -1,0 +1,1 @@
+{"version":3,"file":"tauri-utils.d.ts","sourceRoot":"","sources":["../../src/lib/tauri-utils.tsx"],"names":[],"mappings":"AAAA,cAAc,OAAO,CAAC;AACtB,OAAO,EAAE,UAAU,EAAE,MAAM,cAAc,CAAC;AAC1C,OAAO,EAAE,YAAY,EAAE,MAAM,gBAAgB,CAAC;AAC9C,OAAO,EACL,sBAAsB,EACtB,qBAAqB,EACrB,2BAA2B,EAC3B,kBAAkB,EAClB,wBAAwB,GACzB,MAAM,qBAAqB,CAAC;AAC7B,OAAO,EAAE,gBAAgB,EAAE,MAAM,eAAe,CAAC"}

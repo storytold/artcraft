@@ -1,0 +1,1 @@
+{"version":3,"file":"IGenerationOptions.d.ts","sourceRoot":"","sources":["../../../src/lib/interfaces/IGenerationOptions.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,kBAAkB;IACjC,OAAO,EAAE,OAAO,CAAC;IACjB,UAAU,EAAE,OAAO,CAAC;IACpB,aAAa,EAAE,MAAM,CAAC;IACtB,OAAO,EAAE,OAAO,CAAC;IACjB,SAAS,EAAE,OAAO,CAAC;IACnB,8BAA8B,EAAE,MAAM,GAAG,IAAI,CAAC;IAC9C,mBAAmB,EAAE,OAAO,CAAC;CAC9B"}

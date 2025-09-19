@@ -1,0 +1,1 @@
+{"version":3,"file":"environment-variables.d.ts","sourceRoot":"","sources":["../../src/lib/environment-variables.tsx"],"names":[],"mappings":"AAAA,cAAM,oBAAoB;IACxB,MAAM,EAAE,MAAM,CAAC,MAAM,EAAE,MAAM,GAAG,OAAO,CAAC,CAAM;IAE9C,UAAU,CAAC,MAAM,EAAE,MAAM,CAAC,MAAM,EAAE,MAAM,GAAG,OAAO,CAAC;CAGpD;AAED,QAAA,MAAM,oBAAoB,sBAA6B,CAAC;AACxD,eAAe,oBAAoB,CAAC"}

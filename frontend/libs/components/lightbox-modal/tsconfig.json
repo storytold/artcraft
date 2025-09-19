@@ -1,0 +1,40 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "../toaster"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../../analytics/google-analytics"
+    },
+    {
+      "path": "../loading-spinner"
+    },
+    {
+      "path": "../../tauri-api"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

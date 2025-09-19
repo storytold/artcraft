@@ -1,0 +1,1 @@
+{"version":3,"file":"jobcontext.d.ts","sourceRoot":"","sources":["../../../src/lib/types/jobcontext.ts"],"names":[],"mappings":"AACA,MAAM,WAAW,cAAc;IAC7B,SAAS,EAAE,MAAM,EAAE,CAAC;IACpB,WAAW,EAAE,CAAC,KAAK,EAAE,MAAM,KAAK,IAAI,CAAC;IACrC,cAAc,EAAE,CAAC,KAAK,EAAE,MAAM,KAAK,IAAI,CAAC;IACxC,cAAc,EAAE,MAAM,IAAI,CAAC;CAC5B"}

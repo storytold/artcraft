@@ -1,0 +1,1 @@
+{"version":3,"file":"common.d.ts","sourceRoot":"","sources":["../../../../src/lib/events/generation/common.ts"],"names":[],"mappings":"AACA,oBAAY,yBAAyB;IACnC,IAAI,SAAS;IACb,GAAG,QAAQ;CACZ;AAED,oBAAY,eAAe;IACzB,QAAQ,cAAc;IACtB,QAAQ,cAAc;IACtB,IAAI,SAAS;CACd;AAED,oBAAY,gBAAgB;IAC1B,aAAa,mBAAmB;IAChC,aAAa,mBAAmB;IAChC,gBAAgB,sBAAsB;IACtC,SAAS,gBAAgB;CAC1B"}

@@ -1,0 +1,55 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../button-icon-select"
+    },
+    {
+      "path": "../camera-settings-modal"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "../../analytics/google-analytics"
+    },
+    {
+      "path": "../../tauri-api"
+    },
+    {
+      "path": "../gallery-modal"
+    },
+    {
+      "path": "../../tauri-utils"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../tooltip"
+    },
+    {
+      "path": "../popover"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../../common"
+    },
+    {
+      "path": "../toaster"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

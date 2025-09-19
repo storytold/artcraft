@@ -1,0 +1,10 @@
+/target
+examples/*/target
+examples/*/Cargo.lock
+.fastembed_cache
+/backup.sql
+.env*
+
+.DS_Store
+
+Cargo.lock

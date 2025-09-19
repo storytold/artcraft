@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-fetch-cancel"
+description = "Enables the fetch_cancel command without any pre-configured scope."
+commands.allow = ["fetch_cancel"]
+
+[[permission]]
+identifier = "deny-fetch-cancel"
+description = "Denies the fetch_cancel command without any pre-configured scope."
+commands.deny = ["fetch_cancel"]

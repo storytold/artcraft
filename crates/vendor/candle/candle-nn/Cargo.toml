@@ -1,0 +1,35 @@
+[package]
+name = "candle-nn"
+edition = "2021"
+
+[dependencies]
+accelerate-src = { version = "0.3.2", optional = true }
+candle = { path = "../candle-core", package = "candle-core" }
+half = { version = "2.3.1", features = ["num-traits", "use-intrinsics", "rand_distr"] }
+thiserror = "1"
+intel-mkl-src = { version = "0.8.1", features = ["mkl-static-lp64-iomp"], optional = true }
+num-traits = "0.2.15"
+rayon = "1.7.0"
+safetensors = "0.4.1"
+serde = { version = "1.0.171", features = ["derive"] }
+metal = { version = "0.27.0", features = ["mps"], optional = true }
+candle-metal-kernels = { path = "../candle-metal-kernels", version = "0.8.3" , optional = true }
+
+[dev-dependencies]
+anyhow = { version = "1", features = ["backtrace"] }
+clap = { version = "4.2.4", features = ["derive"] }
+rand = "0.8.5"
+rand_distr = "0.4.3"
+criterion = { version = "0.5.1", default-features=false }
+
+[features]
+default = []
+accelerate = ["dep:accelerate-src", "candle/accelerate"]
+cuda = ["candle/cuda"]
+mkl = ["dep:intel-mkl-src", "candle/mkl"]
+metal = ["candle/metal", "dep:candle-metal-kernels", "dep:metal"]
+
+[[bench]]
+name = "bench_main"
+harness = false
+

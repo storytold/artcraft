@@ -1,0 +1,1 @@
+{"version":3,"file":"UploaderState.d.ts","sourceRoot":"","sources":["../../../src/lib/interfaces/UploaderState.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,cAAc,EAAE,MAAM,UAAU,CAAC;AAE1C,MAAM,WAAW,aAAa;IAC5B,MAAM,EAAE,cAAc,CAAC;IACvB,YAAY,CAAC,EAAE,MAAM,CAAC;IACtB,IAAI,CAAC,EAAE,MAAM,CAAC;CACf"}

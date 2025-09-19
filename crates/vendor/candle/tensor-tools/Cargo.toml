@@ -1,0 +1,10 @@
+[package]
+name = "tensor-tools"
+edition = "2021"
+
+[dependencies]
+anyhow = { version = "1", features = ["backtrace"] }
+candle = { path = "../candle-core", package = "candle-core" }
+clap = { version = "4.2.4", features = ["derive"] }
+rayon = "1.7.0"
+safetensors = "0.4.1"

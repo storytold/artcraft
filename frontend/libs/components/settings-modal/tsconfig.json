@@ -1,0 +1,61 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../../analytics/google-analytics"
+    },
+    {
+      "path": "../modal"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "../../state/subscription"
+    },
+    {
+      "path": "../../state/credits"
+    },
+    {
+      "path": "../pricing-modal"
+    },
+    {
+      "path": "../switch"
+    },
+    {
+      "path": "../select"
+    },
+    {
+      "path": "../../soundboard"
+    },
+    {
+      "path": "../../tauri-events"
+    },
+    {
+      "path": "../input"
+    },
+    {
+      "path": "../login-modal"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../label"
+    },
+    {
+      "path": "../../tauri-api"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../../tsconfig.base.json"
+}

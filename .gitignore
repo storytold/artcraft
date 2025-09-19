@@ -1,0 +1,88 @@
+# Secrets are BAD!
+*secret*sh
+.env
+.env-aichatbot-secrets
+.env-analytics-job
+.env-elasticsearch-secrets
+.env-migration-tool-secrets
+.env-secrets
+_develop/tools/.secrets
+_develop/tools/db_secrets.toml
+crates/service/web/storyteller_web/config/storyteller-web.development-secrets.env
+db.secrets
+db_secrets.toml
+env-secrets
+pubkeys.txt
+secrets.toml
+secrets.yaml
+twitch_secrets.toml
+
+# Old env secrets
+.*-secrets
+
+# New env secrets (per-app)
+*-secrets.env
+
+# Utilities with secrets
+production_database_secret_connect.sh
+production_database_secret_query.sh
+production_database_voice_clone_report_download.sh
+script/artcraft/mac_signing_build.sh
+script/production_database_secret_backup.sh
+script/production_database_secret_connect.sh
+script/socat_dev_database_connect.sh
+
+# Scratch data
+scratch/
+test_data/temp/
+tmp/
+
+# Rust build directory
+target/
+crates/lib/database_queries/target/
+crates/lib/sqlite_queries/target/
+
+# Javascript build directories
+node_modules/
+
+# Vim noise
+*.swo
+*.swp
+*~
+
+# IntelliJ/CLion/RustRover noise
+.idea/
+
+# Python noise
+__pycache__/
+
+# We use diesel for DB migrations only. We don't care about its codgen.
+_ignored_schema.rs
+
+# AI Chat Sidecar has its own schema managed by diesel, but we don't care for diesel codegen.
+crates/programs/aichatbot-sidecar/_ignored_schema.rs
+
+# AI Chat sidecar's SQlite database shouldn't be checked in
+crates/programs/aichatbot-sidecar/database.db
+
+# Runtime data for the AI chatbot
+runtime_data/
+
+# Old Python virtual environments
+models/Wav2Lip/python/
+models/tacotron2/python/
+
+# Stuff I want to keep around, but not commit
+scraps/
+
+# Mac nonsense
+.DS_Store
+
+# Windows build files
+# These should be built by the platform
+windows/sqlite/sqlite3.exp
+windows/sqlite/sqlite3.lib
+
+# ArtCraft Windows DLLs
+crates/desktop/src-tauri/*.dll
+windows_dlls/

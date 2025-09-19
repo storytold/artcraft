@@ -1,0 +1,1 @@
+{"version":3,"file":"CheckSoraSession.d.ts","sourceRoot":"","sources":["../../../src/lib/sora/CheckSoraSession.ts"],"names":[],"mappings":"AAEA,MAAM,WAAW,sBAAsB;IACrC,KAAK,EAAE,gBAAgB,CAAC;IACxB,mBAAmB,CAAC,EAAE,MAAM,CAAC;CAC9B;AAED,oBAAY,gBAAgB;IAC1B,QAAQ,eAAe;IACvB,cAAc,qBAAqB;IACnC,KAAK,UAAU;CAChB;AAED,eAAO,MAAM,gBAAgB,QAAa,OAAO,CAAC,sBAAsB,CAIvE,CAAC"}

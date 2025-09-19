@@ -1,0 +1,51 @@
+[package]
+name = "candle-core"
+edition = "2021"
+
+[dependencies]
+accelerate-src = { version = "0.3.2" , optional = true }
+byteorder = "1.4.3"
+candle-kernels = { path = "../candle-kernels", version = "0.8.3", optional = true }
+candle-metal-kernels = { path = "../candle-metal-kernels", version = "0.8.3" , optional = true }
+metal = { version = "0.27.0", features = ["mps"], optional = true }
+cudarc = { version = "0.13.5", features = ["std", "cublas", "cublaslt", "curand", "driver", "nvrtc", "f16", "cuda-version-from-build-system", "dynamic-linking"], default-features=false, optional = true }
+gemm = { version = "0.17.0", features = ["wasm-simd128-enable"] }
+half = { version = "2.3.1", features = ["num-traits", "use-intrinsics", "rand_distr"] }
+intel-mkl-src = { version = "0.8.1", features = ["mkl-static-lp64-iomp"], optional = true }
+libc = { version = "0.2.147", optional = true }
+memmap2 = { version = "0.9.3", features = ["stable_deref_trait"] }
+num-traits = "0.2.15"
+num_cpus = "1.15.0"
+rand = "0.8.5"
+rand_distr = "0.4.3"
+rayon = "1.7.0"
+safetensors = "0.4.1"
+thiserror = "1"
+ug-cuda = { version = "0.1.0", optional = true }
+ug-metal = { version = "0.1.0", optional = true }
+yoke = { version = "0.7.2", features = ["derive"] }
+zip = { version = "1.1.1", default-features = false }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+ug = { version = "0.1.0" }
+
+[dev-dependencies]
+anyhow = { version = "1", features = ["backtrace"] }
+clap = { version = "4.2.4", features = ["derive"] }
+criterion = { version = "0.5.1", default-features=false }
+
+[features]
+default = []
+cuda = ["cudarc", "dep:candle-kernels", "dep:ug-cuda"]
+cudnn = ["cuda", "cudarc/cudnn"]
+mkl = ["dep:libc", "dep:intel-mkl-src"]
+accelerate = ["dep:libc", "dep:accelerate-src"]
+metal = ["dep:metal", "dep:candle-metal-kernels", "dep:ug-metal"]
+
+[[bench]]
+name = "bench_main"
+harness = false
+
+[[example]]
+name = "metal_basics"
+required-features = ["metal"]

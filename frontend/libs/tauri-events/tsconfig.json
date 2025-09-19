@@ -1,0 +1,25 @@
+{
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../components/toaster"
+    },
+    {
+      "path": "../tauri-api"
+    },
+    {
+      "path": "../soundboard"
+    },
+    {
+      "path": "../common"
+    },
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ],
+  "extends": "../../tsconfig.base.json"
+}

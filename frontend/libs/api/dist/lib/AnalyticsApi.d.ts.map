@@ -1,0 +1,1 @@
+{"version":3,"file":"AnalyticsApi.d.ts","sourceRoot":"","sources":["../../src/lib/AnalyticsApi.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,EAAE,WAAW,EAAE,MAAM,iBAAiB,CAAC;AAE1D,qBAAa,YAAa,SAAQ,UAAU;IACnC,aAAa,CAAC,EACnB,eAAe,EACf,aAAa,GACd,EAAE;QACD,eAAe,EAAE,MAAM,CAAC;QACxB,aAAa,EAAE,MAAM,CAAC;KACvB,GAAG,OAAO,CAAC,WAAW,CAAC,MAAM,CAAC,CAAC;CA4BjC"}

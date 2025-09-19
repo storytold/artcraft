@@ -1,0 +1,16 @@
+[package]
+name = "candle-datasets"
+edition = "2021"
+
+[dependencies]
+byteorder = "1.4.3"
+candle = { path = "../candle-core", package = "candle-core" }
+candle-nn = { path = "../candle-nn" }
+hf-hub = "0.4.1"
+intel-mkl-src = { version = "0.8.1", features = ["mkl-static-lp64-iomp"], optional = true }
+memmap2 = { version = "0.9.3", features = ["stable_deref_trait"] }
+tokenizers = { version = "0.19.1", features = ["onig"], default-features = false }
+rand = "0.8.5"
+thiserror = "1"
+parquet = { version = "51.0.0" }
+image = { version = "0.25.2", default-features = false, features = ["jpeg", "png"] }

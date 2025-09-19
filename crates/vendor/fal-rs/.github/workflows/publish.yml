@@ -1,0 +1,70 @@
+name: Publish to crates.io
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: "Version bump type (major, minor, patch)"
+        required: false
+        default: "patch"
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-bump
+        run: cargo install cargo-bump
+
+      - name: Bump version
+        run: |
+          cargo bump ${{ github.event.inputs.version_bump }}
+          version=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
+          echo "NEW_VERSION=$version" >> $GITHUB_ENV
+          # Extract major.minor version for README updates
+          major_minor=$(echo $version | cut -d. -f1,2)
+          echo "MAJOR_MINOR=$major_minor" >> $GITHUB_ENV
+
+      - name: Update README versions
+        run: |
+          # Use perl for in-place replacement of version strings in README
+          perl -i -pe 's/fal = "[\d\.]+"/fal = "${{ env.MAJOR_MINOR }}"/' README.md
+          perl -i -pe 's/fal = \{ version = "[\d\.]+"/fal = { version = "${{ env.MAJOR_MINOR }}"/' README.md
+
+      - name: Publish to crates.io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          cargo publish -p fal
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push changes
+        run: |
+          git add .
+          git commit -m "chore: bump version to ${{ env.NEW_VERSION }}"
+          git tag "v${{ env.NEW_VERSION }}"
+          git push origin main
+          git push origin "v${{ env.NEW_VERSION }}"
+
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v2

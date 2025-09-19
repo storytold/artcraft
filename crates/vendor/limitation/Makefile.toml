@@ -1,0 +1,6 @@
+[tasks.member-readme]
+dependencies = [
+  "generate-readme",
+  "update-readme-toc",
+  "format-readme",
+]
