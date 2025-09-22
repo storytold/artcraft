@@ -112,3 +112,14 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   setReferenceImages: (referenceImages) => set({ referenceImages }),
   setEndFrameImage: (endFrameImage) => set({ endFrameImage }),
 }));
+
+// ----- Edit Prompt Box Store -----
+interface PromptEditStore {
+  referenceImages: RefImage[];
+  setReferenceImages: (images: RefImage[]) => void;
+}
+
+export const usePromptEditStore = create<PromptEditStore>()((set) => ({
+  referenceImages: [],
+  setReferenceImages: (referenceImages) => set({ referenceImages }),
+}));

@@ -1,17 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
-import { downloadFileFromUrl } from "@storyteller/api";
 import {
-  faPlus,
   faCamera,
   faSave,
   faSparkles,
-  faUpload,
-  faImages,
   faDownload,
   faSpinnerThird,
-  faTimes,
   faMessageCheck,
   faMessageXmark,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -28,7 +23,6 @@ import { Button, ToggleButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   CameraAspectRatio,
-  UploaderStates,
   DomLevels,
   Camera,
   FocalLengthDragging,
@@ -40,7 +34,6 @@ import { toast } from "@storyteller/ui-toaster";
 import { EngineApi } from "@storyteller/api";
 import { CameraSettingsModal } from "@storyteller/ui-camera-settings-modal";
 import { twMerge } from "tailwind-merge";
-import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
 import { Modal } from "@storyteller/ui-modal";
 import { Signal } from "@preact/signals-react";
 import {
@@ -51,9 +44,10 @@ import {
   // waitForSoraLogin,
 } from "@storyteller/tauri-api";
 // import { showActionReminder } from "@storyteller/ui-action-reminder-modal";
-import { usePrompt3DStore, RefImage } from "./promptStore";
+import { usePrompt3DStore } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ImageModel } from "@storyteller/model-list";
+import { ImagePromptRow } from "./ImagePromptRow";
 
 interface PromptBox3DProps {
   cameras: Signal<Camera[]>;
@@ -116,9 +110,7 @@ export const PromptBox3D = ({
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const referenceImages = usePrompt3DStore((s) => s.referenceImages);
   const setReferenceImages = usePrompt3DStore((s) => s.setReferenceImages);
-  const [uploadingImages, setUploadingImages] = useState<
-    { id: string; file: File }[]
-  >([]);
+  const [showImagePrompts, setShowImagePrompts] = useState(false);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
       label: "3:2",
@@ -137,10 +129,10 @@ export const PromptBox3D = ({
     },
   ]);
   const [isCameraSettingsOpen, setIsCameraSettingsOpen] = useState(false);
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
-    []
-  );
-  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const isImageRowVisible =
+    showImagePrompts ||
+    (selectedImageModel?.canUseImagePrompt && referenceImages.length > 0) ||
+    false;
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -198,109 +190,7 @@ export const PromptBox3D = ({
     onAspectRatioSelect(newRatio);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      Array.from(files).forEach((file) => {
-        const uploadId = Math.random().toString(36).substring(7);
-        setUploadingImages((prev) => [...prev, { id: uploadId, file }]);
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          uploadImage({
-            title: `reference-image-${Math.random()
-              .toString(36)
-              .substring(2, 15)}`,
-            assetFile: file,
-            progressCallback: (newState) => {
-              console.debug("Upload progress:", newState.data);
-              if (newState.status === UploaderStates.success && newState.data) {
-                const referenceImage: RefImage = {
-                  id: Math.random().toString(36).substring(7),
-                  url: reader.result as string,
-                  file,
-                  mediaToken: newState.data || "",
-                };
-                setReferenceImages([...referenceImages, referenceImage]);
-                setUploadingImages((prev) =>
-                  prev.filter((img) => img.id !== uploadId)
-                );
-                console.log("Reference image added:", referenceImage);
-              } else if (
-                newState.status === UploaderStates.assetError ||
-                newState.status === UploaderStates.imageCreateError
-              ) {
-                setUploadingImages((prev) =>
-                  prev.filter((img) => img.id !== uploadId)
-                );
-                console.error("Upload failed");
-              }
-            },
-          });
-        };
-
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const handleRemoveReference = (id: string) => {
-    setReferenceImages(referenceImages.filter((img) => img.id !== id));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleGallerySelect = () => setIsGalleryModalOpen(true);
-  const handleGalleryClose = () => {
-    setIsGalleryModalOpen(false);
-    setSelectedGalleryImages([]);
-  };
-
-  const handleImageSelect = (id: string) => {
-    setSelectedGalleryImages((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((imageId) => imageId !== id);
-      }
-      if (prev.length >= 4) {
-        return prev;
-      }
-      return [...prev, id];
-    });
-  };
-
-  const handleGalleryImages = (selectedItems: GalleryItem[]) => {
-    const newRefs = [...referenceImages];
-    selectedItems.forEach((item) => {
-      if (!item.fullImage) return;
-      newRefs.push({
-        id: Math.random().toString(36).substring(7),
-        url: item.fullImage,
-        file: new File([], "gallery-image"),
-        mediaToken: item.id,
-      });
-    });
-    setReferenceImages(newRefs);
-    setIsGalleryModalOpen(false);
-    setSelectedGalleryImages([]);
-  };
-
-  const handleAction = (action: string) => {
-    switch (action) {
-      case "upload":
-        handleUploadClick();
-        break;
-      case "gallery":
-        handleGallerySelect();
-        break;
-      default:
-        console.log("Unknown action:", action);
-    }
-  };
+  // ImagePromptRow will handle uploads and gallery internally
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
@@ -560,90 +450,71 @@ export const PromptBox3D = ({
         {content}
       </Modal>
       <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col gap-3">
-        {(referenceImages.length > 0 || uploadingImages.length > 0) && (
-          <div className="flex w-full gap-2">
-            {referenceImages.map((image) => (
-              <div
-                key={image.id}
-                className="glass relative aspect-square w-20 rounded-lg"
-              >
+        {selectedImageModel?.canUseImagePrompt && isImageRowVisible && (
+          <ImagePromptRow
+            visible={true}
+            maxImagePromptCount={Math.max(
+              1,
+              selectedImageModel?.maxImagePromptCount ?? 1
+            )}
+            allowUpload={true}
+            referenceImages={referenceImages}
+            setReferenceImages={setReferenceImages}
+            uploadImage={uploadImage as any}
+            onImageClick={(image) => {
+              setContent(
                 <img
                   src={image.url}
-                  alt="Reference"
-                  className="h-full w-full rounded-lg object-cover"
+                  alt="Reference preview"
+                  className="w-full h-full object-contain"
                 />
-                <button
-                  onClick={() => handleRemoveReference(image.id)}
-                  className="absolute right-[2px] top-[2px] flex h-5 w-5 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-colors hover:bg-black"
-                >
-                  <FontAwesomeIcon icon={faTimes} className="h-2.5 w-2.5" />
-                </button>
-              </div>
-            ))}
-            {uploadingImages.map(({ id, file }) => {
-              const previewUrl = URL.createObjectURL(file);
-              return (
-                <div
-                  key={id}
-                  className="glass relative aspect-square w-20 overflow-hidden rounded-lg"
-                >
-                  <div className="absolute inset-0">
-                    <img
-                      src={previewUrl}
-                      alt="Uploading preview"
-                      className="h-full w-full object-cover blur-sm"
-                    />
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <FontAwesomeIcon
-                      icon={faSpinnerThird}
-                      className="h-6 w-6 animate-spin text-white"
-                    />
-                  </div>
-                </div>
               );
-            })}
-          </div>
+              setIsModalOpen(true);
+            }}
+          />
         )}
         <div
           className={twMerge(
             "glass w-[730px] rounded-xl p-4",
-            isPromptBoxFocused.value ? "!border !border-primary" : ""
+            isPromptBoxFocused.value ? "!border !border-primary" : "",
+            selectedImageModel?.canUseImagePrompt &&
+              isImageRowVisible &&
+              "rounded-t-none"
           )}
         >
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            accept="image/*"
-            onChange={handleFileUpload}
-            multiple
-          />
           <div className="flex justify-center gap-2">
-            <PopoverMenu
-              mode="button"
-              panelTitle="Add Image"
-              items={[
-                {
-                  label: "Upload from device",
-                  selected: false,
-                  icon: <FontAwesomeIcon icon={faUpload} className="h-4 w-4" />,
-                  action: "upload",
-                },
-                {
-                  label: "Choose from library",
-                  selected: false,
-                  icon: <FontAwesomeIcon icon={faImages} className="h-4 w-4" />,
-                  action: "gallery",
-                },
-              ]}
-              onPanelAction={handleAction}
-              showIconsInList
-              buttonClassName="bg-transparent hover:bg-transparent py-1.5 px-0 pr-1 m-0 hover:opacity-50 transition-opacity duration-100 ring-0 border-none focus:ring-0 outline-none"
-              triggerIcon={
-                <FontAwesomeIcon icon={faPlus} className="text-xl" />
-              }
-            />
+            {selectedImageModel?.canUseImagePrompt && (
+              <Tooltip
+                content="Add Image"
+                position="top"
+                closeOnClick={true}
+                className={twMerge(isImageRowVisible && "hidden opacity-0")}
+              >
+                <Button
+                  variant="action"
+                  className={twMerge(
+                    "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
+                    isImageRowVisible && "text-primary"
+                  )}
+                  onClick={() => setShowImagePrompts((prev) => !prev)}
+                >
+                  <svg
+                    width="24"
+                    height="20"
+                    viewBox="0 0 24 20"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="group-hover:opacity-100 opacity-80 transition-all"
+                  >
+                    <path
+                      opacity="1"
+                      d="M2.66667 2H16C16.3667 2 16.6667 2.3 16.6667 2.66667V6.1125C17.1 6.04167 17.5458 6 18 6C18.225 6 18.4458 6.00833 18.6667 6.02917V2.66667C18.6667 1.19583 17.4708 0 16 0H2.66667C1.19583 0 0 1.19583 0 2.66667V16C0 17.4708 1.19583 18.6667 2.66667 18.6667H11.5C11.0625 18.0583 10.7083 17.3875 10.4542 16.6667H2.66667C2.3 16.6667 2 16.3667 2 16V2.66667C2 2.3 2.3 2 2.66667 2ZM11.8625 7.49167C11.6833 7.1875 11.3542 7 11 7C10.6458 7 10.3167 7.1875 10.1375 7.49167L8.2 10.7833L7.48333 9.75833C7.29583 9.49167 6.99167 9.33333 6.6625 9.33333C6.33333 9.33333 6.02917 9.49167 5.84167 9.75833L3.50833 13.0917C3.29583 13.3958 3.26667 13.7958 3.44167 14.125C3.61667 14.4542 3.9625 14.6667 4.33333 14.6667H10.0292C10.0125 14.4458 10 14.225 10 14C10 11.7833 10.9 9.77917 12.3542 8.33333L11.8625 7.49583V7.49167ZM5.33333 6.66667C6.07083 6.66667 6.66667 6.07083 6.66667 5.33333C6.66667 4.59583 6.07083 4 5.33333 4C4.59583 4 4 4.59583 4 5.33333C4 6.07083 4.59583 6.66667 5.33333 6.66667ZM18 20C21.3125 20 24 17.3125 24 14C24 10.6875 21.3125 8 18 8C14.6875 8 12 10.6875 12 14C12 17.3125 14.6875 20 18 20ZM18.6667 11.3333V13.3333H20.6667C21.0333 13.3333 21.3333 13.6333 21.3333 14C21.3333 14.3667 21.0333 14.6667 20.6667 14.6667H18.6667V16.6667C18.6667 17.0333 18.3667 17.3333 18 17.3333C17.6333 17.3333 17.3333 17.0333 17.3333 16.6667V14.6667H15.3333C14.9667 14.6667 14.6667 14.3667 14.6667 14C14.6667 13.6333 14.9667 13.3333 15.3333 13.3333H17.3333V11.3333C17.3333 10.9667 17.6333 10.6667 18 10.6667C18.3667 10.6667 18.6667 10.9667 18.6667 11.3333Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </Button>
+              </Tooltip>
+            )}
 
             <textarea
               ref={textareaRef}
@@ -819,17 +690,6 @@ export const PromptBox3D = ({
           focalLengthDragging={focalLengthDragging}
         />
       </div>
-      <GalleryModal
-        isOpen={!!isGalleryModalOpen}
-        onClose={handleGalleryClose}
-        mode="select"
-        selectedItemIds={selectedGalleryImages}
-        onSelectItem={handleImageSelect}
-        maxSelections={4}
-        onUseSelected={handleGalleryImages}
-        onDownloadClicked={downloadFileFromUrl}
-        forceFilter="image"
-      />
     </>
   );
 };
