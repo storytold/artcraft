@@ -61,6 +61,7 @@ import { useCreditsBalanceChangedEvent } from "@storyteller/tauri-events";
 import { useSubscriptionPlanChangedEvent } from "@storyteller/tauri-events";
 import { useCreditsState } from "@storyteller/credits";
 import { useSubscriptionState } from "@storyteller/subscription";
+import { UploadImagesButton } from "./UploadImagesButton";
 
 interface Props {
   pageName: string;
@@ -421,6 +422,8 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                   Upgrade
                 </Button>
               )}
+
+              <UploadImagesButton className="h-[38px] w-[38px]" />
 
               <Tooltip content="Settings" position="bottom" delay={300}>
                 <Button
