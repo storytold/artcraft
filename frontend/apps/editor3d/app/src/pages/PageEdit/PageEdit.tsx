@@ -140,10 +140,15 @@ const PageEdit = () => {
     const canvasH = store.getAspectRatioDimensions().height;
 
     // Calculate optimal scale to fit the canvas in the container
-    // Use a padding factor to leave some margin around the canvas
-    const paddingFactor = 0.95; // 5% padding on all sides
+    // Leave horizontal margin via factor, and explicit vertical padding
+    const paddingFactor = 0.95; // horizontal padding (left/right)
+    const verticalPaddingPx = 128; // explicit top/bottom margin in pixels
     const scaleX = (containerWidth * paddingFactor) / canvasW;
-    const scaleY = (containerHeight * paddingFactor) / canvasH;
+    const availableHeight = Math.max(
+      0,
+      containerHeight - verticalPaddingPx * 2,
+    );
+    const scaleY = availableHeight / canvasH;
 
     // Use the smaller scale to ensure the canvas fits in both dimensions
     const scale = Math.min(scaleX, scaleY);
@@ -154,7 +159,7 @@ const PageEdit = () => {
     // Apply the calculated scale
     stage.scale({ x: boundedScale, y: boundedScale });
 
-    // Calculate position to center canvas in container
+    // Calculate position to center canvas in container (creates ~verticalPaddingPx margins)
     stage.position({
       x: (containerWidth - canvasW * boundedScale) / 2,
       y: (containerHeight - canvasH * boundedScale) / 2,
@@ -162,6 +167,42 @@ const PageEdit = () => {
     // NOTE: Store isn't used as dependency because it's a different const reference each time
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-fit when the base image becomes available and stage is ready
+  useEffect(() => {
+    if (!store.baseImageBitmap) return;
+    if (!stageRef.current) return;
+    // Defer to ensure container has laid out with correct size
+    const id = requestAnimationFrame(() => {
+      const id2 = requestAnimationFrame(() => {
+        void onFitPressed();
+      });
+      return () => cancelAnimationFrame(id2);
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.baseImageBitmap, stageRef.current]);
+
+  // Re-center on window resize when an image is loaded
+  useEffect(() => {
+    let timeoutId: number | undefined;
+    const handleResize = () => {
+      if (!store.baseImageBitmap) return;
+      if (!stageRef.current) return;
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        requestAnimationFrame(() => {
+          void onFitPressed();
+        });
+      }, 150);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.baseImageBitmap, stageRef.current, onFitPressed]);
 
   // Create a function to use the left layer ref and download the bitmap from it
   const getMaskArrayBuffer = async (): Promise<Uint8Array> => {
