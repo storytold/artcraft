@@ -130,7 +130,7 @@ export const HistoryStack = ({
                           />
                         )}
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--st-divider)] border-t-[var(--st-fg)]" />
                         </div>
                         {/* SVG running border (single solid line) */}
                         <svg
@@ -154,14 +154,14 @@ export const HistoryStack = ({
                   ),
                 )}
                 {idx < reversed.length - 1 && (
-                  <hr className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-white/15" />
+                  <hr className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-[var(--st-divider)]" />
                 )}
               </Fragment>
             ));
           })()}
 
           {pendingPlaceholders.length > 0 && (
-            <hr className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-white/15" />
+            <hr className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-[var(--st-divider)]" />
           )}
 
           {/* Completed images below placeholders, newest bundles first */}
@@ -202,7 +202,7 @@ export const HistoryStack = ({
                           primaryActionIcon: faTrashXmark,
                           primaryActionBtnClassName: "bg-red hover:bg-red/80",
                           message: (
-                            <p className="text-sm text-white/70">
+                            <p className="text-base-fg text-sm opacity-70">
                               Are you sure you want to delete this image? This
                               action cannot be undone.
                             </p>
@@ -217,14 +217,14 @@ export const HistoryStack = ({
                     >
                       <FontAwesomeIcon
                         icon={faTrashAlt}
-                        className="h-full w-full text-[13px] text-white"
+                        className="text-base-fg h-full w-full text-[13px]"
                       />
                     </div>
                   </Button>
                 ))}
                 {index < imageBundles.length - 1 && (
                   <hr
-                    className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-white/15"
+                    className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-[var(--st-divider)]"
                     key={"hr" + index}
                   />
                 )}
@@ -244,7 +244,7 @@ export const HistoryStack = ({
               delay={100}
             >
               <button
-                className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-transparent text-white transition-colors hover:bg-red/50"
+                className="text-base-fg flex h-10 w-10 items-center justify-center rounded-lg border-2 border-transparent transition-colors hover:bg-red/50"
                 onClick={() =>
                   showActionReminder({
                     reminderType: "default",
@@ -252,7 +252,7 @@ export const HistoryStack = ({
                     primaryActionIcon: faTrashXmark,
                     primaryActionBtnClassName: "bg-red hover:bg-red/80",
                     message: (
-                      <p className="text-sm text-white/70">
+                      <p className="text-base-fg text-sm opacity-70">
                         Are you sure you want to reset all? This will clear all
                         your work and cannot be undone.
                       </p>

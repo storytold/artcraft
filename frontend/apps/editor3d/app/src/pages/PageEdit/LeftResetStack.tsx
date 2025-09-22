@@ -29,7 +29,7 @@ const LeftResetStack: React.FC<LeftResetStackProps> = ({
           delay={100}
         >
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-transparent text-white transition-colors hover:bg-red/50"
+            className="text-base-fg flex h-10 w-10 items-center justify-center rounded-lg border-2 border-transparent transition-colors hover:bg-red/50"
             onClick={() =>
               showActionReminder({
                 reminderType: "default",
@@ -37,7 +37,7 @@ const LeftResetStack: React.FC<LeftResetStackProps> = ({
                 primaryActionIcon: faTrashXmark,
                 primaryActionBtnClassName: "bg-red hover:bg-red/80",
                 message: (
-                  <p className="text-sm text-white/70">
+                  <p className="text-base-fg text-sm opacity-70">
                     Are you sure you want to reset all? This will clear all your
                     work and cannot be undone.
                   </p>

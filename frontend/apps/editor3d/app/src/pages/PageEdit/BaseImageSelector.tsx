@@ -151,9 +151,9 @@ export const BaseImageSelector = ({
           <div className="flex flex-col gap-8">
             <FontAwesomeIcon
               icon={faImage}
-              className="text-6xl text-white/50"
+              className="text-base-fg text-6xl opacity-50"
             />
-            <span className="ml-2 text-xl text-white/50">
+            <span className="text-base-fg ml-2 text-xl opacity-50">
               Click to upload or drag and drop an image here to edit
             </span>
             <div className="mt-4 flex justify-center gap-2.5">

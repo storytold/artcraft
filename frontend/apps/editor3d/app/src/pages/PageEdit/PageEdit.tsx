@@ -468,7 +468,7 @@ const PageEdit = () => {
           page={PAGE_ID}
           panelTitle="Select Model"
           panelClassName="min-w-[280px]"
-          buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
+          buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-base-fg opacity-80 hover:opacity-100"
           showIconsInList
           triggerLabel="Model"
         />
