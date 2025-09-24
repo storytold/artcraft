@@ -43,6 +43,27 @@ export const HistoryStack = ({
   selectedImageToken,
   blurredBackgroundUrl,
 }: HistoryStackProps) => {
+  const handleSelectWithPreload = (image: BaseSelectorImage) => {
+    const preload = new Image();
+    preload.crossOrigin = "anonymous";
+    (
+      preload as HTMLImageElement & { decoding?: "sync" | "async" | "auto" }
+    ).decoding = "async";
+    preload.src = image.url;
+    const select = () => onImageSelect(image);
+    // Prefer decode() when available to ensure the image is fully decoded before swap
+    // Fallback to onload/onerror which also ensures layout is ready
+    const decodeFn = (
+      preload as HTMLImageElement & { decode?: () => Promise<void> }
+    ).decode;
+    if (typeof decodeFn === "function") {
+      decodeFn.call(preload).then(select).catch(select);
+    } else {
+      preload.onload = select;
+      preload.onerror = select;
+    }
+  };
+
   useImageEditCompleteEvent(async (event) => {
     const newBundle: ImageBundle = {
       images: event.edited_images.map(
@@ -178,9 +199,7 @@ export const HistoryStack = ({
                       selectedImageToken === image.mediaToken &&
                         "border-primary hover:opacity-100",
                     )}
-                    onClick={() => {
-                      onImageSelect(image);
-                    }}
+                    onClick={() => handleSelectWithPreload(image)}
                   >
                     <img
                       src={

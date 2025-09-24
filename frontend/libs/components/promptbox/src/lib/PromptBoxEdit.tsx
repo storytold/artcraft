@@ -311,7 +311,7 @@ export const PromptBoxEdit = ({
                 >
                   <Button
                     variant="secondary"
-                    className="h-9 bg-[#5F5F68]/60 px-3 text-white hover:bg-[#5F5F68]/90"
+                    className="h-9 bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90"
                     onClick={onFitPressed}
                   >
                     <FontAwesomeIcon icon={faFrame} className="h-4 w-4" />
