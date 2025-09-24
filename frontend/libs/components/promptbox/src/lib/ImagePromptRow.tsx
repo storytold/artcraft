@@ -396,11 +396,11 @@ export const ImagePromptRow = ({
       >
         <div
           className={twMerge(
-            "grow grid py-2 px-3 grid-cols-1",
-            isVideo && showEndFrameSection && "grid-cols-2 gap-5"
+            "grow grid grid-cols-1",
+            isVideo && showEndFrameSection && "grid-cols-2"
           )}
         >
-          <div className="flex gap-2">
+          <div className="flex gap-2 py-2 px-3">
             <div className="flex flex-col grow gap-1">
               <div className="flex items-center gap-2 opacity-90 text-base-fg">
                 <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
@@ -550,18 +550,23 @@ export const ImagePromptRow = ({
             </div>
           </div>
           {isVideo && showEndFrameSection && (
-            <div className="flex gap-2">
-              <div className="flex flex-col grow gap-1">
-                <div className="flex items-center gap-2 opacity-90 text-base-fg">
-                  <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
-                  <span className="text-sm font-medium flex items-center gap-1.5">
-                    Ending Frame{" "}
-                    <span className="text-base-fg/60 text-xs">(optional)</span>
+            <div className="flex gap-3 pe-3">
+              <div className="flex grow gap-1">
+                <div className="w-[1px] h-full bg-white/10" />
+                <div className="flex flex-col grow gap-1 p-2">
+                  <div className="flex items-center gap-2 opacity-90 text-base-fg">
+                    <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
+                    <span className="text-sm font-medium flex items-center gap-1.5">
+                      Ending Frame{" "}
+                      <span className="text-base-fg/60 text-xs">
+                        (optional)
+                      </span>
+                    </span>
+                  </div>
+                  <span className="text-[13px] text-base-fg/60">
+                    How the animation ends
                   </span>
                 </div>
-                <span className="text-[13px] text-base-fg/60">
-                  How the animation ends
-                </span>
               </div>
               <div className="flex gap-2 items-center">
                 {endFrameImage ? (
@@ -656,6 +661,7 @@ export const ImagePromptRow = ({
           )}
         </div>
         <div className="col-span-2 flex items-center">
+          <div className="w-[1px] h-full bg-white/10" />
           <div className="flex items-center gap-2 w-[1px] h-full bg-base-fg/20 dark:bg-base-fg/10 rounded-lg" />
           <div className="p-2">
             <Button
