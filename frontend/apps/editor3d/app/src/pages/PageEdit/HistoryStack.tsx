@@ -174,7 +174,7 @@ export const HistoryStack = ({
                   <Button
                     key={image.mediaToken}
                     className={twMerge(
-                      "group relative aspect-square h-full w-full overflow-hidden rounded-lg border-2 bg-transparent p-0 hover:bg-transparent hover:opacity-80",
+                      "group relative aspect-square h-full w-full shrink-0 overflow-hidden rounded-lg border-2 bg-transparent p-0 hover:bg-transparent hover:opacity-80",
                       selectedImageToken === image.mediaToken &&
                         "border-primary hover:opacity-100",
                     )}
