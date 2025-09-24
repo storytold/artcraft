@@ -197,6 +197,7 @@ class Scene {
         );
         obj = new THREE.Mesh(geometry, image_material);
         obj.userData["media_id"] = name;
+        obj.userData["media_file_type"] = MediaFileType.Video;
       } else {
         const loader = new THREE.TextureLoader();
         // NB(bt,2025-08-26): Images loaded throughout the rest of ArtCraft with the <img> tag set
@@ -214,6 +215,7 @@ class Scene {
         });
         obj = new THREE.Mesh(geometry, image_material);
         obj.userData["media_id"] = name;
+        obj.userData["media_file_type"] = MediaFileType.Image;
       }
     } else if (name == "PointLight") {
       const light_material = new THREE.MeshBasicMaterial({
@@ -553,7 +555,14 @@ class Scene {
       url.includes(".jpeg") ||
       url.includes(".mp4")
     ) {
-      return await this.instantiate("Image::" + url);
+      const obj = await this.instantiate("Image::" + url);
+      obj.position.copy(position);
+      if (url.includes(".mp4")) {
+        obj.userData["media_file_type"] = MediaFileType.Video;
+      } else {
+        obj.userData["media_file_type"] = MediaFileType.Image;
+      }
+      return obj;
     }
   }
 
@@ -579,7 +588,15 @@ class Scene {
       url.includes(".jpeg") ||
       url.includes(".mp4")
     ) {
-      return await this.instantiate("Image::" + url);
+      const obj = await this.instantiate("Image::" + url);
+      // Preserve original token to enable copy/paste and timeline mapping
+      obj.userData["media_id"] = media_id;
+      if (url.includes(".mp4")) {
+        obj.userData["media_file_type"] = MediaFileType.Video;
+      } else {
+        obj.userData["media_file_type"] = MediaFileType.Image;
+      }
+      return obj;
     }
     return await this.loadGlbWithPlaceholder(
       media_id,

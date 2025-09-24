@@ -147,18 +147,34 @@ export class SceneManager implements SceneManagerAPI {
     media_token: string,
     name: string,
     position: THREE.Vector3,
-  ): Promise<THREE.Object3D<THREE.Object3DEventMap>> {
+  ): Promise<THREE.Object3D<THREE.Object3DEventMap> | undefined> {
     if (media_token.includes("SKY::")) {
       const token = media_token.replace("SKY::", "");
       this.scene.updateSkybox(token);
     } else if (media_token !== "Parim") {
-      return await this.scene.loadObject(
+      // Support direct image/video URL pastes via the Image::<url> scheme
+      if (media_token.startsWith("Image::")) {
+        const url = media_token.replace("Image::", "");
+        const obj = await this.scene.loadObjectFromUrl(url, position);
+        if (obj) {
+          obj.name = name;
+          obj.userData["name"] = name;
+        }
+        return obj as THREE.Object3D<THREE.Object3DEventMap>;
+      }
+
+      const obj = await this.scene.loadObject(
         media_token,
         name,
         true,
         position,
         this.version,
       );
+      if (obj) {
+        obj.name = name;
+        obj.userData["name"] = name;
+      }
+      return obj as THREE.Object3D<THREE.Object3DEventMap> | undefined;
     } else {
       return this.scene.instantiate(name, position);
     }
@@ -288,6 +304,9 @@ export class SceneManager implements SceneManagerAPI {
       const wasCharacter: boolean = !!this.copiedObject.userData.isCharacter;
 
       const obj = await this.create(media_id, name, position);
+      if (!obj) {
+        return;
+      }
       this.scene.setColor(obj.uuid, color);
       obj.position.copy(position.add(new THREE.Vector3(0.5, 0.0, 0.5)));
       obj.rotation.copy(rotation);
