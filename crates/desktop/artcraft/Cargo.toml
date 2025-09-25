@@ -69,7 +69,7 @@ tauri-plugin-upload.workspace = true
 tauri.workspace = true
 tempdir.workspace = true
 tempfile.workspace = true
-tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "fs"] }
+tokio = { version = "1.47", features = ["rt", "rt-multi-thread", "fs"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 url.workspace = true
 

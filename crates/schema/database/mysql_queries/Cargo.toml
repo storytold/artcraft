@@ -45,7 +45,7 @@ serde_json.workspace = true
 # BigNum
 num-traits = "0.2.19"
 
-tokio = { version = "1.38.0", features = ["full"] }
+tokio = { version = "1.47.1", features = ["full"] }
 rand.workspace = true
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio", "tls-rustls", "chrono", "bigdecimal" ] }
 

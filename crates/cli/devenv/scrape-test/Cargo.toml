@@ -25,4 +25,4 @@ web_scrapers = { path = "../../../lib/web_scrapers" }
 
 # External
 clap = "4.4.8"
-tokio = { version = "1.38.0", features = ["macros"] }
+tokio = { version = "1.47.1", features = ["macros"] }
