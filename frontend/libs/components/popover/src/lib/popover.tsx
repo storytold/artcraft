@@ -109,8 +109,8 @@ export const PopoverMenu = ({
   const className = twMerge(
     "text-sm font-medium rounded-lg px-3 py-2 shadow-sm",
     "flex gap-2 items-center justify-center outline-none",
-    "transition-all duration-100",
-    "bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90 border border-ui-controls-border",
+    "transition-all duration-150",
+    "bg-ui-controls px-3 text-base-fg hover:bg-ui-controls/80 border border-ui-controls-border",
     "active:scale-95 transform",
     buttonClassName
   );

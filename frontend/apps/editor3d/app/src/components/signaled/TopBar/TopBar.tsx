@@ -62,6 +62,7 @@ import { useSubscriptionPlanChangedEvent } from "@storyteller/tauri-events";
 import { useCreditsState } from "@storyteller/credits";
 import { useSubscriptionState } from "@storyteller/subscription";
 import { UploadImagesButton } from "./UploadImagesButton";
+import TaskQueue from "./TaskQueue";
 
 interface Props {
   pageName: string;
@@ -449,7 +450,8 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 </span>
               </Button>
 
-              <Activity />
+              {/* <Activity /> */}
+              <TaskQueue />
             </div>
 
             <div className="no-drag">
