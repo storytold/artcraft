@@ -3,6 +3,12 @@ import { PopoverMenu } from "@storyteller/ui-popover";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faListCheck, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { Modal } from "@storyteller/ui-modal";
+import {
+  galleryModalLightboxMediaId,
+  galleryModalLightboxVisible,
+  galleryModalLightboxImage,
+} from "@storyteller/ui-gallery-modal";
+import type { GalleryItem } from "@storyteller/ui-gallery-modal";
 import { useMemo, useState } from "react";
 
 type InProgressTask = {
@@ -51,9 +57,20 @@ const InProgressCard = ({ task }: { task: InProgressTask }) => {
   );
 };
 
-const CompletedCard = ({ task }: { task: CompletedTask }) => {
+const CompletedCard = ({
+  task,
+  onClick,
+}: {
+  task: CompletedTask;
+  onClick?: () => void;
+}) => {
   return (
-    <div className="mb-2 flex items-center gap-2 rounded-md border border-ui-divider bg-ui-background p-2">
+    <div
+      className="mb-2 flex cursor-pointer items-center gap-2 rounded-md border border-ui-divider bg-ui-background p-2 transition-colors hover:bg-ui-controls/40"
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : -1}
+    >
       <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-ui-controls">
         {task.thumbnailUrl ? (
           <img
@@ -146,7 +163,25 @@ export const TaskQueue = () => {
                               Completed
                             </div>
                             {completed.map((t) => (
-                              <CompletedCard key={t.id} task={t} />
+                              <CompletedCard
+                                key={t.id}
+                                task={t}
+                                onClick={() => {
+                                  const item: GalleryItem = {
+                                    id: t.id,
+                                    label: t.title,
+                                    thumbnail: t.thumbnailUrl || null,
+                                    fullImage: t.thumbnailUrl || null,
+                                    createdAt: new Date().toISOString(),
+                                    mediaClass: "image",
+                                  } as GalleryItem;
+                                  galleryModalLightboxMediaId.value = item.id;
+                                  galleryModalLightboxImage.value =
+                                    item as GalleryItem;
+                                  galleryModalLightboxVisible.value = true;
+                                  close();
+                                }}
+                              />
                             ))}
                           </div>
                         )}
@@ -200,7 +235,24 @@ export const TaskQueue = () => {
                     Completed
                   </div>
                   {completed.map((t) => (
-                    <CompletedCard key={t.id} task={t} />
+                    <CompletedCard
+                      key={t.id}
+                      task={t}
+                      onClick={() => {
+                        const item: GalleryItem = {
+                          id: t.id,
+                          label: t.title,
+                          thumbnail: t.thumbnailUrl || null,
+                          fullImage: t.thumbnailUrl || null,
+                          createdAt: new Date().toISOString(),
+                          mediaClass: "image",
+                        } as GalleryItem;
+                        galleryModalLightboxMediaId.value = item.id;
+                        galleryModalLightboxImage.value = item as GalleryItem;
+                        galleryModalLightboxVisible.value = true;
+                        setModalOpen(false);
+                      }}
+                    />
                   ))}
                 </div>
               )}
