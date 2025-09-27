@@ -71,6 +71,8 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::Kling21Master) => Some(TaskModelType::Kling21Master),
       Some(GenerationModel::Seedance10Lite) => Some(TaskModelType::Seedance10Lite),
       Some(GenerationModel::Veo2) => Some(TaskModelType::Veo2),
+      Some(GenerationModel::Veo3) => Some(TaskModelType::Veo3),
+      Some(GenerationModel::Veo3Fast) => Some(TaskModelType::Veo3Fast),
       Some(GenerationModel::Hunyuan3d2_0) => Some(TaskModelType::Hunyuan3d2_0),
       Some(GenerationModel::Hunyuan3d2_1) => Some(TaskModelType::Hunyuan3d2_1),
       Some(GenerationModel::Midjourney) => Some(TaskModelType::Midjourney), // NB: This is a generic Midjourney model, version unknown.

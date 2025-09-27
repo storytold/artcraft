@@ -48,6 +48,10 @@ pub enum TaskModelType {
   Seedance10Lite,
   #[serde(rename = "veo_2")]
   Veo2,
+  #[serde(rename = "veo_3")]
+  Veo3,
+  #[serde(rename = "veo_3_fast")]
+  Veo3Fast,
 
   // 3D Object generation models
   #[serde(rename = "hunyuan_3d_2.0")]
@@ -83,6 +87,8 @@ impl TaskModelType {
       Self::Kling21Master => "kling_2.1_master",
       Self::Seedance10Lite => "seedance_1.0_lite",
       Self::Veo2 => "veo_2",
+      Self::Veo3 => "veo_3",
+      Self::Veo3Fast => "veo_3_fast",
       // 3D Object generation models
       Self::Hunyuan3d2_0 => "hunyuan_3d_2.0",
       Self::Hunyuan3d2_1 => "hunyuan_3d_2.1",
@@ -109,6 +115,8 @@ impl TaskModelType {
       "kling_2.1_master" => Ok(Self::Kling21Master),
       "seedance_1.0_lite" => Ok(Self::Seedance10Lite),
       "veo_2" => Ok(Self::Veo2),
+      "veo_3" => Ok(Self::Veo3),
+      "veo_3_fast" => Ok(Self::Veo3Fast),
       // 3D Object generation models
       "hunyuan_3d_2.0" => Ok(Self::Hunyuan3d2_0),
       "hunyuan_3d_2.1" => Ok(Self::Hunyuan3d2_1),
@@ -138,6 +146,8 @@ impl TaskModelType {
       Self::Kling21Master,
       Self::Seedance10Lite,
       Self::Veo2,
+      Self::Veo3,
+      Self::Veo3Fast,
       // 3D Object generation models
       Self::Hunyuan3d2_0,
       Self::Hunyuan3d2_1,
@@ -173,6 +183,8 @@ mod tests {
       assert_serialization(TaskModelType::Kling21Master, "kling_2.1_master");
       assert_serialization(TaskModelType::Seedance10Lite, "seedance_1.0_lite");
       assert_serialization(TaskModelType::Veo2, "veo_2");
+      assert_serialization(TaskModelType::Veo3, "veo_3");
+      assert_serialization(TaskModelType::Veo3Fast, "veo_3_fast");
       // 3D Object generation models
       assert_serialization(TaskModelType::Hunyuan3d2_0, "hunyuan_3d_2.0");
       assert_serialization(TaskModelType::Hunyuan3d2_1, "hunyuan_3d_2.1");
@@ -198,6 +210,8 @@ mod tests {
       assert_eq!(TaskModelType::Kling21Master.to_str(), "kling_2.1_master");
       assert_eq!(TaskModelType::Seedance10Lite.to_str(), "seedance_1.0_lite");
       assert_eq!(TaskModelType::Veo2.to_str(), "veo_2");
+      assert_eq!(TaskModelType::Veo3.to_str(), "veo_3");
+      assert_eq!(TaskModelType::Veo3Fast.to_str(), "veo_3_fast");
       // 3D Object generation models
       assert_eq!(TaskModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2.0");
       assert_eq!(TaskModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2.1");
@@ -223,6 +237,8 @@ mod tests {
       assert_eq!(TaskModelType::from_str("kling_2.1_master").unwrap(), TaskModelType::Kling21Master);
       assert_eq!(TaskModelType::from_str("seedance_1.0_lite").unwrap(), TaskModelType::Seedance10Lite);
       assert_eq!(TaskModelType::from_str("veo_2").unwrap(), TaskModelType::Veo2);
+      assert_eq!(TaskModelType::from_str("veo_3").unwrap(), TaskModelType::Veo3);
+      assert_eq!(TaskModelType::from_str("veo_3_fast").unwrap(), TaskModelType::Veo3Fast);
       // 3D Object generation models
       assert_eq!(TaskModelType::from_str("hunyuan_3d_2.0").unwrap(), TaskModelType::Hunyuan3d2_0);
       assert_eq!(TaskModelType::from_str("hunyuan_3d_2.1").unwrap(), TaskModelType::Hunyuan3d2_1);
@@ -231,7 +247,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskModelType::all_variants();
-      assert_eq!(variants.len(), 18);
+      assert_eq!(variants.len(), 20);
       // Image models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Schnell));
@@ -250,6 +266,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskModelType::Kling21Master));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance10Lite));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Veo2));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Veo3));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Veo3Fast));
       // 3D Object generation models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Hunyuan3d2_0));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Hunyuan3d2_1));

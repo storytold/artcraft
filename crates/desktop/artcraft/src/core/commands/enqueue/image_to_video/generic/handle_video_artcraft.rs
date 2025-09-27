@@ -13,6 +13,8 @@ use artcraft_api_defs::generate::video::generate_kling_2_1_master_image_to_video
 use artcraft_api_defs::generate::video::generate_kling_2_1_pro_image_to_video::{GenerateKling21ProAspectRatio, GenerateKling21ProImageToVideoRequest};
 use artcraft_api_defs::generate::video::generate_seedance_1_0_lite_image_to_video::GenerateSeedance10LiteImageToVideoRequest;
 use artcraft_api_defs::generate::video::generate_veo_2_image_to_video::{GenerateVeo2AspectRatio, GenerateVeo2ImageToVideoRequest};
+use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::GenerateVeo3FastImageToVideoRequest;
+use artcraft_api_defs::generate::video::generate_veo_3_image_to_video::{GenerateVeo3AspectRatio, GenerateVeo3ImageToVideoRequest};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use fal_client::requests::queue::image_gen::enqueue_flux_pro_11_ultra_text_to_image::{enqueue_flux_pro_11_ultra_text_to_image, FluxPro11UltraTextToImageArgs};
@@ -25,6 +27,8 @@ use storyteller_client::endpoints::generate::video::generate_kling_21_master_ima
 use storyteller_client::endpoints::generate::video::generate_kling_21_pro_image_to_video::generate_kling_21_pro_image_to_video;
 use storyteller_client::endpoints::generate::video::generate_seedance_1_0_lite_image_to_video::generate_seedance_1_0_lite_image_to_video;
 use storyteller_client::endpoints::generate::video::generate_veo_2_image_to_video::generate_veo_2_image_to_video;
+use storyteller_client::endpoints::generate::video::generate_veo_3_fast_image_to_video::generate_veo_3_fast_image_to_video;
+use storyteller_client::endpoints::generate::video::generate_veo_3_image_to_video::generate_veo_3_image_to_video;
 use storyteller_client::utils::api_host::ApiHost;
 use tauri::AppHandle;
 
@@ -198,6 +202,61 @@ pub async fn handle_video_artcraft(
         }
         Err(err) => {
           error!("Failed to use Artcraft Veo 2 video generation: {:?}", err);
+          return Err(GenerateError::from(err));
+        }
+      }
+    }
+    Some(VideoModel::Veo3) => {
+      info!("enqueue Veo 3 with Artcraft API");
+      selected_model = Some(GenerationModel::Veo3);
+      let request = GenerateVeo3ImageToVideoRequest {
+        uuid_idempotency_token,
+        media_file_token: request.image_media_token,
+        aspect_ratio: Some(GenerateVeo3AspectRatio::WideSixteenNine),
+        prompt: request.prompt,
+        duration: None,
+        resolution: None,
+        generate_audio: None,
+      };
+      let result = generate_veo_3_image_to_video(
+        &app_env_configs.storyteller_host,
+        Some(&creds),
+        request,
+      ).await;
+      match result {
+        Ok(enqueued) => {
+          info!("Successfully enqueued Artcraft Veo 3 video generation");
+          enqueued.inference_job_token
+        }
+        Err(err) => {
+          error!("Failed to use Artcraft Veo 3 video generation: {:?}", err);
+          return Err(GenerateError::from(err));
+        }
+      }
+    }
+    Some(VideoModel::Veo3Fast) => {
+      info!("enqueue Veo 3 Fast with Artcraft API");
+      selected_model = Some(GenerationModel::Veo3Fast);
+      let request = GenerateVeo3FastImageToVideoRequest {
+        uuid_idempotency_token,
+        media_file_token: request.image_media_token,
+        prompt: request.prompt,
+        duration: None,
+        resolution: None,
+        generate_audio: None,
+      };
+      let result = generate_veo_3_fast_image_to_video(
+        &app_env_configs.storyteller_host,
+        Some(&creds),
+        request,
+      ).await;
+      match result {
+        Ok(enqueued) => {
+          info!("Successfully enqueued Artcraft Veo 3 video generation");
+          enqueued.inference_job_token
+        }
+        Err(err) => {
+          error!("Failed to use Artcraft Veo 3 video generation: {:?}", err);
           return Err(GenerateError::from(err));
         }
       }

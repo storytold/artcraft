@@ -41,6 +41,12 @@ pub enum VideoModel {
 
   #[serde(rename = "veo_2")]
   Veo2,
+
+  #[serde(rename = "veo_3")]
+  Veo3,
+
+  #[serde(rename = "veo_3_fast")]
+  Veo3Fast,
 }
 
 #[derive(Deserialize)]

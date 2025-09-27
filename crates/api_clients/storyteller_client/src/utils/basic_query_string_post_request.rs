@@ -25,7 +25,7 @@ pub async fn basic_query_string_post_request<Res: DeserializeOwned>(
   // TODO: Please stop using this URL Builder library. It's not very safe or intuitive.
   let url = get_route(api_host, route_path, query_params);
 
-  info!("Requesting {:?}", &url);
+  debug!("Requesting {:?}", &url);
 
   let client = Client::builder()
       .gzip(true)
