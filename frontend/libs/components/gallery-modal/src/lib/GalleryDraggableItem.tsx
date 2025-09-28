@@ -1,10 +1,21 @@
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCheck,
+  faEllipsis,
+  faPencil,
+  faTrashCan,
+} from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import galleryDnd from "./galleryDnd";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { GalleryItem } from "./gallery-modal";
+import { PopoverMenu } from "@storyteller/ui-popover";
+import {
+  showActionReminder,
+  isActionReminderOpen,
+} from "@storyteller/ui-action-reminder-modal";
+import { MediaFilesApi } from "@storyteller/api";
 
 type ModalMode = "select" | "view";
 
@@ -17,6 +28,8 @@ interface GalleryDraggableItemProps {
   onImageError: () => void;
   disableTooltipAndBadge?: boolean;
   imageFit?: "cover" | "contain";
+  onDeleted?: (id: string) => void;
+  onEditClicked?: (url: string, media_id?: string) => Promise<void> | void;
 }
 
 export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
@@ -28,9 +41,40 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   onImageError,
   disableTooltipAndBadge = false,
   imageFit = "cover",
+  onDeleted,
+  onEditClicked,
 }) => {
   const imgRef = useRef<HTMLImageElement>(null);
   const dragStarted = useRef(false);
+  const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
+
+  const handleDelete = () => {
+    showActionReminder({
+      reminderType: "default",
+      title: "Delete this media?",
+      message: (
+        <p className="text-sm text-white/70">
+          This will permanently remove the media from your library. This action
+          cannot be undone.
+        </p>
+      ),
+      primaryActionText: "Delete",
+      secondaryActionText: "Cancel",
+      primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
+      onPrimaryAction: async () => {
+        try {
+          const res = await mediaFilesApi.DeleteMediaFileByToken({
+            mediaFileToken: item.id,
+          });
+          if (res.success) {
+            onDeleted?.(item.id);
+          }
+        } finally {
+          isActionReminderOpen.value = false;
+        }
+      },
+    });
+  };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     // Disable dragging for video items
@@ -77,9 +121,65 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
         activeFilter === "video" ? "aspect-square" : "aspect-square"
       )}
     >
+      {/* dropdown menu */}
+      <div
+        className="absolute right-2 top-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-75"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        <PopoverMenu
+          position="bottom"
+          align="end"
+          mode="default"
+          triggerIcon={
+            <FontAwesomeIcon icon={faEllipsis} className="text-base-fg" />
+          }
+          buttonClassName="h-7 w-7 p-0 rounded-full bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
+          panelClassName="min-w-28 p-1"
+          closeOnUnhover
+        >
+          {(close) => (
+            <div className="flex flex-col">
+              {item.mediaClass === "image" && (
+                <button
+                  type="button"
+                  className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (onEditClicked && (item.fullImage || item.thumbnail)) {
+                      await onEditClicked(
+                        item.fullImage || item.thumbnail!,
+                        item.id
+                      );
+                    }
+                    close();
+                  }}
+                >
+                  <FontAwesomeIcon icon={faPencil} className="text-base-fg" />
+                  <span>Edit image</span>
+                </button>
+              )}
+              <button
+                type="button"
+                className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                  close();
+                }}
+              >
+                <FontAwesomeIcon icon={faTrashCan} className="text-red" />
+                <span className="text-red">Delete</span>
+              </button>
+            </div>
+          )}
+        </PopoverMenu>
+      </div>
       {/* Media class badge on hover */}
       {!disableTooltipAndBadge && item.mediaClass && (
-        <div className="pointer-events-none absolute right-2 top-2 z-20 rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+        <div className="pointer-events-none absolute left-2 top-2 z-20 rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           {item.mediaClass === "dimensional" ? "3D" : item.mediaClass}
         </div>
       )}
@@ -127,7 +227,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               />
             )}
             {selected && (
-              <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+              <div className="absolute right-8 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
                 <FontAwesomeIcon icon={faCheck} className="text-sm" />
               </div>
             )}
@@ -199,7 +299,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                 />
               )}
               {selected && (
-                <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                <div className="absolute right-8 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
                   <FontAwesomeIcon icon={faCheck} className="text-sm" />
                 </div>
               )}

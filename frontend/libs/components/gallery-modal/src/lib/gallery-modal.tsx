@@ -120,7 +120,7 @@ export const GalleryModal = React.memo(
 
     // NB: We've got some kind of cursoring issue where subsequent pages are not requested.
     // For now, let's set the pagination limit really high.
-    const pageSize = 1000;
+    const pageSize = 100;
 
     const imageUrl = lightboxImageSignal.value?.fullImage || "";
 
@@ -338,6 +338,10 @@ export const GalleryModal = React.memo(
         .filter((item) => selectedItemIds.includes(item.id));
       onUseSelected?.(selectedItems);
     }, [groupItemsByDate, selectedItemIds, onUseSelected]);
+
+    const handleItemDeleted = useCallback((id: string) => {
+      setAllItems((prev) => prev.filter((it) => it.id !== id));
+    }, []);
 
     useSignals();
 
@@ -609,6 +613,8 @@ export const GalleryModal = React.memo(
                                 }
                                 disableTooltipAndBadge={mode === "select"}
                                 imageFit={imageFit}
+                                onDeleted={handleItemDeleted}
+                                onEditClicked={onEditClicked}
                               />
                             ))}
                           </div>

@@ -50,6 +50,7 @@ interface PopoverMenuProps {
   align?: "start" | "center" | "end";
   panelActionLabel?: string;
   onOpenChange?: (open: boolean) => void;
+  closeOnUnhover?: boolean;
 }
 
 export const PopoverMenu = ({
@@ -71,6 +72,7 @@ export const PopoverMenu = ({
   align = "start",
   panelActionLabel,
   onOpenChange,
+  closeOnUnhover = false,
 }: PopoverMenuProps) => {
   const selectedItem = items.find((item) => item.selected);
 
@@ -87,7 +89,7 @@ export const PopoverMenu = ({
   const className = twMerge(
     "text-sm font-medium rounded-lg px-3 py-2 shadow-sm",
     "flex gap-2 items-center justify-center outline-none",
-    "transition-all duration-150",
+    "transition-all duration-100",
     "bg-ui-controls/60 px-3 text-base-fg hover:bg-ui-controls/90 border border-ui-controls-border",
     "active:scale-95 transform",
     buttonClassName
@@ -119,7 +121,7 @@ export const PopoverMenu = ({
   }, []);
 
   const handleButtonMouseEnter = (open: boolean, openFn: () => void) => {
-    if (mode !== "hoverSelect") return;
+    if (!(mode === "hoverSelect" || closeOnUnhover)) return;
 
     setIsHovering(true);
     if (hoverTimeoutRef.current) {
@@ -127,7 +129,7 @@ export const PopoverMenu = ({
       hoverTimeoutRef.current = null;
     }
 
-    if (!open) {
+    if (!open && mode === "hoverSelect") {
       hoverTimeoutRef.current = setTimeout(() => {
         openFn();
       }, 100);
@@ -135,7 +137,7 @@ export const PopoverMenu = ({
   };
 
   const handleButtonMouseLeave = (closeFn: () => void) => {
-    if (mode !== "hoverSelect") return;
+    if (!(mode === "hoverSelect" || closeOnUnhover)) return;
 
     setIsHovering(false);
 
@@ -143,15 +145,18 @@ export const PopoverMenu = ({
       clearTimeout(hoverTimeoutRef.current);
     }
 
-    hoverTimeoutRef.current = setTimeout(() => {
-      if (!isHovering) {
-        closeFn();
-      }
-    }, 300);
+    hoverTimeoutRef.current = setTimeout(
+      () => {
+        if (!isHovering) {
+          closeFn();
+        }
+      },
+      mode === "hoverSelect" ? 300 : 150
+    );
   };
 
   const handlePanelMouseEnter = () => {
-    if (mode !== "hoverSelect") return;
+    if (!(mode === "hoverSelect" || closeOnUnhover)) return;
     setIsHovering(true);
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -160,16 +165,19 @@ export const PopoverMenu = ({
   };
 
   const handlePanelMouseLeave = (closeFn: () => void) => {
-    if (mode !== "hoverSelect") return;
+    if (!(mode === "hoverSelect" || closeOnUnhover)) return;
     setIsHovering(false);
 
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
 
-    hoverTimeoutRef.current = setTimeout(() => {
-      closeFn();
-    }, 300);
+    hoverTimeoutRef.current = setTimeout(
+      () => {
+        closeFn();
+      },
+      mode === "hoverSelect" ? 300 : 150
+    );
   };
 
   return (
@@ -221,19 +229,19 @@ export const PopoverMenu = ({
 
             <Transition
               show={open}
-              enter="transition duration-100 ease-out"
+              enter="transition duration-75 ease-out"
               enterFrom={
                 position === "bottom"
-                  ? "translate-y-2 opacity-0"
-                  : "-translate-y-2 opacity-0"
+                  ? "translate-y-1 opacity-0"
+                  : "-translate-y-1 opacity-0"
               }
               enterTo="translate-y-0 opacity-100"
-              leave="transition duration-100 ease-in"
+              leave="transition duration-75 ease-in"
               leaveFrom="translate-y-0 opacity-100"
               leaveTo={
                 position === "bottom"
-                  ? "translate-y-2 opacity-0"
-                  : "-translate-y-2 opacity-0"
+                  ? "translate-y-1 opacity-0"
+                  : "-translate-y-1 opacity-0"
               }
             >
               <PopoverPanel
