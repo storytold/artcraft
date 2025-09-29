@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { UploaderStates } from "~/enums";
 import { MediaFilesApi } from "@storyteller/api";
+import { TutorialModalButton } from "@storyteller/ui-tutorial-modal";
 
 export interface BaseSelectorImage {
   url: string;
@@ -174,6 +175,9 @@ export const BaseImageSelector = ({
             </div>
           </div>
         )}
+      </div>
+      <div className="fixed bottom-6 right-6 z-20 flex items-center gap-2">
+        <TutorialModalButton />
       </div>
       <GalleryModal
         isOpen={!!isGalleryModalOpen}
