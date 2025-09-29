@@ -28,8 +28,6 @@ export function TutorialModalButton({
   const getProgress = useTutorialModalStore((s) => s.getProgress);
   const setProgress = useTutorialModalStore((s) => s.setProgress);
 
-  // (replaced old static iframe conversion with IFrame API player)
-
   const handleOpen = () => {
     setOpen(true);
     onOpenChange?.(true);
