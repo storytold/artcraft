@@ -3,6 +3,12 @@
   "include": [],
   "references": [
     {
+      "path": "../button"
+    },
+    {
+      "path": "../modal"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

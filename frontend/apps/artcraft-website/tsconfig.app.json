@@ -38,6 +38,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/components/tutorial-modal/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/button/tsconfig.lib.json"
     }
   ]

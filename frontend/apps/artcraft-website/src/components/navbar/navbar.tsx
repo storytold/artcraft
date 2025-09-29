@@ -1,10 +1,37 @@
 import { Disclosure } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { DiscordButton } from "../discord-button";
+
+const NAV_ITEMS = [
+  { name: "Home", href: "/" },
+  { name: "Tutorials", href: "/tutorials" },
+];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const [underlineAnim, setUnderlineAnim] = useState<
+    Record<string, "in" | "out" | null>
+  >({});
+  const outTimersRef = useRef<Record<string, number | undefined>>({});
+
+  const handleEnter = (href: string) => {
+    if (outTimersRef.current[href] !== undefined) {
+      window.clearTimeout(outTimersRef.current[href]);
+      delete outTimersRef.current[href];
+    }
+    setUnderlineAnim((prev) => ({ ...prev, [href]: "in" }));
+  };
+
+  const handleLeave = (href: string) => {
+    setUnderlineAnim((prev) => ({ ...prev, [href]: "out" }));
+    outTimersRef.current[href] = window.setTimeout(() => {
+      setUnderlineAnim((prev) => ({ ...prev, [href]: null }));
+      delete outTimersRef.current[href];
+    }, 260);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,23 +64,49 @@ export default function Navbar() {
                 />
               </a>
             </div>
-            {/* <div className="hidden md:ml-7 md:flex md:items-center md:space-x-3">
-              {navigation.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  aria-current={item.current ? "page" : undefined}
-                  className={twMerge(
-                    item.current
-                      ? "text-white/80 hover:text-white"
-                      : "text-white/80 hover:text-white",
-                    "rounded-md px-3 py-2 text-[15px] font-medium transition-all"
-                  )}
-                >
-                  {item.name}
-                </a>
-              ))}
-            </div> */}
+            <div className="hidden md:ml-10 md:flex md:items-center md:space-x-6">
+              {NAV_ITEMS.map((item) => {
+                const isCurrent = location.pathname === item.href;
+                const anim = underlineAnim[item.href] ?? null;
+                return (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    aria-current={isCurrent ? "page" : undefined}
+                    className={twMerge(
+                      isCurrent
+                        ? "text-white"
+                        : "text-white/60 hover:text-white",
+                      "relative rounded-md text-[15px] font-semibold transition-all"
+                    )}
+                    onMouseEnter={() => !isCurrent && handleEnter(item.href)}
+                    onMouseLeave={() => !isCurrent && handleLeave(item.href)}
+                  >
+                    <span className="relative z-10">{item.name}</span>
+                    <span
+                      className={twMerge(
+                        "pointer-events-none absolute left-0 right-0 -bottom-1 h-[2px] overflow-hidden",
+                        isCurrent ? "" : ""
+                      )}
+                      aria-hidden="true"
+                    >
+                      <span
+                        className={twMerge(
+                          "link-underline block h-full w-full bg-primary/90",
+                          isCurrent
+                            ? "visible-line"
+                            : anim === "in"
+                            ? "animate-in"
+                            : anim === "out"
+                            ? "animate-out"
+                            : "hidden-line"
+                        )}
+                      />
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
           </div>
           <div className="flex items-center">
             <div className="hidden md:ml-4 md:flex md:shrink-0 md:items-center">
@@ -96,6 +149,31 @@ export default function Navbar() {
           ))}
         </div>
       </DisclosurePanel> */}
+      <style>{`
+        .link-underline {
+          transform-origin: left center;
+          transform: scaleX(0) translateX(0);
+          opacity: 0;
+        }
+        .visible-line {
+          transform: scaleX(1) translateX(0);
+          opacity: 1;
+        }
+        .hidden-line {
+          transform: scaleX(0) translateX(0);
+          opacity: 0;
+        }
+        @keyframes underline-in {
+          0% { transform: scaleX(0) translateX(0); opacity: 0.8; }
+          100% { transform: scaleX(1) translateX(0); opacity: 1; }
+        }
+        @keyframes underline-out {
+          0% { transform: scaleX(1) translateX(0); opacity: 1; }
+          100% { transform: scaleX(1) translateX(100%); opacity: 0; }
+        }
+        .animate-in { animation: underline-in 220ms ease-out forwards; }
+        .animate-out { animation: underline-out 220ms ease-in forwards; }
+      `}</style>
     </Disclosure>
   );
 }

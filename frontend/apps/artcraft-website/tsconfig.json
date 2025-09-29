@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/components/tutorial-modal"
+    },
+    {
       "path": "../../libs/components/button"
     },
     {
