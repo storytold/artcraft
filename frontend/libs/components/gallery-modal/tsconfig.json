@@ -6,12 +6,6 @@
       "path": "../slider-v2"
     },
     {
-      "path": "../popover"
-    },
-    {
-      "path": "../../api"
-    },
-    {
       "path": "../loading-spinner"
     },
     {
@@ -25,6 +19,15 @@
     },
     {
       "path": "../modal"
+    },
+    {
+      "path": "../../api"
+    },
+    {
+      "path": "../action-reminder-modal"
+    },
+    {
+      "path": "../popover"
     },
     {
       "path": "../tooltip"

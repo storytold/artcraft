@@ -167,6 +167,9 @@
     },
     {
       "path": "./libs/state/subscription"
+    },
+    {
+      "path": "./libs/components/tutorial-modal"
     }
   ]
 }

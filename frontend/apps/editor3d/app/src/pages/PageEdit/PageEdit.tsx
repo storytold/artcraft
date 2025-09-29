@@ -19,6 +19,7 @@ import {
 } from "@storyteller/ui-model-selector";
 import { ImageModel } from "@storyteller/model-list";
 import { HistoryStack, ImageBundle } from "./HistoryStack";
+import { TutorialModalButton } from "@storyteller/ui-tutorial-modal";
 
 const PAGE_ID: ModelPage = ModelPage.ImageEditor;
 
@@ -472,6 +473,9 @@ const PageEdit = () => {
           showIconsInList
           triggerLabel="Model"
         />
+      </div>
+      <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+        <TutorialModalButton />
       </div>
     </>
   );

@@ -77,6 +77,7 @@ import PageDraw from "../PageDraw/PageDraw";
 import { useTabStore } from "../Stores/TabState";
 import PageEdit from "../PageEdit/PageEdit";
 import { ImageModel } from "@storyteller/model-list";
+import { TutorialModalButton } from "@storyteller/ui-tutorial-modal";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
 
@@ -550,6 +551,9 @@ export const PageEditor = () => {
                     showIconsInList
                     triggerLabel="Model"
                   />
+                </div>
+                <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+                  <TutorialModalButton />
                 </div>
               </div>
             </div>

@@ -23,6 +23,7 @@ import {
 } from "@storyteller/ui-gallery-modal";
 import { Badge } from "@storyteller/ui-badge";
 import { twMerge } from "tailwind-merge";
+import { TutorialModalButton } from "@storyteller/ui-tutorial-modal";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
 
@@ -186,7 +187,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
               >
                 <button
                   onClick={() => resetBatches()}
-                  className="bg-red/20 hover:bg-red/30 rounded-md px-3 py-1 text-xs text-white/70 transition-colors"
+                  className="rounded-md bg-red/20 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/30"
                 >
                   Clear session
                 </button>
@@ -223,6 +224,9 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
               showIconsInList
               triggerLabel="Model"
             />
+          </div>
+          <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+            <TutorialModalButton />
           </div>
         </div>
       </div>

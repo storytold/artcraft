@@ -18,6 +18,7 @@ import {
 // import { Badge } from "@storyteller/ui-badge";
 import { twMerge } from "tailwind-merge";
 import { uploadImage } from "../../components/reusable/UploadModalMedia/uploadImage";
+import { TutorialModalButton } from "@storyteller/ui-tutorial-modal";
 
 const PAGE_ID: ModelPage = ModelPage.ImageToVideo;
 
@@ -210,6 +211,9 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
               showIconsInList
               triggerLabel="Model"
             />
+          </div>
+          <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+            <TutorialModalButton />
           </div>
         </div>
       </div>
