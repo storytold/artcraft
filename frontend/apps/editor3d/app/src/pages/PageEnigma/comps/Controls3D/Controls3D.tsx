@@ -45,6 +45,7 @@ import {
 } from "@storyteller/ui-gallery-modal";
 import { twMerge } from "tailwind-merge";
 import { UploadModalImage } from "../../../../components/reusable/UploadModalImage";
+import { useCreditsState } from "~/signals/billing/billing";
 
 export const Controls3D = () => {
   useSignals();
@@ -58,6 +59,8 @@ export const Controls3D = () => {
 
   // Track processed 3D models by their media token to prevent duplicates
   const processedModelsRef = useRef<Record<string, boolean>>({});
+
+  const creditsStore = useCreditsState();
 
   useEffect(() => {
     // Check if scene is empty and onboarding helper is not visible
@@ -327,11 +330,10 @@ export const Controls3D = () => {
                     ]}
                     onPanelAction={handleAddAssetAction}
                     showIconsInList
-                    buttonClassName={`h-9 w-9 rounded-[10px] text-lg ${
-                      showEmptySceneTooltip
+                    buttonClassName={`h-9 w-9 rounded-[10px] text-lg ${showEmptySceneTooltip
                         ? "bg-primary/90 hover:bg-primary/70"
                         : "border-transparent bg-primary/90 hover:bg-primary/70"
-                    }`}
+                      }`}
                     triggerIcon={
                       <FontAwesomeIcon icon={faPlus} className="text-xl" />
                     }
@@ -372,6 +374,7 @@ export const Controls3D = () => {
         onClose={() => setIsSettingsModalOpen(false)}
         globalAccountLogoutCallback={() => setLogoutStates()}
         initialSection="accounts"
+        creditsState={creditsStore}
       />
 
       <UploadModal3D

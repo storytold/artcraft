@@ -9,7 +9,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { usePricingModalStore } from "@storyteller/ui-pricing-modal";
 import { useCreditsModalStore } from "@storyteller/ui-pricing-modal";
-import { useCreditsState, CreditsState } from "@storyteller/credits";
+import { CreditsActions, CreditsState } from "@storyteller/credits";
 import {
   FREE_PLAN,
   SubscriptionPlanDetails,
@@ -18,12 +18,14 @@ import {
 import { SUBSCRIPTION_PLANS_BY_SLUG } from "@storyteller/subscription";
 import { invoke } from "@tauri-apps/api/core";
 
-interface BillingSettingsPaneProps {}
+interface BillingSettingsPaneProps {
+  creditsStore: CreditsState & CreditsActions;
+}
 
 export const BillingSettingsPane = (args: BillingSettingsPaneProps) => {
   const { toggleModal: toggleSubscriptionModal } = usePricingModalStore();
 
-  const creditsStore = useCreditsState();
+  const creditsStore = args.creditsStore;
 
   const sumTotalCredits = creditsStore.totalCredits;
 

@@ -19,12 +19,14 @@ import { ProviderPrioritySettingsPane } from "./panes/ProviderPrioritySettingsPa
 import { gtagEvent } from "@storyteller/google-analytics";
 import { BillingSettingsPane } from "./panes/BillingSettingsPane";
 import { AppearanceSettingsPane } from "./panes/AppearanceSettingsPane";
+import { CreditsActions, CreditsState } from "@storyteller/credits";
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   globalAccountLogoutCallback: () => void;
   initialSection?: SettingsSection;
+  creditsState: CreditsState & CreditsActions;
 }
 
 type SettingsSection =
@@ -41,6 +43,7 @@ export const SettingsModal = ({
   onClose,
   globalAccountLogoutCallback,
   initialSection = "general",
+  creditsState,
 }: SettingsModalProps) => {
   const [selectedSection, setSelectedSection] =
     useState<SettingsSection>(initialSection);
@@ -89,7 +92,7 @@ export const SettingsModal = ({
       case "provider_priority":
         return <ProviderPrioritySettingsPane />;
       case "billing":
-        return <BillingSettingsPane />;
+        return <BillingSettingsPane creditsStore={creditsState} />;
     }
   };
 

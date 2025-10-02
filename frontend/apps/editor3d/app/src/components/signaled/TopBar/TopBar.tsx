@@ -57,11 +57,10 @@ import {
   usePricingModalStore,
   useCreditsModalStore,
 } from "@storyteller/ui-pricing-modal";
-import { useCreditsBalanceChangedEvent } from "@storyteller/tauri-events";
-import { useSubscriptionPlanChangedEvent } from "@storyteller/tauri-events";
-import { useCreditsState } from "@storyteller/credits";
+import { useCreditsBalanceChangedEvent, useSubscriptionPlanChangedEvent } from "@storyteller/tauri-events";
 import { useSubscriptionState } from "@storyteller/subscription";
 import { UploadImagesButton } from "./UploadImagesButton";
+import { useCreditsState } from "~/signals/billing/billing";
 
 interface Props {
   pageName: string;
@@ -493,6 +492,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
         onClose={() => setIsSettingsModalOpen(false)}
         globalAccountLogoutCallback={() => setLogoutStates()}
         initialSection={settingsSection}
+        creditsState={creditsStore}
       />
 
       <GalleryModal
