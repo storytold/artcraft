@@ -1,37 +1,19 @@
 import { Disclosure } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
-import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { DiscordButton } from "../discord-button";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
   { name: "Tutorials", href: "/tutorials" },
+  { name: "FAQ", href: "/faq" },
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const [underlineAnim, setUnderlineAnim] = useState<
-    Record<string, "in" | "out" | null>
-  >({});
-  const outTimersRef = useRef<Record<string, number | undefined>>({});
-
-  const handleEnter = (href: string) => {
-    if (outTimersRef.current[href] !== undefined) {
-      window.clearTimeout(outTimersRef.current[href]);
-      delete outTimersRef.current[href];
-    }
-    setUnderlineAnim((prev) => ({ ...prev, [href]: "in" }));
-  };
-
-  const handleLeave = (href: string) => {
-    setUnderlineAnim((prev) => ({ ...prev, [href]: "out" }));
-    outTimersRef.current[href] = window.setTimeout(() => {
-      setUnderlineAnim((prev) => ({ ...prev, [href]: null }));
-      delete outTimersRef.current[href];
-    }, 260);
-  };
+  // Underline hover handled purely via CSS
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,31 +38,29 @@ export default function Navbar() {
         <div className="flex h-16 justify-between">
           <div className="flex">
             <div className="flex shrink-0 items-center">
-              <a href="/">
+              <Link to="/">
                 <img
                   alt="ArtCraft"
                   src="/images/artcraft-logo.png"
                   className="h-7 w-auto"
                 />
-              </a>
+              </Link>
             </div>
             <div className="hidden md:ml-10 md:flex md:items-center md:space-x-6">
               {NAV_ITEMS.map((item) => {
                 const isCurrent = location.pathname === item.href;
-                const anim = underlineAnim[item.href] ?? null;
                 return (
-                  <a
+                  <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     aria-current={isCurrent ? "page" : undefined}
                     className={twMerge(
+                      "nav-link",
                       isCurrent
                         ? "text-white"
                         : "text-white/60 hover:text-white",
                       "relative rounded-md text-[15px] font-semibold transition-all"
                     )}
-                    onMouseEnter={() => !isCurrent && handleEnter(item.href)}
-                    onMouseLeave={() => !isCurrent && handleLeave(item.href)}
                   >
                     <span className="relative z-10">{item.name}</span>
                     <span
@@ -93,17 +73,11 @@ export default function Navbar() {
                       <span
                         className={twMerge(
                           "link-underline block h-full w-full bg-primary/90",
-                          isCurrent
-                            ? "visible-line"
-                            : anim === "in"
-                            ? "animate-in"
-                            : anim === "out"
-                            ? "animate-out"
-                            : "hidden-line"
+                          isCurrent ? "visible-line" : ""
                         )}
                       />
                     </span>
-                  </a>
+                  </Link>
                 );
               })}
             </div>
@@ -154,25 +128,16 @@ export default function Navbar() {
           transform-origin: left center;
           transform: scaleX(0) translateX(0);
           opacity: 0;
+          transition: transform 220ms ease, opacity 220ms ease;
+        }
+        .nav-link:hover .link-underline {
+          transform: scaleX(1) translateX(0);
+          opacity: 1;
         }
         .visible-line {
           transform: scaleX(1) translateX(0);
           opacity: 1;
         }
-        .hidden-line {
-          transform: scaleX(0) translateX(0);
-          opacity: 0;
-        }
-        @keyframes underline-in {
-          0% { transform: scaleX(0) translateX(0); opacity: 0.8; }
-          100% { transform: scaleX(1) translateX(0); opacity: 1; }
-        }
-        @keyframes underline-out {
-          0% { transform: scaleX(1) translateX(0); opacity: 1; }
-          100% { transform: scaleX(1) translateX(100%); opacity: 0; }
-        }
-        .animate-in { animation: underline-in 220ms ease-out forwards; }
-        .animate-out { animation: underline-out 220ms ease-in forwards; }
       `}</style>
     </Disclosure>
   );

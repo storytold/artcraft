@@ -7,10 +7,24 @@ import {
   faGithubAlt,
 } from "@fortawesome/free-brands-svg-icons";
 import { SOCIAL_LINKS } from "../../config/links";
+import { parseFrontmatter, pathToFilename } from "../../utils/markdown";
+
+const faqFiles = import.meta.glob("../../pages/faq/content/*.md", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+const tutorialFiles = import.meta.glob("../../pages/tutorials/content/*.md", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
 
 const navigation = {
   main: [
     { name: "Home", href: "/" },
+    { name: "Tutorials", href: "/tutorials" },
+    { name: "FAQ", href: "/faq" },
     { name: "Download", href: "/download" },
   ],
   social: [
@@ -62,8 +76,8 @@ export default function Example() {
             </a>
           ))}
         </nav> */}
-        <div>
-          <div className="flex justify-center gap-x-10">
+        <div className="w-full flex flex-col items-center gap-10">
+          <div className="flex justify-center gap-x-10 mb-8">
             {navigation.social.map((item) => (
               <a
                 key={item.name}
@@ -79,7 +93,58 @@ export default function Example() {
               </a>
             ))}
           </div>
-          <p className="mt-10 text-center text-sm/6 text-gray-400">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6 text-sm/6">
+            <div className="flex flex-col items-center sm:items-start gap-2">
+              <div className="text-gray-200 mb-1">Pages</div>
+              <a href="/" className="text-gray-400 hover:text-white">
+                Home
+              </a>
+            </div>
+            <div className="flex flex-col items-center sm:items-start gap-2">
+              <div className="text-gray-200 mb-1">Tutorials</div>
+              <a href="/tutorials" className="text-gray-400 hover:text-white">
+                All Tutorials
+              </a>
+              {Object.entries(tutorialFiles).map(([path, raw]) => {
+                const { frontmatter } = parseFrontmatter(raw as string);
+                const slug = pathToFilename(path);
+                if (frontmatter.isPublished === "false") return null;
+                return (
+                  <a
+                    key={slug}
+                    href={`/tutorials/${slug}`}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    {frontmatter.title || slug}
+                  </a>
+                );
+              })}
+            </div>
+            <div className="flex flex-col items-center sm:items-start gap-2">
+              <div className="text-gray-200 mb-1">FAQ</div>
+              <a href="/faq" className="text-gray-400 hover:text-white">
+                All FAQs
+              </a>
+              {Object.entries(faqFiles).map(([path, raw]) => {
+                const { frontmatter } = parseFrontmatter(raw as string);
+                const slug = pathToFilename(path);
+                if (frontmatter.isPublished === "false") return null;
+                const title = (frontmatter.title || slug) as string;
+                const truncated =
+                  title.length > 36 ? title.slice(0, 33) + "…" : title;
+                return (
+                  <a
+                    key={slug}
+                    href={`/faq/${slug}`}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    {truncated}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+          <p className="text-center text-sm/6 text-gray-400">
             &copy; 2025 ArtCraft. All rights reserved.
           </p>
         </div>

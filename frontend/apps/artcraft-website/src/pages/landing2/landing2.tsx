@@ -102,7 +102,7 @@ const Landing = () => {
         </motion.div>
 
         <div className="relative z-10 px-2 sm:px-4 md:px-6 py-8 w-full flex flex-col items-center justify-center">
-          <div className="max-w-full md:max-w-[1200px] mx-auto text-center flex flex-col items-center">
+          <div className="w-full max-w-[1200px] mx-auto text-center flex flex-col items-center">
             {/* Main Heading */}
             <motion.h1
               className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight mb-4 sm:mb-6 drop-shadow-[0_4px_32px_rgba(80,80,255,0.25)]"
@@ -169,13 +169,13 @@ const Landing = () => {
 
             {/* Glassy Video Mockup */}
             <motion.div
-              className="relative mx-auto mt-4 w-full max-w-full"
+              className="relative mx-auto mt-4 w-full max-w-[1200px]"
               initial="hidden"
               animate="visible"
               variants={fadeUpVariants}
             >
               <div
-                className="relative rounded-[20px] sm:rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-xl shadow-2xl p-2 sm:p-4 aspect-[16/9] w-full max-w-full md:max-w-[1200px] mx-auto transition-transform duration-300"
+                className="relative rounded-[20px] sm:rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-xl shadow-2xl p-2 sm:p-4 aspect-[16/9] w-full mx-auto transition-transform duration-300"
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={() => setIsHovering(false)}
               >
@@ -184,7 +184,7 @@ const Landing = () => {
                   autoPlay
                   loop
                   playsInline
-                  className="w-full h-full object-cover rounded-2xl"
+                  className="w-full h-full object-cover rounded-2xl bg-white"
                   src="https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/artcraft_commercial.mp4"
                 >
                   <source

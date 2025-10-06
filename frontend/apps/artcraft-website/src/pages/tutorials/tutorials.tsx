@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
-import { defaultTutorials, TutorialItem } from "@storyteller/ui-tutorial-modal";
-import { Button } from "@storyteller/ui-button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronLeft, faPlay } from "@fortawesome/pro-solid-svg-icons";
+import { faPlay } from "@fortawesome/pro-solid-svg-icons";
+import { parseFrontmatter, pathToFilename } from "../../utils/markdown";
 
-const categoriesFrom = (items: TutorialItem[]): string[] => {
-  const set = new Set<string>();
-  for (const t of items) if (t.category) set.add(t.category);
-  return ["All", ...Array.from(set)];
+type MdTutorial = {
+  slug: string;
+  title: string;
+  abstract: string;
+  category?: string;
+  thumbnail?: string;
 };
 
 const websiteThumb = (url: string): string => {
@@ -20,15 +22,41 @@ const websiteThumb = (url: string): string => {
 
 export const TutorialsPage = () => {
   const [activeCategory, setActiveCategory] = useState<string>("All");
-  const [selected, setSelected] = useState<TutorialItem | null>(null);
 
-  const tutorials = defaultTutorials;
-  const categories = useMemo(() => categoriesFrom(tutorials), [tutorials]);
+  const mdFiles = import.meta.glob("./content/*.md", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  });
+
+  const items = useMemo<MdTutorial[]>(() => {
+    const entries = Object.entries(mdFiles);
+    const results: MdTutorial[] = [];
+    for (const [path, raw] of entries) {
+      const { frontmatter } = parseFrontmatter(raw as string);
+      const filenameSlug = pathToFilename(path);
+      const slug = (frontmatter.slug || filenameSlug).trim().toLowerCase();
+      results.push({
+        slug,
+        title: frontmatter.title || filenameSlug,
+        abstract: frontmatter.abstract || "",
+        category: frontmatter.category || undefined,
+        thumbnail: frontmatter.thumbnail || undefined,
+      });
+    }
+    return results;
+  }, [mdFiles]);
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const t of items) if (t.category) set.add(t.category);
+    return ["All", ...Array.from(set)];
+  }, [items]);
 
   const visible = useMemo(() => {
-    if (activeCategory === "All") return tutorials;
-    return tutorials.filter((t) => t.category === activeCategory);
-  }, [activeCategory, tutorials]);
+    if (activeCategory === "All") return items;
+    return items.filter((t) => t.category === activeCategory);
+  }, [activeCategory, items]);
 
   return (
     <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden bg-dots">
@@ -46,46 +74,48 @@ export const TutorialsPage = () => {
         </div>
 
         {/* Categories */}
-        {!selected && (
-          <div className="flex flex-wrap gap-3 justify-center mb-8">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setActiveCategory(cat)}
-                className={twMerge(
-                  "px-4 py-2 rounded-xl border",
-                  activeCategory === cat
-                    ? "bg-primary/30 border-primary/90"
-                    : "bg-white/5 border-white/10 hover:bg-white/10"
-                )}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-3 justify-center mb-8">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setActiveCategory(cat)}
+              className={twMerge(
+                "px-4 py-2 rounded-xl border",
+                activeCategory === cat
+                  ? "bg-primary/30 border-primary/90"
+                  : "bg-white/5 border-white/10 hover:bg-white/10"
+              )}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
 
         {/* Content */}
-        {!selected ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setSelected(item)}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {visible.map((item) => {
+            const href = `/tutorials/${item.slug}`;
+            return (
+              <Link
+                key={item.slug}
+                to={href}
                 className="group block overflow-hidden rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-left"
               >
                 <div className="aspect-video w-full overflow-hidden relative">
                   <img
-                    src={websiteThumb(item.thumbnailUrl)}
+                    src={
+                      item.thumbnail
+                        ? websiteThumb(item.thumbnail)
+                        : "/images/tutorial-thumbnails/2D_Editor_Basics.jpg"
+                    }
                     alt={item.title}
                     className="h-full w-full object-cover transition-transform group-hover:scale-[1.02]"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="inline-flex items-center gap-2 text-white/90 text-sm font-medium">
                       <FontAwesomeIcon icon={faPlay} />
-                      Watch
+                      Watch video
                     </span>
                   </div>
                 </div>
@@ -97,40 +127,10 @@ export const TutorialsPage = () => {
                     </span>
                   )}
                 </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="flex w-full flex-col">
-            <div className="mb-3 flex items-center gap-4 md:flex-row flex-col">
-              <Button
-                onClick={() => setSelected(null)}
-                className="w-fit text-base-fg opacity-80 hover:opacity-100 font-medium border-none"
-                variant="action"
-                icon={faChevronLeft}
-              >
-                Back
-              </Button>
-              <div className="text-lg font-bold text-base-fg">
-                Tutorial: {selected.title}
-              </div>
-            </div>
-            <div className="w-full">
-              <div className="aspect-video w-full overflow-hidden rounded-lg border border-white/10 bg-black">
-                <iframe
-                  title={selected.title}
-                  src={selected.videoUrl.replace(
-                    "youtu.be/",
-                    "www.youtube.com/embed/"
-                  )}
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-          </div>
-        )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

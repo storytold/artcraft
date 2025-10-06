@@ -1,4 +1,8 @@
 /tutorials /index.html 200
 /tutorials/ /index.html 200
 
+/faq /index.html 200
+/faq/ /index.html 200
+/faq/* /index.html 200
+
 

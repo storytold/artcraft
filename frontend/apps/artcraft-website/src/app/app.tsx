@@ -3,6 +3,9 @@ import Download from "../pages/download";
 import Navbar from "../components/navbar";
 import Landing2 from "../pages/landing2";
 import TutorialsPage from "../pages/tutorials";
+import TutorialsArticle from "../pages/tutorials/article";
+import FaqIndex from "../pages/faq/index";
+import FaqArticle from "../pages/faq/article";
 
 export function App() {
   return (
@@ -13,6 +16,9 @@ export function App() {
         <Route path="/" element={<Landing2 />} />
         <Route path="/download" element={<Download />} />
         <Route path="/tutorials" element={<TutorialsPage />} />
+        <Route path="/tutorials/:slug" element={<TutorialsArticle />} />
+        <Route path="/faq" element={<FaqIndex />} />
+        <Route path="/faq/:slug" element={<FaqArticle />} />
       </Routes>
     </div>
   );
