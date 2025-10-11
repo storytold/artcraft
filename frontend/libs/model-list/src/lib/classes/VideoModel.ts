@@ -36,11 +36,12 @@ export class VideoModel extends Model {
     requiresImage: boolean;
     tags?: ModelTag[];
     sizeOptions?: SizeOption[];
+    progressBarTime?: number;
   }) {
     super(args);
     this.startFrame = args.startFrame;
     this.endFrame = args.endFrame;
     this.requiresImage = args.requiresImage;
     this.sizeOptions = args.sizeOptions ?? [];
-  } 
+  }
 }

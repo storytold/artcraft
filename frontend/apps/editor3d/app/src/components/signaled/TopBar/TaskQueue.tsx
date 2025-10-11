@@ -1,7 +1,13 @@
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faListCheck, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faListCheck,
+  faSpinnerThird,
+  faXmark,
+  faTrashAlt,
+  faTasks,
+} from "@fortawesome/pro-solid-svg-icons";
 import { Modal } from "@storyteller/ui-modal";
 import {
   galleryModalLightboxMediaId,
@@ -9,7 +15,16 @@ import {
   galleryModalLightboxImage,
 } from "@storyteller/ui-gallery-modal";
 import type { GalleryItem } from "@storyteller/ui-gallery-modal";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { GetTaskQueue, MarkTaskAsDismissed } from "@storyteller/tauri-api";
+import type { TaskQueueItem } from "@storyteller/tauri-api";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import {
+  useSelectedImageModel,
+  useSelectedVideoModel,
+} from "../../../../../../../libs/components/model-selector/src/lib/classy-model-selector-store";
+import { ModelPage } from "../../../../../../../libs/components/model-selector/src/lib/model-pages";
+import { Button } from "@storyteller/ui-button";
 
 type InProgressTask = {
   id: string;
@@ -23,9 +38,16 @@ type CompletedTask = {
   title: string;
   thumbnailUrl?: string;
   completedAt?: string; //dummy
+  updatedAt?: string;
 };
 
-const InProgressCard = ({ task }: { task: InProgressTask }) => {
+const InProgressCard = ({
+  task,
+  onDismiss,
+}: {
+  task: InProgressTask;
+  onDismiss?: () => void;
+}) => {
   return (
     <div className="mb-2 rounded-md border border-ui-divider bg-ui-background p-2">
       <div className="flex items-center gap-2">
@@ -52,6 +74,15 @@ const InProgressCard = ({ task }: { task: InProgressTask }) => {
             />
           </div>
         </div>
+        {onDismiss && (
+          <button
+            className="text-base-fg/60 ml-2 rounded p-1 hover:bg-ui-controls"
+            aria-label="Dismiss"
+            onClick={onDismiss}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -60,9 +91,11 @@ const InProgressCard = ({ task }: { task: InProgressTask }) => {
 const CompletedCard = ({
   task,
   onClick,
+  onDismiss,
 }: {
   task: CompletedTask;
   onClick?: () => void;
+  onDismiss?: () => void;
 }) => {
   return (
     <div
@@ -94,27 +127,142 @@ const CompletedCard = ({
           </div>
         )}
       </div>
+      {onDismiss && (
+        <button
+          className="text-base-fg/60 ml-auto rounded p-1 hover:bg-ui-controls"
+          aria-label="Dismiss"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss();
+          }}
+        >
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
+      )}
     </div>
   );
 };
 
 export const TaskQueue = () => {
   const [isModalOpen, setModalOpen] = useState(false);
-  const [inProgress] = useState<InProgressTask[]>([
-    {
-      id: "1",
-      title: "Midjourney image",
-      progress: 42,
-      updatedAt: "Just now",
-    },
-  ]);
-  const [completed] = useState<CompletedTask[]>([
-    {
-      id: "2",
-      title: "Midjourney image",
-      thumbnailUrl: "https://picsum.photos/seed/portrait/80",
-      completedAt: "2m ago",
-    },
+  const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
+  const [completed, setCompleted] = useState<CompletedTask[]>([]);
+  const [lastReadAt, setLastReadAt] = useState<number>(() => {
+    const stored = localStorage.getItem("taskQueueLastReadAt");
+    return stored ? parseInt(stored, 10) : 0;
+  });
+
+  // remove unread state; unread tracking handled via IDs below
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [unreadCompletedIds, setUnreadCompletedIds] = useState<string[]>([]);
+  const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+
+  // Use currently selected models for image and video pages to drive fake progress.
+  const selectedImageModel = useSelectedImageModel(ModelPage.TextToImage);
+  const selectedVideoModel = useSelectedVideoModel(ModelPage.ImageToVideo);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const formatTitle = (t: { provider?: unknown; task_type?: unknown }) => {
+      const provider = t.provider ? String(t.provider) : undefined;
+      const type = t.task_type ? String(t.task_type) : undefined;
+      return [provider, type].filter(Boolean).join(" · ") || "Task";
+    };
+
+    const load = async () => {
+      try {
+        const result = await GetTaskQueue();
+        if (cancelled) return;
+        console.log("TaskQueue:GetTaskQueue result", result);
+        const { tasks } = result;
+
+        const now = Date.now();
+        const inProg = tasks
+          .filter(
+            (t) => t.task_status === "pending" || t.task_status === "started",
+          )
+          .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime())
+          .map((t: TaskQueueItem) => {
+            const createdMs = t.created_at.getTime();
+            const taskTypeStr = t.task_type
+              ? String(t.task_type).toLowerCase()
+              : "";
+            const isVideo = taskTypeStr.includes("video");
+            const duration =
+              (isVideo
+                ? selectedVideoModel?.progressBarTime
+                : selectedImageModel?.progressBarTime) ?? 20000;
+            const raw = ((now - createdMs) / duration) * 100;
+            const progress = Math.min(95, Math.max(0, raw));
+            return {
+              id: t.id,
+              title: formatTitle(t),
+              progress,
+              updatedAt: t.updated_at?.toISOString(),
+            };
+          });
+
+        const done = tasks
+          .filter((t) => t.task_status === "complete_success")
+          .sort(
+            (a, b) =>
+              (b.completed_at?.getTime() || b.updated_at.getTime()) -
+              (a.completed_at?.getTime() || a.updated_at.getTime()),
+          )
+          .map((t) => ({
+            id: t.id,
+            title: formatTitle(t),
+            thumbnailUrl: undefined,
+            completedAt: t.completed_at?.toISOString(),
+            updatedAt: t.updated_at?.toISOString(),
+          }));
+
+        setInProgress(inProg);
+        setCompleted(done);
+
+        // Track newly completed IDs when popover is closed
+        const newCompletedIdSet = new Set(done.map((d) => d.id));
+        const newlyCompletedIds: string[] = [];
+        newCompletedIdSet.forEach((id) => {
+          if (!prevCompletedIdsRef.current.has(id)) {
+            newlyCompletedIds.push(id);
+          }
+        });
+        prevCompletedIdsRef.current = newCompletedIdSet;
+        if (!isPopoverOpen && newlyCompletedIds.length > 0) {
+          setUnreadCompletedIds((prev) =>
+            Array.from(new Set([...(prev ?? []), ...newlyCompletedIds])),
+          );
+        }
+      } catch (_) {
+        // ignore
+      }
+    };
+
+    load();
+    const id = setInterval(load, 5000);
+    let unlisten: Promise<UnlistenFn> | null = null;
+    (async () => {
+      // Update immediately when Tauri signals a generation completion
+      unlisten = listen("generation-complete-event", () => {
+        if (!cancelled) {
+          load();
+        }
+      });
+    })();
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      if (unlisten) {
+        unlisten.then((f) => f());
+      }
+    };
+  }, [
+    lastReadAt,
+    selectedImageModel?.progressBarTime,
+    selectedVideoModel?.progressBarTime,
+    isPopoverOpen,
   ]);
 
   const hasNothing = useMemo(
@@ -122,28 +270,79 @@ export const TaskQueue = () => {
     [inProgress.length, completed.length],
   );
 
+  const inProgressCount = inProgress.length;
+  const badgeCount = inProgressCount + (unreadCompletedIds?.length ?? 0);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsPopoverOpen(open);
+    if (open) {
+      const now = Date.now();
+      setLastReadAt(now);
+      localStorage.setItem("taskQueueLastReadAt", String(now));
+      setUnreadCompletedIds([]);
+    }
+  };
+
+  const dismissTask = async (id: string) => {
+    try {
+      await MarkTaskAsDismissed(id);
+      setInProgress((prev) => prev.filter((t) => t.id !== id));
+      setCompleted((prev) => prev.filter((t) => t.id !== id));
+      setUnreadCompletedIds((prev) => (prev ?? []).filter((x) => x !== id));
+    } catch (_) {
+      // ignore
+    }
+  };
+
+  const dismissAll = async () => {
+    const ids = [...inProgress.map((t) => t.id), ...completed.map((t) => t.id)];
+    try {
+      await Promise.all(ids.map((id) => MarkTaskAsDismissed(id)));
+    } catch (_) {
+      // ignore
+    } finally {
+      setInProgress([]);
+      setCompleted([]);
+      setUnreadCompletedIds([]);
+    }
+  };
+
   return (
     <>
       <Tooltip content="Task Queue" position="bottom" closeOnClick={true}>
         <div className="relative">
-          <div className="absolute -right-1 -top-1 z-20 flex h-[17px] w-[17px] items-center justify-center rounded-full bg-brand-primary-400 text-[13px] font-medium text-white">
-            1
-          </div>
+          {badgeCount > 0 && (
+            <div className="absolute -right-1 -top-1 z-20 flex h-[17px] w-[17px] items-center justify-center rounded-full bg-brand-primary-400 text-[13px] font-medium text-white">
+              {badgeCount}
+            </div>
+          )}
           <PopoverMenu
             mode="default"
             buttonClassName="h-[38px] w-[38px] !p-0 relative"
             panelClassName="w-[360px] p-2 bg-ui-panel mt-2.5"
             position="bottom"
             align="end"
-            triggerIcon={<FontAwesomeIcon icon={faListCheck} />}
+            triggerIcon={
+              inProgressCount > 0 ? (
+                <FontAwesomeIcon
+                  icon={faSpinnerThird}
+                  className="animate-spin"
+                />
+              ) : (
+                <FontAwesomeIcon icon={faListCheck} />
+              )
+            }
+            onOpenChange={handleOpenChange}
           >
             {(close) => (
               <>
                 <div className="flex max-h-[480px] flex-col">
                   <div className="max-h-[420px] overflow-y-auto p-1">
                     {hasNothing ? (
-                      <div className="text-base-fg/60 flex h-40 w-full flex-col items-center justify-center">
-                        <div className="text-sm">No tasks yet</div>
+                      <div className="text-base-fg/60 flex w-full flex-col items-center justify-center p-5">
+                        <div className="flex items-center gap-2.5 text-sm opacity-60">
+                          <FontAwesomeIcon icon={faTasks} /> No tasks yet
+                        </div>
                       </div>
                     ) : (
                       <div>
@@ -181,6 +380,7 @@ export const TaskQueue = () => {
                                   galleryModalLightboxVisible.value = true;
                                   close();
                                 }}
+                                onDismiss={() => dismissTask(t.id)}
                               />
                             ))}
                           </div>
@@ -189,15 +389,34 @@ export const TaskQueue = () => {
                     )}
                   </div>
                   <div className="pt-1">
-                    <button
-                      className="border-ui-controls-border text-base-fg w-full rounded-md border bg-ui-controls py-2 text-sm hover:brightness-110"
-                      onClick={() => {
-                        setModalOpen(true);
-                        close();
-                      }}
-                    >
-                      Show all
-                    </button>
+                    <div className="flex items-center justify-between gap-2">
+                      <Button
+                        className="grow"
+                        variant="secondary"
+                        onClick={() => {
+                          setModalOpen(true);
+                          close();
+                        }}
+                      >
+                        Show all
+                      </Button>
+                      <Tooltip
+                        content="Clear all"
+                        position="bottom"
+                        closeOnClick={true}
+                      >
+                        <Button
+                          className="flex h-9 w-9 items-center justify-center rounded-md bg-red/20 text-white hover:bg-red/40"
+                          aria-label="Clear all"
+                          onClick={async () => {
+                            await dismissAll();
+                            close();
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTrashAlt} />
+                        </Button>
+                      </Tooltip>
+                    </div>
                   </div>
                 </div>
               </>
@@ -214,8 +433,10 @@ export const TaskQueue = () => {
       >
         <div className="max-h-[70vh] overflow-y-auto p-2">
           {hasNothing ? (
-            <div className="text-base-fg/60 flex h-40 w-full flex-col items-center justify-center">
-              <div className="text-sm">No tasks yet</div>
+            <div className="text-base-fg/60 flex w-full flex-col items-center justify-center p-5">
+              <div className="flex items-center gap-2.5 text-sm opacity-60">
+                <FontAwesomeIcon icon={faTasks} /> No tasks yet
+              </div>
             </div>
           ) : (
             <div>

@@ -43,6 +43,9 @@ export class Model {
   // Optional provider preferences; two-to-many via page and providers.
   readonly preferredProvidersByPage?: Partial<Record<string, string[]>>;
 
+  // Time in milliseconds for the fake progress bar to reach 100% (UI-only)
+  readonly progressBarTime: number;
+
   protected constructor(args: {
     id: string;
     tauriId: string;
@@ -54,6 +57,7 @@ export class Model {
     selectorBadges: string[];
     tags?: ModelTag[];
     preferredProvidersByPage?: Partial<Record<string, string[]>>;
+    progressBarTime?: number;
   }) {
     this.id = args.id;
     this.tauriId = args.tauriId;
@@ -65,6 +69,7 @@ export class Model {
     this.selectorBadges = args.selectorBadges;
     this.tags = args.tags ?? [];
     this.preferredProvidersByPage = args.preferredProvidersByPage;
+    this.progressBarTime = args.progressBarTime ?? 20000;
   }
 
   toLegacyBadges(): { label: string }[] {

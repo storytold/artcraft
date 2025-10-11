@@ -15,6 +15,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     startFrame: true,
     endFrame: true,
     requiresImage: true,
+    progressBarTime: 100000,
   }),
   new VideoModel({
     id: "kling_2_1_pro",
