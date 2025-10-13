@@ -529,19 +529,13 @@ export const TaskQueue = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Task Queue</h2>
               <div className="flex items-center gap-2">
-                <Tooltip
-                  content="Clear completed"
-                  position="bottom"
-                  closeOnClick={true}
+                <Button
+                  className="flex h-9 items-center justify-center bg-red/20 px-3 text-white hover:bg-red/40"
+                  onClick={dismissCompleted}
                 >
-                  <Button
-                    className="flex h-9 items-center justify-center rounded-md bg-red/20 px-3 text-white hover:bg-red/40"
-                    onClick={dismissCompleted}
-                  >
-                    <FontAwesomeIcon icon={faTrashAlt} className="mr-1" />
-                    Clear completed
-                  </Button>
-                </Tooltip>
+                  <FontAwesomeIcon icon={faTrashAlt} className="mr-1" />
+                  Clear all
+                </Button>
                 <CloseButton onClick={() => setModalOpen(false)} />
               </div>
             </div>
