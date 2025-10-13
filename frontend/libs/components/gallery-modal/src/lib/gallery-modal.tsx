@@ -47,7 +47,7 @@ export interface GalleryItem {
   id: string;
   label: string;
   thumbnail: string | null;
-  // Thumbnail template is not a usable URL yet. It has some variables 
+  // Thumbnail template is not a usable URL yet. It has some variables
   // like `{WIDTH}` which must be replaced downstream.
   thumbnailUrlTemplate?: string;
   fullImage?: string | null;
@@ -126,6 +126,8 @@ export const GalleryModal = React.memo(
     const pageSize = 100;
 
     const imageUrl = lightboxImageSignal.value?.fullImage || "";
+    const imageUrls: string[] | undefined = (lightboxImageSignal.value as any)
+      ?.imageUrls;
 
     const api = useMemo(() => new GalleryModalApi(), []);
     const usersApi = useMemo(() => new UsersApi(), []);
@@ -269,9 +271,9 @@ export const GalleryModal = React.memo(
                       "{WIDTH}",
                       thumbnail_size.toString()
                     ),
-              // TODO(bt): Thumbnail template URL may be wrong for videos and other asset types, but I'm 
+              // TODO(bt): Thumbnail template URL may be wrong for videos and other asset types, but I'm
               // trying to plumb it through for the inpainting editor, which is just images.
-              thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template, 
+              thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
               fullImage: item.media_links.cdn_url,
               createdAt: item.created_at,
               mediaClass:
@@ -693,12 +695,15 @@ export const GalleryModal = React.memo(
             onClose={handleCloseLightbox}
             onCloseGallery={() => (galleryModalVisibleViewMode.value = false)}
             imageUrl={imageUrl}
+            // pass multiple images if present
+            imageUrls={imageUrls}
             imageAlt={lightboxImageSignal.value?.label || ""}
             onImageError={() => imageUrl && handleImageError(imageUrl)}
             title={lightboxImageSignal.value?.label}
             createdAt={lightboxImageSignal.value?.createdAt}
             downloadUrl={imageUrl}
             mediaId={lightboxImageSignal.value?.id}
+            mediaTokens={(lightboxImageSignal.value as any)?.mediaTokens}
             onDownloadClicked={onDownloadClicked}
             onAddToSceneClicked={onAddToSceneClicked}
             mediaClass={lightboxImageSignal.value?.mediaClass}

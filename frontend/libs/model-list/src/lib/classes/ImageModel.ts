@@ -48,6 +48,7 @@ export class ImageModel extends Model {
     maxImagePromptCount?: number;
     canTextToImage?: boolean;
     tags?: ModelTag[];
+    progressBarTime?: number;
   }) {
     if (args.maxGenerationCount < 1) {
       throw new Error("maxGenerationCount must be at least 1");

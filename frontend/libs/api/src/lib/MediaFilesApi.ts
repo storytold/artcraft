@@ -94,6 +94,28 @@ export class MediaFilesApi extends ApiManager {
       });
   }
 
+  public async GetMediaFilesByBatchToken({
+    batchToken,
+  }: {
+    batchToken: string;
+  }): Promise<ApiResponse<MediaFile[]>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/batch/${batchToken}`;
+
+    return await this.get<{
+      success: boolean;
+      results: MediaFile[];
+      pagination?: Pagination;
+      error_reason?: string;
+    }>({ endpoint })
+      .then((response) => ({
+        success: response.success,
+        data: (response.results ?? []) as unknown as MediaFile[],
+      }))
+      .catch((err) => {
+        return { success: false, errorMessage: err.message };
+      });
+  }
+
   public async GetMediaFileByToken({
     mediaFileToken,
   }: {

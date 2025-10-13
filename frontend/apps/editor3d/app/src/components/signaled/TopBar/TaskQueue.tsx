@@ -22,13 +22,20 @@ import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import {
   useSelectedImageModel,
   useSelectedVideoModel,
-} from "../../../../../../../libs/components/model-selector/src/lib/classy-model-selector-store";
-import { ModelPage } from "../../../../../../../libs/components/model-selector/src/lib/model-pages";
+  ModelPage,
+} from "@storyteller/ui-model-selector";
 import { Button } from "@storyteller/ui-button";
+import {
+  getProviderDisplayName,
+  getModelDisplayName,
+} from "@storyteller/model-list";
+import { MediaFilesApi } from "@storyteller/api";
+import { CloseButton } from "@storyteller/ui-close-button";
 
 type InProgressTask = {
   id: string;
   title: string;
+  subtitle?: string;
   progress: number;
   updatedAt?: string;
 };
@@ -36,9 +43,12 @@ type InProgressTask = {
 type CompletedTask = {
   id: string;
   title: string;
+  subtitle?: string;
   thumbnailUrl?: string;
-  completedAt?: string; //dummy
+  completedAt?: string;
   updatedAt?: string;
+  imageUrls?: string[];
+  mediaTokens?: string[];
 };
 
 const InProgressCard = ({
@@ -50,8 +60,8 @@ const InProgressCard = ({
 }) => {
   return (
     <div className="mb-2 rounded-md border border-ui-divider bg-ui-background p-2">
-      <div className="flex items-center gap-2">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
           <FontAwesomeIcon
             icon={faSpinnerThird}
             className="text-base-fg/60 animate-spin"
@@ -67,6 +77,11 @@ const InProgressCard = ({
               {Math.max(0, Math.min(100, Math.round(task.progress)))}%
             </div>
           </div>
+          {task.subtitle && (
+            <div className="text-base-fg mt-0.5 truncate text-xs opacity-60">
+              {task.subtitle}
+            </div>
+          )}
           <div className="mt-2 h-1.5 w-full rounded bg-ui-controls">
             <div
               className="h-1.5 rounded bg-brand-primary-400"
@@ -99,12 +114,12 @@ const CompletedCard = ({
 }) => {
   return (
     <div
-      className="mb-2 flex cursor-pointer items-center gap-2 rounded-md border border-ui-divider bg-ui-background p-2 transition-colors hover:bg-ui-controls/40"
+      className="mb-2 flex cursor-pointer items-center gap-2.5 rounded-md border border-ui-divider bg-ui-background p-2 transition-colors hover:bg-ui-controls/40"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : -1}
     >
-      <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-ui-controls">
+      <div className="h-14 w-14 shrink-0 overflow-hidden rounded bg-ui-controls">
         {task.thumbnailUrl ? (
           <img
             src={task.thumbnailUrl}
@@ -121,6 +136,11 @@ const CompletedCard = ({
         <div className="text-base-fg/90 truncate text-sm font-medium">
           {task.title}
         </div>
+        {task.subtitle && (
+          <div className="text-base-fg mt-0.5 truncate text-xs opacity-60">
+            {task.subtitle}
+          </div>
+        )}
         {task.completedAt && (
           <div className="text-base-fg text-xs opacity-60">
             {task.completedAt}
@@ -129,7 +149,7 @@ const CompletedCard = ({
       </div>
       {onDismiss && (
         <button
-          className="text-base-fg/60 ml-auto rounded p-1 hover:bg-ui-controls"
+          className="text-base-fg/60 ml-auto h-6 w-6 rounded-full p-1 hover:bg-ui-controls"
           aria-label="Dismiss"
           onClick={(e) => {
             e.stopPropagation();
@@ -160,14 +180,32 @@ export const TaskQueue = () => {
   // Use currently selected models for image and video pages to drive fake progress.
   const selectedImageModel = useSelectedImageModel(ModelPage.TextToImage);
   const selectedVideoModel = useSelectedVideoModel(ModelPage.ImageToVideo);
+  // Snapshot per-task duration so switching models doesn't affect existing items
+  const taskDurationRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
 
-    const formatTitle = (t: { provider?: unknown; task_type?: unknown }) => {
-      const provider = t.provider ? String(t.provider) : undefined;
-      const type = t.task_type ? String(t.task_type) : undefined;
-      return [provider, type].filter(Boolean).join(" · ") || "Task";
+    const formatTitleParts = (t: TaskQueueItem) => {
+      const provider = t.provider
+        ? getProviderDisplayName(String(t.provider).toLowerCase())
+        : undefined;
+      const taskTypeStr = t.task_type ? String(t.task_type) : "";
+      const kind = taskTypeStr.includes("video")
+        ? "Video"
+        : taskTypeStr.includes("image")
+          ? "Image"
+          : undefined;
+      const modelDisplay = t.model_type
+        ? getModelDisplayName(String(t.model_type))
+        : undefined;
+
+      const title = kind || "Task";
+      const subtitle =
+        modelDisplay && provider
+          ? `${modelDisplay} — ${provider}`
+          : modelDisplay || provider || undefined;
+      return { title, subtitle, kind };
     };
 
     const load = async () => {
@@ -176,6 +214,40 @@ export const TaskQueue = () => {
         if (cancelled) return;
         console.log("TaskQueue:GetTaskQueue result", result);
         const { tasks } = result;
+
+        // Fetch media files for thumbnails, using dummy tokens from API for now
+        const tokens = result.results as string[] | undefined;
+        let imageUrls: string[] = [];
+        let mediaTokens: string[] | undefined = undefined;
+        if (tokens && tokens.length > 0) {
+          try {
+            const api = new MediaFilesApi();
+            const batchToken = tokens.find((t) => t.startsWith("batch_"));
+            if (batchToken) {
+              const resp = await api.GetMediaFilesByBatchToken({
+                batchToken,
+              });
+              if (resp.success && resp.data) {
+                imageUrls = resp.data
+                  .filter((m) => !!m?.media_links?.cdn_url)
+                  .map((m) => m.media_links.cdn_url);
+                mediaTokens = resp.data.map((m) => m.token);
+              }
+            } else {
+              const resp = await api.ListMediaFilesByTokens({
+                mediaTokens: tokens,
+              });
+              if (resp.success && resp.data) {
+                imageUrls = resp.data
+                  .filter((m) => !!m?.media_links?.cdn_url)
+                  .map((m) => m.media_links.cdn_url);
+                mediaTokens = resp.data.map((m) => m.token);
+              }
+            }
+          } catch (_) {
+            // ignore
+          }
+        }
 
         const now = Date.now();
         const inProg = tasks
@@ -189,19 +261,33 @@ export const TaskQueue = () => {
               ? String(t.task_type).toLowerCase()
               : "";
             const isVideo = taskTypeStr.includes("video");
-            const duration =
-              (isVideo
-                ? selectedVideoModel?.progressBarTime
-                : selectedImageModel?.progressBarTime) ?? 20000;
+            let duration = taskDurationRef.current.get(t.id);
+            if (!duration) {
+              duration =
+                (isVideo
+                  ? selectedVideoModel?.progressBarTime
+                  : selectedImageModel?.progressBarTime) ?? 20000;
+              taskDurationRef.current.set(t.id, duration);
+            }
             const raw = ((now - createdMs) / duration) * 100;
             const progress = Math.min(95, Math.max(0, raw));
+            const parts = formatTitleParts(t);
             return {
               id: t.id,
-              title: formatTitle(t),
+              title: `Generating ${parts.kind || "Task"}...`,
+              subtitle: parts.subtitle,
               progress,
               updatedAt: t.updated_at?.toISOString(),
             };
           });
+
+        // prune durations for tasks no longer in progress
+        const inProgIds = new Set(inProg.map((x) => x.id));
+        for (const id of Array.from(taskDurationRef.current.keys())) {
+          if (!inProgIds.has(id)) {
+            taskDurationRef.current.delete(id);
+          }
+        }
 
         const done = tasks
           .filter((t) => t.task_status === "complete_success")
@@ -210,12 +296,14 @@ export const TaskQueue = () => {
               (b.completed_at?.getTime() || b.updated_at.getTime()) -
               (a.completed_at?.getTime() || a.updated_at.getTime()),
           )
-          .map((t) => ({
+          .map((t: TaskQueueItem) => ({
             id: t.id,
-            title: formatTitle(t),
-            thumbnailUrl: undefined,
+            ...formatTitleParts(t),
+            thumbnailUrl: imageUrls?.[0],
             completedAt: t.completed_at?.toISOString(),
             updatedAt: t.updated_at?.toISOString(),
+            imageUrls: imageUrls?.length ? imageUrls : undefined,
+            mediaTokens: mediaTokens?.length ? mediaTokens : undefined,
           }));
 
         setInProgress(inProg);
@@ -289,19 +377,19 @@ export const TaskQueue = () => {
       setInProgress((prev) => prev.filter((t) => t.id !== id));
       setCompleted((prev) => prev.filter((t) => t.id !== id));
       setUnreadCompletedIds((prev) => (prev ?? []).filter((x) => x !== id));
+      taskDurationRef.current.delete(id);
     } catch (_) {
       // ignore
     }
   };
 
-  const dismissAll = async () => {
-    const ids = [...inProgress.map((t) => t.id), ...completed.map((t) => t.id)];
+  const dismissCompleted = async () => {
+    const ids = completed.map((t) => t.id);
     try {
       await Promise.all(ids.map((id) => MarkTaskAsDismissed(id)));
     } catch (_) {
       // ignore
     } finally {
-      setInProgress([]);
       setCompleted([]);
       setUnreadCompletedIds([]);
     }
@@ -366,8 +454,10 @@ export const TaskQueue = () => {
                                 key={t.id}
                                 task={t}
                                 onClick={() => {
+                                  const firstMediaToken =
+                                    t.mediaTokens?.[0] || t.id;
                                   const item: GalleryItem = {
-                                    id: t.id,
+                                    id: firstMediaToken,
                                     label: t.title,
                                     thumbnail: t.thumbnailUrl || null,
                                     fullImage: t.thumbnailUrl || null,
@@ -375,8 +465,11 @@ export const TaskQueue = () => {
                                     mediaClass: "image",
                                   } as GalleryItem;
                                   galleryModalLightboxMediaId.value = item.id;
-                                  galleryModalLightboxImage.value =
-                                    item as GalleryItem;
+                                  galleryModalLightboxImage.value = {
+                                    ...item,
+                                    imageUrls: t.imageUrls,
+                                    mediaTokens: t.mediaTokens,
+                                  } as unknown as GalleryItem;
                                   galleryModalLightboxVisible.value = true;
                                   close();
                                 }}
@@ -401,15 +494,15 @@ export const TaskQueue = () => {
                         Show all
                       </Button>
                       <Tooltip
-                        content="Clear all"
+                        content="Clear completed"
                         position="bottom"
                         closeOnClick={true}
                       >
                         <Button
                           className="flex h-9 w-9 items-center justify-center rounded-md bg-red/20 text-white hover:bg-red/40"
-                          aria-label="Clear all"
+                          aria-label="Clear completed"
                           onClick={async () => {
-                            await dismissAll();
+                            await dismissCompleted();
                             close();
                           }}
                         >
@@ -428,57 +521,80 @@ export const TaskQueue = () => {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setModalOpen(false)}
-        title={<h2>Task Queue</h2>}
         className="h-[520px] max-w-3xl"
+        showClose={false}
       >
-        <div className="max-h-[70vh] overflow-y-auto p-2">
-          {hasNothing ? (
-            <div className="text-base-fg/60 flex w-full flex-col items-center justify-center p-5">
-              <div className="flex items-center gap-2.5 text-sm opacity-60">
-                <FontAwesomeIcon icon={faTasks} /> No tasks yet
+        <div className="flex h-full flex-col">
+          <div className="rounded-t-xl border-ui-panel-border bg-ui-panel p-3 py-2">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Task Queue</h2>
+              <div className="flex items-center gap-2">
+                <Tooltip
+                  content="Clear completed"
+                  position="bottom"
+                  closeOnClick={true}
+                >
+                  <Button
+                    className="flex h-9 items-center justify-center rounded-md bg-red/20 px-3 text-white hover:bg-red/40"
+                    onClick={dismissCompleted}
+                  >
+                    <FontAwesomeIcon icon={faTrashAlt} className="mr-1" />
+                    Clear completed
+                  </Button>
+                </Tooltip>
+                <CloseButton onClick={() => setModalOpen(false)} />
               </div>
             </div>
-          ) : (
-            <div>
-              {inProgress.length > 0 && (
-                <div className="mb-4">
-                  <div className="text-base-fg/50 mb-2 px-1 text-xs uppercase tracking-wide">
-                    In Progress
-                  </div>
-                  {inProgress.map((t) => (
-                    <InProgressCard key={t.id} task={t} />
-                  ))}
+          </div>
+          <div className="flex-1 overflow-y-auto p-2">
+            {hasNothing ? (
+              <div className="text-base-fg/60 flex w-full flex-col items-center justify-center p-5">
+                <div className="flex items-center gap-2.5 text-sm opacity-60">
+                  <FontAwesomeIcon icon={faTasks} /> No tasks yet
                 </div>
-              )}
-              {completed.length > 0 && (
-                <div>
-                  <div className="text-base-fg/50 mb-2 px-1 text-xs uppercase tracking-wide">
-                    Completed
+              </div>
+            ) : (
+              <div>
+                {inProgress.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-base-fg/50 mb-2 px-1 text-xs uppercase tracking-wide">
+                      In Progress
+                    </div>
+                    {inProgress.map((t) => (
+                      <InProgressCard key={t.id} task={t} />
+                    ))}
                   </div>
-                  {completed.map((t) => (
-                    <CompletedCard
-                      key={t.id}
-                      task={t}
-                      onClick={() => {
-                        const item: GalleryItem = {
-                          id: t.id,
-                          label: t.title,
-                          thumbnail: t.thumbnailUrl || null,
-                          fullImage: t.thumbnailUrl || null,
-                          createdAt: new Date().toISOString(),
-                          mediaClass: "image",
-                        } as GalleryItem;
-                        galleryModalLightboxMediaId.value = item.id;
-                        galleryModalLightboxImage.value = item as GalleryItem;
-                        galleryModalLightboxVisible.value = true;
-                        setModalOpen(false);
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                )}
+                {completed.length > 0 && (
+                  <div>
+                    <div className="text-base-fg/50 mb-2 px-1 text-xs uppercase tracking-wide">
+                      Completed
+                    </div>
+                    {completed.map((t) => (
+                      <CompletedCard
+                        key={t.id}
+                        task={t}
+                        onClick={() => {
+                          const item: GalleryItem = {
+                            id: t.id,
+                            label: t.title,
+                            thumbnail: t.thumbnailUrl || null,
+                            fullImage: t.thumbnailUrl || null,
+                            createdAt: new Date().toISOString(),
+                            mediaClass: "image",
+                          } as GalleryItem;
+                          galleryModalLightboxMediaId.value = item.id;
+                          galleryModalLightboxImage.value = item as GalleryItem;
+                          galleryModalLightboxVisible.value = true;
+                          setModalOpen(false);
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </Modal>
     </>

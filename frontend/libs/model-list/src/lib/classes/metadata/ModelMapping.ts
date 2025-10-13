@@ -8,6 +8,9 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   flux_1_schnell: ModelCreator.BlackForestLabs,
   flux_pro_1p1: ModelCreator.BlackForestLabs,
   flux_pro_1p1_ultra: ModelCreator.BlackForestLabs,
+  // Aliases commonly returned by other services
+  flux_pro_1_1: ModelCreator.BlackForestLabs,
+  flux_pro_1_1_ultra: ModelCreator.BlackForestLabs,
   gpt_image_1: ModelCreator.OpenAi,
   kling_1p6_pro: ModelCreator.Kling,
   kling_2p1_pro: ModelCreator.Kling,
@@ -27,17 +30,20 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
 };
 
 // Get creator icon for a model type
+const normalizeModelKey = (modelType: string): string =>
+  modelType.toLowerCase().replace(/\./g, "_").trim();
+
 export const getModelCreatorIcon = (
   modelType: string
 ): React.ReactNode | null => {
-  const creator = MODEL_TYPE_TO_CREATOR[modelType];
+  const creator = MODEL_TYPE_TO_CREATOR[normalizeModelKey(modelType)];
   if (!creator) return null;
   return getCreatorIcon(creator, "h-4 w-4 invert");
 };
 
 // Get creator name for display
 export const getModelCreatorName = (modelType: string): string | null => {
-  const creator = MODEL_TYPE_TO_CREATOR[modelType];
+  const creator = MODEL_TYPE_TO_CREATOR[normalizeModelKey(modelType)];
 
   // Convert enum value to display name
   switch (creator) {
@@ -91,6 +97,9 @@ export const getModelDisplayName = (modelType: string): string => {
     flux_1_schnell: "Flux 1 Schnell",
     flux_pro_1p1: "Flux Pro 1.1",
     flux_pro_1p1_ultra: "Flux Pro 1.1 Ultra",
+    // Aliases
+    flux_pro_1_1: "Flux Pro 1.1",
+    flux_pro_1_1_ultra: "Flux Pro 1.1 Ultra",
     gpt_image_1: "GPT Image 1",
     kling_1p6_pro: "Kling 1.6 Pro",
     kling_2p1_pro: "Kling 2.1 Pro",
@@ -118,7 +127,8 @@ export const getModelDisplayName = (modelType: string): string => {
     // TODO: add more models here - BFlat
   };
 
-  return displayNames[modelType] || modelType;
+  const key = normalizeModelKey(modelType);
+  return displayNames[key] || modelType;
 };
 
 // Convert provider string to human-readable display name (this is for the provider priority in settings)

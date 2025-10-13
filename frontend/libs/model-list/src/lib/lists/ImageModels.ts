@@ -16,6 +16,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     defaultGenerationCount: 4,
     canUseImagePrompt: false,
     maxImagePromptCount: 6,
+    progressBarTime: 45000,
   }),
   new ImageModel({
     id: "flux_pro_1_1_ultra",
@@ -30,6 +31,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     defaultGenerationCount: 4,
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
+    progressBarTime: 35000,
   }),
   new ImageModel({
     id: "flux_pro_1_1",
@@ -39,11 +41,12 @@ export const IMAGE_MODELS: ImageModel[] = [
     creator: ModelCreator.BlackForestLabs,
     selectorName: "Flux Pro 1.1",
     selectorDescription: "High quality model",
-    selectorBadges: ["25 sec."],
+    selectorBadges: ["10 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
+    progressBarTime: 10000,
   }),
   new ImageModel({
     id: "flux_1_dev",
@@ -58,6 +61,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     defaultGenerationCount: 4,
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
+    progressBarTime: 10000,
   }),
   new ImageModel({
     id: "flux_1_schnell",
@@ -72,6 +76,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     defaultGenerationCount: 4,
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
+    progressBarTime: 10000,
   }),
   new ImageModel({
     id: "gemini_25_flash",
@@ -89,6 +94,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     maxImagePromptCount: 6,
     canTextToImage: false,
     tags: [ModelTag.InstructiveEdit],
+    progressBarTime: 25000,
   }),
   new ImageModel({
     id: "gpt_image_1",
@@ -105,6 +111,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canEditImages: true,
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
+    progressBarTime: 60000,
   }),
   new ImageModel({
     id: "flux_pro_kontext_max",
@@ -120,6 +127,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canEditImages: true,
     canTextToImage: false,
     tags: [ModelTag.InstructiveEdit],
+    progressBarTime: 20000,
   }),
   new ImageModel({
     id: "flux_pro_inpaint",
@@ -135,6 +143,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canEditImages: true,
     usesInpaintingMask: true,
     canTextToImage: false,
+    progressBarTime: 30000,
   }),
   new ImageModel({
     id: "flux_dev_juggernaut_inpaint",
@@ -150,10 +159,11 @@ export const IMAGE_MODELS: ImageModel[] = [
     canEditImages: true,
     usesInpaintingMask: true,
     canTextToImage: false,
+    progressBarTime: 10000,
   }),
 ];
 
-export const IMAGE_MODELS_BY_ID : Map<string, ImageModel> = new Map(
+export const IMAGE_MODELS_BY_ID: Map<string, ImageModel> = new Map(
   IMAGE_MODELS.map((model) => [model.id, model])
 );
 

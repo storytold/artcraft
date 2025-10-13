@@ -7,7 +7,7 @@ import {
   EnqueueImageTo3dObjectModel,
 } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
-import React from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
@@ -26,11 +26,13 @@ interface LightboxModalProps {
   onClose: () => void;
   onCloseGallery: () => void;
   imageUrl?: string | null;
+  imageUrls?: string[];
+  mediaTokens?: string[];
   imageAlt?: string;
   onImageError?: () => void;
   title?: string;
   createdAt?: string;
-  additionalInfo?: React.ReactNode;
+  additionalInfo?: ReactNode;
   downloadUrl?: string;
   mediaId?: string;
   onDownloadClicked?: (url: string, mediaClass?: string) => Promise<void>;
@@ -48,6 +50,8 @@ export function LightboxModal({
   onClose,
   onCloseGallery,
   imageUrl,
+  imageUrls,
+  mediaTokens,
   imageAlt = "",
   onImageError,
   title,
@@ -64,18 +68,25 @@ export function LightboxModal({
   // the <image> tag request from being cached. If we then drag it into the canvas after it's been cached,
   // it won't be able to load in cors mode and will show blank in the canvas and 3D engine. This is a really
   // stupid hack around this behavior.
-  const imageTagImageUrl = imageUrl ? imageUrl + "?cors=1" : "";
+  const [selectedBatchIndex, setSelectedBatchIndex] = useState<number | null>(
+    null
+  );
+  const displayUrl =
+    selectedBatchIndex !== null && imageUrls
+      ? imageUrls[selectedBatchIndex]
+      : imageUrl || null;
+  const imageTagImageUrl = displayUrl ? displayUrl + "?cors=1" : "";
 
-  const [mediaLoaded, setMediaLoaded] = React.useState<boolean>(false);
-  const [prompt, setPrompt] = React.useState<string | null>(null);
-  const [promptLoading, setPromptLoading] = React.useState<boolean>(false);
-  const [hasPromptToken, setHasPromptToken] = React.useState<boolean>(false);
-  const [isPromptHovered, setIsPromptHovered] = React.useState<boolean>(false);
-  const [generationProvider, setGenerationProvider] = React.useState<
-    string | null
-  >(null);
-  const [modelType, setModelType] = React.useState<string | null>(null);
-  const [contextImages, setContextImages] = React.useState<Array<{
+  const [mediaLoaded, setMediaLoaded] = useState<boolean>(false);
+  const [prompt, setPrompt] = useState<string | null>(null);
+  const [promptLoading, setPromptLoading] = useState<boolean>(false);
+  const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
+  const [isPromptHovered, setIsPromptHovered] = useState<boolean>(false);
+  const [generationProvider, setGenerationProvider] = useState<string | null>(
+    null
+  );
+  const [modelType, setModelType] = useState<string | null>(null);
+  const [contextImages, setContextImages] = useState<Array<{
     media_links: {
       cdn_url: string;
       maybe_thumbnail_template: string;
@@ -85,14 +96,33 @@ export function LightboxModal({
   }> | null>(null);
 
   // Reset when imageUrl changes
-  React.useEffect(() => {
+  useEffect(() => {
     setMediaLoaded(false);
-  }, [imageUrl]);
+  }, [imageUrl, selectedBatchIndex]);
+
+  // Maintain current media id (updates when selecting from batch)
+  const [currentMediaId, setCurrentMediaId] = useState<string | undefined>(
+    mediaId
+  );
+  useEffect(() => {
+    setCurrentMediaId(mediaId);
+  }, [mediaId]);
+
+  // Reset promoted selection whenever a new lightbox item is shown or dialog re-opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedBatchIndex(null);
+    }
+  }, [isOpen]);
+  useEffect(() => {
+    // If the upstream lightbox content changes, return to grid state
+    setSelectedBatchIndex(null);
+  }, [mediaId, imageUrls]);
 
   // Fetch prompt when mediaId changes
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchPrompt = async () => {
-      if (!mediaId) {
+      if (!currentMediaId) {
         setPrompt(null);
         setHasPromptToken(false);
         setGenerationProvider(null);
@@ -105,7 +135,7 @@ export function LightboxModal({
       try {
         const mediaFilesApi = new MediaFilesApi();
         const mediaResponse = await mediaFilesApi.GetMediaFileByToken({
-          mediaFileToken: mediaId,
+          mediaFileToken: currentMediaId,
         });
 
         if (mediaResponse.success && mediaResponse.data?.maybe_prompt_token) {
@@ -147,7 +177,7 @@ export function LightboxModal({
     };
 
     fetchPrompt();
-  }, [mediaId]);
+  }, [currentMediaId]);
 
   return (
     <Modal
@@ -171,7 +201,7 @@ export function LightboxModal({
       <div className="grid h-full grid-cols-3 gap-6">
         {/* image panel */}
         <div className="col-span-2 relative flex h-full items-center justify-center overflow-hidden rounded-l-xl bg-[#1A1A1A]">
-          {!imageUrl ? (
+          {!displayUrl ? (
             <div className="flex h-full w-full items-center justify-center bg-gray-800">
               <span className="text-white/60">Image not available</span>
             </div>
@@ -183,9 +213,36 @@ export function LightboxModal({
               className="h-full w-full object-contain"
               onLoadedData={() => setMediaLoaded(true)}
             >
-              <source src={imageUrl} type="video/mp4" />
+              <source src={displayUrl as string} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
+          ) : imageUrls &&
+            imageUrls.length > 1 &&
+            selectedBatchIndex === null ? (
+            <div
+              className="grid w-full h-full p-2 gap-2"
+              style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
+            >
+              {imageUrls.slice(0, 4).map((url, idx) => (
+                <div
+                  key={idx}
+                  className="relative flex items-center justify-center overflow-hidden rounded-lg bg-black/20 cursor-pointer"
+                  onClick={() => {
+                    setSelectedBatchIndex(idx);
+                    const maybeToken = mediaTokens?.[idx];
+                    if (maybeToken) setCurrentMediaId(maybeToken);
+                  }}
+                >
+                  <img
+                    src={url + "?cors=1"}
+                    alt={`Generated ${idx + 1}`}
+                    className="h-full w-full object-contain"
+                    onLoad={() => setMediaLoaded(true)}
+                    onError={onImageError}
+                  />
+                </div>
+              ))}
+            </div>
           ) : (
             <img
               data-lightbox-modal="true"
@@ -197,7 +254,7 @@ export function LightboxModal({
             />
           )}
 
-          {!mediaLoaded && imageUrl && (
+          {!mediaLoaded && displayUrl && (
             <div className="absolute inset-0 bg-[#1A1A1A] flex items-center justify-center">
               <LoadingSpinner className="h-12 w-12 text-white" />
             </div>
@@ -387,18 +444,10 @@ export function LightboxModal({
               <Button
                 onClick={async (e) => {
                   gtagEvent("image_to_3d_clicked");
-                  //let _result = await FalHunyuanImageTo3d({
-                  //  image_media_token: mediaId,
-                  //  //base64_image: downloadUrl,
-                  //});
                   let result = await EnqueueImageTo3dObject({
                     image_media_token: mediaId,
                     model: EnqueueImageTo3dObjectModel.Hunyuan3d2_0,
                   });
-                  //e.stopPropagation();
-                  //await onAddToSceneClicked(downloadUrl, mediaId);
-                  //onClose(); // close the lightbox
-                  //onCloseGallery(); // close the gallery
                 }}
               >
                 3D
@@ -430,32 +479,6 @@ export function LightboxModal({
                   Add to Current Scene
                 </Button>
               )}
-
-              {/* {downloadUrl &&
-                (onDownloadClicked ? (
-                  <Button
-                    icon={faDownToLine}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      gtagEvent("download_clicked");
-                      await onDownloadClicked(downloadUrl, mediaClass);
-                    }}
-                  >
-                    Download
-                  </Button>
-                ) : (
-                  <a
-                    href={downloadUrl}
-                    download
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      gtagEvent("download_clicked");
-                    }}
-                    className="no-underline"
-                  >
-                    <Button icon={faDownToLine}>Download</Button>
-                  </a>
-                ))} */}
 
               {onDownloadClicked && downloadUrl && (
                 <Button
