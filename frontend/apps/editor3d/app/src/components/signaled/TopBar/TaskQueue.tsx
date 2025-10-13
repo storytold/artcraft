@@ -525,7 +525,7 @@ export const TaskQueue = () => {
         showClose={false}
       >
         <div className="flex h-full flex-col">
-          <div className="rounded-t-xl border-ui-panel-border bg-ui-panel p-3 py-2">
+          <div className="rounded-t-xl border-ui-panel-border bg-ui-panel">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Task Queue</h2>
               <div className="flex items-center gap-2">
