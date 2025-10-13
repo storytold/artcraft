@@ -31,6 +31,7 @@ import {
 } from "@storyteller/model-list";
 import { MediaFilesApi } from "@storyteller/api";
 import { CloseButton } from "@storyteller/ui-close-button";
+import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 
 type InProgressTask = {
   id: string;
@@ -38,6 +39,7 @@ type InProgressTask = {
   subtitle?: string;
   progress: number;
   updatedAt?: string;
+  canDismiss?: boolean;
 };
 
 type CompletedTask = {
@@ -65,7 +67,7 @@ const InProgressCard = ({
           <FontAwesomeIcon
             icon={faSpinnerThird}
             className="text-base-fg/60 animate-spin"
-            size="sm"
+            size="lg"
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -91,9 +93,12 @@ const InProgressCard = ({
         </div>
         {onDismiss && (
           <button
-            className="text-base-fg/60 ml-2 rounded p-1 hover:bg-ui-controls"
+            className="text-base-fg/60 ml-auto h-6 w-6 rounded-full p-1 hover:bg-ui-controls"
             aria-label="Dismiss"
-            onClick={onDismiss}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
           >
             <FontAwesomeIcon icon={faXmark} />
           </button>
@@ -176,6 +181,9 @@ export const TaskQueue = () => {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [unreadCompletedIds, setUnreadCompletedIds] = useState<string[]>([]);
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+  // confirmation modal state for destructive actions
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [afterConfirm, setAfterConfirm] = useState<(() => void) | null>(null);
 
   // Use currently selected models for image and video pages to drive fake progress.
   const selectedImageModel = useSelectedImageModel(ModelPage.TextToImage);
@@ -272,12 +280,14 @@ export const TaskQueue = () => {
             const raw = ((now - createdMs) / duration) * 100;
             const progress = Math.min(95, Math.max(0, raw));
             const parts = formatTitleParts(t);
+            const canDismiss = now - createdMs > 5 * 60 * 1000; // 5 minutes
             return {
               id: t.id,
               title: `Generating ${parts.kind || "Task"}...`,
               subtitle: parts.subtitle,
               progress,
               updatedAt: t.updated_at?.toISOString(),
+              canDismiss,
             };
           });
 
@@ -440,7 +450,15 @@ export const TaskQueue = () => {
                               In Progress
                             </div>
                             {inProgress.map((t) => (
-                              <InProgressCard key={t.id} task={t} />
+                              <InProgressCard
+                                key={t.id}
+                                task={t}
+                                onDismiss={
+                                  t.canDismiss
+                                    ? () => dismissTask(t.id)
+                                    : undefined
+                                }
+                              />
                             ))}
                           </div>
                         )}
@@ -494,16 +512,16 @@ export const TaskQueue = () => {
                         Show all
                       </Button>
                       <Tooltip
-                        content="Clear completed"
+                        content="Clear all"
                         position="bottom"
                         closeOnClick={true}
                       >
                         <Button
                           className="flex h-9 w-9 items-center justify-center rounded-md bg-red/20 text-white hover:bg-red/40"
-                          aria-label="Clear completed"
-                          onClick={async () => {
-                            await dismissCompleted();
-                            close();
+                          aria-label="Clear all"
+                          onClick={() => {
+                            setAfterConfirm(() => () => close());
+                            setConfirmOpen(true);
                           }}
                         >
                           <FontAwesomeIcon icon={faTrashAlt} />
@@ -531,7 +549,10 @@ export const TaskQueue = () => {
               <div className="flex items-center gap-2">
                 <Button
                   className="flex h-9 items-center justify-center bg-red/20 px-3 text-white hover:bg-red/40"
-                  onClick={dismissCompleted}
+                  onClick={() => {
+                    setAfterConfirm(() => null);
+                    setConfirmOpen(true);
+                  }}
                 >
                   <FontAwesomeIcon icon={faTrashAlt} className="mr-1" />
                   Clear all
@@ -555,7 +576,13 @@ export const TaskQueue = () => {
                       In Progress
                     </div>
                     {inProgress.map((t) => (
-                      <InProgressCard key={t.id} task={t} />
+                      <InProgressCard
+                        key={t.id}
+                        task={t}
+                        onDismiss={
+                          t.canDismiss ? () => dismissTask(t.id) : undefined
+                        }
+                      />
                     ))}
                   </div>
                 )}
@@ -591,6 +618,28 @@ export const TaskQueue = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Confirm clear completed modal */}
+      <ActionReminderModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title="Clear all tasks?"
+        message={
+          <span className="text-sm text-white/80">
+            This will remove all completed tasks from the task queue.
+          </span>
+        }
+        onPrimaryAction={async () => {
+          await dismissCompleted();
+          setConfirmOpen(false);
+          if (afterConfirm) afterConfirm();
+          setAfterConfirm(null);
+        }}
+        primaryActionText="Clear completed"
+        secondaryActionText="Cancel"
+        primaryActionIcon={faTrashAlt}
+        primaryActionBtnClassName="bg-red hover:bg-red/80"
+      />
     </>
   );
 };
