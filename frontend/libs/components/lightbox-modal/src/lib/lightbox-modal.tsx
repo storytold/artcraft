@@ -1,7 +1,12 @@
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import dayjs from "dayjs";
-import { faDownToLine, faPencil } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCube,
+  faDownToLine,
+  faPencil,
+  faVideo,
+} from "@fortawesome/pro-solid-svg-icons";
 import {
   EnqueueImageTo3dObject,
   EnqueueImageTo3dObjectModel,
@@ -42,6 +47,10 @@ interface LightboxModalProps {
   mediaClass?: string;
   onPromptCopy?: (prompt: string) => void;
   onEditClicked?: (url: string, media_id?: string) => Promise<void> | void;
+  onTurnIntoVideoClicked?: (
+    url: string,
+    media_id?: string
+  ) => Promise<void> | void;
 }
 
 export function LightboxModal({
@@ -62,6 +71,7 @@ export function LightboxModal({
   onAddToSceneClicked,
   mediaClass,
   onEditClicked,
+  onTurnIntoVideoClicked,
 }: LightboxModalProps) {
   // NB(bt,2025-06-14): We add ?cors=1 to the image url to prevent caching "sec-fetch-mode: no-cors" from
   // the <image> tag request from being cached. If we then drag it into the canvas after it's been cached,
@@ -434,61 +444,109 @@ export function LightboxModal({
             </div>
 
             {/* buttons with spacing */}
-            {(onAddToSceneClicked && downloadUrl) || downloadUrl ? (
-              <div className="mt-15 mb-15 flex justify-end gap-2">
-                <Button
-                  onClick={async (e) => {
-                    gtagEvent("image_to_3d_clicked");
-                    await EnqueueImageTo3dObject({
-                      image_media_token: mediaId,
-                      model: EnqueueImageTo3dObjectModel.Hunyuan3d2_0,
-                    });
-                  }}
-                >
-                  3D
-                </Button>
+            {(onAddToSceneClicked && downloadUrl) || downloadUrl
+              ? (() => {
+                  const visibleButtons = [
+                    onEditClicked && downloadUrl && mediaClass === "image",
+                    onTurnIntoVideoClicked &&
+                      downloadUrl &&
+                      mediaClass === "image",
+                    onAddToSceneClicked && downloadUrl,
+                    mediaClass === "image",
+                    onDownloadClicked && downloadUrl,
+                  ].filter(Boolean).length;
 
-                {onEditClicked && downloadUrl && (
-                  <Button
-                    icon={faPencil}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      gtagEvent("edit_image_clicked");
-                      await onEditClicked(downloadUrl, mediaId);
-                    }}
-                  >
-                    Edit
-                  </Button>
-                )}
+                  const buttonClass =
+                    visibleButtons === 1 ? "w-full col-span-2" : "w-full";
 
-                {onAddToSceneClicked && downloadUrl && (
-                  <Button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      gtagEvent("add_to_scene_clicked");
-                      await onAddToSceneClicked(downloadUrl, mediaId);
-                      onClose(); // close the lightbox
-                      onCloseGallery(); // close the gallery
-                    }}
-                  >
-                    Add to Current Scene
-                  </Button>
-                )}
+                  return (
+                    <div className="mt-15 mb-15 grid grid-cols-2 gap-2">
+                      {onEditClicked &&
+                        downloadUrl &&
+                        mediaClass === "image" && (
+                          <Button
+                            className={buttonClass}
+                            icon={faPencil}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              gtagEvent("edit_image_clicked");
+                              await onEditClicked(downloadUrl, mediaId);
+                            }}
+                          >
+                            Edit Image
+                          </Button>
+                        )}
 
-                {onDownloadClicked && downloadUrl && (
-                  <Button
-                    icon={faDownToLine}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      gtagEvent("download_clicked");
-                      await onDownloadClicked(downloadUrl, mediaClass);
-                    }}
-                  >
-                    Download
-                  </Button>
-                )}
-              </div>
-            ) : null}
+                      {onTurnIntoVideoClicked &&
+                        downloadUrl &&
+                        mediaClass === "image" && (
+                          <Button
+                            className={buttonClass}
+                            icon={faVideo}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              gtagEvent("turn_into_video_clicked");
+                              await onTurnIntoVideoClicked(
+                                downloadUrl,
+                                mediaId
+                              );
+                            }}
+                          >
+                            Turn into Video
+                          </Button>
+                        )}
+
+                      {onAddToSceneClicked && downloadUrl && (
+                        <Button
+                          className={buttonClass}
+                          variant="secondary"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            gtagEvent("add_to_scene_clicked");
+                            await onAddToSceneClicked(downloadUrl, mediaId);
+                            onClose();
+                            onCloseGallery();
+                          }}
+                        >
+                          Add to Current Scene
+                        </Button>
+                      )}
+
+                      {mediaClass === "image" && (
+                        <Button
+                          icon={faCube}
+                          className={buttonClass}
+                          variant="secondary"
+                          onClick={async (e) => {
+                            gtagEvent("image_to_3d_clicked");
+                            await EnqueueImageTo3dObject({
+                              image_media_token: mediaId,
+                              model: EnqueueImageTo3dObjectModel.Hunyuan3d2_0,
+                            });
+                          }}
+                        >
+                          Make 3D Model
+                        </Button>
+                      )}
+
+                      {onDownloadClicked && downloadUrl && (
+                        <Button
+                          className={buttonClass}
+                          icon={faDownToLine}
+                          variant="secondary"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            gtagEvent("download_clicked");
+                            await onDownloadClicked(downloadUrl, mediaClass);
+                          }}
+                        >
+                          Download
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })()
+              : null}
           </div>
         </div>
       </Modal>

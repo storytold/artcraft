@@ -224,6 +224,22 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
     }
   };
 
+  const handleTurnIntoVideoFromGallery = async (
+    url: string,
+    mediaId?: string,
+  ) => {
+    try {
+      topNavMediaId.value = mediaId || "";
+      topNavMediaUrl.value = url;
+      useTabStore.getState().setActiveTab("VIDEO");
+      galleryModalVisibleViewMode.value = false;
+      galleryModalVisibleDuringDrag.value = false;
+      galleryModalLightboxVisible.value = false;
+    } catch (e) {
+      // no-op
+    }
+  };
+
   const getPageTitle = (): string => {
     switch (tabStore.activeTabId) {
       case "2D":
@@ -501,6 +517,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
         mode="view"
         onDownloadClicked={downloadFile}
         onEditClicked={handleEditFromGallery}
+        onTurnIntoVideoClicked={handleTurnIntoVideoFromGallery}
       />
 
       <ProviderSetupModal />
