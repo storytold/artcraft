@@ -97,6 +97,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     startFrame: true,
     endFrame: false,
     requiresImage: true,
+    generateWithSound: true,
     progressBarTime: 100000,
   }),
   new VideoModel({
@@ -111,6 +112,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     startFrame: true,
     endFrame: false,
     requiresImage: true,
+    generateWithSound: true,
     progressBarTime: 100000,
   }),
   new VideoModel({
@@ -125,6 +127,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     startFrame: true,
     endFrame: false,
     requiresImage: true,
+    generateWithSound: true,
     progressBarTime: 100000,
   }),
 ];

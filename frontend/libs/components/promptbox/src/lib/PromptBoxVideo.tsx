@@ -6,7 +6,10 @@ import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, ToggleButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
-import { EnqueueImageToVideo, EnqueueImageToVideoRequest } from "@storyteller/tauri-api";
+import {
+  EnqueueImageToVideo,
+  EnqueueImageToVideoRequest,
+} from "@storyteller/tauri-api";
 import {
   faMessageXmark,
   faMessageCheck,
@@ -14,12 +17,17 @@ import {
   faSpinnerThird,
   faSquare,
   faPortrait,
+  faWaveformLines,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faRectangle } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
-import { SizeIconOption, SizeOption, VideoModel } from "@storyteller/model-list";
+import {
+  SizeIconOption,
+  SizeOption,
+  VideoModel,
+} from "@storyteller/model-list";
 import { usePromptVideoStore, RefImage } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -27,7 +35,7 @@ import type { UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
 import { toast } from "@storyteller/ui-toaster";
 
-const DEFAULT_RESOLUTIONS : SizeOption[] =  [
+const DEFAULT_RESOLUTIONS: SizeOption[] = [
   {
     tauriValue: "720p",
     textLabel: "720p",
@@ -83,6 +91,10 @@ export const PromptBoxVideo = ({
   const setPrompt = usePromptVideoStore((s) => s.setPrompt);
   const useSystemPrompt = usePromptVideoStore((s) => s.useSystemPrompt);
   const setUseSystemPrompt = usePromptVideoStore((s) => s.setUseSystemPrompt);
+  const generateWithSound = usePromptVideoStore((s) => s.generateWithSound);
+  const setGenerateWithSound = usePromptVideoStore(
+    (s) => s.setGenerateWithSound
+  );
   const resolution = usePromptVideoStore((s) => s.resolution);
   const setResolution = usePromptVideoStore((s) => s.setResolution);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
@@ -109,7 +121,9 @@ export const PromptBoxVideo = ({
   if (!!selectedModel?.sizeOptions && selectedModel.sizeOptions.length > 0) {
     // When switching to a new model, the existing resolution might not be correct.
     // This is a gross and nasty hack to handle the case where the resolution is not found.
-    const resolutionExists = selectedModel.sizeOptions.some((option) => option.textLabel === resolution);
+    const resolutionExists = selectedModel.sizeOptions.some(
+      (option) => option.textLabel === resolution
+    );
     const useFirstOption = !resolutionExists;
 
     resolutionOptions = selectedModel.sizeOptions.map((option, index) => {
@@ -128,12 +142,15 @@ export const PromptBoxVideo = ({
       const icon = <FontAwesomeIcon icon={faIcon} className="h-4 w-4" />;
       return {
         label: option.textLabel,
-        selected: option.textLabel === resolution || (useFirstOption && index === 0),
+        selected:
+          option.textLabel === resolution || (useFirstOption && index === 0),
         icon: icon,
       };
     });
   } else {
-    const resolutionExists = DEFAULT_RESOLUTIONS.some((option) => option.textLabel === resolution);
+    const resolutionExists = DEFAULT_RESOLUTIONS.some(
+      (option) => option.textLabel === resolution
+    );
     const useFirstOption = !resolutionExists;
 
     resolutionOptions = DEFAULT_RESOLUTIONS.map((option, index) => {
@@ -152,13 +169,15 @@ export const PromptBoxVideo = ({
       const icon = <FontAwesomeIcon icon={faIcon} className="h-4 w-4" />;
       return {
         label: option.textLabel,
-        selected: option.textLabel === resolution || (useFirstOption && index === 0),
+        selected:
+          option.textLabel === resolution || (useFirstOption && index === 0),
         icon: icon,
       };
     });
   }
 
-  const [resolutionList, setResolutionList] = useState<PopoverItem[]>(resolutionOptions);
+  const [resolutionList, setResolutionList] =
+    useState<PopoverItem[]>(resolutionOptions);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -252,7 +271,7 @@ export const PromptBoxVideo = ({
       setIsEnqueueing(false);
     }, 10000);
 
-    let request : EnqueueImageToVideoRequest = {
+    let request: EnqueueImageToVideoRequest = {
       model: selectedModel,
       image_media_token: imageMediaToken,
       prompt: prompt,
@@ -262,7 +281,16 @@ export const PromptBoxVideo = ({
     };
 
     if (selectedModel?.tauriId === "sora_2") {
-      request.sora_orientation = resolution === "720p" ? "landscape" : "portrait";
+      request.sora_orientation =
+        resolution === "720p" ? "landscape" : "portrait";
+    }
+
+    if (selectedModel?.tauriId === "veo_2") {
+      request.generate_with_sound = !!generateWithSound;
+    }
+
+    if (selectedModel?.tauriId === "veo_3") {
+      request.generate_with_sound = !!generateWithSound;
     }
 
     await EnqueueImageToVideo(request);
@@ -297,9 +325,8 @@ export const PromptBoxVideo = ({
 
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
-  const modelNeedsAnImageButNoneAreSelected = 
-    selectedModel?.requiresImage && 
-    referenceImages.length === 0;
+  const modelNeedsAnImageButNoneAreSelected =
+    selectedModel?.requiresImage && referenceImages.length === 0;
 
   // Hide/clear ending frame if model doesn't support it
   useEffect(() => {
@@ -421,6 +448,7 @@ export const PromptBoxVideo = ({
                   }
                 />
               </Tooltip>
+
               <Tooltip
                 content={
                   useSystemPrompt
@@ -438,6 +466,22 @@ export const PromptBoxVideo = ({
                   onClick={() => setUseSystemPrompt(!useSystemPrompt)}
                 />
               </Tooltip>
+
+              {selectedModel?.generateWithSound && (
+                <Tooltip
+                  content={generateWithSound ? "Sound: ON" : "Sound: OFF"}
+                  position="top"
+                  className="z-50"
+                  delay={200}
+                >
+                  <ToggleButton
+                    isActive={generateWithSound}
+                    icon={faWaveformLines}
+                    activeIcon={faWaveformLines}
+                    onClick={() => setGenerateWithSound(!generateWithSound)}
+                  />
+                </Tooltip>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Button

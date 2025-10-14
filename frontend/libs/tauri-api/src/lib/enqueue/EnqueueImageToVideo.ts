@@ -34,6 +34,9 @@ export interface EnqueueImageToVideoRequest {
 
   // Optional. Orientation of the video for Sora 2.
   sora_orientation?: "portrait" | "landscape";
+
+  // Optional. Whether to generate audio alongside the video (used by some models like Veo2)
+  generate_with_sound?: boolean;
 }
 
 interface RawEnqueueImageToVideoRequest {
@@ -44,6 +47,7 @@ interface RawEnqueueImageToVideoRequest {
   frontend_caller?: string;
   frontend_subscriber_id?: string;
   sora_orientation?: "portrait" | "landscape";
+  generate_with_sound?: boolean;
 }
 
 export interface EnqueueImageToVideoError extends CommandResult {
@@ -51,7 +55,7 @@ export interface EnqueueImageToVideoError extends CommandResult {
   error_message?: string;
 }
 
-export interface EnqueueImageToVideoPayload {}
+export type EnqueueImageToVideoPayload = Record<string, never>;
 
 export interface EnqueueImageToVideoSuccess extends CommandResult {
   payload: EnqueueImageToVideoPayload;
@@ -64,30 +68,34 @@ export type EnqueueImageToVideoResult =
 export const EnqueueImageToVideo = async (
   request: EnqueueImageToVideoRequest
 ): Promise<EnqueueImageToVideoResult> => {
-  let mutableRequest: RawEnqueueImageToVideoRequest = {
+  const mutableRequest: RawEnqueueImageToVideoRequest = {
     model: request.model?.tauriId,
     image_media_token: request.image_media_token,
   };
 
-  if (!!request.prompt) {
+  if (request.prompt) {
     mutableRequest.prompt = request.prompt;
   }
 
-  if (!!request.end_frame_image_media_token) {
+  if (request.end_frame_image_media_token) {
     mutableRequest.end_frame_image_media_token =
       request.end_frame_image_media_token;
   }
 
-  if (!!request.frontend_caller) {
+  if (request.frontend_caller) {
     mutableRequest.frontend_caller = request.frontend_caller;
   }
 
-  if (!!request.frontend_subscriber_id) {
+  if (request.frontend_subscriber_id) {
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  if (!!request.sora_orientation) {
+  if (request.sora_orientation) {
     mutableRequest.sora_orientation = request.sora_orientation;
+  }
+
+  if (typeof request.generate_with_sound === "boolean") {
+    mutableRequest.generate_with_sound = request.generate_with_sound;
   }
 
   const result = await invoke("enqueue_image_to_video_command", {

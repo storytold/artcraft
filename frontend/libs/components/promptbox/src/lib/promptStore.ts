@@ -93,11 +93,13 @@ interface PromptVideoStore {
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
   endFrameImage?: RefImage;
+  generateWithSound: boolean;
   setPrompt: (prompt: string) => void;
   setResolution: (resolution: Resolution | string) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
   setEndFrameImage: (image?: RefImage) => void;
+  setGenerateWithSound: (value: boolean) => void;
 }
 
 export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
@@ -106,11 +108,13 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   useSystemPrompt: true,
   referenceImages: [],
   endFrameImage: undefined,
+  generateWithSound: true,
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
   setEndFrameImage: (endFrameImage) => set({ endFrameImage }),
+  setGenerateWithSound: (generateWithSound) => set({ generateWithSound }),
 }));
 
 // ----- Edit Prompt Box Store -----

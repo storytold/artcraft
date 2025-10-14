@@ -22,6 +22,9 @@ export class VideoModel extends Model {
   // The size options for the model
   readonly sizeOptions: SizeOption[];
 
+  // Whether this model supports toggling generation with sound
+  readonly generateWithSound?: boolean;
+
   constructor(args: {
     id: string;
     tauriId: string;
@@ -37,11 +40,13 @@ export class VideoModel extends Model {
     tags?: ModelTag[];
     sizeOptions?: SizeOption[];
     progressBarTime?: number;
+    generateWithSound?: boolean;
   }) {
     super(args);
     this.startFrame = args.startFrame;
     this.endFrame = args.endFrame;
     this.requiresImage = args.requiresImage;
     this.sizeOptions = args.sizeOptions ?? [];
+    this.generateWithSound = args.generateWithSound;
   }
 }
