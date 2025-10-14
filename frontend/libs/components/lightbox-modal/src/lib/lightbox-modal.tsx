@@ -19,7 +19,6 @@ import {
   getModelDisplayName,
   getProviderDisplayName,
 } from "@storyteller/model-list";
-import { Tooltip } from "@storyteller/ui-tooltip";
 
 interface LightboxModalProps {
   isOpen: boolean;
@@ -75,6 +74,7 @@ export function LightboxModal({
     selectedBatchIndex !== null && imageUrls
       ? imageUrls[selectedBatchIndex]
       : imageUrl || null;
+  const [refPreviewUrl, setRefPreviewUrl] = useState<string | null>(null);
   const imageTagImageUrl = displayUrl ? displayUrl + "?cors=1" : "";
 
   const [mediaLoaded, setMediaLoaded] = useState<boolean>(false);
@@ -112,11 +112,13 @@ export function LightboxModal({
   useEffect(() => {
     if (isOpen) {
       setSelectedBatchIndex(null);
+      setRefPreviewUrl(null);
     }
   }, [isOpen]);
   useEffect(() => {
     // If the upstream lightbox content changes, return to grid state
     setSelectedBatchIndex(null);
+    setRefPreviewUrl(null);
   }, [mediaId, imageUrls]);
 
   // Fetch prompt when mediaId changes
@@ -180,323 +182,343 @@ export function LightboxModal({
   }, [currentMediaId]);
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      className="rounded-xl bg-[#2C2C2C] h-[75vh] w-[60vw] max-w-screen min-w-[35vw] min-h-[40vh] p-4"
-      draggable
-      allowBackgroundInteraction={true}
-      showClose={true}
-      closeOnOutsideClick={false}
-      resizable={true}
-      backdropClassName="pointer-events-none hidden"
-      expandable={true}
-    >
-      {/* Invisible drag handle strip at the very top for moving */}
-      <Modal.DragHandle>
-        <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
-      </Modal.DragHandle>
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        className="rounded-xl bg-ui-modal h-[75vh] w-[60vw] max-w-screen min-w-[35vw] min-h-[40vh] p-4"
+        draggable
+        allowBackgroundInteraction={true}
+        showClose={true}
+        closeOnOutsideClick={false}
+        resizable={true}
+        backdropClassName="pointer-events-none hidden"
+        expandable={true}
+      >
+        {/* Invisible drag handle strip at the very top for moving */}
+        <Modal.DragHandle>
+          <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
+        </Modal.DragHandle>
 
-      {/* content grid */}
-      <div className="grid h-full grid-cols-3 gap-6">
-        {/* image panel */}
-        <div className="col-span-2 relative flex h-full items-center justify-center overflow-hidden rounded-l-xl bg-[#1A1A1A]">
-          {!displayUrl ? (
-            <div className="flex h-full w-full items-center justify-center bg-gray-800">
-              <span className="text-white/60">Image not available</span>
-            </div>
-          ) : mediaClass === "video" ? (
-            <video
-              controls
-              loop={true}
-              autoPlay={true}
-              className="h-full w-full object-contain"
-              onLoadedData={() => setMediaLoaded(true)}
-            >
-              <source src={displayUrl as string} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          ) : imageUrls &&
-            imageUrls.length > 1 &&
-            selectedBatchIndex === null ? (
-            <div
-              className="grid w-full h-full p-2 gap-2"
-              style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
-            >
-              {imageUrls.slice(0, 4).map((url, idx) => (
-                <div
-                  key={idx}
-                  className="relative flex items-center justify-center overflow-hidden rounded-lg bg-black/20 cursor-pointer"
-                  onClick={() => {
-                    setSelectedBatchIndex(idx);
-                    const maybeToken = mediaTokens?.[idx];
-                    if (maybeToken) setCurrentMediaId(maybeToken);
-                  }}
-                >
-                  <img
-                    src={url + "?cors=1"}
-                    alt={`Generated ${idx + 1}`}
-                    className="h-full w-full object-contain"
-                    onLoad={() => setMediaLoaded(true)}
-                    onError={onImageError}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <img
-              data-lightbox-modal="true"
-              src={imageTagImageUrl}
-              alt={imageAlt}
-              className="h-full w-full object-contain"
-              onError={onImageError}
-              onLoad={() => setMediaLoaded(true)}
-            />
-          )}
-
-          {!mediaLoaded && displayUrl && (
-            <div className="absolute inset-0 bg-[#1A1A1A] flex items-center justify-center">
-              <LoadingSpinner className="h-12 w-12 text-white" />
-            </div>
-          )}
-        </div>
-
-        {/* info + actions */}
-        <div className="flex h-full flex-col">
-          <div className="flex-1 space-y-5">
-            {/* <div className="text-xl font-medium">
-              {title || "Image Generation"}
-            </div> */}
-            {createdAt && (
-              <div className="space-y-1.5">
-                <div className="text-sm font-medium text-white/90">Created</div>
-                <div className="text-sm text-white/70">
-                  {dayjs(createdAt).format("MMM D, YYYY")} at{" "}
-                  {dayjs(createdAt).format("hh:mm A")}
-                </div>
+        {/* content grid */}
+        <div className="grid h-full grid-cols-3 gap-6">
+          {/* image panel */}
+          <div className="col-span-2 relative flex h-full items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
+            {!displayUrl ? (
+              <div className="flex h-full w-full items-center justify-center bg-black/30">
+                <span className="text-base-fg/60">Image not available</span>
               </div>
-            )}
-
-            {hasPromptToken && (
-              <>
-                {/* Prompt */}
-                <div className="relative space-y-1.5">
-                  <div className="text-sm font-medium text-white/90">
-                    Prompt
-                  </div>
+            ) : mediaClass === "video" ? (
+              <video
+                controls
+                loop={true}
+                autoPlay={true}
+                className="h-full w-full object-contain"
+                onLoadedData={() => setMediaLoaded(true)}
+              >
+                <source src={displayUrl as string} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            ) : imageUrls &&
+              imageUrls.length > 1 &&
+              selectedBatchIndex === null ? (
+              <div
+                className="grid w-full h-full p-2 gap-2"
+                style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
+              >
+                {imageUrls.slice(0, 4).map((url, idx) => (
                   <div
-                    className={twMerge(
-                      "relative text-sm text-white/90 break-words bg-black/20 p-3 rounded-lg cursor-pointer transition-colors duration-100 leading-relaxed",
-                      isPromptHovered && "bg-black/30"
-                    )}
-                    onMouseEnter={() => setIsPromptHovered(true)}
-                    onMouseLeave={() => setIsPromptHovered(false)}
+                    key={idx}
+                    className="relative flex items-center justify-center overflow-hidden rounded-lg bg-black/20 cursor-pointer"
                     onClick={() => {
-                      if (!prompt) return;
-                      navigator.clipboard.writeText(prompt).catch(() => {});
-                      toast.success("Prompt copied");
+                      setSelectedBatchIndex(idx);
+                      const maybeToken = mediaTokens?.[idx];
+                      if (maybeToken) setCurrentMediaId(maybeToken);
                     }}
                   >
-                    {promptLoading ? (
-                      <div className="flex items-center gap-2">
-                        <LoadingSpinner className="h-4 w-4" />
-                        <span className="text-sm text-white/80">
-                          Loading prompt...
-                        </span>
+                    <img
+                      src={url + "?cors=1"}
+                      alt={`Generated ${idx + 1}`}
+                      className="h-full w-full object-contain"
+                      onLoad={() => setMediaLoaded(true)}
+                      onError={onImageError}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <img
+                data-lightbox-modal="true"
+                src={imageTagImageUrl}
+                alt={imageAlt}
+                className="h-full w-full object-contain"
+                onError={onImageError}
+                onLoad={() => setMediaLoaded(true)}
+              />
+            )}
+
+            {!mediaLoaded && displayUrl && (
+              <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
+                <LoadingSpinner className="h-12 w-12 text-base-fg" />
+              </div>
+            )}
+          </div>
+
+          {/* info + actions */}
+          <div className="flex h-full flex-col">
+            <div className="flex-1 space-y-5 text-base-fg">
+              {/* <div className="text-xl font-medium">
+              {title || "Image Generation"}
+            </div> */}
+              {createdAt && (
+                <div className="space-y-1.5">
+                  <div className="text-sm font-medium text-base-fg/90">
+                    Created
+                  </div>
+                  <div className="text-sm text-base-fg/70">
+                    {dayjs(createdAt).format("MMM D, YYYY")} at{" "}
+                    {dayjs(createdAt).format("hh:mm A")}
+                  </div>
+                </div>
+              )}
+
+              {hasPromptToken && (
+                <>
+                  {/* Prompt */}
+                  <div className="relative space-y-1.5">
+                    <div className="text-sm font-medium text-base-fg/90">
+                      Prompt
+                    </div>
+                    <div
+                      className={twMerge(
+                        "relative text-sm text-base-fg break-words p-3 rounded-lg cursor-pointer transition-colors duration-100 leading-relaxed"
+                      )}
+                      style={{
+                        background: isPromptHovered
+                          ? "rgb(var(--st-controls-rgb) / 0.30)"
+                          : "rgb(var(--st-controls-rgb) / 0.20)",
+                      }}
+                      onMouseEnter={() => setIsPromptHovered(true)}
+                      onMouseLeave={() => setIsPromptHovered(false)}
+                      onClick={() => {
+                        if (!prompt) return;
+                        navigator.clipboard.writeText(prompt).catch(() => {});
+                        toast.success("Prompt copied");
+                      }}
+                    >
+                      {promptLoading ? (
+                        <div className="flex items-center gap-2">
+                          <LoadingSpinner className="h-4 w-4" />
+                          <span className="text-sm text-base-fg/80">
+                            Loading prompt...
+                          </span>
+                        </div>
+                      ) : (
+                        prompt || (
+                          <span className="text-sm text-base-fg">
+                            No prompt
+                          </span>
+                        )
+                      )}
+                    </div>
+
+                    {!promptLoading && (
+                      <div
+                        className={twMerge(
+                          "pointer-events-none absolute inset-0 flex items-end justify-end opacity-0 transition-opacity duration-50",
+                          isPromptHovered && "opacity-100"
+                        )}
+                      >
+                        <div
+                          className="flex items-center gap-1 text-xs text-base-fg backdrop-blur-md p-1.5 rounded-tl-lg rounded-br-lg"
+                          style={{
+                            background: "rgb(var(--st-controls-rgb) / 0.80)",
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
+                          <span>Copy prompt</span>
+                        </div>
                       </div>
-                    ) : (
-                      prompt || (
-                        <span className="text-sm text-white/90">No prompt</span>
-                      )
                     )}
                   </div>
 
-                  {!promptLoading && (
-                    <div
-                      className={twMerge(
-                        "pointer-events-none absolute inset-0 flex items-end justify-end opacity-0 transition-opacity duration-50",
-                        isPromptHovered && "opacity-100"
-                      )}
-                    >
-                      <div className="flex items-center gap-1 text-xs text-white/80 bg-black/80 backdrop-blur-md p-1.5 rounded-tl-lg rounded-br-lg">
-                        <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
-                        <span>Copy prompt</span>
+                  {/* Context Images */}
+                  {contextImages && contextImages.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="text-sm font-medium text-base-fg/90">
+                        Reference Images
+                      </div>
+                      <div className="grid grid-cols-6 gap-2">
+                        {contextImages.map((contextImage, index) => {
+                          const thumbnailUrl = contextImage.media_links
+                            .maybe_thumbnail_template
+                            ? contextImage.media_links.maybe_thumbnail_template.replace(
+                                "{WIDTH}",
+                                "128"
+                              )
+                            : contextImage.media_links.cdn_url;
+
+                          const fullSizeUrl = contextImage.media_links
+                            .maybe_thumbnail_template
+                            ? contextImage.media_links.maybe_thumbnail_template.replace(
+                                "{WIDTH}",
+                                "512"
+                              )
+                            : contextImage.media_links.cdn_url;
+
+                          return (
+                            <div
+                              key={contextImage.media_token}
+                              className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                              onClick={() => setRefPreviewUrl(fullSizeUrl)}
+                            >
+                              <img
+                                src={thumbnailUrl}
+                                alt={`Reference image ${index + 1}`}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
-                </div>
 
-                {/* Context Images */}
-                {contextImages && contextImages.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="text-sm font-medium text-white/90">
-                      Reference Images
-                    </div>
-                    <div className="grid grid-cols-6 gap-2">
-                      {contextImages.map((contextImage, index) => {
-                        const thumbnailUrl = contextImage.media_links
-                          .maybe_thumbnail_template
-                          ? contextImage.media_links.maybe_thumbnail_template.replace(
-                              "{WIDTH}",
-                              "128"
-                            )
-                          : contextImage.media_links.cdn_url;
-
-                        const fullSizeUrl = contextImage.media_links
-                          .maybe_thumbnail_template
-                          ? contextImage.media_links.maybe_thumbnail_template.replace(
-                              "{WIDTH}",
-                              "512"
-                            )
-                          : contextImage.media_links.cdn_url;
-
-                        return (
-                          // Hover preview
-                          <Tooltip
-                            key={contextImage.media_token}
-                            className="bg-black p-1.5"
-                            content={
-                              <div>
-                                <div className="flex flex-col items-center bg-white/10 rounded-lg">
-                                  <img
-                                    src={fullSizeUrl}
-                                    alt={`Reference image ${index + 1} preview`}
-                                    className="w-auto h-48 object-cover rounded-lg"
-                                  />
-                                </div>
-                                {contextImage.semantic && (
-                                  <div className="mt-2 text-xs text-white/90 text-center max-w-48 px-1">
-                                    {contextImage.semantic}
-                                  </div>
-                                )}
-                              </div>
-                            }
-                            position="top"
-                            delay={300}
-                            closeOnClick={true}
+                  {/* Generation Details */}
+                  {(generationProvider || modelType) && (
+                    <div className="space-y-1.5">
+                      <div className="text-sm font-medium text-base-fg/90">
+                        Generation Details
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {modelType && (
+                          <div
+                            className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                            style={{
+                              background: "rgb(var(--st-controls-rgb) / 0.20)",
+                            }}
                           >
-                            <div
-                              className="relative group cursor-pointer"
-                              onClick={() => {
-                                window.open(
-                                  contextImage.media_links.cdn_url,
-                                  "_blank"
-                                );
-                              }}
-                            >
-                              <div className="relative overflow-hidden rounded-lg border border-white/5 bg-white/10 aspect-square">
-                                <img
-                                  src={thumbnailUrl}
-                                  alt={`Reference image ${index + 1}`}
-                                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                                />
-                              </div>
+                            <span className="text-sm text-base-fg/70 font-medium">
+                              Model
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {getModelCreatorIcon(modelType)}
+                              <span className="text-sm text-base-fg rounded">
+                                {getModelDisplayName(modelType)}
+                              </span>
                             </div>
-                          </Tooltip>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Generation Details */}
-                {(generationProvider || modelType) && (
-                  <div className="space-y-1.5">
-                    <div className="text-sm font-medium text-white/90">
-                      Generation Details
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      {modelType && (
-                        <div className="flex items-center justify-between py-2 px-3 bg-black/20 rounded-lg border border-white/5">
-                          <span className="text-sm text-white/70 font-medium">
-                            Model
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {getModelCreatorIcon(modelType)}
-                            <span className="text-sm text-white/90 rounded">
-                              {getModelDisplayName(modelType)}
+                          </div>
+                        )}
+                        {generationProvider && (
+                          <div
+                            className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                            style={{
+                              background: "rgb(var(--st-controls-rgb) / 0.20)",
+                            }}
+                          >
+                            <span className="text-sm text-base-fg/70 font-medium">
+                              Provider
+                            </span>
+                            <span className="text-sm text-base-fg rounded">
+                              {getProviderDisplayName(generationProvider)}
                             </span>
                           </div>
-                        </div>
-                      )}
-                      {generationProvider && (
-                        <div className="flex items-center justify-between py-2 px-3 bg-black/20 rounded-lg border border-white/5">
-                          <span className="text-sm text-white/70 font-medium">
-                            Provider
-                          </span>
-                          <span className="text-sm text-white/90 rounded">
-                            {getProviderDisplayName(generationProvider)}
-                          </span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {additionalInfo}
-          </div>
-
-          {/* buttons with spacing */}
-          {(onAddToSceneClicked && downloadUrl) || downloadUrl ? (
-            <div className="mt-15 mb-15 flex justify-end gap-2">
-              <Button
-                onClick={async (e) => {
-                  gtagEvent("image_to_3d_clicked");
-                  let result = await EnqueueImageTo3dObject({
-                    image_media_token: mediaId,
-                    model: EnqueueImageTo3dObjectModel.Hunyuan3d2_0,
-                  });
-                }}
-              >
-                3D
-              </Button>
-
-              {onEditClicked && downloadUrl && (
-                <Button
-                  icon={faPencil}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    gtagEvent("edit_image_clicked");
-                    await onEditClicked(downloadUrl, mediaId);
-                  }}
-                >
-                  Edit
-                </Button>
+                  )}
+                </>
               )}
 
-              {onAddToSceneClicked && downloadUrl && (
-                <Button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    gtagEvent("add_to_scene_clicked");
-                    await onAddToSceneClicked(downloadUrl, mediaId);
-                    onClose(); // close the lightbox
-                    onCloseGallery(); // close the gallery
-                  }}
-                >
-                  Add to Current Scene
-                </Button>
-              )}
-
-              {onDownloadClicked && downloadUrl && (
-                <Button
-                  icon={faDownToLine}
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    gtagEvent("download_clicked");
-                    await onDownloadClicked(downloadUrl, mediaClass);
-                  }}
-                >
-                  Download
-                </Button>
-              )}
+              {additionalInfo}
             </div>
-          ) : null}
+
+            {/* buttons with spacing */}
+            {(onAddToSceneClicked && downloadUrl) || downloadUrl ? (
+              <div className="mt-15 mb-15 flex justify-end gap-2">
+                <Button
+                  onClick={async (e) => {
+                    gtagEvent("image_to_3d_clicked");
+                    await EnqueueImageTo3dObject({
+                      image_media_token: mediaId,
+                      model: EnqueueImageTo3dObjectModel.Hunyuan3d2_0,
+                    });
+                  }}
+                >
+                  3D
+                </Button>
+
+                {onEditClicked && downloadUrl && (
+                  <Button
+                    icon={faPencil}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      gtagEvent("edit_image_clicked");
+                      await onEditClicked(downloadUrl, mediaId);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                )}
+
+                {onAddToSceneClicked && downloadUrl && (
+                  <Button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      gtagEvent("add_to_scene_clicked");
+                      await onAddToSceneClicked(downloadUrl, mediaId);
+                      onClose(); // close the lightbox
+                      onCloseGallery(); // close the gallery
+                    }}
+                  >
+                    Add to Current Scene
+                  </Button>
+                )}
+
+                {onDownloadClicked && downloadUrl && (
+                  <Button
+                    icon={faDownToLine}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      gtagEvent("download_clicked");
+                      await onDownloadClicked(downloadUrl, mediaClass);
+                    }}
+                  >
+                    Download
+                  </Button>
+                )}
+              </div>
+            ) : null}
+          </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      {refPreviewUrl && (
+        <Modal
+          isOpen={true}
+          onClose={() => setRefPreviewUrl(null)}
+          className="rounded-xl bg-ui-modal h-[50vh] w-fit max-w-screen min-w-[35vw] min-h-[40vh] p-4"
+          draggable
+          allowBackgroundInteraction={true}
+          showClose={true}
+          closeOnOutsideClick={true}
+          resizable={true}
+          backdropClassName=""
+          expandable={true}
+        >
+          <Modal.DragHandle>
+            <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
+          </Modal.DragHandle>
+          <div className="relative flex h-full items-center justify-center overflow-hidden rounded-xl bg-black/30">
+            <img
+              src={`${refPreviewUrl}?cors=1`}
+              alt="Reference preview"
+              className="h-full w-full object-contain"
+            />
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }
 
