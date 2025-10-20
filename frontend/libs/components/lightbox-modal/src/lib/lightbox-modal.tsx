@@ -12,7 +12,7 @@ import {
   EnqueueImageTo3dObjectModel,
 } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
-import { useEffect, useState, ReactNode } from "react";
+import { useEffect, useState, ReactNode, useMemo, useCallback } from "react";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
@@ -24,6 +24,8 @@ import {
   getModelDisplayName,
   getProviderDisplayName,
 } from "@storyteller/model-list";
+import useEmblaCarousel from "embla-carousel-react";
+import type { EmblaOptionsType } from "embla-carousel";
 
 interface LightboxModalProps {
   isOpen: boolean;
@@ -51,6 +53,7 @@ interface LightboxModalProps {
     url: string,
     media_id?: string
   ) => Promise<void> | void;
+  batchImageToken?: string;
 }
 
 export function LightboxModal({
@@ -72,21 +75,14 @@ export function LightboxModal({
   mediaClass,
   onEditClicked,
   onTurnIntoVideoClicked,
+  batchImageToken,
 }: LightboxModalProps) {
   // NB(bt,2025-06-14): We add ?cors=1 to the image url to prevent caching "sec-fetch-mode: no-cors" from
   // the <image> tag request from being cached. If we then drag it into the canvas after it's been cached,
   // it won't be able to load in cors mode and will show blank in the canvas and 3D engine. This is a really
   // stupid hack around this behavior.
-  const [selectedBatchIndex, setSelectedBatchIndex] = useState<number | null>(
-    null
-  );
-  const displayUrl =
-    selectedBatchIndex !== null && imageUrls
-      ? imageUrls[selectedBatchIndex]
-      : imageUrl || null;
-  const [refPreviewUrl, setRefPreviewUrl] = useState<string | null>(null);
-  const imageTagImageUrl = displayUrl ? displayUrl + "?cors=1" : "";
 
+  const [refPreviewUrl, setRefPreviewUrl] = useState<string | null>(null);
   const [mediaLoaded, setMediaLoaded] = useState<boolean>(false);
   const [prompt, setPrompt] = useState<string | null>(null);
   const [promptLoading, setPromptLoading] = useState<boolean>(false);
@@ -104,13 +100,9 @@ export function LightboxModal({
     media_token: string;
     semantic: string;
   }> | null>(null);
+  const [batchImages, setBatchImages] = useState<string[] | null>(null);
+  const [batchTokens, setBatchTokens] = useState<string[] | null>(null);
 
-  // Reset when imageUrl changes
-  useEffect(() => {
-    setMediaLoaded(false);
-  }, [imageUrl, selectedBatchIndex]);
-
-  // Maintain current media id (updates when selecting from batch)
   const [currentMediaId, setCurrentMediaId] = useState<string | undefined>(
     mediaId
   );
@@ -118,18 +110,20 @@ export function LightboxModal({
     setCurrentMediaId(mediaId);
   }, [mediaId]);
 
-  // Reset promoted selection whenever a new lightbox item is shown or dialog re-opens
   useEffect(() => {
     if (isOpen) {
-      setSelectedBatchIndex(null);
       setRefPreviewUrl(null);
+      setSelectedIndex(0);
+      setMediaLoaded(false);
     }
   }, [isOpen]);
+
   useEffect(() => {
-    // If the upstream lightbox content changes, return to grid state
-    setSelectedBatchIndex(null);
-    setRefPreviewUrl(null);
-  }, [mediaId, imageUrls]);
+    if (!batchImageToken) {
+      setBatchImages(null);
+      setBatchTokens(null);
+    }
+  }, [mediaId, imageUrl, batchImageToken]);
 
   // Fetch prompt when mediaId changes
   useEffect(() => {
@@ -191,6 +185,144 @@ export function LightboxModal({
     fetchPrompt();
   }, [currentMediaId]);
 
+  useEffect(() => {
+    const fetchBatch = async () => {
+      if (!batchImageToken) {
+        setBatchImages(null);
+        setBatchTokens(null);
+        return;
+      }
+      try {
+        const mediaFilesApi = new MediaFilesApi();
+        const response = await mediaFilesApi.GetMediaFilesByBatchToken({
+          batchToken: batchImageToken,
+        });
+        if (response.success && response.data?.length) {
+          const items = response.data
+            .map((file: any) => ({
+              url: file.media_links?.cdn_url,
+              token: file.token,
+            }))
+            .filter(
+              (item): item is { url: string; token: string } =>
+                Boolean(item.url) && Boolean(item.token)
+            );
+
+          if (items.length > 0) {
+            const primaryToken = mediaId;
+            const primaryUrl = imageUrl;
+
+            const sortedItems = [...items].sort((a, b) => {
+              if (primaryToken === a.token) return -1;
+              if (primaryToken === b.token) return 1;
+              if (primaryUrl === a.url) return -1;
+              if (primaryUrl === b.url) return 1;
+              return 0;
+            });
+
+            setBatchImages(sortedItems.map((item) => item.url));
+            setBatchTokens(sortedItems.map((item) => item.token));
+          } else {
+            setBatchImages(null);
+            setBatchTokens(null);
+          }
+        } else {
+          setBatchImages(null);
+          setBatchTokens(null);
+        }
+      } catch (error: unknown) {
+        setBatchImages(null);
+        setBatchTokens(null);
+      }
+    };
+
+    fetchBatch();
+  }, [batchImageToken, mediaId, imageUrl]);
+
+  const effectiveImageUrls = useMemo(() => {
+    if (batchImages && batchImages.length > 0) {
+      return batchImages;
+    }
+    if (imageUrls && imageUrls.length > 0) {
+      return imageUrls;
+    }
+    return imageUrl ? [imageUrl] : [];
+  }, [batchImages, imageUrls, imageUrl]);
+
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const carouselOptions: EmblaOptionsType = useMemo(() => ({ loop: true }), []);
+  const [emblaMainRef, emblaMainApi] = useEmblaCarousel(carouselOptions);
+  const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
+    containScroll: "keepSnaps",
+    dragFree: true,
+  });
+
+  const onThumbClick = useCallback(
+    (index: number) => {
+      if (!emblaMainApi || !emblaThumbsApi) return;
+      emblaMainApi.scrollTo(index);
+    },
+    [emblaMainApi, emblaThumbsApi]
+  );
+
+  const onSelect = useCallback(() => {
+    if (!emblaMainApi || !emblaThumbsApi) return;
+    const index = emblaMainApi.selectedScrollSnap();
+    setSelectedIndex(index);
+    emblaThumbsApi.scrollTo(index);
+  }, [emblaMainApi, emblaThumbsApi]);
+
+  useEffect(() => {
+    if (!emblaMainApi) return;
+    onSelect();
+    emblaMainApi.on("select", onSelect).on("reInit", onSelect);
+  }, [emblaMainApi, onSelect]);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+    emblaMainApi?.scrollTo(0, true);
+    emblaThumbsApi?.scrollTo(0, true);
+  }, [batchImageToken, imageUrl, emblaMainApi, emblaThumbsApi]);
+
+  const selectedImageUrl = effectiveImageUrls[selectedIndex] ?? null;
+  const actionUrl = selectedImageUrl ?? downloadUrl ?? undefined;
+
+  const selectedMediaToken = useMemo(() => {
+    const tokenFromBatch = batchTokens?.[selectedIndex];
+    const tokenFromProps = mediaTokens?.[selectedIndex];
+    return tokenFromBatch ?? tokenFromProps ?? mediaId;
+  }, [batchTokens, mediaTokens, selectedIndex, mediaId]);
+
+  useEffect(() => {
+    if (!selectedImageUrl) {
+      setMediaLoaded(false);
+      return;
+    }
+
+    setMediaLoaded(false);
+    const img = new Image();
+    img.src = `${selectedImageUrl}?cors=1`;
+
+    const handleLoad = () => setMediaLoaded(true);
+    const handleError = () => setMediaLoaded(true);
+
+    if (img.complete) {
+      setMediaLoaded(true);
+    } else {
+      img.addEventListener("load", handleLoad);
+      img.addEventListener("error", handleError);
+    }
+
+    return () => {
+      img.removeEventListener("load", handleLoad);
+      img.removeEventListener("error", handleError);
+    };
+  }, [selectedImageUrl]);
+
+  const derivedMediaClass =
+    mediaClass ??
+    (batchImages && batchImages.length > 0 ? "image" : mediaClass);
+
   return (
     <>
       <Modal
@@ -214,7 +346,7 @@ export function LightboxModal({
         <div className="grid h-full grid-cols-3 gap-6">
           {/* image panel */}
           <div className="col-span-2 relative flex h-full items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
-            {!displayUrl ? (
+            {!selectedImageUrl ? (
               <div className="flex h-full w-full items-center justify-center bg-black/30">
                 <span className="text-base-fg/60">Image not available</span>
               </div>
@@ -226,48 +358,84 @@ export function LightboxModal({
                 className="h-full w-full object-contain"
                 onLoadedData={() => setMediaLoaded(true)}
               >
-                <source src={displayUrl as string} type="video/mp4" />
+                <source src={selectedImageUrl as string} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
-            ) : imageUrls &&
-              imageUrls.length > 1 &&
-              selectedBatchIndex === null ? (
-              <div
-                className="grid w-full h-full p-2 gap-2"
-                style={{ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }}
-              >
-                {imageUrls.slice(0, 4).map((url, idx) => (
-                  <div
-                    key={idx}
-                    className="relative flex items-center justify-center overflow-hidden rounded-lg bg-black/20 cursor-pointer"
-                    onClick={() => {
-                      setSelectedBatchIndex(idx);
-                      const maybeToken = mediaTokens?.[idx];
-                      if (maybeToken) setCurrentMediaId(maybeToken);
-                    }}
-                  >
-                    <img
-                      src={url + "?cors=1"}
-                      alt={`Generated ${idx + 1}`}
-                      className="h-full w-full object-contain"
-                      onLoad={() => setMediaLoaded(true)}
-                      onError={onImageError}
-                    />
-                  </div>
-                ))}
-              </div>
             ) : (
-              <img
-                data-lightbox-modal="true"
-                src={imageTagImageUrl}
-                alt={imageAlt}
-                className="h-full w-full object-contain"
-                onError={onImageError}
-                onLoad={() => setMediaLoaded(true)}
-              />
+              <div className="flex h-full w-full flex-col justify-center">
+                <div
+                  className="embla relative w-full flex-1 overflow-hidden"
+                  ref={emblaMainRef}
+                >
+                  <div className="embla__container flex h-full">
+                    {effectiveImageUrls.map((url, idx) => (
+                      <div
+                        className="embla__slide flex-[0_0_100%]"
+                        key={`${url}-${idx}`}
+                      >
+                        <div className="relative flex h-full items-center justify-center overflow-hidden rounded-lg bg-black/20">
+                          <img
+                            data-lightbox-modal="true"
+                            src={`${url}?cors=1`}
+                            alt={`${imageAlt || "Generated image"} ${idx + 1}`}
+                            className="h-full w-full object-contain"
+                            onError={(e) => {
+                              onImageError?.();
+                              if (idx === selectedIndex) {
+                                setMediaLoaded(true);
+                                e.currentTarget.src =
+                                  "/resources/placeholders/placeholder.png";
+                              }
+                            }}
+                            onLoad={() => {
+                              if (idx === selectedIndex) {
+                                setMediaLoaded(true);
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {effectiveImageUrls.length > 1 && (
+                  <div className="mt-3 px-2">
+                    <div
+                      className="embla-thumbs overflow-hidden"
+                      ref={emblaThumbsRef}
+                    >
+                      <div className="embla-thumbs__container flex gap-2">
+                        {effectiveImageUrls.map((url, idx) => {
+                          const isSelected = idx === selectedIndex;
+                          return (
+                            <button
+                              key={`${url}-thumb-${idx}`}
+                              type="button"
+                              onClick={() => onThumbClick(idx)}
+                              className={twMerge(
+                                "embla-thumbs__slide relative h-20 w-20 flex-[0_0_5rem] overflow-hidden rounded-md border-2 transition-all",
+                                isSelected
+                                  ? "border-brand-primary-400 opacity-100"
+                                  : "border-transparent opacity-60 hover:border-white/40 hover:opacity-100"
+                              )}
+                            >
+                              <img
+                                src={`${url}?cors=1`}
+                                alt={`Thumbnail ${idx + 1}`}
+                                className="h-full w-full object-cover bg-black/20"
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
-            {!mediaLoaded && displayUrl && (
+            {!mediaLoaded && selectedImageUrl && (
               <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
                 <LoadingSpinner className="h-12 w-12 text-base-fg" />
               </div>
@@ -444,16 +612,16 @@ export function LightboxModal({
             </div>
 
             {/* buttons with spacing */}
-            {(onAddToSceneClicked && downloadUrl) || downloadUrl
+            {(onAddToSceneClicked && actionUrl) || actionUrl
               ? (() => {
                   const visibleButtons = [
-                    onEditClicked && downloadUrl && mediaClass === "image",
+                    onEditClicked && actionUrl && derivedMediaClass === "image",
                     onTurnIntoVideoClicked &&
-                      downloadUrl &&
-                      mediaClass === "image",
-                    onAddToSceneClicked && downloadUrl,
-                    mediaClass === "image",
-                    onDownloadClicked && downloadUrl,
+                      actionUrl &&
+                      derivedMediaClass === "image",
+                    onAddToSceneClicked && actionUrl,
+                    derivedMediaClass === "image",
+                    onDownloadClicked && actionUrl,
                   ].filter(Boolean).length;
 
                   const buttonClass =
@@ -462,15 +630,18 @@ export function LightboxModal({
                   return (
                     <div className="mt-15 mb-15 grid grid-cols-2 gap-2">
                       {onEditClicked &&
-                        downloadUrl &&
-                        mediaClass === "image" && (
+                        actionUrl &&
+                        derivedMediaClass === "image" && (
                           <Button
                             className={buttonClass}
                             icon={faPencil}
                             onClick={async (e) => {
                               e.stopPropagation();
                               gtagEvent("edit_image_clicked");
-                              await onEditClicked(downloadUrl, mediaId);
+                              await onEditClicked(
+                                actionUrl,
+                                selectedMediaToken
+                              );
                             }}
                           >
                             Edit Image
@@ -478,8 +649,8 @@ export function LightboxModal({
                         )}
 
                       {onTurnIntoVideoClicked &&
-                        downloadUrl &&
-                        mediaClass === "image" && (
+                        actionUrl &&
+                        derivedMediaClass === "image" && (
                           <Button
                             className={buttonClass}
                             icon={faVideo}
@@ -487,8 +658,8 @@ export function LightboxModal({
                               e.stopPropagation();
                               gtagEvent("turn_into_video_clicked");
                               await onTurnIntoVideoClicked(
-                                downloadUrl,
-                                mediaId
+                                actionUrl,
+                                selectedMediaToken
                               );
                             }}
                           >
@@ -496,14 +667,17 @@ export function LightboxModal({
                           </Button>
                         )}
 
-                      {onAddToSceneClicked && downloadUrl && (
+                      {onAddToSceneClicked && actionUrl && (
                         <Button
                           className={buttonClass}
                           variant="secondary"
                           onClick={async (e) => {
                             e.stopPropagation();
                             gtagEvent("add_to_scene_clicked");
-                            await onAddToSceneClicked(downloadUrl, mediaId);
+                            await onAddToSceneClicked(
+                              actionUrl,
+                              selectedMediaToken
+                            );
                             onClose();
                             onCloseGallery();
                           }}
@@ -512,7 +686,7 @@ export function LightboxModal({
                         </Button>
                       )}
 
-                      {mediaClass === "image" && (
+                      {derivedMediaClass === "image" && (
                         <Button
                           icon={faCube}
                           className={buttonClass}
@@ -520,7 +694,7 @@ export function LightboxModal({
                           onClick={async (e) => {
                             gtagEvent("image_to_3d_clicked");
                             await EnqueueImageTo3dObject({
-                              image_media_token: mediaId,
+                              image_media_token: selectedMediaToken,
                               model: EnqueueImageTo3dObjectModel.Hunyuan3d2_0,
                             });
                           }}
@@ -529,7 +703,7 @@ export function LightboxModal({
                         </Button>
                       )}
 
-                      {onDownloadClicked && downloadUrl && (
+                      {onDownloadClicked && actionUrl && (
                         <Button
                           className={buttonClass}
                           icon={faDownToLine}
@@ -537,7 +711,7 @@ export function LightboxModal({
                           onClick={async (e) => {
                             e.stopPropagation();
                             gtagEvent("download_clicked");
-                            await onDownloadClicked(downloadUrl, mediaClass);
+                            await onDownloadClicked(actionUrl, mediaClass);
                           }}
                         >
                           Download

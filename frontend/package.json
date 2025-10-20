@@ -19,6 +19,7 @@
     "@remix-run/serve": "^2.15.0",
     "dayjs": "^1.11.10",
     "detect-gpu": "^5.0.38",
+    "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.11.0",
     "konva": "^9.3.20",
     "lodash": "^4.17.21",

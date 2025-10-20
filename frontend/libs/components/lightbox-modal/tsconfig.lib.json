@@ -44,9 +44,6 @@
   ],
   "references": [
     {
-      "path": "../tooltip/tsconfig.lib.json"
-    },
-    {
       "path": "../../model-list/tsconfig.lib.json"
     },
     {

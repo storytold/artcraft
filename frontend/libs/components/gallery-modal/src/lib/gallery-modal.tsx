@@ -54,6 +54,9 @@ export interface GalleryItem {
   createdAt: string;
   mediaClass?: string;
   assetType?: string;
+  batchImageToken?: string;
+  mediaTokens?: string[];
+  imageUrls?: string[];
 }
 
 interface GroupedItems {
@@ -639,7 +642,8 @@ export const GalleryModal = React.memo(
                                 onClick={() => handleItemClick(item)}
                                 onImageError={(e) => {
                                   // NB: Replace the broken thumbnail with a placeholder.
-                                  e.currentTarget.src = "/resources/placeholders/placeholder.png";
+                                  e.currentTarget.src =
+                                    "/resources/placeholders/placeholder.png";
                                   handleImageError(item.thumbnail!);
                                 }}
                                 disableTooltipAndBadge={mode === "select"}
@@ -704,13 +708,16 @@ export const GalleryModal = React.memo(
             imageUrl={imageUrl}
             // pass multiple images if present
             imageUrls={imageUrls}
+            mediaTokens={(lightboxImageSignal.value as any)?.mediaTokens}
+            batchImageToken={
+              (lightboxImageSignal.value as any)?.batchImageToken
+            }
             imageAlt={lightboxImageSignal.value?.label || ""}
             onImageError={() => imageUrl && handleImageError(imageUrl)}
             title={lightboxImageSignal.value?.label}
             createdAt={lightboxImageSignal.value?.createdAt}
             downloadUrl={imageUrl}
             mediaId={lightboxImageSignal.value?.id}
-            mediaTokens={(lightboxImageSignal.value as any)?.mediaTokens}
             onDownloadClicked={onDownloadClicked}
             onAddToSceneClicked={onAddToSceneClicked}
             mediaClass={lightboxImageSignal.value?.mediaClass}

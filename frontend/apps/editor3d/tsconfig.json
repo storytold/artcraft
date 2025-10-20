@@ -47,9 +47,6 @@
       "path": "../../libs/components/label"
     },
     {
-      "path": "../../libs/components/close-button"
-    },
-    {
       "path": "../../libs/components/button-dropdown"
     },
     {
@@ -71,19 +68,10 @@
       "path": "../../libs/components/loading-spinner"
     },
     {
-      "path": "../../libs/components/action-reminder-modal"
-    },
-    {
       "path": "../../libs/components/promptbox"
     },
     {
       "path": "../../libs/components/tutorial-modal"
-    },
-    {
-      "path": "../../libs/components/model-selector"
-    },
-    {
-      "path": "../../libs/model-list"
     },
     {
       "path": "../../libs/common"
@@ -113,13 +101,28 @@
       "path": "../../libs/components/menu-icon-selector"
     },
     {
-      "path": "../../libs/components/tooltip"
-    },
-    {
       "path": "../../libs/components/settings-modal"
     },
     {
+      "path": "../../libs/api-enums"
+    },
+    {
+      "path": "../../libs/components/action-reminder-modal"
+    },
+    {
+      "path": "../../libs/components/close-button"
+    },
+    {
+      "path": "../../libs/model-list"
+    },
+    {
+      "path": "../../libs/components/model-selector"
+    },
+    {
       "path": "../../libs/components/popover"
+    },
+    {
+      "path": "../../libs/components/tooltip"
     },
     {
       "path": "../../libs/components/gravatar"

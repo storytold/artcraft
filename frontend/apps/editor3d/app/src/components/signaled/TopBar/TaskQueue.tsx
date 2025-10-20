@@ -52,6 +52,7 @@ type CompletedTask = {
   imageUrls?: string[];
   mediaTokens?: string[];
   mediaFileClass?: TaskMediaFileClass;
+  batchImageToken?: string;
 };
 
 const InProgressCard = ({
@@ -135,7 +136,8 @@ const CompletedCard = ({
               let errorPlaceholder = "/resources/placeholders/placeholder.png";
               switch (task.mediaFileClass) {
                 case TaskMediaFileClass.Video:
-                  errorPlaceholder = "/resources/placeholders/placeholder_play.png";
+                  errorPlaceholder =
+                    "/resources/placeholders/placeholder_play.png";
                   break;
               }
               e.currentTarget.src = errorPlaceholder;
@@ -288,15 +290,23 @@ export const TaskQueue = () => {
           .map((t: TaskQueueItem) => ({
             id: t.id,
             ...formatTitleParts(t),
-            thumbnailUrl: t.completed_item?.primary_media_file?.maybe_thumbnail_url_template ? 
-              t.completed_item?.primary_media_file?.maybe_thumbnail_url_template.replace("{WIDTH}", "250") : 
-              undefined,
-            imageUrls: t.completed_item?.primary_media_file?.cdn_url ? 
-              [t.completed_item?.primary_media_file?.cdn_url] : 
-              [],
-            mediaTokens: t.completed_item?.primary_media_file?.token ? 
-              [t.completed_item?.primary_media_file?.token] : 
-              [],
+            thumbnailUrl: t.completed_item?.primary_media_file
+              ?.maybe_thumbnail_url_template
+              ? t.completed_item?.primary_media_file?.maybe_thumbnail_url_template.replace(
+                  "{WIDTH}",
+                  "250",
+                )
+              : undefined,
+            imageUrls: t.completed_item?.primary_media_file?.cdn_url
+              ? [t.completed_item?.primary_media_file?.cdn_url]
+              : [],
+            mediaTokens: (() => {
+              const primaryToken = t.completed_item?.primary_media_file?.token;
+              const tokens: string[] = primaryToken ? [primaryToken] : [];
+              return tokens;
+            })(),
+            mediaFileClass: t.completed_item?.media_file_class,
+            batchImageToken: t.completed_item?.maybe_batch_token,
             completedAt: t.completed_at,
             updatedAt: t.updated_at,
           }));
@@ -464,14 +474,20 @@ export const TaskQueue = () => {
                                     label: t.title,
                                     thumbnail: t.thumbnailUrl || null,
                                     fullImage: t.imageUrls?.[0] || null,
-                                    createdAt: (t.completedAt || new Date()).toISOString(),
+                                    createdAt: (
+                                      t.completedAt || new Date()
+                                    ).toISOString(),
                                     mediaClass: "image",
+                                    batchImageToken: t.batchImageToken,
+                                    mediaTokens: t.mediaTokens,
+                                    imageUrls: t.imageUrls,
                                   } as GalleryItem;
                                   galleryModalLightboxMediaId.value = item.id;
                                   galleryModalLightboxImage.value = {
                                     ...item,
                                     imageUrls: t.imageUrls,
                                     mediaTokens: t.mediaTokens,
+                                    batchImageToken: t.batchImageToken,
                                   } as unknown as GalleryItem;
                                   galleryModalLightboxVisible.value = true;
                                   close();
@@ -586,8 +602,13 @@ export const TaskQueue = () => {
                             label: t.title,
                             thumbnail: t.thumbnailUrl || null,
                             fullImage: t.imageUrls?.[0] || null,
-                            createdAt: (t.completedAt || new Date()).toISOString(),
+                            createdAt: (
+                              t.completedAt || new Date()
+                            ).toISOString(),
                             mediaClass: t.mediaFileClass,
+                            batchImageToken: t.batchImageToken,
+                            mediaTokens: t.mediaTokens,
+                            imageUrls: t.imageUrls,
                           } as GalleryItem;
                           galleryModalLightboxMediaId.value = item.id;
                           galleryModalLightboxImage.value = item as GalleryItem;
