@@ -32,6 +32,11 @@ import {
 import { CloseButton } from "@storyteller/ui-close-button";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { TaskMediaFileClass } from "@storyteller/api-enums";
+import {
+  getThumbnailUrl,
+  THUMBNAIL_SIZES,
+  getPlaceholderForMediaClass,
+} from "@storyteller/common";
 
 type InProgressTask = {
   id: string;
@@ -132,15 +137,10 @@ const CompletedCard = ({
             src={task.thumbnailUrl}
             alt={task.title}
             onError={(e) => {
-              console.log("Failed to load thumbnail", e);
-              let errorPlaceholder = "/resources/placeholders/placeholder.png";
-              switch (task.mediaFileClass) {
-                case TaskMediaFileClass.Video:
-                  errorPlaceholder =
-                    "/resources/placeholders/placeholder_play.png";
-                  break;
-              }
-              e.currentTarget.src = errorPlaceholder;
+              e.currentTarget.src = getPlaceholderForMediaClass(
+                task.mediaFileClass,
+              );
+              e.currentTarget.style.opacity = "0.3";
             }}
             className="h-full w-full object-cover"
           />
@@ -290,13 +290,12 @@ export const TaskQueue = () => {
           .map((t: TaskQueueItem) => ({
             id: t.id,
             ...formatTitleParts(t),
-            thumbnailUrl: t.completed_item?.primary_media_file
-              ?.maybe_thumbnail_url_template
-              ? t.completed_item?.primary_media_file?.maybe_thumbnail_url_template.replace(
-                  "{WIDTH}",
-                  "250",
-                )
-              : undefined,
+            thumbnailUrl:
+              getThumbnailUrl(
+                t.completed_item?.primary_media_file
+                  ?.maybe_thumbnail_url_template,
+                { width: THUMBNAIL_SIZES.MEDIUM },
+              ) || undefined,
             imageUrls: t.completed_item?.primary_media_file?.cdn_url
               ? [t.completed_item?.primary_media_file?.cdn_url]
               : [],

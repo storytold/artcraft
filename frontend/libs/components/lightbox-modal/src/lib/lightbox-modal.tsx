@@ -26,6 +26,12 @@ import {
 } from "@storyteller/model-list";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
+import {
+  addCorsParam,
+  getContextImageThumbnail,
+  THUMBNAIL_SIZES,
+  PLACEHOLDER_IMAGES,
+} from "@storyteller/common";
 
 interface LightboxModalProps {
   isOpen: boolean;
@@ -301,7 +307,7 @@ export function LightboxModal({
 
     setMediaLoaded(false);
     const img = new Image();
-    img.src = `${selectedImageUrl}?cors=1`;
+    img.src = addCorsParam(selectedImageUrl) || selectedImageUrl;
 
     const handleLoad = () => setMediaLoaded(true);
     const handleError = () => setMediaLoaded(true);
@@ -376,7 +382,7 @@ export function LightboxModal({
                         <div className="relative flex h-full items-center justify-center overflow-hidden rounded-lg bg-black/20">
                           <img
                             data-lightbox-modal="true"
-                            src={`${url}?cors=1`}
+                            src={addCorsParam(url) || url}
                             alt={`${imageAlt || "Generated image"} ${idx + 1}`}
                             className="h-full w-full object-contain"
                             onError={(e) => {
@@ -384,7 +390,8 @@ export function LightboxModal({
                               if (idx === selectedIndex) {
                                 setMediaLoaded(true);
                                 e.currentTarget.src =
-                                  "/resources/placeholders/placeholder.png";
+                                  PLACEHOLDER_IMAGES.DEFAULT;
+                                e.currentTarget.style.opacity = "0.3";
                               }
                             }}
                             onLoad={() => {
@@ -421,7 +428,7 @@ export function LightboxModal({
                               )}
                             >
                               <img
-                                src={`${url}?cors=1`}
+                                src={addCorsParam(url) || url}
                                 alt={`Thumbnail ${idx + 1}`}
                                 className="h-full w-full object-cover bg-black/20"
                               />
@@ -520,7 +527,6 @@ export function LightboxModal({
                     )}
                   </div>
 
-                  {/* Context Images */}
                   {contextImages && contextImages.length > 0 && (
                     <div className="space-y-1.5">
                       <div className="text-sm font-medium text-base-fg/90">
@@ -528,30 +534,19 @@ export function LightboxModal({
                       </div>
                       <div className="grid grid-cols-6 gap-2">
                         {contextImages.map((contextImage, index) => {
-                          const thumbnailUrl = contextImage.media_links
-                            .maybe_thumbnail_template
-                            ? contextImage.media_links.maybe_thumbnail_template.replace(
-                                "{WIDTH}",
-                                "128"
-                              )
-                            : contextImage.media_links.cdn_url;
-
-                          const fullSizeUrl = contextImage.media_links
-                            .maybe_thumbnail_template
-                            ? contextImage.media_links.maybe_thumbnail_template.replace(
-                                "{WIDTH}",
-                                "512"
-                              )
-                            : contextImage.media_links.cdn_url;
+                          const { thumbnail, fullSize } =
+                            getContextImageThumbnail(contextImage, {
+                              size: THUMBNAIL_SIZES.SMALL,
+                            });
 
                           return (
                             <div
                               key={contextImage.media_token}
                               className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
-                              onClick={() => setRefPreviewUrl(fullSizeUrl)}
+                              onClick={() => setRefPreviewUrl(fullSize)}
                             >
                               <img
-                                src={thumbnailUrl}
+                                src={thumbnail}
                                 alt={`Reference image ${index + 1}`}
                                 className="h-full w-full object-cover"
                               />
@@ -743,7 +738,7 @@ export function LightboxModal({
           </Modal.DragHandle>
           <div className="relative flex h-full items-center justify-center overflow-hidden rounded-xl bg-black/30">
             <img
-              src={`${refPreviewUrl}?cors=1`}
+              src={addCorsParam(refPreviewUrl) || refPreviewUrl}
               alt="Reference preview"
               className="h-full w-full object-contain"
             />

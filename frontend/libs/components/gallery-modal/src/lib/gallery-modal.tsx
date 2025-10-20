@@ -20,6 +20,11 @@ import { twMerge } from "tailwind-merge";
 import { GalleryDraggableItem } from "./GalleryDraggableItem";
 import { useSignals } from "@preact/signals-react/runtime";
 import {
+  getThumbnailUrl,
+  THUMBNAIL_SIZES,
+  PLACEHOLDER_IMAGES,
+} from "@storyteller/common";
+import {
   galleryModalVisibleDuringDrag,
   galleryReopenAfterDragSignal,
   galleryModalVisibleViewMode,
@@ -262,7 +267,6 @@ export const GalleryModal = React.memo(
         response = await api.listUserMediaFiles(query);
 
         if (response.success && response.data) {
-          const thumbnail_size = 250;
           const newItems = response.data
             .filter(
               (item: any) => item.media_type !== FilterMediaType.SCENE_JSON
@@ -272,15 +276,12 @@ export const GalleryModal = React.memo(
               label: getLabel(item),
               thumbnail:
                 item.media_class === "video"
-                  ? item.media_links.maybe_video_previews.animated
+                  ? item.media_links.maybe_video_previews?.animated
                   : item.media_class === "dimensional"
                   ? item.cover_image?.maybe_cover_image_public_bucket_url
-                  : item.media_links.maybe_thumbnail_template?.replace(
-                      "{WIDTH}",
-                      thumbnail_size.toString()
-                    ),
-              // TODO(bt): Thumbnail template URL may be wrong for videos and other asset types, but I'm
-              // trying to plumb it through for the inpainting editor, which is just images.
+                  : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
+                      width: THUMBNAIL_SIZES.MEDIUM,
+                    }),
               thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
               fullImage: item.media_links.cdn_url,
               createdAt: item.created_at,
@@ -289,7 +290,6 @@ export const GalleryModal = React.memo(
                 (item.filter_media_classes
                   ? item.filter_media_classes[0]
                   : "image"),
-              // assetType for 3D assets so drop handlers can decide between character vs object
               assetType:
                 item.media_class === "dimensional"
                   ? item.maybe_animation_type ||
@@ -641,9 +641,9 @@ export const GalleryModal = React.memo(
                                 selected={selectedItemIds.includes(item.id)}
                                 onClick={() => handleItemClick(item)}
                                 onImageError={(e) => {
-                                  // NB: Replace the broken thumbnail with a placeholder.
                                   e.currentTarget.src =
-                                    "/resources/placeholders/placeholder.png";
+                                    PLACEHOLDER_IMAGES.DEFAULT;
+                                  e.currentTarget.style.opacity = "0.3";
                                   handleImageError(item.thumbnail!);
                                 }}
                                 disableTooltipAndBadge={mode === "select"}
