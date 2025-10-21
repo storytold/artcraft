@@ -15,7 +15,6 @@ import {
 import { TransformControls } from "./TransformControls";
 import { SceneManager, SceneObject } from "./scene_manager_api";
 import { FreeCam, isPointerLockSupported } from "./free_cam";
-import Stats from "three/examples/jsm/libs/stats.module.js";
 import { FKHelper } from "./KinHelpers/FKHelper";
 import {
   selectedMode,
@@ -23,6 +22,38 @@ import {
   showPoseControls,
 } from "../signals/selectedMode";
 import { Euler } from "three";
+
+const EDITABLE_INPUT_TYPES = new Set([
+  "text",
+  "search",
+  "email",
+  "password",
+  "number",
+  "url",
+  "tel",
+]);
+
+const isEventFromEditableElement = (event: KeyboardEvent): boolean => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (target instanceof HTMLInputElement) {
+    if (target.disabled || target.readOnly) {
+      return false;
+    }
+
+    const type = target.type?.toLowerCase() ?? "";
+    return type === "" || EDITABLE_INPUT_TYPES.has(type);
+  }
+
+  if (target instanceof HTMLTextAreaElement) {
+    return !(target.disabled || target.readOnly);
+  }
+
+  return target.isContentEditable;
+};
 
 export enum KinMode {
   FK,
@@ -280,6 +311,10 @@ export class MouseControls {
   }
 
   async onkeydown(event: KeyboardEvent) {
+    if (isEventFromEditableElement(event)) {
+      return;
+    }
+
     if (hotkeysStatus.value.disabled) {
       return;
     } else if (event.key === "f" && this.selected && this.lockControls) {
