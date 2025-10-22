@@ -12,12 +12,12 @@ import {
   EnqueueImageTo3dObjectModel,
 } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
-import { useEffect, useState, ReactNode, useMemo, useCallback } from "react";
+import { useEffect, useState, ReactNode, useMemo, useCallback, useRef } from "react";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCopy } from "@fortawesome/pro-solid-svg-icons";
+import { faCopy, faLink, faCheck } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import {
   getModelCreatorIcon,
@@ -108,6 +108,8 @@ export function LightboxModal({
   }> | null>(null);
   const [batchImages, setBatchImages] = useState<string[] | null>(null);
   const [batchTokens, setBatchTokens] = useState<string[] | null>(null);
+  const [shareCopied, setShareCopied] = useState<boolean>(false);
+  const shareCopiedTimeoutRef = useRef<number | null>(null);
 
   const [currentMediaId, setCurrentMediaId] = useState<string | undefined>(
     mediaId
@@ -121,8 +123,22 @@ export function LightboxModal({
       setRefPreviewUrl(null);
       setSelectedIndex(0);
       setMediaLoaded(false);
+      setShareCopied(false);
+      if (shareCopiedTimeoutRef.current) {
+        window.clearTimeout(shareCopiedTimeoutRef.current);
+        shareCopiedTimeoutRef.current = null;
+      }
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (shareCopiedTimeoutRef.current) {
+        window.clearTimeout(shareCopiedTimeoutRef.current);
+        shareCopiedTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!batchImageToken) {
@@ -624,6 +640,34 @@ export function LightboxModal({
 
                   return (
                     <div className="mt-15 mb-15 grid grid-cols-2 gap-2">
+                      {selectedMediaToken && (
+                        <Button
+                          className="w-full col-span-2"
+                          icon={shareCopied ? faCheck : faLink}
+                          variant="secondary"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            gtagEvent("share_link_copied");
+                            const shareUrl = `https://getartcraft.com/media/${selectedMediaToken}`;
+                            try {
+                              await navigator.clipboard.writeText(shareUrl);
+                              toast.success("Share link copied");
+                              setShareCopied(true);
+                              if (shareCopiedTimeoutRef.current) {
+                                window.clearTimeout(shareCopiedTimeoutRef.current);
+                              }
+                              shareCopiedTimeoutRef.current = window.setTimeout(() => {
+                                setShareCopied(false);
+                                shareCopiedTimeoutRef.current = null;
+                              }, 1500);
+                            } catch (err) {
+                              toast.error("Unable to copy link");
+                            }
+                          }}
+                        >
+                          {shareCopied ? "Share link copied" : "Copy Share Link"}
+                        </Button>
+                      )}
                       {onEditClicked &&
                         actionUrl &&
                         derivedMediaClass === "image" && (
