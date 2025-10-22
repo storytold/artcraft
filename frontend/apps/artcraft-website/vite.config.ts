@@ -8,6 +8,14 @@ export default defineConfig(() => ({
   server:{
     port: 4200,
     host: 'localhost',
+    proxy: {
+      // Forward API calls to production API to avoid CORS during local dev
+      '/v1': {
+        target: 'https://api.storyteller.ai',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
   preview:{
     port: 4300,
