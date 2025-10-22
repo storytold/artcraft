@@ -516,8 +516,19 @@ export const Modal = ({
 
       const dir = resizeDirRef.current;
 
-      const minWidth = 320;
-      const minHeight = 240;
+      // Resolve effective min sizes from computed styles so Tailwind classes like min-w-[1000px]
+      // are respected during resize. Fallback to sensible component minimums.
+      let minWidth = 320;
+      let minHeight = 240;
+      try {
+        const cs = window.getComputedStyle(modalRef.current);
+        const parsedMinW = parseFloat(cs.minWidth || "0");
+        const parsedMinH = parseFloat(cs.minHeight || "0");
+        if (!Number.isNaN(parsedMinW) && parsedMinW > 0)
+          minWidth = Math.max(minWidth, parsedMinW);
+        if (!Number.isNaN(parsedMinH) && parsedMinH > 0)
+          minHeight = Math.max(minHeight, parsedMinH);
+      } catch {}
 
       if (dir.includes("right")) {
         newWidth = resizeStart.current.width + dx;
@@ -534,8 +545,24 @@ export const Modal = ({
         newY = resizeStart.current.y + dy;
       }
 
-      newWidth = Math.max(minWidth, newWidth);
-      newHeight = Math.max(minHeight, newHeight);
+      // Enforce minimum size while keeping the opposite edge fixed for top/left resizes
+      if (dir.includes("left") && newWidth < minWidth) {
+        const clampDeltaX = resizeStart.current.width - minWidth;
+        newX = resizeStart.current.x + clampDeltaX;
+        newWidth = minWidth;
+      }
+      if (dir.includes("top") && newHeight < minHeight) {
+        const clampDeltaY = resizeStart.current.height - minHeight;
+        newY = resizeStart.current.y + clampDeltaY;
+        newHeight = minHeight;
+      }
+      // For right/bottom resizes, clamp size without shifting position
+      if (!dir.includes("left")) {
+        newWidth = Math.max(minWidth, newWidth);
+      }
+      if (!dir.includes("top")) {
+        newHeight = Math.max(minHeight, newHeight);
+      }
 
       positionRef.current = { x: newX, y: newY };
       sizeRef.current = { width: newWidth, height: newHeight };

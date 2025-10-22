@@ -21,6 +21,7 @@ import { useTextToImageStore } from "./TextToImageStore";
 import { animated, useSpring } from "@react-spring/web";
 import {
   galleryModalLightboxImage,
+  galleryModalLightboxMediaId,
   galleryModalLightboxVisible,
 } from "@storyteller/ui-gallery-modal";
 import { Badge } from "@storyteller/ui-badge";
@@ -140,16 +141,27 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                             <button
                               key={img.media_token}
                               onClick={() => {
-                                galleryModalLightboxImage.value = {
+                                const lightboxItem = {
                                   id: img.media_token,
                                   label: batch.prompt || "Generated Image",
-                                  thumbnail:
-                                    img.maybe_thumbnail_template || img.cdn_url,
+                                  thumbnail: img.cdn_url,
                                   fullImage: img.cdn_url,
                                   createdAt: new Date(
                                     batch.createdAt,
                                   ).toISOString(),
+                                  mediaClass: "image" as const,
+                                  mediaTokens: batch.images.map(
+                                    (image) => image.media_token,
+                                  ),
+                                  imageUrls: batch.images.map(
+                                    (image) => image.cdn_url,
+                                  ),
+                                  thumbnailUrlTemplate:
+                                    img.maybe_thumbnail_template,
                                 };
+                                galleryModalLightboxMediaId.value =
+                                  lightboxItem.id;
+                                galleryModalLightboxImage.value = lightboxItem;
                                 galleryModalLightboxVisible.value = true;
                               }}
                               className="aspect-square w-full overflow-hidden rounded-lg"

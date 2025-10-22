@@ -334,7 +334,7 @@ export function LightboxModal({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        className="rounded-xl bg-ui-modal h-[75vh] w-[60vw] max-w-screen min-w-[35vw] min-h-[40vh] p-4"
+        className="rounded-xl bg-ui-modal h-[760px] w-[1000px] max-w-screen min-w-[1000px] min-h-[600px] p-4"
         draggable
         allowBackgroundInteraction={true}
         showClose={true}
@@ -450,7 +450,7 @@ export function LightboxModal({
           </div>
 
           {/* info + actions */}
-          <div className="flex h-full flex-col">
+          <div className="flex h-full flex-col col-span-1">
             <div className="flex-1 space-y-5 text-base-fg">
               {/* <div className="text-xl font-medium">
               {title || "Image Generation"}
