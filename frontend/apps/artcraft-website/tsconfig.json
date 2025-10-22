@@ -3,6 +3,21 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/model-list"
+    },
+    {
+      "path": "../../libs/common"
+    },
+    {
+      "path": "../../libs/api"
+    },
+    {
+      "path": "../../libs/components/toaster"
+    },
+    {
+      "path": "../../libs/components/loading-spinner"
+    },
+    {
       "path": "../../libs/components/button"
     },
     {

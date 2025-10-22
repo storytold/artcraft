@@ -38,6 +38,21 @@
   ],
   "references": [
     {
+      "path": "../../libs/model-list/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/common/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/api/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/toaster/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/loading-spinner/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/button/tsconfig.lib.json"
     }
   ]

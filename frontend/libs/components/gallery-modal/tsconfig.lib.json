@@ -47,6 +47,9 @@
       "path": "../slider-v2/tsconfig.lib.json"
     },
     {
+      "path": "../../common/tsconfig.lib.json"
+    },
+    {
       "path": "../loading-spinner/tsconfig.lib.json"
     },
     {
@@ -62,10 +65,10 @@
       "path": "../modal/tsconfig.lib.json"
     },
     {
-      "path": "../../api/tsconfig.lib.json"
+      "path": "../../tauri-api/tsconfig.lib.json"
     },
     {
-      "path": "../../tauri-api/tsconfig.lib.json"
+      "path": "../../api/tsconfig.lib.json"
     },
     {
       "path": "../action-reminder-modal/tsconfig.lib.json"

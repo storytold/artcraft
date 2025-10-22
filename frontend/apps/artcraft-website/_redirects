@@ -1,6 +1,10 @@
 /tutorials /index.html 200
 /tutorials/ /index.html 200
 
+/media /index.html 200
+/media/ /index.html 200
+/media/* /index.html 200
+
 /faq /index.html 200
 /faq/ /index.html 200
 /faq/* /index.html 200

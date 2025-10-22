@@ -6,6 +6,9 @@
       "path": "../slider-v2"
     },
     {
+      "path": "../../common"
+    },
+    {
       "path": "../loading-spinner"
     },
     {
@@ -21,10 +24,10 @@
       "path": "../modal"
     },
     {
-      "path": "../../api"
+      "path": "../../tauri-api"
     },
     {
-      "path": "../../tauri-api"
+      "path": "../../api"
     },
     {
       "path": "../action-reminder-modal"

@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../common"
+    },
+    {
       "path": "../../model-list"
     },
     {
