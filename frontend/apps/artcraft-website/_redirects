@@ -1,3 +1,6 @@
+/download /index.html 200
+/download/ /index.html 200
+
 /tutorials /index.html 200
 /tutorials/ /index.html 200
 

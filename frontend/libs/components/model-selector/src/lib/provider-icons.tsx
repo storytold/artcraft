@@ -1,4 +1,5 @@
 import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
+import { IsDesktopApp } from "@storyteller/tauri-utils";
 import { Provider } from "@storyteller/tauri-api";
 import { ReactNode } from "react";
 
@@ -16,7 +17,11 @@ export const getProviderIcon = (
   if (creator) return getCreatorIcon(creator, className);
   return (
     <img
-      src="/resources/images/services/generic.svg"
+      src={
+        IsDesktopApp()
+          ? "/resources/images/services/generic.svg"
+          : "/images/services/generic.svg"
+      }
       alt="generic logo"
       className={className}
     />

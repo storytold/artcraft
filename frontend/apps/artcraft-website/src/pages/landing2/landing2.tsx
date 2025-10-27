@@ -15,36 +15,11 @@ import Footer from "../../components/footer";
 import { useState, useRef, useEffect } from "react";
 import ModelBadgeGrid from "../../components/model-badge-grid";
 import Seo from "../../components/seo";
+import { DOWNLOAD_LINKS } from "../../config/downloads";
 
-// Current Mac version (update this when a new version is released)
-// If a rollback is necessary, roll back to the last known good date.
-//const MAC_VERSION = "2025.06.04";
-//const MAC_VERSION = "2025.07.13";
-//const MAC_VERSION = "2025.07.17";
-//const MAC_VERSION = "2025.07.28";
-//const MAC_VERSION = "2025.08.23"; // NB: The "08.22 (twenty two)" release is broken.
-//const MAC_VERSION = "2025.09.23";
-//const MAC_VERSION = "2025.09.24"; // Works! Good release.
-//const MAC_VERSION = "2025.09.27";
-const MAC_VERSION = "2025.10.04"; // Sora 2
-
-// Current Windows version (update this when a new version is released)
-// If a rollback is necessary, roll back to the last known good date.
-//const WINDOWS_VERSION = "2025.06.04";
-//const WINDOWS_VERSION = "2025.07.13";
-//const WINDOWS_VERSION = "2025.07.17";
-//const WINDOWS_VERSION = "2025.07.28";
-//const WINDOWS_VERSION = "2025.08.22";
-//const WINDOWS_VERSION = "2025.09.23";
-//const WINDOWS_VERSION = "2025.09.24"; // Works! Good release.
-//const WINDOWS_VERSION = "2025.09.27";
-const WINDOWS_VERSION = "2025.10.04"; // Sora 2
-
-// Link to the current production Mac build
-const MAC_LINK = `https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/mac/ArtCraft_0.0.1_universal_${MAC_VERSION}.dmg`;
-
-// Link to the current production Windows build
-const WINDOWS_LINK = `https://pub-3b58c874772a4e04b9c291815224128c.r2.dev/windows/ArtCraft_0.0.1_x64-setup_${WINDOWS_VERSION}.exe`;
+// Versions and links are now centralized in downloads config - BFlat
+const MAC_LINK = DOWNLOAD_LINKS.MACOS;
+const WINDOWS_LINK = DOWNLOAD_LINKS.WINDOWS;
 
 const fadeUpVariants = {
   hidden: { opacity: 0, y: 20 },

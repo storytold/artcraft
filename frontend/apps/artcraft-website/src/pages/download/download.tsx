@@ -1,13 +1,9 @@
-import {
-  faApple,
-  faWindows,
-  faLinux,
-} from "@fortawesome/free-brands-svg-icons";
+import { faApple, faWindows } from "@fortawesome/free-brands-svg-icons";
 import { faArrowDownToLine } from "@fortawesome/pro-solid-svg-icons";
-import { DownloadButton } from "../../components/download-button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { DOWNLOAD_LINKS } from "../../config/downloads";
+import { isMobile } from "react-device-detect";
 
 const Download = () => {
   const systemRequirements = [
@@ -16,8 +12,8 @@ const Download = () => {
       icon: faWindows,
       requirements: [
         "Windows 10 (64-bit) or newer",
-        "8GB RAM minimum",
-        "4GB available storage",
+        "16GB RAM recommended",
+        "Dedicated GPU recommended",
       ],
     },
     {
@@ -25,17 +21,8 @@ const Download = () => {
       icon: faApple,
       requirements: [
         "macOS 12.0 or newer",
-        "8GB RAM minimum",
-        "4GB available storage",
-      ],
-    },
-    {
-      os: "Linux",
-      icon: faLinux,
-      requirements: [
-        "Ubuntu 20.04 or newer",
-        "8GB RAM minimum",
-        "4GB available storage",
+        "16GB RAM recommended",
+        "Apple Silicon recommended",
       ],
     },
   ];
@@ -43,6 +30,9 @@ const Download = () => {
   return (
     <div className="relative min-h-screen bg-[#101014] text-white bg-dots">
       <div className="dotted-pattern absolute inset-0 z-[0] opacity-50" />
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+        <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-30 blur-[120px]"></div>
+      </div>
 
       {/* Hero Section */}
       <div className="relative flex overflow-hidden">
@@ -56,8 +46,34 @@ const Download = () => {
             with canvas editing and 3D scene composition.
           </p>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:gap-6 mb-20">
-            <DownloadButton />
+          <div className="flex flex-col gap-4 sm:flex-row items-center justify-center mb-20">
+            {isMobile ? (
+              <Button
+                className="text-lg font-semibold rounded-xl shadow-lg"
+                disabled
+              >
+                Download on a desktop
+              </Button>
+            ) : (
+              <>
+                <Button
+                  className="text-md px-4 py-3 font-semibold rounded-xl shadow-lg gap-3"
+                  as="link"
+                  href={DOWNLOAD_LINKS.WINDOWS}
+                >
+                  <FontAwesomeIcon icon={faWindows} />
+                  Download Windows
+                </Button>
+                <Button
+                  className="text-md px-4 py-3 font-semibold rounded-xl shadow-lg gap-3"
+                  as="link"
+                  href={DOWNLOAD_LINKS.MACOS}
+                >
+                  <FontAwesomeIcon icon={faApple} />
+                  Download Mac
+                </Button>
+              </>
+            )}
           </div>
 
           <div className="w-full max-w-7xl mb-20">
@@ -68,10 +84,12 @@ const Download = () => {
             />
           </div>
 
-          {/* System Requirements */}
+          {/* Recommended System Requirements */}
           <div className="w-full max-w-6xl mb-20">
-            <h2 className="text-3xl font-bold mb-10">System Requirements</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <h2 className="text-3xl font-bold mb-10">
+              Recommended System Requirements
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {systemRequirements.map((system, index) => (
                 <div
                   key={index}
@@ -91,21 +109,25 @@ const Download = () => {
                       </li>
                     ))}
                   </ul>
-                  <Button
-                    className="w-fit"
-                    onClick={() => {
-                      const downloadLink =
-                        system.os === "Windows"
-                          ? DOWNLOAD_LINKS.WINDOWS
-                          : system.os === "macOS"
-                          ? DOWNLOAD_LINKS.MACOS
-                          : DOWNLOAD_LINKS.LINUX;
-                      window.open(downloadLink, "_blank");
-                    }}
-                    icon={faArrowDownToLine}
-                  >
-                    Download
-                  </Button>
+                  {isMobile ? (
+                    <Button className="w-fit" icon={faArrowDownToLine} disabled>
+                      Download on a desktop
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-fit"
+                      onClick={() => {
+                        const downloadLink =
+                          system.os === "Windows"
+                            ? DOWNLOAD_LINKS.WINDOWS
+                            : DOWNLOAD_LINKS.MACOS;
+                        window.open(downloadLink, "_blank");
+                      }}
+                      icon={faArrowDownToLine}
+                    >
+                      Download
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
