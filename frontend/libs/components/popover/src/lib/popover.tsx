@@ -82,6 +82,7 @@ interface PopoverMenuProps {
   panelActionLabel?: string;
   onOpenChange?: (open: boolean) => void;
   closeOnUnhover?: boolean;
+  renderTrigger?: (selected?: PopoverItem, open?: boolean) => ReactNode;
 }
 
 export const PopoverMenu = ({
@@ -104,6 +105,7 @@ export const PopoverMenu = ({
   panelActionLabel,
   onOpenChange,
   closeOnUnhover = false,
+  renderTrigger,
 }: PopoverMenuProps) => {
   const selectedItem = items.find((item) => item.selected);
   const [openTooltipIdx, setOpenTooltipIdx] = useState<number | null>(null);
@@ -272,22 +274,31 @@ export const PopoverMenu = ({
                 }}
                 ref={popoverButtonRef}
               >
-                {triggerIcon}
-                {mode === "toggle" && selectedItem ? (
-                  <span className="truncate">{selectedItem.label}</span>
-                ) : null}
-                {mode === "default" && triggerLabel ? (
-                  <span className="truncate">{triggerLabel}</span>
-                ) : null}
-                {mode === "hoverSelect" && selectedItem ? (
-                  <div className="flex items-center gap-1.5">
-                    <span className="opacity-70">{triggerLabel}</span>
-                    <div className="flex items-center gap-2">
+                {renderTrigger ? (
+                  renderTrigger(selectedItem, open)
+                ) : (
+                  <>
+                    {triggerIcon}
+                    {mode === "toggle" && selectedItem ? (
                       <span className="truncate">{selectedItem.label}</span>
-                      <FontAwesomeIcon icon={faChevronUp} className="text-sm" />
-                    </div>
-                  </div>
-                ) : null}
+                    ) : null}
+                    {mode === "default" && triggerLabel ? (
+                      <span className="truncate">{triggerLabel}</span>
+                    ) : null}
+                    {mode === "hoverSelect" && selectedItem ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="opacity-70">{triggerLabel}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate">{selectedItem.label}</span>
+                          <FontAwesomeIcon
+                            icon={faChevronUp}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                )}
               </PopoverButton>
 
               <Transition

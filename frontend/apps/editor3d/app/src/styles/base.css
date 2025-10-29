@@ -57,6 +57,7 @@ body {
   --st-controls-rgb: 62 62 65;
   --st-controls-border: #3f3f3f;
   --st-fg: #ffffff;
+  --st-fg-rgb: 255 255 255;
   --st-divider: #515168;
   --st-gallery-vignette-alpha: 0.6;
   /* Photo tint (default neutral) */
@@ -77,6 +78,7 @@ body {
   --st-controls-rgb: 238 238 239;
   --st-controls-border: #dcdcdf; /* requested light button border */
   --st-fg: #111827;
+  --st-fg-rgb: 17 24 39;
   --st-divider: #d1d5db;
   --st-color-scheme: light;
   --st-photo-tint-rgb: 0 0 0;
@@ -96,6 +98,7 @@ body {
   --st-controls-rgb: 62 62 65;
   --st-controls-border: #464646;
   --st-fg: #ffffff;
+  --st-fg-rgb: 255 255 255;
   --st-divider: #424242;
   --st-color-scheme: dark;
   --st-gallery-vignette-alpha: 0.3;
@@ -115,6 +118,7 @@ body {
   --st-controls-rgb: 17 17 17;
   --st-controls-border: #242424;
   --st-fg: #ffffff;
+  --st-fg-rgb: 255 255 255;
   --st-divider: #303030;
   --st-color-scheme: dark;
   --st-photo-tint-rgb: 0 0 0;
@@ -138,6 +142,7 @@ body {
   --st-controls-rgb: 26 31 53;
   --st-controls-border: #1e2237;
   --st-fg: #f8fafc;
+  --st-fg-rgb: 248 250 252;
   --st-divider: #2a3152;
   --st-color-scheme: dark;
   --st-photo-tint-rgb: 22 32 56; /* slightly darker bluish tint */
@@ -160,6 +165,7 @@ body {
   --st-controls-rgb: 39 25 39;
   --st-controls-border: #3a253a;
   --st-fg: #f8fafc;
+  --st-fg-rgb: 248 250 252;
   --st-divider: #4a2e3a;
   --st-color-scheme: dark;
   --st-photo-tint-rgb: 96 32 48; /* warmer tint for images */
@@ -191,7 +197,7 @@ body {
   background-color: rgba(0, 0, 0, var(--st-badge-alpha));
 }
 .text-base-fg {
-  color: var(--st-fg);
+  color: rgb(var(--st-fg-rgb) / 1);
 }
 .border-ui-divider {
   border-color: var(--st-divider);

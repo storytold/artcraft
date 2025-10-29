@@ -212,6 +212,7 @@ export default {
         "controls-button": "rgb(var(--st-controls-rgb) / <alpha-value>)",
         divider: "var(--st-divider)",
       },
+      "base-fg": "rgb(var(--st-fg-rgb) / <alpha-value>)",
       media: {
         "audio-tts": "#6AAA88",
         "audio-v2v": "#6691B9",

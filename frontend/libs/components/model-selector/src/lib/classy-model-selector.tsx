@@ -9,7 +9,7 @@ import { Provider } from "@storyteller/tauri-api";
 import { getProviderDisplayName, getProviderIcon } from "./provider-icons";
 import { Model } from "@storyteller/model-list";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleCheck } from "@fortawesome/pro-solid-svg-icons";
+import { faCircleCheck, faChevronUp } from "@fortawesome/pro-solid-svg-icons";
 import { PROVIDER_LOOKUP_BY_PAGE } from "./provider-lookup";
 
 interface ClassyModelSelectorProps {
@@ -206,13 +206,48 @@ export function ClassyModelSelector({
   );
 
   return (
-    <PopoverMenu
-      items={modelList}
-      onSelect={handleModelSelect}
-      mode="hoverSelect"
-      {...popoverProps}
-      buttonClassName="border-0 bg-transparent p-0 hover:bg-transparent text-lg hover:opacity-80 shadow-none"
-    />
+    <div className="flex items-center gap-3">
+      <span className="text-base-fg/90 text-base font-semibold">Model</span>
+      <PopoverMenu
+        items={modelList}
+        onSelect={handleModelSelect}
+        mode="hoverSelect"
+        {...popoverProps}
+        buttonClassName="rounded-xl bg-ui-controls/90 hover:bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
+        renderTrigger={(selectedItem) => {
+          const modelTitle = selectedItem?.label ?? "";
+          const providerIcon = selectedProvider
+            ? getProviderIcon(selectedProvider)
+            : null;
+          return (
+            <div className="flex items-center justify-between w-full gap-3">
+              <div className="flex min-w-0 flex-col">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="truncate text-base font-semibold text-base-fg">
+                    {modelTitle}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-base-fg/60 text-[13px] -mt-[1px]">
+                  <span>via</span>
+                  {providerIcon && (
+                    <span className="opacity-70">{providerIcon}</span>
+                  )}
+                  <span className="truncate">
+                    {selectedProvider
+                      ? getProviderDisplayName(selectedProvider)
+                      : ""}
+                  </span>
+                </div>
+              </div>
+              <FontAwesomeIcon
+                icon={faChevronUp}
+                className="text-base text-base-fg/70 self-center"
+              />
+            </div>
+          );
+        }}
+      />
+    </div>
   );
 }
 
