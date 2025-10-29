@@ -61,38 +61,40 @@ function ProviderTooltipContent({
   if (!modelId) return null as any;
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1">
       <div className="mb-1 mt-0.5 px-1.5 text-sm font-normal text-base-fg opacity-70">
         Select Provider
       </div>
-      {allowedProviders.map((p) => (
-        <button
-          key={p}
-          onClick={() => {
-            if (model) {
-              setSelectedModel(page, model);
-            }
-            setSelectedProvider(page, modelId, p);
-            onFinished?.();
-          }}
-          type="button"
-          className={`group flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-all ${
-            selectedProvider === p
-              ? "bg-ui-controls/70 border-l-4 border-primary"
-              : "hover:bg-ui-controls/50"
-          }`}
-        >
-          <span className="flex items-center gap-2 text-sm text-base-fg">
-            <span className="text-lg">{getProviderIcon(p)}</span>
-            {getProviderDisplayName(p)}
-          </span>
-          {selectedProvider === p && (
-            <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center">
-              <FontAwesomeIcon icon={faCircleCheck} />
+      <div className="flex flex-col gap-0">
+        {allowedProviders.map((p) => (
+          <button
+            key={p}
+            onClick={() => {
+              if (model) {
+                setSelectedModel(page, model);
+              }
+              setSelectedProvider(page, modelId, p);
+              onFinished?.();
+            }}
+            type="button"
+            className={`group flex cursor-pointer items-center justify-between rounded-lg px-2 py-2 transition-all ${
+              selectedProvider === p
+                ? "bg-ui-controls/70 border-l-4 border-primary"
+                : "hover:bg-ui-controls/50"
+            }`}
+          >
+            <span className="flex items-center gap-2 text-sm text-base-fg">
+              <span className="text-lg">{getProviderIcon(p)}</span>
+              {getProviderDisplayName(p)}
             </span>
-          )}
-        </button>
-      ))}
+            {selectedProvider === p && (
+              <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center">
+                <FontAwesomeIcon icon={faCircleCheck} />
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

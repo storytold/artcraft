@@ -1,4 +1,4 @@
-import { ReactNode, useRef, useEffect } from "react";
+import { ReactNode, useRef, useEffect, useState } from "react";
 import {
   Popover,
   Transition,
@@ -106,6 +106,7 @@ export const PopoverMenu = ({
   closeOnUnhover = false,
 }: PopoverMenuProps) => {
   const selectedItem = items.find((item) => item.selected);
+  const [openTooltipIdx, setOpenTooltipIdx] = useState<number | null>(null);
 
   const handleItemClick = (item: PopoverItem, close: () => void) => {
     if (mode === "button" && item.action && onPanelAction) {
@@ -365,6 +366,11 @@ export const PopoverMenu = ({
                                 delay={item.tooltipDelayMs ?? 300}
                                 interactive
                                 className="!pointer-events-auto z-50 min-w-48 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border"
+                                onOpenChange={(open) =>
+                                  setOpenTooltipIdx((prev) =>
+                                    open ? index : prev === index ? null : prev
+                                  )
+                                }
                               >
                                 <div
                                   onClick={() => {
@@ -377,6 +383,9 @@ export const PopoverMenu = ({
                                     item.selected
                                       ? "bg-ui-controls/70 border-l-4 border-primary"
                                       : "hover:bg-ui-controls/50",
+                                    !item.selected && openTooltipIdx === index
+                                      ? "bg-ui-controls/50"
+                                      : "",
                                     item.disabled
                                       ? "!cursor-not-allowed opacity-50"
                                       : ""
@@ -411,7 +420,7 @@ export const PopoverMenu = ({
                                                 key={i}
                                                 className="flex items-center gap-1 min-w-0"
                                               >
-                                                <span className="inline-flex items-center rounded bg-black/40 px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
+                                                <span className="inline-flex items-center rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
                                                   {badge?.icon && (
                                                     <span>{badge.icon}</span>
                                                   )}
@@ -487,7 +496,7 @@ export const PopoverMenu = ({
                                               key={i}
                                               className="flex items-center gap-1 min-w-0"
                                             >
-                                              <span className="inline-flex items-center rounded bg-black/40 px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
+                                              <span className="inline-flex items-center rounded bg-ui-badge px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
                                                 {badge?.icon && (
                                                   <span>{badge.icon}</span>
                                                 )}
@@ -554,11 +563,19 @@ export const PopoverMenu = ({
                                 delay={item.tooltipDelayMs ?? 1000}
                                 interactive
                                 className="!pointer-events-auto z-50 min-w-48 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border"
+                                onOpenChange={(open) =>
+                                  setOpenTooltipIdx((prev) =>
+                                    open ? index : prev === index ? null : prev
+                                  )
+                                }
                               >
                                 <Button
                                   className={twMerge(
                                     "flex w-full items-center shadow-none justify-between px-1.5",
                                     "bg-transparent hover:bg-ui-controls/60",
+                                    openTooltipIdx === index
+                                      ? "bg-ui-controls/60"
+                                      : "",
                                     mode === "toggle" && item.selected
                                       ? "hover:bg-ui-controls/80"
                                       : "",

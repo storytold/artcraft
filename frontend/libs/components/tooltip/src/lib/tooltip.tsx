@@ -16,6 +16,7 @@ interface TooltipProps {
    * immediately when the cursor leaves the trigger. Useful for menus.
    */
   interactive?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const Tooltip = ({
@@ -28,6 +29,7 @@ export const Tooltip = ({
   imageSrc,
   description,
   interactive = false,
+  onOpenChange,
 }: TooltipProps) => {
   const [isShowing, setIsShowing] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -121,6 +123,10 @@ export const Tooltip = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHoveringTrigger, isHoveringTooltip, interactive]);
+
+  useEffect(() => {
+    onOpenChange?.(isShowing);
+  }, [isShowing, onOpenChange]);
 
   return (
     <div
