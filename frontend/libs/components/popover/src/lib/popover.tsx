@@ -14,6 +14,7 @@ import {
   faCircleCheck,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Model, ModelInfo } from "@storyteller/model-list";
+import { Tooltip } from "@storyteller/ui-tooltip";
 
 // Global hover manager to debounce close across adjacent hover popovers
 let globalCloseTimer: NodeJS.Timeout | null = null;
@@ -35,6 +36,8 @@ const scheduleGlobalClose = (fn: () => void, delayMs: number) => {
 const ST_POPOVER_OPEN_EVENT = "st-popover-open";
 let popoverIdCounter = 0;
 
+type HoverTooltipContent = ReactNode | ((close: () => void) => ReactNode);
+
 export interface PopoverItem {
   label: string;
   selected: boolean;
@@ -49,6 +52,14 @@ export interface PopoverItem {
   }>;
   modelInfo?: ModelInfo;
   model?: Model; // NB: Let's migrate to using this.
+  // Optional trailing content rendered on the far right of each list row
+  // (e.g., a settings button or tooltip trigger)
+  trailing?: ReactNode;
+  // Optional tooltip content to show when hovering the entire row
+  hoverTooltip?: HoverTooltipContent;
+  tooltipDelayMs?: number;
+  // Optional custom right-side node shown when item is selected
+  selectedRight?: ReactNode;
 }
 
 interface PopoverMenuProps {
@@ -339,70 +350,170 @@ export const PopoverMenu = ({
                       <div className="flex flex-col gap-0 text-sm text-base-fg">
                         {items.map((item, index) => (
                           <div key={index}>
-                            <div
-                              onClick={() => {
-                                if (!item.disabled) {
-                                  handleItemClick(item, close);
+                            {item.hoverTooltip ? (
+                              <Tooltip
+                                content={
+                                  typeof item.hoverTooltip === "function"
+                                    ? (
+                                        item.hoverTooltip as (
+                                          close: () => void
+                                        ) => ReactNode
+                                      )(close)
+                                    : item.hoverTooltip
                                 }
-                              }}
-                              className={twMerge(
-                                "group flex cursor-pointer items-start gap-2 rounded-lg px-2 py-2 transition-all",
-                                item.selected
-                                  ? "bg-ui-controls/70 border-l-4 border-primary"
-                                  : "hover:bg-ui-controls/50",
-                                item.disabled
-                                  ? "!cursor-not-allowed opacity-50"
-                                  : ""
-                              )}
-                              style={{ minHeight: 48 }}
-                            >
-                              <div className="flex items-center gap-2 w-full">
-                                <div className="flex items-start gap-2 grow">
-                                  {showIconsInList && (
-                                    <span className="mt-1 flex h-5 w-5 items-center justify-center text-lg text-base-fg/80">
-                                      {item.icon}
-                                    </span>
+                                position="right"
+                                delay={item.tooltipDelayMs ?? 300}
+                                interactive
+                                className="!pointer-events-auto z-50 min-w-48 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border"
+                              >
+                                <div
+                                  onClick={() => {
+                                    if (!item.disabled) {
+                                      handleItemClick(item, close);
+                                    }
+                                  }}
+                                  className={twMerge(
+                                    "group flex cursor-pointer items-start gap-2 rounded-lg px-2 py-2 transition-all",
+                                    item.selected
+                                      ? "bg-ui-controls/70 border-l-4 border-primary"
+                                      : "hover:bg-ui-controls/50",
+                                    item.disabled
+                                      ? "!cursor-not-allowed opacity-50"
+                                      : ""
                                   )}
-                                  <div className="flex flex-1 flex-col min-w-0">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                      <span className="truncate font-semibold text-base-fg text-base">
-                                        {item.label}
-                                      </span>
+                                  style={{ minHeight: 48 }}
+                                >
+                                  <div className="flex items-center gap-2 w-full">
+                                    <div className="flex items-start gap-2 grow">
+                                      {showIconsInList && (
+                                        <span className="mt-1 flex h-5 w-5 items-center justify-center text-lg text-base-fg/80">
+                                          {item.icon}
+                                        </span>
+                                      )}
+                                      <div className="flex flex-1 flex-col min-w-0">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <span className="truncate font-semibold text-base-fg text-base">
+                                            {item.label}
+                                          </span>
+                                        </div>
+
+                                        {item.description && (
+                                          <div className="truncate text-xs text-base-fg/60 mt-0.5">
+                                            {item.description}
+                                          </div>
+                                        )}
+
+                                        <div className="flex flex-row gap-1 flex-wrap mt-1.5">
+                                          {item.badges &&
+                                            Array.isArray(item.badges) &&
+                                            item.badges.map((badge, i) => (
+                                              <div
+                                                key={i}
+                                                className="flex items-center gap-1 min-w-0"
+                                              >
+                                                <span className="inline-flex items-center rounded bg-black/40 px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
+                                                  {badge?.icon && (
+                                                    <span>{badge.icon}</span>
+                                                  )}
+                                                  {badge?.label || ""}
+                                                </span>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      </div>
                                     </div>
 
-                                    {item.description && (
-                                      <div className="truncate text-xs text-base-fg/60 mt-0.5">
-                                        {item.description}
+                                    {/* Optional trailing content (e.g., tooltip trigger) */}
+                                    {item.trailing && (
+                                      <div className="ml-2 mr-1 flex items-center">
+                                        {item.trailing}
                                       </div>
                                     )}
 
-                                    <div className="flex flex-row gap-1 flex-wrap mt-1.5">
-                                      {item.badges &&
-                                        Array.isArray(item.badges) &&
-                                        item.badges.map((badge, i) => (
-                                          <div
-                                            key={i}
-                                            className="flex items-center gap-1 min-w-0"
-                                          >
-                                            <span className="inline-flex items-center rounded bg-black/40 px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
-                                              {badge?.icon && (
-                                                <span>{badge.icon}</span>
-                                              )}
-                                              {badge?.label || ""}
-                                            </span>
-                                          </div>
-                                        ))}
-                                    </div>
+                                    {item.selected &&
+                                      (item.selectedRight ?? (
+                                        <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center mr-1">
+                                          <FontAwesomeIcon
+                                            icon={faCircleCheck}
+                                          />
+                                        </span>
+                                      ))}
                                   </div>
                                 </div>
-
-                                {item.selected && (
-                                  <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center mr-1">
-                                    <FontAwesomeIcon icon={faCircleCheck} />
-                                  </span>
+                              </Tooltip>
+                            ) : (
+                              <div
+                                onClick={() => {
+                                  if (!item.disabled) {
+                                    handleItemClick(item, close);
+                                  }
+                                }}
+                                className={twMerge(
+                                  "group flex cursor-pointer items-start gap-2 rounded-lg px-2 py-2 transition-all",
+                                  item.selected
+                                    ? "bg-ui-controls/70 border-l-4 border-primary"
+                                    : "hover:bg-ui-controls/50",
+                                  item.disabled
+                                    ? "!cursor-not-allowed opacity-50"
+                                    : ""
                                 )}
+                                style={{ minHeight: 48 }}
+                              >
+                                <div className="flex items-center gap-2 w-full">
+                                  <div className="flex items-start gap-2 grow">
+                                    {showIconsInList && (
+                                      <span className="mt-1 flex h-5 w-5 items-center justify-center text-lg text-base-fg/80">
+                                        {item.icon}
+                                      </span>
+                                    )}
+                                    <div className="flex flex-1 flex-col min-w-0">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="truncate font-semibold text-base-fg text-base">
+                                          {item.label}
+                                        </span>
+                                      </div>
+
+                                      {item.description && (
+                                        <div className="truncate text-xs text-base-fg/60 mt-0.5">
+                                          {item.description}
+                                        </div>
+                                      )}
+
+                                      <div className="flex flex-row gap-1 flex-wrap mt-1.5">
+                                        {item.badges &&
+                                          Array.isArray(item.badges) &&
+                                          item.badges.map((badge, i) => (
+                                            <div
+                                              key={i}
+                                              className="flex items-center gap-1 min-w-0"
+                                            >
+                                              <span className="inline-flex items-center rounded bg-black/40 px-1.5 py-0.5 text-xs font-medium text-base-fg gap-1">
+                                                {badge?.icon && (
+                                                  <span>{badge.icon}</span>
+                                                )}
+                                                {badge?.label || ""}
+                                              </span>
+                                            </div>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Optional trailing content (e.g., tooltip trigger) */}
+                                  {item.trailing && (
+                                    <div className="ml-2 mr-1 flex items-center">
+                                      {item.trailing}
+                                    </div>
+                                  )}
+
+                                  {item.selected && (
+                                    <span className="text-primary text-xl font-bold bg-white rounded-full p-0 h-4 w-4 flex items-center justify-center mr-1">
+                                      <FontAwesomeIcon icon={faCircleCheck} />
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
+                            )}
                             {item.divider && (
                               <div className="my-1 border-t border-white/10" />
                             )}
@@ -428,59 +539,156 @@ export const PopoverMenu = ({
                       <div className="flex flex-col gap-0 text-sm text-base-fg">
                         {items.map((item, index) => (
                           <div key={index}>
-                            <Button
-                              className={twMerge(
-                                "flex w-full items-center shadow-none justify-between px-1.5",
-                                "bg-transparent hover:bg-ui-controls/60",
-                                mode === "toggle" && item.selected
-                                  ? "hover:bg-ui-controls/80"
-                                  : "",
-                                item.disabled
-                                  ? "!cursor-not-allowed opacity-50"
-                                  : "",
-                                "border-0"
-                              )}
-                              onClick={() =>
-                                !item.disabled && handleItemClick(item, close)
-                              }
-                              variant="secondary"
-                              disabled={item.disabled}
-                            >
-                              <div className="flex items-center gap-2 truncate">
-                                {showIconsInList && item.icon}
-                                {mode === "toggle" ? (
+                            {item.hoverTooltip ? (
+                              <Tooltip
+                                content={
+                                  typeof item.hoverTooltip === "function"
+                                    ? (
+                                        item.hoverTooltip as (
+                                          close: () => void
+                                        ) => ReactNode
+                                      )(close)
+                                    : item.hoverTooltip
+                                }
+                                position="right"
+                                delay={item.tooltipDelayMs ?? 1000}
+                                interactive
+                                className="!pointer-events-auto z-50 min-w-48 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border"
+                              >
+                                <Button
+                                  className={twMerge(
+                                    "flex w-full items-center shadow-none justify-between px-1.5",
+                                    "bg-transparent hover:bg-ui-controls/60",
+                                    mode === "toggle" && item.selected
+                                      ? "hover:bg-ui-controls/80"
+                                      : "",
+                                    item.disabled
+                                      ? "!cursor-not-allowed opacity-50"
+                                      : "",
+                                    "border-0"
+                                  )}
+                                  onClick={() =>
+                                    !item.disabled &&
+                                    handleItemClick(item, close)
+                                  }
+                                  variant="secondary"
+                                  disabled={item.disabled}
+                                >
+                                  <div className="flex items-center gap-2 truncate">
+                                    {showIconsInList && item.icon}
+                                    {mode === "toggle" ? (
+                                      <span
+                                        className={twMerge(
+                                          "truncate",
+                                          item.selected
+                                            ? "text-base-fg"
+                                            : "text-base-fg/70"
+                                        )}
+                                      >
+                                        {item.label}
+                                      </span>
+                                    ) : (
+                                      <span className="truncate">
+                                        {item.label}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {/* Optional trailing content on the right */}
+                                  {item.trailing && (
+                                    <div className="ml-2 flex items-center">
+                                      {item.trailing}
+                                    </div>
+                                  )}
+                                  {/* Optional trailing content on the right */}
+                                  {item.trailing && (
+                                    <div className="ml-2 flex items-center">
+                                      {item.trailing}
+                                    </div>
+                                  )}
+
+                                  {mode === "toggle" && (
+                                    <span
+                                      className={twMerge(
+                                        "ml-2 h-5 w-5 rounded-full border flex items-center justify-center transition-colors",
+                                        item.selected
+                                          ? "border-primary bg-primary"
+                                          : "border-transparent bg-transparent"
+                                      )}
+                                    >
+                                      {item.selected && (
+                                        <FontAwesomeIcon
+                                          icon={faCheck}
+                                          className="text-base-fg text-xs font-bold"
+                                        />
+                                      )}
+                                    </span>
+                                  )}
+                                </Button>
+                              </Tooltip>
+                            ) : (
+                              <Button
+                                className={twMerge(
+                                  "flex w-full items-center shadow-none justify-between px-1.5",
+                                  "bg-transparent hover:bg-ui-controls/60",
+                                  mode === "toggle" && item.selected
+                                    ? "hover:bg-ui-controls/80"
+                                    : "",
+                                  item.disabled
+                                    ? "!cursor-not-allowed opacity-50"
+                                    : "",
+                                  "border-0"
+                                )}
+                                onClick={() =>
+                                  !item.disabled && handleItemClick(item, close)
+                                }
+                                variant="secondary"
+                                disabled={item.disabled}
+                              >
+                                <div className="flex items-center gap-2 truncate">
+                                  {showIconsInList && item.icon}
+                                  {mode === "toggle" ? (
+                                    <span
+                                      className={twMerge(
+                                        "truncate",
+                                        item.selected
+                                          ? "text-base-fg"
+                                          : "text-base-fg/70"
+                                      )}
+                                    >
+                                      {item.label}
+                                    </span>
+                                  ) : (
+                                    <span className="truncate">
+                                      {item.label}
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Optional trailing content on the right */}
+                                {item.trailing && (
+                                  <div className="ml-2 flex items-center">
+                                    {item.trailing}
+                                  </div>
+                                )}
+
+                                {mode === "toggle" && (
                                   <span
                                     className={twMerge(
-                                      "truncate",
+                                      "ml-2 h-5 w-5 rounded-full border flex items-center justify-center transition-colors",
                                       item.selected
-                                        ? "text-base-fg"
-                                        : "text-base-fg/70"
+                                        ? "border-primary bg-primary"
+                                        : "border-transparent bg-transparent"
                                     )}
                                   >
-                                    {item.label}
+                                    {item.selected && (
+                                      <FontAwesomeIcon
+                                        icon={faCheck}
+                                        className="text-base-fg text-xs font-bold"
+                                      />
+                                    )}
                                   </span>
-                                ) : (
-                                  <span className="truncate">{item.label}</span>
                                 )}
-                              </div>
-                              {mode === "toggle" && (
-                                <span
-                                  className={twMerge(
-                                    "ml-2 h-5 w-5 rounded-full border flex items-center justify-center transition-colors",
-                                    item.selected
-                                      ? "border-primary bg-primary"
-                                      : "border-transparent bg-transparent"
-                                  )}
-                                >
-                                  {item.selected && (
-                                    <FontAwesomeIcon
-                                      icon={faCheck}
-                                      className="text-base-fg text-xs font-bold"
-                                    />
-                                  )}
-                                </span>
-                              )}
-                            </Button>
+                              </Button>
+                            )}
                             {item.divider && (
                               <div className="my-1 border-t border-white/10" />
                             )}

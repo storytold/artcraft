@@ -1,3 +1,7 @@
+///////////////////////////////////////////
+// DEPRECATED: Use ClassyModelSelector only
+///////////////////////////////////////////
+
 import { useEffect, useMemo } from "react";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { ModelPage } from "./model-pages";
