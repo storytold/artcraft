@@ -289,6 +289,30 @@ export const Modal = ({
           modalRef.current.style.position = "fixed";
           modalRef.current.style.zIndex = String(zIndex);
         }
+      } else if (modalRef.current) {
+        // No previous position: center it or clear inline positioning
+        if (draggable) {
+          const modal = modalRef.current;
+          const { width: mw, height: mh } = modal.getBoundingClientRect();
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          const x = Math.max(0, (vw - mw) / 2);
+          const y = Math.max(0, (vh - mh) / 2);
+          setPosition({ x, y });
+          positionRef.current = { x, y };
+          modal.style.left = x + "px";
+          modal.style.top = y + "px";
+          modal.style.margin = "0";
+          modal.style.position = "fixed";
+          modal.style.zIndex = String(zIndex);
+        } else {
+          // Let the flex container center the modal by clearing inline overrides
+          modalRef.current.style.left = "";
+          modalRef.current.style.top = "";
+          modalRef.current.style.margin = "";
+          modalRef.current.style.position = "";
+          modalRef.current.style.zIndex = String(zIndex);
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
