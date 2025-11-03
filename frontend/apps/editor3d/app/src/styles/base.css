@@ -103,7 +103,7 @@ body {
   --st-color-scheme: dark;
   --st-gallery-vignette-alpha: 0.3;
   --st-photo-tint-rgb: 0 0 0;
-  --st-photo-tint-alpha: 0;
+  --st-photo-tint-alpha: 0.4;
   --st-photo-grayscale: 1;
   --st-badge-alpha: 0.4;
 }
