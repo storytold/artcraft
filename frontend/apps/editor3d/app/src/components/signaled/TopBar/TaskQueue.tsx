@@ -73,21 +73,21 @@ const InProgressCard = ({
         <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
           <FontAwesomeIcon
             icon={faSpinnerThird}
-            className="text-base-fg/60 animate-spin"
+            className="animate-spin text-base-fg/60"
             size="lg"
           />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
-            <div className="text-base-fg/90 truncate font-medium">
+            <div className="truncate font-medium text-base-fg/90">
               {task.title}
             </div>
-            <div className="text-base-fg/60 ml-2 shrink-0 text-xs tabular-nums">
+            <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">
               {Math.max(0, Math.min(100, Math.round(task.progress)))}%
             </div>
           </div>
           {task.subtitle && (
-            <div className="text-base-fg mt-0.5 truncate text-xs opacity-60">
+            <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
               {task.subtitle}
             </div>
           )}
@@ -100,7 +100,7 @@ const InProgressCard = ({
         </div>
         {onDismiss && (
           <button
-            className="text-base-fg/60 ml-auto h-6 w-6 rounded-full p-1 hover:bg-ui-controls"
+            className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
             aria-label="Dismiss"
             onClick={(e) => {
               e.stopPropagation();
@@ -145,29 +145,29 @@ const CompletedCard = ({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="text-base-fg/40 flex h-full w-full items-center justify-center text-[10px]">
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">
             Done
           </div>
         )}
       </div>
       <div className="min-w-0">
-        <div className="text-base-fg/90 truncate text-sm font-medium">
+        <div className="truncate text-sm font-medium text-base-fg/90">
           {task.title}
         </div>
         {task.subtitle && (
-          <div className="text-base-fg mt-0.5 truncate text-xs opacity-60">
+          <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
             {task.subtitle}
           </div>
         )}
         {task.completedAt && (
-          <div className="text-base-fg text-xs opacity-60">
+          <div className="text-xs text-base-fg opacity-60">
             {task.completedAt.toISOString()}
           </div>
         )}
       </div>
       {onDismiss && (
         <button
-          className="text-base-fg/60 ml-auto h-6 w-6 rounded-full p-1 hover:bg-ui-controls"
+          className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
           aria-label="Dismiss"
           onClick={(e) => {
             e.stopPropagation();
@@ -431,7 +431,7 @@ export const TaskQueue = () => {
                 <div className="flex max-h-[480px] flex-col">
                   <div className="max-h-[420px] overflow-y-auto p-1">
                     {hasNothing ? (
-                      <div className="text-base-fg/60 flex w-full flex-col items-center justify-center p-5">
+                      <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
                         <div className="flex items-center gap-2.5 text-sm opacity-60">
                           <FontAwesomeIcon icon={faTasks} /> No tasks yet
                         </div>
@@ -440,7 +440,7 @@ export const TaskQueue = () => {
                       <div>
                         {inProgress.length > 0 && (
                           <div className="mb-4">
-                            <div className="text-base-fg/50 mb-1 px-1 text-xs uppercase tracking-wide">
+                            <div className="mb-1 px-1 text-xs uppercase tracking-wide text-base-fg/50">
                               In Progress
                             </div>
                             {inProgress.map((t) => (
@@ -458,7 +458,7 @@ export const TaskQueue = () => {
                         )}
                         {completed.length > 0 && (
                           <div>
-                            <div className="text-base-fg/50 mb-1 px-1 text-xs uppercase tracking-wide">
+                            <div className="mb-1 px-1 text-xs uppercase tracking-wide text-base-fg/50">
                               Completed
                             </div>
                             {completed.map((t) => (
@@ -476,7 +476,7 @@ export const TaskQueue = () => {
                                     createdAt: (
                                       t.completedAt || new Date()
                                     ).toISOString(),
-                                    mediaClass: "image",
+                                    mediaClass: t.mediaFileClass,
                                     batchImageToken: t.batchImageToken,
                                     mediaTokens: t.mediaTokens,
                                     imageUrls: t.imageUrls,
@@ -563,7 +563,7 @@ export const TaskQueue = () => {
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             {hasNothing ? (
-              <div className="text-base-fg/60 flex w-full flex-col items-center justify-center p-5">
+              <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
                 <div className="flex items-center gap-2.5 text-sm opacity-60">
                   <FontAwesomeIcon icon={faTasks} /> No tasks yet
                 </div>
@@ -572,7 +572,7 @@ export const TaskQueue = () => {
               <div>
                 {inProgress.length > 0 && (
                   <div className="mb-4">
-                    <div className="text-base-fg/50 mb-2 px-1 text-xs uppercase tracking-wide">
+                    <div className="mb-2 px-1 text-xs uppercase tracking-wide text-base-fg/50">
                       In Progress
                     </div>
                     {inProgress.map((t) => (
@@ -588,7 +588,7 @@ export const TaskQueue = () => {
                 )}
                 {completed.length > 0 && (
                   <div>
-                    <div className="text-base-fg/50 mb-2 px-1 text-xs uppercase tracking-wide">
+                    <div className="mb-2 px-1 text-xs uppercase tracking-wide text-base-fg/50">
                       Completed
                     </div>
                     {completed.map((t) => (

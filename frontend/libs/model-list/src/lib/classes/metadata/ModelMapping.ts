@@ -20,6 +20,8 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   veo_2: ModelCreator.Google,
   recraft_3: ModelCreator.Recraft,
   hunyuan_3d: ModelCreator.Tencent,
+  grok_image: ModelCreator.Grok,
+  grok_video: ModelCreator.Grok,
   midjourney: ModelCreator.Midjourney,
   midjourney_v6: ModelCreator.Midjourney,
   midjourney_v6p1: ModelCreator.Midjourney,
@@ -85,6 +87,8 @@ export const getModelCreatorName = (modelType: string): string | null => {
       return "Higgsfield";
     case ModelCreator.Krea:
       return "Krea";
+    case ModelCreator.Grok:
+      return "Grok";
     default:
       return creator;
   }
@@ -93,6 +97,8 @@ export const getModelCreatorName = (modelType: string): string | null => {
 // Convert model type string to human-readable display name
 export const getModelDisplayName = (modelType: string): string => {
   const displayNames: Record<string, string> = {
+    grok_image: "Grok Image",
+    grok_video: "Grok Video",
     flux_1_dev: "Flux 1 Dev",
     flux_1_schnell: "Flux 1 Schnell",
     flux_pro_1p1: "Flux Pro 1.1",
@@ -136,9 +142,27 @@ export const getProviderDisplayName = (provider: string): string => {
   const displayNames: Record<string, string> = {
     artcraft: "ArtCraft",
     fal: "FAL",
+    grok: "Grok",
     midjourney: "Midjourney",
     sora: "Sora",
   };
 
   return displayNames[provider] || provider;
+};
+
+// Get provider icon (string-based provider)
+export const getProviderIconByName = (
+  provider: string,
+  className = "h-4 w-4 invert"
+): React.ReactNode | null => {
+  const providerToCreator: Record<string, ModelCreator> = {
+    artcraft: ModelCreator.ArtCraft,
+    fal: ModelCreator.Fal,
+    grok: ModelCreator.Grok,
+    midjourney: ModelCreator.Midjourney,
+    sora: ModelCreator.OpenAi,
+  };
+  const creator = providerToCreator[provider?.toLowerCase?.() ?? ""];
+  if (!creator) return null;
+  return getCreatorIcon(creator, className);
 };

@@ -23,6 +23,7 @@ import {
   getModelCreatorIcon,
   getModelDisplayName,
   getProviderDisplayName,
+  getProviderIconByName,
 } from "@storyteller/model-list";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
@@ -608,9 +609,15 @@ export function LightboxModal({
                             <span className="text-sm text-base-fg/70 font-medium">
                               Provider
                             </span>
-                            <span className="text-sm text-base-fg rounded">
-                              {getProviderDisplayName(generationProvider)}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              {getProviderIconByName(
+                                generationProvider,
+                                "h-4 w-4 invert"
+                              )}
+                              <span className="text-sm text-base-fg rounded">
+                                {getProviderDisplayName(generationProvider)}
+                              </span>
+                            </div>
                           </div>
                         )}
                       </div>
