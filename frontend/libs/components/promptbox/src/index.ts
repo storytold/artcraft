@@ -3,3 +3,4 @@ export * from "./lib/PromptBox3D";
 export * from "./lib/PromptBoxEdit";
 export * from "./lib/PromptBoxVideo";
 export * from "./lib/PromptBoxImage";
+export * from "./lib/promptStore";

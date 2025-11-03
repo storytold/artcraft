@@ -19,7 +19,6 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { SceneTitleInput } from "./SceneTitleInput";
-import { Activity } from "~/pages/PageEnigma/comps/GenerateModals/Activity";
 import {
   GalleryModal,
   galleryModalVisibleViewMode,
@@ -62,7 +61,8 @@ import { useSubscriptionPlanChangedEvent } from "@storyteller/tauri-events";
 import { useCreditsState } from "@storyteller/credits";
 import { useSubscriptionState } from "@storyteller/subscription";
 import { UploadImagesButton } from "./UploadImagesButton";
-import TaskQueue from "./TaskQueue";
+import { TaskQueue } from "./TaskQueue";
+import { usePromptVideoStore, RefImage } from "@storyteller/ui-promptbox";
 
 interface Props {
   pageName: string;
@@ -229,8 +229,14 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
     mediaId?: string,
   ) => {
     try {
-      topNavMediaId.value = mediaId || "";
-      topNavMediaUrl.value = url;
+      const referenceImage: RefImage = {
+        id: Math.random().toString(36).substring(7),
+        url,
+        file: new File([], "library-image"),
+        mediaToken: mediaId || "",
+      };
+      // Update zustand store for Video directly
+      usePromptVideoStore.getState().setReferenceImages([referenceImage]);
       useTabStore.getState().setActiveTab("VIDEO");
       galleryModalVisibleViewMode.value = false;
       galleryModalVisibleDuringDrag.value = false;
@@ -380,9 +386,9 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 panelClassName="mt-3 bg-ui-panel border border-ui-panel-border text-base-fg"
               >
                 {(close) => (
-                  <div className="text-base-fg w-72 p-2.5">
+                  <div className="w-72 p-2.5 text-base-fg">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-base-fg/80 flex items-center gap-1.5 text-sm font-medium">
+                      <span className="flex items-center gap-1.5 text-sm font-medium text-base-fg/80">
                         Your credit balance
                       </span>
                       <button
@@ -395,7 +401,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                         Buy credits
                       </button>
                     </div>
-                    <div className="text-base-fg flex items-center gap-2 text-4xl font-bold">
+                    <div className="flex items-center gap-2 text-4xl font-bold text-base-fg">
                       <FontAwesomeIcon
                         icon={faCoinFront}
                         className="text-2xl text-primary"
@@ -461,7 +467,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 icon={faImages}
                 onClick={handleOpenGalleryModal}
               >
-                <span className="text-base-fg hidden whitespace-nowrap xl:block">
+                <span className="hidden whitespace-nowrap text-base-fg xl:block">
                   My Library
                 </span>
               </Button>
@@ -478,14 +484,14 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
               <div className="no-drag flex items-center">
                 <Button
                   variant="secondary"
-                  className="text-base-fg h-[32px] w-[44px] rounded-none border-0 bg-transparent opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
+                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
                   onClick={minimize}
                 >
                   <FontAwesomeIcon icon={faDash} className="text-xs" />
                 </Button>
                 <Button
                   variant="secondary"
-                  className="text-base-fg h-[32px] w-[44px] rounded-none border-0 bg-transparent opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
+                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-ui-controls/20 hover:opacity-100"
                   onClick={toggleMaximize}
                 >
                   <FontAwesomeIcon
@@ -495,7 +501,7 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 </Button>
                 <Button
                   variant="secondary"
-                  className="text-base-fg h-[32px] w-[44px] rounded-none border-0 bg-transparent opacity-70 shadow-none hover:bg-red/10 hover:text-red"
+                  className="h-[32px] w-[44px] rounded-none border-0 bg-transparent text-base-fg opacity-70 shadow-none hover:bg-red/10 hover:text-red"
                   onClick={close}
                 >
                   <FontAwesomeIcon icon={faXmark} className="text-lg" />
