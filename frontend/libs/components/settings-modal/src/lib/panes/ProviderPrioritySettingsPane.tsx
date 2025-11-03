@@ -107,7 +107,7 @@ const PROVIDER_TO_CREATOR: Partial<Record<Provider, ModelCreator>> = {
 
 const getProviderIcon = (provider: Provider): ReactNode => {
   const creator = PROVIDER_TO_CREATOR[provider];
-  if (creator) return getCreatorIcon(creator, "h-4 w-4");
+  if (creator) return getCreatorIcon(creator, "h-4 w-4 icon-auto-contrast");
   return (
     <img
       src={
@@ -116,7 +116,7 @@ const getProviderIcon = (provider: Provider): ReactNode => {
           : "/images/services/generic.svg"
       }
       alt="generic logo"
-      className="h-4 w-4"
+      className="h-4 w-4 icon-auto-contrast"
     />
   );
 };
