@@ -3,10 +3,13 @@
   "include": [],
   "references": [
     {
-      "path": "../button"
+      "path": "../tooltip"
     },
     {
       "path": "../../model-list"
+    },
+    {
+      "path": "../button"
     },
     {
       "path": "./tsconfig.lib.json"

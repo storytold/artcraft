@@ -11,7 +11,7 @@ import {
   faCopy,
   faLink,
   faCheck,
-  faDownToLine,
+  faArrowDownToLine,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   addCorsParam,
@@ -23,107 +23,154 @@ import {
   getModelCreatorIcon,
   getModelDisplayName,
   getProviderDisplayName,
+  getProviderIconByName,
 } from "@storyteller/model-list";
+
+const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v'];
+const COPY_FEEDBACK_DURATION = 1500;
+const SHARE_URL_BASE = 'https://getartcraft.com/media/';
+
+const isVideoUrl = (url: string): boolean => {
+  const urlLower = url.toLowerCase();
+  return VIDEO_EXTENSIONS.some(ext => urlLower.includes(ext));
+};
+
+interface ContextImage {
+  media_links: { cdn_url: string; maybe_thumbnail_template: string };
+  media_token: string;
+  semantic: string;
+}
+
+interface MediaData {
+  url: string | null;
+  token: string | null;
+  createdAt: string | null;
+  isVideo: boolean;
+  isLoaded: boolean;
+}
+
+interface PromptData {
+  text: string | null;
+  loading: boolean;
+  hasToken: boolean;
+  provider: string | null;
+  modelType: string | null;
+  contextImages: ContextImage[] | null;
+}
+
+const EMPTY_PROMPT_DATA: PromptData = {
+  text: null,
+  loading: false,
+  hasToken: false,
+  provider: null,
+  modelType: null,
+  contextImages: null,
+};
+
+const createPromptData = (
+  data: any,
+  hasToken: boolean,
+  loading: boolean = false
+): PromptData => ({
+  text: data?.maybe_positive_prompt || null,
+  loading,
+  hasToken,
+  provider: data?.maybe_generation_provider || null,
+  modelType: data?.maybe_model_type || null,
+  contextImages: data?.maybe_context_images || null,
+});
+
+const useCopyFeedback = () => {
+  const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
+
+  const triggerCopy = useCallback(() => {
+    setCopied(true);
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = window.setTimeout(() => {
+      setCopied(false);
+      timeoutRef.current = null;
+    }, COPY_FEEDBACK_DURATION);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return { copied, triggerCopy };
+};
 
 export default function MediaPage() {
   const { id: routeId } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
   const mediaIdParam = routeId || searchParams.get("media") || undefined;
 
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [mediaToken, setMediaToken] = useState<string | null>(null);
-  const [createdAt, setCreatedAt] = useState<string | null>(null);
-  const [mediaLoaded, setMediaLoaded] = useState<boolean>(false);
-  const [mediaRecordLoading, setMediaRecordLoading] = useState<boolean>(true);
+  const [media, setMedia] = useState<MediaData>({
+    url: null,
+    token: null,
+    createdAt: null,
+    isVideo: false,
+    isLoaded: false,
+  });
+  const [mediaRecordLoading, setMediaRecordLoading] = useState(true);
 
-  const [prompt, setPrompt] = useState<string | null>(null);
-  const [promptLoading, setPromptLoading] = useState<boolean>(false);
-  const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
-  const [isPromptHovered, setIsPromptHovered] = useState<boolean>(false);
-  const [generationProvider, setGenerationProvider] = useState<string | null>(
-    null
-  );
-  const [modelType, setModelType] = useState<string | null>(null);
-  const [contextImages, setContextImages] = useState<Array<{
-    media_links: { cdn_url: string; maybe_thumbnail_template: string };
-    media_token: string;
-    semantic: string;
-  }> | null>(null);
+  const [promptData, setPromptData] = useState<PromptData>(EMPTY_PROMPT_DATA);
+  const [isPromptHovered, setIsPromptHovered] = useState(false);
 
-  const [shareCopied, setShareCopied] = useState<boolean>(false);
-  const shareCopiedTimeoutRef = useRef<number | null>(null);
-  const [promptCopied, setPromptCopied] = useState<boolean>(false);
-  const promptCopiedTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (shareCopiedTimeoutRef.current) {
-        window.clearTimeout(shareCopiedTimeoutRef.current);
-        shareCopiedTimeoutRef.current = null;
-      }
-      if (promptCopiedTimeoutRef.current) {
-        window.clearTimeout(promptCopiedTimeoutRef.current);
-        promptCopiedTimeoutRef.current = null;
-      }
-    };
-  }, []);
+  const shareCopy = useCopyFeedback();
+  const promptCopy = useCopyFeedback();
 
   const loadMedia = useCallback(async (id: string) => {
-    setMediaLoaded(false);
-    setShareCopied(false);
+    setMedia(prev => ({ ...prev, isLoaded: false }));
     setMediaRecordLoading(true);
+
     const mediaFilesApi = new MediaFilesApi();
     try {
       const mediaResponse = await mediaFilesApi.GetMediaFileByToken({
         mediaFileToken: id,
       });
+
       if (mediaResponse.success && mediaResponse.data) {
         const file = mediaResponse.data;
         const url = file.media_links?.cdn_url || null;
-        setImageUrl(url);
-        setMediaToken(file.token || id);
-        setCreatedAt(file.created_at || null);
+        
+        setMedia({
+          url,
+          token: file.token || id,
+          createdAt: file.created_at || null,
+          isVideo: url ? isVideoUrl(url) : false,
+          isLoaded: false,
+        });
 
         if (file.maybe_prompt_token) {
-          setHasPromptToken(true);
-          setPromptLoading(true);
+          setPromptData(prev => ({ ...prev, hasToken: true, loading: true }));
+          
           try {
             const promptsApi = new PromptsApi();
             const promptResponse = await promptsApi.GetPromptsByToken({
               token: file.maybe_prompt_token,
             });
-            if (promptResponse.success && promptResponse.data) {
-              const promptData = promptResponse.data;
-              setPrompt(promptData.maybe_positive_prompt || null);
-              setGenerationProvider(
-                promptData.maybe_generation_provider || null
-              );
-              setModelType(promptData.maybe_model_type || null);
-              setContextImages(promptData.maybe_context_images || null);
-            } else {
-              setPrompt(null);
-              setGenerationProvider(null);
-              setModelType(null);
-              setContextImages(null);
-            }
-          } finally {
-            setPromptLoading(false);
+
+            const data = promptResponse.success ? promptResponse.data : null;
+            setPromptData(createPromptData(data, true, false));
+          } catch {
+            setPromptData(prev => ({ ...prev, loading: false }));
           }
         } else {
-          setHasPromptToken(false);
-          setPrompt(null);
-          setGenerationProvider(null);
-          setModelType(null);
-          setContextImages(null);
+          setPromptData(EMPTY_PROMPT_DATA);
         }
       } else {
-        setImageUrl(null);
-        setMediaToken(null);
+        setMedia({ url: null, token: null, createdAt: null, isVideo: false, isLoaded: false });
         toast.error("Media not found");
       }
-    } catch (err) {
-      setImageUrl(null);
-      setMediaToken(null);
+    } catch {
+      setMedia({ url: null, token: null, createdAt: null, isVideo: false, isLoaded: false });
       toast.error("Failed to load media");
     } finally {
       setMediaRecordLoading(false);
@@ -137,63 +184,54 @@ export default function MediaPage() {
   }, [mediaIdParam, loadMedia]);
 
   useEffect(() => {
-    if (!imageUrl) return;
-    setMediaLoaded(false);
-    const img = new Image();
-    img.src = addCorsParam(imageUrl) || imageUrl;
-    const onLoad = () => setMediaLoaded(true);
-    const onError = () => setMediaLoaded(true);
-    if (img.complete) setMediaLoaded(true);
-    else {
-      img.addEventListener("load", onLoad);
-      img.addEventListener("error", onError);
+    if (!media.url) return;
+    
+    if (media.isVideo) {
+      setMedia(prev => ({ ...prev, isLoaded: true }));
+      return;
     }
+    
+    const img = new Image();
+    img.src = addCorsParam(media.url) || media.url;
+    const handleLoad = () => setMedia(prev => ({ ...prev, isLoaded: true }));
+    
+    if (img.complete) {
+      handleLoad();
+    } else {
+      img.addEventListener("load", handleLoad);
+      img.addEventListener("error", handleLoad);
+    }
+    
     return () => {
-      img.removeEventListener("load", onLoad);
-      img.removeEventListener("error", onError);
+      img.removeEventListener("load", handleLoad);
+      img.removeEventListener("error", handleLoad);
     };
-  }, [imageUrl]);
+  }, [media.url, media.isVideo]);
 
   const handleCopyPrompt = useCallback(async () => {
-    if (!prompt) return;
+    if (!promptData.text) return;
     try {
-      await navigator.clipboard.writeText(prompt);
-      setPromptCopied(true);
-      if (promptCopiedTimeoutRef.current) {
-        window.clearTimeout(promptCopiedTimeoutRef.current);
-      }
-      promptCopiedTimeoutRef.current = window.setTimeout(() => {
-        setPromptCopied(false);
-        promptCopiedTimeoutRef.current = null;
-      }, 1500);
-    } catch (err) {
+      await navigator.clipboard.writeText(promptData.text);
+      promptCopy.triggerCopy();
+    } catch {
       toast.error("Unable to copy prompt");
     }
-  }, [prompt]);
+  }, [promptData.text, promptCopy]);
 
   const handleCopyShareLink = useCallback(async () => {
-    if (!mediaToken) return;
-    const shareUrl = `https://getartcraft.com/media/${mediaToken}`;
+    if (!media.token) return;
+    const shareUrl = `${SHARE_URL_BASE}${media.token}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setShareCopied(true);
-      if (shareCopiedTimeoutRef.current) {
-        window.clearTimeout(shareCopiedTimeoutRef.current);
-      }
-      shareCopiedTimeoutRef.current = window.setTimeout(() => {
-        setShareCopied(false);
-        shareCopiedTimeoutRef.current = null;
-      }, 1500);
+      shareCopy.triggerCopy();
       toast.success("Share link copied");
-    } catch (err) {
+    } catch {
       toast.error("Unable to copy link");
     }
-  }, [mediaToken]);
+  }, [media.token, shareCopy]);
 
-  // Download handled via anchor-style button link
-
-  const shareButtonIcon = shareCopied ? faCheck : faLink;
-  const shareButtonText = shareCopied ? "Share link copied" : "Copy Share Link";
+  const shareButtonIcon = shareCopy.copied ? faCheck : faLink;
+  const shareButtonText = shareCopy.copied ? "Share link copied" : "Copy Share Link";
 
   return (
     <div className="relative min-h-screen w-full px-4 sm:px-6 pt-24 pb-8 bg-dots">
@@ -204,29 +242,44 @@ export default function MediaPage() {
               <div className="absolute inset-0 animate-pulse">
                 <div className="h-full w-full bg-white/5" />
               </div>
-            ) : imageUrl ? (
+            ) : media.url ? (
               <div className="relative flex h-full w-full items-center justify-center">
-                <img
-                  src={addCorsParam(imageUrl) || imageUrl}
-                  alt="Generated image"
-                  className="max-h-[75vh] w-full object-contain"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      PLACEHOLDER_IMAGES.DEFAULT;
-                    (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
-                    setMediaLoaded(true);
-                  }}
-                  onLoad={() => setMediaLoaded(true)}
-                />
-                {!mediaLoaded && (
-                  <div className="absolute inset-0 bg-ui-panel/80 flex items-center justify-center">
-                    <LoadingSpinner className="h-12 w-12 text-white" />
-                  </div>
+                {media.isVideo ? (
+                  <video
+                    src={addCorsParam(media.url) || media.url}
+                    className="max-h-[75vh] w-full object-contain"
+                    controls
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    onError={() => console.error('Video failed to load')}
+                    onLoadedData={() => setMedia(prev => ({ ...prev, isLoaded: true }))}
+                  />
+                ) : (
+                  <>
+                    <img
+                      src={addCorsParam(media.url) || media.url}
+                      alt="Generated image"
+                      className="max-h-[75vh] w-full object-contain"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = PLACEHOLDER_IMAGES.DEFAULT;
+                        (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+                        setMedia(prev => ({ ...prev, isLoaded: true }));
+                      }}
+                      onLoad={() => setMedia(prev => ({ ...prev, isLoaded: true }))}
+                    />
+                    {!media.isLoaded && (
+                      <div className="absolute inset-0 bg-ui-panel/80 flex items-center justify-center">
+                        <LoadingSpinner className="h-12 w-12 text-white" />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             ) : (
               <div className="flex h-full w-full items-center justify-center">
-                <span className="text-white/60">Image not available</span>
+                <span className="text-white/60">Media not available</span>
               </div>
             )}
           </div>
@@ -262,33 +315,31 @@ export default function MediaPage() {
                 </div>
               ) : (
                 <>
-                  {createdAt && (
+                  {media.createdAt && (
                     <div className="space-y-1.5">
                       <div className="text-sm font-medium text-white/90">
                         Created
                       </div>
                       <div className="text-sm text-white/70">
-                        {dayjs(createdAt).format("MMM D, YYYY")} at{" "}
-                        {dayjs(createdAt).format("hh:mm A")}
+                        {dayjs(media.createdAt).format("MMM D, YYYY")} at{" "}
+                        {dayjs(media.createdAt).format("hh:mm A")}
                       </div>
                     </div>
                   )}
 
-                  {hasPromptToken && (
+                  {promptData.hasToken && (
                     <>
                       <div className="relative space-y-1.5">
                         <div className="text-sm font-medium text-white/90">
                           Prompt
                         </div>
                         <div
-                          className={twMerge(
-                            "relative text-sm text-white break-words p-3 rounded-lg cursor-pointer transition-colors duration-100 leading-relaxed bg-ui-controls/20 backdrop-blur-md"
-                          )}
+                          className="relative text-sm text-white break-words p-3 rounded-lg cursor-pointer transition-colors duration-100 leading-relaxed bg-ui-controls/20 backdrop-blur-md"
                           onMouseEnter={() => setIsPromptHovered(true)}
                           onMouseLeave={() => setIsPromptHovered(false)}
                           onClick={handleCopyPrompt}
                         >
-                          {promptLoading ? (
+                          {promptData.loading ? (
                             <div className="flex items-center gap-2">
                               <LoadingSpinner className="h-4 w-4" />
                               <span className="text-sm text-white/80">
@@ -296,40 +347,40 @@ export default function MediaPage() {
                               </span>
                             </div>
                           ) : (
-                            prompt || (
+                            promptData.text || (
                               <span className="text-sm text-white">
                                 No prompt
                               </span>
                             )
                           )}
                         </div>
-                        {!promptLoading && (
+                        {!promptData.loading && (
                           <div
                             className={twMerge(
                               "pointer-events-none absolute inset-0 flex items-end justify-end opacity-0 transition-opacity duration-50",
-                              (isPromptHovered || promptCopied) && "opacity-100"
+                              (isPromptHovered || promptCopy.copied) && "opacity-100"
                             )}
                           >
                             <div className="flex items-center gap-1 text-xs text-white backdrop-blur-md p-1.5 rounded-tl-lg rounded-br-lg bg-ui-controls/40">
                               <FontAwesomeIcon
-                                icon={promptCopied ? faCheck : faCopy}
+                                icon={promptCopy.copied ? faCheck : faCopy}
                                 className="h-3 w-3"
                               />
                               <span>
-                                {promptCopied ? "Prompt copied" : "Copy prompt"}
+                                {promptCopy.copied ? "Prompt copied" : "Copy prompt"}
                               </span>
                             </div>
                           </div>
                         )}
                       </div>
 
-                      {contextImages && contextImages.length > 0 && (
+                      {promptData.contextImages && promptData.contextImages.length > 0 && (
                         <div className="space-y-1.5">
                           <div className="text-sm font-medium text-white/90">
                             Reference Images
                           </div>
                           <div className="grid grid-cols-6 gap-2">
-                            {contextImages.map((contextImage, index) => {
+                            {promptData.contextImages.map((contextImage, index) => {
                               const { thumbnail } = getContextImageThumbnail(
                                 contextImage,
                                 { size: THUMBNAIL_SIZES.SMALL }
@@ -351,33 +402,36 @@ export default function MediaPage() {
                         </div>
                       )}
 
-                      {(generationProvider || modelType) && (
+                      {(promptData.provider || promptData.modelType) && (
                         <div className="space-y-1.5">
                           <div className="text-sm font-medium text-white/90">
                             Generation Details
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            {modelType && (
+                            {promptData.modelType && (
                               <div className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border/40 bg-ui-controls/20 backdrop-blur-md">
                                 <span className="text-sm text-white/70 font-medium">
                                   Model
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  {getModelCreatorIcon(modelType)}
+                                  {getModelCreatorIcon(promptData.modelType)}
                                   <span className="text-sm text-white rounded">
-                                    {getModelDisplayName(modelType)}
+                                    {getModelDisplayName(promptData.modelType)}
                                   </span>
                                 </div>
                               </div>
                             )}
-                            {generationProvider && (
+                            {promptData.provider && (
                               <div className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border/40 bg-ui-controls/20 backdrop-blur-md">
                                 <span className="text-sm text-white/70 font-medium">
                                   Provider
                                 </span>
-                                <span className="text-sm text-white rounded">
-                                  {getProviderDisplayName(generationProvider)}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  {getProviderIconByName(promptData.provider, "h-4 w-4 invert")}
+                                  <span className="text-sm text-white rounded">
+                                    {getProviderDisplayName(promptData.provider)}
+                                  </span>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -401,22 +455,23 @@ export default function MediaPage() {
               <a
                 className={twMerge(
                   "w-full border-0 shadow-none inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  imageUrl
+                  media.url
                     ? "bg-ui-controls hover:bg-ui-controls/80 text-base-fg"
                     : "bg-ui-controls text-base-fg cursor-not-allowed pointer-events-none"
                 )}
-                href={imageUrl ? addCorsParam(imageUrl) || imageUrl : undefined}
+                href={media.url ? addCorsParam(media.url) || media.url : undefined}
                 download={
-                  imageUrl ? `artcraft-${mediaToken || "image"}` : undefined
+                  media.url ? `artcraft-${media.token || (media.isVideo ? "video" : "image")}` : undefined
                 }
-                aria-disabled={!imageUrl}
+                aria-disabled={!media.url}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <FontAwesomeIcon icon={faDownToLine} />
-                Download Image
+                <FontAwesomeIcon icon={faArrowDownToLine} />
+                Download {media.isVideo ? 'Video' : 'Image'}
               </a>
               <Button
+              icon={faArrowDownToLine}
                 className="w-full col-span-2 border-0 shadow-none"
                 variant="primary"
                 onClick={() => {

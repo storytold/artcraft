@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../tauri-utils"
+    },
+    {
       "path": "../popover"
     },
     {

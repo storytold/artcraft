@@ -9,6 +9,9 @@
       "path": "../modal"
     },
     {
+      "path": "../../tauri-utils"
+    },
+    {
       "path": "../../model-list"
     },
     {

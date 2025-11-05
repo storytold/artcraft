@@ -44,10 +44,13 @@
   ],
   "references": [
     {
-      "path": "../button/tsconfig.lib.json"
+      "path": "../tooltip/tsconfig.lib.json"
     },
     {
       "path": "../../model-list/tsconfig.lib.json"
+    },
+    {
+      "path": "../button/tsconfig.lib.json"
     }
   ]
 }
