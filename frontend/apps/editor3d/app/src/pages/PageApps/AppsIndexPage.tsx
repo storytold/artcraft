@@ -31,9 +31,9 @@ export const AppsIndexPage = () => {
   ];
 
   return (
-    <div className="min-h-screen overflow-hidden bg-ui-background text-base-fg">
+    <div className="fixed inset-0 overflow-hidden bg-ui-background text-base-fg">
       <TopBar pageName="Apps" loginSignUpPressed={() => {}} />
-      <main className="mx-auto max-w-6xl px-5 pb-12 pt-[72px]">
+      <main className="mx-auto h-full max-w-6xl overflow-y-auto px-5 pb-12 pt-[120px]">
         <div className="flex w-full flex-col items-start gap-2 pb-4">
           <div className="mb-6 flex items-center gap-4">
             <FontAwesomeIcon icon={faGrid2} className="text-2xl opacity-70" />
