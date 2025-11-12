@@ -10,6 +10,7 @@ import { authentication, pageHeight, pageWidth } from "~/signals";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
 import ImageToVideo from "../PageVideo/ImageToVideo";
 import TextToImage from "../PageImage/TextToImage";
+import { AppsIndexPage } from "../PageApps/AppsIndexPage";
 
 import {
   timelineHeight,
@@ -560,6 +561,11 @@ export const PageEditor = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+      {tabStore.activeTabId == "APPS" && (
+        <div>
+          <AppsIndexPage />
         </div>
       )}
       {tabStore.activeTabId == "2D" && (

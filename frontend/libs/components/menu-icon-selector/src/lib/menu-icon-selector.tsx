@@ -9,6 +9,9 @@ export interface MenuIconItem {
   imageSrc?: string;
   description?: string;
   large?: boolean;
+  tooltipContent?: React.ReactNode;
+  tooltipInteractive?: boolean;
+  tooltipPosition?: "top" | "bottom" | "left" | "right";
 }
 
 interface MenuIconSelectorProps {
@@ -110,38 +113,48 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
             }}
           />
         )}
-        {menuItems.map((item, idx) => (
-          <Tooltip
-            key={item.id}
-            content={item.label}
-            position="bottom"
-            delay={100}
-            closeOnClick={true}
-            className={twMerge(
-              "text-sm font-semibold",
-              item.large && "text-md"
-            )}
-            imageSrc={item.imageSrc || undefined}
-            description={item.description || undefined}
-          >
-            <button
-              ref={(el) => {
-                itemsRef.current[idx] = el;
-              }}
-              disabled={disabled}
-              onClick={() => !disabled && onMenuChange(item.id)}
-              onMouseEnter={() => setHoveredIndex(idx)}
+        {menuItems.map((item, idx) => {
+          const content = item.tooltipContent ?? item.label;
+          const interactive = item.tooltipInteractive ?? false;
+          const position = item.tooltipPosition ?? "bottom";
+          const imageSrc = item.tooltipContent ? undefined : item.imageSrc;
+          const description = item.tooltipContent
+            ? undefined
+            : item.description;
+          return (
+            <Tooltip
+              key={item.id}
+              content={content}
+              position={position}
+              delay={100}
+              closeOnClick={true}
+              interactive={interactive}
               className={twMerge(
-                "relative z-30 flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-150 text-base-fg",
-                disabled ? "cursor-not-allowed opacity-60" : ""
+                "text-sm font-semibold",
+                item.large && "text-md"
               )}
-              tabIndex={0}
-              type="button"
+              imageSrc={imageSrc || undefined}
+              description={description || undefined}
             >
-              {item.icon}
-            </button>
-          </Tooltip>
-        ))}
+              <button
+                ref={(el) => {
+                  itemsRef.current[idx] = el;
+                }}
+                disabled={disabled}
+                onClick={() => !disabled && onMenuChange(item.id)}
+                onMouseEnter={() => setHoveredIndex(idx)}
+                className={twMerge(
+                  "relative z-30 flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-150 text-base-fg",
+                  disabled ? "cursor-not-allowed opacity-60" : ""
+                )}
+                tabIndex={0}
+                type="button"
+              >
+                {item.icon}
+              </button>
+            </Tooltip>
+          );
+        })}
       </div>
     </div>
   );

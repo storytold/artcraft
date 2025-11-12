@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { useSceneStore } from '../PageDraw/stores/SceneState';
 
-export type TabId = '2D' | '3D' | 'VIDEO' | 'IMAGE' | 'EDIT';
+export type TabId = '2D' | '3D' | 'VIDEO' | 'IMAGE' | 'EDIT' | 'APPS';
 
 const DEFAULT_TAB : TabId = 'IMAGE';
 

@@ -2,13 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   faGear,
   faImages,
-  faCube,
-  faFilm,
-  faPalette,
-  faImage,
-  faPenNib,
   faGem,
   faCoinFront,
+  faGrid2,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   faWindowRestore,
@@ -63,6 +59,8 @@ import { useSubscriptionState } from "@storyteller/subscription";
 import { UploadImagesButton } from "./UploadImagesButton";
 import { TaskQueue } from "./TaskQueue";
 import { usePromptVideoStore, RefImage } from "@storyteller/ui-promptbox";
+import { APP_DESCRIPTORS } from "~/config/appMenu";
+import { AppsQuickMenu } from "./AppsQuickMenu";
 
 interface Props {
   pageName: string;
@@ -82,46 +80,30 @@ const SWITCHER_THROTTLE_TIME = 500; // milliseconds
 
 // NB: See `TabState` for the default tab.
 const appMenuTabs: MenuIconItem[] = [
+  ...APP_DESCRIPTORS.map((d) => ({
+    id: d.id,
+    label: d.label,
+    icon: <FontAwesomeIcon icon={d.icon} />,
+    imageSrc: d.imageSrc,
+    description: d.description,
+    large: d.large,
+  })),
   {
-    id: "IMAGE",
-    label: "Text to Image",
-    icon: <FontAwesomeIcon icon={faImage} />,
-  },
-  {
-    id: "VIDEO",
-    label: "Image to Video",
-    icon: <FontAwesomeIcon icon={faFilm} />,
-  },
-  {
-    id: "EDIT",
-    label: "Edit Image",
-    icon: <FontAwesomeIcon icon={faPenNib} />,
-    imageSrc: "/resources/gifs/INPAINT_CANVAS_DEMO.gif",
-    description: "Modify your image with AI",
+    id: "APPS",
+    label: "More",
+    icon: <FontAwesomeIcon icon={faGrid2} />,
+    description: "Explore more apps and miniapps",
     large: true,
-  },
-  {
-    id: "2D",
-    label: "2D Canvas",
-    icon: <FontAwesomeIcon icon={faPalette} />,
-    imageSrc: "/resources/gifs/2D_CANVAS_DEMO.gif",
-    description: "Easy edits. Great for graphic design.",
-    large: true,
-  },
-  {
-    id: "3D",
-    label: "3D Editor",
-    icon: <FontAwesomeIcon icon={faCube} />,
-    imageSrc: "/resources/gifs/3D_CANVAS_DEMO.gif",
-    description: "Precision control. Great for AI film.",
-    large: true,
+    tooltipContent: <AppsQuickMenu />,
+    tooltipInteractive: true,
+    tooltipPosition: "bottom",
   },
 ];
 
 export const topNavMediaId = signal<string>("");
 export const topNavMediaUrl = signal<string>("");
 
-export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
+export const TopBar = ({ pageName }: Props) => {
   useSignals();
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -334,6 +316,16 @@ export const TopBar = ({ pageName, loginSignUpPressed }: Props) => {
                 }
                 switcherThrottle.current = true;
                 setDisableSwitcher(true);
+
+                if (tabId === "APPS") {
+                  set3DPageMounted(false);
+                  useTabStore.getState().setActiveTab("APPS");
+                  setTimeout(() => {
+                    switcherThrottle.current = false;
+                    setDisableSwitcher(false);
+                  }, SWITCHER_THROTTLE_TIME);
+                  return;
+                }
 
                 // Disable 3d engine to prevent memory leak.
                 if (tabId === "3D") {

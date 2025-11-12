@@ -163,6 +163,11 @@ export const Tooltip = ({
           ref={tooltipRef}
           onMouseEnter={() => interactive && setIsHoveringTooltip(true)}
           onMouseLeave={() => interactive && setIsHoveringTooltip(false)}
+          onClick={() => {
+            if (closeOnClick) {
+              setIsShowing(false);
+            }
+          }}
           style={{
             ...getStyleForPosition(),
             transitionDelay: `${delay}ms`,
@@ -171,24 +176,33 @@ export const Tooltip = ({
             transitionTimingFunction: "ease-out",
           }}
           className={twMerge(
-            "absolute z-10 w-max rounded-lg bg-ui-controls px-2.5 py-1.5 text-[13px] font-medium text-base-fg shadow-xl border border-ui-panel-border",
-            interactive ? "pointer-events-auto" : "pointer-events-none",
+            "absolute z-10 rounded-lg bg-ui-controls shadow-xl border border-ui-panel-border",
+            interactive
+              ? "pointer-events-auto p-3"
+              : "w-max px-2.5 py-1.5 text-[13px] font-medium pointer-events-none",
+            "text-base-fg",
             className ? className : ""
           )}
         >
-          <div className="flex flex-col gap-1">
-            {content}
-            {imageSrc && (
-              <img
-                src={imageSrc}
-                alt="tooltip"
-                className="mb-1 aspect-square w-56 rounded-md"
-              />
-            )}
-            {description && (
-              <p className="text-sm text-base-fg font-normal">{description}</p>
-            )}
-          </div>
+          {interactive ? (
+            content
+          ) : (
+            <div className="flex flex-col gap-1">
+              {content}
+              {imageSrc && (
+                <img
+                  src={imageSrc}
+                  alt="tooltip"
+                  className="mb-1 aspect-square w-56 rounded-md"
+                />
+              )}
+              {description && (
+                <p className="text-sm text-base-fg font-normal">
+                  {description}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </Transition>
     </div>
