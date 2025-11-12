@@ -1,5 +1,6 @@
 import { faGrid2 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { twMerge } from "tailwind-merge";
 import { TopBar } from "~/components";
 import { GENERATE_APPS, EDIT_APPS } from "~/config/appMenu";
 import { TabId, useTabStore } from "~/pages/Stores/TabState";
@@ -18,7 +19,7 @@ export const AppsIndexPage = () => {
       case "BEST":
         return "bg-[#e7316d] text-white";
       case "SOON":
-        return "bg-ui-panel-border/50 text-base-fg/70";
+        return "bg-gray-600 text-white";
       default:
         return "";
     }
@@ -30,7 +31,7 @@ export const AppsIndexPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-ui-background text-base-fg">
+    <div className="min-h-screen overflow-hidden bg-ui-background text-base-fg">
       <TopBar pageName="Apps" loginSignUpPressed={() => {}} />
       <main className="mx-auto max-w-6xl px-5 pb-12 pt-[72px]">
         <div className="flex w-full flex-col items-start gap-2 pb-4">
@@ -54,14 +55,18 @@ export const AppsIndexPage = () => {
                     key={app.id}
                     onClick={() => goToApp(app.action)}
                     disabled={!app.action}
-                    className={`group flex w-full items-center gap-4 rounded-lg px-3 py-3 text-left transition-colors ${
+                    className={twMerge(
+                      "group flex w-full items-center gap-4 rounded-lg px-3 py-3 text-left transition-colors",
                       app.action
                         ? "cursor-pointer hover:bg-ui-controls/60"
-                        : "cursor-default opacity-60"
-                    }`}
+                        : "cursor-default opacity-60",
+                    )}
                   >
                     <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors ${app.color || "bg-ui-controls"}`}
+                      className={twMerge(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors",
+                        app.color || "bg-ui-controls",
+                      )}
                     >
                       <FontAwesomeIcon icon={app.icon} className="text-base" />
                     </div>
@@ -72,7 +77,10 @@ export const AppsIndexPage = () => {
                         </div>
                         {app.badge && (
                           <span
-                            className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${getBadgeStyles(app.badge)}`}
+                            className={twMerge(
+                              "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+                              getBadgeStyles(app.badge),
+                            )}
                           >
                             {app.badge}
                           </span>

@@ -1,4 +1,5 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { twMerge } from "tailwind-merge";
 import { GENERATE_APPS, EDIT_APPS } from "~/config/appMenu";
 import { TabId, useTabStore } from "~/pages/Stores/TabState";
 
@@ -16,7 +17,7 @@ export const AppsQuickMenu = () => {
       case "BEST":
         return "bg-[#e7316d] text-white";
       case "SOON":
-        return "bg-ui-panel-border/50 text-base-fg/70";
+        return "bg-gray-600 text-white";
       default:
         return "";
     }
@@ -32,14 +33,18 @@ export const AppsQuickMenu = () => {
               key={app.id}
               onClick={() => goToApp(app.action)}
               disabled={!app.action}
-              className={`group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors ${
+              className={twMerge(
+                "group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors",
                 app.action
                   ? "cursor-pointer hover:bg-base-fg/10"
-                  : "cursor-default opacity-60"
-              }`}
+                  : "cursor-default opacity-60",
+              )}
             >
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors ${app.color || "bg-ui-panel"}`}
+                className={twMerge(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+                  app.color || "bg-ui-panel",
+                )}
               >
                 <FontAwesomeIcon icon={app.icon} className="text-sm" />
               </div>
@@ -50,7 +55,10 @@ export const AppsQuickMenu = () => {
                   </div>
                   {app.badge && (
                     <span
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${getBadgeStyles(app.badge)}`}
+                      className={twMerge(
+                        "shrink-0 rounded-full px-2 py-1 text-[9px] font-bold uppercase tracking-wider",
+                        getBadgeStyles(app.badge),
+                      )}
                     >
                       {app.badge}
                     </span>
@@ -73,14 +81,18 @@ export const AppsQuickMenu = () => {
               key={app.id}
               onClick={() => goToApp(app.action)}
               disabled={!app.action}
-              className={`group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors ${
+              className={twMerge(
+                "group flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors",
                 app.action
                   ? "cursor-pointer hover:bg-base-fg/10"
-                  : "cursor-default opacity-60"
-              }`}
+                  : "cursor-default opacity-60",
+              )}
             >
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors ${app.color || "bg-ui-panel"}`}
+                className={twMerge(
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
+                  app.color || "bg-ui-panel",
+                )}
               >
                 <FontAwesomeIcon icon={app.icon} className="text-sm" />
               </div>
@@ -91,7 +103,10 @@ export const AppsQuickMenu = () => {
                   </div>
                   {app.badge && (
                     <span
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${getBadgeStyles(app.badge)}`}
+                      className={twMerge(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+                        getBadgeStyles(app.badge),
+                      )}
                     >
                       {app.badge}
                     </span>
