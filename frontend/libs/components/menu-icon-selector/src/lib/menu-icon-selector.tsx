@@ -92,15 +92,17 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
         onMouseLeave={() => setHoveredIndex(-1)}
       >
         {/* Active tab background */}
-        <div
-          className="absolute z-10 rounded-lg bg-primary/25 border-2 border-primary shadow-md transition-all duration-150 ease-in-out -ml-[1px]"
-          style={{
-            left: activeStyle.left,
-            width: activeStyle.width,
-            top: 4,
-            bottom: 4,
-          }}
-        />
+        {selectedIndex >= 0 && (
+          <div
+            className="absolute z-10 rounded-lg bg-primary/25 border-2 border-primary shadow-md transition-all duration-150 ease-in-out -ml-[1px]"
+            style={{
+              left: activeStyle.left,
+              width: activeStyle.width,
+              top: 4,
+              bottom: 4,
+            }}
+          />
+        )}
         {/* Hover background (only if hovering a different tab) */}
         {hoveredIndex !== -1 && hoveredIndex !== selectedIndex && (
           <div
