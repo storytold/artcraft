@@ -31,6 +31,7 @@ interface GalleryDraggableItemProps {
   imageFit?: "cover" | "contain";
   onDeleted?: (id: string) => void;
   onEditClicked?: (url: string, media_id?: string) => Promise<void> | void;
+  maxSelections?: number;
 }
 
 export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
@@ -44,6 +45,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   imageFit = "cover",
   onDeleted,
   onEditClicked,
+  maxSelections,
 }) => {
   const imgRef = useRef<HTMLImageElement>(null);
   const dragStarted = useRef(false);
@@ -81,8 +83,8 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
-    // Disable dragging for video items
-    if (item.mediaClass === "video") return;
+    // Disable dragging for video items, but allow clicks in select mode
+    if (item.mediaClass === "video" && mode !== "select") return;
     dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
@@ -107,13 +109,13 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handlePointerUp = (event: React.PointerEvent) => {
-    if (!dragStarted.current && !disableTooltipAndBadge) {
+    if (!dragStarted.current && (mode === "select" || !disableTooltipAndBadge)) {
       onClick();
     }
   };
 
   const handleButtonClick = (event: React.MouseEvent) => {
-    if (!disableTooltipAndBadge) {
+    if (mode === "select" || !disableTooltipAndBadge) {
       onClick();
     }
   };
@@ -126,14 +128,15 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       )}
     >
       {/* dropdown menu */}
-      <div
-        className="absolute right-2 top-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-75"
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        <PopoverMenu
+      {mode !== "select" && (
+        <div
+          className="absolute right-2 top-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-75"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          <PopoverMenu
           position="bottom"
           align="end"
           mode="default"
@@ -180,7 +183,8 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             </div>
           )}
         </PopoverMenu>
-      </div>
+        </div>
+      )}
       {/* Media class badge on hover */}
       {!disableTooltipAndBadge && item.mediaClass && (
         <div className="pointer-events-none absolute left-2 top-2 z-20 rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
@@ -231,7 +235,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               />
             )}
             {selected && (
-              <div className="absolute right-8 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+              <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
                 <FontAwesomeIcon icon={faCheck} className="text-sm" />
               </div>
             )}
@@ -303,7 +307,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                 />
               )}
               {selected && (
-                <div className="absolute right-8 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
                   <FontAwesomeIcon icon={faCheck} className="text-sm" />
                 </div>
               )}

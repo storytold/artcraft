@@ -1,28 +1,13 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
-import { GENERATE_APPS, EDIT_APPS } from "~/config/appMenu";
-import { TabId, useTabStore } from "~/pages/Stores/TabState";
+import {
+  GENERATE_APPS,
+  EDIT_APPS,
+  getBadgeStyles,
+  goToApp,
+} from "~/config/appMenu";
 
 export const AppsQuickMenu = () => {
-  const goToApp = (action?: string) => {
-    if (action && ["IMAGE", "VIDEO", "EDIT", "2D", "3D"].includes(action)) {
-      useTabStore.getState().setActiveTab(action as TabId);
-    }
-  };
-
-  const getBadgeStyles = (badge?: string) => {
-    switch (badge) {
-      case "NEW":
-        return "bg-[#9ef01a] text-black";
-      case "BEST":
-        return "bg-[#e7316d] text-white";
-      case "SOON":
-        return "bg-gray-600 text-white";
-      default:
-        return "";
-    }
-  };
-
   return (
     <div className="grid w-[680px] grid-cols-2 gap-3">
       <div>
@@ -104,7 +89,7 @@ export const AppsQuickMenu = () => {
                   {app.badge && (
                     <span
                       className={twMerge(
-                        "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider",
+                        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider",
                         getBadgeStyles(app.badge),
                       )}
                     >

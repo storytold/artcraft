@@ -11,6 +11,7 @@ import { PoseModeSelector } from "./comps/PoseModeSelector";
 import ImageToVideo from "../PageVideo/ImageToVideo";
 import TextToImage from "../PageImage/TextToImage";
 import { AppsIndexPage } from "../PageApps/AppsIndexPage";
+import { VideoFrameExtractor } from "../PageVideoFrameExtractor";
 
 import {
   timelineHeight,
@@ -589,6 +590,11 @@ export const PageEditor = () => {
       {tabStore.activeTabId == "EDIT" && (
         <div>
           <PageEdit />
+        </div>
+      )}
+      {tabStore.activeTabId == "VIDEO_FRAME_EXTRACTOR" && (
+        <div>
+          <VideoFrameExtractor />
         </div>
       )}
     </div>

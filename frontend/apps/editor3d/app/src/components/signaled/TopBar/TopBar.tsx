@@ -240,6 +240,8 @@ export const TopBar = ({ pageName }: Props) => {
         return "Image to Video";
       case "EDIT":
         return "Edit Image";
+      case "VIDEO_FRAME_EXTRACTOR":
+        return "Video Frame Extractor";
       default:
         return "Artcraft";
     }

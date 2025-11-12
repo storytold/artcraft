@@ -8,8 +8,15 @@ import {
   faDroplet,
   faPhotoFilm,
 } from "@fortawesome/pro-solid-svg-icons";
+import { useTabStore, TabId } from "~/pages/Stores/TabState";
 
-export type AppId = "IMAGE" | "VIDEO" | "EDIT" | "2D" | "3D";
+export type AppId =
+  | "IMAGE"
+  | "VIDEO"
+  | "EDIT"
+  | "2D"
+  | "3D"
+  | "VIDEO_FRAME_EXTRACTOR";
 
 export interface AppDescriptor {
   id: AppId;
@@ -97,6 +104,16 @@ export const ALL_APPS: FullAppItem[] = [
     color: "bg-purple-600/40",
   },
   {
+    id: "video-frame-extractor",
+    label: "Video Frame Extractor",
+    description: "Extract frames from video",
+    icon: faPhotoFilm,
+    category: "edit",
+    action: "VIDEO_FRAME_EXTRACTOR",
+    color: "bg-rose-600/40",
+    badge: "NEW",
+  },
+  {
     id: "video-watermark-removal",
     label: "Video Watermark Removal",
     description: "Remove watermarks from videos",
@@ -114,15 +131,7 @@ export const ALL_APPS: FullAppItem[] = [
     badge: "SOON",
     color: "bg-indigo-600/40",
   },
-  {
-    id: "video-frame-extractor",
-    label: "Video Frame Extractor",
-    description: "Extract frames from video",
-    icon: faPhotoFilm,
-    category: "edit",
-    badge: "SOON",
-    color: "bg-rose-600/40",
-  },
+
   {
     id: "2d-canvas",
     label: "2D Canvas",
@@ -147,3 +156,27 @@ export const GENERATE_APPS = ALL_APPS.filter(
   (app) => app.category === "generate",
 );
 export const EDIT_APPS = ALL_APPS.filter((app) => app.category === "edit");
+
+export const getBadgeStyles = (badge?: string) => {
+  switch (badge) {
+    case "NEW":
+      return "bg-teal-600 text-white";
+    case "BEST":
+      return "bg-primary text-white";
+    case "SOON":
+      return "bg-gray-600 text-white";
+    default:
+      return "";
+  }
+};
+
+export const goToApp = (action?: string) => {
+  if (
+    action &&
+    ["IMAGE", "VIDEO", "EDIT", "2D", "3D", "VIDEO_FRAME_EXTRACTOR"].includes(
+      action,
+    )
+  ) {
+    useTabStore.getState().setActiveTab(action as TabId);
+  }
+};

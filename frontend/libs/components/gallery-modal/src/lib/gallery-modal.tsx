@@ -259,7 +259,8 @@ export const GalleryModal = React.memo(
             activeFilter === "uploaded" ||
             activeFilter === "all" ||
             activeFilter === "3d" ||
-            activeFilter === "image",
+            activeFilter === "image" ||
+            activeFilter === "video",
           user_uploads_only: activeFilter === "uploaded",
           page_index: reset ? 0 : pageIndex,
           page_size: pageSize,
@@ -445,7 +446,25 @@ export const GalleryModal = React.memo(
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <h2 className="text-xl font-semibold">
-                    {mode === "select" ? "Select Images" : "My Library"}
+                    {mode === "select"
+                      ? activeFilter === "video"
+                        ? maxSelections === 1
+                          ? "Select Video"
+                          : "Select Videos"
+                        : activeFilter === "3d"
+                        ? maxSelections === 1
+                          ? "Select 3D Object"
+                          : "Select 3D Objects"
+                        : activeFilter === "uploaded"
+                        ? maxSelections === 1
+                          ? "Select Upload"
+                          : "Select Uploads"
+                        : activeFilter === "all"
+                        ? "Select Media"
+                        : maxSelections === 1
+                        ? "Select Image"
+                        : "Select Images"
+                      : "My Library"}
                   </h2>
                   {mode === "view" && (
                     <div className="flex items-center relative z-[51]">
@@ -650,6 +669,7 @@ export const GalleryModal = React.memo(
                                 imageFit={imageFit}
                                 onDeleted={handleItemDeleted}
                                 onEditClicked={onEditClicked}
+                                maxSelections={maxSelections}
                               />
                             ))}
                           </div>

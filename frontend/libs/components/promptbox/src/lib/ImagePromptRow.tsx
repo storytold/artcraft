@@ -329,7 +329,10 @@ export const ImagePromptRow = ({
   const handleImageSelect = (id: string) => {
     setSelectedGalleryImages((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= Math.max(1, maxImagePromptCount)) return prev;
+      const maxSelections = Math.max(1, maxImagePromptCount);
+      if (prev.length >= maxSelections) {
+        return maxSelections === 1 ? [id] : prev;
+      }
       return [...prev, id];
     });
   };
