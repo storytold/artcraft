@@ -1,4 +1,4 @@
-import { faImage } from "@fortawesome/pro-solid-svg-icons";
+import { faImage, faUpload, faImages } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { downloadFileFromUrl } from "libs/api/src/lib/LocalApi";
 import { Button } from "@storyteller/ui-button";
@@ -65,7 +65,7 @@ export const BaseImageSelector = ({
     }
     const item = selectedItems[0];
     if (!item.fullImage) {
-      return
+      return;
     }
     const referenceImage: BaseSelectorImage = {
       url: item.fullImage,
@@ -115,9 +115,10 @@ export const BaseImageSelector = ({
                       // NB(bt,2025-10-09): I think `thumbnail_template` is wrong and that
                       // `maybe_thumbnail_template` is the correct API field, but upstream
                       // seems to imply otherwise. Let's simply check both keys for now.
-                      thumbnailUrlTemplate = 
+                      thumbnailUrlTemplate =
                         result.data.media_links?.thumbnail_template ||
-                        (result.data.media_links as any)?.maybe_thumbnail_template;
+                        (result.data.media_links as any)
+                          ?.maybe_thumbnail_template;
                     }
                   } catch (e) {
                     console.warn(
@@ -160,38 +161,59 @@ export const BaseImageSelector = ({
 
   return (
     <>
-      <div className="flex h-1/2 w-1/2 items-center justify-center rounded-xl border-8 border-ui-panel-border bg-ui-background">
+      <div className="relative flex h-full flex-col items-center justify-center gap-8 overflow-hidden">
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          accept="image/*"
+          onChange={handleFileUpload}
+          multiple
+        />
         {isLoading || showLoading ? (
-          <div className="flex flex-col items-center gap-4">
-            <span>Uploading image...</span>
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <span className="text-base-fg">Uploading image...</span>
             <LoadingSpinner />
           </div>
         ) : (
-          <div className="flex flex-col gap-8">
-            <FontAwesomeIcon
-              icon={faImage}
-              className="text-base-fg text-6xl opacity-50"
-            />
-            <span className="text-base-fg ml-2 text-xl opacity-50">
-              Click to upload or drag and drop an image here to edit
-            </span>
-            <div className="mt-4 flex justify-center gap-2.5">
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleFileUpload}
-                multiple
-              />
-              <Button variant="primary" onClick={handleUploadClick}>
-                Upload an image
+          <>
+            <div className="relative z-10 flex flex-col items-center gap-6">
+              <div className="relative">
+                <div className="relative flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-blue-400/30 bg-blue-500/40 shadow-xl backdrop-blur-sm">
+                  <FontAwesomeIcon
+                    icon={faImage}
+                    className="text-5xl text-white drop-shadow-lg"
+                  />
+                </div>
+              </div>
+              <div className="space-y-3 text-center">
+                <h3 className="text-4xl font-bold tracking-tight text-base-fg">
+                  Edit Image
+                </h3>
+                <p className="max-w-md text-base leading-relaxed text-base-fg/70">
+                  Click to upload or drag and drop an image here to edit
+                </p>
+              </div>
+            </div>
+            <div className="relative z-10 mt-4 flex gap-4">
+              <Button
+                variant="primary"
+                icon={faUpload}
+                onClick={handleUploadClick}
+                className="px-8 py-3 text-base font-semibold shadow-lg"
+              >
+                Select Image
               </Button>
-              <Button variant="secondary" onClick={handleGalleryClick}>
-                Select from library
+              <Button
+                variant="action"
+                icon={faImages}
+                onClick={handleGalleryClick}
+                className="border-2 px-8 py-3 text-base font-semibold"
+              >
+                Pick from Library
               </Button>
             </div>
-          </div>
+          </>
         )}
       </div>
       <div className="fixed bottom-6 right-6 z-20 flex items-center gap-2">

@@ -12,6 +12,8 @@ import ImageToVideo from "../PageVideo/ImageToVideo";
 import TextToImage from "../PageImage/TextToImage";
 import { AppsIndexPage } from "../PageApps/AppsIndexPage";
 import { VideoFrameExtractor } from "../PageVideoFrameExtractor";
+import { VideoWatermarkRemover } from "../PageVideoWatermarkRemover";
+import { ImageWatermarkRemover } from "../PageImageWatermarkRemover";
 
 import {
   timelineHeight,
@@ -595,6 +597,16 @@ export const PageEditor = () => {
       {tabStore.activeTabId == "VIDEO_FRAME_EXTRACTOR" && (
         <div>
           <VideoFrameExtractor />
+        </div>
+      )}
+      {tabStore.activeTabId == "VIDEO_WATERMARK_REMOVAL" && (
+        <div>
+          <VideoWatermarkRemover />
+        </div>
+      )}
+      {tabStore.activeTabId == "IMAGE_WATERMARK_REMOVAL" && (
+        <div>
+          <ImageWatermarkRemover />
         </div>
       )}
     </div>

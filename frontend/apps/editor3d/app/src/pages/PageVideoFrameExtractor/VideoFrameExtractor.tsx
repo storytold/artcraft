@@ -14,7 +14,6 @@ import {
   faArrowRotateRight,
   faSave,
   faVideo,
-  faSpinnerThird,
   faCheck,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
@@ -477,7 +476,7 @@ export const VideoFrameExtractor = () => {
   };
 
   const renderUploadArea = () => (
-    <div className="flex h-full flex-col items-center justify-center gap-6">
+    <div className="relative flex h-full flex-col items-center justify-center gap-8 overflow-hidden">
       <input
         type="file"
         ref={fileInputRef}
@@ -485,28 +484,31 @@ export const VideoFrameExtractor = () => {
         accept="video/*"
         onChange={handleFileSelect}
       />
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-ui-controls/40">
-          <FontAwesomeIcon
-            icon={faPhotoFilm}
-            className="text-4xl text-base-fg/60"
-          />
+      <div className="relative z-10 flex flex-col items-center gap-6">
+        <div className="relative">
+          <div className="relative flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-rose-400/30 bg-rose-500/40 shadow-xl backdrop-blur-sm">
+            <FontAwesomeIcon
+              icon={faPhotoFilm}
+              className="text-5xl text-white drop-shadow-lg"
+            />
+          </div>
         </div>
-        <div className="text-center">
-          <h3 className="text-xl font-semibold text-base-fg">
-            Select a video for frame extraction
+        <div className="space-y-3 text-center">
+          <h3 className="text-4xl font-bold tracking-tight text-base-fg">
+            Extract Video Frames
           </h3>
-          <p className="text-sm text-base-fg/60">
-            Add a video from your computer or pick from your library
+          <p className="max-w-md text-base leading-relaxed text-base-fg/70">
+            Capture perfect moments from your videos. Select frames at precise
+            timestamps and save them as images.
           </p>
         </div>
       </div>
-      <div className="mt-2 flex gap-3">
+      <div className="relative z-10 mt-4 flex gap-4">
         <Button
           variant="primary"
           icon={faUpload}
           onClick={handleUploadClick}
-          className="px-6"
+          className="px-8 py-3 text-base font-semibold shadow-lg"
         >
           Select Video
         </Button>
@@ -514,7 +516,7 @@ export const VideoFrameExtractor = () => {
           variant="action"
           icon={faImages}
           onClick={() => setIsGalleryModalOpen(true)}
-          className="px-6"
+          className="border-2 px-8 py-3 text-base font-semibold"
         >
           Pick from Library
         </Button>
@@ -534,8 +536,8 @@ export const VideoFrameExtractor = () => {
           }
         >
           {!videoUrl ? (
-            <div className="w-full max-w-6xl">
-              <div className="aspect-video overflow-hidden rounded-xl border border-ui-panel-border bg-ui-controls/40">
+            <div className="w-full max-w-5xl">
+              <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
                 {renderUploadArea()}
               </div>
             </div>
@@ -562,7 +564,7 @@ export const VideoFrameExtractor = () => {
                   <video
                     ref={videoRef}
                     src={videoUrl}
-                    className="h-full w-full"
+                    className="h-full w-full bg-black"
                     onClick={togglePlayPause}
                     preload="metadata"
                     playsInline
@@ -571,7 +573,7 @@ export const VideoFrameExtractor = () => {
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                     <div
                       ref={progressBarRef}
-                      className="group relative mb-3 h-3 cursor-pointer rounded-full bg-white/20 transition-all hover:h-4"
+                      className="group relative mb-3 h-3 cursor-pointer rounded-full bg-white/20"
                       onClick={handleProgressBarClick}
                     >
                       <div
@@ -625,7 +627,7 @@ export const VideoFrameExtractor = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => seekToFrame("first")}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                           title="First Frame"
                         >
                           <FontAwesomeIcon
@@ -635,7 +637,7 @@ export const VideoFrameExtractor = () => {
                         </button>
                         <button
                           onClick={togglePlayPause}
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
                         >
                           <FontAwesomeIcon
                             icon={isPlaying ? faPause : faPlay}
@@ -644,7 +646,7 @@ export const VideoFrameExtractor = () => {
                         </button>
                         <button
                           onClick={() => seekToFrame("last")}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                           title="Last Frame"
                         >
                           <FontAwesomeIcon
@@ -655,7 +657,7 @@ export const VideoFrameExtractor = () => {
                         <div className="mx-1 h-6 w-px bg-white/20" />
                         <button
                           onClick={toggleMute}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
                         >
                           <FontAwesomeIcon
                             icon={isMuted ? faVolumeMute : faVolumeHigh}
@@ -685,9 +687,10 @@ export const VideoFrameExtractor = () => {
               <div className="flex justify-center">
                 <Button
                   variant="primary"
-                  icon={faSparkles}
+                  icon={isExtracting ? undefined : faSparkles}
+                  loading={isExtracting}
                   onClick={handleExtract}
-                  className="px-10 py-2 text-lg font-semibold"
+                  className="px-12 py-3 text-lg font-semibold"
                   disabled={isExtracting}
                 >
                   {isExtracting ? "Extracting..." : "Extract Frames"}
@@ -696,98 +699,113 @@ export const VideoFrameExtractor = () => {
 
               <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="flex flex-col gap-5">
-                  <div className="rounded-xl border border-ui-panel-border bg-ui-controls/40 p-5">
-                    <div className="mb-2 text-xs font-medium uppercase tracking-wide text-base-fg/60">
-                      Start Time
-                    </div>
-                    <div className="font-mono text-2xl font-bold text-primary-300">
-                      {formatTimePrecise(startTime)}
-                    </div>
-                    <div className="mt-1.5 text-xs text-base-fg/60">
-                      Adjust via the yellow marker on the video
+                  <div className="group rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                    <div>
+                      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                        Start Time
+                      </div>
+                      <div className="font-mono text-3xl font-bold text-primary drop-shadow-sm">
+                        {formatTimePrecise(startTime)}
+                      </div>
+                      <div className="mt-3 flex items-center gap-2 text-xs text-base-fg/60">
+                        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-yellow-400 shadow-lg shadow-yellow-400/50" />
+                        <span>Adjust via the yellow marker on the video</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-ui-panel-border bg-ui-controls/40 p-5">
-                    <div className="mb-3 text-xs font-medium uppercase tracking-wide text-base-fg/60">
-                      Video Information
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-base-fg/60">Duration</span>
-                        <span className="font-mono text-base-fg">
-                          {formatTime(duration)}
-                        </span>
+                  <div className="group rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                    <div>
+                      <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                        Video Information
                       </div>
-                      {videoRef.current && (
-                        <div className="flex justify-between">
-                          <span className="text-base-fg/60">Resolution</span>
-                          <span className="font-mono text-base-fg">
-                            {videoRef.current.videoWidth} ×{" "}
-                            {videoRef.current.videoHeight}
+                      <div className="space-y-3 text-sm">
+                        <div className="flex items-center justify-between border-b border-ui-divider py-2">
+                          <span className="font-medium text-base-fg/70">
+                            Duration
+                          </span>
+                          <span className="font-mono text-lg font-bold text-base-fg">
+                            {formatTime(duration)}
                           </span>
                         </div>
-                      )}
+                        {videoRef.current && (
+                          <div className="flex items-center justify-between py-2">
+                            <span className="font-medium text-base-fg/70">
+                              Resolution
+                            </span>
+                            <span className="font-mono font-bold text-base-fg">
+                              {videoRef.current.videoWidth} ×{" "}
+                              {videoRef.current.videoHeight}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-ui-panel-border bg-ui-controls/40 p-5">
-                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-base-fg/60">
-                    Extraction Settings
-                  </h3>
-
-                  <div className="space-y-3">
-                    <div>
-                      <label
-                        htmlFor="numFrames"
-                        className="mb-1.5 block text-sm font-medium text-base-fg"
-                      >
-                        Number of Frames
-                      </label>
-                      <input
-                        id="numFrames"
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={numFrames}
-                        onChange={(e) =>
-                          setNumFrames(
-                            Math.max(
-                              1,
-                              Math.min(50, parseInt(e.target.value) || 1),
-                            ),
-                          )
-                        }
-                        className="bg-ui-background/50 w-full rounded-lg px-4 py-2.5 text-base-fg focus:outline-none focus:ring-2 focus:ring-primary"
+                <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                  <div>
+                    <h3 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-base-fg/60">
+                      <FontAwesomeIcon
+                        icon={faSparkles}
+                        className="text-primary"
                       />
-                    </div>
+                      Extraction Settings
+                    </h3>
 
-                    <div>
-                      <label
-                        htmlFor="frameDistance"
-                        className="mb-1.5 block text-sm font-medium text-base-fg"
-                      >
-                        Distance (ms)
-                      </label>
-                      <input
-                        id="frameDistance"
-                        type="number"
-                        min="1"
-                        max="10000"
-                        value={frameDistance}
-                        onChange={(e) =>
-                          setFrameDistance(
-                            Math.max(1, parseInt(e.target.value) || 1),
-                          )
-                        }
-                        className="bg-ui-background/50 w-full rounded-lg px-4 py-2.5 text-base-fg focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
+                    <div className="space-y-5">
+                      <div>
+                        <label
+                          htmlFor="numFrames"
+                          className="mb-2.5 block text-sm font-semibold text-base-fg"
+                        >
+                          Number of Frames
+                        </label>
+                        <input
+                          id="numFrames"
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={numFrames}
+                          onChange={(e) =>
+                            setNumFrames(
+                              Math.max(
+                                1,
+                                Math.min(50, parseInt(e.target.value) || 1),
+                              ),
+                            )
+                          }
+                          className="border-ui-controls-border w-full rounded-xl border-2 bg-ui-controls px-4 py-3.5 text-base-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
 
-                    <div className="pt-1 text-xs text-base-fg/60">
-                      <strong>Tip:</strong> Extracting multiple frames helps
-                      capture a sharp, non-blurred frame.
+                      <div>
+                        <label
+                          htmlFor="frameDistance"
+                          className="mb-2.5 block text-sm font-semibold text-base-fg"
+                        >
+                          Distance (ms)
+                        </label>
+                        <input
+                          id="frameDistance"
+                          type="number"
+                          min="1"
+                          max="10000"
+                          value={frameDistance}
+                          onChange={(e) =>
+                            setFrameDistance(
+                              Math.max(1, parseInt(e.target.value) || 1),
+                            )
+                          }
+                          className="border-ui-controls-border w-full rounded-xl border-2 bg-ui-controls px-4 py-3.5 text-base-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+
+                      <div className="text-xs leading-relaxed text-base-fg/80">
+                        Extracting multiple frames helps capture a sharp,
+                        non-blurred frame.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -796,97 +814,99 @@ export const VideoFrameExtractor = () => {
               {extractedFrames.length > 0 && (
                 <div
                   ref={extractedFramesRef}
-                  className="rounded-xl border border-ui-panel-border bg-ui-controls/40 p-5"
+                  className="rounded-2xl border border-ui-panel-border bg-ui-controls p-6 shadow-lg"
                 >
-                  <h3 className="mb-4 text-base font-semibold uppercase tracking-wide text-base-fg/60">
-                    Extracted Frames ({extractedFrames.length})
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {extractedFrames.map((frame, index) => (
-                      <div
-                        key={frame.id}
-                        className="group relative overflow-hidden rounded-lg border border-ui-panel-border"
-                      >
-                        <div className="aspect-video overflow-hidden bg-black">
-                          <img
-                            src={frame.url}
-                            alt={`Frame ${index + 1}`}
-                            className="h-full w-full object-contain"
-                          />
-                        </div>
-                        <div className="space-y-2 bg-ui-controls/80 p-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-base-fg">
-                              #{index + 1}
-                            </span>
-                            <div className="font-mono text-xs text-base-fg/60">
-                              {formatTimePrecise(frame.timestamp)}
+                  <div>
+                    <div className="mb-6 flex items-center justify-between">
+                      <h3 className="flex items-center gap-2 text-xl font-bold uppercase tracking-wider text-base-fg">
+                        <FontAwesomeIcon
+                          icon={faPhotoFilm}
+                          className="text-primary"
+                        />
+                        Extracted Frames
+                      </h3>
+                      <div className="bg-ui-badge rounded-full border-2 border-primary/30 px-5 py-2 text-sm font-bold text-base-fg shadow-lg">
+                        {extractedFrames.length}{" "}
+                        {extractedFrames.length === 1 ? "Frame" : "Frames"}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-5">
+                      {extractedFrames.map((frame, index) => (
+                        <div
+                          key={frame.id}
+                          className="group relative overflow-hidden rounded-xl border-2 border-ui-panel-border bg-ui-controls"
+                        >
+                          <div className="aspect-video overflow-hidden bg-black">
+                            <img
+                              src={frame.url}
+                              alt={`Frame ${index + 1}`}
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
+                          <div className="space-y-2 bg-ui-background p-3">
+                            <div className="flex items-center justify-between">
+                              <span className="bg-ui-badge rounded border border-ui-panel-border px-2 py-1 text-xs font-bold text-base-fg">
+                                #{index + 1}
+                              </span>
+                              <div className="font-mono text-xs font-semibold text-base-fg/70">
+                                {formatTimePrecise(frame.timestamp)}
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="action"
+                                icon={
+                                  savingFrames.has(frame.id)
+                                    ? undefined
+                                    : savedFrames.has(frame.id)
+                                      ? faCheck
+                                      : faSave
+                                }
+                                loading={savingFrames.has(frame.id)}
+                                onClick={() =>
+                                  handleSaveFrame(
+                                    frame.id,
+                                    frame.url,
+                                    frame.timestamp,
+                                  )
+                                }
+                                disabled={
+                                  savingFrames.has(frame.id) ||
+                                  savedFrames.has(frame.id)
+                                }
+                                className="flex-1 px-3 py-1.5 text-xs font-semibold"
+                              >
+                                {savingFrames.has(frame.id)
+                                  ? "Saving..."
+                                  : savedFrames.has(frame.id)
+                                    ? "Saved"
+                                    : "Save"}
+                              </Button>
+                              <Button
+                                variant="primary"
+                                icon={
+                                  convertingFrames.has(frame.id)
+                                    ? undefined
+                                    : faVideo
+                                }
+                                loading={convertingFrames.has(frame.id)}
+                                onClick={() =>
+                                  handleTurnIntoVideo(
+                                    frame.id,
+                                    frame.url,
+                                    frame.timestamp,
+                                  )
+                                }
+                                disabled={convertingFrames.has(frame.id)}
+                                className="flex-1 px-3 py-1.5 text-xs font-semibold"
+                              >
+                                Turn into Video
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="action"
-                              icon={
-                                savingFrames.has(frame.id)
-                                  ? undefined
-                                  : savedFrames.has(frame.id)
-                                    ? faCheck
-                                    : faSave
-                              }
-                              onClick={() =>
-                                handleSaveFrame(
-                                  frame.id,
-                                  frame.url,
-                                  frame.timestamp,
-                                )
-                              }
-                              disabled={
-                                savingFrames.has(frame.id) ||
-                                savedFrames.has(frame.id)
-                              }
-                              className="flex-1 bg-white/15 px-2 py-1 text-xs hover:bg-white/20"
-                            >
-                              {savingFrames.has(frame.id) ? (
-                                <FontAwesomeIcon
-                                  icon={faSpinnerThird}
-                                  className="animate-spin"
-                                />
-                              ) : savedFrames.has(frame.id) ? (
-                                "Saved"
-                              ) : (
-                                "Save"
-                              )}
-                            </Button>
-                            <Button
-                              variant="primary"
-                              icon={
-                                convertingFrames.has(frame.id)
-                                  ? undefined
-                                  : faVideo
-                              }
-                              onClick={() =>
-                                handleTurnIntoVideo(
-                                  frame.id,
-                                  frame.url,
-                                  frame.timestamp,
-                                )
-                              }
-                              disabled={convertingFrames.has(frame.id)}
-                              className="flex-1 px-2 py-1 text-xs"
-                            >
-                              {convertingFrames.has(frame.id) ? (
-                                <FontAwesomeIcon
-                                  icon={faSpinnerThird}
-                                  className="animate-spin"
-                                />
-                              ) : (
-                                "Turn into Video"
-                              )}
-                            </Button>
-                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

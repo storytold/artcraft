@@ -242,6 +242,10 @@ export const TopBar = ({ pageName }: Props) => {
         return "Edit Image";
       case "VIDEO_FRAME_EXTRACTOR":
         return "Video Frame Extractor";
+      case "VIDEO_WATERMARK_REMOVAL":
+        return "Video Watermark Remover";
+      case "IMAGE_WATERMARK_REMOVAL":
+        return "Image Watermark Remover";
       default:
         return "Artcraft";
     }

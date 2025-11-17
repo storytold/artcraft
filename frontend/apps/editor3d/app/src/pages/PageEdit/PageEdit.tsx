@@ -323,18 +323,22 @@ const PageEdit = () => {
     return (
       <div
         className={
-          "flex h-[calc(100vh-56px)] w-full items-center justify-center bg-ui-panel"
+          "flex h-[calc(100vh-56px)] w-full items-center justify-center bg-ui-panel p-8"
         }
       >
-        <BaseImageSelector
-          onImageSelect={(image: BaseSelectorImage) => {
-            addHistoryImageBundle({ images: [image] });
-            store.setBaseImageInfo(image);
-          }}
-          showLoading={
-            store.baseImageInfo !== null && store.baseImageInfo === null
-          }
-        />
+        <div className="w-full max-w-5xl">
+          <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+            <BaseImageSelector
+              onImageSelect={(image: BaseSelectorImage) => {
+                addHistoryImageBundle({ images: [image] });
+                store.setBaseImageInfo(image);
+              }}
+              showLoading={
+                store.baseImageInfo !== null && store.baseImageInfo === null
+              }
+            />
+          </div>
+        </div>
       </div>
     );
   }
