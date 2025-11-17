@@ -121,7 +121,7 @@ export const ALL_APPS: FullAppItem[] = [
     description: "Remove watermarks from videos",
     icon: faDroplet,
     category: "edit",
-    action: "VIDEO_WATERMARK_REMOVAL",
+    badge: "SOON",
     color: "bg-cyan-500/40",
   },
   {
@@ -130,7 +130,7 @@ export const ALL_APPS: FullAppItem[] = [
     description: "Remove watermarks from images",
     icon: faDroplet,
     category: "edit",
-    action: "IMAGE_WATERMARK_REMOVAL",
+    badge: "SOON",
     color: "bg-indigo-600/40",
   },
 
