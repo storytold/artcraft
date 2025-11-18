@@ -22,12 +22,14 @@
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
 /* Firefox */
 input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 body {
@@ -181,6 +183,16 @@ body {
 .bg-ui-panel {
   background: var(--st-panel);
 }
+.bg-ui-panel-gradient {
+  background:
+    radial-gradient(
+      60.68% 60.68% at 50% 0%,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(0, 0, 0, 0) 70%
+    ),
+    var(--st-panel);
+  background-color: var(--st-panel);
+}
 .bg-ui-modal {
   background: var(--st-modal);
 }
@@ -206,7 +218,6 @@ body {
 /* Tauri custom titlebar drag regions */
 [data-tauri-drag-region] {
   -webkit-app-region: drag;
-  app-region: drag;
 }
 
 .tauri-no-drag,
@@ -217,7 +228,6 @@ body {
 [data-tauri-drag-region] textarea,
 [data-tauri-drag-region] select {
   -webkit-app-region: no-drag;
-  app-region: no-drag;
 }
 
 img {

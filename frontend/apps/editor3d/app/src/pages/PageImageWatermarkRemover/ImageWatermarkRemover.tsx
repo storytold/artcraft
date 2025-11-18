@@ -8,7 +8,7 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
-import { UploadEntryCard } from "~/components/media/UploadEntryCard";
+import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import toast from "react-hot-toast";
 
 export const ImageWatermarkRemover = () => {
@@ -109,7 +109,7 @@ export const ImageWatermarkRemover = () => {
 
   return (
     <>
-      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+      <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
         <div className="flex-1 overflow-y-auto">
           <main
             className={
@@ -170,56 +170,59 @@ export const ImageWatermarkRemover = () => {
                 </div>
 
                 <div className="flex justify-center">
-                <Button
-                  variant="primary"
-                  icon={isProcessing ? undefined : faDroplet}
-                  loading={isProcessing}
-                  onClick={handleRemoveWatermark}
-                  className="px-12 py-3 text-lg font-semibold"
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? "Processing..." : "Remove Watermark"}
-                </Button>
-              </div>
+                  <Button
+                    variant="primary"
+                    icon={isProcessing ? undefined : faDroplet}
+                    loading={isProcessing}
+                    onClick={handleRemoveWatermark}
+                    className="px-12 py-3 text-lg font-semibold"
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? "Processing..." : "Remove Watermark"}
+                  </Button>
+                </div>
 
-              <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
-                <div>
-                  <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
-                    <FontAwesomeIcon icon={faImages} className="text-primary" />
-                    Image Information
-                  </div>
-                  {imageDimensions ? (
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center justify-between border-b border-ui-divider py-2">
-                        <span className="font-medium text-base-fg/70">
-                          Resolution
-                        </span>
-                        <span className="font-mono text-lg font-bold text-base-fg">
-                          {imageDimensions.width} × {imageDimensions.height}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between py-2">
-                        <span className="font-medium text-base-fg/70">
-                          Aspect Ratio
-                        </span>
-                        <span className="font-mono text-lg font-bold text-base-fg">
-                          {(
-                            imageDimensions.width / imageDimensions.height
-                          ).toFixed(2)}
-                          :1
-                        </span>
-                      </div>
+                <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                  <div>
+                    <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                      <FontAwesomeIcon
+                        icon={faImages}
+                        className="text-primary"
+                      />
+                      Image Information
                     </div>
-                  ) : (
-                    <div className="text-sm text-base-fg/50">Loading...</div>
-                  )}
+                    {imageDimensions ? (
+                      <div className="space-y-3 text-sm">
+                        <div className="flex items-center justify-between border-b border-ui-divider py-2">
+                          <span className="font-medium text-base-fg/70">
+                            Resolution
+                          </span>
+                          <span className="font-mono text-lg font-bold text-base-fg">
+                            {imageDimensions.width} × {imageDimensions.height}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between py-2">
+                          <span className="font-medium text-base-fg/70">
+                            Aspect Ratio
+                          </span>
+                          <span className="font-mono text-lg font-bold text-base-fg">
+                            {(
+                              imageDimensions.width / imageDimensions.height
+                            ).toFixed(2)}
+                            :1
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-base-fg/50">Loading...</div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </main>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
 
       <GalleryModal
         isOpen={!!isGalleryModalOpen}

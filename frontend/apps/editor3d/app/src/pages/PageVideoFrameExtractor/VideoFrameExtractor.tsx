@@ -25,7 +25,7 @@ import {
 import toast from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import { usePromptVideoStore, RefImage } from "@storyteller/ui-promptbox";
-import { UploadEntryCard } from "~/components/media/UploadEntryCard";
+import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import { useTabStore } from "~/pages/Stores/TabState";
 
 export const VideoFrameExtractor = () => {
@@ -471,7 +471,7 @@ export const VideoFrameExtractor = () => {
 
   return (
     <>
-      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+      <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
         <div className="flex-1 overflow-y-auto">
           <main
             className={
@@ -500,378 +500,378 @@ export const VideoFrameExtractor = () => {
               </div>
             ) : (
               <div className="flex w-full max-w-5xl flex-col gap-5">
-              <div className="w-full overflow-hidden rounded-xl border border-ui-panel-border bg-ui-controls/40">
-                <div className="relative aspect-video w-full bg-black">
-                  <Button
-                    icon={faArrowRotateRight}
-                    variant="action"
-                    onClick={() => {
-                      setVideoUrl("");
-                      setStartTime(0);
-                      setCurrentTime(0);
-                      setExtractedFrames([]);
-                      setSavingFrames(new Set());
-                      setSavedFrames(new Set());
-                      setConvertingFrames(new Set());
-                    }}
-                    className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
-                  >
-                    Switch Video
-                  </Button>
-                  <video
-                    ref={videoRef}
-                    src={videoUrl}
-                    className="h-full w-full bg-black"
-                    onClick={togglePlayPause}
-                    preload="metadata"
-                    playsInline
-                    crossOrigin="anonymous"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
-                    <div
-                      ref={progressBarRef}
-                      className="group relative mb-3 h-3 cursor-pointer rounded-full bg-white/20"
-                      onClick={handleProgressBarClick}
+                <div className="w-full overflow-hidden rounded-xl border border-ui-panel-border bg-ui-controls/40">
+                  <div className="relative aspect-video w-full bg-black">
+                    <Button
+                      icon={faArrowRotateRight}
+                      variant="action"
+                      onClick={() => {
+                        setVideoUrl("");
+                        setStartTime(0);
+                        setCurrentTime(0);
+                        setExtractedFrames([]);
+                        setSavingFrames(new Set());
+                        setSavedFrames(new Set());
+                        setConvertingFrames(new Set());
+                      }}
+                      className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
+                      Switch Video
+                    </Button>
+                    <video
+                      ref={videoRef}
+                      src={videoUrl}
+                      className="h-full w-full bg-black"
+                      onClick={togglePlayPause}
+                      preload="metadata"
+                      playsInline
+                      crossOrigin="anonymous"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                       <div
-                        className="absolute h-full overflow-hidden rounded-full bg-primary"
-                        style={{
-                          width: `${duration ? (currentTime / duration) * 100 : 0}%`,
-                        }}
-                      />
-                      <div
-                        className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 cursor-ew-resize rounded-full bg-yellow-400 shadow-lg"
-                        style={{
-                          left: `${duration ? (startTime / duration) * 100 : 0}%`,
-                        }}
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                          const handleMouseMove = (moveEvent: MouseEvent) => {
-                            if (!progressBarRef.current || !duration) return;
-                            const rect =
-                              progressBarRef.current.getBoundingClientRect();
-                            const moveX = moveEvent.clientX - rect.left;
-                            const percentage = Math.max(
-                              0,
-                              Math.min(1, moveX / rect.width),
-                            );
-                            const newTime = percentage * duration;
-                            setStartTime(newTime);
-                            if (videoRef.current) {
-                              videoRef.current.currentTime = newTime;
-                              setCurrentTime(newTime);
-                            }
-                          };
-                          const handleMouseUp = () => {
-                            document.removeEventListener(
+                        ref={progressBarRef}
+                        className="group relative mb-3 h-3 cursor-pointer rounded-full bg-white/20"
+                        onClick={handleProgressBarClick}
+                      >
+                        <div
+                          className="absolute h-full overflow-hidden rounded-full bg-primary"
+                          style={{
+                            width: `${duration ? (currentTime / duration) * 100 : 0}%`,
+                          }}
+                        />
+                        <div
+                          className="absolute top-1/2 h-6 w-1.5 -translate-y-1/2 cursor-ew-resize rounded-full bg-yellow-400 shadow-lg"
+                          style={{
+                            left: `${duration ? (startTime / duration) * 100 : 0}%`,
+                          }}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            const handleMouseMove = (moveEvent: MouseEvent) => {
+                              if (!progressBarRef.current || !duration) return;
+                              const rect =
+                                progressBarRef.current.getBoundingClientRect();
+                              const moveX = moveEvent.clientX - rect.left;
+                              const percentage = Math.max(
+                                0,
+                                Math.min(1, moveX / rect.width),
+                              );
+                              const newTime = percentage * duration;
+                              setStartTime(newTime);
+                              if (videoRef.current) {
+                                videoRef.current.currentTime = newTime;
+                                setCurrentTime(newTime);
+                              }
+                            };
+                            const handleMouseUp = () => {
+                              document.removeEventListener(
+                                "mousemove",
+                                handleMouseMove,
+                              );
+                              document.removeEventListener(
+                                "mouseup",
+                                handleMouseUp,
+                              );
+                            };
+                            document.addEventListener(
                               "mousemove",
                               handleMouseMove,
                             );
-                            document.removeEventListener(
-                              "mouseup",
-                              handleMouseUp,
-                            );
-                          };
-                          document.addEventListener(
-                            "mousemove",
-                            handleMouseMove,
-                          );
-                          document.addEventListener("mouseup", handleMouseUp);
-                        }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => seekToFrame("first")}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
-                          title="First Frame"
-                        >
-                          <FontAwesomeIcon
-                            icon={faStepBackward}
-                            className="text-sm text-white"
-                          />
-                        </button>
-                        <button
-                          onClick={togglePlayPause}
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
-                        >
-                          <FontAwesomeIcon
-                            icon={isPlaying ? faPause : faPlay}
-                            className="text-white"
-                          />
-                        </button>
-                        <button
-                          onClick={() => seekToFrame("last")}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
-                          title="Last Frame"
-                        >
-                          <FontAwesomeIcon
-                            icon={faStepForward}
-                            className="text-sm text-white"
-                          />
-                        </button>
-                        <div className="mx-1 h-6 w-px bg-white/20" />
-                        <button
-                          onClick={toggleMute}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
-                        >
-                          <FontAwesomeIcon
-                            icon={isMuted ? faVolumeMute : faVolumeHigh}
-                            className="text-sm text-white"
-                          />
-                        </button>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={volume}
-                          onChange={(e) =>
-                            setVolume(parseFloat(e.target.value))
-                          }
-                          className="w-20 accent-white"
+                            document.addEventListener("mouseup", handleMouseUp);
+                          }}
                         />
                       </div>
-                      <div className="font-mono text-sm text-white">
-                        {formatTime(currentTime)} / {formatTime(duration)}
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => seekToFrame("first")}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            title="First Frame"
+                          >
+                            <FontAwesomeIcon
+                              icon={faStepBackward}
+                              className="text-sm text-white"
+                            />
+                          </button>
+                          <button
+                            onClick={togglePlayPause}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
+                          >
+                            <FontAwesomeIcon
+                              icon={isPlaying ? faPause : faPlay}
+                              className="text-white"
+                            />
+                          </button>
+                          <button
+                            onClick={() => seekToFrame("last")}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            title="Last Frame"
+                          >
+                            <FontAwesomeIcon
+                              icon={faStepForward}
+                              className="text-sm text-white"
+                            />
+                          </button>
+                          <div className="mx-1 h-6 w-px bg-white/20" />
+                          <button
+                            onClick={toggleMute}
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                          >
+                            <FontAwesomeIcon
+                              icon={isMuted ? faVolumeMute : faVolumeHigh}
+                              className="text-sm text-white"
+                            />
+                          </button>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={volume}
+                            onChange={(e) =>
+                              setVolume(parseFloat(e.target.value))
+                            }
+                            className="w-20 accent-white"
+                          />
+                        </div>
+                        <div className="font-mono text-sm text-white">
+                          {formatTime(currentTime)} / {formatTime(duration)}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex justify-center">
-                <Button
-                  variant="primary"
-                  icon={isExtracting ? undefined : faSparkles}
-                  loading={isExtracting}
-                  onClick={handleExtract}
-                  className="px-12 py-3 text-lg font-semibold"
-                  disabled={isExtracting}
-                >
-                  {isExtracting ? "Extracting..." : "Extract Frames"}
-                </Button>
-              </div>
+                <div className="flex justify-center">
+                  <Button
+                    variant="primary"
+                    icon={isExtracting ? undefined : faSparkles}
+                    loading={isExtracting}
+                    onClick={handleExtract}
+                    className="px-12 py-3 text-lg font-semibold"
+                    disabled={isExtracting}
+                  >
+                    {isExtracting ? "Extracting..." : "Extract Frames"}
+                  </Button>
+                </div>
 
-              <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2">
-                <div className="flex flex-col gap-5">
-                  <div className="group rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
-                    <div>
-                      <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
-                        Start Time
-                      </div>
-                      <div className="font-mono text-3xl font-bold text-primary drop-shadow-sm">
-                        {formatTimePrecise(startTime)}
-                      </div>
-                      <div className="mt-3 flex items-center gap-2 text-xs text-base-fg/60">
-                        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-yellow-400 shadow-lg shadow-yellow-400/50" />
-                        <span>Adjust via the yellow marker on the video</span>
+                <div className="grid w-full grid-cols-1 gap-5 md:grid-cols-2">
+                  <div className="flex flex-col gap-5">
+                    <div className="group rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                      <div>
+                        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                          Start Time
+                        </div>
+                        <div className="font-mono text-3xl font-bold text-primary drop-shadow-sm">
+                          {formatTimePrecise(startTime)}
+                        </div>
+                        <div className="mt-3 flex items-center gap-2 text-xs text-base-fg/60">
+                          <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-yellow-400 shadow-lg shadow-yellow-400/50" />
+                          <span>Adjust via the yellow marker on the video</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="group rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
-                    <div>
-                      <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
-                        Video Information
-                      </div>
-                      <div className="space-y-3 text-sm">
-                        <div className="flex items-center justify-between border-b border-ui-divider py-2">
-                          <span className="font-medium text-base-fg/70">
-                            Duration
-                          </span>
-                          <span className="font-mono text-lg font-bold text-base-fg">
-                            {formatTime(duration)}
-                          </span>
+                    <div className="group rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                      <div>
+                        <div className="mb-4 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                          Video Information
                         </div>
-                        {videoRef.current && (
-                          <div className="flex items-center justify-between py-2">
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center justify-between border-b border-ui-divider py-2">
                             <span className="font-medium text-base-fg/70">
-                              Resolution
+                              Duration
                             </span>
-                            <span className="font-mono font-bold text-base-fg">
-                              {videoRef.current.videoWidth} ×{" "}
-                              {videoRef.current.videoHeight}
+                            <span className="font-mono text-lg font-bold text-base-fg">
+                              {formatTime(duration)}
                             </span>
                           </div>
-                        )}
+                          {videoRef.current && (
+                            <div className="flex items-center justify-between py-2">
+                              <span className="font-medium text-base-fg/70">
+                                Resolution
+                              </span>
+                              <span className="font-mono font-bold text-base-fg">
+                                {videoRef.current.videoWidth} ×{" "}
+                                {videoRef.current.videoHeight}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
-                  <div>
-                    <h3 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-base-fg/60">
-                      <FontAwesomeIcon
-                        icon={faSparkles}
-                        className="text-primary"
-                      />
-                      Extraction Settings
-                    </h3>
-
-                    <div className="space-y-5">
-                      <div>
-                        <label
-                          htmlFor="numFrames"
-                          className="mb-2.5 block text-sm font-semibold text-base-fg"
-                        >
-                          Number of Frames
-                        </label>
-                        <input
-                          id="numFrames"
-                          type="number"
-                          min="1"
-                          max="50"
-                          value={numFrames}
-                          onChange={(e) =>
-                            setNumFrames(
-                              Math.max(
-                                1,
-                                Math.min(50, parseInt(e.target.value) || 1),
-                              ),
-                            )
-                          }
-                          className="border-ui-controls-border w-full rounded-xl border-2 bg-ui-controls px-4 py-3.5 text-base-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="frameDistance"
-                          className="mb-2.5 block text-sm font-semibold text-base-fg"
-                        >
-                          Distance (ms)
-                        </label>
-                        <input
-                          id="frameDistance"
-                          type="number"
-                          min="1"
-                          max="10000"
-                          value={frameDistance}
-                          onChange={(e) =>
-                            setFrameDistance(
-                              Math.max(1, parseInt(e.target.value) || 1),
-                            )
-                          }
-                          className="border-ui-controls-border w-full rounded-xl border-2 bg-ui-controls px-4 py-3.5 text-base-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </div>
-
-                      <div className="text-xs leading-relaxed text-base-fg/80">
-                        Extracting multiple frames helps capture a sharp,
-                        non-blurred frame.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {extractedFrames.length > 0 && (
-                <div
-                  ref={extractedFramesRef}
-                  className="rounded-2xl border border-ui-panel-border bg-ui-controls p-6 shadow-lg"
-                >
-                  <div>
-                    <div className="mb-6 flex items-center justify-between">
-                      <h3 className="flex items-center gap-2 text-xl font-bold uppercase tracking-wider text-base-fg">
+                  <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                    <div>
+                      <h3 className="mb-5 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-base-fg/60">
                         <FontAwesomeIcon
-                          icon={faPhotoFilm}
+                          icon={faSparkles}
                           className="text-primary"
                         />
-                        Extracted Frames
+                        Extraction Settings
                       </h3>
-                      <div className="bg-ui-badge rounded-full border-2 border-primary/30 px-5 py-2 text-sm font-bold text-base-fg shadow-lg">
-                        {extractedFrames.length}{" "}
-                        {extractedFrames.length === 1 ? "Frame" : "Frames"}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-5">
-                      {extractedFrames.map((frame, index) => (
-                        <div
-                          key={frame.id}
-                          className="group relative overflow-hidden rounded-xl border-2 border-ui-panel-border bg-ui-controls"
-                        >
-                          <div className="aspect-video overflow-hidden bg-black">
-                            <img
-                              src={frame.url}
-                              alt={`Frame ${index + 1}`}
-                              className="h-full w-full object-contain"
-                            />
-                          </div>
-                          <div className="space-y-2 bg-ui-background p-3">
-                            <div className="flex items-center justify-between">
-                              <span className="bg-ui-badge rounded border border-ui-panel-border px-2 py-1 text-xs font-bold text-base-fg">
-                                #{index + 1}
-                              </span>
-                              <div className="font-mono text-xs font-semibold text-base-fg/70">
-                                {formatTimePrecise(frame.timestamp)}
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="action"
-                                icon={
-                                  savingFrames.has(frame.id)
-                                    ? undefined
-                                    : savedFrames.has(frame.id)
-                                      ? faCheck
-                                      : faSave
-                                }
-                                loading={savingFrames.has(frame.id)}
-                                onClick={() =>
-                                  handleSaveFrame(
-                                    frame.id,
-                                    frame.url,
-                                    frame.timestamp,
-                                  )
-                                }
-                                disabled={
-                                  savingFrames.has(frame.id) ||
-                                  savedFrames.has(frame.id)
-                                }
-                                className="flex-1 px-3 py-1.5 text-xs font-semibold"
-                              >
-                                {savingFrames.has(frame.id)
-                                  ? "Saving..."
-                                  : savedFrames.has(frame.id)
-                                    ? "Saved"
-                                    : "Save"}
-                              </Button>
-                              <Button
-                                variant="primary"
-                                icon={
-                                  convertingFrames.has(frame.id)
-                                    ? undefined
-                                    : faVideo
-                                }
-                                loading={convertingFrames.has(frame.id)}
-                                onClick={() =>
-                                  handleTurnIntoVideo(
-                                    frame.id,
-                                    frame.url,
-                                    frame.timestamp,
-                                  )
-                                }
-                                disabled={convertingFrames.has(frame.id)}
-                                className="flex-1 px-3 py-1.5 text-xs font-semibold"
-                              >
-                                Turn into Video
-                              </Button>
-                            </div>
-                          </div>
+
+                      <div className="space-y-5">
+                        <div>
+                          <label
+                            htmlFor="numFrames"
+                            className="mb-2.5 block text-sm font-semibold text-base-fg"
+                          >
+                            Number of Frames
+                          </label>
+                          <input
+                            id="numFrames"
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={numFrames}
+                            onChange={(e) =>
+                              setNumFrames(
+                                Math.max(
+                                  1,
+                                  Math.min(50, parseInt(e.target.value) || 1),
+                                ),
+                              )
+                            }
+                            className="border-ui-controls-border w-full rounded-xl border-2 bg-ui-controls px-4 py-3.5 text-base-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
                         </div>
-                      ))}
+
+                        <div>
+                          <label
+                            htmlFor="frameDistance"
+                            className="mb-2.5 block text-sm font-semibold text-base-fg"
+                          >
+                            Distance (ms)
+                          </label>
+                          <input
+                            id="frameDistance"
+                            type="number"
+                            min="1"
+                            max="10000"
+                            value={frameDistance}
+                            onChange={(e) =>
+                              setFrameDistance(
+                                Math.max(1, parseInt(e.target.value) || 1),
+                              )
+                            }
+                            className="border-ui-controls-border w-full rounded-xl border-2 bg-ui-controls px-4 py-3.5 text-base-fg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                          />
+                        </div>
+
+                        <div className="text-xs leading-relaxed text-base-fg/80">
+                          Extracting multiple frames helps capture a sharp,
+                          non-blurred frame.
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-        </main>
+
+                {extractedFrames.length > 0 && (
+                  <div
+                    ref={extractedFramesRef}
+                    className="rounded-2xl border border-ui-panel-border bg-ui-controls p-6 shadow-lg"
+                  >
+                    <div>
+                      <div className="mb-6 flex items-center justify-between">
+                        <h3 className="flex items-center gap-2 text-xl font-bold uppercase tracking-wider text-base-fg">
+                          <FontAwesomeIcon
+                            icon={faPhotoFilm}
+                            className="text-primary"
+                          />
+                          Extracted Frames
+                        </h3>
+                        <div className="bg-ui-badge rounded-full border-2 border-primary/30 px-5 py-2 text-sm font-bold text-base-fg shadow-lg">
+                          {extractedFrames.length}{" "}
+                          {extractedFrames.length === 1 ? "Frame" : "Frames"}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-5">
+                        {extractedFrames.map((frame, index) => (
+                          <div
+                            key={frame.id}
+                            className="group relative overflow-hidden rounded-xl border-2 border-ui-panel-border bg-ui-controls"
+                          >
+                            <div className="aspect-video overflow-hidden bg-black">
+                              <img
+                                src={frame.url}
+                                alt={`Frame ${index + 1}`}
+                                className="h-full w-full object-contain"
+                              />
+                            </div>
+                            <div className="space-y-2 bg-ui-background p-3">
+                              <div className="flex items-center justify-between">
+                                <span className="bg-ui-badge rounded border border-ui-panel-border px-2 py-1 text-xs font-bold text-base-fg">
+                                  #{index + 1}
+                                </span>
+                                <div className="font-mono text-xs font-semibold text-base-fg/70">
+                                  {formatTimePrecise(frame.timestamp)}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="action"
+                                  icon={
+                                    savingFrames.has(frame.id)
+                                      ? undefined
+                                      : savedFrames.has(frame.id)
+                                        ? faCheck
+                                        : faSave
+                                  }
+                                  loading={savingFrames.has(frame.id)}
+                                  onClick={() =>
+                                    handleSaveFrame(
+                                      frame.id,
+                                      frame.url,
+                                      frame.timestamp,
+                                    )
+                                  }
+                                  disabled={
+                                    savingFrames.has(frame.id) ||
+                                    savedFrames.has(frame.id)
+                                  }
+                                  className="flex-1 px-3 py-1.5 text-xs font-semibold"
+                                >
+                                  {savingFrames.has(frame.id)
+                                    ? "Saving..."
+                                    : savedFrames.has(frame.id)
+                                      ? "Saved"
+                                      : "Save"}
+                                </Button>
+                                <Button
+                                  variant="primary"
+                                  icon={
+                                    convertingFrames.has(frame.id)
+                                      ? undefined
+                                      : faVideo
+                                  }
+                                  loading={convertingFrames.has(frame.id)}
+                                  onClick={() =>
+                                    handleTurnIntoVideo(
+                                      frame.id,
+                                      frame.url,
+                                      frame.timestamp,
+                                    )
+                                  }
+                                  disabled={convertingFrames.has(frame.id)}
+                                  className="flex-1 px-3 py-1.5 text-xs font-semibold"
+                                >
+                                  Turn into Video
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
 
       <GalleryModal
         isOpen={!!isGalleryModalOpen}

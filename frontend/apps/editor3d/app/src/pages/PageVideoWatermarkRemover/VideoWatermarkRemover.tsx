@@ -15,7 +15,7 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
-import { UploadEntryCard } from "~/components/media/UploadEntryCard";
+import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import toast from "react-hot-toast";
 
 export const VideoWatermarkRemover = () => {
@@ -214,7 +214,7 @@ export const VideoWatermarkRemover = () => {
 
   return (
     <>
-      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+      <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
         <div className="flex-1 overflow-y-auto">
           <main
             className={
