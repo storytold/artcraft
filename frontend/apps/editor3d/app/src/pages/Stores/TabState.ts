@@ -1,9 +1,20 @@
-import { create } from 'zustand';
-import { useSceneStore } from '../PageDraw/stores/SceneState';
+import { create } from "zustand";
+import { useSceneStore } from "../PageDraw/stores/SceneState";
 
-export type TabId = '2D' | '3D' | 'VIDEO' | 'IMAGE' | 'EDIT' | 'APPS' | 'VIDEO_FRAME_EXTRACTOR' | 'VIDEO_WATERMARK_REMOVAL' | 'IMAGE_WATERMARK_REMOVAL';
+export type TabId =
+  | "2D"
+  | "3D"
+  | "VIDEO"
+  | "IMAGE"
+  | "EDIT"
+  | "APPS"
+  | "VIDEO_FRAME_EXTRACTOR"
+  | "VIDEO_WATERMARK_REMOVAL"
+  | "IMAGE_WATERMARK_REMOVAL"
+  | "IMAGE_TO_3D_OBJECT"
+  | "IMAGE_TO_3D_WORLD";
 
-const DEFAULT_TAB : TabId = 'IMAGE';
+const DEFAULT_TAB: TabId = "IMAGE";
 
 interface TabState {
   // Current active tab
@@ -31,20 +42,20 @@ export const useTabStore = create<TabState>((set, get) => ({
 
     try {
       // Save current 2D state if we're leaving 2D tab
-      if (currentTabId === '2D') {
+      if (currentTabId === "2D") {
         const sceneStore = useSceneStore.getState();
         const sceneState = await sceneStore.serializeSceneToString();
-        set(state => ({
+        set((state) => ({
           tabData: {
             ...state.tabData,
-            '2D': sceneState
-          }
+            "2D": sceneState,
+          },
         }));
       }
 
       // Load 2D state if we're entering 2D tab
-      if (newTabId === '2D') {
-        const savedState = get().tabData['2D'];
+      if (newTabId === "2D") {
+        const savedState = get().tabData["2D"];
         if (savedState) {
           const sceneStore = useSceneStore.getState();
           sceneStore.loadSceneFromString(savedState);
@@ -55,7 +66,7 @@ export const useTabStore = create<TabState>((set, get) => ({
       set({ activeTabId: newTabId });
       return true;
     } catch (error) {
-      console.error('Error during tab change:', error);
+      console.error("Error during tab change:", error);
       return false;
     }
   },
@@ -64,8 +75,8 @@ export const useTabStore = create<TabState>((set, get) => ({
     set((state) => ({
       tabData: {
         ...state.tabData,
-        [tabId]: JSON.stringify(data)
-      }
+        [tabId]: JSON.stringify(data),
+      },
     }));
   },
 
@@ -87,5 +98,5 @@ export const useTabStore = create<TabState>((set, get) => ({
       delete newTabData[tabId];
       return { tabData: newTabData };
     });
-  }
+  },
 }));

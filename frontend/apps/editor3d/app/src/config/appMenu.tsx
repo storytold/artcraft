@@ -7,6 +7,7 @@ import {
   faPenNib,
   faDroplet,
   faPhotoFilm,
+  faGlobe,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useTabStore, TabId } from "~/pages/Stores/TabState";
 
@@ -18,7 +19,9 @@ export type AppId =
   | "3D"
   | "VIDEO_FRAME_EXTRACTOR"
   | "VIDEO_WATERMARK_REMOVAL"
-  | "IMAGE_WATERMARK_REMOVAL";
+  | "IMAGE_WATERMARK_REMOVAL"
+  | "IMAGE_TO_3D_OBJECT"
+  | "IMAGE_TO_3D_WORLD";
 
 export interface AppDescriptor {
   id: AppId;
@@ -95,6 +98,26 @@ export const ALL_APPS: FullAppItem[] = [
     category: "generate",
     action: "VIDEO",
     color: "bg-amber-500/40",
+  },
+  {
+    id: "image-to-3d-object",
+    label: "Image to 3D Object",
+    description: "Convert references into textured assets",
+    icon: faCube,
+    category: "generate",
+    // action: "IMAGE_TO_3D_OBJECT",
+    color: "bg-emerald-500/40",
+    badge: "SOON",
+  },
+  {
+    id: "image-to-3d-world",
+    label: "Image to 3D World",
+    description: "Turn mood boards into explorable worlds",
+    icon: faGlobe,
+    category: "generate",
+    // action: "IMAGE_TO_3D_WORLD",
+    color: "bg-blue-500/40",
+    badge: "SOON",
   },
   {
     id: "edit-image",
@@ -175,9 +198,18 @@ export const getBadgeStyles = (badge?: string) => {
 export const goToApp = (action?: string) => {
   if (
     action &&
-    ["IMAGE", "VIDEO", "EDIT", "2D", "3D", "VIDEO_FRAME_EXTRACTOR", "VIDEO_WATERMARK_REMOVAL", "IMAGE_WATERMARK_REMOVAL"].includes(
-      action,
-    )
+    [
+      "IMAGE",
+      "VIDEO",
+      "EDIT",
+      "2D",
+      "3D",
+      "VIDEO_FRAME_EXTRACTOR",
+      "VIDEO_WATERMARK_REMOVAL",
+      "IMAGE_WATERMARK_REMOVAL",
+      "IMAGE_TO_3D_OBJECT",
+      "IMAGE_TO_3D_WORLD",
+    ].includes(action)
   ) {
     useTabStore.getState().setActiveTab(action as TabId);
   }

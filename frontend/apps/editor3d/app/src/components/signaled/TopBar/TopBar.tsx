@@ -246,6 +246,10 @@ export const TopBar = ({ pageName }: Props) => {
         return "Video Watermark Remover";
       case "IMAGE_WATERMARK_REMOVAL":
         return "Image Watermark Remover";
+      case "IMAGE_TO_3D_OBJECT":
+        return "Image to 3D Object";
+      case "IMAGE_TO_3D_WORLD":
+        return "Image to 3D World";
       default:
         return "Artcraft";
     }

@@ -17,6 +17,7 @@ interface TooltipProps {
    */
   interactive?: boolean;
   onOpenChange?: (open: boolean) => void;
+  zIndex?: number;
 }
 
 export const Tooltip = ({
@@ -30,6 +31,7 @@ export const Tooltip = ({
   description,
   interactive = false,
   onOpenChange,
+  zIndex = 10,
 }: TooltipProps) => {
   const [isShowing, setIsShowing] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -174,9 +176,10 @@ export const Tooltip = ({
             transitionProperty: "opacity",
             transitionDuration: "200ms",
             transitionTimingFunction: "ease-out",
+            zIndex,
           }}
           className={twMerge(
-            "absolute w-max z-10 rounded-lg bg-ui-controls shadow-xl border border-ui-panel-border",
+            "absolute w-max rounded-lg bg-ui-controls shadow-xl border border-ui-panel-border",
             interactive
               ? "pointer-events-auto p-3"
               : "px-2.5 py-1.5 text-[13px] font-medium pointer-events-none",
