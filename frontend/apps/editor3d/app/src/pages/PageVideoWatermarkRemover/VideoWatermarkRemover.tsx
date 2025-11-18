@@ -5,7 +5,6 @@ import {
   faPause,
   faVolumeHigh,
   faVolumeMute,
-  faUpload,
   faImages,
   faStepBackward,
   faStepForward,
@@ -16,7 +15,7 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
-import { TopBar } from "~/components";
+import { UploadEntryCard } from "~/components/media/UploadEntryCard";
 import toast from "react-hot-toast";
 
 export const VideoWatermarkRemover = () => {
@@ -34,7 +33,6 @@ export const VideoWatermarkRemover = () => {
   const [isLoadingFromGallery, setIsLoadingFromGallery] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,8 +91,8 @@ export const VideoWatermarkRemover = () => {
     };
   }, [videoUrl]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleLocalVideoSelect = (files: FileList) => {
+    const file = files[0];
     if (file && file.type.startsWith("video/")) {
       setIsPlaying(false);
       setCurrentTime(0);
@@ -107,10 +105,6 @@ export const VideoWatermarkRemover = () => {
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
     }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
   };
 
   const handleVideoSelect = (id: string) => {
@@ -218,217 +212,181 @@ export const VideoWatermarkRemover = () => {
     }
   };
 
-  const renderUploadArea = () => (
-    <div className="relative flex h-full flex-col items-center justify-center gap-8 overflow-hidden">
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept="video/*"
-        onChange={handleFileSelect}
-      />
-      <div className="relative z-10 flex flex-col items-center gap-6">
-        <div className="relative">
-          <div className="relative flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-cyan-400/30 bg-cyan-500/40 shadow-xl backdrop-blur-sm">
-            <FontAwesomeIcon
-              icon={faDroplet}
-              className="text-5xl text-white drop-shadow-lg"
-            />
-          </div>
-        </div>
-        <div className="space-y-3 text-center">
-          <h3 className="text-4xl font-bold tracking-tight text-base-fg">
-            Remove Video Watermark
-          </h3>
-          <p className="max-w-md text-base leading-relaxed text-base-fg/70">
-            Clean up your videos by removing unwanted watermarks. Upload your
-            video and let AI do the magic.
-          </p>
-        </div>
-      </div>
-      <div className="relative z-10 mt-4 flex gap-4">
-        <Button
-          variant="primary"
-          icon={faUpload}
-          onClick={handleUploadClick}
-          className="px-8 py-3 text-base font-semibold shadow-lg"
-        >
-          Select Video
-        </Button>
-        <Button
-          variant="action"
-          icon={faImages}
-          onClick={() => setIsGalleryModalOpen(true)}
-          className="border-2 px-8 py-3 text-base font-semibold"
-        >
-          Pick from Library
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="fixed inset-0 w-full overflow-hidden bg-ui-panel text-base-fg">
-      <TopBar
-        pageName="Video Watermark Remover"
-        loginSignUpPressed={() => {}}
-      />
-      <div className="mt-[56px] h-[calc(100vh-56px)] w-full overflow-y-auto">
-        <main
-          className={
-            !videoUrl
-              ? "flex min-h-full w-full items-center justify-center p-8"
-              : "flex w-full justify-center px-8 py-6"
-          }
-        >
-          {!videoUrl ? (
-            <div className="w-full max-w-5xl">
-              <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
-                {renderUploadArea()}
-              </div>
-            </div>
-          ) : (
-            <div className="flex w-full max-w-5xl flex-col gap-5">
-              <div className="w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
-                <div className="relative aspect-video w-full bg-black">
-                  <Button
-                    icon={faArrowRotateRight}
-                    variant="action"
-                    onClick={() => {
-                      setVideoUrl("");
-                      setCurrentTime(0);
-                    }}
-                    className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
-                  >
-                    Switch Video
-                  </Button>
-                  <video
-                    ref={videoRef}
-                    src={videoUrl}
-                    className="h-full w-full"
-                    onClick={togglePlayPause}
-                    preload="metadata"
-                    playsInline
+    <>
+      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+        <div className="flex-1 overflow-y-auto">
+          <main
+            className={
+              !videoUrl
+                ? "flex min-h-full w-full items-center justify-center p-8"
+                : "flex w-full justify-center px-8 py-6"
+            }
+          >
+            {!videoUrl ? (
+              <div className="w-full max-w-5xl">
+                <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                  <UploadEntryCard
+                    icon={faDroplet}
+                    title="Remove Video Watermark"
+                    description="Clean up your videos by removing unwanted watermarks. Upload your video and let AI do the magic."
+                    accentBackgroundClass="bg-cyan-500/40"
+                    accentBorderClass="border-cyan-400/30"
+                    accept="video/*"
+                    onFilesSelected={handleLocalVideoSelect}
+                    primaryLabel="Select Video"
+                    secondaryLabel="Pick from Library"
+                    secondaryIcon={faImages}
+                    onSecondaryClick={() => setIsGalleryModalOpen(true)}
                   />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
-                    <div
-                      ref={progressBarRef}
-                      className="group relative mb-3 h-3 cursor-pointer rounded-full bg-white/20"
-                      onClick={handleProgressBarClick}
+                </div>
+              </div>
+            ) : (
+              <div className="flex w-full max-w-5xl flex-col gap-5">
+                <div className="w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                  <div className="relative aspect-video w-full bg-black">
+                    <Button
+                      icon={faArrowRotateRight}
+                      variant="action"
+                      onClick={() => {
+                        setVideoUrl("");
+                        setCurrentTime(0);
+                      }}
+                      className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
                     >
+                      Switch Video
+                    </Button>
+                    <video
+                      ref={videoRef}
+                      src={videoUrl}
+                      className="h-full w-full"
+                      onClick={togglePlayPause}
+                      preload="metadata"
+                      playsInline
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4">
                       <div
-                        className="absolute h-full overflow-hidden rounded-full bg-primary"
-                        style={{
-                          width: `${duration ? (currentTime / duration) * 100 : 0}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => seekToFrame("first")}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
-                          title="First Frame"
-                        >
-                          <FontAwesomeIcon
-                            icon={faStepBackward}
-                            className="text-sm text-white"
-                          />
-                        </button>
-                        <button
-                          onClick={togglePlayPause}
-                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
-                        >
-                          <FontAwesomeIcon
-                            icon={isPlaying ? faPause : faPlay}
-                            className="text-white"
-                          />
-                        </button>
-                        <button
-                          onClick={() => seekToFrame("last")}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
-                          title="Last Frame"
-                        >
-                          <FontAwesomeIcon
-                            icon={faStepForward}
-                            className="text-sm text-white"
-                          />
-                        </button>
-                        <div className="mx-1 h-6 w-px bg-white/20" />
-                        <button
-                          onClick={toggleMute}
-                          className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
-                        >
-                          <FontAwesomeIcon
-                            icon={isMuted ? faVolumeMute : faVolumeHigh}
-                            className="text-sm text-white"
-                          />
-                        </button>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={volume}
-                          onChange={(e) =>
-                            setVolume(parseFloat(e.target.value))
-                          }
-                          className="w-20 accent-white"
+                        ref={progressBarRef}
+                        className="group relative mb-3 h-3 cursor-pointer rounded-full bg-white/20"
+                        onClick={handleProgressBarClick}
+                      >
+                        <div
+                          className="absolute h-full overflow-hidden rounded-full bg-primary"
+                          style={{
+                            width: `${duration ? (currentTime / duration) * 100 : 0}%`,
+                          }}
                         />
                       </div>
-                      <div className="font-mono text-sm text-white">
-                        {formatTime(currentTime)} / {formatTime(duration)}
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => seekToFrame("first")}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            title="First Frame"
+                          >
+                            <FontAwesomeIcon
+                              icon={faStepBackward}
+                              className="text-sm text-white"
+                            />
+                          </button>
+                          <button
+                            onClick={togglePlayPause}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 hover:bg-white/30"
+                          >
+                            <FontAwesomeIcon
+                              icon={isPlaying ? faPause : faPlay}
+                              className="text-white"
+                            />
+                          </button>
+                          <button
+                            onClick={() => seekToFrame("last")}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                            title="Last Frame"
+                          >
+                            <FontAwesomeIcon
+                              icon={faStepForward}
+                              className="text-sm text-white"
+                            />
+                          </button>
+                          <div className="mx-1 h-6 w-px bg-white/20" />
+                          <button
+                            onClick={toggleMute}
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 hover:bg-white/20"
+                          >
+                            <FontAwesomeIcon
+                              icon={isMuted ? faVolumeMute : faVolumeHigh}
+                              className="text-sm text-white"
+                            />
+                          </button>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={volume}
+                            onChange={(e) =>
+                              setVolume(parseFloat(e.target.value))
+                            }
+                            className="w-20 accent-white"
+                          />
+                        </div>
+                        <div className="font-mono text-sm text-white">
+                          {formatTime(currentTime)} / {formatTime(duration)}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex justify-center">
-                <Button
-                  variant="primary"
-                  icon={isProcessing ? undefined : faDroplet}
-                  loading={isProcessing}
-                  onClick={handleRemoveWatermark}
-                  className="px-12 py-3 text-lg font-semibold"
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? "Processing..." : "Remove Watermark"}
-                </Button>
-              </div>
+                <div className="flex justify-center">
+                  <Button
+                    variant="primary"
+                    icon={isProcessing ? undefined : faDroplet}
+                    loading={isProcessing}
+                    onClick={handleRemoveWatermark}
+                    className="px-12 py-3 text-lg font-semibold"
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? "Processing..." : "Remove Watermark"}
+                  </Button>
+                </div>
 
-              <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
-                <div>
-                  <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
-                    <FontAwesomeIcon icon={faVideo} className="text-primary" />
-                    Video Information
-                  </div>
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center justify-between border-b border-ui-divider py-2">
-                      <span className="font-medium text-base-fg/70">
-                        Duration
-                      </span>
-                      <span className="font-mono text-lg font-bold text-base-fg">
-                        {formatTime(duration)}
-                      </span>
+                <div className="rounded-2xl border border-ui-panel-border bg-ui-background p-6 shadow-lg">
+                  <div>
+                    <div className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-base-fg/60">
+                      <FontAwesomeIcon
+                        icon={faVideo}
+                        className="text-primary"
+                      />
+                      Video Information
                     </div>
-                    {videoRef.current && (
-                      <div className="flex items-center justify-between py-2">
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between border-b border-ui-divider py-2">
                         <span className="font-medium text-base-fg/70">
-                          Resolution
+                          Duration
                         </span>
-                        <span className="font-mono font-bold text-base-fg">
-                          {videoRef.current.videoWidth} ×{" "}
-                          {videoRef.current.videoHeight}
+                        <span className="font-mono text-lg font-bold text-base-fg">
+                          {formatTime(duration)}
                         </span>
                       </div>
-                    )}
+                      {videoRef.current && (
+                        <div className="flex items-center justify-between py-2">
+                          <span className="font-medium text-base-fg/70">
+                            Resolution
+                          </span>
+                          <span className="font-mono font-bold text-base-fg">
+                            {videoRef.current.videoWidth} ×{" "}
+                            {videoRef.current.videoHeight}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </main>
+            )}
+          </main>
+        </div>
       </div>
 
       <GalleryModal
@@ -447,6 +405,6 @@ export const VideoWatermarkRemover = () => {
         onDownloadClicked={downloadFileFromUrl}
         forceFilter="video"
       />
-    </div>
+    </>
   );
 };

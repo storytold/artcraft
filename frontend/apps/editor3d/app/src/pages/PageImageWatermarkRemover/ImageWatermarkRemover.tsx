@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faUpload,
   faImages,
   faDroplet,
   faArrowRotateRight,
@@ -9,7 +8,7 @@ import {
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { downloadFileFromUrl } from "@storyteller/api";
-import { TopBar } from "~/components";
+import { UploadEntryCard } from "~/components/media/UploadEntryCard";
 import toast from "react-hot-toast";
 
 export const ImageWatermarkRemover = () => {
@@ -25,7 +24,6 @@ export const ImageWatermarkRemover = () => {
     height: number;
   } | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
@@ -36,8 +34,8 @@ export const ImageWatermarkRemover = () => {
     };
   }, [imageUrl]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleLocalImageSelect = (files: FileList) => {
+    const file = files[0];
     if (file && file.type.startsWith("image/")) {
       if (imageUrl && imageUrl.startsWith("blob:")) {
         URL.revokeObjectURL(imageUrl);
@@ -47,10 +45,6 @@ export const ImageWatermarkRemover = () => {
       setImageUrl(url);
       setImageDimensions(null);
     }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
   };
 
   const handleImageSelect = (id: string) => {
@@ -113,109 +107,69 @@ export const ImageWatermarkRemover = () => {
     }
   };
 
-  const renderUploadArea = () => (
-    <div className="relative flex h-full flex-col items-center justify-center gap-8 overflow-hidden">
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept="image/*"
-        onChange={handleFileSelect}
-      />
-      <div className="relative z-10 flex flex-col items-center gap-6">
-        <div className="relative">
-          <div className="relative flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-indigo-400/30 bg-indigo-500/40 shadow-xl backdrop-blur-sm">
-            <FontAwesomeIcon
-              icon={faDroplet}
-              className="text-5xl text-white drop-shadow-lg"
-            />
-          </div>
-        </div>
-        <div className="space-y-3 text-center">
-          <h3 className="text-4xl font-bold tracking-tight text-base-fg">
-            Remove Image Watermark
-          </h3>
-          <p className="max-w-md text-base leading-relaxed text-base-fg/70">
-            Erase watermarks from your images seamlessly. Upload your image and
-            get a clean, watermark-free result.
-          </p>
-        </div>
-      </div>
-      <div className="relative z-10 mt-4 flex gap-4">
-        <Button
-          variant="primary"
-          icon={faUpload}
-          onClick={handleUploadClick}
-          className="px-8 py-3 text-base font-semibold shadow-lg"
-        >
-          Select Image
-        </Button>
-        <Button
-          variant="action"
-          icon={faImages}
-          onClick={() => setIsGalleryModalOpen(true)}
-          className="border-2 px-8 py-3 text-base font-semibold"
-        >
-          Pick from Library
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="fixed inset-0 w-full overflow-hidden bg-ui-panel text-base-fg">
-      <TopBar
-        pageName="Image Watermark Remover"
-        loginSignUpPressed={() => {}}
-      />
-      <div className="mt-[56px] h-[calc(100vh-56px)] w-full overflow-y-auto">
-        <main
-          className={
-            !imageUrl
-              ? "flex min-h-full w-full items-center justify-center p-8"
-              : "flex w-full justify-center px-8 py-6"
-          }
-        >
-          {!imageUrl ? (
-            <div className="w-full max-w-5xl">
-              <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
-                {renderUploadArea()}
-              </div>
-            </div>
-          ) : (
-            <div className="flex w-full max-w-5xl flex-col gap-5">
-              <div className="w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
-                <div className="relative w-full bg-black">
-                  <Button
-                    icon={faArrowRotateRight}
-                    variant="action"
-                    onClick={() => {
-                      setImageUrl("");
-                      setImageDimensions(null);
-                    }}
-                    className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
-                  >
-                    Switch Image
-                  </Button>
-                  <div className="flex min-h-[400px] items-center justify-center p-6">
-                    <img
-                      ref={imageRef}
-                      src={imageUrl}
-                      alt="Selected pic"
-                      className="max-h-[70vh] max-w-full rounded-lg object-contain shadow-2xl"
-                      onLoad={(e) => {
-                        const img = e.currentTarget;
-                        setImageDimensions({
-                          width: img.naturalWidth,
-                          height: img.naturalHeight,
-                        });
-                      }}
-                    />
-                  </div>
+    <>
+      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+        <div className="flex-1 overflow-y-auto">
+          <main
+            className={
+              !imageUrl
+                ? "flex min-h-full w-full items-center justify-center p-8"
+                : "flex w-full justify-center px-8 py-6"
+            }
+          >
+            {!imageUrl ? (
+              <div className="w-full max-w-5xl">
+                <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                  <UploadEntryCard
+                    icon={faDroplet}
+                    title="Remove Image Watermark"
+                    description="Erase watermarks from your images seamlessly. Upload your image and get a clean, watermark-free result."
+                    accentBackgroundClass="bg-indigo-500/40"
+                    accentBorderClass="border-indigo-400/30"
+                    accept="image/*"
+                    onFilesSelected={handleLocalImageSelect}
+                    primaryLabel="Select Image"
+                    secondaryLabel="Pick from Library"
+                    secondaryIcon={faImages}
+                    onSecondaryClick={() => setIsGalleryModalOpen(true)}
+                  />
                 </div>
               </div>
+            ) : (
+              <div className="flex w-full max-w-5xl flex-col gap-5">
+                <div className="w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                  <div className="relative w-full bg-black">
+                    <Button
+                      icon={faArrowRotateRight}
+                      variant="action"
+                      onClick={() => {
+                        setImageUrl("");
+                        setImageDimensions(null);
+                      }}
+                      className="absolute right-3 top-3 z-10 border-2 border-red/50 px-3 py-1.5 text-sm hover:border-red/80 hover:bg-red/80"
+                    >
+                      Switch Image
+                    </Button>
+                    <div className="flex min-h-[400px] items-center justify-center p-6">
+                      <img
+                        ref={imageRef}
+                        src={imageUrl}
+                        alt="Selected pic"
+                        className="max-h-[70vh] max-w-full rounded-lg object-contain shadow-2xl"
+                        onLoad={(e) => {
+                          const img = e.currentTarget;
+                          setImageDimensions({
+                            width: img.naturalWidth,
+                            height: img.naturalHeight,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-              <div className="flex justify-center">
+                <div className="flex justify-center">
                 <Button
                   variant="primary"
                   icon={isProcessing ? undefined : faDroplet}
@@ -265,6 +219,7 @@ export const ImageWatermarkRemover = () => {
           )}
         </main>
       </div>
+    </div>
 
       <GalleryModal
         isOpen={!!isGalleryModalOpen}
@@ -282,6 +237,6 @@ export const ImageWatermarkRemover = () => {
         onDownloadClicked={downloadFileFromUrl}
         forceFilter="image"
       />
-    </div>
+    </>
   );
 };

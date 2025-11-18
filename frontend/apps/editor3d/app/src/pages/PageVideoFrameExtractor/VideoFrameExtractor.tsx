@@ -7,7 +7,6 @@ import {
   faVolumeMute,
   faPhotoFilm,
   faSparkles,
-  faUpload,
   faImages,
   faStepBackward,
   faStepForward,
@@ -23,10 +22,10 @@ import {
   MediaUploadApi,
   EIntermediateFile,
 } from "@storyteller/api";
-import { TopBar } from "~/components";
 import toast from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 import { usePromptVideoStore, RefImage } from "@storyteller/ui-promptbox";
+import { UploadEntryCard } from "~/components/media/UploadEntryCard";
 import { useTabStore } from "~/pages/Stores/TabState";
 
 export const VideoFrameExtractor = () => {
@@ -55,7 +54,6 @@ export const VideoFrameExtractor = () => {
   const [isLoadingFromGallery, setIsLoadingFromGallery] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
   const extractedFramesRef = useRef<HTMLDivElement>(null);
 
@@ -112,8 +110,8 @@ export const VideoFrameExtractor = () => {
     };
   }, [videoUrl]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleLocalVideoSelect = (files: FileList) => {
+    const file = files[0];
     if (file && file.type.startsWith("video/")) {
       setIsPlaying(false);
       setCurrentTime(0);
@@ -131,10 +129,6 @@ export const VideoFrameExtractor = () => {
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
     }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
   };
 
   const handleVideoSelect = (id: string) => {
@@ -475,74 +469,37 @@ export const VideoFrameExtractor = () => {
     }
   };
 
-  const renderUploadArea = () => (
-    <div className="relative flex h-full flex-col items-center justify-center gap-8 overflow-hidden">
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept="video/*"
-        onChange={handleFileSelect}
-      />
-      <div className="relative z-10 flex flex-col items-center gap-6">
-        <div className="relative">
-          <div className="relative flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-rose-400/30 bg-rose-500/40 shadow-xl backdrop-blur-sm">
-            <FontAwesomeIcon
-              icon={faPhotoFilm}
-              className="text-5xl text-white drop-shadow-lg"
-            />
-          </div>
-        </div>
-        <div className="space-y-3 text-center">
-          <h3 className="text-4xl font-bold tracking-tight text-base-fg">
-            Extract Video Frames
-          </h3>
-          <p className="max-w-md text-base leading-relaxed text-base-fg/70">
-            Capture perfect moments from your videos. Select frames at precise
-            timestamps and save them as images.
-          </p>
-        </div>
-      </div>
-      <div className="relative z-10 mt-4 flex gap-4">
-        <Button
-          variant="primary"
-          icon={faUpload}
-          onClick={handleUploadClick}
-          className="px-8 py-3 text-base font-semibold shadow-lg"
-        >
-          Select Video
-        </Button>
-        <Button
-          variant="action"
-          icon={faImages}
-          onClick={() => setIsGalleryModalOpen(true)}
-          className="border-2 px-8 py-3 text-base font-semibold"
-        >
-          Pick from Library
-        </Button>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="fixed inset-0 w-full overflow-hidden bg-ui-panel text-base-fg">
-      <TopBar pageName="Video Frame Extractor" loginSignUpPressed={() => {}} />
-      <div className="mt-[56px] h-[calc(100vh-56px)] w-full overflow-y-auto">
-        <main
-          className={
-            !videoUrl
-              ? "flex min-h-full w-full items-center justify-center p-8"
-              : "flex w-full justify-center px-8 py-6"
-          }
-        >
-          {!videoUrl ? (
-            <div className="w-full max-w-5xl">
-              <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
-                {renderUploadArea()}
+    <>
+      <div className="flex h-[calc(100vh-56px)] w-full overflow-hidden bg-ui-panel text-base-fg">
+        <div className="flex-1 overflow-y-auto">
+          <main
+            className={
+              !videoUrl
+                ? "flex min-h-full w-full items-center justify-center p-8"
+                : "flex w-full justify-center px-8 py-6"
+            }
+          >
+            {!videoUrl ? (
+              <div className="w-full max-w-5xl">
+                <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                  <UploadEntryCard
+                    icon={faPhotoFilm}
+                    title="Extract Video Frames"
+                    description="Capture perfect moments from your videos. Select frames at precise timestamps and save them as images."
+                    accentBackgroundClass="bg-rose-500/40"
+                    accentBorderClass="border-rose-400/30"
+                    accept="video/*"
+                    onFilesSelected={handleLocalVideoSelect}
+                    primaryLabel="Select Video"
+                    secondaryLabel="Pick from Library"
+                    secondaryIcon={faImages}
+                    onSecondaryClick={() => setIsGalleryModalOpen(true)}
+                  />
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex w-full max-w-5xl flex-col gap-5">
+            ) : (
+              <div className="flex w-full max-w-5xl flex-col gap-5">
               <div className="w-full overflow-hidden rounded-xl border border-ui-panel-border bg-ui-controls/40">
                 <div className="relative aspect-video w-full bg-black">
                   <Button
@@ -914,6 +871,7 @@ export const VideoFrameExtractor = () => {
           )}
         </main>
       </div>
+    </div>
 
       <GalleryModal
         isOpen={!!isGalleryModalOpen}
@@ -931,6 +889,6 @@ export const VideoFrameExtractor = () => {
         onDownloadClicked={downloadFileFromUrl}
         forceFilter="video"
       />
-    </div>
+    </>
   );
 };
