@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { animated, useSpring } from "@react-spring/web";
 import { Button, ToggleButton } from "@storyteller/ui-button";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -6,7 +7,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCube,
   faCubes,
-  faGlobe,
   faImages,
   faPlus,
   faSparkles,
@@ -14,6 +14,10 @@ import {
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
+import {
+  useImageTo3DStore,
+  ImageTo3DResult,
+} from "../../pages/PageImageTo3DObject/ImageTo3DStore";
 
 type Mode = "image" | "text";
 type Variant = "object" | "world";
@@ -22,15 +26,7 @@ interface ImageTo3DExperienceProps {
   title: string;
   subtitle: string;
   variant: Variant;
-}
-
-interface GeneratedResult {
-  id: string;
-  mode: Mode;
-  timestamp: number;
-  note?: string;
-  previewUrl?: string;
-  meshOnly?: boolean;
+  backgroundImage?: string;
 }
 
 const MODE_TABS = [
@@ -48,22 +44,83 @@ const generateId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2, 10);
 
+const SimpleThreeViewer = ({
+  previewUrl,
+  isActive,
+}: {
+  previewUrl?: string;
+  isActive?: boolean;
+}) => {
+  // Placeholder for actual ThreeJS viewer
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black/40">
+      {previewUrl ? (
+        <img
+          src={previewUrl}
+          alt="3D Model Preview"
+          className="h-full w-full object-contain opacity-80"
+        />
+      ) : (
+        <div className="flex flex-col items-center gap-4 text-base-fg/30">
+          <FontAwesomeIcon icon={faCube} className="text-6xl" />
+          <span className="text-sm uppercase tracking-widest">
+            3D Viewer Ready
+          </span>
+        </div>
+      )}
+      {isActive && (
+        <div className="absolute bottom-4 right-4 rounded bg-black/60 px-2 py-1 text-xs font-bold text-white/70">
+          INTERACTIVE VIEW
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ImageTo3DExperience = ({
   title,
   subtitle,
   variant,
+  backgroundImage,
 }: ImageTo3DExperienceProps) => {
   const [activeMode, setActiveMode] = useState<Mode>("image");
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
-  const [results, setResults] = useState<GeneratedResult[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [meshOnly, setMeshOnly] = useState(false);
   const timeoutRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+  const promptContentRef = useRef<HTMLDivElement>(null);
+  const [promptHeight, setPromptHeight] = useState<number>(400);
+  const [vh, setVh] = useState<number>(
+    typeof window !== "undefined" ? window.innerHeight : 800,
+  );
+
+  const results = useImageTo3DStore((s) => s.results);
+  const addResult = useImageTo3DStore((s) => s.addResult);
+  const updateResultStatus = useImageTo3DStore((s) => s.updateResultStatus);
+  const resetResults = useImageTo3DStore((s) => s.reset);
+
+  useEffect(() => {
+    const onResize = () => setVh(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    const el = promptContentRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const update = () => setPromptHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(() => update());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(
     () => () => {
@@ -116,22 +173,27 @@ export const ImageTo3DExperience = ({
     setIsGenerating(true);
     const snapshotPrompt = prompt.trim();
     const snapshotPreview = uploadedPreview || undefined;
-    const newResult: GeneratedResult = {
-      id: generateId(),
+    const id = generateId();
+    const newResult: ImageTo3DResult = {
+      id,
       mode: activeMode,
       timestamp: Date.now(),
       note: activeMode === "text" ? snapshotPrompt : uploadedName || undefined,
       previewUrl: snapshotPreview,
       meshOnly,
+      status: "pending",
     };
 
+    addResult(newResult);
+    setSelectedResultId(id);
+
     timeoutRef.current = window.setTimeout(() => {
-      setResults((prev) => [newResult, ...prev]);
+      updateResultStatus(id, "completed");
       setIsGenerating(false);
       if (activeMode === "text") {
         setPrompt("");
       }
-    }, 1200);
+    }, 2000);
   };
 
   const canGenerate = useMemo(() => {
@@ -145,8 +207,24 @@ export const ImageTo3DExperience = ({
     return true;
   }, [activeMode, uploadedPreview, prompt, isGenerating]);
 
-  const resultTitle =
-    variant === "object" ? "3D Object Preview" : "3D World Preview";
+  const hasResults = results.length > 0;
+  const showPromptAtBottom = hasResults;
+
+  // Animation logic
+  const bottomMarginPx = 24;
+  const bottomOffsetPx = promptHeight + bottomMarginPx;
+
+  const centerTop = vh / 2 - promptHeight / 2 + 80;
+  const bottomTop = vh - bottomOffsetPx;
+
+  const targetTop = showPromptAtBottom
+    ? Math.max(0, bottomTop)
+    : Math.max(0, centerTop);
+
+  const promptAnim = useSpring({
+    top: targetTop,
+    config: { tension: 200, friction: 28, mass: 1.1 },
+  });
 
   const renderAddImageTile = () => (
     <Tooltip
@@ -179,7 +257,8 @@ export const ImageTo3DExperience = ({
         role="button"
         tabIndex={0}
         className={twMerge(
-          "flex aspect-square w-48 flex-col items-center justify-center rounded-2xl border-[3px] border-dashed border-primary/40 bg-primary/5 text-center text-xs transition-colors hover:border-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40",
+          "flex flex-col items-center justify-center rounded-2xl border-[3px] border-dashed border-primary/40 bg-primary/5 text-center text-xs transition-all hover:border-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40",
+          hasResults ? "aspect-square w-24" : "aspect-square w-48",
           dragActive && "border-primary bg-primary/10",
         )}
         onDragEnter={(event) => {
@@ -209,11 +288,16 @@ export const ImageTo3DExperience = ({
       >
         <FontAwesomeIcon
           icon={faPlus}
-          className="text-4xl text-base-fg opacity-90 drop-shadow"
+          className={twMerge(
+            "text-base-fg opacity-90 drop-shadow",
+            hasResults ? "text-2xl" : "text-4xl",
+          )}
         />
-        <span className="mt-3 text-[15px] font-medium text-base-fg opacity-60">
-          Add Image
-        </span>
+        {!hasResults && (
+          <span className="mt-3 text-[15px] font-medium text-base-fg opacity-60">
+            Add Image
+          </span>
+        )}
       </div>
     </Tooltip>
   );
@@ -222,7 +306,10 @@ export const ImageTo3DExperience = ({
     <div className="flex justify-center">
       {uploadedPreview ? (
         <div
-          className="group relative aspect-square w-48 cursor-pointer overflow-hidden rounded-2xl border-[3px] border-primary/40 bg-black/30"
+          className={twMerge(
+            "group relative cursor-pointer overflow-hidden rounded-2xl border-[3px] border-primary/40 bg-black/30 transition-all",
+            hasResults ? "aspect-square w-24" : "aspect-square w-48",
+          )}
           onClick={() => fileInputRef.current?.click()}
         >
           <img
@@ -272,112 +359,176 @@ export const ImageTo3DExperience = ({
     return renderImageMode();
   };
 
-  const renderResults = () => (
-    <div className="mb-10 space-y-6">
-      {results.map((result) => (
-        <div
-          key={result.id}
-          className="bg-ui-background/80 rounded-3xl border border-ui-panel-border p-5 shadow-xl"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm font-semibold uppercase tracking-widest text-base-fg/50">
-              {resultTitle}
-            </div>
-            <div className="text-xs text-base-fg/50">
-              {formatTime(result.timestamp)}
-            </div>
-          </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <div className="aspect-video w-full overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-controls">
-                {result.previewUrl ? (
-                  <img
-                    src={result.previewUrl}
-                    alt="Result preview"
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full flex-col items-center justify-center gap-2 text-base-fg/60">
-                    <FontAwesomeIcon
-                      icon={variant === "object" ? faCube : faGlobe}
-                      className="text-2xl"
-                    />
-                    <span className="text-sm">Preview ready</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              <div className="rounded-2xl border border-ui-panel-border bg-ui-controls/60 p-3 text-sm text-base-fg">
-                <p className="font-semibold capitalize">
-                  {result.mode} input
-                  {result.meshOnly ? " · Mesh only" : ""}
-                </p>
-                <p className="text-xs text-base-fg/70">
-                  {result.note ?? "Configuration snapshot saved."}
-                </p>
-              </div>
-              <Button variant="primary" className="w-full">
-                Open in Studio
-              </Button>
-              <Button variant="action" className="w-full">
-                Download GLB
-              </Button>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  const activeResult =
+    results.find((r) => r.id === selectedResultId) || results[0];
 
   return (
-    <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full items-center justify-center bg-ui-panel px-4 text-base-fg">
-      <div className="flex w-full flex-col items-center gap-8 py-10">
-        <div className="mb-6 space-y-3 text-center">
-          <h1 className="text-7xl font-bold tracking-tight">{title}</h1>
-          <p className="text-xl text-base-fg/70">{subtitle}</p>
-        </div>
+    <div className="flex h-[calc(100vh-56px)] w-full bg-ui-background text-base-fg">
+      {backgroundImage && !hasResults && (
+        <>
+          <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden bg-[radial-gradient(50%_50%_at_50%_50%,_transparent_49%,_rgb(var(--st-controls-rgb)_/_var(--st-gallery-vignette-alpha))_100%)]" />
+          <div className="fixed inset-0 z-0 overflow-hidden">
+            <div
+              className="h-full w-full opacity-30 transition-opacity duration-1000"
+              style={{
+                backgroundImage: `linear-gradient(0deg, rgb(var(--st-photo-tint-rgb) / var(--st-photo-tint-alpha)), rgb(var(--st-photo-tint-rgb) / var(--st-photo-tint-alpha))), url(${backgroundImage})`,
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: "grayscale(var(--st-photo-grayscale))",
+              }}
+            />
+          </div>
+        </>
+      )}
 
-        {results.length > 0 && (
-          <div className="max-h-[45vh] w-full overflow-y-auto pr-2">
-            {renderResults()}
+      <div className="relative z-10 h-full w-full p-8">
+        {!hasResults && (
+          <div className="pointer-events-none absolute left-0 top-[calc(50%-280px)] w-full text-center">
+            <h1 className="mb-3 text-7xl font-bold tracking-tight">{title}</h1>
+            <p className="text-xl text-base-fg/70">{subtitle}</p>
           </div>
         )}
 
-        <div className="glass w-full max-w-md rounded-xl p-5">
-          <div className="space-y-5">{renderActiveMode()}</div>
+        {/* Split View: Viewer + History */}
+        {hasResults && (
+          <div
+            className="mx-auto grid h-full w-full max-w-6xl grid-cols-[1fr_300px] gap-4 overflow-hidden pb-10"
+            style={{ height: `calc(100vh - ${bottomOffsetPx + 80}px)` }}
+          >
+            {/* Left: Viewer */}
+            <div className="glass flex flex-col gap-4 overflow-hidden rounded-xl border border-ui-panel-border p-4">
+              <SimpleThreeViewer
+                previewUrl={activeResult?.previewUrl}
+                isActive={true}
+              />
+              {activeResult && (
+                <div className="flex items-center justify-between px-2">
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      {activeResult.note || "Generated Model"}
+                    </h3>
+                    <p className="text-xs opacity-50">
+                      {formatTime(activeResult.timestamp)} • {activeResult.mode}{" "}
+                      mode
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="primary" className="min-w-[120px]">
+                      Open in Studio
+                    </Button>
+                    <Button variant="action" icon={faCube}>
+                      GLB
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-            <ToggleButton
-              isActive={meshOnly}
-              icon={faCubes}
-              activeIcon={faCubes}
-              label="Mesh only"
-              onClick={() => setMeshOnly((prev) => !prev)}
-            />
-            <div className="flex items-center gap-3">
-              <Button
-                variant="primary"
-                icon={faSparkles}
-                disabled={!canGenerate}
-                onClick={handleGenerate}
-                loading={isGenerating}
-              >
-                {`Generate ${variant === "object" ? "Object" : "World"}`}
-              </Button>
+            {/* Right: History List */}
+            <div className="glass flex h-full flex-col overflow-hidden rounded-xl border border-ui-panel-border">
+              <div className="flex items-center justify-between border-b border-ui-panel-border p-4">
+                <h3 className="font-semibold text-base-fg/80">History</h3>
+                {results.length > 0 && (
+                  <button
+                    onClick={resetResults}
+                    className="rounded-md bg-red/20 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red/30"
+                  >
+                    Clear Session
+                  </button>
+                )}
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <div className="space-y-3">
+                  {results.map((result) => (
+                    <button
+                      key={result.id}
+                      onClick={() => setSelectedResultId(result.id)}
+                      className={twMerge(
+                        "flex w-full gap-3 rounded-xl border p-2 text-left transition-all hover:bg-ui-controls/40",
+                        selectedResultId === result.id
+                          ? "border-primary/50 bg-primary/10"
+                          : "border-transparent bg-ui-controls/20",
+                      )}
+                    >
+                      <div className="aspect-square h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-black/20">
+                        {result.previewUrl ? (
+                          <img
+                            src={result.previewUrl}
+                            alt="thumb"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-base-fg/20">
+                            <FontAwesomeIcon icon={faCube} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 py-1">
+                        <div className="truncate text-sm font-medium">
+                          {result.note || "Generated Model"}
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-xs opacity-50">
+                          {result.status === "pending" ? (
+                            <span className="flex items-center gap-1.5 text-amber-400">
+                              <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+                              Generating...
+                            </span>
+                          ) : (
+                            <span>{formatTime(result.timestamp)}</span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="sticky top-6 mx-auto flex justify-center">
-          <TabSelector
-            tabs={MODE_TABS}
-            activeTab={activeMode}
-            onTabChange={(tabId) => setActiveMode(tabId as Mode)}
-            className="w-full max-w-md"
-            indicatorClassName="bg-primary/25"
-          />
-        </div>
+        {/* Animated Input Area */}
+        <animated.div
+          className="fixed left-1/2 z-20 w-full max-w-md -translate-x-1/2"
+          style={promptAnim}
+        >
+          <div ref={promptContentRef}>
+            <div className="glass w-full rounded-xl p-5 shadow-2xl ring-1 ring-white/10">
+              <div className="space-y-5">{renderActiveMode()}</div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                <ToggleButton
+                  isActive={meshOnly}
+                  icon={faCubes}
+                  activeIcon={faCubes}
+                  label="Mesh only"
+                  onClick={() => setMeshOnly((prev) => !prev)}
+                />
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="primary"
+                    icon={faSparkles}
+                    disabled={!canGenerate}
+                    onClick={handleGenerate}
+                    loading={isGenerating}
+                  >
+                    {`Generate ${variant === "object" ? "Object" : "World"}`}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-center">
+              <TabSelector
+                tabs={MODE_TABS}
+                activeTab={activeMode}
+                onTabChange={(tabId) => setActiveMode(tabId as Mode)}
+                className="w-fit"
+                indicatorClassName="bg-primary/25"
+              />
+            </div>
+          </div>
+        </animated.div>
       </div>
 
       <input

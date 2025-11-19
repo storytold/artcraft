@@ -105,9 +105,8 @@ export const ALL_APPS: FullAppItem[] = [
     description: "Convert references into textured assets",
     icon: faCube,
     category: "generate",
-    // action: "IMAGE_TO_3D_OBJECT",
+    action: "IMAGE_TO_3D_OBJECT",
     color: "bg-emerald-500/40",
-    badge: "SOON",
   },
   {
     id: "image-to-3d-world",
