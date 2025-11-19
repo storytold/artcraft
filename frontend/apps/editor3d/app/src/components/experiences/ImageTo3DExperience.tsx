@@ -3,6 +3,7 @@ import { animated, useSpring } from "@react-spring/web";
 import { Button, ToggleButton } from "@storyteller/ui-button";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { Viewer3D } from "@storyteller/ui-viewer-3d";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCube,
@@ -43,39 +44,6 @@ const generateId = () =>
   typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2, 10);
-
-const SimpleThreeViewer = ({
-  previewUrl,
-  isActive,
-}: {
-  previewUrl?: string;
-  isActive?: boolean;
-}) => {
-  // Placeholder for actual ThreeJS viewer
-  return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black/40">
-      {previewUrl ? (
-        <img
-          src={previewUrl}
-          alt="3D Model Preview"
-          className="h-full w-full object-contain opacity-80"
-        />
-      ) : (
-        <div className="flex flex-col items-center gap-4 text-base-fg/30">
-          <FontAwesomeIcon icon={faCube} className="text-6xl" />
-          <span className="text-sm uppercase tracking-widest">
-            3D Viewer Ready
-          </span>
-        </div>
-      )}
-      {isActive && (
-        <div className="absolute bottom-4 right-4 rounded bg-black/60 px-2 py-1 text-xs font-bold text-white/70">
-          INTERACTIVE VIEW
-        </div>
-      )}
-    </div>
-  );
-};
 
 export const ImageTo3DExperience = ({
   title,
@@ -393,15 +361,12 @@ export const ImageTo3DExperience = ({
         {/* Split View: Viewer + History */}
         {hasResults && (
           <div
-            className="mx-auto grid h-full w-full max-w-6xl grid-cols-[1fr_300px] gap-4 overflow-hidden pb-10"
+            className="mx-auto grid h-full w-full max-w-7xl grid-cols-[1fr_300px] gap-4 overflow-hidden pb-10"
             style={{ height: `calc(100vh - ${bottomOffsetPx + 80}px)` }}
           >
             {/* Left: Viewer */}
             <div className="glass flex flex-col gap-4 overflow-hidden rounded-xl border border-ui-panel-border p-4">
-              <SimpleThreeViewer
-                previewUrl={activeResult?.previewUrl}
-                isActive={true}
-              />
+              <Viewer3D previewUrl={activeResult?.previewUrl} isActive={true} />
               {activeResult && (
                 <div className="flex items-center justify-between px-2">
                   <div>
@@ -415,7 +380,7 @@ export const ImageTo3DExperience = ({
                   </div>
                   <div className="flex gap-2">
                     <Button variant="primary" className="min-w-[120px]">
-                      Open in Studio
+                      Open in 3D Editor
                     </Button>
                     <Button variant="action" icon={faCube}>
                       GLB

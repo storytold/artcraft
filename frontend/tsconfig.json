@@ -173,6 +173,9 @@
     },
     {
       "path": "./libs/api-enums"
+    },
+    {
+      "path": "./libs/components/viewer-3d"
     }
   ]
 }

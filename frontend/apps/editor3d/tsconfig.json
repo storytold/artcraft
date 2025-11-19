@@ -68,13 +68,10 @@
       "path": "../../libs/components/loading-spinner"
     },
     {
-      "path": "../../libs/components/promptbox"
-    },
-    {
       "path": "../../libs/components/tutorial-modal"
     },
     {
-      "path": "../../libs/common"
+      "path": "../../libs/components/promptbox"
     },
     {
       "path": "../../libs/state/subscription"
@@ -104,6 +101,9 @@
       "path": "../../libs/components/settings-modal"
     },
     {
+      "path": "../../libs/common"
+    },
+    {
       "path": "../../libs/api-enums"
     },
     {
@@ -120,9 +120,6 @@
     },
     {
       "path": "../../libs/components/popover"
-    },
-    {
-      "path": "../../libs/components/tooltip"
     },
     {
       "path": "../../libs/components/gravatar"
@@ -147,6 +144,15 @@
     },
     {
       "path": "../../libs/components/list-dropdown"
+    },
+    {
+      "path": "../../libs/components/viewer-3d"
+    },
+    {
+      "path": "../../libs/components/tooltip"
+    },
+    {
+      "path": "../../libs/components/tab-selector"
     },
     {
       "path": "../../libs/components/button"
