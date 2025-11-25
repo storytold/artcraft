@@ -43,17 +43,20 @@ export interface EnqueueImageTo3dObjectError extends CommandResult {
   error_message?: string;
 }
 
-export interface EnqueueImageTo3dObjectPayload {
-}
+export interface EnqueueImageTo3dObjectPayload {}
 
 export interface EnqueueImageTo3dObjectSuccess extends CommandResult {
   payload: EnqueueImageTo3dObjectPayload;
 }
 
-export type EnqueueImageTo3dObjectResult = EnqueueImageTo3dObjectSuccess | EnqueueImageTo3dObjectError;
+export type EnqueueImageTo3dObjectResult =
+  | EnqueueImageTo3dObjectSuccess
+  | EnqueueImageTo3dObjectError;
 
-export const EnqueueImageTo3dObject = async (request: EnqueueImageTo3dObjectRequest) : Promise<EnqueueImageTo3dObjectResult> => {
-  let mutableRequest : EnqueueImageTo3dObjectRequestRaw = {
+export const EnqueueImageTo3dObject = async (
+  request: EnqueueImageTo3dObjectRequest
+): Promise<EnqueueImageTo3dObjectResult> => {
+  let mutableRequest: EnqueueImageTo3dObjectRequestRaw = {
     image_media_token: request.image_media_token,
     model: request.model,
   };
@@ -66,9 +69,9 @@ export const EnqueueImageTo3dObject = async (request: EnqueueImageTo3dObjectRequ
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  let result = await invoke("enqueue_image_to_3d_object_command", { 
+  let result = await invoke("enqueue_image_to_3d_object_command", {
     request: mutableRequest,
   });
 
-  return (result as EnqueueImageTo3dObjectResult);
-}
+  return result as EnqueueImageTo3dObjectResult;
+};

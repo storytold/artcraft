@@ -15,10 +15,15 @@ import {
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
+import { useImageTo3DStore } from "../../pages/PageImageTo3DObject/ImageTo3DStore";
+import { MediaUploadApi } from "@storyteller/api";
 import {
-  useImageTo3DStore,
-  ImageTo3DResult,
-} from "../../pages/PageImageTo3DObject/ImageTo3DStore";
+  EnqueueImageTo3dObject,
+  EnqueueImageTo3dObjectModel,
+} from "@storyteller/tauri-api";
+import { useImageTo3DGenerationCompleteEvent } from "@storyteller/tauri-events";
+import { toast } from "react-hot-toast";
+import { v4 as uuidv4 } from "uuid";
 
 type Mode = "image" | "text";
 type Variant = "object" | "world";
@@ -58,7 +63,6 @@ export const ImageTo3DExperience = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [meshOnly, setMeshOnly] = useState(false);
-  const timeoutRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -70,9 +74,12 @@ export const ImageTo3DExperience = ({
   );
 
   const results = useImageTo3DStore((s) => s.results);
-  const addResult = useImageTo3DStore((s) => s.addResult);
-  const updateResultStatus = useImageTo3DStore((s) => s.updateResultStatus);
+  const startGeneration = useImageTo3DStore((s) => s.startGeneration);
+  const completeGeneration = useImageTo3DStore((s) => s.completeGeneration);
   const resetResults = useImageTo3DStore((s) => s.reset);
+  const [uploadedMediaToken, setUploadedMediaToken] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const onResize = () => setVh(window.innerHeight);
@@ -92,9 +99,6 @@ export const ImageTo3DExperience = ({
 
   useEffect(
     () => () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
       if (uploadedPreview && uploadedPreview.startsWith("blob:")) {
         URL.revokeObjectURL(uploadedPreview);
       }
@@ -109,6 +113,16 @@ export const ImageTo3DExperience = ({
     }
   });
 
+  useImageTo3DGenerationCompleteEvent(async (event) => {
+    if (event.maybe_frontend_subscriber_id) {
+      completeGeneration(
+        event.maybe_frontend_subscriber_id,
+        event.model_cdn_url,
+      );
+      toast.success("3D model generated successfully!");
+    }
+  });
+
   const handleFiles = (files?: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
@@ -119,6 +133,7 @@ export const ImageTo3DExperience = ({
     const objectUrl = URL.createObjectURL(file);
     setUploadedPreview(objectUrl);
     setUploadedName(file.name);
+    setUploadedMediaToken(null);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,32 +151,81 @@ export const ImageTo3DExperience = ({
     console.info("TODO: integrate gallery modal for ImageTo3DExperience");
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (isGenerating) return;
+    if (activeMode === "image" && !uploadedPreview) return;
+    if (activeMode === "text" && prompt.trim().length <= 3) return;
+
     setIsGenerating(true);
     const snapshotPrompt = prompt.trim();
     const snapshotPreview = uploadedPreview || undefined;
-    const id = generateId();
-    const newResult: ImageTo3DResult = {
-      id,
-      mode: activeMode,
-      timestamp: Date.now(),
-      note: activeMode === "text" ? snapshotPrompt : uploadedName || undefined,
-      previewUrl: snapshotPreview,
-      meshOnly,
-      status: "pending",
-    };
+    const snapshotName = uploadedName;
 
-    addResult(newResult);
-    setSelectedResultId(id);
+    try {
+      let mediaToken = uploadedMediaToken;
 
-    timeoutRef.current = window.setTimeout(() => {
-      updateResultStatus(id, "completed");
-      setIsGenerating(false);
+      if (activeMode === "image" && uploadedPreview && !mediaToken) {
+        const response = await fetch(uploadedPreview);
+        const blob = await response.blob();
+        const fileName = snapshotName || "image.png";
+        const file = new File([blob], fileName, { type: blob.type });
+
+        const mediaUploadApi = new MediaUploadApi();
+        const uuid = uuidv4();
+
+        const uploadResult = await mediaUploadApi.UploadImage({
+          blob: file,
+          fileName: file.name,
+          uuid: uuid,
+        });
+
+        if (!uploadResult.success || !uploadResult.data) {
+          throw new Error("Failed to upload image");
+        }
+
+        mediaToken = uploadResult.data;
+        setUploadedMediaToken(mediaToken);
+      }
+
+      if (activeMode === "image" && !mediaToken) {
+        throw new Error("No media token available");
+      }
+
+      const subscriberId = generateId();
+      const note =
+        activeMode === "text"
+          ? snapshotPrompt
+          : snapshotName || "Generated Model";
+
+      startGeneration(
+        activeMode,
+        note,
+        snapshotPreview,
+        meshOnly,
+        subscriberId,
+      );
+      setSelectedResultId(subscriberId);
+
+      const result = await EnqueueImageTo3dObject({
+        image_media_token: mediaToken || undefined,
+        model: EnqueueImageTo3dObjectModel.Hunyuan3d2,
+        frontend_subscriber_id: subscriberId,
+      });
+
+      if ("error_type" in result) {
+        throw new Error(result.error_message || result.error_type);
+      }
+
       if (activeMode === "text") {
         setPrompt("");
       }
-    }, 2000);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      toast.error(`Failed to generate 3D model: ${errorMessage}`);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const canGenerate = useMemo(() => {
@@ -295,6 +359,7 @@ export const ImageTo3DExperience = ({
               }
               setUploadedPreview(null);
               setUploadedName(null);
+              setUploadedMediaToken(null);
             }}
           >
             <FontAwesomeIcon icon={faXmark} className="text-xs" />
@@ -366,7 +431,10 @@ export const ImageTo3DExperience = ({
           >
             {/* Left: Viewer */}
             <div className="glass flex flex-col gap-4 overflow-hidden rounded-xl border border-ui-panel-border p-4">
-              <Viewer3D previewUrl={activeResult?.previewUrl} isActive={true} />
+              <Viewer3D
+                previewUrl={activeResult?.modelUrl || activeResult?.previewUrl}
+                isActive={true}
+              />
               {activeResult && (
                 <div className="flex items-center justify-between px-2">
                   <div>
