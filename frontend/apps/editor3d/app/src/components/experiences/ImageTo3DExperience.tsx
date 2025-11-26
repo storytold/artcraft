@@ -21,7 +21,7 @@ import {
   EnqueueImageTo3dObject,
   EnqueueImageTo3dObjectModel,
 } from "@storyteller/tauri-api";
-import { useImageTo3DGenerationCompleteEvent } from "@storyteller/tauri-events";
+import { useObjectGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
 
@@ -113,23 +113,47 @@ export const ImageTo3DExperience = ({
     }
   });
 
-  useImageTo3DGenerationCompleteEvent(async (event) => {
-    console.log("[ImageTo3D] Generation complete event received:", event);
-    if (event.maybe_frontend_subscriber_id) {
+  useObjectGenerationCompleteEvent(async (event) => {
+    console.log(
+      "[ImageTo3D] Object generation complete event received:",
+      event,
+    );
+    if (event.maybe_frontend_subscriber_id && event.generated_object) {
       console.log(
         "[ImageTo3D] Completing generation for subscriber:",
         event.maybe_frontend_subscriber_id,
       );
-      console.log("[ImageTo3D] Model URL:", event.model_cdn_url);
+      console.log("[ImageTo3D] Model URL:", event.generated_object.cdn_url);
       completeGeneration(
-        event.model_cdn_url,
+        event.generated_object.cdn_url,
         event.maybe_frontend_subscriber_id,
       );
       toast.success("3D model generated successfully!");
     } else {
-      console.log("[ImageTo3D] No subscriber ID in event");
+      console.log("[ImageTo3D] No subscriber ID or generated object in event");
     }
   });
+
+  // Debug: Listen to ALL tauri events to see what's being emitted
+  useEffect(() => {
+    const setupDebugListener = async () => {
+      const { listen } = await import("@tauri-apps/api/event");
+      const unlisten = await listen(
+        "object_generation_complete_event",
+        (event) => {
+          console.log("[DEBUG] Raw object_generation_complete_event:", event);
+        },
+      );
+      const unlisten2 = await listen("generation-complete-event", (event) => {
+        console.log("[DEBUG] Raw generation-complete-event:", event);
+      });
+      return () => {
+        unlisten();
+        unlisten2();
+      };
+    };
+    setupDebugListener();
+  }, []);
 
   const handleFiles = (files?: FileList | null) => {
     if (!files || files.length === 0) return;
