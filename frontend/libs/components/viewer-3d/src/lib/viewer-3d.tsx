@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export interface Viewer3DProps {
   modelUrl?: string;
@@ -22,6 +23,7 @@ export function Viewer3D({
   const controlsRef = useRef<OrbitControls | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const cubeRef = useRef<THREE.Mesh | null>(null);
+  const loadedModelRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -156,6 +158,68 @@ export function Viewer3D({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!modelUrl || !sceneRef.current) return;
+
+    console.log("[Viewer3D] Loading model from URL:", modelUrl);
+
+    const scene = sceneRef.current;
+    const loader = new GLTFLoader();
+
+    if (loadedModelRef.current) {
+      console.log("[Viewer3D] Removing previous model");
+      scene.remove(loadedModelRef.current);
+      loadedModelRef.current = null;
+    }
+
+    if (cubeRef.current) {
+      cubeRef.current.visible = false;
+    }
+
+    loader.load(
+      modelUrl,
+      (gltf) => {
+        console.log("[Viewer3D] Model loaded successfully");
+        const model = gltf.scene;
+        
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        
+        model.position.sub(center);
+        
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 2 / maxDim;
+        model.scale.multiplyScalar(scale);
+        
+        scene.add(model);
+        loadedModelRef.current = model;
+        
+        if (cameraRef.current && controlsRef.current) {
+          cameraRef.current.position.set(3, 3, 3);
+          controlsRef.current.target.set(0, 0, 0);
+          controlsRef.current.update();
+        }
+      },
+      (progress) => {
+        console.log("[Viewer3D] Loading progress:", (progress.loaded / progress.total * 100).toFixed(2) + "%");
+      },
+      (error) => {
+        console.error("[Viewer3D] Error loading model:", error);
+        if (cubeRef.current) {
+          cubeRef.current.visible = true;
+        }
+      }
+    );
+
+    return () => {
+      if (loadedModelRef.current && sceneRef.current) {
+        sceneRef.current.remove(loadedModelRef.current);
+        loadedModelRef.current = null;
+      }
+    };
+  }, [modelUrl]);
 
   return (
     <div

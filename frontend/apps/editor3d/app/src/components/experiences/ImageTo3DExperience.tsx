@@ -114,12 +114,20 @@ export const ImageTo3DExperience = ({
   });
 
   useImageTo3DGenerationCompleteEvent(async (event) => {
+    console.log("[ImageTo3D] Generation complete event received:", event);
     if (event.maybe_frontend_subscriber_id) {
-      completeGeneration(
+      console.log(
+        "[ImageTo3D] Completing generation for subscriber:",
         event.maybe_frontend_subscriber_id,
+      );
+      console.log("[ImageTo3D] Model URL:", event.model_cdn_url);
+      completeGeneration(
         event.model_cdn_url,
+        event.maybe_frontend_subscriber_id,
       );
       toast.success("3D model generated successfully!");
+    } else {
+      console.log("[ImageTo3D] No subscriber ID in event");
     }
   });
 
@@ -209,6 +217,7 @@ export const ImageTo3DExperience = ({
       const result = await EnqueueImageTo3dObject({
         image_media_token: mediaToken || undefined,
         model: EnqueueImageTo3dObjectModel.Hunyuan3d2,
+        frontend_caller: "mini_app",
         frontend_subscriber_id: subscriberId,
       });
 
@@ -395,6 +404,10 @@ export const ImageTo3DExperience = ({
   const activeResult =
     results.find((r) => r.id === selectedResultId) || results[0];
 
+  useEffect(() => {
+    console.log("[ImageTo3D] Active result changed:", activeResult);
+  }, [activeResult]);
+
   return (
     <div className="flex h-[calc(100vh-56px)] w-full bg-ui-background text-base-fg">
       {backgroundImage && !hasResults && (
@@ -432,7 +445,8 @@ export const ImageTo3DExperience = ({
             {/* Left: Viewer */}
             <div className="glass flex flex-col gap-4 overflow-hidden rounded-xl border border-ui-panel-border p-4">
               <Viewer3D
-                previewUrl={activeResult?.modelUrl || activeResult?.previewUrl}
+                modelUrl={activeResult?.modelUrl}
+                previewUrl={activeResult?.previewUrl}
                 isActive={true}
               />
               {activeResult && (

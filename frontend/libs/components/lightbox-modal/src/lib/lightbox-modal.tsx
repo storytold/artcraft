@@ -12,7 +12,14 @@ import {
   EnqueueImageTo3dObjectModel,
 } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
-import { useEffect, useState, ReactNode, useMemo, useCallback, useRef } from "react";
+import {
+  useEffect,
+  useState,
+  ReactNode,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
@@ -663,18 +670,25 @@ export function LightboxModal({
                               toast.success("Share link copied");
                               setShareCopied(true);
                               if (shareCopiedTimeoutRef.current) {
-                                window.clearTimeout(shareCopiedTimeoutRef.current);
+                                window.clearTimeout(
+                                  shareCopiedTimeoutRef.current
+                                );
                               }
-                              shareCopiedTimeoutRef.current = window.setTimeout(() => {
-                                setShareCopied(false);
-                                shareCopiedTimeoutRef.current = null;
-                              }, 1500);
+                              shareCopiedTimeoutRef.current = window.setTimeout(
+                                () => {
+                                  setShareCopied(false);
+                                  shareCopiedTimeoutRef.current = null;
+                                },
+                                1500
+                              );
                             } catch (err) {
                               toast.error("Unable to copy link");
                             }
                           }}
                         >
-                          {shareCopied ? "Share link copied" : "Copy Share Link"}
+                          {shareCopied
+                            ? "Share link copied"
+                            : "Copy Share Link"}
                         </Button>
                       )}
                       {onEditClicked &&
@@ -744,6 +758,7 @@ export function LightboxModal({
                             await EnqueueImageTo3dObject({
                               image_media_token: selectedMediaToken,
                               model: EnqueueImageTo3dObjectModel.Hunyuan3d2_0,
+                              frontend_caller: "mini_app",
                             });
                           }}
                         >

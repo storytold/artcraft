@@ -48,38 +48,48 @@ export const Create3dModal = ({ onModelComplete }: Create3dModalProps = {}) => {
         const eventData = event.payload?.data;
 
         console.log("[DEBUG] eventData:", eventData);
-        console.log("[DEBUG] Current activeToastIds:", {...activeToastIds.current});
+        console.log("[DEBUG] Current activeToastIds:", {
+          ...activeToastIds.current,
+        });
 
         if (eventData?.action === GenerationAction.ImageTo3d) {
           console.log("[DEBUG] This is an ImageTo3d completion event");
-          
+
           // Find any active toasts for 3D model generation and update them
           const entries = Object.entries(activeToastIds.current);
-          console.log("[DEBUG] Processing", entries.length, "active toast entries");
-          
-          entries.forEach(
-            ([mediaToken, toastId]) => {
-              console.log("[DEBUG] Processing toast for mediaToken:", mediaToken);
-              
-              // Dismiss the loading toast
-              toast.dismiss(toastId);
-              console.log("[DEBUG] Toast dismissed");
-
-              // Call the callback if provided
-              if (onModelComplete) {
-                console.log("[DEBUG] Calling onModelComplete with mediaToken:", mediaToken);
-                onModelComplete(mediaToken);
-              } else {
-                console.log("[DEBUG] onModelComplete callback is not provided");
-              }
-
-              // Remove from active toasts
-              delete activeToastIds.current[mediaToken];
-              console.log("[DEBUG] Removed mediaToken from activeToastIds");
-            }
+          console.log(
+            "[DEBUG] Processing",
+            entries.length,
+            "active toast entries"
           );
+
+          entries.forEach(([mediaToken, toastId]) => {
+            console.log("[DEBUG] Processing toast for mediaToken:", mediaToken);
+
+            // Dismiss the loading toast
+            toast.dismiss(toastId);
+            console.log("[DEBUG] Toast dismissed");
+
+            // Call the callback if provided
+            if (onModelComplete) {
+              console.log(
+                "[DEBUG] Calling onModelComplete with mediaToken:",
+                mediaToken
+              );
+              onModelComplete(mediaToken);
+            } else {
+              console.log("[DEBUG] onModelComplete callback is not provided");
+            }
+
+            // Remove from active toasts
+            delete activeToastIds.current[mediaToken];
+            console.log("[DEBUG] Removed mediaToken from activeToastIds");
+          });
         } else {
-          console.log("[DEBUG] Not an ImageTo3d event, action:", eventData?.action);
+          console.log(
+            "[DEBUG] Not an ImageTo3d event, action:",
+            eventData?.action
+          );
         }
       });
 
@@ -174,6 +184,7 @@ export const Create3dModal = ({ onModelComplete }: Create3dModalProps = {}) => {
       const result = await EnqueueImageTo3dObject({
         image_media_token: mediaToken,
         model: EnqueueImageTo3dObjectModel.Hunyuan3d2,
+        frontend_caller: "mini_app",
       });
 
       if ("error_type" in result) {
