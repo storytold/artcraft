@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { listen } from "@tauri-apps/api/event";
 
 export type ImageTo3DResult = {
   id: string;
@@ -10,6 +11,7 @@ export type ImageTo3DResult = {
   status: "pending" | "completed";
   subscriberId: string;
   modelUrl?: string;
+  mediaToken?: string;
 };
 
 type ImageTo3DState = {
@@ -21,7 +23,11 @@ type ImageTo3DState = {
     meshOnly: boolean,
     subscriberId?: string
   ) => string;
-  completeGeneration: (modelUrl: string, maybeSubscriberId?: string) => void;
+  completeGeneration: (
+    modelUrl: string,
+    mediaToken: string,
+    maybeSubscriberId?: string
+  ) => void;
   reset: () => void;
 };
 
@@ -52,9 +58,14 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
     set((s) => ({ results: [result, ...s.results] }));
     return id;
   },
-  completeGeneration: (modelUrl: string, maybeSubscriberId?: string) => {
+  completeGeneration: (
+    modelUrl: string,
+    mediaToken: string,
+    maybeSubscriberId?: string
+  ) => {
     console.log("[ImageTo3DStore] completeGeneration", {
       modelUrl,
+      mediaToken,
       maybeSubscriberId,
     });
     const pending = maybeSubscriberId
@@ -78,6 +89,7 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
           note: "Generated Model",
           status: "completed",
           modelUrl,
+          mediaToken,
         };
         return { results: [result, ...results] };
       }
@@ -86,6 +98,7 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
         ...results[targetIdx],
         status: "completed",
         modelUrl,
+        mediaToken,
       };
 
       return { results };
@@ -93,4 +106,29 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
   },
   reset: () => set({ results: [] }),
 }));
+
+interface ObjectGenerationEvent {
+  data: {
+    generated_object?: {
+      cdn_url: string;
+      media_token: string;
+    };
+    maybe_frontend_subscriber_id?: string;
+  };
+}
+
+listen<ObjectGenerationEvent>("object_generation_complete_event", (event) => {
+  const payload = event.payload?.data;
+  if (payload?.maybe_frontend_subscriber_id && payload?.generated_object) {
+    console.log(
+      "[ImageTo3DStore] Global event received for subscriber:",
+      payload.maybe_frontend_subscriber_id
+    );
+    useImageTo3DStore.getState().completeGeneration(
+      payload.generated_object.cdn_url,
+      payload.generated_object.media_token,
+      payload.maybe_frontend_subscriber_id
+    );
+  }
+});
 

@@ -372,17 +372,13 @@ export class TimeLine {
     return new THREE.Vector3(0, 0, 0);
   }
 
-  public async addObject(data: MediaItem) {
-    const pos = this.getPos();
+  public async addObject(data: MediaItem & { position?: { x: number; y: number; z: number } }) {
+    const dataPos = data.position;
+    const pos = dataPos
+      ? new THREE.Vector3(dataPos.x, dataPos.y, dataPos.z)
+      : this.getPos();
     const media_id = data.media_id;
     const name = data.name;
-    // const obj = await this.scene.loadGlbWithPlaceholder(
-    //   media_id,
-    //   name,
-    //   true,
-    //   pos,
-    //   this.editorEngine.version,
-    // );
 
     const obj = await this.editorEngine.sceneManager?.create(
       media_id,

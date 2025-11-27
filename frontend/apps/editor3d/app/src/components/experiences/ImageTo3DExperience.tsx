@@ -16,14 +16,19 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { useImageTo3DStore } from "../../pages/PageImageTo3DObject/ImageTo3DStore";
-import { MediaUploadApi } from "@storyteller/api";
+import { MediaUploadApi, downloadFileFromUrl } from "@storyteller/api";
+import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
   EnqueueImageTo3dObject,
   EnqueueImageTo3dObjectModel,
 } from "@storyteller/tauri-api";
-import { useObjectGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
+import { useTabStore } from "../../pages/Stores/TabState";
+import { addObject } from "../../pages/PageEnigma/signals/objectGroup/addObject";
+import { set3DPageMounted } from "../../pages/PageEnigma/Editor/editor";
+import { AssetType } from "~/enums";
+import type { MediaItem } from "../../pages/PageEnigma/models";
 
 type Mode = "image" | "text";
 type Variant = "object" | "world";
@@ -37,7 +42,7 @@ interface ImageTo3DExperienceProps {
 
 const MODE_TABS = [
   { id: "image", label: "Image to 3D" },
-  { id: "text", label: "Text to 3D" },
+  // { id: "text", label: "Text to 3D" },
 ] satisfies { id: Mode; label: string }[];
 
 const formatTime = (timestamp: number) => {
@@ -61,6 +66,7 @@ export const ImageTo3DExperience = ({
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [meshOnly, setMeshOnly] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,10 +81,13 @@ export const ImageTo3DExperience = ({
 
   const results = useImageTo3DStore((s) => s.results);
   const startGeneration = useImageTo3DStore((s) => s.startGeneration);
-  const completeGeneration = useImageTo3DStore((s) => s.completeGeneration);
   const resetResults = useImageTo3DStore((s) => s.reset);
   const [uploadedMediaToken, setUploadedMediaToken] = useState<string | null>(
     null,
+  );
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
+    [],
   );
 
   useEffect(() => {
@@ -97,14 +106,6 @@ export const ImageTo3DExperience = ({
     return () => ro.disconnect();
   }, []);
 
-  useEffect(
-    () => () => {
-      if (uploadedPreview && uploadedPreview.startsWith("blob:")) {
-        URL.revokeObjectURL(uploadedPreview);
-      }
-    },
-    [uploadedPreview],
-  );
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -113,63 +114,50 @@ export const ImageTo3DExperience = ({
     }
   });
 
-  useObjectGenerationCompleteEvent(async (event) => {
-    console.log(
-      "[ImageTo3D] Object generation complete event received:",
-      event,
-    );
-    if (event.maybe_frontend_subscriber_id && event.generated_object) {
-      console.log(
-        "[ImageTo3D] Completing generation for subscriber:",
-        event.maybe_frontend_subscriber_id,
-      );
-      console.log("[ImageTo3D] Model URL:", event.generated_object.cdn_url);
-      completeGeneration(
-        event.generated_object.cdn_url,
-        event.maybe_frontend_subscriber_id,
-      );
-      toast.success("3D model generated successfully!");
-    } else {
-      console.log("[ImageTo3D] No subscriber ID or generated object in event");
-    }
-  });
 
-  // Debug: Listen to ALL tauri events to see what's being emitted
-  useEffect(() => {
-    const setupDebugListener = async () => {
-      const { listen } = await import("@tauri-apps/api/event");
-      const unlisten = await listen(
-        "object_generation_complete_event",
-        (event) => {
-          console.log("[DEBUG] Raw object_generation_complete_event:", event);
-        },
-      );
-      const unlisten2 = await listen("generation-complete-event", (event) => {
-        console.log("[DEBUG] Raw generation-complete-event:", event);
-      });
-      return () => {
-        unlisten();
-        unlisten2();
-      };
-    };
-    setupDebugListener();
-  }, []);
-
-  const handleFiles = (files?: FileList | null) => {
+  const handleFiles = async (files?: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!file.type.startsWith("image/")) return;
-    if (uploadedPreview && uploadedPreview.startsWith("blob:")) {
-      URL.revokeObjectURL(uploadedPreview);
-    }
-    const objectUrl = URL.createObjectURL(file);
-    setUploadedPreview(objectUrl);
+
     setUploadedName(file.name);
     setUploadedMediaToken(null);
+    setIsUploading(true);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      setUploadedPreview(dataUrl);
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      const mediaUploadApi = new MediaUploadApi();
+      const uuid = uuidv4();
+
+      const uploadResult = await mediaUploadApi.UploadImage({
+        blob: file,
+        fileName: file.name,
+        uuid: uuid,
+      });
+
+      if (!uploadResult.success || !uploadResult.data) {
+        throw new Error("Failed to upload image");
+      }
+
+      setUploadedMediaToken(uploadResult.data);
+    } catch (error) {
+      toast.error("Failed to upload image");
+      setUploadedPreview(null);
+      setUploadedName(null);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     handleFiles(event.target.files);
+    event.target.value = "";
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
@@ -180,12 +168,36 @@ export const ImageTo3DExperience = ({
   };
 
   const handlePickFromLibrary = () => {
-    console.info("TODO: integrate gallery modal for ImageTo3DExperience");
+    setIsGalleryModalOpen(true);
+  };
+
+  const handleImageSelect = (id: string) => {
+    setSelectedGalleryImages((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      return [id];
+    });
+  };
+
+  const handleGallerySelect = async (selectedItems: GalleryItem[]) => {
+    const item = selectedItems[0];
+    if (!item || !item.fullImage) {
+      toast.error("No image selected");
+      return;
+    }
+
+    if (isUploading) return;
+
+    setIsGalleryModalOpen(false);
+    setSelectedGalleryImages([]);
+
+    setUploadedName(item.label || "Library Image");
+    setUploadedPreview(item.fullImage);
+    setUploadedMediaToken(item.id);
   };
 
   const handleGenerate = async () => {
-    if (isGenerating) return;
-    if (activeMode === "image" && !uploadedPreview) return;
+    if (isGenerating || isUploading) return;
+    if (activeMode === "image" && !uploadedMediaToken) return;
     if (activeMode === "text" && prompt.trim().length <= 3) return;
 
     setIsGenerating(true);
@@ -194,35 +206,6 @@ export const ImageTo3DExperience = ({
     const snapshotName = uploadedName;
 
     try {
-      let mediaToken = uploadedMediaToken;
-
-      if (activeMode === "image" && uploadedPreview && !mediaToken) {
-        const response = await fetch(uploadedPreview);
-        const blob = await response.blob();
-        const fileName = snapshotName || "image.png";
-        const file = new File([blob], fileName, { type: blob.type });
-
-        const mediaUploadApi = new MediaUploadApi();
-        const uuid = uuidv4();
-
-        const uploadResult = await mediaUploadApi.UploadImage({
-          blob: file,
-          fileName: file.name,
-          uuid: uuid,
-        });
-
-        if (!uploadResult.success || !uploadResult.data) {
-          throw new Error("Failed to upload image");
-        }
-
-        mediaToken = uploadResult.data;
-        setUploadedMediaToken(mediaToken);
-      }
-
-      if (activeMode === "image" && !mediaToken) {
-        throw new Error("No media token available");
-      }
-
       const subscriberId = generateId();
       const note =
         activeMode === "text"
@@ -239,7 +222,7 @@ export const ImageTo3DExperience = ({
       setSelectedResultId(subscriberId);
 
       const result = await EnqueueImageTo3dObject({
-        image_media_token: mediaToken || undefined,
+        image_media_token: uploadedMediaToken || undefined,
         model: EnqueueImageTo3dObjectModel.Hunyuan3d2,
         frontend_caller: "mini_app",
         frontend_subscriber_id: subscriberId,
@@ -251,6 +234,10 @@ export const ImageTo3DExperience = ({
 
       if (activeMode === "text") {
         setPrompt("");
+      } else {
+        setUploadedPreview(null);
+        setUploadedName(null);
+        setUploadedMediaToken(null);
       }
     } catch (error) {
       const errorMessage =
@@ -262,15 +249,15 @@ export const ImageTo3DExperience = ({
   };
 
   const canGenerate = useMemo(() => {
-    if (isGenerating) return false;
+    if (isGenerating || isUploading) return false;
     if (activeMode === "image") {
-      return Boolean(uploadedPreview);
+      return Boolean(uploadedMediaToken);
     }
     if (activeMode === "text") {
       return prompt.trim().length > 3;
     }
     return true;
-  }, [activeMode, uploadedPreview, prompt, isGenerating]);
+  }, [activeMode, uploadedMediaToken, prompt, isGenerating, isUploading]);
 
   const hasResults = results.length > 0;
   const showPromptAtBottom = hasResults;
@@ -375,28 +362,35 @@ export const ImageTo3DExperience = ({
             "group relative cursor-pointer overflow-hidden rounded-2xl border-[3px] border-primary/40 bg-black/30 transition-all",
             hasResults ? "aspect-square w-24" : "aspect-square w-48",
           )}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !isUploading && fileInputRef.current?.click()}
         >
           <img
             src={uploadedPreview}
             alt="Reference"
-            className="h-full w-full object-cover"
+            className={twMerge(
+              "h-full w-full object-cover transition-opacity",
+              isUploading && "opacity-50",
+            )}
           />
-          <button
-            type="button"
-            className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={(event) => {
-              event.stopPropagation();
-              if (uploadedPreview?.startsWith("blob:")) {
-                URL.revokeObjectURL(uploadedPreview);
-              }
-              setUploadedPreview(null);
-              setUploadedName(null);
-              setUploadedMediaToken(null);
-            }}
-          >
-            <FontAwesomeIcon icon={faXmark} className="text-xs" />
-          </button>
+          {isUploading && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-white/30 border-t-primary" />
+            </div>
+          )}
+          {!isUploading && (
+            <button
+              type="button"
+              className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+              onClick={(event) => {
+                event.stopPropagation();
+                setUploadedPreview(null);
+                setUploadedName(null);
+                setUploadedMediaToken(null);
+              }}
+            >
+              <FontAwesomeIcon icon={faXmark} className="text-xs" />
+            </button>
+          )}
         </div>
       ) : (
         renderAddImageTile()
@@ -433,7 +427,7 @@ export const ImageTo3DExperience = ({
   }, [activeResult]);
 
   return (
-    <div className="flex h-[calc(100vh-56px)] w-full bg-ui-background text-base-fg">
+    <div className="flex h-[calc(100vh-56px)] w-full bg-ui-panel-gradient bg-ui-panel text-base-fg">
       {backgroundImage && !hasResults && (
         <>
           <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden bg-[radial-gradient(50%_50%_at_50%_50%,_transparent_49%,_rgb(var(--st-controls-rgb)_/_var(--st-gallery-vignette-alpha))_100%)]" />
@@ -467,31 +461,49 @@ export const ImageTo3DExperience = ({
             style={{ height: `calc(100vh - ${bottomOffsetPx + 80}px)` }}
           >
             {/* Left: Viewer */}
-            <div className="glass flex flex-col gap-4 overflow-hidden rounded-xl border border-ui-panel-border p-4">
+            <div className="glass relative h-full overflow-hidden rounded-xl border border-ui-panel-border">
               <Viewer3D
                 modelUrl={activeResult?.modelUrl}
                 previewUrl={activeResult?.previewUrl}
                 isActive={true}
+                className="h-full"
               />
-              {activeResult && (
-                <div className="flex items-center justify-between px-2">
-                  <div>
-                    <h3 className="text-lg font-semibold">
-                      {activeResult.note || "Generated Model"}
-                    </h3>
-                    <p className="text-xs opacity-50">
-                      {formatTime(activeResult.timestamp)} • {activeResult.mode}{" "}
-                      mode
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="primary" className="min-w-[120px]">
-                      Open in 3D Editor
-                    </Button>
-                    <Button variant="action" icon={faCube}>
-                      GLB
-                    </Button>
-                  </div>
+              {activeResult?.modelUrl && activeResult?.mediaToken && (
+                <div className="absolute right-4 top-4 z-10 flex gap-2">
+                  <Button
+                    variant="primary"
+                    className="min-w-[120px]"
+                    onClick={() => {
+                      set3DPageMounted(true);
+                      useTabStore.getState().setActiveTab("3D");
+                      setTimeout(() => {
+                        const mediaItem = {
+                          version: 1,
+                          type: AssetType.OBJECT,
+                          media_id: activeResult.mediaToken!,
+                          name: activeResult.note || "3D Object",
+                          position: { x: 0, y: 0, z: 0 },
+                        } as MediaItem & { position: { x: number; y: number; z: number } };
+                        addObject(mediaItem);
+                        toast.success("Added to 3D scene");
+                      }, 500);
+                    }}
+                  >
+                    Open in 3D Editor
+                  </Button>
+                  <Button
+                    variant="action"
+                    icon={faCube}
+                    onClick={() => {
+                      toast.promise(downloadFileFromUrl(activeResult.modelUrl!), {
+                        loading: "Downloading GLB...",
+                        success: "Downloaded GLB file",
+                        error: "Failed to download file",
+                      });
+                    }}
+                  >
+                    GLB
+                  </Button>
                 </div>
               )}
             </div>
@@ -589,15 +601,17 @@ export const ImageTo3DExperience = ({
               </div>
             </div>
 
-            <div className="mt-6 flex justify-center">
-              <TabSelector
-                tabs={MODE_TABS}
-                activeTab={activeMode}
-                onTabChange={(tabId) => setActiveMode(tabId as Mode)}
-                className="w-fit"
-                indicatorClassName="bg-primary/25"
-              />
-            </div>
+            {MODE_TABS.length > 1 && (
+              <div className="mt-6 flex justify-center">
+                <TabSelector
+                  tabs={MODE_TABS}
+                  activeTab={activeMode}
+                  onTabChange={(tabId) => setActiveMode(tabId as Mode)}
+                  className="w-fit"
+                  indicatorClassName="bg-primary/25"
+                />
+              </div>
+            )}
           </div>
         </animated.div>
       </div>
@@ -608,6 +622,21 @@ export const ImageTo3DExperience = ({
         accept="image/*"
         className="hidden"
         onChange={handleFileChange}
+      />
+
+      <GalleryModal
+        isOpen={isGalleryModalOpen}
+        onClose={() => {
+          setIsGalleryModalOpen(false);
+          setSelectedGalleryImages([]);
+        }}
+        mode="select"
+        selectedItemIds={selectedGalleryImages}
+        onSelectItem={handleImageSelect}
+        maxSelections={1}
+        onUseSelected={handleGallerySelect}
+        onDownloadClicked={downloadFileFromUrl}
+        forceFilter="image"
       />
     </div>
   );

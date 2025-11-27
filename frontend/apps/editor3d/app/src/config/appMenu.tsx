@@ -10,6 +10,7 @@ import {
   faGlobe,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useTabStore, TabId } from "~/pages/Stores/TabState";
+import { set3DPageMounted } from "~/pages/PageEnigma/Editor/editor";
 
 export type AppId =
   | "IMAGE"
@@ -210,6 +211,11 @@ export const goToApp = (action?: string) => {
       "IMAGE_TO_3D_WORLD",
     ].includes(action)
   ) {
+    if (action === "3D") {
+      set3DPageMounted(true);
+    } else {
+      set3DPageMounted(false);
+    }
     useTabStore.getState().setActiveTab(action as TabId);
   }
 };

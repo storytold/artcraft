@@ -25,10 +25,7 @@ import {
   ModelPage,
 } from "@storyteller/ui-model-selector";
 import { Button } from "@storyteller/ui-button";
-import {
-  getProviderDisplayName,
-  getModelDisplayName,
-} from "@storyteller/model-list";
+import { getProviderDisplayName } from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { TaskMediaFileClass } from "@storyteller/api-enums";
@@ -68,7 +65,7 @@ const InProgressCard = ({
   onDismiss?: () => void;
 }) => {
   return (
-    <div className="mb-2 rounded-md border border-ui-divider bg-ui-background p-2">
+    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
           <FontAwesomeIcon
@@ -126,7 +123,7 @@ const CompletedCard = ({
 }) => {
   return (
     <div
-      className="mb-2 flex cursor-pointer items-center gap-2.5 rounded-md border border-ui-divider bg-ui-background p-2 transition-colors hover:bg-ui-controls/40"
+      className="flex cursor-pointer items-center gap-2.5 rounded-md p-2 transition-colors hover:bg-ui-controls/40"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : -1}
@@ -142,7 +139,8 @@ const CompletedCard = ({
               );
               e.currentTarget.style.opacity = "0.3";
               // Set the `data-brokenurl` property for debugging the broken images:
-              (e.currentTarget as HTMLImageElement).dataset.brokenurl = task.thumbnailUrl;
+              (e.currentTarget as HTMLImageElement).dataset.brokenurl =
+                task.thumbnailUrl;
             }}
             className="h-full w-full object-cover"
           />
@@ -214,13 +212,37 @@ export const TaskQueue = () => {
         ? getProviderDisplayName(String(t.provider).toLowerCase())
         : undefined;
       const taskTypeStr = t.task_type ? String(t.task_type) : "";
-      const kind = taskTypeStr.includes("video")
-        ? "Video"
-        : taskTypeStr.includes("image")
-          ? "Image"
-          : undefined;
+      const is3DModel =
+        taskTypeStr.includes("3d") ||
+        taskTypeStr.includes("object") ||
+        taskTypeStr.includes("dimensional");
+      const kind = is3DModel
+        ? "3D Model"
+        : taskTypeStr.includes("video")
+          ? "Video"
+          : taskTypeStr.includes("image")
+            ? "Image"
+            : undefined;
+
+      const formatModelName = (modelType: string): string => {
+        const formatted = modelType
+          .replace(/_/g, " ")
+          .replace(/(\d)([a-zA-Z])/g, "$1 $2")
+          .replace(/([a-zA-Z])(\d)/g, "$1 $2")
+          .split(" ")
+          .map((word) =>
+            word.length <= 2
+              ? word.toUpperCase()
+              : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+          )
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+        return formatted;
+      };
+
       const modelDisplay = t.model_type
-        ? getModelDisplayName(String(t.model_type))
+        ? formatModelName(String(t.model_type))
         : undefined;
 
       const title = kind || "Task";

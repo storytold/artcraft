@@ -4,7 +4,9 @@ import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
 import { toEngineActions } from "~/pages/PageEnigma/Queue/toEngineActions";
 import { objectGroup } from "~/pages/PageEnigma/signals";
 
-export function addObject(object: MediaItem) {
+export function addObject(
+  object: MediaItem & { position?: { x: number; y: number; z: number } }
+) {
   Queue.publish({
     queueName: QueueNames.TO_ENGINE,
     action: toEngineActions.ADD_OBJECT,

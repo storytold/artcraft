@@ -11,23 +11,14 @@ import {
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  showActionReminder,
-  isActionReminderOpen,
-} from "@storyteller/ui-action-reminder-modal";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { EngineContext } from "../../contexts/EngineContext";
-import { useContext, useEffect, useState, useRef, useCallback } from "react";
+import { useContext, useEffect, useState } from "react";
 import { assetModalVisibleDuringDrag, assetModalVisible } from "../../signals";
-import {
-  Create3dModal,
-  useCreate3dModalStore,
-  // eslint-disable-next-line import/no-unresolved
-} from "@storyteller/ui-create-3d-modal";
+import { useTabStore } from "~/pages/Stores/TabState";
 // import { v4 as uuidv4 } from "uuid";
 // import { addObject } from "../../signals/objectGroup/addObject";
 // import { MediaItem } from "../../models/assets";
-import { GetFalApiKey } from "@storyteller/tauri-api"; // Fix import path
 // eslint-disable-next-line import/no-unresolved
 // import { AssetType } from "~/enums";
 import { AssetModal } from "../AssetMenu/AssetModal";
@@ -56,8 +47,6 @@ export const Controls3D = () => {
   const [isAddAssetPopoverOpen, setIsAddAssetPopoverOpen] = useState(false);
   const [uploadImageIsShowing, setUploadImageIsShowing] = useState(false);
 
-  // Track processed 3D models by their media token to prevent duplicates
-  const processedModelsRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     // Check if scene is empty and onboarding helper is not visible
@@ -157,37 +146,8 @@ export const Controls3D = () => {
     assetModalVisible.value = true;
   };
 
-  const handleOpenCreate3dModal = async () => {
-    try {
-      const falApiKeyResult = await GetFalApiKey();
-
-      if (
-        falApiKeyResult.status === "success" &&
-        "payload" in falApiKeyResult &&
-        falApiKeyResult.payload?.key
-      ) {
-        // API key exists, open the create 3D modal
-        useCreate3dModalStore.getState().open();
-      } else {
-        // No API key, show the action reminder modal
-        showActionReminder({
-          reminderType: "default",
-          title: "FAL API Key Required",
-          message:
-            "To generate 3D models, you need to add a valid FAL API key in your settings.",
-          primaryActionText: "Add now",
-          secondaryActionText: "Cancel",
-          onPrimaryAction: () => {
-            // Close the action reminder modal first
-            isActionReminderOpen.value = false;
-            // Then open the settings modal
-            openSettingsModal();
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Error checking FAL API key:", error);
-    }
+  const handleOpenCreate3dModal = () => {
+    useTabStore.getState().setActiveTab("IMAGE_TO_3D_OBJECT");
   };
 
   // Open global Gallery modal
@@ -214,22 +174,6 @@ export const Controls3D = () => {
         break;
     }
   };
-
-  const openSettingsModal = () => {
-    setIsSettingsModalOpen(true);
-  };
-
-  // Handle completed models from the Create3dModal component
-  const handleModelComplete = useCallback((mediaToken: string) => {
-    // Check if we've already processed this model
-    if (mediaToken && !processedModelsRef.current[mediaToken]) {
-      // Mark this model as processed to avoid duplicates
-      processedModelsRef.current[mediaToken] = true;
-
-      // Add the generated 3D model to the scene
-      // addGeneratedModelToScene(mediaToken);
-    }
-  }, []);
 
   const modes = [
     {
@@ -364,8 +308,6 @@ export const Controls3D = () => {
       </div>
 
       <AssetModal />
-
-      <Create3dModal onModelComplete={handleModelComplete} />
 
       <SettingsModal
         isOpen={isSettingsModalOpen}

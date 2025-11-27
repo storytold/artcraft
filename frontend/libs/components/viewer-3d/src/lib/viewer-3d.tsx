@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -24,6 +24,7 @@ export function Viewer3D({
   const animationFrameRef = useRef<number | null>(null);
   const cubeRef = useRef<THREE.Mesh | null>(null);
   const loadedModelRef = useRef<THREE.Group | null>(null);
+  const [isModelLoaded, setIsModelLoaded] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -63,12 +64,27 @@ export function Viewer3D({
       controls.update();
       controlsRef.current = controls;
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 2);
       scene.add(ambientLight);
 
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-      directionalLight.position.set(5, 5, 5);
-      scene.add(directionalLight);
+      const hemisphereLight = new THREE.HemisphereLight(
+        0xffffff,
+        0x888888,
+        1.2
+      );
+      scene.add(hemisphereLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 2);
+      keyLight.position.set(2, 10, 8);
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      fillLight.position.set(-6, 6, -4);
+      scene.add(fillLight);
+
+      const frontLight = new THREE.DirectionalLight(0xffffff, 1);
+      frontLight.position.set(0, 4, 10);
+      scene.add(frontLight);
 
       const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222);
       scene.add(gridHelper);
@@ -163,6 +179,7 @@ export function Viewer3D({
     if (!modelUrl || !sceneRef.current) return;
 
     console.log("[Viewer3D] Loading model from URL:", modelUrl);
+    setIsModelLoaded(false);
 
     const scene = sceneRef.current;
     const loader = new GLTFLoader();
@@ -182,28 +199,46 @@ export function Viewer3D({
       (gltf) => {
         console.log("[Viewer3D] Model loaded successfully");
         const model = gltf.scene;
-        
+
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
-        
-        model.position.sub(center);
-        
+
         const maxDim = Math.max(size.x, size.y, size.z);
         const scale = 2 / maxDim;
         model.scale.multiplyScalar(scale);
-        
+
+        const scaledBox = new THREE.Box3().setFromObject(model);
+        const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
+        const scaledSize = scaledBox.getSize(new THREE.Vector3());
+
+        model.position.x = -scaledCenter.x;
+        model.position.z = -scaledCenter.z;
+        model.position.y = -scaledBox.min.y;
+
         scene.add(model);
         loadedModelRef.current = model;
-        
+        setIsModelLoaded(true);
+
+        const modelHeight = scaledSize.y;
+        const cameraDistance =
+          Math.max(scaledSize.x, scaledSize.z, modelHeight) * 1.4 + 1;
+
         if (cameraRef.current && controlsRef.current) {
-          cameraRef.current.position.set(3, 3, 3);
-          controlsRef.current.target.set(0, 0, 0);
+          cameraRef.current.position.set(
+            cameraDistance * 0.7,
+            modelHeight + 1.2,
+            cameraDistance * 0.7
+          );
+          controlsRef.current.target.set(0, modelHeight * 0.3, 0);
           controlsRef.current.update();
         }
       },
       (progress) => {
-        console.log("[Viewer3D] Loading progress:", (progress.loaded / progress.total * 100).toFixed(2) + "%");
+        console.log(
+          "[Viewer3D] Loading progress:",
+          ((progress.loaded / progress.total) * 100).toFixed(2) + "%"
+        );
       },
       (error) => {
         console.error("[Viewer3D] Error loading model:", error);
@@ -221,17 +256,24 @@ export function Viewer3D({
     };
   }, [modelUrl]);
 
+  const showViewer = modelUrl && isModelLoaded;
+  const showSpinner = !showViewer;
+
   return (
     <div
-      className={`relative h-full w-full overflow-hidden rounded-xl bg-black/20 ${className}`}
+      className={`relative h-full w-full overflow-hidden rounded-xl bg-[#1a1a1a] ${className}`}
     >
-      <div ref={containerRef} className="h-full w-full" />
-
-      {isActive && (
-        <div className="absolute bottom-4 right-4 rounded bg-black/60 px-2 py-1 text-xs font-bold text-white/70">
-          INTERACTIVE VIEW
+      {showSpinner && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <div className="h-16 w-16 animate-spin rounded-full border-[5px] border-white/20 border-t-primary" />
         </div>
       )}
+
+      <div
+        ref={containerRef}
+        className="h-full w-full"
+        style={{ visibility: showViewer ? "visible" : "hidden" }}
+      />
     </div>
   );
 }
