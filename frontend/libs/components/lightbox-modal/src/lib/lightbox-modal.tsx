@@ -478,7 +478,7 @@ export function LightboxModal({
               </div>
             )}
 
-            {!mediaLoaded && selectedImageUrl && (
+            {!mediaLoaded && selectedImageUrl && mediaClass !== "dimensional" && (
               <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
                 <LoadingSpinner className="h-12 w-12 text-base-fg" />
               </div>
