@@ -12,6 +12,7 @@ import {
   EnqueueImageTo3dObjectModel,
 } from "@storyteller/tauri-api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
+import { Viewer3D } from "@storyteller/ui-viewer-3d";
 import {
   useEffect,
   useState,
@@ -379,6 +380,15 @@ export function LightboxModal({
             {!selectedImageUrl ? (
               <div className="flex h-full w-full items-center justify-center bg-black/30">
                 <span className="text-base-fg/60">Image not available</span>
+              </div>
+            ) : mediaClass === "dimensional" ? (
+              <div className="h-full w-full">
+                <Viewer3D
+                  modelUrl={selectedImageUrl}
+                  isActive={true}
+                  showGrid={true}
+                  className="h-full w-full"
+                />
               </div>
             ) : mediaClass === "video" ? (
               <video

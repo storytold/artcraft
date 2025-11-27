@@ -358,6 +358,16 @@ export const TaskQueue = () => {
 
     load();
     const id = setInterval(load, 5000);
+
+    // Listen for cover image uploads to refresh and show new thumbnails
+    const handleCoverUploaded = () => {
+      if (!cancelled) {
+        // Small delay to allow server to process
+        setTimeout(load, 1000);
+      }
+    };
+    window.addEventListener("cover-image-uploaded", handleCoverUploaded);
+
     let unlisten: Promise<UnlistenFn> | null = null;
     (async () => {
       // Update immediately when Tauri signals a generation completion
@@ -370,6 +380,7 @@ export const TaskQueue = () => {
     return () => {
       cancelled = true;
       clearInterval(id);
+      window.removeEventListener("cover-image-uploaded", handleCoverUploaded);
       if (unlisten) {
         unlisten.then((f) => f());
       }
