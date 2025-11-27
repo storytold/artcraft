@@ -143,6 +143,10 @@ export type ImageTo3DResult = {
   coverImageUploaded?: boolean;
 };
 
+// Global cache for cover image URLs - TaskQueue can use this as fallback
+// Maps mediaToken -> cover image data URL
+export const coverImageCache = new Map<string, string>();
+
 type ImageTo3DState = {
   results: ImageTo3DResult[];
   startGeneration: (
@@ -284,6 +288,10 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
 
       if (setCoverResult.success) {
         console.log("[ImageTo3DStore] Cover image set successfully");
+
+        // Store in global cache for TaskQueue to use as fallback
+        coverImageCache.set(mediaToken, thumbnailDataUrl);
+
         // Mark as uploaded
         set((s) => ({
           results: s.results.map((r) =>
@@ -292,8 +300,12 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
               : r,
           ),
         }));
-        // Emit event to trigger task queue refresh
-        window.dispatchEvent(new CustomEvent("cover-image-uploaded"));
+        // Emit event to trigger task queue refresh with the cover data
+        window.dispatchEvent(
+          new CustomEvent("cover-image-uploaded", {
+            detail: { mediaToken, thumbnailDataUrl },
+          }),
+        );
       } else {
         console.error(
           "[ImageTo3DStore] Failed to set cover image:",

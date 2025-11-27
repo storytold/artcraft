@@ -34,6 +34,7 @@ import {
   THUMBNAIL_SIZES,
   getPlaceholderForMediaClass,
 } from "@storyteller/common";
+import { coverImageCache } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 
 type InProgressTask = {
   id: string;
@@ -311,28 +312,33 @@ export const TaskQueue = () => {
               (b.completed_at?.getTime() || b.updated_at.getTime()) -
               (a.completed_at?.getTime() || a.updated_at.getTime()),
           )
-          .map((t: TaskQueueItem) => ({
-            id: t.id,
-            ...formatTitleParts(t),
-            thumbnailUrl:
-              getThumbnailUrl(
-                t.completed_item?.primary_media_file
-                  ?.maybe_thumbnail_url_template,
-                { width: THUMBNAIL_SIZES.MEDIUM },
-              ) || undefined,
-            imageUrls: t.completed_item?.primary_media_file?.cdn_url
-              ? [t.completed_item?.primary_media_file?.cdn_url]
-              : [],
-            mediaTokens: (() => {
-              const primaryToken = t.completed_item?.primary_media_file?.token;
-              const tokens: string[] = primaryToken ? [primaryToken] : [];
-              return tokens;
-            })(),
-            mediaFileClass: t.completed_item?.media_file_class,
-            batchImageToken: t.completed_item?.maybe_batch_token,
-            completedAt: t.completed_at,
-            updatedAt: t.updated_at,
-          }));
+          .map((t: TaskQueueItem) => {
+            const mediaToken = t.completed_item?.primary_media_file?.token;
+            // Try server thumbnail first, then fall back to local cache
+            const serverThumbnail = getThumbnailUrl(
+              t.completed_item?.primary_media_file?.maybe_thumbnail_url_template,
+              { width: THUMBNAIL_SIZES.MEDIUM },
+            );
+            const cachedThumbnail = mediaToken ? coverImageCache.get(mediaToken) : undefined;
+            
+            return {
+              id: t.id,
+              ...formatTitleParts(t),
+              thumbnailUrl: serverThumbnail || cachedThumbnail || undefined,
+              imageUrls: t.completed_item?.primary_media_file?.cdn_url
+                ? [t.completed_item?.primary_media_file?.cdn_url]
+                : [],
+              mediaTokens: (() => {
+                const primaryToken = t.completed_item?.primary_media_file?.token;
+                const tokens: string[] = primaryToken ? [primaryToken] : [];
+                return tokens;
+              })(),
+              mediaFileClass: t.completed_item?.media_file_class,
+              batchImageToken: t.completed_item?.maybe_batch_token,
+              completedAt: t.completed_at,
+              updatedAt: t.updated_at,
+            };
+          });
 
         setInProgress(inProg);
         setCompleted(done);
