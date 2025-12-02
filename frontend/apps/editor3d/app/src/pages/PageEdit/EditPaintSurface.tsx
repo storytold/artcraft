@@ -37,6 +37,9 @@ export type EditPaintSurfaceProps = {
   activeTool?: ActiveEditTool;
   brushColor?: string;
   brushSize?: number;
+  markerBrushSize?: number;
+  eraserBrushSize?: number;
+  markerColor?: string;
   onSelectionChange?: (isSelecting: boolean) => void;
   stageRef: React.RefObject<Konva.Stage>;
   transformerRefs: React.RefObject<{ [key: string]: Konva.Transformer }>;
@@ -52,6 +55,9 @@ export const EditPaintSurface = ({
   activeTool = "select",
   brushColor = "#000000",
   brushSize = 5,
+  markerBrushSize = 5,
+  eraserBrushSize = 25,
+  markerColor = "#FF0000",
   onSelectionChange,
   stageRef,
   transformerRefs,
@@ -94,7 +100,9 @@ export const EditPaintSurface = ({
     endY: number;
   } | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
-  const [isDragging, setIsDragging] = useState<DragState | undefined>(undefined);
+  const [isDragging, setIsDragging] = useState<DragState | undefined>(
+    undefined,
+  );
   // Add a ref to track if we're currently selecting
   const isSelectingRef = React.useRef(false);
 
@@ -167,7 +175,13 @@ export const EditPaintSurface = ({
     activeTool: string,
     nodeDraggable: boolean,
   ): boolean => {
-    return activeTool !== "edit" && nodeDraggable && !isMiddleMousePressed;
+    return (
+      activeTool !== "edit" &&
+      activeTool !== "marker" &&
+      activeTool !== "eraser" &&
+      nodeDraggable &&
+      !isMiddleMousePressed
+    );
   };
 
   // Add state for middle mouse button
@@ -220,28 +234,52 @@ export const EditPaintSurface = ({
     }
 
     // Handle drawing tools - only start if within bounds
-    if (activeTool === "edit" && isWithinLeftPanel(stagePoint)) {
+    if (
+      (activeTool === "edit" ||
+        activeTool === "marker" ||
+        activeTool === "eraser") &&
+      isWithinLeftPanel(stagePoint)
+    ) {
       const lineId = `line-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const opacity = activeTool === "edit" ? store.brushOpacity : 1;
       const composite =
-        store.editOperation === "add" ? "source-over" : "destination-out";
+        activeTool === "eraser"
+          ? "destination-out"
+          : activeTool === "marker"
+            ? "source-over"
+            : store.editOperation === "add"
+              ? "source-over"
+              : "destination-out";
       const strokeColor =
-        store.editOperation === "add" ? brushColor : "#FFFFFF"; // Eraser uses transparent stroke
+        activeTool === "eraser"
+          ? "#FFFFFF"
+          : activeTool === "marker"
+            ? markerColor
+            : store.editOperation === "add"
+              ? brushColor
+              : "#FFFFFF";
+
+      const lineStrokeWidth =
+        activeTool === "eraser"
+          ? eraserBrushSize / stage.scaleX()
+          : activeTool === "marker"
+            ? markerBrushSize / stage.scaleX()
+            : brushSize / stage.scaleX();
 
       const newLineNode: LineNode = {
         id: lineId,
         type: "line",
         points: [stagePoint.x, stagePoint.y],
         stroke: strokeColor,
-        strokeWidth: brushSize / stage.scaleX(),
-        draggable: true,
+        strokeWidth: lineStrokeWidth,
+        draggable: activeTool === "marker",
         opacity: opacity,
         locked: false,
-        zIndex: 0, // Default zIndex, can be adjusted later
+        zIndex: 0,
         globalCompositeOperation: composite,
       };
       store.selectNode(null);
-      store.addLineNode(newLineNode, false); // Don't save state when starting line
+      store.addLineNode(newLineNode, false);
       setCurrentLineId(lineId);
       setIsDrawing(true);
       setLastPoint(stagePoint);
@@ -291,14 +329,67 @@ export const EditPaintSurface = ({
       const isWithinCanvas = isWithinLeftPanel(stagePoint);
 
       // Update cursor position and visibility based on tool and canvas position
-      if (activeTool === "edit") {
+      if (
+        activeTool === "edit" ||
+        activeTool === "marker" ||
+        activeTool === "eraser"
+      ) {
         if (isWithinCanvas || isDrawing) {
           stage.container().style.cursor = "none";
-          store.setCursorPosition(pointer);
-          store.setCursorVisible(true);
+
+          // Update cursor directly without triggering React re-render
+          const cursorNode = cursorShapeRef.current;
+          const cursorLayer = cursorLayerRef.current;
+          if (cursorNode && cursorLayer) {
+            const stageX = stage.x();
+            const stageY = stage.y();
+            const scaleX = stage.scaleX();
+            const scaleY = stage.scaleY();
+
+            cursorLayer.x(-stageX / scaleX);
+            cursorLayer.y(-stageY / scaleY);
+            cursorLayer.scaleX(1 / scaleX);
+            cursorLayer.scaleY(1 / scaleY);
+
+            cursorNode.visible(true);
+            cursorNode.position(pointer);
+
+            const cursorRadius =
+              activeTool === "eraser"
+                ? eraserBrushSize / 2
+                : activeTool === "marker"
+                  ? markerBrushSize / 2
+                  : brushSize / 2;
+            cursorNode.radius(cursorRadius);
+
+            if (activeTool === "marker") {
+              cursorNode.fill(markerColor);
+              cursorNode.stroke("rgba(255, 255, 255, 0.7)");
+              cursorNode.strokeWidth(1);
+            } else if (activeTool === "eraser") {
+              cursorNode.fill("rgba(255, 255, 255, 0.3)");
+              cursorNode.stroke("rgba(0, 0, 0, 0.7)");
+              cursorNode.strokeWidth(1);
+            } else if (store.editOperation === "add") {
+              cursorNode.fill(brushColor);
+              cursorNode.stroke("rgba(255, 255, 255, 0.7)");
+              cursorNode.strokeWidth(1);
+            } else {
+              cursorNode.fill("rgba(255, 255, 255, 0.3)");
+              cursorNode.stroke("rgba(0, 0, 0, 0.7)");
+              cursorNode.strokeWidth(1);
+            }
+
+            cursorLayer.batchDraw();
+          }
         } else {
           stage.container().style.cursor = "grab";
-          store.setCursorVisible(false);
+          const cursorNode = cursorShapeRef.current;
+          const cursorLayer = cursorLayerRef.current;
+          if (cursorNode && cursorLayer) {
+            cursorNode.visible(false);
+            cursorLayer.batchDraw();
+          }
         }
       } else {
         if (isWithinCanvas) {
@@ -306,9 +397,13 @@ export const EditPaintSurface = ({
         } else {
           stage.container().style.cursor = "grab";
         }
-        store.setCursorVisible(false);
+        const cursorNode = cursorShapeRef.current;
+        const cursorLayer = cursorLayerRef.current;
+        if (cursorNode && cursorLayer) {
+          cursorNode.visible(false);
+          cursorLayer.batchDraw();
+        }
       }
-
 
       // Handle panning with improved dragging
       if (isDragging) {
@@ -319,11 +414,11 @@ export const EditPaintSurface = ({
 
         const displacement = {
           x: pointer.x - isDragging.x,
-          y: pointer.y - isDragging.y
-        }
+          y: pointer.y - isDragging.y,
+        };
         const newPos = {
           x: isDragging.anchorX + displacement.x,
-          y: isDragging.anchorY + displacement.y
+          y: isDragging.anchorY + displacement.y,
         };
         console.log(isDragging, displacement, newPos);
         currentStage.position(newPos);
@@ -333,7 +428,13 @@ export const EditPaintSurface = ({
     }
 
     // Handle drawing - only add points if within bounds
-    if (isDrawing && currentLineId && activeTool === "edit") {
+    if (
+      isDrawing &&
+      currentLineId &&
+      (activeTool === "edit" ||
+        activeTool === "marker" ||
+        activeTool === "eraser")
+    ) {
       const point = stage.getPointerPosition();
       if (!point) return;
 
@@ -342,18 +443,15 @@ export const EditPaintSurface = ({
         y: (point.y - stage.y()) / stage.scaleY(),
       };
 
-      // Continue drawing regardless of canvas boundaries
-      const currentLine = store.lineNodes.find(
-        (line) => line.id === currentLineId,
-      );
-      if (currentLine) {
-        const updatedPoints = [
-          ...currentLine.points,
-          stagePoint.x,
-          stagePoint.y,
-        ];
-        store.updateLineNode(currentLineId, { points: updatedPoints }, false); // Don't save state while drawing
+      // Update line directly on the Konva layer without React
+      const lineNode = stage.findOne(`#${currentLineId}`) as Konva.Line;
+      if (lineNode) {
+        const currentPoints = lineNode.points();
+        currentPoints.push(stagePoint.x, stagePoint.y);
+        lineNode.points(currentPoints);
+        lineNode.getLayer()?.batchDraw();
       }
+
       setLastPoint(stagePoint);
     }
 
@@ -383,18 +481,27 @@ export const EditPaintSurface = ({
       setSelectionRect((prev) =>
         prev
           ? {
-            // Ensure prev is not null
-            ...prev,
-            endX: clampedPoint.x,
-            endY: clampedPoint.y,
-          }
+              // Ensure prev is not null
+              ...prev,
+              endX: clampedPoint.x,
+              endY: clampedPoint.y,
+            }
           : null,
       );
     }
   };
 
   const handleStageMouseUp = () => {
-    if (isDrawing) {
+    if (isDrawing && currentLineId) {
+      // Update store with final line points after drawing is complete
+      const stage = stageRef.current;
+      if (stage) {
+        const lineNode = stage.findOne(`#${currentLineId}`) as Konva.Line;
+        if (lineNode) {
+          const finalPoints = lineNode.points();
+          store.updateLineNode(currentLineId, { points: finalPoints }, false);
+        }
+      }
       store.saveState(); // Save state only when the stroke is complete
     }
 
@@ -530,7 +637,9 @@ export const EditPaintSurface = ({
     const container = e.target.getStage()?.container();
     if (!container) return;
     const defaultCursor =
-      activeTool === "edit"
+      activeTool === "edit" ||
+      activeTool === "marker" ||
+      activeTool === "eraser"
         ? "none"
         : activeTool === "select"
           ? "grab"
@@ -546,16 +655,14 @@ export const EditPaintSurface = ({
       return;
     }
 
-    if (activeTool === "edit") {
+    if (
+      activeTool === "edit" ||
+      activeTool === "marker" ||
+      activeTool === "eraser"
+    ) {
       stage.container().style.cursor = "none";
-      const pointer = stage.getPointerPosition();
-      if (pointer) {
-        store.setCursorPosition(pointer);
-        store.setCursorVisible(true);
-      }
     } else {
       stage.container().style.cursor = "default";
-      store.setCursorVisible(false);
     }
   };
 
@@ -564,8 +671,12 @@ export const EditPaintSurface = ({
     if (stage) {
       stage.container().style.cursor = "default";
     }
-    store.setCursorVisible(false);
-    store.setCursorPosition(null);
+    const cursorNode = cursorShapeRef.current;
+    const cursorLayer = cursorLayerRef.current;
+    if (cursorNode && cursorLayer) {
+      cursorNode.visible(false);
+      cursorLayer.batchDraw();
+    }
   };
 
   // Update cursor appearance
@@ -582,7 +693,7 @@ export const EditPaintSurface = ({
     const touch2 = touches[1];
     return Math.sqrt(
       Math.pow(touch2.clientX - touch1.clientX, 2) +
-      Math.pow(touch2.clientY - touch1.clientY, 2),
+        Math.pow(touch2.clientY - touch1.clientY, 2),
     );
   };
 
@@ -649,59 +760,63 @@ export const EditPaintSurface = ({
     }
   };
 
+  // Only update cursor appearance when tool or size changes, not on every mouse move
   useLayoutEffect(() => {
     const cursorNode = cursorShapeRef.current;
     const cursorLayer = cursorLayerRef.current;
-    const stage = stageRef.current;
-    if (!cursorNode || !cursorLayer || !stage) return;
+    if (!cursorNode || !cursorLayer) return;
 
-    if (store.cursorVisible && store.cursorPosition && activeTool === "edit") {
-      // Counteract stage transforms to position cursor in screen space
-      const stageX = stage.x();
-      const stageY = stage.y();
-      const scaleX = stage.scaleX();
-      const scaleY = stage.scaleY();
+    const cursorRadius =
+      activeTool === "eraser"
+        ? eraserBrushSize / 2
+        : activeTool === "marker"
+          ? markerBrushSize / 2
+          : brushSize / 2;
+    cursorNode.radius(cursorRadius);
 
-      cursorLayer.x(-stageX / scaleX);
-      cursorLayer.y(-stageY / scaleY);
-      cursorLayer.scaleX(1 / scaleX);
-      cursorLayer.scaleY(1 / scaleY);
-
-      cursorNode.visible(true);
-      cursorNode.position(store.cursorPosition);
-      cursorNode.radius(brushSize / 2);
-
-      if (store.editOperation === "add") {
-        cursorNode.fill(brushColor);
-        cursorNode.stroke("rgba(255, 255, 255, 0.7)");
-        cursorNode.strokeWidth(1);
-      } else {
-        cursorNode.fill("rgba(255, 255, 255, 0.3)");
-        cursorNode.stroke("rgba(0, 0, 0, 0.7)");
-        cursorNode.strokeWidth(1);
-      }
+    if (activeTool === "marker") {
+      cursorNode.fill(markerColor);
+      cursorNode.stroke("rgba(255, 255, 255, 0.7)");
+      cursorNode.strokeWidth(1);
+    } else if (activeTool === "eraser") {
+      cursorNode.fill("rgba(255, 255, 255, 0.3)");
+      cursorNode.stroke("rgba(0, 0, 0, 0.7)");
+      cursorNode.strokeWidth(1);
+    } else if (store.editOperation === "add") {
+      cursorNode.fill(brushColor);
+      cursorNode.stroke("rgba(255, 255, 255, 0.7)");
+      cursorNode.strokeWidth(1);
     } else {
-      cursorNode.visible(false);
+      cursorNode.fill("rgba(255, 255, 255, 0.3)");
+      cursorNode.stroke("rgba(0, 0, 0, 0.7)");
+      cursorNode.strokeWidth(1);
     }
-    cursorLayer.batchDraw();
+
+    if (cursorNode.visible()) {
+      cursorLayer.batchDraw();
+    }
   }, [
-    store.cursorVisible,
-    store.cursorPosition,
     activeTool,
     brushColor,
     brushSize,
-    stageRef,
+    markerBrushSize,
+    eraserBrushSize,
+    markerColor,
     store.editOperation,
   ]);
 
   const renderNode = (node: Node | LineNode) => {
     // Node Callbacks
     const handleNodeMouseDown = (
-      e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+      e: Konva.KonvaEventObject<Event>,
       nodeId: string,
     ) => {
-      // Don't select nodes when edit tool is active
-      if (activeTool === "edit") {
+      // Don't select nodes when edit, marker, or eraser tool is active
+      if (
+        activeTool === "edit" ||
+        activeTool === "marker" ||
+        activeTool === "eraser"
+      ) {
         return;
       }
 
@@ -755,7 +870,7 @@ export const EditPaintSurface = ({
     };
 
     const handleNodeDragStart = (
-      e: Konva.KonvaEventObject<DragEvent>,
+      e: Konva.KonvaEventObject<Event>,
       nodeId: string,
     ) => {
       const targetNode = e.target as Konva.Node & {
@@ -769,7 +884,7 @@ export const EditPaintSurface = ({
     };
 
     const handleNodeDragMove = (
-      e: Konva.KonvaEventObject<DragEvent>,
+      e: Konva.KonvaEventObject<Event>,
       nodeId: string,
     ) => {
       const targetNode = e.target as Konva.Node & {
@@ -789,7 +904,7 @@ export const EditPaintSurface = ({
     };
 
     const handleNodeDragEnd = (
-      e: Konva.KonvaEventObject<DragEvent>,
+      e: Konva.KonvaEventObject<Event>,
       nodeId: string,
     ) => {
       const targetNode = e.target as Konva.Node & {
@@ -902,7 +1017,7 @@ export const EditPaintSurface = ({
       const lineNode = node as LineNode;
 
       const handleLineDragStart = (
-        e: Konva.KonvaEventObject<DragEvent>,
+        e: Konva.KonvaEventObject<Event>,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _nodeId: string, // NodeId is not used but kept for function signature compatibility
       ) => {
@@ -914,7 +1029,7 @@ export const EditPaintSurface = ({
         targetNode.lastY = targetNode.y();
       };
       const handleLineDragMove = (
-        e: Konva.KonvaEventObject<DragEvent>,
+        e: Konva.KonvaEventObject<Event>,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _nodeId: string, // NodeId is not used but kept for function signature compatibility
       ) => {
@@ -926,7 +1041,7 @@ export const EditPaintSurface = ({
         targetNode.lastY = targetNode.y(); // but is set for consistency or future use
       };
       const handleLineDragEnd = (
-        e: Konva.KonvaEventObject<DragEvent>,
+        e: Konva.KonvaEventObject<Event>,
         nodeId: string,
       ) => {
         // Move the line node in the store
@@ -1188,6 +1303,37 @@ export const EditPaintSurface = ({
     loadImageFromUrl(checkerboard).then(setCheckerImage);
   }, []);
 
+  // Smooth fade transition when base image changes
+  useEffect(() => {
+    if (!store.baseImageBitmap) return;
+
+    const imageNode = baseImageRef.current;
+    if (!imageNode) return;
+
+    // Fade out
+    const fadeOut = new Konva.Tween({
+      node: imageNode,
+      opacity: 0,
+      duration: 0.08,
+      onFinish: () => {
+        // Fade in
+        const fadeIn = new Konva.Tween({
+          node: imageNode,
+          opacity: 1,
+          duration: 0.15,
+        });
+        fadeIn.play();
+      },
+    });
+
+    fadeOut.play();
+
+    return () => {
+      fadeOut.destroy();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [store.baseImageBitmap]);
+
   return (
     <SplitPane
       singlePaneMode={singlePaneMode}
@@ -1351,11 +1497,11 @@ export const EditPaintSurface = ({
             scaleY={previewScale}
             x={0}
             y={0}
-          // style={{
-          //   background: '#f5f5f5',
-          //   border: '1px solid #ddd',
-          //   borderRadius: '8px',
-          // }}
+            // style={{
+            //   background: '#f5f5f5',
+            //   border: '1px solid #ddd',
+            //   borderRadius: '8px',
+            // }}
           >
             <Layer>
               <Image

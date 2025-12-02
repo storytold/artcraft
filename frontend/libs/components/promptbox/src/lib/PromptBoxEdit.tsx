@@ -8,6 +8,10 @@ import {
   faSpinnerThird,
   faFrame,
   faCopy,
+  faPen,
+  faEraser,
+  faUndo,
+  faRedo,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, ToggleButton } from "@storyteller/ui-button";
@@ -32,6 +36,9 @@ export interface PromptBoxEditProps {
   supportsMaskedInpainting?: boolean;
   isEnqueueing?: boolean;
   uploadImage?: UploadImageFn;
+  isNanoBananaModel?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const PromptBoxEdit = ({
@@ -46,6 +53,9 @@ export const PromptBoxEdit = ({
   onGenerationCountChange,
   supportsMaskedInpainting = false,
   uploadImage,
+  isNanoBananaModel = false,
+  onUndo,
+  onRedo,
 }: PromptBoxEditProps) => {
   const [prompt, setPrompt] = useState("");
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
@@ -179,27 +189,44 @@ export const PromptBoxEdit = ({
     }
   };
 
-  const modes = [
-    {
-      value: "edit",
-      icon: faEdit,
-      text: "Edit Region",
-      tooltip: "Edit area for inpainting",
-    },
-    {
-      value: "select",
-      icon: faMousePointer,
-      text: "Select",
-      tooltip: "Selection mode",
-    },
-    // Commented out for now - BFL-1000
-    // {
-    //   value: "expand",
-    //   icon: faExpand,
-    //   text: "Expand",
-    //   tooltip: "Expand area for outpainting",
-    // },
-  ];
+  const modes = isNanoBananaModel
+    ? [
+        {
+          value: "marker",
+          icon: faPen,
+          text: "Marker",
+        },
+        {
+          value: "eraser",
+          icon: faEraser,
+          text: "Eraser",
+        },
+      ]
+    : supportsMaskedInpainting
+    ? [
+        {
+          value: "edit",
+          icon: faEdit,
+          text: "Edit Region",
+        },
+        {
+          value: "eraser",
+          icon: faEraser,
+          text: "Eraser",
+        },
+      ]
+    : [
+        {
+          value: "edit",
+          icon: faEdit,
+          text: "Edit Region",
+        },
+        {
+          value: "select",
+          icon: faMousePointer,
+          text: "Select",
+        },
+      ];
 
   return (
     <>
@@ -217,6 +244,36 @@ export const PromptBoxEdit = ({
             uploadImage={uploadImage}
             onImageClick={() => {}}
           />
+        )}
+        {(supportsMaskedInpainting || isNanoBananaModel) && (
+          <div className="glass w-fit mx-auto rounded-xl px-2 py-2 flex items-center gap-3">
+            <ButtonIconSelect
+              options={modes}
+              onOptionChange={onModeSelectionChange}
+              selectedOption={selectedMode}
+            />
+            <div className="h-6 w-px bg-white/20" />
+            <div className="flex items-center gap-1">
+              <Tooltip content="Undo" position="top" delay={200}>
+                <button
+                  onClick={onUndo}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                  disabled={!onUndo}
+                >
+                  <FontAwesomeIcon icon={faUndo} className="h-4 w-4" />
+                </button>
+              </Tooltip>
+              <Tooltip content="Redo" position="top" delay={200}>
+                <button
+                  onClick={onRedo}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                  disabled={!onRedo}
+                >
+                  <FontAwesomeIcon icon={faRedo} className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            </div>
+          </div>
         )}
         <div
           className={twMerge(
@@ -275,14 +332,6 @@ export const PromptBoxEdit = ({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              {supportsMaskedInpainting && (
-                <ButtonIconSelect
-                  options={modes}
-                  onOptionChange={onModeSelectionChange}
-                  selectedOption={selectedMode}
-                />
-              )}
-
               <Tooltip
                 content={
                   useSystemPrompt

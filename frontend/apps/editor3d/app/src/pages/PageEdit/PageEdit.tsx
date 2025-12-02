@@ -10,7 +10,7 @@ import { ActiveEditTool, useEditStore } from "./stores/EditState";
 import { EditPaintSurface } from "./EditPaintSurface";
 import { normalizeCanvas } from "../../Helpers/CanvasHelpers";
 import { BaseImageSelector, BaseSelectorImage } from "./BaseImageSelector";
-import DrawToolControlBar from "./DrawToolControlBar";
+import MarkerToolControlBar from "./MarkerToolControlBar";
 import {
   ClassyModelSelector,
   useSelectedImageModel,
@@ -142,14 +142,30 @@ const PageEdit = () => {
     const canvasW = store.getAspectRatioDimensions().width;
     const canvasH = store.getAspectRatioDimensions().height;
 
+    // Account for top toolbar and bottom prompt box
+    // Top toolbar (MarkerToolControlBar): ~140px from top (toolbar + padding)
+    // Bottom prompt box: ~200px from bottom (can vary with reference images)
+    // Mode selector above prompt: ~60px
+    const topToolbarHeight =
+      store.activeTool === "marker" ||
+      store.activeTool === "eraser" ||
+      store.activeTool === "edit"
+        ? 140
+        : 0;
+
+    // Check if model supports masking or is nano banana (has mode selector)
+    const hasModeSelectorUI =
+      selectedImageModel?.usesInpaintingMask ||
+      selectedImageModel?.id === "gemini_25_flash";
+    const bottomUIHeight = hasModeSelectorUI ? 260 : 200;
+    const totalVerticalReserved = topToolbarHeight + bottomUIHeight;
+
     // Calculate optimal scale to fit the canvas in the container
-    // Leave horizontal margin via factor, and explicit vertical padding
     const paddingFactor = 0.95; // horizontal padding (left/right)
-    const verticalPaddingPx = 128; // explicit top/bottom margin in pixels
     const scaleX = (containerWidth * paddingFactor) / canvasW;
     const availableHeight = Math.max(
       0,
-      containerHeight - verticalPaddingPx * 2,
+      containerHeight - totalVerticalReserved,
     );
     const scaleY = availableHeight / canvasH;
 
@@ -162,20 +178,20 @@ const PageEdit = () => {
     // Apply the calculated scale
     stage.scale({ x: boundedScale, y: boundedScale });
 
-    // Calculate position to center canvas in container (creates ~verticalPaddingPx margins)
+    // Calculate position to center canvas in available space (between toolbars)
+    const verticalOffset = (topToolbarHeight - bottomUIHeight) / 2;
     stage.position({
       x: (containerWidth - canvasW * boundedScale) / 2,
-      y: (containerHeight - canvasH * boundedScale) / 2,
+      y: (containerHeight - canvasH * boundedScale) / 2 + verticalOffset,
     });
-    // NOTE: Store isn't used as dependency because it's a different const reference each time
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedImageModel, store]);
 
   // Auto-fit when the base image becomes available and stage is ready
+  // Also re-fit when active tool or model changes (as UI layout changes)
   useEffect(() => {
     if (!store.baseImageBitmap) return;
     if (!stageRef.current) return;
-    // Defer to ensure container has laid out with correct size
+    // Defer to ensure container has laid out with correct size and toolbars have rendered
     const id = requestAnimationFrame(() => {
       const id2 = requestAnimationFrame(() => {
         void onFitPressed();
@@ -184,7 +200,12 @@ const PageEdit = () => {
     });
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.baseImageBitmap, stageRef.current]);
+  }, [
+    store.baseImageBitmap,
+    stageRef.current,
+    store.activeTool,
+    selectedImageModel,
+  ]);
 
   // Re-center on window resize when an image is loaded
   useEffect(() => {
@@ -289,24 +310,28 @@ const PageEdit = () => {
     [generationCount, selectedImageModel, store.baseImageInfo?.mediaToken],
   );
 
-  //const modelConfig = lookupModelByTauriId(selectedImageModel!.tauriId);
-  //const supportsMaskedInpainting = modelConfig?.tags?.includes(ModelTag.MaskedInpainting) ?? false;
+  const isNanoBananaModel = selectedImageModel?.id === "gemini_25_flash";
   const supportsMaskedInpainting =
     selectedImageModel?.usesInpaintingMask ?? false;
 
   useEffect(() => {
-    if (
+    if (isNanoBananaModel) {
+      if (store.activeTool !== "marker" && store.activeTool !== "eraser") {
+        store.setActiveTool("marker");
+      }
+    } else if (
       !supportsMaskedInpainting &&
       (store.activeTool !== "select" || store.lineNodes.length > 0)
     ) {
-      // TODO: Implement a new mode for unsupported masking and hide the nodes layer instead of clearing
       store.setActiveTool("select");
       store.clearLineNodes();
-    } else if (supportsMaskedInpainting && store.activeTool === "select") {
-      // Switch to edit mode if supported and currently in select mode
+    } else if (
+      supportsMaskedInpainting &&
+      (store.activeTool === "select" || store.activeTool === "marker")
+    ) {
       store.setActiveTool("edit");
     }
-  }, [store, supportsMaskedInpainting]);
+  }, [store, supportsMaskedInpainting, isNanoBananaModel]);
 
   /*
    *
@@ -323,7 +348,7 @@ const PageEdit = () => {
     return (
       <div
         className={
-          "flex h-[calc(100vh-56px)] w-full items-center justify-center bg-ui-panel p-8"
+          "bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full items-center justify-center p-8"
         }
       >
         <div className="w-full max-w-5xl">
@@ -346,19 +371,56 @@ const PageEdit = () => {
   return (
     <>
       <div className="fixed inset-0 -z-10 bg-ui-background" />
-      <div
-        className={`preserve-aspect-ratio fixed left-1/2 top-0 z-10 -translate-x-1/2 transform ${
-          isSelecting ? "pointer-events-none" : "pointer-events-auto"
-        }`}
-        style={{ display: store.activeTool === "edit" ? "block" : "none" }}
-      >
-        <DrawToolControlBar
-          currentMode={store.editOperation}
-          currentSize={store.brushSize}
-          onModeChange={store.setEditOperation}
-          onSizeChange={store.setBrushSize}
-        />
-      </div>
+      {(store.activeTool === "marker" || store.activeTool === "eraser") &&
+        isNanoBananaModel && (
+          <div
+            className={`preserve-aspect-ratio fixed left-1/2 top-0 z-10 -translate-x-1/2 transform ${
+              isSelecting ? "pointer-events-none" : "pointer-events-auto"
+            }`}
+          >
+            <MarkerToolControlBar
+              currentSize={
+                store.activeTool === "eraser"
+                  ? store.eraserBrushSize
+                  : store.markerBrushSize
+              }
+              currentColor={store.markerColor}
+              activeTool={store.activeTool}
+              showColorPicker={true}
+              onSizeChange={
+                store.activeTool === "eraser"
+                  ? store.setEraserBrushSize
+                  : store.setMarkerBrushSize
+              }
+              onColorChange={store.setMarkerColor}
+            />
+          </div>
+        )}
+      {(store.activeTool === "edit" || store.activeTool === "eraser") &&
+        supportsMaskedInpainting && (
+          <div
+            className={`preserve-aspect-ratio fixed left-1/2 top-0 z-10 -translate-x-1/2 transform ${
+              isSelecting ? "pointer-events-none" : "pointer-events-auto"
+            }`}
+          >
+            <MarkerToolControlBar
+              currentSize={
+                store.activeTool === "eraser"
+                  ? store.eraserBrushSize
+                  : store.brushSize
+              }
+              currentColor={store.brushColor}
+              activeTool={store.activeTool}
+              showColorPicker={false}
+              onSizeChange={
+                store.activeTool === "eraser"
+                  ? store.setEraserBrushSize
+                  : store.setBrushSize
+              }
+              onColorChange={store.setBrushColor}
+            />
+          </div>
+        )}
       <div
         className={`preserve-aspect-ratio fixed right-4 top-1/2 z-10 -translate-y-1/2 transform ${
           isSelecting ? "pointer-events-none" : "pointer-events-auto"
@@ -413,6 +475,9 @@ const PageEdit = () => {
           generationCount={generationCount}
           onGenerationCountChange={setGenerationCount}
           supportsMaskedInpainting={supportsMaskedInpainting}
+          isNanoBananaModel={isNanoBananaModel}
+          onUndo={store.undo}
+          onRedo={store.redo}
         />
       </div>
       <div className="relative z-0">
@@ -461,6 +526,9 @@ const PageEdit = () => {
             activeTool={store.activeTool}
             brushColor={"rgba(39, 187, 245, 0.54)"}
             brushSize={store.brushSize}
+            markerBrushSize={store.markerBrushSize}
+            eraserBrushSize={store.eraserBrushSize}
+            markerColor={store.markerColor}
             onSelectionChange={setIsSelecting}
             stageRef={stageRef}
             transformerRefs={transformerRefs}

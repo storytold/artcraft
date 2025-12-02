@@ -5,7 +5,7 @@ import { BaseSelectorImage } from "../BaseImageSelector";
 import { FetchProxy } from "libs/tauri-utils/src/lib/FetchProxy";
 import { ImageBundle } from "../HistoryStack";
 
-export type ActiveEditTool = "select" | "edit" | "expand";
+export type ActiveEditTool = "select" | "edit" | "expand" | "marker" | "eraser";
 export type EditOperation = "add" | "minus";
 
 interface EditState {
@@ -22,8 +22,11 @@ interface EditState {
   editOperation: EditOperation;
   brushColor: string;
   brushSize: number;
+  markerBrushSize: number;
+  eraserBrushSize: number;
   brushOpacity: number;
   fillColor: string;
+  markerColor: string;
 
   // Cursor state
   cursorPosition: { x: number; y: number } | null;
@@ -104,7 +107,10 @@ interface EditState {
   setBrushColor: (color: string) => void;
   setBrushOpacity: (opacity: number) => void;
   setBrushSize: (size: number) => void;
+  setMarkerBrushSize: (size: number) => void;
+  setEraserBrushSize: (size: number) => void;
   setFillColor: (color: string) => void;
+  setMarkerColor: (color: string) => void;
 
   // Cursor actions
   setCursorPosition: (position: { x: number; y: number } | null) => void;
@@ -168,8 +174,11 @@ export const useEditStore = create<EditState>((set, get, store) => ({
   editOperation: "add", // Default to 'add' operation
   brushColor: "#000000",
   brushSize: 30,
+  markerBrushSize: 5,
+  eraserBrushSize: 25,
   brushOpacity: 1,
   fillColor: "rgba(0, 0, 255, 0.5)",
+  markerColor: "#FF0000",
 
   // Cursor initial state
   cursorPosition: null,
@@ -833,8 +842,11 @@ export const useEditStore = create<EditState>((set, get, store) => ({
   setEditOperation: (mode: EditOperation) => set({ editOperation: mode }),
   setBrushColor: (color: string) => set({ brushColor: color }),
   setBrushSize: (size: number) => set({ brushSize: size }),
+  setMarkerBrushSize: (size: number) => set({ markerBrushSize: size }),
+  setEraserBrushSize: (size: number) => set({ eraserBrushSize: size }),
   setFillColor: (color: string) => set({ fillColor: color }),
   setBrushOpacity: (opacity: number) => set({ brushOpacity: opacity }),
+  setMarkerColor: (color: string) => set({ markerColor: color }),
 
   // Cursor actions
   setCursorPosition: (position: { x: number; y: number } | null) =>
