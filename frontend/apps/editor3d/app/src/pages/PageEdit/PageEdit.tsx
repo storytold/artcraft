@@ -293,11 +293,11 @@ const PageEdit = () => {
         switch (ratio) {
           case "auto":
             return EnqueueEditImageSize.Auto;
-          case "3:2":
+          case "wide":
             return EnqueueEditImageSize.Wide;
-          case "2:3":
+          case "tall":
             return EnqueueEditImageSize.Tall;
-          case "1:1":
+          case "square":
             return EnqueueEditImageSize.Square;
           default:
             return undefined;

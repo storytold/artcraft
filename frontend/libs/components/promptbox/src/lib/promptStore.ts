@@ -8,7 +8,7 @@ export interface RefImage {
 }
 
 // ----- 2D Prompt Box Store -----
-type AspectRatio = "3:2" | "2:3" | "1:1";
+type AspectRatio = "wide" | "tall" | "square";
 type Resolution = "1k" | "2k" | "4k";
 
 interface Prompt2DStore {
@@ -28,7 +28,7 @@ interface Prompt2DStore {
 
 export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
   prompt: "",
-  aspectRatio: "3:2",
+  aspectRatio: "wide",
   resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
@@ -84,7 +84,7 @@ interface PromptImageStore {
 
 export const usePromptImageStore = create<PromptImageStore>()((set) => ({
   prompt: "",
-  aspectRatio: "3:2",
+  aspectRatio: "wide",
   resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
@@ -131,7 +131,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
 }));
 
 // ----- Edit Prompt Box Store -----
-type EditAspectRatio = "auto" | "3:2" | "2:3" | "1:1";
+type EditAspectRatio = "auto" | "wide" | "tall" | "square";
 
 interface PromptEditStore {
   referenceImages: RefImage[];

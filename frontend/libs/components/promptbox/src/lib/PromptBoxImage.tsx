@@ -111,34 +111,34 @@ export const PromptBoxImage = ({
   }, [isImageRowVisible, onImageRowVisibilityChange]);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
-      label: "3:2",
-      selected: aspectRatio === "3:2",
+      label: "Wide",
+      selected: aspectRatio === "wide",
       icon: <FontAwesomeIcon icon={faRectangle} className="h-4 w-4" />,
     },
     {
-      label: "2:3",
-      selected: aspectRatio === "2:3",
+      label: "Tall",
+      selected: aspectRatio === "tall",
       icon: <FontAwesomeIcon icon={faRectangleVertical} className="h-4 w-4" />,
     },
     {
-      label: "1:1",
-      selected: aspectRatio === "1:1",
+      label: "Square",
+      selected: aspectRatio === "square",
       icon: <FontAwesomeIcon icon={faSquare} className="h-4 w-4" />,
     },
   ]);
   const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
     {
-      label: "1k",
+      label: "1K",
       selected: resolution === "1k",
       icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
     },
     {
-      label: "2k",
+      label: "2K",
       selected: resolution === "2k",
       icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
     },
     {
-      label: "4k",
+      label: "4K",
       selected: resolution === "4k",
       icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
     },
@@ -201,7 +201,7 @@ export const PromptBoxImage = ({
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label === aspectRatio,
+        selected: item.label.toLowerCase() === aspectRatio,
       }))
     );
   }, [aspectRatio]);
@@ -210,13 +210,13 @@ export const PromptBoxImage = ({
     setResolutionList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label === resolution,
+        selected: item.label.toLowerCase() === resolution,
       }))
     );
   }, [resolution]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
-    setAspectRatio(selectedItem.label as any);
+    setAspectRatio(selectedItem.label.toLowerCase() as any);
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
@@ -226,7 +226,7 @@ export const PromptBoxImage = ({
   };
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
-    setResolution(selectedItem.label as any);
+    setResolution(selectedItem.label.toLowerCase() as any);
   };
 
   const handleGenerationCountSelect = (selectedItem: PopoverItem) => {
@@ -330,12 +330,12 @@ export const PromptBoxImage = ({
 
   const getCurrentAspectRatio = (): EnqueueTextToImageSize => {
     const selected = aspectRatioList.find((item) => item.selected);
-    switch (selected?.label) {
-      case "3:2":
+    switch (selected?.label.toLowerCase()) {
+      case "wide":
         return EnqueueTextToImageSize.Wide;
-      case "2:3":
+      case "tall":
         return EnqueueTextToImageSize.Tall;
-      case "1:1":
+      case "square":
       default:
         return EnqueueTextToImageSize.Square;
     }
@@ -462,26 +462,28 @@ export const PromptBoxImage = ({
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Tooltip
-                content="Aspect Ratio"
-                position="top"
-                className="z-50"
-                closeOnClick={true}
-              >
-                <PopoverMenu
-                  items={aspectRatioList}
-                  onSelect={handleAspectRatioSelect}
-                  mode="toggle"
-                  panelTitle="Aspect Ratio"
-                  showIconsInList
-                  triggerIcon={
-                    <FontAwesomeIcon
-                      icon={getCurrentResolutionIcon()}
-                      className="h-4 w-4"
-                    />
-                  }
-                />
-              </Tooltip>
+              {selectedModel?.canChangeAspectRatio && (
+                <Tooltip
+                  content="Aspect Ratio"
+                  position="top"
+                  className="z-50"
+                  closeOnClick={true}
+                >
+                  <PopoverMenu
+                    items={aspectRatioList}
+                    onSelect={handleAspectRatioSelect}
+                    mode="toggle"
+                    panelTitle="Aspect Ratio"
+                    showIconsInList
+                    triggerIcon={
+                      <FontAwesomeIcon
+                        icon={getCurrentResolutionIcon()}
+                        className="h-4 w-4"
+                      />
+                    }
+                  />
+                </Tooltip>
+              )}
               {selectedModel?.canChangeResolution && (
                 <Tooltip
                   content="Resolution"

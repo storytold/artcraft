@@ -2,7 +2,6 @@ import {
   faRectangle,
   faRectangleVertical,
   faSquare,
-  faCircle,
 } from "@fortawesome/pro-regular-svg-icons";
 import {
   faEdit,
@@ -18,6 +17,7 @@ import {
   faUndo,
   faRedo,
   faExpand,
+  faArrowsUpDownLeftRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, ToggleButton } from "@storyteller/ui-button";
@@ -35,7 +35,7 @@ export interface PromptBoxEditProps {
   selectedMode?: string;
   onGenerateClick: (
     prompt: string,
-    options?: { aspectRatio?: string; resolution?: string }
+    options?: { aspectRatio?: string; resolution?: string },
   ) => void | Promise<void>;
   isDisabled?: boolean;
   onFitPressed?: () => void | Promise<void>;
@@ -70,7 +70,7 @@ export const PromptBoxEdit = ({
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
   const [generationCount, setGenerationCount] = useState<number>(
-    typeof generationCountProp === "number" ? generationCountProp : 1
+    typeof generationCountProp === "number" ? generationCountProp : 1,
   );
   const [internalEnqueueing, setInternalEnqueueing] = useState(false);
   const referenceImages = usePromptEditStore((s) => s.referenceImages);
@@ -83,45 +83,47 @@ export const PromptBoxEdit = ({
   const [showImagePrompts, setShowImagePrompts] = useState(false);
 
   const [generationCountList, setGenerationCountList] = useState<PopoverItem[]>(
-    []
+    [],
   );
 
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
       label: "Auto",
       selected: aspectRatio === "auto",
-      icon: <FontAwesomeIcon icon={faCircle} className="h-4 w-4" />,
+      icon: (
+        <FontAwesomeIcon icon={faArrowsUpDownLeftRight} className="h-4 w-4" />
+      ),
     },
     {
-      label: "3:2",
-      selected: aspectRatio === "3:2",
+      label: "Wide",
+      selected: aspectRatio === "wide",
       icon: <FontAwesomeIcon icon={faRectangle} className="h-4 w-4" />,
     },
     {
-      label: "2:3",
-      selected: aspectRatio === "2:3",
+      label: "Tall",
+      selected: aspectRatio === "tall",
       icon: <FontAwesomeIcon icon={faRectangleVertical} className="h-4 w-4" />,
     },
     {
-      label: "1:1",
-      selected: aspectRatio === "1:1",
+      label: "Square",
+      selected: aspectRatio === "square",
       icon: <FontAwesomeIcon icon={faSquare} className="h-4 w-4" />,
     },
   ]);
 
   const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
     {
-      label: "1k",
+      label: "1K",
       selected: resolution === "1k",
       icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
     },
     {
-      label: "2k",
+      label: "2K",
       selected: resolution === "2k",
       icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
     },
     {
-      label: "4k",
+      label: "4K",
       selected: resolution === "4k",
       icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
     },
@@ -134,7 +136,7 @@ export const PromptBoxEdit = ({
         selected:
           item.label.toLowerCase() === aspectRatio ||
           (item.label === "Auto" && aspectRatio === "auto"),
-      }))
+      })),
     );
   }, [aspectRatio]);
 
@@ -142,8 +144,8 @@ export const PromptBoxEdit = ({
     setResolutionList((prev) =>
       prev.map((item) => ({
         ...item,
-        selected: item.label === resolution,
-      }))
+        selected: item.label.toLowerCase() === resolution,
+      })),
     );
   }, [resolution]);
 
@@ -154,7 +156,7 @@ export const PromptBoxEdit = ({
   };
 
   const handleResolutionSelect = (selectedItem: PopoverItem) => {
-    setResolution(selectedItem.label as any);
+    setResolution(selectedItem.label.toLowerCase() as any);
   };
 
   const getCurrentAspectRatioIcon = () => {
@@ -187,7 +189,7 @@ export const PromptBoxEdit = ({
     const caps = getCapabilitiesForModel(selectedImageModel);
     const items: PopoverItem[] = Array.from(
       { length: caps.maxGenerationCount },
-      (_, i) => i + 1
+      (_, i) => i + 1,
     ).map((count) => ({
       label: String(count),
       selected: count === generationCount,
@@ -198,7 +200,7 @@ export const PromptBoxEdit = ({
     if (generationCount < 1 || generationCount > caps.maxGenerationCount) {
       const clamped = Math.min(
         Math.max(1, generationCount),
-        caps.maxGenerationCount
+        caps.maxGenerationCount,
       );
       setGenerationCount(clamped);
       onGenerationCountChange?.(clamped);
@@ -211,7 +213,7 @@ export const PromptBoxEdit = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === String(generationCount),
-      }))
+      })),
     );
   }, [generationCount]);
 
@@ -254,7 +256,7 @@ export const PromptBoxEdit = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
-      }))
+      })),
     );
   };
 
@@ -267,7 +269,7 @@ export const PromptBoxEdit = ({
     }, 10000);
     try {
       await Promise.resolve(
-        onGenerateClick(prompt, { aspectRatio, resolution })
+        onGenerateClick(prompt, { aspectRatio, resolution }),
       );
     } finally {
       clearTimeout(timeout);
@@ -289,30 +291,30 @@ export const PromptBoxEdit = ({
         },
       ]
     : supportsMaskedInpainting
-    ? [
-        {
-          value: "edit",
-          icon: faEdit,
-          text: "Edit Region",
-        },
-        {
-          value: "eraser",
-          icon: faEraser,
-          text: "Eraser",
-        },
-      ]
-    : [
-        {
-          value: "edit",
-          icon: faEdit,
-          text: "Edit Region",
-        },
-        {
-          value: "select",
-          icon: faMousePointer,
-          text: "Select",
-        },
-      ];
+      ? [
+          {
+            value: "edit",
+            icon: faEdit,
+            text: "Edit Region",
+          },
+          {
+            value: "eraser",
+            icon: faEraser,
+            text: "Eraser",
+          },
+        ]
+      : [
+          {
+            value: "edit",
+            icon: faEdit,
+            text: "Edit Region",
+          },
+          {
+            value: "select",
+            icon: faMousePointer,
+            text: "Select",
+          },
+        ];
 
   return (
     <>
@@ -354,7 +356,7 @@ export const PromptBoxEdit = ({
               visible={true}
               maxImagePromptCount={Math.max(
                 1,
-                selectedImageModel?.maxImagePromptCount ?? 1
+                selectedImageModel?.maxImagePromptCount ?? 1,
               )}
               allowUpload={true}
               referenceImages={referenceImages}
@@ -370,7 +372,7 @@ export const PromptBoxEdit = ({
               isFocused && "ring-1 ring-primary border-primary",
               selectedImageModel?.canUseImagePrompt &&
                 isImageRowVisible &&
-                "rounded-t-none"
+                "rounded-t-none",
             )}
           >
             <div className="flex justify-center gap-2">
@@ -385,7 +387,7 @@ export const PromptBoxEdit = ({
                     variant="action"
                     className={twMerge(
                       "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
-                      isImageRowVisible && "text-primary"
+                      isImageRowVisible && "text-primary",
                     )}
                     onClick={() => setShowImagePrompts((prev) => !prev)}
                   >
@@ -530,7 +532,7 @@ export const PromptBoxEdit = ({
                     !prompt.trim()
                   }
                 >
-                  {isEnqueueing ?? internalEnqueueing ? (
+                  {(isEnqueueing ?? internalEnqueueing) ? (
                     <FontAwesomeIcon
                       icon={faSpinnerThird}
                       className="animate-spin text-lg"

@@ -15,11 +15,13 @@ import {
   faMessageCheck,
   faSparkles,
   faSpinnerThird,
-  faSquare,
-  faPortrait,
   faWaveformLines,
 } from "@fortawesome/pro-solid-svg-icons";
-import { faRectangle } from "@fortawesome/pro-regular-svg-icons";
+import {
+  faRectangle,
+  faSquare,
+  faRectangleVertical,
+} from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
@@ -54,7 +56,7 @@ interface PromptBoxVideoProps {
   useJobContext: () => JobContextType;
   onEnqueuePressed?: (
     prompt: string,
-    subscriberId: string
+    subscriberId: string,
   ) => void | Promise<void>;
   selectedModel?: VideoModel;
   imageMediaId?: string;
@@ -95,14 +97,14 @@ export const PromptBoxVideo = ({
   const setUseSystemPrompt = usePromptVideoStore((s) => s.setUseSystemPrompt);
   const generateWithSound = usePromptVideoStore((s) => s.generateWithSound);
   const setGenerateWithSound = usePromptVideoStore(
-    (s) => s.setGenerateWithSound
+    (s) => s.setGenerateWithSound,
   );
   const resolution = usePromptVideoStore((s) => s.resolution);
   const setResolution = usePromptVideoStore((s) => s.setResolution);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
-    []
+    [],
   );
   const referenceImages = usePromptVideoStore((s) => s.referenceImages);
   const setReferenceImages = usePromptVideoStore((s) => s.setReferenceImages);
@@ -124,7 +126,7 @@ export const PromptBoxVideo = ({
     // When switching to a new model, the existing resolution might not be correct.
     // This is a gross and nasty hack to handle the case where the resolution is not found.
     const resolutionExists = selectedModel.sizeOptions.some(
-      (option) => option.textLabel === resolution
+      (option) => option.textLabel === resolution,
     );
     const useFirstOption = !resolutionExists;
 
@@ -135,7 +137,7 @@ export const PromptBoxVideo = ({
           faIcon = faRectangle;
           break;
         case SizeIconOption.Portrait:
-          faIcon = faPortrait;
+          faIcon = faRectangleVertical;
           break;
         case SizeIconOption.Square:
           faIcon = faSquare;
@@ -151,7 +153,7 @@ export const PromptBoxVideo = ({
     });
   } else {
     const resolutionExists = DEFAULT_RESOLUTIONS.some(
-      (option) => option.textLabel === resolution
+      (option) => option.textLabel === resolution,
     );
     const useFirstOption = !resolutionExists;
 
@@ -162,7 +164,7 @@ export const PromptBoxVideo = ({
           faIcon = faRectangle;
           break;
         case SizeIconOption.Portrait:
-          faIcon = faPortrait;
+          faIcon = faRectangleVertical;
           break;
         case SizeIconOption.Square:
           faIcon = faSquare;
@@ -213,7 +215,7 @@ export const PromptBoxVideo = ({
       resolutionOptions.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
-      }))
+      })),
     );
   };
 
@@ -329,12 +331,11 @@ export const PromptBoxVideo = ({
   };
 
   const getGrokAspectRatio = (): GROK_ASPECT_RATIO => {
-    // NB: This function was just written to give us better type safety. 
+    // NB: This function was just written to give us better type safety.
     // There has to be a cleaner appraoach.
-    const maybeAspectRatio = selectedModel?.
-      sizeOptions?.
-      find((option) => option.textLabel === resolution)?.
-      tauriValue;
+    const maybeAspectRatio = selectedModel?.sizeOptions?.find(
+      (option) => option.textLabel === resolution,
+    )?.tauriValue;
 
     switch (maybeAspectRatio) {
       case "landscape":
@@ -346,7 +347,7 @@ export const PromptBoxVideo = ({
       default:
         return "landscape";
     }
-  }
+  };
 
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
 
@@ -386,7 +387,7 @@ export const PromptBoxVideo = ({
                   src={image.url}
                   alt="Reference preview"
                   className="w-full h-full object-contain"
-                />
+                />,
               );
               setIsModalOpen(true);
             }}
@@ -403,7 +404,7 @@ export const PromptBoxVideo = ({
             isImageRowVisible && "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"
-              : "ring-1 ring-transparent"
+              : "ring-1 ring-transparent",
           )}
         >
           <div className="flex justify-center gap-2">

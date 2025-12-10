@@ -283,11 +283,11 @@ const PageDraw = () => {
           onAspectRatioChange={async (ratio: string) => {
             const ratioToType = (ratio: string): AspectRatioType => {
               switch (ratio) {
-                case "2:3":
+                case "tall":
                   return AspectRatioType.PORTRAIT;
-                case "3:2":
+                case "wide":
                   return AspectRatioType.LANDSCAPE;
-                case "1:1":
+                case "square":
                   return AspectRatioType.SQUARE;
                 default:
                   return AspectRatioType.NONE;
