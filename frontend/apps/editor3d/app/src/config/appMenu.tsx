@@ -4,10 +4,10 @@ import {
   faFilm,
   faPalette,
   faImage,
-  faPenNib,
   faDroplet,
   faPhotoFilm,
   faGlobe,
+  faPencil,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useTabStore, TabId } from "~/pages/Stores/TabState";
 import { set3DPageMounted } from "~/pages/PageEnigma/Editor/editor";
@@ -47,7 +47,7 @@ export const APP_DESCRIPTORS: AppDescriptor[] = [
   {
     id: "EDIT",
     label: "Edit Image",
-    icon: faPenNib,
+    icon: faPencil,
     imageSrc: "/resources/gifs/INPAINT_CANVAS_DEMO.gif",
     description: "Modify your image with AI",
     large: true,
@@ -123,7 +123,7 @@ export const ALL_APPS: FullAppItem[] = [
     id: "edit-image",
     label: "Edit Image",
     description: "Change with inpainting",
-    icon: faPenNib,
+    icon: faPencil,
     category: "edit",
     action: "EDIT",
     color: "bg-purple-600/40",

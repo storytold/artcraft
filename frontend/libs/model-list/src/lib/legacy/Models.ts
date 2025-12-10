@@ -20,7 +20,7 @@ const cfg = (
     id: string;
     category: ModelCategory;
     info: ModelInfo;
-  }
+  },
 ): ModelConfig => ({
   label: m.label ?? m.info.name,
   description: m.description,
@@ -129,6 +129,21 @@ const ALL_MODELS: ModelConfig[] = [
     },
     description: "Fast and high-quality model",
     badges: [{ label: "20 sec." }],
+    capabilities: {
+      maxGenerationCount: 4,
+    },
+    tags: [ModelTag.InstructiveEdit, ModelTag.NonMaskedInpainting],
+  }),
+  cfg({
+    id: "gemini_25_flash",
+    category: "image",
+    info: {
+      name: "Nano Banana",
+      tauri_id: "gemini_25_flash",
+      creator: mc.Google,
+    },
+    description: "Incredibly instructive editing",
+    badges: [{ label: "25 sec." }],
     capabilities: {
       maxGenerationCount: 4,
     },
@@ -252,23 +267,22 @@ export const getModelsByCategory = (category: ModelCategory): ModelConfig[] =>
 
 export const getInstructiveImageEditModels = (): ModelConfig[] =>
   ALL_MODELS.filter(
-    (m) => m.category === "image" && m.tags?.includes("instructiveEdit")
+    (m) => m.category === "image" && m.tags?.includes("instructiveEdit"),
   );
 
 export const getMaskedInpaintModels = (): ModelConfig[] =>
   ALL_MODELS.filter(
-    (m) => m.category === "image" && m.tags?.includes(ModelTag.MaskedInpainting)
+    (m) =>
+      m.category === "image" && m.tags?.includes(ModelTag.MaskedInpainting),
   );
 
 export const lookupModelByTauriId = (
-  tauriId: string
+  tauriId: string,
 ): ModelConfig | undefined =>
   ALL_MODELS.find((m) => m.info.tauri_id === tauriId);
 
 // Single exported capability resolver so callers never need to touch anything else
-export const getCapabilitiesForModel = (
-  model?: Model
-): ModelCapabilities => {
+export const getCapabilitiesForModel = (model?: Model): ModelCapabilities => {
   if (!model) return DEFAULT_CAPABILITIES;
   const cfg = lookupModelByTauriId(model.tauriId);
   return cfg?.capabilities ?? DEFAULT_CAPABILITIES;
