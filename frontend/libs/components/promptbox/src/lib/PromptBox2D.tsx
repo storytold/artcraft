@@ -17,6 +17,7 @@ import {
   faSpinnerThird,
   faFrame,
   faCopy,
+  faExpand,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   faRectangleVertical,
@@ -30,6 +31,7 @@ import { PromptsApi } from "@storyteller/api";
 import {
   EnqueueEditImage,
   EnqueueEditImageSize,
+  EnqueueEditImageResolution,
 } from "@storyteller/tauri-api";
 import { usePrompt2DStore } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
@@ -82,6 +84,8 @@ export const PromptBox2D = ({
   const setUseSystemPrompt = usePrompt2DStore((s) => s.setUseSystemPrompt);
   const aspectRatio = usePrompt2DStore((s) => s.aspectRatio);
   const setAspectRatio = usePrompt2DStore((s) => s.setAspectRatio);
+  const resolution = usePrompt2DStore((s) => s.resolution);
+  const setResolution = usePrompt2DStore((s) => s.setResolution);
   const generationCount = usePrompt2DStore((s) => s.generationCount);
   const setGenerationCount = usePrompt2DStore((s) => s.setGenerationCount);
 
@@ -104,6 +108,24 @@ export const PromptBox2D = ({
       label: "1:1",
       selected: aspectRatio === "1:1",
       icon: <FontAwesomeIcon icon={faSquare} className="h-4 w-4" />,
+    },
+  ]);
+
+  const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
+    {
+      label: "1k",
+      selected: resolution === "1k",
+      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+    },
+    {
+      label: "2k",
+      selected: resolution === "2k",
+      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+    },
+    {
+      label: "4k",
+      selected: resolution === "4k",
+      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
     },
   ]);
 
@@ -142,6 +164,15 @@ export const PromptBox2D = ({
     );
   }, [generationCount]);
 
+  useEffect(() => {
+    setResolutionList((prev) =>
+      prev.map((item) => ({
+        ...item,
+        selected: item.label === resolution,
+      }))
+    );
+  }, [resolution]);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isImageRowVisible =
     showImagePrompts ||
@@ -164,6 +195,10 @@ export const PromptBox2D = ({
         selected: item.label === selectedItem.label,
       }))
     );
+  };
+
+  const handleResolutionSelect = (selectedItem: PopoverItem) => {
+    setResolution(selectedItem.label as any);
   };
 
   // Image prompt row replaces legacy upload/gallery UI
@@ -234,6 +269,7 @@ export const PromptBox2D = ({
     console.log("Snapshot media token:", snapshotMediaToken.data);
 
     const aspectRatio = getCurrentAspectRatio();
+    const resolution = getCurrentResolution();
 
     const generateResponse = await EnqueueEditImage({
       model: selectedImageModel,
@@ -243,6 +279,7 @@ export const PromptBox2D = ({
       prompt: prompt,
       image_count: generationCount,
       aspect_ratio: aspectRatio,
+      image_resolution: resolution,
     });
 
     console.log("generateResponse", generateResponse);
@@ -364,6 +401,20 @@ export const PromptBox2D = ({
       case "1:1":
       default:
         return EnqueueEditImageSize.Square;
+    }
+  };
+
+  const getCurrentResolution = (): EnqueueEditImageResolution | undefined => {
+    const selected = resolutionList.find((item) => item.selected);
+    switch (selected?.label) {
+      case "1k":
+        return EnqueueEditImageResolution.OneK;
+      case "2k":
+        return EnqueueEditImageResolution.TwoK;
+      case "4k":
+        return EnqueueEditImageResolution.FourK;
+      default:
+        return undefined;
     }
   };
 
@@ -489,6 +540,25 @@ export const PromptBox2D = ({
                   }
                 />
               </Tooltip>
+              {selectedImageModel?.canChangeResolution && (
+                <Tooltip
+                  content="Resolution"
+                  position="top"
+                  className="z-50"
+                  closeOnClick={true}
+                >
+                  <PopoverMenu
+                    items={resolutionList}
+                    onSelect={handleResolutionSelect}
+                    mode="toggle"
+                    panelTitle="Resolution"
+                    showIconsInList
+                    triggerIcon={
+                      <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
+                    }
+                  />
+                </Tooltip>
+              )}
               <Tooltip
                 content={
                   useSystemPrompt

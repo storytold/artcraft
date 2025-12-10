@@ -9,15 +9,18 @@ export interface RefImage {
 
 // ----- 2D Prompt Box Store -----
 type AspectRatio = "3:2" | "2:3" | "1:1";
+type Resolution = "1k" | "2k" | "4k";
 
 interface Prompt2DStore {
   prompt: string;
   aspectRatio: AspectRatio;
+  resolution: Resolution;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
   generationCount: number;
   setPrompt: (prompt: string) => void;
   setAspectRatio: (ratio: AspectRatio) => void;
+  setResolution: (resolution: Resolution) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
   setGenerationCount: (count: number) => void;
@@ -26,11 +29,13 @@ interface Prompt2DStore {
 export const usePrompt2DStore = create<Prompt2DStore>()((set) => ({
   prompt: "",
   aspectRatio: "3:2",
+  resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
   generationCount: 1,
   setPrompt: (prompt) => set({ prompt }),
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
+  setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
   setGenerationCount: (generationCount) => set({ generationCount }),
@@ -41,18 +46,22 @@ export { usePrompt2DStore as usePromptStore };
 // ----- 3D Prompt Box Store -----
 interface Prompt3DStore {
   prompt: string;
+  resolution: Resolution;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
   setPrompt: (prompt: string) => void;
+  setResolution: (resolution: Resolution) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
 }
 
 export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
   prompt: "",
+  resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
   setPrompt: (prompt) => set({ prompt }),
+  setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
 }));
@@ -61,11 +70,13 @@ export const usePrompt3DStore = create<Prompt3DStore>()((set) => ({
 interface PromptImageStore {
   prompt: string;
   aspectRatio: AspectRatio;
+  resolution: Resolution;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
   generationCount: number;
   setPrompt: (prompt: string) => void;
   setAspectRatio: (ratio: AspectRatio) => void;
+  setResolution: (resolution: Resolution) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
   setGenerationCount: (count: number) => void;
@@ -74,11 +85,13 @@ interface PromptImageStore {
 export const usePromptImageStore = create<PromptImageStore>()((set) => ({
   prompt: "",
   aspectRatio: "3:2",
+  resolution: "1k",
   useSystemPrompt: true,
   referenceImages: [],
   generationCount: 1,
   setPrompt: (prompt) => set({ prompt }),
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
+  setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
   setGenerationCount: (generationCount) => set({ generationCount }),
@@ -118,12 +131,22 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
 }));
 
 // ----- Edit Prompt Box Store -----
+type EditAspectRatio = "auto" | "3:2" | "2:3" | "1:1";
+
 interface PromptEditStore {
   referenceImages: RefImage[];
+  aspectRatio: EditAspectRatio;
+  resolution: Resolution;
   setReferenceImages: (images: RefImage[]) => void;
+  setAspectRatio: (ratio: EditAspectRatio) => void;
+  setResolution: (resolution: Resolution) => void;
 }
 
 export const usePromptEditStore = create<PromptEditStore>()((set) => ({
   referenceImages: [],
+  aspectRatio: "auto",
+  resolution: "1k",
   setReferenceImages: (referenceImages) => set({ referenceImages }),
+  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
+  setResolution: (resolution) => set({ resolution }),
 }));

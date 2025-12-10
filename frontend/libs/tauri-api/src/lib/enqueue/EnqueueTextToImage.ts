@@ -23,6 +23,9 @@ export interface EnqueueTextToImageRequest {
   // The desired output aspect ratio.
   aspect_ratio?: EnqueueTextToImageSize;
 
+  // Image resolution. Support: Nano Banana Pro
+  image_resolution?: EnqueueTextToImageResolution;
+
   // The number of images to generate.
   number_images?: number;
 
@@ -46,6 +49,7 @@ interface EnqueueTextToImageRawRequest {
   prompt?: string;
   model?: EnqueueTextToImageModel | string; // TODO: Shouldn't allow string
   aspect_ratio?: EnqueueTextToImageSize;
+  image_resolution?: EnqueueTextToImageResolution;
   number_images?: number;
   image_media_tokens?: string[];
   frontend_caller?: string;
@@ -63,6 +67,12 @@ export enum EnqueueTextToImageSize {
   Square = "square",
   Wide = "wide",
   Tall = "tall",
+}
+
+export enum EnqueueTextToImageResolution {
+  OneK = "one_k",
+  TwoK = "two_k",
+  FourK = "four_k",
 }
 
 export interface EnqueueTextToImageError extends CommandResult {
@@ -105,6 +115,10 @@ export const EnqueueTextToImage = async (request: EnqueueTextToImageRequest) : P
 
   if (!!request.aspect_ratio) {
     mutableRequest.aspect_ratio = request.aspect_ratio;
+  }
+
+  if (!!request.image_resolution) {
+    mutableRequest.image_resolution = request.image_resolution;
   }
 
   if (!!request.number_images) {

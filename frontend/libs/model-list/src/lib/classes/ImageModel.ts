@@ -36,6 +36,12 @@ export class ImageModel extends Model {
   // If true, it'll be displayed on the text-to-image page.
   readonly canTextToImage: boolean;
 
+  // Whether the model supports changing resolution (e.g. 1k, 2k, 4k)
+  readonly canChangeResolution: boolean;
+
+  // Whether the model supports changing aspect ratio
+  readonly canChangeAspectRatio: boolean;
+
   constructor(args: {
     id: string;
     tauriId: string;
@@ -53,6 +59,8 @@ export class ImageModel extends Model {
     canUseImagePrompt?: boolean;
     maxImagePromptCount?: number;
     canTextToImage?: boolean;
+    canChangeResolution?: boolean;
+    canChangeAspectRatio?: boolean;
     tags?: ModelTag[];
     progressBarTime?: number;
   }) {
@@ -76,6 +84,8 @@ export class ImageModel extends Model {
     this.canUseImagePrompt = args.canUseImagePrompt ?? false;
     this.maxImagePromptCount = Math.max(0, args.maxImagePromptCount ?? 1);
     this.canTextToImage = args.canTextToImage === false ? false : true; // Default to true !
+    this.canChangeResolution = args.canChangeResolution ?? false;
+    this.canChangeAspectRatio = args.canChangeAspectRatio ?? false;
   }
 
   // If the model is a "Nano Banana"-type model, we may want to enable certain features. 

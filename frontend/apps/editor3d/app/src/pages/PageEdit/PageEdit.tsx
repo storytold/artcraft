@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Konva from "konva"; // just for types
-import { EnqueueEditImage, EnqueueImageInpaint } from "@storyteller/tauri-api";
+import {
+  EnqueueEditImage,
+  EnqueueImageInpaint,
+  EnqueueEditImageSize,
+  EnqueueEditImageResolution,
+} from "@storyteller/tauri-api";
 import { ContextMenuContainer } from "../PageDraw/components/ui/ContextMenu";
 import { useCopyPasteHotkeys } from "../PageDraw/hooks/useCopyPasteHotkeys";
 import { useDeleteHotkeys } from "../PageDraw/hooks/useDeleteHotkeys";
@@ -270,13 +275,50 @@ const PageEdit = () => {
   };
 
   const handleGenerate = useCallback(
-    async (prompt: string) => {
+    async (
+      prompt: string,
+      options?: { aspectRatio?: string; resolution?: string },
+    ) => {
       const editedImageToken = store.baseImageInfo?.mediaToken;
 
       if (!editedImageToken) {
         console.error("Base image is not available");
         return;
       }
+
+      // Helper to map aspect ratio string to enum
+      const mapAspectRatio = (
+        ratio?: string,
+      ): EnqueueEditImageSize | undefined => {
+        switch (ratio) {
+          case "auto":
+            return EnqueueEditImageSize.Auto;
+          case "3:2":
+            return EnqueueEditImageSize.Wide;
+          case "2:3":
+            return EnqueueEditImageSize.Tall;
+          case "1:1":
+            return EnqueueEditImageSize.Square;
+          default:
+            return undefined;
+        }
+      };
+
+      // Helper to map resolution string to enum
+      const mapResolution = (
+        res?: string,
+      ): EnqueueEditImageResolution | undefined => {
+        switch (res) {
+          case "1k":
+            return EnqueueEditImageResolution.OneK;
+          case "2k":
+            return EnqueueEditImageResolution.TwoK;
+          case "4k":
+            return EnqueueEditImageResolution.FourK;
+          default:
+            return undefined;
+        }
+      };
 
       const arrayBuffer = await getMaskArrayBuffer();
 
@@ -306,8 +348,9 @@ const PageEdit = () => {
             image_count: generationCount,
             frontend_caller: "image_editor",
             frontend_subscriber_id: subscriberId,
+            aspect_ratio: mapAspectRatio(options?.aspectRatio),
+            image_resolution: mapResolution(options?.resolution),
             //scene_image_media_token,
-            //aspect_ratio: aspectRatio,
           });
         }
 

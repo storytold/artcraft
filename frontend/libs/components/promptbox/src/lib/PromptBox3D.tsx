@@ -9,6 +9,7 @@ import {
   faSpinnerThird,
   faMessageCheck,
   faMessageXmark,
+  faExpand,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   faRectangleWide,
@@ -40,6 +41,7 @@ import {
   CommandSuccessStatus,
   EnqueueEditImage,
   EnqueueEditImageSize,
+  EnqueueEditImageResolution,
 } from "@storyteller/tauri-api";
 import { usePrompt3DStore } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
@@ -104,6 +106,8 @@ export const PromptBox3D = ({
   const setPrompt = usePrompt3DStore((s) => s.setPrompt);
   const useSystemPrompt = usePrompt3DStore((s) => s.useSystemPrompt);
   const setUseSystemPrompt = usePrompt3DStore((s) => s.setUseSystemPrompt);
+  const resolution = usePrompt3DStore((s) => s.resolution);
+  const setResolution = usePrompt3DStore((s) => s.setResolution);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const referenceImages = usePrompt3DStore((s) => s.referenceImages);
   const setReferenceImages = usePrompt3DStore((s) => s.setReferenceImages);
@@ -125,6 +129,23 @@ export const PromptBox3D = ({
       icon: <FontAwesomeIcon icon={faSquare} className="h-4 w-4" />,
     },
   ]);
+  const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
+    {
+      label: "1k",
+      selected: resolution === "1k",
+      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+    },
+    {
+      label: "2k",
+      selected: resolution === "2k",
+      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+    },
+    {
+      label: "4k",
+      selected: resolution === "4k",
+      icon: <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />,
+    },
+  ]);
   const [isCameraSettingsOpen, setIsCameraSettingsOpen] = useState(false);
   const isImageRowVisible =
     showImagePrompts ||
@@ -137,6 +158,15 @@ export const PromptBox3D = ({
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [prompt]);
+
+  useEffect(() => {
+    setResolutionList((prev) =>
+      prev.map((item) => ({
+        ...item,
+        selected: item.label === resolution,
+      }))
+    );
+  }, [resolution]);
 
   // Update aspect ratio list based on the current cameraAspectRatio signal
   useEffect(() => {
@@ -185,6 +215,10 @@ export const PromptBox3D = ({
     }
 
     onAspectRatioSelect(newRatio);
+  };
+
+  const handleResolutionSelect = (selectedItem: PopoverItem) => {
+    setResolution(selectedItem.label as any);
   };
 
   // ImagePromptRow will handle uploads and gallery internally
@@ -335,6 +369,7 @@ export const PromptBox3D = ({
         console.log("snapshotResult", snapshotResult);
 
         const aspectRatio = getCurrentAspectRatio();
+        const resolution = getCurrentResolution();
 
         const generateResponse = await EnqueueEditImage({
           model: selectedImageModel,
@@ -344,6 +379,7 @@ export const PromptBox3D = ({
           prompt: prompt,
           image_count: 1,
           aspect_ratio: aspectRatio,
+          image_resolution: resolution,
         });
 
         console.log("generateResponse", generateResponse);
@@ -410,6 +446,20 @@ export const PromptBox3D = ({
       case CameraAspectRatio.SQUARE_1_1:
       default:
         return EnqueueEditImageSize.Square;
+    }
+  };
+
+  const getCurrentResolution = (): EnqueueEditImageResolution | undefined => {
+    const selected = resolutionList.find((item) => item.selected);
+    switch (selected?.label) {
+      case "1k":
+        return EnqueueEditImageResolution.OneK;
+      case "2k":
+        return EnqueueEditImageResolution.TwoK;
+      case "4k":
+        return EnqueueEditImageResolution.FourK;
+      default:
+        return undefined;
     }
   };
 
@@ -559,6 +609,25 @@ export const PromptBox3D = ({
                   }
                 />
               </Tooltip>
+              {selectedImageModel?.canChangeResolution && (
+                <Tooltip
+                  content="Resolution"
+                  position="top"
+                  className="z-50"
+                  closeOnClick={true}
+                >
+                  <PopoverMenu
+                    items={resolutionList}
+                    onSelect={handleResolutionSelect}
+                    mode="toggle"
+                    panelTitle="Resolution"
+                    showIconsInList
+                    triggerIcon={
+                      <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
+                    }
+                  />
+                </Tooltip>
+              )}
               <Tooltip
                 content="Camera"
                 position="top"

@@ -112,6 +112,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     canTextToImage: false,
     tags: [ModelTag.InstructiveEdit],
     progressBarTime: 25000,
+    canChangeResolution: true,
+    canChangeAspectRatio: true,
   }),
   new ImageModel({
     id: "nano_banana_pro",
@@ -130,6 +132,8 @@ export const IMAGE_MODELS: ImageModel[] = [
     canTextToImage: true,
     tags: [ModelTag.InstructiveEdit],
     progressBarTime: 25000,
+    canChangeResolution: true,
+    canChangeAspectRatio: true,
   }),
   new ImageModel({
     id: "gpt_image_1",
@@ -201,7 +205,7 @@ export const IMAGE_MODELS: ImageModel[] = [
 ];
 
 export const IMAGE_MODELS_BY_ID: Map<string, ImageModel> = new Map(
-  IMAGE_MODELS.map((model) => [model.id, model])
+  IMAGE_MODELS.map((model) => [model.id, model]),
 );
 
 if (IMAGE_MODELS_BY_ID.size !== IMAGE_MODELS.length) {
