@@ -154,17 +154,16 @@ const PageEdit = () => {
     // Top toolbar (MarkerToolControlBar): ~140px from top (toolbar + padding)
     // Bottom prompt box: ~200px from bottom (can vary with reference images)
     // Mode selector above prompt: ~60px
-    const topToolbarHeight =
+    const hasTopToolbar =
       store.activeTool === "marker" ||
       store.activeTool === "eraser" ||
-      store.activeTool === "edit"
-        ? 140
-        : 0;
+      store.activeTool === "edit";
+    const topToolbarHeight = hasTopToolbar ? 140 : 80;
 
     // Check if model supports masking or is nano banana (has mode selector)
     const hasModeSelectorUI =
       selectedImageModel?.usesInpaintingMask ||
-      selectedImageModel?.id === "gemini_25_flash";
+      selectedImageModel?.isNanoBananaModel();
     const bottomUIHeight = hasModeSelectorUI ? 260 : 200;
     const totalVerticalReserved = topToolbarHeight + bottomUIHeight;
 
