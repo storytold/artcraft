@@ -7,6 +7,7 @@ import {
   EnqueueEditImageResolution,
 } from "@storyteller/tauri-api";
 import { PromptsApi } from "@storyteller/api";
+import { RefImage, usePromptEditStore } from "@storyteller/ui-promptbox";
 import { ContextMenuContainer } from "../PageDraw/components/ui/ContextMenu";
 import { useCopyPasteHotkeys } from "../PageDraw/hooks/useCopyPasteHotkeys";
 import { useDeleteHotkeys } from "../PageDraw/hooks/useDeleteHotkeys";
@@ -64,6 +65,7 @@ const PageEdit = () => {
   const historyImageBundles = useEditStore(
     (state) => state.historyImageBundles,
   );
+  const referenceImages = usePromptEditStore((s) => s.referenceImages);
 
   // Pass store actions directly as callbacks
   useDeleteHotkeys({ onDelete: store.deleteSelectedItems });
@@ -317,7 +319,11 @@ const PageEdit = () => {
   const handleGenerate = useCallback(
     async (
       prompt: string,
-      options?: { aspectRatio?: string; resolution?: string },
+      options?: {
+        aspectRatio?: string;
+        resolution?: string;
+        images?: RefImage[];
+      },
     ) => {
       const editedImageToken = store.baseImageInfo?.mediaToken;
 
@@ -392,10 +398,13 @@ const PageEdit = () => {
             console.error("Failed to upload scene snapshot");
             return;
           }
+          const imgs = options?.images || [];
           result = await EnqueueEditImage({
             model: selectedImageModel,
             scene_image_media_token: snapshotResult.data,
-            image_media_tokens: [editedImageToken],
+            image_media_tokens: imgs
+              .map((img) => img.mediaToken)
+              .filter((t) => t.length > 0),
             prompt: prompt,
             image_count: generationCount,
             frontend_caller: "image_editor",
@@ -404,9 +413,15 @@ const PageEdit = () => {
             image_resolution: mapResolution(options?.resolution),
           });
         } else {
+          const imgs = options?.images || [];
           result = await EnqueueEditImage({
             model: selectedImageModel,
-            image_media_tokens: [editedImageToken],
+            image_media_tokens: [
+              editedImageToken,
+              ...imgs
+                .filter((img) => img.mediaToken !== editedImageToken)
+                .map((img) => img.mediaToken),
+            ].filter((t) => t.length > 0),
             disable_system_prompt: true,
             prompt: prompt,
             image_count: generationCount,
@@ -431,7 +446,12 @@ const PageEdit = () => {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [generationCount, selectedImageModel, store.baseImageInfo?.mediaToken],
+    [
+      generationCount,
+      selectedImageModel,
+      store.baseImageInfo?.mediaToken,
+      referenceImages,
+    ],
   );
 
   const isNanoBananaModel = selectedImageModel?.isNanoBananaModel();

@@ -59,14 +59,14 @@ interface LightboxModalProps {
   onDownloadClicked?: (url: string, mediaClass?: string) => Promise<void>;
   onAddToSceneClicked?: (
     url: string,
-    media_id: string | undefined
+    media_id: string | undefined,
   ) => Promise<void>;
   mediaClass?: string;
   onPromptCopy?: (prompt: string) => void;
   onEditClicked?: (url: string, media_id?: string) => Promise<void> | void;
   onTurnIntoVideoClicked?: (
     url: string,
-    media_id?: string
+    media_id?: string,
   ) => Promise<void> | void;
   batchImageToken?: string;
 }
@@ -104,7 +104,7 @@ export function LightboxModal({
   const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
   const [isPromptHovered, setIsPromptHovered] = useState<boolean>(false);
   const [generationProvider, setGenerationProvider] = useState<string | null>(
-    null
+    null,
   );
   const [modelType, setModelType] = useState<string | null>(null);
   const [contextImages, setContextImages] = useState<Array<{
@@ -121,7 +121,7 @@ export function LightboxModal({
   const shareCopiedTimeoutRef = useRef<number | null>(null);
 
   const [currentMediaId, setCurrentMediaId] = useState<string | undefined>(
-    mediaId
+    mediaId,
   );
   useEffect(() => {
     setCurrentMediaId(mediaId);
@@ -236,7 +236,7 @@ export function LightboxModal({
             }))
             .filter(
               (item): item is { url: string; token: string } =>
-                Boolean(item.url) && Boolean(item.token)
+                Boolean(item.url) && Boolean(item.token),
             );
 
           if (items.length > 0) {
@@ -293,7 +293,7 @@ export function LightboxModal({
       if (!emblaMainApi || !emblaThumbsApi) return;
       emblaMainApi.scrollTo(index);
     },
-    [emblaMainApi, emblaThumbsApi]
+    [emblaMainApi, emblaThumbsApi],
   );
 
   const onSelect = useCallback(() => {
@@ -427,7 +427,9 @@ export function LightboxModal({
                                   PLACEHOLDER_IMAGES.DEFAULT;
                                 e.currentTarget.style.opacity = "0.3";
                                 // Set the `data-brokenurl` property for debugging the broken images:
-                                (e.currentTarget as HTMLImageElement).dataset.brokenurl = url || "";
+                                (
+                                  e.currentTarget as HTMLImageElement
+                                ).dataset.brokenurl = url || "";
                               }
                             }}
                             onLoad={() => {
@@ -460,7 +462,7 @@ export function LightboxModal({
                                 "embla-thumbs__slide relative h-20 w-20 flex-[0_0_5rem] overflow-hidden rounded-md border-2 transition-all",
                                 isSelected
                                   ? "border-brand-primary-400 opacity-100"
-                                  : "border-transparent opacity-60 hover:border-white/40 hover:opacity-100"
+                                  : "border-transparent opacity-60 hover:border-white/40 hover:opacity-100",
                               )}
                             >
                               <img
@@ -478,11 +480,13 @@ export function LightboxModal({
               </div>
             )}
 
-            {!mediaLoaded && selectedImageUrl && mediaClass !== "dimensional" && (
-              <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
-                <LoadingSpinner className="h-12 w-12 text-base-fg" />
-              </div>
-            )}
+            {!mediaLoaded &&
+              selectedImageUrl &&
+              mediaClass !== "dimensional" && (
+                <div className="absolute inset-0 bg-ui-panel flex items-center justify-center">
+                  <LoadingSpinner className="h-12 w-12 text-base-fg" />
+                </div>
+              )}
           </div>
 
           {/* info + actions */}
@@ -512,7 +516,7 @@ export function LightboxModal({
                     </div>
                     <div
                       className={twMerge(
-                        "relative text-sm text-base-fg break-words p-3 rounded-lg cursor-pointer transition-colors duration-100 leading-relaxed"
+                        "relative text-sm text-base-fg break-words p-3 rounded-lg cursor-pointer transition-colors duration-100 leading-relaxed",
                       )}
                       style={{
                         background: isPromptHovered
@@ -547,7 +551,7 @@ export function LightboxModal({
                       <div
                         className={twMerge(
                           "pointer-events-none absolute inset-0 flex items-end justify-end opacity-0 transition-opacity duration-50",
-                          isPromptHovered && "opacity-100"
+                          isPromptHovered && "opacity-100",
                         )}
                       >
                         <div
@@ -568,7 +572,7 @@ export function LightboxModal({
                       <div className="text-sm font-medium text-base-fg/90">
                         Reference Images
                       </div>
-                      <div className="grid grid-cols-6 gap-2">
+                      <div className="grid grid-cols-6 gap-2 w-fit">
                         {contextImages.map((contextImage, index) => {
                           const { thumbnail, fullSize } =
                             getContextImageThumbnail(contextImage, {
@@ -578,7 +582,7 @@ export function LightboxModal({
                           return (
                             <div
                               key={contextImage.media_token}
-                              className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                              className="glass relative aspect-square overflow-hidden rounded-lg w-12 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
                               onClick={() => setRefPreviewUrl(fullSize)}
                             >
                               <img
@@ -631,7 +635,7 @@ export function LightboxModal({
                             <div className="flex items-center gap-2">
                               {getProviderIconByName(
                                 generationProvider,
-                                "h-4 w-4 invert"
+                                "h-4 w-4 invert",
                               )}
                               <span className="text-sm text-base-fg rounded">
                                 {getProviderDisplayName(generationProvider)}
@@ -681,7 +685,7 @@ export function LightboxModal({
                               setShareCopied(true);
                               if (shareCopiedTimeoutRef.current) {
                                 window.clearTimeout(
-                                  shareCopiedTimeoutRef.current
+                                  shareCopiedTimeoutRef.current,
                                 );
                               }
                               shareCopiedTimeoutRef.current = window.setTimeout(
@@ -689,7 +693,7 @@ export function LightboxModal({
                                   setShareCopied(false);
                                   shareCopiedTimeoutRef.current = null;
                                 },
-                                1500
+                                1500,
                               );
                             } catch (err) {
                               toast.error("Unable to copy link");
@@ -712,7 +716,7 @@ export function LightboxModal({
                               gtagEvent("edit_image_clicked");
                               await onEditClicked(
                                 actionUrl,
-                                selectedMediaToken
+                                selectedMediaToken,
                               );
                             }}
                           >
@@ -731,7 +735,7 @@ export function LightboxModal({
                               gtagEvent("turn_into_video_clicked");
                               await onTurnIntoVideoClicked(
                                 actionUrl,
-                                selectedMediaToken
+                                selectedMediaToken,
                               );
                             }}
                           >
@@ -748,7 +752,7 @@ export function LightboxModal({
                             gtagEvent("add_to_scene_clicked");
                             await onAddToSceneClicked(
                               actionUrl,
-                              selectedMediaToken
+                              selectedMediaToken,
                             );
                             onClose();
                             onCloseGallery();

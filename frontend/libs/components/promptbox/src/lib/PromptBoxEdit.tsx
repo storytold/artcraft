@@ -28,14 +28,18 @@ import { useEffect, useRef, useState } from "react";
 import { ImageModel, getCapabilitiesForModel } from "@storyteller/model-list";
 import { twMerge } from "tailwind-merge";
 import { ImagePromptRow, type UploadImageFn } from "./ImagePromptRow";
-import { usePromptEditStore } from "./promptStore";
+import { RefImage, usePromptEditStore } from "./promptStore";
 
 export interface PromptBoxEditProps {
   onModeChange?: (mode: string) => void;
   selectedMode?: string;
   onGenerateClick: (
     prompt: string,
-    options?: { aspectRatio?: string; resolution?: string },
+    options?: {
+      aspectRatio?: string;
+      resolution?: string;
+      images?: RefImage[];
+    },
   ) => void | Promise<void>;
   isDisabled?: boolean;
   onFitPressed?: () => void | Promise<void>;
@@ -269,7 +273,11 @@ export const PromptBoxEdit = ({
     }, 10000);
     try {
       await Promise.resolve(
-        onGenerateClick(prompt, { aspectRatio, resolution }),
+        onGenerateClick(prompt, {
+          aspectRatio,
+          resolution,
+          images: referenceImages,
+        }),
       );
     } finally {
       clearTimeout(timeout);
@@ -320,7 +328,14 @@ export const PromptBoxEdit = ({
     <>
       <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 flex-col gap-3">
         {(supportsMaskedInpainting || isNanoBananaModel) && (
-          <div className="glass w-fit mx-auto rounded-xl px-2 py-2 flex items-center gap-3">
+          <div
+            className={twMerge(
+              "glass w-fit mx-auto rounded-xl px-2 py-2 flex items-center gap-3",
+              selectedImageModel?.canUseImagePrompt &&
+                isImageRowVisible &&
+                "mb-[72px]",
+            )}
+          >
             <ButtonIconSelect
               options={modes}
               onOptionChange={onModeSelectionChange}

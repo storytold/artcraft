@@ -130,7 +130,7 @@ export const PromptBox2D = ({
   ]);
 
   const [generationCountList, setGenerationCountList] = useState<PopoverItem[]>(
-    []
+    [],
   );
 
   // Update generation count options from selected model capabilities
@@ -138,7 +138,7 @@ export const PromptBox2D = ({
     const caps = getCapabilitiesForModel(selectedImageModel);
     const items: PopoverItem[] = Array.from(
       { length: caps.maxGenerationCount },
-      (_, i) => i + 1
+      (_, i) => i + 1,
     ).map((count) => ({
       label: String(count),
       selected: count === generationCount,
@@ -148,7 +148,7 @@ export const PromptBox2D = ({
     // Clamp selection to allowed range
     if (generationCount < 1 || generationCount > caps.maxGenerationCount) {
       setGenerationCount(
-        Math.min(Math.max(1, generationCount), caps.maxGenerationCount)
+        Math.min(Math.max(1, generationCount), caps.maxGenerationCount),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,7 +160,7 @@ export const PromptBox2D = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === String(generationCount),
-      }))
+      })),
     );
   }, [generationCount]);
 
@@ -169,7 +169,7 @@ export const PromptBox2D = ({
       prev.map((item) => ({
         ...item,
         selected: item.label.toLowerCase() === resolution,
-      }))
+      })),
     );
   }, [resolution]);
 
@@ -194,7 +194,7 @@ export const PromptBox2D = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
-      }))
+      })),
     );
   };
 
@@ -211,7 +211,7 @@ export const PromptBox2D = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
-      }))
+      })),
     );
   };
 
@@ -275,7 +275,9 @@ export const PromptBox2D = ({
     const generateResponse = await EnqueueEditImage({
       model: selectedImageModel,
       scene_image_media_token: snapshotMediaToken.data!,
-      image_media_tokens: referenceImages.map((image) => image.mediaToken),
+      image_media_tokens: referenceImages
+        .map((image) => image.mediaToken)
+        .filter((t) => t.length > 0),
       disable_system_prompt: !useSystemPrompt,
       prompt: prompt,
       image_count: generationCount,
@@ -294,7 +296,7 @@ export const PromptBox2D = ({
     let image = getCanvasRenderBitmap();
     if (image === undefined) {
       toast.error(
-        "Error: Unable to generate image. Please check the input and try again."
+        "Error: Unable to generate image. Please check the input and try again.",
       );
       return;
     }
@@ -328,7 +330,9 @@ export const PromptBox2D = ({
       disableSystemPrompt: !useSystemPrompt,
       prompt: prompt,
       snapshotMediaToken: snapshotMediaToken.data,
-      additionalImages: referenceImages.map((image) => image.mediaToken),
+      additionalImages: referenceImages
+        .map((image) => image.mediaToken)
+        .filter((t) => t.length > 0),
     });
 
     if (response.success === true) {
@@ -363,7 +367,7 @@ export const PromptBox2D = ({
         "(4) Enqueuing with prompt:",
         prompt,
         "and reference images:",
-        referenceImages
+        referenceImages,
       );
 
       const isDesktop = IsDesktopApp();
@@ -377,7 +381,7 @@ export const PromptBox2D = ({
     } catch (error) {
       console.error("Error during image generation:", error);
       toast.error(
-        "An error occurred while generating the image. Please try again."
+        "An error occurred while generating the image. Please try again.",
       );
     } finally {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -446,7 +450,7 @@ export const PromptBox2D = ({
             visible={true}
             maxImagePromptCount={Math.max(
               1,
-              selectedImageModel?.maxImagePromptCount ?? 1
+              selectedImageModel?.maxImagePromptCount ?? 1,
             )}
             allowUpload={true}
             referenceImages={referenceImages}
@@ -458,7 +462,7 @@ export const PromptBox2D = ({
                   src={image.url}
                   alt="Reference preview"
                   className="w-full h-full object-contain"
-                />
+                />,
               );
               setIsModalOpen(true);
             }}
@@ -469,7 +473,7 @@ export const PromptBox2D = ({
             "glass w-[730px] rounded-xl p-4",
             selectedImageModel?.canUseImagePrompt &&
               isImageRowVisible &&
-              "rounded-t-none"
+              "rounded-t-none",
           )}
         >
           <div className="flex justify-center gap-2">
@@ -484,7 +488,7 @@ export const PromptBox2D = ({
                   variant="action"
                   className={twMerge(
                     "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
-                    isImageRowVisible && "text-primary"
+                    isImageRowVisible && "text-primary",
                   )}
                   onClick={() => setShowImagePrompts((prev) => !prev)}
                 >

@@ -47,7 +47,7 @@ interface PromptBoxImageProps {
   onEnqueuePressed?: (
     prompt: string,
     count: number,
-    subscriberId: string
+    subscriberId: string,
   ) => void | Promise<void>;
   selectedModel?: ImageModel;
   imageMediaId?: string;
@@ -144,7 +144,7 @@ export const PromptBoxImage = ({
     },
   ]);
   const [generationCountList, setGenerationCountList] = useState<PopoverItem[]>(
-    []
+    [],
   );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -172,14 +172,14 @@ export const PromptBoxImage = ({
     const caps = getCapabilitiesForModel(selectedModel);
     const defaultCount = Math.min(
       Math.max(1, caps.defaultGenerationCount ?? 1),
-      caps.maxGenerationCount
+      caps.maxGenerationCount,
     );
 
     setGenerationCount(defaultCount);
 
     const items: PopoverItem[] = Array.from(
       { length: caps.maxGenerationCount },
-      (_, i) => i + 1
+      (_, i) => i + 1,
     ).map((count) => ({
       label: String(count),
       selected: count === defaultCount,
@@ -193,7 +193,7 @@ export const PromptBoxImage = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === String(generationCount),
-      }))
+      })),
     );
   }, [generationCount]);
 
@@ -202,7 +202,7 @@ export const PromptBoxImage = ({
       prev.map((item) => ({
         ...item,
         selected: item.label.toLowerCase() === aspectRatio,
-      }))
+      })),
     );
   }, [aspectRatio]);
 
@@ -211,7 +211,7 @@ export const PromptBoxImage = ({
       prev.map((item) => ({
         ...item,
         selected: item.label.toLowerCase() === resolution,
-      }))
+      })),
     );
   }, [resolution]);
 
@@ -221,7 +221,7 @@ export const PromptBoxImage = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
-      }))
+      })),
     );
   };
 
@@ -236,7 +236,7 @@ export const PromptBoxImage = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
-      }))
+      })),
     );
   };
 
@@ -269,8 +269,8 @@ export const PromptBoxImage = ({
       return;
     }
 
-    console.debug("Selected model:", selectedModel)
-    console.debug("Prompt:", prompt)
+    console.debug("Selected model:", selectedModel);
+    console.debug("Prompt:", prompt);
 
     setIsEnqueueing(true);
 
@@ -304,9 +304,9 @@ export const PromptBoxImage = ({
         !!referenceImages &&
         referenceImages.length > 0
       ) {
-        request.image_media_tokens = referenceImages.map(
-          (image) => image.mediaToken
-        );
+        request.image_media_tokens = referenceImages
+          .map((image) => image.mediaToken)
+          .filter((t) => t.length > 0);
       }
 
       const generateResponse = await EnqueueTextToImage(request);
@@ -381,7 +381,7 @@ export const PromptBoxImage = ({
             visible={true}
             maxImagePromptCount={Math.max(
               1,
-              selectedModel?.maxImagePromptCount ?? 1
+              selectedModel?.maxImagePromptCount ?? 1,
             )}
             allowUpload={true}
             referenceImages={referenceImages}
@@ -395,7 +395,7 @@ export const PromptBoxImage = ({
                   src={image.url}
                   alt="Reference preview"
                   className="w-full h-full object-contain"
-                />
+                />,
               );
               setIsModalOpen(true);
             }}
@@ -410,7 +410,7 @@ export const PromptBoxImage = ({
               "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"
-              : "ring-1 ring-transparent"
+              : "ring-1 ring-transparent",
           )}
         >
           <div className="flex justify-center gap-2">
@@ -425,7 +425,7 @@ export const PromptBoxImage = ({
                   variant="action"
                   className={twMerge(
                     "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
-                    isImageRowVisible && "text-primary"
+                    isImageRowVisible && "text-primary",
                   )}
                   onClick={() => setShowImagePrompts((prev) => !prev)}
                 >
