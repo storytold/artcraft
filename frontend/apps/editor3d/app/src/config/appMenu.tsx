@@ -8,6 +8,7 @@ import {
   faPhotoFilm,
   faGlobe,
   faPencil,
+  faWandMagicSparkles,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useTabStore, TabId } from "~/pages/Stores/TabState";
 import { set3DPageMounted } from "~/pages/PageEnigma/Editor/editor";
@@ -22,7 +23,8 @@ export type AppId =
   | "VIDEO_WATERMARK_REMOVAL"
   | "IMAGE_WATERMARK_REMOVAL"
   | "IMAGE_TO_3D_OBJECT"
-  | "IMAGE_TO_3D_WORLD";
+  | "IMAGE_TO_3D_WORLD"
+  | "REMOVE_BACKGROUND";
 
 export interface AppDescriptor {
   id: AppId;
@@ -156,6 +158,16 @@ export const ALL_APPS: FullAppItem[] = [
     badge: "SOON",
     color: "bg-indigo-600/40",
   },
+  {
+    id: "remove-background",
+    label: "Remove Background",
+    description: "Remove backgrounds from images",
+    icon: faWandMagicSparkles,
+    category: "edit",
+    action: "REMOVE_BACKGROUND",
+    color: "bg-violet-500/40",
+    badge: "NEW",
+  },
 
   {
     id: "2d-canvas",
@@ -209,6 +221,7 @@ export const goToApp = (action?: string) => {
       "IMAGE_WATERMARK_REMOVAL",
       "IMAGE_TO_3D_OBJECT",
       "IMAGE_TO_3D_WORLD",
+      "REMOVE_BACKGROUND",
     ].includes(action)
   ) {
     if (action === "3D") {
