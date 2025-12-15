@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faWandMagicSparkles,
@@ -24,6 +24,7 @@ import {
 } from "@storyteller/tauri-api";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { twMerge } from "tailwind-merge";
+import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 
 const convertFileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -41,7 +42,6 @@ const convertFileToBase64 = (file: File): Promise<string> => {
 };
 
 export const RemoveBackground = () => {
-  // Local UI state (not persisted)
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
@@ -50,9 +50,17 @@ export const RemoveBackground = () => {
     width: window.innerWidth,
     height: window.innerHeight,
   });
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isHoldingCompare, setIsHoldingCompare] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(true);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
 
-  // Get all persisted state from store
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const clipLayerRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const revealProgressRef = useRef(100);
+  const animationFrameRef = useRef<number | null>(null);
+  const processingExternalUrlRef = useRef<string | null>(null);
+
   const store = useRemoveBackgroundStore();
   const {
     images,
@@ -60,18 +68,13 @@ export const RemoveBackground = () => {
     isProcessing,
     currentOriginalUrl,
     pendingJobId,
-    revealProgress,
-    isAnimating,
-    isHoldingCompare,
     imageDimensions,
+    pendingExternalUrl,
     setIsProcessing,
     setCurrentOriginalUrl,
     setPendingJobId,
-    setRevealProgress,
-    setIsAnimating,
-    setIsHoldingCompare,
     setImageDimensions,
-    resetAnimationState,
+    setPendingExternalUrl,
     addImage,
     setActiveImage,
     getActiveImage,
@@ -79,11 +82,9 @@ export const RemoveBackground = () => {
 
   const activeImage = getActiveImage();
 
-  // Keep a ref for the event handler (to avoid stale closures)
   const pendingJobIdRef = useRef(pendingJobId);
   const currentOriginalUrlRef = useRef(currentOriginalUrl);
 
-  // Sync refs with store state
   useEffect(() => {
     pendingJobIdRef.current = pendingJobId;
   }, [pendingJobId]);
@@ -100,28 +101,150 @@ export const RemoveBackground = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const addMenuItems: PopoverItem[] = [
-    {
-      label: "Upload Image",
-      selected: false,
-      icon: <FontAwesomeIcon icon={faUpload} className="h-4 w-4" />,
-      action: "upload",
-    },
-    {
-      label: "Choose from Library",
-      selected: false,
-      icon: <FontAwesomeIcon icon={faImages} className="h-4 w-4" />,
-      action: "library",
-    },
-  ];
+  useEffect(() => {
+    const processExternalUrl = async () => {
+      if (!pendingExternalUrl) return;
+      if (processingExternalUrlRef.current === pendingExternalUrl) return;
 
-  const handleAddMenuSelect = (item: PopoverItem) => {
+      processingExternalUrlRef.current = pendingExternalUrl;
+      const imageUrl = pendingExternalUrl;
+      setPendingExternalUrl(null);
+      setIsLoadingImage(true);
+
+      try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], "external-image.png", {
+          type: blob.type,
+        });
+        const base64Image = await convertFileToBase64(file);
+
+        await new Promise<void>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            setImageDimensions({
+              width: img.naturalWidth,
+              height: img.naturalHeight,
+            });
+            resolve();
+          };
+          img.onerror = () => reject(new Error("Failed to load image"));
+          img.src = imageUrl;
+        });
+
+        setActiveImage(null);
+        setCurrentOriginalUrl(imageUrl);
+        setIsLoadingImage(false);
+        setIsProcessing(true);
+
+        const jobId = uuidv4();
+        setPendingJobId(jobId);
+
+        await EnqueueImageBgRemoval({
+          base64_image: base64Image,
+          frontend_caller: "mini_app",
+          frontend_subscriber_id: jobId,
+        });
+      } catch (error) {
+        console.error("Error processing external image:", error);
+        toast.error("Failed to process image");
+        setIsLoadingImage(false);
+        setIsProcessing(false);
+        setPendingJobId(null);
+      } finally {
+        processingExternalUrlRef.current = null;
+      }
+    };
+
+    processExternalUrl();
+  }, [
+    pendingExternalUrl,
+    setPendingExternalUrl,
+    setActiveImage,
+    setCurrentOriginalUrl,
+    setIsProcessing,
+    setPendingJobId,
+    setImageDimensions,
+  ]);
+
+  const addMenuItems: PopoverItem[] = useMemo(
+    () => [
+      {
+        label: "Upload Image",
+        selected: false,
+        icon: <FontAwesomeIcon icon={faUpload} className="h-4 w-4" />,
+        action: "upload",
+      },
+      {
+        label: "Choose from Library",
+        selected: false,
+        icon: <FontAwesomeIcon icon={faImages} className="h-4 w-4" />,
+        action: "library",
+      },
+    ],
+    [],
+  );
+
+  const handleAddMenuSelect = useCallback((item: PopoverItem) => {
     if (item.action === "upload") {
       fileInputRef.current?.click();
     } else if (item.action === "library") {
       setIsGalleryModalOpen(true);
     }
-  };
+  }, []);
+
+  const startRevealAnimation = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    revealProgressRef.current = 0;
+    setAnimationComplete(false);
+
+    const duration = 800;
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const progressPercent = eased * 100;
+
+      revealProgressRef.current = progressPercent;
+
+      if (clipLayerRef.current) {
+        clipLayerRef.current.style.clipPath = `inset(0 0 0 ${progressPercent}%)`;
+      }
+      if (progressBarRef.current) {
+        progressBarRef.current.style.left = `${progressPercent}%`;
+        progressBarRef.current.style.display =
+          progressPercent < 100 ? "block" : "none";
+      }
+
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        setAnimationComplete(true);
+        animationFrameRef.current = null;
+      }
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          animationFrameRef.current = requestAnimationFrame(animate);
+        }, 50);
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   useCanvasBgRemovedEvent(async (event) => {
     if (event.maybe_frontend_subscriber_id !== pendingJobIdRef.current) return;
@@ -133,7 +256,6 @@ export const RemoveBackground = () => {
       timestamp: Date.now(),
     };
 
-    // Wait for BOTH the original and processed images to load before showing result
     const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -144,73 +266,52 @@ export const RemoveBackground = () => {
     };
 
     try {
-      // Load both images in parallel
       const [originalImg] = await Promise.all([
         loadImage(currentOriginalUrlRef.current),
         loadImage(event.image_cdn_url),
       ]);
 
-      // Both images loaded - now show the result
       addImage(newImage);
       setIsProcessing(false);
       setPendingJobId(null);
+      toast.success("Saved to Library");
 
       setImageDimensions({
         width: originalImg.naturalWidth,
         height: originalImg.naturalHeight,
       });
 
-      setRevealProgress(0);
-
-      // Wait for React to re-render and browser to paint before starting animation
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            setIsAnimating(true);
-          }, 50);
-        });
-      });
+      startRevealAnimation();
     } catch (error) {
       console.error("Error loading images:", error);
-      // Still show result even if image load fails
       addImage(newImage);
       setIsProcessing(false);
       setPendingJobId(null);
+      toast.success("Saved to Library");
     }
   });
 
-  useEffect(() => {
-    if (!isAnimating) return;
-
-    const duration = 800;
-    const startTime = performance.now();
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setRevealProgress(eased * 100);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        setIsAnimating(false);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }, [isAnimating, setRevealProgress, setIsAnimating]);
+  const resetAnimationState = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    revealProgressRef.current = 0;
+    setAnimationComplete(true);
+    setIsHoldingCompare(false);
+  }, []);
 
   const handleLocalImageSelect = useCallback(
     async (files: FileList) => {
       const file = files[0];
       if (!file || !file.type.startsWith("image/")) return;
 
+      setIsLoadingImage(true);
+
       try {
         const base64Image = await convertFileToBase64(file);
         const objectUrl = URL.createObjectURL(file);
 
-        // Wait for image to load before switching views
         await new Promise<void>((resolve, reject) => {
           const img = new Image();
           img.onload = () => {
@@ -224,14 +325,10 @@ export const RemoveBackground = () => {
           img.src = objectUrl;
         });
 
-        // Clear previous active image so it doesn't show behind
         setActiveImage(null);
-
-        // Reset animation state for new generation
         resetAnimationState();
-
-        // Now switch to processing view
         setCurrentOriginalUrl(objectUrl);
+        setIsLoadingImage(false);
         setIsProcessing(true);
 
         const jobId = uuidv4();
@@ -245,6 +342,7 @@ export const RemoveBackground = () => {
       } catch (error) {
         console.error("Error processing image:", error);
         toast.error("Failed to process image");
+        setIsLoadingImage(false);
         setIsProcessing(false);
         setPendingJobId(null);
       }
@@ -259,92 +357,112 @@ export const RemoveBackground = () => {
     ],
   );
 
-  const handleImageSelect = (id: string) => {
+  const handleImageSelect = useCallback((id: string) => {
     setSelectedGalleryImages((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
       return [id];
     });
-  };
+  }, []);
 
-  const handleGallerySelect = async (selectedItems: GalleryItem[]) => {
-    const item = selectedItems[0];
-    if (!item || !item.fullImage) {
-      toast.error("No image selected");
-      return;
-    }
+  const handleGallerySelect = useCallback(
+    async (selectedItems: GalleryItem[]) => {
+      const item = selectedItems[0];
+      if (!item || !item.fullImage) {
+        toast.error("No image selected");
+        return;
+      }
 
-    const imageUrl = item.fullImage;
-    setIsGalleryModalOpen(false);
-    setSelectedGalleryImages([]);
+      const imageUrl = item.fullImage;
+      setIsGalleryModalOpen(false);
+      setSelectedGalleryImages([]);
+      setIsLoadingImage(true);
 
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const file = new File([blob], "library-image.png", { type: blob.type });
+      try {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], "library-image.png", { type: blob.type });
 
-      const base64Image = await convertFileToBase64(file);
+        const base64Image = await convertFileToBase64(file);
 
-      // Wait for image to load before switching views
-      await new Promise<void>((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          setImageDimensions({
-            width: img.naturalWidth,
-            height: img.naturalHeight,
-          });
-          resolve();
-        };
-        img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = imageUrl;
-      });
+        await new Promise<void>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            setImageDimensions({
+              width: img.naturalWidth,
+              height: img.naturalHeight,
+            });
+            resolve();
+          };
+          img.onerror = () => reject(new Error("Failed to load image"));
+          img.src = imageUrl;
+        });
 
-      // Clear previous active image so it doesn't show behind
-      setActiveImage(null);
+        setActiveImage(null);
+        resetAnimationState();
+        setCurrentOriginalUrl(imageUrl);
+        setIsLoadingImage(false);
+        setIsProcessing(true);
 
-      // Reset animation state for new generation
-      resetAnimationState();
+        const jobId = uuidv4();
+        setPendingJobId(jobId);
 
-      // Now switch to processing view
-      setCurrentOriginalUrl(imageUrl);
-      setIsProcessing(true);
+        await EnqueueImageBgRemoval({
+          base64_image: base64Image,
+          frontend_caller: "mini_app",
+          frontend_subscriber_id: jobId,
+        });
+      } catch (error) {
+        console.error("Error processing gallery image:", error);
+        toast.error("Failed to process image");
+        setIsLoadingImage(false);
+        setIsProcessing(false);
+        setPendingJobId(null);
+      }
+    },
+    [
+      setActiveImage,
+      resetAnimationState,
+      setCurrentOriginalUrl,
+      setIsProcessing,
+      setPendingJobId,
+      setImageDimensions,
+    ],
+  );
 
-      const jobId = uuidv4();
-      setPendingJobId(jobId);
-
-      await EnqueueImageBgRemoval({
-        base64_image: base64Image,
-        frontend_caller: "mini_app",
-        frontend_subscriber_id: jobId,
-      });
-    } catch (error) {
-      console.error("Error processing gallery image:", error);
-      toast.error("Failed to process image");
-      setIsProcessing(false);
-      setPendingJobId(null);
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!activeImage) {
+  const handleDownload = useCallback(async () => {
+    const currentActiveImage = getActiveImage();
+    if (!currentActiveImage) {
       toast.error("No image to download");
       return;
     }
     try {
-      await downloadFileFromUrl(activeImage.processedUrl);
+      await downloadFileFromUrl(currentActiveImage.processedUrl);
       toast.success("Image saved to Downloads folder");
     } catch (error) {
       console.error("Download failed:", error);
       toast.error("Failed to download image");
     }
-  };
+  }, [getActiveImage]);
 
-  const handleCompareMouseDown = () => {
+  const handleCompareMouseDown = useCallback(() => {
     setIsHoldingCompare(true);
-  };
+    if (clipLayerRef.current) {
+      clipLayerRef.current.style.clipPath = "inset(0 0 0 0)";
+    }
+    if (progressBarRef.current) {
+      progressBarRef.current.style.display = "none";
+    }
+  }, []);
 
   const handleCompareMouseUp = useCallback(() => {
     setIsHoldingCompare(false);
-  }, [setIsHoldingCompare]);
+    if (clipLayerRef.current) {
+      clipLayerRef.current.style.clipPath = `inset(0 0 0 ${revealProgressRef.current}%)`;
+    }
+    if (progressBarRef.current && revealProgressRef.current < 100) {
+      progressBarRef.current.style.display = "block";
+    }
+  }, []);
 
   useEffect(() => {
     if (isHoldingCompare) {
@@ -357,20 +475,42 @@ export const RemoveBackground = () => {
     };
   }, [isHoldingCompare, handleCompareMouseUp]);
 
+  const handleThumbnailClick = useCallback(
+    (img: ProcessedImage) => {
+      setActiveImage(img.id);
+      revealProgressRef.current = 100;
+      setAnimationComplete(true);
+      if (clipLayerRef.current) {
+        clipLayerRef.current.style.clipPath = "inset(0 0 0 100%)";
+      }
+      if (progressBarRef.current) {
+        progressBarRef.current.style.display = "none";
+      }
+      const loadImg = new Image();
+      loadImg.onload = () => {
+        setImageDimensions({
+          width: loadImg.naturalWidth,
+          height: loadImg.naturalHeight,
+        });
+      };
+      loadImg.src = img.originalUrl;
+    },
+    [setActiveImage, setImageDimensions],
+  );
+
   const hasImages = images.length > 0;
   const showUploadScreen = !hasImages && !isProcessing;
 
-  const getImageContainerStyle = () => {
+  const imageContainerStyle = useMemo(() => {
     if (!imageDimensions) {
       return { width: "600px", height: "450px" };
     }
 
-    // Account for padding (p-16 = 64px * 2 = 128px) and some margin
-    const horizontalPadding = 128 + 32; // p-16 + extra margin
-    const verticalPadding = 128 + 150; // p-16 + buttons + thumbnails + gaps
+    const horizontalPadding = 128 + 32;
+    const verticalPadding = 128 + 150;
 
     const availableWidth = windowSize.width - horizontalPadding;
-    const availableHeight = windowSize.height - 56 - verticalPadding; // 56px header
+    const availableHeight = windowSize.height - 56 - verticalPadding;
 
     const maxWidth = Math.min(availableWidth, 1400);
     const maxHeight = Math.max(availableHeight, 200);
@@ -384,12 +524,30 @@ export const RemoveBackground = () => {
       width = height * imageAspect;
     }
 
-    // Ensure minimum dimensions
     width = Math.max(width, 200);
     height = Math.max(height, 150);
 
     return { width: `${width}px`, height: `${height}px` };
-  };
+  }, [imageDimensions, windowSize.width, windowSize.height]);
+
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) {
+        handleLocalImageSelect(e.target.files);
+        e.target.value = "";
+      }
+    },
+    [handleLocalImageSelect],
+  );
+
+  const handleOpenGallery = useCallback(() => {
+    setIsGalleryModalOpen(true);
+  }, []);
+
+  const handleCloseGallery = useCallback(() => {
+    setIsGalleryModalOpen(false);
+    setSelectedGalleryImages([]);
+  }, []);
 
   return (
     <>
@@ -398,7 +556,7 @@ export const RemoveBackground = () => {
           <main className="flex h-full w-full flex-col items-center justify-center">
             {showUploadScreen ? (
               <div className="w-full max-w-5xl">
-                <div className="aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
+                <div className="relative aspect-video overflow-hidden rounded-2xl border border-ui-panel-border bg-ui-background shadow-lg">
                   <UploadEntryCard
                     icon={faWandMagicSparkles}
                     title="Remove Background"
@@ -410,8 +568,14 @@ export const RemoveBackground = () => {
                     primaryLabel="Select Image"
                     secondaryLabel="Pick from Library"
                     secondaryIcon={faImages}
-                    onSecondaryClick={() => setIsGalleryModalOpen(true)}
+                    onSecondaryClick={handleOpenGallery}
+                    disabled={isLoadingImage}
                   />
+                  {isLoadingImage && (
+                    <div className="bg-ui-panel/80 absolute inset-0 flex items-center justify-center backdrop-blur-sm">
+                      <LoadingSpinner className="h-12 w-12" />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -454,7 +618,7 @@ export const RemoveBackground = () => {
 
                 <div
                   className="relative overflow-hidden rounded-2xl border border-ui-panel-border shadow-xl"
-                  style={getImageContainerStyle()}
+                  style={imageContainerStyle}
                 >
                   {isProcessing && (
                     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -503,11 +667,14 @@ export const RemoveBackground = () => {
                       />
 
                       <div
-                        className="absolute inset-0 transition-all duration-300"
+                        ref={clipLayerRef}
+                        className={twMerge(
+                          "absolute inset-0",
+                          animationComplete &&
+                            "transition-[clip-path] duration-300",
+                        )}
                         style={{
-                          clipPath: isHoldingCompare
-                            ? "inset(0 0 0 0)"
-                            : `inset(0 0 0 ${revealProgress}%)`,
+                          clipPath: `inset(0 0 0 ${revealProgressRef.current}%)`,
                         }}
                       >
                         <img
@@ -517,15 +684,19 @@ export const RemoveBackground = () => {
                         />
                       </div>
 
-                      {!isHoldingCompare && revealProgress < 100 && (
-                        <div
-                          className="absolute bottom-0 top-0 w-1 bg-primary-500 shadow-lg shadow-primary-500/50"
-                          style={{
-                            left: `${revealProgress}%`,
-                            transform: "translateX(-50%)",
-                          }}
-                        />
-                      )}
+                      <div
+                        ref={progressBarRef}
+                        className="absolute bottom-0 top-0 w-1 bg-primary-500 shadow-lg shadow-primary-500/50"
+                        style={{
+                          left: `${revealProgressRef.current}%`,
+                          transform: "translateX(-50%)",
+                          display:
+                            animationComplete ||
+                            revealProgressRef.current >= 100
+                              ? "none"
+                              : "block",
+                        }}
+                      />
                     </>
                   )}
                 </div>
@@ -536,12 +707,7 @@ export const RemoveBackground = () => {
                     ref={fileInputRef}
                     className="hidden"
                     accept="image/*"
-                    onChange={(e) => {
-                      if (e.target.files) {
-                        handleLocalImageSelect(e.target.files);
-                        e.target.value = "";
-                      }
-                    }}
+                    onChange={handleFileInputChange}
                   />
 
                   <PopoverMenu
@@ -562,18 +728,7 @@ export const RemoveBackground = () => {
                   {images.map((img) => (
                     <button
                       key={img.id}
-                      onClick={() => {
-                        setActiveImage(img.id);
-                        setRevealProgress(100);
-                        const loadImg = new Image();
-                        loadImg.onload = () => {
-                          setImageDimensions({
-                            width: loadImg.naturalWidth,
-                            height: loadImg.naturalHeight,
-                          });
-                        };
-                        loadImg.src = img.originalUrl;
-                      }}
+                      onClick={() => handleThumbnailClick(img)}
                       className={twMerge(
                         "relative h-14 w-14 overflow-hidden rounded-lg border-2 transition-all",
                         img.id === activeImageId
@@ -596,11 +751,8 @@ export const RemoveBackground = () => {
       </div>
 
       <GalleryModal
-        isOpen={!!isGalleryModalOpen}
-        onClose={() => {
-          setIsGalleryModalOpen(false);
-          setSelectedGalleryImages([]);
-        }}
+        isOpen={isGalleryModalOpen}
+        onClose={handleCloseGallery}
         mode="select"
         selectedItemIds={selectedGalleryImages}
         onSelectItem={handleImageSelect}

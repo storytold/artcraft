@@ -89,6 +89,10 @@ interface GalleryModalProps {
     url: string,
     media_id?: string
   ) => Promise<void> | void;
+  onRemoveBackgroundClicked?: (
+    url: string,
+    media_id?: string
+  ) => Promise<void> | void;
 }
 
 export const GalleryModal = React.memo(
@@ -105,6 +109,7 @@ export const GalleryModal = React.memo(
     forceFilter,
     onEditClicked,
     onTurnIntoVideoClicked,
+    onRemoveBackgroundClicked,
   }: GalleryModalProps) => {
     const [loading, setLoading] = useState(false);
     // Lightbox state is now handled via signals
@@ -745,6 +750,7 @@ export const GalleryModal = React.memo(
             mediaClass={lightboxImageSignal.value?.mediaClass}
             onEditClicked={onEditClicked}
             onTurnIntoVideoClicked={onTurnIntoVideoClicked}
+            onRemoveBackgroundClicked={onRemoveBackgroundClicked}
           />
         )}
       </>

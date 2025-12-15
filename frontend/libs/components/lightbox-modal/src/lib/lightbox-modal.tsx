@@ -6,6 +6,7 @@ import {
   faDownToLine,
   faPencil,
   faVideo,
+  faWandMagicSparkles,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   EnqueueImageTo3dObject,
@@ -68,6 +69,10 @@ interface LightboxModalProps {
     url: string,
     media_id?: string,
   ) => Promise<void> | void;
+  onRemoveBackgroundClicked?: (
+    url: string,
+    media_id?: string,
+  ) => Promise<void> | void;
   batchImageToken?: string;
 }
 
@@ -90,6 +95,7 @@ export function LightboxModal({
   mediaClass,
   onEditClicked,
   onTurnIntoVideoClicked,
+  onRemoveBackgroundClicked,
   batchImageToken,
 }: LightboxModalProps) {
   // NB(bt,2025-06-14): We add ?cors=1 to the image url to prevent caching "sec-fetch-mode: no-cors" from
@@ -660,6 +666,9 @@ export function LightboxModal({
                     onTurnIntoVideoClicked &&
                       actionUrl &&
                       derivedMediaClass === "image",
+                    onRemoveBackgroundClicked &&
+                      actionUrl &&
+                      derivedMediaClass === "image",
                     onAddToSceneClicked && actionUrl,
                     derivedMediaClass === "image",
                     onDownloadClicked && actionUrl,
@@ -740,6 +749,27 @@ export function LightboxModal({
                             }}
                           >
                             Turn into Video
+                          </Button>
+                        )}
+
+                      {onRemoveBackgroundClicked &&
+                        actionUrl &&
+                        derivedMediaClass === "image" && (
+                          <Button
+                            className={buttonClass}
+                            icon={faWandMagicSparkles}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              gtagEvent("remove_background_clicked");
+                              await onRemoveBackgroundClicked(
+                                actionUrl,
+                                selectedMediaToken,
+                              );
+                              onClose();
+                              onCloseGallery();
+                            }}
+                          >
+                            Remove BG
                           </Button>
                         )}
 

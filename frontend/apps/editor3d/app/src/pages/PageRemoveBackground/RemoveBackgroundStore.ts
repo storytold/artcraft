@@ -13,52 +13,35 @@ export interface ImageDimensions {
 }
 
 interface RemoveBackgroundState {
-  // Image data
   images: ProcessedImage[];
   activeImageId: string | null;
-
-  // Processing state
   isProcessing: boolean;
   currentOriginalUrl: string;
   pendingJobId: string | null;
-
-  // Animation state
-  revealProgress: number;
-  isAnimating: boolean;
-  isHoldingCompare: boolean;
-
-  // Image dimensions
   imageDimensions: ImageDimensions | null;
+  pendingExternalUrl: string | null;
 
-  // Actions
   addImage: (image: ProcessedImage) => void;
   setActiveImage: (id: string | null) => void;
   getActiveImage: () => ProcessedImage | null;
   setIsProcessing: (value: boolean) => void;
   setCurrentOriginalUrl: (url: string) => void;
   setPendingJobId: (id: string | null) => void;
-  setRevealProgress: (value: number) => void;
-  setIsAnimating: (value: boolean) => void;
-  setIsHoldingCompare: (value: boolean) => void;
   setImageDimensions: (dimensions: ImageDimensions | null) => void;
-  resetAnimationState: () => void;
+  setPendingExternalUrl: (url: string | null) => void;
   clearAll: () => void;
 }
 
 export const useRemoveBackgroundStore = create<RemoveBackgroundState>(
   (set, get) => ({
-    // Initial state
     images: [],
     activeImageId: null,
     isProcessing: false,
     currentOriginalUrl: "",
     pendingJobId: null,
-    revealProgress: 0,
-    isAnimating: false,
-    isHoldingCompare: false,
     imageDimensions: null,
+    pendingExternalUrl: null,
 
-    // Actions
     addImage: (image) => {
       set((state) => ({
         images: [...state.images, image],
@@ -87,28 +70,12 @@ export const useRemoveBackgroundStore = create<RemoveBackgroundState>(
       set({ pendingJobId: id });
     },
 
-    setRevealProgress: (value) => {
-      set({ revealProgress: value });
-    },
-
-    setIsAnimating: (value) => {
-      set({ isAnimating: value });
-    },
-
-    setIsHoldingCompare: (value) => {
-      set({ isHoldingCompare: value });
-    },
-
     setImageDimensions: (dimensions) => {
       set({ imageDimensions: dimensions });
     },
 
-    resetAnimationState: () => {
-      set({
-        isAnimating: false,
-        revealProgress: 0,
-        isHoldingCompare: false,
-      });
+    setPendingExternalUrl: (url) => {
+      set({ pendingExternalUrl: url });
     },
 
     clearAll: () => {
@@ -118,10 +85,8 @@ export const useRemoveBackgroundStore = create<RemoveBackgroundState>(
         isProcessing: false,
         currentOriginalUrl: "",
         pendingJobId: null,
-        revealProgress: 0,
-        isAnimating: false,
-        isHoldingCompare: false,
         imageDimensions: null,
+        pendingExternalUrl: null,
       });
     },
   }),

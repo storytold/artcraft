@@ -61,6 +61,7 @@ import { TaskQueue } from "./TaskQueue";
 import { usePromptVideoStore, RefImage } from "@storyteller/ui-promptbox";
 import { APP_DESCRIPTORS } from "~/config/appMenu";
 import { AppsQuickMenu } from "./AppsQuickMenu";
+import { useRemoveBackgroundStore } from "~/pages/PageRemoveBackground/RemoveBackgroundStore";
 
 interface Props {
   pageName: string;
@@ -220,6 +221,18 @@ export const TopBar = ({ pageName }: Props) => {
       // Update zustand store for Video directly
       usePromptVideoStore.getState().setReferenceImages([referenceImage]);
       useTabStore.getState().setActiveTab("VIDEO");
+      galleryModalVisibleViewMode.value = false;
+      galleryModalVisibleDuringDrag.value = false;
+      galleryModalLightboxVisible.value = false;
+    } catch (e) {
+      // no-op
+    }
+  };
+
+  const handleRemoveBackgroundFromGallery = async (url: string) => {
+    try {
+      useRemoveBackgroundStore.getState().setPendingExternalUrl(url);
+      useTabStore.getState().setActiveTab("REMOVE_BACKGROUND");
       galleryModalVisibleViewMode.value = false;
       galleryModalVisibleDuringDrag.value = false;
       galleryModalLightboxVisible.value = false;
@@ -526,6 +539,7 @@ export const TopBar = ({ pageName }: Props) => {
         onDownloadClicked={downloadFile}
         onEditClicked={handleEditFromGallery}
         onTurnIntoVideoClicked={handleTurnIntoVideoFromGallery}
+        onRemoveBackgroundClicked={handleRemoveBackgroundFromGallery}
       />
 
       <ProviderSetupModal />
