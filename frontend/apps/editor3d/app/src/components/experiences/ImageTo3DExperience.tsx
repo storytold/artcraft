@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { animated, useSpring } from "@react-spring/web";
-import { Button, ToggleButton } from "@storyteller/ui-button";
+import { Button } from "@storyteller/ui-button";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCube,
-  faCubes,
   faImages,
   faPlus,
   faSparkles,
@@ -16,11 +15,14 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { useImageTo3DStore } from "../../pages/PageImageTo3DObject/ImageTo3DStore";
+import { useImageTo3DWorldStore } from "../../pages/PageImageTo3DWorld/ImageTo3DWorldStore";
 import { MediaUploadApi, downloadFileFromUrl } from "@storyteller/api";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
   EnqueueImageTo3dObject,
   EnqueueImageTo3dObjectModel,
+  EnqueueImageTo3dWorld,
+  EnqueueImageTo3dWorldModel,
 } from "@storyteller/tauri-api";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
@@ -68,7 +70,6 @@ export const ImageTo3DExperience = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [meshOnly, setMeshOnly] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -79,9 +80,16 @@ export const ImageTo3DExperience = ({
     typeof window !== "undefined" ? window.innerHeight : 800,
   );
 
-  const results = useImageTo3DStore((s) => s.results);
-  const startGeneration = useImageTo3DStore((s) => s.startGeneration);
-  const resetResults = useImageTo3DStore((s) => s.reset);
+  const objectResults = useImageTo3DStore((s) => s.results);
+  const objectStartGeneration = useImageTo3DStore((s) => s.startGeneration);
+  const objectReset = useImageTo3DStore((s) => s.reset);
+
+  const worldResults = useImageTo3DWorldStore((s) => s.results);
+  const worldStartGeneration = useImageTo3DWorldStore((s) => s.startGeneration);
+  const worldReset = useImageTo3DWorldStore((s) => s.reset);
+
+  const results = variant === "object" ? objectResults : worldResults;
+  const resetResults = variant === "object" ? objectReset : worldReset;
   const [uploadedMediaToken, setUploadedMediaToken] = useState<string | null>(
     null,
   );
@@ -106,14 +114,12 @@ export const ImageTo3DExperience = ({
     return () => ro.disconnect();
   }, []);
 
-
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   });
-
 
   const handleFiles = async (files?: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -212,21 +218,33 @@ export const ImageTo3DExperience = ({
           ? snapshotPrompt
           : snapshotName || "Generated Model";
 
-      startGeneration(
-        activeMode,
-        note,
-        snapshotPreview,
-        meshOnly,
-        subscriberId,
-      );
+      if (variant === "object") {
+        objectStartGeneration(
+          activeMode,
+          note,
+          snapshotPreview,
+          false,
+          subscriberId,
+        );
+      } else {
+        worldStartGeneration(activeMode, note, snapshotPreview, subscriberId);
+      }
       setSelectedResultId(subscriberId);
 
-      const result = await EnqueueImageTo3dObject({
-        image_media_token: uploadedMediaToken || undefined,
-        model: EnqueueImageTo3dObjectModel.Hunyuan3d2,
-        frontend_caller: "mini_app",
-        frontend_subscriber_id: subscriberId,
-      });
+      const result =
+        variant === "object"
+          ? await EnqueueImageTo3dObject({
+              image_media_token: uploadedMediaToken || undefined,
+              model: EnqueueImageTo3dObjectModel.Hunyuan3d2,
+              frontend_caller: "mini_app",
+              frontend_subscriber_id: subscriberId,
+            })
+          : await EnqueueImageTo3dWorld({
+              image_media_token: uploadedMediaToken || undefined,
+              model: EnqueueImageTo3dWorldModel.Hunyuan3d2,
+              frontend_caller: "mini_app",
+              frontend_subscriber_id: subscriberId,
+            });
 
       if ("error_type" in result) {
         throw new Error(result.error_message || result.error_type);
@@ -427,7 +445,7 @@ export const ImageTo3DExperience = ({
   }, [activeResult]);
 
   return (
-    <div className="flex h-[calc(100vh-56px)] w-full bg-ui-panel-gradient bg-ui-panel text-base-fg">
+    <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full bg-ui-panel text-base-fg">
       {backgroundImage && !hasResults && (
         <>
           <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden bg-[radial-gradient(50%_50%_at_50%_50%,_transparent_49%,_rgb(var(--st-controls-rgb)_/_var(--st-gallery-vignette-alpha))_100%)]" />
@@ -457,7 +475,10 @@ export const ImageTo3DExperience = ({
         {/* Split View: Viewer + History */}
         {hasResults && (
           <div
-            className="mx-auto grid h-full w-full max-w-7xl grid-cols-[1fr_300px] gap-4 overflow-hidden pb-10"
+            className={twMerge(
+              "mx-auto grid h-full w-full grid-cols-[1fr_300px] gap-4 overflow-hidden pb-10",
+              variant === "world" ? "max-w-[1600px]" : "max-w-7xl",
+            )}
             style={{ height: `calc(100vh - ${bottomOffsetPx + 80}px)` }}
           >
             {/* Left: Viewer */}
@@ -483,7 +504,9 @@ export const ImageTo3DExperience = ({
                           media_id: activeResult.mediaToken!,
                           name: activeResult.note || "3D Object",
                           position: { x: 0, y: 0, z: 0 },
-                        } as MediaItem & { position: { x: number; y: number; z: number } };
+                        } as MediaItem & {
+                          position: { x: number; y: number; z: number };
+                        };
                         addObject(mediaItem);
                         toast.success("Added to 3D scene");
                       }, 500);
@@ -495,11 +518,14 @@ export const ImageTo3DExperience = ({
                     variant="action"
                     icon={faCube}
                     onClick={() => {
-                      toast.promise(downloadFileFromUrl(activeResult.modelUrl!), {
-                        loading: "Downloading GLB...",
-                        success: "Downloaded GLB file",
-                        error: "Failed to download file",
-                      });
+                      toast.promise(
+                        downloadFileFromUrl(activeResult.modelUrl!),
+                        {
+                          loading: "Downloading GLB...",
+                          success: "Downloaded GLB file",
+                          error: "Failed to download file",
+                        },
+                      );
                     }}
                   >
                     GLB
@@ -579,25 +605,16 @@ export const ImageTo3DExperience = ({
             <div className="glass w-full rounded-xl p-5 shadow-2xl ring-1 ring-white/10">
               <div className="space-y-5">{renderActiveMode()}</div>
 
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-                <ToggleButton
-                  isActive={meshOnly}
-                  icon={faCubes}
-                  activeIcon={faCubes}
-                  label="Mesh only"
-                  onClick={() => setMeshOnly((prev) => !prev)}
-                />
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="primary"
-                    icon={faSparkles}
-                    disabled={!canGenerate}
-                    onClick={handleGenerate}
-                    loading={isGenerating}
-                  >
-                    {`Generate ${variant === "object" ? "Object" : "World"}`}
-                  </Button>
-                </div>
+              <div className="mt-6 flex justify-center">
+                <Button
+                  variant="primary"
+                  icon={faSparkles}
+                  disabled={!canGenerate}
+                  onClick={handleGenerate}
+                  loading={isGenerating}
+                >
+                  {`Generate ${variant === "object" ? "Object" : "World"}`}
+                </Button>
               </div>
             </div>
 
