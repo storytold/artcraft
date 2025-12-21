@@ -192,33 +192,37 @@ export const useImageTo3DWorldStore = create<ImageTo3DWorldState>(
   }),
 );
 
-interface WorldGenerationEvent {
+interface GaussianGenerationEvent {
   data: {
-    generated_world?: {
+    generated_gaussian?: {
       cdn_url: string;
       media_token: string;
+      maybe_thumbnail_template?: string;
     };
     maybe_frontend_subscriber_id?: string;
   };
 }
 
-listen<WorldGenerationEvent>("world_generation_complete_event", (event) => {
-  const payload = event.payload?.data;
-  if (payload?.maybe_frontend_subscriber_id && payload?.generated_world) {
-    console.log(
-      "[ImageTo3DWorldStore] Global event received for subscriber:",
-      payload.maybe_frontend_subscriber_id,
-    );
-    useImageTo3DWorldStore
-      .getState()
-      .completeGeneration(
-        payload.generated_world.cdn_url,
-        payload.generated_world.media_token,
+listen<GaussianGenerationEvent>(
+  "gaussian_generation_complete_event",
+  (event) => {
+    const payload = event.payload?.data;
+    if (payload?.maybe_frontend_subscriber_id && payload?.generated_gaussian) {
+      console.log(
+        "[ImageTo3DWorldStore] Gaussian event received for subscriber:",
         payload.maybe_frontend_subscriber_id,
       );
+      useImageTo3DWorldStore
+        .getState()
+        .completeGeneration(
+          payload.generated_gaussian.cdn_url,
+          payload.generated_gaussian.media_token,
+          payload.maybe_frontend_subscriber_id,
+        );
 
-    useImageTo3DWorldStore
-      .getState()
-      .uploadCoverFromPreview(payload.generated_world.media_token);
-  }
-});
+      useImageTo3DWorldStore
+        .getState()
+        .uploadCoverFromPreview(payload.generated_gaussian.media_token);
+    }
+  },
+);
