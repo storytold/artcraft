@@ -23,6 +23,7 @@ interface ClassyModelSelectorProps {
   triggerLabel?: string;
   providersByModel?: Partial<Record<string, Provider[]>>;
   providerTooltipDelayMs?: number;
+  maxListHeight?: number | string;
 }
 
 const DEFAULT_PROVIDER_OPTIONS: Provider[] = [Provider.ArtCraft];
@@ -100,6 +101,7 @@ export function ClassyModelSelector({
   page,
   providersByModel,
   providerTooltipDelayMs = 300,
+  maxListHeight = "60vh",
   ...popoverProps
 }: ClassyModelSelectorProps) {
   const { selectedModels, setSelectedModel, setSelectedProvider } =
@@ -107,7 +109,7 @@ export function ClassyModelSelector({
   const selectedModel = selectedModels[page] || items[0]?.model;
   const selectedProvider = useSelectedProviderForModel(page, selectedModel?.id);
   const selectedProvidersByModel = useClassyModelSelectorStore(
-    (s) => s.selectedProviders[page] ?? {}
+    (s) => s.selectedProviders[page] ?? {},
   );
 
   // For the first mount, make sure the selected model is set for other components to listen
@@ -145,9 +147,9 @@ export function ClassyModelSelector({
       items.map((item) => {
         const modelId = item.model?.id;
         const allowedProviders: Provider[] = modelId
-          ? providersByModel?.[modelId] ??
+          ? (providersByModel?.[modelId] ??
             PROVIDER_LOOKUP_BY_PAGE[page]?.[modelId] ??
-            DEFAULT_PROVIDER_OPTIONS
+            DEFAULT_PROVIDER_OPTIONS)
           : DEFAULT_PROVIDER_OPTIONS;
 
         return {
@@ -198,7 +200,7 @@ export function ClassyModelSelector({
       page,
       providersByModel,
       providerTooltipDelayMs,
-    ]
+    ],
   );
 
   return (
@@ -208,6 +210,7 @@ export function ClassyModelSelector({
         items={modelList}
         onSelect={handleModelSelect}
         mode="hoverSelect"
+        maxListHeight={maxListHeight}
         {...popoverProps}
         buttonClassName="rounded-xl bg-ui-controls/90 hover:bg-ui-controls text-left shadow-sm px-3 py-1 gap-3 border border-ui-controls-border"
         renderTrigger={(selectedItem) => {

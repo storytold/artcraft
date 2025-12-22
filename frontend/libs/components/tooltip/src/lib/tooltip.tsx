@@ -153,7 +153,7 @@ export const Tooltip = ({
         show={isShowing}
         enter={twMerge(
           "transition ease-out duration-200",
-          delay ? `delay-[${delay}ms]` : "delay-[300ms]"
+          delay ? `delay-[${delay}ms]` : "delay-[300ms]",
         )}
         enterFrom="opacity-0"
         enterTo="opacity-100"
@@ -184,7 +184,7 @@ export const Tooltip = ({
               ? "pointer-events-auto p-3"
               : "px-2.5 py-1.5 text-[13px] font-medium pointer-events-none",
             "text-base-fg",
-            className ? className : ""
+            className ? className : "",
           )}
         >
           {interactive ? (
