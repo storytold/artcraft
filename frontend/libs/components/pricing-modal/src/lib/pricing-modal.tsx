@@ -25,15 +25,14 @@ const pricingConfig = {
   yearlyDiscount: 20,
 };
 
-interface PricingModalProps {}
+interface PricingContentProps {
+  title?: string;
+  subtitle?: string;
+}
 
-export function PricingModal({}: PricingModalProps = {}) {
-  const { isOpen, closeModal } = usePricingModalStore();
-
+export function PricingContent({ title, subtitle }: PricingContentProps) {
   const subscriptionStore = useSubscriptionState();
-
   const hasActiveSub = subscriptionStore.hasPaidPlan();
-
   const activePlanId = subscriptionStore.subscriptionInfo?.productSlug;
 
   const [billingType, setBillingType] = useState("yearly");
@@ -194,6 +193,152 @@ export function PricingModal({}: PricingModalProps = {}) {
   };
 
   return (
+    <div className="p-8 md:p-16 py-12 md:py-24 flex-1 overflow-y-auto min-h-0 text-base-fg">
+      <div className="text-center mb-10">
+        <h1 className="text-3xl md:text-5xl font-bold text-base-fg mb-4">
+          {title || pricingConfig.header.title}
+        </h1>
+        <p className="text-base-fg/60 text-md md:text-lg mb-6 max-w-3xl mx-auto">
+          {subtitle || pricingConfig.header.subtitle}
+        </p>
+
+        {/* Billing Toggle */}
+        <div className="flex items-center justify-center gap-4 mb-8 relative w-fit mx-auto">
+          <TabSelector
+            tabs={billingTabs}
+            activeTab={billingType}
+            onTabChange={setBillingType}
+            className="w-fit border border-base-fg/20 rounded-lg"
+            tabClassName="w-24 text-md"
+            indicatorClassName="bg-primary/30 border border-primary"
+            selectedTabClassName="text-base-fg"
+          />
+          <span className="bg-primary text-white px-3 py-0.5 rounded-full text-sm font-medium -top-3 -left-6 absolute pointer-events-none">
+            -{pricingConfig.yearlyDiscount}%
+          </span>
+        </div>
+      </div>
+
+      {/* Pricing Tiers */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
+        {SUBSCRIPTION_PLANS.map((plan) => {
+          const pricing = formatPrice(plan);
+
+          return (
+            <div
+              key={plan.slug}
+              className={getColorSchemeClasses(
+                plan.colorScheme,
+                isCurrentPlan(plan.slug)
+              )}
+            >
+              {/* Current Plan Badge */}
+              {isCurrentPlan(plan.slug) && (
+                <div className="absolute -top-4 right-5 bg-white text-black px-3 py-1 rounded-full text-md font-semibold shadow-xl">
+                  Active
+                </div>
+              )}
+
+              {/* Tier Header */}
+              <div className="text-center mb-8">
+                <h3 className="text-2xl md:text-4xl font-bold text-white mb-4">
+                  {plan.name}
+                </h3>
+                <div className="flex items-baseline justify-center gap-2">
+                  {pricing.original && (
+                    <span className="text-white/60 line-through text-xl md:text-2xl">
+                      {pricing.original}
+                    </span>
+                  )}
+                  <span className="text-2xl md:text-4xl font-bold text-white">
+                    {pricing.current}
+                  </span>
+                  <span className="text-white/60 text-sm">/month</span>
+                </div>
+
+                <p className="text-white/60 text-xs mt-1">
+                  {isYearly ? "billed yearly" : "billed monthly"}
+                </p>
+              </div>
+
+              {/* Features */}
+              <div className="flex-1 space-y-3 mb-6">
+                {plan.features.map((feature, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div
+                      className={twMerge(
+                        "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                        feature.included
+                          ? "bg-white text-black"
+                          : "bg-transparent border border-gray-400"
+                      )}
+                    >
+                      {feature.included && (
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <span
+                      className={twMerge(
+                        "text-sm mt-0.5",
+                        feature.included ? "text-white" : "text-white/60"
+                      )}
+                    >
+                      {feature.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA Button */}
+              <Button
+                onClick={() => handleSetPlan(plan.slug)}
+                disabled={isCurrentPlan(plan.slug)}
+                className="w-full h-12 rounded-xl bg-white text-black border hover:bg-white/90"
+              >
+                {getButtonText(plan)}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Manage Subscription Button - only show if user has a paid plan */}
+      {hasActiveSub && activePlanId !== "free" && (
+        <div className="flex flex-wrap justify-center mt-8 gap-4">
+          <Button
+            onClick={handleUpdatePaymentMethod}
+            className="bg-transparent border border-white/25 text-white hover:bg-white/10 px-8 py-3 rounded-xl"
+          >
+            Update your payment method
+          </Button>
+          <Button
+            onClick={handleManageSubscription}
+            className="bg-transparent border border-white/25 text-white hover:bg-white/10 px-8 py-3 rounded-xl"
+          >
+            Manage your subscription
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface PricingModalProps {}
+
+export function PricingModal({}: PricingModalProps = {}) {
+  const { isOpen, closeModal, title, subtitle } = usePricingModalStore();
+
+  return (
     <Modal
       isOpen={isOpen}
       onClose={closeModal}
@@ -204,144 +349,7 @@ export function PricingModal({}: PricingModalProps = {}) {
       resizable={false}
       backdropClassName=""
     >
-      <div className="p-16 py-24 flex-1 overflow-y-auto min-h-0 text-base-fg">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-5xl font-bold text-base-fg mb-4">
-            {pricingConfig.header.title}
-          </h1>
-          <p className="text-base-fg/60 text-lg mb-6">
-            {pricingConfig.header.subtitle}
-          </p>
-
-          {/* Billing Toggle */}
-          <div className="flex items-center justify-center gap-4 mb-8 relative w-fit mx-auto">
-            <TabSelector
-              tabs={billingTabs}
-              activeTab={billingType}
-              onTabChange={setBillingType}
-              className="w-fit border border-base-fg/20 rounded-lg"
-              tabClassName="w-24 text-md"
-              indicatorClassName="bg-primary/30 border border-primary"
-              selectedTabClassName="text-base-fg"
-            />
-            <span className="bg-primary text-white px-3 py-0.5 rounded-full text-sm font-medium -top-3 -left-6 absolute pointer-events-none">
-              -{pricingConfig.yearlyDiscount}%
-            </span>
-          </div>
-        </div>
-
-        {/* Pricing Tiers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {SUBSCRIPTION_PLANS.map((plan) => {
-            const pricing = formatPrice(plan);
-
-            return (
-              <div
-                key={plan.slug}
-                className={getColorSchemeClasses(
-                  plan.colorScheme,
-                  isCurrentPlan(plan.slug)
-                )}
-              >
-                {/* Current Plan Badge */}
-                {isCurrentPlan(plan.slug) && (
-                  <div className="absolute -top-4 right-5 bg-white text-black px-3 py-1 rounded-full text-md font-semibold shadow-xl">
-                    Active
-                  </div>
-                )}
-
-                {/* Tier Header */}
-                <div className="text-center mb-8">
-                  <h3 className="text-4xl font-bold text-white mb-4">
-                    {plan.name}
-                  </h3>
-                  <div className="flex items-baseline justify-center gap-2">
-                    {pricing.original && (
-                      <span className="text-white/60 line-through text-2xl">
-                        {pricing.original}
-                      </span>
-                    )}
-                    <span className="text-4xl font-bold text-white">
-                      {pricing.current}
-                    </span>
-                    <span className="text-white/60 text-sm">/month</span>
-                  </div>
-
-                  <p className="text-white/60 text-xs mt-1">
-                    {isYearly ? "billed yearly" : "billed monthly"}
-                  </p>
-                </div>
-
-                {/* Features */}
-                <div className="flex-1 space-y-3 mb-6">
-                  {plan.features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div
-                        className={twMerge(
-                          "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                          feature.included
-                            ? "bg-white text-black"
-                            : "bg-transparent border border-gray-400"
-                        )}
-                      >
-                        {feature.included && (
-                          <svg
-                            className="w-3 h-3"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        )}
-                      </div>
-                      <span
-                        className={twMerge(
-                          "text-sm mt-0.5",
-                          feature.included ? "text-white" : "text-white/60"
-                        )}
-                      >
-                        {feature.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* CTA Button */}
-                <Button
-                  onClick={() => handleSetPlan(plan.slug)}
-                  disabled={isCurrentPlan(plan.slug)}
-                  className="w-full h-12 rounded-xl bg-white text-black border hover:bg-white/90"
-                >
-                  {getButtonText(plan)}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Manage Subscription Button - only show if user has a paid plan */}
-        {hasActiveSub && activePlanId !== "free" && (
-          <div className="flex justify-center mt-8">
-            <Button
-              onClick={handleUpdatePaymentMethod}
-              className="bg-transparent border border-white/25 text-white hover:bg-white/10 px-8 py-3 mx-3 rounded-xl"
-            >
-              Update your payment method
-            </Button>
-            <Button
-              onClick={handleManageSubscription}
-              className="bg-transparent border border-white/25 text-white hover:bg-white/10 px-8 py-3 mx-3 rounded-xl"
-            >
-              Manage your subscription
-            </Button>
-          </div>
-        )}
-      </div>
+      <PricingContent title={title} subtitle={subtitle} />
     </Modal>
   );
 }

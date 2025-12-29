@@ -4,6 +4,7 @@ import { useShowProviderBillingModalEvent } from "@storyteller/tauri-events";
 import { GenerationProvider } from "@storyteller/common";
 import { GenericProviderBillingBlock } from "./others/GenericProviderBillingBlock";
 import { ArtcraftBillingBlock } from "./artcraft/ArtcraftBillingBlock";
+import { twMerge } from "tailwind-merge";
 
 interface ProviderBillingModalProps {
 }
@@ -33,16 +34,24 @@ export function ProviderBillingModal({
       break;
   }
 
+  const isArtcraft = provider === GenerationProvider.Artcraft;
+
   return (
     <Modal
       isOpen={showModal}
       onClose={() => {
         setShowModal(false);
       }}
-      className="max-w-2xl max-h-[500px] p-6"
+      className={twMerge(
+        "bg-ui-panel border border-ui-panel-border transition-all duration-300 overflow-y-auto",
+        isArtcraft ? "max-w-screen-2xl max-h-[90vh]" : "max-w-2xl max-h-[500px]"
+      )}
       showClose={true}
     >
-      <div className="flex flex-col items-center justify-center gap-6">
+      <div className={twMerge(
+        "flex flex-col items-center justify-center",
+        isArtcraft ? "h-full w-full" : "gap-6 p-6"
+      )}>
         {block}
       </div>
     </Modal>

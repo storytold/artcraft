@@ -11,7 +11,9 @@ interface SubscriptionState {
 interface PricingModalState {
   isOpen: boolean;
   subscription: SubscriptionState;
-  openModal: () => void;
+  title?: string;
+  subtitle?: string;
+  openModal: (options?: { title?: string; subtitle?: string }) => void;
   closeModal: () => void;
   toggleModal: () => void;
   setSubscription: (subscription: Partial<SubscriptionState>) => void;
@@ -24,8 +26,14 @@ export const usePricingModalStore = create<PricingModalState>((set) => ({
     currentPlanId: "free",
     hasActiveSubscription: false,
   },
-  openModal: () => set({ isOpen: true }),
-  closeModal: () => set({ isOpen: false }),
+  title: undefined,
+  subtitle: undefined,
+  openModal: (options) => set({ 
+    isOpen: true, 
+    title: options?.title, 
+    subtitle: options?.subtitle 
+  }),
+  closeModal: () => set({ isOpen: false, title: undefined, subtitle: undefined }),
   toggleModal: () => set((state) => ({ isOpen: !state.isOpen })),
   setSubscription: (subscription) =>
     set((state) => ({
