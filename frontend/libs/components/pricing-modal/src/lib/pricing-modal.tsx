@@ -33,7 +33,7 @@ interface PricingContentProps {
 export function PricingContent({ title, subtitle }: PricingContentProps) {
   const subscriptionStore = useSubscriptionState();
   const hasActiveSub = subscriptionStore.hasPaidPlan();
-  const activePlanId = subscriptionStore.subscriptionInfo?.productSlug;
+  const activePlanId = subscriptionStore.subscriptionInfo?.productSlug || "free";
 
   const [billingType, setBillingType] = useState("yearly");
   const isYearly = billingType === "yearly";
