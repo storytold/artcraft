@@ -3,17 +3,18 @@ import {
   faBook,
   faChevronLeft,
   faCircleQuestion,
-  faFilm,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   faDiscord,
   faGithub,
 } from "@fortawesome/free-brands-svg-icons";
+import { OpenUrl } from "@storyteller/tauri-api";
 import { Modal } from "@storyteller/ui-modal";
 import { defaultTutorials, TutorialItem } from "./tutorials.js";
 import { useTutorialModalStore } from "./help-menu-store";
 import { Button } from "@storyteller/ui-button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 
 export type HelpMenuButtonProps = {
@@ -63,7 +64,7 @@ export function HelpMenuButton({
       action: "discord",
     },
     {
-      label: "Github",
+      label: "GitHub",
       selected: false,
       icon: <FontAwesomeIcon icon={faGithub} className="text-base" />,
       action: "github",
@@ -71,7 +72,7 @@ export function HelpMenuButton({
     {
       label: "ArtCraft Studios",
       selected: false,
-      icon: <FontAwesomeIcon icon={faFilm} className="text-base" />,
+      icon: <FontAwesomeIcon icon={faYoutube} className="text-base" />,
       action: "artcraft",
     },
   ];
@@ -82,13 +83,13 @@ export function HelpMenuButton({
         handleOpenTutorials();
         break;
       case "discord":
-        window.open("https://discord.gg", "_blank");
+        OpenUrl("https://discord.com/invite/75svZP2Vje");
         break;
       case "github":
-        window.open("https://github.com", "_blank");
+        OpenUrl("https://github.com/storytold/artcraft");
         break;
       case "artcraft":
-        window.open("https://youtube.com", "_blank");
+        OpenUrl("https://www.youtube.com/@OfficialArtCraftStudios");
         break;
     }
   };

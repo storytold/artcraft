@@ -3,13 +3,16 @@
   "include": [],
   "references": [
     {
+      "path": "../popover"
+    },
+    {
       "path": "../button"
     },
     {
       "path": "../modal"
     },
     {
-      "path": "../popover"
+      "path": "../../tauri-api"
     },
     {
       "path": "./tsconfig.lib.json"

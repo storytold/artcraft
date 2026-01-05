@@ -44,13 +44,16 @@
   ],
   "references": [
     {
+      "path": "../popover/tsconfig.lib.json"
+    },
+    {
       "path": "../button/tsconfig.lib.json"
     },
     {
       "path": "../modal/tsconfig.lib.json"
     },
     {
-      "path": "../popover/tsconfig.lib.json"
+      "path": "../../tauri-api/tsconfig.lib.json"
     }
   ]
 }
