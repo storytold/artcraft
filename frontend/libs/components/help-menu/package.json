@@ -1,5 +1,5 @@
 {
-  "name": "@storyteller/ui-tutorial-modal",
+  "name": "@storyteller/ui-help-menu",
   "version": "0.0.1",
   "type": "module",
   "main": "./src/index.ts",

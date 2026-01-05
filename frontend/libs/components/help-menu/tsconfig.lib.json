@@ -48,6 +48,9 @@
     },
     {
       "path": "../modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../popover/tsconfig.lib.json"
     }
   ]
 }

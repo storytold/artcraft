@@ -169,7 +169,7 @@
       "path": "./libs/state/subscription"
     },
     {
-      "path": "./libs/components/tutorial-modal"
+      "path": "./libs/components/help-menu"
     },
     {
       "path": "./libs/api-enums"

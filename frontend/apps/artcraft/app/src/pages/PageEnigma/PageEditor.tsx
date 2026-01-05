@@ -87,7 +87,7 @@ import PageDraw from "../PageDraw/PageDraw";
 import { useTabStore } from "../Stores/TabState";
 import PageEdit from "../PageEdit/PageEdit";
 import { ImageModel } from "@storyteller/model-list";
-import { TutorialModalButton } from "@storyteller/ui-tutorial-modal";
+import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
@@ -568,7 +568,7 @@ export const PageEditor = () => {
                   />
                 </div>
                 <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-                  <TutorialModalButton />
+                  <HelpMenuButton />
                 </div>
               </div>
             </div>

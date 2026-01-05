@@ -22,7 +22,7 @@ import {
   useSelectedProviderForModel,
 } from "@storyteller/ui-model-selector";
 import { useCanvasBgRemovedEvent } from "@storyteller/tauri-api";
-import { TutorialModalButton } from "@storyteller/ui-tutorial-modal";
+import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
@@ -461,7 +461,7 @@ const PageDraw = () => {
         />
       </div>
       <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-        <TutorialModalButton />
+        <HelpMenuButton />
       </div>
     </>
   );

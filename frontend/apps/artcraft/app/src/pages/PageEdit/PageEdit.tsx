@@ -31,7 +31,7 @@ import {
 } from "@storyteller/ui-model-selector";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { HistoryStack, ImageBundle } from "./HistoryStack";
-import { TutorialModalButton } from "@storyteller/ui-tutorial-modal";
+import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 
@@ -732,7 +732,7 @@ const PageEdit = () => {
         />
       </div>
       <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-        <TutorialModalButton />
+        <HelpMenuButton />
       </div>
     </>
   );
