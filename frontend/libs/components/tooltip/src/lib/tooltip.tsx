@@ -18,6 +18,7 @@ interface TooltipProps {
   interactive?: boolean;
   onOpenChange?: (open: boolean) => void;
   zIndex?: number;
+  disabled?: boolean;
 }
 
 export const Tooltip = ({
@@ -32,6 +33,7 @@ export const Tooltip = ({
   interactive = false,
   onOpenChange,
   zIndex = 10,
+  disabled = false,
 }: TooltipProps) => {
   const [isShowing, setIsShowing] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -118,13 +120,17 @@ export const Tooltip = ({
   };
 
   useEffect(() => {
+    if (disabled) {
+      setIsShowing(false);
+      return;
+    }
     if (!checkForOpenPopovers()) {
       const shouldShow =
         isHoveringTrigger || (interactive && isHoveringTooltip);
       setIsShowing(shouldShow);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHoveringTrigger, isHoveringTooltip, interactive]);
+  }, [isHoveringTrigger, isHoveringTooltip, interactive, disabled]);
 
   useEffect(() => {
     onOpenChange?.(isShowing);
@@ -135,7 +141,7 @@ export const Tooltip = ({
       ref={triggerRef}
       onMouseEnter={() => {
         setIsHoveringTrigger(true);
-        if (!checkForOpenPopovers()) {
+        if (!checkForOpenPopovers() && !disabled) {
           setIsShowing(true);
         }
       }}

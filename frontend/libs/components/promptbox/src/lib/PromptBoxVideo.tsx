@@ -17,6 +17,7 @@ import {
   faSpinnerThird,
   faWaveformLines,
 } from "@fortawesome/pro-solid-svg-icons";
+import {faCircleInfo} from  "@fortawesome/pro-regular-svg-icons";
 import {
   faRectangle,
   faSquare,
@@ -249,12 +250,13 @@ export const PromptBoxVideo = ({
 
     if (!selectedModel) {
       console.warn("Cannot generate video: no model selected");
+      toast.error("Please select a model to generate video");
       return;
     }
 
     if (selectedModel?.requiresImage && referenceImages.length === 0) {
       console.warn("Cannot generate video: no reference image provided");
-      toast.error("Please choose a starting frame image to generate video");
+      toast.error("Please add a starting frame image to generate video");
       return;
     }
 
@@ -393,7 +395,7 @@ export const PromptBoxVideo = ({
                 <img
                   src={image.url}
                   alt="Reference preview"
-                  className="w-full h-full object-contain"
+                  className="h-full w-full object-contain"
                 />,
               );
               setIsModalOpen(true);
@@ -517,26 +519,37 @@ export const PromptBoxVideo = ({
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                icon={!isEnqueueing ? faSparkles : undefined}
-                onClick={handleEnqueue}
-                disabled={
-                  isEnqueueing ||
-                  !prompt.trim() ||
-                  modelNeedsAnImageButNoneAreSelected ||
-                  !selectedModel
-                }
+              {modelNeedsAnImageButNoneAreSelected && (
+                <span className="flex items-center gap-1.5 text-xs text-red-500 font-medium animate-pulse">
+                  <FontAwesomeIcon icon={faCircleInfo} />
+                  Starting frame required
+                </span>
+              )}
+              <Tooltip
+                content="Add a starting image before generating"
+                position="top"
+                className="z-50"
+                delay={0}
+                disabled={!modelNeedsAnImageButNoneAreSelected}
               >
-                {isEnqueueing ? (
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="animate-spin text-lg"
-                  />
-                ) : (
-                  "Generate"
-                )}
-              </Button>
+                <div>
+                  <Button
+                    className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    icon={!isEnqueueing ? faSparkles : undefined}
+                    onClick={handleEnqueue}
+                    disabled={isEnqueueing || !prompt.trim()}
+                  >
+                    {isEnqueueing ? (
+                      <FontAwesomeIcon
+                        icon={faSpinnerThird}
+                        className="animate-spin text-lg"
+                      />
+                    ) : (
+                      "Generate"
+                    )}
+                  </Button>
+                </div>
+              </Tooltip>
             </div>
           </div>
         </div>
