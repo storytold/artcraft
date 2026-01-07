@@ -70,18 +70,7 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
         ? s.batches.findIndex((b) => b.id === pending.id)
         : -1;
       if (idx === -1) {
-        const id = Math.random().toString(36).slice(2);
-        const batch: TextToImageBatch = {
-          id,
-          prompt,
-          status: "complete",
-          images: images.slice(0, 4),
-          createdAt: Date.now(),
-          requestedCount: Math.max(1, Math.min(4, images.length || 4)),
-          modelLabel,
-          subscriberId: id,
-        };
-        return { batches: [...s.batches, batch] };
+        return { batches: s.batches };
       }
       const updated = [...s.batches];
       updated[idx] = {

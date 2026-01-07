@@ -35,7 +35,10 @@ import { useFlashFileDownloadErrorEvent, useFlashUserInputErrorEvent } from "@st
 import { useGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { useGenerationEnqueueFailureEvent } from "@storyteller/tauri-events";
 import { useGenerationEnqueueSuccessEvent } from "@storyteller/tauri-events";
+
 import { useGenerationFailedEvent } from "@storyteller/tauri-events";
+import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
+import { useTextToImageStore } from "~/pages/PageImage/TextToImageStore";
 
 export const PageEnigma = ({ sceneToken }: { sceneToken?: string }) => {
   useSignals();
@@ -91,7 +94,16 @@ export const PageEnigma = ({ sceneToken }: { sceneToken?: string }) => {
   useGenerationEnqueueSuccessEvent();
   useGenerationEnqueueFailureEvent();
   useGenerationCompleteEvent();
+
   useGenerationFailedEvent();
+
+  const completeBatch = useTextToImageStore((s) => s.completeBatch);
+  useTextToImageGenerationCompleteEvent(async (event) => {
+    completeBatch(
+      event.generated_images || [],
+      event.maybe_frontend_subscriber_id,
+    );
+  });
 
   useFlashUserInputErrorEvent(async (event) => {
     console.log("Flash user input error event received:", event);

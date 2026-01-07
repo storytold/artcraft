@@ -55,12 +55,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
     clearJobTokens: () => {},
   };
 
-  useTextToImageGenerationCompleteEvent(async (event) => {
-    completeBatch(
-      event.generated_images || [],
-      event.maybe_frontend_subscriber_id,
-    );
-  });
+
 
   const hasAnyBatches = batches.length > 0;
   const showPromptAtBottom = useMemo(() => hasAnyBatches, [hasAnyBatches]);
