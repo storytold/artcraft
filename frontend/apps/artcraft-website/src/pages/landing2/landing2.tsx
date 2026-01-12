@@ -9,6 +9,12 @@ import {
   faFilm,
   faPaintBrush,
   faCamera,
+  faMapMarkerAlt,
+  faCube,
+  faLayerGroup,
+  faUser,
+  faTools,
+  faShapes,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Footer from "../../components/footer";
@@ -50,7 +56,47 @@ const Landing = () => {
 
   const [isMuted, setIsMuted] = useState(true);
   const [isHovering, setIsHovering] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const features = [
+    {
+      icon: faMapMarkerAlt,
+      title: "Image to Location",
+      description: "Placing virtual actors into physical environments establishes single-location consistency. You can film multiple shots within a room without having things disappear.",
+      src: "https://github.com/user-attachments/assets/21f103e3-cc19-4882-a630-9caa1b76ae31"
+    },
+    {
+      icon: faCube,
+      title: "3D Image Compositing",
+      description: "Use images (backdrops, foreground elements, props, etc.) in scenes with depth and blend them naturally together. Just a couple of images usually leads to great compositions.",
+      src: "https://github.com/user-attachments/assets/f93a616f-571d-474e-bcc0-53736de7303d"
+    },
+    {
+      icon: faLayerGroup,
+      title: "2D Image Compositing",
+      description: "Use images, background removal, layers, and simple drawing tools to precisely compose a scene.",
+      src: "https://github.com/user-attachments/assets/d6f99391-e496-4c62-9e37-29734ba5f899"
+    },
+    {
+      icon: faShapes,
+      title: "Image to 3D Mesh",
+      description: "It's almost impossible to lay out complicated objects or block complicated scenes; turning images into 3D helps position elements exactingly and intentionally.",
+      src: "https://github.com/user-attachments/assets/600a405c-e360-48c1-9b42-6e657ae6243b"
+    },
+    {
+      icon: faTools,
+      title: "Mixed Asset Crafting",
+      description: "You can use image cutouts, worlds, and simple 3D meshes all together to precisely and intentionally lay out your scenes.",
+      src: "https://raw.githubusercontent.com/storytold/github-media/main/ship-editing.gif"
+    },
+    {
+      icon: faUser,
+      title: "Character Posing",
+      description: "You can dynamically pose your characters to achieve the precise character, scene, and camera blocking before calling \"action\".",
+      src: "https://github.com/user-attachments/assets/52a8e983-7c8f-42d2-be8b-25296ab9ed57"
+    }
+  ];
 
   useEffect(() => {
     if (videoRef.current) {
@@ -490,158 +536,138 @@ const Landing = () => {
         </motion.div>
       </div>
 
-      <div className="relative flex overflow-visible xl:items-center xl:pt-0 mb-4 md:mb-12 px-2 sm:px-4 md:px-0">
-        {/* Gradient Orb for Section */}
-        <div className="absolute left-[-200px] top-[-100px] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-blue-700 opacity-15 blur-[120px] z-0 pointer-events-none" />
-        <motion.div
-          className="w-full flex flex-col items-center justify-center text-center pt-16 sm:pt-24 md:pt-32 px-2 sm:px-6 md:px-10"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeUpVariants}
-        >
-          <motion.div className="relative" variants={fadeUpVariants}>
-            <h1 className="relative mb-4 sm:mb-6 md:mb-10 font-bold text-3xl sm:text-4xl md:text-[3rem] lg:text-[4rem] xl:text-[4.5rem] !leading-none text-shadow-lg">
-              <span
-                className="text-white leading-tight"
-                style={{ textShadow: "0 0 15px var(--color-primary)" }}
-              >
-                We're Pulling You{" "}
-                <span className="text-primary">
-                  Out
-                  <br />
-                  of Prompting
-                </span>
-              </span>
-            </h1>
-          </motion.div>
-        </motion.div>
-      </div>
+      <div className="relative z-10 py-12 md:py-24 px-4 sm:px-8 lg:px-12 max-w-[1400px] mx-auto overflow-visible">
+         {/* Gradient Orb for Section */}
+         <div className="absolute left-[-200px] top-[-100px] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-blue-700 opacity-15 blur-[120px] z-0 pointer-events-none" />
 
-      <div className="overflow-visible pb-10 sm:pb-20 md:pb-28 lg:pb-32 relative px-4">
-        {/* Gradient Orb for Section */}
-        <div className="absolute left-[-150px] bottom-[-100px] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-blue-700 opacity-10 blur-[110px] z-0 pointer-events-none" />
-        <motion.div
-          className="mx-auto max-w-[88rem] md:px-6 lg:px-8"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeUpVariants}
-        >
-          <div className="grid grid-cols-1 gap-10 sm:gap-20 lg:grid-cols-2 lg:items-center">
+         {/* Title Area */}
+         <div className="relative z-10 mb-16 md:mb-24">
             <motion.div
-              className="px-2 sm:px-6 lg:px-0 lg:pt-4 lg:pr-4"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUpVariants}
+              className="max-w-3xl"
+            >
+              <h2 className="text-primary font-bold text-sm md:text-base mb-6 tracking-widest uppercase">
+                Advanced Crafting Features
+              </h2>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] mb-8">
+                We're Pulling You <br /> <span className="text-white">Out of Prompting</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/60 leading-relaxed max-w-2xl">
+                Text-to-image is great, but artists <em>need control</em>. Achieve consistency and repeatability with our advanced toolset.
+              </p>
+            </motion.div>
+         </div>
+
+         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-20 items-start relative">
+            {/* Mobile Navigation (Tabs) */}
+            <div className="lg:hidden col-span-1 w-full overflow-x-auto pb-4 no-scrollbar flex gap-3 snap-x">
+              {features.map((feature, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveFeature(index)}
+                  className={`snap-center shrink-0 px-5 py-2.5 rounded-full text-sm font-bold border transition-all duration-300 whitespace-nowrap ${
+                    activeFeature === index
+                      ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
+                      : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
+                  }`}
+                >
+                   {feature.title}
+                </button>
+              ))}
+            </div>
+
+            {/* Desktop Navigation (List) */}
+            <motion.div 
+              className="hidden lg:flex lg:col-span-5 flex-col min-h-[600px]"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
               variants={fadeUpVariants}
             >
-              <div className="max-w-2xl lg:mx-0 mb-10 md:mb-16">
-                <h2 className="relative font-bold text-4xl md:text-5xl !leading-tight">
-                  Our tool lets you design, control, and achieve{" "}
-                  <span className="text-primary">perfect consistency</span>
-                </h2>
-              </div>
-              <DiscordButton />
+              {features.map((feature, index) => (
+                <div 
+                  key={index}
+                  onClick={() => setActiveFeature(index)}
+                  className={`cursor-pointer border-l-2 pl-6 py-4 transition-all duration-500 group ${
+                    activeFeature === index 
+                      ? "border-primary" 
+                      : "border-white/10 hover:border-white/30"
+                  }`}
+                >
+                  <h3 className={`text-xl md:text-2xl font-bold transition-colors duration-300 ${
+                    activeFeature === index ? "text-primary" : "text-white/40 group-hover:text-white/80"
+                  }`}>
+                    {feature.title}
+                  </h3>
+                  <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                    activeFeature === index ? "max-h-40 opacity-100 mt-3" : "max-h-0 opacity-0"
+                  }`}>
+                    <p className="text-base text-white/70 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </motion.div>
-            <div className="sm:px-2 sm:mx-auto lg:px-0">
-              <div className="relative isolate overflow-hidden bg-indigo-500 sm:mx-auto sm:max-w-2xl sm:rounded-3xl sm:pr-0 lg:mx-0 lg:max-w-none">
-                <div className="mx-auto max-w-full sm:mx-0 sm:max-w-none p-2 sm:p-4 bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
-                  <video
-                    src="/videos/3d_canvas_demo.mp4"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="aspect-square w-full max-w-none rounded-lg bg-gray-800 object-cover h-full overflow-hidden"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
 
-      <div className="overflow-visible py-10 sm:py-20 md:py-28 lg:py-32 relative px-4">
-        {/* Gradient Orb for Section */}
-        <div className="absolute right-[-200px] top-[-100px] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-blue-700 via-[#00AABA] to-pink-500 opacity-10 blur-[120px] z-0 pointer-events-none" />
-        <motion.div
-          className="mx-auto max-w-[88rem] md:px-6 lg:px-8"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeUpVariants}
-        >
-          <div className="grid grid-cols-1 gap-10 sm:gap-20 lg:grid-cols-2 lg:items-center">
-            <div className="sm:px-2 sm:mx-auto lg:px-0 order-2 lg:order-1">
-              <motion.div
-                className="relative isolate overflow-hidden bg-indigo-500 sm:mx-auto sm:max-w-2xl sm:rounded-3xl sm:pr-0 lg:mx-0 lg:max-w-none"
-                variants={fadeUpVariants}
-              >
-                <div className="mx-auto max-w-full sm:mx-0 sm:max-w-none p-2 sm:p-4 bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
-                  <video
-                    src="/videos/2d_canvas_demo.mp4"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="aspect-square w-full max-w-none rounded-lg bg-gray-800 object-cover h-full overflow-hidden"
-                  />
+            {/* Media Preview */}
+            <motion.div 
+              className="col-span-1 lg:col-span-7 sticky top-24"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={{
+                hidden: { opacity: 0, x: 20 },
+                visible: {
+                  opacity: 1, 
+                  x: 0,
+                  transition: { duration: 0.8, delay: 0.2, ease: "circOut" }
+                }
+              }}
+            >
+                <div className="relative aspect-[4/3] w-full bg-[#050505] rounded-xl overflow-hidden shadow-2xl border border-white/10 ring-1 ring-white/5">
+                  {features.map((feature, index) => (
+                      <div 
+                        key={index}
+                        className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                          activeFeature === index 
+                            ? "opacity-100 z-10" 
+                            : "opacity-0 z-0"
+                        }`}
+                      >
+                            <img 
+                                src={feature.src}
+                                alt={feature.title}
+                                className="w-full h-full object-cover"
+                            />
+                         {/* Overlay Gradient for depth */}
+                         <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
+                      </div>
+                  ))}
                 </div>
+            </motion.div>
+
+            {/* Mobile Description */}
+            <div className="lg:hidden col-span-1">
+              <motion.div
+                key={activeFeature}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5"
+              >
+                 <h3 className="text-lg font-bold text-white mb-2">
+                    {features[activeFeature].title}
+                 </h3>
+                 <p className="text-white/70 text-sm leading-relaxed">
+                    {features[activeFeature].description}
+                 </p>
               </motion.div>
             </div>
-            <motion.div
-              className="px-2 sm:px-6 lg:px-0 lg:pt-4 lg:pr-4 order-1 lg:order-2"
-              variants={fadeUpVariants}
-            >
-              <div className=" max-w-2xl lg:mx-0 mb-10 md:mb-16">
-                <h2 className="relative font-bold text-4xl md:text-5xl !leading-tight">
-                  <span className="text-primary">Patented</span> Brain to Art
-                  Interface lets you Sketch and Composite
-                </h2>
-              </div>
-              <DiscordButton />
-            </motion.div>
-          </div>
-        </motion.div>
-      </div>
-
-      <div className="overflow-visible py-10 sm:py-20 md:py-28 lg:py-32 relative px-4">
-        {/* Gradient Orb for Section */}
-        <div className="absolute left-[-150px] bottom-[-100px] w-[500px] h-[500px] rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-blue-700 opacity-10 blur-[110px] z-0 pointer-events-none" />
-        <motion.div
-          className="mx-auto max-w-[88rem] md:px-6 lg:px-8"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeUpVariants}
-        >
-          <div className="grid grid-cols-1 gap-10 sm:gap-20 lg:grid-cols-2 lg:items-center">
-            <motion.div
-              className="px-2 sm:px-6 lg:px-0 lg:pt-4 lg:pr-4"
-              variants={fadeUpVariants}
-            >
-              <div className="max-w-2xl lg:mx-0 mb-10 md:mb-16">
-                <h2 className="relative font-bold text-4xl md:text-5xl !leading-tight">
-                  <span className="text-primary">AI inpainting</span> allows you
-                  to edit any image into whatever you imagine
-                </h2>
-              </div>
-              <DiscordButton />
-            </motion.div>
-            <div className="sm:px-2 sm:mx-auto lg:px-0">
-              <div className="relative isolate overflow-hidden bg-indigo-500 sm:mx-auto sm:max-w-2xl sm:rounded-3xl sm:pr-0 lg:mx-0 lg:max-w-none">
-                <div className="mx-auto max-w-full sm:mx-0 sm:max-w-none p-2 sm:p-4 bg-white/10 backdrop-blur-md rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl">
-                  <video
-                    src="/videos/inpainting_demo.mp4"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    className="aspect-square w-full max-w-none rounded-lg bg-gray-800 object-cover h-full overflow-hidden"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+         </div>
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-screen py-10 sm:py-20 md:py-32 sm:px-8 lg:px-32 overflow-visible px-4">
