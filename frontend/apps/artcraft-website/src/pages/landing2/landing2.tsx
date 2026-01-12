@@ -641,7 +641,8 @@ const Landing = () => {
                             <img 
                                 src={feature.src}
                                 alt={feature.title}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover select-none"
+                                draggable={false}
                             />
                          {/* Overlay Gradient for depth */}
                          <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
