@@ -4,7 +4,7 @@ import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
 import {
   faCheckSquare,
   faFile,
-  faQuestion,
+  faKeyboard,
   faSquare,
 } from "@fortawesome/pro-solid-svg-icons";
 import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
@@ -29,7 +29,7 @@ export const ControlsTopButtons = () => {
   const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [helpIsShowing, setHelpIsShowing] = useState(false);
+  const [shortcutsIsShowing, setShortcutsIsShowing] = useState(false);
   const editorEngine = useContext(EngineContext);
 
   const [sceneTitleInput, setSceneTitleInput] = useState<string>("");
@@ -288,20 +288,20 @@ export const ControlsTopButtons = () => {
         </Button>
 
         <Button
-          icon={faQuestion}
+          icon={faKeyboard}
           variant="secondary"
           className="shadow-xl"
-          onClick={() => setHelpIsShowing(true)}
+          onClick={() => setShortcutsIsShowing(true)}
         >
-          Help
+          Shortcuts
         </Button>
       </div>
       <TestFeaturesButtons debug={false} />
 
       <Modal
-        isOpen={helpIsShowing}
-        onClose={() => setHelpIsShowing(false)}
-        title="Help"
+        isOpen={shortcutsIsShowing}
+        onClose={() => setShortcutsIsShowing(false)}
+        title="Shortcuts"
         className="h-[500px] max-w-4xl"
       >
         <Help />
