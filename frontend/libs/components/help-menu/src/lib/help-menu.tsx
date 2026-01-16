@@ -31,7 +31,28 @@ export type HelpMenuButtonProps = {
 const NewsView = ({ onBack }: { onBack: () => void }) => {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
-  const items = useMemo(() => getNewsPosts(), []);
+  const bundledItems = useMemo(() => getNewsPosts(), []);
+  const [items, setItems] = useState(bundledItems);
+
+  useEffect(() => {
+    // Attempt to fetch fresh news
+    const fetchNews = async () => {
+      try {
+        const baseUrl = import.meta.env.DEV ? "http://localhost:4200" : "https://getartcraft.com";
+        const res = await fetch(`${baseUrl}/news.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setItems(data);
+          }
+        }
+      } catch (e) {
+        // Fallback or ignore
+        console.warn("Failed to fetch news feed, using bundled content.", e);
+      }
+    };
+    fetchNews();
+  }, []);
 
   const selectedPost = useMemo(() => 
     selectedSlug ? items.find(i => i.slug === selectedSlug) : null

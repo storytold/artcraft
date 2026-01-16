@@ -1,6 +1,23 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { execSync } from 'child_process';
+import path from 'path';
+
+// Custom plugin to generate news.json on dev server start
+function generateNewsPlugin() {
+  return {
+    name: 'generate-news',
+    buildStart() {
+      try {
+        const scriptPath = path.resolve(__dirname, '../../scripts/generate-news-json.mjs');
+        execSync(`node "${scriptPath}"`, { stdio: 'inherit' });
+      } catch (e) {
+        console.warn('Failed to generate news.json:', e);
+      }
+    },
+  };
+}
 
 export default defineConfig(() => ({
   root: __dirname,
@@ -21,7 +38,7 @@ export default defineConfig(() => ({
     port: 4300,
     host: 'localhost',
   },
-  plugins: [react()],
+  plugins: [generateNewsPlugin(), react()],
   // Uncomment this if you are using workers.
   // worker: {
   //  plugins: [ nxViteTsPaths() ],

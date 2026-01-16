@@ -18,3 +18,5 @@
 
 # Redirects for growth measurement
 /reddit /?utm_source=reddit 301
+
+/news.json /index.html 200
