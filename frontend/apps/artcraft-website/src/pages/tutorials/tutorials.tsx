@@ -4,15 +4,7 @@ import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay } from "@fortawesome/pro-solid-svg-icons";
-import { parseFrontmatter, pathToFilename } from "../../utils/markdown";
-
-type MdTutorial = {
-  slug: string;
-  title: string;
-  abstract: string;
-  category?: string;
-  thumbnail?: string;
-};
+import { getTutorialItems, TutorialItem } from "@storyteller/markdown-content";
 
 const websiteThumb = (url: string): string => {
   // Map shared modal thumbnail paths to website public path
@@ -24,29 +16,9 @@ const websiteThumb = (url: string): string => {
 export const TutorialsPage = () => {
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
-  const mdFiles = import.meta.glob("./content/*.md", {
-    query: "?raw",
-    import: "default",
-    eager: true,
-  });
-
-  const items = useMemo<MdTutorial[]>(() => {
-    const entries = Object.entries(mdFiles);
-    const results: MdTutorial[] = [];
-    for (const [path, raw] of entries) {
-      const { frontmatter } = parseFrontmatter(raw as string);
-      const filenameSlug = pathToFilename(path);
-      const slug = (frontmatter.slug || filenameSlug).trim().toLowerCase();
-      results.push({
-        slug,
-        title: frontmatter.title || filenameSlug,
-        abstract: frontmatter.abstract || "",
-        category: frontmatter.category || undefined,
-        thumbnail: frontmatter.thumbnail || undefined,
-      });
-    }
-    return results;
-  }, [mdFiles]);
+  const items = useMemo<TutorialItem[]>(() => {
+    return getTutorialItems();
+  }, []);
 
   const categories = useMemo(() => {
     const set = new Set<string>();

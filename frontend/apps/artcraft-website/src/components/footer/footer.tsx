@@ -6,19 +6,10 @@ import {
   faGithubAlt,
 } from "@fortawesome/free-brands-svg-icons";
 import { SOCIAL_LINKS } from "../../config/links";
-import { parseFrontmatter, pathToFilename } from "../../utils/markdown";
+import { getFaqItems, getTutorialItems } from "@storyteller/markdown-content";
 import { Link } from "react-router-dom";
 
-const faqFiles = import.meta.glob("../../pages/faq/content/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
-const tutorialFiles = import.meta.glob("../../pages/tutorials/content/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
+// Imports removed.
 
 const navigation = {
   main: [
@@ -106,17 +97,15 @@ export default function Example() {
               <Link to="/tutorials" className="text-gray-400 hover:text-white">
                 All Tutorials
               </Link>
-              {Object.entries(tutorialFiles).map(([path, raw]) => {
-                const { frontmatter } = parseFrontmatter(raw as string);
-                const slug = pathToFilename(path);
-                if (frontmatter.isPublished === "false") return null;
+              {getTutorialItems().map((item) => {
+                if (!item.isPublished) return null;
                 return (
                   <Link
-                    key={slug}
-                    to={`/tutorials/${slug}`}
+                    key={item.slug}
+                    to={`/tutorials/${item.slug}`}
                     className="text-gray-400 hover:text-white"
                   >
-                    {frontmatter.title || slug}
+                    {item.title}
                   </Link>
                 );
               })}
@@ -126,17 +115,14 @@ export default function Example() {
               <Link to="/faq" className="text-gray-400 hover:text-white">
                 All FAQs
               </Link>
-              {Object.entries(faqFiles).map(([path, raw]) => {
-                const { frontmatter } = parseFrontmatter(raw as string);
-                const slug = pathToFilename(path);
-                if (frontmatter.isPublished === "false") return null;
-                const title = (frontmatter.title || slug) as string;
+              {getFaqItems().map((item) => {
+                if (!item.isPublished) return null;
                 const truncated =
-                  title.length > 36 ? title.slice(0, 33) + "…" : title;
+                  item.title.length > 36 ? item.title.slice(0, 33) + "…" : item.title;
                 return (
                   <Link
-                    key={slug}
-                    to={`/faq/${slug}`}
+                    key={item.slug}
+                    to={`/faq/${item.slug}`}
                     className="text-gray-400 hover:text-white"
                   >
                     {truncated}

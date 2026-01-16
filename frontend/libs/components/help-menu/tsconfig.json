@@ -15,6 +15,9 @@
       "path": "../../tauri-api"
     },
     {
+      "path": "../../markdown-content"
+    },
+    {
       "path": "./tsconfig.lib.json"
     },
     {

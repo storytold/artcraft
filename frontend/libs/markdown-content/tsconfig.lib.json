@@ -1,5 +1,5 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
     "types": [
@@ -41,22 +41,5 @@
     "src/**/*.jsx",
     "src/**/*.ts",
     "src/**/*.tsx"
-  ],
-  "references": [
-    {
-      "path": "../popover/tsconfig.lib.json"
-    },
-    {
-      "path": "../button/tsconfig.lib.json"
-    },
-    {
-      "path": "../modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../../tauri-api/tsconfig.lib.json"
-    },
-    {
-      "path": "../../markdown-content/tsconfig.lib.json"
-    }
   ]
 }

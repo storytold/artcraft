@@ -3,6 +3,8 @@ import {
   faBook,
   faChevronLeft,
   faCircleQuestion,
+  faNewspaper,
+  faArrowRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   faDiscord,
@@ -16,6 +18,7 @@ import { useTutorialModalStore } from "./help-menu-store";
 import { Button } from "@storyteller/ui-button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
+import { getNewsPosts, markdownToHtml } from "@storyteller/markdown-content";
 
 export type HelpMenuButtonProps = {
   items?: TutorialItem[];
@@ -23,6 +26,77 @@ export type HelpMenuButtonProps = {
   className?: string;
   onOpenChange?: (open: boolean) => void;
 };
+
+// Internal News Component
+const NewsView = ({ onBack }: { onBack: () => void }) => {
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+
+  const items = useMemo(() => getNewsPosts(), []);
+
+  const selectedPost = useMemo(() => 
+    selectedSlug ? items.find(i => i.slug === selectedSlug) : null
+  , [selectedSlug, items]);
+
+  const html = useMemo(() => 
+     selectedPost ? markdownToHtml(selectedPost.body) : ""
+  , [selectedPost]);
+
+  if (selectedPost) {
+    return (
+      <div className="flex flex-col h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+        <button 
+          onClick={() => setSelectedSlug(null)}
+          className="self-start mb-4 text-sm flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+        >
+          <FontAwesomeIcon icon={faChevronLeft} /> Back to News
+        </button>
+        
+        <div className="article-content">
+          <h1 className="text-2xl font-bold mb-2">{selectedPost.title}</h1>
+           {selectedPost.date && <p className="text-xs text-white/50 mb-4">{selectedPost.date}</p>}
+           
+           {selectedPost.thumbnail && (
+             <img src={selectedPost.thumbnail} alt={selectedPost.title} className="w-full h-48 object-cover rounded-lg mb-4 border border-white/10" />
+           )}
+
+           <div dangerouslySetInnerHTML={{ __html: html }} className="text-white/80 space-y-4" />
+        </div>
+         <style>{`
+          .article-content h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.5rem; }
+          .article-content h2 { font-size: 1.25rem; font-weight: 700; margin: 1rem 0 0.5rem; color: #93c5fd; }
+          .article-content h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.5rem; }
+          .article-content p { margin-bottom: 0.75rem; line-height: 1.6; }
+          .article-content ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+          .article-content li { margin-bottom: 0.25rem; }
+          .article-content img { border-radius: 0.5rem; max-width: 100%; height: auto; }
+        `}</style>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4 mt-2 h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+      {items.map(item => (
+        <div 
+          key={item.slug} 
+          onClick={() => setSelectedSlug(item.slug)}
+          className="bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-lg cursor-pointer transition-all group"
+        >
+          <div className="flex justify-between items-start">
+             <h3 className="text-lg font-semibold group-hover:text-blue-300 transition-colors flex items-center gap-2">
+               {item.title}
+               <FontAwesomeIcon icon={faArrowRight} size="xs" className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-blue-400" />
+             </h3>
+             {item.date && <span className="text-xs text-white/40 font-mono whitespace-nowrap ml-2">{item.date}</span>}
+          </div>
+          <p className="text-sm text-white/60 mt-1 line-clamp-2">{item.description}</p>
+        </div>
+      ))}
+      {items.length === 0 && <div className="text-center text-white/40 py-10">No news yet.</div>}
+    </div>
+  );
+};
+
 
 export function HelpMenuButton({
   items,
@@ -35,11 +109,21 @@ export function HelpMenuButton({
   const view = useTutorialModalStore((s) => s.view);
   const selected = useTutorialModalStore((s) => s.selected);
   const setGrid = useTutorialModalStore((s) => s.setGrid);
+  const setNews = useTutorialModalStore((s) => s.setNews);
   const viewTutorial = useTutorialModalStore((s) => s.viewTutorial);
   const getProgress = useTutorialModalStore((s) => s.getProgress);
   const setProgress = useTutorialModalStore((s) => s.setProgress);
 
+  // Sync open state if managed externally? No, local state + optional callback.
+  
   const handleOpenTutorials = () => {
+    setGrid();
+    setOpen(true);
+    onOpenChange?.(true);
+  };
+  
+  const handleOpenNews = () => {
+    setNews();
     setOpen(true);
     onOpenChange?.(true);
   };
@@ -56,6 +140,12 @@ export function HelpMenuButton({
       selected: false,
       icon: <FontAwesomeIcon icon={faBook} className="text-base" />,
       action: "tutorials",
+    },
+    {
+      label: "News & Updates",
+      selected: false,
+      icon: <FontAwesomeIcon icon={faNewspaper} className="text-base" />,
+      action: "news",
     },
     {
       label: "Discord",
@@ -81,6 +171,9 @@ export function HelpMenuButton({
     switch (item.action) {
       case "tutorials":
         handleOpenTutorials();
+        break;
+      case "news":
+        handleOpenNews();
         break;
       case "discord":
         OpenUrl("https://discord.com/invite/75svZP2Vje");
@@ -193,6 +286,8 @@ export function HelpMenuButton({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, view, selected?.id]);
 
+  const modalTitle = view === "video" ? undefined : (view === "news" ? "News & Updates" : panelTitle);
+
   return (
     <div className={className}>
       <PopoverMenu
@@ -211,11 +306,15 @@ export function HelpMenuButton({
       <Modal
         isOpen={open}
         onClose={handleClose}
-        title={view === "video" ? undefined : panelTitle}
-        titleIcon={faBook}
-        accessibleTitle={panelTitle}
-        className="max-w-5xl"
+        title={modalTitle}
+        titleIcon={view === "news" ? faNewspaper : faBook}
+        accessibleTitle={modalTitle}
+        className={view === "news" ? "max-w-3xl" : "max-w-5xl"}
       >
+        {view === "news" && (
+          <NewsView onBack={() => {}} />
+        )}
+
         {view === "grid" && (
           <>
             {tutorials.length === 0 ? (

@@ -57,6 +57,9 @@
     },
     {
       "path": "../../libs/components/button/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/markdown-content/tsconfig.lib.json"
     }
   ]
 }

@@ -28,7 +28,8 @@
         // Uncomment if 2D ever gets used
         // "apps/editor2d/app/src/*",
         "apps/artcraft/app/src/*"
-      ]
+      ],
+      "@storyteller/markdown-content": ["libs/markdown-content/src/index.ts"]
     }
   }
 }

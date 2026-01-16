@@ -7,6 +7,7 @@ import { DiscordButton } from "../discord-button";
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
   { name: "Tutorials", href: "/tutorials" },
+  { name: "News", href: "/news" },
   { name: "FAQ", href: "/faq" },
 ];
 

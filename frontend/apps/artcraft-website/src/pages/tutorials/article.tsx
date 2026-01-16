@@ -1,50 +1,20 @@
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import Seo from "../../components/seo";
-import { parseFrontmatter, markdownToHtml } from "../../utils/markdown";
+import { getTutorialItemBySlug, markdownToHtml } from "@storyteller/markdown-content";
 import { faChevronLeft } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
-const tutorialFiles = import.meta.glob("./content/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
 
 const TutorialsArticle = () => {
   const { slug } = useParams();
 
-  const entries = Object.entries(tutorialFiles);
-  const markdown = (() => {
-    // 1) filename match
-    const byFilename = entries.find(([path]) =>
-      path.endsWith(`/content/${slug}.md`)
-    );
-    if (byFilename) return byFilename[1] as string;
-    // 2) frontmatter slug match
-    const wanted = (slug || "").toLowerCase();
-    for (const [_, raw] of entries) {
-      const { frontmatter } = parseFrontmatter(raw as string);
-      const fmSlug = (frontmatter.slug || "").trim().toLowerCase();
-      if (fmSlug && fmSlug === wanted) return raw as string;
-      const aliasesRaw = (frontmatter.aliases || "").toString();
-      if (aliasesRaw) {
-        const candidateList = aliasesRaw
-          .split(/[\s,]+/)
-          .map((s) => s.trim().toLowerCase())
-          .filter(Boolean);
-        if (candidateList.includes(wanted)) return raw as string;
-      }
-    }
-    return null;
-  })();
-  const { frontmatter, body } = useMemo(
-    () =>
-      markdown ? parseFrontmatter(markdown) : { frontmatter: {}, body: "" },
-    [markdown]
-  );
+  const item = slug ? getTutorialItemBySlug(slug) : null;
 
-  if (!markdown) {
+  const html = useMemo(() => 
+    item ? markdownToHtml(item.body) : ""
+  , [item]);
+
+  if (!item) {
     return (
       <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden bg-dots">
         <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-8 pt-28 sm:pt-36 pb-12">
@@ -55,8 +25,8 @@ const TutorialsArticle = () => {
     );
   }
 
-  const title = `${frontmatter.title || slug} - ArtCraft`;
-  const description = frontmatter.abstract || "";
+  const title = `${item.title} - ArtCraft`;
+  const description = item.abstract || "";
   const toEmbed = (url: string): string => {
     if (!url) return url;
     if (url.includes("youtu.be/"))
@@ -65,18 +35,17 @@ const TutorialsArticle = () => {
     return url;
   };
   const frontmatterVideo =
-    (frontmatter.videoUrl as string) ||
-    (frontmatter.youtubeId
-      ? `https://www.youtube.com/embed/${frontmatter.youtubeId}`
+    (item.videoUrl as string) ||
+    (item.youtubeId
+      ? `https://www.youtube.com/embed/${item.youtubeId}`
       : "");
   const videoUrl = toEmbed(frontmatterVideo);
-  const html = markdownToHtml(body);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: frontmatter.title || slug,
+    headline: item.title,
     description: description,
-    articleBody: body,
+    articleBody: item.body,
   };
 
   return (
@@ -99,14 +68,14 @@ const TutorialsArticle = () => {
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 !leading-tight">
-          {frontmatter.title || slug}
+          {item.title || slug}
         </h1>
         {description && <p className="text-white/70 mb-8">{description}</p>}
 
         {videoUrl && (
           <div className="aspect-video w-full overflow-hidden rounded-lg border border-white/10 bg-black mb-10">
             <iframe
-              title={frontmatter.title || slug}
+              title={item.title || slug}
               src={videoUrl}
               className="h-full w-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

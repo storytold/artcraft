@@ -24,6 +24,9 @@
       "path": "../../libs/components/button"
     },
     {
+      "path": "../../libs/markdown-content"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

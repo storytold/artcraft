@@ -44,6 +44,9 @@
       "path": "../../libs/components/loading-spinner"
     },
     {
+      "path": "../../libs/markdown-content"
+    },
+    {
       "path": "../../libs/components/button-icon-select"
     },
     {
@@ -110,9 +113,6 @@
       "path": "../../libs/components/close-button"
     },
     {
-      "path": "../../libs/model-list"
-    },
-    {
       "path": "../../libs/components/model-selector"
     },
     {
@@ -138,6 +138,9 @@
     },
     {
       "path": "../../libs/components/list-dropdown"
+    },
+    {
+      "path": "../../libs/model-list"
     },
     {
       "path": "../../libs/components/gallery-modal"

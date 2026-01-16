@@ -176,6 +176,9 @@
     },
     {
       "path": "./libs/components/viewer-3d"
+    },
+    {
+      "path": "./libs/markdown-content"
     }
   ]
 }

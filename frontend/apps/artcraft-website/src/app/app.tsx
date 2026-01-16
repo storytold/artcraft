@@ -7,6 +7,7 @@ import TutorialsPage from "../pages/tutorials";
 import TutorialsArticle from "../pages/tutorials/article";
 import FaqIndex from "../pages/faq/index";
 import FaqArticle from "../pages/faq/article";
+import { NewsIndex, NewsPost } from "@storyteller/markdown-content";
 
 export function App() {
   return (
@@ -22,6 +23,8 @@ export function App() {
         <Route path="/tutorials/:slug" element={<TutorialsArticle />} />
         <Route path="/faq" element={<FaqIndex />} />
         <Route path="/faq/:slug" element={<FaqArticle />} />
+        <Route path="/news" element={<NewsIndex basePath="/news" />} />
+        <Route path="/news/:slug" element={<NewsPost basePath="/news" />} />
       </Routes>
     </div>
   );

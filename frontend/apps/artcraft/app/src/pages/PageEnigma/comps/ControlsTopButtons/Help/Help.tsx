@@ -53,96 +53,91 @@ export const Mouse = (props: {
 
 export const Plus = () => <div className="text-xl font-medium">+</div>;
 
+const ShortcutsView = () => (
+  <div className="grid select-none grid-cols-2 gap-12 ps-4 mt-6">
+    <div className="flex flex-col gap-8">
+      <ShortcutsGroup label="Navigation">
+        <Shortcut label="Orbit View">
+          <KeyGroup>
+            <Mouse button="left" label="(Hold)" />
+          </KeyGroup>
+        </Shortcut>
+        <Shortcut label="Forward Backward">
+          <KeyGroup>
+            <Key button="W" />
+            <Key button="S" />
+          </KeyGroup>
+        </Shortcut>
+        <Shortcut label="Left Right">
+          <KeyGroup>
+            <Key button="A" />
+            <Key button="D" />
+          </KeyGroup>
+        </Shortcut>
+        <Shortcut label="Up Down">
+          <KeyGroup>
+            <Key button="E" />
+            <Key button="Q" />
+          </KeyGroup>
+        </Shortcut>
+        <Shortcut label="Speed Boost">
+          <KeyGroup>
+            <Key button="Shift" />
+          </KeyGroup>
+        </Shortcut>
+      </ShortcutsGroup>
+
+      <ShortcutsGroup label="Interaction">
+        <Shortcut label="Select Object">
+          <Mouse button="left" label="(Click)" />
+        </Shortcut>
+        <Shortcut label="Delete Selection">
+          <Key button="Del" />
+        </Shortcut>
+      </ShortcutsGroup>
+    </div>
+
+    <div className="flex flex-col gap-8">
+      <ShortcutsGroup label="Shortcuts">
+        <Shortcut label="Transform">
+          <Key button="T" />
+        </Shortcut>
+        <Shortcut label="Rotate">
+          <Key button="R" />
+        </Shortcut>
+        <Shortcut label="Scale">
+          <Key button="G" />
+        </Shortcut>
+        <Shortcut label="Focus">
+          <Key button="F" />
+        </Shortcut>
+        <Shortcut label="Copy">
+          <Key button="Ctrl" />
+          <Plus></Plus>
+          <Key button="C" />
+        </Shortcut>
+        <Shortcut label="Paste">
+          <Key button="Ctrl" />
+          <Plus></Plus>
+          <Key button="Shift" />
+          <Plus></Plus>
+          <Key button="V" />
+        </Shortcut>
+        <Shortcut label="Open 3D Asset Modal">
+          <Key button="B" />
+        </Shortcut>
+      </ShortcutsGroup>
+    </div>
+  </div>
+);
+
+
+
 export const Help = () => {
   return (
-    <div className="mt-8 grid select-none grid-cols-2 gap-12 ps-4">
-      <div className="flex flex-col gap-8">
-        <ShortcutsGroup label="Navigation">
-          {/* <Shortcut label="Forward">
-            <Key button="w" label="Forward" />
-          </Shortcut>
-          <Shortcut label="Rotate View">
-            <Mouse button="left" label="(Drag)" />
-          </Shortcut>
-          <Shortcut label="Zoom">
-            <Mouse button="middle" label="(Scroll)" />
-          </Shortcut> */}
-          <Shortcut label="Orbit View">
-            <KeyGroup>
-              <Mouse button="left" label="(Hold)" />
-            </KeyGroup>
-          </Shortcut>
-          <Shortcut label="Forward Backward">
-            <KeyGroup>
-              <Key button="W" />
-              <Key button="S" />
-            </KeyGroup>
-          </Shortcut>
-          <Shortcut label="Left Right">
-            <KeyGroup>
-              <Key button="A" />
-              <Key button="D" />
-            </KeyGroup>
-          </Shortcut>
-          <Shortcut label="Up Down">
-            <KeyGroup>
-              <Key button="E" />
-              <Key button="Q" />
-            </KeyGroup>
-          </Shortcut>
-          <Shortcut label="Speed Boost">
-            <KeyGroup>
-              <Key button="Shift" />
-            </KeyGroup>
-          </Shortcut>
-        </ShortcutsGroup>
-
-        <ShortcutsGroup label="Interaction">
-          <Shortcut label="Select Object">
-            <Mouse button="left" label="(Click)" />
-          </Shortcut>
-          {/* <Shortcut label="Clear Selection">
-            <Key button="Esc" />
-          </Shortcut> */}
-          {/* <Shortcut label="Focus Selection">
-            <Key button="F" />
-          </Shortcut> */}
-          <Shortcut label="Delete Selection">
-            <Key button="Del" />
-          </Shortcut>
-        </ShortcutsGroup>
-      </div>
-
-      <div className="flex flex-col gap-8">
-        <ShortcutsGroup label="Shortcuts">
-          <Shortcut label="Transform">
-            <Key button="T" />
-          </Shortcut>
-          <Shortcut label="Rotate">
-            <Key button="R" />
-          </Shortcut>
-          <Shortcut label="Scale">
-            <Key button="G" />
-          </Shortcut>
-          <Shortcut label="Focus">
-            <Key button="F" />
-          </Shortcut>
-          <Shortcut label="Copy">
-            <Key button="Ctrl" />
-            <Plus></Plus>
-            <Key button="C" />
-          </Shortcut>
-          <Shortcut label="Paste">
-            <Key button="Ctrl" />
-            <Plus></Plus>
-            <Key button="Shift" />
-            <Plus></Plus>
-            <Key button="V" />
-          </Shortcut>
-          <Shortcut label="Open 3D Asset Modal">
-            <Key button="B" />
-          </Shortcut>
-        </ShortcutsGroup>
+    <div className="flex flex-col h-full">
+      <div className="flex-1">
+        <ShortcutsView />
       </div>
     </div>
   );

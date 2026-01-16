@@ -1,27 +1,15 @@
 import { Link } from "react-router-dom";
 import Seo from "../../components/seo";
-import { parseFrontmatter, pathToFilename } from "../../utils/markdown";
-
-const faqFiles = import.meta.glob("./content/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
+import { getFaqItems } from "@storyteller/markdown-content";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowRight } from "@fortawesome/pro-solid-svg-icons";
 
 const FaqIndex = () => {
   const title = "Frequently Asked Questions - ArtCraft";
   const description =
     "Explore ArtCraft FAQs: guides on AI image generation, editing, and workflows.";
 
-  const items = Object.entries(faqFiles).map(([path, raw]) => {
-    const { frontmatter } = parseFrontmatter(raw as string);
-    const slug = pathToFilename(path);
-    return {
-      slug,
-      title: frontmatter.title || slug,
-      description: frontmatter.abstract || "",
-    };
-  });
+  const items = getFaqItems();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -59,9 +47,12 @@ const FaqIndex = () => {
             <Link
               key={item.slug}
               to={`/faq/${item.slug}`}
-              className="block rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 p-5 transition-all"
+              className="group block rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 p-5 transition-all"
             >
-              <h2 className="text-xl font-semibold mb-2">{item.title}</h2>
+              <h2 className="text-xl font-semibold mb-2 group-hover:text-blue-400 transition-colors flex items-center gap-2">
+                {item.title}
+                <FontAwesomeIcon icon={faArrowRight} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+              </h2>
               <p className="text-white/70 text-sm">{item.description}</p>
             </Link>
           ))}

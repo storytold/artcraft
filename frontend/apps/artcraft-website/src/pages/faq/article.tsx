@@ -1,42 +1,19 @@
-import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import Seo from "../../components/seo";
-import { parseFrontmatter, markdownToHtml } from "../../utils/markdown";
+import { getFaqItemBySlug, markdownToHtml } from "@storyteller/markdown-content";
 import { faChevronLeft } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
-const markdownFiles = import.meta.glob("./content/*.md", {
-  query: "?raw",
-  import: "default",
-  eager: true,
-});
+import { useMemo } from "react";
 
 const FaqArticle = () => {
   const { slug } = useParams();
-  const entries = Object.entries(markdownFiles);
-  const markdown = (() => {
-    const byFilename = entries.find(([path]) =>
-      path.endsWith(`/content/${slug}.md`)
-    );
-    if (byFilename) return byFilename[1] as string;
-    for (const [_, raw] of entries) {
-      const { frontmatter } = parseFrontmatter(raw as string);
-      if (
-        frontmatter.slug &&
-        frontmatter.slug.trim().toLowerCase() === (slug || "").toLowerCase()
-      ) {
-        return raw as string;
-      }
-    }
-    return null;
-  })();
-  const { frontmatter, body } = useMemo(
-    () =>
-      markdown ? parseFrontmatter(markdown) : { frontmatter: {}, body: "" },
-    [markdown]
-  );
+  const item = slug ? getFaqItemBySlug(slug) : null;
 
-  if (!markdown) {
+  const html = useMemo(() => 
+    item ? markdownToHtml(item.body, "/faq/") : ""
+  , [item]);
+
+  if (!item) {
     return (
       <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden bg-dots">
         <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-8 pt-28 sm:pt-36 pb-12">
@@ -47,16 +24,16 @@ const FaqArticle = () => {
     );
   }
 
-  const title = `${frontmatter.title || slug} - ArtCraft`;
-  const description = frontmatter.abstract || "";
-  const thumbnail = frontmatter.thumbnail || "";
-  const html = markdownToHtml(body, "/faq/");
+  const title = `${item.title} - ArtCraft`;
+  const description = item.description || "";
+  const thumbnail = item.thumbnail || "";
+  
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: frontmatter.title || slug,
+    headline: item.title,
     description: description,
-    articleBody: body,
+    articleBody: item.body,
   };
 
   return (
@@ -79,7 +56,7 @@ const FaqArticle = () => {
         </div>
 
         <h1 className="text-4xl font-bold mb-4 !leading-tight">
-          {frontmatter.title || slug}
+          {item.title || slug}
         </h1>
         {description && <p className="text-white/70 mb-8">{description}</p>}
 
@@ -87,7 +64,7 @@ const FaqArticle = () => {
           <div className="w-full overflow-hidden rounded-lg border border-white/10 bg-black mb-10">
             <img
               src={thumbnail}
-              alt={frontmatter.title || slug}
+              alt={item.title || slug}
               className="w-full h-auto object-cover"
             />
           </div>

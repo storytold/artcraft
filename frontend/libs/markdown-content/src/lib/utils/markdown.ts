@@ -26,8 +26,13 @@ export const markdownToHtml = (
   };
 
   const renderInline = (text: string): string => {
+    // bold: **text**
+    let out = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    // italic: *text*
+    out = out.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+
     // images: ![alt](url)
-    let out = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, url) => {
+    out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt, url) => {
       const safeAlt = String(alt || "").replace(/"/g, "&quot;");
       const safeUrl = String(url || "");
       return `<img src="${safeUrl}" alt="${safeAlt}" />`;
