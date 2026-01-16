@@ -91,6 +91,9 @@ export default function Example() {
               <Link to="/" className="text-gray-400 hover:text-white">
                 Home
               </Link>
+              <Link to="/news" className="text-gray-400 hover:text-white">
+                News
+              </Link>
             </div>
             <div className="flex flex-col items-center sm:items-start gap-2">
               <div className="text-gray-200 mb-1">Tutorials</div>
