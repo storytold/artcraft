@@ -38,7 +38,7 @@
     "@radix-ui/react-tooltip": "^1.2.7",
     "@remix-run/deno": "^2.8.1",
     "@remix-run/node": "^2.8.1",
-    "@remix-run/react": "^2.8.1",
+    "@remix-run/react": "^2.17.4",
     "@remix-run/router": "^1.23.2",
     "@remix-run/serve": "^2.8.1",
     "@tauri-apps/plugin-http": "^2.4.3",
