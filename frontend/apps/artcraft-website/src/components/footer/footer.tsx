@@ -39,7 +39,6 @@ const navigation = {
       href: SOCIAL_LINKS.GITHUB,
       icon: (props: any) => <FontAwesomeIcon icon={faGithubAlt} {...props} />,
     },
-    
   ],
 };
 
@@ -94,6 +93,9 @@ export default function Example() {
               <Link to="/news" className="text-gray-400 hover:text-white">
                 News
               </Link>
+              <Link to="/press-kit" className="text-gray-400 hover:text-white">
+                Press Kit
+              </Link>
             </div>
             <div className="flex flex-col items-center sm:items-start gap-2">
               <div className="text-gray-200 mb-1">Tutorials</div>
@@ -121,7 +123,9 @@ export default function Example() {
               {getFaqItems().map((item) => {
                 if (!item.isPublished) return null;
                 const truncated =
-                  item.title.length > 36 ? item.title.slice(0, 33) + "…" : item.title;
+                  item.title.length > 36
+                    ? item.title.slice(0, 33) + "…"
+                    : item.title;
                 return (
                   <Link
                     key={item.slug}

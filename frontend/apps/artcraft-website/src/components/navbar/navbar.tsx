@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { name: "Tutorials", href: "/tutorials" },
   { name: "News", href: "/news" },
   { name: "FAQ", href: "/faq" },
+  { name: "Press Kit", href: "/press-kit" },
 ];
 
 export default function Navbar() {
@@ -32,7 +33,7 @@ export default function Navbar() {
         "z-20 fixed top-0 left-0 w-full transition-colors duration-200 bg-transparent",
         scrolled
           ? "bg-[#1b1b1f]/70 backdrop-blur-lg lg:bg-transparent lg:backdrop-blur-none"
-          : "bg-transparent"
+          : "bg-transparent",
       )}
     >
       <div className="mx-auto max-w-screen sm:px-6 lg:px-8 px-6 md:px-16 xl:px-4">
@@ -64,21 +65,21 @@ export default function Navbar() {
                       isCurrent
                         ? "text-white"
                         : "text-white/60 hover:text-white",
-                      "relative rounded-md text-[15px] font-semibold transition-all"
+                      "relative rounded-md text-[15px] font-semibold transition-all",
                     )}
                   >
                     <span className="relative z-10">{item.name}</span>
                     <span
                       className={twMerge(
                         "pointer-events-none absolute left-0 right-0 -bottom-1 h-[2px] overflow-hidden",
-                        isCurrent ? "" : ""
+                        isCurrent ? "" : "",
                       )}
                       aria-hidden="true"
                     >
                       <span
                         className={twMerge(
                           "link-underline block h-full w-full bg-primary/90",
-                          isCurrent ? "visible-line" : ""
+                          isCurrent ? "visible-line" : "",
                         )}
                       />
                     </span>
