@@ -16,6 +16,10 @@
 /news/ /index.html 200
 /news/* /index.html 200
 
+/press-kit /index.html 200
+/press-kit/ /index.html 200
+/press-kit/* /index.html 200
+
 # Redirects for growth measurement
 /reddit /?utm_source=reddit 301
 

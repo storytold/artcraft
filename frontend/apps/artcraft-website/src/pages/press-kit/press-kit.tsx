@@ -10,126 +10,18 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import Footer from "../../components/footer";
 import Seo from "../../components/seo";
+import { PRESS_KIT_CATEGORIES, type PressKitAsset } from "./press-kit-data";
 
 // ============================================================================
-// PRESS KIT ASSET DATA - TEMPLATE FOR EASY EDITING
-// ============================================================================
-//
-// To add a new asset, copy one of the existing objects and modify:
-// - type: "video" | "image" | "embed" | "link"
-// - title: Display title for the asset
-// - description: Optional short description
-// - thumbnail: URL to thumbnail image (can be YouTube thumbnail or custom)
-// - embedUrl: For YouTube embeds (use embed format: youtube.com/embed/VIDEO_ID)
-// - downloadUrl: Direct link to the downloadable file (e.g., Cloudflare R2 URL)
-// - downloadLabel: Optional custom label for download button (default: "Download")
-// - fileSize: Optional file size display (e.g., "1.2 GB")
-//
-// ============================================================================
-
-interface PressKitAsset {
-  type: "video" | "image" | "embed" | "link";
-  title: string;
-  description?: string;
-  thumbnail?: string;
-  embedUrl?: string;
-  downloadUrl: string;
-  downloadLabel?: string;
-  fileSize?: string;
-  /** If true, thumbnail uses object-contain with padding (good for logos) */
-  containThumbnail?: boolean;
-}
-
-interface PressKitCategory {
-  name: string;
-  description?: string;
-  assets: PressKitAsset[];
-}
-
-// ============================================================================
-// EDIT THIS DATA TO ADD PRESS KIT ASSETS
-// ============================================================================
-
-const PRESS_KIT_CATEGORIES: PressKitCategory[] = [
-  {
-    name: "Promotional Videos",
-    description: "High-quality promotional videos for press coverage",
-    assets: [
-      // ArtCraft Commercial / Trailer
-      {
-        type: "embed",
-        title: "ArtCraft Commercial",
-        description: "Official ArtCraft commercial showcasing the app",
-        thumbnail: "/images/video-thumbnails/artcraft-commercial.png",
-        embedUrl: "https://www.youtube.com/embed/H4NFXGMuwpY",
-        downloadUrl:
-          "https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/artcraft_website_v2.mp4",
-        fileSize: "125 MB",
-      },
-      // Grinch: The Anime
-      {
-        type: "embed",
-        title: "Grinch: The Anime",
-        description: "Made using ArtCraft",
-        thumbnail: "https://img.youtube.com/vi/oqoCWdOwr2U/maxresdefault.jpg",
-        embedUrl: "https://www.youtube.com/embed/oqoCWdOwr2U",
-        downloadUrl: "", // Add R2 download link here
-      },
-    ],
-  },
-  {
-    name: "Logos & Branding",
-    description: "Official ArtCraft logos and branding assets",
-    assets: [
-      // EXAMPLE: Image asset
-      {
-        type: "image",
-        title: "ArtCraft Logo (PNG)",
-        thumbnail: "/images/artcraft-logo.png",
-        downloadUrl: "/images/artcraft-logo.png",
-        containThumbnail: true, // Use contain so logo is fully visible with padding
-      },
-      // EXAMPLE: Zip bundle
-      // {
-      //   type: "link",
-      //   title: "Full Logo Pack (ZIP)",
-      //   description: "All logos in PNG, SVG, and EPS formats",
-      //   downloadUrl: "https://your-r2-bucket.r2.dev/artcraft-logo-pack.zip",
-      //   fileSize: "12 MB",
-      // },
-    ],
-  },
-  {
-    name: "Screenshots & Media",
-    description: "High-resolution screenshots and promotional images",
-    assets: [
-      // EXAMPLE: Screenshot image
-      // {
-      //   type: "image",
-      //   title: "Editor Interface",
-      //   thumbnail: "/images/screenshot-editor.jpg",
-      //   downloadUrl: "https://your-r2-bucket.r2.dev/screenshot-editor-hires.png",
-      // },
-    ],
-  },
-  // Add more categories as needed:
-  // {
-  //   name: "Tutorial Videos",
-  //   description: "Step-by-step tutorials",
-  //   assets: [],
-  // },
-];
-
-// ============================================================================
-// PRESS KIT PAGE COMPONENT
+// ASSET CARD COMPONENT
 // ============================================================================
 
 const AssetCard = ({
   asset,
-  onOpenEmbed,
+  onOpenMedia,
 }: {
   asset: PressKitAsset;
-  onOpenEmbed: (embedUrl: string, title: string) => void;
+  onOpenMedia: (asset: PressKitAsset) => void;
 }) => {
   const getTypeIcon = () => {
     switch (asset.type) {
@@ -147,7 +39,9 @@ const AssetCard = ({
 
   const handleThumbnailClick = () => {
     if (asset.type === "embed" && asset.embedUrl) {
-      onOpenEmbed(asset.embedUrl, asset.title);
+      onOpenMedia(asset);
+    } else if (asset.type === "video") {
+      onOpenMedia(asset);
     }
   };
 
@@ -156,7 +50,9 @@ const AssetCard = ({
       {/* Thumbnail */}
       <div
         className={`relative aspect-video bg-black/40 overflow-hidden ${
-          asset.type === "embed" ? "cursor-pointer" : ""
+          asset.type === "embed" || asset.type === "video"
+            ? "cursor-pointer"
+            : ""
         }`}
         onClick={handleThumbnailClick}
       >
@@ -179,8 +75,8 @@ const AssetCard = ({
           </div>
         )}
 
-        {/* Play button overlay for embeds */}
-        {asset.type === "embed" && (
+        {/* Play button overlay for videos and embeds */}
+        {(asset.type === "embed" || asset.type === "video") && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity duration-300 group-hover:bg-black/40">
             <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 transition-transform duration-300 group-hover:scale-110">
               <FontAwesomeIcon
@@ -240,15 +136,20 @@ const AssetCard = ({
   );
 };
 
+// ============================================================================
+// VIDEO MODAL COMPONENT
+// ============================================================================
+
 const VideoModal = ({
-  embedUrl,
-  title,
+  asset,
   onClose,
 }: {
-  embedUrl: string;
-  title: string;
+  asset: PressKitAsset;
   onClose: () => void;
 }) => {
+  const isEmbed = asset.type === "embed" && asset.embedUrl;
+  const videoSrc = asset.videoUrl || asset.downloadUrl;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
@@ -258,13 +159,23 @@ const VideoModal = ({
         className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <iframe
-          src={`${embedUrl}?autoplay=1`}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-          className="w-full h-full"
-        />
+        {isEmbed ? (
+          <iframe
+            src={`${asset.embedUrl}?autoplay=1`}
+            title={asset.title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        ) : (
+          <video
+            src={videoSrc}
+            className="w-full h-full"
+            controls
+            autoPlay
+            playsInline
+          />
+        )}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-colors"
@@ -277,18 +188,19 @@ const VideoModal = ({
   );
 };
 
-export default function PressKitPage() {
-  const [activeEmbed, setActiveEmbed] = useState<{
-    url: string;
-    title: string;
-  } | null>(null);
+// ============================================================================
+// PRESS KIT PAGE
+// ============================================================================
 
-  const handleOpenEmbed = (embedUrl: string, title: string) => {
-    setActiveEmbed({ url: embedUrl, title });
+export default function PressKitPage() {
+  const [activeMedia, setActiveMedia] = useState<PressKitAsset | null>(null);
+
+  const handleOpenMedia = (asset: PressKitAsset) => {
+    setActiveMedia(asset);
   };
 
-  const handleCloseEmbed = () => {
-    setActiveEmbed(null);
+  const handleCloseMedia = () => {
+    setActiveMedia(null);
   };
 
   // Filter out empty categories
@@ -341,7 +253,7 @@ export default function PressKitPage() {
                       <AssetCard
                         key={`${category.name}-${index}`}
                         asset={asset}
-                        onOpenEmbed={handleOpenEmbed}
+                        onOpenMedia={handleOpenMedia}
                       />
                     ))}
                   </div>
@@ -390,12 +302,8 @@ export default function PressKitPage() {
       <Footer />
 
       {/* Video Modal */}
-      {activeEmbed && (
-        <VideoModal
-          embedUrl={activeEmbed.url}
-          title={activeEmbed.title}
-          onClose={handleCloseEmbed}
-        />
+      {activeMedia && (
+        <VideoModal asset={activeMedia} onClose={handleCloseMedia} />
       )}
     </div>
   );

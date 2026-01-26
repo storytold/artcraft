@@ -36,7 +36,7 @@ export default function Navbar() {
           : "bg-transparent",
       )}
     >
-      <div className="mx-auto max-w-screen sm:px-6 lg:px-8 px-6 md:px-16 xl:px-4">
+      <div className="mx-auto max-w-screen sm:px-6 lg:px-8 px-4 md:px-16 xl:px-4">
         <div className="flex h-16 justify-between">
           <div className="flex">
             <div className="flex shrink-0 items-center">
