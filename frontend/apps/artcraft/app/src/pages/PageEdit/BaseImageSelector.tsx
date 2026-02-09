@@ -7,6 +7,8 @@ import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage"
 import { UploaderStates } from "~/enums";
 import { MediaFilesApi } from "@storyteller/api";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
+import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
+import { ModelPage } from "@storyteller/ui-model-selector";
 import { UploadEntryCard } from "~/components/media/UploadEntryCard";
 
 export interface BaseSelectorImage {
@@ -170,6 +172,7 @@ export const BaseImageSelector = ({
         </div>
       </div>
       <div className="fixed bottom-6 right-6 z-20 flex items-center gap-2">
+        <CostCalculatorButton />
         <HelpMenuButton />
       </div>
       <GalleryModal

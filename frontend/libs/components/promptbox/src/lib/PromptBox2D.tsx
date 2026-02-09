@@ -2,13 +2,11 @@ import { useState, useRef, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { Button, ToggleButton } from "@storyteller/ui-button";
+import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import {
   faMessageXmark,
   faMessageCheck,
-  faSparkles,
-  faSpinnerThird,
   faFrame,
   faExpand,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -497,25 +495,16 @@ export const PromptBox2D = ({
                 }}
                 isFreeUser={isFreeUser}
               />
-              <Button
+              <GenerateButton
                 className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                icon={
-                  !(isEnqueueing ?? internalEnqueueing) && !isDisabled
-                    ? faSparkles
-                    : undefined
-                }
+                icon={undefined}
                 onClick={handleGenerate}
                 disabled={isEnqueueing || !prompt.trim()}
+                loading={isEnqueueing}
+                credits={1}
               >
-                {(isEnqueueing ?? internalEnqueueing) ? (
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="animate-spin text-lg"
-                  />
-                ) : (
-                  "Generate"
-                )}
-              </Button>
+                Generate
+              </GenerateButton>
             </div>
           </div>
         </div>

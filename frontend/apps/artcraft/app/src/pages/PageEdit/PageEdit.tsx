@@ -32,8 +32,8 @@ import {
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { HistoryStack, ImageBundle } from "./HistoryStack";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
+import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
-
 
 const PAGE_ID: ModelPage = ModelPage.ImageEditor;
 
@@ -64,7 +64,9 @@ const PageEdit = () => {
   const [generationCount, setGenerationCount] = useState<number>(1);
 
   // New aspect ratio state will begin to phase out old aspect ratio
-  const [commonAspectRatio, setCommonAspectRatio] = useState<CommonAspectRatio | undefined>(undefined);
+  const [commonAspectRatio, setCommonAspectRatio] = useState<
+    CommonAspectRatio | undefined
+  >(undefined);
 
   // Use the Zustand store
   const store = useEditStore();
@@ -554,8 +556,9 @@ const PageEdit = () => {
       {(store.activeTool === "marker" || store.activeTool === "eraser") &&
         isNanoBananaModel && (
           <div
-            className={`preserve-aspect-ratio fixed left-1/2 top-0 z-10 -translate-x-1/2 transform ${isSelecting ? "pointer-events-none" : "pointer-events-auto"
-              }`}
+            className={`preserve-aspect-ratio fixed left-1/2 top-0 z-10 -translate-x-1/2 transform ${
+              isSelecting ? "pointer-events-none" : "pointer-events-auto"
+            }`}
           >
             <MarkerToolControlBar
               currentSize={
@@ -578,8 +581,9 @@ const PageEdit = () => {
       {(store.activeTool === "edit" || store.activeTool === "eraser") &&
         supportsMaskedInpainting && (
           <div
-            className={`preserve-aspect-ratio fixed left-1/2 top-0 z-10 -translate-x-1/2 transform ${isSelecting ? "pointer-events-none" : "pointer-events-auto"
-              }`}
+            className={`preserve-aspect-ratio fixed left-1/2 top-0 z-10 -translate-x-1/2 transform ${
+              isSelecting ? "pointer-events-none" : "pointer-events-auto"
+            }`}
           >
             <MarkerToolControlBar
               currentSize={
@@ -600,8 +604,9 @@ const PageEdit = () => {
           </div>
         )}
       <div
-        className={`preserve-aspect-ratio fixed right-4 top-1/2 z-10 -translate-y-1/2 transform ${isSelecting ? "pointer-events-none" : "pointer-events-auto"
-          }`}
+        className={`preserve-aspect-ratio fixed right-4 top-1/2 z-10 -translate-y-1/2 transform ${
+          isSelecting ? "pointer-events-none" : "pointer-events-auto"
+        }`}
       >
         <HistoryStack
           onClear={() => {
@@ -636,8 +641,9 @@ const PageEdit = () => {
         />
       </div>
       <div
-        className={`preserve-aspect-ratio fixed bottom-0 left-1/2 z-10 -translate-x-1/2 transform ${isSelecting ? "pointer-events-none" : "pointer-events-auto"
-          }`}
+        className={`preserve-aspect-ratio fixed bottom-0 left-1/2 z-10 -translate-x-1/2 transform ${
+          isSelecting ? "pointer-events-none" : "pointer-events-auto"
+        }`}
       >
         <PromptEditor
           selectedImageModel={selectedImageModel}
@@ -728,6 +734,7 @@ const PageEdit = () => {
         />
       </div>
       <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+        <CostCalculatorButton />
         <HelpMenuButton />
       </div>
     </>

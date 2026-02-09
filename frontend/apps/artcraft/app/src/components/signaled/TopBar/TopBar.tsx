@@ -10,6 +10,7 @@ import {
   faGem,
   faGrid2,
   faImages,
+  faCalculator,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signal } from "@preact/signals-react";
@@ -44,6 +45,9 @@ import { PopoverMenu } from "@storyteller/ui-popover";
 import {
   useCreditsModalStore,
   usePricingModalStore,
+  CostBreakdownModal,
+  useCostBreakdownModalStore,
+  CreditsModal,
 } from "@storyteller/ui-pricing-modal";
 import { RefImage, usePromptVideoStore } from "@storyteller/ui-promptbox";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
@@ -449,6 +453,18 @@ export const TopBar = ({ pageName }: Props) => {
                       />
                       {sumTotalCredits}
                     </div>
+
+                    <button
+                      className="mt-2 flex items-center gap-1.5 text-xs text-base-fg/50 transition-colors hover:text-primary"
+                      onClick={() => {
+                        close();
+                        useCostBreakdownModalStore.getState().openModal();
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faCalculator} />
+                      Cost calculator
+                    </button>
+
                     <div className="mt-3 flex gap-2">
                       <Button
                         variant="action"
@@ -571,6 +587,8 @@ export const TopBar = ({ pageName }: Props) => {
 
       <ProviderSetupModal />
       <ProviderBillingModal isVideoPage={tabStore.activeTabId === "VIDEO"} />
+      <CreditsModal />
+      <CostBreakdownModal activeTabId={tabStore.activeTabId} />
     </>
   );
 };

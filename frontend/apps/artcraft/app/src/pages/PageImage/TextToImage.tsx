@@ -28,6 +28,7 @@ import {
 import { Badge } from "@storyteller/ui-badge";
 import { twMerge } from "tailwind-merge";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
+import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
@@ -45,7 +46,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   const selectedImageModel: ImageModel | undefined =
     useSelectedImageModel(PAGE_ID);
 
-  const selectedProvider : GenerationProvider | undefined = 
+  const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
 
   const jobContext: JobContextType = {
@@ -54,8 +55,6 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
     removeJobToken: () => {},
     clearJobTokens: () => {},
   };
-
-
 
   const hasAnyBatches = batches.length > 0;
   const showPromptAtBottom = useMemo(() => hasAnyBatches, [hasAnyBatches]);
@@ -107,10 +106,10 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                 imageRowVisible && "mb-80",
               )}
             >
-              <span className="text-base-fg text-7xl font-bold">
+              <span className="text-7xl font-bold text-base-fg">
                 Generate Image
               </span>
-              <span className="text-base-fg pt-2 text-xl opacity-80">
+              <span className="pt-2 text-xl text-base-fg opacity-80">
                 Add a prompt, then generate
               </span>
             </div>
@@ -175,7 +174,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                           ))}
                     </div>
                     <div>
-                      <div className="glass text-base-fg/90 inline-block w-[320px] shrink-0 rounded-xl px-4 py-3 text-left text-sm">
+                      <div className="glass inline-block w-[320px] shrink-0 rounded-xl px-4 py-3 text-left text-sm text-base-fg/90">
                         <div>{batch.prompt}</div>
                       </div>
                       <div className="mt-2 flex justify-end">
@@ -241,6 +240,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
             />
           </div>
           <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+            <CostCalculatorButton />
             <HelpMenuButton />
           </div>
         </div>

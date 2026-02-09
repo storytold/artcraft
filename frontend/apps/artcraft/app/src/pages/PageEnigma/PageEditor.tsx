@@ -88,6 +88,7 @@ import { useTabStore } from "../Stores/TabState";
 import PageEdit from "../PageEdit/PageEdit";
 import { ImageModel } from "@storyteller/model-list";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
+import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
@@ -568,6 +569,7 @@ export const PageEditor = () => {
                   />
                 </div>
                 <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+                  <CostCalculatorButton />
                   <HelpMenuButton />
                 </div>
               </div>

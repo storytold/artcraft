@@ -4,9 +4,7 @@ import { IsDesktopApp } from "@storyteller/tauri-utils";
 import {
   faCamera,
   faSave,
-  faSparkles,
   faDownload,
-  faSpinnerThird,
   faMessageCheck,
   faMessageXmark,
   faExpand,
@@ -20,7 +18,7 @@ import {
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
-import { Button, ToggleButton } from "@storyteller/ui-button";
+import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   CameraAspectRatio,
@@ -158,7 +156,9 @@ export const PromptBox3D = ({
     false;
 
   // New aspect ratio state will begin to phase out old aspect ratio
-  const [commonAspectRatio, setCommonAspectRatio] = useState<CommonAspectRatio | undefined>(undefined);
+  const [commonAspectRatio, setCommonAspectRatio] = useState<
+    CommonAspectRatio | undefined
+  >(undefined);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -172,7 +172,7 @@ export const PromptBox3D = ({
       prev.map((item) => ({
         ...item,
         selected: item.label.toLowerCase() === resolution,
-      }))
+      })),
     );
   }, [resolution]);
 
@@ -188,7 +188,7 @@ export const PromptBox3D = ({
             cameraAspectRatio.value === CameraAspectRatio.VERTICAL_2_3) ||
           (item.label === "Square" &&
             cameraAspectRatio.value === CameraAspectRatio.SQUARE_1_1),
-      }))
+      })),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraAspectRatio.value]);
@@ -198,7 +198,7 @@ export const PromptBox3D = ({
       prev.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
-      }))
+      })),
     );
 
     // Map the selected label to the corresponding CameraAspectRatio enum value
@@ -307,7 +307,7 @@ export const PromptBox3D = ({
           "(3D.2) Enqueuing with prompt:",
           prompt,
           "and reference images:",
-          referenceImages
+          referenceImages,
         );
         await new Promise((resolve) => setTimeout(resolve, 2000));
       } finally {
@@ -392,7 +392,7 @@ export const PromptBox3D = ({
         if (selectedImageModel?.supportsNewAspectRatio()) {
           request.common_aspect_ratio = commonAspectRatio;
         }
-    
+
         const generateResponse = await EnqueueEditImage(request);
 
         console.log("generateResponse", generateResponse);
@@ -412,7 +412,7 @@ export const PromptBox3D = ({
           "(3D.1) Enqueuing with prompt:",
           prompt,
           "and reference images:",
-          referenceImages
+          referenceImages,
         );
         await new Promise((resolve) => setTimeout(resolve, 2000));
       } finally {
@@ -515,7 +515,7 @@ export const PromptBox3D = ({
             visible={true}
             maxImagePromptCount={Math.max(
               1,
-              selectedImageModel?.maxImagePromptCount ?? 1
+              selectedImageModel?.maxImagePromptCount ?? 1,
             )}
             allowUpload={true}
             referenceImages={referenceImages}
@@ -527,7 +527,7 @@ export const PromptBox3D = ({
                   src={image.url}
                   alt="Reference preview"
                   className="w-full h-full object-contain"
-                />
+                />,
               );
               setIsModalOpen(true);
             }}
@@ -539,7 +539,7 @@ export const PromptBox3D = ({
             isPromptBoxFocused.value ? "!border !border-primary" : "",
             selectedImageModel?.canUseImagePrompt &&
               isImageRowVisible &&
-              "rounded-t-none"
+              "rounded-t-none",
           )}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
@@ -559,7 +559,7 @@ export const PromptBox3D = ({
                   variant="action"
                   className={twMerge(
                     "h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all border-0 shadow-none",
-                    isImageRowVisible && "text-primary"
+                    isImageRowVisible && "text-primary",
                   )}
                   onClick={() => setShowImagePrompts((prev) => !prev)}
                 >
@@ -609,28 +609,29 @@ export const PromptBox3D = ({
                   handleCommonAspectRatioSelect={setCommonAspectRatio}
                 />
               )}
-              {selectedImageModel?.canChangeAspectRatio && !selectedImageModel?.supportsNewAspectRatio() && (
-                <Tooltip
-                  content="Aspect ratio"
-                  position="top"
-                  className="z-50"
-                  closeOnClick={true}
-                >
-                  <PopoverMenu
-                    items={aspectRatioList}
-                    onSelect={handleAspectRatioSelect}
-                    mode="toggle"
-                    panelTitle="Aspect Ratio"
-                    showIconsInList
-                    triggerIcon={
-                      <FontAwesomeIcon
-                        icon={getCurrentAspectRatioIcon()}
-                        className="h-4 w-4"
-                      />
-                    }
-                  />
-                </Tooltip>
-              )}
+              {selectedImageModel?.canChangeAspectRatio &&
+                !selectedImageModel?.supportsNewAspectRatio() && (
+                  <Tooltip
+                    content="Aspect ratio"
+                    position="top"
+                    className="z-50"
+                    closeOnClick={true}
+                  >
+                    <PopoverMenu
+                      items={aspectRatioList}
+                      onSelect={handleAspectRatioSelect}
+                      mode="toggle"
+                      panelTitle="Aspect Ratio"
+                      showIconsInList
+                      triggerIcon={
+                        <FontAwesomeIcon
+                          icon={getCurrentAspectRatioIcon()}
+                          className="h-4 w-4"
+                        />
+                      }
+                    />
+                  </Tooltip>
+                )}
               {selectedImageModel?.canChangeResolution && (
                 <Tooltip
                   content="Resolution"
@@ -740,21 +741,16 @@ export const PromptBox3D = ({
               >
                 Save frame
               </Button>
-              <Button
+              <GenerateButton
                 className="flex items-center border-none bg-brand-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                icon={!isEnqueueing ? faSparkles : undefined}
+                icon={undefined}
                 onClick={handleEnqueue}
                 disabled={isEnqueueing || !prompt.trim()}
+                loading={isEnqueueing}
+                credits={1}
               >
-                {isEnqueueing ? (
-                  <FontAwesomeIcon
-                    icon={faSpinnerThird}
-                    className="animate-spin text-lg"
-                  />
-                ) : (
-                  "Generate"
-                )}
-              </Button>
+                Generate
+              </GenerateButton>
             </div>
           </div>
         </div>

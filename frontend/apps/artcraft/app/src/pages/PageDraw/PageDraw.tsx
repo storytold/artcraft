@@ -32,9 +32,23 @@ import {
   EnqueueImageInpaintRequest,
   useCanvasBgRemovedEvent,
 } from "@storyteller/tauri-api";
+import {
+  EnqueueEditImage,
+  EnqueueEditImageRequest,
+  EnqueueEditImageResolution,
+  EnqueueEditImageSize,
+  EnqueueImageInpaint,
+  EnqueueImageInpaintRequest,
+  useCanvasBgRemovedEvent,
+} from "@storyteller/tauri-api";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
+import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack, ImageBundle } from "../PageEdit/HistoryStack";
+import {
+  BaseImageSelector,
+  BaseSelectorImage,
+} from "../PageEdit/BaseImageSelector";
 import {
   BaseImageSelector,
   BaseSelectorImage,
@@ -188,6 +202,9 @@ const PageDraw = () => {
   const setGenerationCount = promptStoreProvider(
     (state) => state.setGenerationCount,
   );
+  const useSystemPrompt = promptStoreProvider((state) => state.useSystemPrompt);
+  const referenceImages = promptStoreProvider((state) => state.referenceImages);
+  const prompt = promptStoreProvider((state) => state.prompt);
 
   const baseImageKonvaRef = useRef<Konva.Image>({} as Konva.Image);
   const baseImageUrl = baseImageInfo?.url;
@@ -353,11 +370,77 @@ const PageDraw = () => {
     }
   };
 
+  const handleTauriEnqueue = async (
+    image: ImageBitmap,
+    aspectRatio: EnqueueEditImageSize | undefined,
+    resolution: EnqueueEditImageResolution | undefined,
+    subscriberId: string,
+  ) => {
+    if (image === undefined) {
+      console.log("image is undefined");
+      return;
+    }
+
+    const api = new PromptsApi();
+    const base64Bitmap = await EncodeImageBitmapToBase64(image);
+
+    const byteString = atob(base64Bitmap);
+    const mimeString = "image/png";
+
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+
+    const uuid = crypto.randomUUID(); // Generate a new UUID
+    const file = new File([ab], `${uuid}.png`, { type: mimeString });
+
+    const snapshotMediaToken = await api.uploadSceneSnapshot({
+      screenshot: file,
+    });
+
+    if (snapshotMediaToken.data === undefined) {
+      toast.error("Error: Unable to upload scene snapshot Please try again.");
+      return;
+    }
+
+    console.log("useSystemPrompt", useSystemPrompt);
+    console.log("Snapshot media token:", snapshotMediaToken.data);
+
+    const request: EnqueueEditImageRequest = {
+      model: selectedImageModel,
+      scene_image_media_token: snapshotMediaToken.data!,
+      image_media_tokens: referenceImages
+        .map((image) => image.mediaToken)
+        .filter((t) => t.length > 0),
+      disable_system_prompt: !useSystemPrompt,
+      prompt: prompt,
+      image_count: generationCount,
+      aspect_ratio: aspectRatio,
+      image_resolution: resolution,
+      frontend_caller: "image_editor",
+      frontend_subscriber_id: subscriberId,
+    };
+
+    if (selectedProvider) {
+      request.provider = selectedProvider;
+    }
+
+    const generateResponse = await EnqueueEditImage(request);
+    console.log("generateResponse", generateResponse);
+    return generateResponse;
+  };
+
   const getCompositeCanvasFile = useCallback(async (): Promise<File | null> => {
     if (!stageRef.current || !baseImageKonvaRef.current || !baseImageBitmap) {
       return null;
     }
 
+    const editsLayer = stageRef.current
+      .getLayers()
+      .find((l) => l.id() === DRAW_LAYER_ID);
     const editsLayer = stageRef.current
       .getLayers()
       .find((l) => l.id() === DRAW_LAYER_ID);
@@ -566,7 +649,7 @@ const PageDraw = () => {
         throw error;
       }
     },
-    [generationCount, getCompositeCanvasFile, selectedImageModel],
+    [generationCount, getCompositeCanvasFile, selectedImageModel, store],
   );
 
   const onFitPressed = async () => {
@@ -903,6 +986,7 @@ const PageDraw = () => {
         />
       </div>
       <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+        <CostCalculatorButton />
         <HelpMenuButton />
       </div>
     </>

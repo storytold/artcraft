@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { animated, useSpring } from "@react-spring/web";
-import { Button } from "@storyteller/ui-button";
+import { Button, GenerateButton } from "@storyteller/ui-button";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
@@ -9,7 +9,6 @@ import {
   faCube,
   faImages,
   faPlus,
-  faSparkles,
   faUpload,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -648,15 +647,16 @@ export const ImageTo3DExperience = ({
                   </div>
                 )}
 
-                <Button
+                <GenerateButton
                   variant="primary"
-                  icon={faSparkles}
+                  icon={undefined}
                   disabled={!canGenerate}
                   onClick={handleGenerate}
                   loading={isGenerating}
+                  credits={1}
                 >
                   {`Generate ${variant === "object" ? "Object" : "World"}`}
-                </Button>
+                </GenerateButton>
               </div>
             </div>
 

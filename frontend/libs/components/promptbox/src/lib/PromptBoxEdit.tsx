@@ -8,8 +8,6 @@ import {
   faMessageCheck,
   faMessageXmark,
   faMousePointer,
-  faSparkles,
-  faSpinnerThird,
   faFrame,
   faPen,
   faEraser,
@@ -19,7 +17,7 @@ import {
   faArrowsUpDownLeftRight,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Button, ToggleButton } from "@storyteller/ui-button";
+import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
 import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -511,29 +509,16 @@ export const PromptBoxEdit = ({
                   }}
                   isFreeUser={isFreeUser}
                 />
-                <Button
+                <GenerateButton
                   className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  icon={
-                    !(isEnqueueing ?? internalEnqueueing) && !isDisabled
-                      ? faSparkles
-                      : undefined
-                  }
+                  icon={undefined}
                   onClick={handleGenerate}
-                  disabled={
-                    (isEnqueueing ?? internalEnqueueing) ||
-                    isDisabled ||
-                    !prompt.trim()
-                  }
+                  disabled={isDisabled || !prompt.trim()}
+                  loading={isEnqueueing ?? internalEnqueueing}
+                  credits={1}
                 >
-                  {(isEnqueueing ?? internalEnqueueing) ? (
-                    <FontAwesomeIcon
-                      icon={faSpinnerThird}
-                      className="animate-spin text-lg"
-                    />
-                  ) : (
-                    "Generate"
-                  )}
-                </Button>
+                  Generate
+                </GenerateButton>
               </div>
             </div>
           </div>
