@@ -86,7 +86,13 @@ export function LoginModal({
     if (step === 2) {
       // Trigger the form submit in ArtCraftSignUp
       if (artCraftFormRef.current) {
-        artCraftFormRef.current.requestSubmit();
+        if (artCraftFormRef.current.requestSubmit) {
+          artCraftFormRef.current.requestSubmit();
+        } else {
+          artCraftFormRef.current.dispatchEvent(
+            new Event('submit', { cancelable: true, bubbles: true })
+          );
+        }
       }
     } else {
       setStep(step + 1);
