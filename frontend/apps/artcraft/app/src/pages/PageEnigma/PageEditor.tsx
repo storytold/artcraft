@@ -17,6 +17,7 @@ import { ImageWatermarkRemover } from "../PageImageWatermarkRemover";
 import { ImageTo3DObject } from "../PageImageTo3DObject";
 import { ImageTo3DWorld } from "../PageImageTo3DWorld";
 import { RemoveBackground } from "../PageRemoveBackground";
+import { Angles } from "../PageAngles";
 
 import {
   timelineHeight,
@@ -636,6 +637,11 @@ export const PageEditor = () => {
       {tabStore.activeTabId == "REMOVE_BACKGROUND" && (
         <div>
           <RemoveBackground />
+        </div>
+      )}
+      {tabStore.activeTabId == "ANGLES" && (
+        <div>
+          <Angles />
         </div>
       )}
     </div>

@@ -13,7 +13,8 @@ export type TabId =
   | "IMAGE_WATERMARK_REMOVAL"
   | "IMAGE_TO_3D_OBJECT"
   | "IMAGE_TO_3D_WORLD"
-  | "REMOVE_BACKGROUND";
+  | "REMOVE_BACKGROUND"
+  | "ANGLES";
 
 const DEFAULT_TAB: TabId = "IMAGE";
 
