@@ -32,23 +32,10 @@ import {
   EnqueueImageInpaintRequest,
   useCanvasBgRemovedEvent,
 } from "@storyteller/tauri-api";
-import {
-  EnqueueEditImage,
-  EnqueueEditImageRequest,
-  EnqueueEditImageResolution,
-  EnqueueEditImageSize,
-  EnqueueImageInpaint,
-  EnqueueImageInpaintRequest,
-  useCanvasBgRemovedEvent,
-} from "@storyteller/tauri-api";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack, ImageBundle } from "../PageEdit/HistoryStack";
-import {
-  BaseImageSelector,
-  BaseSelectorImage,
-} from "../PageEdit/BaseImageSelector";
 import {
   BaseImageSelector,
   BaseSelectorImage,
@@ -438,9 +425,6 @@ const PageDraw = () => {
       return null;
     }
 
-    const editsLayer = stageRef.current
-      .getLayers()
-      .find((l) => l.id() === DRAW_LAYER_ID);
     const editsLayer = stageRef.current
       .getLayers()
       .find((l) => l.id() === DRAW_LAYER_ID);
