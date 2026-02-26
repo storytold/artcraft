@@ -68,6 +68,9 @@ __pycache__/
 # We use diesel for DB migrations only. We don't care about its codgen.
 _ignored_schema.rs
 
+# Diesel lock file
+.diesel_lock
+
 # AI Chat Sidecar has its own schema managed by diesel, but we don't care for diesel codegen.
 crates/programs/aichatbot-sidecar/_ignored_schema.rs
 

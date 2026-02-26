@@ -182,6 +182,9 @@ CREATE TABLE generic_inference_jobs (
   is_from_api_user BOOLEAN NOT NULL DEFAULT FALSE,
   is_for_twitch BOOLEAN NOT NULL DEFAULT FALSE,
 
+  -- If credits were spent for this job, this references the corresponding wallet ledger entry.
+  maybe_wallet_ledger_entry_token VARCHAR(32) DEFAULT NULL,
+
   -- ========== DEVELOPMENT AND DEBUGGING METADATA ==========
 
   -- If true, the request gets a "debug" flag, which may do different

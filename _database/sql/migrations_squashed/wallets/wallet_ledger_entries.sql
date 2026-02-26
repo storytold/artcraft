@@ -40,6 +40,12 @@ CREATE TABLE wallet_ledger_entries (
   -- Balance of monthly credits after the event.
   monthly_credits_after INTEGER UNSIGNED NOT NULL DEFAULT 0,
 
+  -- Whether this ledger entry has been refunded.
+  is_refunded BOOLEAN NOT NULL DEFAULT FALSE,
+
+  -- If this entry was refunded, this points to the refund ledger entry.
+  maybe_linked_refund_ledger_token VARCHAR(32) DEFAULT NULL,
+
   -- ========== RECORD TIMESTAMPS ==========
 
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
