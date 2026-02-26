@@ -13,6 +13,7 @@ use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
+use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 use crate::errors::database_query_error::DatabaseQueryError;
 use crate::payloads::generic_inference_args::generic_inference_args::GenericInferenceArgs;
@@ -31,6 +32,8 @@ pub struct InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, 
   pub maybe_inference_args: Option<GenericInferenceArgs>,
 
   pub maybe_prompt_token: Option<&'e PromptToken>,
+
+  pub maybe_wallet_ledger_entry_token: Option<&'e WalletLedgerEntryToken>,
 
   pub maybe_creator_user_token: Option<&'e UserToken>,
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
@@ -82,6 +85,8 @@ SET
 
   maybe_prompt_token = ?,
 
+  maybe_wallet_ledger_entry_token = ?,
+
   maybe_raw_inference_text = NULL,
 
   maybe_inference_args = ?,
@@ -112,6 +117,8 @@ SET
         INFERENCE_CATEGORY.to_str(),
 
         args.maybe_prompt_token.map(|t| t.to_string()),
+
+        args.maybe_wallet_ledger_entry_token.map(|t| t.to_string()),
 
         serialized_args_payload,
 
