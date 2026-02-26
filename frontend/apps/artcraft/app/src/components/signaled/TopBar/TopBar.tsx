@@ -76,6 +76,7 @@ import { AppsQuickMenu } from "./AppsQuickMenu";
 import { SceneTitleInput } from "./SceneTitleInput";
 import { TaskQueue } from "./TaskQueue";
 import { UploadImagesButton } from "./UploadImagesButton";
+import { AppStatusCheck } from "./AppStatusCheck";
 
 interface Props {
   pageName: string;
@@ -166,7 +167,7 @@ export const TopBar = ({ pageName }: Props) => {
       Promise.all([
         creditsStore.fetchFromServer(),
         subscriptionStore.fetchFromServer(),
-      ])
+      ]);
     }, 1000);
     return () => clearTimeout(t);
   }, []);
@@ -597,6 +598,8 @@ export const TopBar = ({ pageName }: Props) => {
             )}
           </div>
 
+          <AppStatusCheck />
+
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
               {isCreditsLoading ? (
@@ -607,7 +610,10 @@ export const TopBar = ({ pageName }: Props) => {
                     position="bottom"
                     align="center"
                     triggerIcon={
-                      <FontAwesomeIcon icon={faCoins} className="text-primary" />
+                      <FontAwesomeIcon
+                        icon={faCoins}
+                        className="text-primary"
+                      />
                     }
                     triggerLabel={
                       <span className="whitespace-nowrap text-sm font-medium">
