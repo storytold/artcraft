@@ -130,6 +130,7 @@ export const getModelDisplayName = (modelType: string): string => {
     gemini_25_flash: "Nano Banana",
     nano_banana: "Nano Banana",
     nano_banana_pro: "Nano Banana Pro",
+    flux_dev_juggernaut: "Flux Dev Juggernaut",
 
     // Catch-all bucket for Midjourney.
     midjourney: "Midjourney",

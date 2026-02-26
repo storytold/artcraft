@@ -106,6 +106,68 @@ interface GalleryModalProps {
   ) => Promise<void> | void;
 }
 
+// --- Constants (never re-created) ---
+
+const EMPTY_SELECTED_IDS: string[] = [];
+
+const FILTERS = [
+  { id: "all", label: "All", icon: <FontAwesomeIcon icon={faBorderAll} /> },
+  { id: "image", label: "Image", icon: <FontAwesomeIcon icon={faImage} /> },
+  { id: "video", label: "Video", icon: <FontAwesomeIcon icon={faVideo} /> },
+  { id: "3d", label: "3D Object", icon: <FontAwesomeIcon icon={faCube} /> },
+  {
+    id: "uploaded",
+    label: "Uploaded",
+    icon: <FontAwesomeIcon icon={faUpload} />,
+  },
+];
+
+const getFilterMediaClass = (filter: string) => {
+  switch (filter) {
+    case "image":
+      return [FilterMediaClasses.IMAGE];
+    case "video":
+      return [FilterMediaClasses.VIDEO];
+    case "3d":
+      return [FilterMediaClasses.DIMENSIONAL];
+    case "uploaded":
+      return [
+        FilterMediaClasses.IMAGE,
+        FilterMediaClasses.VIDEO,
+        FilterMediaClasses.DIMENSIONAL,
+      ];
+    default:
+      return undefined;
+  }
+};
+
+const getLabel = (item: any) => {
+  if (!!item.maybe_title) {
+    return item.maybe_title;
+  }
+  switch (item.media_class) {
+    case "image":
+      return "Image Generation";
+    case "video":
+      return "Video Generation";
+    case "dimensional":
+      return "3D Object Generation";
+    default:
+      return "Generation";
+  }
+};
+
+const formatDate = (date: string) => {
+  const d = new Date(date);
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+};
+
+const PAGE_SIZE = 100;
+
 /** Small thumbnail used in the bulk-selection footer bar. */
 const BulkThumb = ({
   thumbnail,
@@ -142,7 +204,7 @@ export const GalleryModal = React.memo(
   ({
     onClose,
     mode = "view",
-    selectedItemIds = [],
+    selectedItemIds = EMPTY_SELECTED_IDS,
     onSelectItem,
     maxSelections = 4,
     onUseSelected,
@@ -159,7 +221,7 @@ export const GalleryModal = React.memo(
     // Lightbox state is now handled via signals
     const lightboxImageSignal = galleryModalLightboxImage;
     const lightboxVisibleSignal = galleryModalLightboxVisible;
-    const [failedImageUrls] = useState<Set<string>>(new Set());
+    const failedImageUrls = useRef<Set<string>>(new Set());
     const [username, setUsername] = useState<string>("");
     const forceFilterRef = useRef(forceFilter);
     const [activeFilter, setActiveFilter] = useState(forceFilter || "all");
@@ -194,9 +256,13 @@ export const GalleryModal = React.memo(
       setBulkSelectedIds(new Set());
     }, [activeFilter]);
 
-    // NB: We've got some kind of cursoring issue where subsequent pages are not requested.
-    // For now, let's set the pagination limit really high.
-    const pageSize = 100;
+    // Use refs for values that loadItems needs but shouldn't trigger re-creation
+    const pageIndexRef = useRef(pageIndex);
+    pageIndexRef.current = pageIndex;
+    const activeFilterRef = useRef(activeFilter);
+    activeFilterRef.current = activeFilter;
+    const usernameRef = useRef(username);
+    usernameRef.current = username;
 
     const imageUrl = lightboxImageSignal.value?.fullImage || "";
     const imageUrls: string[] | undefined = (lightboxImageSignal.value as any)
@@ -205,45 +271,36 @@ export const GalleryModal = React.memo(
     const api = useMemo(() => new GalleryModalApi(), []);
     const usersApi = useMemo(() => new UsersApi(), []);
 
-    const formatDate = useCallback((date: string) => {
-      const d = new Date(date);
-      return d.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
+    const groupItemsByDate = useCallback((items: GalleryItem[]) => {
+      const grouped = items.reduce((acc: GroupedItems, item) => {
+        const dateKey = formatDate(item.createdAt);
+        if (!acc[dateKey]) {
+          acc[dateKey] = [];
+        }
+        acc[dateKey].push(item);
+        return acc;
+      }, {});
+
+      // Sort dates in descending order
+      return Object.fromEntries(
+        Object.entries(grouped).sort(
+          (a, b) =>
+            new Date(b[1][0].createdAt).getTime() -
+            new Date(a[1][0].createdAt).getTime(),
+        ),
+      );
     }, []);
 
-    const groupItemsByDate = useCallback(
-      (items: GalleryItem[]) => {
-        const grouped = items.reduce((acc: GroupedItems, item) => {
-          const dateKey = formatDate(item.createdAt);
-          if (!acc[dateKey]) {
-            acc[dateKey] = [];
-          }
-          acc[dateKey].push(item);
-          return acc;
-        }, {});
-
-        // Sort dates in descending order
-        return Object.fromEntries(
-          Object.entries(grouped).sort(
-            (a, b) =>
-              new Date(b[1][0].createdAt).getTime() -
-              new Date(a[1][0].createdAt).getTime(),
-          ),
-        );
-      },
-      [formatDate],
+    // Memoize the grouped result so we don't recompute on every render
+    const groupedItems = useMemo(
+      () => groupItemsByDate(allItems),
+      [allItems, groupItemsByDate],
     );
 
-    const handleImageError = useCallback(
-      (url: string) => {
-        console.error(`Failed to load gallery modal image: ${url}`);
-        failedImageUrls.add(url);
-      },
-      [failedImageUrls],
-    );
+    const handleImageError = useCallback((url: string) => {
+      console.error(`Failed to load gallery modal image: ${url}`);
+      failedImageUrls.current.add(url);
+    }, []);
 
     useEffect(() => {
       const getUsername = async () => {
@@ -257,133 +314,89 @@ export const GalleryModal = React.memo(
       }
     }, [usersApi, mode, galleryModalVisibleViewMode.value, isOpen]);
 
-    // filter state
-    const FILTERS = [
-      { id: "all", label: "All", icon: <FontAwesomeIcon icon={faBorderAll} /> },
-      { id: "image", label: "Image", icon: <FontAwesomeIcon icon={faImage} /> },
-      { id: "video", label: "Video", icon: <FontAwesomeIcon icon={faVideo} /> },
-      { id: "3d", label: "3D Object", icon: <FontAwesomeIcon icon={faCube} /> },
-      {
-        id: "uploaded",
-        label: "Uploaded",
-        icon: <FontAwesomeIcon icon={faUpload} />,
-      },
-    ];
+    // Stable loadItems that reads from refs — never causes cascading re-renders
+    const loadItems = useCallback(
+      async (reset = false) => {
+        const currentUsername = usernameRef.current;
+        const currentFilter = activeFilterRef.current;
+        if (!currentUsername) return;
+        setLoading(true);
+        try {
+          const filterMediaClasses = getFilterMediaClass(currentFilter);
+          const query = {
+            filter_media_classes: filterMediaClasses,
+            username: currentUsername,
+            include_user_uploads:
+              currentFilter === "uploaded" ||
+              currentFilter === "all" ||
+              currentFilter === "3d" ||
+              currentFilter === "image" ||
+              currentFilter === "video",
+            user_uploads_only: currentFilter === "uploaded",
+            page_index: reset ? 0 : pageIndexRef.current,
+            page_size: PAGE_SIZE,
+          };
+          const response = await api.listUserMediaFiles(query);
 
-    // Map filter to API/media class
-    const getFilterMediaClass = (filter: string) => {
-      switch (filter) {
-        case "image":
-          return [FilterMediaClasses.IMAGE];
-        case "video":
-          return [FilterMediaClasses.VIDEO];
-        case "3d":
-          return [FilterMediaClasses.DIMENSIONAL];
-        case "uploaded":
-          return [
-            FilterMediaClasses.IMAGE,
-            FilterMediaClasses.VIDEO,
-            FilterMediaClasses.DIMENSIONAL,
-          ];
-        default:
-          return undefined;
-      }
-    };
-
-    const getLabel = (item: any) => {
-      if (!!item.maybe_title) {
-        return item.maybe_title;
-      }
-      switch (item.media_class) {
-        case "image":
-          return "Image Generation";
-        case "video":
-          return "Video Generation";
-        case "dimensional":
-          return "3D Object Generation";
-        default:
-          return "Generation";
-      }
-    };
-
-    const loadItems = async (reset = false) => {
-      if (!username) return;
-      setLoading(true);
-      try {
-        let response = null;
-        const filterMediaClasses = getFilterMediaClass(activeFilter);
-        const query = {
-          filter_media_classes: filterMediaClasses,
-          username: username,
-          include_user_uploads:
-            activeFilter === "uploaded" ||
-            activeFilter === "all" ||
-            activeFilter === "3d" ||
-            activeFilter === "image" ||
-            activeFilter === "video",
-          user_uploads_only: activeFilter === "uploaded",
-          page_index: reset ? 0 : pageIndex,
-          page_size: pageSize,
-        };
-        response = await api.listUserMediaFiles(query);
-
-        if (response.success && response.data) {
-          const newItems = response.data
-            .filter(
-              (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
-            )
-            .map((item: any) => ({
-              id: item.token,
-              label: getLabel(item),
-              thumbnail:
-                item.media_class === "video"
-                  ? item.media_links.maybe_video_previews?.animated
-                  : item.media_class === "dimensional"
-                    ? item.cover_image?.maybe_cover_image_public_bucket_url
-                    : getThumbnailUrl(
-                        item.media_links.maybe_thumbnail_template,
-                        {
-                          width: THUMBNAIL_SIZES.MEDIUM,
-                        },
-                      ),
-              thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
-              fullImage: item.media_links.cdn_url,
-              createdAt: item.created_at,
-              mediaClass:
-                item.media_class ||
-                (item.filter_media_classes
-                  ? item.filter_media_classes[0]
-                  : "image"),
-              assetType:
-                item.media_class === "dimensional"
-                  ? item.maybe_animation_type ||
-                    item.origin_product_category === "character" ||
-                    (item.origin &&
-                      item.origin.product_category === "character")
-                    ? "character"
-                    : "object"
-                  : undefined,
-            }));
-          setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
-          // Pagination logic
-          const current = response.pagination?.current ?? 0;
-          const total = response.pagination?.total_page_count ?? 1;
-          setPageIndex(current + 1);
-          setHasMore(current + 1 < total);
+          if (response.success && response.data) {
+            const newItems = response.data
+              .filter(
+                (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
+              )
+              .map((item: any) => ({
+                id: item.token,
+                label: getLabel(item),
+                thumbnail:
+                  item.media_class === "video"
+                    ? item.media_links.maybe_video_previews?.animated
+                    : item.media_class === "dimensional"
+                      ? item.cover_image?.maybe_cover_image_public_bucket_url
+                      : getThumbnailUrl(
+                          item.media_links.maybe_thumbnail_template,
+                          {
+                            width: THUMBNAIL_SIZES.MEDIUM,
+                          },
+                        ),
+                thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
+                fullImage: item.media_links.cdn_url,
+                createdAt: item.created_at,
+                mediaClass:
+                  item.media_class ||
+                  (item.filter_media_classes
+                    ? item.filter_media_classes[0]
+                    : "image"),
+                assetType:
+                  item.media_class === "dimensional"
+                    ? item.maybe_animation_type ||
+                      item.origin_product_category === "character" ||
+                      (item.origin &&
+                        item.origin.product_category === "character")
+                      ? "character"
+                      : "object"
+                    : undefined,
+              }));
+            setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
+            // Pagination logic
+            const current = response.pagination?.current ?? 0;
+            const total = response.pagination?.total_page_count ?? 1;
+            setPageIndex(current + 1);
+            setHasMore(current + 1 < total);
+          }
+        } catch (error) {
+          console.error("Failed to fetch library items:", error);
         }
-      } catch (error) {
-        console.error("Failed to fetch library items:", error);
-      }
-      setLoading(false);
-    };
+        setLoading(false);
+      },
+      [api],
+    );
 
-    // refresh logic
+    // refresh logic — stable because loadItems is stable
     const refreshGallery = useCallback(() => {
       setAllItems([]);
       setPageIndex(0);
       setHasMore(true);
       loadItems(true);
-    }, [setAllItems, setPageIndex, setHasMore, loadItems]);
+    }, [loadItems]);
 
     useEffect(() => {
       // Refresh every time the modal is opened
@@ -405,6 +418,18 @@ export const GalleryModal = React.memo(
       activeFilter,
     ]);
 
+    const toggleBulkSelect = useCallback((id: string) => {
+      setBulkSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    }, []);
+
     const handleItemClick = useCallback(
       (item: GalleryItem) => {
         if (mode === "select" && onSelectItem) {
@@ -417,7 +442,7 @@ export const GalleryModal = React.memo(
           galleryModalLightboxMediaId.value = item.id;
         }
       },
-      [mode, onSelectItem, bulkSelectionMode],
+      [mode, onSelectItem, bulkSelectionMode, toggleBulkSelect],
     );
 
     const handleCloseLightbox = useCallback(() => {
@@ -426,34 +451,26 @@ export const GalleryModal = React.memo(
       galleryModalLightboxMediaId.value = null;
     }, []);
 
+    const handleCloseGallery = useCallback(() => {
+      galleryModalVisibleViewMode.value = false;
+    }, []);
+
     const handleDeselectAll = useCallback(() => {
       selectedItemIds.forEach((id: any) => onSelectItem?.(id));
     }, [selectedItemIds, onSelectItem]);
 
     const handleUseSelected = useCallback(() => {
-      const selectedItems = Object.values(groupItemsByDate(allItems))
+      const selectedItems = Object.values(groupedItems)
         .flat()
         .filter((item) => selectedItemIds.includes(item.id));
       onUseSelected?.(selectedItems);
-    }, [groupItemsByDate, selectedItemIds, onUseSelected]);
+    }, [groupedItems, selectedItemIds, onUseSelected]);
 
     const handleItemDeleted = useCallback((id: string) => {
       setAllItems((prev) => prev.filter((it) => it.id !== id));
       setBulkSelectedIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
-        return next;
-      });
-    }, []);
-
-    const toggleBulkSelect = useCallback((id: string) => {
-      setBulkSelectedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
         return next;
       });
     }, []);
@@ -510,21 +527,85 @@ export const GalleryModal = React.memo(
       }
     }, [galleryModalLightboxMediaId.value, allItems]);
 
-    // Compute gap class based on gridColumns
-    let gapClass = "gap-0.5";
-    if (gridColumns <= 4) gapClass = "gap-1.5";
-    else if (gridColumns <= 7) gapClass = "gap-1";
+    // Build a flat, ordered list of all visible items (matching the grid render order) for lightbox navigation
+    const filterItem = useCallback(
+      (item: GalleryItem) => {
+        if ((item as any).mediaType === "scene_json") return false;
+        if (activeFilter === "3d") return item.mediaClass === "dimensional";
+        if (activeFilter === "image") return item.mediaClass === "image";
+        if (activeFilter === "video") return item.mediaClass === "video";
+        if (activeFilter === "all") {
+          return (
+            item.mediaClass !== "audio" &&
+            (item as any).mediaType !== "scene_json"
+          );
+        }
+        return true;
+      },
+      [activeFilter],
+    );
 
-    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-      const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-      if (
-        scrollHeight - scrollTop - clientHeight < 100 &&
-        hasMore &&
-        !loading
-      ) {
-        loadItems();
+    const flatFilteredItems = useMemo(() => {
+      const result: GalleryItem[] = [];
+      for (const [, dateItems] of Object.entries(groupedItems)) {
+        for (const item of dateItems) {
+          if (filterItem(item)) result.push(item);
+        }
       }
-    };
+      return result;
+    }, [groupedItems, filterItem]);
+
+    const currentLightboxIndex = useMemo(() => {
+      const currentId = lightboxImageSignal.value?.id;
+      if (!currentId) return -1;
+      return flatFilteredItems.findIndex((item) => item.id === currentId);
+    }, [flatFilteredItems, lightboxImageSignal.value]);
+
+    const handleNavigatePrev = useMemo(() => {
+      if (currentLightboxIndex <= 0) return undefined;
+      return () => {
+        const prevItem = flatFilteredItems[currentLightboxIndex - 1];
+        if (prevItem) {
+          lightboxImageSignal.value = prevItem;
+          lightboxVisibleSignal.value = true;
+          galleryModalLightboxMediaId.value = prevItem.id;
+        }
+      };
+    }, [currentLightboxIndex, flatFilteredItems]);
+
+    const handleNavigateNext = useMemo(() => {
+      if (
+        currentLightboxIndex < 0 ||
+        currentLightboxIndex >= flatFilteredItems.length - 1
+      )
+        return undefined;
+      return () => {
+        const nextItem = flatFilteredItems[currentLightboxIndex + 1];
+        if (nextItem) {
+          lightboxImageSignal.value = nextItem;
+          lightboxVisibleSignal.value = true;
+          galleryModalLightboxMediaId.value = nextItem.id;
+        }
+      };
+    }, [currentLightboxIndex, flatFilteredItems]);
+
+    // Compute gap class based on gridColumns
+    const gapClass =
+      gridColumns <= 4 ? "gap-1.5" : gridColumns <= 7 ? "gap-1" : "gap-0.5";
+
+    const handleScroll = useCallback(
+      (e: React.UIEvent<HTMLDivElement>) => {
+        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+        if (
+          scrollHeight - scrollTop - clientHeight < 100 &&
+          hasMore &&
+          !loading
+        ) {
+          loadItems();
+        }
+      },
+      [hasMore, loading, loadItems],
+    );
 
     return (
       <>
@@ -739,75 +820,54 @@ export const GalleryModal = React.memo(
                 </div>
               ) : (
                 <div className="space-y-6 p-4">
-                  {Object.entries(groupItemsByDate(allItems)).map(
-                    ([date, dateItems]) => {
-                      const filteredItems = dateItems.filter((item) => {
-                        if ((item as any).mediaType === "scene_json")
-                          return false;
-                        if (activeFilter === "3d") {
-                          return item.mediaClass === "dimensional";
-                        }
-                        if (activeFilter === "image") {
-                          return item.mediaClass === "image";
-                        }
-                        if (activeFilter === "video") {
-                          return item.mediaClass === "video";
-                        }
-                        if (activeFilter === "all") {
-                          return (
-                            item.mediaClass !== "audio" &&
-                            (item as any).mediaType !== "scene_json"
-                          );
-                        }
-                        return true;
-                      });
-                      if (filteredItems.length === 0) return null;
-                      return (
-                        <div key={date}>
-                          <h3 className="text-md mb-2 font-medium text-base-fg/60">
-                            {date}
-                          </h3>
-                          <div
-                            className={twMerge("grid", gapClass)}
-                            style={{
-                              gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
-                            }}
-                          >
-                            {filteredItems.map((item) => (
-                              <GalleryDraggableItem
-                                key={item.id}
-                                item={item}
-                                mode={mode}
-                                activeFilter={activeFilter}
-                                selected={selectedItemIds.includes(item.id)}
-                                onClick={() => handleItemClick(item)}
-                                onImageError={(e) => {
-                                  e.currentTarget.src =
-                                    PLACEHOLDER_IMAGES.DEFAULT;
-                                  e.currentTarget.style.opacity = "0.3";
-                                  // Set the `data-brokenurl` property for debugging the broken images:
-                                  (
-                                    e.currentTarget as HTMLImageElement
-                                  ).dataset.brokenurl = item.thumbnail || "";
-                                  handleImageError(item.thumbnail!);
-                                }}
-                                disableTooltipAndBadge={mode === "select"}
-                                imageFit={imageFit}
-                                onDeleted={handleItemDeleted}
-                                onEditClicked={onEditClicked}
-                                maxSelections={maxSelections}
-                                bulkSelected={bulkSelectedIds.has(item.id)}
-                                onBulkSelectToggle={() =>
-                                  toggleBulkSelect(item.id)
-                                }
-                                bulkSelectionMode={bulkSelectionMode}
-                              />
-                            ))}
-                          </div>
+                  {Object.entries(groupedItems).map(([date, dateItems]) => {
+                    const filteredItems = dateItems.filter(filterItem);
+                    if (filteredItems.length === 0) return null;
+                    return (
+                      <div key={date}>
+                        <h3 className="text-md mb-2 font-medium text-base-fg/60">
+                          {date}
+                        </h3>
+                        <div
+                          className={twMerge("grid", gapClass)}
+                          style={{
+                            gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+                          }}
+                        >
+                          {filteredItems.map((item) => (
+                            <GalleryDraggableItem
+                              key={item.id}
+                              item={item}
+                              mode={mode}
+                              activeFilter={activeFilter}
+                              selected={selectedItemIds.includes(item.id)}
+                              onClick={() => handleItemClick(item)}
+                              onImageError={(e) => {
+                                e.currentTarget.src =
+                                  PLACEHOLDER_IMAGES.DEFAULT;
+                                e.currentTarget.style.opacity = "0.3";
+                                // Set the `data-brokenurl` property for debugging the broken images:
+                                (
+                                  e.currentTarget as HTMLImageElement
+                                ).dataset.brokenurl = item.thumbnail || "";
+                                handleImageError(item.thumbnail!);
+                              }}
+                              disableTooltipAndBadge={mode === "select"}
+                              imageFit={imageFit}
+                              onDeleted={handleItemDeleted}
+                              onEditClicked={onEditClicked}
+                              maxSelections={maxSelections}
+                              bulkSelected={bulkSelectedIds.has(item.id)}
+                              onBulkSelectToggle={() =>
+                                toggleBulkSelect(item.id)
+                              }
+                              bulkSelectionMode={bulkSelectionMode}
+                            />
+                          ))}
                         </div>
-                      );
-                    },
-                  )}
+                      </div>
+                    );
+                  })}
                   {loading && allItems.length > 0 && (
                     <div className="flex justify-center py-4">
                       <LoadingSpinner className="h-8 w-8" />
@@ -907,7 +967,7 @@ export const GalleryModal = React.memo(
           <LightboxModal
             isOpen={lightboxVisibleSignal.value}
             onClose={handleCloseLightbox}
-            onCloseGallery={() => (galleryModalVisibleViewMode.value = false)}
+            onCloseGallery={handleCloseGallery}
             imageUrl={imageUrl}
             // pass multiple images if present
             imageUrls={imageUrls}
@@ -928,6 +988,8 @@ export const GalleryModal = React.memo(
             onTurnIntoVideoClicked={onTurnIntoVideoClicked}
             onRemoveBackgroundClicked={onRemoveBackgroundClicked}
             onMake3DWorldClicked={onMake3DWorldClicked}
+            onNavigatePrev={handleNavigatePrev}
+            onNavigateNext={handleNavigateNext}
           />
         )}
       </>
