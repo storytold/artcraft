@@ -21,7 +21,7 @@ pub (crate) struct InsertWalletLedgerEntry<'a> {
   /// An optional reference for this entry. Could be an internal ID (eg. job) or an
   /// external ID (eg. Stripe payment intent, invoice, etc.)
   pub maybe_entity_ref: Option<String>,
-  
+
   /// Change in credits (positive or negative) across banked and/or monthly credits.
   pub credits_delta: i64,
 
@@ -40,41 +40,35 @@ pub (crate) struct InsertWalletLedgerEntry<'a> {
 
 impl <'a> InsertWalletLedgerEntry<'a> {
 
-  pub async fn upsert(&'a self, mysql_pool: &MySqlPool) -> AnyhowResult<()> {
+  pub async fn upsert_with_pool(&'a self, mysql_pool: &MySqlPool) -> AnyhowResult<WalletLedgerEntryToken> {
     let mut conn = mysql_pool.acquire().await?;
     self.upsert_with_connection(&mut conn).await
   }
 
-  pub async fn upsert_with_connection(&'a self, mysql_connection: &mut PoolConnection<MySql>) -> AnyhowResult<()> {
-    let query = self.query();
-    let query_result = query.execute(&mut **mysql_connection).await;
+  pub async fn upsert_with_connection(&'a self, mysql_connection: &mut PoolConnection<MySql>) -> AnyhowResult<WalletLedgerEntryToken> {
+    let ledger_token = WalletLedgerEntryToken::generate();
+    let query_result = self.query_with_token(&ledger_token).execute(&mut **mysql_connection).await;
 
-    let _record_id = match query_result {
-      Ok(res) => res.last_insert_id(),
-      Err(err) => return Err(anyhow!("Error upserting wallet ledger entry record: {:?}", err)),
-    };
-
-    Ok(())
+    match query_result {
+      Ok(_) => Ok(ledger_token),
+      Err(err) => Err(anyhow!("Error upserting wallet ledger entry record: {:?}", err)),
+    }
   }
 
-  pub async fn upsert_with_transaction(&'a self, transaction: &mut Transaction<'_, MySql>) -> Result<(), sqlx::Error> {
-    let query = self.query();
-    let query_result = query.execute(&mut **transaction).await;
+  pub async fn upsert_with_transaction(&'a self, transaction: &mut Transaction<'_, MySql>) -> Result<WalletLedgerEntryToken, sqlx::Error> {
+    let ledger_token = WalletLedgerEntryToken::generate();
+    let query_result = self.query_with_token(&ledger_token).execute(&mut **transaction).await;
 
-    let _record_id = match query_result {
-      Ok(res) => res.last_insert_id(),
+    match query_result {
+      Ok(_) => Ok(ledger_token),
       Err(err) => {
         error!("Error upserting wallet ledger entry record: {:?}", err);
-        return Err(err);
+        Err(err)
       },
-    };
-
-    Ok(())
+    }
   }
 
-  fn query(&self) -> Query<MySql, MySqlArguments> {
-    let token = WalletLedgerEntryToken::generate().to_string();
-
+  fn query_with_token(&self, ledger_token: &WalletLedgerEntryToken) -> Query<MySql, MySqlArguments> {
     sqlx::query!(
         r#"
 INSERT INTO wallet_ledger_entries
@@ -89,7 +83,7 @@ SET
   monthly_credits_before = ?,
   monthly_credits_after = ?
         "#,
-      token.as_str(),
+      ledger_token.as_str(),
       self.wallet_token.as_str(),
       self.entry_type.to_str(),
       self.maybe_entity_ref,

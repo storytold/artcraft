@@ -115,10 +115,11 @@ pub async fn try_to_spend_wallet_balance(
     banked_credits_after: updated_banked_balance
   };
 
-  record.upsert_with_transaction(transaction).await?;
+  let wallet_ledger_entry_token = record.upsert_with_transaction(transaction).await?;
 
   Ok(WalletUpdateSummary {
-    token: wallet.token,
+    wallet_token: wallet.token,
+    wallet_ledger_entry_token,
     namespace: wallet.namespace,
     owner_user_token: wallet.owner_user_token,
 

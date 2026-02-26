@@ -51,11 +51,12 @@ pub async fn refill_monthly_credits_balance_on_wallet(
     banked_credits_after: wallet.banked_credits,
   };
 
-  record.upsert_with_transaction(transaction).await?;
+  let wallet_ledger_entry_token = record.upsert_with_transaction(transaction).await?;
 
 
   Ok(WalletUpdateSummary {
-    token: wallet.token,
+    wallet_token: wallet.token,
+    wallet_ledger_entry_token,
     namespace: wallet.namespace,
     owner_user_token: wallet.owner_user_token,
 

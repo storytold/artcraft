@@ -1,9 +1,12 @@
 use enums::common::payments_namespace::PaymentsNamespace;
 use tokens::tokens::users::UserToken;
+use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use tokens::tokens::wallets::WalletToken;
 
 pub struct WalletUpdateSummary {
-  pub token: WalletToken,
+  pub wallet_token: WalletToken,
+
+  pub wallet_ledger_entry_token: WalletLedgerEntryToken,
 
   pub namespace: PaymentsNamespace,
 
