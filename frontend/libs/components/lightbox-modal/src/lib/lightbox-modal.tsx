@@ -497,6 +497,7 @@ export function LightboxModal({
             ) : mediaClass === "dimensional" ? (
               <div className="h-full w-full">
                 <Viewer3D
+                  key={selectedImageUrl}
                   modelUrl={selectedImageUrl}
                   isActive={true}
                   showGrid={true}
