@@ -12,8 +12,6 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use tokens::tokens::wallets::WalletToken;
 
-// TODO: This hasn't really been tested yet...
-
 pub struct WalletDeductionResult {
   pub wallet_token: WalletToken,
   pub ledger_entry_token: WalletLedgerEntryToken,
