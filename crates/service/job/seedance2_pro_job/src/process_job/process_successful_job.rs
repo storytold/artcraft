@@ -9,18 +9,17 @@ use enums::by_table::media_files::media_file_origin_product_category::MediaFileO
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
-use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::PendingSeedance2ProJob;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use seedance2pro::requests::poll_orders::poll_orders::OrderStatus;
 use crate::job_dependencies::JobDependencies;
 
-const PREFIX : &str = "artcraft_";
-const SUFFIX : &str = ".mp4";
+const PREFIX: &str = "artcraft_";
+const SUFFIX: &str = ".mp4";
 
 /// Download the completed video, upload to bucket, create media file record, and mark job done.
-pub async fn process_completed_order(
+pub async fn process_successful_job(
   deps: &JobDependencies,
   job: &PendingSeedance2ProJob,
   order: &OrderStatus,
@@ -142,19 +141,4 @@ pub async fn process_completed_order(
   info!("Job {} completed successfully.", job.job_token.as_str());
 
   Ok(())
-}
-
-/// Mark a job as permanently failed.
-pub async fn mark_job_failed(
-  deps: &JobDependencies,
-  job: &PendingSeedance2ProJob,
-  fail_reason: &str,
-) -> AnyhowResult<()> {
-  mark_job_failed_by_token(MarkJobFailedByTokenArgs {
-    pool: &deps.mysql_pool,
-    job_token: &job.job_token,
-    maybe_public_failure_reason: Some(fail_reason),
-    internal_debugging_failure_reason: fail_reason,
-    maybe_frontend_failure_category: None,
-  }).await
 }

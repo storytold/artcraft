@@ -26,12 +26,13 @@ use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
 use server_environment::ServerEnvironment;
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
-use crate::job::job_loop::main_loop::main_loop;
+use crate::main_loop::main_loop;
 use crate::job_dependencies::JobDependencies;
 
 pub mod http_server;
-pub mod job;
 pub mod job_dependencies;
+pub mod main_loop;
+pub mod process_job;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
