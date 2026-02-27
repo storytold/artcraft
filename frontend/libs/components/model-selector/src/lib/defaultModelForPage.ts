@@ -9,7 +9,7 @@ export const defaultModelForPage = (models: Model[], page: ModelPage): Model => 
       imageModel = IMAGE_MODELS_BY_ID.get("nano_banana_pro");
       break;
     case ModelPage.ImageToVideo:
-      imageModel = VIDEO_MODELS_BY_ID.get("seedance_1_0_lite");
+      imageModel = VIDEO_MODELS_BY_ID.get("seedance_2p0");
       break;
     case ModelPage.Canvas2D:
       imageModel = IMAGE_MODELS_BY_ID.get("gpt_image_1p5");

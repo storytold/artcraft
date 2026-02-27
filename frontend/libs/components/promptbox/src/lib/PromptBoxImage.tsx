@@ -17,13 +17,7 @@ import {
   faMessageCheck,
   faExpand,
 } from "@fortawesome/pro-solid-svg-icons";
-import {
-  faRectangle,
-  faSquare,
-  faRectangleVertical,
-} from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { usePromptImageStore, RefImage } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
@@ -31,6 +25,7 @@ import { twMerge } from "tailwind-merge";
 import { ImagePromptRow } from "./ImagePromptRow";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
+import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
 import { ResolutionPicker } from "./common/ResolutionPicker";
 import { CommonResolution } from "@storyteller/model-list";
@@ -132,17 +127,17 @@ export const PromptBoxImage = ({
     {
       label: "Wide",
       selected: aspectRatio === "wide",
-      icon: <FontAwesomeIcon icon={faRectangle} className="h-4 w-4" />,
+      icon: <AspectRatioIcon ratio={[16, 10]} />,
     },
     {
       label: "Tall",
       selected: aspectRatio === "tall",
-      icon: <FontAwesomeIcon icon={faRectangleVertical} className="h-4 w-4" />,
+      icon: <AspectRatioIcon ratio={[10, 16]} />,
     },
     {
       label: "Square",
       selected: aspectRatio === "square",
-      icon: <FontAwesomeIcon icon={faSquare} className="h-4 w-4" />,
+      icon: <AspectRatioIcon ratio={[1, 1]} />,
     },
   ]);
   const [resolutionList, setResolutionList] = useState<PopoverItem[]>([
@@ -317,11 +312,18 @@ export const PromptBoxImage = ({
     }
   };
 
-  const getCurrentResolutionIcon = () => {
+  const getCurrentLegacyAspectRatioIcon = () => {
     const selected = aspectRatioList.find((item) => item.selected);
-    if (!selected || !selected.icon) return faRectangle;
-    const iconElement = selected.icon as React.ReactElement<{ icon: IconProp }>;
-    return iconElement.props.icon;
+    switch (selected?.label?.toLowerCase()) {
+      case "wide":
+        return <AspectRatioIcon ratio={[16, 10]} />;
+      case "tall":
+        return <AspectRatioIcon ratio={[10, 16]} />;
+      case "square":
+        return <AspectRatioIcon ratio={[1, 1]} />;
+      default:
+        return <AspectRatioIcon ratio={[16, 10]} />;
+    }
   };
 
   const getCurrentLegacyAspectRatio = (): EnqueueTextToImageSize => {
@@ -479,12 +481,7 @@ export const PromptBoxImage = ({
                       mode="toggle"
                       panelTitle="Aspect Ratio (Legacy)"
                       showIconsInList
-                      triggerIcon={
-                        <FontAwesomeIcon
-                          icon={getCurrentResolutionIcon()}
-                          className="h-4 w-4"
-                        />
-                      }
+                      triggerIcon={getCurrentLegacyAspectRatioIcon()}
                     />
                   </Tooltip>
                 )}

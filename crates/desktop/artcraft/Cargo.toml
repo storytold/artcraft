@@ -1,6 +1,6 @@
 [package]
 name = "artcraft"
-version = "0.7.0"
+version = "0.8.0"
 description = "Artcraft"
 authors = ["you"]
 license = ""
@@ -27,6 +27,7 @@ workspace-build-acceleration.workspace =  true
 
 # Internal
 artcraft_api_defs.workspace = true
+artcraft_router.workspace = true
 build_metadata.workspace = true
 cookie_store.workspace = true
 enums.workspace = true

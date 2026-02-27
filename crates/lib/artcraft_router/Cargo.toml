@@ -1,0 +1,29 @@
+[package]
+name = "artcraft_router"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "artcraft_router"
+path = "src/lib.rs"
+
+[dependencies]
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# Internal
+artcraft_api_defs.workspace = true
+storyteller_client.workspace = true
+tokens.workspace = true
+
+# External
+anyhow.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_derive.workspace = true
+tokio.workspace = true
+uuid.workspace = true

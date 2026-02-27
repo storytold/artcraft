@@ -16,6 +16,7 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   kling_2p1_pro: ModelCreator.Kling,
   kling_2p1_master: ModelCreator.Kling,
   seedance_1p0_lite: ModelCreator.Bytedance,
+  seedance_2p0: ModelCreator.Bytedance,
   sora_2: ModelCreator.OpenAi,
   veo_2: ModelCreator.Google,
   gemini_25_flash: ModelCreator.Google,
@@ -117,6 +118,7 @@ export const getModelDisplayName = (modelType: string): string => {
     kling_2p1_pro: "Kling 2.1 Pro",
     kling_2p1_master: "Kling 2.1 Master",
     seedance_1p0_lite: "Seedance 1.0 Lite",
+    seedance_2p0: "Seedance 2.0",
     veo_2: "Veo 2",
     sora_2: "Sora 2",
     recraft_3: "Recraft 3",
@@ -128,6 +130,7 @@ export const getModelDisplayName = (modelType: string): string => {
     gemini_25_flash: "Nano Banana",
     nano_banana: "Nano Banana",
     nano_banana_pro: "Nano Banana Pro",
+    flux_dev_juggernaut: "Flux Dev Juggernaut",
 
     // Catch-all bucket for Midjourney.
     midjourney: "Midjourney",

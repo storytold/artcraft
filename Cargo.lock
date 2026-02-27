@@ -677,10 +677,11 @@ checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 
 [[package]]
 name = "artcraft"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "anyhow",
  "artcraft_api_defs",
+ "artcraft_router",
  "base64 0.22.1",
  "build_metadata",
  "bytes",
@@ -737,6 +738,7 @@ dependencies = [
 name = "artcraft_api_defs"
 version = "0.0.1"
 dependencies = [
+ "anyhow",
  "chrono",
  "enums",
  "enums_public",
@@ -746,6 +748,22 @@ dependencies = [
  "tokens",
  "url",
  "utoipa",
+ "workspace-build-acceleration",
+]
+
+[[package]]
+name = "artcraft_router"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "artcraft_api_defs",
+ "log",
+ "serde",
+ "serde_derive",
+ "storyteller_client",
+ "tokens",
+ "tokio",
+ "uuid 1.18.1",
  "workspace-build-acceleration",
 ]
 

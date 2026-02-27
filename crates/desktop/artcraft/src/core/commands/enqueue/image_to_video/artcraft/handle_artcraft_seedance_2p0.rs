@@ -1,51 +1,59 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
-use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::{EnqueueImageToVideoRequest, SoraOrientation};
+use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::EnqueueImageToVideoRequest;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::events::generation_events::common::{GenerationModel};
+use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
-use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{Seedance2p0AspectRatio, Seedance2p0MultiFunctionVideoGenRequest};
+use artcraft_router::api::common_video_model::CommonVideoModel;
+use artcraft_router::api::image_list_ref::ImageListRef;
+use artcraft_router::api::image_ref::ImageRef;
+use artcraft_router::api::provider::Provider;
+use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
+use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
+use artcraft_router::client::router_client::RouterClient;
+use artcraft_router::generate::generate_video::begin_video_generation::begin_video_generation;
+use artcraft_router::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use idempotency::uuid::generate_random_uuid;
 use log::{error, info};
 use storyteller_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
-use storyteller_client::endpoints::generate::video::multi_function::seedance_2p0_multi_function_video_gen::seedance_2p0_multi_function_video_gen;
 
-pub (super) async fn handle_artcraft_seedance_2p0(
+pub(super) async fn handle_artcraft_seedance_2p0(
   request: &EnqueueImageToVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let client = RouterClient::Artcraft(RouterArtcraftClient::new(
+    app_env_configs.storyteller_host.clone(),
+    creds.clone(),
+  ));
 
-  let uuid_idempotency_token = generate_random_uuid();
+  let start_frame = request.image_media_token.as_ref().map(ImageRef::MediaFileToken);
+  let end_frame = request.end_frame_image_media_token.as_ref().map(ImageRef::MediaFileToken);
+  let reference_images = request.reference_image_media_tokens.as_ref().map(ImageListRef::MediaFileTokens);
 
-  let aspect_ratio = match request.sora_orientation {
-    Some(SoraOrientation::Portrait) => Seedance2p0AspectRatio::Portrait9x16,
-    Some(SoraOrientation::Landscape) => Seedance2p0AspectRatio::Landscape16x9,
-    None => Seedance2p0AspectRatio::Landscape16x9,
+  let router_request = GenerateVideoRequest {
+    model: CommonVideoModel::Seedance2p0,
+    provider: Provider::Artcraft,
+    prompt: request.prompt.as_deref(),
+    start_frame,
+    end_frame,
+    reference_images,
+    resolution: None,
+    aspect_ratio: request.aspect_ratio,
+    duration_seconds: request.duration_seconds,
+    video_batch_count: request.video_batch_count,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+    idempotency_token: None,
   };
 
-  let request = Seedance2p0MultiFunctionVideoGenRequest {
-    uuid_idempotency_token,
-    prompt: request.prompt.clone(),
-    start_frame_media_token: request.image_media_token.clone(),
-    end_frame_media_token: request.end_frame_image_media_token.clone(),
-    reference_image_media_tokens: None,
-    aspect_ratio: Some(aspect_ratio),
-    duration_seconds: None, // TODO: Parameterize
-    batch_count: None,
-  };
+  let plan = begin_video_generation(&router_request)?;
+  
+  info!("Video Generation Plan: {:?}", plan);
 
-  let result = seedance_2p0_multi_function_video_gen(
-    &app_env_configs.storyteller_host,
-    Some(&creds),
-    request,
-  ).await;
-
-  let job_token = match result {
-    Ok(enqueued) => {
+  let response = match plan.generate_video(&client).await {
+    Ok(resp) => {
       info!("Successfully enqueued.");
-      enqueued.inference_job_token
+      resp
     }
     Err(err) => {
       error!("Failed to enqueue: {:?}", err);
@@ -57,6 +65,6 @@ pub (super) async fn handle_artcraft_seedance_2p0(
     task_type: TaskType::VideoGeneration,
     model: Some(GenerationModel::Seedance2p0),
     provider: GenerationProvider::Artcraft,
-    provider_job_id: Some(job_token.to_string()),
+    provider_job_id: Some(response.inference_job_token.to_string()),
   })
 }

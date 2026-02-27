@@ -15,11 +15,9 @@ use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use idempotency::uuid::generate_random_uuid;
 use log::debug;
-use reqwest::multipart::Form;
+use reqwest::multipart::{Form, Part};
 use reqwest::Client;
 use serde_derive::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -44,11 +42,13 @@ pub async fn upload_new_engine_asset_from_file<P: AsRef<Path>>(
       .gzip(true)
       .build()?;
 
+  let file_bytes = std::fs::read(path.as_ref())?;
+  let file_name = path.as_ref().file_name()
+      .and_then(|n| n.to_str()).unwrap_or("file").to_string();
   let form = Form::new()
       .text("uuid_idempotency_token", generate_random_uuid())
-      .text("engine_category", "object") // TODO: Which type should we use? 
-      .file("file", path)
-      .await?;
+      .text("engine_category", "object") // TODO: Which type should we use?
+      .part("file", Part::bytes(file_bytes).file_name(file_name));
 
   let mut request_builder = client.post(url)
       .header("User-Agent", USER_AGENT)

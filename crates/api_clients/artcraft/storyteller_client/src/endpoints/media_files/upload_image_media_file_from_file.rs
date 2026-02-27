@@ -18,11 +18,9 @@ use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use idempotency::uuid::generate_random_uuid;
 use log::debug;
-use reqwest::multipart::Form;
+use reqwest::multipart::{Form, Part};
 use reqwest::Client;
 use serde_derive::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::Read;
 use std::path::Path;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -73,11 +71,13 @@ pub async fn upload_image_media_file_from_file<P: AsRef<Path>>(
       .build()
       .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
 
+  let file_bytes = std::fs::read(args.path.as_ref())
+      .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
+  let file_name = args.path.as_ref().file_name()
+      .and_then(|n| n.to_str()).unwrap_or("file").to_string();
   let mut form = Form::new()
       .text("uuid_idempotency_token", generate_random_uuid())
-      .file("file", args.path)
-      .await
-      .map_err(|err| StorytellerError::Client(ClientError::from(err)))?;
+      .part("file", Part::bytes(file_bytes).file_name(file_name));
 
   if args.is_intermediate_system_file {
     form = form.text("is_intermediate_system_file", "true");

@@ -36,3 +36,4 @@ serde_json.workspace = true
 utoipa = { version = "4", features = ["chrono", "actix_extras"] }
 
 [dev-dependencies]
+anyhow.workspace = true

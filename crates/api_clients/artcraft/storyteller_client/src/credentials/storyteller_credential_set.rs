@@ -1,3 +1,4 @@
+use crate::credentials::parse_multi_cookie_header::parse_multi_cookie_header;
 use crate::credentials::storyteller_avt_cookie::StorytellerAvtCookie;
 use crate::credentials::storyteller_session_cookie::StorytellerSessionCookie;
 
@@ -23,6 +24,10 @@ impl StorytellerCredentialSet {
       avt,
       session,
     }
+  }
+
+  pub fn parse_multi_cookie_header(header: &str) -> Result<Option<Self>, cookie::ParseError> {
+    parse_multi_cookie_header(header)
   }
 
   pub fn initialize_with_just_cookie(session: StorytellerSessionCookie) -> Self {

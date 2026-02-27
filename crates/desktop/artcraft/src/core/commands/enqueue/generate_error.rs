@@ -1,5 +1,7 @@
 use crate::core::artcraft_error::ArtcraftError;
 use anyhow::anyhow;
+use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
+use artcraft_router::errors::provider_error::ProviderError;
 use base64::DecodeError;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
@@ -209,5 +211,18 @@ impl From<StorytellerError> for GenerateError {
 impl From<WorldLabsError> for GenerateError {
   fn from(value: WorldLabsError) -> Self {
     Self::ProviderFailure(ProviderFailureReason::WorldLabsError(value))
+  }
+}
+
+impl From<ArtcraftRouterError> for GenerateError {
+  fn from(value: ArtcraftRouterError) -> Self {
+    match value {
+      ArtcraftRouterError::Client(e) => Self::BadInput(BadInputReason::WrongImageArguments(e.to_string())),
+      ArtcraftRouterError::UnsupportedModel(model) => Self::NotYetImplemented(format!("Unsupported model: {}", model)),
+      ArtcraftRouterError::InvalidInput(msg) => Self::BadInput(BadInputReason::WrongImageArguments(msg)),
+      ArtcraftRouterError::Provider(ProviderError::Storyteller(e)) => {
+        Self::ProviderFailure(ProviderFailureReason::StorytellerError(e))
+      }
+    }
   }
 }

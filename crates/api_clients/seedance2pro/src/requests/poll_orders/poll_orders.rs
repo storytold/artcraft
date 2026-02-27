@@ -79,8 +79,9 @@ pub struct VideoResult {
   pub url: String,
   pub width: u32,
   pub height: u32,
-  /// Width / height ratio (e.g. 1.777… for 16:9).
-  pub ratio: f64,
+  // NB: We don't need these.
+  // /// Width / height ratio (e.g. 1.777… for 16:9). `None` when the server returns null (e.g. width/height are 0).
+  // pub ratio: Option<f64>,
 }
 
 /// The status of one order (one video generation task).
@@ -179,7 +180,7 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         url: r.url,
         width: r.width,
         height: r.height,
-        ratio: r.ratio,
+        // ratio: r.ratio,
       }).collect(),
       fail_reason: o.fail_reason,
       created_at: o.created_at,

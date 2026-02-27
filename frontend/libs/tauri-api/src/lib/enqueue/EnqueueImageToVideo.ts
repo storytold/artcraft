@@ -44,6 +44,16 @@ export interface EnqueueImageToVideoRequest {
 
   // Optional. Whether to generate audio alongside the video (used by some models like Veo2)
   generate_audio?: boolean;
+
+  // Optional. Common aspect ratio for other models. 
+  // Not all are supported by all models, but Artcraft will compensate.
+  aspect_ratio?: string; // TODO: Typesafety.
+
+  // Optional. Duration in seconds.
+  duration_seconds?: number;
+
+  // Optional. Reference image media tokens (for reference mode).
+  reference_image_media_tokens?: string[];
 }
 
 interface RawEnqueueImageToVideoRequest {
@@ -55,8 +65,11 @@ interface RawEnqueueImageToVideoRequest {
   frontend_caller?: string;
   frontend_subscriber_id?: string;
   sora_orientation?: "portrait" | "landscape";
-  grok_aspect_ratio?:  "portrait" | "landscape" | "square";
+  grok_aspect_ratio?: "portrait" | "landscape" | "square";
   generate_audio?: boolean;
+  aspect_ratio?: string; // TODO: Typesafety.
+  duration_seconds?: number;
+  reference_image_media_tokens?: string[];
 }
 
 export interface EnqueueImageToVideoError extends CommandResult {
@@ -75,7 +88,7 @@ export type EnqueueImageToVideoResult =
   | EnqueueImageToVideoError;
 
 export const EnqueueImageToVideo = async (
-  request: EnqueueImageToVideoRequest
+  request: EnqueueImageToVideoRequest,
 ): Promise<EnqueueImageToVideoResult> => {
   const mutableRequest: RawEnqueueImageToVideoRequest = {
     model: request.model?.tauriId,
@@ -113,6 +126,22 @@ export const EnqueueImageToVideo = async (
 
   if (typeof request.generate_audio === "boolean") {
     mutableRequest.generate_audio = request.generate_audio;
+  }
+
+  if (request.aspect_ratio) {
+    mutableRequest.aspect_ratio = request.aspect_ratio;
+  }
+
+  if (typeof request.duration_seconds === "number") {
+    mutableRequest.duration_seconds = request.duration_seconds;
+  }
+
+  if (
+    request.reference_image_media_tokens &&
+    request.reference_image_media_tokens.length > 0
+  ) {
+    mutableRequest.reference_image_media_tokens =
+      request.reference_image_media_tokens;
   }
 
   const result = await invoke("enqueue_image_to_video_command", {

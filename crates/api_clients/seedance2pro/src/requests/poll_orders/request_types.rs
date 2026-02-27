@@ -38,5 +38,5 @@ pub(super) struct RawVideoResult {
   pub url: String,
   pub width: u32,
   pub height: u32,
-  pub ratio: f64,
+  // pub ratio: Option<f64>,
 }

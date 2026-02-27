@@ -10,9 +10,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     fullName: "Grok Video",
     category: "video",
     creator: ModelCreator.Grok,
-    providers: [
-      GenerationProvider.Grok
-    ],
+    providers: [GenerationProvider.Grok],
     selectorName: "Grok Video",
     selectorDescription: "Fastest video model",
     selectorBadges: ["20 sec."],
@@ -141,22 +139,39 @@ export const VIDEO_MODELS: VideoModel[] = [
     requiresImage: false,
     sizeOptions: [
       {
-        tauriValue: "landscape",
-        textLabel: "Landscape",
-        icon: SizeIconOption.Landscape,
-      },
-      {
-        tauriValue: "portrait",
-        textLabel: "Portrait",
-        icon: SizeIconOption.Portrait,
+        tauriValue: "wide_sixteen_by_nine",
+        textLabel: "16:9",
+        icon: SizeIconOption.Landscape16x9,
       },
       {
         tauriValue: "square",
-        textLabel: "Square",
+        textLabel: "1:1",
         icon: SizeIconOption.Square,
       },
+      {
+        tauriValue: "tall_three_by_four",
+        textLabel: "3:4",
+        icon: SizeIconOption.Portrait3x4,
+      },
+      {
+        tauriValue: "wide_four_by_three",
+        textLabel: "4:3",
+        icon: SizeIconOption.Standard4x3,
+      },
+      {
+        tauriValue: "tall_nine_by_sixteen",
+        textLabel: "9:16",
+        icon: SizeIconOption.Portrait9x16,
+      },
     ],
-    progressBarTime: 100000,
+    durationOptions: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    defaultDuration: 5,
+    supportsReferenceMode: true,
+    maxReferenceImages: 3,
+    resolutionOptions: ["480p", "720p"],
+    defaultResolution: "720p",
+    supportsSystemPrompt: false,
+    progressBarTime: 360000,
   }),
   new VideoModel({
     id: "sora_2",
@@ -164,10 +179,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     fullName: "Sora 2",
     category: "video",
     creator: ModelCreator.OpenAi,
-    providers: [
-      GenerationProvider.Artcraft,
-      GenerationProvider.Sora,
-    ],
+    providers: [GenerationProvider.Artcraft, GenerationProvider.Sora],
     selectorName: "Sora 2",
     selectorDescription: "Smart video model",
     selectorBadges: ["2 min."],

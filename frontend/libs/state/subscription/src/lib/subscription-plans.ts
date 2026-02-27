@@ -58,8 +58,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlanDetails[] = [
     originalMonthlyPrice: 60,
     originalYearlyPrice: 720,
     features: [
-      { text: "~100,000 Nano Banana Pro 4K images", included: true },
-      { text: "~100,000 GPT-Image-1.5 images", included: true },
+      { text: "~10,000 Nano Banana Pro 4K images", included: true },
+      { text: "~10,000 GPT-Image-1.5 images", included: true },
       { text: "~30 minutes Kling video", included: true },
       { text: "You Own ArtCraft Forever", included: true },
     ],

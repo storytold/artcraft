@@ -98,34 +98,48 @@ export const usePromptImageStore = create<PromptImageStore>()((set) => ({
 }));
 
 // ----- Video Prompt Box Store -----
+export type VideoInputMode = "keyframe" | "reference";
+
 interface PromptVideoStore {
   prompt: string;
   resolution: Resolution | string;
+  aspectRatio: string | null;
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
   endFrameImage?: RefImage;
   generateWithSound: boolean;
+  duration: number | null;
+  inputMode: VideoInputMode;
   setPrompt: (prompt: string) => void;
   setResolution: (resolution: Resolution | string) => void;
+  setAspectRatio: (aspectRatio: string | null) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
   setEndFrameImage: (image?: RefImage) => void;
   setGenerateWithSound: (value: boolean) => void;
+  setDuration: (duration: number | null) => void;
+  setInputMode: (mode: VideoInputMode) => void;
 }
 
 export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   prompt: "",
   resolution: "720p",
+  aspectRatio: null,
   useSystemPrompt: true,
   referenceImages: [],
   endFrameImage: undefined,
   generateWithSound: true,
+  duration: null,
+  inputMode: "keyframe",
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
+  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
   setEndFrameImage: (endFrameImage) => set({ endFrameImage }),
   setGenerateWithSound: (generateWithSound) => set({ generateWithSound }),
+  setDuration: (duration) => set({ duration }),
+  setInputMode: (inputMode) => set({ inputMode }),
 }));
 
 // ----- Edit Prompt Box Store -----

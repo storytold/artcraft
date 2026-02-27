@@ -2,6 +2,8 @@ import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import dayjs from "dayjs";
 import {
+  faChevronLeft,
+  faChevronRight,
   faCube,
   faDownToLine,
   faGlobe,
@@ -85,6 +87,8 @@ interface LightboxModalProps {
     media_id?: string,
   ) => Promise<void> | void;
   batchImageToken?: string;
+  onNavigatePrev?: () => void;
+  onNavigateNext?: () => void;
 }
 
 export function LightboxModal({
@@ -109,6 +113,8 @@ export function LightboxModal({
   onRemoveBackgroundClicked,
   onMake3DWorldClicked,
   batchImageToken,
+  onNavigatePrev,
+  onNavigateNext,
 }: LightboxModalProps) {
   // NB(bt,2025-06-14): We add ?cors=1 to the image url to prevent caching "sec-fetch-mode: no-cors" from
   // the <image> tag request from being cached. If we then drag it into the canvas after it's been cached,
@@ -142,12 +148,9 @@ export function LightboxModal({
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
 
-  const [currentMediaId, setCurrentMediaId] = useState<string | undefined>(
-    mediaId,
-  );
-  useEffect(() => {
-    setCurrentMediaId(mediaId);
-  }, [mediaId]);
+  // Stable API instances
+  const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
+  const promptsApi = useMemo(() => new PromptsApi(), []);
 
   useEffect(() => {
     if (isOpen) {
@@ -172,38 +175,41 @@ export function LightboxModal({
     };
   }, []);
 
+  // Fetch prompt when mediaId changes — debounced to avoid API spam during
+  // rapid next/prev navigation, with cancellation for stale responses.
   useEffect(() => {
-    if (!batchImageToken) {
-      setBatchImages(null);
-      setBatchTokens(null);
+    if (!mediaId) {
+      setPrompt(null);
+      setHasPromptToken(false);
+      setGenerationProvider(null);
+      setModelType(null);
+      setContextImages(null);
+      setPromptLoading(false);
+      return;
     }
-  }, [mediaId, imageUrl, batchImageToken]);
 
-  // Fetch prompt when mediaId changes
-  useEffect(() => {
-    const fetchPrompt = async () => {
-      if (!currentMediaId) {
-        setPrompt(null);
-        setHasPromptToken(false);
-        setGenerationProvider(null);
-        setModelType(null);
-        setContextImages(null);
-        return;
-      }
+    // Immediately show skeletons & clear stale data
+    setPromptLoading(true);
+    setPrompt(null);
+    setGenerationProvider(null);
+    setModelType(null);
+    setContextImages(null);
 
-      setPromptLoading(true);
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
       try {
-        const mediaFilesApi = new MediaFilesApi();
         const mediaResponse = await mediaFilesApi.GetMediaFileByToken({
-          mediaFileToken: currentMediaId,
+          mediaFileToken: mediaId,
         });
+        if (cancelled) return;
 
         if (mediaResponse.success && mediaResponse.data?.maybe_prompt_token) {
           setHasPromptToken(true);
-          const promptsApi = new PromptsApi();
           const promptResponse = await promptsApi.GetPromptsByToken({
             token: mediaResponse.data.maybe_prompt_token,
           });
+          if (cancelled) return;
 
           if (promptResponse.success && promptResponse.data) {
             const promptData = promptResponse.data;
@@ -225,6 +231,7 @@ export function LightboxModal({
           setContextImages(null);
         }
       } catch (error) {
+        if (cancelled) return;
         console.error("Error fetching prompt:", error);
         setHasPromptToken(false);
         setPrompt(null);
@@ -232,12 +239,15 @@ export function LightboxModal({
         setModelType(null);
         setContextImages(null);
       } finally {
-        setPromptLoading(false);
+        if (!cancelled) setPromptLoading(false);
       }
-    };
+    }, 180);
 
-    fetchPrompt();
-  }, [currentMediaId]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [mediaId, mediaFilesApi, promptsApi]);
 
   // Detect if prompt text is clamped (overflows the 4-line clamp)
   useEffect(() => {
@@ -256,18 +266,27 @@ export function LightboxModal({
     return () => cancelAnimationFrame(raf);
   }, [prompt, promptLoading, isPromptExpanded]);
 
+  // Fetch batch images — debounced + cancellable like fetchPrompt above.
   useEffect(() => {
-    const fetchBatch = async () => {
-      if (!batchImageToken) {
-        setBatchImages(null);
-        setBatchTokens(null);
-        return;
-      }
+    if (!batchImageToken) {
+      setBatchImages(null);
+      setBatchTokens(null);
+      return;
+    }
+
+    // Clear stale batch data immediately
+    setBatchImages(null);
+    setBatchTokens(null);
+
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
       try {
-        const mediaFilesApi = new MediaFilesApi();
         const response = await mediaFilesApi.GetMediaFilesByBatchToken({
           batchToken: batchImageToken,
         });
+        if (cancelled) return;
+
         if (response.success && response.data?.length) {
           const items = response.data
             .map((file: any) => ({
@@ -302,13 +321,17 @@ export function LightboxModal({
           setBatchTokens(null);
         }
       } catch (error: unknown) {
+        if (cancelled) return;
         setBatchImages(null);
         setBatchTokens(null);
       }
-    };
+    }, 200);
 
-    fetchBatch();
-  }, [batchImageToken, mediaId, imageUrl]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [batchImageToken, mediaId, imageUrl, mediaFilesApi]);
 
   const effectiveImageUrls = useMemo(() => {
     if (batchImages && batchImages.length > 0) {
@@ -336,29 +359,32 @@ export function LightboxModal({
     [emblaMainApi, emblaThumbsApi],
   );
 
-  const onDeleteClicked = (mediaToken: string) => {
-    showActionReminder({
-      reminderType: "default",
-      title: "Delete this media?",
-      message: (
-        <p className="text-sm text-white/70">
-          This will permanently remove the media from your library. This action
-          cannot be undone.
-        </p>
-      ),
-      primaryActionText: "Delete",
-      secondaryActionText: "Cancel",
-      primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
-      onPrimaryAction: async () => {
-        try {
-          await MediaFileDelete(mediaToken);
-        } finally {
-          isActionReminderOpen.value = false;
-          onClose();
-        }
-      },
-    });
-  };
+  const onDeleteClicked = useCallback(
+    (mediaToken: string) => {
+      showActionReminder({
+        reminderType: "default",
+        title: "Delete this media?",
+        message: (
+          <p className="text-sm text-white/70">
+            This will permanently remove the media from your library. This
+            action cannot be undone.
+          </p>
+        ),
+        primaryActionText: "Delete",
+        secondaryActionText: "Cancel",
+        primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
+        onPrimaryAction: async () => {
+          try {
+            await MediaFileDelete(mediaToken);
+          } finally {
+            isActionReminderOpen.value = false;
+            onClose();
+          }
+        },
+      });
+    },
+    [onClose],
+  );
 
   const onSelect = useCallback(() => {
     if (!emblaMainApi || !emblaThumbsApi) return;
@@ -414,9 +440,32 @@ export function LightboxModal({
     };
   }, [selectedImageUrl]);
 
-  const derivedMediaClass =
-    mediaClass ??
-    (batchImages && batchImages.length > 0 ? "image" : mediaClass);
+  const derivedMediaClass = useMemo(
+    () =>
+      mediaClass ??
+      (batchImages && batchImages.length > 0 ? "image" : mediaClass),
+    [mediaClass, batchImages],
+  );
+
+  // Keyboard navigation for gallery prev/next
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't navigate if user is interacting with an input, textarea, etc.
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (e.key === "ArrowLeft" && onNavigatePrev) {
+        e.preventDefault();
+        onNavigatePrev();
+      } else if (e.key === "ArrowRight" && onNavigateNext) {
+        e.preventDefault();
+        onNavigateNext();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onNavigatePrev, onNavigateNext]);
 
   return (
     <>
@@ -440,7 +489,7 @@ export function LightboxModal({
         {/* content grid */}
         <div className="flex h-full gap-4">
           {/* image panel - flexible width */}
-          <div className="relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
+          <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
             {!selectedImageUrl ? (
               <div className="flex h-full w-full items-center justify-center bg-black/30">
                 <span className="text-base-fg/60">Image not available</span>
@@ -448,6 +497,7 @@ export function LightboxModal({
             ) : mediaClass === "dimensional" ? (
               <div className="h-full w-full">
                 <Viewer3D
+                  key={selectedImageUrl}
                   modelUrl={selectedImageUrl}
                   isActive={true}
                   showGrid={true}
@@ -551,6 +601,32 @@ export function LightboxModal({
                   <LoadingSpinner className="h-12 w-12 text-base-fg" />
                 </div>
               )}
+
+            {/* Gallery navigation arrows – only visible on hover */}
+            {onNavigatePrev && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigatePrev();
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
+                aria-label="Previous item"
+              >
+                <FontAwesomeIcon icon={faChevronLeft} className="text-lg" />
+              </button>
+            )}
+            {onNavigateNext && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigateNext();
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100 focus:outline-none"
+                aria-label="Next item"
+              >
+                <FontAwesomeIcon icon={faChevronRight} className="text-lg" />
+              </button>
+            )}
           </div>
 
           {/* info + actions - fixed width */}
@@ -571,7 +647,7 @@ export function LightboxModal({
                 </div>
               )}
 
-              {hasPromptToken && (
+              {(hasPromptToken || promptLoading) && (
                 <>
                   {/* Prompt */}
                   <div className="space-y-1.5">
@@ -619,11 +695,10 @@ export function LightboxModal({
                       }}
                     >
                       {promptLoading ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingSpinner className="h-4 w-4" />
-                          <span className="text-sm text-base-fg/80">
-                            Loading prompt...
-                          </span>
+                        <div className="animate-pulse space-y-2">
+                          <div className="h-3 w-full rounded bg-white/10" />
+                          <div className="h-3 w-4/5 rounded bg-white/10" />
+                          <div className="h-3 w-3/5 rounded bg-white/10" />
                         </div>
                       ) : (
                         <div
@@ -673,84 +748,125 @@ export function LightboxModal({
                       )}
                   </div>
 
-                  {contextImages && contextImages.length > 0 && (
-                    <div className="space-y-1.5">
-                      <div className="text-sm font-medium text-base-fg/90">
-                        Reference Images
+                  {promptLoading ? (
+                    /* Skeleton placeholders while fetching metadata */
+                    <>
+                      {/* Reference Images skeleton */}
+                      <div className="space-y-1.5 animate-pulse">
+                        <div className="h-3.5 w-28 rounded bg-white/10" />
+                        <div className="flex gap-1.5">
+                          <div className="h-12 w-12 rounded-lg bg-white/10" />
+                          <div className="h-12 w-12 rounded-lg bg-white/10" />
+                          <div className="h-12 w-12 rounded-lg bg-white/10" />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-6 gap-2 w-fit">
-                        {contextImages.map((contextImage, index) => {
-                          const { thumbnail, fullSize } =
-                            getContextImageThumbnail(contextImage, {
-                              size: THUMBNAIL_SIZES.SMALL,
-                            });
-
-                          return (
-                            <div
-                              key={contextImage.media_token}
-                              className="glass relative aspect-square overflow-hidden rounded-lg w-12 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
-                              onClick={() => setRefPreviewUrl(fullSize)}
-                            >
-                              <img
-                                src={thumbnail}
-                                alt={`Reference image ${index + 1}`}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-                          );
-                        })}
+                      {/* Generation Details skeleton */}
+                      <div className="space-y-1.5 animate-pulse">
+                        <div className="h-3.5 w-32 rounded bg-white/10" />
+                        <div
+                          className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-ui-panel-border"
+                          style={{
+                            background: "rgb(var(--st-controls-rgb) / 0.20)",
+                          }}
+                        >
+                          <div className="h-3.5 w-12 rounded bg-white/10" />
+                          <div className="h-3.5 w-24 rounded bg-white/10" />
+                        </div>
+                        <div
+                          className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-ui-panel-border"
+                          style={{
+                            background: "rgb(var(--st-controls-rgb) / 0.20)",
+                          }}
+                        >
+                          <div className="h-3.5 w-14 rounded bg-white/10" />
+                          <div className="h-3.5 w-20 rounded bg-white/10" />
+                        </div>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Generation Details */}
-                  {(generationProvider || modelType) && (
-                    <div className="space-y-1.5">
-                      <div className="text-sm font-medium text-base-fg/90">
-                        Generation Details
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        {modelType && (
-                          <div
-                            className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
-                            style={{
-                              background: "rgb(var(--st-controls-rgb) / 0.20)",
-                            }}
-                          >
-                            <span className="text-sm text-base-fg/70 font-medium">
-                              Model
-                            </span>
-                            <div className="flex items-center gap-2">
-                              {getModelCreatorIcon(modelType)}
-                              <span className="text-sm text-base-fg rounded">
-                                {getModelDisplayName(modelType)}
-                              </span>
-                            </div>
+                    </>
+                  ) : (
+                    <>
+                      {contextImages && contextImages.length > 0 && (
+                        <div className="space-y-1.5">
+                          <div className="text-sm font-medium text-base-fg/90">
+                            Reference Images
                           </div>
-                        )}
-                        {generationProvider && (
-                          <div
-                            className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
-                            style={{
-                              background: "rgb(var(--st-controls-rgb) / 0.20)",
-                            }}
-                          >
-                            <span className="text-sm text-base-fg/70 font-medium">
-                              Provider
-                            </span>
-                            <div className="flex items-center gap-2">
-                              {getProviderIconByName(
-                                generationProvider,
-                                "h-4 w-4 invert",
-                              )}
-                              <span className="text-sm text-base-fg rounded">
-                                {getProviderDisplayName(generationProvider)}
-                              </span>
-                            </div>
+                          <div className="grid grid-cols-5 gap-1.5 w-fit">
+                            {contextImages.map((contextImage, index) => {
+                              const { thumbnail, fullSize } =
+                                getContextImageThumbnail(contextImage, {
+                                  size: THUMBNAIL_SIZES.SMALL,
+                                });
+
+                              return (
+                                <div
+                                  key={contextImage.media_token}
+                                  className="glass relative aspect-square overflow-hidden rounded-lg w-12 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
+                                  onClick={() => setRefPreviewUrl(fullSize)}
+                                >
+                                  <img
+                                    src={thumbnail}
+                                    alt={`Reference image ${index + 1}`}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </div>
+                              );
+                            })}
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
+                      )}
+
+                      {/* Generation Details */}
+                      {(generationProvider || modelType) && (
+                        <div className="space-y-1.5">
+                          <div className="text-sm font-medium text-base-fg/90">
+                            Generation Details
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            {modelType && (
+                              <div
+                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                                style={{
+                                  background:
+                                    "rgb(var(--st-controls-rgb) / 0.20)",
+                                }}
+                              >
+                                <span className="text-sm text-base-fg/70 font-medium">
+                                  Model
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  {getModelCreatorIcon(modelType)}
+                                  <span className="text-sm text-base-fg rounded">
+                                    {getModelDisplayName(modelType)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            {generationProvider && (
+                              <div
+                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                                style={{
+                                  background:
+                                    "rgb(var(--st-controls-rgb) / 0.20)",
+                                }}
+                              >
+                                <span className="text-sm text-base-fg/70 font-medium">
+                                  Provider
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  {getProviderIconByName(
+                                    generationProvider,
+                                    "h-4 w-4 invert",
+                                  )}
+                                  <span className="text-sm text-base-fg rounded">
+                                    {getProviderDisplayName(generationProvider)}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}

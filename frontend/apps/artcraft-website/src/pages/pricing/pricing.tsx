@@ -9,7 +9,7 @@ const Pricing = () => {
         title="Pricing - ArtCraft"
         description="Simple, transparent pricing for ArtCraft. Start for free and scale as you grow."
       />
-      <div className="dotted-pattern absolute inset-0 z-[0] opacity-50" />
+      <div className="dotted-pattern absolute inset-0 z-[0] opacity-50 pointer-events-none" />
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
         <div className="w-[900px] h-[900px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]"></div>
       </div>
@@ -26,9 +26,9 @@ const Pricing = () => {
         <p className="text-md text-white/80 leading-relaxed">
           &dagger; ArtCraft can be used without paying for a subscription. You
           can bring your own compute and third party subscriptions. We hope
-          you'll subscribe, though, as that helps accelerate our development. 
-          Pricing table is a placeholder. We charge below FAL API pricing, 
-          which is highly competitive.
+          you'll subscribe, though, as that helps accelerate our development.
+          Pricing table is a placeholder. We charge below FAL API pricing, which
+          is highly competitive.
         </p>
       </div>
 

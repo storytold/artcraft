@@ -60,6 +60,7 @@ interface ImagePromptRowProps {
   uploadImage?: UploadImageFn;
   onImageClick?: (image: RefImage) => void;
   isVideo?: boolean;
+  isReferenceMode?: boolean;
   endFrameImage?: RefImage;
   setEndFrameImage?: (image?: RefImage) => void;
   allowUploadEnd?: boolean;
@@ -77,6 +78,7 @@ export const ImagePromptRow = ({
   uploadImage,
   onImageClick,
   isVideo,
+  isReferenceMode,
   endFrameImage,
   setEndFrameImage,
   allowUploadEnd,
@@ -116,7 +118,7 @@ export const ImagePromptRow = ({
     })
   );
 
-  const SortableImage = ({ image }: { image: RefImage }) => {
+  const SortableImage = ({ image, index }: { image: RefImage; index: number }) => {
     const {
       attributes,
       listeners,
@@ -151,6 +153,11 @@ export const ImagePromptRow = ({
           alt="Reference"
           className="h-full w-full object-cover"
         />
+        {isReferenceMode && (
+          <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
+            {index + 1}
+          </div>
+        )}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -413,8 +420,12 @@ export const ImagePromptRow = ({
               <div className="flex items-center gap-2 opacity-90 text-base-fg">
                 <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
                 <span className="text-sm font-medium flex items-center gap-1.5">
-                  {isVideo ? "Starting Frame" : "Image Prompts"}
-                  {!isVideo && (
+                  {isVideo
+                    ? isReferenceMode
+                      ? "Reference Images"
+                      : "Starting Frame"
+                    : "Image Prompts"}
+                  {(!isVideo || isReferenceMode) && (
                     <span className="text-base-fg/60 font-semibold">
                       ({usedSlotsRender}/{maxImagePromptCount})
                     </span>
@@ -422,7 +433,11 @@ export const ImagePromptRow = ({
                 </span>
               </div>
               <span className="text-[13px] text-base-fg/60">
-                {isVideo ? "Animate an image" : "Use the elements of an image"}
+                {isVideo
+                  ? isReferenceMode
+                    ? "Upload images"
+                    : "Animate an image"
+                  : "Use the elements of an image"}
               </span>
             </div>
 
@@ -441,15 +456,15 @@ export const ImagePromptRow = ({
                   >
                     {referenceImages
                       .slice(0, Math.max(0, maxImagePromptCount))
-                      .map((image) => (
-                        <SortableImage key={image.id} image={image} />
+                      .map((image, index) => (
+                        <SortableImage key={image.id} image={image} index={index} />
                       ))}
                   </SortableContext>
                 </DndContext>
               ) : (
                 referenceImages
                   .slice(0, Math.max(0, maxImagePromptCount))
-                  .map((image) => (
+                  .map((image, index) => (
                     <div
                       key={image.id}
                       className="glass relative aspect-square overflow-hidden rounded-lg w-14 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
@@ -460,6 +475,11 @@ export const ImagePromptRow = ({
                         alt="Reference"
                         className="h-full w-full object-cover"
                       />
+                      {isReferenceMode && (
+                        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center bg-black/60 py-0.5 text-[11px] font-bold text-white">
+                          {index + 1}
+                        </div>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

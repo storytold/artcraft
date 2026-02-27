@@ -22,6 +22,7 @@ use crate::services::grok::state::grok_credential_manager::GrokCredentialManager
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
+use artcraft_router::api::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use log::{error, info, warn};
@@ -101,6 +102,10 @@ pub struct EnqueueImageToVideoRequest {
   /// TODO: In the future we may support base64 images, URLs, or file paths here.
   pub end_frame_image_media_token: Option<MediaFileToken>,
 
+  /// OPTIONAL.
+  /// Reference images for the video generation (e.g. character consistency, props, etc.)
+  pub reference_image_media_tokens: Option<Vec<MediaFileToken>>,
+
   /// Optional.
   /// Text prompt used to direct the video.
   pub prompt: Option<String>,
@@ -109,6 +114,18 @@ pub struct EnqueueImageToVideoRequest {
   /// Generate the video with audio, if there is an option.
   /// Typically, this costs money when presented as an option, so we default to off.
   pub generate_audio: Option<bool>,
+
+  /// OPTIONAL.
+  /// Aspect ratio for the generated video.
+  pub aspect_ratio: Option<CommonAspectRatio>,
+
+  /// OPTIONAL.
+  /// Duration of the generated video in seconds.
+  pub duration_seconds: Option<u16>,
+
+  /// OPTIONAL.
+  /// Number of videos to generate in one batch.
+  pub video_batch_count: Option<u16>,
 
   /// OPTIONAL.
   /// Only for Sora2 model currently.

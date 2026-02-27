@@ -26,6 +26,27 @@ export class VideoModel extends Model {
   // Whether this model supports toggling generation with sound
   readonly generateWithSound?: boolean;
 
+  // Available duration options in seconds (e.g. [4, 5, 6, 7, 8, 9])
+  readonly durationOptions?: number[];
+
+  // Default duration in seconds
+  readonly defaultDuration?: number;
+
+  // Whether the model supports multi-image reference mode
+  readonly supportsReferenceMode?: boolean;
+
+  // Maximum number of reference images in reference mode
+  readonly maxReferenceImages?: number;
+
+  // Available resolution options (e.g. ["480p", "720p"])
+  readonly resolutionOptions?: string[];
+
+  // Default resolution
+  readonly defaultResolution?: string;
+
+  // Whether the model supports the system prompt toggle (default true)
+  readonly supportsSystemPrompt: boolean;
+
   constructor(args: {
     id: string;
     tauriId: string;
@@ -43,6 +64,13 @@ export class VideoModel extends Model {
     progressBarTime?: number;
     generateWithSound?: boolean;
     providers?: GenerationProvider[];
+    durationOptions?: number[];
+    defaultDuration?: number;
+    supportsReferenceMode?: boolean;
+    maxReferenceImages?: number;
+    resolutionOptions?: string[];
+    defaultResolution?: string;
+    supportsSystemPrompt?: boolean;
   }) {
     super(args);
     this.startFrame = args.startFrame;
@@ -50,5 +78,12 @@ export class VideoModel extends Model {
     this.requiresImage = args.requiresImage;
     this.sizeOptions = args.sizeOptions ?? [];
     this.generateWithSound = args.generateWithSound || false;
+    this.durationOptions = args.durationOptions;
+    this.defaultDuration = args.defaultDuration;
+    this.supportsReferenceMode = args.supportsReferenceMode;
+    this.maxReferenceImages = args.maxReferenceImages;
+    this.resolutionOptions = args.resolutionOptions;
+    this.defaultResolution = args.defaultResolution;
+    this.supportsSystemPrompt = args.supportsSystemPrompt ?? true;
   }
 }

@@ -49,7 +49,7 @@ const unregisterModal = (id: number) => {
 
 const updateModal = (
   id: number,
-  data: Partial<{ zIndex: number; onClose: () => void; closeOnEsc: boolean }>
+  data: Partial<{ zIndex: number; onClose: () => void; closeOnEsc: boolean }>,
 ) => {
   const entry = modalRegistry.find((m) => m.id === id);
   if (entry) Object.assign(entry, data);
@@ -119,7 +119,7 @@ interface ModalExpandContextType {
   toggleExpanded: () => void;
 }
 const ModalExpandContext = createContext<ModalExpandContextType | undefined>(
-  undefined
+  undefined,
 );
 
 // Expand button subcomponent
@@ -146,7 +146,7 @@ const ExpandButton = ({ className, size = "md" }: ExpandButtonProps) => {
         "flex items-center justify-center rounded-full bg-black/40 text-white/60 transition-all hover:bg-black/70 hover:text-white",
         sizeClasses[size],
         "relative z-[70]",
-        className
+        className,
       )}
     >
       <FontAwesomeIcon
@@ -213,7 +213,7 @@ export const Modal = ({
 }) => {
   // Draggable logic
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
-    null
+    null,
   );
   const [dragging, setDragging] = useState(false);
   const [resizing, setResizing] = useState(false);
@@ -472,24 +472,24 @@ export const Modal = ({
           return child;
         })
       : isValidElement(children) &&
-        (children.type === DragHandle ||
-          (children.type as any).displayName === "ModalDragHandle")
-      ? (() => {
-          const typedChildren = children as React.ReactElement<{
-            children: ReactNode;
-          }>;
-          return cloneElement(typedChildren, {
-            children: (
-              <div
-                style={{ cursor: "move", userSelect: "none" }}
-                onMouseDown={handleDragStart}
-              >
-                {typedChildren.props.children}
-              </div>
-            ),
-          });
-        })()
-      : children;
+          (children.type === DragHandle ||
+            (children.type as any).displayName === "ModalDragHandle")
+        ? (() => {
+            const typedChildren = children as React.ReactElement<{
+              children: ReactNode;
+            }>;
+            return cloneElement(typedChildren, {
+              children: (
+                <div
+                  style={{ cursor: "move", userSelect: "none" }}
+                  onMouseDown={handleDragStart}
+                >
+                  {typedChildren.props.children}
+                </div>
+              ),
+            });
+          })()
+        : children;
   }
 
   /**
@@ -673,7 +673,7 @@ export const Modal = ({
 
   // Size (width & height) state for resizable modal
   const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null
+    null,
   );
   const sizeRef = useRef<{ width: number; height: number } | null>(null);
   const lastSizeRef = useRef<{ width: number; height: number } | null>(null);
@@ -737,7 +737,7 @@ export const Modal = ({
       if (target) {
         // Allow if target is inside a popover, dropdown, or other interactive UI
         const isInPopover = target.closest(
-          '[role="dialog"], [role="menu"], [role="listbox"], [data-headlessui-portal]'
+          '[role="dialog"], [role="menu"], [role="listbox"], [data-headlessui-portal]',
         );
         if (isInPopover) return;
 
@@ -810,7 +810,7 @@ export const Modal = ({
     // so long as background interaction is requested.
     const stripInertFromPortals = () => {
       const portals = document.querySelectorAll(
-        "[data-radix-portal][inert], [data-headlessui-portal][inert]"
+        "[data-radix-portal][inert], [data-headlessui-portal][inert]",
       );
       portals.forEach((el) => el.removeAttribute("inert"));
     };
@@ -930,7 +930,7 @@ export const Modal = ({
                   disableHotkeyInput={disableHotkeyInput}
                   enableHotkeyInput={enableHotkeyInput}
                 />
-              ) : null
+              ) : null,
             )}
           {allowBackgroundInteraction && (
             <div
@@ -980,7 +980,7 @@ export const Modal = ({
                         className,
                         "!transition-none", // Always disable CSS transitions for spring animations
                         expanded &&
-                          "w-screen h-screen max-w-screen max-h-screen rounded-none"
+                          "w-screen h-screen max-w-screen max-h-screen rounded-none",
                       )}
                       ref={modalRef}
                       style={{
@@ -989,6 +989,7 @@ export const Modal = ({
                         transform: styles.transform,
                         transformOrigin: "center center",
                         willChange: "transform, opacity", // Optimize for animations
+                        outline: "none",
                       }}
                     >
                       <div className="w-full h-full">
@@ -1002,7 +1003,7 @@ export const Modal = ({
                         {title ? (
                           <Dialog.Title
                             className={twMerge(
-                              "mb-4 flex justify-between pb-0 text-xl font-bold text-base-fg"
+                              "mb-4 flex justify-between pb-0 text-xl font-bold text-base-fg",
                             )}
                           >
                             <>

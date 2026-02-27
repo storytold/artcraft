@@ -5,7 +5,7 @@ use crate::error::storyteller_error::StorytellerError;
 use crate::utils::api_host::ApiHost;
 use crate::utils::constants::{APPLICATION_JSON, USER_AGENT};
 use crate::utils::filter_bad_response::filter_bad_response;
-use log::debug;
+use log::{debug, info};
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -39,6 +39,16 @@ pub async fn basic_json_get_request<Res: DeserializeOwned>(
       .send()
       .await
       .map_err(|err| StorytellerError::Api(ApiError::from(err)))?;
+
+  let hostname = response.headers().get("x-backend-hostname")
+      .and_then(|v| v.to_str().ok())
+      .map(|s| s.to_owned());
+
+  let build_sha = response.headers().get("x-build-sha")
+      .and_then(|v| v.to_str().ok())
+      .map(|s| s.to_owned());
+
+  debug!("[server] x-backend-hostname: {:?}, x-build-sha: {:?}", hostname, build_sha);
 
   let response = filter_bad_response(response)
       .await

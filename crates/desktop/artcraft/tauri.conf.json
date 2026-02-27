@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0-rc",
   "productName": "ArtCraft",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "identifier": "ai.artcraft.app",
   "build": {
     "frontendDist": "../../../frontend/apps/artcraft/dist",

@@ -14,6 +14,7 @@ import {
   faMessageXmark,
   faMessageCheck,
   faWaveformLines,
+  faClock,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
 import {
@@ -22,17 +23,17 @@ import {
   faRectangleVertical,
 } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
   SizeIconOption,
   SizeOption,
   VideoModel,
 } from "@storyteller/model-list";
-import { usePromptVideoStore, RefImage } from "./promptStore";
+import { usePromptVideoStore, RefImage, VideoInputMode } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
 import type { UploadImageFn } from "./ImagePromptRow";
+import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { twMerge } from "tailwind-merge";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -103,6 +104,12 @@ export const PromptBoxVideo = ({
   );
   const resolution = usePromptVideoStore((s) => s.resolution);
   const setResolution = usePromptVideoStore((s) => s.setResolution);
+  const aspectRatio = usePromptVideoStore((s) => s.aspectRatio);
+  const setAspectRatio = usePromptVideoStore((s) => s.setAspectRatio);
+  const duration = usePromptVideoStore((s) => s.duration);
+  const setDuration = usePromptVideoStore((s) => s.setDuration);
+  const inputMode = usePromptVideoStore((s) => s.inputMode);
+  const setInputMode = usePromptVideoStore((s) => s.setInputMode);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
@@ -122,68 +129,30 @@ export const PromptBoxVideo = ({
     uploadingImages.length > 0;
 
   // TODO: Get rid of default resolutions. Just disable it if not present.
-  let resolutionOptions: PopoverItem[];
+  let aspectRatioOptions: PopoverItem[];
+
+  const buildAspectRatioOptions = (options: SizeOption[]): PopoverItem[] => {
+    const currentExists = options.some(
+      (option) => option.textLabel === aspectRatio,
+    );
+    const useFirstOption = !currentExists;
+
+    return options.map((option, index) => ({
+      label: option.textLabel,
+      selected:
+        option.textLabel === aspectRatio || (useFirstOption && index === 0),
+      icon: <AspectRatioIcon sizeIcon={option.icon} />,
+    }));
+  };
 
   if (!!selectedModel?.sizeOptions && selectedModel.sizeOptions.length > 0) {
-    // When switching to a new model, the existing resolution might not be correct.
-    // This is a gross and nasty hack to handle the case where the resolution is not found.
-    const resolutionExists = selectedModel.sizeOptions.some(
-      (option) => option.textLabel === resolution,
-    );
-    const useFirstOption = !resolutionExists;
-
-    resolutionOptions = selectedModel.sizeOptions.map((option, index) => {
-      let faIcon = faRectangle;
-      switch (option.icon) {
-        case SizeIconOption.Landscape:
-          faIcon = faRectangle;
-          break;
-        case SizeIconOption.Portrait:
-          faIcon = faRectangleVertical;
-          break;
-        case SizeIconOption.Square:
-          faIcon = faSquare;
-          break;
-      }
-      const icon = <FontAwesomeIcon icon={faIcon} className="h-4 w-4" />;
-      return {
-        label: option.textLabel,
-        selected:
-          option.textLabel === resolution || (useFirstOption && index === 0),
-        icon: icon,
-      };
-    });
+    aspectRatioOptions = buildAspectRatioOptions(selectedModel.sizeOptions);
   } else {
-    const resolutionExists = DEFAULT_RESOLUTIONS.some(
-      (option) => option.textLabel === resolution,
-    );
-    const useFirstOption = !resolutionExists;
-
-    resolutionOptions = DEFAULT_RESOLUTIONS.map((option, index) => {
-      let faIcon = faRectangle;
-      switch (option.icon) {
-        case SizeIconOption.Landscape:
-          faIcon = faRectangle;
-          break;
-        case SizeIconOption.Portrait:
-          faIcon = faRectangleVertical;
-          break;
-        case SizeIconOption.Square:
-          faIcon = faSquare;
-          break;
-      }
-      const icon = <FontAwesomeIcon icon={faIcon} className="h-4 w-4" />;
-      return {
-        label: option.textLabel,
-        selected:
-          option.textLabel === resolution || (useFirstOption && index === 0),
-        icon: icon,
-      };
-    });
+    aspectRatioOptions = buildAspectRatioOptions(DEFAULT_RESOLUTIONS);
   }
 
-  const [resolutionList, setResolutionList] =
-    useState<PopoverItem[]>(resolutionOptions);
+  const [aspectRatioList, setAspectRatioList] =
+    useState<PopoverItem[]>(aspectRatioOptions);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -210,15 +179,172 @@ export const PromptBoxVideo = ({
     onImageRowVisibilityChange?.(isImageRowVisible);
   }, [isImageRowVisible, onImageRowVisibilityChange]);
 
-  const handleResolutionSelect = (selectedItem: PopoverItem) => {
-    console.log(">>>> handleResolutionSelect", selectedItem);
-    setResolution(selectedItem.label as any);
-    setResolutionList((prev) =>
-      resolutionOptions.map((item) => ({
+  const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
+    setAspectRatio(selectedItem.label);
+    setAspectRatioList((prev) =>
+      aspectRatioOptions.map((item) => ({
         ...item,
         selected: item.label === selectedItem.label,
       })),
     );
+  };
+
+  // Sync duration with model default when switching models
+  useEffect(() => {
+    if (selectedModel?.durationOptions && selectedModel.defaultDuration) {
+      if (
+        duration === null ||
+        !selectedModel.durationOptions.includes(duration)
+      ) {
+        setDuration(selectedModel.defaultDuration);
+      }
+    } else if (duration !== null) {
+      setDuration(null);
+    }
+  }, [selectedModel]);
+
+  // Sync resolution with model default when switching models
+  useEffect(() => {
+    if (selectedModel?.resolutionOptions && selectedModel.defaultResolution) {
+      if (!selectedModel.resolutionOptions.includes(resolution as string)) {
+        setResolution(selectedModel.defaultResolution);
+      }
+    }
+  }, [selectedModel]);
+
+  // Reset input mode when switching to a model that doesn't support reference
+  useEffect(() => {
+    if (!selectedModel?.supportsReferenceMode && inputMode === "reference") {
+      setInputMode("keyframe");
+    }
+  }, [selectedModel]);
+
+  const durationOptions: PopoverItem[] | null = selectedModel?.durationOptions
+    ? selectedModel.durationOptions.map((d) => ({
+        label: `${d}s`,
+        selected: d === (duration ?? selectedModel.defaultDuration),
+      }))
+    : null;
+
+  const resolutionPickerOptions: PopoverItem[] | null =
+    selectedModel?.resolutionOptions
+      ? selectedModel.resolutionOptions.map((r) => ({
+          label: r,
+          selected: r === resolution,
+        }))
+      : null;
+
+  const handleResolutionSelect = (selectedItem: PopoverItem) => {
+    setResolution(selectedItem.label);
+  };
+
+  const handleDurationSelect = (selectedItem: PopoverItem) => {
+    const seconds = parseInt(selectedItem.label);
+    setDuration(seconds);
+  };
+
+  const inputModeOptions: PopoverItem[] | null =
+    selectedModel?.supportsReferenceMode
+      ? [
+          {
+            label: "Keyframe",
+            description: "First/Last frame",
+            selected: inputMode === "keyframe",
+          },
+          {
+            label: "Reference",
+            description: "Multi-media ref",
+            selected: inputMode === "reference",
+          },
+        ]
+      : null;
+
+  const handleInputModeSelect = (selectedItem: PopoverItem) => {
+    const mode: VideoInputMode =
+      selectedItem.label === "Reference" ? "reference" : "keyframe";
+    setInputMode(mode);
+    // Clear images when switching modes to avoid stale state
+    if (mode === "reference") {
+      setEndFrameImage(undefined);
+    }
+  };
+
+  const isReferenceMode =
+    inputMode === "reference" && !!selectedModel?.supportsReferenceMode;
+  const maxImageCount = isReferenceMode
+    ? (selectedModel?.maxReferenceImages ?? 3)
+    : 1;
+
+  const highlightRef = useRef<HTMLDivElement>(null);
+
+  // Sync scroll between textarea and highlight overlay
+  const handleScroll = () => {
+    if (highlightRef.current && textareaRef.current) {
+      highlightRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
+  };
+
+  // Color palette for @Image mentions
+  const MENTION_COLORS = [
+    "rgb(96, 165, 250)", // blue
+    "rgb(251, 146, 60)", // orange
+    "rgb(167, 139, 250)", // purple
+    "rgb(52, 211, 153)", // green
+    "rgb(251, 113, 133)", // pink
+  ];
+
+  const renderHighlightedPrompt = () => {
+    if (!isReferenceMode || referenceImages.length === 0) return null;
+    const parts = prompt.split(/(@Image\d+)/g);
+    return parts.map((part, i) => {
+      const match = part.match(/^@Image(\d+)$/);
+      if (match) {
+        const imgIndex = parseInt(match[1]) - 1;
+        const color = MENTION_COLORS[imgIndex % MENTION_COLORS.length];
+        return (
+          <span key={i} style={{ color, fontWeight: 600 }}>
+            {part}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
+  // @-mention autocomplete state
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionFilter, setMentionFilter] = useState("");
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const mentionAnchorRef = useRef<number | null>(null);
+
+  const mentionItems = isReferenceMode
+    ? referenceImages
+        .map((img, i) => ({
+          label: `@Image${i + 1}`,
+          image: img,
+        }))
+        .filter((item) =>
+          mentionFilter
+            ? item.label.toLowerCase().includes(mentionFilter.toLowerCase())
+            : true,
+        )
+    : [];
+
+  const insertMention = (label: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea || mentionAnchorRef.current === null) return;
+    const before = prompt.slice(0, mentionAnchorRef.current);
+    const after = prompt.slice(textarea.selectionStart);
+    const next = before + label + " " + after;
+    setPrompt(next);
+    setMentionOpen(false);
+    setMentionFilter("");
+    mentionAnchorRef.current = null;
+    requestAnimationFrame(() => {
+      const pos = before.length + label.length + 1;
+      textarea.setSelectionRange(pos, pos);
+      textarea.focus();
+    });
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -236,7 +362,31 @@ export const PromptBoxVideo = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setPrompt(e.target.value);
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    setPrompt(value);
+
+    if (isReferenceMode && referenceImages.length > 0) {
+      // Find the last '@' before cursor that could be a mention trigger
+      const textBeforeCursor = value.slice(0, cursorPos);
+      const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
+      if (lastAtIndex !== -1) {
+        const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
+        // Only trigger if no space after @ (still typing the mention)
+        if (!textAfterAt.includes(" ")) {
+          mentionAnchorRef.current = lastAtIndex;
+          setMentionFilter("@" + textAfterAt);
+          setMentionOpen(true);
+          setMentionIndex(0);
+          return;
+        }
+      }
+    }
+
+    setMentionOpen(false);
+    setMentionFilter("");
+    mentionAnchorRef.current = null;
   };
 
   const handleEnqueue = async () => {
@@ -266,9 +416,12 @@ export const PromptBoxVideo = ({
       ? crypto.randomUUID()
       : Math.random().toString(36).slice(2);
 
+    const isRefMode =
+      inputMode === "reference" && !!selectedModel.supportsReferenceMode;
+
     let imageMediaToken = undefined;
 
-    if (referenceImages.length > 0) {
+    if (!isRefMode && referenceImages.length > 0) {
       imageMediaToken = referenceImages[0].mediaToken;
     }
 
@@ -283,7 +436,9 @@ export const PromptBoxVideo = ({
       model: selectedModel,
       image_media_token: imageMediaToken,
       prompt: prompt,
-      end_frame_image_media_token: endFrameImage?.mediaToken,
+      end_frame_image_media_token: isRefMode
+        ? undefined
+        : endFrameImage?.mediaToken,
       frontend_caller: "image_to_video",
       frontend_subscriber_id: subscriberId,
     };
@@ -296,6 +451,18 @@ export const PromptBoxVideo = ({
       request.generate_audio = !!generateWithSound;
     }
 
+    // Pass reference image tokens in reference mode
+    if (isRefMode && referenceImages.length > 0) {
+      request.reference_image_media_tokens = referenceImages.map(
+        (img) => img.mediaToken,
+      );
+    }
+
+    // Pass duration if model supports it
+    if (selectedModel.durationOptions && duration !== null) {
+      request.duration_seconds = duration;
+    }
+
     switch (selectedModel?.tauriId) {
       case "grok_video":
         request.grok_aspect_ratio = getGrokAspectRatio();
@@ -305,6 +472,17 @@ export const PromptBoxVideo = ({
         request.sora_orientation =
           resolution === "720p" ? "landscape" : "portrait";
         break;
+
+      case "seedance_2p0": {
+        const selectedOption = selectedModel.sizeOptions?.find(
+          (option) => option.textLabel === aspectRatio,
+        );
+        if (selectedOption) {
+          request.aspect_ratio =
+            selectedOption.tauriValue as typeof request.aspect_ratio;
+        }
+        break;
+      }
     }
 
     await EnqueueImageToVideo(request);
@@ -314,14 +492,40 @@ export const PromptBoxVideo = ({
     setIsEnqueueing(false);
   };
 
-  const getCurrentResolutionIcon = () => {
-    const selected = resolutionList.find((item) => item.selected);
-    if (!selected || !selected.icon) return faRectangle;
-    const iconElement = selected.icon as React.ReactElement<{ icon: IconProp }>;
-    return iconElement.props.icon;
+  const getCurrentAspectRatioIcon = (): SizeIconOption => {
+    const selectedLabel = aspectRatioList.find((item) => item.selected)?.label;
+    const allOptions = selectedModel?.sizeOptions ?? DEFAULT_RESOLUTIONS;
+    const match = allOptions.find((o) => o.textLabel === selectedLabel);
+    return match?.icon ?? SizeIconOption.Landscape;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle mention dropdown navigation
+    if (mentionOpen && mentionItems.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMentionIndex((prev) => (prev + 1) % mentionItems.length);
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMentionIndex((prev) =>
+          prev <= 0 ? mentionItems.length - 1 : prev - 1,
+        );
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        insertMention(mentionItems[mentionIndex].label);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setMentionOpen(false);
+        return;
+      }
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
 
@@ -341,7 +545,7 @@ export const PromptBoxVideo = ({
     // NB: This function was just written to give us better type safety.
     // There has to be a cleaner appraoach.
     const maybeAspectRatio = selectedModel?.sizeOptions?.find(
-      (option) => option.textLabel === resolution,
+      (option) => option.textLabel === aspectRatio,
     )?.tauriValue;
 
     switch (maybeAspectRatio) {
@@ -384,7 +588,8 @@ export const PromptBoxVideo = ({
           <ImagePromptRow
             visible={true}
             isVideo={true}
-            maxImagePromptCount={1}
+            isReferenceMode={isReferenceMode}
+            maxImagePromptCount={maxImageCount}
             allowUpload={true}
             referenceImages={referenceImages}
             setReferenceImages={setReferenceImages}
@@ -399,10 +604,10 @@ export const PromptBoxVideo = ({
               setIsModalOpen(true);
             }}
             uploadImage={uploadImage}
-            endFrameImage={endFrameImage}
-            setEndFrameImage={setEndFrameImage}
-            allowUploadEnd={!!selectedModel?.endFrame}
-            showEndFrameSection={!!selectedModel?.endFrame}
+            endFrameImage={isReferenceMode ? undefined : endFrameImage}
+            setEndFrameImage={isReferenceMode ? undefined : setEndFrameImage}
+            allowUploadEnd={!isReferenceMode && !!selectedModel?.endFrame}
+            showEndFrameSection={!isReferenceMode && !!selectedModel?.endFrame}
           />
         )}
         <div
@@ -414,7 +619,38 @@ export const PromptBoxVideo = ({
               : "ring-1 ring-transparent",
           )}
         >
-          <div className="flex justify-center gap-2">
+          <div className="relative flex justify-center gap-2">
+            {/* @-mention autocomplete dropdown */}
+            {mentionOpen && mentionItems.length > 0 && (
+              <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl">
+                <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
+                  Reference Files
+                </div>
+                {mentionItems.map((item, i) => (
+                  <button
+                    key={item.label}
+                    className={twMerge(
+                      "flex w-full items-center gap-2.5 px-3 py-2 text-sm text-base-fg transition-colors cursor-pointer",
+                      i === mentionIndex ? "bg-white/10" : "hover:bg-white/5",
+                    )}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      insertMention(item.label);
+                    }}
+                    onMouseEnter={() => setMentionIndex(i)}
+                  >
+                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/20">
+                      <img
+                        src={item.image.url}
+                        alt={item.label}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <span className="font-medium">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {/* Hide the Add image button for video for now */}
             {/* <Tooltip
               content="Add Image"
@@ -446,59 +682,114 @@ export const PromptBoxVideo = ({
               </Button>
             </Tooltip> */}
 
-            <textarea
-              ref={textareaRef}
-              rows={1}
-              placeholder="Describe what you want to happen in the video..."
-              className="text-md mb-2 max-h-[5.5em] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
-              value={prompt}
-              onChange={handleChange}
-              onPaste={handlePaste}
-              onKeyDown={handleKeyDown}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-            />
+            <div className="relative flex-1">
+              {isReferenceMode && referenceImages.length > 0 && (
+                <div
+                  ref={highlightRef}
+                  aria-hidden
+                  className="text-md pointer-events-none absolute inset-0 max-h-[5.5em] overflow-y-auto whitespace-pre-wrap break-words rounded pb-2 pr-2 pt-1 text-base-fg"
+                >
+                  {renderHighlightedPrompt()}
+                </div>
+              )}
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                placeholder={
+                  isReferenceMode
+                    ? "Use @Image1, @Image2... to reference your uploaded images in the prompt..."
+                    : "Describe what you want to happen in the video..."
+                }
+                className={twMerge(
+                  "text-md relative mb-2 max-h-[5.5em] w-full resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 placeholder-base-fg/60 focus:outline-none",
+                  isReferenceMode && referenceImages.length > 0
+                    ? "text-transparent caret-base-fg"
+                    : "text-base-fg",
+                )}
+                value={prompt}
+                onChange={handleChange}
+                onPaste={handlePaste}
+                onKeyDown={handleKeyDown}
+                onScroll={handleScroll}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+              />
+            </div>
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Tooltip
-                content="Resolution"
+                content="Aspect Ratio"
                 position="top"
                 className="z-50"
                 closeOnClick={true}
               >
                 <PopoverMenu
-                  items={resolutionOptions}
-                  onSelect={handleResolutionSelect}
+                  items={aspectRatioOptions}
+                  onSelect={handleAspectRatioSelect}
                   mode="toggle"
-                  panelTitle="Resolution"
+                  panelTitle="Aspect Ratio"
                   showIconsInList
                   triggerIcon={
-                    <FontAwesomeIcon
-                      icon={getCurrentResolutionIcon()}
-                      className="h-4 w-4"
-                    />
+                    <AspectRatioIcon sizeIcon={getCurrentAspectRatioIcon()} />
                   }
                 />
               </Tooltip>
 
-              <Tooltip
-                content={
-                  useSystemPrompt
-                    ? "Use system prompt: ON"
-                    : "Use system prompt: OFF"
-                }
-                position="top"
-                className="z-50"
-                delay={200}
-              >
-                <ToggleButton
-                  isActive={useSystemPrompt}
-                  icon={faMessageXmark}
-                  activeIcon={faMessageCheck}
-                  onClick={() => setUseSystemPrompt(!useSystemPrompt)}
-                />
-              </Tooltip>
+              {resolutionPickerOptions && (
+                <Tooltip
+                  content="Resolution"
+                  position="top"
+                  className="z-50"
+                  closeOnClick={true}
+                >
+                  <PopoverMenu
+                    items={resolutionPickerOptions}
+                    onSelect={handleResolutionSelect}
+                    mode="toggle"
+                    panelTitle="Resolution"
+                  />
+                </Tooltip>
+              )}
+
+              {durationOptions && (
+                <Tooltip
+                  content="Duration"
+                  position="top"
+                  className="z-50"
+                  closeOnClick={true}
+                >
+                  <PopoverMenu
+                    items={durationOptions}
+                    onSelect={handleDurationSelect}
+                    mode="toggle"
+                    panelTitle="Duration"
+                    triggerIcon={
+                      <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
+                    }
+                  />
+                </Tooltip>
+              )}
+
+              {selectedModel?.supportsSystemPrompt !== false && (
+                <Tooltip
+                  content={
+                    useSystemPrompt
+                      ? "Use system prompt: ON"
+                      : "Use system prompt: OFF"
+                  }
+                  position="top"
+                  className="z-50"
+                  delay={200}
+                >
+                  <ToggleButton
+                    isActive={useSystemPrompt}
+                    icon={faMessageXmark}
+                    activeIcon={faMessageCheck}
+                    onClick={() => setUseSystemPrompt(!useSystemPrompt)}
+                  />
+                </Tooltip>
+              )}
 
               {selectedModel?.generateWithSound && (
                 <Tooltip
@@ -512,6 +803,22 @@ export const PromptBoxVideo = ({
                     icon={faWaveformLines}
                     activeIcon={faWaveformLines}
                     onClick={() => setGenerateWithSound(!generateWithSound)}
+                  />
+                </Tooltip>
+              )}
+
+              {inputModeOptions && (
+                <Tooltip
+                  content="Input Mode"
+                  position="top"
+                  className="z-50"
+                  closeOnClick={true}
+                >
+                  <PopoverMenu
+                    items={inputModeOptions}
+                    onSelect={handleInputModeSelect}
+                    mode="toggle"
+                    panelTitle="Input Mode"
                   />
                 </Tooltip>
               )}

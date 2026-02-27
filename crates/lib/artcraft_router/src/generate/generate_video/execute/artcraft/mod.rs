@@ -1,0 +1,1 @@
+pub mod generate_video_artcraft_seedance2p0;

@@ -72,6 +72,7 @@ members = [
   "crates/lib/files/videos",
   "crates/lib/http_headers",
   "crates/lib/idempotency",
+  "crates/lib/artcraft_router",
   "crates/lib/image_algorithms",
   "crates/lib/jobs_common",
   "crates/lib/jwt_light",
@@ -207,6 +208,7 @@ workspace-build-acceleration = { path = "crates/workspace-build-acceleration" }
 # Setting paths here ensures we don't need to do so in every crate's Cargo.toml
 # It makes refactoring much easier.
 actix_artcraft = { path = "crates/lib/actix_artcraft" }
+artcraft_router = { path = "crates/lib/artcraft_router" }
 actix_helpers = { path = "crates/lib/actix_helpers" }
 artcraft_api_defs = { path = "crates/api_clients/artcraft/artcraft_api_defs" }
 build_metadata = { path = "crates/lib/build_metadata" }
