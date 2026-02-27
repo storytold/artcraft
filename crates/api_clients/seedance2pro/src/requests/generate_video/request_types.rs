@@ -23,11 +23,11 @@ pub (super) struct BatchRequestJson {
 pub (super) struct ApiParams {
   pub prompt: String,
   pub resolution: String,
-  pub mode: &'static str,
+  #[serde(rename = "contentMode")]
+  pub content_mode: &'static str,
   pub model: &'static str,
   pub duration: String,
-  #[serde(rename = "videoInputMode")]
-  pub video_input_mode: &'static str,
+  pub mode: &'static str,
   #[serde(rename = "uploadedUrls", skip_serializing_if = "Option::is_none")]
   pub uploaded_urls: Option<Vec<String>>,
   #[serde(rename = "batchCount", skip_serializing_if = "Option::is_none")]
