@@ -133,7 +133,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     creator: ModelCreator.Bytedance,
     selectorName: "Seedance 2.0",
     selectorDescription: "High quality model",
-    selectorBadges: ["2 min."],
+    selectorBadges: ["3 hr."],
     startFrame: true,
     endFrame: true,
     requiresImage: false,
@@ -171,7 +171,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     resolutionOptions: ["480p", "720p"],
     defaultResolution: "720p",
     supportsSystemPrompt: false,
-    progressBarTime: 360000,
+    progressBarTime: 10800000, //3 hours for now
   }),
   new VideoModel({
     id: "sora_2",

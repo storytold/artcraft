@@ -31,7 +31,11 @@ import {
   ModelPage,
 } from "@storyteller/ui-model-selector";
 import { Button } from "@storyteller/ui-button";
-import { getProviderDisplayName } from "@storyteller/model-list";
+import {
+  getProviderDisplayName,
+  ALL_MODELS_LIST,
+  getModelDisplayName,
+} from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { TaskMediaFileClass } from "@storyteller/api-enums";
@@ -49,6 +53,7 @@ type InProgressTask = {
   progress: number;
   updatedAt?: Date;
   canDismiss?: boolean;
+  estimatedTimeLeftMs?: number;
 };
 
 type CompletedTask = {
@@ -64,6 +69,18 @@ type CompletedTask = {
   batchImageToken?: string;
 };
 
+const formatTimeLeft = (ms: number): string => {
+  const totalSeconds = Math.ceil(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (hours > 0 && minutes > 0) return `~ ${hours}h ${minutes}m left`;
+  if (hours > 0) return `~ ${hours}h left`;
+  if (minutes > 0) return `~ ${minutes}m left`;
+  return `~ ${seconds}s left`;
+};
+
 const InProgressCard = ({
   task,
   onDismiss,
@@ -71,10 +88,17 @@ const InProgressCard = ({
   task: InProgressTask;
   onDismiss?: () => void;
 }) => {
+  const progressPercent = Math.max(0, Math.min(100, Math.round(task.progress)));
+  const isAlmostDone = task.progress >= 95;
+  const timeLabel = isAlmostDone
+    ? "Almost done..."
+    : task.estimatedTimeLeftMs != null && task.estimatedTimeLeftMs > 0
+      ? formatTimeLeft(task.estimatedTimeLeftMs)
+      : null;
   return (
     <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
           <FontAwesomeIcon
             icon={faSpinnerThird}
             className="animate-spin text-base-fg/60"
@@ -87,7 +111,7 @@ const InProgressCard = ({
               {task.title}
             </div>
             <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">
-              {Math.max(0, Math.min(100, Math.round(task.progress)))}%
+              {progressPercent}%
             </div>
           </div>
           {task.subtitle && (
@@ -95,12 +119,19 @@ const InProgressCard = ({
               {task.subtitle}
             </div>
           )}
-          <div className="mt-2 h-1.5 w-full rounded bg-ui-controls">
-            <div
-              className="h-1.5 rounded bg-brand-primary-400"
-              style={{ width: `${Math.max(0, Math.min(100, task.progress))}%` }}
-            />
+          <div className="mt-1.5 flex items-center gap-2">
+            <div className="h-1.5 min-w-0 flex-1 rounded bg-ui-controls">
+              <div
+                className="h-1.5 rounded bg-brand-primary-400"
+                style={{
+                  width: `${Math.max(0, Math.min(100, task.progress))}%`,
+                }}
+              />
+            </div>
           </div>
+          {timeLabel && (
+            <div className="mt-1 text-xs text-base-fg/50">{timeLabel}</div>
+          )}
         </div>
         {onDismiss && (
           <button
@@ -135,7 +166,7 @@ const CompletedCard = ({
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : -1}
     >
-      <div className="h-14 w-14 shrink-0 overflow-hidden rounded bg-ui-controls">
+      <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded bg-ui-controls">
         {task.thumbnailUrl ? (
           <img
             src={task.thumbnailUrl}
@@ -309,34 +340,8 @@ export const TaskQueue = () => {
         kind = "Image";
       }
 
-      const formatModelName = (modelType: string): string => {
-        let formatted = modelType
-          // Handle version numbers with underscores (e.g. 2_0 -> 2.0)
-          .replace(/(\d)_(\d+)/g, "$1.$2")
-          .replace(/_/g, " ")
-          // Don't split number and 'd'/'D' (e.g. 3d)
-          .replace(/(\d)(?![dD])([a-zA-Z])/g, "$1 $2")
-          .replace(/([a-zA-Z])(\d)/g, "$1 $2")
-          .split(" ")
-          .map((word) =>
-            word.length <= 2
-              ? word.toUpperCase()
-              : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-          )
-          .join(" ")
-          .replace(/\s+/g, " ")
-          .trim();
-
-        // Specific fix for Hunyuan 3D 3 -> 3.0 for consistency
-        if (formatted.endsWith("Hunyuan 3D 3")) {
-          formatted += ".0";
-        }
-
-        return formatted;
-      };
-
       const modelDisplay = t.model_type
-        ? formatModelName(String(t.model_type))
+        ? getModelDisplayName(String(t.model_type))
         : undefined;
 
       const title = kind || "Task";
@@ -370,14 +375,23 @@ export const TaskQueue = () => {
             const isVideo = taskTypeStr.includes("video");
             let duration = taskDurationRef.current.get(t.id);
             if (!duration) {
+              const actualModel = t.model_type
+                ? ALL_MODELS_LIST.find(
+                    (m) => m.tauriId === t.model_type || m.id === t.model_type,
+                  )
+                : undefined;
               duration =
+                actualModel?.progressBarTime ??
                 (isVideo
                   ? selectedVideoModel?.progressBarTime
-                  : selectedImageModel?.progressBarTime) ?? 20000;
+                  : selectedImageModel?.progressBarTime) ??
+                20000;
               taskDurationRef.current.set(t.id, duration);
             }
             const raw = ((now - createdMs) / duration) * 100;
             const progress = Math.min(95, Math.max(0, raw));
+            const elapsed = now - createdMs;
+            const estimatedTimeLeftMs = Math.max(0, duration - elapsed);
             const parts = formatTitleParts(t);
             const canDismiss = now - createdMs > 5 * 60 * 1000; // 5 minutes
             return {
@@ -387,6 +401,7 @@ export const TaskQueue = () => {
               progress,
               updatedAt: t.updated_at,
               canDismiss,
+              estimatedTimeLeftMs,
             };
           });
 
