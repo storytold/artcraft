@@ -44,6 +44,7 @@ import { normalizeCanvas } from "~/Helpers/CanvasHelpers";
 import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
+import toast from "react-hot-toast";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 
@@ -633,7 +634,7 @@ const PageDraw = () => {
         throw error;
       }
     },
-    [generationCount, getCompositeCanvasFile, selectedImageModel, store],
+    [generationCount, getCompositeCanvasFile, selectedImageModel],
   );
 
   const onFitPressed = async () => {
