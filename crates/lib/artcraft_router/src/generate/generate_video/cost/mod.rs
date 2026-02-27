@@ -1,1 +1,1 @@
-pub mod artcraft;
+pub (crate) mod artcraft;
