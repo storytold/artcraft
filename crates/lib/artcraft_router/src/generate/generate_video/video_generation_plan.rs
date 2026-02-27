@@ -27,4 +27,10 @@ impl<'a> VideoGenerationPlan<'a> {
       }
     }
   }
+
+  /// Estimate the cost in credits for this generation plan.
+  /// TODO: Implement per-plan cost calculation.
+  pub fn estimate_costs(&self) -> u32 {
+    100
+  }
 }

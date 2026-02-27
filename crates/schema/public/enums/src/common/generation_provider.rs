@@ -1,3 +1,10 @@
+//! This is an important enum.
+//!
+//! It's used in storyteller-web inference generation, the cost estimate handler,
+//! the ArtCraft Tauri app, and more.
+//!
+//! Do not change the values here without cause or care.
+
 use std::collections::BTreeSet;
 
 use crate::error::enum_error::EnumError;

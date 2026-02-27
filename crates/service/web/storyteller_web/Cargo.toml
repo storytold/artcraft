@@ -36,6 +36,7 @@ actix_artcraft.workspace = true
 actix_cors_configs = { path = "../../../lib/actix_cors_configs" }
 actix_helpers.workspace = true
 artcraft_api_defs.workspace = true
+artcraft_router.workspace = true
 bootstrap = { path = "../../../lib/bootstrap" }
 bucket_paths = { path = "../../../lib/bucket_paths" }
 cloud_storage.workspace = true
