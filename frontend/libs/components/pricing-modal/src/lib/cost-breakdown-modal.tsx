@@ -1,5 +1,5 @@
 import { Modal } from "@storyteller/ui-modal";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { Select } from "@storyteller/ui-select";
@@ -26,6 +26,7 @@ import {
   usePromptEditStore,
 } from "@storyteller/ui-promptbox";
 import { Model } from "@storyteller/model-list";
+import { useCurrency } from "./use-currency";
 
 // Drag handle subcomponent that Modal looks for
 const DragHandle = ({ children }: { children: React.ReactNode }) => (
@@ -78,7 +79,13 @@ export interface CostBreakdownModalProps {
 
 export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const { isOpen, closeModal } = useCostBreakdownModalStore();
-  const [currency, setCurrency] = useState<string | number>("USD");
+  const {
+    currency,
+    setCurrency,
+    currencyOption,
+    formatPrice,
+    currencyOptions,
+  } = useCurrency();
 
   // Map TabId to ModelPage, default to TextToImage
   const activePage = useMemo(() => {
@@ -155,28 +162,15 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const creditsPerGeneration = 1;
   const totalCredits = creditsPerGeneration * storeData.generationCount;
 
-  const currencyOptions = [
-    { value: "USD", label: "USD ($)" },
-    { value: "EUR", label: "EUR (€)" },
-    { value: "GBP", label: "GBP (£)" },
-    { value: "JPY", label: "JPY (¥)" },
-  ];
+  // Convert credits to USD first (1 credit = $0.01), then to selected currency
+  const usdAmount = totalCredits * 0.01;
+  const formattedPrice = formatPrice(usdAmount);
 
-  const getCurrencySymbol = (curr: string | number) => {
-    switch (curr) {
-      case "EUR":
-        return "€";
-      case "GBP":
-        return "£";
-      case "JPY":
-        return "¥";
-      default:
-        return "$";
-    }
-  };
-
-  const symbol = getCurrencySymbol(currency);
-  const estimatedCost = (totalCredits * 0.01).toFixed(2);
+  // Select options formatted for the Select component
+  const selectOptions = currencyOptions.map((o) => ({
+    value: o.value,
+    label: o.label,
+  }));
 
   // Format provider name
   const formatProvider = (provider: string | undefined) => {
@@ -228,7 +222,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       closeOnEsc={true}
       resizable={false}
       backdropClassName="pointer-events-none !bg-transparent"
-      className="max-w-xs rounded-xl bg-ui-panel border border-ui-panel-border overflow-hidden shadow-2xl"
+      className="max-w-xs rounded-xl bg-ui-panel border border-ui-panel-border overflow-visible shadow-2xl"
     >
       {/* Drag Handle - Modal component will recognize this and make it draggable */}
       <DragHandle>
@@ -292,34 +286,36 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
             </div>
 
             {/* Total Cost */}
-            <div className="bg-ui-controls/50 rounded-lg p-2.5 border border-ui-controls-border">
-              <div className="flex justify-between items-center mb-0.5">
-                <span className="text-base-fg/80">Total Cost</span>
-                <span className="text-base font-bold text-base-fg">
-                  {totalCredits} Credits
-                </span>
+            <div className="bg-ui-controls/50 rounded-lg p-3 border border-ui-controls-border space-y-2.5">
+              {/* Credits row */}
+              <div>
+                <div className="text-[10px] text-base-fg/50 uppercase tracking-wider font-medium mb-0.5">
+                  Credits
+                </div>
+                <div className="text-lg font-bold text-base-fg">
+                  {totalCredits} {totalCredits === 1 ? "Credit" : "Credits"}
+                </div>
               </div>
-              <div className="text-[10px] text-base-fg/60 text-right">
-                ≈ {symbol}
-                {estimatedCost} {currency}
+
+              <div className="border-t border-ui-controls-border" />
+
+              {/* Converted price row */}
+              <div>
+                <div className="text-[10px] text-base-fg/50 uppercase tracking-wider font-medium mb-0.5">
+                  Estimated Price
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-lg font-bold text-base-fg tracking-tight">
+                    {formattedPrice}
+                  </span>
+                  <Select
+                    options={selectOptions}
+                    value={currency}
+                    onChange={setCurrency}
+                    className="w-[110px] text-xs"
+                  />
+                </div>
               </div>
-            </div>
-
-            {/* Currency Selector */}
-            <div className="space-y-0.5">
-              <label className="text-[10px] font-medium text-base-fg/80">
-                Currency
-              </label>
-              <Select
-                options={currencyOptions}
-                value={currency}
-                onChange={setCurrency}
-                className="w-full"
-              />
-            </div>
-
-            <div className="pt-2 text-[9px] text-base-fg/40 text-center border-t border-ui-panel-border">
-              1 Credit = $0.01 USD
             </div>
           </>
         ) : (

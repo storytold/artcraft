@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCoins, faTimes } from "@fortawesome/pro-solid-svg-icons";
 import { Select } from "@storyteller/ui-select";
+import { useCurrency } from "@storyteller/ui-pricing-modal";
 
 interface CostModalProps {
   credits?: number;
@@ -11,30 +11,23 @@ interface CostModalProps {
 }
 
 export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
-  const [currency, setCurrency] = useState<string | number>("USD");
+  const {
+    currency,
+    setCurrency,
+    currencyOption,
+    formatPrice,
+    currencyOptions,
+  } = useCurrency();
 
-  const currencyOptions = [
-    { value: "USD", label: "USD ($)" },
-    { value: "EUR", label: "EUR (€)" },
-    { value: "GBP", label: "GBP (£)" },
-    { value: "JPY", label: "JPY (¥)" },
-  ];
+  // Convert credits to USD first (1 credit = $0.01), then to selected currency
+  const usdAmount = credits * 0.01;
+  const formattedPrice = formatPrice(usdAmount);
 
-  const getCurrencySymbol = (curr: string | number) => {
-    switch (curr) {
-      case "EUR":
-        return "€";
-      case "GBP":
-        return "£";
-      case "JPY":
-        return "¥";
-      default:
-        return "$";
-    }
-  };
-
-  const symbol = getCurrencySymbol(currency);
-  const estimatedCost = (credits * 0.01).toFixed(2);
+  // Select options formatted for the Select component
+  const selectOptions = currencyOptions.map((o) => ({
+    value: o.value,
+    label: o.label,
+  }));
 
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center font-sans">
@@ -69,8 +62,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
               </span>
             </div>
             <div className="text-right text-xs text-base-fg/60">
-              ≈ {symbol}
-              {estimatedCost} {currency}
+              ≈ {formattedPrice} {currencyOption.value}
             </div>
           </div>
 
@@ -79,7 +71,7 @@ export const CostModal = ({ credits = 1, onClose }: CostModalProps) => {
               Currency
             </label>
             <Select
-              options={currencyOptions}
+              options={selectOptions}
               value={currency}
               onChange={setCurrency}
               className="w-full"
