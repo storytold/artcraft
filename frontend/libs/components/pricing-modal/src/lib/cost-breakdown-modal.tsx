@@ -212,6 +212,11 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
 
   const pageName = getPageName();
 
+  // Models that have credit cost data available
+  const MODELS_WITH_COST_DATA = new Set(["seedance_2p0", "nano_banana_pro"]);
+  const hasCostData =
+    selectedModel != null && MODELS_WITH_COST_DATA.has(selectedModel.id);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -243,75 +248,85 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
           </div>
         )}
 
-        {/* Generation Details */}
-        <div className="space-y-1.5">
-          {selectedModel && (
-            <div className="flex justify-between items-center">
-              <span className="text-base-fg/60">Model</span>
-              <span
-                className="text-base-fg font-medium truncate max-w-[140px]"
-                title={selectedModel.selectorName}
-              >
-                {selectedModel.selectorName}
-              </span>
-            </div>
-          )}
-          {storeData.resolution && (
-            <div className="flex justify-between items-center">
-              <span className="text-base-fg/60">Resolution</span>
-              <span className="text-base-fg font-medium uppercase">
-                {storeData.resolution}
-              </span>
-            </div>
-          )}
-          {storeData.generationCount > 0 && (
-            <div className="flex justify-between items-center">
-              <span className="text-base-fg/60">{storeData.label}</span>
-              <span className="text-base-fg font-medium">
-                {storeData.generationCount}
-              </span>
-            </div>
-          )}
-          {selectedProvider && (
-            <div className="flex justify-between items-center">
-              <span className="text-base-fg/60">Provider</span>
-              <span className="text-base-fg font-medium">
-                {formatProvider(selectedProvider)}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Total Cost */}
-        <div className="bg-ui-controls/50 rounded-lg p-2.5 border border-ui-controls-border">
-          <div className="flex justify-between items-center mb-0.5">
-            <span className="text-base-fg/80">Total Cost</span>
-            <span className="text-base font-bold text-base-fg">
-              {totalCredits} Credits
+        {/* Model row — always shown */}
+        {selectedModel && (
+          <div className="flex justify-between items-center">
+            <span className="text-base-fg/60">Model</span>
+            <span
+              className="text-base-fg font-medium truncate max-w-[140px]"
+              title={selectedModel.selectorName}
+            >
+              {selectedModel.selectorName}
             </span>
           </div>
-          <div className="text-[10px] text-base-fg/60 text-right">
-            ≈ {symbol}
-            {estimatedCost} {currency}
+        )}
+
+        {hasCostData ? (
+          <>
+            {/* Generation Details */}
+            <div className="space-y-1.5">
+              {storeData.resolution && (
+                <div className="flex justify-between items-center">
+                  <span className="text-base-fg/60">Resolution</span>
+                  <span className="text-base-fg font-medium uppercase">
+                    {storeData.resolution}
+                  </span>
+                </div>
+              )}
+              {storeData.generationCount > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-base-fg/60">{storeData.label}</span>
+                  <span className="text-base-fg font-medium">
+                    {storeData.generationCount}
+                  </span>
+                </div>
+              )}
+              {selectedProvider && (
+                <div className="flex justify-between items-center">
+                  <span className="text-base-fg/60">Provider</span>
+                  <span className="text-base-fg font-medium">
+                    {formatProvider(selectedProvider)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Total Cost */}
+            <div className="bg-ui-controls/50 rounded-lg p-2.5 border border-ui-controls-border">
+              <div className="flex justify-between items-center mb-0.5">
+                <span className="text-base-fg/80">Total Cost</span>
+                <span className="text-base font-bold text-base-fg">
+                  {totalCredits} Credits
+                </span>
+              </div>
+              <div className="text-[10px] text-base-fg/60 text-right">
+                ≈ {symbol}
+                {estimatedCost} {currency}
+              </div>
+            </div>
+
+            {/* Currency Selector */}
+            <div className="space-y-0.5">
+              <label className="text-[10px] font-medium text-base-fg/80">
+                Currency
+              </label>
+              <Select
+                options={currencyOptions}
+                value={currency}
+                onChange={setCurrency}
+                className="w-full"
+              />
+            </div>
+
+            <div className="pt-2 text-[9px] text-base-fg/40 text-center border-t border-ui-panel-border">
+              1 Credit = $0.01 USD
+            </div>
+          </>
+        ) : (
+          <div className="bg-ui-controls/50 rounded-lg p-2.5 border border-ui-controls-border text-center text-base-fg/60 text-[11px]">
+            Credit Costs not yet available for this model
           </div>
-        </div>
-
-        {/* Currency Selector */}
-        <div className="space-y-0.5">
-          <label className="text-[10px] font-medium text-base-fg/80">
-            Currency
-          </label>
-          <Select
-            options={currencyOptions}
-            value={currency}
-            onChange={setCurrency}
-            className="w-full"
-          />
-        </div>
-
-        <div className="pt-2 text-[9px] text-base-fg/40 text-center border-t border-ui-panel-border">
-          1 Credit = $0.01 USD
-        </div>
+        )}
       </div>
     </Modal>
   );
