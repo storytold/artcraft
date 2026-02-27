@@ -57,19 +57,16 @@ pub async fn estimate_video_cost_handler(
   let plan = begin_video_generation(&router_request)
     .map_err(|e| HandlerError::InvalidInput(format!("{}", e)))?;
 
-  let cost_in_credits = plan.estimate_costs();
-
-  // 25000 credits = $99.99, so 250 credits ≈ $1.00 → 1 credit ≈ 0.4 cents
-  let cost_in_usd_cents = ((cost_in_credits as f64) / 250.0 * 100.0).round() as u64;
+  let estimate = plan.estimate_costs();
 
   Ok(Json(EstimateVideoCostResponse {
     success: true,
-    cost_in_credits: Some(cost_in_credits),
-    cost_in_usd_cents: Some(cost_in_usd_cents),
-    is_free: false,
-    is_unlimited: false,
-    is_rate_limited: false,
-    has_watermark: false,
+    cost_in_credits: estimate.cost_in_credits,
+    cost_in_usd_cents: estimate.cost_in_usd_cents,
+    is_free: estimate.is_free,
+    is_unlimited: estimate.is_unlimited,
+    is_rate_limited: estimate.is_rate_limited,
+    has_watermark: estimate.has_watermark,
   }))
 }
 

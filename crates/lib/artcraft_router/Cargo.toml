@@ -17,6 +17,7 @@ workspace-build-acceleration.workspace = true
 
 # Internal
 artcraft_api_defs.workspace = true
+seedance2pro.workspace = true
 storyteller_client.workspace = true
 tokens.workspace = true
 

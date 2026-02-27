@@ -758,6 +758,7 @@ dependencies = [
  "anyhow",
  "artcraft_api_defs",
  "log",
+ "seedance2pro",
  "serde",
  "serde_derive",
  "storyteller_client",

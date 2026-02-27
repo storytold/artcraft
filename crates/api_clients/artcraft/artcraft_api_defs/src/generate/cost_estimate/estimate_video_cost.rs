@@ -49,7 +49,7 @@ pub struct EstimateVideoCostResponse {
   pub success: bool,
 
   /// Estimated cost in credits.
-  pub cost_in_credits: Option<u32>,
+  pub cost_in_credits: Option<u64>,
 
   /// Estimated cost in USD cents.
   pub cost_in_usd_cents: Option<u64>,

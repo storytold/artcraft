@@ -1,7 +1,9 @@
 use crate::client::router_client::RouterClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance2p0::estimate_video_cost_artcraft_seedance2p0;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance2p0::execute_artcraft_seedance2p0;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
+use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
 #[derive(Clone, Debug)]
@@ -28,9 +30,11 @@ impl<'a> VideoGenerationPlan<'a> {
     }
   }
 
-  /// Estimate the cost in credits for this generation plan.
-  /// TODO: Implement per-plan cost calculation.
-  pub fn estimate_costs(&self) -> u32 {
-    100
+  pub fn estimate_costs(&self) -> VideoGenerationCostEstimate {
+    match self {
+      VideoGenerationPlan::ArtcraftSeedance2p0(plan) => {
+        estimate_video_cost_artcraft_seedance2p0(plan)
+      }
+    }
   }
 }
