@@ -43,6 +43,21 @@ pub enum GenerationMode {
   ReferenceImageToVideo { count: u32 },
 }
 
+/// Error response for the video cost estimate endpoint.
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct EstimateVideoCostError {
+  pub success: bool,
+  pub error_type: EstimateVideoCostErrorType,
+  pub error_message: String,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum EstimateVideoCostErrorType {
+  InvalidProviderForModel,
+  InvalidInput,
+}
+
 /// Response body for the video cost estimate endpoint.
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EstimateVideoCostResponse {

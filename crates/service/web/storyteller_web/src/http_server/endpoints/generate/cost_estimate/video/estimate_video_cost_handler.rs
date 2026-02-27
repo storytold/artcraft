@@ -4,7 +4,8 @@ use actix_http::StatusCode;
 use actix_web::web::Json;
 use actix_web::{HttpResponse, ResponseError};
 use artcraft_api_defs::generate::cost_estimate::estimate_video_cost::{
-  EstimateVideoCostRequest, EstimateVideoCostResponse,
+  EstimateVideoCostError, EstimateVideoCostErrorType, EstimateVideoCostRequest,
+  EstimateVideoCostResponse,
 };
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
 use artcraft_router::api::common_resolution::CommonVideoResolution as RouterResolution;
@@ -18,55 +19,6 @@ use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation::common_video_resolution::CommonVideoResolution;
 use enums::common::generation_provider::GenerationProvider;
 
-#[derive(Debug)]
-pub enum EstimateVideoCostError {
-  InvalidProvider { provider: String, model: String },
-  InvalidInput(String),
-}
-
-impl std::error::Error for EstimateVideoCostError {}
-
-impl Display for EstimateVideoCostError {
-  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
-#[derive(Serialize)]
-struct ErrorBody<'a> {
-  success: bool,
-  error_code: u16,
-  error_code_str: Option<&'a str>,
-  reason: &'a str,
-  message: &'a str,
-}
-
-impl ResponseError for EstimateVideoCostError {
-  fn status_code(&self) -> StatusCode {
-    StatusCode::BAD_REQUEST
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let (reason, message) = match self {
-      EstimateVideoCostError::InvalidProvider { provider, model } => (
-        "invalid_provider",
-        format!("Provider '{}' is not supported for model '{}'", provider, model),
-      ),
-      EstimateVideoCostError::InvalidInput(msg) => (
-        "invalid_input",
-        msg.clone(),
-      ),
-    };
-
-    HttpResponse::BadRequest().json(ErrorBody {
-      success: false,
-      error_code: 400,
-      error_code_str: Some("Bad Request"),
-      reason,
-      message: &message,
-    })
-  }
-}
 
 /// Estimate the credit and USD cost of a video generation request.
 /// Does not require authentication and does not charge any credits.
@@ -76,14 +28,12 @@ impl ResponseError for EstimateVideoCostError {
   path = "/v1/generate/cost_estimate/video",
   responses(
     (status = 200, description = "Cost estimate", body = EstimateVideoCostResponse),
+    (status = 400, description = "Invalid request", body = EstimateVideoCostError),
   ),
-  params(
-    ("request" = EstimateVideoCostRequest, description = "Cost estimate request"),
-  )
 )]
 pub async fn estimate_video_cost_handler(
   request: Json<EstimateVideoCostRequest>,
-) -> Result<Json<EstimateVideoCostResponse>, EstimateVideoCostError> {
+) -> Result<Json<EstimateVideoCostResponse>, HandlerError> {
   let router_provider = map_provider(request.provider, request.model)?;
   let router_model = map_video_model(request.model)?;
   let router_aspect_ratio = request.aspect_ratio.map(map_aspect_ratio);
@@ -98,14 +48,14 @@ pub async fn estimate_video_cost_handler(
     reference_images: None,
     resolution: router_resolution,
     aspect_ratio: router_aspect_ratio,
-    duration_seconds: request.duration_seconds.map(|d| d as u16),
+    duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     idempotency_token: None,
   };
 
   let plan = begin_video_generation(&router_request)
-    .map_err(|e| EstimateVideoCostError::InvalidInput(format!("{}", e)))?;
+    .map_err(|e| HandlerError::InvalidInput(format!("{}", e)))?;
 
   let cost_in_credits = plan.estimate_costs();
 
@@ -123,20 +73,60 @@ pub async fn estimate_video_cost_handler(
   }))
 }
 
+/// Local error type — wraps the serializable API error struct so we can implement
+/// ResponseError (orphan rules prevent implementing it directly on the foreign type).
+#[derive(Debug)]
+pub enum HandlerError {
+  InvalidProviderForModel { provider: String, model: String },
+  InvalidInput(String),
+}
+
+impl std::error::Error for HandlerError {}
+
+impl Display for HandlerError {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{:?}", self)
+  }
+}
+
+impl ResponseError for HandlerError {
+  fn status_code(&self) -> StatusCode {
+    StatusCode::BAD_REQUEST
+  }
+
+  fn error_response(&self) -> HttpResponse {
+    let (error_type, error_message) = match self {
+      HandlerError::InvalidProviderForModel { provider, model } => (
+        EstimateVideoCostErrorType::InvalidProviderForModel,
+        format!("Provider '{}' is not supported for model '{}'", provider, model),
+      ),
+      HandlerError::InvalidInput(msg) => (
+        EstimateVideoCostErrorType::InvalidInput,
+        msg.clone(),
+      ),
+    };
+    HttpResponse::BadRequest().json(EstimateVideoCostError {
+      success: false,
+      error_type,
+      error_message,
+    })
+  }
+}
+
 fn map_provider(
   provider: GenerationProvider,
   model: CommonVideoModel,
-) -> Result<RouterProvider, EstimateVideoCostError> {
+) -> Result<RouterProvider, HandlerError> {
   match provider {
     GenerationProvider::Artcraft => Ok(RouterProvider::Artcraft),
-    other => Err(EstimateVideoCostError::InvalidProvider {
+    other => Err(HandlerError::InvalidProviderForModel {
       provider: format!("{:?}", other),
       model: format!("{:?}", model),
     }),
   }
 }
 
-fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, EstimateVideoCostError> {
+fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerError> {
   let router_model = match model {
     CommonVideoModel::GrokVideo => RouterVideoModel::GrokVideo,
     CommonVideoModel::Kling16Pro => RouterVideoModel::Kling16Pro,
