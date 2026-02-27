@@ -9,6 +9,7 @@ use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
+use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 /// A Seedance2Pro job that is waiting for a result from the external API.
 #[derive(Debug)]
@@ -24,6 +25,8 @@ pub struct PendingSeedance2ProJob {
   pub creator_set_visibility: Visibility,
 
   pub maybe_prompt_token: Option<PromptToken>,
+
+  pub maybe_wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
 }
 
 #[derive(Debug, Default)]
@@ -35,6 +38,7 @@ struct RawRecord {
   creator_ip_address: String,
   creator_set_visibility: Visibility,
   maybe_prompt_token: Option<PromptToken>,
+  maybe_wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
 }
 
 /// Returns all non-terminal Seedance2Pro jobs that have an associated order_id.
@@ -49,7 +53,8 @@ SELECT
     jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,
     jobs.creator_ip_address,
     jobs.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
-    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`
+    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,
+    jobs.maybe_wallet_ledger_entry_token as `maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`
 
 FROM generic_inference_jobs as jobs
 
@@ -84,6 +89,7 @@ LIMIT 25000
         creator_ip_address: record.creator_ip_address,
         creator_set_visibility: record.creator_set_visibility,
         maybe_prompt_token: record.maybe_prompt_token,
+        maybe_wallet_ledger_entry_token: record.maybe_wallet_ledger_entry_token,
       })
     })
     .collect();
