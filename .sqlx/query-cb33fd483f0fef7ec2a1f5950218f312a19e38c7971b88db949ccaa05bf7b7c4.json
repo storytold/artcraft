@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n    jobs.maybe_external_third_party_id as `order_id`,\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n    jobs.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`\n\nFROM generic_inference_jobs as jobs\n\nWHERE jobs.maybe_external_third_party = ?\n  AND jobs.status NOT IN ('complete_success', 'complete_failure')\n  AND jobs.maybe_external_third_party_id IS NOT NULL\n\nLIMIT 25000\n    ",
+  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n    jobs.maybe_external_third_party_id as `order_id`,\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n    jobs.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n    jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,\n    jobs.maybe_wallet_ledger_entry_token as `maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`\n\nFROM generic_inference_jobs as jobs\n\nWHERE jobs.maybe_external_third_party = ?\n  AND jobs.status NOT IN ('complete_success', 'complete_failure')\n  AND jobs.maybe_external_third_party_id IS NOT NULL\n\nLIMIT 25000\n    ",
   "describe": {
     "columns": [
       {
@@ -72,6 +72,16 @@
           "char_set": 224,
           "max_size": 128
         }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
       }
     ],
     "parameters": {
@@ -84,8 +94,9 @@
       true,
       false,
       false,
+      true,
       true
     ]
   },
-  "hash": "ca96942d8214edb84f163cf40131ceed873209e86718054e1502219fc81d2dc6"
+  "hash": "cb33fd483f0fef7ec2a1f5950218f312a19e38c7971b88db949ccaa05bf7b7c4"
 }

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE wallets\nSET\n  banked_credits = ?,\n  version = version + 1\nWHERE token = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "01f6369e0ab7b0fa5b95b4595827dcf15897f3b50cce5b1dc421101b157b7008"
+}

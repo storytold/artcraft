@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO generic_inference_jobs\nSET\n  token = ?,\n  uuid_idempotency_token = ?,\n\n  job_type = ?,\n\n  maybe_external_third_party = ?,\n  maybe_external_third_party_id = ?,\n\n  product_category = ?,\n  inference_category = ?,\n\n  maybe_model_type = NULL,\n  maybe_model_token = NULL,\n\n  maybe_input_source_token = NULL,\n  maybe_input_source_token_type = NULL,\n\n  maybe_download_url = NULL,\n  maybe_cover_image_media_file_token = NULL,\n\n  maybe_prompt_token = ?,\n\n  maybe_wallet_ledger_entry_token = ?,\n\n  maybe_raw_inference_text = NULL,\n\n  maybe_inference_args = ?,\n\n  maybe_creator_user_token = ?,\n  maybe_creator_anonymous_visitor_token = ?,\n  creator_ip_address = ?,\n  creator_set_visibility = ?,\n\n  priority_level = 0,\n  is_keepalive_required = FALSE,\n  max_duration_seconds = 0,\n\n  is_debug_request = FALSE,\n  maybe_routing_tag = NULL,\n\n  status = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 15
+    },
+    "nullable": []
+  },
+  "hash": "ee228ab4a079fde6b3683b6cde2a2384d3def27a5d09baa5caf00a521d5d2bcd"
+}

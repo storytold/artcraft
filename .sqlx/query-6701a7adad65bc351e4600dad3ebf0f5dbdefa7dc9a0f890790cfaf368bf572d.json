@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE wallet_ledger_entries\nSET\n  is_refunded = TRUE,\n  maybe_linked_refund_ledger_token = ?\nWHERE token = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "6701a7adad65bc351e4600dad3ebf0f5dbdefa7dc9a0f890790cfaf368bf572d"
+}
