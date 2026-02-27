@@ -29,6 +29,7 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
 };
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
+use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
 use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro::requests::generate_video::generate_video::{
   generate_video, BatchCount, GenerateVideoArgs, Resolution,
@@ -212,12 +213,20 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
   // --- Call seedance2pro API ---
 
-  let gen_response = generate_video(video_gen_args)
-      .await
-      .map_err(|err| {
-        warn!("Error calling seedance2pro generate_video: {:?}", err);
-        CommonWebError::ServerError
-      })?;
+  // TODO: The refund logic here could use work. We shouldn't hold MySQL transactions open during the HTTP
+  //  transaction (as that could last forever), but this is slightly risky in that a tiny percentage of errors
+  //  may leak. We need to engineer two-phase transactions (a lot of work) to make every step atomic.
+
+  let gen_response = match generate_video(video_gen_args).await {
+    Ok(resp) => resp,
+    Err(err) => {
+      warn!("Error calling seedance2pro generate_video: {:?}", err);
+      refund_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await;
+
+      // TODO: We need to start returning robust failure messages to the caller.
+      return Err(CommonWebError::ServerError);
+    }
+  };
 
   info!(
     "Seedance2pro task_id={}, order_id={}",
@@ -356,6 +365,53 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     inference_job_token: first_job_token,
     all_inference_job_tokens: all_job_tokens,
   }))
+}
+
+async fn refund_after_api_failure(
+  ledger_entry_token: &tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken,
+  connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
+) {
+  let mut transaction = match connection.begin().await {
+    Ok(tx) => tx,
+    Err(err) => {
+      error!(
+        "Failed to begin refund transaction after API failure (ledger {}): {:?}",
+        ledger_entry_token.as_str(), err
+      );
+      return;
+    }
+  };
+
+  match try_to_refund_ledger_entry(ledger_entry_token, &mut transaction).await {
+    Ok(WalletRefundOutcome::Refunded(summary)) => {
+      info!(
+        "Refunded {} credits after API failure (ledger {} → refund ledger {}).",
+        summary.refund_amount,
+        ledger_entry_token.as_str(),
+        summary.refund_ledger_entry_token.as_str(),
+      );
+      if let Err(err) = transaction.commit().await {
+        error!(
+          "Failed to commit refund after API failure (ledger {}): {:?}",
+          ledger_entry_token.as_str(), err
+        );
+      }
+    }
+    Ok(WalletRefundOutcome::AlreadyRefunded) => {
+      info!(
+        "Ledger entry {} was already refunded; no action needed.",
+        ledger_entry_token.as_str()
+      );
+      let _ = transaction.rollback().await;
+    }
+    Err(err) => {
+      error!(
+        "Failed to refund ledger entry {} after API failure: {:?}",
+        ledger_entry_token.as_str(), err
+      );
+      let _ = transaction.rollback().await;
+    }
+  }
 }
 
 async fn upload_to_seedance2pro(
