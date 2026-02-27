@@ -18,6 +18,77 @@ pub async fn process_failed_job(
     .as_deref()
     .unwrap_or("unknown failure reason");
 
+  // --- Step 1: Attempt the refund before touching the job status. ---
+  //
+  // We do this first so that a crash or error between the refund and the status update
+  // can never result in a failed job with no refund. If the refund itself fails we bail
+  // out early: the job stays pending and will be retried on the next poll cycle.
+
+  match &job.maybe_wallet_ledger_entry_token {
+    None => {
+      // No ledger token recorded — job was likely submitted before billing was wired up.
+      warn!(
+        "Job {} has no wallet ledger entry token; skipping refund.",
+        job.job_token.as_str()
+      );
+    }
+    Some(ledger_token) => {
+      let mut transaction = match deps.mysql_pool.begin().await {
+        Ok(tx) => tx,
+        Err(err) => {
+          error!(
+            "Failed to begin refund transaction for job {} (ledger {}): {:?}. \
+             Job will NOT be marked failed yet and will be retried next poll.",
+            job.job_token.as_str(), ledger_token.as_str(), err
+          );
+          return;
+        }
+      };
+
+      match try_to_refund_ledger_entry(ledger_token, &mut transaction).await {
+        Ok(WalletRefundOutcome::Refunded(summary)) => {
+          info!(
+            "Refunded {} credits for failed job {} (ledger {} → refund ledger {}).",
+            summary.refund_amount,
+            job.job_token.as_str(),
+            ledger_token.as_str(),
+            summary.refund_ledger_entry_token.as_str(),
+          );
+          if let Err(err) = transaction.commit().await {
+            error!(
+              "Failed to commit refund transaction for job {} (ledger {}): {:?}. \
+               Job will NOT be marked failed yet and will be retried next poll.",
+              job.job_token.as_str(), ledger_token.as_str(), err
+            );
+            return;
+          }
+        }
+        Ok(WalletRefundOutcome::AlreadyRefunded) => {
+          // Idempotent — nothing to do, safe to proceed.
+          info!(
+            "Ledger entry {} for job {} was already refunded; proceeding to mark job failed.",
+            ledger_token.as_str(),
+            job.job_token.as_str(),
+          );
+          let _ = transaction.rollback().await;
+        }
+        Err(err) => {
+          error!(
+            "Failed to refund ledger entry {} for job {}: {:?}. \
+             Job will NOT be marked failed yet and will be retried next poll.",
+            ledger_token.as_str(),
+            job.job_token.as_str(),
+            err,
+          );
+          let _ = transaction.rollback().await;
+          return;
+        }
+      }
+    }
+  }
+
+  // --- Step 2: Mark the job record as failed. ---
+
   let reason_lower = reason.to_lowercase();
 
   let platform_rules_violation = reason_lower.contains("violates") ||
@@ -49,62 +120,5 @@ pub async fn process_failed_job(
       job.job_token.as_str(),
       err
     );
-  }
-
-  // Refund the credits for the failed generation.
-  let ledger_token = match &job.maybe_wallet_ledger_entry_token {
-    Some(token) => token,
-    None => {
-      warn!(
-        "Job {} has no wallet ledger entry token; cannot issue refund.",
-        job.job_token.as_str()
-      );
-      return;
-    }
-  };
-
-  match deps.mysql_pool.begin().await {
-    Err(err) => {
-      error!(
-        "Failed to begin refund transaction for job {}: {:?}",
-        job.job_token.as_str(), err
-      );
-    }
-    Ok(mut transaction) => {
-      match try_to_refund_ledger_entry(ledger_token, &mut transaction).await {
-        Ok(WalletRefundOutcome::Refunded(summary)) => {
-          info!(
-            "Refunded {} credits for failed job {} (ledger {} → refund ledger {}).",
-            summary.refund_amount,
-            job.job_token.as_str(),
-            ledger_token.as_str(),
-            summary.refund_ledger_entry_token.as_str(),
-          );
-          if let Err(err) = transaction.commit().await {
-            error!(
-              "Failed to commit refund transaction for job {}: {:?}",
-              job.job_token.as_str(), err
-            );
-          }
-        }
-        Ok(WalletRefundOutcome::AlreadyRefunded) => {
-          info!(
-            "Ledger entry {} for job {} was already refunded; skipping.",
-            ledger_token.as_str(),
-            job.job_token.as_str(),
-          );
-          let _ = transaction.rollback().await;
-        }
-        Err(err) => {
-          error!(
-            "Failed to refund ledger entry {} for job {}: {:?}",
-            ledger_token.as_str(),
-            job.job_token.as_str(),
-            err,
-          );
-          let _ = transaction.rollback().await;
-        }
-      }
-    }
   }
 }
