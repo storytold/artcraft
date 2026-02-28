@@ -4,11 +4,11 @@ import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 
 interface GenerateButtonProps extends ButtonProps {
-  credits?: number;
+  credits?: number | null;
 }
 
 export const GenerateButton = ({
-  credits = 0,
+  credits,
   children,
   className,
   disabled,
@@ -25,17 +25,18 @@ export const GenerateButton = ({
     >
       <span className="truncate">{children}</span>
 
-      {/* Static Credit Info - No Interaction */}
-      <div
-        className={twMerge(
-          "flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none",
-          disabled && "opacity-50",
-        )}
-        title={`${credits} credit${credits !== 1 ? "s" : ""} cost`}
-      >
-        <FontAwesomeIcon icon={faCoins} className="text-xs text-white" />
-        <span className="text-[13px] font-bold text-white/90">{credits}</span>
-      </div>
+      {credits != null && (
+        <div
+          className={twMerge(
+            "flex items-center gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none",
+            disabled && "opacity-50",
+          )}
+          title={`${credits} credit${credits !== 1 ? "s" : ""} cost`}
+        >
+          <FontAwesomeIcon icon={faCoins} className="text-xs text-white" />
+          <span className="text-[13px] font-bold text-white/90">{credits}</span>
+        </div>
+      )}
     </Button>
   );
 };

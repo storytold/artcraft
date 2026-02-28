@@ -841,7 +841,7 @@ export const PromptBoxVideo = ({
                     onClick={handleEnqueue}
                     disabled={!prompt.trim()}
                     loading={isEnqueueing}
-                    credits={credits ?? 1}
+                    credits={credits}
                   >
                     Generate
                   </GenerateButton>
