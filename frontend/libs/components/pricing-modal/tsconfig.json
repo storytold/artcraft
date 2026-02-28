@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../tauri-api"
+    },
+    {
       "path": "../../state/subscription"
     },
     {
@@ -12,7 +15,22 @@
       "path": "../button"
     },
     {
+      "path": "../select"
+    },
+    {
       "path": "../modal"
+    },
+    {
+      "path": "../model-selector"
+    },
+    {
+      "path": "../promptbox"
+    },
+    {
+      "path": "../../model-list"
+    },
+    {
+      "path": "../../api-enums"
     },
     {
       "path": "./tsconfig.lib.json"

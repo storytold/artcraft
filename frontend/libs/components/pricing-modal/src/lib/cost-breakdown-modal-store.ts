@@ -6,6 +6,11 @@ interface CostBreakdownModalState {
   openModal: () => void;
   closeModal: () => void;
   toggleModal: () => void;
+  estimatedCreditsByPage: Partial<Record<ModelPage, number | null>>;
+  setEstimatedCreditsForPage: (
+    page: ModelPage,
+    credits: number | null,
+  ) => void;
 }
 
 export const useCostBreakdownModalStore = create<CostBreakdownModalState>(
@@ -14,6 +19,14 @@ export const useCostBreakdownModalStore = create<CostBreakdownModalState>(
     openModal: () => set({ isOpen: true }),
     closeModal: () => set({ isOpen: false }),
     toggleModal: () => set((state) => ({ isOpen: !state.isOpen })),
+    estimatedCreditsByPage: {},
+    setEstimatedCreditsForPage: (page, credits) =>
+      set((state) => ({
+        estimatedCreditsByPage: {
+          ...state.estimatedCreditsByPage,
+          [page]: credits,
+        },
+      })),
   }),
 );
 

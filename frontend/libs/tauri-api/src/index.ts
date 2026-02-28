@@ -41,3 +41,4 @@ export * from "./lib/sora/waitForSoraLogin.js";
 export * from "./lib/system/GetAppInfo.js";
 export * from "./lib/util/LoadWithoutCors.js";
 export * from "./lib/worldlabs/WorldLabsGetCredentialInfo.js";
+export * from "./lib/cost_estimate/EstimateVideoCost.js";

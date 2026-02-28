@@ -68,34 +68,31 @@
       "path": "../../libs/components/help-menu"
     },
     {
+      "path": "../../libs/components/settings-modal"
+    },
+    {
       "path": "../../libs/components/promptbox"
-    },
-    {
-      "path": "../../libs/state/subscription"
-    },
-    {
-      "path": "../../libs/state/credits"
-    },
-    {
-      "path": "../../libs/tauri-events"
-    },
-    {
-      "path": "../../libs/components/pricing-modal"
-    },
-    {
-      "path": "../../libs/components/provider-billing-modal"
-    },
-    {
-      "path": "../../libs/components/provider-setup-modal"
-    },
-    {
-      "path": "../../libs/analytics/google-analytics"
     },
     {
       "path": "../../libs/components/menu-icon-selector"
     },
     {
-      "path": "../../libs/components/settings-modal"
+      "path": "../../libs/tauri-events"
+    },
+    {
+      "path": "../../libs/state/subscription"
+    },
+    {
+      "path": "../../libs/components/provider-setup-modal"
+    },
+    {
+      "path": "../../libs/components/provider-billing-modal"
+    },
+    {
+      "path": "../../libs/analytics/google-analytics"
+    },
+    {
+      "path": "../../libs/state/credits"
     },
     {
       "path": "../../libs/common"
@@ -135,6 +132,12 @@
     },
     {
       "path": "../../libs/components/list-dropdown"
+    },
+    {
+      "path": "../../libs/components/pricing-modal"
+    },
+    {
+      "path": "../../libs/components/select"
     },
     {
       "path": "../../libs/model-list"

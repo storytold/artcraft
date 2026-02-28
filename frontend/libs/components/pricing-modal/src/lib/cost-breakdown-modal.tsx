@@ -1,7 +1,7 @@
 import { Modal } from "@storyteller/ui-modal";
 import { useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCoins } from "@fortawesome/pro-solid-svg-icons";
+import { faCoins, faSpinner } from "@fortawesome/pro-solid-svg-icons";
 import { Select } from "@storyteller/ui-select";
 import {
   useCostBreakdownModalStore,
@@ -27,6 +27,7 @@ import {
 } from "@storyteller/ui-promptbox";
 import { Model } from "@storyteller/model-list";
 import { useCurrency } from "./use-currency";
+import { useVideoCostEstimate } from "./useVideoCostEstimate";
 
 // Drag handle subcomponent that Modal looks for
 const DragHandle = ({ children }: { children: React.ReactNode }) => (
@@ -78,7 +79,8 @@ export interface CostBreakdownModalProps {
 }
 
 export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
-  const { isOpen, closeModal } = useCostBreakdownModalStore();
+  const { isOpen, closeModal, estimatedCreditsByPage } =
+    useCostBreakdownModalStore();
   const {
     currency,
     setCurrency,
@@ -104,6 +106,12 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const selectedProvider = useSelectedProviderForModel(
     activePage,
     selectedModel?.id,
+  );
+
+  const { isLoading: isVideoEstimateLoading } = useVideoCostEstimate(
+    activePage,
+    selectedModel,
+    selectedProvider,
   );
 
   // Get generation settings from the appropriate stores based on active page
@@ -157,13 +165,20 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
 
   const storeData = getStoreData();
 
-  // Default credits per model - this should ideally come from the model
-  // For now we use a default of 1 credit per generation
+  // For video, use the live estimate from the backend; for others use a default
+  const videoCredits =
+    activePage === ModelPage.ImageToVideo
+      ? (estimatedCreditsByPage[ModelPage.ImageToVideo] ?? null)
+      : null;
+
   const creditsPerGeneration = 1;
-  const totalCredits = creditsPerGeneration * storeData.generationCount;
+  const totalCredits =
+    activePage === ModelPage.ImageToVideo
+      ? (videoCredits ?? null)
+      : creditsPerGeneration * storeData.generationCount;
 
   // Convert credits to USD first (1 credit = $0.01), then to selected currency
-  const usdAmount = totalCredits * 0.01;
+  const usdAmount = (totalCredits ?? 0) * 0.01;
   const formattedPrice = formatPrice(usdAmount);
 
   // Select options formatted for the Select component
@@ -292,8 +307,23 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                 <div className="text-[10px] text-base-fg/50 uppercase tracking-wider font-medium mb-0.5">
                   Credits
                 </div>
-                <div className="text-lg font-bold text-base-fg">
-                  {totalCredits} {totalCredits === 1 ? "Credit" : "Credits"}
+                <div className="text-lg font-bold text-base-fg flex items-center gap-1.5">
+                  {isVideoEstimateLoading && activePage === ModelPage.ImageToVideo ? (
+                    <>
+                      <FontAwesomeIcon
+                        icon={faSpinner}
+                        className="animate-spin text-base"
+                      />
+                      <span className="text-base-fg/50 text-sm">Calculating…</span>
+                    </>
+                  ) : totalCredits != null ? (
+                    <>
+                      {totalCredits}{" "}
+                      {totalCredits === 1 ? "Credit" : "Credits"}
+                    </>
+                  ) : (
+                    <span className="text-base-fg/50">—</span>
+                  )}
                 </div>
               </div>
 

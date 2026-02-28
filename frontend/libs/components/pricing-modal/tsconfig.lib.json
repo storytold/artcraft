@@ -44,6 +44,9 @@
   ],
   "references": [
     {
+      "path": "../../tauri-api/tsconfig.lib.json"
+    },
+    {
       "path": "../../state/subscription/tsconfig.lib.json"
     },
     {
@@ -53,7 +56,22 @@
       "path": "../button/tsconfig.lib.json"
     },
     {
+      "path": "../select/tsconfig.lib.json"
+    },
+    {
       "path": "../modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../model-selector/tsconfig.lib.json"
+    },
+    {
+      "path": "../promptbox/tsconfig.lib.json"
+    },
+    {
+      "path": "../../model-list/tsconfig.lib.json"
+    },
+    {
+      "path": "../../api-enums/tsconfig.lib.json"
     }
   ]
 }
