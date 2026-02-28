@@ -22,7 +22,10 @@ import {
 import { twMerge } from "tailwind-merge";
 import { uploadImage } from "../../components/reusable/UploadModalMedia/uploadImage";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
-import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
+import {
+  CostCalculatorButton,
+  useCostBreakdownModalStore,
+} from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 const PAGE_ID: ModelPage = ModelPage.ImageToVideo;
@@ -47,6 +50,10 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
 
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedVideoModel?.id);
+
+  const videoCredits = useCostBreakdownModalStore(
+    (s) => s.estimatedCreditsByPage[PAGE_ID],
+  );
 
   const jobContext: JobContextType = {
     jobTokens: [],
@@ -197,6 +204,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
                 url={imageUrl ?? undefined}
                 onImageRowVisibilityChange={setImageRowVisible}
                 uploadImage={uploadImage}
+                credits={videoCredits}
                 onEnqueuePressed={async (prompt, subscriberId) => {
                   const modelLabel = selectedVideoModel?.fullName ?? "";
                   startBatch(prompt, modelLabel, subscriberId);

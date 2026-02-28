@@ -60,6 +60,7 @@ interface PromptBoxVideoProps {
   url?: string;
   onImageRowVisibilityChange?: (visible: boolean) => void;
   uploadImage?: UploadImageFn;
+  credits?: number | null;
 }
 
 export const PromptBoxVideo = ({
@@ -71,6 +72,7 @@ export const PromptBoxVideo = ({
   url,
   onImageRowVisibilityChange,
   uploadImage,
+  credits,
 }: PromptBoxVideoProps) => {
   useSignals();
 
@@ -839,7 +841,7 @@ export const PromptBoxVideo = ({
                     onClick={handleEnqueue}
                     disabled={!prompt.trim()}
                     loading={isEnqueueing}
-                    credits={1}
+                    credits={credits ?? 1}
                   >
                     Generate
                   </GenerateButton>
