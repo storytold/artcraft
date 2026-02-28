@@ -17,22 +17,12 @@ impl SerializeMarker for EstimateVideoCostResponse {}
 pub async fn estimate_video_cost_command(
   request: EstimateVideoCostRequest,
   app_env_configs: State<'_, AppEnvConfigs>,
-  storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
 ) -> ResponseOrError<EstimateVideoCostResponse, EstimateVideoCostError> {
   info!("estimate_video_cost_command called");
 
-  let creds = storyteller_creds_manager
-    .get_credentials()
-    .map_err(|e| CommandErrorResponseWrapper {
-      status: CommandErrorStatus::Unauthorized,
-      error_message: Some(e.to_string()),
-      error_type: None,
-      error_details: None,
-    })?;
-
   let result = estimate_video_cost(
     &app_env_configs.storyteller_host,
-    creds.as_ref(),
+    None, // Credentials are not required for this endpoint.
     request,
   )
   .await;
