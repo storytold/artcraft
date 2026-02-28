@@ -545,7 +545,6 @@ export const PromptBoxImage = ({
                 onClick={handleEnqueue}
                 disabled={!prompt.trim()}
                 loading={isEnqueueing}
-                credits={1}
               >
                 Generate
               </GenerateButton>

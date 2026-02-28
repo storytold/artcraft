@@ -653,7 +653,6 @@ export const ImageTo3DExperience = ({
                   disabled={!canGenerate}
                   onClick={handleGenerate}
                   loading={isGenerating}
-                  credits={1}
                 >
                   {`Generate ${variant === "object" ? "Object" : "World"}`}
                 </GenerateButton>

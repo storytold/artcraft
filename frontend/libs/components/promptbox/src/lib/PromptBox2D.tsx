@@ -501,7 +501,6 @@ export const PromptBox2D = ({
                 onClick={handleGenerate}
                 disabled={isEnqueueing || !prompt.trim()}
                 loading={isEnqueueing}
-                credits={1}
               >
                 Generate
               </GenerateButton>

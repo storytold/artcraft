@@ -747,7 +747,6 @@ export const PromptBox3D = ({
                 onClick={handleEnqueue}
                 disabled={isEnqueueing || !prompt.trim()}
                 loading={isEnqueueing}
-                credits={1}
               >
                 Generate
               </GenerateButton>

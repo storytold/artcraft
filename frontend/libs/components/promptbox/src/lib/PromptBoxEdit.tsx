@@ -515,7 +515,6 @@ export const PromptBoxEdit = ({
                   onClick={handleGenerate}
                   disabled={isDisabled || !prompt.trim()}
                   loading={isEnqueueing ?? internalEnqueueing}
-                  credits={1}
                 >
                   Generate
                 </GenerateButton>
