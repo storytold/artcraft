@@ -1,5 +1,6 @@
 pub mod app_preferences;
 pub mod app_state;
+pub mod cost_estimate;
 pub mod download;
 pub mod enqueue;
 pub mod flip_image;

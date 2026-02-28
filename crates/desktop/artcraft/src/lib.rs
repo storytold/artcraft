@@ -6,6 +6,7 @@ use tauri::Manager;
 
 use crate::core::commands::app_preferences::get_app_preferences_command::get_app_preferences_command;
 use crate::core::commands::app_preferences::update_app_preference_command::update_app_preferences_command;
+use crate::core::commands::cost_estimate::estimate_video_cost_command::estimate_video_cost_command;
 use crate::core::commands::download::download_directory_reveal_command::download_directory_reveal_command;
 use crate::core::commands::download::download_media_file_command::download_media_file_command;
 use crate::core::commands::download::download_url_command::download_url_command;
@@ -211,6 +212,7 @@ pub fn run() {
     enqueue_image_to_gaussian_command,
     enqueue_image_to_video_command,
     enqueue_text_to_image_command,
+    estimate_video_cost_command,
     flip_image,
     get_app_info_command,
     get_app_preferences_command,
