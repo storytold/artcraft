@@ -161,6 +161,7 @@ fn plan_batch_count(
 }
 
 // Seedance2p0 supports duration of 4–15 seconds.
+
 fn plan_duration(
   duration_seconds: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -179,5 +180,153 @@ fn plan_duration(
       }
       _ => Ok(Some(d.clamp(MIN, MAX) as u8)),
     },
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::api::image_ref::ImageRef;
+  use crate::errors::artcraft_router_error::ArtcraftRouterError;
+  use crate::errors::client_error::ClientError;
+  use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
+  use crate::test_helpers::base_video_request;
+  use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
+    Seedance2p0AspectRatio, Seedance2p0BatchCount,
+  };
+
+  #[test]
+  fn aspect_ratio_direct_16x9() {
+    let request = GenerateVideoRequest {
+      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      ..base_video_request()
+    };
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    assert!(matches!(plan.aspect_ratio, Some(Seedance2p0AspectRatio::Landscape16x9)));
+  }
+
+  #[test]
+  fn aspect_ratio_direct_9x16() {
+    let request = GenerateVideoRequest {
+      aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+      ..base_video_request()
+    };
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    assert!(matches!(plan.aspect_ratio, Some(Seedance2p0AspectRatio::Portrait9x16)));
+  }
+
+  #[test]
+  fn aspect_ratio_direct_square() {
+    let request = GenerateVideoRequest {
+      aspect_ratio: Some(CommonAspectRatio::Square),
+      ..base_video_request()
+    };
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    assert!(matches!(plan.aspect_ratio, Some(Seedance2p0AspectRatio::Square1x1)));
+  }
+
+  #[test]
+  fn aspect_ratio_nearest_match_both_strategies() {
+    // WideThreeByTwo (AR 1.5) is nearest to Standard4x3 (1.33), not Landscape16x9 (1.78)
+    for strategy in [
+      RequestMismatchMitigationStrategy::PayMoreUpgrade,
+      RequestMismatchMitigationStrategy::PayLessDowngrade,
+    ] {
+      let request = GenerateVideoRequest {
+        aspect_ratio: Some(CommonAspectRatio::WideThreeByTwo),
+        request_mismatch_mitigation_strategy: strategy,
+        ..base_video_request()
+      };
+      let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+      assert!(
+        matches!(plan.aspect_ratio, Some(Seedance2p0AspectRatio::Standard4x3)),
+        "Expected Standard4x3 for WideThreeByTwo with {:?}", strategy,
+      );
+    }
+  }
+
+  #[test]
+  fn aspect_ratio_error_out_on_unsupported() {
+    let request = GenerateVideoRequest {
+      aspect_ratio: Some(CommonAspectRatio::WideThreeByTwo),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      ..base_video_request()
+    };
+    let result = request.build();
+    assert!(matches!(
+      result,
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { .. }))
+    ));
+  }
+
+  #[test]
+  fn batch_count_zero_is_always_error() {
+    for strategy in [
+      RequestMismatchMitigationStrategy::ErrorOut,
+      RequestMismatchMitigationStrategy::PayMoreUpgrade,
+      RequestMismatchMitigationStrategy::PayLessDowngrade,
+    ] {
+      let request = GenerateVideoRequest {
+        video_batch_count: Some(0),
+        request_mismatch_mitigation_strategy: strategy,
+        ..base_video_request()
+      };
+      let result = request.build();
+      assert!(
+        matches!(result, Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations))),
+        "Expected UserRequestedZeroGenerations with {:?}", strategy,
+      );
+    }
+  }
+
+  #[test]
+  fn batch_count_direct_mapping() {
+    let req = GenerateVideoRequest { video_batch_count: Some(1), ..base_video_request() };
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap();
+    assert!(matches!(plan.batch_count, Seedance2p0BatchCount::One));
+
+    let req = GenerateVideoRequest { video_batch_count: Some(2), ..base_video_request() };
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap();
+    assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Two));
+
+    let req = GenerateVideoRequest { video_batch_count: Some(4), ..base_video_request() };
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap();
+    assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Four));
+  }
+
+  #[test]
+  fn batch_count_three_upgrade_rounds_to_four() {
+    let request = GenerateVideoRequest {
+      video_batch_count: Some(3),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+      ..base_video_request()
+    };
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Four));
+  }
+
+  #[test]
+  fn batch_count_three_downgrade_rounds_to_two() {
+    let request = GenerateVideoRequest {
+      video_batch_count: Some(3),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
+      ..base_video_request()
+    };
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Two));
+  }
+
+  #[test]
+  fn url_image_ref_returns_error() {
+    let request = GenerateVideoRequest {
+      start_frame: Some(ImageRef::Url("https://example.com/image.jpg")),
+      ..base_video_request()
+    };
+    let result = request.build();
+    assert!(matches!(
+      result,
+      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
+    ));
   }
 }

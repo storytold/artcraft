@@ -34,3 +34,56 @@ pub async fn execute_artcraft_seedance2p0(
     all_inference_job_tokens: response.all_inference_job_tokens,
   })
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
+  use crate::test_helpers::{base_video_request, get_artcraft_client};
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request and incurs cost
+  async fn test_text_to_video_seedance_2p0() {
+    let client = get_artcraft_client();
+    let request = crate::generate::generate_video::generate_video_request::GenerateVideoRequest {
+      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      video_batch_count: Some(1),
+      prompt: Some("a cat walking through a cyberpunk city at night"),
+      ..base_video_request()
+    };
+
+    let plan = request.build().unwrap();
+    let result = plan.generate_video(&client).await;
+
+    println!("Result: {:?}", result);
+    let response = result.expect("generate_video request failed");
+    println!("Job token: {:?}", response.inference_job_token);
+    println!("All job tokens: {:?}", response.all_inference_job_tokens);
+
+    assert_eq!(1, 2); // NB: Intentional failure to inspect the response above.
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request and incurs cost
+  async fn test_text_to_video_seedance_2p0_batch_two() {
+    let client = get_artcraft_client();
+    let request = crate::generate::generate_video::generate_video_request::GenerateVideoRequest {
+      aspect_ratio: Some(CommonAspectRatio::Square),
+      video_batch_count: Some(2),
+      prompt: Some("a dog surfing a wave, cinematic"),
+      ..base_video_request()
+    };
+
+    let plan = request.build().unwrap();
+    let result = plan.generate_video(&client).await;
+
+    println!("Result: {:?}", result);
+    let response = result.expect("generate_video request failed");
+    println!("Job tokens ({} total):", response.all_inference_job_tokens.len());
+    for token in &response.all_inference_job_tokens {
+      println!("  {:?}", token);
+    }
+
+    assert_eq!(1, 2); // NB: Intentional failure to inspect the response above.
+  }
+}
