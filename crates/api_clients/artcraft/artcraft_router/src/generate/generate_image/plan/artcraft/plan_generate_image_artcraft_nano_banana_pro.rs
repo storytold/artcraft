@@ -185,7 +185,7 @@ mod tests {
   #[test]
   fn aspect_ratio_none_is_none() {
     let request = GenerateImageRequest { aspect_ratio: None, ..base_image_request() };
-    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
     assert!(plan.aspect_ratio.is_none());
   }
 
@@ -193,7 +193,7 @@ mod tests {
   fn aspect_ratio_direct_square() {
     for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
       let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_image_request() };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(matches!(plan.aspect_ratio, Some(NbpAr::OneByOne)), "expected OneByOne for {:?}", ar);
     }
   }
@@ -210,7 +210,7 @@ mod tests {
     ];
     for (common, expected) in cases {
       let request = GenerateImageRequest { aspect_ratio: Some(common), ..base_image_request() };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.aspect_ratio, Some(ar) if std::mem::discriminant(&ar) == std::mem::discriminant(&expected)),
         "expected {:?} for {:?}", expected, common,
@@ -229,7 +229,7 @@ mod tests {
     ];
     for (common, expected) in cases {
       let request = GenerateImageRequest { aspect_ratio: Some(common), ..base_image_request() };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.aspect_ratio, Some(ar) if std::mem::discriminant(&ar) == std::mem::discriminant(&expected)),
         "expected {:?} for {:?}", expected, common,
@@ -247,7 +247,7 @@ mod tests {
         image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
         ..base_image_request()
       };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.aspect_ratio, Some(NbpAr::Auto)),
         "expected Auto in edit mode for {:?}", auto_ar,
@@ -263,7 +263,7 @@ mod tests {
         image_inputs: None,
         ..base_image_request()
       };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.aspect_ratio, Some(NbpAr::OneByOne)),
         "expected OneByOne fallback in text-to-image for {:?}", auto_ar,
@@ -298,7 +298,7 @@ mod tests {
         request_mismatch_mitigation_strategy: strategy,
         ..base_image_request()
       };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.aspect_ratio, Some(NbpAr::NineBySixteen)),
         "expected NineBySixteen nearest match with {:?}", strategy,
@@ -311,7 +311,7 @@ mod tests {
   #[test]
   fn resolution_none_is_none() {
     let request = GenerateImageRequest { resolution: None, ..base_image_request() };
-    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
     assert!(plan.resolution.is_none());
   }
 
@@ -324,7 +324,7 @@ mod tests {
     ];
     for (common, expected) in cases {
       let request = GenerateImageRequest { resolution: Some(common), ..base_image_request() };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.resolution, Some(r) if std::mem::discriminant(&r) == std::mem::discriminant(&expected)),
         "expected {:?} for {:?}", expected, common,
@@ -338,7 +338,7 @@ mod tests {
       resolution: Some(CommonResolution::ThreeK),
       ..base_image_request()
     };
-    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
     assert!(matches!(plan.resolution, Some(NbpRes::TwoK)));
   }
 
@@ -374,7 +374,7 @@ mod tests {
     ];
     for (count, expected) in cases {
       let request = GenerateImageRequest { image_batch_count: Some(count), ..base_image_request() };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
         "expected {:?} for count {}", expected, count,
@@ -407,7 +407,7 @@ mod tests {
         request_mismatch_mitigation_strategy: strategy,
         ..base_image_request()
       };
-      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+      let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
       assert!(
         matches!(plan.num_images, NbpN::Four),
         "expected Four for count 5 with {:?}", strategy,
@@ -434,7 +434,7 @@ mod tests {
   #[test]
   fn no_image_inputs_is_text_to_image_mode() {
     let request = GenerateImageRequest { image_inputs: None, ..base_image_request() };
-    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
     assert!(plan.image_inputs.is_none());
   }
 
@@ -445,7 +445,7 @@ mod tests {
       image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
       ..base_image_request()
     };
-    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
+    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBananaPro") };
     assert!(plan.image_inputs.is_some());
   }
 }

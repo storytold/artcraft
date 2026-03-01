@@ -65,6 +65,9 @@ impl<'a> GenerateVideoRequest<'a> {
         }
         _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
       },
+      Provider::Fal => Err(ArtcraftRouterError::UnsupportedModel(
+        format!("Video generation via Fal is not yet supported (model: {:?})", self.model)
+      )),
     }
   }
 

@@ -7,6 +7,7 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::plan_generate_image_artcraft_nano_banana_pro;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
 pub struct GenerateImageRequest<'a> {
   /// Which model to use.
@@ -47,6 +48,11 @@ impl<'a> GenerateImageRequest<'a> {
       Provider::Artcraft => match self.model {
         CommonImageModel::NanaBananaPro => {
           plan_generate_image_artcraft_nano_banana_pro(self).map(ImageGenerationPlan::ArtcraftNanaBananaPro)
+        }
+      },
+      Provider::Fal => match self.model {
+        CommonImageModel::NanaBananaPro => {
+          plan_generate_image_fal_nano_banana_pro(self).map(ImageGenerationPlan::FalNanaBananaPro)
         }
       },
     }

@@ -5,4 +5,5 @@ use serde_derive::{Deserialize, Serialize};
 #[serde(rename_all = "snake_case")]
 pub enum Provider {
   Artcraft,
+  Fal,
 }

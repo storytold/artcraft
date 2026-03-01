@@ -4,10 +4,12 @@ use crate::api::provider::Provider;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_client::RouterClient;
+use crate::client::router_fal_client::RouterFalClient;
 use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::utils::api_host::ApiHost;
+use fal_client::creds::fal_api_key::FalApiKey;
 
 pub fn get_artcraft_client() -> RouterClient {
   let cookies = std::fs::read_to_string("/Users/bt/Artcraft/credentials/artcraft_cookies.txt")
@@ -23,6 +25,28 @@ pub fn base_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
     model: CommonImageModel::NanaBananaPro,
     provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    idempotency_token: None,
+  }
+}
+
+pub fn get_fal_client() -> RouterClient {
+  let secret = std::fs::read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")
+    .expect("Failed to read /Users/bt/Artcraft/credentials/fal_api_key.txt");
+  let api_key = FalApiKey::from_str(secret.trim());
+  let webhook_url = "https://example.com/fal-webhook-test".to_string();
+  RouterClient::Fal(RouterFalClient::new(api_key, webhook_url))
+}
+
+pub fn base_fal_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::NanaBananaPro,
+    provider: Provider::Fal,
     prompt: Some("a cat in space"),
     image_inputs: None,
     resolution: None,

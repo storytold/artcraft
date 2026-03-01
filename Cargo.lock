@@ -786,6 +786,7 @@ dependencies = [
  "anyhow",
  "artcraft_api_defs",
  "artcraft_client",
+ "fal_client",
  "log",
  "seedance2pro",
  "serde",
