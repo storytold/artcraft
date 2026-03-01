@@ -99,6 +99,7 @@ mod tests {
   use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_fal_image_request, get_fal_client};
+  use test_data::web::image_urls::{GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL};
 
   #[tokio::test]
   #[ignore] // manually run — fires a real Fal API request
@@ -149,14 +150,13 @@ mod tests {
   async fn test_edit_image_fal_nano_banana_pro() {
     let client = get_fal_client();
 
-    // Two public images: a ghost and a T-Rex skeleton (for compositing).
     let image_urls = vec![
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Casper_ghost.svg/800px-Casper_ghost.svg.png".to_string(),
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Trex_smithsonian.jpg/800px-Trex_smithsonian.jpg".to_string(),
+      GHOST_IMAGE_URL.to_string(),
+      TREX_SKELETON_IMAGE_URL.to_string(),
     ];
 
     let request = GenerateImageRequest {
-      prompt: Some("Add the ghost floating above the T-Rex skeleton in the museum, make the scene spooky but friendly"),
+      prompt: Some("Add the ghost from the first image hovering above the T-Rex skeleton in the second image, make it look spooky but friendly"),
       image_inputs: Some(ImageListRef::Urls(&image_urls)),
       aspect_ratio: Some(CommonAspectRatio::Auto), // edit mode: preserve source dimensions
       resolution: Some(CommonResolution::TwoK),

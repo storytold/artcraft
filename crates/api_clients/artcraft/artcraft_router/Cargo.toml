@@ -29,3 +29,6 @@ serde.workspace = true
 serde_derive.workspace = true
 tokio.workspace = true
 uuid.workspace = true
+
+[dev-dependencies]
+test_data.workspace = true
