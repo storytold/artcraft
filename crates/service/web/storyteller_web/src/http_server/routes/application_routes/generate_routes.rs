@@ -1,3 +1,4 @@
+use crate::http_server::endpoints::generate::cost_estimate::image::estimate_image_cost_handler::estimate_image_cost_handler;
 use crate::http_server::endpoints::generate::cost_estimate::video::estimate_video_cost_handler::estimate_video_cost_handler;
 use crate::http_server::endpoints::generate::image::edit::flux_pro_kontext_max_edit_image_handler::flux_pro_kontext_max_edit_image_handler;
 use crate::http_server::endpoints::generate::image::edit::gemini_25_flash_edit_image_handler::gemini_25_flash_edit_image_handler;
@@ -53,6 +54,10 @@ where
 {
   app.service(web::scope("/v1/generate")
       .service(web::scope("/cost_estimate")
+          .service(web::resource("/image")
+              .route(web::post().to(estimate_image_cost_handler))
+              .route(web::head().to(|| HttpResponse::Ok()))
+          )
           .service(web::resource("/video")
               .route(web::post().to(estimate_video_cost_handler))
               .route(web::head().to(|| HttpResponse::Ok()))
