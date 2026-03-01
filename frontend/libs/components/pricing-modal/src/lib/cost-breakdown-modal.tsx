@@ -207,7 +207,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       case ModelPage.TextToImage:
         return "Text to Image";
       case ModelPage.ImageToVideo:
-        return "Image to Video";
+        return "Generate Video";
       case ModelPage.Canvas2D:
         return "Canvas 2D";
       case ModelPage.Stage3D:
@@ -308,18 +308,20 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                   Credits
                 </div>
                 <div className="text-lg font-bold text-base-fg flex items-center gap-1.5">
-                  {isVideoEstimateLoading && activePage === ModelPage.ImageToVideo ? (
+                  {isVideoEstimateLoading &&
+                  activePage === ModelPage.ImageToVideo ? (
                     <>
                       <FontAwesomeIcon
                         icon={faSpinner}
                         className="animate-spin text-base"
                       />
-                      <span className="text-base-fg/50 text-sm">Calculating…</span>
+                      <span className="text-base-fg/50 text-sm">
+                        Calculating…
+                      </span>
                     </>
                   ) : totalCredits != null ? (
                     <>
-                      {totalCredits}{" "}
-                      {totalCredits === 1 ? "Credit" : "Credits"}
+                      {totalCredits} {totalCredits === 1 ? "Credit" : "Credits"}
                     </>
                   ) : (
                     <span className="text-base-fg/50">—</span>

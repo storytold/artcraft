@@ -11,6 +11,7 @@ import {
 } from "~/pages/PageEnigma/signals";
 import { Input } from "@storyteller/ui-input";
 import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
+import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
 
 interface Props {
   pageName: string;
@@ -98,10 +99,15 @@ export const SceneTitleInput = ({ pageName }: Props) => {
         "flex w-full items-center justify-center gap-1.5",
         isSaving && "ml-3",
       )}
+      data-tauri-drag-region
     >
       {!showInput && (
-        <div className="flex items-center">
-          <span className="mr-2 text-nowrap opacity-60">{pageName}</span>
+        <div className="flex items-center gap-2.5" data-tauri-drag-region>
+          {getCreatorIcon(
+            ModelCreator.ArtCraft,
+            "h-5 w-5 icon-auto-contrast opacity-60",
+          )}
+          <span className="text-nowrap opacity-60">{pageName}</span>
           <span className="opacity-60">/</span>
 
           {isSceneOwner ? (

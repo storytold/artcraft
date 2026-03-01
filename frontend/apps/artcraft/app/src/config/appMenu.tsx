@@ -43,7 +43,7 @@ export const APP_DESCRIPTORS: AppDescriptor[] = [
   },
   {
     id: "VIDEO",
-    label: "Image to Video",
+    label: "Generate Video",
     icon: faFilm,
   },
   {
@@ -87,7 +87,7 @@ export const ALL_APPS: FullAppItem[] = [
   },
   {
     id: "image-to-video",
-    label: "Image to Video",
+    label: "Generate Video",
     description: "Create video from images",
     icon: faFilm,
     category: "generate",

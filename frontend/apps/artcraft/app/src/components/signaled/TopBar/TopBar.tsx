@@ -16,6 +16,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { FilterMediaClasses } from "@storyteller/api";
+import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
 import { useCreditsState } from "@storyteller/credits";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
@@ -278,7 +279,7 @@ export const TopBar = ({ pageName }: Props) => {
       case "IMAGE":
         return "Text to Image";
       case "VIDEO":
-        return "Image to Video";
+        return "Generate Video";
       case "EDIT":
         return "Edit Image";
       case "VIDEO_FRAME_EXTRACTOR":
@@ -304,7 +305,7 @@ export const TopBar = ({ pageName }: Props) => {
   const { toggleModal: toggleCreditsModal } = useCreditsModalStore();
 
   // Pick logo based on current theme (light uses black logo; others use white)
-  const [logoSrc, setLogoSrc] = useState<string>(
+  const [_logoSrc, setLogoSrc] = useState<string>(
     "/resources/logo/artcraft-logo-color-white.svg",
   );
   useEffect(() => {
@@ -344,8 +345,11 @@ export const TopBar = ({ pageName }: Props) => {
           aria-label="navigation"
           data-tauri-drag-region
         >
-          <div className="flex items-center gap-3" data-tauri-drag-region>
-            <div className="mr-2" data-tauri-drag-region>
+          <div
+            className={`flex items-center gap-3 ${platform === "macos" ? "ml-14" : ""}`}
+            data-tauri-drag-region
+          >
+            {/* <div className="mr-2" data-tauri-drag-region>
               <span className="sr-only" data-tauri-drag-region>
                 ArtCraft
               </span>
@@ -355,7 +359,7 @@ export const TopBar = ({ pageName }: Props) => {
                 alt="ArtCraft Logo"
                 data-tauri-drag-region
               />
-            </div>
+            </div> */}
             <MenuIconSelector
               menuItems={appMenuTabs}
               activeMenu={tabStore.activeTabId}
@@ -405,7 +409,14 @@ export const TopBar = ({ pageName }: Props) => {
             {tabStore.activeTabId === "3D" ? (
               <SceneTitleInput pageName={pageName} />
             ) : (
-              <h1 className="text-base-fg" data-tauri-drag-region>
+              <h1
+                className="flex items-center gap-2.5 text-base-fg"
+                data-tauri-drag-region
+              >
+                {getCreatorIcon(
+                  ModelCreator.ArtCraft,
+                  "h-5 w-5 icon-auto-contrast opacity-50",
+                )}
                 {pageTitle}
               </h1>
             )}

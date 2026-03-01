@@ -77,39 +77,92 @@ export const Tooltip = ({
     };
   }, []);
 
+  const [measuredWidth, setMeasuredWidth] = useState(0);
+
+  const setTooltipRef = React.useCallback((node: HTMLDivElement | null) => {
+    tooltipRef.current = node;
+    if (node) {
+      const w = node.getBoundingClientRect().width;
+      if (w > 0) {
+        setMeasuredWidth((prev) => (prev !== w ? w : prev));
+      }
+    }
+  }, []);
+
   const getStyleForPosition = () => {
+    let baseStyle: React.CSSProperties = {};
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
+      const vw = typeof window !== "undefined" ? window.innerWidth : 1000;
+      //const vh = typeof window !== "undefined" ? window.innerHeight : 1000;
+      const padding = 10;
+
+      // Use the known measured width over fallback, or aggressively measure via ref
+      let estWidth = measuredWidth > 0 ? measuredWidth : 100;
+      if (tooltipRef.current && measuredWidth === 0) {
+        const currentWidth = tooltipRef.current.getBoundingClientRect().width;
+        if (currentWidth > 0) estWidth = currentWidth;
+      }
+
       switch (position) {
-        case "top":
-          return {
+        case "top": {
+          baseStyle = {
             bottom: rect.height + 10,
             left: "50%",
             transform: "translateX(-50%)",
           };
-        case "bottom":
-          return {
-            top: rect.height + 10,
-            left: "50%",
-            transform: "translateX(-50%)",
-          };
-        case "left":
-          return {
+          break;
+        }
+        case "bottom": {
+          const center = rect.left + rect.width / 2;
+          const halfWidth = estWidth / 2;
+
+          if (center - halfWidth < padding) {
+            // Fixes flush-left behavior
+            const diff = padding - (center - halfWidth);
+            baseStyle = {
+              top: rect.height + 10,
+              left: "50%",
+              transform: `translateX(calc(-50% + ${diff}px))`,
+            };
+          } else if (center + halfWidth > vw - padding) {
+            // Fixes flush-right behavior
+            const diff = center + halfWidth - (vw - padding);
+            baseStyle = {
+              top: rect.height + 10,
+              left: "50%",
+              transform: `translateX(calc(-50% - ${diff}px))`,
+            };
+          } else {
+            // Uses normal centering
+            baseStyle = {
+              top: rect.height + 10,
+              left: "50%",
+              transform: "translateX(-50%)",
+            };
+          }
+          break;
+        }
+        case "left": {
+          baseStyle = {
             right: rect.width + 10,
             top: "50%",
             transform: "translateY(-50%)",
           };
-        case "right":
-          return {
+          break;
+        }
+        case "right": {
+          baseStyle = {
             left: rect.width + 10,
             top: "50%",
             transform: "translateY(-50%)",
           };
-        default:
-          return {};
+          break;
+        }
       }
     }
-    return {};
+
+    return baseStyle;
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -168,7 +221,7 @@ export const Tooltip = ({
         leaveTo="opacity-0"
       >
         <div
-          ref={tooltipRef}
+          ref={setTooltipRef}
           onMouseEnter={() => interactive && setIsHoveringTooltip(true)}
           onMouseLeave={() => interactive && setIsHoveringTooltip(false)}
           onClick={() => {
