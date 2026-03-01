@@ -1,8 +1,10 @@
+use crate::api::common_image_model::CommonImageModel;
 use crate::api::common_video_model::CommonVideoModel;
 use crate::api::provider::Provider;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_client::RouterClient;
+use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::utils::api_host::ApiHost;
@@ -15,6 +17,20 @@ pub fn get_artcraft_client() -> RouterClient {
       .expect("Failed to parse cookies")
       .expect("No credentials found");
   RouterClient::Artcraft(RouterArtcraftClient::new(ApiHost::Storyteller, credentials))
+}
+
+pub fn base_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::NanaBananaPro,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    idempotency_token: None,
+  }
 }
 
 pub fn base_video_request() -> GenerateVideoRequest<'static> {
