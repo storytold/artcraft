@@ -37,12 +37,12 @@ pub(crate) fn estimate_image_cost_artcraft_nano_banana_pro(
 #[cfg(test)]
 mod tests {
   use crate::api::common_image_model::CommonImageModel;
-  use crate::api::common_resolution::CommonVideoResolution;
+  use crate::api::common_resolution::CommonResolution;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
 
-  fn estimate_usd_cents(resolution: Option<CommonVideoResolution>, image_batch_count: u16) -> u64 {
+  fn estimate_usd_cents(resolution: Option<CommonResolution>, image_batch_count: u16) -> u64 {
     let request = GenerateImageRequest {
       model: CommonImageModel::NanaBananaPro,
       provider: Provider::Artcraft,
@@ -65,15 +65,15 @@ mod tests {
   fn test_estimate_cost_usd_cents() {
     // 1K/2K: $0.15/image = 15 cents
     assert_eq!(estimate_usd_cents(None, 1), 15);
-    assert_eq!(estimate_usd_cents(Some(CommonVideoResolution::OneK), 1), 15);
-    assert_eq!(estimate_usd_cents(Some(CommonVideoResolution::TwoK), 1), 15);
-    assert_eq!(estimate_usd_cents(Some(CommonVideoResolution::OneK), 2), 30);
-    assert_eq!(estimate_usd_cents(Some(CommonVideoResolution::OneK), 3), 45);
-    assert_eq!(estimate_usd_cents(Some(CommonVideoResolution::OneK), 4), 60);
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 1), 15);
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::TwoK), 1), 15);
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 2), 30);
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 3), 45);
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 4), 60);
 
     // 4K: $0.30/image = 30 cents
-    assert_eq!(estimate_usd_cents(Some(CommonVideoResolution::FourK), 1), 30);
-    assert_eq!(estimate_usd_cents(Some(CommonVideoResolution::FourK), 2), 60);
-    assert_eq!(estimate_usd_cents(Some(CommonVideoResolution::FourK), 4), 120);
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 1), 30);
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 2), 60);
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 4), 120);
   }
 }

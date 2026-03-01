@@ -1,5 +1,5 @@
 use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonVideoResolution;
+use crate::api::common_resolution::CommonResolution;
 use crate::api::common_video_model::CommonVideoModel;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
@@ -32,7 +32,7 @@ pub struct GenerateVideoRequest<'a> {
   pub reference_images: Option<ImageListRef<'a>>,
 
   /// The resolution to use
-  pub resolution: Option<CommonVideoResolution>,
+  pub resolution: Option<CommonResolution>,
 
   /// The aspect ratio to use
   pub aspect_ratio: Option<CommonAspectRatio>,

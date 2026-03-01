@@ -35,7 +35,7 @@ pub async fn execute_artcraft_nano_banana_pro(
 #[cfg(test)]
 mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonVideoResolution;
+  use crate::api::common_resolution::CommonResolution;
   use crate::api::image_list_ref::ImageListRef;
   use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
@@ -48,7 +48,7 @@ mod tests {
     let client = get_artcraft_client();
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      resolution: Some(CommonVideoResolution::OneK),
+      resolution: Some(CommonResolution::OneK),
       image_batch_count: Some(1),
       prompt: Some("a cat walking through a cyberpunk city at night"),
       ..base_image_request()
@@ -70,7 +70,7 @@ mod tests {
     let client = get_artcraft_client();
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Square),
-      resolution: Some(CommonVideoResolution::OneK),
+      resolution: Some(CommonResolution::OneK),
       image_batch_count: Some(4),
       prompt: Some("a dog surfing a wave, cinematic"),
       ..base_image_request()
@@ -101,7 +101,7 @@ mod tests {
       prompt: Some("Add the man in the first image into the fantasy scene in the second image. Keep his hoodie and attire, but match the vibe of the fantasy scene."),
       image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
       aspect_ratio: Some(CommonAspectRatio::Auto), // edit mode: preserve source dimensions
-      resolution: Some(CommonVideoResolution::OneK),
+      resolution: Some(CommonResolution::OneK),
       image_batch_count: Some(1),
       ..base_image_request()
     };

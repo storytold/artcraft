@@ -1,6 +1,6 @@
 use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::common_image_model::CommonImageModel;
-use crate::api::common_resolution::CommonVideoResolution;
+use crate::api::common_resolution::CommonResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::provider::Provider;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
@@ -24,7 +24,7 @@ pub struct GenerateImageRequest<'a> {
   pub image_inputs: Option<ImageListRef<'a>>,
 
   /// The resolution to use.
-  pub resolution: Option<CommonVideoResolution>,
+  pub resolution: Option<CommonResolution>,
 
   /// The aspect ratio to use.
   pub aspect_ratio: Option<CommonAspectRatio>,

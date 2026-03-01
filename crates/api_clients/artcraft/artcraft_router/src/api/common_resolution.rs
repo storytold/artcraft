@@ -5,7 +5,7 @@ use serde_derive::{Deserialize, Serialize};
 /// In the case a model doesn't support the resolution, gracefully pick the nearest option.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum CommonVideoResolution {
+pub enum CommonResolution {
   /// Models: Nano Banana Pro
   OneK,
   /// Models: Nano Banana Pro

@@ -1,5 +1,5 @@
 use crate::api::common_aspect_ratio::CommonAspectRatio;
-use crate::api::common_resolution::CommonVideoResolution;
+use crate::api::common_resolution::CommonResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -120,10 +120,10 @@ fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> NanoBananaProMultiFu
 }
 
 fn plan_resolution(
-  resolution: Option<CommonVideoResolution>,
+  resolution: Option<CommonResolution>,
   _strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<NanoBananaProMultiFunctionImageGenImageResolution>, ArtcraftRouterError> {
-  use CommonVideoResolution as R;
+  use CommonResolution as R;
   use NanoBananaProMultiFunctionImageGenImageResolution as NbpRes;
   match resolution {
     None => Ok(None),
@@ -168,7 +168,7 @@ fn plan_num_images(
 mod tests {
   use super::*;
   use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonVideoResolution;
+  use crate::api::common_resolution::CommonResolution;
   use crate::api::image_list_ref::ImageListRef;
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
@@ -318,9 +318,9 @@ mod tests {
   #[test]
   fn resolution_direct_mappings() {
     let cases = [
-      (CommonVideoResolution::OneK, NbpRes::OneK),
-      (CommonVideoResolution::TwoK, NbpRes::TwoK),
-      (CommonVideoResolution::FourK, NbpRes::FourK),
+      (CommonResolution::OneK, NbpRes::OneK),
+      (CommonResolution::TwoK, NbpRes::TwoK),
+      (CommonResolution::FourK, NbpRes::FourK),
     ];
     for (common, expected) in cases {
       let request = GenerateImageRequest { resolution: Some(common), ..base_image_request() };
@@ -335,7 +335,7 @@ mod tests {
   #[test]
   fn resolution_three_k_falls_back_to_two_k() {
     let request = GenerateImageRequest {
-      resolution: Some(CommonVideoResolution::ThreeK),
+      resolution: Some(CommonResolution::ThreeK),
       ..base_image_request()
     };
     let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap();
