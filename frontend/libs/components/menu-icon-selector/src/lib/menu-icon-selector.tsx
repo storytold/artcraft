@@ -82,7 +82,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
       className={twMerge(
         "w-full flex items-center justify-center relative",
         className,
-        disabled && "cursor-not-allowed opacity-60"
+        disabled && "cursor-not-allowed opacity-60",
       )}
     >
       <div
@@ -131,9 +131,10 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
               delay={100}
               closeOnClick={true}
               interactive={interactive}
+              disabled={disabled}
               className={twMerge(
                 "text-sm font-semibold",
-                item.large && "text-md"
+                item.large && "text-md",
               )}
               imageSrc={imageSrc || undefined}
               description={description || undefined}
@@ -147,7 +148,7 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
                 onMouseEnter={() => setHoveredIndex(idx)}
                 className={twMerge(
                   "relative z-30 flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-150 text-base-fg",
-                  disabled ? "cursor-not-allowed opacity-60" : ""
+                  disabled ? "cursor-not-allowed opacity-60" : "",
                 )}
                 tabIndex={0}
                 type="button"
@@ -163,15 +164,17 @@ export const MenuIconSelector: React.FC<MenuIconSelectorProps> = ({
 
   return (
     <>
-      {disabled && (
+      {disabled && disabledMessage ? (
         <Tooltip
-          content={disabledMessage ?? "Cannot change menu. Action in progress."}
+          content={disabledMessage}
           position="bottom"
+          className="bg-transparent border-none"
         >
           {MenuGroupElement}
         </Tooltip>
+      ) : (
+        MenuGroupElement
       )}
-      {!disabled && MenuGroupElement}
     </>
   );
 };
