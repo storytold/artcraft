@@ -55,6 +55,147 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import { MediaFileDelete } from "@storyteller/tauri-api";
+import { listen } from "@tauri-apps/api/event";
+
+// ─── Module-level gallery cache ───────────────────────────────────────────────
+// Persists gallery items across modal open/close so users see content instantly.
+interface GalleryCacheEntry {
+  items: GalleryItem[];
+  pageIndex: number;
+  hasMore: boolean;
+  timestamp: number;
+}
+
+const galleryCacheMap = new Map<string, GalleryCacheEntry>();
+let cachedUsername: string | null = null;
+const usersApiSingleton = new UsersApi();
+
+/** Get cached username or fetch it once. */
+async function getCachedUsername(): Promise<string | null> {
+  if (cachedUsername) return cachedUsername;
+  try {
+    const session = await usersApiSingleton.GetSession();
+    if (session.success && session.data?.user) {
+      cachedUsername = session.data.user.username;
+      return cachedUsername;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+// ─── Skeleton loader component ────────────────────────────────────────────────
+const SKELETON_COUNT = 15;
+
+const SkeletonGrid = ({ columns }: { columns: number }) => {
+  const gapClass =
+    columns <= 4 ? "gap-1.5" : columns <= 7 ? "gap-1" : "gap-0.5";
+  return (
+    <div className="space-y-6 p-4 animate-in fade-in duration-200">
+      {/* Fake date heading */}
+      <div>
+        <div className="h-4 w-24 rounded bg-white/[0.06] mb-3" />
+        <div
+          className={twMerge("grid", gapClass)}
+          style={{
+            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+          }}
+        >
+          {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+            <div key={i} className="aspect-square rounded-md overflow-hidden">
+              <div
+                className="h-full w-full bg-white/[0.06]"
+                style={{
+                  animation: `pulse 1.8s ease-in-out ${i * 0.07}s infinite`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.8; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+// ─── Lazy date-group virtualization ───────────────────────────────────────────
+// Bidirectional: mounts groups when they scroll within 800px of the viewport,
+// and unmounts them when they scroll beyond that range. Measured heights are
+// used for placeholders so scroll position stays rock-solid.
+
+interface LazyDateGroupProps {
+  /** If true the group renders on mount (use for first N visible groups). */
+  eager: boolean;
+  /** Estimated item count for placeholder height calculation. */
+  itemCount: number;
+  /** Current grid column count, used to estimate placeholder height. */
+  gridColumns: number;
+  /** The scroll container used as IntersectionObserver root. */
+  scrollRoot: HTMLDivElement | null;
+  children: React.ReactNode;
+}
+
+const LazyDateGroup = React.memo(
+  ({
+    eager,
+    itemCount,
+    gridColumns,
+    scrollRoot,
+    children,
+  }: LazyDateGroupProps) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isNearViewport, setIsNearViewport] = useState(eager);
+    // Store the last measured height so placeholders match exactly
+    const measuredHeightRef = useRef<number | null>(null);
+
+    // Measure rendered height on every commit while visible
+    useEffect(() => {
+      if (isNearViewport && containerRef.current) {
+        measuredHeightRef.current = containerRef.current.offsetHeight;
+      }
+    });
+
+    useEffect(() => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          setIsNearViewport(entry.isIntersecting);
+        },
+        {
+          root: scrollRoot,
+          rootMargin: "800px 0px", // mount/unmount buffer
+        },
+      );
+      observer.observe(el);
+      return () => observer.disconnect();
+    }, [scrollRoot]);
+
+    if (!isNearViewport) {
+      // Use measured height if available, otherwise estimate
+      const height =
+        measuredHeightRef.current ??
+        Math.ceil(itemCount / gridColumns) * 120 + 36;
+      return (
+        <div
+          ref={containerRef}
+          style={{ height, minHeight: height }}
+          aria-hidden
+        />
+      );
+    }
+
+    return <div ref={containerRef}>{children}</div>;
+  },
+);
+LazyDateGroup.displayName = "LazyDateGroup";
 
 export interface GalleryItem {
   id: string;
@@ -219,10 +360,15 @@ export const GalleryModal = React.memo(
     onMake3DWorldClicked,
   }: GalleryModalProps) => {
     const [loading, setLoading] = useState(false);
+    // Separate state for pagination spinner (bottom of list) — not shared with background refresh
+    const [paginationLoading, setPaginationLoading] = useState(false);
+    // Ref-based lock to prevent re-entrant loadItems calls
+    const isLoadingRef = useRef(false);
     // Lightbox state is now handled via signals
     const lightboxImageSignal = galleryModalLightboxImage;
     const lightboxVisibleSignal = galleryModalLightboxVisible;
     const failedImageUrls = useRef<Set<string>>(new Set());
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [username, setUsername] = useState<string>("");
     const forceFilterRef = useRef(forceFilter);
     const [activeFilter, setActiveFilter] = useState(forceFilter || "all");
@@ -245,6 +391,9 @@ export const GalleryModal = React.memo(
     const [allItems, setAllItems] = useState<GalleryItem[]>([]);
     const [pageIndex, setPageIndex] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+
+    // Track whether this is the very first load (no cache, no items yet)
+    const [initialLoading, setInitialLoading] = useState(false);
 
     // Bulk selection state (view mode only)
     const [bulkSelectedIds, setBulkSelectedIds] = useState<Set<string>>(
@@ -270,7 +419,6 @@ export const GalleryModal = React.memo(
       ?.imageUrls;
 
     const api = useMemo(() => new GalleryModalApi(), []);
-    const usersApi = useMemo(() => new UsersApi(), []);
     const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
 
     const groupItemsByDate = useCallback((items: GalleryItem[]) => {
@@ -304,17 +452,53 @@ export const GalleryModal = React.memo(
       failedImageUrls.current.add(url);
     }, []);
 
+    // Fetch & cache username — uses module-level cache so subsequent opens are instant
     useEffect(() => {
       const getUsername = async () => {
-        const session = await usersApi.GetSession();
-        if (session.success && session.data?.user) {
-          setUsername(session.data.user.username);
-        }
+        const name = await getCachedUsername();
+        if (name) setUsername(name);
       };
       if (isOpen || (mode === "view" && galleryModalVisibleViewMode.value)) {
         getUsername();
       }
-    }, [usersApi, mode, galleryModalVisibleViewMode.value, isOpen]);
+    }, [mode, galleryModalVisibleViewMode.value, isOpen]);
+
+    // Helper to build the cache key for the current filter
+    const getCacheKey = useCallback(
+      () => `gallery_${activeFilterRef.current}`,
+      [],
+    );
+
+    // Map raw API item to GalleryItem
+    const mapApiItem = useCallback(
+      (item: any): GalleryItem => ({
+        id: item.token,
+        label: getLabel(item),
+        thumbnail:
+          item.media_class === "video"
+            ? item.media_links.maybe_video_previews?.animated
+            : item.media_class === "dimensional"
+              ? item.cover_image?.maybe_cover_image_public_bucket_url
+              : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
+                  width: THUMBNAIL_SIZES.MEDIUM,
+                }),
+        thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
+        fullImage: item.media_links.cdn_url,
+        createdAt: item.created_at,
+        mediaClass:
+          item.media_class ||
+          (item.filter_media_classes ? item.filter_media_classes[0] : "image"),
+        assetType:
+          item.media_class === "dimensional"
+            ? item.maybe_animation_type ||
+              item.origin_product_category === "character" ||
+              (item.origin && item.origin.product_category === "character")
+              ? "character"
+              : "object"
+            : undefined,
+      }),
+      [],
+    );
 
     // Stable loadItems that reads from refs — never causes cascading re-renders
     const loadItems = useCallback(
@@ -322,7 +506,11 @@ export const GalleryModal = React.memo(
         const currentUsername = usernameRef.current;
         const currentFilter = activeFilterRef.current;
         if (!currentUsername) return;
+        // Ref-based lock prevents concurrent/re-entrant calls
+        if (isLoadingRef.current) return;
+        isLoadingRef.current = true;
         setLoading(true);
+        if (!reset) setPaginationLoading(true);
         try {
           const filterMediaClasses = getFilterMediaClass(currentFilter);
           const query = {
@@ -345,59 +533,79 @@ export const GalleryModal = React.memo(
               .filter(
                 (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
               )
-              .map((item: any) => ({
-                id: item.token,
-                label: getLabel(item),
-                thumbnail:
-                  item.media_class === "video"
-                    ? item.media_links.maybe_video_previews?.animated
-                    : item.media_class === "dimensional"
-                      ? item.cover_image?.maybe_cover_image_public_bucket_url
-                      : getThumbnailUrl(
-                          item.media_links.maybe_thumbnail_template,
-                          {
-                            width: THUMBNAIL_SIZES.MEDIUM,
-                          },
-                        ),
-                thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
-                fullImage: item.media_links.cdn_url,
-                createdAt: item.created_at,
-                mediaClass:
-                  item.media_class ||
-                  (item.filter_media_classes
-                    ? item.filter_media_classes[0]
-                    : "image"),
-                assetType:
-                  item.media_class === "dimensional"
-                    ? item.maybe_animation_type ||
-                      item.origin_product_category === "character" ||
-                      (item.origin &&
-                        item.origin.product_category === "character")
-                      ? "character"
-                      : "object"
-                    : undefined,
-              }));
-            setAllItems((prev) => (reset ? newItems : [...prev, ...newItems]));
+              .map(mapApiItem);
+
+            if (reset) {
+              // Smart merge: update existing items in-place (preserves
+              // scroll position), then prepend any genuinely new items.
+              setAllItems((prev) => {
+                if (prev.length === 0) return newItems;
+                const existingIds = new Set(prev.map((it) => it.id));
+                const brandNew = newItems.filter(
+                  (it: GalleryItem) => !existingIds.has(it.id),
+                );
+                // Build lookup for fresh data so we can update in-place
+                const freshMap = new Map(
+                  newItems.map((it: GalleryItem) => [it.id, it]),
+                );
+                // Update existing items in their current positions
+                const updated = prev.map((it) => freshMap.get(it.id) || it);
+                return [...brandNew, ...updated];
+              });
+            } else {
+              setAllItems((prev) => [...prev, ...newItems]);
+            }
+
             // Pagination logic
             const current = response.pagination?.current ?? 0;
             const total = response.pagination?.total_page_count ?? 1;
             setPageIndex(current + 1);
             setHasMore(current + 1 < total);
+
+            // Update cache
+            const cacheKey = getCacheKey();
+            setAllItems((latest) => {
+              galleryCacheMap.set(cacheKey, {
+                items: latest,
+                pageIndex: current + 1,
+                hasMore: current + 1 < total,
+                timestamp: Date.now(),
+              });
+              return latest;
+            });
           }
         } catch (error) {
           console.error("Failed to fetch library items:", error);
         }
         setLoading(false);
+        setPaginationLoading(false);
+        setInitialLoading(false);
+        isLoadingRef.current = false;
       },
-      [api],
+      [api, mapApiItem, getCacheKey],
     );
 
-    // refresh logic — stable because loadItems is stable
+    // refresh logic — shows cached items immediately, then background-refreshes
     const refreshGallery = useCallback(() => {
-      setAllItems([]);
-      setPageIndex(0);
-      setHasMore(true);
-      loadItems(true);
+      const cacheKey = `gallery_${activeFilterRef.current}`;
+      const cached = galleryCacheMap.get(cacheKey);
+
+      if (cached && cached.items.length > 0) {
+        // Instantly show cached items — no loading indicator
+        setAllItems(cached.items);
+        setPageIndex(cached.pageIndex);
+        setHasMore(cached.hasMore);
+        setInitialLoading(false);
+        // Background refresh — silently fetch page 0 and merge new items
+        loadItems(true);
+      } else {
+        // No cache — show skeleton, then load
+        setAllItems([]);
+        setPageIndex(0);
+        setHasMore(true);
+        setInitialLoading(true);
+        loadItems(true);
+      }
     }, [loadItems]);
 
     useEffect(() => {
@@ -419,6 +627,28 @@ export const GalleryModal = React.memo(
       username,
       activeFilter,
     ]);
+
+    // Auto-refresh when a generation completes while the gallery is open
+    const modalIsOpenRef = useRef(false);
+    useEffect(() => {
+      modalIsOpenRef.current =
+        mode === "view"
+          ? !!galleryModalVisibleViewMode.value
+          : typeof isOpen === "boolean"
+            ? isOpen
+            : true;
+    }, [mode, isOpen, galleryModalVisibleViewMode.value]);
+
+    useEffect(() => {
+      const unlistenPromise = listen("generation-complete-event", () => {
+        if (modalIsOpenRef.current && username) {
+          refreshGallery();
+        }
+      });
+      return () => {
+        unlistenPromise.then((fn) => fn());
+      };
+    }, [refreshGallery, username]);
 
     const toggleBulkSelect = useCallback((id: string) => {
       setBulkSelectedIds((prev) => {
@@ -468,14 +698,29 @@ export const GalleryModal = React.memo(
       onUseSelected?.(selectedItems);
     }, [groupedItems, selectedItemIds, onUseSelected]);
 
-    const handleItemDeleted = useCallback((id: string) => {
-      setAllItems((prev) => prev.filter((it) => it.id !== id));
-      setBulkSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }, []);
+    const handleItemDeleted = useCallback(
+      (id: string) => {
+        setAllItems((prev) => {
+          const updated = prev.filter((it) => it.id !== id);
+          // Remove from cache too
+          const cacheKey = getCacheKey();
+          const cached = galleryCacheMap.get(cacheKey);
+          if (cached) {
+            galleryCacheMap.set(cacheKey, {
+              ...cached,
+              items: cached.items.filter((it) => it.id !== id),
+            });
+          }
+          return updated;
+        });
+        setBulkSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      },
+      [getCacheKey],
+    );
 
     const clearBulkSelection = useCallback(() => {
       setBulkSelectedIds(new Set());
@@ -504,16 +749,28 @@ export const GalleryModal = React.memo(
           try {
             const ids = Array.from(bulkSelectedIds);
             await Promise.allSettled(ids.map((id) => MediaFileDelete(id)));
-            setAllItems((prev) =>
-              prev.filter((it) => !bulkSelectedIds.has(it.id)),
-            );
+            setAllItems((prev) => {
+              const updated = prev.filter((it) => !bulkSelectedIds.has(it.id));
+              // Evict from cache too
+              const cacheKey = getCacheKey();
+              const cached = galleryCacheMap.get(cacheKey);
+              if (cached) {
+                galleryCacheMap.set(cacheKey, {
+                  ...cached,
+                  items: cached.items.filter(
+                    (it) => !bulkSelectedIds.has(it.id),
+                  ),
+                });
+              }
+              return updated;
+            });
             clearBulkSelection();
           } finally {
             isActionReminderOpen.value = false;
           }
         },
       });
-    }, [bulkSelectedIds, clearBulkSelection]);
+    }, [bulkSelectedIds, clearBulkSelection, getCacheKey]);
 
     useSignals();
 
@@ -633,12 +890,12 @@ export const GalleryModal = React.memo(
         if (
           scrollHeight - scrollTop - clientHeight < 100 &&
           hasMore &&
-          !loading
+          !isLoadingRef.current
         ) {
           loadItems();
         }
       },
-      [hasMore, loading, loadItems],
+      [hasMore, loadItems],
     );
 
     return (
@@ -739,7 +996,7 @@ export const GalleryModal = React.memo(
                     >
                       <FontAwesomeIcon
                         icon={faArrowsRotate}
-                        className="text-lg text-base-fg"
+                        className={`text-lg text-base-fg ${loading ? "animate-spin" : ""}`}
                       />
                     </Button>
                   </Tooltip>
@@ -843,66 +1100,75 @@ export const GalleryModal = React.memo(
             </div>
 
             <div
+              ref={scrollContainerRef}
               className="flex-1 overflow-y-auto bg-ui-panel"
               onScroll={handleScroll}
             >
-              {loading && allItems.length === 0 ? (
+              {initialLoading && allItems.length === 0 ? (
+                <SkeletonGrid columns={gridColumns} />
+              ) : allItems.length === 0 && !loading ? (
                 <div className="flex h-full items-center justify-center">
-                  <div className="text-base-fg/60">
-                    <LoadingSpinner className="h-12 w-12" />
-                  </div>
+                  <div className="text-base-fg/40 text-sm">No items yet</div>
                 </div>
               ) : (
                 <div className="space-y-6 p-4">
-                  {Object.entries(groupedItems).map(([date, dateItems]) => {
-                    const filteredItems = dateItems.filter(filterItem);
-                    if (filteredItems.length === 0) return null;
-                    return (
-                      <div key={date}>
-                        <h3 className="text-md mb-2 font-medium text-base-fg/60">
-                          {date}
-                        </h3>
-                        <div
-                          className={twMerge("grid", gapClass)}
-                          style={{
-                            gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
-                          }}
+                  {Object.entries(groupedItems).map(
+                    ([date, dateItems], groupIndex) => {
+                      const filteredItems = dateItems.filter(filterItem);
+                      if (filteredItems.length === 0) return null;
+                      return (
+                        <LazyDateGroup
+                          key={date}
+                          eager={groupIndex < 2}
+                          itemCount={filteredItems.length}
+                          gridColumns={gridColumns}
+                          scrollRoot={scrollContainerRef.current}
                         >
-                          {filteredItems.map((item) => (
-                            <GalleryDraggableItem
-                              key={item.id}
-                              item={item}
-                              mode={mode}
-                              activeFilter={activeFilter}
-                              selected={selectedItemIds.includes(item.id)}
-                              onClick={() => handleItemClick(item)}
-                              onImageError={(e) => {
-                                e.currentTarget.src =
-                                  PLACEHOLDER_IMAGES.DEFAULT;
-                                e.currentTarget.style.opacity = "0.3";
-                                // Set the `data-brokenurl` property for debugging the broken images:
-                                (
-                                  e.currentTarget as HTMLImageElement
-                                ).dataset.brokenurl = item.thumbnail || "";
-                                handleImageError(item.thumbnail!);
-                              }}
-                              disableTooltipAndBadge={mode === "select"}
-                              imageFit={imageFit}
-                              onDeleted={handleItemDeleted}
-                              onEditClicked={onEditClicked}
-                              maxSelections={maxSelections}
-                              bulkSelected={bulkSelectedIds.has(item.id)}
-                              onBulkSelectToggle={() =>
-                                toggleBulkSelect(item.id)
-                              }
-                              bulkSelectionMode={bulkSelectionMode}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {loading && allItems.length > 0 && (
+                          <h3 className="text-md mb-2 font-medium text-base-fg/60">
+                            {date}
+                          </h3>
+                          <div
+                            className={twMerge("grid", gapClass)}
+                            style={{
+                              gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+                            }}
+                          >
+                            {filteredItems.map((item) => (
+                              <GalleryDraggableItem
+                                key={item.id}
+                                item={item}
+                                mode={mode}
+                                activeFilter={activeFilter}
+                                selected={selectedItemIds.includes(item.id)}
+                                onClick={() => handleItemClick(item)}
+                                onImageError={(e) => {
+                                  e.currentTarget.src =
+                                    PLACEHOLDER_IMAGES.DEFAULT;
+                                  e.currentTarget.style.opacity = "0.3";
+                                  // Set the `data-brokenurl` property for debugging the broken images:
+                                  (
+                                    e.currentTarget as HTMLImageElement
+                                  ).dataset.brokenurl = item.thumbnail || "";
+                                  handleImageError(item.thumbnail!);
+                                }}
+                                disableTooltipAndBadge={mode === "select"}
+                                imageFit={imageFit}
+                                onDeleted={handleItemDeleted}
+                                onEditClicked={onEditClicked}
+                                maxSelections={maxSelections}
+                                bulkSelected={bulkSelectedIds.has(item.id)}
+                                onBulkSelectToggle={() =>
+                                  toggleBulkSelect(item.id)
+                                }
+                                bulkSelectionMode={bulkSelectionMode}
+                              />
+                            ))}
+                          </div>
+                        </LazyDateGroup>
+                      );
+                    },
+                  )}
+                  {paginationLoading && allItems.length > 0 && (
                     <div className="flex justify-center py-4">
                       <LoadingSpinner className="h-8 w-8" />
                     </div>
