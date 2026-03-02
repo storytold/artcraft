@@ -71,7 +71,7 @@ def connect(config):
 def fetch_user(cursor, token: str) -> dict | None:
     cursor.execute(
         """
-        SELECT token, email_address, password_hash, password_version,
+        SELECT token, email_address, username, display_name, password_hash, password_version,
                is_without_password, version, created_at
         FROM users
         WHERE token = %s
@@ -82,7 +82,7 @@ def fetch_user(cursor, token: str) -> dict | None:
     row = cursor.fetchone()
     if row is None:
         return None
-    cols = ["token", "email_address", "password_hash", "password_version",
+    cols = ["token", "email_address", "username", "display_name", "password_hash", "password_version",
             "is_without_password", "version", "created_at"]
     return dict(zip(cols, row))
 
@@ -137,6 +137,8 @@ def print_user(label: str, user: dict):
     print(f"  {label}:")
     print(f"    token             : {user['token']}")
     print(f"    email_address     : {user['email_address']}")
+    print(f"    username          : {user['username']}")
+    print(f"    display_name      : {user['display_name']}")
     print(f"    password_hash     : {decode_hash(user['password_hash'])}")
     print(f"    password_version  : {user['password_version']}")
     print(f"    is_without_password: {bool(user['is_without_password'])}")
@@ -204,13 +206,19 @@ def main():
         original_email = strip_renamed_suffixes(source["email_address"])
         timestamp = int(time.time())
         renamed_email = f"{original_email}.{timestamp}-renamed.com"
+        renamed_username = f"rename{timestamp}"  # fits within VARCHAR(20): "rename" + 10 digits = 16
         new_gravatar_hash = gravatar_hash(original_email)
 
         print("\nProposed changes:")
-        print(f"  source email  : {source['email_address']}")
-        print(f"              → : {renamed_email}")
-        print(f"  target email  : {target['email_address']}")
-        print(f"              → : {original_email}")
+        print(f"  source email    : {source['email_address']}")
+        print(f"                → : {renamed_email}")
+        print(f"  source username : {source['username']}")
+        print(f"                → : {renamed_username}")
+        print(f"  target email    : {target['email_address']}")
+        print(f"                → : {original_email}")
+        print(f"  target username : {target['username']}")
+        print(f"                → : {source['username']}")
+        print(f"  target display_name → {source['display_name']}")
         print(f"  target password_hash → {source_hash_str}")
         print(f"  target email_gravatar_hash → {new_gravatar_hash}")
         print(f"  target is_without_password → false")
@@ -229,11 +237,12 @@ def main():
                 """
                 UPDATE users
                 SET email_address = %s,
+                    username = %s,
                     version = version + 1
                 WHERE token = %s
                 LIMIT 1
                 """,
-                (renamed_email, source_token),
+                (renamed_email, renamed_username, source_token),
             )
             if cursor.rowcount != 1:
                 raise RuntimeError(f"Expected 1 row updated for source, got {cursor.rowcount}")
@@ -243,6 +252,8 @@ def main():
                 """
                 UPDATE users
                 SET email_address = %s,
+                    username = %s,
+                    display_name = %s,
                     password_hash = %s,
                     email_gravatar_hash = %s,
                     is_without_password = false,
@@ -251,7 +262,7 @@ def main():
                 WHERE token = %s
                 LIMIT 1
                 """,
-                (original_email, source["password_hash"], new_gravatar_hash, target_token),
+                (original_email, source["username"], source["display_name"], source["password_hash"], new_gravatar_hash, target_token),
             )
             if cursor.rowcount != 1:
                 raise RuntimeError(f"Expected 1 row updated for target, got {cursor.rowcount}")
