@@ -13,7 +13,7 @@ use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_status::TaskStatus;
 use enums::tauri::tasks::task_type::TaskType;
 use errors::AnyhowResult;
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use serde_derive::{Deserialize, Serialize};
 use sqlite_tasks::queries::list_tasks_for_frontend::list_tasks_for_frontend;
 use artcraft_client::endpoints::media_files::delete_media_file::delete_media_file;
@@ -72,7 +72,8 @@ pub async fn get_task_queue_command(
   task_database: State<'_, TaskDatabase>,
 ) -> ResponseOrErrorMessage<GetTaskQueueCommandResponse> {
 
-  info!("get_task_queue_command called");
+  // NB: This is debug because it spams the logs.
+  debug!("get_task_queue_command called");
 
   let result = handle_request(
     &task_database,

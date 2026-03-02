@@ -19,7 +19,16 @@ pub async fn basic_json_post_request<Req: Serialize, Res: DeserializeOwned>(
 
   let url = get_route(api_host, route_path);
 
-  info!("Requesting {:?}", &url);
+  // NB: We record lightweight analytics telemetry to understand which areas
+  //  of the tool are useful and which models and services are important.
+  let debug_log = url.ends_with("/v1/analytics/active_user_v2");
+
+  // Suppress "spammy" logs at the debug level.
+  if debug_log {
+    debug!("Requesting {:?}", &url);
+  } else {
+    info!("Requesting {:?}", &url);
+  }
 
   let client = Client::builder()
       .gzip(true)
