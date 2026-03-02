@@ -19,8 +19,6 @@ export function useVideoCostEstimate(
   selectedModel: Model | null | undefined,
   selectedProvider: string | null | undefined,
 ): { isLoading: boolean } {
-  console.log(">>> useCostEstimateVideo");
-
   const [isLoading, setIsLoading] = useState(false);
   const setEstimatedCreditsForPage = useCostBreakdownModalStore(
     (s) => s.setEstimatedCreditsForPage,
@@ -34,18 +32,14 @@ export function useVideoCostEstimate(
 
   useEffect(() => {
     if (activePage !== ModelPage.ImageToVideo || !selectedModel) {
-      console.log(">>> useCostEstimateVideo - SKIP useVideoCostEstimate (1)");
       return;
     }
 
     const commonModel = videoModelToCommonVideoModel(selectedModel.tauriId);
     if (!commonModel) {
-      console.log(">>> useCostEstimateVideo - SKIP useVideoCostEstimate (2)");
       setEstimatedCreditsForPage(ModelPage.ImageToVideo, null);
       return;
     }
-
-    console.log(">>> useCostEstimateVideo - CALLING...");
 
     const videoModel = selectedModel as VideoModel;
     const commonAspectRatio = videoAspectRatioToCommonAspectRatio(

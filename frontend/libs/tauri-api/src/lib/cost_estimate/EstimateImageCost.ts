@@ -49,7 +49,6 @@ export const EstimateImageCost = async (
   request: EstimateImageCostRequest,
 ): Promise<EstimateImageCostResult> => {
   const result = await invoke("estimate_image_cost_command", { request });
-  console.log(">>> useCostEstimateImage - EstimateImageCost() - Image Cost Estimate Result: ", result);
   return result as EstimateImageCostResult;
 };
 

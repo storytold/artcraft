@@ -50,7 +50,6 @@ export const EstimateVideoCost = async (
   request: EstimateVideoCostRequest,
 ): Promise<EstimateVideoCostResult> => {
   const result = await invoke("estimate_video_cost_command", { request });
-  console.log(">>> useCostEstimateVideo - EstimateVideoCost() - Video Cost Estimate Result: ", result);
   return result as EstimateVideoCostResult;
 };
 
