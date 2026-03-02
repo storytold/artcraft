@@ -25,15 +25,16 @@ use utoipa::OpenApi;
 use docs::api_doc::ApiDoc;
 use errors::AnyhowResult;
 
+
 pub mod billing;
 pub mod configs;
+pub mod docs;
+pub mod email;
 pub mod error;
 pub mod http_server;
 pub mod state;
 pub mod threads;
 pub mod util;
-
-pub mod docs;
 
 #[actix_web::main]
 async fn main() -> AnyhowResult<()> {
