@@ -8,12 +8,12 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$REPO_ROOT"
 
-# Install system dependencies
-# libclang-dev is required by boring-sys2's build script, which uses bindgen
-# (a libclang-based tool) to generate Rust FFI bindings for BoringSSL.
-# Without it, clang cannot find stddef.h and the build fails.
-sudo apt-get update -y
-sudo apt-get install -y libclang-dev
+# boring-sys2 uses bindgen (libclang) to generate Rust FFI bindings for BoringSSL.
+# On Netlify's build image, clang is available but can't locate stddef.h on its
+# own because the GCC system header path isn't in its default search path.
+# Pointing bindgen at GCC's own include directory resolves this without any
+# package installation.
+export BINDGEN_EXTRA_CLANG_ARGS="-I$(gcc -print-file-name=include)"
 
 # Install Rust toolchain
 rustup update
