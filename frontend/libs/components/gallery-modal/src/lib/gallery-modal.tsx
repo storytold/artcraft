@@ -14,6 +14,7 @@ import {
   FilterMediaClasses,
   FilterMediaType,
   GalleryModalApi,
+  MediaFilesApi,
   UsersApi,
 } from "@storyteller/api";
 import { twMerge } from "tailwind-merge";
@@ -270,6 +271,7 @@ export const GalleryModal = React.memo(
 
     const api = useMemo(() => new GalleryModalApi(), []);
     const usersApi = useMemo(() => new UsersApi(), []);
+    const mediaFilesApi = useMemo(() => new MediaFilesApi(), []);
 
     const groupItemsByDate = useCallback((items: GalleryItem[]) => {
       const grouped = items.reduce((acc: GroupedItems, item) => {
@@ -588,6 +590,38 @@ export const GalleryModal = React.memo(
         }
       };
     }, [currentLightboxIndex, flatFilteredItems]);
+
+    const handleNavigateToMedia = useCallback(
+      async (mediaToken: string) => {
+        try {
+          const response = await mediaFilesApi.GetMediaFileByToken({
+            mediaFileToken: mediaToken,
+          });
+          if (response.success && response.data) {
+            const file = response.data;
+            const url = file.media_links?.cdn_url || null;
+            const item: GalleryItem = {
+              id: file.token || mediaToken,
+              label: "",
+              thumbnail:
+                getThumbnailUrl(file.media_links?.thumbnail_template, {
+                  width: THUMBNAIL_SIZES.MEDIUM,
+                }) || url,
+              thumbnailUrlTemplate:
+                file.media_links?.thumbnail_template || undefined,
+              fullImage: url,
+              createdAt: file.created_at || new Date().toISOString(),
+              mediaClass: file.media_class || "image",
+            };
+            lightboxImageSignal.value = item;
+            galleryModalLightboxMediaId.value = item.id;
+          }
+        } catch (error) {
+          console.error("Failed to navigate to reference media:", error);
+        }
+      },
+      [mediaFilesApi],
+    );
 
     // Compute gap class based on gridColumns
     const gapClass =
@@ -990,6 +1024,7 @@ export const GalleryModal = React.memo(
             onMake3DWorldClicked={onMake3DWorldClicked}
             onNavigatePrev={handleNavigatePrev}
             onNavigateNext={handleNavigateNext}
+            onNavigateToMedia={handleNavigateToMedia}
           />
         )}
       </>

@@ -1,12 +1,15 @@
 import { Modal } from "@storyteller/ui-modal";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import dayjs from "dayjs";
 import {
+  faArrowRightFromBracket,
   faChevronLeft,
   faChevronRight,
   faCube,
   faDownToLine,
   faGlobe,
+  faMagnifyingGlass,
   faPencil,
   faTrashCan,
   faVideo,
@@ -89,6 +92,7 @@ interface LightboxModalProps {
   batchImageToken?: string;
   onNavigatePrev?: () => void;
   onNavigateNext?: () => void;
+  onNavigateToMedia?: (mediaToken: string) => void;
 }
 
 export function LightboxModal({
@@ -115,6 +119,7 @@ export function LightboxModal({
   batchImageToken,
   onNavigatePrev,
   onNavigateNext,
+  onNavigateToMedia,
 }: LightboxModalProps) {
   // NB(bt,2025-06-14): We add ?cors=1 to the image url to prevent caching "sec-fetch-mode: no-cors" from
   // the <image> tag request from being cached. If we then drag it into the canvas after it's been cached,
@@ -799,17 +804,60 @@ export function LightboxModal({
                                 });
 
                               return (
-                                <div
+                                <Tooltip
                                   key={contextImage.media_token}
-                                  className="glass relative aspect-square overflow-hidden rounded-lg w-12 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer hover:cursor-zoom-in"
-                                  onClick={() => setRefPreviewUrl(fullSize)}
+                                  position="top"
+                                  interactive
+                                  strategy="fixed"
+                                  delay={150}
+                                  zIndex={50}
+                                  className="p-1"
+                                  content={
+                                    <div className="flex flex-col gap-1.5 min-w-[100px]">
+                                      <button
+                                        className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded hover:bg-white/5"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setRefPreviewUrl(fullSize);
+                                        }}
+                                      >
+                                        <FontAwesomeIcon
+                                          icon={faMagnifyingGlass}
+                                          className="mr-1.5"
+                                        />
+                                        Preview image
+                                      </button>
+                                      {onNavigateToMedia && (
+                                        <button
+                                          className="text-xs text-left text-base-fg/80 hover:text-base-fg transition-colors py-1 px-1 rounded hover:bg-white/5"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onNavigateToMedia(
+                                              contextImage.media_token,
+                                            );
+                                          }}
+                                        >
+                                          <FontAwesomeIcon
+                                            icon={faArrowRightFromBracket}
+                                            className="mr-1.5"
+                                          />
+                                          View as media
+                                        </button>
+                                      )}
+                                    </div>
+                                  }
                                 >
-                                  <img
-                                    src={thumbnail}
-                                    alt={`Reference image ${index + 1}`}
-                                    className="h-full w-full object-cover"
-                                  />
-                                </div>
+                                  <div
+                                    className="glass relative aspect-square overflow-hidden rounded-lg w-12 border-2 border-white/30 hover:border-white/80 transition-all group cursor-pointer"
+                                    onClick={() => setRefPreviewUrl(fullSize)}
+                                  >
+                                    <img
+                                      src={thumbnail}
+                                      alt={`Reference image ${index + 1}`}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  </div>
+                                </Tooltip>
                               );
                             })}
                           </div>
@@ -1068,23 +1116,23 @@ export function LightboxModal({
         <Modal
           isOpen={true}
           onClose={() => setRefPreviewUrl(null)}
-          className="rounded-xl bg-ui-modal h-[50vh] w-fit max-w-screen min-w-[35vw] min-h-[40vh] p-4"
+          className="rounded-xl bg-ui-modal w-auto h-auto max-w-[75vw] max-h-[75vh] p-4"
           draggable
           allowBackgroundInteraction={true}
           showClose={true}
           closeOnOutsideClick={true}
-          resizable={true}
+          resizable={false}
           backdropClassName=""
-          expandable={true}
+          expandable={false}
         >
           <Modal.DragHandle>
             <div className="absolute left-0 top-0 z-20 h-12 w-full cursor-move rounded-t-xl" />
           </Modal.DragHandle>
-          <div className="relative flex h-full items-center justify-center overflow-hidden rounded-xl bg-black/30">
+          <div className="relative flex items-center justify-center overflow-hidden rounded-xl bg-black/30">
             <img
               src={addCorsParam(refPreviewUrl) || refPreviewUrl}
               alt="Reference preview"
-              className="h-full w-full object-contain"
+              className="max-w-[72vw] max-h-[70vh] object-contain"
             />
           </div>
         </Modal>

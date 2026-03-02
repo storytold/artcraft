@@ -19,6 +19,12 @@ interface TooltipProps {
   onOpenChange?: (open: boolean) => void;
   zIndex?: number;
   disabled?: boolean;
+  /**
+   * Positioning strategy. "absolute" (default) positions relative to the
+   * trigger wrapper. "fixed" positions relative to the viewport, useful
+   * when the tooltip is inside an overflow-hidden / overflow-auto container.
+   */
+  strategy?: "absolute" | "fixed";
 }
 
 export const Tooltip = ({
@@ -34,6 +40,7 @@ export const Tooltip = ({
   onOpenChange,
   zIndex = 10,
   disabled = false,
+  strategy = "absolute",
 }: TooltipProps) => {
   const [isShowing, setIsShowing] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -89,80 +96,147 @@ export const Tooltip = ({
     }
   }, []);
 
-  const getStyleForPosition = () => {
-    let baseStyle: React.CSSProperties = {};
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      const vw = typeof window !== "undefined" ? window.innerWidth : 1000;
-      //const vh = typeof window !== "undefined" ? window.innerHeight : 1000;
-      const padding = 10;
+  const getAbsoluteStyle = (
+    rect: DOMRect,
+    vw: number,
+    estWidth: number,
+    padding: number,
+  ): React.CSSProperties => {
+    switch (position) {
+      case "top":
+        return {
+          bottom: rect.height + 10,
+          left: "50%",
+          transform: "translateX(-50%)",
+        };
+      case "bottom": {
+        const center = rect.left + rect.width / 2;
+        const halfWidth = estWidth / 2;
 
-      // Use the known measured width over fallback, or aggressively measure via ref
-      let estWidth = measuredWidth > 0 ? measuredWidth : 100;
-      if (tooltipRef.current && measuredWidth === 0) {
-        const currentWidth = tooltipRef.current.getBoundingClientRect().width;
-        if (currentWidth > 0) estWidth = currentWidth;
-      }
-
-      switch (position) {
-        case "top": {
-          baseStyle = {
-            bottom: rect.height + 10,
+        if (center - halfWidth < padding) {
+          const diff = padding - (center - halfWidth);
+          return {
+            top: rect.height + 10,
             left: "50%",
-            transform: "translateX(-50%)",
+            transform: `translateX(calc(-50% + ${diff}px))`,
           };
-          break;
-        }
-        case "bottom": {
-          const center = rect.left + rect.width / 2;
-          const halfWidth = estWidth / 2;
-
-          if (center - halfWidth < padding) {
-            // Fixes flush-left behavior
-            const diff = padding - (center - halfWidth);
-            baseStyle = {
-              top: rect.height + 10,
-              left: "50%",
-              transform: `translateX(calc(-50% + ${diff}px))`,
-            };
-          } else if (center + halfWidth > vw - padding) {
-            // Fixes flush-right behavior
-            const diff = center + halfWidth - (vw - padding);
-            baseStyle = {
-              top: rect.height + 10,
-              left: "50%",
-              transform: `translateX(calc(-50% - ${diff}px))`,
-            };
-          } else {
-            // Uses normal centering
-            baseStyle = {
-              top: rect.height + 10,
-              left: "50%",
-              transform: "translateX(-50%)",
-            };
-          }
-          break;
-        }
-        case "left": {
-          baseStyle = {
-            right: rect.width + 10,
-            top: "50%",
-            transform: "translateY(-50%)",
+        } else if (center + halfWidth > vw - padding) {
+          const diff = center + halfWidth - (vw - padding);
+          return {
+            top: rect.height + 10,
+            left: "50%",
+            transform: `translateX(calc(-50% - ${diff}px))`,
           };
-          break;
         }
-        case "right": {
-          baseStyle = {
-            left: rect.width + 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-          };
-          break;
-        }
+        return {
+          top: rect.height + 10,
+          left: "50%",
+          transform: "translateX(-50%)",
+        };
       }
+      case "left":
+        return {
+          right: rect.width + 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+        };
+      case "right":
+        return {
+          left: rect.width + 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+        };
+    }
+  };
+
+  /**
+   * Walk up the DOM to find the nearest ancestor that creates a new containing
+   * block for `position: fixed` (transform, filter, will-change, etc.).
+   * Returns its viewport offset so we can compensate.
+   */
+  const getContainingBlockOffset = (): { x: number; y: number } => {
+    if (!triggerRef.current) return { x: 0, y: 0 };
+    let current = triggerRef.current.parentElement;
+    while (current && current !== document.body) {
+      const cs = getComputedStyle(current);
+      if (
+        cs.transform !== "none" ||
+        cs.willChange === "transform" ||
+        (cs.filter && cs.filter !== "none")
+      ) {
+        const r = current.getBoundingClientRect();
+        return { x: r.left, y: r.top };
+      }
+      current = current.parentElement;
+    }
+    return { x: 0, y: 0 };
+  };
+
+  const getFixedStyle = (
+    rect: DOMRect,
+    vw: number,
+    estWidth: number,
+    padding: number,
+  ): React.CSSProperties => {
+    const offset = getContainingBlockOffset();
+    const GAP = 10;
+
+    switch (position) {
+      case "top":
+        return {
+          top: rect.top - offset.y - GAP,
+          left: rect.left + rect.width / 2 - offset.x,
+          transform: "translate(-50%, -100%)",
+        };
+      case "bottom": {
+        const centerX = rect.left + rect.width / 2;
+        const halfWidth = estWidth / 2;
+        let translateX = "-50%";
+
+        if (centerX - halfWidth < padding) {
+          const diff = padding - (centerX - halfWidth);
+          translateX = `calc(-50% + ${diff}px)`;
+        } else if (centerX + halfWidth > vw - padding) {
+          const diff = centerX + halfWidth - (vw - padding);
+          translateX = `calc(-50% - ${diff}px)`;
+        }
+        return {
+          top: rect.bottom - offset.y + GAP,
+          left: centerX - offset.x,
+          transform: `translateX(${translateX})`,
+        };
+      }
+      case "left":
+        return {
+          top: rect.top + rect.height / 2 - offset.y,
+          left: rect.left - offset.x - GAP,
+          transform: "translate(-100%, -50%)",
+        };
+      case "right":
+        return {
+          top: rect.top + rect.height / 2 - offset.y,
+          left: rect.right - offset.x + GAP,
+          transform: "translateY(-50%)",
+        };
+    }
+  };
+
+  const getStyleForPosition = (): React.CSSProperties => {
+    if (!triggerRef.current) return {};
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1000;
+    const padding = 10;
+
+    let estWidth = measuredWidth > 0 ? measuredWidth : 100;
+    if (tooltipRef.current && measuredWidth === 0) {
+      const currentWidth = tooltipRef.current.getBoundingClientRect().width;
+      if (currentWidth > 0) estWidth = currentWidth;
     }
 
-    return baseStyle;
+    return strategy === "fixed"
+      ? getFixedStyle(rect, vw, estWidth, padding)
+      : getAbsoluteStyle(rect, vw, estWidth, padding);
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -188,6 +262,8 @@ export const Tooltip = ({
   useEffect(() => {
     onOpenChange?.(isShowing);
   }, [isShowing, onOpenChange]);
+
+  const isFixed = strategy === "fixed";
 
   return (
     <div
@@ -238,7 +314,8 @@ export const Tooltip = ({
             zIndex,
           }}
           className={twMerge(
-            "absolute w-max rounded-lg bg-ui-controls shadow-xl border border-ui-panel-border",
+            isFixed ? "fixed" : "absolute",
+            "w-max rounded-lg bg-ui-controls shadow-xl border border-ui-panel-border",
             interactive
               ? "pointer-events-auto p-3"
               : "px-2.5 py-1.5 text-[13px] font-medium pointer-events-none",

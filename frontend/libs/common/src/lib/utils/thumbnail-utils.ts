@@ -15,7 +15,7 @@ interface ThumbnailOptions {
 
 export function getThumbnailUrl(
   urlTemplate: string | null | undefined,
-  options: ThumbnailOptions = {}
+  options: ThumbnailOptions = {},
 ): string | null {
   if (!urlTemplate) return null;
 
@@ -53,7 +53,7 @@ export function getMediaThumbnail(
     | null
     | undefined,
   mediaClass: string | undefined,
-  options: MediaThumbnailOptions = {}
+  options: MediaThumbnailOptions = {},
 ): string | null {
   if (!mediaLinks) return null;
 
@@ -85,10 +85,10 @@ export function getContextImageThumbnail(
       cdn_url: string;
     };
   },
-  options: MediaThumbnailOptions = {}
+  options: MediaThumbnailOptions = {},
 ): { thumbnail: string; fullSize: string } {
   const { size = THUMBNAIL_SIZES.SMALL } = options;
-  const fullSizeWidth = THUMBNAIL_SIZES.LARGE;
+  const fullSizeWidth = THUMBNAIL_SIZES.EXTRA_LARGE;
 
   const thumbnail = contextImage.media_links.maybe_thumbnail_template
     ? getThumbnailUrl(contextImage.media_links.maybe_thumbnail_template, {
