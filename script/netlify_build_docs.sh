@@ -8,7 +8,14 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$REPO_ROOT"
 
-# Install build dependencies
+# Install system dependencies
+# libclang-dev is required by boring-sys2's build script, which uses bindgen
+# (a libclang-based tool) to generate Rust FFI bindings for BoringSSL.
+# Without it, clang cannot find stddef.h and the build fails.
+sudo apt-get update -y
+sudo apt-get install -y libclang-dev
+
+# Install Rust toolchain
 rustup update
 rustup default stable
 
