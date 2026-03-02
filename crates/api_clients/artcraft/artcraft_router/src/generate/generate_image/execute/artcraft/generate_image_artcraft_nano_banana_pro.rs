@@ -1,7 +1,9 @@
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
-use crate::generate::generate_image::image_generation_plan::GenerateImageResponse;
+use crate::generate::generate_image::generate_image_response::{
+  ArtcraftImageResponsePayload, GenerateImageResponse,
+};
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::PlanArtcraftNanaBananaPro;
 use artcraft_api_defs::generate::image::multi_function::nano_banana_pro_multi_function_image_gen::NanoBananaProMultiFunctionImageGenRequest;
 use artcraft_client::endpoints::generate::image::multi_function::nano_banana_pro_multi_function_image_gen_image::nano_banana_pro_multi_function_image_gen;
@@ -27,9 +29,9 @@ pub async fn execute_artcraft_nano_banana_pro(
     .await
     .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Storyteller(err)))?;
 
-  Ok(GenerateImageResponse {
+  Ok(GenerateImageResponse::Artcraft(ArtcraftImageResponsePayload {
     inference_job_token: response.inference_job_token,
-  })
+  }))
 }
 
 #[cfg(test)]
@@ -59,7 +61,8 @@ mod tests {
 
     println!("Result: {:?}", result);
     let response = result.expect("generate_image request failed");
-    println!("Job token: {:?}", response.inference_job_token);
+    let payload = response.get_artcraft_payload().expect("expected Artcraft payload");
+    println!("Job token: {:?}", payload.inference_job_token);
 
     assert_eq!(1, 2); // NB: Intentional failure to inspect the response above.
   }
@@ -81,7 +84,8 @@ mod tests {
 
     println!("Result: {:?}", result);
     let response = result.expect("generate_image request failed");
-    println!("Job token: {:?}", response.inference_job_token);
+    let payload = response.get_artcraft_payload().expect("expected Artcraft payload");
+    println!("Job token: {:?}", payload.inference_job_token);
 
     assert_eq!(1, 2); // NB: Intentional failure to inspect the response above.
   }
@@ -111,7 +115,8 @@ mod tests {
 
     println!("Result: {:?}", result);
     let response = result.expect("generate_image request failed");
-    println!("Job token: {:?}", response.inference_job_token);
+    let payload = response.get_artcraft_payload().expect("expected Artcraft payload");
+    println!("Job token: {:?}", payload.inference_job_token);
 
     assert_eq!(1, 2); // NB: Intentional failure to inspect the response above.
   }

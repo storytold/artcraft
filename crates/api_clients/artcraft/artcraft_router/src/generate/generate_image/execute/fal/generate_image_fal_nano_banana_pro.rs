@@ -1,7 +1,9 @@
 use crate::client::router_fal_client::RouterFalClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
-use crate::generate::generate_image::image_generation_plan::GenerateImageResponse;
+use crate::generate::generate_image::generate_image_response::{
+  FalImageResponsePayload, GenerateImageResponse,
+};
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::{
   FalNbpNumImages, FalNbpResolution, PlanFalNanaBananaPro,
 };
@@ -13,13 +15,11 @@ use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_
   enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs,
   EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageResolution,
 };
-use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-
 pub async fn execute_fal_nano_banana_pro(
   plan: &PlanFalNanaBananaPro<'_>,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let request_id = if plan.image_urls.is_empty() {
+  let webhook_response = if plan.image_urls.is_empty() {
     // Text-to-image mode
     let args = EnqueueNanoBananaProTextToImageArgs {
       prompt: plan.prompt.unwrap_or(""),
@@ -32,7 +32,6 @@ pub async fn execute_fal_nano_banana_pro(
     enqueue_nano_banana_pro_text_to_image_webhook(args)
       .await
       .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
-      .request_id
   } else {
     // Image-edit mode
     let args = EnqueueNanoBananaProEditImageArgs {
@@ -47,14 +46,12 @@ pub async fn execute_fal_nano_banana_pro(
     enqueue_nano_banana_pro_image_edit_webhook(args)
       .await
       .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
-      .request_id
   };
 
-  let inference_job_token = InferenceJobToken::new_from_str(
-    &request_id.unwrap_or_default(),
-  );
-
-  Ok(GenerateImageResponse { inference_job_token })
+  Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
+    request_id: webhook_response.request_id,
+    gateway_request_id: webhook_response.gateway_request_id,
+  }))
 }
 
 fn to_t2i_num_images(n: FalNbpNumImages) -> EnqueueNanoBananaProTextToImageNumImages {
@@ -118,7 +115,9 @@ mod tests {
 
     println!("Result: {:?}", result);
     let response = result.expect("generate_image request failed");
-    println!("Job token: {:?}", response.inference_job_token);
+    let payload = response.get_fal_payload().expect("expected Fal payload");
+    println!("Request ID: {:?}", payload.request_id);
+    println!("Gateway request ID: {:?}", payload.gateway_request_id);
 
     assert_eq!(1, 2); // NB: Intentional failure to inspect the response above.
   }
@@ -140,7 +139,9 @@ mod tests {
 
     println!("Result: {:?}", result);
     let response = result.expect("generate_image request failed");
-    println!("Job token: {:?}", response.inference_job_token);
+    let payload = response.get_fal_payload().expect("expected Fal payload");
+    println!("Request ID: {:?}", payload.request_id);
+    println!("Gateway request ID: {:?}", payload.gateway_request_id);
 
     assert_eq!(1, 2); // NB: Intentional failure to inspect the response above.
   }
@@ -175,7 +176,9 @@ mod tests {
 
     println!("Result: {:?}", result);
     let response = result.expect("generate_image request failed");
-    println!("Job token: {:?}", response.inference_job_token);
+    let payload = response.get_fal_payload().expect("expected Fal payload");
+    println!("Request ID: {:?}", payload.request_id);
+    println!("Gateway request ID: {:?}", payload.gateway_request_id);
 
     assert_eq!(1, 2); // NB: Intentional failure to inspect the response above.
   }

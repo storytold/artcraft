@@ -4,15 +4,10 @@ use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraf
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_nano_banana_pro::estimate_image_cost_fal_nano_banana_pro;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_nano_banana_pro::execute_artcraft_nano_banana_pro;
 use crate::generate::generate_image::execute::fal::generate_image_fal_nano_banana_pro::execute_fal_nano_banana_pro;
+use crate::generate::generate_image::generate_image_response::GenerateImageResponse;
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::PlanArtcraftNanaBananaPro;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::PlanFalNanaBananaPro;
-use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-
-#[derive(Clone, Debug)]
-pub struct GenerateImageResponse {
-  pub inference_job_token: InferenceJobToken,
-}
 
 #[derive(Debug)]
 pub enum ImageGenerationPlan<'a> {
