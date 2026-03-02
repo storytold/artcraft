@@ -87,6 +87,31 @@ def fetch_user(cursor, token: str) -> dict | None:
     return dict(zip(cols, row))
 
 
+def fetch_sessions(cursor, user_token: str) -> list[dict]:
+    cursor.execute(
+        """
+        SELECT id, token, user_token, ip_address_creation,
+               created_at, updated_at, expires_at, deleted_at
+        FROM user_sessions
+        WHERE user_token = %s
+        """,
+        (user_token,),
+    )
+    cols = ["id", "token", "user_token", "ip_address_creation",
+            "created_at", "updated_at", "expires_at", "deleted_at"]
+    return [dict(zip(cols, row)) for row in cursor.fetchall()]
+
+
+def print_sessions(sessions: list[dict]):
+    if not sessions:
+        print("  (none)")
+        return
+    for s in sessions:
+        print(f"  id={s['id']}  token={s['token']}  ip={s['ip_address_creation']}"
+              f"  created={s['created_at']}  expires={s['expires_at']}"
+              f"  deleted={s['deleted_at']}")
+
+
 def strip_renamed_suffixes(email: str) -> str:
     """Remove any .{digits}-renamed.com suffixes to recover the original email."""
     pattern = r'\.\d+-renamed\.com$'
@@ -154,6 +179,7 @@ def main():
         with conn.cursor() as cursor:
             source = fetch_user(cursor, source_token)
             target = fetch_user(cursor, target_token)
+            source_sessions = fetch_sessions(cursor, source_token)
 
         if source is None:
             print(f"ERROR: No user found with source token: {source_token}")
@@ -166,6 +192,9 @@ def main():
         print_user("source", source)
         print("\nTarget (credentials will be copied TO this account):")
         print_user("target", target)
+
+        print(f"\nSource sessions ({len(source_sessions)} found — will be expired and deleted):")
+        print_sessions(source_sessions)
 
         source_hash_str = decode_hash(source["password_hash"])
         if source_hash_str == "*":
@@ -186,6 +215,7 @@ def main():
         print(f"  target email_gravatar_hash → {new_gravatar_hash}")
         print(f"  target is_without_password → false")
         print(f"  target password_version → {target['password_version']} + 1 = {target['password_version'] + 1}")
+        print(f"  {len(source_sessions)} source session(s) → expires_at and deleted_at set to NOW() - 1 HOUR")
 
         print()
         answer = input("Proceed? [y/N] ").strip().lower()
@@ -194,7 +224,6 @@ def main():
             sys.exit(0)
 
         with conn.cursor() as cursor:
-            sys.exit(0)
             # Step 1: rename source email
             cursor.execute(
                 """
@@ -202,6 +231,7 @@ def main():
                 SET email_address = %s,
                     version = version + 1
                 WHERE token = %s
+                LIMIT 1
                 """,
                 (renamed_email, source_token),
             )
@@ -219,11 +249,25 @@ def main():
                     password_version = password_version + 1,
                     version = version + 1
                 WHERE token = %s
+                LIMIT 1
                 """,
                 (original_email, source["password_hash"], new_gravatar_hash, target_token),
             )
             if cursor.rowcount != 1:
                 raise RuntimeError(f"Expected 1 row updated for target, got {cursor.rowcount}")
+
+            # Step 3: expire and delete all source sessions
+            cursor.execute(
+                """
+                UPDATE user_sessions
+                SET expires_at = NOW() - INTERVAL 1 HOUR,
+                    deleted_at = NOW() - INTERVAL 1 HOUR
+                WHERE user_token = %s
+                LIMIT 10
+                """,
+                (source_token,),
+            )
+            print(f"  Expired and deleted {cursor.rowcount} source session(s).")
 
         conn.commit()
         print("\nDone. Changes committed.")
