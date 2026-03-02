@@ -28,6 +28,7 @@ import {
 import { Model } from "@storyteller/model-list";
 import { useCurrency } from "./use-currency";
 import { useVideoCostEstimate } from "./useVideoCostEstimate";
+import { useImageCostEstimate } from "./useImageCostEstimate";
 
 // Drag handle subcomponent that Modal looks for
 const DragHandle = ({ children }: { children: React.ReactNode }) => (
@@ -113,6 +114,11 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     selectedModel,
     selectedProvider,
   );
+  const { isLoading: isImageEstimateLoading } = useImageCostEstimate(
+    activePage,
+    selectedModel,
+    selectedProvider,
+  );
 
   // Get generation settings from the appropriate stores based on active page
   const prompt2D = usePrompt2DStore();
@@ -165,17 +171,23 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
 
   const storeData = getStoreData();
 
-  // For video, use the live estimate from the backend; for others use a default
-  const videoCredits =
-    activePage === ModelPage.ImageToVideo
-      ? (estimatedCreditsByPage[ModelPage.ImageToVideo] ?? null)
-      : null;
+  // For video/image, use the live estimate from the backend; for others use a default
+  const IMAGE_PAGES_SET = new Set<ModelPage>([
+    ModelPage.TextToImage,
+    ModelPage.Canvas2D,
+    ModelPage.ImageEditor,
+  ]);
+
+  const isLiveEstimatePage =
+    activePage === ModelPage.ImageToVideo || IMAGE_PAGES_SET.has(activePage);
+  const liveCredits = isLiveEstimatePage
+    ? (estimatedCreditsByPage[activePage] ?? null)
+    : null;
 
   const creditsPerGeneration = 1;
-  const totalCredits =
-    activePage === ModelPage.ImageToVideo
-      ? (videoCredits ?? null)
-      : creditsPerGeneration * storeData.generationCount;
+  const totalCredits = isLiveEstimatePage
+    ? liveCredits
+    : creditsPerGeneration * storeData.generationCount;
 
   // Convert credits to USD first (1 credit = $0.01), then to selected currency
   const usdAmount = (totalCredits ?? 0) * 0.01;
@@ -308,8 +320,10 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                   Credits
                 </div>
                 <div className="text-lg font-bold text-base-fg flex items-center gap-1.5">
-                  {isVideoEstimateLoading &&
-                  activePage === ModelPage.ImageToVideo ? (
+                  {(isVideoEstimateLoading &&
+                    activePage === ModelPage.ImageToVideo) ||
+                  (isImageEstimateLoading &&
+                    IMAGE_PAGES_SET.has(activePage)) ? (
                     <>
                       <FontAwesomeIcon
                         icon={faSpinner}

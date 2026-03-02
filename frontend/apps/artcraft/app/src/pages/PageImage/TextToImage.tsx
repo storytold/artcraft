@@ -28,7 +28,10 @@ import {
 import { Badge } from "@storyteller/ui-badge";
 import { twMerge } from "tailwind-merge";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
-import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
+import {
+  CostCalculatorButton,
+  useCostBreakdownModalStore,
+} from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
@@ -48,6 +51,10 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
 
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+
+  const imageCredits = useCostBreakdownModalStore(
+    (s) => s.estimatedCreditsByPage[PAGE_ID],
+  );
 
   const jobContext: JobContextType = {
     jobTokens: [],
@@ -217,6 +224,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                 imageMediaId={imageMediaId}
                 url={imageUrl ?? undefined}
                 onImageRowVisibilityChange={setImageRowVisible}
+                credits={imageCredits}
                 onEnqueuePressed={async (prompt, count, subscriberId) => {
                   const modelLabel = selectedImageModel?.fullName ?? "";
                   startBatch(prompt, count, modelLabel, subscriberId);
@@ -240,7 +248,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
             />
           </div>
           <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-            <CostCalculatorButton />
+            <CostCalculatorButton modelPage={PAGE_ID} />
             <HelpMenuButton />
           </div>
         </div>

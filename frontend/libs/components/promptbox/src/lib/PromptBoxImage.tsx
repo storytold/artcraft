@@ -52,6 +52,7 @@ interface PromptBoxImageProps {
   imageMediaId?: string;
   url?: string;
   onImageRowVisibilityChange?: (visible: boolean) => void;
+  credits?: number | null;
 }
 
 export const PromptBoxImage = ({
@@ -63,6 +64,7 @@ export const PromptBoxImage = ({
   imageMediaId,
   url,
   onImageRowVisibilityChange,
+  credits,
 }: PromptBoxImageProps) => {
   useSignals();
 
@@ -110,15 +112,11 @@ export const PromptBoxImage = ({
     referenceImages.length > 0 ||
     uploadingImages.length > 0;
 
-  // New aspect ratio state will begin to phase out old aspect ratio
-  const [commonAspectRatio, setCommonAspectRatio] = useState<
-    CommonAspectRatio | undefined
-  >(undefined);
-
-  // New resolution state will begin to phase out old resolution
-  const [commonResolution, setCommonResolution] = useState<
-    CommonResolution | undefined
-  >(undefined);
+  // New aspect ratio and resolution — stored globally so cost estimates can observe them
+  const commonAspectRatio = usePromptImageStore((s) => s.commonAspectRatio);
+  const setCommonAspectRatio = usePromptImageStore((s) => s.setCommonAspectRatio);
+  const commonResolution = usePromptImageStore((s) => s.commonResolution);
+  const setCommonResolution = usePromptImageStore((s) => s.setCommonResolution);
 
   useEffect(() => {
     onImageRowVisibilityChange?.(isImageRowVisible);
@@ -545,6 +543,7 @@ export const PromptBoxImage = ({
                 onClick={handleEnqueue}
                 disabled={!prompt.trim()}
                 loading={isEnqueueing}
+                credits={credits}
               >
                 Generate
               </GenerateButton>

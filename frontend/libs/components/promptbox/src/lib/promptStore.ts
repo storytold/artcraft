@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { CommonAspectRatio } from "@storyteller/model-list";
+import { CommonResolution } from "@storyteller/model-list";
 
 export interface RefImage {
   id: string;
@@ -74,12 +76,17 @@ interface PromptImageStore {
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
   generationCount: number;
+  // New-style aspect ratio and resolution (preferred over legacy fields above)
+  commonAspectRatio: CommonAspectRatio | undefined;
+  commonResolution: CommonResolution | undefined;
   setPrompt: (prompt: string) => void;
   setAspectRatio: (ratio: AspectRatio) => void;
   setResolution: (resolution: Resolution) => void;
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
   setGenerationCount: (count: number) => void;
+  setCommonAspectRatio: (ratio: CommonAspectRatio | undefined) => void;
+  setCommonResolution: (resolution: CommonResolution | undefined) => void;
 }
 
 export const usePromptImageStore = create<PromptImageStore>()((set) => ({
@@ -89,12 +96,16 @@ export const usePromptImageStore = create<PromptImageStore>()((set) => ({
   useSystemPrompt: true,
   referenceImages: [],
   generationCount: 1,
+  commonAspectRatio: undefined,
+  commonResolution: undefined,
   setPrompt: (prompt) => set({ prompt }),
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
   setResolution: (resolution) => set({ resolution }),
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
   setGenerationCount: (generationCount) => set({ generationCount }),
+  setCommonAspectRatio: (commonAspectRatio) => set({ commonAspectRatio }),
+  setCommonResolution: (commonResolution) => set({ commonResolution }),
 }));
 
 // ----- Video Prompt Box Store -----

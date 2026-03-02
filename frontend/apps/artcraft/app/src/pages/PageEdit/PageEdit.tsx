@@ -734,7 +734,7 @@ const PageEdit = () => {
         />
       </div>
       <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-        <CostCalculatorButton />
+        <CostCalculatorButton modelPage={PAGE_ID} />
         <HelpMenuButton />
       </div>
     </>
