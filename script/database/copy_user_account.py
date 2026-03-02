@@ -22,6 +22,7 @@ Usage:
 """
 
 import argparse
+import hashlib
 import re
 import sys
 import time
@@ -94,19 +95,24 @@ def strip_renamed_suffixes(email: str) -> str:
     return email
 
 
-def format_hash(h) -> str:
+def decode_hash(h) -> str:
+    """Decode a BINARY(60) bcrypt hash to its readable ASCII string."""
     if h is None:
         return "(null)"
     if isinstance(h, (bytes, bytearray)):
-        return h.hex()[:24] + "..."
-    return str(h)[:24] + "..."
+        return h.rstrip(b'\x00').decode('utf-8', errors='replace')
+    return str(h)
+
+
+def gravatar_hash(email: str) -> str:
+    return hashlib.md5(email.strip().lower().encode()).hexdigest()
 
 
 def print_user(label: str, user: dict):
     print(f"  {label}:")
     print(f"    token             : {user['token']}")
     print(f"    email_address     : {user['email_address']}")
-    print(f"    password_hash     : {format_hash(user['password_hash'])}")
+    print(f"    password_hash     : {decode_hash(user['password_hash'])}")
     print(f"    password_version  : {user['password_version']}")
     print(f"    is_without_password: {bool(user['is_without_password'])}")
     print(f"    version           : {user['version']}")
@@ -161,16 +167,23 @@ def main():
         print("\nTarget (credentials will be copied TO this account):")
         print_user("target", target)
 
+        source_hash_str = decode_hash(source["password_hash"])
+        if source_hash_str == "*":
+            print("ERROR: source password_hash is \"*\" (empty/locked password). Refusing to copy.")
+            sys.exit(1)
+
         original_email = strip_renamed_suffixes(source["email_address"])
         timestamp = int(time.time())
         renamed_email = f"{original_email}.{timestamp}-renamed.com"
+        new_gravatar_hash = gravatar_hash(original_email)
 
         print("\nProposed changes:")
         print(f"  source email  : {source['email_address']}")
         print(f"              → : {renamed_email}")
         print(f"  target email  : {target['email_address']}")
         print(f"              → : {original_email}")
-        print(f"  target password_hash → (copied from source)")
+        print(f"  target password_hash → {source_hash_str}")
+        print(f"  target email_gravatar_hash → {new_gravatar_hash}")
         print(f"  target is_without_password → false")
         print(f"  target password_version → {target['password_version']} + 1 = {target['password_version'] + 1}")
 
@@ -181,6 +194,7 @@ def main():
             sys.exit(0)
 
         with conn.cursor() as cursor:
+            sys.exit(0)
             # Step 1: rename source email
             cursor.execute(
                 """
@@ -200,12 +214,13 @@ def main():
                 UPDATE users
                 SET email_address = %s,
                     password_hash = %s,
+                    email_gravatar_hash = %s,
                     is_without_password = false,
                     password_version = password_version + 1,
                     version = version + 1
                 WHERE token = %s
                 """,
-                (original_email, source["password_hash"], target_token),
+                (original_email, source["password_hash"], new_gravatar_hash, target_token),
             )
             if cursor.rowcount != 1:
                 raise RuntimeError(f"Expected 1 row updated for target, got {cursor.rowcount}")
