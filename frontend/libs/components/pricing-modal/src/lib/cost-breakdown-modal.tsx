@@ -119,6 +119,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     selectedModel,
     selectedProvider,
   );
+  const isEstimateLoading = isVideoEstimateLoading || isImageEstimateLoading;
 
   // Get generation settings from the appropriate stores based on active page
   const prompt2D = usePrompt2DStore();
@@ -171,16 +172,16 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
 
   const storeData = getStoreData();
 
-  // For video/image, use the live estimate from the backend; for others use a default
-  const IMAGE_PAGES_SET = new Set<ModelPage>([
+  // Pages that use a live backend estimate instead of a local calculation
+  const LIVE_ESTIMATE_PAGES = new Set<ModelPage>([
     ModelPage.TextToImage,
     ModelPage.Canvas2D,
     ModelPage.Stage3D,
     ModelPage.ImageEditor,
+    ModelPage.ImageToVideo,
   ]);
 
-  const isLiveEstimatePage =
-    activePage === ModelPage.ImageToVideo || IMAGE_PAGES_SET.has(activePage);
+  const isLiveEstimatePage = LIVE_ESTIMATE_PAGES.has(activePage);
   const liveCredits = isLiveEstimatePage
     ? (estimatedCreditsByPage[activePage] ?? null)
     : null;
@@ -321,10 +322,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
                   Credits
                 </div>
                 <div className="text-lg font-bold text-base-fg flex items-center gap-1.5">
-                  {(isVideoEstimateLoading &&
-                    activePage === ModelPage.ImageToVideo) ||
-                  (isImageEstimateLoading &&
-                    IMAGE_PAGES_SET.has(activePage)) ? (
+                  {isEstimateLoading && isLiveEstimatePage ? (
                     <>
                       <FontAwesomeIcon
                         icon={faSpinner}
