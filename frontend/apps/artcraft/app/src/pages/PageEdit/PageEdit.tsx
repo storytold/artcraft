@@ -32,7 +32,10 @@ import {
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { HistoryStack, ImageBundle } from "./HistoryStack";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
-import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
+import {
+  CostCalculatorButton,
+  useCostBreakdownModalStore,
+} from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 const PAGE_ID: ModelPage = ModelPage.ImageEditor;
@@ -45,6 +48,10 @@ const PageEdit = () => {
 
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+
+  const imageCredits = useCostBreakdownModalStore(
+    (s) => s.estimatedCreditsByPage[PAGE_ID],
+  );
 
   // State for canvas dimensions
   const canvasWidth = useRef<number>(1024);
@@ -663,6 +670,7 @@ const PageEdit = () => {
           isNanoBananaModel={isNanoBananaModel}
           onUndo={store.undo}
           onRedo={store.redo}
+          credits={imageCredits}
         />
       </div>
       <div className="relative z-0">

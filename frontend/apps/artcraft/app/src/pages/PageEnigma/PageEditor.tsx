@@ -88,7 +88,10 @@ import { useTabStore } from "../Stores/TabState";
 import PageEdit from "../PageEdit/PageEdit";
 import { ImageModel } from "@storyteller/model-list";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
-import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
+import {
+  CostCalculatorButton,
+  useCostBreakdownModalStore,
+} from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 
 const PAGE_ID: ModelPage = ModelPage.Stage3D;
@@ -122,6 +125,10 @@ export const PageEditor = () => {
 
   const selectedProvider: GenerationProvider | undefined =
     useSelectedProviderForModel(PAGE_ID, selectedImageModel?.id);
+
+  const imageCredits = useCostBreakdownModalStore(
+    (s) => s.estimatedCreditsByPage[PAGE_ID],
+  );
 
   const height =
     dndTimelineHeight.value > -1
@@ -537,6 +544,7 @@ export const PageEditor = () => {
                   onAspectRatioSelect={onAspectRatioSelect}
                   selectedImageModel={selectedImageModel}
                   selectedProvider={selectedProvider}
+                  credits={imageCredits}
                   setEnginePrompt={(prompt) => {
                     console.log("setEnginePrompt", prompt);
                     if (!editorEngine) {
@@ -569,7 +577,7 @@ export const PageEditor = () => {
                   />
                 </div>
                 <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-                  <CostCalculatorButton />
+                  <CostCalculatorButton modelPage={PAGE_ID} />
                   <HelpMenuButton />
                 </div>
               </div>

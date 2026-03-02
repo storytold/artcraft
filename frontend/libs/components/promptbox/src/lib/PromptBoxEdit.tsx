@@ -57,6 +57,7 @@ export interface PromptBoxEditProps {
   isNanoBananaModel?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
+  credits?: number | null;
 }
 
 export const PromptBoxEdit = ({
@@ -77,6 +78,7 @@ export const PromptBoxEdit = ({
   isNanoBananaModel = false,
   onUndo,
   onRedo,
+  credits,
 }: PromptBoxEditProps) => {
   // Check subscription status to determine if user is on free plan
   const hasPaidPlan = useSubscriptionState((s) => s.hasPaidPlan);
@@ -515,6 +517,7 @@ export const PromptBoxEdit = ({
                   onClick={handleGenerate}
                   disabled={isDisabled || !prompt.trim()}
                   loading={isEnqueueing ?? internalEnqueueing}
+                  credits={credits}
                 >
                   Generate
                 </GenerateButton>

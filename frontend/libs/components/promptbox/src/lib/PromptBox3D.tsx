@@ -75,6 +75,7 @@ interface PromptBox3DProps {
         file: File;
       } | null)
     | undefined;
+  credits?: number | null;
 }
 
 export const PromptBox3D = ({
@@ -98,6 +99,7 @@ export const PromptBox3D = ({
   selectedImageModel,
   selectedProvider,
   snapshotCurrentFrame,
+  credits,
 }: PromptBox3DProps) => {
   useSignals();
   //const fileInputRef = useRef<HTMLInputElement>(null);
@@ -747,6 +749,7 @@ export const PromptBox3D = ({
                 onClick={handleEnqueue}
                 disabled={isEnqueueing || !prompt.trim()}
                 loading={isEnqueueing}
+                credits={credits}
               >
                 Generate
               </GenerateButton>

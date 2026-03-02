@@ -175,6 +175,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const IMAGE_PAGES_SET = new Set<ModelPage>([
     ModelPage.TextToImage,
     ModelPage.Canvas2D,
+    ModelPage.Stage3D,
     ModelPage.ImageEditor,
   ]);
 

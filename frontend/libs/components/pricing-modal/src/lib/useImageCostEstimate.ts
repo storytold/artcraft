@@ -5,6 +5,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 import {
   usePromptImageStore,
   usePrompt2DStore,
+  usePrompt3DStore,
   usePromptEditStore,
 } from "@storyteller/ui-promptbox";
 import {
@@ -21,6 +22,7 @@ import {
 const IMAGE_PAGES = new Set<ModelPage>([
   ModelPage.TextToImage,
   ModelPage.Canvas2D,
+  ModelPage.Stage3D,
   ModelPage.ImageEditor,
 ]);
 
@@ -29,8 +31,6 @@ export function useImageCostEstimate(
   selectedModel: Model | null | undefined,
   selectedProvider: string | null | undefined,
 ): { isLoading: boolean } {
-  console.log(">>> useCostEstimateImage ");
-
   const [isLoading, setIsLoading] = useState(false);
   const setEstimatedCreditsForPage = useCostBreakdownModalStore(
     (s) => s.setEstimatedCreditsForPage,
@@ -48,25 +48,25 @@ export function useImageCostEstimate(
   const prompt2DResolution = usePrompt2DStore((s) => s.resolution);
   const prompt2DReferenceImages = usePrompt2DStore((s) => s.referenceImages);
 
+  // Stage3D store
+  const prompt3DResolution = usePrompt3DStore((s) => s.resolution);
+  const prompt3DReferenceImages = usePrompt3DStore((s) => s.referenceImages);
+
   // ImageEditor store
-  const editReferenceImages = usePromptEditStore((s) => s.referenceImages);
   const editAspectRatio = usePromptEditStore((s) => s.aspectRatio);
   const editResolution = usePromptEditStore((s) => s.resolution);
+  const editReferenceImages = usePromptEditStore((s) => s.referenceImages);
 
   useEffect(() => {
     if (!IMAGE_PAGES.has(activePage) || !selectedModel) {
-      console.log(">>> useCostEstimateImage - SKIP useImageCostEstimate (1)");
       return;
     }
 
     const commonModel = imageModelToCommonImageModel(selectedModel.tauriId);
     if (!commonModel) {
-      console.log(">>> useCostEstimateImage - SKIP useImageCostEstimate (2)");
       setEstimatedCreditsForPage(activePage, null);
       return;
     }
-
-    console.log(">>> useCostEstimateImage - CALLING...");
 
     let aspectRatioStr: string | undefined;
     let legacyAspectRatioStr: string | undefined;
@@ -84,6 +84,10 @@ export function useImageCostEstimate(
         legacyAspectRatioStr = prompt2DAspectRatio;
         resolutionStr = prompt2DResolution;
         referenceImageCount = prompt2DReferenceImages.length;
+        break;
+      case ModelPage.Stage3D:
+        resolutionStr = prompt3DResolution;
+        referenceImageCount = prompt3DReferenceImages.length;
         break;
       case ModelPage.ImageEditor:
         legacyAspectRatioStr = editAspectRatio;
@@ -116,21 +120,17 @@ export function useImageCostEstimate(
       resolution: commonResolution ?? undefined,
     })
       .then((result) => {
-        console.log(">>> useCostEstimateImage - THEN RESULT...", result);
         if (isEstimateImageCostSuccess(result)) {
           const credits = result.payload.cost_in_credits ?? null;
           setEstimatedCreditsForPage(activePage, credits);
         } else {
-          console.log(">>> useCostEstimateImage - FAILURE (1)", result);
           setEstimatedCreditsForPage(activePage, null);
         }
       })
       .catch(() => {
-        console.log(">>> useCostEstimateImage - FAILURE (2)");
         setEstimatedCreditsForPage(activePage, null);
       })
       .finally(() => {
-        console.log(">>> useCostEstimateImage - FINALLY");
         setIsLoading(false);
       });
   }, [
@@ -145,6 +145,8 @@ export function useImageCostEstimate(
     prompt2DAspectRatio,
     prompt2DResolution,
     prompt2DReferenceImages.length,
+    prompt3DResolution,
+    prompt3DReferenceImages.length,
     editAspectRatio,
     editResolution,
     editReferenceImages.length,
