@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::billing::wallets::temporary_test_wallet_deduction::temporary_test_wallet_deduction;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoints::generate::common::job_failure_test::is_job_failure_test;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -20,6 +21,7 @@ use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::InsertGenericInferenceForFalArgs;
+use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_mock_failure::{insert_generic_inference_job_for_fal_queue_mock_failure, InsertGenericInferenceForFalMockFailureArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use sqlx::Acquire;
@@ -89,6 +91,75 @@ pub async fn generate_flux_1_dev_text_to_image_handler(
         error!("Error inserting idempotency token: {:?}", err);
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
+
+  // Secret test hook: insert a synthetic "complete_failure" job without calling Fal.
+  if is_job_failure_test(request.prompt.as_deref().unwrap_or("")) {
+    let ip_address = get_request_ip(&http_request);
+
+    let mut transaction = mysql_connection
+        .begin()
+        .await
+        .map_err(|err| {
+          error!("Error starting MySQL transaction: {:?}", err);
+          CommonWebError::ServerError
+        })?;
+
+    let prompt_result = insert_prompt(InsertPromptArgs {
+      maybe_apriori_prompt_token: None,
+      prompt_type: PromptType::ArtcraftApp,
+      maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
+      maybe_model_type: Some(ModelType::Flux1Dev),
+      maybe_generation_provider: Some(GenerationProvider::Artcraft),
+      maybe_positive_prompt: request.prompt.as_deref(),
+      maybe_negative_prompt: None,
+      maybe_other_args: None,
+      creator_ip_address: &ip_address,
+      mysql_executor: &mut *transaction,
+      phantom: Default::default(),
+    }).await;
+
+    let prompt_token = match prompt_result {
+      Ok(token) => Some(token),
+      Err(err) => {
+        warn!("Error inserting prompt for mock failure job: {:?}", err);
+        None
+      }
+    };
+
+    let mock_result = insert_generic_inference_job_for_fal_queue_mock_failure(InsertGenericInferenceForFalMockFailureArgs {
+      uuid_idempotency_token: &request.uuid_idempotency_token,
+      fal_category: FalCategory::ImageGeneration,
+      maybe_inference_args: None,
+      maybe_prompt_token: prompt_token.as_ref(),
+      maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
+      maybe_avt_token: maybe_avt_token.as_ref(),
+      creator_ip_address: &ip_address,
+      creator_set_visibility: Visibility::Public,
+      mysql_executor: &mut *transaction,
+      phantom: Default::default(),
+    }).await;
+
+    let job_token = match mock_result {
+      Ok(token) => token,
+      Err(err) => {
+        warn!("Error inserting mock failure job: {:?}", err);
+        return Err(CommonWebError::ServerError);
+      }
+    };
+
+    transaction
+        .commit()
+        .await
+        .map_err(|err| {
+          error!("Error committing mock failure transaction: {:?}", err);
+          CommonWebError::ServerError
+        })?;
+
+    return Ok(Json(GenerateFlux1DevTextToImageResponse {
+      success: true,
+      inference_job_token: job_token,
+    }));
+  }
 
 //  // TODO: This is test code
 //  let credits = match request.num_images {

@@ -234,6 +234,7 @@ pub async fn generate_gpt_image_1_text_to_image_handler(
     creator_ip_address: &ip_address,
     creator_set_visibility: Visibility::Public,
     mysql_executor: &mut *transaction,
+    starting_job_status_override: None,
     phantom: Default::default(),
   }).await;
 

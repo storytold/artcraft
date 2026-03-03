@@ -316,6 +316,7 @@ pub async fn kling_2p6_pro_multi_function_video_gen_handler(
     creator_ip_address: &ip_address,
     creator_set_visibility: Visibility::Public,
     mysql_executor: &mut *transaction,
+    starting_job_status_override: None,
     phantom: Default::default(),
   }).await;
 

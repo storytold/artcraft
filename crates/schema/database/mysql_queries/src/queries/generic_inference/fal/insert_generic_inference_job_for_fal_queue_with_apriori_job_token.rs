@@ -46,6 +46,10 @@ pub struct InsertGenericInferenceForFalWithAprioriJobTokenArgs<'e, 'c, E>
   pub creator_ip_address: &'e str,
   pub creator_set_visibility: Visibility,
 
+  /// Override the initial job status. Defaults to `Pending` when `None`.
+  /// Set to `Some(JobStatusPlus::CompleteFailure)` for mock/test failure jobs.
+  pub starting_job_status_override: Option<JobStatusPlus>,
+
   pub mysql_executor: E,
   
   // TODO: Not sure if this works to tell the compiler we need the lifetime annotation.
@@ -86,7 +90,7 @@ pub async fn insert_generic_inference_job_for_fal_queue_with_apriori_job_token<'
 
   let maybe_external_third_party = InferenceJobExternalThirdParty::Fal;
   
-  const STATUS : JobStatusPlus = JobStatusPlus::Pending;
+  let status = args.starting_job_status_override.unwrap_or(JobStatusPlus::Pending);
 
   let query = sqlx::query!(
         r#"
@@ -152,7 +156,7 @@ SET
         args.creator_ip_address,
         args.creator_set_visibility.to_str(),
 
-        STATUS.to_str(),
+        status.to_str(),
     );
 
   let query_result = query.execute(args.mysql_executor)

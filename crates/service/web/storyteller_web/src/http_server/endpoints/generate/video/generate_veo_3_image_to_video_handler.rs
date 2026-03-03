@@ -247,6 +247,7 @@ pub async fn generate_veo_3_image_to_video_handler(
     creator_ip_address: &ip_address,
     creator_set_visibility: Visibility::Public,
     mysql_executor: &mut *transaction,
+    starting_job_status_override: None,
     phantom: Default::default(),
   }).await;
 
