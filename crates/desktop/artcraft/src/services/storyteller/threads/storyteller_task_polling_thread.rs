@@ -98,6 +98,11 @@ async fn polling_loop(
       }
     };
 
+    info!("Found {} storyteller jobs", jobs.len());
+    for job in jobs.iter() {
+      info!("Storyteller Job: {:?} - {:?}", job.job_token, job.status.status);
+    }
+
     let job_ids = jobs.iter()
         .map(|job| job.job_token.to_string())
         .collect::<Vec<_>>();
@@ -107,6 +112,11 @@ async fn polling_loop(
       provider: GenerationProvider::Artcraft,
       provider_job_ids: Some(job_ids),
     }).await?;
+
+    info!("Found {} tauri tasks", tasks.tasks.len());
+    for task in tasks.tasks.iter() {
+      info!("Tauri Task: {:?}", task);
+    }
 
     let tasks = tasks.tasks;
 
@@ -126,77 +136,119 @@ async fn polling_loop(
         .collect::<HashMap<String, Task>>();
 
     for job in jobs.iter() {
-      match job.status.status {
-        JobStatusPlus::CompleteSuccess => {} // Fall-through.
-        _ => continue,
-      }
-
       let task = match tasks_by_provider_job_id.get(job.job_token.as_str()) {
-        Some(job) => job,
+        Some(task) => task,
         None => continue,
       };
 
-      match task.status {
-        TaskStatus::CompleteSuccess => continue,
-        _ => {} // Fall-through.
-      }
-
-      let maybe_primary_media_file_token = job.maybe_result
-          .as_ref()
-          .map(|result| MediaFileToken::new_from_str(&result.entity_token));
-
-      let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
-        db: task_database.get_connection(),
-        task_id: &task.id,
-        maybe_batch_token: job.maybe_result
-            .as_ref()
-            .map(|result| result.maybe_batch_token.as_ref())
-            .flatten(),
-        maybe_primary_media_file_token: maybe_primary_media_file_token.as_ref(),
-        maybe_primary_media_file_class: get_media_file_class(&job),
-        maybe_primary_media_file_thumbnail_url_template: get_thumbnail_template(&job),
-        maybe_primary_media_file_cdn_url: job.maybe_result
-            .as_ref()
-            .map(|result| result.media_links.cdn_url.as_str()),
-      }).await?;
-
-      if !updated {
-        continue; // If anything breaks with queries, don't spam events.
-      }
-
-      send_additional_events(
-        &app_handle,
-        &app_env_configs,
-        creds.as_ref(),
-        &job,
-        &task,
-      ).await;
-
-      let service = to_generation_service_provider(task.provider);
-      let action = to_generation_action(task.task_type);
-
-      let event = GenerationCompleteEvent {
-        action: Some(action),
-        service,
-        model: None, // TODO
-      };
-
-      if let Err(err) = event.send(&app_handle) {
-        error!("Failed to send GenerationCompleteEvent: {:?}", err); // Fail open
+      match job.status.status {
+        JobStatusPlus::CompleteSuccess => {
+          match task.status {
+            TaskStatus::CompleteSuccess => continue,
+            _ => {}
+          }
+          handle_successful_job(app_handle, app_env_configs, creds.as_ref(), job, task, task_database).await?;
+        }
+        JobStatusPlus::CompleteFailure => {
+          match task.status {
+            TaskStatus::CompleteFailure => continue,
+            _ => {}
+          }
+          handle_failed_job(app_handle, job, task, task_database).await?;
+        }
+        _ => continue,
       }
     }
 
   }
 }
 
-async fn send_additional_events(
+async fn handle_successful_job(
+  app_handle: &AppHandle,
+  app_env_configs: &AppEnvConfigs,
+  creds: Option<&StorytellerCredentialSet>,
+  job: &ListSessionJobsItem,
+  task: &Task,
+  task_database: &TaskDatabase,
+) -> AnyhowResult<()> {
+  let maybe_primary_media_file_token = job.maybe_result
+      .as_ref()
+      .map(|result| MediaFileToken::new_from_str(&result.entity_token));
+
+  let updated = update_successful_task_status_with_metadata(UpdateSuccessfulTaskArgs {
+    db: task_database.get_connection(),
+    task_id: &task.id,
+    maybe_batch_token: job.maybe_result
+        .as_ref()
+        .map(|result| result.maybe_batch_token.as_ref())
+        .flatten(),
+    maybe_primary_media_file_token: maybe_primary_media_file_token.as_ref(),
+    maybe_primary_media_file_class: get_media_file_class(job),
+    maybe_primary_media_file_thumbnail_url_template: get_thumbnail_template(job),
+    maybe_primary_media_file_cdn_url: job.maybe_result
+        .as_ref()
+        .map(|result| result.media_links.cdn_url.as_str()),
+  }).await?;
+
+  if !updated {
+    return Ok(()); // If anything breaks with queries, don't spam events.
+  }
+
+  send_additional_success_events(app_handle, app_env_configs, creds, job, task).await;
+
+  let service = to_generation_service_provider(task.provider);
+  let action = to_generation_action(task.task_type);
+
+  let event = GenerationCompleteEvent {
+    action: Some(action),
+    service,
+    model: None, // TODO
+  };
+
+  if let Err(err) = event.send(app_handle) {
+    error!("Failed to send GenerationCompleteEvent: {:?}", err); // Fail open
+  }
+
+  Ok(())
+}
+
+async fn handle_failed_job(
+  app_handle: &AppHandle,
+  job: &ListSessionJobsItem,
+  task: &Task,
+  task_database: &TaskDatabase,
+) -> AnyhowResult<()> {
+  info!("Marking storyteller job as failed: {:?}", task.id);
+
+  update_task_status(UpdateTaskArgs {
+    db: task_database.get_connection(),
+    task_id: &task.id,
+    status: TaskStatus::CompleteFailure,
+  }).await?;
+
+  let service = to_generation_service_provider(task.provider);
+  let action = to_generation_action(task.task_type);
+
+  let event = GenerationFailedEvent {
+    action,
+    service,
+    model: None,
+    reason: None,
+  };
+
+  event.send_infallible(app_handle);
+
+  Ok(())
+}
+
+async fn send_additional_success_events(
   app_handle: &AppHandle,
   app_env_configs: &AppEnvConfigs,
   creds: Option<&StorytellerCredentialSet>,
   job: &ListSessionJobsItem,
   task: &Task
 ) {
-  info!("Attempting to dispatch events for completed Storyteller : {:?}", task);
+  info!("Attempting to dispatch events for completed Storyteller job: {:?}", task);
 
   let result = maybe_handle_frontend_caller_notification(
     app_handle,
