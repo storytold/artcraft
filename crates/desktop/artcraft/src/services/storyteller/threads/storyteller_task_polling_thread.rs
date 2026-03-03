@@ -98,11 +98,6 @@ async fn polling_loop(
       }
     };
 
-    info!("Found {} storyteller jobs", jobs.len());
-    for job in jobs.iter() {
-      info!("Storyteller Job: {:?} - {:?}", job.job_token, job.status.status);
-    }
-
     let job_ids = jobs.iter()
         .map(|job| job.job_token.to_string())
         .collect::<Vec<_>>();
@@ -112,11 +107,6 @@ async fn polling_loop(
       provider: GenerationProvider::Artcraft,
       provider_job_ids: Some(job_ids),
     }).await?;
-
-    info!("Found {} tauri tasks", tasks.tasks.len());
-    for task in tasks.tasks.iter() {
-      info!("Tauri Task: {:?}", task);
-    }
 
     let tasks = tasks.tasks;
 
