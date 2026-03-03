@@ -1,1 +1,3 @@
 pub mod estimate_image_cost_artcraft_nano_banana_pro;
+pub mod estimate_image_cost_artcraft_seedream_4;
+pub mod estimate_image_cost_artcraft_seedream_4p5;

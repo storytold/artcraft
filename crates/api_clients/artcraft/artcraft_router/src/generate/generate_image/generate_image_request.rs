@@ -5,8 +5,11 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::api::provider::Provider;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::plan_generate_image_artcraft_nano_banana_pro;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4::plan_generate_image_artcraft_seedream_4;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::plan_generate_image_artcraft_seedream_4p5;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
 pub struct GenerateImageRequest<'a> {
@@ -49,10 +52,22 @@ impl<'a> GenerateImageRequest<'a> {
         CommonImageModel::NanaBananaPro => {
           plan_generate_image_artcraft_nano_banana_pro(self).map(ImageGenerationPlan::ArtcraftNanaBananaPro)
         }
+        CommonImageModel::Seedream4 => {
+          plan_generate_image_artcraft_seedream_4(self).map(ImageGenerationPlan::ArtcraftSeedream4)
+        }
+        CommonImageModel::Seedream4p5 => {
+          plan_generate_image_artcraft_seedream_4p5(self).map(ImageGenerationPlan::ArtcraftSeedream4p5)
+        }
       },
       Provider::Fal => match self.model {
         CommonImageModel::NanaBananaPro => {
           plan_generate_image_fal_nano_banana_pro(self).map(ImageGenerationPlan::FalNanaBananaPro)
+        }
+        CommonImageModel::Seedream4 | CommonImageModel::Seedream4p5 => {
+          Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+            field: "provider",
+            value: "Seedream is only available on the Artcraft provider".to_string(),
+          }))
         }
       },
     }

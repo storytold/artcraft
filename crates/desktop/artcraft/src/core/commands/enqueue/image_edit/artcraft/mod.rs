@@ -3,7 +3,5 @@ mod handle_artcraft_flux_kontext_edit;
 mod handle_artcraft_gpt_image_1_edit;
 mod handle_artcraft_gpt_image_1p5_edit;
 mod handle_artcraft_nano_banana_edit;
-mod handle_artcraft_seedream_4_edit;
-mod handle_artcraft_seedream_4p5_edit;
 
 pub (super) mod handle_image_edit_artcraft;

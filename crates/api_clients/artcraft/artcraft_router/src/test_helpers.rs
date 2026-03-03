@@ -57,6 +57,34 @@ pub fn base_fal_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
+pub fn base_seedream_4_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::Seedream4,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    idempotency_token: None,
+  }
+}
+
+pub fn base_seedream_4p5_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::Seedream4p5,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    idempotency_token: None,
+  }
+}
+
 pub fn base_video_request() -> GenerateVideoRequest<'static> {
   GenerateVideoRequest {
     model: CommonVideoModel::Seedance2p0,

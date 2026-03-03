@@ -7,4 +7,6 @@ use serde_derive::{Deserialize, Serialize};
 pub enum CommonImageModel {
   #[serde(rename = "nano_banana_pro")]
   NanaBananaPro,
+  Seedream4,
+  Seedream4p5,
 }
