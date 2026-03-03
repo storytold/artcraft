@@ -50,7 +50,7 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       image_batch_count: Some(1),
-      prompt: Some("a cat walking through a cyberpunk city at night"),
+      prompt: Some("a corgi walking through a cyberpunk city at night"),
       ..base_seedream_4p5_image_request()
     };
 
@@ -75,7 +75,7 @@ mod tests {
     ];
 
     let request = GenerateImageRequest {
-      prompt: Some("Change the background to a sunny beach"),
+      prompt: Some("Change the background to a spooky haunted house"),
       image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
       aspect_ratio: Some(CommonAspectRatio::Auto2k),
       image_batch_count: Some(1),
