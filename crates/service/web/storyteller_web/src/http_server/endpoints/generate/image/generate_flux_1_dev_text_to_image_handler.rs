@@ -25,6 +25,8 @@ use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use sqlx::Acquire;
+use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
+use tokens::tokens::users::UserToken;
 use utoipa::ToSchema;
 
 /// Flux 1 Dev text to image
@@ -94,71 +96,14 @@ pub async fn generate_flux_1_dev_text_to_image_handler(
 
   // Secret test hook: insert a synthetic "complete_failure" job without calling Fal.
   if is_job_failure_test(request.prompt.as_deref().unwrap_or("")) {
-    let ip_address = get_request_ip(&http_request);
-
-    let mut transaction = mysql_connection
-        .begin()
-        .await
-        .map_err(|err| {
-          error!("Error starting MySQL transaction: {:?}", err);
-          CommonWebError::ServerError
-        })?;
-
-    let prompt_result = insert_prompt(InsertPromptArgs {
-      maybe_apriori_prompt_token: None,
-      prompt_type: PromptType::ArtcraftApp,
-      maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
-      maybe_model_type: Some(ModelType::Flux1Dev),
-      maybe_generation_provider: Some(GenerationProvider::Artcraft),
-      maybe_positive_prompt: request.prompt.as_deref(),
-      maybe_negative_prompt: None,
-      maybe_other_args: None,
-      creator_ip_address: &ip_address,
-      mysql_executor: &mut *transaction,
-      phantom: Default::default(),
-    }).await;
-
-    let prompt_token = match prompt_result {
-      Ok(token) => Some(token),
-      Err(err) => {
-        warn!("Error inserting prompt for mock failure job: {:?}", err);
-        None
-      }
-    };
-
-    let mock_result = insert_generic_inference_job_for_fal_queue_mock_failure(InsertGenericInferenceForFalMockFailureArgs {
-      uuid_idempotency_token: &request.uuid_idempotency_token,
-      fal_category: FalCategory::ImageGeneration,
-      maybe_inference_args: None,
-      maybe_prompt_token: prompt_token.as_ref(),
-      maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
-      maybe_avt_token: maybe_avt_token.as_ref(),
-      creator_ip_address: &ip_address,
-      creator_set_visibility: Visibility::Public,
-      mysql_executor: &mut *transaction,
-      phantom: Default::default(),
-    }).await;
-
-    let job_token = match mock_result {
-      Ok(token) => token,
-      Err(err) => {
-        warn!("Error inserting mock failure job: {:?}", err);
-        return Err(CommonWebError::ServerError);
-      }
-    };
-
-    transaction
-        .commit()
-        .await
-        .map_err(|err| {
-          error!("Error committing mock failure transaction: {:?}", err);
-          CommonWebError::ServerError
-        })?;
-
-    return Ok(Json(GenerateFlux1DevTextToImageResponse {
-      success: true,
-      inference_job_token: job_token,
-    }));
+    return insert_mock_failure_job(
+      &http_request,
+      request.prompt.as_deref(),
+      &request.uuid_idempotency_token,
+      maybe_user_session.as_ref().map(|s| &s.user_token),
+      maybe_avt_token.as_ref(),
+      &mut mysql_connection,
+    ).await;
   }
 
 //  // TODO: This is test code
@@ -290,6 +235,83 @@ pub async fn generate_flux_1_dev_text_to_image_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
+        CommonWebError::ServerError
+      })?;
+
+  Ok(Json(GenerateFlux1DevTextToImageResponse {
+    success: true,
+    inference_job_token: job_token,
+  }))
+}
+
+/// Inserts a synthetic `CompleteFailure` job without calling Fal.
+/// Used when the prompt triggers the secret job-failure test phrase.
+async fn insert_mock_failure_job(
+  http_request: &HttpRequest,
+  prompt: Option<&str>,
+  uuid_idempotency_token: &str,
+  maybe_creator_user_token: Option<&UserToken>,
+  maybe_avt_token: Option<&AnonymousVisitorTrackingToken>,
+  mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
+) -> Result<Json<GenerateFlux1DevTextToImageResponse>, CommonWebError> {
+  let ip_address = get_request_ip(http_request);
+
+  let mut transaction = mysql_connection
+      .begin()
+      .await
+      .map_err(|err| {
+        error!("Error starting MySQL transaction: {:?}", err);
+        CommonWebError::ServerError
+      })?;
+
+  let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_apriori_prompt_token: None,
+    prompt_type: PromptType::ArtcraftApp,
+    maybe_creator_user_token,
+    maybe_model_type: Some(ModelType::Flux1Dev),
+    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_positive_prompt: prompt,
+    maybe_negative_prompt: None,
+    maybe_other_args: None,
+    creator_ip_address: &ip_address,
+    mysql_executor: &mut *transaction,
+    phantom: Default::default(),
+  }).await;
+
+  let prompt_token = match prompt_result {
+    Ok(token) => Some(token),
+    Err(err) => {
+      warn!("Error inserting prompt for mock failure job: {:?}", err);
+      None
+    }
+  };
+
+  let mock_result = insert_generic_inference_job_for_fal_queue_mock_failure(InsertGenericInferenceForFalMockFailureArgs {
+    uuid_idempotency_token,
+    fal_category: FalCategory::ImageGeneration,
+    maybe_inference_args: None,
+    maybe_prompt_token: prompt_token.as_ref(),
+    maybe_creator_user_token,
+    maybe_avt_token,
+    creator_ip_address: &ip_address,
+    creator_set_visibility: Visibility::Public,
+    mysql_executor: &mut *transaction,
+    phantom: Default::default(),
+  }).await;
+
+  let job_token = match mock_result {
+    Ok(token) => token,
+    Err(err) => {
+      warn!("Error inserting mock failure job: {:?}", err);
+      return Err(CommonWebError::ServerError);
+    }
+  };
+
+  transaction
+      .commit()
+      .await
+      .map_err(|err| {
+        error!("Error committing mock failure transaction: {:?}", err);
         CommonWebError::ServerError
       })?;
 

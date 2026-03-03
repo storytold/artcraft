@@ -1,3 +1,4 @@
+use idempotency::uuid::generate_random_uuid;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
@@ -47,11 +48,12 @@ pub async fn insert_generic_inference_job_for_fal_queue_mock_failure<'e, 'c: 'e,
   where E: 'e + Executor<'c, Database = MySql>
 {
   let job_token = InferenceJobToken::generate();
+  let synthetic_external_id = format!("synthetic_{}", generate_random_uuid());
 
   let inner_args = InsertGenericInferenceForFalWithAprioriJobTokenArgs {
     uuid_idempotency_token: args.uuid_idempotency_token,
     apriori_job_token: &job_token,
-    maybe_external_third_party_id: "", // No external job — Fal was never called
+    maybe_external_third_party_id: &synthetic_external_id,
     fal_category: args.fal_category,
     maybe_inference_args: args.maybe_inference_args,
     maybe_prompt_token: args.maybe_prompt_token,
