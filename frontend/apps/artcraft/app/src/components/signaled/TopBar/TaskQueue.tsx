@@ -9,6 +9,7 @@ import {
   faTasks,
   faBroom,
   faBomb,
+  faCircleExclamation,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Modal } from "@storyteller/ui-modal";
 import {
@@ -67,6 +68,14 @@ type CompletedTask = {
   mediaTokens?: string[];
   mediaFileClass?: TaskMediaFileClass;
   batchImageToken?: string;
+};
+
+type FailedTask = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  failedAt?: Date;
+  status: string;
 };
 
 const formatTimeLeft = (ms: number): string => {
@@ -219,10 +228,70 @@ const CompletedCard = ({
   );
 };
 
+const FAILED_STATUS_LABEL: Record<string, string> = {
+  complete_failure: "Failed",
+  attempt_failed: "Failed",
+  dead: "Failed",
+  cancelled_by_user: "Cancelled",
+  cancelled_by_provider: "Cancelled by provider",
+  cancelled_by_us: "Cancelled",
+};
+
+const FailedCard = ({
+  task,
+  onDismiss,
+}: {
+  task: FailedTask;
+  onDismiss?: () => void;
+}) => {
+  const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
+  return (
+    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
+          <FontAwesomeIcon
+            icon={faCircleExclamation}
+            className="text-red-400"
+            size="lg"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between text-sm">
+            <div className="truncate font-medium text-base-fg/90">
+              {task.title}
+            </div>
+          </div>
+          {task.subtitle && (
+            <div className="mt-0.5 truncate text-xs text-base-fg opacity-60">
+              {task.subtitle}
+            </div>
+          )}
+          <div className="mt-1 text-xs font-medium text-red-400">
+            {statusLabel}
+          </div>
+        </div>
+        {onDismiss && (
+          <button
+            className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
+            aria-label="Dismiss"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const TaskQueue = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
   const [completed, setCompleted] = useState<CompletedTask[]>([]);
+  const [failed, setFailed] = useState<FailedTask[]>([]);
   const [lastReadAt, setLastReadAt] = useState<number>(() => {
     const stored = localStorage.getItem("taskQueueLastReadAt");
     return stored ? parseInt(stored, 10) : 0;
@@ -286,6 +355,25 @@ export const TaskQueue = () => {
         "bg-orange-500/10 hover:bg-orange-500/20 text-orange-500",
       onConfirm: async () => {
         await dismissStale();
+      },
+    });
+  };
+
+  const handleClearFailed = () => {
+    setConfirmationConfig({
+      isOpen: true,
+      title: "Clear failed tasks?",
+      message: (
+        <span className="text-sm text-white/80">
+          This will remove all failed/cancelled tasks from the queue.
+        </span>
+      ),
+      primaryActionText: "Clear failed",
+      primaryActionIcon: faTrashAlt,
+      primaryActionBtnClassName:
+        "bg-red-500/10 hover:bg-red-500/20 text-red-500",
+      onConfirm: async () => {
+        await dismissFailed();
       },
     });
   };
@@ -452,8 +540,32 @@ export const TaskQueue = () => {
             };
           });
 
+        const FAILED_STATUSES = new Set([
+          "complete_failure",
+          "attempt_failed",
+          "dead",
+          "cancelled_by_user",
+          "cancelled_by_provider",
+          "cancelled_by_us",
+        ]);
+
+        const failedTasks = tasks
+          .filter((t) => FAILED_STATUSES.has(t.task_status))
+          .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime())
+          .map((t: TaskQueueItem) => {
+            const parts = formatTitleParts(t);
+            return {
+              id: t.id,
+              title: parts.title || "Task",
+              subtitle: parts.subtitle,
+              failedAt: t.completed_at || t.updated_at,
+              status: t.task_status,
+            };
+          });
+
         setInProgress(inProg);
         setCompleted(done);
+        setFailed(failedTasks);
 
         // Track newly completed IDs when popover is closed
         const newCompletedIdSet = new Set(done.map((d) => d.id));
@@ -486,10 +598,17 @@ export const TaskQueue = () => {
     };
     window.addEventListener("cover-image-uploaded", handleCoverUploaded);
 
-    let unlisten: Promise<UnlistenFn> | null = null;
+    let unlistenComplete: Promise<UnlistenFn> | null = null;
+    let unlistenFailed: Promise<UnlistenFn> | null = null;
     (async () => {
       // Update immediately when Tauri signals a generation completion
-      unlisten = listen("generation-complete-event", () => {
+      unlistenComplete = listen("generation-complete-event", () => {
+        if (!cancelled) {
+          load();
+        }
+      });
+      // Also update immediately when a generation fails
+      unlistenFailed = listen("generation-failed-event", () => {
         if (!cancelled) {
           load();
         }
@@ -499,8 +618,11 @@ export const TaskQueue = () => {
       cancelled = true;
       clearInterval(id);
       window.removeEventListener("cover-image-uploaded", handleCoverUploaded);
-      if (unlisten) {
-        unlisten.then((f) => f());
+      if (unlistenComplete) {
+        unlistenComplete.then((f) => f());
+      }
+      if (unlistenFailed) {
+        unlistenFailed.then((f) => f());
       }
     };
   }, [
@@ -511,8 +633,9 @@ export const TaskQueue = () => {
   ]);
 
   const hasNothing = useMemo(
-    () => inProgress.length === 0 && completed.length === 0,
-    [inProgress.length, completed.length],
+    () =>
+      inProgress.length === 0 && completed.length === 0 && failed.length === 0,
+    [inProgress.length, completed.length, failed.length],
   );
 
   const inProgressCount = inProgress.length;
@@ -533,6 +656,7 @@ export const TaskQueue = () => {
       await MarkTaskAsDismissed(id);
       setInProgress((prev) => prev.filter((t) => t.id !== id));
       setCompleted((prev) => prev.filter((t) => t.id !== id));
+      setFailed((prev) => prev.filter((t) => t.id !== id));
       setUnreadCompletedIds((prev) => (prev ?? []).filter((x) => x !== id));
       taskDurationRef.current.delete(id);
     } catch (_) {
@@ -549,6 +673,17 @@ export const TaskQueue = () => {
     } finally {
       setCompleted([]);
       setUnreadCompletedIds([]);
+    }
+  };
+
+  const dismissFailed = async () => {
+    const ids = failed.map((t) => t.id);
+    try {
+      await Promise.all(ids.map((id) => MarkTaskAsDismissed(id)));
+    } catch (_) {
+      // ignore
+    } finally {
+      setFailed([]);
     }
   };
 
@@ -575,6 +710,7 @@ export const TaskQueue = () => {
     } finally {
       setCompleted([]);
       setInProgress([]);
+      setFailed([]);
       setUnreadCompletedIds([]);
       taskDurationRef.current.clear();
     }
@@ -633,6 +769,20 @@ export const TaskQueue = () => {
                                     ? () => dismissTask(t.id)
                                     : undefined
                                 }
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {failed.length > 0 && (
+                          <div className="mb-4">
+                            <div className="mb-1 px-1 text-xs uppercase tracking-wide text-red-400/70">
+                              Failed
+                            </div>
+                            {failed.map((t) => (
+                              <FailedCard
+                                key={t.id}
+                                task={t}
+                                onDismiss={() => dismissTask(t.id)}
                               />
                             ))}
                           </div>
@@ -739,6 +889,13 @@ export const TaskQueue = () => {
                   Clear stale
                 </Button>
                 <Button
+                  className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
+                  onClick={() => handleClearFailed()}
+                >
+                  <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
+                  Clear failed
+                </Button>
+                <Button
                   className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
@@ -771,6 +928,20 @@ export const TaskQueue = () => {
                         onDismiss={
                           t.canDismiss ? () => dismissTask(t.id) : undefined
                         }
+                      />
+                    ))}
+                  </div>
+                )}
+                {failed.length > 0 && (
+                  <div className="mb-4">
+                    <div className="mb-2 px-1 text-xs uppercase tracking-wide text-red-400/70">
+                      Failed
+                    </div>
+                    {failed.map((t) => (
+                      <FailedCard
+                        key={t.id}
+                        task={t}
+                        onDismiss={() => dismissTask(t.id)}
                       />
                     ))}
                   </div>

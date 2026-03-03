@@ -3,6 +3,7 @@ import { JobContextType } from "@storyteller/common";
 import { PromptBoxImage } from "@storyteller/ui-promptbox";
 import { uploadImage } from "../../components/reusable/UploadModalMedia/uploadImage";
 import BackgroundGallery from "./BackgroundGallery";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import {
   TEXT_TO_IMAGE_PAGE_MODEL_LIST,
   ModelPage,
@@ -13,11 +14,13 @@ import {
   //PROVIDER_LOOKUP_BY_PAGE,
 } from "@storyteller/ui-model-selector";
 import { ImageModel } from "@storyteller/model-list";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
 interface TextToImageProps {
   imageMediaId?: string;
   imageUrl?: string;
 }
-import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
+//import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { useTextToImageStore } from "./TextToImageStore";
 import { animated, useSpring } from "@react-spring/web";
 import {
@@ -40,7 +43,9 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const batches = useTextToImageStore((s) => s.batches);
   const startBatch = useTextToImageStore((s) => s.startBatch);
-  const completeBatch = useTextToImageStore((s) => s.completeBatch);
+  //const completeBatch = useTextToImageStore((s) => s.completeBatch);
+  const failBatch = useTextToImageStore((s) => s.failBatch);
+  const dismissBatch = useTextToImageStore((s) => s.dismissBatch);
   const resetBatches = useTextToImageStore((s) => s.reset);
   const [imageRowVisible, setImageRowVisible] = useState(false);
   const promptContentRef = useRef<HTMLDivElement>(null);
@@ -95,6 +100,23 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
     config: { tension: 200, friction: 28, mass: 1.1 },
   });
 
+  // Listen for generation-failed-event and mark the oldest pending image batch as failed
+  useEffect(() => {
+    let unlisten: Promise<UnlistenFn> | null = null;
+    unlisten = listen<{ data: { action: string; reason?: string } }>(
+      "generation-failed-event",
+      (event) => {
+        const { action, reason } = event.payload.data;
+        if (action === "generate_image") {
+          failBatch(reason || "Generation failed");
+        }
+      },
+    );
+    return () => {
+      if (unlisten) unlisten.then((f) => f());
+    };
+  }, [failBatch]);
+
   // Show the batches in reverse order, with the newest items at top.
   // Like Midjourney instead of a "chat history" style.
   const inverseBatch = [...batches].reverse();
@@ -129,10 +151,40 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
             >
               <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 pr-2">
                 {inverseBatch.map((batch) => (
-                  <div key={batch.id} className="flex items-start gap-4">
+                  <div
+                    key={batch.id}
+                    className="relative flex items-stretch gap-4"
+                  >
                     <div className="grid flex-1 grid-cols-4 gap-4">
-                      {batch.status === "pending" && batch.images.length === 0
-                        ? Array.from({
+                      {batch.status === "failed" ? (
+                        <>
+                          <div className="flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-lg bg-red-500/10 text-red-400">
+                            <FontAwesomeIcon
+                              icon={faCircleExclamation}
+                              size="2x"
+                            />
+                            <span className="px-4 text-center text-sm font-medium">
+                              {batch.failureReason || "Generation failed"}
+                            </span>
+                            <button
+                              onClick={() => dismissBatch(batch.id)}
+                              className="mt-1 flex items-center gap-1.5 rounded-md bg-white/5 px-3 py-1.5 text-xs text-white/50 transition-colors hover:bg-white/10 hover:text-white/70"
+                            >
+                              <FontAwesomeIcon icon={faXmark} />
+                              Dismiss
+                            </button>
+                          </div>
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <div
+                              key={`empty-${batch.id}-${i}`}
+                              className="aspect-square w-full rounded-lg bg-white/[0.02]"
+                            />
+                          ))}
+                        </>
+                      ) : batch.status === "pending" &&
+                        batch.images.length === 0 ? (
+                        <>
+                          {Array.from({
                             length: Math.max(
                               1,
                               Math.min(4, batch.requestedCount ?? 4),
@@ -140,10 +192,30 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                           }).map((_, i) => (
                             <div
                               key={`sk-${batch.id}-${i}`}
-                              className="aspect-square w-full animate-pulse rounded-lg bg-white/5"
+                              className="aspect-square w-full overflow-hidden rounded-lg bg-white/[0.03]"
+                            >
+                              <div className="animate-shimmer h-full w-full bg-gradient-to-r from-transparent via-white/10 to-transparent bg-[length:200%_100%]" />
+                            </div>
+                          ))}
+                          {Array.from({
+                            length: Math.max(
+                              0,
+                              4 -
+                                Math.max(
+                                  1,
+                                  Math.min(4, batch.requestedCount ?? 4),
+                                ),
+                            ),
+                          }).map((_, i) => (
+                            <div
+                              key={`filler-sk-${batch.id}-${i}`}
+                              className="aspect-square w-full rounded-lg bg-white/[0.02]"
                             />
-                          ))
-                        : batch.images.slice(0, 4).map((img) => (
+                          ))}
+                        </>
+                      ) : (
+                        <>
+                          {batch.images.slice(0, 4).map((img) => (
                             <button
                               key={img.media_token}
                               onClick={() => {
@@ -170,21 +242,38 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                                 galleryModalLightboxImage.value = lightboxItem;
                                 galleryModalLightboxVisible.value = true;
                               }}
-                              className="aspect-square w-full overflow-hidden rounded-lg"
+                              className="aspect-square w-full overflow-hidden rounded-lg transition-opacity duration-200 hover:cursor-pointer hover:opacity-75"
                             >
                               <img
                                 src={img.cdn_url}
                                 alt="Generated"
-                                className="h-full w-full object-cover"
+                                className="h-full w-full bg-black/10 object-cover"
                               />
                             </button>
                           ))}
+                          {Array.from({
+                            length: Math.max(
+                              0,
+                              4 - batch.images.slice(0, 4).length,
+                            ),
+                          }).map((_, i) => (
+                            <div
+                              key={`filler-${batch.id}-${i}`}
+                              className="aspect-square w-full rounded-lg bg-white/[0.02]"
+                            />
+                          ))}
+                        </>
+                      )}
                     </div>
-                    <div>
-                      <div className="glass inline-block w-[320px] shrink-0 rounded-xl px-4 py-3 text-left text-sm text-base-fg/90">
+                    <div
+                      className="flex w-[320px] shrink-0"
+                      aria-hidden="true"
+                    />
+                    <div className="absolute bottom-0 right-0 top-0 flex w-[320px] flex-col">
+                      <div className="glass min-h-0 overflow-y-auto rounded-xl px-4 py-3 text-left text-sm text-base-fg/90">
                         <div>{batch.prompt}</div>
                       </div>
-                      <div className="mt-2 flex justify-end">
+                      <div className="flex justify-end pt-2">
                         <Badge
                           label={batch.modelLabel}
                           className="px-2 py-1 text-xs opacity-70"

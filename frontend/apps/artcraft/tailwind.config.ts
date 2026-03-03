@@ -18,9 +18,14 @@ export default {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
         },
+        shimmer: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
       },
       animation: {
         fadeIn: "fadeIn 0.2s ease-in-out",
+        shimmer: "shimmer 2s ease-in-out infinite",
       },
     },
     colors: {

@@ -4,12 +4,13 @@ import type { GeneratedImage } from "@storyteller/tauri-events";
 export type TextToImageBatch = {
   id: string;
   prompt: string;
-  status: "pending" | "complete";
+  status: "pending" | "complete" | "failed";
   images: GeneratedImage[];
   createdAt: number;
   requestedCount: number;
   modelLabel: string;
   subscriberId: string;
+  failureReason?: string;
 };
 
 type TextToImageState = {
@@ -25,6 +26,8 @@ type TextToImageState = {
     maybeSubscriberId?: string,
     maybePrompt?: string,
   ) => void;
+  failBatch: (reason?: string) => void;
+  dismissBatch: (id: string) => void;
   reset: () => void;
 };
 
@@ -62,8 +65,8 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
     const pending = maybeSubscriberId
       ? get().batches.find((b) => b.subscriberId === maybeSubscriberId)
       : get().batches.find((b) => b.status === "pending");
-    const prompt = pending?.prompt ?? maybePrompt ?? "";
-    const modelLabel = pending?.modelLabel ?? "";
+    //const prompt = pending?.prompt ?? maybePrompt ?? "";
+    //const modelLabel = pending?.modelLabel ?? "";
     // Mark the most recent pending batch complete, or create one if none exists
     set((s) => {
       const idx = pending
@@ -80,6 +83,25 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
       };
       return { batches: updated };
     });
+  },
+  failBatch: (reason?: string) => {
+    set((s) => {
+      // Mark the oldest pending batch as failed
+      const idx = s.batches.findIndex((b) => b.status === "pending");
+      if (idx === -1) return { batches: s.batches };
+      const updated = [...s.batches];
+      updated[idx] = {
+        ...updated[idx],
+        status: "failed",
+        failureReason: reason,
+      };
+      return { batches: updated };
+    });
+  },
+  dismissBatch: (id: string) => {
+    set((s) => ({
+      batches: s.batches.filter((b) => b.id !== id),
+    }));
   },
   reset: () => set({ batches: [] }),
 }));
