@@ -745,8 +745,8 @@ export const TaskQueue = () => {
           >
             {(close) => (
               <>
-                <div className="flex max-h-[480px] flex-col">
-                  <div className="max-h-[420px] overflow-y-auto p-1">
+                <div className="flex max-h-[80vh] flex-col">
+                  <div className="max-h-[80vh] overflow-y-auto p-1">
                     {hasNothing ? (
                       <div className="flex w-full flex-col items-center justify-center p-5 text-base-fg/60">
                         <div className="flex items-center gap-2.5 text-sm opacity-60">
@@ -775,8 +775,20 @@ export const TaskQueue = () => {
                         )}
                         {failed.length > 0 && (
                           <div className="mb-4">
-                            <div className="mb-1 px-1 text-xs uppercase tracking-wide text-red-400/70">
-                              Failed
+                            <div className="mb-1 flex items-center justify-between px-1">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-red-400/70">
+                                Failed
+                              </div>
+                              <button
+                                className="text-xs tracking-wide text-red-400/70 transition-colors hover:text-red-300"
+                                onClick={() => handleClearFailed()}
+                              >
+                                <FontAwesomeIcon
+                                  icon={faXmark}
+                                  className="mr-1"
+                                />
+                                Clear failed
+                              </button>
                             </div>
                             {failed.map((t) => (
                               <FailedCard
@@ -789,8 +801,20 @@ export const TaskQueue = () => {
                         )}
                         {completed.length > 0 && (
                           <div>
-                            <div className="mb-1 px-1 text-xs uppercase tracking-wide text-base-fg/50">
-                              Completed
+                            <div className="mb-1 flex items-center justify-between px-1">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-base-fg/50">
+                                Completed
+                              </div>
+                              <button
+                                className="text-xs tracking-wide text-base-fg/50 transition-colors hover:text-base-fg/100"
+                                onClick={() => handleClearCompleted()}
+                              >
+                                <FontAwesomeIcon
+                                  icon={faXmark}
+                                  className="mr-1"
+                                />
+                                Clear completed
+                              </button>
                             </div>
                             {completed.map((t) => (
                               <CompletedCard
@@ -830,11 +854,11 @@ export const TaskQueue = () => {
                       </div>
                     )}
                   </div>
-                  <div className="pt-1">
-                    <div className="flex items-center justify-between gap-2">
+                  <div className="pt-3">
+                    <div className="flex items-center justify-center">
                       <Button
-                        className="grow"
-                        variant="secondary"
+                        className="grow border-none bg-white/5 text-white/70 hover:bg-white/10"
+                        variant="ghost"
                         onClick={() => {
                           setModalOpen(true);
                           close();
@@ -842,19 +866,6 @@ export const TaskQueue = () => {
                       >
                         Show all
                       </Button>
-                      <Tooltip
-                        content="Clear completed"
-                        position="bottom"
-                        closeOnClick={true}
-                      >
-                        <Button
-                          className="flex h-9 w-9 items-center justify-center rounded-md bg-green-500/10 text-green-500 hover:bg-green-500/20"
-                          aria-label="Clear completed"
-                          onClick={() => handleClearCompleted(() => close())}
-                        >
-                          <FontAwesomeIcon icon={faBroom} />
-                        </Button>
-                      </Tooltip>
                     </div>
                   </div>
                 </div>
