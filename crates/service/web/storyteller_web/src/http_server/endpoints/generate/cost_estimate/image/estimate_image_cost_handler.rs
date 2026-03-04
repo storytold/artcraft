@@ -11,6 +11,7 @@ use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspect
 use artcraft_router::api::common_image_model::CommonImageModel as RouterImageModel;
 use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
 use artcraft_router::api::provider::Provider as RouterProvider;
+use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
@@ -40,13 +41,13 @@ pub async fn estimate_image_cost_handler(
   let router_request = GenerateImageRequest {
     model: router_model,
     provider: router_provider,
-    prompt: None,
-    image_inputs: None,
+    prompt: None, // NB: Prompt is immaterial to cost estimation
+    image_inputs: None, // TODO: Only some models charge for this - we'll need to add later.
     resolution: router_resolution,
     aspect_ratio: router_aspect_ratio,
     image_batch_count: request.image_batch_count,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
-    generation_mode_mismatch_strategy: None,
+    generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),
     idempotency_token: None,
   };
 
