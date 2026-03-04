@@ -91,7 +91,7 @@ where
                   .route(web::post().to(nano_banana_pro_multi_function_image_gen_handler))
                   .route(web::head().to(|| HttpResponse::Ok()))
               )
-              .service(web::resource("/bytedance_seedream_5_light")
+              .service(web::resource("/bytedance_seedream_5_lite")
                   .route(web::post().to(bytedance_seedream_5_lite_multi_function_image_gen_handler))
                   .route(web::head().to(|| HttpResponse::Ok()))
               )

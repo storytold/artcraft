@@ -31,7 +31,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 #[utoipa::path(
   post,
   tag = "Generate Images (Multi-Function)",
-  path = "/v1/generate/image/multi_function/bytedance_seedream_5_light",
+  path = "/v1/generate/image/multi_function/bytedance_seedream_5_lite",
   responses(
     (status = 200, description = "Success", body = BytedanceSeedream5LiteMultiFunctionImageGenResponse),
   ),
