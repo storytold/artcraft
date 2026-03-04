@@ -5,9 +5,7 @@ use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_flu
 use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_flux_pro_1p1_text_to_image::handle_artcraft_flux_pro_1p1_text_to_image;
 use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_flux_pro_1p1_ultra_text_to_image::handle_artcraft_flux_pro_1p1_ultra_text_to_image;
 use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_gpt_image_1_text_to_image::handle_artcraft_gpt_image_1_text_to_image;
-use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_gpt_image_1p5_text_to_image::handle_artcraft_gpt_image_1p5_text_to_image;
 use crate::core::commands::enqueue::text_to_image::artcraft::handle_text_to_image_artcraft_via_router::handle_text_to_image_artcraft_via_router;
-use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_nano_banana_text_to_image::handle_artcraft_nano_banana_text_to_image;
 use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::{EnqueueTextToImageRequest, TextToImageModel};
 use crate::core::commands::enqueue::text_to_image::text_to_image_models::text_to_image_model_to_model_type;
 use crate::core::events::generation_events::common::GenerationModel;
@@ -42,9 +40,9 @@ pub async fn handle_text_to_image_artcraft(
     TextToImageModel::FluxPro11 =>handle_artcraft_flux_pro_1p1_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
     TextToImageModel::FluxPro11Ultra => handle_artcraft_flux_pro_1p1_ultra_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
     TextToImageModel::GptImage1 => handle_artcraft_gpt_image_1_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
-    TextToImageModel::GptImage1p5 => handle_artcraft_gpt_image_1p5_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
+    TextToImageModel::GptImage1p5 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::GptImage1p5, GenerationModel::GptImage1p5).await,
     TextToImageModel::Gemini25Flash | TextToImageModel::NanoBanana => {
-      handle_artcraft_nano_banana_text_to_image(request, app_env_configs, storyteller_creds_manager).await
+      handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBanana, GenerationModel::NanoBanana).await
     },
     TextToImageModel::NanoBananaPro => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBananaPro, GenerationModel::NanoBananaPro).await,
     TextToImageModel::Seedream4 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4, GenerationModel::Seedream4).await,

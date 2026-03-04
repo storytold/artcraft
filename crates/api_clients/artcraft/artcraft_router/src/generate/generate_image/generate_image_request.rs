@@ -7,6 +7,8 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1p5::plan_generate_image_artcraft_gpt_image_1p5;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana::plan_generate_image_artcraft_nano_banana;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::plan_generate_image_artcraft_nano_banana_pro;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4::plan_generate_image_artcraft_seedream_4;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::plan_generate_image_artcraft_seedream_4p5;
@@ -49,6 +51,12 @@ impl<'a> GenerateImageRequest<'a> {
   pub fn build(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
     match self.provider {
       Provider::Artcraft => match self.model {
+        CommonImageModel::GptImage1p5 => {
+          plan_generate_image_artcraft_gpt_image_1p5(self).map(ImageGenerationPlan::ArtcraftGptImage1p5)
+        }
+        CommonImageModel::NanaBanana => {
+          plan_generate_image_artcraft_nano_banana(self).map(ImageGenerationPlan::ArtcraftNanaBanana)
+        }
         CommonImageModel::NanaBananaPro => {
           plan_generate_image_artcraft_nano_banana_pro(self).map(ImageGenerationPlan::ArtcraftNanaBananaPro)
         }
@@ -63,10 +71,13 @@ impl<'a> GenerateImageRequest<'a> {
         CommonImageModel::NanaBananaPro => {
           plan_generate_image_fal_nano_banana_pro(self).map(ImageGenerationPlan::FalNanaBananaPro)
         }
-        CommonImageModel::Seedream4 | CommonImageModel::Seedream4p5 => {
+        CommonImageModel::GptImage1p5
+        | CommonImageModel::NanaBanana
+        | CommonImageModel::Seedream4
+        | CommonImageModel::Seedream4p5 => {
           Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
             field: "provider",
-            value: "Seedream is only available on the Artcraft provider".to_string(),
+            value: format!("{:?} is only available on the Artcraft provider", self.model),
           }))
         }
       },

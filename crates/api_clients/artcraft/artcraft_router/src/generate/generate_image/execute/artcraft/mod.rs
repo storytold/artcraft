@@ -1,3 +1,5 @@
+pub mod generate_image_artcraft_gpt_image_1p5;
+pub mod generate_image_artcraft_nano_banana;
 pub mod generate_image_artcraft_nano_banana_pro;
 pub mod generate_image_artcraft_seedream_4;
 pub mod generate_image_artcraft_seedream_4p5;
