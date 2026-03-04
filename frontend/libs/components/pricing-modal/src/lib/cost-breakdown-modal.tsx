@@ -236,7 +236,20 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
   const pageName = getPageName();
 
   // Models that have credit cost data available
-  const MODELS_WITH_COST_DATA = new Set(["seedance_2p0", "nano_banana_pro"]);
+  const MODELS_WITH_COST_DATA = new Set([
+    "flux_1_dev",
+    "flux_1_schnell",
+    "flux_pro_11",
+    "flux_pro_11_ultra",
+    "gpt_image_1p5",
+    "nano_banana",
+    "nano_banana_2",
+    "nano_banana_pro",
+    "seedream_4",
+    "seedream_4p5",
+    "seedream_5_lite",
+    "seedance_2p0",
+  ]);
   const hasCostData =
     selectedModel != null && MODELS_WITH_COST_DATA.has(selectedModel.id);
 

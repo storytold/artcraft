@@ -131,7 +131,7 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::NanaBananaPro => RouterImageModel::NanaBananaPro,
     CommonImageModel::Seedream4 => RouterImageModel::Seedream4,
     CommonImageModel::Seedream4p5 => RouterImageModel::Seedream4p5,
-    CommonImageModel::SeedreamV5Lite => RouterImageModel::SeedreamV5Lite,
+    CommonImageModel::Seedream5Lite => RouterImageModel::Seedream5Lite,
   };
   Ok(router_model)
 }

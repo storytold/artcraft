@@ -4,25 +4,25 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
-use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v5_lite_multi_function_image_gen::{
-  BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize,
-  BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages,
+use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen::{
+  BytedanceSeedream5LiteMultiFunctionImageGenImageSize,
+  BytedanceSeedream5LiteMultiFunctionImageGenNumImages,
 };
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftSeedreamV5Lite<'a> {
+pub struct PlanArtcraftSeedream5Lite<'a> {
   pub prompt: Option<&'a str>,
   /// Input images for image editing. None means text-to-image mode.
   pub image_inputs: Option<&'a Vec<MediaFileToken>>,
-  pub image_size: Option<BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize>,
-  pub num_images: BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages,
+  pub image_size: Option<BytedanceSeedream5LiteMultiFunctionImageGenImageSize>,
+  pub num_images: BytedanceSeedream5LiteMultiFunctionImageGenNumImages,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_image_artcraft_seedream_v5_lite<'a>(
+pub fn plan_generate_image_artcraft_seedream_5_lite<'a>(
   request: &'a GenerateImageRequest<'a>,
-) -> Result<PlanArtcraftSeedreamV5Lite<'a>, ArtcraftRouterError> {
+) -> Result<PlanArtcraftSeedream5Lite<'a>, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let is_edit_mode = request.image_inputs.is_some();
@@ -30,7 +30,7 @@ pub fn plan_generate_image_artcraft_seedream_v5_lite<'a>(
   let image_size = plan_image_size(request.aspect_ratio, is_edit_mode, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
-  Ok(PlanArtcraftSeedreamV5Lite {
+  Ok(PlanArtcraftSeedream5Lite {
     prompt: request.prompt,
     image_inputs,
     image_size,
@@ -51,17 +51,17 @@ fn resolve_image_list_ref<'a>(
   }
 }
 
-// Seedream V5 Lite supported image sizes:
+// Seedream 5 Lite supported image sizes:
 //   Square, SquareHd
 //   PortraitFourThree, PortraitSixteenNine
 //   LandscapeFourThree, LandscapeSixteenNine
-//   Auto2k, Auto3k (NB: V5 max is auto_3K, unlike V4.5's auto_4K)
+//   Auto2k, Auto3k (NB: 5 Lite max is auto_3K, unlike V4.5's auto_4K)
 fn plan_image_size(
   aspect_ratio: Option<CommonAspectRatio>,
   is_edit_mode: bool,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize>, ArtcraftRouterError> {
-  use BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize as S;
+) -> Result<Option<BytedanceSeedream5LiteMultiFunctionImageGenImageSize>, ArtcraftRouterError> {
+  use BytedanceSeedream5LiteMultiFunctionImageGenImageSize as S;
   match aspect_ratio {
     None => Ok(None),
 
@@ -71,7 +71,7 @@ fn plan_image_size(
     }
 
     Some(CommonAspectRatio::Auto2k) => Ok(Some(S::Auto2k)),
-    // V5 Lite max is auto_3K; map Auto4k down to Auto3k
+    // 5 Lite max is auto_3K; map Auto4k down to Auto3k
     Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto3k)),
 
     // Square
@@ -119,8 +119,8 @@ fn plan_image_size(
 fn plan_num_images(
   image_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages, ArtcraftRouterError> {
-  use BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages as N;
+) -> Result<BytedanceSeedream5LiteMultiFunctionImageGenNumImages, ArtcraftRouterError> {
+  use BytedanceSeedream5LiteMultiFunctionImageGenNumImages as N;
   let count = image_batch_count.unwrap_or(1);
   match count {
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
@@ -149,16 +149,16 @@ mod tests {
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
-  use crate::test_helpers::base_seedream_v5_lite_image_request;
-  use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v5_lite_multi_function_image_gen::{
-    BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize as S,
-    BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages as N,
+  use crate::test_helpers::base_seedream_5_lite_image_request;
+  use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen::{
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize as S,
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages as N,
   };
 
   #[test]
   fn image_size_none_is_none() {
-    let request = GenerateImageRequest { aspect_ratio: None, ..base_seedream_v5_lite_image_request() };
-    let ImageGenerationPlan::ArtcraftSeedreamV5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedreamV5Lite") };
+    let request = GenerateImageRequest { aspect_ratio: None, ..base_seedream_5_lite_image_request() };
+    let ImageGenerationPlan::ArtcraftSeedream5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream5Lite") };
     assert!(plan.image_size.is_none());
   }
 
@@ -168,9 +168,9 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Auto),
       image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
-      ..base_seedream_v5_lite_image_request()
+      ..base_seedream_5_lite_image_request()
     };
-    let ImageGenerationPlan::ArtcraftSeedreamV5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedreamV5Lite") };
+    let ImageGenerationPlan::ArtcraftSeedream5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream5Lite") };
     assert!(matches!(plan.image_size, Some(S::Auto2k)));
   }
 
@@ -179,20 +179,20 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Auto),
       image_inputs: None,
-      ..base_seedream_v5_lite_image_request()
+      ..base_seedream_5_lite_image_request()
     };
-    let ImageGenerationPlan::ArtcraftSeedreamV5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedreamV5Lite") };
+    let ImageGenerationPlan::ArtcraftSeedream5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream5Lite") };
     assert!(matches!(plan.image_size, Some(S::Square)));
   }
 
   #[test]
   fn auto4k_is_mapped_to_auto3k() {
-    // V5 Lite only supports up to auto_3K; auto_4K is downgraded
+    // 5 Lite only supports up to auto_3K; auto_4K is downgraded
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Auto4k),
-      ..base_seedream_v5_lite_image_request()
+      ..base_seedream_5_lite_image_request()
     };
-    let ImageGenerationPlan::ArtcraftSeedreamV5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedreamV5Lite") };
+    let ImageGenerationPlan::ArtcraftSeedream5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream5Lite") };
     assert!(matches!(plan.image_size, Some(S::Auto3k)));
   }
 
@@ -200,8 +200,8 @@ mod tests {
   fn num_images_direct_mapping() {
     let cases = [(1, N::One), (2, N::Two), (3, N::Three), (4, N::Four)];
     for (count, expected) in cases {
-      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_seedream_v5_lite_image_request() };
-      let ImageGenerationPlan::ArtcraftSeedreamV5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedreamV5Lite") };
+      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_seedream_5_lite_image_request() };
+      let ImageGenerationPlan::ArtcraftSeedream5Lite(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream5Lite") };
       assert!(
         std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
         "expected {:?} for count {}", expected, count,

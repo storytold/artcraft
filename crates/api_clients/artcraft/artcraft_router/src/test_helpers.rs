@@ -89,9 +89,9 @@ pub fn base_seedream_4p5_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_seedream_v5_lite_image_request() -> GenerateImageRequest<'static> {
+pub fn base_seedream_5_lite_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
-    model: CommonImageModel::SeedreamV5Lite,
+    model: CommonImageModel::Seedream5Lite,
     provider: Provider::Artcraft,
     prompt: Some("a cat in space"),
     image_inputs: None,

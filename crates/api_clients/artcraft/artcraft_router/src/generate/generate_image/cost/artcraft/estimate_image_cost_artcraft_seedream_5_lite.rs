@@ -1,19 +1,19 @@
-use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v5_lite_multi_function_image_gen::BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages;
+use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen::BytedanceSeedream5LiteMultiFunctionImageGenNumImages;
 
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_v5_lite::PlanArtcraftSeedreamV5Lite;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::PlanArtcraftSeedream5Lite;
 
-pub(crate) fn estimate_image_cost_artcraft_seedream_v5_lite(
-  plan: &PlanArtcraftSeedreamV5Lite<'_>,
+pub(crate) fn estimate_image_cost_artcraft_seedream_5_lite(
+  plan: &PlanArtcraftSeedream5Lite<'_>,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.04/image (4 cents). 1 credit = 1 USD cent.
   let cost_per_image: u64 = 4;
 
   let num_images: u64 = match plan.num_images {
-    BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::One => 1,
-    BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Two => 2,
-    BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Three => 3,
-    BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Four => 4,
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages::One => 1,
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Two => 2,
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Three => 3,
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Four => 4,
   };
 
   let cost_in_usd_cents = cost_per_image * num_images;
@@ -37,7 +37,7 @@ mod tests {
 
   fn estimate_usd_cents(image_batch_count: u16) -> u64 {
     let request = GenerateImageRequest {
-      model: CommonImageModel::SeedreamV5Lite,
+      model: CommonImageModel::Seedream5Lite,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: None,

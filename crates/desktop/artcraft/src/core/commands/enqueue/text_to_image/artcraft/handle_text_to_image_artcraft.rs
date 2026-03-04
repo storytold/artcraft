@@ -44,6 +44,6 @@ pub async fn handle_text_to_image_artcraft(
     TextToImageModel::NanoBananaPro => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBananaPro, GenerationModel::NanoBananaPro).await,
     TextToImageModel::Seedream4 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4, GenerationModel::Seedream4).await,
     TextToImageModel::Seedream4p5 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4p5, GenerationModel::Seedream4p5).await,
-    TextToImageModel::SeedreamV5Lite => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::SeedreamV5Lite, GenerationModel::SeedreamV5Lite).await,
+    TextToImageModel::Seedream5Lite => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream5Lite, GenerationModel::Seedream5Lite).await,
   }
 }

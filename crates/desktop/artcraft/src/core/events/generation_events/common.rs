@@ -47,8 +47,8 @@ pub enum GenerationModel {
   Seedream4,
   #[serde(rename = "seedream_4p5")]
   Seedream4p5,
-  #[serde(rename = "seedream_v5_lite")]
-  SeedreamV5Lite,
+  #[serde(rename = "seedream_5_lite")]
+  Seedream5Lite,
 
   #[serde(rename = "hunyuan_3d_2_0")]
   Hunyuan3d2_0,

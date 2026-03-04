@@ -31,6 +31,6 @@ pub async fn handle_image_edit_artcraft(
     ImageEditModel::GptImage1p5 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::GptImage1p5, GenerationModel::GptImage1p5).await,
     ImageEditModel::Seedream4 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4, GenerationModel::Seedream4).await,
     ImageEditModel::Seedream4p5 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4p5, GenerationModel::Seedream4p5).await,
-    ImageEditModel::SeedreamV5Lite => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::SeedreamV5Lite, GenerationModel::SeedreamV5Lite).await,
+    ImageEditModel::Seedream5Lite => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream5Lite, GenerationModel::Seedream5Lite).await,
   }
 }

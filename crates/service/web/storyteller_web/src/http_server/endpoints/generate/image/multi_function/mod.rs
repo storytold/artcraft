@@ -1,6 +1,6 @@
 pub mod bytedance_seedream_v4_multi_function_image_gen_handler;
 pub mod bytedance_seedream_v4p5_multi_function_image_gen_handler;
-pub mod bytedance_seedream_v5_lite_multi_function_image_gen_handler;
+pub mod bytedance_seedream_5_lite_multi_function_image_gen_handler;
 pub mod gpt_image_1p5_multi_function_image_gen_handler;
 pub mod nano_banana_2_multi_function_image_gen_handler;
 pub mod nano_banana_multi_function_image_gen_handler;

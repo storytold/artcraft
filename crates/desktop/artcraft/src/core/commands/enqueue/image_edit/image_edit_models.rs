@@ -12,6 +12,6 @@ pub fn image_edit_model_to_model_type(model: ImageEditModel) -> ModelType {
     ImageEditModel::GptImage1p5 => ModelType::GptImage1p5,
     ImageEditModel::Seedream4 => ModelType::Seedream4,
     ImageEditModel::Seedream4p5 => ModelType::Seedream4p5,
-    ImageEditModel::SeedreamV5Lite => ModelType::SeedreamV5Lite,
+    ImageEditModel::Seedream5Lite => ModelType::Seedream5Lite,
   }
 }

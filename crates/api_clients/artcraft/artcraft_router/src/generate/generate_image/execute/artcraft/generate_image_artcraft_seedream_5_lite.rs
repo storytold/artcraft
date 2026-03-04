@@ -4,15 +4,15 @@ use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_image::generate_image_response::{
   ArtcraftImageResponsePayload, GenerateImageResponse,
 };
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_v5_lite::PlanArtcraftSeedreamV5Lite;
-use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v5_lite_multi_function_image_gen::BytedanceSeedreamV5LiteMultiFunctionImageGenRequest;
-use artcraft_client::endpoints::generate::image::multi_function::bytedance_seedream_v5_lite_multi_function_image_gen_image::bytedance_seedream_v5_lite_multi_function_image_gen;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::PlanArtcraftSeedream5Lite;
+use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen::BytedanceSeedream5LiteMultiFunctionImageGenRequest;
+use artcraft_client::endpoints::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen_image::bytedance_seedream_5_lite_multi_function_image_gen;
 
-pub async fn execute_artcraft_seedream_v5_lite(
-  plan: &PlanArtcraftSeedreamV5Lite<'_>,
+pub async fn execute_artcraft_seedream_5_lite(
+  plan: &PlanArtcraftSeedream5Lite<'_>,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let request = BytedanceSeedreamV5LiteMultiFunctionImageGenRequest {
+  let request = BytedanceSeedream5LiteMultiFunctionImageGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
     prompt: plan.prompt.map(|p| p.to_string()),
     image_media_tokens: plan.image_inputs.map(|tokens| tokens.to_owned()),
@@ -21,7 +21,7 @@ pub async fn execute_artcraft_seedream_v5_lite(
     max_images: None,
   };
 
-  let response = bytedance_seedream_v5_lite_multi_function_image_gen(
+  let response = bytedance_seedream_5_lite_multi_function_image_gen(
     &artcraft_client.api_host,
     Some(&artcraft_client.credentials),
     request,
@@ -39,17 +39,17 @@ mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
-  use crate::test_helpers::{base_seedream_v5_lite_image_request, get_artcraft_client};
+  use crate::test_helpers::{base_seedream_5_lite_image_request, get_artcraft_client};
 
   #[tokio::test]
   #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_text_to_image_seedream_v5_lite() {
+  async fn test_text_to_image_seedream_5_lite() {
     let client = get_artcraft_client();
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       image_batch_count: Some(1),
       prompt: Some("a corgi walking through a cyberpunk city at night"),
-      ..base_seedream_v5_lite_image_request()
+      ..base_seedream_5_lite_image_request()
     };
 
     let plan = request.build().unwrap();

@@ -8,7 +8,7 @@ use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_optional_list::lookup_image_urls_as_optional_list;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v5_lite_multi_function_image_gen::{BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize, BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages, BytedanceSeedreamV5LiteMultiFunctionImageGenRequest, BytedanceSeedreamV5LiteMultiFunctionImageGenResponse};
+use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen::{BytedanceSeedream5LiteMultiFunctionImageGenImageSize, BytedanceSeedream5LiteMultiFunctionImageGenNumImages, BytedanceSeedream5LiteMultiFunctionImageGenRequest, BytedanceSeedream5LiteMultiFunctionImageGenResponse};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
@@ -27,23 +27,23 @@ use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPrompt
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
-/// Bytedance Seedream V5 Lite Multi-Function (generate + edit)
+/// Bytedance Seedream 5 Lite Multi-Function (generate + edit)
 #[utoipa::path(
   post,
   tag = "Generate Images (Multi-Function)",
   path = "/v1/generate/image/multi_function/bytedance_seedream_5_light",
   responses(
-    (status = 200, description = "Success", body = BytedanceSeedreamV5LiteMultiFunctionImageGenResponse),
+    (status = 200, description = "Success", body = BytedanceSeedream5LiteMultiFunctionImageGenResponse),
   ),
   params(
-    ("request" = BytedanceSeedreamV5LiteMultiFunctionImageGenRequest, description = "Payload for Request"),
+    ("request" = BytedanceSeedream5LiteMultiFunctionImageGenRequest, description = "Payload for Request"),
   )
 )]
-pub async fn bytedance_seedream_v5_lite_multi_function_image_gen_handler(
+pub async fn bytedance_seedream_5_lite_multi_function_image_gen_handler(
   http_request: HttpRequest,
-  request: Json<BytedanceSeedreamV5LiteMultiFunctionImageGenRequest>,
+  request: Json<BytedanceSeedream5LiteMultiFunctionImageGenRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<BytedanceSeedreamV5LiteMultiFunctionImageGenResponse>, CommonWebError> {
+) -> Result<Json<BytedanceSeedream5LiteMultiFunctionImageGenResponse>, CommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
@@ -102,25 +102,25 @@ pub async fn bytedance_seedream_v5_lite_multi_function_image_gen_handler(
   let fal_result;
 
   if let Some(input_image_urls) = image_urls.as_deref() {
-    info!("seedream v5 lite edit image");
+    info!("seedream 5 lite edit image");
 
     let num_images = match request.num_images {
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::One) => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::One,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Two) => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::Two,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Three) => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::Three,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Four) => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::Four,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenNumImages::One) => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::One,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Two) => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::Two,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Three) => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::Three,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Four) => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::Four,
       None => EnqueueBytedanceSeedreamV5LiteEditImageNumImages::One,
     };
 
     let image_size = match request.image_size {
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::Square) => EnqueueBytedanceSeedreamV5LiteEditImageSize::Square,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::SquareHd) => EnqueueBytedanceSeedreamV5LiteEditImageSize::SquareHd,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::PortraitFourThree) => EnqueueBytedanceSeedreamV5LiteEditImageSize::PortraitFourThree,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::PortraitSixteenNine) => EnqueueBytedanceSeedreamV5LiteEditImageSize::PortraitSixteenNine,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::LandscapeFourThree) => EnqueueBytedanceSeedreamV5LiteEditImageSize::LandscapeFourThree,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::LandscapeSixteenNine) => EnqueueBytedanceSeedreamV5LiteEditImageSize::LandscapeSixteenNine,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::Auto2k) => EnqueueBytedanceSeedreamV5LiteEditImageSize::Auto2k,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::Auto3k) => EnqueueBytedanceSeedreamV5LiteEditImageSize::Auto3k,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Square) => EnqueueBytedanceSeedreamV5LiteEditImageSize::Square,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::SquareHd) => EnqueueBytedanceSeedreamV5LiteEditImageSize::SquareHd,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::PortraitFourThree) => EnqueueBytedanceSeedreamV5LiteEditImageSize::PortraitFourThree,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::PortraitSixteenNine) => EnqueueBytedanceSeedreamV5LiteEditImageSize::PortraitSixteenNine,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::LandscapeFourThree) => EnqueueBytedanceSeedreamV5LiteEditImageSize::LandscapeFourThree,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::LandscapeSixteenNine) => EnqueueBytedanceSeedreamV5LiteEditImageSize::LandscapeSixteenNine,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Auto2k) => EnqueueBytedanceSeedreamV5LiteEditImageSize::Auto2k,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Auto3k) => EnqueueBytedanceSeedreamV5LiteEditImageSize::Auto3k,
       None => EnqueueBytedanceSeedreamV5LiteEditImageSize::SquareHd,
     };
 
@@ -153,25 +153,25 @@ pub async fn bytedance_seedream_v5_lite_multi_function_image_gen_handler(
         })?;
 
   } else {
-    info!("seedream v5 lite text-to-image");
+    info!("seedream 5 lite text-to-image");
 
     let num_images = match request.num_images {
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::One) => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::One,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Two) => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Two,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Three) => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Three,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenNumImages::Four) => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Four,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenNumImages::One) => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::One,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Two) => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Two,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Three) => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Three,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Four) => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::Four,
       None => EnqueueBytedanceSeedreamV5LiteTextToImageNumImages::One,
     };
 
     let image_size = match request.image_size {
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::Square) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::Square,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::SquareHd) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::SquareHd,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::PortraitFourThree) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::PortraitFourThree,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::PortraitSixteenNine) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::PortraitSixteenNine,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::LandscapeFourThree) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::LandscapeFourThree,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::LandscapeSixteenNine) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::LandscapeSixteenNine,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::Auto2k) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::Auto2k,
-      Some(BytedanceSeedreamV5LiteMultiFunctionImageGenImageSize::Auto3k) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::Auto3k,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Square) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::Square,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::SquareHd) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::SquareHd,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::PortraitFourThree) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::PortraitFourThree,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::PortraitSixteenNine) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::PortraitSixteenNine,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::LandscapeFourThree) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::LandscapeFourThree,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::LandscapeSixteenNine) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::LandscapeSixteenNine,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Auto2k) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::Auto2k,
+      Some(BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Auto3k) => EnqueueBytedanceSeedreamV5LiteTextToImageSize::Auto3k,
       None => EnqueueBytedanceSeedreamV5LiteTextToImageSize::SquareHd,
     };
 
@@ -225,7 +225,7 @@ pub async fn bytedance_seedream_v5_lite_multi_function_image_gen_handler(
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),
-    maybe_model_type: Some(ModelType::SeedreamV5Lite),
+    maybe_model_type: Some(ModelType::Seedream5Lite),
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
@@ -294,7 +294,7 @@ pub async fn bytedance_seedream_v5_lite_multi_function_image_gen_handler(
         CommonWebError::ServerError
       })?;
 
-  Ok(Json(BytedanceSeedreamV5LiteMultiFunctionImageGenResponse {
+  Ok(Json(BytedanceSeedream5LiteMultiFunctionImageGenResponse {
     success: true,
     inference_job_token: job_token,
   }))

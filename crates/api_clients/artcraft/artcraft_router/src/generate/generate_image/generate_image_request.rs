@@ -18,7 +18,7 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::plan_generate_image_artcraft_nano_banana_pro;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4::plan_generate_image_artcraft_seedream_4;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::plan_generate_image_artcraft_seedream_4p5;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_v5_lite::plan_generate_image_artcraft_seedream_v5_lite;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::plan_generate_image_artcraft_seedream_5_lite;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
 pub struct GenerateImageRequest<'a> {
@@ -93,8 +93,8 @@ impl<'a> GenerateImageRequest<'a> {
         CommonImageModel::Seedream4p5 => {
           plan_generate_image_artcraft_seedream_4p5(self).map(ImageGenerationPlan::ArtcraftSeedream4p5)
         }
-        CommonImageModel::SeedreamV5Lite => {
-          plan_generate_image_artcraft_seedream_v5_lite(self).map(ImageGenerationPlan::ArtcraftSeedreamV5Lite)
+        CommonImageModel::Seedream5Lite => {
+          plan_generate_image_artcraft_seedream_5_lite(self).map(ImageGenerationPlan::ArtcraftSeedream5Lite)
         }
       },
       Provider::Fal => match self.model {
@@ -110,7 +110,7 @@ impl<'a> GenerateImageRequest<'a> {
         | CommonImageModel::NanaBanana2
         | CommonImageModel::Seedream4
         | CommonImageModel::Seedream4p5
-        | CommonImageModel::SeedreamV5Lite => {
+        | CommonImageModel::Seedream5Lite => {
           Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
             field: "provider",
             value: format!("{:?} is only available on the Artcraft provider", self.model),
