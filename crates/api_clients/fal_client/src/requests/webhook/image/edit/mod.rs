@@ -1,5 +1,7 @@
 pub mod enqueue_bytedance_seedream_v4_edit_image_webhook;
 pub mod enqueue_bytedance_seedream_v4p5_edit_image_webhook;
+pub mod enqueue_bytedance_seedream_v5_lite_edit_image_webhook;
+pub mod enqueue_nano_banana_2_edit_image_webhook;
 pub mod enqueue_flux_pro_kontext_max_edit_webhook;
 pub mod enqueue_gemini_25_flash_edit_webhook;
 pub mod enqueue_gpt_image_1_edit_image_webhook;

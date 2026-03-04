@@ -1,5 +1,7 @@
 pub mod enqueue_bytedance_seedream_v4_text_to_image_webhook;
 pub mod enqueue_bytedance_seedream_v4p5_text_to_image_webhook;
+pub mod enqueue_bytedance_seedream_v5_lite_text_to_image_webhook;
+pub mod enqueue_nano_banana_2_text_to_image_webhook;
 pub mod enqueue_flux_1_dev_text_to_image_webhook;
 pub mod enqueue_flux_1_schnell_text_to_image_webhook;
 pub mod enqueue_flux_pro_11_text_to_image_webhook;
