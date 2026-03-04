@@ -791,6 +791,7 @@ dependencies = [
  "seedance2pro",
  "serde",
  "serde_derive",
+ "strum 0.28.0",
  "test_data",
  "tokens",
  "tokio",
@@ -1523,7 +1524,7 @@ dependencies = [
  "bitflags 2.11.0",
  "cexpr",
  "clang-sys",
- "itertools 0.11.0",
+ "itertools 0.13.0",
  "proc-macro2",
  "quote",
  "regex",
@@ -3471,7 +3472,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330c60081dcc4c72131f8eb70510f1ac07223e5d4163db481a04a0befcffa412"
 dependencies = [
- "libloading 0.7.4",
+ "libloading 0.8.6",
 ]
 
 [[package]]
@@ -3776,7 +3777,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "storyteller_root",
- "strum",
+ "strum 0.26.2",
  "tokens",
  "tokio",
  "workspace-build-acceleration",
@@ -3938,7 +3939,7 @@ dependencies = [
  "sqlx",
  "sqlx-core",
  "sqlx-mysql",
- "strum",
+ "strum 0.26.2",
  "toml 0.8.23",
  "utoipa",
  "workspace-build-acceleration",
@@ -3952,7 +3953,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "strum",
+ "strum 0.26.2",
  "toml 0.8.23",
  "utoipa",
  "workspace-build-acceleration",
@@ -6501,7 +6502,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc2f4eb4bc735547cfed7c0a4922cbd04a4655978c09b54f1f7b228750664c34"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.6",
 ]
 
 [[package]]
@@ -7066,7 +7067,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "storyteller_root",
- "strum",
+ "strum 0.26.2",
  "tempdir",
  "tokens",
  "tokio",
@@ -11581,8 +11582,8 @@ dependencies = [
  "server_environment",
  "speculoos",
  "sqlx",
- "strum",
- "strum_macros",
+ "strum 0.26.2",
+ "strum_macros 0.26.4",
  "tempdir",
  "tempfile",
  "testing",
@@ -11667,7 +11668,16 @@ version = "0.26.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d8cec3501a5194c432b2b7976db6b7d10ec95c253208b45f83f7136aa985e29"
 dependencies = [
- "strum_macros",
+ "strum_macros 0.26.4",
+]
+
+[[package]]
+name = "strum"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9628de9b8791db39ceda2b119bbe13134770b56c138ec1d3af810d045c04f9bd"
+dependencies = [
+ "strum_macros 0.28.0",
 ]
 
 [[package]]
@@ -11680,6 +11690,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustversion",
+ "syn 2.0.106",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab85eea0270ee17587ed4156089e10b9e6880ee688791d45a905f5b1ca36f664"
+dependencies = [
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
  "syn 2.0.106",
 ]
 
@@ -12679,7 +12701,7 @@ dependencies = [
  "sqlx",
  "sqlx-core",
  "sqlx-mysql",
- "strum",
+ "strum 0.26.2",
  "utoipa",
  "workspace-build-acceleration",
 ]
@@ -14029,7 +14051,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "strum",
+ "strum 0.26.2",
  "workspace-build-acceleration",
 ]
 

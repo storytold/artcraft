@@ -1,9 +1,12 @@
 use serde_derive::{Deserialize, Serialize};
+#[cfg(test)]
+use strum::EnumIter;
 
 /// This is a comprehensive list of common aspect ratios you can specify when enqueuing a generation.
 /// Not every model will support every aspect ratio.
 /// In the case a model doesn't support the aspect ratio, gracefully pick the nearest option.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
+#[cfg_attr(test, derive(EnumIter))]
 #[serde(rename_all = "snake_case")]
 pub enum CommonAspectRatio {
   // Auto (eg. for image editing to use the source; used by Nano Banana Pro edit image, but not text-to-image)
