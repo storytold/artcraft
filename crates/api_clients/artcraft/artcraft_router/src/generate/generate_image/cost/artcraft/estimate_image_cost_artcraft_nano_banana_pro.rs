@@ -52,6 +52,7 @@ mod tests {
       aspect_ratio: None,
       image_batch_count: Some(image_batch_count),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      generation_mode_mismatch_strategy: None,
       idempotency_token: None,
     };
     request.build()

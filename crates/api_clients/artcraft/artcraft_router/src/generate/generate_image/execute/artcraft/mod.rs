@@ -1,3 +1,7 @@
+pub mod generate_image_artcraft_flux_1_dev;
+pub mod generate_image_artcraft_flux_1_schnell;
+pub mod generate_image_artcraft_flux_pro_1p1;
+pub mod generate_image_artcraft_flux_pro_1p1_ultra;
 pub mod generate_image_artcraft_gpt_image_1p5;
 pub mod generate_image_artcraft_nano_banana;
 pub mod generate_image_artcraft_nano_banana_pro;

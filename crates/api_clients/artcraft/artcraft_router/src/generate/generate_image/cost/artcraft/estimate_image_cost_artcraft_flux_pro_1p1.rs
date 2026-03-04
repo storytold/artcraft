@@ -1,19 +1,19 @@
-use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v4p5_multi_function_image_gen::BytedanceSeedreamV4p5MultiFunctionImageGenNumImages;
+use artcraft_api_defs::generate::image::text::generate_flux_pro_11_text_to_image::GenerateFluxPro11TextToImageNumImages;
 
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
-use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::PlanArtcraftSeedream4p5;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1::PlanArtcraftFluxPro11;
 
-pub(crate) fn estimate_image_cost_artcraft_seedream_4p5(
-  plan: &PlanArtcraftSeedream4p5<'_>,
+pub(crate) fn estimate_image_cost_artcraft_flux_pro_1p1(
+  plan: &PlanArtcraftFluxPro11<'_>,
 ) -> ImageGenerationCostEstimate {
-  // Pricing: $0.04/image (4 cents). 1 credit = 1 USD cent.
-  let cost_per_image: u64 = 4;
+  // NB(bt): Slightly more than 3 cents, weird megapixel maths. We can eat that cost for now.
+  let cost_per_image: u64 = 3;
 
   let num_images: u64 = match plan.num_images {
-    BytedanceSeedreamV4p5MultiFunctionImageGenNumImages::One => 1,
-    BytedanceSeedreamV4p5MultiFunctionImageGenNumImages::Two => 2,
-    BytedanceSeedreamV4p5MultiFunctionImageGenNumImages::Three => 3,
-    BytedanceSeedreamV4p5MultiFunctionImageGenNumImages::Four => 4,
+    GenerateFluxPro11TextToImageNumImages::One => 1,
+    GenerateFluxPro11TextToImageNumImages::Two => 2,
+    GenerateFluxPro11TextToImageNumImages::Three => 3,
+    GenerateFluxPro11TextToImageNumImages::Four => 4,
   };
 
   let cost_in_usd_cents = cost_per_image * num_images;
@@ -37,7 +37,7 @@ mod tests {
 
   fn estimate_usd_cents(image_batch_count: u16) -> u64 {
     let request = GenerateImageRequest {
-      model: CommonImageModel::Seedream4p5,
+      model: CommonImageModel::FluxPro11,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: None,
@@ -57,10 +57,10 @@ mod tests {
 
   #[test]
   fn test_estimate_cost_usd_cents() {
-    // $0.04/image = 4 cents each
-    assert_eq!(estimate_usd_cents(1), 4);
-    assert_eq!(estimate_usd_cents(2), 8);
-    assert_eq!(estimate_usd_cents(3), 12);
-    assert_eq!(estimate_usd_cents(4), 16);
+    // $0.06/image = 6 cents each
+    assert_eq!(estimate_usd_cents(1), 6);
+    assert_eq!(estimate_usd_cents(2), 12);
+    assert_eq!(estimate_usd_cents(3), 18);
+    assert_eq!(estimate_usd_cents(4), 24);
   }
 }
