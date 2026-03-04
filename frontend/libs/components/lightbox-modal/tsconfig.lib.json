@@ -74,6 +74,9 @@
       "path": "../button/tsconfig.lib.json"
     },
     {
+      "path": "../tooltip/tsconfig.lib.json"
+    },
+    {
       "path": "../modal/tsconfig.lib.json"
     }
   ]
