@@ -57,10 +57,10 @@ mod tests {
 
   #[test]
   fn test_estimate_cost_usd_cents() {
-    // $0.06/image = 6 cents each
-    assert_eq!(estimate_usd_cents(1), 6);
-    assert_eq!(estimate_usd_cents(2), 12);
-    assert_eq!(estimate_usd_cents(3), 18);
-    assert_eq!(estimate_usd_cents(4), 24);
+    // ~$0.03/image = 3 cents each (slightly more than 3¢ actual, rounded up)
+    assert_eq!(estimate_usd_cents(1), 3);
+    assert_eq!(estimate_usd_cents(2), 6);
+    assert_eq!(estimate_usd_cents(3), 9);
+    assert_eq!(estimate_usd_cents(4), 12);
   }
 }
