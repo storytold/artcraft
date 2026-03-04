@@ -6,10 +6,12 @@ pub fn image_edit_model_to_model_type(model: ImageEditModel) -> ModelType {
     ImageEditModel::FluxProKontextMax => ModelType::FluxProKontextMax,
     ImageEditModel::Gemini25Flash => ModelType::NanoBanana,
     ImageEditModel::NanoBanana => ModelType::NanoBanana,
+    ImageEditModel::NanoBanana2 => ModelType::NanoBanana2,
     ImageEditModel::NanoBananaPro => ModelType::NanoBananaPro,
     ImageEditModel::GptImage1 => ModelType::GptImage1,
     ImageEditModel::GptImage1p5 => ModelType::GptImage1p5,
     ImageEditModel::Seedream4 => ModelType::Seedream4,
     ImageEditModel::Seedream4p5 => ModelType::Seedream4p5,
+    ImageEditModel::SeedreamV5Lite => ModelType::SeedreamV5Lite,
   }
 }

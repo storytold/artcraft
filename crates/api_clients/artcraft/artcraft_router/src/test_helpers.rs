@@ -89,6 +89,36 @@ pub fn base_seedream_4p5_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
+pub fn base_seedream_v5_lite_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::SeedreamV5Lite,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+  }
+}
+
+pub fn base_nano_banana_2_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::NanaBanana2,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+  }
+}
+
 pub fn base_nano_banana_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
     model: CommonImageModel::NanaBanana,

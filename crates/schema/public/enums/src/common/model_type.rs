@@ -45,12 +45,16 @@ pub enum ModelType {
   Gemini25Flash,
   #[serde(rename = "nano_banana")]
   NanoBanana,
+  #[serde(rename = "nano_banana_2")]
+  NanoBanana2,
   #[serde(rename = "nano_banana_pro")]
   NanoBananaPro,
   #[serde(rename = "seedream_4")]
   Seedream4,
   #[serde(rename = "seedream_4p5")]
   Seedream4p5,
+  #[serde(rename = "seedream_v5_lite")]
+  SeedreamV5Lite,
 
   /// Midjourney without distinguishing a model type or version
   #[serde(rename = "midjourney")]
@@ -144,9 +148,11 @@ impl ModelType {
       Self::Qwen => "qwen",
       Self::Gemini25Flash => "gemini_25_flash",
       Self::NanoBanana => "nano_banana",
+      Self::NanoBanana2 => "nano_banana_2",
       Self::NanoBananaPro => "nano_banana_pro",
       Self::Seedream4 => "seedream_4",
       Self::Seedream4p5 => "seedream_4p5",
+      Self::SeedreamV5Lite => "seedream_v5_lite",
       Self::Midjourney => "midjourney",
       Self::MidjourneyV6 => "midjourney_v6",
       Self::MidjourneyV6p1 => "midjourney_v6p1",
@@ -199,9 +205,11 @@ impl ModelType {
       "qwen" => Ok(Self::Qwen),
       "gemini_25_flash" => Ok(Self::Gemini25Flash),
       "nano_banana" => Ok(Self::NanoBanana),
+      "nano_banana_2" => Ok(Self::NanoBanana2),
       "nano_banana_pro" => Ok(Self::NanoBananaPro),
       "seedream_4" => Ok(Self::Seedream4),
       "seedream_4p5" => Ok(Self::Seedream4p5),
+      "seedream_v5_lite" => Ok(Self::SeedreamV5Lite),
       "midjourney" => Ok(Self::Midjourney),
       "midjourney_v6" => Ok(Self::MidjourneyV6),
       "midjourney_v6p1" => Ok(Self::MidjourneyV6p1),
@@ -258,9 +266,11 @@ impl ModelType {
       Self::Qwen,
       Self::Gemini25Flash,
       Self::NanoBanana,
+      Self::NanoBanana2,
       Self::NanoBananaPro,
       Self::Seedream4,
       Self::Seedream4p5,
+      Self::SeedreamV5Lite,
       Self::Midjourney,
       Self::MidjourneyV6,
       Self::MidjourneyV6p1,
@@ -322,9 +332,11 @@ mod tests {
       assert_serialization(ModelType::Qwen, "qwen");
       assert_serialization(ModelType::Gemini25Flash, "gemini_25_flash");
       assert_serialization(ModelType::NanoBanana, "nano_banana");
+      assert_serialization(ModelType::NanoBanana2, "nano_banana_2");
       assert_serialization(ModelType::NanoBananaPro, "nano_banana_pro");
       assert_serialization(ModelType::Seedream4, "seedream_4");
       assert_serialization(ModelType::Seedream4p5, "seedream_4p5");
+      assert_serialization(ModelType::SeedreamV5Lite, "seedream_v5_lite");
       assert_serialization(ModelType::Midjourney, "midjourney");
       assert_serialization(ModelType::MidjourneyV6, "midjourney_v6");
       assert_serialization(ModelType::MidjourneyV6p1, "midjourney_v6p1");
@@ -374,9 +386,11 @@ mod tests {
       assert_eq!(ModelType::Qwen.to_str(), "qwen");
       assert_eq!(ModelType::Gemini25Flash.to_str(), "gemini_25_flash");
       assert_eq!(ModelType::NanoBanana.to_str(), "nano_banana");
+      assert_eq!(ModelType::NanoBanana2.to_str(), "nano_banana_2");
       assert_eq!(ModelType::NanoBananaPro.to_str(), "nano_banana_pro");
       assert_eq!(ModelType::Seedream4.to_str(), "seedream_4");
       assert_eq!(ModelType::Seedream4p5.to_str(), "seedream_4p5");
+      assert_eq!(ModelType::SeedreamV5Lite.to_str(), "seedream_v5_lite");
       assert_eq!(ModelType::Midjourney.to_str(), "midjourney");
       assert_eq!(ModelType::MidjourneyV6.to_str(), "midjourney_v6");
       assert_eq!(ModelType::MidjourneyV6p1.to_str(), "midjourney_v6p1");
@@ -428,9 +442,11 @@ mod tests {
       assert_eq!(ModelType::from_str("qwen").unwrap(), ModelType::Qwen);
       assert_eq!(ModelType::from_str("gemini_25_flash").unwrap(), ModelType::Gemini25Flash);
       assert_eq!(ModelType::from_str("nano_banana").unwrap(), ModelType::NanoBanana);
+      assert_eq!(ModelType::from_str("nano_banana_2").unwrap(), ModelType::NanoBanana2);
       assert_eq!(ModelType::from_str("nano_banana_pro").unwrap(), ModelType::NanoBananaPro);
       assert_eq!(ModelType::from_str("seedream_4").unwrap(), ModelType::Seedream4);
       assert_eq!(ModelType::from_str("seedream_4p5").unwrap(), ModelType::Seedream4p5);
+      assert_eq!(ModelType::from_str("seedream_v5_lite").unwrap(), ModelType::SeedreamV5Lite);
       assert_eq!(ModelType::from_str("midjourney").unwrap(), ModelType::Midjourney);
       assert_eq!(ModelType::from_str("midjourney_v6").unwrap(), ModelType::MidjourneyV6);
       assert_eq!(ModelType::from_str("midjourney_v6p1").unwrap(), ModelType::MidjourneyV6p1);
@@ -466,7 +482,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = ModelType::all_variants();
-      assert_eq!(variants.len(), 45);
+      assert_eq!(variants.len(), 47);
       // Image models
       assert_eq!(variants.pop_first(), Some(ModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(ModelType::Flux1Schnell));
@@ -483,9 +499,11 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(ModelType::Qwen));
       assert_eq!(variants.pop_first(), Some(ModelType::Gemini25Flash));
       assert_eq!(variants.pop_first(), Some(ModelType::NanoBanana));
+      assert_eq!(variants.pop_first(), Some(ModelType::NanoBanana2));
       assert_eq!(variants.pop_first(), Some(ModelType::NanoBananaPro));
       assert_eq!(variants.pop_first(), Some(ModelType::Seedream4));
       assert_eq!(variants.pop_first(), Some(ModelType::Seedream4p5));
+      assert_eq!(variants.pop_first(), Some(ModelType::SeedreamV5Lite));
       assert_eq!(variants.pop_first(), Some(ModelType::Midjourney));
       assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV6));
       assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV6p1));

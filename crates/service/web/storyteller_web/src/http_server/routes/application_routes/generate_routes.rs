@@ -14,7 +14,9 @@ use crate::http_server::endpoints::generate::image::inpaint::flux_dev_juggernaut
 use crate::http_server::endpoints::generate::image::inpaint::flux_pro_1_inpaint_handler::flux_pro_1_inpaint_image_handler;
 use crate::http_server::endpoints::generate::image::multi_function::bytedance_seedream_v4_multi_function_image_gen_handler::bytedance_seedream_v4_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::multi_function::bytedance_seedream_v4p5_multi_function_image_gen_handler::bytedance_seedream_v4p5_multi_function_image_gen_handler;
+use crate::http_server::endpoints::generate::image::multi_function::bytedance_seedream_v5_lite_multi_function_image_gen_handler::bytedance_seedream_v5_lite_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::multi_function::gpt_image_1p5_multi_function_image_gen_handler::gpt_image_1p5_multi_function_image_gen_handler;
+use crate::http_server::endpoints::generate::image::multi_function::nano_banana_2_multi_function_image_gen_handler::nano_banana_2_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_multi_function_image_gen_handler::nano_banana_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_pro_multi_function_image_gen_handler::nano_banana_pro_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::remove_image_background_handler::remove_image_background_handler;
@@ -81,8 +83,16 @@ where
                   .route(web::post().to(nano_banana_multi_function_image_gen_handler))
                   .route(web::head().to(|| HttpResponse::Ok()))
               )
+              .service(web::resource("/nano_banana_2")
+                  .route(web::post().to(nano_banana_2_multi_function_image_gen_handler))
+                  .route(web::head().to(|| HttpResponse::Ok()))
+              )
               .service(web::resource("/nano_banana_pro")
                   .route(web::post().to(nano_banana_pro_multi_function_image_gen_handler))
+                  .route(web::head().to(|| HttpResponse::Ok()))
+              )
+              .service(web::resource("/bytedance_seedream_5_light")
+                  .route(web::post().to(bytedance_seedream_v5_lite_multi_function_image_gen_handler))
                   .route(web::head().to(|| HttpResponse::Ok()))
               )
           )

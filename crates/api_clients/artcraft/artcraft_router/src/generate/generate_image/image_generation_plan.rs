@@ -6,9 +6,11 @@ use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraf
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_flux_pro_1p1_ultra::estimate_image_cost_artcraft_flux_pro_1p1_ultra;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_gpt_image_1p5::estimate_image_cost_artcraft_gpt_image_1p5;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_nano_banana::estimate_image_cost_artcraft_nano_banana;
+use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_nano_banana_2::estimate_image_cost_artcraft_nano_banana_2;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_nano_banana_pro::estimate_image_cost_artcraft_nano_banana_pro;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_seedream_4::estimate_image_cost_artcraft_seedream_4;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_seedream_4p5::estimate_image_cost_artcraft_seedream_4p5;
+use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_seedream_v5_lite::estimate_image_cost_artcraft_seedream_v5_lite;
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_nano_banana_pro::estimate_image_cost_fal_nano_banana_pro;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_flux_1_dev::execute_artcraft_flux_1_dev;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_flux_1_schnell::execute_artcraft_flux_1_schnell;
@@ -16,9 +18,11 @@ use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_flux_pro_1p1_ultra::execute_artcraft_flux_pro_1p1_ultra;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_gpt_image_1p5::execute_artcraft_gpt_image_1p5;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_nano_banana::execute_artcraft_nano_banana;
+use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_nano_banana_2::execute_artcraft_nano_banana_2;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_nano_banana_pro::execute_artcraft_nano_banana_pro;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_seedream_4::execute_artcraft_seedream_4;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_seedream_4p5::execute_artcraft_seedream_4p5;
+use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_seedream_v5_lite::execute_artcraft_seedream_v5_lite;
 use crate::generate::generate_image::execute::fal::generate_image_fal_nano_banana_pro::execute_fal_nano_banana_pro;
 use crate::generate::generate_image::generate_image_response::GenerateImageResponse;
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
@@ -28,9 +32,11 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1_ultra::PlanArtcraftFluxPro11Ultra;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1p5::PlanArtcraftGptImage1p5;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana::PlanArtcraftNanaBanana;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_2::PlanArtcraftNanaBanana2;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::PlanArtcraftNanaBananaPro;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4::PlanArtcraftSeedream4;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::PlanArtcraftSeedream4p5;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_v5_lite::PlanArtcraftSeedreamV5Lite;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::PlanFalNanaBananaPro;
 
 #[derive(Debug)]
@@ -41,9 +47,11 @@ pub enum ImageGenerationPlan<'a> {
   ArtcraftFluxPro11Ultra(PlanArtcraftFluxPro11Ultra<'a>),
   ArtcraftGptImage1p5(PlanArtcraftGptImage1p5<'a>),
   ArtcraftNanaBanana(PlanArtcraftNanaBanana<'a>),
+  ArtcraftNanaBanana2(PlanArtcraftNanaBanana2<'a>),
   ArtcraftNanaBananaPro(PlanArtcraftNanaBananaPro<'a>),
   ArtcraftSeedream4(PlanArtcraftSeedream4<'a>),
   ArtcraftSeedream4p5(PlanArtcraftSeedream4p5<'a>),
+  ArtcraftSeedreamV5Lite(PlanArtcraftSeedreamV5Lite<'a>),
   FalNanaBananaPro(PlanFalNanaBananaPro<'a>),
 }
 
@@ -77,6 +85,10 @@ impl<'a> ImageGenerationPlan<'a> {
         let artcraft_client = client.get_artcraft_client_ref()?;
         execute_artcraft_nano_banana(plan, artcraft_client).await
       }
+      ImageGenerationPlan::ArtcraftNanaBanana2(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_nano_banana_2(plan, artcraft_client).await
+      }
       ImageGenerationPlan::ArtcraftNanaBananaPro(plan) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
         execute_artcraft_nano_banana_pro(plan, artcraft_client).await
@@ -88,6 +100,10 @@ impl<'a> ImageGenerationPlan<'a> {
       ImageGenerationPlan::ArtcraftSeedream4p5(plan) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
         execute_artcraft_seedream_4p5(plan, artcraft_client).await
+      }
+      ImageGenerationPlan::ArtcraftSeedreamV5Lite(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_seedream_v5_lite(plan, artcraft_client).await
       }
       ImageGenerationPlan::FalNanaBananaPro(plan) => {
         let fal_client = client.get_fal_client_ref()?;
@@ -116,6 +132,9 @@ impl<'a> ImageGenerationPlan<'a> {
       ImageGenerationPlan::ArtcraftNanaBanana(plan) => {
         estimate_image_cost_artcraft_nano_banana(plan)
       }
+      ImageGenerationPlan::ArtcraftNanaBanana2(plan) => {
+        estimate_image_cost_artcraft_nano_banana_2(plan)
+      }
       ImageGenerationPlan::ArtcraftNanaBananaPro(plan) => {
         estimate_image_cost_artcraft_nano_banana_pro(plan)
       }
@@ -124,6 +143,9 @@ impl<'a> ImageGenerationPlan<'a> {
       }
       ImageGenerationPlan::ArtcraftSeedream4p5(plan) => {
         estimate_image_cost_artcraft_seedream_4p5(plan)
+      }
+      ImageGenerationPlan::ArtcraftSeedreamV5Lite(plan) => {
+        estimate_image_cost_artcraft_seedream_v5_lite(plan)
       }
       ImageGenerationPlan::FalNanaBananaPro(plan) => {
         estimate_image_cost_fal_nano_banana_pro(plan)

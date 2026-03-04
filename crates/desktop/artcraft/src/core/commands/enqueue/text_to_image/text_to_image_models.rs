@@ -13,9 +13,11 @@ pub fn text_to_image_model_to_model_type(model: TextToImageModel) -> ModelType {
     TextToImageModel::GptImage1p5 => ModelType::GptImage1p5,
     TextToImageModel::Gemini25Flash => ModelType::NanoBanana,
     TextToImageModel::NanoBanana => ModelType::NanoBanana,
+    TextToImageModel::NanoBanana2 => ModelType::NanoBanana2,
     TextToImageModel::NanoBananaPro => ModelType::NanoBananaPro,
     TextToImageModel::Seedream4 => ModelType::Seedream4,
     TextToImageModel::Seedream4p5 => ModelType::Seedream4p5,
+    TextToImageModel::SeedreamV5Lite => ModelType::SeedreamV5Lite,
     TextToImageModel::Midjourney => ModelType::Midjourney,
   }
 }

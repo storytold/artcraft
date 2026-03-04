@@ -4,6 +4,8 @@ pub mod plan_generate_image_artcraft_flux_pro_1p1;
 pub mod plan_generate_image_artcraft_flux_pro_1p1_ultra;
 pub mod plan_generate_image_artcraft_gpt_image_1p5;
 pub mod plan_generate_image_artcraft_nano_banana;
+pub mod plan_generate_image_artcraft_nano_banana_2;
 pub mod plan_generate_image_artcraft_nano_banana_pro;
 pub mod plan_generate_image_artcraft_seedream_4;
 pub mod plan_generate_image_artcraft_seedream_4p5;
+pub mod plan_generate_image_artcraft_seedream_v5_lite;

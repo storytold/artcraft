@@ -39,12 +39,16 @@ pub enum GenerationModel {
   Gemini25Flash,
   #[serde(rename = "nano_banana")]
   NanoBanana,
+  #[serde(rename = "nano_banana_2")]
+  NanoBanana2,
   #[serde(rename = "nano_banana_pro")]
   NanoBananaPro,
   #[serde(rename = "seedream_4")]
   Seedream4,
   #[serde(rename = "seedream_4p5")]
   Seedream4p5,
+  #[serde(rename = "seedream_v5_lite")]
+  SeedreamV5Lite,
 
   #[serde(rename = "hunyuan_3d_2_0")]
   Hunyuan3d2_0,
