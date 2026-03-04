@@ -74,6 +74,7 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
     aspect_ratio,
     image_batch_count: request.image_count.map(|n| n as u16),
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   };
 

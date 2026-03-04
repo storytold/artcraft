@@ -31,6 +31,7 @@ pub fn base_image_request() -> GenerateImageRequest<'static> {
     aspect_ratio: None,
     image_batch_count: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   }
 }
@@ -53,6 +54,7 @@ pub fn base_fal_image_request() -> GenerateImageRequest<'static> {
     aspect_ratio: None,
     image_batch_count: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   }
 }
@@ -67,6 +69,7 @@ pub fn base_seedream_4_image_request() -> GenerateImageRequest<'static> {
     aspect_ratio: None,
     image_batch_count: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   }
 }
@@ -81,6 +84,7 @@ pub fn base_seedream_4p5_image_request() -> GenerateImageRequest<'static> {
     aspect_ratio: None,
     image_batch_count: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   }
 }
@@ -95,6 +99,7 @@ pub fn base_nano_banana_image_request() -> GenerateImageRequest<'static> {
     aspect_ratio: None,
     image_batch_count: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   }
 }
@@ -109,6 +114,67 @@ pub fn base_gpt_image_1p5_image_request() -> GenerateImageRequest<'static> {
     aspect_ratio: None,
     image_batch_count: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+  }
+}
+
+pub fn base_flux_1_dev_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::Flux1Dev,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+  }
+}
+
+pub fn base_flux_1_schnell_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::Flux1Schnell,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+  }
+}
+
+pub fn base_flux_pro_1p1_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::FluxPro11,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+  }
+}
+
+pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::FluxPro11Ultra,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   }
 }

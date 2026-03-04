@@ -52,6 +52,7 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
     aspect_ratio,
     image_batch_count: request.number_images.map(|n| n as u16),
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   };
 

@@ -1,9 +1,5 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_flux_1_dev_text_to_image::handle_artcraft_flux_1_dev_text_to_image;
-use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_flux_1_schnell_text_to_image::handle_artcraft_flux_1_schnell_text_to_image;
-use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_flux_pro_1p1_text_to_image::handle_artcraft_flux_pro_1p1_text_to_image;
-use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_flux_pro_1p1_ultra_text_to_image::handle_artcraft_flux_pro_1p1_ultra_text_to_image;
 use crate::core::commands::enqueue::text_to_image::artcraft::handle_artcraft_gpt_image_1_text_to_image::handle_artcraft_gpt_image_1_text_to_image;
 use crate::core::commands::enqueue::text_to_image::artcraft::handle_text_to_image_artcraft_via_router::handle_text_to_image_artcraft_via_router;
 use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::{EnqueueTextToImageRequest, TextToImageModel};
@@ -24,7 +20,7 @@ pub async fn handle_text_to_image_artcraft(
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
-  
+
   match model {
     TextToImageModel::Midjourney | TextToImageModel::GrokImage => {
       Err(GenerateError::BadProviderForModel {
@@ -35,10 +31,10 @@ pub async fn handle_text_to_image_artcraft(
     TextToImageModel::Recraft3 => {
       Err(GenerateError::NotYetImplemented(format!("not yet implemented in Artcraft")))
     }
-    TextToImageModel::Flux1Dev => handle_artcraft_flux_1_dev_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
-    TextToImageModel::Flux1Schnell => handle_artcraft_flux_1_schnell_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
-    TextToImageModel::FluxPro11 =>handle_artcraft_flux_pro_1p1_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
-    TextToImageModel::FluxPro11Ultra => handle_artcraft_flux_pro_1p1_ultra_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
+    TextToImageModel::Flux1Dev => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Flux1Dev, GenerationModel::Flux1Dev).await,
+    TextToImageModel::Flux1Schnell => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Flux1Schnell, GenerationModel::Flux1Schnell).await,
+    TextToImageModel::FluxPro11 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::FluxPro11, GenerationModel::FluxPro11).await,
+    TextToImageModel::FluxPro11Ultra => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::FluxPro11Ultra, GenerationModel::FluxPro11Ultra).await,
     TextToImageModel::GptImage1 => handle_artcraft_gpt_image_1_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
     TextToImageModel::GptImage1p5 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::GptImage1p5, GenerationModel::GptImage1p5).await,
     TextToImageModel::Gemini25Flash | TextToImageModel::NanoBanana => {

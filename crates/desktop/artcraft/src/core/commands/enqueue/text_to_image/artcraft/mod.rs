@@ -1,8 +1,4 @@
 pub (super) mod handle_text_to_image_artcraft;
 
 mod handle_text_to_image_artcraft_via_router;
-mod handle_artcraft_flux_1_dev_text_to_image;
-mod handle_artcraft_flux_1_schnell_text_to_image;
-mod handle_artcraft_flux_pro_1p1_text_to_image;
-mod handle_artcraft_flux_pro_1p1_ultra_text_to_image;
 mod handle_artcraft_gpt_image_1_text_to_image;

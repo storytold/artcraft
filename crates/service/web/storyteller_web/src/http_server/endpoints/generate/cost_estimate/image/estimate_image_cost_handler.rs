@@ -46,6 +46,7 @@ pub async fn estimate_image_cost_handler(
     aspect_ratio: router_aspect_ratio,
     image_batch_count: request.image_batch_count,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
+    generation_mode_mismatch_strategy: None,
     idempotency_token: None,
   };
 
