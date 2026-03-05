@@ -4,7 +4,7 @@ use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest};
 use log::warn;
 
-use artcraft_api_defs::moderation::user_jobs::list_user_jobs::{
+use artcraft_api_defs::moderation::jobs::user::list_user_jobs::{
   ListUserJobsEntry,
   ListUserJobsPathInfo,
   ListUserJobsResponse,
@@ -19,7 +19,7 @@ use crate::state::server_state::ServerState;
 #[utoipa::path(
   get,
   tag = "Moderation",
-  path = "/v1/moderation/user_jobs/{user_token}/list",
+  path = "/v1/moderation/jobs/user/{user_token}/list",
   responses(
     (status = 200, description = "Success", body = ListUserJobsResponse),
     (status = 401, description = "Unauthorized"),

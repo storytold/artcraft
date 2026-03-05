@@ -19,7 +19,7 @@ use crate::http_server::endpoints::moderation::ip_bans::add_ip_ban::add_ip_ban_h
 use crate::http_server::endpoints::moderation::ip_bans::delete_ip_ban::delete_ip_ban_handler;
 use crate::http_server::endpoints::moderation::ip_bans::get_ip_ban::get_ip_ban_handler;
 use crate::http_server::endpoints::moderation::ip_bans::list_ip_bans::list_ip_bans_handler;
-use crate::http_server::endpoints::moderation::user_jobs::list_user_jobs_handler::list_user_jobs_handler;
+use crate::http_server::endpoints::moderation::jobs::user::list_user_jobs_handler::list_user_jobs_handler;
 use crate::http_server::endpoints::moderation::jobs::get_tts_inference_queue_count::get_tts_inference_queue_count_handler;
 use crate::http_server::endpoints::moderation::jobs::get_w2l_inference_queue_count::get_w2l_inference_queue_count_handler;
 use crate::http_server::endpoints::moderation::jobs::kill_tts_inference_jobs::kill_tts_inference_jobs_handler;
@@ -55,8 +55,8 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )
-        .service(web::scope("/user_jobs")
-            .service(web::resource("/{user_token}/list")
+        .service(web::scope("/jobs")
+            .service(web::resource("/user/{user_token}/list")
                 .route(web::get().to(list_user_jobs_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )

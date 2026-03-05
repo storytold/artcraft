@@ -7,7 +7,7 @@ use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use utoipa::ToSchema;
 
-pub const LIST_USER_JOBS_PATH: &str = "/v1/moderation/user_jobs/{user_token}/list";
+pub const LIST_USER_JOBS_PATH: &str = "/v1/moderation/jobs/user/{user_token}/list";
 
 #[derive(Deserialize, ToSchema)]
 pub struct ListUserJobsPathInfo {
