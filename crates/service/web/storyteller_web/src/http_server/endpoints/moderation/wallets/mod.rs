@@ -1,2 +1,3 @@
 pub mod list_user_wallets_handler;
+pub mod moderator_add_banked_balance_to_wallet_handler;
 pub mod moderator_get_wallet_handler;
