@@ -19,7 +19,7 @@ use crate::state::server_state::ServerState;
 #[utoipa::path(
   post,
   tag = "Moderation",
-  path = "/v1/moderation/user_lookup_by_stripe_customer_id",
+  path = "/v1/moderation/users/lookup_by_stripe_customer_id",
   request_body = ModeratorUserLookupByStripeCustomerIdRequest,
   responses(
     (status = 200, description = "Success", body = ModeratorUserLookupByStripeCustomerIdResponse),

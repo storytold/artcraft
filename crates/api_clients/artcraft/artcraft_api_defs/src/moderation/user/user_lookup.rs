@@ -2,7 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
-pub const MODERATOR_USER_LOOKUP_PATH: &str = "/v1/moderation/user_lookup";
+pub const MODERATOR_USER_LOOKUP_PATH: &str = "/v1/moderation/users/lookup";
 
 #[derive(Deserialize, ToSchema)]
 pub struct ModeratorUserLookupRequest {

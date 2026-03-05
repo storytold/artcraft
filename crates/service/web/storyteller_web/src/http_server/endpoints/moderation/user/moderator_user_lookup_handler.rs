@@ -26,7 +26,7 @@ const LEGACY_USER_TOKEN_PREFIX: &str = "U:";
 #[utoipa::path(
   post,
   tag = "Moderation",
-  path = "/v1/moderation/user_lookup",
+  path = "/v1/moderation/users/lookup",
   request_body = ModeratorUserLookupRequest,
   responses(
     (status = 200, description = "Success", body = ModeratorUserLookupSuccessResponse),
