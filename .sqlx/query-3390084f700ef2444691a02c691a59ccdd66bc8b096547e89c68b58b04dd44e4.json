@@ -1,11 +1,11 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    user_subscriptions.subscription_namespace,\n    user_subscriptions.maybe_stripe_subscription_id,\n    users.token as `user_token: tokens::tokens::users::UserToken`,\n    users.email_address,\n    users.username,\n    users.display_name\nFROM user_subscriptions\nINNER JOIN users ON users.token = user_subscriptions.user_token\nWHERE\n    user_subscriptions.maybe_stripe_customer_id = ?\n    AND user_subscriptions.deleted_at IS NULL\n    AND users.user_deleted_at IS NULL\n    AND users.mod_deleted_at IS NULL\nORDER BY user_subscriptions.created_at DESC\n    ",
+  "query": "\nSELECT\n    user_subscriptions.subscription_namespace as `subscription_namespace: enums::common::payments_namespace::PaymentsNamespace`,\n    user_subscriptions.maybe_stripe_subscription_id,\n    users.token as `user_token: tokens::tokens::users::UserToken`,\n    users.email_address,\n    users.username,\n    users.display_name\nFROM user_subscriptions\nINNER JOIN users ON users.token = user_subscriptions.user_token\nWHERE\n    user_subscriptions.maybe_stripe_customer_id = ?\n    AND user_subscriptions.deleted_at IS NULL\n    AND users.user_deleted_at IS NULL\n    AND users.mod_deleted_at IS NULL\nORDER BY user_subscriptions.created_at DESC\n    ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "subscription_namespace",
+        "name": "subscription_namespace: enums::common::payments_namespace::PaymentsNamespace",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
@@ -76,5 +76,5 @@
       false
     ]
   },
-  "hash": "5ac058d9ebc84ffbd94e0997522f794aadaea55400527bcfe99f0a5e9678fcf7"
+  "hash": "3390084f700ef2444691a02c691a59ccdd66bc8b096547e89c68b58b04dd44e4"
 }

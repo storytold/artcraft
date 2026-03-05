@@ -1,3 +1,4 @@
+use enums::common::payments_namespace::PaymentsNamespace;
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::users::UserToken;
 use utoipa::ToSchema;
@@ -17,7 +18,7 @@ pub struct ModeratorUserLookupByStripeCustomerIdResponse {
 
 #[derive(Serialize, ToSchema)]
 pub struct ModeratorUserLookupByStripeCustomerIdEntry {
-  pub subscription_namespace: String,
+  pub subscription_namespace: PaymentsNamespace,
   pub maybe_stripe_subscription_id: Option<String>,
   pub token: UserToken,
   pub email_address: String,

@@ -68,7 +68,7 @@ pub async fn moderator_user_lookup_handler(
     })?;
 
   let maybe_user_details = maybe_user.map(|user| ModeratorUserLookupUserDetails {
-    token: user.user_token.to_string(),
+    token: user.user_token,
     username: user.username,
     display_name: user.display_name,
     username_is_generated: user.username_is_generated,

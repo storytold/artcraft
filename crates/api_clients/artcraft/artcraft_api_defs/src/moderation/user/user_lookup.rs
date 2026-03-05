@@ -1,5 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::users::UserToken;
 use utoipa::ToSchema;
 
 pub const MODERATOR_USER_LOOKUP_PATH: &str = "/v1/moderation/users/lookup";
@@ -17,7 +18,7 @@ pub struct ModeratorUserLookupSuccessResponse {
 
 #[derive(Serialize, ToSchema)]
 pub struct ModeratorUserLookupUserDetails {
-  pub token: String,
+  pub token: UserToken,
   pub username: String,
   pub display_name: String,
   pub username_is_generated: bool,
