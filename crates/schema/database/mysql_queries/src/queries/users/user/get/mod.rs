@@ -3,3 +3,4 @@ pub mod lookup_user_for_login_by_email;
 pub mod lookup_user_for_login_by_email_with_transactor;
 pub mod lookup_user_for_login_by_username;
 pub mod lookup_user_for_login_result;
+pub mod lookup_user_for_moderation;
