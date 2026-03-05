@@ -6,5 +6,6 @@ pub mod find_primary_wallet_token_for_owner;
 pub mod refill_monthly_credits_balance_on_wallet;
 pub mod refund;
 pub mod spend;
+pub mod get_wallet_for_moderation;
 pub mod list_user_wallets_for_moderation;
 pub mod wallet_update_summary;
