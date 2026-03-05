@@ -54,7 +54,6 @@ pub async fn add_durable_banked_balance_to_wallet(
 
   let wallet_ledger_entry_token = record.upsert_with_transaction(transaction).await?;
 
-
   Ok(WalletUpdateSummary {
     wallet_token: wallet.token,
     wallet_ledger_entry_token,
