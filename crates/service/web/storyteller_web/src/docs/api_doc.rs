@@ -265,6 +265,7 @@ use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
 // Handler modules with locally-defined types
 use crate::http_server::endpoints::moderation::info::moderator_token_info_handler::*;
+use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::*;
 use crate::http_server::endpoints::webhooks::fal_webhook_handler::*;
 use crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::*;
 use crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::*;
@@ -434,6 +435,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::tts::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler,
     // Moderation
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,
+    crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler,
     // Credits
     crate::http_server::endpoints::credits::get_session_credits_handler::get_session_credits_handler,
     // Subscriptions
@@ -611,6 +613,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     EditUserFeatureFlagsError,
     EditUserFeatureFlagsOption,
     EditUserFeatureFlagsRequest,
+    ModeratorUserLookupRequest,
+    ModeratorUserLookupSuccessResponse,
+    ModeratorUserLookupUserDetails,
+    ModeratorUserLookupError,
     GptImage1EditImageRequest,
     GptImage1EditImageImageSize,
     GptImage1EditImageNumImages,
