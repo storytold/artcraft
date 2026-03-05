@@ -1,4 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
+use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
 pub const MODERATOR_USER_LOOKUP_PATH: &str = "/v1/moderation/user_lookup";
@@ -28,6 +29,6 @@ pub struct ModeratorUserLookupUserDetails {
   pub is_without_password: bool,
   pub ip_address_creation: String,
   pub ip_address_last_login: String,
-  pub maybe_avatar_media_file_token: Option<String>,
+  pub maybe_avatar_media_file_token: Option<MediaFileToken>,
   pub email_gravatar_hash: String,
 }

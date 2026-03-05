@@ -24,6 +24,7 @@ use crate::http_server::endpoints::moderation::jobs::get_w2l_inference_queue_cou
 use crate::http_server::endpoints::moderation::jobs::kill_tts_inference_jobs::kill_tts_inference_jobs_handler;
 use crate::http_server::endpoints::moderation::user_bans::ban_user::ban_user_handler;
 use crate::http_server::endpoints::moderation::user_bans::list_banned_users::list_banned_users_handler;
+use crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::edit_user_feature_flags_handler::edit_user_feature_flags_handler;
 
@@ -45,6 +46,10 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
         )
         .service(web::resource("/user_lookup")
             .route(web::post().to(moderator_user_lookup_handler))
+            .route(web::head().to(|| HttpResponse::Ok()))
+        )
+        .service(web::resource("/user_lookup_by_stripe_customer_id")
+            .route(web::post().to(moderator_user_lookup_by_stripe_customer_id_handler))
             .route(web::head().to(|| HttpResponse::Ok()))
         )
       )

@@ -4,6 +4,7 @@ use log::warn;
 use sqlx::MySqlPool;
 
 use errors::AnyhowResult;
+use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 
 pub struct LookupUserForModerationResult {
@@ -19,7 +20,7 @@ pub struct LookupUserForModerationResult {
   pub is_without_password: bool,
   pub ip_address_creation: String,
   pub ip_address_last_login: String,
-  pub maybe_avatar_media_file_token: Option<String>,
+  pub maybe_avatar_media_file_token: Option<MediaFileToken>,
   pub email_gravatar_hash: String,
   pub created_at: DateTime<Utc>,
 }
@@ -44,7 +45,7 @@ SELECT
     is_without_password as `is_without_password: bool`,
     ip_address_creation,
     ip_address_last_login,
-    maybe_avatar_media_file_token,
+    maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,
     email_gravatar_hash,
     created_at
 FROM users
@@ -91,7 +92,7 @@ SELECT
     is_without_password as `is_without_password: bool`,
     ip_address_creation,
     ip_address_last_login,
-    maybe_avatar_media_file_token,
+    maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,
     email_gravatar_hash,
     created_at
 FROM users
@@ -138,7 +139,7 @@ SELECT
     is_without_password as `is_without_password: bool`,
     ip_address_creation,
     ip_address_last_login,
-    maybe_avatar_media_file_token,
+    maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,
     email_gravatar_hash,
     created_at
 FROM users
