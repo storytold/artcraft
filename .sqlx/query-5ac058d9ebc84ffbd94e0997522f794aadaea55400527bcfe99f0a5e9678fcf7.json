@@ -1,0 +1,80 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    user_subscriptions.subscription_namespace,\n    user_subscriptions.maybe_stripe_subscription_id,\n    users.token as `user_token: tokens::tokens::users::UserToken`,\n    users.email_address,\n    users.username,\n    users.display_name\nFROM user_subscriptions\nINNER JOIN users ON users.token = user_subscriptions.user_token\nWHERE\n    user_subscriptions.maybe_stripe_customer_id = ?\n    AND user_subscriptions.deleted_at IS NULL\n    AND users.user_deleted_at IS NULL\n    AND users.mod_deleted_at IS NULL\nORDER BY user_subscriptions.created_at DESC\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "subscription_namespace",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "maybe_stripe_subscription_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "email_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "username",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "display_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5ac058d9ebc84ffbd94e0997522f794aadaea55400527bcfe99f0a5e9678fcf7"
+}

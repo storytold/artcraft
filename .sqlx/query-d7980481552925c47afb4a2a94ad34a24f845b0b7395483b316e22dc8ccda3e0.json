@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    users.token as `user_token: tokens::tokens::users::UserToken`,\n    username,\n    display_name,\n    username_is_generated as `username_is_generated: bool`,\n    is_temporary as `is_temporary: bool`,\n    username_is_not_customized as `username_is_not_customized: bool`,\n    email_address,\n    email_confirmed as `email_confirmed: bool`,\n    email_is_synthetic as `email_is_synthetic: bool`,\n    is_without_password as `is_without_password: bool`,\n    ip_address_creation,\n    ip_address_last_login,\n    maybe_avatar_media_file_token,\n    email_gravatar_hash,\n    created_at\nFROM users\nWHERE\n    users.username = ?\n    AND users.user_deleted_at IS NULL\n    AND users.mod_deleted_at IS NULL\nLIMIT 1\n    ",
+  "query": "\nSELECT\n    users.token as `user_token: tokens::tokens::users::UserToken`,\n    username,\n    display_name,\n    username_is_generated as `username_is_generated: bool`,\n    is_temporary as `is_temporary: bool`,\n    username_is_not_customized as `username_is_not_customized: bool`,\n    email_address,\n    email_confirmed as `email_confirmed: bool`,\n    email_is_synthetic as `email_is_synthetic: bool`,\n    is_without_password as `is_without_password: bool`,\n    ip_address_creation,\n    ip_address_last_login,\n    maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,\n    email_gravatar_hash,\n    created_at\nFROM users\nWHERE\n    users.username = ?\n    AND users.user_deleted_at IS NULL\n    AND users.mod_deleted_at IS NULL\nLIMIT 1\n    ",
   "describe": {
     "columns": [
       {
@@ -125,7 +125,7 @@
       },
       {
         "ordinal": 12,
-        "name": "maybe_avatar_media_file_token",
+        "name": "maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken",
         "type_info": {
           "type": "VarString",
           "flags": "MULTIPLE_KEY | BINARY",
@@ -175,5 +175,5 @@
       false
     ]
   },
-  "hash": "b983acd5a1f5446f6edfbfe21a0c3d50b0fe0b471d22877e86b690dc0d7e24c8"
+  "hash": "d7980481552925c47afb4a2a94ad34a24f845b0b7395483b316e22dc8ccda3e0"
 }
