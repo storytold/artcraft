@@ -220,6 +220,9 @@ CREATE TABLE users (
   -- statistical evaluation.)
   was_eagerly_provisioned BOOLEAN NOT NULL DEFAULT false,
 
+  -- The referral URL the user arrived from when signing up.
+  maybe_referral_url VARCHAR(255) DEFAULT NULL,
+
   -- ========== MODERATION DETAILS ==========
 
   -- Different than deleted.
