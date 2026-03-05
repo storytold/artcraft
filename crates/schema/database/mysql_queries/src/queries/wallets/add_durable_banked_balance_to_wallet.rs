@@ -10,6 +10,7 @@ pub async fn add_durable_banked_balance_to_wallet(
   wallet_token: &WalletToken,
   amount_to_add: u64,
   maybe_ledger_ref: Option<&str>,
+  wallet_ledger_entry_type_override: Option<WalletLedgerEntryType>,
   transaction: &mut sqlx::Transaction<'_, MySql>,
 ) -> anyhow::Result<WalletUpdateSummary> {
 
@@ -38,7 +39,7 @@ pub async fn add_durable_banked_balance_to_wallet(
 
   let record = InsertWalletLedgerEntry {
     wallet_token,
-    entry_type: WalletLedgerEntryType::CreditBanked,
+    entry_type: wallet_ledger_entry_type_override.unwrap_or(WalletLedgerEntryType::CreditBanked),
     maybe_entity_ref: maybe_ledger_ref.map(|t| t.to_string()),
 
     credits_delta: amount_to_add.to_i64().unwrap_or(0),

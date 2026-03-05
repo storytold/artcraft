@@ -38,9 +38,10 @@ pub async fn complete_credits_pack_purchase(
   info!("Adding {} credits to wallet: {}", credits_purchased, wallet_token.as_str());
   
   let _result = add_durable_banked_balance_to_wallet(
-    &wallet_token, 
-    credits_purchased, 
+    &wallet_token,
+    credits_purchased,
     maybe_ledger_ref,
+    None,
     transaction,
   ).await?;
 
