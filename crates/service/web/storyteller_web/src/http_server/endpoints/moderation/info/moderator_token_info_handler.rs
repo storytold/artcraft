@@ -68,6 +68,7 @@ impl fmt::Display for ModeratorTokenInfoError {
 
 #[utoipa::path(
   get,
+  tag = "Moderation",
   path = "/v1/moderation/token_info/{token}",
   responses(
     (status = 200, description = "Found", body = ModeratorTokenInfoResponse),
