@@ -1,6 +1,7 @@
 use actix_cors::Cors;
 use log::info;
 
+use crate::configs::artcraft_admin_dashboard::add_artcraft_admin_dashboard;
 use crate::configs::artcraft_2d::add_artcraft_2d;
 use crate::configs::artcraft_3d::add_artcraft_3d;
 use crate::configs::artcraft_website::add_artcraft_website;
@@ -48,6 +49,7 @@ fn do_build_cors_config(is_production: bool) -> Cors {
   cors = add_artcraft_2d(cors, is_production);
   cors = add_artcraft_3d(cors, is_production);
   cors = add_artcraft_website(cors, is_production);
+  cors = add_artcraft_admin_dashboard(cors, is_production);
 
   // Legacy
   cors = add_legacy_trumped(cors, is_production);
