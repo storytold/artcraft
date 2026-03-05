@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    users.token as `user_token: tokens::tokens::users::UserToken`,\n    username,\n    display_name,\n    username_is_generated as `username_is_generated: bool`,\n    is_temporary as `is_temporary: bool`,\n    username_is_not_customized as `username_is_not_customized: bool`,\n    email_address,\n    email_confirmed as `email_confirmed: bool`,\n    email_is_synthetic as `email_is_synthetic: bool`,\n    is_without_password as `is_without_password: bool`,\n    ip_address_creation,\n    ip_address_last_login,\n    maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,\n    email_gravatar_hash,\n    created_at\nFROM users\nWHERE\n    users.email_address = ?\n    AND users.user_deleted_at IS NULL\n    AND users.mod_deleted_at IS NULL\nLIMIT 1\n    ",
+  "query": "\nSELECT\n    users.token as `user_token: tokens::tokens::users::UserToken`,\n    username,\n    display_name,\n    username_is_generated as `username_is_generated: bool`,\n    is_temporary as `is_temporary: bool`,\n    username_is_not_customized as `username_is_not_customized: bool`,\n    email_address,\n    email_confirmed as `email_confirmed: bool`,\n    email_is_synthetic as `email_is_synthetic: bool`,\n    is_without_password as `is_without_password: bool`,\n    ip_address_creation,\n    ip_address_last_login,\n    maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,\n    email_gravatar_hash,\n    is_banned as `is_banned: bool`,\n    created_at,\n    updated_at\nFROM users\nWHERE\n    users.email_address = ?\n    AND users.user_deleted_at IS NULL\n    AND users.mod_deleted_at IS NULL\nLIMIT 1\n    ",
   "describe": {
     "columns": [
       {
@@ -145,10 +145,30 @@
       },
       {
         "ordinal": 14,
+        "name": "is_banned: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 15,
         "name": "created_at",
         "type_info": {
           "type": "Timestamp",
           "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
           "char_set": 63,
           "max_size": 19
         }
@@ -172,8 +192,10 @@
       false,
       true,
       false,
+      false,
+      false,
       false
     ]
   },
-  "hash": "ed1ef2c6aeaaf33053807758524bb9cb4672a0c19e58723964eb265d3187751a"
+  "hash": "d023eb33c9a06f8b07b1e5d1e255dbb730244bbd764a49d519473e50751a3ddc"
 }
