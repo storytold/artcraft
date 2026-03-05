@@ -8,6 +8,8 @@ use errors::AnyhowResult;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use tokens::tokens::wallets::WalletToken;
 
+// TODO(bt): This will need to be paginated. Sort direction would be nice, too.
+
 pub struct WalletLedgerEntryForModerationResult {
   pub token: WalletLedgerEntryToken,
   pub wallet_token: WalletToken,
