@@ -42,8 +42,8 @@ pub enum WalletLedgerEntryType {
   RefundBanked,
 
   /// Support staff manually credit account
-  #[serde(rename = "staff_credit_banked")]
-  StaffCreditBanked,
+  #[serde(rename = "staff_add_banked")]
+  StaffAddBanked,
 
   // TODO: No clean way to do "mixed" refunds yet, and if we
   //  refund close to the cutoff it might be unfair. Let's
@@ -70,7 +70,7 @@ impl WalletLedgerEntryType {
       Self::DeductBanked => "deduct_banked",
       Self::DeductMonthly => "deduct_monthly",
       Self::RefundBanked => "refund_banked",
-      Self::StaffCreditBanked => "staff_credit_banked",
+      Self::StaffAddBanked => "staff_add_banked",
     }
   }
 
@@ -83,7 +83,7 @@ impl WalletLedgerEntryType {
       "deduct_banked" => Ok(Self::DeductBanked),
       "deduct_monthly" => Ok(Self::DeductMonthly),
       "refund_banked" => Ok(Self::RefundBanked),
-      "staff_credit_banked" => Ok(Self::StaffCreditBanked),
+      "staff_add_banked" => Ok(Self::StaffAddBanked),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -99,7 +99,7 @@ impl WalletLedgerEntryType {
       Self::DeductBanked,
       Self::DeductMonthly,
       Self::RefundBanked,
-      Self::StaffCreditBanked,
+      Self::StaffAddBanked,
     ])
   }
 }
@@ -121,7 +121,7 @@ mod tests {
       assert_serialization(WalletLedgerEntryType::DeductBanked, "deduct_banked");
       assert_serialization(WalletLedgerEntryType::DeductMonthly, "deduct_monthly");
       assert_serialization(WalletLedgerEntryType::RefundBanked, "refund_banked");
-      assert_serialization(WalletLedgerEntryType::StaffCreditBanked, "staff_credit_banked");
+      assert_serialization(WalletLedgerEntryType::StaffAddBanked, "staff_add_banked");
     }
   }
 
@@ -137,7 +137,7 @@ mod tests {
       assert_eq!(WalletLedgerEntryType::DeductBanked.to_str(), "deduct_banked");
       assert_eq!(WalletLedgerEntryType::DeductMonthly.to_str(), "deduct_monthly");
       assert_eq!(WalletLedgerEntryType::RefundBanked.to_str(), "refund_banked");
-      assert_eq!(WalletLedgerEntryType::StaffCreditBanked.to_str(), "staff_credit_banked");
+      assert_eq!(WalletLedgerEntryType::StaffAddBanked.to_str(), "staff_add_banked");
     }
 
     #[test]
@@ -149,7 +149,7 @@ mod tests {
       assert_eq!(WalletLedgerEntryType::from_str("deduct_banked").unwrap(), WalletLedgerEntryType::DeductBanked);
       assert_eq!(WalletLedgerEntryType::from_str("deduct_monthly").unwrap(), WalletLedgerEntryType::DeductMonthly);
       assert_eq!(WalletLedgerEntryType::from_str("refund_banked").unwrap(), WalletLedgerEntryType::RefundBanked);
-      assert_eq!(WalletLedgerEntryType::from_str("staff_credit_banked").unwrap(), WalletLedgerEntryType::StaffCreditBanked);
+      assert_eq!(WalletLedgerEntryType::from_str("staff_add_banked").unwrap(), WalletLedgerEntryType::StaffAddBanked);
       assert!(WalletLedgerEntryType::from_str("foo").is_err());
     }
   }
@@ -160,7 +160,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = WalletLedgerEntryType::all_variants();
-      assert_eq!(variants.len(), 7);
+      assert_eq!(variants.len(), 8);
       assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::Create));
       assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::CreditBanked));
       assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::CreditMonthly));
@@ -168,7 +168,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::DeductBanked));
       assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::DeductMonthly));
       assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::RefundBanked));
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::StaffCreditBanked));
+      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::StaffAddBanked));
       assert_eq!(variants.pop_first(), None);
     }
   }
