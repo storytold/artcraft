@@ -268,6 +268,7 @@ use crate::http_server::endpoints::moderation::info::moderator_token_info_handle
 use artcraft_api_defs::moderation::user::user_lookup::*;
 use artcraft_api_defs::moderation::user::user_lookup_by_stripe_customer_id::*;
 use artcraft_api_defs::moderation::jobs::user::list_user_jobs::*;
+use artcraft_api_defs::moderation::wallet_ledger_entries::list_wallet_ledger_entries_by_wallet::*;
 use artcraft_api_defs::moderation::wallets::list_user_wallets::*;
 use crate::http_server::endpoints::webhooks::fal_webhook_handler::*;
 use crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::*;
@@ -441,6 +442,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler,
     crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler,
     crate::http_server::endpoints::moderation::jobs::user::list_user_jobs_handler::list_user_jobs_handler,
+    crate::http_server::endpoints::moderation::wallet_ledger_entries::list_wallet_ledger_entries_by_wallet_handler::list_wallet_ledger_entries_by_wallet_handler,
     crate::http_server::endpoints::moderation::wallets::list_user_wallets_handler::list_user_wallets_handler,
     // Credits
     crate::http_server::endpoints::credits::get_session_credits_handler::get_session_credits_handler,
@@ -631,6 +633,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListUserWalletsPathInfo,
     ListUserWalletsResponse,
     ListUserWalletsEntry,
+    ListWalletLedgerEntriesByWalletPathInfo,
+    ListWalletLedgerEntriesByWalletResponse,
+    ListWalletLedgerEntriesByWalletEntry,
     GptImage1EditImageRequest,
     GptImage1EditImageImageSize,
     GptImage1EditImageNumImages,

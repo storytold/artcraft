@@ -20,6 +20,7 @@ use crate::http_server::endpoints::moderation::ip_bans::delete_ip_ban::delete_ip
 use crate::http_server::endpoints::moderation::ip_bans::get_ip_ban::get_ip_ban_handler;
 use crate::http_server::endpoints::moderation::ip_bans::list_ip_bans::list_ip_bans_handler;
 use crate::http_server::endpoints::moderation::jobs::user::list_user_jobs_handler::list_user_jobs_handler;
+use crate::http_server::endpoints::moderation::wallet_ledger_entries::list_wallet_ledger_entries_by_wallet_handler::list_wallet_ledger_entries_by_wallet_handler;
 use crate::http_server::endpoints::moderation::wallets::list_user_wallets_handler::list_user_wallets_handler;
 use crate::http_server::endpoints::moderation::jobs::get_tts_inference_queue_count::get_tts_inference_queue_count_handler;
 use crate::http_server::endpoints::moderation::jobs::get_w2l_inference_queue_count::get_w2l_inference_queue_count_handler;
@@ -65,6 +66,12 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
         .service(web::scope("/wallets")
             .service(web::resource("/user/{user_token}/list")
                 .route(web::get().to(list_user_wallets_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/wallet_ledger_entries")
+            .service(web::resource("/wallet/{wallet_token}/list")
+                .route(web::get().to(list_wallet_ledger_entries_by_wallet_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )

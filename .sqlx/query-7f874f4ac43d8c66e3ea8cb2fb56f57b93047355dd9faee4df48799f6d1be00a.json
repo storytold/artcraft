@@ -1,0 +1,146 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    token as `token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,\n    wallet_token as `wallet_token: tokens::tokens::wallets::WalletToken`,\n    entry_type as `entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`,\n    maybe_entity_ref,\n    credits_delta,\n    banked_credits_before as `banked_credits_before: u32`,\n    banked_credits_after as `banked_credits_after: u32`,\n    monthly_credits_before as `monthly_credits_before: u32`,\n    monthly_credits_after as `monthly_credits_after: u32`,\n    created_at as `created_at: DateTime<Utc>`,\n    is_refunded as `is_refunded: bool`,\n    maybe_linked_refund_ledger_token as `maybe_linked_refund_ledger_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`\nFROM wallet_ledger_entries\nWHERE wallet_token = ?\nORDER BY id DESC\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "wallet_token: tokens::tokens::wallets::WalletToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_entity_ref",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "credits_delta",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 11
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "banked_credits_before: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "banked_credits_after: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "monthly_credits_before: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "monthly_credits_after: u32",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at: DateTime<Utc>",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "is_refunded: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "maybe_linked_refund_ledger_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "7f874f4ac43d8c66e3ea8cb2fb56f57b93047355dd9faee4df48799f6d1be00a"
+}
