@@ -90,7 +90,7 @@ pub async fn edit_beta_key_note_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<HttpResponse, EditBetaKeyNoteError>
 {
-  let user_session = require_moderator(&http_request, &server_state, UseDatabase::Implicit)
+  let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
       .await
       .map_err(|err| match err {
         RequireModeratorError::ServerError => EditBetaKeyNoteError::ServerError,

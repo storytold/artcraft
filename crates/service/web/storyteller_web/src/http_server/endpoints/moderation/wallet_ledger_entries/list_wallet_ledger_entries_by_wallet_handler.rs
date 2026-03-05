@@ -35,7 +35,7 @@ pub async fn list_wallet_ledger_entries_by_wallet_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListWalletLedgerEntriesByWalletResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::Implicit)
+  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
     .map_err(|_| CommonWebError::NotAuthorized)?;
 

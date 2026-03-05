@@ -35,7 +35,7 @@ pub async fn list_user_jobs_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ListUserJobsResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::Implicit)
+  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
     .map_err(|_| CommonWebError::NotAuthorized)?;
 

@@ -91,7 +91,7 @@ pub async fn edit_beta_key_distributed_flag_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<HttpResponse, EditBetaKeyDistributedFlagError>
 {
-  let user_session = require_moderator(&http_request, &server_state, UseDatabase::Implicit)
+  let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
       .await
       .map_err(|err| match err {
         RequireModeratorError::ServerError => EditBetaKeyDistributedFlagError::ServerError,

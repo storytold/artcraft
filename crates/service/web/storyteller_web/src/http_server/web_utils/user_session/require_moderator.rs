@@ -28,7 +28,7 @@ impl Display for RequireModeratorError {
 impl Error for RequireModeratorError {}
 
 pub enum UseDatabase<'a> {
-  Implicit,
+  GrabNewConnection,
   FromPool(&'a mut PoolConnection<MySql>),
 }
 
@@ -41,7 +41,7 @@ pub async fn require_moderator(
   let mut saved_connection = None;
 
   let mysql_connection = match database {
-    UseDatabase::Implicit => {
+    UseDatabase::GrabNewConnection => {
       let mut connection = server_state.mysql_pool
           .acquire()
           .await
