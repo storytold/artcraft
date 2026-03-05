@@ -82,6 +82,9 @@ pub async fn moderator_user_lookup_handler(
     ip_address_last_login: user.ip_address_last_login,
     maybe_avatar_media_file_token: user.maybe_avatar_media_file_token,
     email_gravatar_hash: user.email_gravatar_hash,
+    is_banned: user.is_banned,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
   });
 
   Ok(Json(ModeratorUserLookupSuccessResponse {

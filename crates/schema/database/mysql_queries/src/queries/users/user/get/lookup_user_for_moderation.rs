@@ -22,7 +22,9 @@ pub struct LookupUserForModerationResult {
   pub ip_address_last_login: String,
   pub maybe_avatar_media_file_token: Option<MediaFileToken>,
   pub email_gravatar_hash: String,
+  pub is_banned: bool,
   pub created_at: DateTime<Utc>,
+  pub updated_at: DateTime<Utc>,
 }
 
 pub async fn lookup_user_for_moderation_by_token(
@@ -47,7 +49,9 @@ SELECT
     ip_address_last_login,
     maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,
     email_gravatar_hash,
-    created_at
+    is_banned as `is_banned: bool`,
+    created_at,
+    updated_at
 FROM users
 WHERE
     users.token = ?
@@ -94,7 +98,9 @@ SELECT
     ip_address_last_login,
     maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,
     email_gravatar_hash,
-    created_at
+    is_banned as `is_banned: bool`,
+    created_at,
+    updated_at
 FROM users
 WHERE
     users.email_address = ?
@@ -141,7 +147,9 @@ SELECT
     ip_address_last_login,
     maybe_avatar_media_file_token as `maybe_avatar_media_file_token: tokens::tokens::media_files::MediaFileToken`,
     email_gravatar_hash,
-    created_at
+    is_banned as `is_banned: bool`,
+    created_at,
+    updated_at
 FROM users
 WHERE
     users.username = ?

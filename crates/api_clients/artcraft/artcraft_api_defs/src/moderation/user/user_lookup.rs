@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
@@ -32,4 +33,7 @@ pub struct ModeratorUserLookupUserDetails {
   pub ip_address_last_login: String,
   pub maybe_avatar_media_file_token: Option<MediaFileToken>,
   pub email_gravatar_hash: String,
+  pub is_banned: bool,
+  pub created_at: DateTime<Utc>,
+  pub updated_at: DateTime<Utc>,
 }
