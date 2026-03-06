@@ -54,6 +54,28 @@ impl AvtCookieManager {
         .finish())
   }
 
+  pub fn make_new_cookie_with_apriori_token(&self, token: &AnonymousVisitorTrackingToken) -> AnyhowResult<Cookie> {
+    let payload = AvtCookiePayload::from_token(token.clone());
+    let claims = payload.to_map();
+    let jwt_string = self.jwt_signer.claims_to_jwt(&claims)?;
+
+    let make_secure = !self.cookie_domain.to_lowercase().contains("jungle.horse")
+        && !self.cookie_domain.to_lowercase().contains("localhost");
+
+    let same_site = if make_secure {
+      SameSite::None
+    } else {
+      SameSite::Lax
+    };
+
+    Ok(Cookie::build(VISITOR_COOKIE_NAME, jwt_string)
+        .secure(make_secure)
+        .same_site(same_site)
+        .permanent()
+        .path("/")
+        .finish())
+  }
+
   pub fn make_delete_cookie(&self) -> Cookie {
     let mut cookie = Cookie::build(VISITOR_COOKIE_NAME, "DELETED")
         .expires(OffsetDateTime::UNIX_EPOCH)

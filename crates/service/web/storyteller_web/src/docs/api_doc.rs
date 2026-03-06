@@ -273,6 +273,8 @@ use artcraft_api_defs::moderation::wallet_ledger_entries::moderator_get_wallet_l
 use artcraft_api_defs::moderation::wallets::list_user_wallets::*;
 use artcraft_api_defs::moderation::wallets::moderator_add_banked_balance_to_wallet::*;
 use artcraft_api_defs::moderation::wallets::moderator_get_wallet::*;
+use artcraft_api_defs::web_referrals::log_web_referral::*;
+use crate::http_server::endpoints::web_referrals::log_web_referral_handler::*;
 use crate::http_server::endpoints::webhooks::fal_webhook_handler::*;
 use crate::http_server::endpoints::image_studio::update_gpt_image_job_status_handler::*;
 use crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::*;
@@ -454,6 +456,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::credits::get_session_credits_handler::get_session_credits_handler,
     // Subscriptions
     crate::http_server::endpoints::subscriptions::get_session_subscription_handler::get_session_subscription_handler,
+    // Web Referrals
+    crate::http_server::endpoints::web_referrals::log_web_referral_handler::log_web_referral_handler,
     // Webhooks
     crate::http_server::endpoints::webhooks::fal_webhook_handler::fal_webhook_handler,
     // Image Studio
@@ -1043,6 +1047,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetSessionSubscriptionResponse,
     ListBatchGeneratedReduxMediaFilesPathInfo,
     ListBatchGeneratedReduxMediaFilesSuccessResponse,
+
+    // Web Referrals
+    LogWebReferralRequest,
+    LogWebReferralResponse,
   ))
 )]
 pub struct ApiDoc;

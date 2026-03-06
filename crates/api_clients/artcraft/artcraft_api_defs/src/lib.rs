@@ -10,3 +10,4 @@ pub mod stripe_artcraft;
 pub mod subscriptions;
 pub mod users;
 pub mod utils;
+pub mod web_referrals;

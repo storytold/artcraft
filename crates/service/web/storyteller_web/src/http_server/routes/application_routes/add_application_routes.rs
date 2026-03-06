@@ -14,6 +14,7 @@ use crate::http_server::routes::application_routes::user_bookmarks_routes::add_u
 use crate::http_server::routes::application_routes::user_rating_routes::add_user_rating_routes;
 use crate::http_server::routes::application_routes::user_routes::add_user_routes;
 use crate::http_server::routes::application_routes::wallet_routes::add_wallet_routes;
+use crate::http_server::routes::application_routes::web_referrals_routes::add_web_referrals_routes;
 use crate::http_server::routes::application_routes::webhook_routes::add_webhook_routes;
 use crate::http_server::routes::application_routes::weights_routes::add_weights_routes;
 use actix_http::body::MessageBody;
@@ -55,6 +56,7 @@ where
 
   // Other useful tools
   app = add_analytics_routes(app); // /v1/analytics/...
+  app = add_web_referrals_routes(app); // /v1/web_referrals/...
 
   // User and user-adjacent routes
   app = add_comments_routes(app); // /v1/comments/...

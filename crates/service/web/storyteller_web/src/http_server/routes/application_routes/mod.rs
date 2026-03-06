@@ -14,6 +14,7 @@ mod user_bookmarks_routes;
 mod user_rating_routes;
 mod user_routes;
 mod wallet_routes;
+mod web_referrals_routes;
 mod webhook_routes;
 mod weights_routes;
 pub (super) mod add_application_routes;

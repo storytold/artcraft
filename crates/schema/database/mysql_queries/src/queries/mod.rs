@@ -40,3 +40,4 @@ pub mod voice_designer;
 pub mod w2l;
 pub mod wallet_ledger_entries;
 pub mod wallets;
+pub mod web_referrals;

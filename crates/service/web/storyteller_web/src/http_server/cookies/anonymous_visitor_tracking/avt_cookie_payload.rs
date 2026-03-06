@@ -36,6 +36,13 @@ impl AvtCookiePayload {
     }
   }
 
+  pub fn from_token(avt_token: AnonymousVisitorTrackingToken) -> Self {
+    AvtCookiePayload {
+      avt_token,
+      cookie_version: COOKIE_VERSION,
+    }
+  }
+
   pub fn from_map(map: BTreeMap<String, String>) -> Result<Self, InternalError> {
     let avt_token = map.get("avt_token")
         .ok_or_else(|| InternalError::VisitorCookieMissingField("avt_token"))?;
