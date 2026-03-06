@@ -38,8 +38,7 @@ pub async fn log_web_referral_handler(
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string())
     })
-    .filter(|s| !s.is_empty())
-    .map(|s| s.chars().take(255).collect::<String>());
+    .filter(|s| !s.is_empty());
 
   // 2. If no URL from either source, early exit 200 OK.
   let referral_url = match referral_url {
@@ -50,7 +49,11 @@ pub async fn log_web_referral_handler(
   };
 
   // 3. Parse the URL (infallible — we don't fail on bad URLs).
+  //    NB: Parse before truncating so we don't lose UTM params.
   let parsed = Url::parse(&referral_url).ok();
+
+  // Truncate the URL to 255 characters for storage.
+  let referral_url: String = referral_url.chars().take(255).collect();
 
   // 4. Extract domain if URL parsed.
   let maybe_domain = parsed.as_ref()

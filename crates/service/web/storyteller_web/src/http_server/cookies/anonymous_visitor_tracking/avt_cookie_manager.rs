@@ -31,7 +31,12 @@ impl AvtCookieManager {
   }
 
   pub fn make_new_cookie(&self) -> AnyhowResult<Cookie> {
-    let payload = AvtCookiePayload::new();
+    let token = AnonymousVisitorTrackingToken::generate();
+    self.make_new_cookie_with_apriori_token(&token)
+  }
+
+  pub fn make_new_cookie_with_apriori_token(&self, token: &AnonymousVisitorTrackingToken) -> AnyhowResult<Cookie> {
+    let payload = AvtCookiePayload::from_token(token.clone());
     let claims = payload.to_map();
     let jwt_string = self.jwt_signer.claims_to_jwt(&claims)?;
 
@@ -51,28 +56,6 @@ impl AvtCookieManager {
         .path("/") // NB: Otherwise it'll be set to `/v1`
         //.domain(&self.cookie_domain)
         //.http_only(true) // Not exposed to Javascript
-        .finish())
-  }
-
-  pub fn make_new_cookie_with_apriori_token(&self, token: &AnonymousVisitorTrackingToken) -> AnyhowResult<Cookie> {
-    let payload = AvtCookiePayload::from_token(token.clone());
-    let claims = payload.to_map();
-    let jwt_string = self.jwt_signer.claims_to_jwt(&claims)?;
-
-    let make_secure = !self.cookie_domain.to_lowercase().contains("jungle.horse")
-        && !self.cookie_domain.to_lowercase().contains("localhost");
-
-    let same_site = if make_secure {
-      SameSite::None
-    } else {
-      SameSite::Lax
-    };
-
-    Ok(Cookie::build(VISITOR_COOKIE_NAME, jwt_string)
-        .secure(make_secure)
-        .same_site(same_site)
-        .permanent()
-        .path("/")
         .finish())
   }
 
