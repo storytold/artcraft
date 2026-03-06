@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n    INSERT INTO web_referrals (\n      url,\n      domain,\n      utm_source,\n      utm_medium,\n      utm_campaign,\n      ip_address,\n      anonymous_visitor_token\n    ) VALUES (?, ?, ?, ?, ?, ?, ?)\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "80f73702374593c141d183d86bd8af73d37fd7118914d0ba12a02f53c1b84c78"
+}
