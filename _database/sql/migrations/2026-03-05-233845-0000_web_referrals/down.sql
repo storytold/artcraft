@@ -1,1 +1,5 @@
--- This file should undo anything in `up.sql`
+-- noinspection SqlDialectInspectionForFile
+-- noinspection SqlNoDataSourceInspectionForFile
+-- noinspection SqlResolveForFile
+
+DROP TABLE web_referrals;
