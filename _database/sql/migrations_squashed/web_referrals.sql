@@ -19,6 +19,10 @@ CREATE TABLE web_referrals (
 
   utm_campaign VARCHAR(255) DEFAULT NULL,
 
+  ip_address VARCHAR(40) NOT NULL,
+
+  anonymous_visitor_token VARCHAR(32) DEFAULT NULL,
+
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   -- ========== INDICES ==========
