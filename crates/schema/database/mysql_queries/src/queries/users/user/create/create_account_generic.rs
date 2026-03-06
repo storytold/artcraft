@@ -60,6 +60,11 @@ pub struct GenericCreateAccountArgs<'a> {
   /// Comma separated string of feature flags.
   pub maybe_feature_flags: Option<&'a str>,
 
+  /// The referral URL the user arrived from when signing up.
+  /// The browser can send `document.referrer` to the backend so we know how people are finding us.
+  /// If the browser doesn't send this parameter, we'll try the `referer` header.
+  pub maybe_referral_url: Option<String>,
+
   /// In production code, send this as `None`.
   /// Only provide an external user token for db integration tests and db seeding tools.
   /// This allows for knowing the user token a priori.
@@ -124,7 +129,9 @@ SET
 
   maybe_source = ?,
 
-  maybe_signup_method = ?
+  maybe_signup_method = ?,
+
+  maybe_referral_url = ?
         "#,
       user_token.as_str(),
     
@@ -159,6 +166,8 @@ SET
 
       args.maybe_source.map(|s| s.to_str()),
       args.maybe_signup_method.map(|m| m.to_str()),
+
+      args.maybe_referral_url,
     );
 
 

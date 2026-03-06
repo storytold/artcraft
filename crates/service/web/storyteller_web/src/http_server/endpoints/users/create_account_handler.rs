@@ -41,6 +41,11 @@ pub struct CreateAccountRequest {
   /// Optional: Source of the signup, e.g. "artcraft", "fakeyou", "storyteller", etc.
   /// If not provided, we try to infer it from the Origin header instead.
   pub signup_source: Option<UserSignupSource>,
+
+  /// Optional: The referral URL the user arrived from when signing up.
+  /// The browser can send `document.referrer` to the backend so we know how people are finding us.
+  /// If the browser doesn't send this parameter, we'll try the `referer` header.
+  pub maybe_referral_url: Option<String>,
 }
 
 #[derive(ToSchema, Serialize)]
@@ -195,6 +200,15 @@ pub async fn create_account_handler(
     maybe_source = get_request_signup_source_enum(&http_request);
   }
 
+  let maybe_referral_url = request.maybe_referral_url.clone()
+    .or_else(|| {
+      http_request.headers().get("referer")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+    })
+    .filter(|s| !s.is_empty())
+    .map(|s| s.chars().take(255).collect::<String>());
+
   let create_account_result = create_account_from_email_and_password(
     &mysql_pool,
     CreateAccountFromEmailPasswordArgs {
@@ -205,6 +219,7 @@ pub async fn create_account_handler(
       password_hash: &password_hash,
       ip_address: &ip_address,
       maybe_source,
+      maybe_referral_url,
       maybe_user_token: None, // NB: This parameter is for internal testing only
     }
   ).await;

@@ -20,6 +20,11 @@ pub struct CreateAccountFromEmailPasswordArgs<'a> {
   pub ip_address: &'a str,
   pub maybe_source: Option<UserSignupSource>,
 
+  /// The referral URL the user arrived from when signing up.
+  /// The browser can send `document.referrer` to the backend so we know how people are finding us.
+  /// If the browser doesn't send this parameter, we'll try the `referer` header.
+  pub maybe_referral_url: Option<String>,
+
   /// In production code, send this as `None`.
   /// Only provide an external user token for db integration tests and db seeding tools.
   /// This allows for knowing the user token a priori.
@@ -62,9 +67,11 @@ pub async fn create_account_from_email_and_password(
       password_hash: args.password_hash,
       is_without_password: false,
 
+      maybe_referral_url: args.maybe_referral_url,
+
       // NB: This is just for testing.
       maybe_user_token: args.maybe_user_token,
-      
+
       // These flags represent eagerly created users and are false for this flow
       is_temporary: false,
       email_is_synthetic: false,

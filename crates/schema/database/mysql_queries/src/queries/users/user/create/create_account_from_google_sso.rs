@@ -57,6 +57,9 @@ pub async fn create_account_from_google_sso(
       password_hash: SSO_PASSWORD,
       is_without_password: true,
 
+      // TODO: Necessary? We're not doing SSO for now.
+      maybe_referral_url: None,
+
       // NB: This is just for testing.
       maybe_user_token: None,
 
