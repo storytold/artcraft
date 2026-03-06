@@ -91,9 +91,9 @@ pub async fn log_web_referral_handler(
   let avt_token_str = avt_token.to_string();
 
   // Truncate UTM fields to fit the schema.
-  let utm_source = utm_source.map(|s| s.chars().take(32).collect::<String>());
-  let utm_medium = utm_medium.map(|s| s.chars().take(32).collect::<String>());
-  let utm_campaign = utm_campaign.map(|s| s.chars().take(255).collect::<String>());
+  let utm_source = utm_source.map(|s| s.chars().take(150).collect::<String>());
+  let utm_medium = utm_medium.map(|s| s.chars().take(150).collect::<String>());
+  let utm_campaign = utm_campaign.map(|s| s.chars().take(150).collect::<String>());
 
   // Insert into the database.
   insert_web_referral(&server_state.mysql_pool, InsertWebReferralArgs {

@@ -13,11 +13,11 @@ CREATE TABLE web_referrals (
   -- The parsed out referral domain
   domain VARCHAR(255) DEFAULT NULL,
 
-  utm_source VARCHAR(32) DEFAULT NULL,
+  utm_source VARCHAR(150) DEFAULT NULL,
 
-  utm_medium  VARCHAR(32) DEFAULT NULL,
+  utm_medium  VARCHAR(150) DEFAULT NULL,
 
-  utm_campaign VARCHAR(255) DEFAULT NULL,
+  utm_campaign VARCHAR(150) DEFAULT NULL,
 
   ip_address VARCHAR(40) NOT NULL,
 
