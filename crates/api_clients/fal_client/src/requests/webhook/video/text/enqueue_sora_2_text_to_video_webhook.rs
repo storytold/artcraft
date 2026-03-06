@@ -1,8 +1,8 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
+use crate::requests::http::video::http_sora_2_text_to_video::{sora_2_text_to_video, Sora2TextToVideoInput};
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::sora::sora2::sora_2_text_to_video::{sora_2_text_to_video, Sora2TextToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -20,22 +20,20 @@ pub struct EnqueueSora2TextToVideoArgs<'a, R: IntoUrl> {
   pub api_key: &'a FalApiKey,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, strum::EnumIter)]
 pub enum EnqueueSora2TextToVideoDurationSeconds {
   Four,
   Eight,
   Twelve,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, strum::EnumIter)]
 pub enum EnqueueSora2TextToVideoResolution {
-  Auto,
   SevenTwentyP,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, strum::EnumIter)]
 pub enum EnqueueSora2TextToVideoAspectRatio {
-  Auto,
   NineBySixteen,
   SixteenByNine,
 }
@@ -46,8 +44,8 @@ impl <U: IntoUrl> FalRequestCostCalculator for EnqueueSora2TextToVideoArgs<'_, U
     // "The pricing is $0.1/s for Sora 2."
     let duration = self.duration.unwrap_or(EnqueueSora2TextToVideoDurationSeconds::Four);
     match duration {
-      EnqueueSora2TextToVideoDurationSeconds::Four => 40, // $0.10 * 4
-      EnqueueSora2TextToVideoDurationSeconds::Eight => 80, // $0.10 * 8
+      EnqueueSora2TextToVideoDurationSeconds::Four => 40,   // $0.10 * 4
+      EnqueueSora2TextToVideoDurationSeconds::Eight => 80,  // $0.10 * 8
       EnqueueSora2TextToVideoDurationSeconds::Twelve => 120 // $0.10 * 12
     }
   }
@@ -60,34 +58,30 @@ pub async fn enqueue_sora_2_text_to_video_webhook<R: IntoUrl>(
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
   let duration = args.duration
-      .map(|resolution| match resolution {
+      .map(|d| match d {
         EnqueueSora2TextToVideoDurationSeconds::Four => 4,
         EnqueueSora2TextToVideoDurationSeconds::Eight => 8,
         EnqueueSora2TextToVideoDurationSeconds::Twelve => 12,
       });
 
   let resolution = args.resolution
-      .map(|resolution| match resolution {
-        EnqueueSora2TextToVideoResolution::Auto => "auto",
+      .map(|r| match r {
         EnqueueSora2TextToVideoResolution::SevenTwentyP => "720p",
       })
-      .map(|resolution| resolution.to_string());
+      .map(|r| r.to_string());
 
   let aspect_ratio = args.aspect_ratio
-      .map(|aspect_ratio| match aspect_ratio {
-        EnqueueSora2TextToVideoAspectRatio::Auto => "auto",
+      .map(|ar| match ar {
         EnqueueSora2TextToVideoAspectRatio::NineBySixteen => "9:16",
         EnqueueSora2TextToVideoAspectRatio::SixteenByNine => "16:9",
       })
-      .map(|resolution| resolution.to_string());
+      .map(|ar| ar.to_string());
 
   let request = Sora2TextToVideoInput {
     prompt: args.prompt,
-    // Optionals
     duration,
     resolution,
     aspect_ratio,
-    // Constants
     delete_video: Some(false),
   };
 
@@ -101,17 +95,16 @@ pub async fn enqueue_sora_2_text_to_video_webhook<R: IntoUrl>(
 
 #[cfg(test)]
 mod tests {
+  use super::*;
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::text::enqueue_sora_2_text_to_video_webhook::{enqueue_sora_2_text_to_video_webhook, EnqueueSora2TextToVideoArgs, EnqueueSora2TextToVideoAspectRatio, EnqueueSora2TextToVideoDurationSeconds, EnqueueSora2TextToVideoResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
+  use strum::IntoEnumIterator;
 
   #[tokio::test]
-  #[ignore]
+  #[ignore] // manually run — fires a real API request and incurs cost
   async fn test() -> AnyhowResult<()> {
-    // XXX: Don't commit secrets!
-    let secret = read_to_string("/home/bt/Artcraft/credentials/fal_api_key.txt")?;
-
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueSora2TextToVideoArgs {
@@ -124,6 +117,53 @@ mod tests {
     };
 
     let result = enqueue_sora_2_text_to_video_webhook(args).await?;
+    println!("result: {:?}", result);
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_aspect_ratios() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for ar in EnqueueSora2TextToVideoAspectRatio::iter() {
+      println!("--- aspect ratio: {:?} ---", ar);
+      let args = EnqueueSora2TextToVideoArgs {
+        prompt: "a snowy mountain cabin at sunrise".to_string(),
+        duration: Some(EnqueueSora2TextToVideoDurationSeconds::Four),
+        aspect_ratio: Some(ar),
+        resolution: None,
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_sora_2_text_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_durations() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for dur in EnqueueSora2TextToVideoDurationSeconds::iter() {
+      println!("--- duration: {:?} ---", dur);
+      let args = EnqueueSora2TextToVideoArgs {
+        prompt: "a cat walking across a sunny windowsill".to_string(),
+        duration: Some(dur),
+        aspect_ratio: Some(EnqueueSora2TextToVideoAspectRatio::SixteenByNine),
+        resolution: None,
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_sora_2_text_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
 
     Ok(())
   }

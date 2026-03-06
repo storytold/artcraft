@@ -4185,6 +4185,7 @@ dependencies = [
  "log",
  "reqwest 0.12.23",
  "serde",
+ "strum 0.28.0",
  "test_data",
  "testing",
  "tokio",
