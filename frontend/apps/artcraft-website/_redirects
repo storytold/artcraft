@@ -67,3 +67,7 @@
 /password-reset /index.html 200
 /password-reset/ /index.html 200
 /password-reset/* /index.html 200
+
+/seedance-2 /index.html 200
+/seedance-2/ /index.html 200
+/seedance-2/* /index.html 200
