@@ -36,7 +36,7 @@ export const LandingActionButtons = ({
             href="/pricing"
           >
             <FontAwesomeIcon icon={faRocket} />
-            Supercharge Credits
+            Get Now
           </Button>
           <div className="relative">
             <Button
