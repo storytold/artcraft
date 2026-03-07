@@ -210,14 +210,14 @@ pub async fn sora_2_multi_function_video_gen_handler(
     };
 
     let aspect_ratio = match request.aspect_ratio {
-      Some(Sora2MultiFunctionVideoGenAspectRatio::Auto) => EnqueueSora2TextToVideoAspectRatio::Auto,
+      Some(Sora2MultiFunctionVideoGenAspectRatio::Auto) => EnqueueSora2TextToVideoAspectRatio::SixteenByNine,
       Some(Sora2MultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueSora2TextToVideoAspectRatio::SixteenByNine,
       Some(Sora2MultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueSora2TextToVideoAspectRatio::NineBySixteen,
       None => EnqueueSora2TextToVideoAspectRatio::SixteenByNine,
     };
 
     let resolution = match request.resolution {
-      Some(Sora2MultiFunctionVideoGenResolution::Auto) => EnqueueSora2TextToVideoResolution::Auto,
+      Some(Sora2MultiFunctionVideoGenResolution::Auto) => EnqueueSora2TextToVideoResolution::SevenTwentyP,
       Some(Sora2MultiFunctionVideoGenResolution::SevenTwentyP) => EnqueueSora2TextToVideoResolution::SevenTwentyP,
       None => EnqueueSora2TextToVideoResolution::SevenTwentyP,
     };
