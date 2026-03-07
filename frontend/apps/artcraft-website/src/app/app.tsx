@@ -4,6 +4,7 @@ import Media from "../pages/media";
 import PressKit from "../pages/press-kit";
 import Navbar from "../components/navbar";
 import Landing2 from "../pages/landing2";
+import LandingSD2 from "../pages/landing-sd2";
 import TutorialsPage from "../pages/tutorials";
 import TutorialsArticle from "../pages/tutorials/article";
 import FaqIndex from "../pages/faq/index";
@@ -25,6 +26,7 @@ export function App() {
 
       <Routes>
         <Route path="/" element={<Landing2 />} />
+        <Route path="/seedance-2" element={<LandingSD2 />} />
         <Route path="/download" element={<Download />} />
         <Route path="/media" element={<Media />} />
         <Route path="/media/:id" element={<Media />} />
