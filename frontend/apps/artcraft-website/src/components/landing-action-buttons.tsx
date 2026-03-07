@@ -8,11 +8,13 @@ import { DOWNLOAD_LINKS } from "../config/github_download_links";
 interface LandingActionButtonsProps {
   onDownloadClick?: (e: React.MouseEvent) => void;
   className?: string;
+  creditsLabel?: string;
 }
 
 export const LandingActionButtons = ({
   onDownloadClick,
   className,
+  creditsLabel = "Supercharge Credits",
 }: LandingActionButtonsProps) => {
   const MAC_LINK = DOWNLOAD_LINKS.MACOS;
   const WINDOWS_LINK = DOWNLOAD_LINKS.WINDOWS;
@@ -36,7 +38,7 @@ export const LandingActionButtons = ({
             href="/pricing"
           >
             <FontAwesomeIcon icon={faRocket} />
-            Supercharge Credits
+            {creditsLabel}
           </Button>
           <div className="relative">
             <Button
