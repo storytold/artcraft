@@ -277,6 +277,7 @@ const LandingSD2 = () => {
               <LandingActionButtons
                 onDownloadClick={onDownloadClick}
                 className="w-fit max-w-xs sm:max-w-none mx-auto z-10"
+                creditsButtonText="Get Now"
               />
               <img
                 src="/images/buy-credits.png"
@@ -819,7 +820,7 @@ const LandingSD2 = () => {
             </p>
 
             <div className="relative z-10 w-full flex flex-col items-center">
-              <LandingActionButtons onDownloadClick={onDownloadClick} />
+              <LandingActionButtons onDownloadClick={onDownloadClick} creditsButtonText="Get Now" />
               <div className="mt-8 text-sm text-white/80 font-medium">
                 Free to use.
               </div>
