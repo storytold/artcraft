@@ -154,7 +154,7 @@ mod tests {
     for dur in EnqueueSora2TextToVideoDurationSeconds::iter() {
       println!("--- duration: {:?} ---", dur);
       let args = EnqueueSora2TextToVideoArgs {
-        prompt: "a cat walking across a sunny windowsill".to_string(),
+        prompt: "a corgi walks in front of a giant windmill in a beautiful village at sunrise".to_string(),
         duration: Some(dur),
         aspect_ratio: Some(EnqueueSora2TextToVideoAspectRatio::SixteenByNine),
         resolution: None,

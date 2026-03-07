@@ -161,7 +161,7 @@ mod tests {
     for dur in EnqueueSora2ProTextToVideoDurationSeconds::iter() {
       println!("--- duration: {:?} ---", dur);
       let args = EnqueueSora2ProTextToVideoArgs {
-        prompt: "a cat walking across a sunny windowsill".to_string(),
+        prompt: "Suspenseful Hollywood movie. Interior, night. Customers are eating at a city diner. Suddenly a t-rex bursts its head through the large windows. The customers run.".to_string(),
         duration: Some(dur),
         aspect_ratio: Some(EnqueueSora2ProTextToVideoAspectRatio::SixteenByNine),
         resolution: None,
