@@ -252,6 +252,7 @@ use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::*;
 use artcraft_api_defs::generate::video::multi_function::kling_2_5_turbo_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::kling_2_6_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::*;
+use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::sora_2_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::sora_2_pro_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::veo_3p1_multi_function_video_gen::*;
@@ -426,6 +427,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     // Generate Video (Multi-Function)
     crate::http_server::endpoints::generate::video::multi_function::kling_2p5_turbo_pro_multi_function_video_gen_handler::kling_2p5_turbo_pro_multi_function_video_gen_handler,
     crate::http_server::endpoints::generate::video::multi_function::kling_2p6_pro_multi_function_video_gen_handler::kling_2p6_pro_multi_function_video_gen_handler,
+    crate::http_server::endpoints::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen_handler::seedance_1p5_pro_multi_function_video_gen_handler,
     crate::http_server::endpoints::generate::video::multi_function::seedance_2p0_multi_function_video_gen_handler::seedance_2p0_multi_function_video_gen_handler,
     crate::http_server::endpoints::generate::video::multi_function::sora_2_multi_function_video_gen_handler::sora_2_multi_function_video_gen_handler,
     crate::http_server::endpoints::generate::video::multi_function::sora_2_pro_multi_function_video_gen_handler::sora_2_pro_multi_function_video_gen_handler,
@@ -1027,6 +1029,11 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     Seedance2p0MultiFunctionVideoGenResponse,
     Sora2MultiFunctionVideoGenRequest,
     Sora2MultiFunctionVideoGenResponse,
+    Seedance1p5ProMultiFunctionVideoGenRequest,
+    Seedance1p5ProMultiFunctionVideoGenResponse,
+    Seedance1p5ProMultiFunctionVideoGenResolution,
+    Seedance1p5ProMultiFunctionVideoGenDuration,
+    Seedance1p5ProMultiFunctionVideoGenAspectRatio,
     Sora2ProMultiFunctionVideoGenRequest,
     Sora2ProMultiFunctionVideoGenResponse,
     Veo3p1MultiFunctionVideoGenRequest,

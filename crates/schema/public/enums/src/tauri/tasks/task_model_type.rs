@@ -69,6 +69,8 @@ pub enum TaskModelType {
   Kling2p6Pro,
   #[serde(rename = "seedance_1.0_lite")]
   Seedance10Lite,
+  #[serde(rename = "seedance_1.5_pro")]
+  Seedance1p5Pro,
   #[serde(rename = "seedance_2p0")]
   Seedance2p0,
   #[serde(rename = "sora_2")]
@@ -134,6 +136,7 @@ impl TaskModelType {
       Self::Kling2p5TurboPro => "kling_2p5_turbo_pro",
       Self::Kling2p6Pro => "kling_2p6_pro",
       Self::Seedance10Lite => "seedance_1.0_lite",
+      Self::Seedance1p5Pro => "seedance_1.5_pro",
       Self::Seedance2p0 => "seedance_2p0",
       Self::Sora2 => "sora_2",
       Self::Sora2Pro => "sora_2_pro",
@@ -180,6 +183,7 @@ impl TaskModelType {
       "kling_2p5_turbo_pro" => Ok(Self::Kling2p5TurboPro),
       "kling_2p6_pro" => Ok(Self::Kling2p6Pro),
       "seedance_1.0_lite" => Ok(Self::Seedance10Lite),
+      "seedance_1.5_pro" => Ok(Self::Seedance1p5Pro),
       "seedance_2p0" => Ok(Self::Seedance2p0),
       "sora_2" => Ok(Self::Sora2),
       "sora_2_pro" => Ok(Self::Sora2Pro),
@@ -229,6 +233,7 @@ impl TaskModelType {
       Self::Kling2p5TurboPro,
       Self::Kling2p6Pro,
       Self::Seedance10Lite,
+      Self::Seedance1p5Pro,
       Self::Seedance2p0,
       Self::Sora2,
       Self::Sora2Pro,
@@ -285,6 +290,7 @@ mod tests {
       assert_serialization(TaskModelType::Kling2p5TurboPro, "kling_2p5_turbo_pro");
       assert_serialization(TaskModelType::Kling2p6Pro, "kling_2p6_pro");
       assert_serialization(TaskModelType::Seedance10Lite, "seedance_1.0_lite");
+      assert_serialization(TaskModelType::Seedance1p5Pro, "seedance_1.5_pro");
       assert_serialization(TaskModelType::Seedance2p0, "seedance_2p0");
       assert_serialization(TaskModelType::Sora2, "sora_2");
       assert_serialization(TaskModelType::Sora2Pro, "sora_2_pro");
@@ -330,6 +336,7 @@ mod tests {
       assert_eq!(TaskModelType::Kling2p5TurboPro.to_str(), "kling_2p5_turbo_pro");
       assert_eq!(TaskModelType::Kling2p6Pro.to_str(), "kling_2p6_pro");
       assert_eq!(TaskModelType::Seedance10Lite.to_str(), "seedance_1.0_lite");
+      assert_eq!(TaskModelType::Seedance1p5Pro.to_str(), "seedance_1.5_pro");
       assert_eq!(TaskModelType::Seedance2p0.to_str(), "seedance_2p0");
       assert_eq!(TaskModelType::Sora2.to_str(), "sora_2");
       assert_eq!(TaskModelType::Sora2Pro.to_str(), "sora_2_pro");
@@ -375,6 +382,7 @@ mod tests {
       assert_eq!(TaskModelType::from_str("kling_2p5_turbo_pro").unwrap(), TaskModelType::Kling2p5TurboPro);
       assert_eq!(TaskModelType::from_str("kling_2p6_pro").unwrap(), TaskModelType::Kling2p6Pro);
       assert_eq!(TaskModelType::from_str("seedance_1.0_lite").unwrap(), TaskModelType::Seedance10Lite);
+      assert_eq!(TaskModelType::from_str("seedance_1.5_pro").unwrap(), TaskModelType::Seedance1p5Pro);
       assert_eq!(TaskModelType::from_str("seedance_2p0").unwrap(), TaskModelType::Seedance2p0);
       assert_eq!(TaskModelType::from_str("sora_2").unwrap(), TaskModelType::Sora2);
       assert_eq!(TaskModelType::from_str("sora_2_pro").unwrap(), TaskModelType::Sora2Pro);
@@ -404,7 +412,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskModelType::all_variants();
-      assert_eq!(variants.len(), 38);
+      assert_eq!(variants.len(), 39);
       // Image models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Schnell));
@@ -433,6 +441,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskModelType::Kling2p5TurboPro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Kling2p6Pro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance10Lite));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance1p5Pro));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedance2p0));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Sora2));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Sora2Pro));

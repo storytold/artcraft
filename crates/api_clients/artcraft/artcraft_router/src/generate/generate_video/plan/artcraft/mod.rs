@@ -1,1 +1,2 @@
+pub mod plan_generate_video_artcraft_seedance1p5_pro;
 pub mod plan_generate_video_artcraft_seedance2p0;

@@ -26,6 +26,9 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
 
+  #[serde(rename = "seedance_1p5_pro")]
+  Seedance1p5Pro,
+
   #[serde(rename = "seedance_2p0")]
   Seedance2p0,
 

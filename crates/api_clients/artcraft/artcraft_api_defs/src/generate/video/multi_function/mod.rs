@@ -1,5 +1,6 @@
 pub mod kling_2_5_turbo_multi_function_video_gen;
 pub mod kling_2_6_multi_function_video_gen;
+pub mod seedance_1p5_pro_multi_function_video_gen;
 pub mod seedance_2p0_multi_function_video_gen;
 pub mod sora_2_multi_function_video_gen;
 pub mod sora_2_pro_multi_function_video_gen;

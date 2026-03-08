@@ -90,6 +90,8 @@ pub enum GenerationModel {
   Sora2Pro,
   #[serde(rename = "seedance_1.0_lite")]
   Seedance10Lite,
+  #[serde(rename = "seedance_1.5_pro")]
+  Seedance1p5Pro,
   #[serde(rename = "seedance_2p0")]
   Seedance2p0,
   #[serde(rename = "veo_2")]

@@ -5,6 +5,7 @@ mod handle_artcraft_kling_2p1_pro;
 mod handle_artcraft_kling_2p5_turbo_pro;
 mod handle_artcraft_kling_2p6_pro;
 mod handle_artcraft_seedance_1_lite;
+mod handle_artcraft_seedance_1p5_pro;
 mod handle_artcraft_seedance_2p0;
 mod handle_artcraft_sora2;
 mod handle_artcraft_sora2_pro;

@@ -202,7 +202,7 @@ mod tests {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       ..base_video_request()
     };
-    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.aspect_ratio, Some(Seedance2p0AspectRatio::Landscape16x9)));
   }
 
@@ -212,7 +212,7 @@ mod tests {
       aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
       ..base_video_request()
     };
-    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.aspect_ratio, Some(Seedance2p0AspectRatio::Portrait9x16)));
   }
 
@@ -222,7 +222,7 @@ mod tests {
       aspect_ratio: Some(CommonAspectRatio::Square),
       ..base_video_request()
     };
-    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.aspect_ratio, Some(Seedance2p0AspectRatio::Square1x1)));
   }
 
@@ -238,7 +238,7 @@ mod tests {
         request_mismatch_mitigation_strategy: strategy,
         ..base_video_request()
       };
-      let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+      let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap() else { panic!("wrong variant") };
       assert!(
         matches!(plan.aspect_ratio, Some(Seedance2p0AspectRatio::Standard4x3)),
         "Expected Standard4x3 for WideThreeByTwo with {:?}", strategy,
@@ -283,15 +283,15 @@ mod tests {
   #[test]
   fn batch_count_direct_mapping() {
     let req = GenerateVideoRequest { video_batch_count: Some(1), ..base_video_request() };
-    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap();
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.batch_count, Seedance2p0BatchCount::One));
 
     let req = GenerateVideoRequest { video_batch_count: Some(2), ..base_video_request() };
-    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap();
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Two));
 
     let req = GenerateVideoRequest { video_batch_count: Some(4), ..base_video_request() };
-    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap();
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Four));
   }
 
@@ -302,7 +302,7 @@ mod tests {
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
       ..base_video_request()
     };
-    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Four));
   }
 
@@ -313,7 +313,7 @@ mod tests {
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
       ..base_video_request()
     };
-    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap();
+    let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = request.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Two));
   }
 

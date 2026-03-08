@@ -1,1 +1,2 @@
+pub mod estimate_video_cost_artcraft_seedance1p5_pro;
 pub mod estimate_video_cost_artcraft_seedance2p0;

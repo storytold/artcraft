@@ -9,6 +9,7 @@ pub mod enqueue_kling_v2p6_pro_image_to_video_webhook;
 pub mod enqueue_pixverse_v5_image_to_video_webhook;
 pub mod enqueue_seedance_1_lite_image_to_video_webhook;
 pub mod enqueue_seedance_1_pro_image_to_video_webhook;
+pub mod enqueue_seedance_1p5_pro_image_to_video_webhook;
 pub mod enqueue_sora_2_image_to_video_webhook;
 pub mod enqueue_sora_2_pro_image_to_video_webhook;
 pub mod enqueue_veo_2_image_to_video_webhook;
