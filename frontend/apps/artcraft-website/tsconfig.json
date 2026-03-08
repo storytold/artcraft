@@ -3,10 +3,7 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/components/tab-selector"
-    },
-    {
-      "path": "../../libs/state/subscription"
+      "path": "../../libs/components/viewer-3d"
     },
     {
       "path": "../../libs/model-list"
@@ -24,13 +21,19 @@
       "path": "../../libs/components/loading-spinner"
     },
     {
+      "path": "../../libs/components/tab-selector"
+    },
+    {
+      "path": "../../libs/state/subscription"
+    },
+    {
       "path": "../../libs/markdown-content"
     },
     {
-      "path": "../../libs/api"
+      "path": "../../libs/components/button"
     },
     {
-      "path": "../../libs/components/button"
+      "path": "../../libs/api"
     },
     {
       "path": "./tsconfig.app.json"

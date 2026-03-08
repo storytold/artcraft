@@ -93,6 +93,10 @@ pub enum ModelType {
   Kling2p5TurboPro,
   #[serde(rename = "kling_2p6_pro")]
   Kling2p6Pro,
+  #[serde(rename = "kling_3p0_standard")]
+  Kling3p0Standard,
+  #[serde(rename = "kling_3p0_pro")]
+  Kling3p0Pro,
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
   #[serde(rename = "seedance_1p0_pro")]
@@ -171,6 +175,8 @@ impl ModelType {
       Self::Kling21Master => "kling_2p1_master",
       Self::Kling2p5TurboPro => "kling_2p5_turbo_pro",
       Self::Kling2p6Pro => "kling_2p6_pro",
+      Self::Kling3p0Standard => "kling_3p0_standard",
+      Self::Kling3p0Pro => "kling_3p0_pro",
       Self::Seedance10Lite => "seedance_1p0_lite",
       Self::Seedance10Pro => "seedance_1p0_pro",
       Self::Seedance1p5Pro => "seedance_1p5_pro",
@@ -229,6 +235,8 @@ impl ModelType {
       "kling_2p1_master" => Ok(Self::Kling21Master),
       "kling_2p5_turbo_pro" => Ok(Self::Kling2p5TurboPro),
       "kling_2p6_pro" => Ok(Self::Kling2p6Pro),
+      "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
+      "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
       "seedance_1p0_lite" => Ok(Self::Seedance10Lite),
       "seedance_1p0_pro" => Ok(Self::Seedance10Pro),
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
@@ -291,6 +299,8 @@ impl ModelType {
       Self::Kling21Master,
       Self::Kling2p5TurboPro,
       Self::Kling2p6Pro,
+      Self::Kling3p0Standard,
+      Self::Kling3p0Pro,
       Self::Seedance10Lite,
       Self::Seedance10Pro,
       Self::Seedance1p5Pro,
@@ -357,6 +367,8 @@ mod tests {
       assert_serialization(ModelType::Kling21Master, "kling_2p1_master");
       assert_serialization(ModelType::Kling2p5TurboPro, "kling_2p5_turbo_pro");
       assert_serialization(ModelType::Kling2p6Pro, "kling_2p6_pro");
+      assert_serialization(ModelType::Kling3p0Standard, "kling_3p0_standard");
+      assert_serialization(ModelType::Kling3p0Pro, "kling_3p0_pro");
       assert_serialization(ModelType::Seedance10Lite, "seedance_1p0_lite");
       assert_serialization(ModelType::Seedance10Pro, "seedance_1p0_pro");
       assert_serialization(ModelType::Seedance1p5Pro, "seedance_1p5_pro");
@@ -413,6 +425,8 @@ mod tests {
       assert_eq!(ModelType::Kling21Master.to_str(), "kling_2p1_master");
       assert_eq!(ModelType::Kling2p5TurboPro.to_str(), "kling_2p5_turbo_pro");
       assert_eq!(ModelType::Kling2p6Pro.to_str(), "kling_2p6_pro");
+      assert_eq!(ModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
+      assert_eq!(ModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
       assert_eq!(ModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
       assert_eq!(ModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
       assert_eq!(ModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
@@ -469,6 +483,8 @@ mod tests {
       assert_eq!(ModelType::from_str("kling_2p1_master").unwrap(), ModelType::Kling21Master);
       assert_eq!(ModelType::from_str("kling_2p5_turbo_pro").unwrap(), ModelType::Kling2p5TurboPro);
       assert_eq!(ModelType::from_str("kling_2p6_pro").unwrap(), ModelType::Kling2p6Pro);
+      assert_eq!(ModelType::from_str("kling_3p0_standard").unwrap(), ModelType::Kling3p0Standard);
+      assert_eq!(ModelType::from_str("kling_3p0_pro").unwrap(), ModelType::Kling3p0Pro);
       assert_eq!(ModelType::from_str("seedance_1p0_lite").unwrap(), ModelType::Seedance10Lite);
       assert_eq!(ModelType::from_str("seedance_1p0_pro").unwrap(), ModelType::Seedance10Pro);
       assert_eq!(ModelType::from_str("seedance_1p5_pro").unwrap(), ModelType::Seedance1p5Pro);
@@ -490,7 +506,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = ModelType::all_variants();
-      assert_eq!(variants.len(), 48);
+      assert_eq!(variants.len(), 50);
       // Image models
       assert_eq!(variants.pop_first(), Some(ModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(ModelType::Flux1Schnell));
@@ -527,6 +543,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(ModelType::Kling21Master));
       assert_eq!(variants.pop_first(), Some(ModelType::Kling2p5TurboPro));
       assert_eq!(variants.pop_first(), Some(ModelType::Kling2p6Pro));
+      assert_eq!(variants.pop_first(), Some(ModelType::Kling3p0Standard));
+      assert_eq!(variants.pop_first(), Some(ModelType::Kling3p0Pro));
       assert_eq!(variants.pop_first(), Some(ModelType::Seedance10Lite));
       assert_eq!(variants.pop_first(), Some(ModelType::Seedance10Pro));
       assert_eq!(variants.pop_first(), Some(ModelType::Seedance1p5Pro));

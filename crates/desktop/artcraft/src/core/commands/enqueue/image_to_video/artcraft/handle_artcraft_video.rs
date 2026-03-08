@@ -5,6 +5,8 @@ use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_kl
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_kling_2p1_pro::handle_artcraft_kling_2p1_pro;
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_kling_2p5_turbo_pro::handle_artcraft_kling_2p5_turbo_pro;
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_kling_2p6_pro::handle_artcraft_kling_2p6_pro;
+use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_kling_3p0_pro::handle_artcraft_kling_3p0_pro;
+use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_kling_3p0_standard::handle_artcraft_kling_3p0_standard;
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_seedance_1_lite::handle_artcraft_seedance_1_lite;
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_seedance_1p5_pro::handle_artcraft_seedance_1p5_pro;
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_seedance_2p0::handle_artcraft_seedance_2p0;
@@ -40,6 +42,8 @@ pub async fn handle_video_artcraft(
     Some(VideoModel::Kling21Master) => handle_artcraft_kling_2p1_master(request, app_env_configs, &creds).await,
     Some(VideoModel::Kling2p5TurboPro) => handle_artcraft_kling_2p5_turbo_pro(request, app_env_configs, &creds).await,
     Some(VideoModel::Kling2p6Pro) => handle_artcraft_kling_2p6_pro(request, app_env_configs, &creds).await,
+    Some(VideoModel::Kling3p0Standard) => handle_artcraft_kling_3p0_standard(request, app_env_configs, &creds).await,
+    Some(VideoModel::Kling3p0Pro) => handle_artcraft_kling_3p0_pro(request, app_env_configs, &creds).await,
     Some(VideoModel::Seedance10Lite) => handle_artcraft_seedance_1_lite(request, app_env_configs, &creds).await,
     Some(VideoModel::Seedance1p5Pro) => handle_artcraft_seedance_1p5_pro(request, app_env_configs, &creds).await,
     Some(VideoModel::Seedance2p0) => handle_artcraft_seedance_2p0(request, app_env_configs, &creds).await,

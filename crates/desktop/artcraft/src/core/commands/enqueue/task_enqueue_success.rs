@@ -83,6 +83,8 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::Kling21Master) => Some(TaskModelType::Kling21Master),
       Some(GenerationModel::Kling2p5TurboPro) => Some(TaskModelType::Kling2p5TurboPro),
       Some(GenerationModel::Kling2p6Pro) => Some(TaskModelType::Kling2p6Pro),
+      Some(GenerationModel::Kling3p0Standard) => Some(TaskModelType::Kling3p0Standard),
+      Some(GenerationModel::Kling3p0Pro) => Some(TaskModelType::Kling3p0Pro),
       Some(GenerationModel::Seedance10Lite) => Some(TaskModelType::Seedance10Lite),
       Some(GenerationModel::Seedance1p5Pro) => Some(TaskModelType::Seedance1p5Pro),
       Some(GenerationModel::Seedance2p0) => Some(TaskModelType::Seedance2p0),

@@ -251,6 +251,8 @@ use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::*;
 // Video multi-function
 use artcraft_api_defs::generate::video::multi_function::kling_2_5_turbo_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::kling_2_6_multi_function_video_gen::*;
+use artcraft_api_defs::generate::video::multi_function::kling_3p0_pro_multi_function_video_gen::*;
+use artcraft_api_defs::generate::video::multi_function::kling_3p0_standard_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen::*;
 use artcraft_api_defs::generate::video::multi_function::sora_2_multi_function_video_gen::*;
@@ -427,6 +429,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     // Generate Video (Multi-Function)
     crate::http_server::endpoints::generate::video::multi_function::kling_2p5_turbo_pro_multi_function_video_gen_handler::kling_2p5_turbo_pro_multi_function_video_gen_handler,
     crate::http_server::endpoints::generate::video::multi_function::kling_2p6_pro_multi_function_video_gen_handler::kling_2p6_pro_multi_function_video_gen_handler,
+    crate::http_server::endpoints::generate::video::multi_function::kling_3p0_pro_multi_function_video_gen_handler::kling_3p0_pro_multi_function_video_gen_handler,
+    crate::http_server::endpoints::generate::video::multi_function::kling_3p0_standard_multi_function_video_gen_handler::kling_3p0_standard_multi_function_video_gen_handler,
     crate::http_server::endpoints::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen_handler::seedance_1p5_pro_multi_function_video_gen_handler,
     crate::http_server::endpoints::generate::video::multi_function::seedance_2p0_multi_function_video_gen_handler::seedance_2p0_multi_function_video_gen_handler,
     crate::http_server::endpoints::generate::video::multi_function::sora_2_multi_function_video_gen_handler::sora_2_multi_function_video_gen_handler,
@@ -1025,6 +1029,14 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     Kling2p5TurboProMultiFunctionVideoGenResponse,
     Kling2p6ProMultiFunctionVideoGenRequest,
     Kling2p6ProMultiFunctionVideoGenResponse,
+    Kling3p0ProMultiFunctionVideoGenRequest,
+    Kling3p0ProMultiFunctionVideoGenResponse,
+    Kling3p0ProMultiFunctionVideoGenDuration,
+    Kling3p0ProMultiFunctionVideoGenAspectRatio,
+    Kling3p0StandardMultiFunctionVideoGenRequest,
+    Kling3p0StandardMultiFunctionVideoGenResponse,
+    Kling3p0StandardMultiFunctionVideoGenDuration,
+    Kling3p0StandardMultiFunctionVideoGenAspectRatio,
     Seedance2p0MultiFunctionVideoGenRequest,
     Seedance2p0MultiFunctionVideoGenResponse,
     Sora2MultiFunctionVideoGenRequest,

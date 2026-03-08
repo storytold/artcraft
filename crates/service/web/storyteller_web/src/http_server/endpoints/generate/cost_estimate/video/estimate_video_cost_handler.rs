@@ -130,6 +130,8 @@ fn map_video_model(model: CommonVideoModel) -> Result<RouterVideoModel, HandlerE
     CommonVideoModel::Kling21Master => RouterVideoModel::Kling21Master,
     CommonVideoModel::Kling2p5TurboPro => RouterVideoModel::Kling2p5TurboPro,
     CommonVideoModel::Kling2p6Pro => RouterVideoModel::Kling2p6Pro,
+    CommonVideoModel::Kling3p0Standard => RouterVideoModel::Kling3p0Standard,
+    CommonVideoModel::Kling3p0Pro => RouterVideoModel::Kling3p0Pro,
     CommonVideoModel::Seedance10Lite => RouterVideoModel::Seedance10Lite,
     CommonVideoModel::Seedance1p5Pro => RouterVideoModel::Seedance1p5Pro,
     CommonVideoModel::Seedance2p0 => RouterVideoModel::Seedance2p0,

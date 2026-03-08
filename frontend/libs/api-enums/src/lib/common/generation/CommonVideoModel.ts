@@ -9,6 +9,8 @@ export enum CommonVideoModel {
   Kling21Master = "kling_2p1_master",
   Kling2p5TurboPro = "kling_2p5_turbo_pro",
   Kling2p6Pro = "kling_2p6_pro",
+  Kling3p0Standard = "kling_3p0_standard",
+  Kling3p0Pro = "kling_3p0_pro",
   Seedance10Lite = "seedance_1p0_lite",
   Seedance1p5Pro = "seedance_1p5_pro",
   Seedance2p0 = "seedance_2p0",

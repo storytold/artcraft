@@ -18,8 +18,14 @@ export function videoModelToCommonVideoModel(
       return CommonVideoModel.Kling2p5TurboPro;
     case "kling_2p6_pro":
       return CommonVideoModel.Kling2p6Pro;
+    case "kling_3p0_standard":
+      return CommonVideoModel.Kling3p0Standard;
+    case "kling_3p0_pro":
+      return CommonVideoModel.Kling3p0Pro;
     case "seedance_1.0_lite":
       return CommonVideoModel.Seedance10Lite;
+    case "seedance_1p5_pro":
+      return CommonVideoModel.Seedance1p5Pro;
     case "seedance_2p0":
       return CommonVideoModel.Seedance2p0;
     case "sora_2":

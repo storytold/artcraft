@@ -248,6 +248,9 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     "seedream_4",
     "seedream_4p5",
     "seedream_5_lite",
+    "kling_3p0_standard",
+    "kling_3p0_pro",
+    "seedance_1p5_pro",
     "seedance_2p0",
   ]);
   const hasCostData =

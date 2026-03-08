@@ -6,6 +6,8 @@ use crate::api::image_ref::ImageRef;
 use crate::api::provider::Provider;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_pro::plan_generate_video_artcraft_kling3p0_pro;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::plan_generate_video_artcraft_kling3p0_standard;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
@@ -61,6 +63,12 @@ impl<'a> GenerateVideoRequest<'a> {
   pub fn build(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
     match self.provider {
       Provider::Artcraft => match self.model {
+        CommonVideoModel::Kling3p0Pro => {
+          plan_generate_video_artcraft_kling3p0_pro(self).map(VideoGenerationPlan::ArtcraftKling3p0Pro)
+        }
+        CommonVideoModel::Kling3p0Standard => {
+          plan_generate_video_artcraft_kling3p0_standard(self).map(VideoGenerationPlan::ArtcraftKling3p0Standard)
+        }
         CommonVideoModel::Seedance1p5Pro => {
           plan_generate_video_artcraft_seedance1p5_pro(self).map(VideoGenerationPlan::ArtcraftSeedance1p5Pro)
         }

@@ -54,6 +54,12 @@ pub enum VideoModel {
   #[serde(rename = "kling_2p6_pro")]
   Kling2p6Pro,
 
+  #[serde(rename = "kling_3p0_standard")]
+  Kling3p0Standard,
+
+  #[serde(rename = "kling_3p0_pro")]
+  Kling3p0Pro,
+
   #[serde(rename = "seedance_1.0_lite")]
   Seedance10Lite,
 
