@@ -21,8 +21,8 @@ use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_kling_v3_pro_image_to_video_webhook::{enqueue_kling_v3_pro_image_to_video_webhook, EnqueueKlingV3ProImageToVideoArgs};
-use fal_client::requests::webhook::video::text::enqueue_kling_v3_pro_text_to_video_webhook::{enqueue_kling_v3_pro_text_to_video_webhook, EnqueueKlingV3ProTextToVideoArgs, EnqueueKlingV3ProTextToVideoAspectRatio, EnqueueKlingV3ProTextToVideoDuration};
+use fal_client::requests::webhook::video::image::enqueue_kling_3p0_pro_image_to_video_webhook::{enqueue_kling_3p0_pro_image_to_video_webhook, EnqueueKling3p0ProImageToVideoArgs};
+use fal_client::requests::webhook::video::text::enqueue_kling_3p0_pro_text_to_video_webhook::{enqueue_kling_3p0_pro_text_to_video_webhook, EnqueueKling3p0ProTextToVideoArgs, EnqueueKling3p0ProTextToVideoAspectRatio, EnqueueKling3p0ProTextToVideoDuration};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -40,50 +40,50 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
-fn map_duration_i2v(duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>) -> EnqueueKlingV3ProTextToVideoDuration {
+fn map_duration_i2v(duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>) -> EnqueueKling3p0ProTextToVideoDuration {
   match duration {
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKlingV3ProTextToVideoDuration::ThreeSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKlingV3ProTextToVideoDuration::FourSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKlingV3ProTextToVideoDuration::FiveSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKlingV3ProTextToVideoDuration::SixSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKlingV3ProTextToVideoDuration::SevenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKlingV3ProTextToVideoDuration::EightSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKlingV3ProTextToVideoDuration::NineSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKlingV3ProTextToVideoDuration::TenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKlingV3ProTextToVideoDuration::ElevenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKlingV3ProTextToVideoDuration::TwelveSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKlingV3ProTextToVideoDuration::ThirteenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKlingV3ProTextToVideoDuration::FourteenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKlingV3ProTextToVideoDuration::FifteenSeconds,
-    None => EnqueueKlingV3ProTextToVideoDuration::FiveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKling3p0ProTextToVideoDuration::ThreeSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKling3p0ProTextToVideoDuration::FourSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKling3p0ProTextToVideoDuration::FiveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKling3p0ProTextToVideoDuration::SixSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKling3p0ProTextToVideoDuration::SevenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKling3p0ProTextToVideoDuration::EightSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKling3p0ProTextToVideoDuration::NineSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKling3p0ProTextToVideoDuration::TenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKling3p0ProTextToVideoDuration::ElevenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKling3p0ProTextToVideoDuration::TwelveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::ThirteenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::FourteenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::FifteenSeconds,
+    None => EnqueueKling3p0ProTextToVideoDuration::FiveSeconds,
   }
 }
 
-fn map_duration_t2v(duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>) -> EnqueueKlingV3ProTextToVideoDuration {
+fn map_duration_t2v(duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>) -> EnqueueKling3p0ProTextToVideoDuration {
   match duration {
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKlingV3ProTextToVideoDuration::ThreeSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKlingV3ProTextToVideoDuration::FourSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKlingV3ProTextToVideoDuration::FiveSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKlingV3ProTextToVideoDuration::SixSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKlingV3ProTextToVideoDuration::SevenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKlingV3ProTextToVideoDuration::EightSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKlingV3ProTextToVideoDuration::NineSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKlingV3ProTextToVideoDuration::TenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKlingV3ProTextToVideoDuration::ElevenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKlingV3ProTextToVideoDuration::TwelveSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKlingV3ProTextToVideoDuration::ThirteenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKlingV3ProTextToVideoDuration::FourteenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKlingV3ProTextToVideoDuration::FifteenSeconds,
-    None => EnqueueKlingV3ProTextToVideoDuration::FiveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKling3p0ProTextToVideoDuration::ThreeSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKling3p0ProTextToVideoDuration::FourSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKling3p0ProTextToVideoDuration::FiveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKling3p0ProTextToVideoDuration::SixSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKling3p0ProTextToVideoDuration::SevenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKling3p0ProTextToVideoDuration::EightSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKling3p0ProTextToVideoDuration::NineSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKling3p0ProTextToVideoDuration::TenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKling3p0ProTextToVideoDuration::ElevenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKling3p0ProTextToVideoDuration::TwelveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::ThirteenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::FourteenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::FifteenSeconds,
+    None => EnqueueKling3p0ProTextToVideoDuration::FiveSeconds,
   }
 }
 
-fn map_aspect_ratio_t2v(aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAspectRatio>) -> EnqueueKlingV3ProTextToVideoAspectRatio {
+fn map_aspect_ratio_t2v(aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAspectRatio>) -> EnqueueKling3p0ProTextToVideoAspectRatio {
   match aspect_ratio {
-    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::Square) => EnqueueKlingV3ProTextToVideoAspectRatio::Square,
-    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueKlingV3ProTextToVideoAspectRatio::SixteenByNine,
-    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueKlingV3ProTextToVideoAspectRatio::NineBySixteen,
-    None => EnqueueKlingV3ProTextToVideoAspectRatio::Square,
+    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::Square) => EnqueueKling3p0ProTextToVideoAspectRatio::Square,
+    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine,
+    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueKling3p0ProTextToVideoAspectRatio::NineBySixteen,
+    None => EnqueueKling3p0ProTextToVideoAspectRatio::Square,
   }
 }
 
@@ -199,7 +199,7 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
 
     let duration = map_duration_i2v(request.duration);
 
-    let args = EnqueueKlingV3ProImageToVideoArgs {
+    let args = EnqueueKling3p0ProImageToVideoArgs {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       image_url: start_frame_url,
       end_image_url: maybe_end_frame_image_url,
@@ -221,10 +221,10 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
       &mut mysql_connection,
     ).await?;
 
-    fal_result = enqueue_kling_v3_pro_image_to_video_webhook(args)
+    fal_result = enqueue_kling_3p0_pro_image_to_video_webhook(args)
         .await
         .map_err(|err| {
-          warn!("Error calling enqueue_kling_v3_pro_image_to_video_webhook: {:?}", err);
+          warn!("Error calling enqueue_kling_3p0_pro_image_to_video_webhook: {:?}", err);
           CommonWebError::ServerError
         })?;
 
@@ -235,7 +235,7 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
 
     let aspect_ratio = map_aspect_ratio_t2v(request.aspect_ratio);
 
-    let args = EnqueueKlingV3ProTextToVideoArgs {
+    let args = EnqueueKling3p0ProTextToVideoArgs {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       negative_prompt: request.negative_prompt.clone(),
       generate_audio: request.generate_audio,
@@ -256,10 +256,10 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
       &mut mysql_connection,
     ).await?;
 
-    fal_result = enqueue_kling_v3_pro_text_to_video_webhook(args)
+    fal_result = enqueue_kling_3p0_pro_text_to_video_webhook(args)
         .await
         .map_err(|err| {
-          warn!("Error calling enqueue_kling_v3_pro_text_to_video_webhook: {:?}", err);
+          warn!("Error calling enqueue_kling_3p0_pro_text_to_video_webhook: {:?}", err);
           CommonWebError::ServerError
         })?;
   }

@@ -1,7 +1,7 @@
-pub mod http_kling_v3_pro_image_to_video;
-pub mod http_kling_v3_pro_text_to_video;
-pub mod http_kling_v3_standard_image_to_video;
-pub mod http_kling_v3_standard_text_to_video;
+pub mod http_kling_3p0_pro_image_to_video;
+pub mod http_kling_3p0_pro_text_to_video;
+pub mod http_kling_3p0_standard_image_to_video;
+pub mod http_kling_3p0_standard_text_to_video;
 pub mod http_seedance_1p5_pro_image_to_video;
 pub mod http_seedance_1p5_pro_text_to_video;
 pub mod http_sora_2_text_to_video;

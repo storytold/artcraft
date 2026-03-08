@@ -2,18 +2,18 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use crate::requests::http::video::http_kling_v3_standard_text_to_video::{kling_v3_standard_text_to_video, KlingV3StandardTextToVideoInput};
+use crate::requests::http::video::http_kling_3p0_pro_text_to_video::{kling_3p0_pro_text_to_video, Kling3p0ProTextToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct EnqueueKlingV3StandardTextToVideoArgs<'a, R: IntoUrl> {
+pub struct EnqueueKling3p0ProTextToVideoArgs<'a, R: IntoUrl> {
   pub prompt: String,
 
   // Optional args
   pub generate_audio: Option<bool>,
   pub negative_prompt: Option<String>,
-  pub duration: Option<EnqueueKlingV3StandardTextToVideoDuration>,
-  pub aspect_ratio: Option<EnqueueKlingV3StandardTextToVideoAspectRatio>,
+  pub duration: Option<EnqueueKling3p0ProTextToVideoDuration>,
+  pub aspect_ratio: Option<EnqueueKling3p0ProTextToVideoAspectRatio>,
 
   // Fulfillment
   pub webhook_url: R,
@@ -21,7 +21,7 @@ pub struct EnqueueKlingV3StandardTextToVideoArgs<'a, R: IntoUrl> {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum EnqueueKlingV3StandardTextToVideoDuration {
+pub enum EnqueueKling3p0ProTextToVideoDuration {
   ThreeSeconds,
   FourSeconds,
   FiveSeconds,
@@ -37,7 +37,7 @@ pub enum EnqueueKlingV3StandardTextToVideoDuration {
   FifteenSeconds,
 }
 
-impl EnqueueKlingV3StandardTextToVideoDuration {
+impl EnqueueKling3p0ProTextToVideoDuration {
   pub fn to_seconds(&self) -> u64 {
     match self {
       Self::ThreeSeconds => 3,
@@ -76,32 +76,31 @@ impl EnqueueKlingV3StandardTextToVideoDuration {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum EnqueueKlingV3StandardTextToVideoAspectRatio {
+pub enum EnqueueKling3p0ProTextToVideoAspectRatio {
   Square,
   SixteenByNine,
   NineBySixteen,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKlingV3StandardTextToVideoArgs<'_, U> {
+impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKling3p0ProTextToVideoArgs<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
-    // Kling 3.0 Standard pricing:
-    //   Audio off: $0.168/second
-    //   Audio on:  $0.252/second
+    // Kling 3.0 Pro pricing:
+    //   Audio off: $0.224/second
+    //   Audio on:  $0.336/second
     let generate_audio = self.generate_audio.unwrap_or(true);
     let duration_secs = self.duration
-        .unwrap_or(EnqueueKlingV3StandardTextToVideoDuration::FiveSeconds)
+        .unwrap_or(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds)
         .to_seconds();
 
-    // Rate in tenths-of-cents per second
-    let rate = if generate_audio { 252u64 } else { 168u64 };
+    let rate = if generate_audio { 336u64 } else { 224u64 };
     (rate * duration_secs + 9) / 10
   }
 }
 
-/// Kling 3.0 Standard Text-to-Video
-/// https://fal.ai/models/fal-ai/kling-video/v3/standard/text-to-video
-pub async fn enqueue_kling_v3_standard_text_to_video_webhook<R: IntoUrl>(
-  args: EnqueueKlingV3StandardTextToVideoArgs<'_, R>
+/// Kling 3.0 Pro Text-to-Video
+/// https://fal.ai/models/fal-ai/kling-video/v3/pro/text-to-video
+pub async fn enqueue_kling_3p0_pro_text_to_video_webhook<R: IntoUrl>(
+  args: EnqueueKling3p0ProTextToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
   let duration = args.duration
@@ -109,13 +108,13 @@ pub async fn enqueue_kling_v3_standard_text_to_video_webhook<R: IntoUrl>(
 
   let aspect_ratio = args.aspect_ratio
       .map(|aspect| match aspect {
-        EnqueueKlingV3StandardTextToVideoAspectRatio::Square => "1:1",
-        EnqueueKlingV3StandardTextToVideoAspectRatio::SixteenByNine => "16:9",
-        EnqueueKlingV3StandardTextToVideoAspectRatio::NineBySixteen => "9:16",
+        EnqueueKling3p0ProTextToVideoAspectRatio::Square => "1:1",
+        EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine => "16:9",
+        EnqueueKling3p0ProTextToVideoAspectRatio::NineBySixteen => "9:16",
       })
       .map(|s| s.to_string());
 
-  let request = KlingV3StandardTextToVideoInput {
+  let request = Kling3p0ProTextToVideoInput {
     prompt: args.prompt,
     generate_audio: args.generate_audio,
     duration,
@@ -124,7 +123,7 @@ pub async fn enqueue_kling_v3_standard_text_to_video_webhook<R: IntoUrl>(
     cfg_scale: None,
   };
 
-  let result = kling_v3_standard_text_to_video(request)
+  let result = kling_3p0_pro_text_to_video(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;
@@ -137,82 +136,66 @@ mod tests {
   use super::*;
 
   #[test]
-  fn test_cost_standard_audio_off() {
+  fn test_cost_pro_audio_off_5s() {
     let api_key = FalApiKey::from_str("");
-    let args = EnqueueKlingV3StandardTextToVideoArgs {
+    let args = EnqueueKling3p0ProTextToVideoArgs {
       prompt: String::new(),
       generate_audio: Some(false),
       negative_prompt: None,
-      duration: Some(EnqueueKlingV3StandardTextToVideoDuration::FiveSeconds),
+      duration: Some(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds),
       aspect_ratio: None,
       webhook_url: "https://example.com",
       api_key: &api_key,
     };
-    // $0.168 * 5 = $0.84 = 84 cents
-    assert_eq!(args.calculate_cost_in_cents(), 84);
+    // $0.224 * 5 = $1.12 = 112 cents
+    assert_eq!(args.calculate_cost_in_cents(), 112);
   }
 
   #[test]
-  fn test_cost_standard_audio_on() {
+  fn test_cost_pro_audio_on_5s() {
     let api_key = FalApiKey::from_str("");
-    let args = EnqueueKlingV3StandardTextToVideoArgs {
+    let args = EnqueueKling3p0ProTextToVideoArgs {
       prompt: String::new(),
       generate_audio: Some(true),
       negative_prompt: None,
-      duration: Some(EnqueueKlingV3StandardTextToVideoDuration::FiveSeconds),
+      duration: Some(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds),
       aspect_ratio: None,
       webhook_url: "https://example.com",
       api_key: &api_key,
     };
-    // $0.252 * 5 = $1.26 = 126 cents
-    assert_eq!(args.calculate_cost_in_cents(), 126);
-  }
-
-  #[test]
-  fn test_cost_standard_audio_off_10s() {
-    let api_key = FalApiKey::from_str("");
-    let args = EnqueueKlingV3StandardTextToVideoArgs {
-      prompt: String::new(),
-      generate_audio: Some(false),
-      negative_prompt: None,
-      duration: Some(EnqueueKlingV3StandardTextToVideoDuration::TenSeconds),
-      aspect_ratio: None,
-      webhook_url: "https://example.com",
-      api_key: &api_key,
-    };
-    // $0.168 * 10 = $1.68 = 168 cents
+    // $0.336 * 5 = $1.68 = 168 cents
     assert_eq!(args.calculate_cost_in_cents(), 168);
   }
 
   #[test]
-  fn test_cost_standard_audio_off_3s() {
+  fn test_cost_pro_audio_off_10s() {
     let api_key = FalApiKey::from_str("");
-    let args = EnqueueKlingV3StandardTextToVideoArgs {
+    let args = EnqueueKling3p0ProTextToVideoArgs {
       prompt: String::new(),
       generate_audio: Some(false),
       negative_prompt: None,
-      duration: Some(EnqueueKlingV3StandardTextToVideoDuration::ThreeSeconds),
+      duration: Some(EnqueueKling3p0ProTextToVideoDuration::TenSeconds),
       aspect_ratio: None,
       webhook_url: "https://example.com",
       api_key: &api_key,
     };
-    // $0.168 * 3 = $0.504 = ceil(50.4) = 51 cents
-    assert_eq!(args.calculate_cost_in_cents(), 51);
+    // $0.224 * 10 = $2.24 = 224 cents
+    assert_eq!(args.calculate_cost_in_cents(), 224);
   }
 
   #[test]
-  fn test_cost_standard_audio_off_15s() {
+  fn test_cost_pro_audio_off_15s() {
     let api_key = FalApiKey::from_str("");
-    let args = EnqueueKlingV3StandardTextToVideoArgs {
+    let args = EnqueueKling3p0ProTextToVideoArgs {
       prompt: String::new(),
       generate_audio: Some(false),
       negative_prompt: None,
-      duration: Some(EnqueueKlingV3StandardTextToVideoDuration::FifteenSeconds),
+      duration: Some(EnqueueKling3p0ProTextToVideoDuration::FifteenSeconds),
       aspect_ratio: None,
       webhook_url: "https://example.com",
       api_key: &api_key,
     };
-    // $0.168 * 15 = $2.52 = 252 cents
-    assert_eq!(args.calculate_cost_in_cents(), 252);
+    // $0.224 * 15 = $3.36 = 336 cents
+    assert_eq!(args.calculate_cost_in_cents(), 336);
   }
 }

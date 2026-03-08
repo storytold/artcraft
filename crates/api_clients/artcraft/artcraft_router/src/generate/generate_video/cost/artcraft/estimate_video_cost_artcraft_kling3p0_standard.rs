@@ -1,8 +1,8 @@
 use artcraft_api_defs::generate::video::multi_function::kling_3p0_standard_multi_function_video_gen::Kling3p0StandardMultiFunctionVideoGenDuration;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::text::enqueue_kling_v3_standard_text_to_video_webhook::{
-  EnqueueKlingV3StandardTextToVideoArgs,
-  EnqueueKlingV3StandardTextToVideoDuration,
+use fal_client::requests::webhook::video::text::enqueue_kling_3p0_standard_text_to_video_webhook::{
+  EnqueueKling3p0StandardTextToVideoArgs,
+  EnqueueKling3p0StandardTextToVideoDuration,
 };
 
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::PlanArtcraftKling3p0Standard;
@@ -13,24 +13,24 @@ pub(crate) fn estimate_video_cost_artcraft_kling3p0_standard(
 ) -> VideoGenerationCostEstimate {
   let duration = plan.duration
       .map(|d| match d {
-        Kling3p0StandardMultiFunctionVideoGenDuration::ThreeSeconds => EnqueueKlingV3StandardTextToVideoDuration::ThreeSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::FourSeconds => EnqueueKlingV3StandardTextToVideoDuration::FourSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::FiveSeconds => EnqueueKlingV3StandardTextToVideoDuration::FiveSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::SixSeconds => EnqueueKlingV3StandardTextToVideoDuration::SixSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::SevenSeconds => EnqueueKlingV3StandardTextToVideoDuration::SevenSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::EightSeconds => EnqueueKlingV3StandardTextToVideoDuration::EightSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::NineSeconds => EnqueueKlingV3StandardTextToVideoDuration::NineSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::TenSeconds => EnqueueKlingV3StandardTextToVideoDuration::TenSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::ElevenSeconds => EnqueueKlingV3StandardTextToVideoDuration::ElevenSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::TwelveSeconds => EnqueueKlingV3StandardTextToVideoDuration::TwelveSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::ThirteenSeconds => EnqueueKlingV3StandardTextToVideoDuration::ThirteenSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::FourteenSeconds => EnqueueKlingV3StandardTextToVideoDuration::FourteenSeconds,
-        Kling3p0StandardMultiFunctionVideoGenDuration::FifteenSeconds => EnqueueKlingV3StandardTextToVideoDuration::FifteenSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::ThreeSeconds => EnqueueKling3p0StandardTextToVideoDuration::ThreeSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::FourSeconds => EnqueueKling3p0StandardTextToVideoDuration::FourSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::FiveSeconds => EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::SixSeconds => EnqueueKling3p0StandardTextToVideoDuration::SixSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::SevenSeconds => EnqueueKling3p0StandardTextToVideoDuration::SevenSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::EightSeconds => EnqueueKling3p0StandardTextToVideoDuration::EightSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::NineSeconds => EnqueueKling3p0StandardTextToVideoDuration::NineSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::TenSeconds => EnqueueKling3p0StandardTextToVideoDuration::TenSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::ElevenSeconds => EnqueueKling3p0StandardTextToVideoDuration::ElevenSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::TwelveSeconds => EnqueueKling3p0StandardTextToVideoDuration::TwelveSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::ThirteenSeconds => EnqueueKling3p0StandardTextToVideoDuration::ThirteenSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::FourteenSeconds => EnqueueKling3p0StandardTextToVideoDuration::FourteenSeconds,
+        Kling3p0StandardMultiFunctionVideoGenDuration::FifteenSeconds => EnqueueKling3p0StandardTextToVideoDuration::FifteenSeconds,
       });
 
   // Use text-to-video cost calculator (same pricing for both modes)
   let api_key = fal_client::creds::fal_api_key::FalApiKey::from_str("");
-  let args = EnqueueKlingV3StandardTextToVideoArgs {
+  let args = EnqueueKling3p0StandardTextToVideoArgs {
     prompt: String::new(),
     generate_audio: None,
     negative_prompt: None,

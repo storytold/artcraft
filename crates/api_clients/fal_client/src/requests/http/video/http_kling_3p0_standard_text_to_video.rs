@@ -2,7 +2,7 @@ use fal::request::FalRequest;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct KlingV3ProTextToVideoInput {
+pub struct Kling3p0StandardTextToVideoInput {
   pub prompt: String,
 
   /// Aspect ratio
@@ -30,17 +30,17 @@ pub struct KlingV3ProTextToVideoInput {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct KlingV3ProTextToVideoVideoFile {
+pub struct Kling3p0StandardTextToVideoVideoFile {
   pub url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct KlingV3ProTextToVideoOutput {
-  pub video: KlingV3ProTextToVideoVideoFile,
+pub struct Kling3p0StandardTextToVideoOutput {
+  pub video: Kling3p0StandardTextToVideoVideoFile,
 }
 
-pub fn kling_v3_pro_text_to_video(
-  params: KlingV3ProTextToVideoInput,
-) -> FalRequest<KlingV3ProTextToVideoInput, KlingV3ProTextToVideoOutput> {
-  FalRequest::new("fal-ai/kling-video/v3/pro/text-to-video", params)
+pub fn kling_3p0_standard_text_to_video(
+  params: Kling3p0StandardTextToVideoInput,
+) -> FalRequest<Kling3p0StandardTextToVideoInput, Kling3p0StandardTextToVideoOutput> {
+  FalRequest::new("fal-ai/kling-video/v3/standard/text-to-video", params)
 }

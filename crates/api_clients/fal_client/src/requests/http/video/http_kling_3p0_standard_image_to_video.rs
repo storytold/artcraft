@@ -2,7 +2,7 @@ use fal::request::FalRequest;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct KlingV3StandardImageToVideoInput {
+pub struct Kling3p0StandardImageToVideoInput {
   pub prompt: String,
 
   /// Starting frame image URL
@@ -37,17 +37,17 @@ pub struct KlingV3StandardImageToVideoInput {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct KlingV3StandardImageToVideoVideoFile {
+pub struct Kling3p0StandardImageToVideoVideoFile {
   pub url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct KlingV3StandardImageToVideoOutput {
-  pub video: KlingV3StandardImageToVideoVideoFile,
+pub struct Kling3p0StandardImageToVideoOutput {
+  pub video: Kling3p0StandardImageToVideoVideoFile,
 }
 
-pub fn kling_v3_standard_image_to_video(
-  params: KlingV3StandardImageToVideoInput,
-) -> FalRequest<KlingV3StandardImageToVideoInput, KlingV3StandardImageToVideoOutput> {
+pub fn kling_3p0_standard_image_to_video(
+  params: Kling3p0StandardImageToVideoInput,
+) -> FalRequest<Kling3p0StandardImageToVideoInput, Kling3p0StandardImageToVideoOutput> {
   FalRequest::new("fal-ai/kling-video/v3/standard/image-to-video", params)
 }
