@@ -15,10 +15,12 @@ use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 
-pub(super) async fn handle_artcraft_kling_3p0_pro(
+pub(super) async fn handle_artcraft_video_via_router(
   request: &EnqueueImageToVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
+  model: CommonVideoModel,
+  generation_model: GenerationModel,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let client = RouterClient::Artcraft(RouterArtcraftClient::new(
     app_env_configs.storyteller_host.clone(),
@@ -29,7 +31,7 @@ pub(super) async fn handle_artcraft_kling_3p0_pro(
   let end_frame = request.end_frame_image_media_token.as_ref().map(ImageRef::MediaFileToken);
 
   let router_request = GenerateVideoRequest {
-    model: CommonVideoModel::Kling3p0Pro,
+    model,
     provider: Provider::Artcraft,
     prompt: request.prompt.as_deref(),
     start_frame,
@@ -64,7 +66,7 @@ pub(super) async fn handle_artcraft_kling_3p0_pro(
 
   Ok(TaskEnqueueSuccess {
     task_type: TaskType::VideoGeneration,
-    model: Some(GenerationModel::Kling3p0Pro),
+    model: Some(generation_model),
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_id),
   })
