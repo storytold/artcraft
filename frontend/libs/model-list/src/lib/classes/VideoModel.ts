@@ -41,6 +41,12 @@ export class VideoModel extends Model {
   // Available resolution options (e.g. ["480p", "720p"])
   readonly resolutionOptions?: string[];
 
+  // Whether the model supports using the CommonAspectRatio enum
+  // We're just using this to select how to propagate aspect ratios
+  // to the more recent models.
+  // NB: Soon all the models will support this.
+  readonly supportsCommonAspectRatio: boolean;
+
   // Default resolution
   readonly defaultResolution?: string;
 
@@ -71,6 +77,7 @@ export class VideoModel extends Model {
     resolutionOptions?: string[];
     defaultResolution?: string;
     supportsSystemPrompt?: boolean;
+    supportsCommonAspectRatio?: boolean;
   }) {
     super(args);
     this.startFrame = args.startFrame;
@@ -85,5 +92,6 @@ export class VideoModel extends Model {
     this.resolutionOptions = args.resolutionOptions;
     this.defaultResolution = args.defaultResolution;
     this.supportsSystemPrompt = args.supportsSystemPrompt ?? true;
+    this.supportsCommonAspectRatio = args.supportsCommonAspectRatio ?? false;
   }
 }

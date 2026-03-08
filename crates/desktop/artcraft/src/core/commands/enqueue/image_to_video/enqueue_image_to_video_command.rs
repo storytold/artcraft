@@ -15,6 +15,7 @@ use crate::core::events::generation_events::generation_enqueue_failure_event::Ge
 use crate::core::events::generation_events::generation_enqueue_success_event::GenerationEnqueueSuccessEvent;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
+use crate::core::state::artcraft_usage_tracker::artcraft_usage_type::{ArtcraftUsagePage, ArtcraftUsageType};
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::provider_priority::{Provider, ProviderPriorityStore};
 use crate::core::state::task_database::TaskDatabase;
@@ -29,7 +30,6 @@ use log::{error, info, warn};
 use serde_derive::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 use tokens::tokens::media_files::MediaFileToken;
-use crate::core::state::artcraft_usage_tracker::artcraft_usage_type::{ArtcraftUsagePage, ArtcraftUsageType};
 
 /// This is used in the Tauri command bridge.
 /// Don't change the serializations without coordinating with the frontend.

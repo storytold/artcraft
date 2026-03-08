@@ -469,16 +469,23 @@ export const PromptBoxVideo = ({
         request.sora_orientation =
           resolution === "720p" ? "landscape" : "portrait";
         break;
+    }
 
-      case "seedance_2p0": {
-        const selectedOption = selectedModel.sizeOptions?.find(
-          (option) => option.textLabel === aspectRatio,
-        );
-        if (selectedOption) {
+    if (selectedModel.supportsCommonAspectRatio) {
+      // NB: This should be the *new* aspect ratio behavior for all models.
+      const selectedOption = selectedModel.sizeOptions?.find(
+        (option) => option.textLabel === aspectRatio,
+      );
+
+      if (selectedOption) {
+        request.aspect_ratio =
+          selectedOption.tauriValue as typeof request.aspect_ratio;
+      } else {
+        const maybeDefault = selectedModel.sizeOptions[0];
+        if (!!maybeDefault) {
           request.aspect_ratio =
-            selectedOption.tauriValue as typeof request.aspect_ratio;
+            maybeDefault.tauriValue as typeof request.aspect_ratio;
         }
-        break;
       }
     }
 
