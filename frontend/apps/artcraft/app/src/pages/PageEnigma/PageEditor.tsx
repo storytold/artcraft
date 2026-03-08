@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { lazy, Suspense, useContext, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { TopBar } from "~/components";
 import { Controls3D } from "./comps/Controls3D";
@@ -17,6 +17,10 @@ import { ImageWatermarkRemover } from "../PageImageWatermarkRemover";
 import { ImageTo3DObject } from "../PageImageTo3DObject";
 import { ImageTo3DWorld } from "../PageImageTo3DWorld";
 import { RemoveBackground } from "../PageRemoveBackground";
+
+const PageVideoEditor = lazy(
+  () => import("../PageVideoEditor/PageVideoEditor"),
+);
 
 import {
   timelineHeight,
@@ -637,6 +641,21 @@ export const PageEditor = () => {
         <div>
           <RemoveBackground />
         </div>
+      )}
+      {tabStore.activeTabId == "VIDEO_EDITOR" && (
+        <Suspense
+          fallback={
+            <div className="flex h-screen w-screen items-center justify-center">
+              <LoadingDots
+                isShowing
+                type="bricks"
+                message="Loading Video Editor..."
+              />
+            </div>
+          }
+        >
+          <PageVideoEditor />
+        </Suspense>
       )}
     </div>
   );

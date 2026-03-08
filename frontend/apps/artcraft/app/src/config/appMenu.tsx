@@ -1,6 +1,7 @@
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faCube,
+  faClapperboard,
   faFilm,
   faImage,
   faDroplet,
@@ -16,6 +17,7 @@ import { set3DPageMounted } from "~/pages/PageEnigma/Editor/editor";
 export type AppId =
   | "IMAGE"
   | "VIDEO"
+  | "VIDEO_EDITOR"
   | "EDIT"
   | "2D"
   | "3D"
@@ -60,6 +62,13 @@ export const APP_DESCRIPTORS: AppDescriptor[] = [
     icon: faCube,
     imageSrc: "/resources/gifs/3D_CANVAS_DEMO.gif",
     description: "Precision control. Great for AI film.",
+    large: true,
+  },
+  {
+    id: "VIDEO_EDITOR",
+    label: "Video Editor",
+    icon: faClapperboard,
+    description: "Timeline-based video editing.",
     large: true,
   },
 ];
@@ -162,6 +171,16 @@ export const ALL_APPS: FullAppItem[] = [
   },
 
   {
+    id: "video-editor",
+    label: "Video Editor",
+    description: "Timeline-based video editing",
+    icon: faClapperboard,
+    category: "edit",
+    action: "VIDEO_EDITOR",
+    color: "bg-orange-600/40",
+    badge: "NEW",
+  },
+  {
     id: "2d-canvas",
     label: "Image Editor",
     description: "Easy edits. Great for graphic design.",
@@ -213,6 +232,7 @@ export const goToApp = (action?: string) => {
       "IMAGE_TO_3D_OBJECT",
       "IMAGE_TO_3D_WORLD",
       "REMOVE_BACKGROUND",
+      "VIDEO_EDITOR",
     ].includes(action)
   ) {
     if (action === "3D") {

@@ -5,6 +5,7 @@ export type TabId =
   | "2D"
   | "3D"
   | "VIDEO"
+  | "VIDEO_EDITOR"
   | "EDIT"
   | "IMAGE"
   | "APPS"

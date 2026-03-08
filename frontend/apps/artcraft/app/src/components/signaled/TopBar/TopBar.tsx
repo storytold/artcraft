@@ -313,6 +313,8 @@ export const TopBar = ({ pageName }: Props) => {
         return "Image to 3D Object";
       case "IMAGE_TO_3D_WORLD":
         return "Image to 3D World";
+      case "VIDEO_EDITOR":
+        return "Video Editor";
       case "APPS":
         return "ArtCraft Apps";
       default:
