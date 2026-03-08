@@ -68,37 +68,97 @@ pub async fn enqueue_kling_3p0_standard_image_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::creds::fal_api_key::FalApiKey;
+  use crate::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
+  use errors::AnyhowResult;
+  use std::fs::read_to_string;
+  use strum::IntoEnumIterator;
+  use test_data::web::image_urls::TREX_SKELETON_IMAGE_URL;
 
   #[test]
-  fn test_cost_standard_i2v_audio_off_5s() {
+  fn test_cost() {
     let api_key = FalApiKey::from_str("");
-    let args = EnqueueKling3p0StandardImageToVideoArgs {
-      prompt: String::new(),
-      image_url: String::new(),
+
+    let mut args = EnqueueKling3p0StandardImageToVideoArgs {
+      prompt: "the t-rex skeleton comes alive and roars".to_string(),
+      image_url: TREX_SKELETON_IMAGE_URL.to_string(),
       end_image_url: None,
       generate_audio: Some(false),
       negative_prompt: None,
       duration: Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds),
-      webhook_url: "https://example.com",
+      webhook_url: "https://example.com/webhook",
       api_key: &api_key,
     };
+
+    // Audio off: $0.168/sec
+    // 5s: (168 * 5 + 9) / 10 = 849 / 10 = 84
     assert_eq!(args.calculate_cost_in_cents(), 84);
+
+    // 10s: (168 * 10 + 9) / 10 = 1689 / 10 = 168
+    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::TenSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 168);
+
+    // 15s: (168 * 15 + 9) / 10 = 2529 / 10 = 252
+    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::FifteenSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 252);
+
+    // Audio on: $0.252/sec
+    args.generate_audio = Some(true);
+
+    // 5s: (252 * 5 + 9) / 10 = 1269 / 10 = 126
+    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 126);
+
+    // 10s: (252 * 10 + 9) / 10 = 2529 / 10 = 252
+    args.duration = Some(EnqueueKling3p0StandardTextToVideoDuration::TenSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 252);
   }
 
-  #[test]
-  fn test_cost_standard_i2v_audio_on_10s() {
-    let api_key = FalApiKey::from_str("");
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request and incurs cost
+  async fn test() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
     let args = EnqueueKling3p0StandardImageToVideoArgs {
-      prompt: String::new(),
-      image_url: String::new(),
-      end_image_url: None,
+      image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+      prompt: "the t-rex skeleton gets off the podium and begins walking toward the camera".to_string(),
+      duration: Some(EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds),
       generate_audio: Some(true),
       negative_prompt: None,
-      duration: Some(EnqueueKling3p0StandardTextToVideoDuration::TenSeconds),
-      webhook_url: "https://example.com",
+      end_image_url: None,
       api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
     };
-    // $0.252 * 10 = $2.52 = 252 cents
-    assert_eq!(args.calculate_cost_in_cents(), 252);
+
+    let result = enqueue_kling_3p0_standard_image_to_video_webhook(args).await?;
+    println!("result: {:?}", result);
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_durations() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for dur in EnqueueKling3p0StandardTextToVideoDuration::iter() {
+      println!("--- duration: {:?} ---", dur);
+      let args = EnqueueKling3p0StandardImageToVideoArgs {
+        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+        prompt: "the skeleton slowly turns its head and opens its jaw".to_string(),
+        duration: Some(dur),
+        generate_audio: Some(false),
+        negative_prompt: None,
+        end_image_url: None,
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_kling_3p0_standard_image_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
+
+    Ok(())
   }
 }

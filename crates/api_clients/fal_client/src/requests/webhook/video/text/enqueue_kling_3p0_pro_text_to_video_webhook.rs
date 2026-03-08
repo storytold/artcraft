@@ -20,7 +20,7 @@ pub struct EnqueueKling3p0ProTextToVideoArgs<'a, R: IntoUrl> {
   pub api_key: &'a FalApiKey,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, strum::EnumIter)]
 pub enum EnqueueKling3p0ProTextToVideoDuration {
   ThreeSeconds,
   FourSeconds,
@@ -75,7 +75,7 @@ impl EnqueueKling3p0ProTextToVideoDuration {
   }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, strum::EnumIter)]
 pub enum EnqueueKling3p0ProTextToVideoAspectRatio {
   Square,
   SixteenByNine,
@@ -134,68 +134,125 @@ pub async fn enqueue_kling_3p0_pro_text_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::creds::fal_api_key::FalApiKey;
+  use crate::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
+  use errors::AnyhowResult;
+  use std::fs::read_to_string;
+  use strum::IntoEnumIterator;
 
   #[test]
-  fn test_cost_pro_audio_off_5s() {
+  fn test_cost() {
     let api_key = FalApiKey::from_str("");
-    let args = EnqueueKling3p0ProTextToVideoArgs {
-      prompt: String::new(),
+
+    let mut args = EnqueueKling3p0ProTextToVideoArgs {
+      prompt: "a spacecraft drifts through an asteroid field, dramatic lighting".to_string(),
       generate_audio: Some(false),
       negative_prompt: None,
       duration: Some(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds),
       aspect_ratio: None,
-      webhook_url: "https://example.com",
+      webhook_url: "https://example.com/webhook",
       api_key: &api_key,
     };
-    // $0.224 * 5 = $1.12 = 112 cents
+
+    // Audio off: $0.224/sec
+    // 5s: (224 * 5 + 9) / 10 = 1129 / 10 = 112
     assert_eq!(args.calculate_cost_in_cents(), 112);
+
+    // 3s: (224 * 3 + 9) / 10 = 681 / 10 = 68
+    args.duration = Some(EnqueueKling3p0ProTextToVideoDuration::ThreeSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 68);
+
+    // 10s: (224 * 10 + 9) / 10 = 2249 / 10 = 224
+    args.duration = Some(EnqueueKling3p0ProTextToVideoDuration::TenSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 224);
+
+    // 15s: (224 * 15 + 9) / 10 = 3369 / 10 = 336
+    args.duration = Some(EnqueueKling3p0ProTextToVideoDuration::FifteenSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 336);
+
+    // Audio on: $0.336/sec
+    args.generate_audio = Some(true);
+
+    // 5s: (336 * 5 + 9) / 10 = 1689 / 10 = 168
+    args.duration = Some(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 168);
+
+    // 10s: (336 * 10 + 9) / 10 = 3369 / 10 = 336
+    args.duration = Some(EnqueueKling3p0ProTextToVideoDuration::TenSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 336);
+
+    // 15s: (336 * 15 + 9) / 10 = 5049 / 10 = 504
+    args.duration = Some(EnqueueKling3p0ProTextToVideoDuration::FifteenSeconds);
+    assert_eq!(args.calculate_cost_in_cents(), 504);
   }
 
-  #[test]
-  fn test_cost_pro_audio_on_5s() {
-    let api_key = FalApiKey::from_str("");
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request and incurs cost
+  async fn test() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
     let args = EnqueueKling3p0ProTextToVideoArgs {
-      prompt: String::new(),
+      prompt: "a samurai draws a katana in a bamboo forest, cherry blossoms falling in slow motion".to_string(),
       generate_audio: Some(true),
       negative_prompt: None,
       duration: Some(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds),
-      aspect_ratio: None,
-      webhook_url: "https://example.com",
+      aspect_ratio: Some(EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine),
       api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
     };
-    // $0.336 * 5 = $1.68 = 168 cents
-    assert_eq!(args.calculate_cost_in_cents(), 168);
+
+    let result = enqueue_kling_3p0_pro_text_to_video_webhook(args).await?;
+    println!("result: {:?}", result);
+
+    Ok(())
   }
 
-  #[test]
-  fn test_cost_pro_audio_off_10s() {
-    let api_key = FalApiKey::from_str("");
-    let args = EnqueueKling3p0ProTextToVideoArgs {
-      prompt: String::new(),
-      generate_audio: Some(false),
-      negative_prompt: None,
-      duration: Some(EnqueueKling3p0ProTextToVideoDuration::TenSeconds),
-      aspect_ratio: None,
-      webhook_url: "https://example.com",
-      api_key: &api_key,
-    };
-    // $0.224 * 10 = $2.24 = 224 cents
-    assert_eq!(args.calculate_cost_in_cents(), 224);
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_aspect_ratios() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for ar in EnqueueKling3p0ProTextToVideoAspectRatio::iter() {
+      println!("--- aspect ratio: {:?} ---", ar);
+      let args = EnqueueKling3p0ProTextToVideoArgs {
+        prompt: "a hot air balloon rises over misty mountains at dawn".to_string(),
+        generate_audio: Some(true),
+        negative_prompt: None,
+        duration: Some(EnqueueKling3p0ProTextToVideoDuration::ThreeSeconds),
+        aspect_ratio: Some(ar),
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_kling_3p0_pro_text_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
+
+    Ok(())
   }
 
-  #[test]
-  fn test_cost_pro_audio_off_15s() {
-    let api_key = FalApiKey::from_str("");
-    let args = EnqueueKling3p0ProTextToVideoArgs {
-      prompt: String::new(),
-      generate_audio: Some(false),
-      negative_prompt: None,
-      duration: Some(EnqueueKling3p0ProTextToVideoDuration::FifteenSeconds),
-      aspect_ratio: None,
-      webhook_url: "https://example.com",
-      api_key: &api_key,
-    };
-    // $0.224 * 15 = $3.36 = 336 cents
-    assert_eq!(args.calculate_cost_in_cents(), 336);
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_durations() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for dur in EnqueueKling3p0ProTextToVideoDuration::iter() {
+      println!("--- duration: {:?} ---", dur);
+      let args = EnqueueKling3p0ProTextToVideoArgs {
+        prompt: "a lighthouse beam sweeps across a stormy sea at night".to_string(),
+        generate_audio: Some(false),
+        negative_prompt: None,
+        duration: Some(dur),
+        aspect_ratio: Some(EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine),
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_kling_3p0_pro_text_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
+
+    Ok(())
   }
 }
