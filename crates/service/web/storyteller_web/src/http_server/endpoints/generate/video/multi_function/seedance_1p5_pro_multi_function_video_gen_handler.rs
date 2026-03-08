@@ -153,11 +153,11 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
   // Collect media tokens to look up
   let mut query_media_tokens = Vec::new();
 
-  if let Some(start_frame_token) = request.image_media_token.as_ref() {
+  if let Some(start_frame_token) = request.start_frame_image_media_token.as_ref() {
     query_media_tokens.push(start_frame_token.to_owned());
   }
 
-  if let Some(end_frame_token) = request.end_image_media_token.as_ref() {
+  if let Some(end_frame_token) = request.end_frame_image_media_token.as_ref() {
     query_media_tokens.push(end_frame_token.to_owned());
   }
 
@@ -173,7 +173,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     ).await?
   };
 
-  let maybe_image_url = match request.image_media_token.as_ref() {
+  let maybe_image_url = match request.start_frame_image_media_token.as_ref() {
     None => None,
     Some(token) => match image_urls_by_token.get(token) {
       Some(url) => Some(url.to_string()),
@@ -183,7 +183,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     }
   };
 
-  let maybe_end_image_url = match request.end_image_media_token.as_ref() {
+  let maybe_end_image_url = match request.end_frame_image_media_token.as_ref() {
     None => None,
     Some(token) => match image_urls_by_token.get(token) {
       Some(url) => Some(url.to_string()),
@@ -323,14 +323,14 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
   if let Some(token) = prompt_token.as_ref() {
     let mut context_items = Vec::with_capacity(2);
 
-    if let Some(media_token) = &request.image_media_token {
+    if let Some(media_token) = &request.start_frame_image_media_token {
       context_items.push(PromptContextItem {
         media_token: media_token.clone(),
         context_semantic_type: PromptContextSemanticType::VidStartFrame,
       });
     }
 
-    if let Some(media_token) = &request.end_image_media_token {
+    if let Some(media_token) = &request.end_frame_image_media_token {
       context_items.push(PromptContextItem {
         media_token: media_token.clone(),
         context_semantic_type: PromptContextSemanticType::VidEndFrame,

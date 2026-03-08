@@ -21,12 +21,12 @@ pub struct Seedance1p5ProMultiFunctionVideoGenRequest {
   /// Source of the starting frame.
   /// If present, we're doing image-to-video.
   /// If absent, we're doing text-to-video.
-  pub image_media_token: Option<MediaFileToken>,
+  pub start_frame_image_media_token: Option<MediaFileToken>,
 
   /// Optional.
   /// Only for image-to-video.
   /// Source of the ending frame.
-  pub end_image_media_token: Option<MediaFileToken>,
+  pub end_frame_image_media_token: Option<MediaFileToken>,
 
   /// Optional.
   pub resolution: Option<Seedance1p5ProMultiFunctionVideoGenResolution>,

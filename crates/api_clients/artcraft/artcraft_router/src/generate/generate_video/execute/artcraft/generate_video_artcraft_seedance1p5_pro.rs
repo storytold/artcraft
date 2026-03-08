@@ -15,8 +15,8 @@ pub async fn execute_artcraft_seedance1p5_pro(
   let request = Seedance1p5ProMultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
     prompt: plan.prompt.map(|p| p.to_string()),
-    image_media_token: plan.start_frame.map(|t| t.to_owned()),
-    end_image_media_token: plan.end_frame.map(|t| t.to_owned()),
+    start_frame_image_media_token: plan.start_frame.map(|t| t.to_owned()),
+    end_frame_image_media_token: plan.end_frame.map(|t| t.to_owned()),
     aspect_ratio: plan.aspect_ratio,
     duration: plan.duration,
     resolution: plan.resolution,
