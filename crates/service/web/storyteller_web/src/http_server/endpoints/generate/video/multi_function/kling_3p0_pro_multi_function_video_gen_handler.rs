@@ -21,7 +21,7 @@ use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_kling_3p0_pro_image_to_video_webhook::{enqueue_kling_3p0_pro_image_to_video_webhook, EnqueueKling3p0ProImageToVideoArgs, EnqueueKling3p0ProImageToVideoDuration};
+use fal_client::requests::webhook::video::image::enqueue_kling_3p0_pro_image_to_video_webhook::{enqueue_kling_3p0_pro_image_to_video_webhook, EnqueueKling3p0ProImageToVideoArgs, EnqueueKling3p0ProImageToVideoAspectRatio, EnqueueKling3p0ProImageToVideoDuration};
 use fal_client::requests::webhook::video::text::enqueue_kling_3p0_pro_text_to_video_webhook::{enqueue_kling_3p0_pro_text_to_video_webhook, EnqueueKling3p0ProTextToVideoArgs, EnqueueKling3p0ProTextToVideoAspectRatio, EnqueueKling3p0ProTextToVideoDuration};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -85,6 +85,14 @@ fn map_aspect_ratio_t2v(aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAsp
     Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueKling3p0ProTextToVideoAspectRatio::NineBySixteen,
     None => EnqueueKling3p0ProTextToVideoAspectRatio::Square,
   }
+}
+
+fn map_aspect_ratio_i2v(aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAspectRatio>) -> Option<EnqueueKling3p0ProImageToVideoAspectRatio> {
+  aspect_ratio.map(|ar| match ar {
+    Kling3p0ProMultiFunctionVideoGenAspectRatio::Square => EnqueueKling3p0ProImageToVideoAspectRatio::Square,
+    Kling3p0ProMultiFunctionVideoGenAspectRatio::SixteenByNine => EnqueueKling3p0ProImageToVideoAspectRatio::SixteenByNine,
+    Kling3p0ProMultiFunctionVideoGenAspectRatio::NineBySixteen => EnqueueKling3p0ProImageToVideoAspectRatio::NineBySixteen,
+  })
 }
 
 /// Kling 3.0 Pro Multi-Function (text and image to video)
@@ -198,6 +206,7 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
     info!("image-to-video case");
 
     let duration = map_duration_i2v(request.duration);
+    let aspect_ratio = map_aspect_ratio_i2v(request.aspect_ratio);
 
     let args = EnqueueKling3p0ProImageToVideoArgs {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
@@ -206,7 +215,7 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
       generate_audio: request.generate_audio,
       negative_prompt: request.negative_prompt.clone(),
       duration: Some(duration),
-      aspect_ratio: None,
+      aspect_ratio,
       shot_type: None,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,

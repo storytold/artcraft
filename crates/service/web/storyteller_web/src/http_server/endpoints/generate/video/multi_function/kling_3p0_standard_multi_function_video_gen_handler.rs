@@ -21,7 +21,7 @@ use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::{enqueue_kling_3p0_standard_image_to_video_webhook, EnqueueKling3p0StandardImageToVideoArgs, EnqueueKling3p0StandardImageToVideoDuration};
+use fal_client::requests::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::{enqueue_kling_3p0_standard_image_to_video_webhook, EnqueueKling3p0StandardImageToVideoArgs, EnqueueKling3p0StandardImageToVideoAspectRatio, EnqueueKling3p0StandardImageToVideoDuration};
 use fal_client::requests::webhook::video::text::enqueue_kling_3p0_standard_text_to_video_webhook::{enqueue_kling_3p0_standard_text_to_video_webhook, EnqueueKling3p0StandardTextToVideoArgs, EnqueueKling3p0StandardTextToVideoAspectRatio, EnqueueKling3p0StandardTextToVideoDuration};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -85,6 +85,14 @@ fn map_aspect_ratio_t2v(aspect_ratio: Option<Kling3p0StandardMultiFunctionVideoG
     Some(Kling3p0StandardMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueKling3p0StandardTextToVideoAspectRatio::NineBySixteen,
     None => EnqueueKling3p0StandardTextToVideoAspectRatio::Square,
   }
+}
+
+fn map_aspect_ratio_i2v(aspect_ratio: Option<Kling3p0StandardMultiFunctionVideoGenAspectRatio>) -> Option<EnqueueKling3p0StandardImageToVideoAspectRatio> {
+  aspect_ratio.map(|ar| match ar {
+    Kling3p0StandardMultiFunctionVideoGenAspectRatio::Square => EnqueueKling3p0StandardImageToVideoAspectRatio::Square,
+    Kling3p0StandardMultiFunctionVideoGenAspectRatio::SixteenByNine => EnqueueKling3p0StandardImageToVideoAspectRatio::SixteenByNine,
+    Kling3p0StandardMultiFunctionVideoGenAspectRatio::NineBySixteen => EnqueueKling3p0StandardImageToVideoAspectRatio::NineBySixteen,
+  })
 }
 
 /// Kling 3.0 Standard Multi-Function (text and image to video)
@@ -198,6 +206,7 @@ pub async fn kling_3p0_standard_multi_function_video_gen_handler(
     info!("image-to-video case");
 
     let duration = map_duration_i2v(request.duration);
+    let aspect_ratio = map_aspect_ratio_i2v(request.aspect_ratio);
 
     let args = EnqueueKling3p0StandardImageToVideoArgs {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
@@ -206,7 +215,7 @@ pub async fn kling_3p0_standard_multi_function_video_gen_handler(
       generate_audio: request.generate_audio,
       negative_prompt: request.negative_prompt.clone(),
       duration: Some(duration),
-      aspect_ratio: None,
+      aspect_ratio,
       shot_type: None,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
