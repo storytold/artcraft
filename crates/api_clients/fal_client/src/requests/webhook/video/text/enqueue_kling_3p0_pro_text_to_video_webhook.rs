@@ -234,7 +234,7 @@ mod tests {
     for ar in EnqueueKling3p0ProTextToVideoAspectRatio::iter() {
       println!("--- aspect ratio: {:?} ---", ar);
       let args = EnqueueKling3p0ProTextToVideoArgs {
-        prompt: "a hot air balloon rises over misty mountains at dawn".to_string(),
+        prompt: "a lighthouse beam sweeps across a stormy sea at night".to_string(),
         generate_audio: Some(true),
         negative_prompt: None,
         duration: Some(EnqueueKling3p0ProTextToVideoDuration::ThreeSeconds),
@@ -259,7 +259,7 @@ mod tests {
     for dur in EnqueueKling3p0ProTextToVideoDuration::iter() {
       println!("--- duration: {:?} ---", dur);
       let args = EnqueueKling3p0ProTextToVideoArgs {
-        prompt: "a lighthouse beam sweeps across a stormy sea at night".to_string(),
+        prompt: "a hot air balloon rises over misty mountains at dawn".to_string(),
         generate_audio: Some(false),
         negative_prompt: None,
         duration: Some(dur),

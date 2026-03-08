@@ -237,7 +237,7 @@ mod tests {
       println!("--- aspect ratio: {:?} ---", ar);
       let args = EnqueueKling3p0ProImageToVideoArgs {
         image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-        prompt: "the skeleton comes alive and roars at the camera".to_string(),
+        prompt: "the t-rex skeleton comes alive and roars at the camera".to_string(),
         duration: Some(EnqueueKling3p0ProImageToVideoDuration::ThreeSeconds),
         aspect_ratio: Some(ar),
         generate_audio: Some(false),
