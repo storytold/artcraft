@@ -23,6 +23,11 @@ pub struct Kling3p0StandardTextToVideoInput {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub duration: Option<String>,
 
+  /// Shot type for multi-shot video generation.
+  /// Possible enum values: "customize", "intelligent"
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub shot_type: Option<String>,
+
   /// The CFG (Classifier Free Guidance) scale.
   /// Default value: 0.5
   #[serde(skip_serializing_if = "Option::is_none")]

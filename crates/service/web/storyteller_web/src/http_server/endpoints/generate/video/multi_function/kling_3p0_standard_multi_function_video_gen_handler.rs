@@ -21,7 +21,7 @@ use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::{enqueue_kling_3p0_standard_image_to_video_webhook, EnqueueKling3p0StandardImageToVideoArgs};
+use fal_client::requests::webhook::video::image::enqueue_kling_3p0_standard_image_to_video_webhook::{enqueue_kling_3p0_standard_image_to_video_webhook, EnqueueKling3p0StandardImageToVideoArgs, EnqueueKling3p0StandardImageToVideoDuration};
 use fal_client::requests::webhook::video::text::enqueue_kling_3p0_standard_text_to_video_webhook::{enqueue_kling_3p0_standard_text_to_video_webhook, EnqueueKling3p0StandardTextToVideoArgs, EnqueueKling3p0StandardTextToVideoAspectRatio, EnqueueKling3p0StandardTextToVideoDuration};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -40,22 +40,22 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
-fn map_duration_i2v(duration: Option<Kling3p0StandardMultiFunctionVideoGenDuration>) -> EnqueueKling3p0StandardTextToVideoDuration {
+fn map_duration_i2v(duration: Option<Kling3p0StandardMultiFunctionVideoGenDuration>) -> EnqueueKling3p0StandardImageToVideoDuration {
   match duration {
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKling3p0StandardTextToVideoDuration::ThreeSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKling3p0StandardTextToVideoDuration::FourSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKling3p0StandardTextToVideoDuration::SixSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKling3p0StandardTextToVideoDuration::SevenSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKling3p0StandardTextToVideoDuration::EightSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKling3p0StandardTextToVideoDuration::NineSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKling3p0StandardTextToVideoDuration::TenSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKling3p0StandardTextToVideoDuration::ElevenSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKling3p0StandardTextToVideoDuration::TwelveSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKling3p0StandardTextToVideoDuration::ThirteenSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKling3p0StandardTextToVideoDuration::FourteenSeconds,
-    Some(Kling3p0StandardMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKling3p0StandardTextToVideoDuration::FifteenSeconds,
-    None => EnqueueKling3p0StandardTextToVideoDuration::FiveSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKling3p0StandardImageToVideoDuration::ThreeSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKling3p0StandardImageToVideoDuration::FourSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKling3p0StandardImageToVideoDuration::SixSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKling3p0StandardImageToVideoDuration::SevenSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKling3p0StandardImageToVideoDuration::EightSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKling3p0StandardImageToVideoDuration::NineSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKling3p0StandardImageToVideoDuration::TenSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKling3p0StandardImageToVideoDuration::ElevenSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKling3p0StandardImageToVideoDuration::TwelveSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKling3p0StandardImageToVideoDuration::ThirteenSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKling3p0StandardImageToVideoDuration::FourteenSeconds,
+    Some(Kling3p0StandardMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKling3p0StandardImageToVideoDuration::FifteenSeconds,
+    None => EnqueueKling3p0StandardImageToVideoDuration::FiveSeconds,
   }
 }
 
@@ -206,6 +206,8 @@ pub async fn kling_3p0_standard_multi_function_video_gen_handler(
       generate_audio: request.generate_audio,
       negative_prompt: request.negative_prompt.clone(),
       duration: Some(duration),
+      aspect_ratio: None,
+      shot_type: None,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
@@ -241,6 +243,7 @@ pub async fn kling_3p0_standard_multi_function_video_gen_handler(
       generate_audio: request.generate_audio,
       duration: Some(duration),
       aspect_ratio: Some(aspect_ratio),
+      shot_type: None,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };

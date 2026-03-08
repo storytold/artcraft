@@ -36,6 +36,7 @@ pub(crate) fn estimate_video_cost_artcraft_kling3p0_pro(
     negative_prompt: None,
     duration,
     aspect_ratio: None,
+    shot_type: None,
     webhook_url: "https://example.com",
     api_key: &api_key,
   };

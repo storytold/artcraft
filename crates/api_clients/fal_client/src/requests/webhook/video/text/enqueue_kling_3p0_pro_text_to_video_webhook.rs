@@ -14,6 +14,7 @@ pub struct EnqueueKling3p0ProTextToVideoArgs<'a, R: IntoUrl> {
   pub negative_prompt: Option<String>,
   pub duration: Option<EnqueueKling3p0ProTextToVideoDuration>,
   pub aspect_ratio: Option<EnqueueKling3p0ProTextToVideoAspectRatio>,
+  pub shot_type: Option<EnqueueKling3p0ProTextToVideoShotType>,
 
   // Fulfillment
   pub webhook_url: R,
@@ -82,6 +83,12 @@ pub enum EnqueueKling3p0ProTextToVideoAspectRatio {
   NineBySixteen,
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq, strum::EnumIter)]
+pub enum EnqueueKling3p0ProTextToVideoShotType {
+  Customize,
+  Intelligent,
+}
+
 impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKling3p0ProTextToVideoArgs<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Kling 3.0 Pro pricing:
@@ -114,12 +121,20 @@ pub async fn enqueue_kling_3p0_pro_text_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
+  let shot_type = args.shot_type
+      .map(|st| match st {
+        EnqueueKling3p0ProTextToVideoShotType::Customize => "customize",
+        EnqueueKling3p0ProTextToVideoShotType::Intelligent => "intelligent",
+      })
+      .map(|s| s.to_string());
+
   let request = Kling3p0ProTextToVideoInput {
     prompt: args.prompt,
     generate_audio: args.generate_audio,
     duration,
     aspect_ratio,
     negative_prompt: args.negative_prompt,
+    shot_type,
     cfg_scale: None,
   };
 
@@ -150,6 +165,7 @@ mod tests {
       negative_prompt: None,
       duration: Some(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds),
       aspect_ratio: None,
+      shot_type: None,
       webhook_url: "https://example.com/webhook",
       api_key: &api_key,
     };
@@ -198,6 +214,7 @@ mod tests {
       negative_prompt: None,
       duration: Some(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds),
       aspect_ratio: Some(EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine),
+      shot_type: None,
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -222,6 +239,7 @@ mod tests {
         negative_prompt: None,
         duration: Some(EnqueueKling3p0ProTextToVideoDuration::ThreeSeconds),
         aspect_ratio: Some(ar),
+        shot_type: None,
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -246,6 +264,32 @@ mod tests {
         negative_prompt: None,
         duration: Some(dur),
         aspect_ratio: Some(EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine),
+        shot_type: None,
+        api_key: &api_key,
+        webhook_url: "https://example.com/webhook",
+      };
+      let result = enqueue_kling_3p0_pro_text_to_video_webhook(args).await?;
+      println!("result: {:?}", result);
+    }
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request per variant (expensive)
+  async fn test_all_shot_types() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    for st in EnqueueKling3p0ProTextToVideoShotType::iter() {
+      println!("--- shot type: {:?} ---", st);
+      let args = EnqueueKling3p0ProTextToVideoArgs {
+        prompt: "an eagle soars over a snow-capped mountain range".to_string(),
+        generate_audio: Some(true),
+        negative_prompt: None,
+        duration: Some(EnqueueKling3p0ProTextToVideoDuration::FiveSeconds),
+        aspect_ratio: Some(EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine),
+        shot_type: Some(st),
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
