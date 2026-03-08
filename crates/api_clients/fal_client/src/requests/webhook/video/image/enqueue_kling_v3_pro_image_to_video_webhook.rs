@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use crate::requests::webhook::video::text::enqueue_kling_v3_pro_text_to_video_webhook::EnqueueKlingV3ProTextToVideoDuration;
-use fal::endpoints::fal_ai::kling_video::v3::kling_v3_pro_image_to_video::{kling_v3_pro_image_to_video, KlingV3ProImageToVideoInput};
+use crate::requests::http::video::http_kling_v3_pro_image_to_video::{kling_v3_pro_image_to_video, KlingV3ProImageToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 

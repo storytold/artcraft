@@ -1,7 +1,8 @@
-use crate::prelude::{Deserialize, FalRequest, Serialize};
+use fal::request::FalRequest;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct KlingV3ProTextToVideoInput {
+pub struct KlingV3StandardTextToVideoInput {
   pub prompt: String,
 
   /// Aspect ratio
@@ -29,18 +30,17 @@ pub struct KlingV3ProTextToVideoInput {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct KlingV3ProTextToVideoOutput {
-  pub video: VideoFile,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct VideoFile {
-  /// The URL where the file can be downloaded from.
+pub struct KlingV3StandardTextToVideoVideoFile {
   pub url: String,
 }
 
-pub fn kling_v3_pro_text_to_video(
-  params: KlingV3ProTextToVideoInput,
-) -> FalRequest<KlingV3ProTextToVideoInput, KlingV3ProTextToVideoOutput> {
-  FalRequest::new("fal-ai/kling-video/v3/pro/text-to-video", params)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct KlingV3StandardTextToVideoOutput {
+  pub video: KlingV3StandardTextToVideoVideoFile,
+}
+
+pub fn kling_v3_standard_text_to_video(
+  params: KlingV3StandardTextToVideoInput,
+) -> FalRequest<KlingV3StandardTextToVideoInput, KlingV3StandardTextToVideoOutput> {
+  FalRequest::new("fal-ai/kling-video/v3/standard/text-to-video", params)
 }

@@ -1,7 +1,8 @@
-use crate::prelude::{Deserialize, FalRequest, Serialize};
+use fal::request::FalRequest;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
-pub struct KlingV3StandardImageToVideoInput {
+pub struct KlingV3ProImageToVideoInput {
   pub prompt: String,
 
   /// Starting frame image URL
@@ -36,18 +37,17 @@ pub struct KlingV3StandardImageToVideoInput {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct KlingV3StandardImageToVideoOutput {
-  pub video: VideoFile,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub struct VideoFile {
-  /// The URL where the file can be downloaded from.
+pub struct KlingV3ProImageToVideoVideoFile {
   pub url: String,
 }
 
-pub fn kling_v3_standard_image_to_video(
-  params: KlingV3StandardImageToVideoInput,
-) -> FalRequest<KlingV3StandardImageToVideoInput, KlingV3StandardImageToVideoOutput> {
-  FalRequest::new("fal-ai/kling-video/v3/standard/image-to-video", params)
+#[derive(Debug, Serialize, Deserialize)]
+pub struct KlingV3ProImageToVideoOutput {
+  pub video: KlingV3ProImageToVideoVideoFile,
+}
+
+pub fn kling_v3_pro_image_to_video(
+  params: KlingV3ProImageToVideoInput,
+) -> FalRequest<KlingV3ProImageToVideoInput, KlingV3ProImageToVideoOutput> {
+  FalRequest::new("fal-ai/kling-video/v3/pro/image-to-video", params)
 }
