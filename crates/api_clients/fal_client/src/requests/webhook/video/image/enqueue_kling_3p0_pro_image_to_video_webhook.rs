@@ -24,6 +24,13 @@ pub struct EnqueueKling3p0ProImageToVideoArgs<'a, R: IntoUrl> {
 
 impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKling3p0ProImageToVideoArgs<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
+    // Fal Docs:
+    // For every second of video you generated, you will be charged $0.224 (audio off)
+    // or $0.336 (audio on),
+    // if voice control is used while generating audio you will be charged $0.392.
+    // For example, a 5s video with audio on and voice control will cost $1.96
+
+    // Our Docs:
     // Same pricing as text-to-video for Kling 3.0 Pro:
     //   Audio off: $0.224/second
     //   Audio on:  $0.336/second
