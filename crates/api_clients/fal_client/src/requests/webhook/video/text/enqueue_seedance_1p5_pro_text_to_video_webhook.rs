@@ -230,7 +230,7 @@ mod tests {
     for ar in EnqueueSeedance1p5ProTextToVideoAspectRatio::iter() {
       println!("--- aspect ratio: {:?} ---", ar);
       let args = EnqueueSeedance1p5ProTextToVideoArgs {
-        prompt: "a serene mountain lake at sunset with gentle ripples".to_string(),
+        prompt: "a corgi runs along a beach at golden hour".to_string(),
         duration: Some(EnqueueSeedance1p5ProTextToVideoDuration::FourSeconds),
         aspect_ratio: Some(ar),
         resolution: None,
