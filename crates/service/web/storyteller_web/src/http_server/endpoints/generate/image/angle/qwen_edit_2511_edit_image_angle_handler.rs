@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
+use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_optional_list::lookup_image_urls_as_optional_list;
@@ -131,19 +131,21 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
 
   info!("Charging wallet: {}", cost);
 
-  attempt_wallet_deduction_else_common_web_error(
+  let wallet_deduction = attempt_wallet_deduction_else_common_web_error(
     user_token,
     Some(apriori_job_token.as_str()),
     cost,
     &mut mysql_connection,
   ).await?;
 
-  let fal_result = enqueue_qwen_edit_2511_edit_image_angle_webhook(args)
-      .await
-      .map_err(|err| {
-        warn!("Error calling enqueue_qwen_edit_2511_edit_image_angle_webhook: {:?}", err);
-        CommonWebError::ServerError
-      })?;
+  let fal_result = match enqueue_qwen_edit_2511_edit_image_angle_webhook(args).await {
+    Ok(result) => result,
+    Err(err) => {
+      warn!("Error calling enqueue_qwen_edit_2511_edit_image_angle_webhook: {:?}", err);
+      refund_wallet_after_api_failure(&wallet_deduction.ledger_entry_token, &mut mysql_connection).await?;
+      return Err(CommonWebError::ServerError);
+    }
+  };
 
   let external_job_id = fal_result.request_id
       .ok_or_else(|| {
@@ -167,7 +169,7 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),
-    maybe_model_type: Some(ModelType::Qwen),
+    maybe_model_type: Some(ModelType::QwenEdit2511Angles),
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: request.additional_prompt.as_deref(),
     maybe_negative_prompt: None,
