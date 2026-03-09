@@ -15020,6 +15020,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "strum 0.28.0",
  "tokio",
  "uuid 1.18.1",
  "workspace-build-acceleration",

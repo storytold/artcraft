@@ -33,3 +33,4 @@ filesys.workspace = true
 env_logger.workspace = true
 env.workspace = true
 chrono.workspace = true
+strum.workspace = true
