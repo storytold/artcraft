@@ -72,45 +72,6 @@ pub struct SplatAssets {
   pub ground_plane_offset: Option<f64>,
 }
 
-/// Try to parse a RawWorld into a strongly-typed World.
-/// Returns None if world_id is missing (not a valid World).
-fn try_parse_world(raw: RawWorld) -> Option<World> {
-  let world_id = raw.world_id?;
-
-  let assets = raw.assets.map(|a| {
-    let splats = a.splats.map(|s| {
-      let semantics = s.semantics_metadata;
-      SplatAssets {
-        spz_url_100k: s.spz_urls.as_ref().and_then(|u| u.low.clone()),
-        spz_url_500k: s.spz_urls.as_ref().and_then(|u| u.medium.clone()),
-        spz_url_full_res: s.spz_urls.as_ref().and_then(|u| u.full_res.clone()),
-        metric_scale_factor: semantics.as_ref().and_then(|m| m.metric_scale_factor),
-        ground_plane_offset: semantics.as_ref().and_then(|m| m.ground_plane_offset),
-      }
-    });
-
-    WorldAssets {
-      caption: a.caption,
-      thumbnail_url: a.thumbnail_url,
-      pano_url: a.imagery.and_then(|i| i.pano_url),
-      collider_mesh_url: a.mesh.and_then(|m| m.collider_mesh_url),
-      splats,
-    }
-  });
-
-  Some(World {
-    world_id: WorldId(world_id),
-    display_name: raw.display_name,
-    world_marble_url: raw.world_marble_url,
-    created_at: raw.created_at,
-    updated_at: raw.updated_at,
-    model: raw.model,
-    status: raw.status,
-    tags: raw.tags,
-    assets,
-  })
-}
-
 /// GET /marble/v1/operations/{operation_id}
 ///
 /// Poll the status of an async operation.
@@ -178,6 +139,45 @@ pub async fn get_operation(args: GetOperationArgs<'_>) -> Result<GetOperationRes
     }),
     metadata: raw.metadata,
     world,
+  })
+}
+
+/// Try to parse a RawWorld into a strongly-typed World.
+/// Returns None if world_id is missing (not a valid World).
+fn try_parse_world(raw: RawWorld) -> Option<World> {
+  let world_id = raw.world_id?;
+
+  let assets = raw.assets.map(|a| {
+    let splats = a.splats.map(|s| {
+      let semantics = s.semantics_metadata;
+      SplatAssets {
+        spz_url_100k: s.spz_urls.as_ref().and_then(|u| u.low.clone()),
+        spz_url_500k: s.spz_urls.as_ref().and_then(|u| u.medium.clone()),
+        spz_url_full_res: s.spz_urls.as_ref().and_then(|u| u.full_res.clone()),
+        metric_scale_factor: semantics.as_ref().and_then(|m| m.metric_scale_factor),
+        ground_plane_offset: semantics.as_ref().and_then(|m| m.ground_plane_offset),
+      }
+    });
+
+    WorldAssets {
+      caption: a.caption,
+      thumbnail_url: a.thumbnail_url,
+      pano_url: a.imagery.and_then(|i| i.pano_url),
+      collider_mesh_url: a.mesh.and_then(|m| m.collider_mesh_url),
+      splats,
+    }
+  });
+
+  Some(World {
+    world_id: WorldId(world_id),
+    display_name: raw.display_name,
+    world_marble_url: raw.world_marble_url,
+    created_at: raw.created_at,
+    updated_at: raw.updated_at,
+    model: raw.model,
+    status: raw.status,
+    tags: raw.tags,
+    assets,
   })
 }
 
