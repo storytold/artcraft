@@ -8,8 +8,17 @@ pub(crate) struct RawResponse {
   pub created_at: Option<String>,
   pub updated_at: Option<String>,
   pub model: Option<String>,
+  pub status: Option<String>,
   pub tags: Option<Vec<String>>,
+  pub permission: Option<RawPermission>,
   pub assets: Option<RawWorldAssets>,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+pub(crate) struct RawPermission {
+  pub public: Option<bool>,
+  pub allow_id_access: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,8 +41,17 @@ pub(crate) struct RawMesh {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct RawSplats {
   pub spz_urls: Option<RawSpzUrls>,
+  pub semantics_metadata: Option<RawSemanticsMetadata>,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+pub(crate) struct RawSemanticsMetadata {
+  pub metric_scale_factor: Option<f64>,
+  pub ground_plane_offset: Option<f64>,
 }
 
 #[derive(Debug, Deserialize)]

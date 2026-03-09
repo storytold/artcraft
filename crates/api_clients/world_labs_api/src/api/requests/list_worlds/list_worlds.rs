@@ -42,6 +42,8 @@ pub struct WorldSummary {
   pub created_at: Option<String>,
   pub updated_at: Option<String>,
   pub model: Option<String>,
+  /// e.g. "SUCCEEDED", "PENDING", "FAILED", "RUNNING"
+  pub status: Option<String>,
   pub tags: Option<Vec<String>>,
 }
 
@@ -108,6 +110,7 @@ pub async fn list_worlds(args: ListWorldsArgs<'_>) -> Result<ListWorldsResponse,
     created_at: w.created_at,
     updated_at: w.updated_at,
     model: w.model,
+    status: w.status,
     tags: w.tags,
   }).collect();
 
@@ -147,9 +150,18 @@ mod tests {
 
     println!("Worlds count: {}", response.worlds.len());
     println!("Next page token: {:?}", response.next_page_token);
+    println!();
 
-    for world in &response.worlds {
-      println!("  World ID: {} | Name: {:?} | Model: {:?}", world.world_id, world.display_name, world.model);
+    for (i, world) in response.worlds.iter().enumerate() {
+      println!("--- World {} ---", i + 1);
+      println!("  World ID: {}", world.world_id);
+      println!("  Display name: {:?}", world.display_name);
+      println!("  Marble URL: {:?}", world.world_marble_url);
+      println!("  Created at: {:?}", world.created_at);
+      println!("  Updated at: {:?}", world.updated_at);
+      println!("  Model: {:?}", world.model);
+      println!("  Status: {:?}", world.status);
+      println!("  Tags: {:?}", world.tags);
     }
 
     assert_eq!(1, 2);

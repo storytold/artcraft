@@ -22,7 +22,10 @@ pub struct GetWorldResponse {
   pub created_at: Option<String>,
   pub updated_at: Option<String>,
   pub model: Option<String>,
+  /// e.g. "SUCCEEDED", "PENDING", "FAILED", "RUNNING"
+  pub status: Option<String>,
   pub tags: Option<Vec<String>>,
+  pub is_public: Option<bool>,
   pub assets: Option<WorldAssets>,
 }
 
@@ -100,7 +103,9 @@ pub async fn get_world(args: GetWorldArgs<'_>) -> Result<GetWorldResponse, World
     created_at: raw.created_at,
     updated_at: raw.updated_at,
     model: raw.model,
+    status: raw.status,
     tags: raw.tags,
+    is_public: raw.permission.and_then(|p| p.public),
     assets,
   })
 }
@@ -132,11 +137,24 @@ mod tests {
     println!("World ID: {}", response.world_id);
     println!("Display name: {:?}", response.display_name);
     println!("Marble URL: {:?}", response.world_marble_url);
+    println!("Created at: {:?}", response.created_at);
+    println!("Updated at: {:?}", response.updated_at);
     println!("Model: {:?}", response.model);
-    if let Some(assets) = &response.assets {
-      println!("Caption: {:?}", assets.caption);
-      println!("Thumbnail: {:?}", assets.thumbnail_url);
-      println!("SPZ full res: {:?}", assets.spz_url_full_res);
+    println!("Status: {:?}", response.status);
+    println!("Tags: {:?}", response.tags);
+    println!("Is public: {:?}", response.is_public);
+    match &response.assets {
+      None => println!("Assets: None"),
+      Some(assets) => {
+        println!("Assets:");
+        println!("  Caption: {:?}", assets.caption);
+        println!("  Thumbnail URL: {:?}", assets.thumbnail_url);
+        println!("  Pano URL: {:?}", assets.pano_url);
+        println!("  Collider mesh URL: {:?}", assets.collider_mesh_url);
+        println!("  SPZ 100k: {:?}", assets.spz_url_100k);
+        println!("  SPZ 500k: {:?}", assets.spz_url_500k);
+        println!("  SPZ full res: {:?}", assets.spz_url_full_res);
+      }
     }
 
     assert_eq!(1, 2);

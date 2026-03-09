@@ -109,7 +109,7 @@ mod tests {
     let creds = get_test_api_key().unwrap();
 
     // Use a known operation_id from a previous generate_world call
-    let operation_id = OperationId("REPLACE_WITH_REAL_ID".to_string());
+    let operation_id = OperationId("1fab3bf1-05a1-4929-907e-c6df07c539e2".to_string());
 
     let response = get_operation(GetOperationArgs {
       creds: &creds,

@@ -36,5 +36,6 @@ pub(crate) struct RawWorldSummary {
   pub created_at: Option<String>,
   pub updated_at: Option<String>,
   pub model: Option<String>,
+  pub status: Option<String>,
   pub tags: Option<Vec<String>>,
 }
