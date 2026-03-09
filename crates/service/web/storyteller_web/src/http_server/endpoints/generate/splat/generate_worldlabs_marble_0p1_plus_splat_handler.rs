@@ -5,6 +5,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
+use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::splat::generate_worldlabs_marble_0p1_plus_splat::{GenerateWorldlabsMarble0p1PlusSplatRequest, GenerateWorldlabsMarble0p1PlusSplatResponse};
@@ -23,6 +24,9 @@ use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use world_labs_api::pricing::check_pricing::{InputType, calculate_cost};
 use world_labs_api::api::api_types::world_labs_model::WorldLabsModel;
+use world_labs_api::credentials::world_labs_api_creds::WorldLabsApiCreds;
+use world_labs_api::api::requests::generate_world::generate_world::{generate_world, GenerateWorldArgs};
+use world_labs_api::api::requests::generate_world::http_request::{WorldPrompt, ContentReference};
 
 /// World Labs Marble 0.1-plus Splat Generation
 #[utoipa::path(
@@ -87,8 +91,14 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
 
   let apriori_job_token = InferenceJobToken::generate();
 
-  // Calculate cost using WorldLabs pricing (ImageNonPanorama for now)
-  let cost = calculate_cost(WorldLabsModel::Marble0p1Plus, InputType::ImageNonPanorama);
+  // Determine input type and calculate cost
+  let input_type = if request.image_media_file_token.is_some() {
+    InputType::ImageNonPanorama
+  } else {
+    InputType::Text
+  };
+
+  let cost = calculate_cost(WorldLabsModel::Marble0p1Plus, input_type);
   let cost_in_cents = cost.us_dollar_cents as u64;
 
   info!("Charging wallet: {} cents for Marble 0.1-plus splat", cost_in_cents);
@@ -99,6 +109,51 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
     cost_in_cents,
     &mut mysql_connection,
   ).await?;
+
+  // Build WorldPrompt based on input
+  let world_prompt = if let Some(image_token) = &request.image_media_file_token {
+    let image_urls = lookup_image_urls_as_map(
+      &http_request,
+      &mut mysql_connection,
+      server_state.server_environment,
+      &[image_token.clone()],
+    ).await?;
+
+    let cdn_url = image_urls.get(image_token)
+      .ok_or_else(|| {
+        warn!("Image token not found in lookup results: {:?}", image_token);
+        CommonWebError::ServerError
+      })?;
+
+    WorldPrompt::Image {
+      image_prompt: ContentReference::Uri { uri: cdn_url.clone() },
+      text_prompt: request.prompt.clone(),
+      is_pano: None,
+      disable_recaption: None,
+    }
+  } else {
+    WorldPrompt::Text {
+      text_prompt: request.prompt.clone(),
+      disable_recaption: None,
+    }
+  };
+
+  // Call World Labs API to start generation
+  let creds = WorldLabsApiCreds::new(server_state.worldlabs.api_key.clone());
+
+  let generate_result = generate_world(GenerateWorldArgs {
+    creds: &creds,
+    world_prompt,
+    display_name: None,
+    model: WorldLabsModel::Marble0p1Plus,
+    seed: None,
+    tags: None,
+    permission: None,
+    request_timeout: None,
+  }).await.map_err(|err| {
+    warn!("World Labs generate_world error: {:?}", err);
+    CommonWebError::ServerError
+  })?;
 
   let ip_address = get_request_ip(&http_request);
 
@@ -154,7 +209,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
   let db_result = insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token(InsertGenericInferenceForWorldlabsWithAprioriJobTokenArgs {
     apriori_job_token: &apriori_job_token,
     uuid_idempotency_token: &request.uuid_idempotency_token,
-    maybe_external_third_party_id: "",
+    maybe_external_third_party_id: generate_result.operation_id.as_str(),
     maybe_inference_args: None,
     maybe_prompt_token: prompt_token.as_ref(),
     maybe_wallet_ledger_entry_token: Some(&wallet_deduction.ledger_entry_token),
