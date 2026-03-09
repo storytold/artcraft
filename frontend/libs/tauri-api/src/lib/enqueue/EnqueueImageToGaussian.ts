@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
 import { Model } from "@storyteller/model-list";
+import { GenerationProvider } from "@storyteller/api-enums";
 
 export enum EnqueueImageToGaussianErrorType {
   /// Caller didn't specify a model
@@ -17,6 +18,9 @@ export interface EnqueueImageToGaussianRequest {
   // Required. The model to use.
   model?: Model;
 
+  // The provider to use.
+  provider?: GenerationProvider;
+
   // Optional. Text prompt to direct the gaussian.
   prompt?: string;
 
@@ -32,6 +36,7 @@ export interface EnqueueImageToGaussianRequest {
 
 interface RawEnqueueImageToGaussianRequest {
   model?: string;
+  provider?: GenerationProvider;
   prompt?: string;
   image_media_tokens?: string[];
   frontend_caller?: string;
@@ -60,6 +65,10 @@ export const EnqueueImageToGaussian = async (
     model: request.model?.tauriId,
     image_media_tokens: request.image_media_tokens,
   };
+
+  if (request.provider) {
+    mutableRequest.provider = request.provider;
+  }
 
   if (request.prompt) {
     mutableRequest.prompt = request.prompt;

@@ -35,6 +35,7 @@ import {
   IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST,
   ModelPage,
   useSelectedModel,
+  useSelectedProviderForModel,
 } from "@storyteller/ui-model-selector";
 
 type Mode = "image" | "text";
@@ -91,6 +92,7 @@ export const ImageTo3DExperience = ({
       EnqueueImageTo3dObjectModel.Hunyuan3d3,
     );
   const selectedWorldModel = useSelectedModel(WORLD_MODEL_PAGE);
+  const selectedWorldProvider = useSelectedProviderForModel(WORLD_MODEL_PAGE, selectedWorldModel?.id);
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -379,6 +381,7 @@ export const ImageTo3DExperience = ({
           image_media_tokens: readyTokens,
           prompt: worldPrompt.trim() || undefined,
           model: selectedWorldModel ?? SPLAT_MODELS[0],
+          provider: selectedWorldProvider,
           frontend_caller: "mini_app",
           frontend_subscriber_id: subscriberId,
         });
