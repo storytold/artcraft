@@ -9,6 +9,7 @@ import {
   faCube,
   faImages,
   faPlus,
+  faTrashAlt,
   faUpload,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -29,10 +30,26 @@ import { addObject } from "../../pages/PageEnigma/signals/objectGroup/addObject"
 import { set3DPageMounted } from "../../pages/PageEnigma/Editor/editor";
 import { AssetType } from "~/enums";
 import type { MediaItem } from "../../pages/PageEnigma/models";
-import { GAUSSIAN_MODELS } from "@storyteller/model-list";
+import { SPLAT_MODELS } from "@storyteller/model-list";
+import {
+  ClassyModelSelector,
+  IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST,
+  ModelPage,
+  useSelectedModel,
+} from "@storyteller/ui-model-selector";
 
 type Mode = "image" | "text";
 type Variant = "object" | "world";
+
+interface WorldImage {
+  id: string;
+  preview: string;
+  mediaToken: string | null;
+  name: string;
+  isUploading: boolean;
+}
+
+const MAX_WORLD_IMAGES = 10;
 
 interface ImageTo3DExperienceProps {
   title: string;
@@ -61,6 +78,8 @@ const MODEL_OPTIONS = [
   { id: EnqueueImageTo3dObjectModel.Hunyuan3d2_0, label: "Hunyuan 2.0" },
 ];
 
+const WORLD_MODEL_PAGE = ModelPage.ImageTo3DWorld;
+
 export const ImageTo3DExperience = ({
   title,
   subtitle,
@@ -72,6 +91,7 @@ export const ImageTo3DExperience = ({
     useState<EnqueueImageTo3dObjectModel>(
       EnqueueImageTo3dObjectModel.Hunyuan3d3,
     );
+  const selectedWorldModel = useSelectedModel(WORLD_MODEL_PAGE);
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -80,6 +100,11 @@ export const ImageTo3DExperience = ({
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const worldFileInputRef = useRef<HTMLInputElement>(null);
+  const worldTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [worldImages, setWorldImages] = useState<WorldImage[]>([]);
+  const [worldPrompt, setWorldPrompt] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const promptContentRef = useRef<HTMLDivElement>(null);
@@ -114,9 +139,19 @@ export const ImageTo3DExperience = ({
 
   useEffect(() => {
     if (variant === "world" && pendingExternalImage) {
-      setUploadedPreview(pendingExternalImage.url);
-      setUploadedMediaToken(pendingExternalImage.mediaToken);
-      setUploadedName("Library Image");
+      setWorldImages((prev) => {
+        if (prev.length >= MAX_WORLD_IMAGES) return prev;
+        return [
+          ...prev,
+          {
+            id: generateId(),
+            preview: pendingExternalImage.url,
+            mediaToken: pendingExternalImage.mediaToken,
+            name: "Library Image",
+            isUploading: false,
+          },
+        ];
+      });
       clearPendingExternalImage();
     }
   }, [variant, pendingExternalImage, clearPendingExternalImage]);
@@ -141,6 +176,10 @@ export const ImageTo3DExperience = ({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+    if (worldTextareaRef.current) {
+      worldTextareaRef.current.style.height = "auto";
+      worldTextareaRef.current.style.height = `${worldTextareaRef.current.scrollHeight}px`;
     }
   });
 
@@ -200,14 +239,95 @@ export const ImageTo3DExperience = ({
     setIsGalleryModalOpen(true);
   };
 
+  const handleWorldFiles = async (files: File[]) => {
+    const remaining = MAX_WORLD_IMAGES - worldImages.length;
+    const imageFiles = files
+      .filter((f) => f.type.startsWith("image/"))
+      .slice(0, remaining);
+
+    await Promise.all(
+      imageFiles.map(async (file) => {
+        const imageId = generateId();
+
+        const preview = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        });
+
+        setWorldImages((prev) => [
+          ...prev,
+          {
+            id: imageId,
+            preview,
+            mediaToken: null,
+            name: file.name,
+            isUploading: true,
+          },
+        ]);
+
+        try {
+          const mediaUploadApi = new MediaUploadApi();
+          const uploadResult = await mediaUploadApi.UploadImage({
+            blob: file,
+            fileName: file.name,
+            uuid: uuidv4(),
+          });
+
+          if (!uploadResult.success || !uploadResult.data) {
+            throw new Error("Upload failed");
+          }
+
+          setWorldImages((prev) =>
+            prev.map((img) =>
+              img.id === imageId
+                ? { ...img, mediaToken: uploadResult.data!, isUploading: false }
+                : img,
+            ),
+          );
+        } catch {
+          toast.error(`Failed to upload ${file.name}`);
+          setWorldImages((prev) => prev.filter((img) => img.id !== imageId));
+        }
+      }),
+    );
+  };
+
+  const removeWorldImage = (imageId: string) => {
+    setWorldImages((prev) => prev.filter((img) => img.id !== imageId));
+  };
+
   const handleImageSelect = (id: string) => {
     setSelectedGalleryImages((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (variant === "world") {
+        const max = MAX_WORLD_IMAGES - worldImages.length;
+        if (prev.length >= max) return prev;
+        return [...prev, id];
+      }
       return [id];
     });
   };
 
   const handleGallerySelect = async (selectedItems: GalleryItem[]) => {
+    if (variant === "world") {
+      const remaining = MAX_WORLD_IMAGES - worldImages.length;
+      const newImages: WorldImage[] = selectedItems
+        .slice(0, remaining)
+        .filter((item) => item.fullImage)
+        .map((item) => ({
+          id: generateId(),
+          preview: item.fullImage!,
+          mediaToken: item.id,
+          name: item.label || "Library Image",
+          isUploading: false,
+        }));
+      setWorldImages((prev) => [...prev, ...newImages]);
+      setIsGalleryModalOpen(false);
+      setSelectedGalleryImages([]);
+      return;
+    }
+
     const item = selectedItems[0];
     if (!item || !item.fullImage) {
       toast.error("No image selected");
@@ -225,25 +345,59 @@ export const ImageTo3DExperience = ({
   };
 
   const handleGenerate = async () => {
-    if (isGenerating || isUploading) return;
-    if (activeMode === "image" && !uploadedMediaToken) return;
-    if (activeMode === "text" && prompt.trim().length <= 3) return;
+    if (isGenerating) return;
 
-    console.log("Set is generating...");
+    if (variant === "world") {
+      const readyTokens = worldImages
+        .filter((img) => img.mediaToken && !img.isUploading)
+        .map((img) => img.mediaToken!);
+      if (readyTokens.length === 0) return;
+    } else {
+      if (isUploading) return;
+      if (activeMode === "image" && !uploadedMediaToken) return;
+      if (activeMode === "text" && prompt.trim().length <= 3) return;
+    }
+
     setIsGenerating(true);
-
-    const snapshotPrompt = prompt.trim();
-    const snapshotPreview = uploadedPreview || undefined;
-    const snapshotName = uploadedName;
 
     try {
       const subscriberId = generateId();
-      const note =
-        activeMode === "text"
-          ? snapshotPrompt
-          : snapshotName || "Generated Model";
 
-      if (variant === "object") {
+      if (variant === "world") {
+        const readyTokens = worldImages
+          .filter((img) => img.mediaToken && !img.isUploading)
+          .map((img) => img.mediaToken!);
+        const note =
+          worldPrompt.trim() ||
+          `${worldImages.length} image${worldImages.length !== 1 ? "s" : ""}`;
+        const firstPreview = worldImages[0]?.preview;
+
+        worldStartGeneration("image", note, firstPreview, subscriberId);
+        setSelectedResultId(subscriberId);
+
+        const result = await EnqueueImageToGaussian({
+          image_media_tokens: readyTokens,
+          prompt: worldPrompt.trim() || undefined,
+          model: selectedWorldModel ?? SPLAT_MODELS[0],
+          frontend_caller: "mini_app",
+          frontend_subscriber_id: subscriberId,
+        });
+
+        if ("error_type" in result) {
+          throw new Error(result.error_message || result.error_type);
+        }
+
+        setWorldImages([]);
+        setWorldPrompt("");
+      } else {
+        const snapshotPrompt = prompt.trim();
+        const snapshotPreview = uploadedPreview || undefined;
+        const snapshotName = uploadedName;
+        const note =
+          activeMode === "text"
+            ? snapshotPrompt
+            : snapshotName || "Generated Model";
+
         objectStartGeneration(
           activeMode,
           note,
@@ -251,38 +405,26 @@ export const ImageTo3DExperience = ({
           false,
           subscriberId,
         );
-      } else {
-        worldStartGeneration(activeMode, note, snapshotPreview, subscriberId);
-      }
-      setSelectedResultId(subscriberId);
+        setSelectedResultId(subscriberId);
 
-      const result =
-        variant === "object"
-          ? await EnqueueImageTo3dObject({
-              image_media_token: uploadedMediaToken || undefined,
-              model: selectedModel,
-              frontend_caller: "mini_app",
-              frontend_subscriber_id: subscriberId,
-            })
-          : await EnqueueImageToGaussian({
-              image_media_tokens: uploadedMediaToken
-                ? [uploadedMediaToken]
-                : undefined,
-              model: GAUSSIAN_MODELS[0],
-              frontend_caller: "mini_app",
-              frontend_subscriber_id: subscriberId,
-            });
+        const result = await EnqueueImageTo3dObject({
+          image_media_token: uploadedMediaToken || undefined,
+          model: selectedModel,
+          frontend_caller: "mini_app",
+          frontend_subscriber_id: subscriberId,
+        });
 
-      if ("error_type" in result) {
-        throw new Error(result.error_message || result.error_type);
-      }
+        if ("error_type" in result) {
+          throw new Error(result.error_message || result.error_type);
+        }
 
-      if (activeMode === "text") {
-        setPrompt("");
-      } else {
-        setUploadedPreview(null);
-        setUploadedName(null);
-        setUploadedMediaToken(null);
+        if (activeMode === "text") {
+          setPrompt("");
+        } else {
+          setUploadedPreview(null);
+          setUploadedName(null);
+          setUploadedMediaToken(null);
+        }
       }
     } catch (error) {
       const errorMessage =
@@ -294,7 +436,11 @@ export const ImageTo3DExperience = ({
   };
 
   const canGenerate = useMemo(() => {
-    if (isGenerating || isUploading) return false;
+    if (isGenerating) return false;
+    if (variant === "world") {
+      return worldImages.some((img) => img.mediaToken && !img.isUploading);
+    }
+    if (isUploading) return false;
     if (activeMode === "image") {
       return Boolean(uploadedMediaToken);
     }
@@ -302,7 +448,15 @@ export const ImageTo3DExperience = ({
       return prompt.trim().length > 3;
     }
     return true;
-  }, [activeMode, uploadedMediaToken, prompt, isGenerating, isUploading]);
+  }, [
+    variant,
+    activeMode,
+    uploadedMediaToken,
+    prompt,
+    isGenerating,
+    isUploading,
+    worldImages,
+  ]);
 
   const hasResults = results.length > 0;
   const showPromptAtBottom = hasResults;
@@ -459,7 +613,155 @@ export const ImageTo3DExperience = ({
     </div>
   );
 
+  const renderWorldMode = () => {
+    const canAddMore = worldImages.length < MAX_WORLD_IMAGES;
+    const hasImages = worldImages.length > 0;
+
+    if (!hasImages) {
+      return (
+        <div className="space-y-3">
+          <div className="flex justify-center">
+            <Tooltip
+              interactive
+              position="top"
+              delay={100}
+              zIndex={50}
+              content={
+                <div className="flex flex-col gap-1.5 text-left">
+                  <Button variant="primary" icon={faUpload} onClick={() => worldFileInputRef.current?.click()} className="w-full">Upload images</Button>
+                  <Button variant="action" icon={faImages} onClick={handlePickFromLibrary} className="w-full">Pick from library</Button>
+                </div>
+              }
+            >
+              <div
+                role="button"
+                tabIndex={0}
+                className={twMerge(
+                  "flex h-32 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 transition-all hover:border-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40",
+                  dragActive && "border-primary bg-primary/10",
+                )}
+                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragActive(false); }}
+                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); if (e.dataTransfer?.files) handleWorldFiles(Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"))); }}
+                onClick={() => worldFileInputRef.current?.click()}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); worldFileInputRef.current?.click(); } }}
+              >
+                <FontAwesomeIcon icon={faPlus} className="text-3xl text-base-fg opacity-90 drop-shadow" />
+                <span className="mt-2 text-sm font-medium text-base-fg/50">Add Images</span>
+              </div>
+            </Tooltip>
+          </div>
+          <textarea
+            ref={worldTextareaRef}
+            rows={2}
+            className="w-full resize-none overflow-y-auto rounded-lg bg-white/5 px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 focus:outline-none focus:ring-2 focus:ring-primary/60"
+            style={{ maxHeight: "5em" }}
+            value={worldPrompt}
+            placeholder="Describe your 3D world (optional)..."
+            onChange={(e) => setWorldPrompt(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="flex flex-1 flex-wrap items-center gap-2">
+            {worldImages.map((img) => (
+              <div
+                key={img.id}
+                className={twMerge(
+                  "glass group relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all",
+                  img.isUploading
+                    ? "cursor-default"
+                    : "cursor-pointer hover:border-white/80 hover:cursor-zoom-in",
+                )}
+                onClick={() =>
+                  !img.isUploading && setPreviewImage(img.preview)
+                }
+              >
+                <img
+                  src={img.preview}
+                  alt={img.name}
+                  className={twMerge(
+                    "h-full w-full object-cover",
+                    img.isUploading && "opacity-50 blur-sm",
+                  )}
+                />
+                {img.isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-primary" />
+                  </div>
+                )}
+                {!img.isUploading && (
+                  <button
+                    type="button"
+                    className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-red/70 group-hover:opacity-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeWorldImage(img.id);
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+            {canAddMore && (
+              <Tooltip
+                interactive
+                position="top"
+                delay={100}
+                zIndex={50}
+                content={
+                  <div className="flex flex-col gap-1.5 text-left">
+                    <Button variant="primary" icon={faUpload} onClick={() => worldFileInputRef.current?.click()} className="w-full">Upload images</Button>
+                    <Button variant="action" icon={faImages} onClick={handlePickFromLibrary} className="w-full">Pick from library</Button>
+                  </div>
+                }
+              >
+                <Button
+                  variant="action"
+                  className="aspect-square w-14 overflow-hidden rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 transition-all hover:bg-ui-controls/60 dark:border-white/25"
+                  onClick={() => worldFileInputRef.current?.click()}
+                >
+                  <FontAwesomeIcon icon={faPlus} className="text-2xl text-base-fg opacity-80" />
+                </Button>
+              </Tooltip>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="h-10 w-[1px] rounded-lg bg-base-fg/10" />
+            <Button
+              variant="action"
+              icon={faTrashAlt}
+              className="h-8 w-3"
+              onClick={() => setWorldImages([])}
+            />
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-base-fg/40">
+          {worldImages.length}/{MAX_WORLD_IMAGES} images
+        </p>
+
+        <textarea
+          ref={worldTextareaRef}
+          rows={2}
+          className="w-full resize-none overflow-y-auto rounded-lg bg-white/5 px-3 py-2.5 text-base text-base-fg placeholder-base-fg/60 focus:outline-none focus:ring-2 focus:ring-primary/60"
+          style={{ maxHeight: "5em" }}
+          value={worldPrompt}
+          placeholder="Describe your 3D world (optional)..."
+          onChange={(e) => setWorldPrompt(e.target.value)}
+        />
+      </div>
+    );
+  };
+
   const renderActiveMode = () => {
+    if (variant === "world") return renderWorldMode();
     if (activeMode === "text") return renderTextMode();
     return renderImageMode();
   };
@@ -625,7 +927,10 @@ export const ImageTo3DExperience = ({
 
         {/* Animated Input Area */}
         <animated.div
-          className="fixed left-1/2 z-20 w-full max-w-md -translate-x-1/2"
+          className={twMerge(
+            "fixed left-1/2 z-20 w-full -translate-x-1/2",
+            variant === "world" ? "max-w-lg" : "max-w-md",
+          )}
           style={promptAnim}
         >
           <div ref={promptContentRef}>
@@ -672,6 +977,20 @@ export const ImageTo3DExperience = ({
             )}
           </div>
         </animated.div>
+
+        {variant === "world" && (
+          <div className="absolute bottom-6 left-6 z-20 flex items-center gap-5">
+            <ClassyModelSelector
+              items={IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST}
+              page={WORLD_MODEL_PAGE}
+              mode="hoverSelect"
+              panelTitle="Select Model"
+              panelClassName="min-w-[300px]"
+              buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
+              showIconsInList
+            />
+          </div>
+        )}
       </div>
 
       <input
@@ -680,6 +999,19 @@ export const ImageTo3DExperience = ({
         accept="image/*"
         className="hidden"
         onChange={handleFileChange}
+      />
+      <input
+        ref={worldFileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files) {
+            handleWorldFiles(Array.from(e.target.files));
+          }
+          e.target.value = "";
+        }}
       />
 
       <GalleryModal
@@ -691,11 +1023,34 @@ export const ImageTo3DExperience = ({
         mode="select"
         selectedItemIds={selectedGalleryImages}
         onSelectItem={handleImageSelect}
-        maxSelections={1}
+        maxSelections={
+          variant === "world" ? MAX_WORLD_IMAGES - worldImages.length : 1
+        }
         onUseSelected={handleGallerySelect}
         onDownloadClicked={downloadFileFromUrl}
         forceFilter="image"
       />
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button
+            type="button"
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+            onClick={() => setPreviewImage(null)}
+          >
+            <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+          </button>
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="max-h-[80vh] max-w-[80vw] rounded-xl object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

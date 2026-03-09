@@ -1,4 +1,4 @@
-import { IMAGE_MODELS_BY_ID, Model, VIDEO_MODELS_BY_ID } from "@storyteller/model-list";
+import { IMAGE_MODELS_BY_ID, Model, SPLAT_MODELS_BY_ID, VIDEO_MODELS_BY_ID } from "@storyteller/model-list";
 import { ModelPage } from "./model-pages";
 
 export const defaultModelForPage = (models: Model[], page: ModelPage): Model => {
@@ -19,6 +19,9 @@ export const defaultModelForPage = (models: Model[], page: ModelPage): Model => 
       break;
     case ModelPage.ImageEditor:
       imageModel = IMAGE_MODELS_BY_ID.get("nano_banana_pro");
+      break;
+    case ModelPage.ImageTo3DWorld:
+      imageModel = SPLAT_MODELS_BY_ID.get("marble_0p1_mini");
       break;
   }
 

@@ -111,7 +111,6 @@ export const ALL_APPS: FullAppItem[] = [
     category: "generate",
     action: "IMAGE_TO_3D_WORLD",
     color: "bg-blue-500/40",
-    badge: "NEW",
   },
   {
     id: "edit-image",
@@ -130,7 +129,6 @@ export const ALL_APPS: FullAppItem[] = [
     category: "edit",
     action: "VIDEO_FRAME_EXTRACTOR",
     color: "bg-rose-600/40",
-    badge: "NEW",
   },
   {
     id: "video-watermark-removal",
@@ -158,7 +156,6 @@ export const ALL_APPS: FullAppItem[] = [
     category: "edit",
     action: "REMOVE_BACKGROUND",
     color: "bg-violet-500/40",
-    badge: "NEW",
   },
 
   {

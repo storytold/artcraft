@@ -1,5 +1,5 @@
 import type { PopoverItem } from "@storyteller/ui-popover";
-import { faClock, faFilm, faImage } from "@fortawesome/pro-solid-svg-icons";
+import { faClock, faCube, faFilm, faImage } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   getCreatorIcon,
@@ -7,6 +7,7 @@ import {
   VIDEO_MODELS,
   IMAGE_MODELS,
   IMAGE_MODELS_BY_ID,
+  SPLAT_MODELS,
 } from "@storyteller/model-list";
 import { ModelTag } from "@storyteller/model-list";
 
@@ -109,4 +110,10 @@ export const IMAGE_TO_VIDEO_PAGE_MODEL_LIST: ModelList =
       return list;
     })(),
     <FontAwesomeIcon icon={faFilm} className="h-4 w-4" />
+  );
+
+export const IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST: ModelList =
+  buildItems(
+    SPLAT_MODELS as Model[],
+    <FontAwesomeIcon icon={faCube} className="h-4 w-4" />
   );

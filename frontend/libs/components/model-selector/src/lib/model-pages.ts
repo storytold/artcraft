@@ -3,7 +3,6 @@ export enum ModelPage {
   ImageToVideo = "image-to-video",
   Canvas2D = "canvas-2d",
   Stage3D = "stage-3d",
-
-  // The "inpainting + outpainting + text" image editor
   ImageEditor = "image-editor",
+  ImageTo3DWorld = "image-to-3d-world",
 }
