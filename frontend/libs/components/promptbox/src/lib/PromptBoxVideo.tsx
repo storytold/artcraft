@@ -17,7 +17,7 @@ import {
   faClock,
   faTriangleExclamation,
 } from "@fortawesome/pro-solid-svg-icons";
-import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
+import { faCircleInfo, faVideo, faMusic } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
@@ -61,6 +61,8 @@ interface PromptBoxVideoProps {
   url?: string;
   onImageRowVisibilityChange?: (visible: boolean) => void;
   uploadImage?: UploadImageFn;
+  uploadVideo?: UploadImageFn;
+  uploadAudio?: UploadImageFn;
   credits?: number | null;
 }
 
@@ -73,6 +75,8 @@ export const PromptBoxVideo = ({
   url,
   onImageRowVisibilityChange,
   uploadImage,
+  uploadVideo,
+  uploadAudio,
   credits,
 }: PromptBoxVideoProps) => {
   useSignals();
@@ -117,6 +121,10 @@ export const PromptBoxVideo = ({
   const setReferenceImages = usePromptVideoStore((s) => s.setReferenceImages);
   const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
   const setEndFrameImage = usePromptVideoStore((s) => s.setEndFrameImage);
+  const referenceVideos = usePromptVideoStore((s) => s.referenceVideos);
+  const setReferenceVideos = usePromptVideoStore((s) => s.setReferenceVideos);
+  const referenceAudios = usePromptVideoStore((s) => s.referenceAudios);
+  const setReferenceAudios = usePromptVideoStore((s) => s.setReferenceAudios);
   const [uploadingImages, _setUploadingImages] = useState<
     { id: string; file: File }[]
   >([]);
@@ -214,6 +222,8 @@ export const PromptBoxVideo = ({
   useEffect(() => {
     if (!selectedModel?.supportsReferenceMode && inputMode === "reference") {
       setInputMode("keyframe");
+      setReferenceVideos([]);
+      setReferenceAudios([]);
     }
   }, [selectedModel]);
 
@@ -261,9 +271,12 @@ export const PromptBoxVideo = ({
     const mode: VideoInputMode =
       selectedItem.label === "Reference" ? "reference" : "keyframe";
     setInputMode(mode);
-    // Clear images when switching modes to avoid stale state
+    // Clear images/videos when switching modes to avoid stale state
     if (mode === "reference") {
       setEndFrameImage(undefined);
+    } else {
+      setReferenceVideos([]);
+      setReferenceAudios([]);
     }
   };
 
@@ -282,25 +295,55 @@ export const PromptBoxVideo = ({
     }
   };
 
-  // Color palette for @Image mentions
-  const MENTION_COLORS = [
+  // Color palettes for @-mention highlights
+  const IMAGE_COLORS = [
     "rgb(96, 165, 250)", // blue
     "rgb(251, 146, 60)", // orange
     "rgb(167, 139, 250)", // purple
     "rgb(52, 211, 153)", // green
     "rgb(251, 113, 133)", // pink
   ];
+  const VIDEO_COLORS = [
+    "rgb(250, 204, 21)", // yellow
+    "rgb(245, 158, 11)", // amber
+  ];
+  const AUDIO_COLORS = [
+    "rgb(192, 132, 252)", // violet
+    "rgb(232, 121, 249)", // fuchsia
+  ];
+
+  const hasAnyRefs =
+    referenceImages.length > 0 ||
+    referenceVideos.length > 0 ||
+    referenceAudios.length > 0;
 
   const renderHighlightedPrompt = () => {
-    if (!isReferenceMode || referenceImages.length === 0) return null;
-    const parts = prompt.split(/(@Image\d+)/g);
+    if (!isReferenceMode || !hasAnyRefs) return null;
+    const parts = prompt.split(/(@(?:Image|Video|Audio)\d+)/g);
     return parts.map((part, i) => {
-      const match = part.match(/^@Image(\d+)$/);
-      if (match) {
-        const imgIndex = parseInt(match[1]) - 1;
-        const color = MENTION_COLORS[imgIndex % MENTION_COLORS.length];
+      const imgMatch = part.match(/^@Image(\d+)$/);
+      if (imgMatch) {
+        const idx = parseInt(imgMatch[1]) - 1;
         return (
-          <span key={i} style={{ color, fontWeight: 600 }}>
+          <span key={i} style={{ color: IMAGE_COLORS[idx % IMAGE_COLORS.length], fontWeight: 600 }}>
+            {part}
+          </span>
+        );
+      }
+      const vidMatch = part.match(/^@Video(\d+)$/);
+      if (vidMatch) {
+        const idx = parseInt(vidMatch[1]) - 1;
+        return (
+          <span key={i} style={{ color: VIDEO_COLORS[idx % VIDEO_COLORS.length], fontWeight: 600 }}>
+            {part}
+          </span>
+        );
+      }
+      const audMatch = part.match(/^@Audio(\d+)$/);
+      if (audMatch) {
+        const idx = parseInt(audMatch[1]) - 1;
+        return (
+          <span key={i} style={{ color: AUDIO_COLORS[idx % AUDIO_COLORS.length], fontWeight: 600 }}>
             {part}
           </span>
         );
@@ -316,16 +359,27 @@ export const PromptBoxVideo = ({
   const mentionAnchorRef = useRef<number | null>(null);
 
   const mentionItems = isReferenceMode
-    ? referenceImages
-        .map((img, i) => ({
+    ? [
+        ...referenceImages.map((img, i) => ({
           label: `@Image${i + 1}`,
-          image: img,
-        }))
-        .filter((item) =>
-          mentionFilter
-            ? item.label.toLowerCase().includes(mentionFilter.toLowerCase())
-            : true,
-        )
+          type: "image" as const,
+          preview: img.url,
+        })),
+        ...referenceVideos.map((vid, i) => ({
+          label: `@Video${i + 1}`,
+          type: "video" as const,
+          preview: vid.url,
+        })),
+        ...referenceAudios.map((_aud, i) => ({
+          label: `@Audio${i + 1}`,
+          type: "audio" as const,
+          preview: undefined as string | undefined,
+        })),
+      ].filter((item) =>
+        mentionFilter
+          ? item.label.toLowerCase().includes(mentionFilter.toLowerCase())
+          : true,
+      )
     : [];
 
   const insertMention = (label: string) => {
@@ -364,7 +418,7 @@ export const PromptBoxVideo = ({
     const cursorPos = e.target.selectionStart;
     setPrompt(value);
 
-    if (isReferenceMode && referenceImages.length > 0) {
+    if (isReferenceMode && hasAnyRefs) {
       // Find the last '@' before cursor that could be a mention trigger
       const textBeforeCursor = value.slice(0, cursorPos);
       const lastAtIndex = textBeforeCursor.lastIndexOf("@");
@@ -453,6 +507,20 @@ export const PromptBoxVideo = ({
     if (isRefMode && referenceImages.length > 0) {
       request.reference_image_media_tokens = referenceImages.map(
         (img) => img.mediaToken,
+      );
+    }
+
+    // Pass reference video tokens in reference mode
+    if (isRefMode && referenceVideos.length > 0) {
+      request.reference_video_media_tokens = referenceVideos.map(
+        (v) => v.mediaToken,
+      );
+    }
+
+    // Pass reference audio tokens in reference mode
+    if (isRefMode && referenceAudios.length > 0) {
+      request.reference_audio_media_tokens = referenceAudios.map(
+        (a) => a.mediaToken,
       );
     }
 
@@ -613,6 +681,19 @@ export const PromptBoxVideo = ({
             setEndFrameImage={isReferenceMode ? undefined : setEndFrameImage}
             allowUploadEnd={!isReferenceMode && !!selectedModel?.endFrame}
             showEndFrameSection={!isReferenceMode && !!selectedModel?.endFrame}
+            referenceVideos={isReferenceMode ? referenceVideos : undefined}
+            setReferenceVideos={
+              isReferenceMode ? setReferenceVideos : undefined
+            }
+            maxVideoCount={selectedModel?.maxReferenceVideos ?? 3}
+            maxVideoRefDuration={selectedModel?.maxVideoRefDuration ?? 15}
+            showVideoReferenceSection={isReferenceMode}
+            uploadVideo={uploadVideo}
+            referenceAudios={isReferenceMode ? referenceAudios : undefined}
+            setReferenceAudios={isReferenceMode ? setReferenceAudios : undefined}
+            maxAudioCount={selectedModel?.maxReferenceAudios ?? 2}
+            maxAudioRefDuration={selectedModel?.maxAudioRefDuration ?? 15}
+            uploadAudio={uploadAudio}
           />
         )}
         <div
@@ -644,12 +725,26 @@ export const PromptBoxVideo = ({
                     }}
                     onMouseEnter={() => setMentionIndex(i)}
                   >
-                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/20">
-                      <img
-                        src={item.image.url}
-                        alt={item.label}
-                        className="h-full w-full object-cover"
-                      />
+                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/20 flex items-center justify-center bg-black/20">
+                      {item.type === "image" && item.preview ? (
+                        <img
+                          src={item.preview}
+                          alt={item.label}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : item.type === "video" && item.preview ? (
+                        <video
+                          src={item.preview}
+                          muted
+                          preload="metadata"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <FontAwesomeIcon
+                          icon={item.type === "video" ? faVideo : faMusic}
+                          className="h-3.5 w-3.5 text-base-fg/60"
+                        />
+                      )}
                     </div>
                     <span className="font-medium">{item.label}</span>
                   </button>
@@ -688,7 +783,7 @@ export const PromptBoxVideo = ({
             </Tooltip> */}
 
             <div className="relative flex-1">
-              {isReferenceMode && referenceImages.length > 0 && (
+              {isReferenceMode && hasAnyRefs && (
                 <div
                   ref={highlightRef}
                   aria-hidden
@@ -702,12 +797,12 @@ export const PromptBoxVideo = ({
                 rows={1}
                 placeholder={
                   isReferenceMode
-                    ? "Use @Image1, @Image2... to reference your uploaded images in the prompt..."
+                    ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                     : "Describe what you want to happen in the video..."
                 }
                 className={twMerge(
                   "text-md relative mb-2 max-h-[5.5em] w-full resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 placeholder-base-fg/60 focus:outline-none",
-                  isReferenceMode && referenceImages.length > 0
+                  isReferenceMode && hasAnyRefs
                     ? "text-transparent caret-base-fg"
                     : "text-base-fg",
                 )}

@@ -9,6 +9,22 @@ export interface RefImage {
   mediaToken: string;
 }
 
+export interface RefVideo {
+  id: string;
+  url: string;
+  file: File;
+  mediaToken: string;
+  duration: number; // seconds
+}
+
+export interface RefAudio {
+  id: string;
+  url: string;
+  file: File;
+  mediaToken: string;
+  duration: number; // seconds
+}
+
 // ----- 2D Prompt Box Store -----
 type AspectRatio = "wide" | "tall" | "square";
 type Resolution = "1k" | "2k" | "4k";
@@ -118,6 +134,8 @@ interface PromptVideoStore {
   useSystemPrompt: boolean;
   referenceImages: RefImage[];
   endFrameImage?: RefImage;
+  referenceVideos: RefVideo[];
+  referenceAudios: RefAudio[];
   generateWithSound: boolean;
   duration: number | null;
   inputMode: VideoInputMode;
@@ -127,6 +145,8 @@ interface PromptVideoStore {
   setUseSystemPrompt: (value: boolean) => void;
   setReferenceImages: (images: RefImage[]) => void;
   setEndFrameImage: (image?: RefImage) => void;
+  setReferenceVideos: (videos: RefVideo[]) => void;
+  setReferenceAudios: (audios: RefAudio[]) => void;
   setGenerateWithSound: (value: boolean) => void;
   setDuration: (duration: number | null) => void;
   setInputMode: (mode: VideoInputMode) => void;
@@ -139,6 +159,8 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   useSystemPrompt: true,
   referenceImages: [],
   endFrameImage: undefined,
+  referenceVideos: [],
+  referenceAudios: [],
   generateWithSound: true,
   duration: null,
   inputMode: "keyframe",
@@ -148,6 +170,8 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
   setReferenceImages: (referenceImages) => set({ referenceImages }),
   setEndFrameImage: (endFrameImage) => set({ endFrameImage }),
+  setReferenceVideos: (referenceVideos) => set({ referenceVideos }),
+  setReferenceAudios: (referenceAudios) => set({ referenceAudios }),
   setGenerateWithSound: (generateWithSound) => set({ generateWithSound }),
   setDuration: (duration) => set({ duration }),
   setInputMode: (inputMode) => set({ inputMode }),

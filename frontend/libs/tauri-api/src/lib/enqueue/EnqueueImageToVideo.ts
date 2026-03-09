@@ -54,6 +54,12 @@ export interface EnqueueImageToVideoRequest {
 
   // Optional. Reference image media tokens (for reference mode).
   reference_image_media_tokens?: string[];
+
+  // Optional. Reference video media tokens (for video-to-video reference).
+  reference_video_media_tokens?: string[];
+
+  // Optional. Reference audio media tokens (for audio reference).
+  reference_audio_media_tokens?: string[];
 }
 
 interface RawEnqueueImageToVideoRequest {
@@ -70,6 +76,8 @@ interface RawEnqueueImageToVideoRequest {
   aspect_ratio?: string; // TODO: Typesafety.
   duration_seconds?: number;
   reference_image_media_tokens?: string[];
+  reference_video_media_tokens?: string[];
+  reference_audio_media_tokens?: string[];
 }
 
 export interface EnqueueImageToVideoError extends CommandResult {
@@ -142,6 +150,22 @@ export const EnqueueImageToVideo = async (
   ) {
     mutableRequest.reference_image_media_tokens =
       request.reference_image_media_tokens;
+  }
+
+  if (
+    request.reference_video_media_tokens &&
+    request.reference_video_media_tokens.length > 0
+  ) {
+    mutableRequest.reference_video_media_tokens =
+      request.reference_video_media_tokens;
+  }
+
+  if (
+    request.reference_audio_media_tokens &&
+    request.reference_audio_media_tokens.length > 0
+  ) {
+    mutableRequest.reference_audio_media_tokens =
+      request.reference_audio_media_tokens;
   }
 
   const result = await invoke("enqueue_image_to_video_command", {

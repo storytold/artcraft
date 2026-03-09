@@ -38,6 +38,18 @@ export class VideoModel extends Model {
   // Maximum number of reference images in reference mode
   readonly maxReferenceImages?: number;
 
+  // Maximum number of reference videos in reference mode
+  readonly maxReferenceVideos?: number;
+
+  // Maximum total duration (seconds) of all reference videos combined
+  readonly maxVideoRefDuration?: number;
+
+  // Maximum number of reference audios in reference mode
+  readonly maxReferenceAudios?: number;
+
+  // Maximum total duration (seconds) of all reference audios combined
+  readonly maxAudioRefDuration?: number;
+
   // Available resolution options (e.g. ["480p", "720p"])
   readonly resolutionOptions?: string[];
 
@@ -74,6 +86,10 @@ export class VideoModel extends Model {
     defaultDuration?: number;
     supportsReferenceMode?: boolean;
     maxReferenceImages?: number;
+    maxReferenceVideos?: number;
+    maxVideoRefDuration?: number;
+    maxReferenceAudios?: number;
+    maxAudioRefDuration?: number;
     resolutionOptions?: string[];
     defaultResolution?: string;
     supportsSystemPrompt?: boolean;
@@ -89,6 +105,10 @@ export class VideoModel extends Model {
     this.defaultDuration = args.defaultDuration;
     this.supportsReferenceMode = args.supportsReferenceMode;
     this.maxReferenceImages = args.maxReferenceImages;
+    this.maxReferenceVideos = args.maxReferenceVideos;
+    this.maxVideoRefDuration = args.maxVideoRefDuration;
+    this.maxReferenceAudios = args.maxReferenceAudios;
+    this.maxAudioRefDuration = args.maxAudioRefDuration;
     this.resolutionOptions = args.resolutionOptions;
     this.defaultResolution = args.defaultResolution;
     this.supportsSystemPrompt = args.supportsSystemPrompt ?? true;
