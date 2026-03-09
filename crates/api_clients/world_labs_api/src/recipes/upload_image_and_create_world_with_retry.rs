@@ -1,8 +1,9 @@
 use crate::api::api_types::media_asset_id::MediaAssetId;
 use crate::api::api_types::operation_id::OperationId;
-use crate::api::requests::media_assets::prepare_upload::{prepare_upload, PrepareUploadArgs};
-use crate::api::requests::media_assets::upload_to_signed_url::{upload_to_signed_url, UploadToSignedUrlArgs};
-use crate::api::requests::worlds::generate_world::{generate_world, GenerateWorldArgs, ImagePrompt, WorldPrompt};
+use crate::api::requests::generate_world::generate_world::{generate_world, GenerateWorldArgs};
+use crate::api::requests::generate_world::http_request::{ContentReference, WorldPrompt};
+use crate::api::requests::prepare_upload::prepare_upload::{prepare_upload, PrepareUploadArgs};
+use crate::api::requests::upload_to_signed_url::upload_to_signed_url::{upload_to_signed_url, UploadToSignedUrlArgs};
 use crate::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use crate::error::world_labs_client_error::WorldLabsClientError;
 use crate::error::world_labs_error::WorldLabsError;
@@ -31,7 +32,7 @@ pub struct UploadImageAndCreateWorldResponse {
 
 /// Official World Labs API: Upload an image and generate a world.
 ///
-/// New flow (3 steps):
+/// Flow (3 steps):
 /// 1. prepare_upload — get media_asset_id + signed upload URL
 /// 2. upload_to_signed_url — PUT file bytes to signed URL
 /// 3. generate_world — start world generation with media_asset source
@@ -63,7 +64,7 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
     creds: args.creds,
     file_name: "upload.jpg",
     kind: "image",
-    extension: "jpg",
+    extension: Some("jpg"),
     request_timeout: args.individual_request_timeout,
   }).await?;
 
@@ -81,6 +82,7 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
     upload_url: &upload_url,
     file_bytes,
     required_headers: &required_headers,
+    content_type: "image/jpeg",
     request_timeout: args.individual_request_timeout,
   }).await?;
 
@@ -90,11 +92,12 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
   info!("Step 3 of 3: generate_world ...");
 
   let world_prompt = WorldPrompt::Image {
-    image_prompt: ImagePrompt::MediaAsset {
+    image_prompt: ContentReference::MediaAsset {
       media_asset_id: media_asset_id.clone(),
     },
     text_prompt: args.text_prompt,
     is_pano: None,
+    disable_recaption: None,
   };
 
   let generate_response = generate_world(GenerateWorldArgs {
@@ -102,6 +105,9 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
     world_prompt,
     display_name: None,
     model: args.model,
+    seed: None,
+    tags: None,
+    permission: None,
     request_timeout: args.individual_request_timeout,
   }).await?;
 
@@ -116,20 +122,20 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
 
 #[cfg(test)]
 mod tests {
-  use crate::recipes::upload_image_and_create_world_with_retry::{upload_image_and_create_world, FileBytesOrPath, UploadImageAndCreateWorldArgs};
+  use super::*;
   use crate::test_utils::get_test_api_key::get_test_api_key;
   use crate::test_utils::setup_test_logging::setup_test_logging;
   use filesys::file_read_bytes::file_read_bytes;
   use log::LevelFilter;
 
   #[tokio::test]
-  #[ignore] // Client side tests only — requires real API key
+  #[ignore]
   async fn test_upload_and_generate() {
     setup_test_logging(LevelFilter::Debug);
 
     let creds = get_test_api_key().unwrap();
 
-    let file_path = "/Users/bt/Pictures/Midjourney/jeep.jpeg";
+    let file_path = "/Users/bt/Pictures/Midjourney/moon_door.png";
     let file_bytes = file_read_bytes(file_path).unwrap();
 
     println!("File bytes len: {}", file_bytes.len());
@@ -144,6 +150,15 @@ mod tests {
 
     println!("Operation ID: {}", results.operation_id.as_str());
     println!("Media Asset ID: {}", results.media_asset_id.as_str());
+
+    /*
+00:55:36.237287 [DEBUG] - Requesting URL: https://api.worldlabs.ai/marble/v1/worlds:generate
+00:55:45.047221 [DEBUG] - Response body (200): {"operation_id":"1fab3bf1-05a1-4929-907e-c6df07c539e2","created_at":"2026-03-09T04:55:37Z","updated_at":"2026-03-09T04:55:37Z","expires_at":"2026-03-09T05:55:37Z","done":false,"error":null,"metadata":null,"response":null}
+00:55:45.047756 [INFO] - Operation ID: 1fab3bf1-05a1-4929-907e-c6df07c539e2
+00:55:45.047839 [INFO] - Done: false
+Operation ID: 1fab3bf1-05a1-4929-907e-c6df07c539e2
+Media Asset ID: bc57b2bc-542e-416d-8089-924294152f0d
+     */
 
     assert_eq!(1, 2);
   }

@@ -1,9 +1,9 @@
+use crate::api::requests::prepare_upload::http_request::{RawRequest, RawResponse};
 use crate::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use crate::error::filter_world_labs_http_error::filter_world_labs_http_error;
 use crate::error::world_labs_error::WorldLabsError;
 use crate::error::world_labs_generic_api_error::WorldLabsGenericApiError;
 use log::{debug, error};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 use wreq::Client;
@@ -15,7 +15,8 @@ pub struct PrepareUploadArgs<'a> {
   pub file_name: &'a str,
   /// "image" or "video"
   pub kind: &'a str,
-  pub extension: &'a str,
+  /// e.g. "jpg", "png", "webp", "mp4", "mov", "mkv"
+  pub extension: Option<&'a str>,
   pub request_timeout: Option<Duration>,
 }
 
@@ -26,13 +27,17 @@ pub struct PrepareUploadResponse {
   pub required_headers: HashMap<String, String>,
 }
 
+/// POST /marble/v1/media-assets:prepare_upload
+///
+/// Get a signed upload URL and media_asset_id for uploading a file.
 pub async fn prepare_upload(args: PrepareUploadArgs<'_>) -> Result<PrepareUploadResponse, WorldLabsError> {
   let client = Client::new();
 
   let payload = RawRequest {
     file_name: args.file_name.to_string(),
     kind: args.kind.to_string(),
-    extension: args.extension.to_string(),
+    extension: args.extension.map(|s| s.to_string()),
+    metadata: None,
   };
 
   debug!("Requesting URL: {}", URL);
@@ -63,7 +68,7 @@ pub async fn prepare_upload(args: PrepareUploadArgs<'_>) -> Result<PrepareUpload
     })?;
 
   if !status.is_success() {
-    error!("prepare_upload returned error (code {}) : {:?}", status.as_u16(), response_body);
+    error!("prepare_upload returned error (code {}): {:?}", status.as_u16(), response_body);
   }
 
   filter_world_labs_http_error(status, Some(&response_body))?;
@@ -81,27 +86,33 @@ pub async fn prepare_upload(args: PrepareUploadArgs<'_>) -> Result<PrepareUpload
   })
 }
 
-#[derive(Serialize)]
-struct RawRequest {
-  pub file_name: String,
-  pub kind: String,
-  pub extension: String,
-}
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::test_utils::get_test_api_key::get_test_api_key;
+  use crate::test_utils::setup_test_logging::setup_test_logging;
+  use log::LevelFilter;
 
-#[derive(Deserialize)]
-struct RawResponse {
-  pub media_asset: RawMediaAsset,
-  pub upload_info: RawUploadInfo,
-}
+  #[tokio::test]
+  #[ignore]
+  async fn test_prepare_upload() {
+    setup_test_logging(LevelFilter::Debug);
 
-#[derive(Deserialize)]
-struct RawMediaAsset {
-  pub media_asset_id: String,
-}
+    let creds = get_test_api_key().unwrap();
 
-#[derive(Deserialize)]
-struct RawUploadInfo {
-  pub upload_url: String,
-  pub upload_method: String,
-  pub required_headers: Option<HashMap<String, String>>,
+    let response = prepare_upload(PrepareUploadArgs {
+      creds: &creds,
+      file_name: "test_image.jpg",
+      kind: "image",
+      extension: Some("jpg"),
+      request_timeout: None,
+    }).await.unwrap();
+
+    println!("Media asset ID: {}", response.media_asset_id);
+    println!("Upload URL: {}", response.upload_url);
+    println!("Upload method: {}", response.upload_method);
+    println!("Required headers: {:?}", response.required_headers);
+
+    assert_eq!(1, 2);
+  }
 }

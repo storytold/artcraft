@@ -9,17 +9,21 @@ pub struct UploadToSignedUrlArgs<'a> {
   pub upload_url: &'a str,
   pub file_bytes: Vec<u8>,
   pub required_headers: &'a HashMap<String, String>,
+  pub content_type: &'a str,
   pub request_timeout: Option<Duration>,
 }
 
-/// Upload file bytes to a signed URL via PUT.
+/// PUT {upload_url}
+///
+/// Upload raw file bytes to the signed URL returned by prepare_upload.
+/// Include any required_headers from the prepare_upload response.
 pub async fn upload_to_signed_url(args: UploadToSignedUrlArgs<'_>) -> Result<(), WorldLabsError> {
   let client = Client::new();
 
   debug!("Uploading to signed URL: {}", args.upload_url);
 
   let mut request_builder = client.put(args.upload_url)
-    .header("Content-Type", "application/octet-stream")
+    .header("Content-Type", args.content_type)
     .body(args.file_bytes);
 
   for (key, value) in args.required_headers {
@@ -53,4 +57,10 @@ pub async fn upload_to_signed_url(args: UploadToSignedUrlArgs<'_>) -> Result<(),
   debug!("Upload to signed URL succeeded");
 
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  // Upload tests are covered by the end-to-end recipe test,
+  // since this endpoint requires a fresh signed URL from prepare_upload.
 }

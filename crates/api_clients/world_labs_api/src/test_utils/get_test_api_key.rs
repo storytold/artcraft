@@ -1,7 +1,7 @@
 use crate::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use anyhow::Result as AnyhowResult;
 
-const API_KEY_FILE: &str = "/Users/bt/Artcraft/credentials/worldlabs_api_key.txt";
+const API_KEY_FILE: &str = "/Users/bt/Artcraft/credentials/world_labs_api_key.txt";
 
 #[cfg(test)]
 pub(crate) fn get_test_api_key() -> AnyhowResult<WorldLabsApiCreds> {
