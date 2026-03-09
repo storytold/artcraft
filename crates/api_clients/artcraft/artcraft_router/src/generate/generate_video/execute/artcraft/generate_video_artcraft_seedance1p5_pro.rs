@@ -20,6 +20,7 @@ pub async fn execute_artcraft_seedance1p5_pro(
     aspect_ratio: plan.aspect_ratio,
     duration: plan.duration,
     resolution: plan.resolution,
+    generate_audio: plan.generate_audio,
   };
 
   let response = seedance_1p5_pro_multi_function_video_gen(

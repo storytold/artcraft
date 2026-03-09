@@ -13,10 +13,12 @@ use tokens::tokens::media_files::MediaFileToken;
 #[derive(Debug, Clone)]
 pub struct PlanArtcraftKling3p0Pro<'a> {
   pub prompt: Option<&'a str>,
+  pub negative_prompt: Option<&'a str>,
   pub start_frame: Option<&'a MediaFileToken>,
   pub end_frame: Option<&'a MediaFileToken>,
   pub aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAspectRatio>,
   pub duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>,
+  pub generate_audio: Option<bool>,
   pub idempotency_token: String,
 }
 
@@ -33,10 +35,12 @@ pub fn plan_generate_video_artcraft_kling3p0_pro<'a>(
 
   Ok(PlanArtcraftKling3p0Pro {
     prompt: request.prompt,
+    negative_prompt: request.negative_prompt,
     start_frame,
     end_frame,
     aspect_ratio,
     duration,
+    generate_audio: request.generate_audio,
     idempotency_token: request.get_or_generate_idempotency_token(),
   })
 }
@@ -169,6 +173,7 @@ mod tests {
       model: CommonVideoModel::Kling3p0Pro,
       provider: Provider::Artcraft,
       prompt: Some("a cat in space"),
+      negative_prompt: None,
       start_frame: None,
       end_frame: None,
       reference_images: None,
@@ -176,6 +181,7 @@ mod tests {
       aspect_ratio: None,
       duration_seconds: None,
       video_batch_count: None,
+      generate_audio: None,
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       idempotency_token: None,
     }

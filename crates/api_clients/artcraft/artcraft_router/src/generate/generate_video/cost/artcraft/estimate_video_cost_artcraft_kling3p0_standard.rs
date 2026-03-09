@@ -32,7 +32,7 @@ pub(crate) fn estimate_video_cost_artcraft_kling3p0_standard(
   let api_key = fal_client::creds::fal_api_key::FalApiKey::from_str("");
   let args = EnqueueKling3p0StandardTextToVideoArgs {
     prompt: String::new(),
-    generate_audio: None,
+    generate_audio: plan.generate_audio,
     negative_prompt: None,
     duration,
     aspect_ratio: None,
@@ -65,6 +65,7 @@ mod tests {
       model: CommonVideoModel::Kling3p0Standard,
       provider: Provider::Artcraft,
       prompt: None,
+      negative_prompt: None,
       start_frame: None,
       end_frame: None,
       reference_images: None,
@@ -72,6 +73,7 @@ mod tests {
       aspect_ratio: None,
       duration_seconds: Some(duration_seconds),
       video_batch_count: None,
+      generate_audio: None,
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       idempotency_token: None,
     };

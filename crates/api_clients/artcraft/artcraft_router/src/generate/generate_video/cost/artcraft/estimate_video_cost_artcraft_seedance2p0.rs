@@ -57,6 +57,7 @@ mod tests {
       model: CommonVideoModel::Seedance2p0,
       provider: Provider::Artcraft,
       prompt: None,
+      negative_prompt: None,
       start_frame: None,
       end_frame: None,
       reference_images: None,
@@ -64,6 +65,7 @@ mod tests {
       aspect_ratio: None,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),
+      generate_audio: None,
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       idempotency_token: None,
     };

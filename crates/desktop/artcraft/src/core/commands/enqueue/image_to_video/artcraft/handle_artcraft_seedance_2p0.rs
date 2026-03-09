@@ -34,6 +34,7 @@ pub(super) async fn handle_artcraft_seedance_2p0(
     model: CommonVideoModel::Seedance2p0,
     provider: Provider::Artcraft,
     prompt: request.prompt.as_deref(),
+    negative_prompt: None,
     start_frame,
     end_frame,
     reference_images,
@@ -41,6 +42,7 @@ pub(super) async fn handle_artcraft_seedance_2p0(
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
+    generate_audio: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     idempotency_token: None,
   };

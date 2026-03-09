@@ -15,11 +15,11 @@ pub async fn execute_artcraft_kling3p0_standard(
   let request = Kling3p0StandardMultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
     prompt: plan.prompt.map(|p| p.to_string()),
-    negative_prompt: None,
+    negative_prompt: plan.negative_prompt.map(|s| s.to_string()),
     image_media_token: plan.start_frame.map(|t| t.to_owned()),
     end_image_media_token: plan.end_frame.map(|t| t.to_owned()),
     duration: plan.duration,
-    generate_audio: None,
+    generate_audio: plan.generate_audio,
     aspect_ratio: plan.aspect_ratio,
   };
 

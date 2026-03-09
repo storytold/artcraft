@@ -19,6 +19,7 @@ pub struct PlanArtcraftSeedance1p5Pro<'a> {
   pub aspect_ratio: Option<Seedance1p5ProMultiFunctionVideoGenAspectRatio>,
   pub duration: Option<Seedance1p5ProMultiFunctionVideoGenDuration>,
   pub resolution: Option<Seedance1p5ProMultiFunctionVideoGenResolution>,
+  pub generate_audio: Option<bool>,
   pub idempotency_token: String,
 }
 
@@ -41,6 +42,7 @@ pub fn plan_generate_video_artcraft_seedance1p5_pro<'a>(
     aspect_ratio,
     duration,
     resolution,
+    generate_audio: request.generate_audio,
     idempotency_token: request.get_or_generate_idempotency_token(),
   })
 }
@@ -184,6 +186,7 @@ mod tests {
       model: CommonVideoModel::Seedance1p5Pro,
       provider: Provider::Artcraft,
       prompt: Some("a cat in space"),
+      negative_prompt: None,
       start_frame: None,
       end_frame: None,
       reference_images: None,
@@ -191,6 +194,7 @@ mod tests {
       aspect_ratio: None,
       duration_seconds: None,
       video_batch_count: None,
+      generate_audio: None,
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       idempotency_token: None,
     }

@@ -14,6 +14,7 @@ pub struct EnqueueSeedance1p5ProTextToVideoArgs<'a, R: IntoUrl> {
   pub resolution: Option<EnqueueSeedance1p5ProTextToVideoResolution>,
   pub duration: Option<EnqueueSeedance1p5ProTextToVideoDuration>,
   pub aspect_ratio: Option<EnqueueSeedance1p5ProTextToVideoAspectRatio>,
+  pub generate_audio: Option<bool>,
 
   // Fulfillment
   pub webhook_url: R,
@@ -53,8 +54,10 @@ pub enum EnqueueSeedance1p5ProTextToVideoAspectRatio {
 
 impl <U: IntoUrl> FalRequestCostCalculator for EnqueueSeedance1p5ProTextToVideoArgs<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
+    // Fal:
     // "Each 720p 5 second video with audio costs roughly $0.26.
     //  For other resolutions, 1 million video tokens with audio costs $2.4.
+    //  Without audio, the price is 1.2 per million tokens.
     //  tokens(video) = (height x width x FPS x duration) / 1024."
 
     let resolution = self.resolution.unwrap_or(EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP);
@@ -146,7 +149,7 @@ pub async fn enqueue_seedance_1p5_pro_text_to_video_webhook<R: IntoUrl>(
     camera_fixed: None,
     seed: None,
     enable_safety_checker: Some(false),
-    generate_audio: Some(true),
+    generate_audio: Some(args.generate_audio.unwrap_or(true)),
   };
 
   let result = seedance_1p5_pro_text_to_video(request)
@@ -176,6 +179,7 @@ mod tests {
       duration: Some(EnqueueSeedance1p5ProTextToVideoDuration::FiveSeconds),
       resolution: Some(EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP),
       aspect_ratio: None,
+      generate_audio: None,
       webhook_url: "https://example.com/webhook",
     };
 
@@ -211,6 +215,7 @@ mod tests {
       duration: Some(EnqueueSeedance1p5ProTextToVideoDuration::FiveSeconds),
       aspect_ratio: Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine),
       resolution: Some(EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP),
+      generate_audio: None,
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -234,6 +239,7 @@ mod tests {
         duration: Some(EnqueueSeedance1p5ProTextToVideoDuration::FourSeconds),
         aspect_ratio: Some(ar),
         resolution: None,
+        generate_audio: None,
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -257,6 +263,7 @@ mod tests {
         duration: Some(dur),
         aspect_ratio: Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine),
         resolution: None,
+        generate_audio: None,
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -280,6 +287,7 @@ mod tests {
         duration: Some(EnqueueSeedance1p5ProTextToVideoDuration::FourSeconds),
         aspect_ratio: Some(EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine),
         resolution: Some(res),
+        generate_audio: None,
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };

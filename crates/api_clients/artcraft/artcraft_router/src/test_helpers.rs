@@ -214,6 +214,7 @@ pub fn base_video_request() -> GenerateVideoRequest<'static> {
     model: CommonVideoModel::Seedance2p0,
     provider: Provider::Artcraft,
     prompt: Some("a cat in space"),
+    negative_prompt: None,
     start_frame: None,
     end_frame: None,
     reference_images: None,
@@ -221,6 +222,7 @@ pub fn base_video_request() -> GenerateVideoRequest<'static> {
     aspect_ratio: None,
     duration_seconds: None,
     video_batch_count: None,
+    generate_audio: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     idempotency_token: None,
   }

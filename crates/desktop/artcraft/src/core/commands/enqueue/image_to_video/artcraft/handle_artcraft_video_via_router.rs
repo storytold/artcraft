@@ -34,6 +34,7 @@ pub(super) async fn handle_artcraft_video_via_router(
     model,
     provider: Provider::Artcraft,
     prompt: request.prompt.as_deref(),
+    negative_prompt: None,
     start_frame,
     end_frame,
     reference_images: None,
@@ -41,6 +42,7 @@ pub(super) async fn handle_artcraft_video_via_router(
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
+    generate_audio: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     idempotency_token: None,
   };

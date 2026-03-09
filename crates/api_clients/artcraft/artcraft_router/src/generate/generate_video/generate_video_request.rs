@@ -22,8 +22,8 @@ pub struct GenerateVideoRequest<'a> {
   /// The prompt for the video generation
   pub prompt: Option<&'a str>,
 
-  // /// Some models support negative prompts
-  // pub negative_prompt: Option<String>,
+  /// Some models support negative prompts
+  pub negative_prompt: Option<&'a str>,
 
   /// Starting keyframe (optional).
   pub start_frame: Option<ImageRef<'a>>,
@@ -46,9 +46,11 @@ pub struct GenerateVideoRequest<'a> {
   /// How many videos to generate.
   pub video_batch_count: Option<u16>,
 
-  // /// Whether to turn on/off audio.
-  // /// Not all models support audio, not all models have a choice.
-  // pub generate_audio: Option<bool>,
+  /// Whether to turn on/off audio.
+  /// Not all models support audio, not all models have a choice.
+  /// Some models will default this to true, others will default it to false,
+  /// so it's best to be explicit.
+  pub generate_audio: Option<bool>,
 
   /// If the request is a mismatch with the (model/provider), how to mitigate it.
   pub request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy,

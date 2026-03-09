@@ -220,6 +220,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       duration: Some(duration),
       aspect_ratio: Some(aspect_ratio),
       resolution: Some(resolution),
+      generate_audio: request.generate_audio,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
@@ -254,6 +255,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
       duration: Some(duration),
       aspect_ratio: Some(aspect_ratio),
       resolution: Some(resolution),
+      generate_audio: request.generate_audio,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };

@@ -38,6 +38,9 @@ pub struct Seedance1p5ProMultiFunctionVideoGenRequest {
 
   /// Optional.
   pub aspect_ratio: Option<Seedance1p5ProMultiFunctionVideoGenAspectRatio>,
+
+  /// Whether to generate audio.
+  pub generate_audio: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Copy, Clone, Debug)]

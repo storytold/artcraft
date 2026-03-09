@@ -39,6 +39,7 @@ pub(crate) fn estimate_video_cost_artcraft_seedance1p5_pro(
     duration,
     resolution,
     aspect_ratio: None,
+    generate_audio: plan.generate_audio,
     webhook_url: "https://example.com",
     api_key: &api_key,
   };
@@ -67,6 +68,7 @@ mod tests {
       model: CommonVideoModel::Seedance1p5Pro,
       provider: Provider::Artcraft,
       prompt: None,
+      negative_prompt: None,
       start_frame: None,
       end_frame: None,
       reference_images: None,
@@ -74,6 +76,7 @@ mod tests {
       aspect_ratio: None,
       duration_seconds: Some(duration_seconds),
       video_batch_count: None,
+      generate_audio: None,
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       idempotency_token: None,
     };

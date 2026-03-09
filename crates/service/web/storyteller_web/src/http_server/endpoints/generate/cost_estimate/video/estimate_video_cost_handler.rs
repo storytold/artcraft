@@ -42,6 +42,7 @@ pub async fn estimate_video_cost_handler(
     model: router_model,
     provider: router_provider,
     prompt: None,
+    negative_prompt: None,
     start_frame: None,
     end_frame: None,
     reference_images: None,
@@ -49,6 +50,7 @@ pub async fn estimate_video_cost_handler(
     aspect_ratio: router_aspect_ratio,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
+    generate_audio: None,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     idempotency_token: None,
   };
