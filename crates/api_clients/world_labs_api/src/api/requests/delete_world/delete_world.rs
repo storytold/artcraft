@@ -1,3 +1,4 @@
+use crate::api::api_types::world_id::WorldId;
 use crate::api::requests::delete_world::http_request::RawResponse;
 use crate::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use crate::error::filter_world_labs_http_error::filter_world_labs_http_error;
@@ -11,12 +12,12 @@ const BASE_URL: &str = "https://api.worldlabs.ai/marble/v1/worlds";
 
 pub struct DeleteWorldArgs<'a> {
   pub creds: &'a WorldLabsApiCreds,
-  pub world_id: &'a str,
+  pub world_id: &'a WorldId,
   pub request_timeout: Option<Duration>,
 }
 
 pub struct DeleteWorldResponse {
-  pub world_id: String,
+  pub world_id: WorldId,
   pub deleted: bool,
 }
 
@@ -26,7 +27,7 @@ pub struct DeleteWorldResponse {
 pub async fn delete_world(args: DeleteWorldArgs<'_>) -> Result<DeleteWorldResponse, WorldLabsError> {
   let client = Client::new();
 
-  let url = format!("{}/{}", BASE_URL, args.world_id);
+  let url = format!("{}/{}", BASE_URL, args.world_id.as_str());
 
   debug!("Requesting URL: {}", url);
 
@@ -65,7 +66,7 @@ pub async fn delete_world(args: DeleteWorldArgs<'_>) -> Result<DeleteWorldRespon
     .map_err(|err| WorldLabsGenericApiError::SerdeResponseParseErrorWithBody(err, response_body.to_string()))?;
 
   Ok(DeleteWorldResponse {
-    world_id: raw.world_id,
+    world_id: WorldId(raw.world_id),
     deleted: raw.deleted,
   })
 }
@@ -85,15 +86,15 @@ mod tests {
     let creds = get_test_api_key().unwrap();
 
     // Use a known world_id to delete
-    let world_id = "REPLACE_WITH_REAL_ID";
+    let world_id = WorldId::from_str("REPLACE_WITH_REAL_ID");
 
     let response = delete_world(DeleteWorldArgs {
       creds: &creds,
-      world_id,
+      world_id: &world_id,
       request_timeout: None,
     }).await.unwrap();
 
-    println!("World ID: {}", response.world_id);
+    println!("World ID: {}", response.world_id.as_str());
     println!("Deleted: {}", response.deleted);
 
     assert_eq!(1, 2);

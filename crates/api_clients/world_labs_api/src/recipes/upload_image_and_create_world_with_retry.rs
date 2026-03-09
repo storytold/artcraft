@@ -1,5 +1,6 @@
 use crate::api::api_types::media_asset_id::MediaAssetId;
 use crate::api::api_types::operation_id::OperationId;
+use crate::api::api_types::world_labs_model::WorldLabsModel;
 use crate::api::requests::generate_world::generate_world::{generate_world, GenerateWorldArgs};
 use crate::api::requests::generate_world::http_request::{ContentReference, WorldPrompt};
 use crate::api::requests::prepare_upload::prepare_upload::{prepare_upload, PrepareUploadArgs, MediaAssetKind};
@@ -16,7 +17,7 @@ pub struct UploadImageAndCreateWorldArgs<'a> {
   pub creds: &'a WorldLabsApiCreds,
   pub file: FileBytesOrPath,
   pub text_prompt: Option<String>,
-  pub model: Option<String>,
+  pub model: WorldLabsModel,
   pub individual_request_timeout: Option<Duration>,
 }
 
@@ -145,7 +146,7 @@ mod tests {
       individual_request_timeout: None,
       file: FileBytesOrPath::Bytes(file_bytes),
       text_prompt: None,
-      model: None,
+      model: WorldLabsModel::Marble0p1Plus,
     }).await.unwrap();
 
     println!("Operation ID: {}", results.operation_id.as_str());

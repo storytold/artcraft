@@ -1,3 +1,4 @@
+use crate::api::api_types::world_id::WorldId;
 use crate::api::requests::get_world::http_request::RawResponse;
 use crate::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use crate::error::filter_world_labs_http_error::filter_world_labs_http_error;
@@ -11,12 +12,12 @@ const BASE_URL: &str = "https://api.worldlabs.ai/marble/v1/worlds";
 
 pub struct GetWorldArgs<'a> {
   pub creds: &'a WorldLabsApiCreds,
-  pub world_id: &'a str,
+  pub world_id: &'a WorldId,
   pub request_timeout: Option<Duration>,
 }
 
 pub struct GetWorldResponse {
-  pub world_id: String,
+  pub world_id: WorldId,
   pub display_name: Option<String>,
   pub world_marble_url: Option<String>,
   pub created_at: Option<String>,
@@ -45,7 +46,7 @@ pub struct WorldAssets {
 pub async fn get_world(args: GetWorldArgs<'_>) -> Result<GetWorldResponse, WorldLabsError> {
   let client = Client::new();
 
-  let url = format!("{}/{}", BASE_URL, args.world_id);
+  let url = format!("{}/{}", BASE_URL, args.world_id.as_str());
 
   debug!("Requesting URL: {}", url);
 
@@ -97,7 +98,7 @@ pub async fn get_world(args: GetWorldArgs<'_>) -> Result<GetWorldResponse, World
   });
 
   Ok(GetWorldResponse {
-    world_id: raw.world_id,
+    world_id: WorldId(raw.world_id),
     display_name: raw.display_name,
     world_marble_url: raw.world_marble_url,
     created_at: raw.created_at,
@@ -125,16 +126,16 @@ mod tests {
     let creds = get_test_api_key().unwrap();
 
     // Use a known world_id from a previous generation
-    let world_id = "0048d009-1c7a-4e13-9881-07e9b6ff32e1";
-    //let world_id = "c8a89fb1-f8b4-44c6-ae50-525f7205c65f";
+    let world_id = WorldId::from_str("0048d009-1c7a-4e13-9881-07e9b6ff32e1");
+    //let world_id = WorldId::from_str("c8a89fb1-f8b4-44c6-ae50-525f7205c65f");
 
     let response = get_world(GetWorldArgs {
       creds: &creds,
-      world_id,
+      world_id: &world_id,
       request_timeout: None,
     }).await.unwrap();
 
-    println!("World ID: {}", response.world_id);
+    println!("World ID: {}", response.world_id.as_str());
     println!("Display name: {:?}", response.display_name);
     println!("Marble URL: {:?}", response.world_marble_url);
     println!("Created at: {:?}", response.created_at);

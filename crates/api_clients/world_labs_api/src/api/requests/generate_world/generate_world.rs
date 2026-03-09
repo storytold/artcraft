@@ -1,4 +1,5 @@
 use crate::api::api_types::operation_id::OperationId;
+use crate::api::api_types::world_labs_model::WorldLabsModel;
 use crate::api::requests::generate_world::http_request::{RawRequest, RawResponse, WorldPrompt, Permission};
 use crate::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use crate::error::filter_world_labs_http_error::filter_world_labs_http_error;
@@ -14,7 +15,7 @@ pub struct GenerateWorldArgs<'a> {
   pub creds: &'a WorldLabsApiCreds,
   pub world_prompt: WorldPrompt,
   pub display_name: Option<String>,
-  pub model: Option<String>,
+  pub model: WorldLabsModel,
   pub seed: Option<u32>,
   pub tags: Option<Vec<String>>,
   pub permission: Option<Permission>,
@@ -35,7 +36,7 @@ pub async fn generate_world(args: GenerateWorldArgs<'_>) -> Result<GenerateWorld
   let payload = RawRequest {
     world_prompt: args.world_prompt,
     display_name: args.display_name,
-    model: args.model,
+    model: Some(args.model.get_model_api_name_str().to_string()),
     seed: args.seed,
     tags: args.tags,
     permission: args.permission,
@@ -107,7 +108,7 @@ mod tests {
         disable_recaption: None,
       },
       display_name: Some("Test World".to_string()),
-      model: Some("Marble 0.1-mini".to_string()),
+      model: WorldLabsModel::Marble0p1Mini,
       seed: None,
       tags: None,
       permission: None,
@@ -138,7 +139,7 @@ mod tests {
         disable_recaption: None,
       },
       display_name: None,
-      model: Some("Marble 0.1-mini".to_string()),
+      model: WorldLabsModel::Marble0p1Mini,
       seed: None,
       tags: None,
       permission: None,

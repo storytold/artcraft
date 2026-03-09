@@ -1,3 +1,4 @@
+use crate::api::api_types::world_id::WorldId;
 use crate::api::requests::list_worlds::http_request::{RawRequest, RawResponse};
 use crate::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use crate::error::filter_world_labs_http_error::filter_world_labs_http_error;
@@ -36,7 +37,7 @@ pub struct ListWorldsResponse {
 }
 
 pub struct WorldSummary {
-  pub world_id: String,
+  pub world_id: WorldId,
   pub display_name: Option<String>,
   pub world_marble_url: Option<String>,
   pub created_at: Option<String>,
@@ -104,7 +105,7 @@ pub async fn list_worlds(args: ListWorldsArgs<'_>) -> Result<ListWorldsResponse,
     .map_err(|err| WorldLabsGenericApiError::SerdeResponseParseErrorWithBody(err, response_body.to_string()))?;
 
   let worlds = raw.worlds.into_iter().map(|w| WorldSummary {
-    world_id: w.world_id,
+    world_id: WorldId(w.world_id),
     display_name: w.display_name,
     world_marble_url: w.world_marble_url,
     created_at: w.created_at,
@@ -154,7 +155,7 @@ mod tests {
 
     for (i, world) in response.worlds.iter().enumerate() {
       println!("--- World {} ---", i + 1);
-      println!("  World ID: {}", world.world_id);
+      println!("  World ID: {}", world.world_id.as_str());
       println!("  Display name: {:?}", world.display_name);
       println!("  Marble URL: {:?}", world.world_marble_url);
       println!("  Created at: {:?}", world.created_at);
