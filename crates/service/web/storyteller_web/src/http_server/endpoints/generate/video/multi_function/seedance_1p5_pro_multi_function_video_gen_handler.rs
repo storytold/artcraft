@@ -120,6 +120,8 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
   server_state: web::Data<Arc<ServerState>>
 ) -> Result<Json<Seedance1p5ProMultiFunctionVideoGenResponse>, CommonWebError> {
 
+  info!("Request: {:?}", request);
+  
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
   let mut mysql_connection = server_state.mysql_pool

@@ -42,7 +42,7 @@ pub(super) async fn handle_artcraft_video_via_router(
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
-    generate_audio: None,
+    generate_audio: request.generate_audio,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     idempotency_token: None,
   };

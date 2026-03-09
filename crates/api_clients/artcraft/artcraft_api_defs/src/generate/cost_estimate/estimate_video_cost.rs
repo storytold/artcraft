@@ -12,7 +12,7 @@ pub const ESTIMATE_VIDEO_COST_PATH: &str = "/v1/generate/cost_estimate/video";
 ///
 /// Every model cares about its own set of parameters and not all
 /// parameters may be relevant for every model.
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct EstimateVideoCostRequest {
   /// The video model to estimate costs for.
   pub model: CommonVideoModel,
@@ -43,7 +43,7 @@ pub struct EstimateVideoCostRequest {
 }
 
 /// Describes the type of video generation being requested.
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum GenerationMode {
   TextToVideo,

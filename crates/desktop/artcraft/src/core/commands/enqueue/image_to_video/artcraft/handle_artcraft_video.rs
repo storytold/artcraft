@@ -9,7 +9,6 @@ use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_vi
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_seedance_1_lite::handle_artcraft_seedance_1_lite;
 use crate::core::events::generation_events::common::GenerationModel;
 use artcraft_router::api::common_video_model::CommonVideoModel;
-use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_seedance_1p5_pro::handle_artcraft_seedance_1p5_pro;
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_seedance_2p0::handle_artcraft_seedance_2p0;
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_sora2::handle_artcraft_sora2;
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_sora2_pro::handle_artcraft_sora2_pro;
@@ -46,7 +45,7 @@ pub async fn handle_video_artcraft(
     Some(VideoModel::Kling3p0Standard) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Kling3p0Standard, GenerationModel::Kling3p0Standard).await,
     Some(VideoModel::Kling3p0Pro) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Kling3p0Pro, GenerationModel::Kling3p0Pro).await,
     Some(VideoModel::Seedance10Lite) => handle_artcraft_seedance_1_lite(request, app_env_configs, &creds).await,
-    Some(VideoModel::Seedance1p5Pro) => handle_artcraft_seedance_1p5_pro(request, app_env_configs, &creds).await,
+    Some(VideoModel::Seedance1p5Pro) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Seedance1p5Pro, GenerationModel::Seedance1p5Pro).await,
     Some(VideoModel::Seedance2p0) => handle_artcraft_seedance_2p0(request, app_env_configs, &creds).await,
     Some(VideoModel::Sora2) => handle_artcraft_sora2(request, app_env_configs, &creds).await,
     Some(VideoModel::Sora2Pro) => handle_artcraft_sora2_pro(request, app_env_configs, &creds).await,

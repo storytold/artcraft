@@ -6,7 +6,7 @@ use utoipa::ToSchema;
 pub const SEEDANCE_1P5_PRO_MULTI_FUNCTION_VIDEO_GEN_PATH: &str = "/v1/generate/video/multi_function/seedance_1p5_pro";
 
 /// Both text-to-video and image-to-video in one request.
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct Seedance1p5ProMultiFunctionVideoGenRequest {
   /// Idempotency token to prevent duplicate requests.
   pub uuid_idempotency_token: String,
