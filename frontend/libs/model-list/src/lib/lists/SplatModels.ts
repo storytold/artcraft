@@ -4,8 +4,6 @@ import { GenerationProvider } from "@storyteller/api-enums";
 
 // TODO: Some of the model configs, such as generation counts, are authoritatively controlled in `legacy/Models.ts`
 
-const SPLAT_PROVIDERS = [GenerationProvider.Artcraft, GenerationProvider.WorldLabs];
-
 export const SPLAT_MODELS : SplatModel [] = [
   new SplatModel({
     id: "marble_0p1_mini",
@@ -16,7 +14,10 @@ export const SPLAT_MODELS : SplatModel [] = [
     selectorName: "Marble Mini",
     selectorDescription: "Fast generation, good for quick drafts",
     selectorBadges: ["~30 sec."],
-    providers: SPLAT_PROVIDERS,
+    providers: [
+      GenerationProvider.Artcraft,
+      GenerationProvider.WorldLabs,
+    ],
     progressBarTime: 45000,
   }),
   new SplatModel({
@@ -28,7 +29,10 @@ export const SPLAT_MODELS : SplatModel [] = [
     selectorName: "Marble Plus",
     selectorDescription: "High quality, best for final renders",
     selectorBadges: ["~5 min."],
-    providers: SPLAT_PROVIDERS,
+    providers: [
+      GenerationProvider.Artcraft,
+      GenerationProvider.WorldLabs,
+    ],
     progressBarTime: 300000,
   }),
 ];
