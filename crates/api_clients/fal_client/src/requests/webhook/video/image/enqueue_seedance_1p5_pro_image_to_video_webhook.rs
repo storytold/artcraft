@@ -63,10 +63,13 @@ impl <U: IntoUrl> FalRequestCostCalculator for EnqueueSeedance1p5ProImageToVideo
     let resolution = self.resolution.unwrap_or(EnqueueSeedance1p5ProImageToVideoResolution::SevenTwentyP);
     let duration = self.duration.unwrap_or(EnqueueSeedance1p5ProImageToVideoDuration::FiveSeconds);
 
+    let audio = self.generate_audio.unwrap_or(true);
+    let dollars_per_million_tokens = if audio { 2.4 } else { 1.2 };
+
     if resolution == EnqueueSeedance1p5ProImageToVideoResolution::SevenTwentyP
         && duration == EnqueueSeedance1p5ProImageToVideoDuration::FiveSeconds
     {
-      return 26;
+      return if audio { 26 } else { 13 };
     }
 
     // TODO: Only correct for some aspect ratios for now.
@@ -93,7 +96,7 @@ impl <U: IntoUrl> FalRequestCostCalculator for EnqueueSeedance1p5ProImageToVideo
     let tokens = (height as f64) * (width as f64) * FPS * duration_secs;
     let tokens = tokens / 1024.0;
 
-    let cost = tokens * 2.4 / 1_000_000.0;
+    let cost = tokens * dollars_per_million_tokens / 1_000_000.0;
     let cost = cost * 100.0; // Dollars to cents.
     let cost = cost.ceil();
 
@@ -207,6 +210,43 @@ mod tests {
     args.resolution = Some(EnqueueSeedance1p5ProImageToVideoResolution::TenEightyP);
     let cost = args.calculate_cost_in_cents();
     assert_eq!(cost, 146);
+  }
+
+  #[test]
+  fn test_cost_audio_off() {
+    let api_key = FalApiKey::from_str("");
+
+    let mut args = EnqueueSeedance1p5ProImageToVideoArgs {
+      prompt: String::new(),
+      image_url: String::new(),
+      end_image_url: None,
+      api_key: &api_key,
+      duration: Some(EnqueueSeedance1p5ProImageToVideoDuration::FiveSeconds),
+      resolution: Some(EnqueueSeedance1p5ProImageToVideoResolution::SevenTwentyP),
+      aspect_ratio: None,
+      generate_audio: Some(false),
+      webhook_url: "https://example.com/webhook",
+    };
+
+    // 720p 5s without audio = half of 26
+    let cost = args.calculate_cost_in_cents();
+    assert_eq!(cost, 13);
+
+    // Calculated values — half of audio-on costs (ceil)
+    args.duration = Some(EnqueueSeedance1p5ProImageToVideoDuration::TenSeconds);
+    args.resolution = Some(EnqueueSeedance1p5ProImageToVideoResolution::SevenTwentyP);
+    let cost = args.calculate_cost_in_cents();
+    assert_eq!(cost, 33);
+
+    args.duration = Some(EnqueueSeedance1p5ProImageToVideoDuration::FiveSeconds);
+    args.resolution = Some(EnqueueSeedance1p5ProImageToVideoResolution::TenEightyP);
+    let cost = args.calculate_cost_in_cents();
+    assert_eq!(cost, 37);
+
+    args.duration = Some(EnqueueSeedance1p5ProImageToVideoDuration::TenSeconds);
+    args.resolution = Some(EnqueueSeedance1p5ProImageToVideoResolution::TenEightyP);
+    let cost = args.calculate_cost_in_cents();
+    assert_eq!(cost, 73);
   }
 
   #[tokio::test]
