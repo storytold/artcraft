@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { JobContextType } from "@storyteller/common";
-import { PromptBoxVideo } from "@storyteller/ui-promptbox";
+import { PromptBoxVideo, usePromptVideoStore } from "@storyteller/ui-promptbox";
+import { UploadImageMedia, UploadVideoMedia, UploadAudioMedia } from "@storyteller/api";
 import BackgroundGallery from "./BackgroundGallery";
 import {
   ClassyModelSelector,
@@ -12,7 +13,6 @@ import {
   //PROVIDER_LOOKUP_BY_PAGE,
 } from "@storyteller/ui-model-selector";
 import { VideoModel } from "@storyteller/model-list";
-import { usePromptVideoStore } from "@storyteller/ui-promptbox";
 import { animated, useSpring } from "@react-spring/web";
 import { useImageToVideoStore } from "./ImageToVideoStore";
 import {
@@ -21,9 +21,6 @@ import {
 } from "@storyteller/tauri-events";
 // import { Badge } from "@storyteller/ui-badge";
 import { twMerge } from "tailwind-merge";
-import { uploadImage } from "../../components/reusable/UploadModalMedia/uploadImage";
-import { uploadVideo } from "../../components/reusable/UploadModalMedia/uploadVideo";
-import { uploadAudio } from "../../components/reusable/UploadModalMedia/uploadAudio";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import {
   CostCalculatorButton,
@@ -209,9 +206,9 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
                 imageMediaId={imageMediaId}
                 url={imageUrl ?? undefined}
                 onImageRowVisibilityChange={setImageRowVisible}
-                uploadImage={uploadImage}
-                uploadVideo={uploadVideo}
-                uploadAudio={uploadAudio}
+                uploadImage={UploadImageMedia}
+                uploadVideo={UploadVideoMedia}
+                uploadAudio={UploadAudioMedia}
                 credits={videoCredits}
                 onEnqueuePressed={async (prompt, subscriberId) => {
                   const modelLabel = selectedVideoModel?.fullName ?? "";

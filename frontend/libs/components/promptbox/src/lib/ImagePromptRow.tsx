@@ -21,7 +21,7 @@ import { faImage, faVideo, faMusic } from "@fortawesome/pro-regular-svg-icons";
 import { RefImage, RefVideo, RefAudio } from "./promptStore";
 import { toast } from "@storyteller/ui-toaster";
 import { twMerge } from "tailwind-merge";
-import { UploaderState, UploaderStates } from "@storyteller/common";
+import { UploaderStates } from "@storyteller/common";
 import {
   DndContext,
   closestCenter,
@@ -40,15 +40,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-export type UploadImageFn = ({
-  title,
-  assetFile,
-  progressCallback,
-}: {
-  title: string;
-  assetFile: File;
-  progressCallback: (newState: UploaderState) => void;
-}) => Promise<void>;
+import type { UploadMediaFn } from "@storyteller/api";
+export type { UploadMediaFn as UploadImageFn } from "@storyteller/api";
+type UploadImageFn = UploadMediaFn;
 
 interface ImagePromptRowProps {
   visible: boolean;

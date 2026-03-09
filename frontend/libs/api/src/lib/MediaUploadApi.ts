@@ -1,7 +1,9 @@
+import { v4 as uuidv4 } from "uuid";
 import { ApiManager, ApiResponse } from "./ApiManager.js";
 import { FilterEngineCategories } from "./enums/QueryFilters.js";
 import { Visibility } from "./enums/Visibility.js";
 import { EIntermediateFile } from "./enums/EIntermediateFile.js";
+import { UploaderStates, UploaderState } from "@storyteller/common";
 export class MediaUploadApi extends ApiManager {
   private sessionToken = "";
 
@@ -338,4 +340,91 @@ export class MediaUploadApi extends ApiManager {
   }
 }
 
+// --- Upload media helpers ---
 
+const getFileName = (file: File) =>
+  file.name.substring(0, file.name.lastIndexOf("."));
+
+export type UploadMediaFn = (args: {
+  title: string;
+  assetFile: File;
+  progressCallback: (newState: UploaderState) => void;
+}) => Promise<void>;
+
+export const UploadImageMedia: UploadMediaFn = async ({
+  title,
+  assetFile,
+  progressCallback,
+}) => {
+  const api = new MediaUploadApi();
+  progressCallback({ status: UploaderStates.uploadingImage });
+
+  const res = await api.UploadImage({
+    uuid: uuidv4(),
+    blob: assetFile,
+    fileName: getFileName(assetFile),
+    maybe_title: "char_frame_" + title,
+  });
+
+  if (!res?.success || !res.data) {
+    progressCallback({
+      status: UploaderStates.imageCreateError,
+      errorMessage: res?.errorMessage ?? "Could not upload image!",
+    });
+    return;
+  }
+
+  progressCallback({ status: UploaderStates.success, data: res.data });
+};
+
+export const UploadVideoMedia: UploadMediaFn = async ({
+  title,
+  assetFile,
+  progressCallback,
+}) => {
+  const api = new MediaUploadApi();
+  progressCallback({ status: UploaderStates.uploadingImage });
+
+  const res = await api.UploadNewVideo({
+    uuid: uuidv4(),
+    blob: assetFile,
+    fileName: getFileName(assetFile),
+    maybe_title: "ref_video_" + title,
+  });
+
+  if (!res?.success || !res.data) {
+    progressCallback({
+      status: UploaderStates.imageCreateError,
+      errorMessage: res?.errorMessage ?? "Could not upload video!",
+    });
+    return;
+  }
+
+  progressCallback({ status: UploaderStates.success, data: res.data });
+};
+
+export const UploadAudioMedia: UploadMediaFn = async ({
+  title,
+  assetFile,
+  progressCallback,
+}) => {
+  const api = new MediaUploadApi();
+  progressCallback({ status: UploaderStates.uploadingImage });
+
+  const res = await api.UploadAudio({
+    uuid: uuidv4(),
+    blob: assetFile,
+    fileName: getFileName(assetFile),
+    maybe_title: "ref_audio_" + title,
+  });
+
+  if (!res?.success || !res.data) {
+    progressCallback({
+      status: UploaderStates.imageCreateError,
+      errorMessage: res?.errorMessage ?? "Could not upload audio!",
+    });
+    return;
+  }
+
+  progressCallback({ status: UploaderStates.success, data: res.data });
+};
