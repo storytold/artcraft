@@ -1,0 +1,1 @@
+pub mod enqueue_qwen_edit_2511_edit_image_angle_webhook;
