@@ -245,6 +245,24 @@ pub fn base_qwen_edit_2511_angles_image_request() -> GenerateImageRequest<'stati
   }
 }
 
+pub fn base_flux_2_lora_angles_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::Flux2LoraAngles,
+    provider: Provider::Artcraft,
+    prompt: None,
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
+  }
+}
+
 pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
     model: CommonImageModel::FluxPro11Ultra,

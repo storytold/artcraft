@@ -29,4 +29,6 @@ pub enum CommonImageModel {
   Seedream5Lite,
   #[serde(rename = "qwen_edit_2511_angles")]
   QwenEdit2511Angles,
+  #[serde(rename = "flux_2_lora_angles")]
+  Flux2LoraAngles,
 }
