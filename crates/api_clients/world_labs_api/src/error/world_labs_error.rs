@@ -1,7 +1,6 @@
 use crate::error::world_labs_client_error::WorldLabsClientError;
 use crate::error::world_labs_generic_api_error::WorldLabsGenericApiError;
 use crate::error::world_labs_specific_api_error::WorldLabsSpecificApiError;
-use cloudflare_errors::cloudflare_error::CloudflareError;
 use std::error::Error;
 
 #[derive(Debug)]
@@ -9,17 +8,6 @@ pub enum WorldLabsError {
   Client(WorldLabsClientError),
   ApiSpecific(WorldLabsSpecificApiError),
   ApiGeneric(WorldLabsGenericApiError),
-}
-
-impl WorldLabsError {
-  pub fn is_world_labs_having_downtime_issues(&self) -> bool {
-    match self {
-      Self::ApiGeneric(WorldLabsGenericApiError::CloudflareError(CloudflareError::BadGateway502)) => true,
-      Self::ApiGeneric(WorldLabsGenericApiError::CloudflareError(CloudflareError::GatewayTimeout504)) => true,
-      Self::ApiGeneric(WorldLabsGenericApiError::CloudflareError(CloudflareError::TimeoutOccurred524)) => true,
-      _ => false,
-    }
-  }
 }
 
 impl Error for WorldLabsError {}
@@ -49,11 +37,5 @@ impl From<WorldLabsSpecificApiError> for WorldLabsError {
 impl From<WorldLabsGenericApiError> for WorldLabsError {
   fn from(error: WorldLabsGenericApiError) -> Self {
     Self::ApiGeneric(error)
-  }
-}
-
-impl From<CloudflareError> for WorldLabsError {
-  fn from(error: CloudflareError) -> Self {
-    Self::ApiGeneric(WorldLabsGenericApiError::CloudflareError(error))
   }
 }

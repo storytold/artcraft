@@ -16,40 +16,20 @@ path = "src/lib.rs"
 workspace-build-acceleration.workspace = true
 
 # Internal
-cloudflare_errors.workspace = true
-cloudflare_mitigation.workspace = true
-cookie_store.workspace = true
 errors.workspace = true
 filesys.workspace = true
-http_headers.workspace = true
-jwt_light.workspace = true
 
 # External
 anyhow.workspace = true
-base64.workspace = true
-bstr.workspace = true
-byteorder = "1.5.0"
-chrono.workspace = true
-futures.workspace = true
-indexmap.workspace = true
 log.workspace = true
-once_cell.workspace = true
-regex.workspace = true
-scraper = "0.24.0"
 serde.workspace = true
 serde_json.workspace = true
-sha2.workspace = true
 tokio = { version = "1", features = ["full"] }
-url.workspace = true
 uuid.workspace = true
-wreq-util.workspace = true
 wreq.workspace = true
 
 [dev-dependencies]
 filesys.workspace = true
-test_data.workspace = true
-testing.workspace = true
-log4rs = "1.4.0"
 env_logger.workspace = true
 env.workspace = true
 chrono.workspace = true
