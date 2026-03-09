@@ -15008,6 +15008,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "world_labs_api"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "bstr",
+ "byteorder",
+ "chrono",
+ "cloudflare_errors",
+ "cloudflare_mitigation",
+ "cookie_store 0.0.1",
+ "env",
+ "env_logger 0.11.9",
+ "errors",
+ "filesys",
+ "futures 0.3.31",
+ "http_headers",
+ "indexmap 2.9.0",
+ "jwt_light",
+ "log",
+ "log4rs",
+ "once_cell",
+ "regex",
+ "scraper 0.24.0",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0-rc.2",
+ "test_data",
+ "testing",
+ "tokio",
+ "url",
+ "uuid 1.18.1",
+ "workspace-build-acceleration",
+ "wreq",
+ "wreq-util",
+]
+
+[[package]]
 name = "world_labs_client"
 version = "0.0.1"
 dependencies = [

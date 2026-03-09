@@ -19,6 +19,7 @@ members = [
   "crates/api_clients/seedance2pro",
   "crates/api_clients/runwayml_client",
   "crates/api_clients/thumbnail_generator",
+  "crates/api_clients/world_labs_api",
   "crates/api_clients/world_labs_client",
 
   # CLI tools for operations, etc.
@@ -248,6 +249,7 @@ tokens = { path = "crates/schema/public/tokens" }
 url_utils = { path = "crates/lib/url_utils" }
 users = { path = "crates/lib/users" }
 web_base64 = { path = "crates/lib/data/web_base64" }
+world_labs_api = { path = "crates/api_clients/world_labs_api" }
 world_labs_client = { path = "crates/api_clients/world_labs_client" }
 
 # External libs
