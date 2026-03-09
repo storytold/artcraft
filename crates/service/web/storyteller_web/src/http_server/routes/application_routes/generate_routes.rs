@@ -20,6 +20,7 @@ use crate::http_server::endpoints::generate::image::multi_function::gpt_image_1p
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_2_multi_function_image_gen_handler::nano_banana_2_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_multi_function_image_gen_handler::nano_banana_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_pro_multi_function_image_gen_handler::nano_banana_pro_multi_function_image_gen_handler;
+use crate::http_server::endpoints::generate::image::angle::qwen_edit_2511_edit_image_angle_handler::qwen_edit_2511_edit_image_angle_handler;
 use crate::http_server::endpoints::generate::image::remove_image_background_handler::remove_image_background_handler;
 use crate::http_server::endpoints::generate::object::generate_hunyuan_2_0_image_to_3d_handler::generate_hunyuan_2_0_image_to_3d_handler;
 use crate::http_server::endpoints::generate::splat::generate_worldlabs_marble_0p1_mini_splat_handler::generate_worldlabs_marble_0p1_mini_splat_handler;
@@ -135,6 +136,12 @@ where
               )
               .service(web::resource("/flux_pro_1")
                   .route(web::post().to(flux_pro_1_inpaint_image_handler))
+                  .route(web::head().to(|| HttpResponse::Ok()))
+              )
+          )
+          .service(web::scope("/angle")
+              .service(web::resource("/qwen_edit_2511")
+                  .route(web::post().to(qwen_edit_2511_edit_image_angle_handler))
                   .route(web::head().to(|| HttpResponse::Ok()))
               )
           )

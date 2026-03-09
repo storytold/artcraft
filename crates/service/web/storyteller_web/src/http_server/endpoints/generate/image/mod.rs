@@ -7,3 +7,4 @@ pub mod generate_gpt_image_1_text_to_image_handler;
 pub mod inpaint;
 pub mod remove_image_background_handler;
 pub mod multi_function;
+pub mod angle;

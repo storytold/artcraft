@@ -1,3 +1,4 @@
+pub mod angle;
 pub mod bg_removal;
 pub mod edit;
 pub mod inpaint;

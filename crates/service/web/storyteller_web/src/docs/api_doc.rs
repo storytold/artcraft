@@ -241,6 +241,7 @@ use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v4_mu
 use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v4p5_multi_function_image_gen::*;
 use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen::*;
 // Image edit (missing handlers)
+use artcraft_api_defs::generate::image::angle::qwen_edit_2511_edit_image_angle::*;
 use artcraft_api_defs::generate::image::edit::flux_pro_kontext_max_edit_image::*;
 use artcraft_api_defs::generate::image::edit::gemini_25_flash_edit_image::*;
 use artcraft_api_defs::generate::image::edit::qwen_edit_image::*;
@@ -425,6 +426,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::generate::image::edit::gemini_25_flash_edit_image_handler::gemini_25_flash_edit_image_handler,
     crate::http_server::endpoints::generate::image::edit::qwen_edit_image_handler::qwen_edit_image_handler,
     crate::http_server::endpoints::generate::image::edit::seededit_3_edit_image_handler::seededit_3_edit_image_handler,
+    // Generate Images (Angle)
+    crate::http_server::endpoints::generate::image::angle::qwen_edit_2511_edit_image_angle_handler::qwen_edit_2511_edit_image_angle_handler,
     // Generate Images (Inpaint)
     crate::http_server::endpoints::generate::image::inpaint::flux_dev_juggernaut_inpaint_handler::flux_dev_juggernaut_inpaint_image_handler,
     crate::http_server::endpoints::generate::image::inpaint::flux_pro_1_inpaint_handler::flux_pro_1_inpaint_image_handler,
@@ -1003,6 +1006,12 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     BytedanceSeedream5LiteMultiFunctionImageGenResponse,
     BytedanceSeedream5LiteMultiFunctionImageGenImageSize,
     BytedanceSeedream5LiteMultiFunctionImageGenNumImages,
+
+    // Image Angle types
+    QwenEdit2511EditImageAngleRequest,
+    QwenEdit2511EditImageAngleResponse,
+    QwenEdit2511EditImageAngleNumImages,
+    QwenEdit2511EditImageAngleImageSize,
 
     // Image Edit types
     FluxProKontextMaxEditImageRequest,

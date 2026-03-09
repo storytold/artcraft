@@ -1,0 +1,1 @@
+pub mod qwen_edit_2511_edit_image_angle;
