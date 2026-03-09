@@ -27,6 +27,8 @@ pub enum ModelType {
   FluxPro11Ultra,
   #[serde(rename = "flux_pro_kontext_max")]
   FluxProKontextMax,
+  #[serde(rename = "flux_2_lora_angles")]
+  Flux2LoraAngles,
   #[serde(rename = "gpt_image_1")]
   GptImage1,
   #[serde(rename = "gpt_image_1p5")]
@@ -154,6 +156,7 @@ impl ModelType {
       Self::FluxPro11 => "flux_pro_1p1",
       Self::FluxPro11Ultra => "flux_pro_1p1_ultra",
       Self::FluxProKontextMax => "flux_pro_kontext_max",
+      Self::Flux2LoraAngles => "flux_2_lora_angles",
       Self::GptImage1 => "gpt_image_1",
       Self::GptImage1p5 => "gpt_image_1p5",
       Self::GrokImage => "grok_image",
@@ -219,6 +222,7 @@ impl ModelType {
       "flux_pro_1p1" => Ok(Self::FluxPro11),
       "flux_pro_1p1_ultra" => Ok(Self::FluxPro11Ultra),
       "flux_pro_kontext_max" => Ok(Self::FluxProKontextMax),
+      "flux_2_lora_angles" => Ok(Self::Flux2LoraAngles),
       "gpt_image_1" => Ok(Self::GptImage1),
       "gpt_image_1p5" => Ok(Self::GptImage1p5),
       "grok_image" => Ok(Self::GrokImage),
@@ -288,6 +292,7 @@ impl ModelType {
       Self::FluxPro11,
       Self::FluxPro11Ultra,
       Self::FluxProKontextMax,
+      Self::Flux2LoraAngles,
       Self::GptImage1,
       Self::GptImage1p5,
       Self::GrokImage,
@@ -362,6 +367,7 @@ mod tests {
       assert_serialization(ModelType::FluxPro11, "flux_pro_1p1");
       assert_serialization(ModelType::FluxPro11Ultra, "flux_pro_1p1_ultra");
       assert_serialization(ModelType::FluxProKontextMax, "flux_pro_kontext_max");
+      assert_serialization(ModelType::Flux2LoraAngles, "flux_2_lora_angles");
       assert_serialization(ModelType::GptImage1, "gpt_image_1");
       assert_serialization(ModelType::GptImage1p5, "gpt_image_1p5");
       assert_serialization(ModelType::GrokImage, "grok_image");
@@ -423,6 +429,7 @@ mod tests {
       assert_eq!(ModelType::FluxPro11.to_str(), "flux_pro_1p1");
       assert_eq!(ModelType::FluxPro11Ultra.to_str(), "flux_pro_1p1_ultra");
       assert_eq!(ModelType::FluxProKontextMax.to_str(), "flux_pro_kontext_max");
+      assert_eq!(ModelType::Flux2LoraAngles.to_str(), "flux_2_lora_angles");
       assert_eq!(ModelType::GptImage1.to_str(), "gpt_image_1");
       assert_eq!(ModelType::GptImage1p5.to_str(), "gpt_image_1p5");
       assert_eq!(ModelType::GrokImage.to_str(), "grok_image");
@@ -486,6 +493,7 @@ mod tests {
       assert_eq!(ModelType::from_str("flux_pro_1p1").unwrap(), ModelType::FluxPro11);
       assert_eq!(ModelType::from_str("flux_pro_1p1_ultra").unwrap(), ModelType::FluxPro11Ultra);
       assert_eq!(ModelType::from_str("flux_pro_kontext_max").unwrap(), ModelType::FluxProKontextMax);
+      assert_eq!(ModelType::from_str("flux_2_lora_angles").unwrap(), ModelType::Flux2LoraAngles);
       assert_eq!(ModelType::from_str("gpt_image_1").unwrap(), ModelType::GptImage1);
       assert_eq!(ModelType::from_str("gpt_image_1p5").unwrap(), ModelType::GptImage1p5);
       assert_eq!(ModelType::from_str("grok_image").unwrap(), ModelType::GrokImage);
@@ -541,7 +549,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = ModelType::all_variants();
-      assert_eq!(variants.len(), 53);
+      assert_eq!(variants.len(), 54);
       // Image models
       assert_eq!(variants.pop_first(), Some(ModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(ModelType::Flux1Schnell));
@@ -550,6 +558,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(ModelType::FluxPro11));
       assert_eq!(variants.pop_first(), Some(ModelType::FluxPro11Ultra));
       assert_eq!(variants.pop_first(), Some(ModelType::FluxProKontextMax));
+      assert_eq!(variants.pop_first(), Some(ModelType::Flux2LoraAngles));
       assert_eq!(variants.pop_first(), Some(ModelType::GptImage1));
       assert_eq!(variants.pop_first(), Some(ModelType::GptImage1p5));
       assert_eq!(variants.pop_first(), Some(ModelType::GrokImage));

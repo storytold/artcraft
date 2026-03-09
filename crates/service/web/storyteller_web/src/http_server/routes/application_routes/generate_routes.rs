@@ -20,6 +20,7 @@ use crate::http_server::endpoints::generate::image::multi_function::gpt_image_1p
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_2_multi_function_image_gen_handler::nano_banana_2_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_multi_function_image_gen_handler::nano_banana_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_pro_multi_function_image_gen_handler::nano_banana_pro_multi_function_image_gen_handler;
+use crate::http_server::endpoints::generate::image::angle::flux_2_lora_edit_image_angle_handler::flux_2_lora_edit_image_angle_handler;
 use crate::http_server::endpoints::generate::image::angle::qwen_edit_2511_edit_image_angle_handler::qwen_edit_2511_edit_image_angle_handler;
 use crate::http_server::endpoints::generate::image::remove_image_background_handler::remove_image_background_handler;
 use crate::http_server::endpoints::generate::object::generate_hunyuan_2_0_image_to_3d_handler::generate_hunyuan_2_0_image_to_3d_handler;
@@ -140,6 +141,10 @@ where
               )
           )
           .service(web::scope("/angle")
+              .service(web::resource("/flux_2_lora")
+                  .route(web::post().to(flux_2_lora_edit_image_angle_handler))
+                  .route(web::head().to(|| HttpResponse::Ok()))
+              )
               .service(web::resource("/qwen_edit_2511")
                   .route(web::post().to(qwen_edit_2511_edit_image_angle_handler))
                   .route(web::head().to(|| HttpResponse::Ok()))
