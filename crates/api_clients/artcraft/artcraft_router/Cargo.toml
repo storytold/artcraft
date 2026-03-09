@@ -17,10 +17,11 @@ workspace-build-acceleration.workspace = true
 
 # Internal
 artcraft_api_defs.workspace = true
+artcraft_client.workspace = true
 fal_client.workspace = true
 seedance2pro.workspace = true
-artcraft_client.workspace = true
 tokens.workspace = true
+world_labs_api.workspace = true
 
 # External
 anyhow.workspace = true
