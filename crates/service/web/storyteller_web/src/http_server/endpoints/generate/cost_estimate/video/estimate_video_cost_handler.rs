@@ -50,7 +50,7 @@ pub async fn estimate_video_cost_handler(
     aspect_ratio: router_aspect_ratio,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
-    generate_audio: None,
+    generate_audio: request.generate_audio,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     idempotency_token: None,
   };

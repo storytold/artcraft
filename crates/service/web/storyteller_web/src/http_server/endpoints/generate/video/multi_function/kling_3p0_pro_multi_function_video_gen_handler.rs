@@ -200,6 +200,9 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
 
   let apriori_job_token = InferenceJobToken::generate();
 
+  // Most people will want audio
+  let generate_audio = request.generate_audio.unwrap_or(true);
+
   let fal_result;
 
   if let Some(start_frame_url) = maybe_start_frame_image_url {
@@ -212,7 +215,7 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       image_url: start_frame_url,
       end_image_url: maybe_end_frame_image_url,
-      generate_audio: request.generate_audio,
+      generate_audio: Some(generate_audio),
       negative_prompt: request.negative_prompt.clone(),
       duration: Some(duration),
       aspect_ratio,
@@ -249,7 +252,7 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
     let args = EnqueueKling3p0ProTextToVideoArgs {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       negative_prompt: request.negative_prompt.clone(),
-      generate_audio: request.generate_audio,
+      generate_audio: Some(generate_audio),
       duration: Some(duration),
       aspect_ratio: Some(aspect_ratio),
       shot_type: None,

@@ -9,6 +9,9 @@ use enums::common::generation_provider::GenerationProvider;
 pub const ESTIMATE_VIDEO_COST_PATH: &str = "/v1/generate/cost_estimate/video";
 
 /// Request body for the video cost estimate endpoint.
+///
+/// Every model cares about its own set of parameters and not all
+/// parameters may be relevant for every model.
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EstimateVideoCostRequest {
   /// The video model to estimate costs for.
@@ -34,6 +37,9 @@ pub struct EstimateVideoCostRequest {
 
   /// Number of videos to generate in parallel.
   pub video_batch_count: Option<u16>,
+
+  /// Whether to generate audio for the video.
+  pub generate_audio: Option<bool>,
 }
 
 /// Describes the type of video generation being requested.
@@ -99,6 +105,7 @@ mod tests {
       resolution: None,
       duration_seconds: None,
       video_batch_count: None,
+      generate_audio: None,
     };
     let serialized = serde_json::to_string(&request).unwrap();
     assert!(serialized.contains("\"generation_mode\":{\"type\":\"text_to_video\"}"));
@@ -115,6 +122,7 @@ mod tests {
       resolution: None,
       duration_seconds: None,
       video_batch_count: None,
+      generate_audio: None,
     };
     let serialized = serde_json::to_string(&request).unwrap();
     assert!(serialized.contains("\"generation_mode\":{\"type\":\"reference_image_to_video\",\"count\":1}"));
