@@ -1,5 +1,6 @@
 pub mod common_requests;
 pub mod common_responses;
+pub mod endpoint_helpers;
 pub mod cookies;
 pub mod deprecated_endpoints;
 pub mod endpoints;

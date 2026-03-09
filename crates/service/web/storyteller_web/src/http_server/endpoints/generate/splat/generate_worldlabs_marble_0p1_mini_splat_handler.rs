@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -20,7 +21,6 @@ use mysql_queries::queries::generic_inference::worldlabs::insert_generic_inferen
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem};
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
-use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use world_labs_api::api::api_types::world_labs_model::WorldLabsModel;
@@ -155,7 +155,7 @@ pub async fn generate_worldlabs_marble_0p1_mini_splat_handler(
     Ok(result) => result,
     Err(err) => {
       warn!("World Labs generate_world error: {:?}", err);
-      refund_after_api_failure(&wallet_deduction.ledger_entry_token, &mut mysql_connection).await;
+      refund_wallet_after_api_failure(&wallet_deduction.ledger_entry_token, &mut mysql_connection).await;
       return Err(CommonWebError::ServerError);
     }
   };
@@ -246,51 +246,4 @@ pub async fn generate_worldlabs_marble_0p1_mini_splat_handler(
     success: true,
     inference_job_token: job_token,
   }))
-}
-
-async fn refund_after_api_failure(
-  ledger_entry_token: &tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken,
-  connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-) {
-  let mut transaction = match connection.begin().await {
-    Ok(tx) => tx,
-    Err(err) => {
-      error!(
-        "Failed to begin refund transaction after API failure (ledger {}): {:?}",
-        ledger_entry_token.as_str(), err
-      );
-      return;
-    }
-  };
-
-  match try_to_refund_ledger_entry(ledger_entry_token, &mut transaction).await {
-    Ok(WalletRefundOutcome::Refunded(summary)) => {
-      info!(
-        "Refunded {} credits after API failure (ledger {} → refund ledger {}).",
-        summary.refund_amount,
-        ledger_entry_token.as_str(),
-        summary.refund_ledger_entry_token.as_str(),
-      );
-      if let Err(err) = transaction.commit().await {
-        error!(
-          "Failed to commit refund after API failure (ledger {}): {:?}",
-          ledger_entry_token.as_str(), err
-        );
-      }
-    }
-    Ok(WalletRefundOutcome::AlreadyRefunded) => {
-      info!(
-        "Ledger entry {} was already refunded; no action needed.",
-        ledger_entry_token.as_str()
-      );
-      let _ = transaction.rollback().await;
-    }
-    Err(err) => {
-      error!(
-        "Failed to refund ledger entry {} after API failure: {:?}",
-        ledger_entry_token.as_str(), err
-      );
-      let _ = transaction.rollback().await;
-    }
-  }
 }
