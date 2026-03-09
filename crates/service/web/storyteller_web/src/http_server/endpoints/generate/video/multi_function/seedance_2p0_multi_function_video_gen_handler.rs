@@ -221,7 +221,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     Ok(resp) => resp,
     Err(err) => {
       warn!("Error calling seedance2pro generate_video: {:?}", err);
-      refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await;
+      refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
 
       // TODO: We need to start returning robust failure messages to the caller.
       return Err(CommonWebError::ServerError);

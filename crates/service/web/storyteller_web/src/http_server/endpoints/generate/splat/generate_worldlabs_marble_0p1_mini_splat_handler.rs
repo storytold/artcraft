@@ -155,7 +155,7 @@ pub async fn generate_worldlabs_marble_0p1_mini_splat_handler(
     Ok(result) => result,
     Err(err) => {
       warn!("World Labs generate_world error: {:?}", err);
-      refund_wallet_after_api_failure(&wallet_deduction.ledger_entry_token, &mut mysql_connection).await;
+      refund_wallet_after_api_failure(&wallet_deduction.ledger_entry_token, &mut mysql_connection).await?;
       return Err(CommonWebError::ServerError);
     }
   };
