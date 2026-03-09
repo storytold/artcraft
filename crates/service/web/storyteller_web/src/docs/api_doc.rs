@@ -159,6 +159,10 @@ use artcraft_api_defs::generate::object::generate_hunyuan_2_0_image_to_3d::Gener
 use artcraft_api_defs::generate::object::generate_hunyuan_2_0_image_to_3d::GenerateHunyuan20ImageTo3dResponse;
 use artcraft_api_defs::generate::object::generate_hunyuan_2_1_image_to_3d::GenerateHunyuan21ImageTo3dRequest;
 use artcraft_api_defs::generate::object::generate_hunyuan_2_1_image_to_3d::GenerateHunyuan21ImageTo3dResponse;
+use artcraft_api_defs::generate::splat::generate_worldlabs_marble_0p1_mini_splat::GenerateWorldlabsMarble0p1MiniSplatRequest;
+use artcraft_api_defs::generate::splat::generate_worldlabs_marble_0p1_mini_splat::GenerateWorldlabsMarble0p1MiniSplatResponse;
+use artcraft_api_defs::generate::splat::generate_worldlabs_marble_0p1_plus_splat::GenerateWorldlabsMarble0p1PlusSplatRequest;
+use artcraft_api_defs::generate::splat::generate_worldlabs_marble_0p1_plus_splat::GenerateWorldlabsMarble0p1PlusSplatResponse;
 use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::GenerateKling16ProAspectRatio;
 use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::GenerateKling16ProDuration;
 use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::GenerateKling16ProImageToVideoRequest;
@@ -321,6 +325,8 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::generate::image::edit::gpt_image_1_edit_image_handler::gpt_image_1_edit_image_handler,
     crate::http_server::endpoints::generate::object::generate_hunyuan_2_1_image_to_3d_handler::generate_hunyuan_2_1_image_to_3d_handler,
     crate::http_server::endpoints::generate::object::generate_hunyuan_2_0_image_to_3d_handler::generate_hunyuan_2_0_image_to_3d_handler,
+    crate::http_server::endpoints::generate::splat::generate_worldlabs_marble_0p1_mini_splat_handler::generate_worldlabs_marble_0p1_mini_splat_handler,
+    crate::http_server::endpoints::generate::splat::generate_worldlabs_marble_0p1_plus_splat_handler::generate_worldlabs_marble_0p1_plus_splat_handler,
     crate::http_server::endpoints::generate::video::generate_kling_1_6_pro_video_handler::generate_kling_1_6_pro_video_handler,
     crate::http_server::endpoints::generate::video::generate_kling_2_1_master_video_handler::generate_kling_2_1_master_video_handler,
     crate::http_server::endpoints::generate::video::generate_kling_2_1_pro_video_handler::generate_kling_2_1_pro_video_handler,
@@ -726,6 +732,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GenerateHunyuan21ImageTo3dResponse,
     GenerateHunyuan20ImageTo3dRequest,
     GenerateHunyuan20ImageTo3dResponse,
+    GenerateWorldlabsMarble0p1MiniSplatRequest,
+    GenerateWorldlabsMarble0p1MiniSplatResponse,
+    GenerateWorldlabsMarble0p1PlusSplatRequest,
+    GenerateWorldlabsMarble0p1PlusSplatResponse,
     GenerateKling16ProAspectRatio,
     GenerateKling16ProDuration,
     GenerateKling16ProImageToVideoRequest,

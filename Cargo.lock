@@ -11603,6 +11603,7 @@ dependencies = [
  "utoipa-swagger-ui",
  "videos",
  "workspace-build-acceleration",
+ "world_labs_api",
  "wreq",
  "zip 0.6.6",
 ]

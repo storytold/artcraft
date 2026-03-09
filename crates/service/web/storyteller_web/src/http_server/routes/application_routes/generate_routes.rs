@@ -21,6 +21,8 @@ use crate::http_server::endpoints::generate::image::multi_function::nano_banana_
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_pro_multi_function_image_gen_handler::nano_banana_pro_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::remove_image_background_handler::remove_image_background_handler;
 use crate::http_server::endpoints::generate::object::generate_hunyuan_2_0_image_to_3d_handler::generate_hunyuan_2_0_image_to_3d_handler;
+use crate::http_server::endpoints::generate::splat::generate_worldlabs_marble_0p1_mini_splat_handler::generate_worldlabs_marble_0p1_mini_splat_handler;
+use crate::http_server::endpoints::generate::splat::generate_worldlabs_marble_0p1_plus_splat_handler::generate_worldlabs_marble_0p1_plus_splat_handler;
 use crate::http_server::endpoints::generate::object::generate_hunyuan_2_1_image_to_3d_handler::generate_hunyuan_2_1_image_to_3d_handler;
 use crate::http_server::endpoints::generate::object::multi_function::generate_hunyuan3d_v3_multi_function_object_handler::generate_hunyuan3d_v3_multi_function_object_handler;
 use crate::http_server::endpoints::generate::video::generate_kling_1_6_pro_video_handler::generate_kling_1_6_pro_video_handler;
@@ -245,6 +247,16 @@ where
           )
           .service(web::resource("/hunyuan_2.1_image_to_3d")
               .route(web::post().to(generate_hunyuan_2_1_image_to_3d_handler))
+              .route(web::head().to(|| HttpResponse::Ok()))
+          )
+      )
+      .service(web::scope("/splat")
+          .service(web::resource("/worldlabs_marble_0p1_mini")
+              .route(web::post().to(generate_worldlabs_marble_0p1_mini_splat_handler))
+              .route(web::head().to(|| HttpResponse::Ok()))
+          )
+          .service(web::resource("/worldlabs_marble_0p1_plus")
+              .route(web::post().to(generate_worldlabs_marble_0p1_plus_splat_handler))
               .route(web::head().to(|| HttpResponse::Ok()))
           )
       )

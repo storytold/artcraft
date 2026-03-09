@@ -20,6 +20,10 @@ pub enum InferenceJobExternalThirdParty {
   /// Seedance 2 Pro jobs
   #[serde(rename = "seedance2pro")]
   Seedance2Pro,
+
+  /// World Labs jobs
+  #[serde(rename = "worldlabs")]
+  Worldlabs,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -32,6 +36,7 @@ impl InferenceJobExternalThirdParty {
     match self {
       Self::Fal => "fal",
       Self::Seedance2Pro => "seedance2pro",
+      Self::Worldlabs => "worldlabs",
     }
   }
 
@@ -39,6 +44,7 @@ impl InferenceJobExternalThirdParty {
     match value {
       "fal" => Ok(Self::Fal),
       "seedance2pro" => Ok(Self::Seedance2Pro),
+      "worldlabs" => Ok(Self::Worldlabs),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -49,6 +55,7 @@ impl InferenceJobExternalThirdParty {
     BTreeSet::from([
       Self::Fal,
       Self::Seedance2Pro,
+      Self::Worldlabs,
     ])
   }
 }
@@ -65,24 +72,27 @@ mod tests {
     fn test_serialization() {
       assert_serialization(InferenceJobExternalThirdParty::Fal, "fal");
       assert_serialization(InferenceJobExternalThirdParty::Seedance2Pro, "seedance2pro");
+      assert_serialization(InferenceJobExternalThirdParty::Worldlabs, "worldlabs");
     }
 
     #[test]
     fn to_str() {
       assert_eq!(InferenceJobExternalThirdParty::Fal.to_str(), "fal");
       assert_eq!(InferenceJobExternalThirdParty::Seedance2Pro.to_str(), "seedance2pro");
+      assert_eq!(InferenceJobExternalThirdParty::Worldlabs.to_str(), "worldlabs");
     }
 
     #[test]
     fn from_str() {
       assert_eq!(InferenceJobExternalThirdParty::from_str("fal").unwrap(), InferenceJobExternalThirdParty::Fal);
       assert_eq!(InferenceJobExternalThirdParty::from_str("seedance2pro").unwrap(), InferenceJobExternalThirdParty::Seedance2Pro);
+      assert_eq!(InferenceJobExternalThirdParty::from_str("worldlabs").unwrap(), InferenceJobExternalThirdParty::Worldlabs);
     }
 
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 2;
+      const EXPECTED_COUNT : usize = 3;
       
       assert_eq!(InferenceJobExternalThirdParty::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobExternalThirdParty::iter().len(), EXPECTED_COUNT);

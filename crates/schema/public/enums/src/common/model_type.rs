@@ -127,6 +127,12 @@ pub enum ModelType {
   Hunyuan3d2_1,
   #[serde(rename = "hunyuan_3d_3")]
   Hunyuan3d3,
+
+  // Splat generation models (World Labs)
+  #[serde(rename = "marble_0p1_mini")]
+  Marble0p1Mini,
+  #[serde(rename = "marble_0p1_plus")]
+  Marble0p1Plus,
 }
 
 impl_enum_display_and_debug_using_to_str!(ModelType);
@@ -193,6 +199,10 @@ impl ModelType {
       Self::Hunyuan3d2_0 => "hunyuan_3d_2p0",
       Self::Hunyuan3d2_1 => "hunyuan_3d_2p1",
       Self::Hunyuan3d3 => "hunyuan_3d_3",
+
+      // Splat generation models (World Labs)
+      Self::Marble0p1Mini => "marble_0p1_mini",
+      Self::Marble0p1Plus => "marble_0p1_plus",
     }
   }
 
@@ -253,6 +263,10 @@ impl ModelType {
       "hunyuan_3d_2p0" => Ok(Self::Hunyuan3d2_0),
       "hunyuan_3d_2p1" => Ok(Self::Hunyuan3d2_1),
       "hunyuan_3d_3" => Ok(Self::Hunyuan3d3),
+
+      // Splat generation models (World Labs)
+      "marble_0p1_mini" => Ok(Self::Marble0p1Mini),
+      "marble_0p1_plus" => Ok(Self::Marble0p1Plus),
 
       _ => Err(format!("invalid model_type: {:?}", job_status)),
     }
@@ -317,6 +331,10 @@ impl ModelType {
       Self::Hunyuan3d2_0,
       Self::Hunyuan3d2_1,
       Self::Hunyuan3d3,
+
+      // Splat generation models (World Labs)
+      Self::Marble0p1Mini,
+      Self::Marble0p1Plus,
     ])
   }
 }
@@ -384,6 +402,9 @@ mod tests {
       assert_serialization(ModelType::Hunyuan3d2_0, "hunyuan_3d_2p0");
       assert_serialization(ModelType::Hunyuan3d2_1, "hunyuan_3d_2p1");
       assert_serialization(ModelType::Hunyuan3d3, "hunyuan_3d_3");
+      // Splat generation models (World Labs)
+      assert_serialization(ModelType::Marble0p1Mini, "marble_0p1_mini");
+      assert_serialization(ModelType::Marble0p1Plus, "marble_0p1_plus");
     }
 
     #[test]
@@ -443,6 +464,9 @@ mod tests {
       assert_eq!(ModelType::Hunyuan3d2_0.to_str(), "hunyuan_3d_2p0");
       assert_eq!(ModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2p1");
       assert_eq!(ModelType::Hunyuan3d3.to_str(), "hunyuan_3d_3");
+      // Splat generation models (World Labs)
+      assert_eq!(ModelType::Marble0p1Mini.to_str(), "marble_0p1_mini");
+      assert_eq!(ModelType::Marble0p1Plus.to_str(), "marble_0p1_plus");
     }
 
     #[test]
@@ -501,12 +525,15 @@ mod tests {
       assert_eq!(ModelType::from_str("hunyuan_3d_2p0").unwrap(), ModelType::Hunyuan3d2_0);
       assert_eq!(ModelType::from_str("hunyuan_3d_2p1").unwrap(), ModelType::Hunyuan3d2_1);
       assert_eq!(ModelType::from_str("hunyuan_3d_3").unwrap(), ModelType::Hunyuan3d3);
+      // Splat generation models (World Labs)
+      assert_eq!(ModelType::from_str("marble_0p1_mini").unwrap(), ModelType::Marble0p1Mini);
+      assert_eq!(ModelType::from_str("marble_0p1_plus").unwrap(), ModelType::Marble0p1Plus);
     }
 
     #[test]
     fn all_variants() {
       let mut variants = ModelType::all_variants();
-      assert_eq!(variants.len(), 50);
+      assert_eq!(variants.len(), 52);
       // Image models
       assert_eq!(variants.pop_first(), Some(ModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(ModelType::Flux1Schnell));
@@ -560,6 +587,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(ModelType::Hunyuan3d2_0));
       assert_eq!(variants.pop_first(), Some(ModelType::Hunyuan3d2_1));
       assert_eq!(variants.pop_first(), Some(ModelType::Hunyuan3d3));
+      // Splat generation models (World Labs)
+      assert_eq!(variants.pop_first(), Some(ModelType::Marble0p1Mini));
+      assert_eq!(variants.pop_first(), Some(ModelType::Marble0p1Plus));
 
       assert_eq!(variants.pop_first(), None);
     }

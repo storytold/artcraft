@@ -47,7 +47,11 @@ pub enum InferenceCategory {
   /// FAL-powered 3D object generation
   #[serde(rename = "object_generation")]
   ObjectGeneration,
-  
+
+  /// Gaussian Splat generation (eg. World Labs Marble)
+  #[serde(rename = "splat_generation")]
+  SplatGeneration,
+
   /// FAL-powered image background removal
   #[serde(rename = "background_removal")]
   BackgroundRemoval,
@@ -104,6 +108,7 @@ impl InferenceCategory {
       Self::ImageGeneration => "image_generation",
       Self::VideoGeneration => "video_generation",
       Self::ObjectGeneration => "object_generation",
+      Self::SplatGeneration => "splat_generation",
       Self::BackgroundRemoval => "background_removal",
       Self::Mocap => "mocap",
       Self::Workflow => "workflow",
@@ -125,6 +130,7 @@ impl InferenceCategory {
       "image_generation" => Ok(Self::ImageGeneration),
       "video_generation" => Ok(Self::VideoGeneration),
       "object_generation" => Ok(Self::ObjectGeneration),
+      "splat_generation" => Ok(Self::SplatGeneration),
       "background_removal" => Ok(Self::BackgroundRemoval),
       "f5_tts" => Ok(Self::F5TTS),
       "mocap" => Ok(Self::Mocap),
@@ -148,6 +154,7 @@ impl InferenceCategory {
       Self::VoiceConversion,
       Self::ImageGeneration,
       Self::ObjectGeneration,
+      Self::SplatGeneration,
       Self::VideoGeneration,
       Self::BackgroundRemoval,
       Self::Mocap,
@@ -179,6 +186,7 @@ mod tests {
       assert_serialization(InferenceCategory::ImageGeneration, "image_generation");
       assert_serialization(InferenceCategory::VideoGeneration, "video_generation");
       assert_serialization(InferenceCategory::ObjectGeneration, "object_generation");
+      assert_serialization(InferenceCategory::SplatGeneration, "splat_generation");
       assert_serialization(InferenceCategory::BackgroundRemoval, "background_removal");
       assert_serialization(InferenceCategory::Mocap, "mocap");
       assert_serialization(InferenceCategory::F5TTS, "f5_tts");
@@ -199,6 +207,7 @@ mod tests {
       assert_eq!(InferenceCategory::ImageGeneration.to_str(), "image_generation");
       assert_eq!(InferenceCategory::VideoGeneration.to_str(), "video_generation");
       assert_eq!(InferenceCategory::ObjectGeneration.to_str(), "object_generation");
+      assert_eq!(InferenceCategory::SplatGeneration.to_str(), "splat_generation");
       assert_eq!(InferenceCategory::BackgroundRemoval.to_str(), "background_removal");
       assert_eq!(InferenceCategory::F5TTS.to_str(), "f5_tts");
       assert_eq!(InferenceCategory::SeedVc.to_str(), "seed_vc");
@@ -219,6 +228,7 @@ mod tests {
       assert_eq!(InferenceCategory::from_str("image_generation").unwrap(), InferenceCategory::ImageGeneration);
       assert_eq!(InferenceCategory::from_str("video_generation").unwrap(), InferenceCategory::VideoGeneration);
       assert_eq!(InferenceCategory::from_str("object_generation").unwrap(), InferenceCategory::ObjectGeneration);
+      assert_eq!(InferenceCategory::from_str("splat_generation").unwrap(), InferenceCategory::SplatGeneration);
       assert_eq!(InferenceCategory::from_str("background_removal").unwrap(), InferenceCategory::BackgroundRemoval);
       assert_eq!(InferenceCategory::from_str("f5_tts").unwrap(), InferenceCategory::F5TTS);
       assert_eq!(InferenceCategory::from_str("seed_vc").unwrap(), InferenceCategory::SeedVc);
@@ -233,7 +243,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 16;
+      const EXPECTED_COUNT : usize = 17;
 
       assert_eq!(InferenceCategory::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceCategory::iter().len(), EXPECTED_COUNT);

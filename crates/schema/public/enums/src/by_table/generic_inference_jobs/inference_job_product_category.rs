@@ -35,6 +35,12 @@ pub enum InferenceJobProductCategory {
   #[serde(rename = "seedance2pro_video")]
   Seedance2ProVideo,
 
+  // =============== WORLD LABS ===============
+
+  /// World Labs: Gaussian Splat Generation
+  #[serde(rename = "worldlabs_splat")]
+  WorldlabsSplat,
+
   // =============== TEXT TO SPEECH ===============
 
   /// TTS: GptSoVits
@@ -131,6 +137,7 @@ impl InferenceJobProductCategory {
       Self::FalObject => "fal_object",
       Self::FalBgRemoval => "fal_bg_removal",
       Self::Seedance2ProVideo => "seedance2pro_video",
+      Self::WorldlabsSplat => "worldlabs_splat",
       Self::TtsGptSoVits => "tts_gpt_so_vits",
       Self::TtsStyleTts2 => "tts_style_tts2",
       Self::TtsTacotron2 => "tts_tacotron2",
@@ -164,6 +171,7 @@ impl InferenceJobProductCategory {
       "fal_object" => Ok(Self::FalObject),
       "fal_bg_removal" => Ok(Self::FalBgRemoval),
       "seedance2pro_video" => Ok(Self::Seedance2ProVideo),
+      "worldlabs_splat" => Ok(Self::WorldlabsSplat),
       "tts_gpt_so_vits" => Ok(Self::TtsGptSoVits),
       "tts_style_tts2" => Ok(Self::TtsStyleTts2),
       "tts_tacotron2" => Ok(Self::TtsTacotron2),
@@ -200,6 +208,7 @@ impl InferenceJobProductCategory {
       Self::FalObject,
       Self::FalBgRemoval,
       Self::Seedance2ProVideo,
+      Self::WorldlabsSplat,
       Self::TtsGptSoVits,
       Self::TtsStyleTts2,
       Self::TtsTacotron2,
@@ -242,6 +251,7 @@ mod tests {
       assert_serialization(InferenceJobProductCategory::FalObject, "fal_object");
       assert_serialization(InferenceJobProductCategory::FalBgRemoval, "fal_bg_removal");
       assert_serialization(InferenceJobProductCategory::Seedance2ProVideo, "seedance2pro_video");
+      assert_serialization(InferenceJobProductCategory::WorldlabsSplat, "worldlabs_splat");
       assert_serialization(InferenceJobProductCategory::TtsGptSoVits, "tts_gpt_so_vits");
       assert_serialization(InferenceJobProductCategory::TtsStyleTts2, "tts_style_tts2");
       assert_serialization(InferenceJobProductCategory::TtsTacotron2, "tts_tacotron2");
@@ -274,6 +284,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::FalObject.to_str(), "fal_object");
       assert_eq!(InferenceJobProductCategory::FalBgRemoval.to_str(), "fal_bg_removal");
       assert_eq!(InferenceJobProductCategory::Seedance2ProVideo.to_str(), "seedance2pro_video");
+      assert_eq!(InferenceJobProductCategory::WorldlabsSplat.to_str(), "worldlabs_splat");
       assert_eq!(InferenceJobProductCategory::TtsGptSoVits.to_str(), "tts_gpt_so_vits");
       assert_eq!(InferenceJobProductCategory::TtsStyleTts2.to_str(), "tts_style_tts2");
       assert_eq!(InferenceJobProductCategory::TtsTacotron2.to_str(), "tts_tacotron2");
@@ -305,6 +316,7 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::from_str("fal_object").unwrap(), InferenceJobProductCategory::FalObject);
       assert_eq!(InferenceJobProductCategory::from_str("fal_bg_removal").unwrap(), InferenceJobProductCategory::FalBgRemoval);
       assert_eq!(InferenceJobProductCategory::from_str("seedance2pro_video").unwrap(), InferenceJobProductCategory::Seedance2ProVideo);
+      assert_eq!(InferenceJobProductCategory::from_str("worldlabs_splat").unwrap(), InferenceJobProductCategory::WorldlabsSplat);
       assert_eq!(InferenceJobProductCategory::from_str("tts_gpt_so_vits").unwrap(), InferenceJobProductCategory::TtsGptSoVits);
       assert_eq!(InferenceJobProductCategory::from_str("tts_style_tts2").unwrap(), InferenceJobProductCategory::TtsStyleTts2);
       assert_eq!(InferenceJobProductCategory::from_str("tts_tacotron2").unwrap(), InferenceJobProductCategory::TtsTacotron2);
@@ -331,7 +343,7 @@ mod tests {
     #[test]
     fn all_variants() {
       // Static check
-      const EXPECTED_COUNT : usize = 28;
+      const EXPECTED_COUNT : usize = 29;
 
       assert_eq!(InferenceJobProductCategory::all_variants().len(), EXPECTED_COUNT);
       assert_eq!(InferenceJobProductCategory::iter().len(), EXPECTED_COUNT);

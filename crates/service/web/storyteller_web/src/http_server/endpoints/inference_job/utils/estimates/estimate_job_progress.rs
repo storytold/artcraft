@@ -85,6 +85,7 @@ pub fn estimate_job_progress(job: &GenericInferenceJobStatus, maybe_args: Option
     InferenceCategory::Mocap => 0,
     InferenceCategory::VideoFilter => 0,
     InferenceCategory::ConvertBvhToWorkflow => 0,
+    InferenceCategory::SplatGeneration => percent(duration_seconds, 60*5),
     InferenceCategory::DeprecatedField => 0, // TODO(bt,2024-07-16): Read job type instead.
   };
 
