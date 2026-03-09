@@ -9,7 +9,6 @@ import {
   faCube,
   faImages,
   faPlus,
-  faTrashAlt,
   faUpload,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -115,10 +114,12 @@ export const ImageTo3DExperience = ({
 
   const objectResults = useImageTo3DStore((s) => s.results);
   const objectStartGeneration = useImageTo3DStore((s) => s.startGeneration);
+  const objectFailGeneration = useImageTo3DStore((s) => s.failGeneration);
   const objectReset = useImageTo3DStore((s) => s.reset);
 
   const worldResults = useImageTo3DWorldStore((s) => s.results);
   const worldStartGeneration = useImageTo3DWorldStore((s) => s.startGeneration);
+  const worldFailGeneration = useImageTo3DWorldStore((s) => s.failGeneration);
   const worldReset = useImageTo3DWorldStore((s) => s.reset);
   const pendingExternalImage = useImageTo3DWorldStore(
     (s) => s.pendingExternalImage,
@@ -359,10 +360,9 @@ export const ImageTo3DExperience = ({
     }
 
     setIsGenerating(true);
+    const subscriberId = generateId();
 
     try {
-      const subscriberId = generateId();
-
       if (variant === "world") {
         const readyTokens = worldImages
           .filter((img) => img.mediaToken && !img.isUploading)
@@ -430,6 +430,11 @@ export const ImageTo3DExperience = ({
       const errorMessage =
         error instanceof Error ? error.message : "An unexpected error occurred";
       toast.error(`Failed to generate 3D model: ${errorMessage}`);
+      if (variant === "world") {
+        worldFailGeneration(subscriberId);
+      } else {
+        objectFailGeneration(subscriberId);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -619,7 +624,7 @@ export const ImageTo3DExperience = ({
 
     if (!hasImages) {
       return (
-        <div className="space-y-3">
+        <div className="space-y-5">
           <div className="flex justify-center">
             <Tooltip
               interactive
@@ -628,8 +633,22 @@ export const ImageTo3DExperience = ({
               zIndex={50}
               content={
                 <div className="flex flex-col gap-1.5 text-left">
-                  <Button variant="primary" icon={faUpload} onClick={() => worldFileInputRef.current?.click()} className="w-full">Upload images</Button>
-                  <Button variant="action" icon={faImages} onClick={handlePickFromLibrary} className="w-full">Pick from library</Button>
+                  <Button
+                    variant="primary"
+                    icon={faUpload}
+                    onClick={() => worldFileInputRef.current?.click()}
+                    className="w-full"
+                  >
+                    Upload images
+                  </Button>
+                  <Button
+                    variant="action"
+                    icon={faImages}
+                    onClick={handlePickFromLibrary}
+                    className="w-full"
+                  >
+                    Pick from library
+                  </Button>
                 </div>
               }
             >
@@ -640,15 +659,47 @@ export const ImageTo3DExperience = ({
                   "flex h-32 w-32 flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 transition-all hover:border-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40",
                   dragActive && "border-primary bg-primary/10",
                 )}
-                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragActive(false); }}
-                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); if (e.dataTransfer?.files) handleWorldFiles(Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"))); }}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDragActive(true);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!e.currentTarget.contains(e.relatedTarget as Node))
+                    setDragActive(false);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setDragActive(false);
+                  if (e.dataTransfer?.files)
+                    handleWorldFiles(
+                      Array.from(e.dataTransfer.files).filter((f) =>
+                        f.type.startsWith("image/"),
+                      ),
+                    );
+                }}
                 onClick={() => worldFileInputRef.current?.click()}
-                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); worldFileInputRef.current?.click(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    worldFileInputRef.current?.click();
+                  }
+                }}
               >
-                <FontAwesomeIcon icon={faPlus} className="text-3xl text-base-fg opacity-90 drop-shadow" />
-                <span className="mt-2 text-sm font-medium text-base-fg/50">Add Images</span>
+                <FontAwesomeIcon
+                  icon={faPlus}
+                  className="text-3xl text-base-fg opacity-90 drop-shadow"
+                />
+                <span className="mt-2 text-sm font-medium text-base-fg/50">
+                  Add Images
+                </span>
               </div>
             </Tooltip>
           </div>
@@ -665,88 +716,141 @@ export const ImageTo3DExperience = ({
       );
     }
 
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 flex-wrap items-center gap-2">
-            {worldImages.map((img) => (
-              <div
-                key={img.id}
-                className={twMerge(
-                  "glass group relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all",
-                  img.isUploading
-                    ? "cursor-default"
-                    : "cursor-pointer hover:border-white/80 hover:cursor-zoom-in",
-                )}
-                onClick={() =>
-                  !img.isUploading && setPreviewImage(img.preview)
-                }
-              >
-                <img
-                  src={img.preview}
-                  alt={img.name}
-                  className={twMerge(
-                    "h-full w-full object-cover",
-                    img.isUploading && "opacity-50 blur-sm",
-                  )}
-                />
-                {img.isUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-primary" />
-                  </div>
-                )}
-                {!img.isUploading && (
-                  <button
-                    type="button"
-                    className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-red/70 group-hover:opacity-100"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeWorldImage(img.id);
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
-                  </button>
-                )}
-              </div>
-            ))}
-            {canAddMore && (
-              <Tooltip
-                interactive
-                position="top"
-                delay={100}
-                zIndex={50}
-                content={
-                  <div className="flex flex-col gap-1.5 text-left">
-                    <Button variant="primary" icon={faUpload} onClick={() => worldFileInputRef.current?.click()} className="w-full">Upload images</Button>
-                    <Button variant="action" icon={faImages} onClick={handlePickFromLibrary} className="w-full">Pick from library</Button>
-                  </div>
-                }
-              >
-                <Button
-                  variant="action"
-                  className="aspect-square w-14 overflow-hidden rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 transition-all hover:bg-ui-controls/60 dark:border-white/25"
-                  onClick={() => worldFileInputRef.current?.click()}
-                >
-                  <FontAwesomeIcon icon={faPlus} className="text-2xl text-base-fg opacity-80" />
-                </Button>
-              </Tooltip>
-            )}
+    const worldImageThumbnail = (img: WorldImage) => (
+      <div
+        key={img.id}
+        className={twMerge(
+          "glass group relative aspect-square overflow-hidden rounded-lg border-2 border-white/30 transition-all",
+          hasResults ? "w-10" : "w-14",
+          img.isUploading
+            ? "cursor-default"
+            : "cursor-pointer hover:cursor-zoom-in hover:border-white/80",
+        )}
+        onClick={() => !img.isUploading && setPreviewImage(img.preview)}
+      >
+        <img
+          src={img.preview}
+          alt={img.name}
+          className={twMerge(
+            "h-full w-full object-cover",
+            img.isUploading && "opacity-50 blur-sm",
+          )}
+        />
+        {img.isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-primary" />
           </div>
-          <div className="flex items-center gap-1">
-            <div className="h-10 w-[1px] rounded-lg bg-base-fg/10" />
+        )}
+        {!img.isUploading && (
+          <button
+            type="button"
+            className="absolute right-[2px] top-[2px] flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-red/70 group-hover:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              removeWorldImage(img.id);
+            }}
+          >
+            <FontAwesomeIcon icon={faXmark} className="h-2 w-2" />
+          </button>
+        )}
+      </div>
+    );
+
+    const addButton = canAddMore && (
+      <Tooltip
+        interactive
+        position="top"
+        delay={100}
+        zIndex={50}
+        content={
+          <div className="flex flex-col gap-1.5 text-left">
+            <Button
+              variant="primary"
+              icon={faUpload}
+              onClick={() => worldFileInputRef.current?.click()}
+              className="w-full"
+            >
+              Upload images
+            </Button>
             <Button
               variant="action"
-              icon={faTrashAlt}
-              className="h-8 w-3"
-              onClick={() => setWorldImages([])}
+              icon={faImages}
+              onClick={handlePickFromLibrary}
+              className="w-full"
+            >
+              Pick from library
+            </Button>
+          </div>
+        }
+      >
+        <Button
+          variant="action"
+          className={twMerge(
+            "aspect-square overflow-hidden rounded-lg border-2 border-dashed border-black/5 bg-ui-controls/40 transition-all hover:bg-ui-controls/60 dark:border-white/25",
+            hasResults ? "w-10" : "w-14",
+          )}
+          onClick={() => worldFileInputRef.current?.click()}
+        >
+          <FontAwesomeIcon
+            icon={faPlus}
+            className={twMerge(
+              "text-base-fg opacity-80",
+              hasResults ? "text-lg" : "text-2xl",
+            )}
+          />
+        </Button>
+      </Tooltip>
+    );
+
+    const imageCountRow = (
+      <div className="flex items-center justify-center gap-2 text-xs text-base-fg/40">
+        <span>
+          {worldImages.length}/{MAX_WORLD_IMAGES} images
+        </span>
+        <button
+          type="button"
+          className="text-base-fg/40 underline transition-colors hover:text-base-fg/70"
+          onClick={() => setWorldImages([])}
+        >
+          Clear all
+        </button>
+      </div>
+    );
+
+    // Compact horizontal layout when in split view
+    if (hasResults) {
+      return (
+        <div className="space-y-2">
+          <div className="flex items-stretch gap-3">
+            <div
+              className="flex shrink-0 flex-wrap items-center gap-1.5"
+              style={{ maxWidth: "234px" }}
+            >
+              {worldImages.map(worldImageThumbnail)}
+              {addButton}
+            </div>
+            <textarea
+              ref={worldTextareaRef}
+              rows={1}
+              className="flex-1 resize-none overflow-y-auto rounded-lg bg-white/5 px-3 py-2 text-sm text-base-fg placeholder-base-fg/60 focus:outline-none focus:ring-2 focus:ring-primary/60"
+              value={worldPrompt}
+              placeholder="Describe world (optional)..."
+              onChange={(e) => setWorldPrompt(e.target.value)}
             />
           </div>
+          {imageCountRow}
         </div>
+      );
+    }
 
-        <p className="text-center text-xs text-base-fg/40">
-          {worldImages.length}/{MAX_WORLD_IMAGES} images
-        </p>
-
+    // Default centered vertical layout
+    return (
+      <div className="space-y-3">
+        <div className="mx-auto grid max-w-[350px] grid-cols-5 place-items-center gap-2">
+          {worldImages.map(worldImageThumbnail)}
+          {addButton}
+        </div>
+        {imageCountRow}
         <textarea
           ref={worldTextareaRef}
           rows={2}
@@ -929,15 +1033,31 @@ export const ImageTo3DExperience = ({
         <animated.div
           className={twMerge(
             "fixed left-1/2 z-20 w-full -translate-x-1/2",
-            variant === "world" ? "max-w-lg" : "max-w-md",
+            variant === "world"
+              ? hasResults
+                ? "max-w-2xl"
+                : "max-w-lg"
+              : "max-w-md",
           )}
           style={promptAnim}
         >
           <div ref={promptContentRef}>
-            <div className="glass w-full rounded-xl p-5 shadow-2xl ring-1 ring-white/10">
-              <div className="space-y-5">{renderActiveMode()}</div>
+            <div
+              className={twMerge(
+                "glass w-full rounded-xl shadow-2xl ring-1 ring-white/10",
+                hasResults ? "p-3" : "p-5",
+              )}
+            >
+              <div className={hasResults ? "space-y-3" : "space-y-5"}>
+                {renderActiveMode()}
+              </div>
 
-              <div className="mt-6 flex justify-center gap-2.5">
+              <div
+                className={twMerge(
+                  "flex justify-center gap-2.5",
+                  hasResults ? "mt-3" : "mt-6",
+                )}
+              >
                 {variant === "object" && (
                   <div className="flex justify-center">
                     <TabSelector

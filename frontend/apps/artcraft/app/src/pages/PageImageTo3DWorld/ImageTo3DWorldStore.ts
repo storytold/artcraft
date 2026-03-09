@@ -38,6 +38,7 @@ type ImageTo3DWorldState = {
     maybeSubscriberId?: string,
   ) => void;
   uploadCoverFromPreview: (mediaToken: string) => Promise<void>;
+  failGeneration: (subscriberId: string) => void;
   setPendingExternalImage: (url: string, mediaToken: string) => void;
   clearPendingExternalImage: () => void;
   reset: () => void;
@@ -196,6 +197,11 @@ export const useImageTo3DWorldStore = create<ImageTo3DWorldState>(
           error,
         );
       }
+    },
+    failGeneration: (subscriberId: string) => {
+      set((s) => ({
+        results: s.results.filter((r) => r.subscriberId !== subscriberId),
+      }));
     },
     setPendingExternalImage: (url: string, mediaToken: string) => {
       set({ pendingExternalImage: { url, mediaToken } });

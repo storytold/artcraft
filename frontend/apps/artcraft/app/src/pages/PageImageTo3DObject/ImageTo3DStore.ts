@@ -169,6 +169,7 @@ type ImageTo3DState = {
     modelUrl: string,
     mediaToken: string,
   ) => Promise<void>;
+  failGeneration: (subscriberId: string) => void;
   reset: () => void;
 };
 
@@ -336,6 +337,11 @@ export const useImageTo3DStore = create<ImageTo3DState>((set, get) => ({
     } catch (error) {
       console.error("[ImageTo3DStore] Error in captureAndUploadCover:", error);
     }
+  },
+  failGeneration: (subscriberId: string) => {
+    set((s) => ({
+      results: s.results.filter((r) => r.subscriberId !== subscriberId),
+    }));
   },
   reset: () => set({ results: [] }),
 }));
