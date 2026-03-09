@@ -144,7 +144,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     durationOptions: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     defaultDuration: 5,
     progressBarTime: 100000,
-    generateWithSound: false,
+    generateWithSound: true,
   }),
   new VideoModel({
     id: "kling_3p0_pro",
@@ -179,7 +179,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     durationOptions: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     defaultDuration: 5,
     progressBarTime: 100000,
-    generateWithSound: false,
+    generateWithSound: true,
   }),
   new VideoModel({
     id: "seedance_1_0_lite",
@@ -244,6 +244,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     resolutionOptions: ["480p", "720p", "1080p"],
     defaultResolution: "720p",
     supportsSystemPrompt: false,
+    generateWithSound: true,
     progressBarTime: 100000,
   }),
   new VideoModel({
