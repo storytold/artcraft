@@ -2,7 +2,7 @@ use crate::api::api_types::media_asset_id::MediaAssetId;
 use crate::api::api_types::operation_id::OperationId;
 use crate::api::requests::generate_world::generate_world::{generate_world, GenerateWorldArgs};
 use crate::api::requests::generate_world::http_request::{ContentReference, WorldPrompt};
-use crate::api::requests::prepare_upload::prepare_upload::{prepare_upload, PrepareUploadArgs};
+use crate::api::requests::prepare_upload::prepare_upload::{prepare_upload, PrepareUploadArgs, MediaAssetKind};
 use crate::api::requests::upload_to_signed_url::upload_to_signed_url::{upload_to_signed_url, UploadToSignedUrlArgs};
 use crate::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use crate::error::world_labs_client_error::WorldLabsClientError;
@@ -63,8 +63,7 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
   let prepare_response = prepare_upload(PrepareUploadArgs {
     creds: args.creds,
     file_name: "upload.jpg",
-    kind: "image",
-    extension: Some("jpg"),
+    kind: MediaAssetKind::Image,
     request_timeout: args.individual_request_timeout,
   }).await?;
 
@@ -72,7 +71,7 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
   let upload_url = prepare_response.upload_url;
   let required_headers = prepare_response.required_headers;
 
-  info!("Media asset ID: {}", media_asset_id);
+  info!("Media asset ID: {}", media_asset_id.as_str());
   info!("Upload URL: {}", upload_url);
 
   // Step 2: Upload to signed URL
@@ -93,7 +92,7 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
 
   let world_prompt = WorldPrompt::Image {
     image_prompt: ContentReference::MediaAsset {
-      media_asset_id: media_asset_id.clone(),
+      media_asset_id: media_asset_id.as_str().to_string(),
     },
     text_prompt: args.text_prompt,
     is_pano: None,
@@ -116,7 +115,7 @@ pub async fn upload_image_and_create_world(args: UploadImageAndCreateWorldArgs<'
 
   Ok(UploadImageAndCreateWorldResponse {
     operation_id: generate_response.operation_id,
-    media_asset_id: MediaAssetId(media_asset_id),
+    media_asset_id,
   })
 }
 
@@ -135,7 +134,8 @@ mod tests {
 
     let creds = get_test_api_key().unwrap();
 
-    let file_path = "/Users/bt/Pictures/Midjourney/moon_door.png";
+    //let file_path = "/Users/bt/Pictures/Midjourney/moon_door.png";
+    let file_path = "/Users/bt/Pictures/Midjourney/meadow_mirror.png";
     let file_bytes = file_read_bytes(file_path).unwrap();
 
     println!("File bytes len: {}", file_bytes.len());
