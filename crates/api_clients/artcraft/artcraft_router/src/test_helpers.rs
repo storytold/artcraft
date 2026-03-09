@@ -33,6 +33,9 @@ pub fn base_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -56,6 +59,9 @@ pub fn base_fal_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -71,6 +77,9 @@ pub fn base_seedream_4_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -86,6 +95,9 @@ pub fn base_seedream_4p5_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -101,6 +113,9 @@ pub fn base_seedream_5_lite_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -116,6 +131,9 @@ pub fn base_nano_banana_2_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -131,6 +149,9 @@ pub fn base_nano_banana_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -146,6 +167,9 @@ pub fn base_gpt_image_1p5_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -161,6 +185,9 @@ pub fn base_flux_1_dev_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -176,6 +203,9 @@ pub fn base_flux_1_schnell_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -191,6 +221,27 @@ pub fn base_flux_pro_1p1_image_request() -> GenerateImageRequest<'static> {
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
+  }
+}
+
+pub fn base_qwen_edit_2511_angles_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::QwenEdit2511Angles,
+    provider: Provider::Artcraft,
+    prompt: None,
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 
@@ -206,6 +257,9 @@ pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequest<'static> 
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   }
 }
 

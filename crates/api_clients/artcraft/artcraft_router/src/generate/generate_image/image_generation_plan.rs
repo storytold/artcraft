@@ -11,6 +11,7 @@ use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraf
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_seedream_4::estimate_image_cost_artcraft_seedream_4;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_seedream_4p5::estimate_image_cost_artcraft_seedream_4p5;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_seedream_5_lite::estimate_image_cost_artcraft_seedream_5_lite;
+use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_qwen_edit_2511_angles::estimate_image_cost_artcraft_qwen_edit_2511_angles;
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_nano_banana_pro::estimate_image_cost_fal_nano_banana_pro;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_flux_1_dev::execute_artcraft_flux_1_dev;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_flux_1_schnell::execute_artcraft_flux_1_schnell;
@@ -23,6 +24,7 @@ use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_seedream_4::execute_artcraft_seedream_4;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_seedream_4p5::execute_artcraft_seedream_4p5;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_seedream_5_lite::execute_artcraft_seedream_5_lite;
+use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_qwen_edit_2511_angles::execute_artcraft_qwen_edit_2511_angles;
 use crate::generate::generate_image::execute::fal::generate_image_fal_nano_banana_pro::execute_fal_nano_banana_pro;
 use crate::generate::generate_image::generate_image_response::GenerateImageResponse;
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
@@ -37,6 +39,7 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4::PlanArtcraftSeedream4;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::PlanArtcraftSeedream4p5;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::PlanArtcraftSeedream5Lite;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_qwen_edit_2511_angles::PlanArtcraftQwenEdit2511Angles;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::PlanFalNanaBananaPro;
 
 #[derive(Debug)]
@@ -52,6 +55,7 @@ pub enum ImageGenerationPlan<'a> {
   ArtcraftSeedream4(PlanArtcraftSeedream4<'a>),
   ArtcraftSeedream4p5(PlanArtcraftSeedream4p5<'a>),
   ArtcraftSeedream5Lite(PlanArtcraftSeedream5Lite<'a>),
+  ArtcraftQwenEdit2511Angles(PlanArtcraftQwenEdit2511Angles<'a>),
   FalNanaBananaPro(PlanFalNanaBananaPro<'a>),
 }
 
@@ -105,6 +109,10 @@ impl<'a> ImageGenerationPlan<'a> {
         let artcraft_client = client.get_artcraft_client_ref()?;
         execute_artcraft_seedream_5_lite(plan, artcraft_client).await
       }
+      ImageGenerationPlan::ArtcraftQwenEdit2511Angles(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_qwen_edit_2511_angles(plan, artcraft_client).await
+      }
       ImageGenerationPlan::FalNanaBananaPro(plan) => {
         let fal_client = client.get_fal_client_ref()?;
         execute_fal_nano_banana_pro(plan, fal_client).await
@@ -146,6 +154,9 @@ impl<'a> ImageGenerationPlan<'a> {
       }
       ImageGenerationPlan::ArtcraftSeedream5Lite(plan) => {
         estimate_image_cost_artcraft_seedream_5_lite(plan)
+      }
+      ImageGenerationPlan::ArtcraftQwenEdit2511Angles(plan) => {
+        estimate_image_cost_artcraft_qwen_edit_2511_angles(plan)
       }
       ImageGenerationPlan::FalNanaBananaPro(plan) => {
         estimate_image_cost_fal_nano_banana_pro(plan)

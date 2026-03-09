@@ -76,6 +76,9 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     generation_mode_mismatch_strategy: None,
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   };
 
   let plan = router_request.build()?;

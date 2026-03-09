@@ -9,3 +9,4 @@ pub mod generate_image_artcraft_nano_banana_pro;
 pub mod generate_image_artcraft_seedream_4;
 pub mod generate_image_artcraft_seedream_4p5;
 pub mod generate_image_artcraft_seedream_5_lite;
+pub mod generate_image_artcraft_qwen_edit_2511_angles;

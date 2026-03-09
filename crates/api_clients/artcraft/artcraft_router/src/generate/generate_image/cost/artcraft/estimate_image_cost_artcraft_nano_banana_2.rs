@@ -55,6 +55,9 @@ mod tests {
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       generation_mode_mismatch_strategy: None,
       idempotency_token: None,
+      horizontal_angle: None,
+      vertical_angle: None,
+      zoom: None,
     };
     request.build()
       .expect("build should succeed")

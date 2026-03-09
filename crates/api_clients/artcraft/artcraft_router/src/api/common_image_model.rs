@@ -27,4 +27,6 @@ pub enum CommonImageModel {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  #[serde(rename = "qwen_edit_2511_angles")]
+  QwenEdit2511Angles,
 }

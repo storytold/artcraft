@@ -49,6 +49,9 @@ pub async fn estimate_image_cost_handler(
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),
     idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
   };
 
   let plan = router_request.build()
