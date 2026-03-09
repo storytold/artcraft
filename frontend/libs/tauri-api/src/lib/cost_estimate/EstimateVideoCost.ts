@@ -16,6 +16,7 @@ export interface EstimateVideoCostRequest {
   resolution?: CommonVideoResolution;
   duration_seconds?: number;
   video_batch_count?: number;
+  generate_audio?: boolean;
 }
 
 export interface EstimateVideoCostPayload {

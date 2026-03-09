@@ -29,6 +29,7 @@ export function useVideoCostEstimate(
   const inputMode = usePromptVideoStore((s) => s.inputMode);
   const referenceImages = usePromptVideoStore((s) => s.referenceImages);
   const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
+  const generateWithSound = usePromptVideoStore((s) => s.generateWithSound);
 
   useEffect(() => {
     if (activePage !== ModelPage.ImageToVideo || !selectedModel) {
@@ -65,6 +66,7 @@ export function useVideoCostEstimate(
       generation_mode: generationMode,
       aspect_ratio: commonAspectRatio ?? undefined,
       duration_seconds: duration ?? undefined,
+      generate_audio: generateWithSound,
     })
       .then((result) => {
         if (isEstimateVideoCostSuccess(result)) {
@@ -89,6 +91,7 @@ export function useVideoCostEstimate(
     inputMode,
     referenceImages.length,
     !!endFrameImage,
+    generateWithSound,
   ]);
 
   return { isLoading };
