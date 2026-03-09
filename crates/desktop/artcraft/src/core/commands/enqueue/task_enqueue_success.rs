@@ -99,6 +99,8 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::Hunyuan3d2_1) => Some(TaskModelType::Hunyuan3d2_1),
       Some(GenerationModel::Hunyuan3d3) => Some(TaskModelType::Hunyuan3d3),
       Some(GenerationModel::WorldlabsMarble) => Some(TaskModelType::WorldlabsMarble),
+      Some(GenerationModel::WorldlabsMarble0p1Mini) => Some(TaskModelType::WorldlabsMarble0p1Mini),
+      Some(GenerationModel::WorldlabsMarble0p1Plus) => Some(TaskModelType::WorldlabsMarble0p1Plus),
       Some(GenerationModel::Midjourney) => Some(TaskModelType::Midjourney), // NB: This is a generic Midjourney model, version unknown.
 
       // TODO: These seem wrong -

@@ -1,5 +1,6 @@
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason};
+use crate::core::commands::enqueue::image_to_gaussian::artcraft::handle_artcraft_gaussian::handle_gaussian_artcraft;
 use crate::core::commands::enqueue::image_to_gaussian::worldlabs::handle_worldlabs_marble::handle_worldlabs_marble;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
@@ -40,6 +41,12 @@ use crate::core::state::artcraft_usage_tracker::artcraft_usage_type::{ArtcraftUs
 pub enum GaussianModel {
   #[serde(rename = "world_labs_marble")]
   WorldLabsMarble,
+
+  #[serde(rename = "marble_0p1_mini")]
+  Marble0p1Mini,
+
+  #[serde(rename = "marble_0p1_plus")]
+  Marble0p1Plus,
 }
 
 #[derive(Deserialize)]
@@ -237,7 +244,13 @@ pub async fn dispatch_request(
         worldlabs_creds_manager,
       ).await;
     }
-  };
-
-  Err(GenerateError::NoProviderAvailable)
+    Some(GaussianModel::Marble0p1Mini) | Some(GaussianModel::Marble0p1Plus) => {
+      return handle_gaussian_artcraft(
+        request,
+        app,
+        app_env_configs,
+        storyteller_creds_manager,
+      ).await;
+    }
+  }
 }

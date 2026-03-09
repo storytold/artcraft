@@ -59,6 +59,10 @@ pub enum GenerationModel {
 
   #[serde(rename = "worldlabs_marble")]
   WorldlabsMarble,
+  #[serde(rename = "worldlabs_marble_0p1_mini")]
+  WorldlabsMarble0p1Mini,
+  #[serde(rename = "worldlabs_marble_0p1_plus")]
+  WorldlabsMarble0p1Plus,
 
   // Generic Midjourney model, version unknown.
   #[serde(rename = "midjourney")]

@@ -101,6 +101,10 @@ pub enum TaskModelType {
   Hunyuan3d3,
   #[serde(rename = "worldlabs_marble")]
   WorldlabsMarble,
+  #[serde(rename = "marble_0p1_mini")]
+  WorldlabsMarble0p1Mini,
+  #[serde(rename = "marble_0p1_plus")]
+  WorldlabsMarble0p1Plus,
 }
 
 impl_enum_display_and_debug_using_to_str!(TaskModelType);
@@ -156,6 +160,8 @@ impl TaskModelType {
       Self::Hunyuan3d2_1 => "hunyuan_3d_2.1",
       Self::Hunyuan3d3 => "hunyuan_3d_3",
       Self::WorldlabsMarble => "worldlabs_marble",
+      Self::WorldlabsMarble0p1Mini => "marble_0p1_mini",
+      Self::WorldlabsMarble0p1Plus => "marble_0p1_plus",
     }
   }
 
@@ -205,6 +211,8 @@ impl TaskModelType {
       "hunyuan_3d_2.1" => Ok(Self::Hunyuan3d2_1),
       "hunyuan_3d_3" => Ok(Self::Hunyuan3d3),
       "worldlabs_marble" => Ok(Self::WorldlabsMarble),
+      "marble_0p1_mini" => Ok(Self::WorldlabsMarble0p1Mini),
+      "marble_0p1_plus" => Ok(Self::WorldlabsMarble0p1Plus),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
     }
   }
@@ -257,6 +265,8 @@ impl TaskModelType {
       Self::Hunyuan3d2_1,
       Self::Hunyuan3d3,
       Self::WorldlabsMarble,
+      Self::WorldlabsMarble0p1Mini,
+      Self::WorldlabsMarble0p1Plus,
     ])
   }
 }
@@ -316,6 +326,8 @@ mod tests {
       assert_serialization(TaskModelType::Hunyuan3d2_1, "hunyuan_3d_2.1");
       assert_serialization(TaskModelType::Hunyuan3d3, "hunyuan_3d_3");
       assert_serialization(TaskModelType::WorldlabsMarble, "worldlabs_marble");
+      assert_serialization(TaskModelType::WorldlabsMarble0p1Mini, "marble_0p1_mini");
+      assert_serialization(TaskModelType::WorldlabsMarble0p1Plus, "marble_0p1_plus");
     }
 
     #[test]
@@ -364,6 +376,8 @@ mod tests {
       assert_eq!(TaskModelType::Hunyuan3d2_1.to_str(), "hunyuan_3d_2.1");
       assert_eq!(TaskModelType::Hunyuan3d3.to_str(), "hunyuan_3d_3");
       assert_eq!(TaskModelType::WorldlabsMarble.to_str(), "worldlabs_marble");
+      assert_eq!(TaskModelType::WorldlabsMarble0p1Mini.to_str(), "marble_0p1_mini");
+      assert_eq!(TaskModelType::WorldlabsMarble0p1Plus.to_str(), "marble_0p1_plus");
     }
 
     #[test]
@@ -412,6 +426,8 @@ mod tests {
       assert_eq!(TaskModelType::from_str("hunyuan_3d_2.1").unwrap(), TaskModelType::Hunyuan3d2_1);
       assert_eq!(TaskModelType::from_str("hunyuan_3d_3").unwrap(), TaskModelType::Hunyuan3d3);
       assert_eq!(TaskModelType::from_str("worldlabs_marble").unwrap(), TaskModelType::WorldlabsMarble);
+      assert_eq!(TaskModelType::from_str("marble_0p1_mini").unwrap(), TaskModelType::WorldlabsMarble0p1Mini);
+      assert_eq!(TaskModelType::from_str("marble_0p1_plus").unwrap(), TaskModelType::WorldlabsMarble0p1Plus);
     }
 
     #[test]
@@ -428,7 +444,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskModelType::all_variants();
-      assert_eq!(variants.len(), 41);
+      assert_eq!(variants.len(), 43);
       // Image models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Schnell));
@@ -473,6 +489,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskModelType::Hunyuan3d2_1));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Hunyuan3d3));
       assert_eq!(variants.pop_first(), Some(TaskModelType::WorldlabsMarble));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::WorldlabsMarble0p1Mini));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::WorldlabsMarble0p1Plus));
       assert_eq!(variants.pop_first(), None);
     }
   }
