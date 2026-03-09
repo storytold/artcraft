@@ -20,13 +20,14 @@ use mysql_queries::queries::generic_inference::worldlabs::insert_generic_inferen
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem};
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
+use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-use world_labs_api::pricing::check_pricing::{InputType, calculate_cost};
 use world_labs_api::api::api_types::world_labs_model::WorldLabsModel;
-use world_labs_api::credentials::world_labs_api_creds::WorldLabsApiCreds;
 use world_labs_api::api::requests::generate_world::generate_world::{generate_world, GenerateWorldArgs};
-use world_labs_api::api::requests::generate_world::http_request::{WorldPrompt, ContentReference};
+use world_labs_api::api::requests::generate_world::http_request::{ContentReference, WorldPrompt};
+use world_labs_api::credentials::world_labs_api_creds::WorldLabsApiCreds;
+use world_labs_api::pricing::check_pricing::{calculate_cost, InputType};
 
 /// World Labs Marble 0.1-plus Splat Generation
 #[utoipa::path(
@@ -141,7 +142,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
   // Call World Labs API to start generation
   let creds = WorldLabsApiCreds::new(server_state.worldlabs.api_key.clone());
 
-  let generate_result = generate_world(GenerateWorldArgs {
+  let generate_result = match generate_world(GenerateWorldArgs {
     creds: &creds,
     world_prompt,
     display_name: None,
@@ -150,10 +151,14 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
     tags: None,
     permission: None,
     request_timeout: None,
-  }).await.map_err(|err| {
-    warn!("World Labs generate_world error: {:?}", err);
-    CommonWebError::ServerError
-  })?;
+  }).await {
+    Ok(result) => result,
+    Err(err) => {
+      warn!("World Labs generate_world error: {:?}", err);
+      refund_after_api_failure(&wallet_deduction.ledger_entry_token, &mut mysql_connection).await;
+      return Err(CommonWebError::ServerError);
+    }
+  };
 
   let ip_address = get_request_ip(&http_request);
 
@@ -241,4 +246,51 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
     success: true,
     inference_job_token: job_token,
   }))
+}
+
+async fn refund_after_api_failure(
+  ledger_entry_token: &tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken,
+  connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
+) {
+  let mut transaction = match connection.begin().await {
+    Ok(tx) => tx,
+    Err(err) => {
+      error!(
+        "Failed to begin refund transaction after API failure (ledger {}): {:?}",
+        ledger_entry_token.as_str(), err
+      );
+      return;
+    }
+  };
+
+  match try_to_refund_ledger_entry(ledger_entry_token, &mut transaction).await {
+    Ok(WalletRefundOutcome::Refunded(summary)) => {
+      info!(
+        "Refunded {} credits after API failure (ledger {} → refund ledger {}).",
+        summary.refund_amount,
+        ledger_entry_token.as_str(),
+        summary.refund_ledger_entry_token.as_str(),
+      );
+      if let Err(err) = transaction.commit().await {
+        error!(
+          "Failed to commit refund after API failure (ledger {}): {:?}",
+          ledger_entry_token.as_str(), err
+        );
+      }
+    }
+    Ok(WalletRefundOutcome::AlreadyRefunded) => {
+      info!(
+        "Ledger entry {} was already refunded; no action needed.",
+        ledger_entry_token.as_str()
+      );
+      let _ = transaction.rollback().await;
+    }
+    Err(err) => {
+      error!(
+        "Failed to refund ledger entry {} after API failure: {:?}",
+        ledger_entry_token.as_str(), err
+      );
+      let _ = transaction.rollback().await;
+    }
+  }
 }
