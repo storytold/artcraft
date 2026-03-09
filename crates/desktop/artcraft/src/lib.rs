@@ -7,6 +7,7 @@ use tauri::Manager;
 use crate::core::commands::app_preferences::get_app_preferences_command::get_app_preferences_command;
 use crate::core::commands::app_preferences::update_app_preference_command::update_app_preferences_command;
 use crate::core::commands::cost_estimate::estimate_image_cost_command::estimate_image_cost_command;
+use crate::core::commands::cost_estimate::estimate_splat_cost_command::estimate_splat_cost_command;
 use crate::core::commands::cost_estimate::estimate_video_cost_command::estimate_video_cost_command;
 use crate::core::commands::download::download_directory_reveal_command::download_directory_reveal_command;
 use crate::core::commands::download::download_media_file_command::download_media_file_command;
@@ -71,11 +72,11 @@ use crate::services::worldlabs::state::worldlabs_bearer_bridge::WorldlabsBearerB
 use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCredentialManager;
 use log::error;
 
+use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
 use tauri_plugin_dialog;
 use tauri_plugin_http;
 use tauri_plugin_log::Target;
 use tauri_plugin_log::TargetKind;
-use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -214,6 +215,7 @@ pub fn run() {
     enqueue_image_to_video_command,
     enqueue_text_to_image_command,
     estimate_image_cost_command,
+    estimate_splat_cost_command,
     estimate_video_cost_command,
     flip_image,
     get_app_info_command,

@@ -2,24 +2,24 @@ use crate::core::commands::response::failure_response_wrapper::{CommandErrorResp
 use crate::core::commands::response::shorthand::ResponseOrError;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
-use artcraft_api_defs::generate::cost_estimate::estimate_image_cost::{
-  EstimateImageCostError, EstimateImageCostErrorType, EstimateImageCostRequest,
-  EstimateImageCostResponse,
+use artcraft_api_defs::generate::cost_estimate::estimate_splat_cost::{
+  EstimateSplatCostError, EstimateSplatCostErrorType, EstimateSplatCostRequest,
+  EstimateSplatCostResponse,
 };
-use artcraft_client::endpoints::generate::cost_estimate::image::estimate_image_cost::estimate_image_cost;
-use log::{debug, info};
+use artcraft_client::endpoints::generate::cost_estimate::splat::estimate_splat_cost::estimate_splat_cost;
+use log::debug;
 use tauri::State;
 
-impl SerializeMarker for EstimateImageCostResponse {}
+impl SerializeMarker for EstimateSplatCostResponse {}
 
 #[tauri::command]
-pub async fn estimate_image_cost_command(
-  request: EstimateImageCostRequest,
+pub async fn estimate_splat_cost_command(
+  request: EstimateSplatCostRequest,
   app_env_configs: State<'_, AppEnvConfigs>,
-) -> ResponseOrError<EstimateImageCostResponse, EstimateImageCostError> {
-  debug!("estimate_image_cost_command called");
+) -> ResponseOrError<EstimateSplatCostResponse, EstimateSplatCostError> {
+  debug!("estimate_splat_cost_command called");
 
-  let result = estimate_image_cost(
+  let result = estimate_splat_cost(
     &app_env_configs.storyteller_host,
     None, // Credentials are not required for this endpoint.
     request,
@@ -32,9 +32,9 @@ pub async fn estimate_image_cost_command(
       status: CommandErrorStatus::BadRequest,
       error_message: None,
       error_type: None,
-      error_details: Some(EstimateImageCostError {
+      error_details: Some(EstimateSplatCostError {
         success: false,
-        error_type: EstimateImageCostErrorType::InvalidInput,
+        error_type: EstimateSplatCostErrorType::InvalidInput,
         error_message: err.to_string(),
       }),
     }),
