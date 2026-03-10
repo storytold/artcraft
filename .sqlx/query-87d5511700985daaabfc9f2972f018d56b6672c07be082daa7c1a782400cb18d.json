@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n        INSERT INTO media_files\n        SET\n            token = ?,\n\n            media_class = ?,\n            media_type = ?,\n\n            is_user_upload = ?,\n            is_intermediate_system_file = ?,\n\n            origin_category = ?, \n            origin_product_category = ?, \n            maybe_origin_model_type = ?, \n            maybe_origin_model_token = ?, \n            maybe_origin_filename = ?,\n\n            is_batch_generated = ?,\n            maybe_batch_token = ?,\n\n            maybe_mime_type = ?,\n            file_size_bytes = ?,\n            maybe_duration_millis = ?,\n            maybe_audio_encoding = ?, \n            maybe_video_encoding = ?, \n            maybe_frame_width = ?, \n            maybe_frame_height = ?,\n            maybe_prompt_token = ?,\n            checksum_sha2 = ?,\n            \n            maybe_engine_category = ?,\n\n            maybe_title = ?,\n            maybe_text_transcript = ?,\n\n            maybe_scene_source_media_file_token = ?,\n\n            public_bucket_directory_hash = ?, \n            maybe_public_bucket_prefix = ?, \n            maybe_public_bucket_extension = ?, \n\n            maybe_creator_user_token = ?, \n            maybe_creator_anonymous_visitor_token = ?, \n\n            creator_ip_address = ?, \n            creator_set_visibility = ?, \n\n            maybe_creator_file_synthetic_id = ?, \n            maybe_creator_category_synthetic_id = ?,\n\n            extra_file_modification_info = ?,\n\n            maybe_cover_image_media_file_token = ?,\n\n            maybe_mod_user_token = ?,\n            is_generated_on_prem = ?,\n            generated_by_worker = ?,\n            generated_by_cluster = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 40
+    },
+    "nullable": []
+  },
+  "hash": "87d5511700985daaabfc9f2972f018d56b6672c07be082daa7c1a782400cb18d"
+}
