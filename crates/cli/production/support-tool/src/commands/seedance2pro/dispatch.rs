@@ -6,6 +6,9 @@ use super::subcommands;
 
 #[derive(Subcommand)]
 pub enum Seedance2proCommand {
+  /// Scan all jobs and print a histogram of failure reasons
+  Failedjobhistogram,
+
   /// Find a job by its order ID across all pages
   Findjob(subcommands::findjob::FindjobArgs),
 }
@@ -17,6 +20,7 @@ pub async fn run(command: Seedance2proCommand) -> anyhow::Result<()> {
   let state = Seedance2ProState { cookies };
 
   match command {
+    Seedance2proCommand::Failedjobhistogram => subcommands::failedjobhistogram::run(&state).await,
     Seedance2proCommand::Findjob(args) => subcommands::findjob::run(&state, args).await,
   }
 }
