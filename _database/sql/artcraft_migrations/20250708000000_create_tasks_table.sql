@@ -16,7 +16,9 @@
 --      on_complete_primary_media_file_class,
 --      on_complete_primary_media_file_cdn_url,
 --      on_complete_primary_media_file_thumbnail_url_template,
---
+--   tasks_v6.sqlite - added two fields:
+--      on_failure_type
+--      on_failure_message
 
 CREATE TABLE tasks (
     -- Task auto-incrementing primary key.
@@ -83,6 +85,15 @@ CREATE TABLE tasks (
     -- OPTIONAL.
     -- The URL template for the thumbnail of the primary media file.
     on_complete_primary_media_file_thumbnail_url_template TEXT,
+
+    -- OPTIONAL.
+    -- An enum-like string describing the failure reason (even for non-terminal failures).
+    -- The enum is `TaskFailureType`, which is a close analogue of the backend API's `FrontendFailureCategory`.
+    on_failure_type TEXT,
+
+    -- OPTIONAL.
+    -- A human-readable message describing the failure reason (even for non-terminal failures).
+    on_failure_message TEXT,
 
     created_at INTEGER NOT NULL DEFAULT (unixepoch('now')),
     updated_at INTEGER NOT NULL DEFAULT (unixepoch('now')),
