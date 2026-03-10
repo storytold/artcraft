@@ -1,0 +1,57 @@
+[package]
+name = "worldlabs-job"
+edition = "2021"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[[bin]]
+name = "worldlabs-job"
+path = "src/main.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration = { workspace = true }
+
+# Internal
+actix_helpers.workspace = true
+bootstrap = { path = "../../../lib/bootstrap" }
+bucket_paths = { path = "../../../lib/bucket_paths" }
+cloud_storage.workspace = true
+concurrency = { path = "../../../lib/concurrency" }
+config = { path = "../../../lib/deprecated/config" }
+easyenv = { path = "../../../lib/easyenv" }
+enums.workspace = true
+errors.workspace = true
+hashing = { path = "../../../lib/files/hashing" }
+jobs_common = { path = "../../../lib/jobs_common" }
+mysql_queries = { path = "../../../schema/database/mysql_queries" }
+world_labs_api = { path = "../../../api_clients/world_labs_api" }
+server_environment = { path = "../../../lib/server_environment" }
+tokens.workspace = true
+
+# External
+anyhow.workspace = true
+log.workspace = true
+
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+
+# Runtime
+tokio = { version = "1.40.0", features = ["macros", "sync"] }
+
+# HTTP Client
+reqwest.workspace = true
+
+# HTTP Server
+actix-web.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true

@@ -120,6 +120,7 @@ members = [
   "crates/service/job/es-update-job",
   "crates/service/job/inference_job",
   "crates/service/job/seedance2_pro_job",
+  "crates/service/job/worldlabs_job",
   "crates/service/job/tts_download_job",
   "crates/service/job/tts_inference_job",
   "crates/service/job/w2l_download_job",

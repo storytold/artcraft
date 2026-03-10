@@ -15068,6 +15068,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "worldlabs-job"
+version = "0.0.1"
+dependencies = [
+ "actix-web",
+ "actix_helpers",
+ "anyhow",
+ "bootstrap",
+ "bucket_paths",
+ "cloud_storage",
+ "concurrency",
+ "config",
+ "easyenv",
+ "enums",
+ "errors",
+ "hashing",
+ "jobs_common",
+ "log",
+ "mysql_queries",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "server_environment",
+ "sqlx",
+ "tokens",
+ "tokio",
+ "workspace-build-acceleration",
+ "world_labs_api",
+]
+
+[[package]]
 name = "wreq"
 version = "6.0.0-rc.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
