@@ -5,6 +5,7 @@ use super::failure_type::FailureType;
 pub struct FailureReason {
   /// The original reason string from the API.
   pub reason: String,
+
   /// The categorized failure type.
   pub failure_type: FailureType,
 }

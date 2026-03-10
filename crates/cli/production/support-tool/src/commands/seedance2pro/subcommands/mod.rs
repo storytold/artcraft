@@ -1,2 +1,2 @@
-pub mod failedjobhistogram;
-pub mod findjob;
+pub mod failed_job_histogram;
+pub mod find_job;

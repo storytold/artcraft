@@ -10,7 +10,7 @@ pub enum Seedance2proCommand {
   Failedjobhistogram,
 
   /// Find a job by its order ID across all pages
-  Findjob(subcommands::findjob::FindjobArgs),
+  Findjob(subcommands::find_job::FindjobArgs),
 }
 
 pub async fn run(command: Seedance2proCommand) -> anyhow::Result<()> {
@@ -20,7 +20,7 @@ pub async fn run(command: Seedance2proCommand) -> anyhow::Result<()> {
   let state = Seedance2ProState { cookies };
 
   match command {
-    Seedance2proCommand::Failedjobhistogram => subcommands::failedjobhistogram::run(&state).await,
-    Seedance2proCommand::Findjob(args) => subcommands::findjob::run(&state, args).await,
+    Seedance2proCommand::Failedjobhistogram => subcommands::failed_job_histogram::run(&state).await,
+    Seedance2proCommand::Findjob(args) => subcommands::find_job::run(&state, args).await,
   }
 }
