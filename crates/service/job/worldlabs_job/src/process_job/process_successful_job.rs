@@ -16,7 +16,7 @@ use world_labs_api::api::requests::get_operation::get_operation::GetOperationRes
 use crate::job_dependencies::JobDependencies;
 
 const PREFIX: &str = "artcraft_";
-const SUFFIX: &str = ".spz";
+const SUFFIX: &str = ".ceramic.spz"; // NB: "ceramic" triggers some heuristics in Artcraft, such as flipping the model upside down
 
 /// Download the completed splat, upload to bucket, create media file record, and mark job done.
 pub async fn process_successful_job(
@@ -91,7 +91,7 @@ pub async fn process_successful_job(
     .media_file_class(MediaFileClass::Dimensional)
     .media_file_type(MediaFileType::Spz)
     .media_file_origin_category(MediaFileOriginCategory::Inference)
-    .media_file_origin_product_category(MediaFileOriginProductCategory::ImageGeneration)
+    .media_file_origin_product_category(MediaFileOriginProductCategory::WorldGeneration)
     .mime_type("application/gzip")
     .file_size_bytes(splat_bytes.len() as u64)
     .checksum_sha2(&checksum)
