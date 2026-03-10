@@ -1,1 +1,2 @@
 pub mod insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token;
+pub mod list_pending_worldlabs_jobs;
