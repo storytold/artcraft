@@ -82,5 +82,13 @@ pub async fn run(state: &Seedance2ProState) -> anyhow::Result<()> {
     println!("{:<6}  {}", count, failure_type);
   }
 
+  // Print reason → type mapping table.
+  println!("\n{:<30}  {}", "Failure Type", "Failure Reason");
+  println!("{:<30}  {}", "------------", "--------------");
+  for (reason, _) in &sorted {
+    let failure_type = FailureType::classify_text(reason);
+    println!("{:<30}  {}", format!("{:?}", failure_type), reason);
+  }
+
   Ok(())
 }
