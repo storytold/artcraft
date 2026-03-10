@@ -91,24 +91,19 @@ pub async fn process_failed_job(
 
   // --- Step 2: Mark the job record as failed. ---
 
-  let platform_rules_violation = order.fail_reason.as_ref().is_some_and(|fr| {
-    matches!(
-      fr.failure_type,
-      FailureType::RuleBansUserImage
-        | FailureType::RuleBansUserImageWithFaces
-        | FailureType::RuleBansUserTextPrompt
-        | FailureType::RuleBansUserContent
-        | FailureType::RuleBansGeneratedVideo
-        | FailureType::RuleBansGeneratedAudio
-        | FailureType::RuleBansGeneratedContent
-    )
+  let frontend_failure_category = order.fail_reason.as_ref().map(|fr| {
+    match fr.failure_type {
+      FailureType::RuleBansUserImage => FrontendFailureCategory::RuleBansUserImage,
+      FailureType::RuleBansUserImageWithFaces => FrontendFailureCategory::RuleBansUserImageWithFaces,
+      FailureType::RuleBansUserTextPrompt => FrontendFailureCategory::RuleBansUserTextPrompt,
+      FailureType::RuleBansUserContent => FrontendFailureCategory::RuleBansUserContent,
+      FailureType::RuleBansGeneratedVideo => FrontendFailureCategory::RuleBansGeneratedVideo,
+      FailureType::RuleBansGeneratedAudio => FrontendFailureCategory::RuleBansGeneratedAudio,
+      FailureType::RuleBansGeneratedContent => FrontendFailureCategory::RuleBansGeneratedContent,
+      FailureType::GenerationFailed => FrontendFailureCategory::GenerationFailed,
+      FailureType::OtherUnknownReason => FrontendFailureCategory::GenerationFailed,
+    }
   });
-
-  let frontend_failure_category = if platform_rules_violation {
-    Some(FrontendFailureCategory::ModelRulesViolation)
-  } else {
-    None
-  };
 
   warn!(
     "Order {} failed: {}. Marking job {} failed.",
