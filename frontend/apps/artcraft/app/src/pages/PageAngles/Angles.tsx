@@ -30,6 +30,7 @@ import { twMerge } from "tailwind-merge";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Switch } from "@headlessui/react";
+import { EnqueueEditImage, EnqueueEditImageRequest } from "@storyteller/tauri-api";
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
@@ -228,23 +229,28 @@ export const Angles = () => {
     if (!sourceImageUrl || isProcessing) return;
 
     setIsProcessing(true);
-    toast("Generating angle...", { icon: "🎯" });
 
-    // Simulate generation (replace with actual Tauri API when available)
-    setTimeout(() => {
-      const newAngle: GeneratedAngle = {
-        id: uuidv4(),
-        imageUrl: sourceImageUrl, // Placeholder: would be the generated result
-        rotation: angleConfig.rotation,
-        tilt: angleConfig.tilt,
-        zoom: angleConfig.zoom,
-        timestamp: Date.now(),
-      };
+    // toast("Generating angle...", { icon: "🎯" });
 
-      addGeneratedAngle(newAngle);
-      setIsProcessing(false);
-      toast.success("Angle generated! Saved to Library");
-    }, 2500);
+    // // Simulate generation (replace with actual Tauri API when available)
+    // setTimeout(() => {
+    //   const newAngle: GeneratedAngle = {
+    //     id: uuidv4(),
+    //     imageUrl: sourceImageUrl, // Placeholder: would be the generated result
+    //     rotation: angleConfig.rotation,
+    //     tilt: angleConfig.tilt,
+    //     zoom: angleConfig.zoom,
+    //     timestamp: Date.now(),
+    //   };
+
+    //   addGeneratedAngle(newAngle);
+    //   setIsProcessing(false);
+    //   toast.success("Angle generated! Saved to Library");
+    // }, 2500);
+
+    // TODO: Call EnqueueEditImage();
+
+
   }, [
     sourceImageUrl,
     isProcessing,
