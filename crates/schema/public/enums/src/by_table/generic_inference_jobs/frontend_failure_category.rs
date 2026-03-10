@@ -55,16 +55,16 @@ pub enum FrontendFailureCategory {
   RuleBansUserImage,
 
   /// Model content violation
-  /// Model content rules prohibit the user's given text prompt (this fails early).
-  /// e.g. "The generated video did not pass review. Credits will not be deducted." (seedance2pro)
-  #[serde(rename = "rule_bans_user_text_prompt")]
-  RuleBansUserTextPrompt,
-
-  /// Model content violation
   /// Model content rules prohibit user uploaded images containing faces (Seedance 2.0)
   /// e.g. "The generated video did not pass review. Credits will not be deducted." (seedance2pro)
   #[serde(rename = "rule_bans_user_image_with_faces")]
   RuleBansUserImageWithFaces,
+
+  /// Model content violation
+  /// Model content rules prohibit the user's given text prompt (this fails early).
+  /// e.g. "The generated video did not pass review. Credits will not be deducted." (seedance2pro)
+  #[serde(rename = "rule_bans_user_text_prompt")]
+  RuleBansUserTextPrompt,
 
   /// Model content violation
   /// Model content rules prohibit user content. (I think this check happens early.)
@@ -113,8 +113,8 @@ impl FrontendFailureCategory {
       Self::RetryableWorkerError => "retryable_worker_error",
       Self::ModelRulesViolation => "model_rules_violation",
       Self::RuleBansUserImage => "rule_bans_user_image",
-      Self::RuleBansUserTextPrompt => "rule_bans_user_text_prompt",
       Self::RuleBansUserImageWithFaces => "rule_bans_user_image_with_faces",
+      Self::RuleBansUserTextPrompt => "rule_bans_user_text_prompt",
       Self::RuleBansUserContent => "rule_bans_user_content",
       Self::RuleBansGeneratedVideo => "rule_bans_generated_video",
       Self::RuleBansGeneratedAudio => "rule_bans_generated_audio",
@@ -131,8 +131,8 @@ impl FrontendFailureCategory {
       "retryable_worker_error" => Ok(Self::RetryableWorkerError),
       "model_rules_violation" => Ok(Self::ModelRulesViolation),
       "rule_bans_user_image" => Ok(Self::RuleBansUserImage),
-      "rule_bans_user_text_prompt" => Ok(Self::RuleBansUserTextPrompt),
       "rule_bans_user_image_with_faces" => Ok(Self::RuleBansUserImageWithFaces),
+      "rule_bans_user_text_prompt" => Ok(Self::RuleBansUserTextPrompt),
       "rule_bans_user_content" => Ok(Self::RuleBansUserContent),
       "rule_bans_generated_video" => Ok(Self::RuleBansGeneratedVideo),
       "rule_bans_generated_audio" => Ok(Self::RuleBansGeneratedAudio),
@@ -152,8 +152,8 @@ impl FrontendFailureCategory {
       Self::RetryableWorkerError,
       Self::ModelRulesViolation,
       Self::RuleBansUserImage,
-      Self::RuleBansUserTextPrompt,
       Self::RuleBansUserImageWithFaces,
+      Self::RuleBansUserTextPrompt,
       Self::RuleBansUserContent,
       Self::RuleBansGeneratedVideo,
       Self::RuleBansGeneratedAudio,
@@ -179,8 +179,8 @@ mod tests {
       assert_serialization(FrontendFailureCategory::RetryableWorkerError, "retryable_worker_error");
       assert_serialization(FrontendFailureCategory::ModelRulesViolation, "model_rules_violation");
       assert_serialization(FrontendFailureCategory::RuleBansUserImage, "rule_bans_user_image");
-      assert_serialization(FrontendFailureCategory::RuleBansUserTextPrompt, "rule_bans_user_text_prompt");
       assert_serialization(FrontendFailureCategory::RuleBansUserImageWithFaces, "rule_bans_user_image_with_faces");
+      assert_serialization(FrontendFailureCategory::RuleBansUserTextPrompt, "rule_bans_user_text_prompt");
       assert_serialization(FrontendFailureCategory::RuleBansUserContent, "rule_bans_user_content");
       assert_serialization(FrontendFailureCategory::RuleBansGeneratedVideo, "rule_bans_generated_video");
       assert_serialization(FrontendFailureCategory::RuleBansGeneratedAudio, "rule_bans_generated_audio");
@@ -196,8 +196,8 @@ mod tests {
       assert_eq!(FrontendFailureCategory::RetryableWorkerError.to_str(), "retryable_worker_error");
       assert_eq!(FrontendFailureCategory::ModelRulesViolation.to_str(), "model_rules_violation");
       assert_eq!(FrontendFailureCategory::RuleBansUserImage.to_str(), "rule_bans_user_image");
-      assert_eq!(FrontendFailureCategory::RuleBansUserTextPrompt.to_str(), "rule_bans_user_text_prompt");
       assert_eq!(FrontendFailureCategory::RuleBansUserImageWithFaces.to_str(), "rule_bans_user_image_with_faces");
+      assert_eq!(FrontendFailureCategory::RuleBansUserTextPrompt.to_str(), "rule_bans_user_text_prompt");
       assert_eq!(FrontendFailureCategory::RuleBansUserContent.to_str(), "rule_bans_user_content");
       assert_eq!(FrontendFailureCategory::RuleBansGeneratedVideo.to_str(), "rule_bans_generated_video");
       assert_eq!(FrontendFailureCategory::RuleBansGeneratedAudio.to_str(), "rule_bans_generated_audio");
@@ -213,8 +213,8 @@ mod tests {
       assert_eq!(FrontendFailureCategory::from_str("retryable_worker_error").unwrap(), FrontendFailureCategory::RetryableWorkerError);
       assert_eq!(FrontendFailureCategory::from_str("model_rules_violation").unwrap(), FrontendFailureCategory::ModelRulesViolation);
       assert_eq!(FrontendFailureCategory::from_str("rule_bans_user_image").unwrap(), FrontendFailureCategory::RuleBansUserImage);
-      assert_eq!(FrontendFailureCategory::from_str("rule_bans_user_text_prompt").unwrap(), FrontendFailureCategory::RuleBansUserTextPrompt);
       assert_eq!(FrontendFailureCategory::from_str("rule_bans_user_image_with_faces").unwrap(), FrontendFailureCategory::RuleBansUserImageWithFaces);
+      assert_eq!(FrontendFailureCategory::from_str("rule_bans_user_text_prompt").unwrap(), FrontendFailureCategory::RuleBansUserTextPrompt);
       assert_eq!(FrontendFailureCategory::from_str("rule_bans_user_content").unwrap(), FrontendFailureCategory::RuleBansUserContent);
       assert_eq!(FrontendFailureCategory::from_str("rule_bans_generated_video").unwrap(), FrontendFailureCategory::RuleBansGeneratedVideo);
       assert_eq!(FrontendFailureCategory::from_str("rule_bans_generated_audio").unwrap(), FrontendFailureCategory::RuleBansGeneratedAudio);
@@ -233,8 +233,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RetryableWorkerError));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::ModelRulesViolation));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserImage));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserTextPrompt));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserImageWithFaces));
+      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserTextPrompt));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserContent));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansGeneratedVideo));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansGeneratedAudio));
