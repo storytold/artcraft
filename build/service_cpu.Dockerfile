@@ -147,6 +147,12 @@ RUN SQLX_OFFLINE=true \
   LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
   $HOME/.cargo/bin/cargo build \
   --release \
+  --bin worldlabs-job
+    
+RUN SQLX_OFFLINE=true \
+  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
+  $HOME/.cargo/bin/cargo build \
+  --release \
   --bin dummy-service
 
 RUN SQLX_OFFLINE=true \
@@ -203,6 +209,7 @@ RUN echo -n ${GIT_SHA} > GIT_SHA
 # Copy all the binaries (except those that need a GPU):
 COPY --from=builder /tmp/target/release/storyteller-web /
 COPY --from=builder /tmp/target/release/seedance2-pro-job /
+COPY --from=builder /tmp/target/release/worldlabs-job /
 COPY --from=builder /tmp/target/release/dummy-service /
 COPY --from=builder /tmp/target/release/analytics-job /
 COPY --from=builder /tmp/target/release/email-sender-job  /
