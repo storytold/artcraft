@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use log::{error, info};
+use log::{error, info, warn};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
@@ -12,11 +12,15 @@ use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use mysql_queries::queries::generic_inference::worldlabs::list_pending_worldlabs_jobs::PendingWorldlabsJob;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
+use tokens::tokens::media_files::MediaFileToken;
 use world_labs_api::api::requests::get_operation::get_operation::GetOperationResponse;
 use crate::job_dependencies::JobDependencies;
 
-const PREFIX: &str = "artcraft_";
-const SUFFIX: &str = ".ceramic.spz"; // NB: "ceramic" triggers some heuristics in Artcraft, such as flipping the model upside down
+const SPLAT_PREFIX: &str = "artcraft_";
+const SPLAT_SUFFIX: &str = ".ceramic.spz"; // NB: "ceramic" triggers some heuristics in Artcraft, such as flipping the model upside down
+
+const THUMB_PREFIX: &str = "artcraft_";
+const THUMB_SUFFIX: &str = ".png";
 
 /// Download the completed splat, upload to bucket, create media file record, and mark job done.
 pub async fn process_successful_job(
@@ -35,6 +39,29 @@ pub async fn process_successful_job(
       "Completed operation {} has no spz_url_full_res",
       operation.operation_id
     ))?;
+
+  // --- Step 1: Download and upload the thumbnail as a cover image. ---
+
+  let maybe_cover_token = match world.assets.as_ref().and_then(|a| a.thumbnail_url.as_ref()) {
+    Some(thumbnail_url) => {
+      match download_and_upload_thumbnail(deps, job, operation, thumbnail_url).await {
+        Ok(token) => Some(token),
+        Err(err) => {
+          warn!(
+            "Failed to create thumbnail cover image for operation {}: {:?}. Continuing without cover.",
+            operation.operation_id, err
+          );
+          None
+        }
+      }
+    }
+    None => {
+      info!("No thumbnail_url for operation {}; skipping cover image.", operation.operation_id);
+      None
+    }
+  };
+
+  // --- Step 2: Download and upload the splat. ---
 
   info!(
     "Downloading splat for operation {} from: {}",
@@ -61,7 +88,7 @@ pub async fn process_successful_job(
     .map_err(|err| anyhow!("error hashing splat: {:?}", err))?;
 
   // Build the bucket path.
-  let bucket_path = MediaFileBucketPath::generate_new(Some(PREFIX), Some(SUFFIX));
+  let bucket_path = MediaFileBucketPath::generate_new(Some(SPLAT_PREFIX), Some(SPLAT_SUFFIX));
 
   let object_path = bucket_path.get_full_object_path_str();
 
@@ -96,6 +123,7 @@ pub async fn process_successful_job(
     .file_size_bytes(splat_bytes.len() as u64)
     .checksum_sha2(&checksum)
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+    .maybe_cover_image_media_file_token(maybe_cover_token.as_ref())
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
     .await
@@ -130,4 +158,71 @@ pub async fn process_successful_job(
   info!("Job {} completed successfully.", job.job_token.as_str());
 
   Ok(())
+}
+
+/// Download a thumbnail image, upload it to the public bucket, and create a media file record for it.
+async fn download_and_upload_thumbnail(
+  deps: &JobDependencies,
+  job: &PendingWorldlabsJob,
+  operation: &GetOperationResponse,
+  thumbnail_url: &str,
+) -> AnyhowResult<MediaFileToken> {
+  info!(
+    "Downloading thumbnail for operation {} from: {}",
+    operation.operation_id, thumbnail_url
+  );
+
+  let thumb_bytes: Vec<u8> = reqwest::get(thumbnail_url)
+    .await
+    .map_err(|err| anyhow!("reqwest error downloading thumbnail: {:?}", err))?
+    .bytes()
+    .await
+    .map_err(|err| anyhow!("error reading thumbnail bytes: {:?}", err))?
+    .to_vec();
+
+  info!(
+    "Downloaded {} thumbnail bytes for operation {}",
+    thumb_bytes.len(),
+    operation.operation_id
+  );
+
+  let checksum = sha256_hash_bytes(&thumb_bytes)
+    .map_err(|err| anyhow!("error hashing thumbnail: {:?}", err))?;
+
+  let bucket_path = MediaFileBucketPath::generate_new(Some(THUMB_PREFIX), Some(THUMB_SUFFIX));
+  let object_path = bucket_path.get_full_object_path_str();
+
+  info!("Uploading thumbnail to public bucket at path: {}", object_path);
+
+  deps
+    .public_bucket_client
+    .upload_file_with_content_type_process(object_path, &thumb_bytes, "image/png")
+    .await
+    .map_err(|err| anyhow!("error uploading thumbnail to bucket: {:?}", err))?;
+
+  let thumb_token = MediaFileInsertBuilder::new()
+    .maybe_creator_user(job.maybe_creator_user_token.as_ref())
+    .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
+    .creator_ip_address(&job.creator_ip_address)
+    .creator_set_visibility(job.creator_set_visibility)
+    .media_file_class(MediaFileClass::Image)
+    .media_file_type(MediaFileType::Png)
+    .media_file_origin_category(MediaFileOriginCategory::Inference)
+    .media_file_origin_product_category(MediaFileOriginProductCategory::WorldGeneration)
+    .mime_type("image/png")
+    .file_size_bytes(thumb_bytes.len() as u64)
+    .checksum_sha2(&checksum)
+    .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+    .public_bucket_directory_hash(&bucket_path)
+    .insert_pool(&deps.mysql_pool)
+    .await
+    .map_err(|err| anyhow!("error inserting thumbnail media file record: {:?}", err))?;
+
+  info!(
+    "Created thumbnail media file {} for operation {}.",
+    thumb_token.as_str(),
+    operation.operation_id
+  );
+
+  Ok(thumb_token)
 }

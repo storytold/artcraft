@@ -73,6 +73,9 @@ pub struct MediaFileInsertBuilder {
   // // If batch generated, this is the batch token.
   maybe_batch_generation_token: Option<BatchGenerationToken>,
 
+  // Cover image (e.g. thumbnail for 3D splats)
+  maybe_cover_image_media_file_token: Option<MediaFileToken>,
+
   // Storage details
   public_bucket_directory_hash: Option<MediaFileBucketPath>, // NB: Non-nullable field(s)
 
@@ -107,6 +110,7 @@ impl MediaFileInsertBuilder {
       maybe_origin_filename: None,
       maybe_engine_category: None,
       maybe_batch_generation_token: None,
+      maybe_cover_image_media_file_token: None,
       public_bucket_directory_hash: None,
       maybe_prompt_token: None,
     }
@@ -250,6 +254,11 @@ impl MediaFileInsertBuilder {
     self
   }
 
+  pub fn maybe_cover_image_media_file_token(mut self, maybe_token: Option<&MediaFileToken>) -> Self {
+    self.maybe_cover_image_media_file_token = maybe_token.cloned();
+    self
+  }
+
   pub fn public_bucket_directory_hash(mut self, public_bucket_directory_hash: &MediaFileBucketPath) -> Self {
     self.public_bucket_directory_hash = Some(public_bucket_directory_hash.clone());
     self
@@ -308,6 +317,7 @@ impl MediaFileInsertBuilder {
       maybe_creator_file_synthetic_id_category: IdCategory::MediaFile, // TODO: Remove this
       maybe_creator_category_synthetic_id_category: IdCategory::FileUpload, // TODO: Remove this
       maybe_extra_media_info: None, // TODO
+      maybe_cover_image_media_file_token: self.maybe_cover_image_media_file_token.as_ref(),
       is_generated_on_prem: false, // TODO
       generated_by_worker: None, // TODO
       generated_by_cluster: None, // TODO

@@ -88,6 +88,9 @@ pub struct InsertArgs<'a> {
     pub generated_by_worker: Option<&'a str>,
     pub generated_by_cluster: Option<&'a str>,
 
+    // Cover image (e.g. thumbnail for 3D splats)
+    pub maybe_cover_image_media_file_token: Option<&'a MediaFileToken>,
+
     // Moderation details (deprecated)
     pub maybe_mod_user_token: Option<&'a UserToken>,
 }
@@ -179,9 +182,11 @@ pub async fn insert_media_file_generic(
 
             extra_file_modification_info = ?,
 
-            maybe_mod_user_token = ?, 
-            is_generated_on_prem = ?, 
-            generated_by_worker = ?, 
+            maybe_cover_image_media_file_token = ?,
+
+            maybe_mod_user_token = ?,
+            is_generated_on_prem = ?,
+            generated_by_worker = ?,
             generated_by_cluster = ?
         "#,
         result_token,
@@ -232,6 +237,8 @@ pub async fn insert_media_file_generic(
         maybe_creator_category_synthetic_id,
 
         extra_file_modification_info,
+
+        args.maybe_cover_image_media_file_token.map(|t| t.as_str()),
 
         args.maybe_mod_user_token,
         args.is_generated_on_prem,

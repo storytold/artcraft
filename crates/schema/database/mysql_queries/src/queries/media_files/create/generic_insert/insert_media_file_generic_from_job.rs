@@ -120,6 +120,7 @@ pub async fn insert_media_file_generic_from_job(
         maybe_text_transcript: args.maybe_text_transcript,
         maybe_title: args.maybe_title,
         maybe_video_encoding: args.maybe_video_encoding,
+        maybe_cover_image_media_file_token: None,
         media_class: args.media_class,
         media_type: args.media_type,
         origin_category: args.origin_category,
