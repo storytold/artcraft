@@ -40,6 +40,15 @@ export interface EnqueueEditImageRequest {
   /// Image resolution. Support: Nano Banana Pro
   image_resolution?: EnqueueEditImageResolution;
 
+  /// Horizontal angle (rotation) for angle edit models.
+  horizontal_angle?: number;
+
+  /// Vertical angle (tilt) for angle edit models.
+  vertical_angle?: number;
+
+  /// Zoom for angle edit models.
+  zoom?: number;
+
   // TODO: Actual enum.
   frontend_caller?: string;
 
@@ -61,6 +70,9 @@ interface RawEnqueueEditImageRequest {
   aspect_ratio?: EnqueueEditImageSize;
   common_aspect_ratio?: CommonAspectRatio;
   image_quality?: EnqueueEditImageQuality;
+  horizontal_angle?: number;
+  vertical_angle?: number;
+  zoom?: number;
   frontend_caller?: string;
   frontend_subscriber_id?: string;
 }
@@ -166,6 +178,18 @@ export const EnqueueEditImage = async (request: EnqueueEditImageRequest) : Promi
 
   if (!!request.disable_system_prompt) {
     mutableRequest.disable_system_prompt = request.disable_system_prompt;
+  }
+
+  if (request.horizontal_angle != null) {
+    mutableRequest.horizontal_angle = request.horizontal_angle;
+  }
+
+  if (request.vertical_angle != null) {
+    mutableRequest.vertical_angle = request.vertical_angle;
+  }
+
+  if (request.zoom != null) {
+    mutableRequest.zoom = request.zoom;
   }
 
   if (!!request.frontend_caller) {

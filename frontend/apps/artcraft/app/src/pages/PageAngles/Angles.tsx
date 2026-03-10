@@ -13,9 +13,9 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
-import { downloadFileFromUrl } from "@storyteller/api";
+import { downloadFileFromUrl, PromptsApi } from "@storyteller/api";
 import toast from "react-hot-toast";
-import { v4 as uuidv4 } from "uuid";
+
 import { UploadEntryCard } from "../../components/media/UploadEntryCard";
 import {
   useAnglesStore,
@@ -65,6 +65,7 @@ export const Angles = () => {
 
   // State selectors (only re-render when specific values change)
   const sourceImageUrl = useAnglesStore((s) => s.sourceImageUrl);
+  const sourceBase64 = useAnglesStore((s) => s.sourceBase64);
   const imageDimensions = useAnglesStore((s) => s.imageDimensions);
   const angleConfig = useAnglesStore((s) => s.angleConfig);
   const generateFromBestAngles = useAnglesStore(
@@ -226,36 +227,49 @@ export const Angles = () => {
   );
 
   const handleGenerate = useCallback(async () => {
-    if (!sourceImageUrl || isProcessing) return;
+    if (!sourceImageUrl || !sourceBase64 || isProcessing) return;
 
     setIsProcessing(true);
 
-    // toast("Generating angle...", { icon: "🎯" });
+    try {
+      // Convert base64 data URL to a File for upload
+      const response = await fetch(sourceBase64);
+      const blob = await response.blob();
+      const file = new File([blob], "angle-source.png", { type: blob.type || "image/png" });
 
-    // // Simulate generation (replace with actual Tauri API when available)
-    // setTimeout(() => {
-    //   const newAngle: GeneratedAngle = {
-    //     id: uuidv4(),
-    //     imageUrl: sourceImageUrl, // Placeholder: would be the generated result
-    //     rotation: angleConfig.rotation,
-    //     tilt: angleConfig.tilt,
-    //     zoom: angleConfig.zoom,
-    //     timestamp: Date.now(),
-    //   };
+      // Upload the source image to get a media token
+      const api = new PromptsApi();
+      const uploadResult = await api.uploadSceneSnapshot({ screenshot: file });
 
-    //   addGeneratedAngle(newAngle);
-    //   setIsProcessing(false);
-    //   toast.success("Angle generated! Saved to Library");
-    // }, 2500);
+      if (!uploadResult.data) {
+        toast.error("Failed to upload source image");
+        setIsProcessing(false);
+        return;
+      }
 
-    // TODO: Call EnqueueEditImage();
+      const mediaToken = uploadResult.data;
 
+      await EnqueueEditImage({
+        model: "flux_2_lora_angles" as EnqueueEditImageRequest["model"],
+        image_media_tokens: [mediaToken],
+        prompt: "",
+        horizontal_angle: angleConfig.rotation,
+        vertical_angle: angleConfig.tilt,
+        zoom: angleConfig.zoom,
+      });
 
+      toast.success("Angle generation enqueued");
+    } catch (error) {
+      console.error("Error generating angle:", error);
+      toast.error("Failed to generate angle");
+    } finally {
+      setIsProcessing(false);
+    }
   }, [
     sourceImageUrl,
+    sourceBase64,
     isProcessing,
     angleConfig,
-    addGeneratedAngle,
     setIsProcessing,
   ]);
 
