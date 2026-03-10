@@ -1,4 +1,4 @@
-mod dispatch;
+pub mod dispatch;
 mod state;
 mod subcommands;
 

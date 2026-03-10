@@ -7,13 +7,13 @@ use seedance2pro::requests::poll_orders::poll_orders::{poll_orders, PollOrdersAr
 use super::super::state::Seedance2ProState;
 
 #[derive(Args)]
-pub struct FindjobArgs {
+pub struct FindJobArgs {
   /// The order ID (job token) to search for
   #[arg(long)]
   pub token: String,
 }
 
-pub async fn run(state: &Seedance2ProState, args: FindjobArgs) -> anyhow::Result<()> {
+pub async fn run(state: &Seedance2ProState, args: FindJobArgs) -> anyhow::Result<()> {
   let session = Seedance2ProSession::from_cookies_string(state.cookies.clone());
 
   let mut cursor: Option<u64> = None;
