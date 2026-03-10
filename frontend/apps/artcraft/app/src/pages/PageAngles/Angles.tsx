@@ -13,7 +13,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
-import { downloadFileFromUrl, PromptsApi } from "@storyteller/api";
+import { downloadFileFromUrl } from "@storyteller/api";
 import toast from "react-hot-toast";
 
 import { UploadEntryCard } from "../../components/media/UploadEntryCard";
@@ -56,6 +56,7 @@ export const Angles = () => {
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
   );
+  const [sourceMediaToken, setSourceMediaToken] = useState<string | null>(null);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -65,7 +66,6 @@ export const Angles = () => {
 
   // State selectors (only re-render when specific values change)
   const sourceImageUrl = useAnglesStore((s) => s.sourceImageUrl);
-  const sourceBase64 = useAnglesStore((s) => s.sourceBase64);
   const imageDimensions = useAnglesStore((s) => s.imageDimensions);
   const angleConfig = useAnglesStore((s) => s.angleConfig);
   const generateFromBestAngles = useAnglesStore(
@@ -189,19 +189,15 @@ export const Angles = () => {
         return;
       }
 
+      let mediaToken = item.id; // NB: `id` is a media token.
+
       const imageUrl = item.fullImage;
       setIsGalleryModalOpen(false);
       setSelectedGalleryImages([]);
+      setSourceMediaToken(mediaToken);
       setIsLoadingImage(true);
 
       try {
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
-        const file = new File([blob], "library-image.png", {
-          type: blob.type,
-        });
-        const base64Image = await convertFileToBase64(file);
-
         await new Promise<void>((resolve, reject) => {
           const img = new Image();
           img.onload = () => {
@@ -215,7 +211,7 @@ export const Angles = () => {
           img.src = imageUrl;
         });
 
-        setSourceImage(imageUrl, base64Image);
+        setSourceImage(imageUrl, "");
         setIsLoadingImage(false);
       } catch (error) {
         console.error("Error processing gallery image:", error);
@@ -227,31 +223,14 @@ export const Angles = () => {
   );
 
   const handleGenerate = useCallback(async () => {
-    if (!sourceImageUrl || !sourceBase64 || isProcessing) return;
+    if (!sourceMediaToken || isProcessing) return;
 
     setIsProcessing(true);
 
     try {
-      // Convert base64 data URL to a File for upload
-      const response = await fetch(sourceBase64);
-      const blob = await response.blob();
-      const file = new File([blob], "angle-source.png", { type: blob.type || "image/png" });
-
-      // Upload the source image to get a media token
-      const api = new PromptsApi();
-      const uploadResult = await api.uploadSceneSnapshot({ screenshot: file });
-
-      if (!uploadResult.data) {
-        toast.error("Failed to upload source image");
-        setIsProcessing(false);
-        return;
-      }
-
-      const mediaToken = uploadResult.data;
-
       await EnqueueEditImage({
         model: "flux_2_lora_angles" as EnqueueEditImageRequest["model"],
-        image_media_tokens: [mediaToken],
+        image_media_tokens: [sourceMediaToken],
         prompt: "",
         horizontal_angle: angleConfig.rotation,
         vertical_angle: angleConfig.tilt,
@@ -266,8 +245,7 @@ export const Angles = () => {
       setIsProcessing(false);
     }
   }, [
-    sourceImageUrl,
-    sourceBase64,
+    sourceMediaToken,
     isProcessing,
     angleConfig,
     setIsProcessing,
@@ -357,6 +335,7 @@ export const Angles = () => {
 
   const handleChangeImage = useCallback(() => {
     resetSource();
+    setSourceMediaToken(null);
   }, [resetSource]);
 
   // Slider handlers that snap to allowed values
@@ -707,7 +686,7 @@ export const Angles = () => {
                     variant="primary"
                     icon={faCrosshairs}
                     onClick={handleGenerate}
-                    disabled={isProcessing || !sourceImageUrl}
+                    disabled={isProcessing || !sourceMediaToken}
                     loading={isProcessing}
                     className="whitespace-nowrap px-5 py-1.5 text-sm"
                   >
