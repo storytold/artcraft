@@ -42,6 +42,10 @@ export class ImageModel extends Model {
   // If true, it'll be displayed on the text-to-image page.
   readonly canTextToImage: boolean;
 
+  // Whether the model can be used for angle editing
+  // If true, it'll be on the "angles" editing page.
+  readonly canEditAngles: boolean;
+
   // Whether the model supports changing resolution (e.g. 1k, 2k, 4k)
   readonly canChangeResolution: boolean;
 
@@ -80,6 +84,7 @@ export class ImageModel extends Model {
     canUseImagePrompt?: boolean;
     maxImagePromptCount?: number;
     canTextToImage?: boolean;
+    canEditAngles?: boolean;
     canChangeResolution?: boolean;
     canChangeAspectRatio?: boolean;
     tags?: ModelTag[];
@@ -111,6 +116,7 @@ export class ImageModel extends Model {
     this.canUseImagePrompt = args.canUseImagePrompt ?? false;
     this.maxImagePromptCount = Math.max(0, args.maxImagePromptCount ?? 1);
     this.canTextToImage = args.canTextToImage === false ? false : true; // Default to true !
+    this.canEditAngles = args.canEditAngles ?? false;
     this.canChangeResolution = args.canChangeResolution ?? false;
     this.canChangeAspectRatio = args.canChangeAspectRatio ?? false;
     this.aspectRatios = args.aspectRatios ?? [];
