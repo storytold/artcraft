@@ -227,6 +227,7 @@ async fn download_and_upload_thumbnail(
     .creator_set_visibility(job.creator_set_visibility)
     .media_file_class(MediaFileClass::Image)
     .media_file_type(media_file_type)
+    .is_intermediate_system_file(true)
     .media_file_origin_category(MediaFileOriginCategory::Inference)
     .media_file_origin_product_category(MediaFileOriginProductCategory::WorldGeneration)
     .mime_type(mime_type)
