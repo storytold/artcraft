@@ -160,6 +160,24 @@ pub async fn process_successful_job(
   Ok(())
 }
 
+/// Guess (suffix, mime_type, MediaFileType) from a URL's file extension.
+/// Falls back to PNG if the extension is unrecognized or absent.
+fn guess_image_format_from_url(url: &str) -> (&'static str, &'static str, MediaFileType) {
+  // Strip query string / fragment before checking the extension.
+  let path = url.split('?').next().unwrap_or(url);
+  let path = path.split('#').next().unwrap_or(path);
+
+  if let Some(dot) = path.rfind('.') {
+    match &path[dot..] {
+      ".jpg" | ".jpeg" => (".jpg", "image/jpeg", MediaFileType::Jpg),
+      ".png" => (".png", "image/png", MediaFileType::Png),
+      _ => (THUMB_SUFFIX, "image/png", MediaFileType::Png),
+    }
+  } else {
+    (THUMB_SUFFIX, "image/png", MediaFileType::Png)
+  }
+}
+
 /// Download a thumbnail image, upload it to the public bucket, and create a media file record for it.
 async fn download_and_upload_thumbnail(
   deps: &JobDependencies,
@@ -171,6 +189,8 @@ async fn download_and_upload_thumbnail(
     "Downloading thumbnail for operation {} from: {}",
     operation.operation_id, thumbnail_url
   );
+
+  let (suffix, mime_type, media_file_type) = guess_image_format_from_url(thumbnail_url);
 
   let thumb_bytes: Vec<u8> = reqwest::get(thumbnail_url)
     .await
@@ -189,14 +209,14 @@ async fn download_and_upload_thumbnail(
   let checksum = sha256_hash_bytes(&thumb_bytes)
     .map_err(|err| anyhow!("error hashing thumbnail: {:?}", err))?;
 
-  let bucket_path = MediaFileBucketPath::generate_new(Some(THUMB_PREFIX), Some(THUMB_SUFFIX));
+  let bucket_path = MediaFileBucketPath::generate_new(Some(THUMB_PREFIX), Some(suffix));
   let object_path = bucket_path.get_full_object_path_str();
 
   info!("Uploading thumbnail to public bucket at path: {}", object_path);
 
   deps
     .public_bucket_client
-    .upload_file_with_content_type_process(object_path, &thumb_bytes, "image/png")
+    .upload_file_with_content_type_process(object_path, &thumb_bytes, mime_type)
     .await
     .map_err(|err| anyhow!("error uploading thumbnail to bucket: {:?}", err))?;
 
@@ -206,10 +226,10 @@ async fn download_and_upload_thumbnail(
     .creator_ip_address(&job.creator_ip_address)
     .creator_set_visibility(job.creator_set_visibility)
     .media_file_class(MediaFileClass::Image)
-    .media_file_type(MediaFileType::Png)
+    .media_file_type(media_file_type)
     .media_file_origin_category(MediaFileOriginCategory::Inference)
     .media_file_origin_product_category(MediaFileOriginProductCategory::WorldGeneration)
-    .mime_type("image/png")
+    .mime_type(mime_type)
     .file_size_bytes(thumb_bytes.len() as u64)
     .checksum_sha2(&checksum)
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
