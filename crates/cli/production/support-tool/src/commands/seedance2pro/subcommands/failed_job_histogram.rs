@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use anyhow::anyhow;
 use log::info;
 use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro::requests::poll_orders::failure_type::FailureType;
 use seedance2pro::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs, TaskStatus};
 
 use super::super::state::Seedance2ProState;
@@ -63,6 +64,22 @@ pub async fn run(state: &Seedance2ProState) -> anyhow::Result<()> {
   println!("{:<6}  {}", "-----", "--------------");
   for (reason, count) in &sorted {
     println!("{:<6}  {}", count, reason);
+  }
+
+  // Build a second histogram by FailureType.
+  let mut type_histogram: BTreeMap<String, usize> = BTreeMap::new();
+  for (reason, count) in &histogram {
+    let failure_type = FailureType::classify_text(reason);
+    *type_histogram.entry(format!("{:?}", failure_type)).or_insert(0) += count;
+  }
+
+  let mut type_sorted: Vec<(&String, &usize)> = type_histogram.iter().collect();
+  type_sorted.sort_by(|a, b| b.1.cmp(a.1));
+
+  println!("\n{:<6}  {}", "Count", "Failure Type");
+  println!("{:<6}  {}", "-----", "------------");
+  for (failure_type, count) in &type_sorted {
+    println!("{:<6}  {}", count, failure_type);
   }
 
   Ok(())
