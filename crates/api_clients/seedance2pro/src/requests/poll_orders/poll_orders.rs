@@ -2,6 +2,7 @@ use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_client_error::Seedance2ProClientError;
 use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::error::seedance2pro_generic_api_error::Seedance2ProGenericApiError;
+use crate::requests::poll_orders::failure_reason::FailureReason;
 use crate::requests::poll_orders::request_types::*;
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
 use log::info;
@@ -10,17 +11,6 @@ use wreq_util::Emulation;
 
 const GET_ORDERS_BASE_URL: &str = "https://seedance2-pro.com/api/trpc/userOrder.getOrders";
 
-/// Builds the tRPC `input` JSON for the getOrders endpoint.
-/// When `cursor` is `Some`, it is included in the JSON payload.
-fn build_input_json(cursor: Option<u64>) -> String {
-  match cursor {
-    None => r#"{"0":{"json":{"limit":30,"format":null,"direction":"forward"},"meta":{"values":{"format":["undefined"]},"v":1}}}"#.to_string(),
-    Some(c) => format!(
-      r#"{{"0":{{"json":{{"limit":30,"format":null,"cursor":{cursor},"direction":"forward"}},"meta":{{"values":{{"format":["undefined"]}},"v":1}}}}}}"#,
-      cursor = c
-    ),
-  }
-}
 
 // --- Args & response ---
 
@@ -97,8 +87,8 @@ pub struct OrderStatus {
   /// Detailed result entries. Typically one entry per video.
   pub results: Vec<VideoResult>,
 
-  /// Failure reason. Populated when `task_status` is `Failed`.
-  pub fail_reason: Option<String>,
+  /// Structured failure reason. Populated when `task_status` is `Failed` or `fail_reason` is present.
+  pub fail_reason: Option<FailureReason>,
 
   /// ISO 8601 creation timestamp (e.g. `"2026-02-19T01:20:50.398Z"`).
   pub created_at: String,
@@ -172,24 +162,43 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
 
   let orders: Vec<OrderStatus> = json.orders
     .into_iter()
-    .map(|o| OrderStatus {
-      order_id: o.order_id,
-      task_status: TaskStatus::from_str(&o.task_status),
-      result_url: o.result_url,
-      results: o.results.into_iter().map(|r| VideoResult {
-        url: r.url,
-        width: r.width,
-        height: r.height,
-        // ratio: r.ratio,
-      }).collect(),
-      fail_reason: o.fail_reason,
-      created_at: o.created_at,
+    .map(|o| {
+      let task_status = TaskStatus::from_str(&o.task_status);
+      let fail_reason = match (&o.fail_reason, &task_status) {
+        (Some(reason), _) => Some(FailureReason::from_reason(reason)),
+        (None, TaskStatus::Failed) => Some(FailureReason::from_reason("(no reason)")),
+        _ => None,
+      };
+      OrderStatus {
+        order_id: o.order_id,
+        task_status,
+        result_url: o.result_url,
+        results: o.results.into_iter().map(|r| VideoResult {
+          url: r.url,
+          width: r.width,
+          height: r.height,
+        }).collect(),
+        fail_reason,
+        created_at: o.created_at,
+      }
     })
     .collect();
 
   info!("Polled {} orders, next_cursor: {:?}", orders.len(), next_cursor);
 
   Ok(PollOrdersResponse { orders, next_cursor })
+}
+
+/// Builds the tRPC `input` JSON for the getOrders endpoint.
+/// When `cursor` is `Some`, it is included in the JSON payload.
+fn build_input_json(cursor: Option<u64>) -> String {
+  match cursor {
+    None => r#"{"0":{"json":{"limit":30,"format":null,"direction":"forward"},"meta":{"values":{"format":["undefined"]},"v":1}}}"#.to_string(),
+    Some(c) => format!(
+      r#"{{"0":{{"json":{{"limit":30,"format":null,"cursor":{cursor},"direction":"forward"}},"meta":{{"values":{{"format":["undefined"]}},"v":1}}}}}}"#,
+      cursor = c
+    ),
+  }
 }
 
 #[cfg(test)]

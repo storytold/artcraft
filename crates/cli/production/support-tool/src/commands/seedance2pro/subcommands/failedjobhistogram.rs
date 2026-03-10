@@ -32,7 +32,9 @@ pub async fn run(state: &Seedance2ProState) -> anyhow::Result<()> {
     for order in &result.orders {
       if order.task_status == TaskStatus::Failed {
         failed_count += 1;
-        let reason = order.fail_reason.as_deref().unwrap_or("(no reason)");
+        let reason = order.fail_reason.as_ref()
+          .map(|fr| fr.reason.as_str())
+          .unwrap_or("(no reason)");
         *histogram.entry(reason.to_string()).or_insert(0) += 1;
       }
     }

@@ -4,6 +4,7 @@ use enums::by_table::generic_inference_jobs::frontend_failure_category::Frontend
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::PendingSeedance2ProJob;
 use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
+use seedance2pro::requests::poll_orders::failure_type::FailureType;
 use seedance2pro::requests::poll_orders::poll_orders::OrderStatus;
 
 use crate::job_dependencies::JobDependencies;
@@ -15,7 +16,8 @@ pub async fn process_failed_job(
 ) {
   let reason = order
     .fail_reason
-    .as_deref()
+    .as_ref()
+    .map(|fr| fr.reason.as_str())
     .unwrap_or("unknown failure reason");
 
   // --- Step 1: Attempt the refund before touching the job status. ---
@@ -89,11 +91,18 @@ pub async fn process_failed_job(
 
   // --- Step 2: Mark the job record as failed. ---
 
-  let reason_lower = reason.to_lowercase();
-
-  let platform_rules_violation = reason_lower.contains("violates") ||
-    reason_lower.contains("platform rules") ||
-    reason_lower.contains("please modify");
+  let platform_rules_violation = order.fail_reason.as_ref().is_some_and(|fr| {
+    matches!(
+      fr.failure_type,
+      FailureType::RuleBansUserImage
+        | FailureType::RuleBansUserImageWithFaces
+        | FailureType::RuleBansUserTextPrompt
+        | FailureType::RuleBansUserContent
+        | FailureType::RuleBansGeneratedVideo
+        | FailureType::RuleBansGeneratedAudio
+        | FailureType::RuleBansGeneratedContent
+    )
+  });
 
   let frontend_failure_category = if platform_rules_violation {
     Some(FrontendFailureCategory::ModelRulesViolation)

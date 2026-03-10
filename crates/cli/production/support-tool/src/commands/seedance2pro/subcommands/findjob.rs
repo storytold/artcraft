@@ -53,7 +53,8 @@ fn order_to_json(order: &seedance2pro::requests::poll_orders::poll_orders::Order
     "order_id": order.order_id,
     "task_status": format!("{:?}", order.task_status),
     "result_url": order.result_url,
-    "fail_reason": order.fail_reason,
+    "fail_reason": order.fail_reason.as_ref().map(|fr| fr.reason.as_str()),
+    "failure_type": order.fail_reason.as_ref().map(|fr| format!("{:?}", fr.failure_type)),
     "created_at": order.created_at,
     "results": order.results.iter().map(|r| {
       serde_json::json!({
