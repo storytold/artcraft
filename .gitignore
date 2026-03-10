@@ -6,6 +6,7 @@
 .env-elasticsearch-secrets
 .env-migration-tool-secrets
 .env-secrets
+.env-support-tool-secrets
 _develop/tools/.secrets
 _develop/tools/db_secrets.toml
 crates/service/web/storyteller_web/config/storyteller-web.development-secrets.env

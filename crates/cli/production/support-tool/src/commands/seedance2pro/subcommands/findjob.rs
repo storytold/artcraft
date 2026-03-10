@@ -4,6 +4,8 @@ use log::info;
 use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs};
 
+use super::super::state::Seedance2ProState;
+
 #[derive(Args)]
 pub struct FindjobArgs {
   /// The order ID (job token) to search for
@@ -11,11 +13,8 @@ pub struct FindjobArgs {
   pub token: String,
 }
 
-pub async fn run(args: FindjobArgs) -> anyhow::Result<()> {
-  let cookies = easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")
-    .map_err(|err| anyhow!("Missing SEEDANCE2PRO_COOKIES env var: {:?}", err))?;
-
-  let session = Seedance2ProSession::from_cookies_string(cookies);
+pub async fn run(state: &Seedance2ProState, args: FindjobArgs) -> anyhow::Result<()> {
+  let session = Seedance2ProSession::from_cookies_string(state.cookies.clone());
 
   let mut cursor: Option<u64> = None;
   let mut page = 0usize;
