@@ -32,5 +32,7 @@ pub async fn handle_image_edit_artcraft(
     ImageEditModel::Seedream4 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4, GenerationModel::Seedream4).await,
     ImageEditModel::Seedream4p5 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4p5, GenerationModel::Seedream4p5).await,
     ImageEditModel::Seedream5Lite => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream5Lite, GenerationModel::Seedream5Lite).await,
+    ImageEditModel::QwenEdit2511Angles => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::QwenEdit2511Angles, GenerationModel::QwenEdit2511Angles).await,
+    ImageEditModel::Flux2LoraAngles => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Flux2LoraAngles, GenerationModel::Flux2LoraAngles).await,
   }
 }

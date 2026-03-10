@@ -45,6 +45,10 @@ pub enum TaskModelType {
   Seedream4p5,
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
+  #[serde(rename = "qwen_edit_2511_angles")]
+  QwenEdit2511Angles,
+  #[serde(rename = "flux_2_lora_angles")]
+  Flux2LoraAngles,
   #[serde(rename = "grok_image")]
   GrokImage,
   #[serde(rename = "recraft_3")]
@@ -133,6 +137,8 @@ impl TaskModelType {
       Self::Seedream4 => "seedream_4",
       Self::Seedream4p5 => "seedream_4p5",
       Self::Seedream5Lite => "seedream_5_lite",
+      Self::QwenEdit2511Angles => "qwen_edit_2511_angles",
+      Self::Flux2LoraAngles => "flux_2_lora_angles",
       Self::GrokImage => "grok_image",
       Self::Recraft3 => "recraft_3",
       Self::Midjourney => "midjourney",
@@ -184,6 +190,8 @@ impl TaskModelType {
       "seedream_4" => Ok(Self::Seedream4),
       "seedream_4p5" => Ok(Self::Seedream4p5),
       "seedream_5_lite" => Ok(Self::Seedream5Lite),
+      "qwen_edit_2511_angles" => Ok(Self::QwenEdit2511Angles),
+      "flux_2_lora_angles" => Ok(Self::Flux2LoraAngles),
       "grok_image" => Ok(Self::GrokImage),
       "recraft_3" => Ok(Self::Recraft3),
       "midjourney" => Ok(Self::Midjourney),
@@ -238,6 +246,8 @@ impl TaskModelType {
       Self::Seedream4,
       Self::Seedream4p5,
       Self::Seedream5Lite,
+      Self::QwenEdit2511Angles,
+      Self::Flux2LoraAngles,
       Self::GrokImage,
       Self::Recraft3,
       Self::Midjourney,
@@ -299,6 +309,8 @@ mod tests {
       assert_serialization(TaskModelType::Seedream4, "seedream_4");
       assert_serialization(TaskModelType::Seedream4p5, "seedream_4p5");
       assert_serialization(TaskModelType::Seedream5Lite, "seedream_5_lite");
+      assert_serialization(TaskModelType::QwenEdit2511Angles, "qwen_edit_2511_angles");
+      assert_serialization(TaskModelType::Flux2LoraAngles, "flux_2_lora_angles");
       assert_serialization(TaskModelType::GrokImage, "grok_image");
       assert_serialization(TaskModelType::Recraft3, "recraft_3");
       assert_serialization(TaskModelType::Midjourney, "midjourney");
@@ -349,6 +361,8 @@ mod tests {
       assert_eq!(TaskModelType::Seedream4.to_str(), "seedream_4");
       assert_eq!(TaskModelType::Seedream4p5.to_str(), "seedream_4p5");
       assert_eq!(TaskModelType::Seedream5Lite.to_str(), "seedream_5_lite");
+      assert_eq!(TaskModelType::QwenEdit2511Angles.to_str(), "qwen_edit_2511_angles");
+      assert_eq!(TaskModelType::Flux2LoraAngles.to_str(), "flux_2_lora_angles");
       assert_eq!(TaskModelType::GrokImage.to_str(), "grok_image");
       assert_eq!(TaskModelType::Recraft3.to_str(), "recraft_3");
       assert_eq!(TaskModelType::Midjourney.to_str(), "midjourney");
@@ -399,6 +413,8 @@ mod tests {
       assert_eq!(TaskModelType::from_str("seedream_4").unwrap(), TaskModelType::Seedream4);
       assert_eq!(TaskModelType::from_str("seedream_4p5").unwrap(), TaskModelType::Seedream4p5);
       assert_eq!(TaskModelType::from_str("seedream_5_lite").unwrap(), TaskModelType::Seedream5Lite);
+      assert_eq!(TaskModelType::from_str("qwen_edit_2511_angles").unwrap(), TaskModelType::QwenEdit2511Angles);
+      assert_eq!(TaskModelType::from_str("flux_2_lora_angles").unwrap(), TaskModelType::Flux2LoraAngles);
       assert_eq!(TaskModelType::from_str("grok_image").unwrap(), TaskModelType::GrokImage);
       assert_eq!(TaskModelType::from_str("recraft_3").unwrap(), TaskModelType::Recraft3);
       assert_eq!(TaskModelType::from_str("midjourney").unwrap(), TaskModelType::Midjourney);
@@ -444,7 +460,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskModelType::all_variants();
-      assert_eq!(variants.len(), 43);
+      assert_eq!(variants.len(), 45);
       // Image models
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Flux1Schnell));
@@ -462,6 +478,8 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedream4));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedream4p5));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Seedream5Lite));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::QwenEdit2511Angles));
+      assert_eq!(variants.pop_first(), Some(TaskModelType::Flux2LoraAngles));
       assert_eq!(variants.pop_first(), Some(TaskModelType::GrokImage));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Recraft3));
       assert_eq!(variants.pop_first(), Some(TaskModelType::Midjourney));

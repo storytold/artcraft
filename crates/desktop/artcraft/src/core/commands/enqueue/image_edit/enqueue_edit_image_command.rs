@@ -81,6 +81,12 @@ pub enum ImageEditModel {
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
 
+  #[serde(rename = "qwen_edit_2511_angles")]
+  QwenEdit2511Angles,
+
+  #[serde(rename = "flux_2_lora_angles")]
+  Flux2LoraAngles,
+
 //  #[serde(rename = "qwen")]
 //  Qwen,
 //
@@ -129,6 +135,18 @@ pub struct EnqueueEditImageCommand {
 
   /// Image resolution
   pub image_resolution: Option<EditImageResolution>,
+
+  /// OPTIONAL.
+  /// Only for image angle edit models.
+  pub horizontal_angle: Option<f64>,
+
+  /// OPTIONAL.
+  /// Only for image angle edit models.
+  pub vertical_angle: Option<f64>,
+
+  /// OPTIONAL.
+  /// Only for image angle edit models.
+  pub zoom: Option<f64>,
 
   /// OPTIONAL.
   /// Name of the frontend caller.

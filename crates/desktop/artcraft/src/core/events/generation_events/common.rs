@@ -50,6 +50,11 @@ pub enum GenerationModel {
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
 
+  #[serde(rename = "qwen_edit_2511_angles")]
+  QwenEdit2511Angles,
+  #[serde(rename = "flux_2_lora_angles")]
+  Flux2LoraAngles,
+
   #[serde(rename = "hunyuan_3d_2_0")]
   Hunyuan3d2_0,
   #[serde(rename = "hunyuan_3d_2_1")]

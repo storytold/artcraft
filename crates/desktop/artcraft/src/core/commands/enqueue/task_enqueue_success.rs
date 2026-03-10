@@ -76,6 +76,8 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::Seedream4) => Some(TaskModelType::Seedream4),
       Some(GenerationModel::Seedream4p5) => Some(TaskModelType::Seedream4p5),
       Some(GenerationModel::Seedream5Lite) => Some(TaskModelType::Seedream5Lite),
+      Some(GenerationModel::QwenEdit2511Angles) => Some(TaskModelType::QwenEdit2511Angles),
+      Some(GenerationModel::Flux2LoraAngles) => Some(TaskModelType::Flux2LoraAngles),
       Some(GenerationModel::GrokImage) => Some(TaskModelType::GrokImage),
       Some(GenerationModel::Recraft3) => Some(TaskModelType::Recraft3),
       Some(GenerationModel::GrokVideo) => Some(TaskModelType::GrokVideo),

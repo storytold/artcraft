@@ -13,5 +13,7 @@ pub fn image_edit_model_to_model_type(model: ImageEditModel) -> ModelType {
     ImageEditModel::Seedream4 => ModelType::Seedream4,
     ImageEditModel::Seedream4p5 => ModelType::Seedream4p5,
     ImageEditModel::Seedream5Lite => ModelType::Seedream5Lite,
+    ImageEditModel::QwenEdit2511Angles => ModelType::QwenEdit2511Angles,
+    ImageEditModel::Flux2LoraAngles => ModelType::Flux2LoraAngles,
   }
 }
