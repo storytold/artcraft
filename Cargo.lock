@@ -578,9 +578,9 @@ dependencies = [
 
 [[package]]
 name = "anstyle"
-version = "1.0.7"
+version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "038dfcf04a5feb68e9c60b21c9625a54c2c0616e79b72b0fd87075a056ae1d1b"
+checksum = "5192cca8006f1fd4f7237516f40fa183bb07f8fbdfedaa0036de5ea9b0b45e78"
 
 [[package]]
 name = "anstyle-parse"
@@ -2225,9 +2225,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.13"
+version = "4.5.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fbb260a053428790f3de475e304ff84cdbc4face759ea7a3e64c1edd938a7fc"
+checksum = "2797f34da339ce31042b27d23607e051786132987f595b02ba4f6a6dffb7030a"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -2235,21 +2235,21 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.13"
+version = "4.5.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64b17d7ea74e9f833c7dbf2cbe4fb12ff26783eda4782a8975b72f895c9b4d99"
+checksum = "24a241312cea5059b13574bb9b3861cabf758b879c15190b37b6d6fd63ab6876"
 dependencies = [
  "anstream",
  "anstyle",
- "clap_lex 0.7.4",
+ "clap_lex 1.0.0",
  "strsim 0.11.1",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "4.5.13"
+version = "4.5.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "501d359d5f3dcaf6ecdeee48833ae73ec6e42723a1e52419c79abf9507eec0a0"
+checksum = "a92793da1a46a5f2a02a6f4c46c6496b28c43638adea8306fcb0caa1634f24e5"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -2268,9 +2268,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.7.4"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
+checksum = "3a822ea5bc7590f9d40f1ba12c0dc3c2760f3482c6984db1573ad11031420831"
 
 [[package]]
 name = "cloud_storage"
@@ -3068,7 +3068,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "chrono",
- "clap 4.5.13",
+ "clap 4.5.60",
  "datetimes",
  "dotenv",
  "easyenv",
@@ -3103,7 +3103,7 @@ name = "db-cleanup"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.5.13",
+ "clap 4.5.60",
  "dotenv",
  "easyenv",
  "enums",
@@ -3263,7 +3263,7 @@ name = "dev-database-seed"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.5.13",
+ "clap 4.5.60",
  "cloud_storage",
  "config",
  "easyenv",
@@ -3289,7 +3289,7 @@ name = "dev-upload-media-file"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.5.13",
+ "clap 4.5.60",
  "cloud_storage",
  "config",
  "easyenv",
@@ -3763,7 +3763,7 @@ name = "elasticsearch-cli"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.5.13",
+ "clap 4.5.60",
  "config",
  "easyenv",
  "elasticsearch",
@@ -6744,7 +6744,7 @@ dependencies = [
 name = "lru-delete-models"
 version = "0.0.1"
 dependencies = [
- "clap 4.5.13",
+ "clap 4.5.60",
  "errors",
  "logging",
  "walkdir",
@@ -7054,7 +7054,7 @@ name = "migration-tool"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.5.13",
+ "clap 4.5.60",
  "cloud_storage",
  "config",
  "easyenv",
@@ -10316,7 +10316,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 name = "scrape-test"
 version = "0.0.1"
 dependencies = [
- "clap 4.5.13",
+ "clap 4.5.60",
  "errors",
  "tokio",
  "web_scrapers",
@@ -11747,6 +11747,20 @@ dependencies = [
  "hmac-sha512",
  "rand 0.8.5",
  "rsa",
+]
+
+[[package]]
+name = "support-tool"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "clap 4.5.60",
+ "easyenv",
+ "errors",
+ "log",
+ "seedance2pro",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -14914,7 +14928,7 @@ dependencies = [
  "bytes",
  "cc",
  "chrono",
- "clap 4.5.13",
+ "clap 4.5.60",
  "cookie 0.18.1",
  "core-foundation-sys",
  "crossbeam-utils",

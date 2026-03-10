@@ -1,0 +1,22 @@
+[package]
+name = "support-tool"
+edition = "2024"
+version = "0.0.1"
+
+[[bin]]
+name = "support-tool"
+path = "src/main.rs"
+
+[dependencies]
+easyenv.workspace = true
+
+# Internal
+errors.workspace = true
+seedance2pro.workspace = true
+
+# External
+anyhow.workspace = true
+clap.workspace = true
+log.workspace = true
+serde_json.workspace = true
+tokio.workspace = true

@@ -33,6 +33,7 @@ members = [
   "crates/cli/production/kubectl-pod-cleanup",
   "crates/cli/production/lru-delete-models",
   "crates/cli/production/migration-tool",
+  "crates/cli/production/support-tool",
 
   # Desktop apps
   "crates/desktop/artcraft",
@@ -222,6 +223,7 @@ component_traits = { path = "crates/service/plugins/component_traits" }
 cookie_store = { path = "crates/lib/cookie_store" }
 cookies = { path = "crates/lib/cookies" }
 crockford = { path = "crates/lib/data/crockford" }
+easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
 enums_public = { path = "crates/schema/public/enums_public" }
 errors = { path = "crates/lib/errors" }
@@ -271,6 +273,7 @@ base64 = "0.22.1"
 bstr = "1.12.1"
 bytes = "1.10.1"
 chrono = { version = "0.4.41", features = ["serde"] }
+clap = { version = "4.5.60", features = ["derive"] }
 cookie = "0.18.1"
 env = "1.0.1"
 env_logger = "0.11.9"
