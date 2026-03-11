@@ -1,4 +1,5 @@
 pub mod get_user_token_by_username;
+pub mod get_username_by_user_token;
 pub mod lookup_user_for_login_by_email;
 pub mod lookup_user_for_login_by_email_with_transactor;
 pub mod lookup_user_for_login_by_username;
