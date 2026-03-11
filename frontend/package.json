@@ -8,6 +8,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@fontsource-variable/figtree": "^5.2.10",
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-brands-svg-icons": "^6.5.2",
     "@fortawesome/pro-regular-svg-icons": "^6.5.1",
@@ -104,5 +105,8 @@
   "workspaces": [
     "apps/**/*",
     "libs/**/*"
-  ]
+  ],
+  "overrides": {
+    "signal-exit": "3.0.7"
+  }
 }
