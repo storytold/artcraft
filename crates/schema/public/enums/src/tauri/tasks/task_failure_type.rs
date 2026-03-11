@@ -37,8 +37,9 @@ impl_enum_display_and_debug_using_to_str!(TaskFailureType);
 
 impl TaskFailureType {
 
-  /// Convert to the Tauri-side `TaskFailureType`, if there is a matching variant.
-  pub fn try_from_frontend_failure_category(category: FrontendFailureCategory) -> Self {
+  /// Convert the web API's `FrontendFailureCategory` to a Tauri-facing type, if there is a matching variant.
+  /// If there isn't a matching variant, return `Unknown`.
+  pub fn from_frontend_failure_category(category: FrontendFailureCategory) -> Self {
     match category {
       FrontendFailureCategory::ModelRulesViolation => Self::RuleBansUserContent, // NB: This is a legacy enum value.
       FrontendFailureCategory::RuleBansUserImage => Self::RuleBansUserImage,

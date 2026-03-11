@@ -7,4 +7,4 @@
 /// We increment this whenever we make a change to the database schema.
 /// This prevents deadlock on startup if the schema has changed from the
 /// previous version.
-pub const TASK_DATABASE_VERSION: u32 = 5;
+pub const TASK_DATABASE_VERSION: u32 = 6;
