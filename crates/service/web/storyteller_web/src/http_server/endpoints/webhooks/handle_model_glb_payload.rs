@@ -70,10 +70,7 @@ pub async fn handle_model_glb_payload(
 
   // Step 1: Try to upload thumbnail first (fail open)
   let maybe_cover_token = match try_to_upload_thumbnail(payload, job, server_state).await {
-    Ok(token) => {
-      info!("Thumbnail uploaded with token: {}", token);
-      Some(token)
-    }
+    Ok(maybe_token) => maybe_token,
     Err(err) => {
       warn!("Could not upload thumbnail as cover image: {:?}. Continuing without cover.", err);
       None
@@ -149,10 +146,15 @@ async fn try_to_upload_thumbnail(
   payload: &Map<String, Value>,
   job: &FalJobDetails,
   server_state: &ServerState,
-) -> AnyhowResult<MediaFileToken> {
+) -> AnyhowResult<Option<MediaFileToken>> {
 
-  let thumbnail_value = payload.get("thumbnail")
-      .ok_or_else(|| anyhow!("no `thumbnail` key in payload"))?;
+  let thumbnail_value = match payload.get("thumbnail") {
+    Some(value) => value,
+    None => {
+      info!("No thumbnail in payload, skipping cover image.");
+      return Ok(None);
+    }
+  };
 
   info!("Fal Thumbnail Payload: {:?}", thumbnail_value);
 
@@ -209,5 +211,7 @@ async fn try_to_upload_thumbnail(
       .insert_pool(&server_state.mysql_pool)
       .await?;
 
-  Ok(thumbnail_media_token)
+  info!("Thumbnail uploaded with token: {}", thumbnail_media_token);
+
+  Ok(Some(thumbnail_media_token))
 }
