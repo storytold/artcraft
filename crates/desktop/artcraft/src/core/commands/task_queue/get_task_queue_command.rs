@@ -18,6 +18,7 @@ use serde_derive::{Deserialize, Serialize};
 use sqlite_tasks::queries::list_tasks_for_frontend::list_tasks_for_frontend;
 use artcraft_client::endpoints::media_files::delete_media_file::delete_media_file;
 use tauri::{AppHandle, State};
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -31,12 +32,20 @@ pub struct GetTaskQueueCommandResponse {
 #[derive(Serialize)]
 pub struct TaskQueueItem {
   pub id: TaskId,
+
   pub task_status: TaskStatus,
   pub task_type: TaskType,
   pub model_type: Option<TaskModelType>,
+
   pub provider: Option<GenerationProvider>,
   pub provider_job_id: Option<String>,
+
+  /// If the item is done, these will be filled out.
   pub completed_item: Option<CompletedItemData>,
+
+  /// If the item failed, this will be filled out.
+  pub failure_reason: Option<FailedItemData>,
+
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
   pub completed_at: Option<DateTime<Utc>>,
@@ -61,6 +70,12 @@ pub struct MediaFileData {
 
   // NB: The frontend wants this.
   pub created_at: DateTime<Utc>,
+}
+
+#[derive(Serialize)]
+pub struct FailedItemData {
+  pub failure_type: TaskFailureType,
+  pub failure_message: Option<String>,
 }
 
 impl SerializeMarker for GetTaskQueueCommandResponse {}
@@ -103,6 +118,7 @@ pub async fn handle_request(
 
   for task in tasks.tasks.into_iter() {
     let mut completed_item = None;
+    let mut failure_reason = None;
 
     if task.status == TaskStatus::CompleteSuccess {
       let token_and_url = task.on_complete_primary_media_file_token
@@ -123,6 +139,19 @@ pub async fn handle_request(
       } else {
         warn!("Task {} is marked complete but has no primary media file token or URL.", task.id);
       }
+    } else {
+      // If either failure field is present, fill out the failure report.
+      if let Some(failure_message) = task.on_failure_message.as_deref() {
+        failure_reason = Some(FailedItemData {
+          failure_type: task.on_failure_type.unwrap_or(TaskFailureType::Unknown),
+          failure_message: Some(failure_message.to_string()),
+        });
+      } else if let Some(failure_type) = task.on_failure_type {
+        failure_reason = Some(FailedItemData {
+          failure_type,
+          failure_message: None,
+        });
+      }
     }
 
     transformed_tasks.push(TaskQueueItem {
@@ -136,6 +165,7 @@ pub async fn handle_request(
       updated_at: task.updated_at,
       completed_at: task.completed_at,
       completed_item,
+      failure_reason,
     })
   }
 
