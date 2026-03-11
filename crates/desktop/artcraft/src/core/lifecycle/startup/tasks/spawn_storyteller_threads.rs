@@ -4,7 +4,7 @@ use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::Artcraft
 use crate::core::state::task_database::TaskDatabase;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use crate::services::storyteller::threads::storyteller_activity_thread::storyteller_activity_thread;
-use crate::services::storyteller::threads::storyteller_task_polling_thread::storyteller_task_polling_thread;
+use crate::services::storyteller::threads::storyteller_task_polling_thread::storyteller_task_polling_thread::storyteller_task_polling_thread;
 use errors::AnyhowResult;
 use tauri::{AppHandle, Manager};
 
