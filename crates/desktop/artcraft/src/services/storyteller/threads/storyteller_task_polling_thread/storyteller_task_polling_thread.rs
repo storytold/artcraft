@@ -106,14 +106,14 @@ async fn polling_loop(
       match job.status.status {
         JobStatusPlus::CompleteSuccess => {
           match task.status {
-            TaskStatus::CompleteSuccess => continue,
+            TaskStatus::CompleteSuccess => continue, // NB: We're done with this task.
             _ => {}
           }
           handle_successful_job(app_handle, app_env_configs, creds.as_ref(), job, task, task_database).await?;
         }
         JobStatusPlus::CompleteFailure => {
           match task.status {
-            TaskStatus::CompleteFailure => continue,
+            TaskStatus::CompleteFailure => continue, // NB: We're done with this task.
             _ => {}
           }
           handle_failed_job(app_handle, job, task, task_database).await?;
