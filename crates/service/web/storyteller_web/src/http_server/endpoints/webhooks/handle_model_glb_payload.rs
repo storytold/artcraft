@@ -13,7 +13,6 @@ use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use serde_json::{Map, Value};
-use mysql_queries::queries::media_files::edit::set_media_file_cover_image::{set_media_file_cover_image, UpdateArgs};
 use tokens::tokens::media_files::MediaFileToken;
 
 const PREFIX : Option<&str> = Some("artcraft_");
@@ -68,31 +67,40 @@ pub async fn handle_model_glb_payload(
   job: &FalJobDetails,
   server_state: &ServerState,
 ) -> AnyhowResult<MediaFileToken> {
-  
+
+  // Step 1: Try to upload thumbnail first (fail open)
+  let maybe_cover_token = match try_to_upload_thumbnail(payload, job, server_state).await {
+    Ok(token) => {
+      info!("Thumbnail uploaded with token: {}", token);
+      Some(token)
+    }
+    Err(err) => {
+      warn!("Could not upload thumbnail as cover image: {:?}. Continuing without cover.", err);
+      None
+    }
+  };
+
+  // Step 2: Upload the GLB mesh, attaching the cover image if available
   let model_glb_value = payload.get("model_glb")
-      .ok_or_else(|| anyhow!("no `model_mesh` key in payload"))?;
+      .ok_or_else(|| anyhow!("no `model_glb` key in payload"))?;
 
   info!("Fal Model Glb Payload: {:?}", model_glb_value);
-  
+
   let mesh: FalMediaPayload = serde_json::from_value(model_glb_value.clone())?;
 
   let mesh_url = mesh.url
       .as_deref()
-      .ok_or_else(|| anyhow!("no `url` in image payload"))?;
-  
-  //let mime_type = mesh.content_type
-  //    .as_deref()
-  //    .ok_or_else(|| anyhow!("no `content_type` in mesh payload"))?;
+      .ok_or_else(|| anyhow!("no `url` in model_glb payload"))?;
 
   let file_bytes = http_download_url_to_bytes(mesh_url)
       .await
       .map_err(|e| anyhow!("Failed to download mesh: {:?}", e))?;
-  
+
   let mimetype_info = MimetypeInfo::get_for_bytes(&file_bytes)
       .ok_or_else(|| anyhow!("Failed to get mimetype info"))?;
-  
+
   let mime_type = mimetype_info.mime_type();
-  
+
   info!("Mime type of mesh: {}", mime_type);
 
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
@@ -124,60 +132,46 @@ pub async fn handle_model_glb_payload(
       .media_file_type(media_file_type)
       .media_file_origin_category(MediaFileOriginCategory::Inference)
       .maybe_engine_category(Some(MediaFileEngineCategory::Object))
-      //.media_file_origin_product_category(MediaFileOriginProductCategory::Unknown)
       .mime_type(mime_type)
       .file_size_bytes(file_size_bytes as u64)
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
+      .maybe_cover_image_media_file_token(maybe_cover_token.as_ref())
       .checksum_sha2(&file_hash)
       .insert_pool(&server_state.mysql_pool)
       .await?;
-  
-  info!("Glb media file uploaded with token: {}", media_token);
 
-  info!("Attempting to attach thumbnail (if it exists) ...");
-  let result = try_to_attach_thumbnail(
-    payload,
-    job,
-    server_state,
-    &media_token,
-  ).await;
-  
-  // NB: Fail open
-  if let Err(err) = result {
-    warn!("Could not attach thumbnail as cover image to media file: {:?}", err);
-  }
+  info!("Glb media file uploaded with token: {}", media_token);
 
   Ok(media_token)
 }
 
-async fn try_to_attach_thumbnail(
+async fn try_to_upload_thumbnail(
   payload: &Map<String, Value>,
   job: &FalJobDetails,
   server_state: &ServerState,
-  glb_media_token: &MediaFileToken,
-) -> AnyhowResult<()> {
+) -> AnyhowResult<MediaFileToken> {
 
   let thumbnail_value = payload.get("thumbnail")
       .ok_or_else(|| anyhow!("no `thumbnail` key in payload"))?;
 
   info!("Fal Thumbnail Payload: {:?}", thumbnail_value);
 
-  let thumbnail : FalMediaPayload = serde_json::from_value(thumbnail_value.clone())?;
+  let thumbnail: FalMediaPayload = serde_json::from_value(thumbnail_value.clone())?;
 
-  let mesh_url = thumbnail.url
+  let thumbnail_url = thumbnail.url
       .as_deref()
-      .ok_or_else(|| anyhow!("no `url` in image payload"))?;
+      .ok_or_else(|| anyhow!("no `url` in thumbnail payload"))?;
 
-  let file_bytes = http_download_url_to_bytes(mesh_url)
+  let file_bytes = http_download_url_to_bytes(thumbnail_url)
       .await
-      .map_err(|e| anyhow!("Failed to download image: {:?}", e))?;
+      .map_err(|e| anyhow!("Failed to download thumbnail: {:?}", e))?;
 
   let mimetype_info = MimetypeInfo::get_for_bytes(&file_bytes)
       .ok_or_else(|| anyhow!("Failed to get mimetype info"))?;
 
   let mime_type = mimetype_info.mime_type();
 
-  info!("Mime type of image: {}", mime_type);
+  info!("Mime type of thumbnail: {}", mime_type);
 
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| anyhow!("Unsupported media file type: {}", mime_type))?;
@@ -207,8 +201,6 @@ async fn try_to_attach_thumbnail(
       .media_file_class(MediaFileClass::Image)
       .media_file_type(media_file_type)
       .media_file_origin_category(MediaFileOriginCategory::Processed)
-      //.maybe_engine_category(Some(MediaFileEngineCategory::Object))
-      //.media_file_origin_product_category(MediaFileOriginProductCategory::Unknown)
       .mime_type(mime_type)
       .file_size_bytes(file_size_bytes as u64)
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
@@ -217,11 +209,5 @@ async fn try_to_attach_thumbnail(
       .insert_pool(&server_state.mysql_pool)
       .await?;
 
-  let query_result = set_media_file_cover_image(UpdateArgs {
-    media_file_token: glb_media_token,
-    maybe_cover_image_media_file_token: Some(&thumbnail_media_token),
-    mysql_pool: &server_state.mysql_pool,
-  }).await;
-
-  Ok(())
+  Ok(thumbnail_media_token)
 }
