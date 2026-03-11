@@ -8,7 +8,7 @@ use crate::http_server::common_responses::simple_entity_stats::SimpleEntityStats
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
 use crate::http_server::endpoints::media_files::common_responses::live_portrait::MediaFileLivePortraitDetails;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
-use crate::http_server::web_utils::bucket_urls::bucket_url_from_media_path::bucket_url_from_media_path;
+use crate::http_server::web_utils::bucket_urls::bucket_url_from_media_path_updated::bucket_url_from_media_path_updated;
 use crate::http_server::web_utils::bucket_urls::bucket_url_from_str_path::bucket_url_from_str_path;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
@@ -366,11 +366,7 @@ async fn modern_media_file_lookup(
       maybe_batch_token: result.maybe_batch_token,
       maybe_scene_source_media_file_token: result.maybe_scene_source_media_file_token,
       media_links: MediaLinksBuilder::from_media_path_and_env(media_domain, server_state.server_environment, &public_bucket_path),
-      public_bucket_url: bucket_url_from_media_path(&public_bucket_path)
-          .map_err(|err| {
-            warn!("error creating URL: {:?}", err);
-            GetMediaFileError::ServerError
-          })?,
+      public_bucket_url: bucket_url_from_media_path_updated(media_domain, server_state.server_environment, &public_bucket_path),
       public_bucket_path: public_bucket_path
           .get_full_object_path_str()
           .to_string(),
