@@ -6,7 +6,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::task_database::TaskDatabase;
 use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
 use crate::core::utils::enum_conversion::task_type::to_generation_action;
-use crate::services::storyteller::threads::events::maybe_handle_frontend_caller_notification::maybe_handle_frontend_caller_notification;
+use super::events::maybe_handle_frontend_caller_notification::maybe_handle_frontend_caller_notification;
 use artcraft_api_defs::jobs::list_session_jobs::ListSessionJobsItem;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
