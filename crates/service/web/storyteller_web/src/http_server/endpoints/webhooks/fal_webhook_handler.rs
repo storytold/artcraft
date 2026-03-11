@@ -115,6 +115,8 @@ pub async fn fal_webhook_handler(
 ) -> Result<Json<SimpleGenericJsonSuccess>, FalWebhookError> {
 
   info!("Received FAL webhook body: {:?}", request);
+
+  println!("--------------------\nFal Result: {:?}\n--------------------", request);
   
   let request_id = request.request_id
       .as_deref()

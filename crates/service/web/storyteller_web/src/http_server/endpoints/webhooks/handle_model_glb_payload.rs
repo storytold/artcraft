@@ -133,7 +133,8 @@ pub async fn handle_model_glb_payload(
       .await?;
   
   info!("Glb media file uploaded with token: {}", media_token);
-  
+
+  info!("Attempting to attach thumbnail (if it exists) ...");
   let result = try_to_attach_thumbnail(
     payload,
     job,
