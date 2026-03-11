@@ -20,14 +20,16 @@ pub enum TaskFailureType {
   /// Catch-all for unknown failures.
   Unknown,
 
-  ModelRulesViolation,
   RuleBansUserImage,
   RuleBansUserImageWithFaces,
   RuleBansUserTextPrompt,
   RuleBansUserContent,
+
   RuleBansGeneratedVideo,
   RuleBansGeneratedAudio,
   RuleBansGeneratedContent,
+
+  /// No reason given for generation failure, but this matches what we were told.
   GenerationFailed,
 }
 
@@ -38,7 +40,7 @@ impl TaskFailureType {
   /// Convert to the Tauri-side `TaskFailureType`, if there is a matching variant.
   pub fn try_from_frontend_failure_category(category: FrontendFailureCategory) -> Self {
     match category {
-      FrontendFailureCategory::ModelRulesViolation => Self::ModelRulesViolation,
+      FrontendFailureCategory::ModelRulesViolation => Self::RuleBansUserContent, // NB: This is a legacy enum value.
       FrontendFailureCategory::RuleBansUserImage => Self::RuleBansUserImage,
       FrontendFailureCategory::RuleBansUserImageWithFaces => Self::RuleBansUserImageWithFaces,
       FrontendFailureCategory::RuleBansUserTextPrompt => Self::RuleBansUserTextPrompt,
@@ -54,7 +56,6 @@ impl TaskFailureType {
   pub const fn to_str(&self) -> &'static str {
     match self {
       Self::Unknown => "unknown",
-      Self::ModelRulesViolation => "model_rules_violation",
       Self::RuleBansUserImage => "rule_bans_user_image",
       Self::RuleBansUserImageWithFaces => "rule_bans_user_image_with_faces",
       Self::RuleBansUserTextPrompt => "rule_bans_user_text_prompt",
@@ -69,7 +70,6 @@ impl TaskFailureType {
   pub fn from_str(value: &str) -> Result<Self, EnumError> {
     match value {
       "unknown" => Ok(Self::Unknown),
-      "model_rules_violation" => Ok(Self::ModelRulesViolation),
       "rule_bans_user_image" => Ok(Self::RuleBansUserImage),
       "rule_bans_user_image_with_faces" => Ok(Self::RuleBansUserImageWithFaces),
       "rule_bans_user_text_prompt" => Ok(Self::RuleBansUserTextPrompt),
@@ -85,7 +85,6 @@ impl TaskFailureType {
   pub fn all_variants() -> BTreeSet<Self> {
     BTreeSet::from([
       Self::Unknown,
-      Self::ModelRulesViolation,
       Self::RuleBansUserImage,
       Self::RuleBansUserImageWithFaces,
       Self::RuleBansUserTextPrompt,
@@ -110,7 +109,6 @@ mod tests {
     #[test]
     fn test_serialization() {
       assert_serialization(TaskFailureType::Unknown, "unknown");
-      assert_serialization(TaskFailureType::ModelRulesViolation, "model_rules_violation");
       assert_serialization(TaskFailureType::RuleBansUserImage, "rule_bans_user_image");
       assert_serialization(TaskFailureType::RuleBansUserImageWithFaces, "rule_bans_user_image_with_faces");
       assert_serialization(TaskFailureType::RuleBansUserTextPrompt, "rule_bans_user_text_prompt");
@@ -124,7 +122,6 @@ mod tests {
     #[test]
     fn to_str() {
       assert_eq!(TaskFailureType::Unknown.to_str(), "unknown");
-      assert_eq!(TaskFailureType::ModelRulesViolation.to_str(), "model_rules_violation");
       assert_eq!(TaskFailureType::RuleBansUserImage.to_str(), "rule_bans_user_image");
       assert_eq!(TaskFailureType::RuleBansUserImageWithFaces.to_str(), "rule_bans_user_image_with_faces");
       assert_eq!(TaskFailureType::RuleBansUserTextPrompt.to_str(), "rule_bans_user_text_prompt");
@@ -138,7 +135,6 @@ mod tests {
     #[test]
     fn from_str() {
       assert_eq!(TaskFailureType::from_str("unknown").unwrap(), TaskFailureType::Unknown);
-      assert_eq!(TaskFailureType::from_str("model_rules_violation").unwrap(), TaskFailureType::ModelRulesViolation);
       assert_eq!(TaskFailureType::from_str("rule_bans_user_image").unwrap(), TaskFailureType::RuleBansUserImage);
       assert_eq!(TaskFailureType::from_str("rule_bans_user_image_with_faces").unwrap(), TaskFailureType::RuleBansUserImageWithFaces);
       assert_eq!(TaskFailureType::from_str("rule_bans_user_text_prompt").unwrap(), TaskFailureType::RuleBansUserTextPrompt);
@@ -163,9 +159,8 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = TaskFailureType::all_variants();
-      assert_eq!(variants.len(), 10);
+      assert_eq!(variants.len(), 9);
       assert_eq!(variants.pop_first(), Some(TaskFailureType::Unknown));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::ModelRulesViolation));
       assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserImage));
       assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserImageWithFaces));
       assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserTextPrompt));
