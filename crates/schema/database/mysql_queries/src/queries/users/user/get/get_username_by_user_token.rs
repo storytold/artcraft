@@ -1,7 +1,7 @@
-use anyhow::anyhow;
 use log::warn;
 use sqlx::MySqlPool;
 
+use crate::errors::select_optional_record_error::SelectOptionalRecordError;
 use tokens::tokens::users::UserToken;
 
 pub struct UsernameDetails {
@@ -14,7 +14,7 @@ pub struct UsernameDetails {
 pub async fn get_username_by_user_token(
   user_token: &UserToken,
   pool: &MySqlPool,
-) -> Result<Option<UsernameDetails>, anyhow::Error> {
+) -> Result<Option<UsernameDetails>, SelectOptionalRecordError> {
   let result = sqlx::query_as!(
     UsernameDetails,
     r#"
@@ -32,15 +32,14 @@ LIMIT 1
     "#,
     user_token.as_str(),
   )
-    .fetch_one(pool)
+    .fetch_optional(pool)
     .await;
 
   match result {
-    Ok(record) => Ok(Some(record)),
-    Err(sqlx::Error::RowNotFound) => Ok(None),
+    Ok(maybe_record) => Ok(maybe_record),
     Err(err) => {
       warn!("get_username_by_user_token query error: {:?}", err);
-      Err(anyhow!("query error"))
+      Err(err.into())
     }
   }
 }
