@@ -1,0 +1,58 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  username,\n  display_name,\n  username_is_generated as `username_is_generated: bool`,\n  username_is_not_customized as `username_is_not_customized: bool`\nFROM users\nWHERE\n  token = ?\n  AND user_deleted_at IS NULL\n  AND mod_deleted_at IS NULL\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "username",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "username_is_generated: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "username_is_not_customized: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 1
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "be9867966f24f44e14f96966cf5113055f00c339dda75334e7e88d355b9bfe72"
+}

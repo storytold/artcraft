@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO wallets\nSET\n  token = ?,\n  wallet_namespace = ?,\n\n  owner_user_token = ?,\n\n  banked_credits = 0,\n  monthly_credits = 0\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "f4fb945b4311bd4458a68d82e417b40f8c36c08d572c07881b89cd157a8a8699"
+}
