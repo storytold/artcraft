@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "\n    SELECT\n      id,\n      task_status,\n      task_type,\n      model_type,\n      provider,\n      provider_job_id,\n      frontend_caller,\n      frontend_subscriber_id,\n      frontend_subscriber_payload,\n      on_complete_primary_media_file_token,\n      on_complete_primary_media_file_class,\n      on_complete_batch_token,\n      on_complete_primary_media_file_cdn_url,\n      on_complete_primary_media_file_thumbnail_url_template,\n      created_at as \"created_at: DateTime<Utc>\",\n      updated_at as \"updated_at: DateTime<Utc>\",\n      completed_at as \"completed_at: DateTime<Utc>\"\n    FROM tasks\n    WHERE is_dismissed_by_user == 0\n  ",
+  "query": "\n    SELECT\n      id,\n      task_status,\n      task_type,\n      model_type,\n      provider,\n      provider_job_id,\n      frontend_caller,\n      frontend_subscriber_id,\n      frontend_subscriber_payload,\n      on_complete_primary_media_file_token,\n      on_complete_primary_media_file_class,\n      on_complete_batch_token,\n      on_complete_primary_media_file_cdn_url,\n      on_complete_primary_media_file_thumbnail_url_template,\n      on_failure_type,\n      on_failure_message,\n      created_at as \"created_at: DateTime<Utc>\",\n      updated_at as \"updated_at: DateTime<Utc>\",\n      completed_at as \"completed_at: DateTime<Utc>\"\n    FROM tasks\n    WHERE is_dismissed_by_user == 0\n  ",
   "describe": {
     "columns": [
       {
@@ -74,18 +74,28 @@
         "type_info": "Text"
       },
       {
-        "name": "created_at: DateTime<Utc>",
+        "name": "on_failure_type",
         "ordinal": 14,
+        "type_info": "Text"
+      },
+      {
+        "name": "on_failure_message",
+        "ordinal": 15,
+        "type_info": "Text"
+      },
+      {
+        "name": "created_at: DateTime<Utc>",
+        "ordinal": 16,
         "type_info": "Int64"
       },
       {
         "name": "updated_at: DateTime<Utc>",
-        "ordinal": 15,
+        "ordinal": 17,
         "type_info": "Int64"
       },
       {
         "name": "completed_at: DateTime<Utc>",
-        "ordinal": 16,
+        "ordinal": 18,
         "type_info": "Int64"
       }
     ],
@@ -107,10 +117,12 @@
       true,
       true,
       true,
+      true,
+      true,
       false,
       false,
       true
     ]
   },
-  "hash": "47f94c127abc20683b25c257aed3c2190b9bd29eb829d61392f08e10fd986767"
+  "hash": "2436eb7bf4b0e23a899311a67a77f71d89eb35461e2113e43cd9d221bfa91c9a"
 }

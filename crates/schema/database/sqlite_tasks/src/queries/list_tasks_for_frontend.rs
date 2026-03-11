@@ -2,6 +2,7 @@ use crate::connection::TaskDbConnection;
 use crate::error::SqliteTasksError;
 use chrono::{DateTime, Utc};
 use enums::common::generation_provider::GenerationProvider;
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_status::TaskStatus;
@@ -30,6 +31,8 @@ pub struct TaskItem {
   pub on_complete_batch_token: Option<BatchGenerationToken>,
   pub on_complete_primary_media_file_cdn_url: Option<String>,
   pub on_complete_primary_media_file_thumbnail_url_template: Option<String>,
+  pub on_failure_type: Option<TaskFailureType>,
+  pub on_failure_message: Option<String>,
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
   pub completed_at: Option<DateTime<Utc>>,
@@ -56,6 +59,8 @@ pub async fn list_tasks_for_frontend(
       on_complete_batch_token,
       on_complete_primary_media_file_cdn_url,
       on_complete_primary_media_file_thumbnail_url_template,
+      on_failure_type,
+      on_failure_message,
       created_at as "created_at: DateTime<Utc>",
       updated_at as "updated_at: DateTime<Utc>",
       completed_at as "completed_at: DateTime<Utc>"
@@ -92,6 +97,10 @@ pub async fn list_tasks_for_frontend(
       on_complete_batch_token: raw.on_complete_batch_token.map(|t| BatchGenerationToken::new_from_str(&t)),
       on_complete_primary_media_file_cdn_url: raw.on_complete_primary_media_file_cdn_url,
       on_complete_primary_media_file_thumbnail_url_template: raw.on_complete_primary_media_file_thumbnail_url_template,
+      on_failure_type: raw.on_failure_type
+          .map(|t| TaskFailureType::from_str(&t))
+          .transpose()?,
+      on_failure_message: raw.on_failure_message,
       created_at: raw.created_at,
       updated_at: raw.updated_at,
       completed_at: raw.completed_at,
@@ -118,6 +127,8 @@ struct TaskItemRaw {
   on_complete_batch_token: Option<String>,
   on_complete_primary_media_file_cdn_url: Option<String>,
   on_complete_primary_media_file_thumbnail_url_template: Option<String>,
+  on_failure_type: Option<String>,
+  on_failure_message: Option<String>,
   created_at: DateTime<Utc>,
   updated_at: DateTime<Utc>,
   completed_at: Option<DateTime<Utc>>,
