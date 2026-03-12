@@ -1,8 +1,8 @@
 use crate::http_server::common_responses::media::cover_image_links_builder::CoverImageLinksBuilder;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
-use crate::http_server::web_utils::bucket_urls::bucket_url_from_media_path::bucket_url_from_media_path;
 use artcraft_api_defs::common::responses::media_file_cover_image_details::{MediaFileCoverImageDetails, MediaFileDefaultCover};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use server_environment::ServerEnvironment;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use tokens::tokens::media_files::MediaFileToken;
@@ -42,6 +42,7 @@ impl MediaFileCoverImageDetailsBuilder {
   pub fn from_optional_db_fields(
     token: &MediaFileToken,
     domain: MediaDomain,
+    server_environment: ServerEnvironment,
     maybe_cover_image_public_bucket_path: Option<&str>,
     maybe_cover_image_public_bucket_prefix: Option<&str>,
     maybe_cover_image_public_bucket_extension: Option<&str>,
@@ -49,6 +50,7 @@ impl MediaFileCoverImageDetailsBuilder {
     Self::from_optional_db_str_fields(
       token.as_str(),
       domain,
+      server_environment,
       maybe_cover_image_public_bucket_path,
       maybe_cover_image_public_bucket_prefix,
       maybe_cover_image_public_bucket_extension
@@ -58,6 +60,7 @@ impl MediaFileCoverImageDetailsBuilder {
   pub fn from_optional_db_str_fields(
     token: &str,
     domain: MediaDomain,
+    server_environment: ServerEnvironment,
     maybe_cover_image_public_bucket_path: Option<&str>,
     maybe_cover_image_public_bucket_prefix: Option<&str>,
     maybe_cover_image_public_bucket_extension: Option<&str>,
@@ -69,29 +72,10 @@ impl MediaFileCoverImageDetailsBuilder {
           maybe_cover_image_public_bucket_extension
         ));
 
-    let maybe_cover_image_public_bucket_path = maybe_bucket_path
-        .as_ref()
-        .map(|bucket_path| bucket_path
-            .get_full_object_path_str()
-            .to_string());
-
-    // NB: Fail construction open.
-    let maybe_cover_image_public_bucket_url = maybe_bucket_path
-        .as_ref()
-        .map(|bucket_path| bucket_url_from_media_path(bucket_path).ok())
-        .flatten();
-
     let maybe_links = CoverImageLinksBuilder::from_maybe_media_path(
-      domain, maybe_bucket_path.as_ref());
-
-    // let maybe_media_links = maybe_bucket_path
-    //     .map(|path| MediaLinks::from_media_path(domain, &path));
+      domain, server_environment, maybe_bucket_path.as_ref());
 
     MediaFileCoverImageDetails {
-      // NB: The code using this builder does not populate or read these legacy fields:
-      // maybe_cover_image_public_bucket_path,
-      // maybe_cover_image_public_bucket_url,
-      // maybe_media_links,
       maybe_links,
       default_cover: MediaFileDefaultCoverBuilder::from_token_str(token),
     }

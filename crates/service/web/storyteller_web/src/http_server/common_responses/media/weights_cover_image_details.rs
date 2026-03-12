@@ -1,12 +1,13 @@
 use url::Url;
 use utoipa::ToSchema;
 
+use crate::http_server::common_responses::media::cdn_link;
 use crate::http_server::common_responses::media::cover_image_links::CoverImageLinks;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
-use crate::http_server::web_utils::bucket_urls::bucket_url_from_media_path::bucket_url_from_media_path;
 use crate::util::placeholder_images::cover_images::default_cover_image_color_from_token::default_cover_image_color_from_token;
 use crate::util::placeholder_images::cover_images::default_cover_image_from_token::default_cover_image_from_token;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use server_environment::ServerEnvironment;
 use tokens::tokens::model_weights::ModelWeightToken;
 
 /// Everything we need to create a cover image.
@@ -45,6 +46,7 @@ impl WeightsCoverImageDetails {
 
   pub fn from_optional_db_fields(
     domain: MediaDomain,
+    server_environment: ServerEnvironment,
     model_weight_token: &ModelWeightToken,
     maybe_cover_image_public_bucket_path: Option<&str>,
     maybe_cover_image_public_bucket_prefix: Option<&str>,
@@ -66,13 +68,15 @@ impl WeightsCoverImageDetails {
     // NB: Fail construction open.
     let maybe_cover_image_public_bucket_url = maybe_bucket_path
         .as_ref()
-        .map(|bucket_path| bucket_url_from_media_path(bucket_path).ok())
-        .flatten();
-
-    let image_index = default_cover_image_from_token(model_weight_token);
+        .and_then(|bucket_path| {
+          let rooted_path = bucket_path.get_full_object_path_str();
+          let mut url = cdn_link::new_cdn_url(domain, server_environment);
+          url.set_path(rooted_path);
+          Some(url)
+        });
 
     let maybe_links = CoverImageLinks::from_maybe_media_path(
-      domain, maybe_bucket_path.as_ref());
+      domain, server_environment, maybe_bucket_path.as_ref());
 
     Self {
       maybe_cover_image_public_bucket_path,
@@ -96,6 +100,7 @@ impl WeightsDefaultCoverInfo {
 mod tests {
   use crate::http_server::common_responses::media::media_domain::MediaDomain;
   use crate::http_server::common_responses::media::weights_cover_image_details::WeightsCoverImageDetails;
+  use server_environment::ServerEnvironment;
   use tokens::tokens::model_weights::ModelWeightToken;
   use url::Url;
 
@@ -109,6 +114,7 @@ mod tests {
 
     let cover_image = WeightsCoverImageDetails::from_optional_db_fields(
       domain,
+      ServerEnvironment::Production,
       &token,
       maybe_public_bucket_hash,
       maybe_prefix,

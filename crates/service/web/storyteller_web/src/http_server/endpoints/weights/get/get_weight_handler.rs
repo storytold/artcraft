@@ -184,6 +184,7 @@ pub async fn get_weight_handler(
 
     let cover_image_details = WeightsCoverImageDetails::from_optional_db_fields(
         media_domain,
+        server_state.server_environment,
         &weight.token,
         weight.maybe_cover_image_public_bucket_hash.as_deref(),
         weight.maybe_cover_image_public_bucket_prefix.as_deref(),

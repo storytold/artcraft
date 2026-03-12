@@ -266,6 +266,7 @@ pub async fn search_session_media_files_handler(
           cover_image: MediaFileCoverImageDetails::from_optional_db_fields(
             &result.token,
             media_domain,
+            server_state.server_environment,
             result.maybe_cover_image_public_bucket_hash.as_deref(),
             result.maybe_cover_image_public_bucket_prefix.as_deref(),
             result.maybe_cover_image_public_bucket_extension.as_deref(),

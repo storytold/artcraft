@@ -3,10 +3,11 @@ use std::hash::{Hash, Hasher};
 use url::Url;
 use utoipa::ToSchema;
 
+use crate::http_server::common_responses::media::cdn_link;
 use crate::http_server::common_responses::media::cover_image_links::CoverImageLinks;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
-use crate::http_server::web_utils::bucket_urls::bucket_url_from_media_path::bucket_url_from_media_path;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use server_environment::ServerEnvironment;
 use tokens::tokens::media_files::MediaFileToken;
 
 /// There are currently 25 cover images numbered 0 to 24 (0-indexed).
@@ -62,7 +63,11 @@ impl MediaFileCoverImageDetails {
   }
 
   /// For non-media file tokens (eg. emulated TTS results)
-  pub fn from_token_str(token: &str) -> Self {
+  pub fn from_legacy_token_str(token: &str) -> Self {
+    Self::from_token_str(token)
+  }
+  
+  fn from_token_str(token: &str) -> Self {
     Self {
       // TODO(bt,2024-04-07): Add column to schema to support + CRUD to add.
       maybe_cover_image_public_bucket_path: None,
@@ -76,6 +81,7 @@ impl MediaFileCoverImageDetails {
   pub fn from_optional_db_fields(
     token: &MediaFileToken,
     domain: MediaDomain,
+    server_environment: ServerEnvironment,
     maybe_cover_image_public_bucket_path: Option<&str>,
     maybe_cover_image_public_bucket_prefix: Option<&str>,
     maybe_cover_image_public_bucket_extension: Option<&str>,
@@ -83,15 +89,17 @@ impl MediaFileCoverImageDetails {
     Self::from_optional_db_str_fields(
       token.as_str(),
       domain,
+      server_environment,
       maybe_cover_image_public_bucket_path,
       maybe_cover_image_public_bucket_prefix,
       maybe_cover_image_public_bucket_extension
     )
   }
 
-  pub fn from_optional_db_str_fields(
+  fn from_optional_db_str_fields(
     token: &str,
     domain: MediaDomain,
+    server_environment: ServerEnvironment,
     maybe_cover_image_public_bucket_path: Option<&str>,
     maybe_cover_image_public_bucket_prefix: Option<&str>,
     maybe_cover_image_public_bucket_extension: Option<&str>,
@@ -112,19 +120,19 @@ impl MediaFileCoverImageDetails {
     // NB: Fail construction open.
     let maybe_cover_image_public_bucket_url = maybe_bucket_path
         .as_ref()
-        .map(|bucket_path| bucket_url_from_media_path(bucket_path).ok())
-        .flatten();
+        .and_then(|bucket_path| {
+          let rooted_path = bucket_path.get_full_object_path_str();
+          let mut url = cdn_link::new_cdn_url(domain, server_environment);
+          url.set_path(rooted_path);
+          Some(url)
+        });
 
     let maybe_links = CoverImageLinks::from_maybe_media_path(
-      domain, maybe_bucket_path.as_ref());
-
-    // let maybe_media_links = maybe_bucket_path
-    //     .map(|path| MediaLinks::from_media_path(domain, &path));
+      domain, server_environment, maybe_bucket_path.as_ref());
 
     Self {
       maybe_cover_image_public_bucket_path,
       maybe_cover_image_public_bucket_url,
-      //maybe_media_links,
       maybe_links,
       default_cover: MediaFileDefaultCover::from_token_str(token),
     }

@@ -243,6 +243,7 @@ pub async fn list_user_bookmarks_for_user_handler(
               maybe_media_file_cover = Some(MediaFileCoverImageDetails::from_optional_db_fields(
                 &MediaFileToken::new_from_str(&user_bookmark.entity_token),
                 media_domain,
+                server_state.server_environment,
                 user_bookmark.maybe_media_file_cover_image_public_bucket_hash.as_deref(),
                 user_bookmark.maybe_media_file_cover_image_public_bucket_prefix.as_deref(),
                 user_bookmark.maybe_media_file_cover_image_public_bucket_extension.as_deref(),
@@ -251,6 +252,7 @@ pub async fn list_user_bookmarks_for_user_handler(
             UserBookmarkEntityType::ModelWeight => {
               maybe_model_weight_cover = Some(WeightsCoverImageDetails::from_optional_db_fields(
                 media_domain,
+                server_state.server_environment,
                 &ModelWeightToken::new_from_str(&user_bookmark.entity_token),
                 user_bookmark.maybe_model_weight_cover_image_public_bucket_hash.as_deref(),
                 user_bookmark.maybe_model_weight_cover_image_public_bucket_prefix.as_deref(),

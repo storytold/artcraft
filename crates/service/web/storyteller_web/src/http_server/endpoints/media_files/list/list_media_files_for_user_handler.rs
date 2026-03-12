@@ -348,6 +348,7 @@ pub async fn list_media_files_for_user_handler(
           cover_image: MediaFileCoverImageDetails::from_optional_db_fields(
             &record.token,
             media_domain,
+            server_state.server_environment,
             record.maybe_file_cover_image_public_bucket_hash.as_deref(),
             record.maybe_file_cover_image_public_bucket_prefix.as_deref(),
             record.maybe_file_cover_image_public_bucket_extension.as_deref(),

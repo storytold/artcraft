@@ -201,6 +201,7 @@ pub async fn search_model_weights_impl(
       .map(|result| {
         let cover_image_details = WeightsCoverImageDetails::from_optional_db_fields(
           media_domain,
+          server_state.server_environment,
           &result.token,
           result.maybe_cover_image_public_bucket_hash.as_deref(),
           result.maybe_cover_image_public_bucket_prefix.as_deref(),
