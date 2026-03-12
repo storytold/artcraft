@@ -29,6 +29,7 @@
         // "apps/editor2d/app/src/*",
         "apps/artcraft/app/src/*"
       ],
+      "@storyteller/api": ["libs/api/src/index.ts"],
       "@storyteller/markdown-content": ["libs/markdown-content/src/index.ts"]
     }
   }
