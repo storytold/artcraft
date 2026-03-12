@@ -18,6 +18,8 @@
     "lucide-react": "^0.512.0",
     "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
+    "react-helmet-async": "^3.0.0",
+    "react-masonry-css": "^1.0.16",
     "react-resizable-panels": "^4.7.2",
     "shadcn": "^4.0.5",
     "sonner": "^2.0.7",

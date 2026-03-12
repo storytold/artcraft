@@ -8,6 +8,24 @@ for = "/build/*"
 [headers.values]
 "Cache-Control" = "public, max-age=31560000, immutable"
 
+[[headers]]
+for = "/og-image.png"
+
+[headers.values]
+"Cache-Control" = "public, max-age=86400"
+
+[[headers]]
+for = "/robots.txt"
+
+[headers.values]
+"Cache-Control" = "public, max-age=3600"
+
+[[headers]]
+for = "/sitemap.xml"
+
+[headers.values]
+"Cache-Control" = "public, max-age=3600"
+
 # [[redirects]]
 #   from = "/ingest/static/*"
 #   to = "https://us-assets.i.posthog.com/static/:splat"
