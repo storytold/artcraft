@@ -34,7 +34,12 @@ export function LoginPage() {
 
   return (
     <>
-      <SEO title="Log in" url="/login" />
+      <SEO
+        title="Log In"
+        description="Log in to your GenHub account to share, remix, and save AI-generated art and prompts."
+        url="/login"
+        noIndex
+      />
 
       <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4">
         <div className="w-full max-w-sm">

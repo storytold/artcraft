@@ -26,24 +26,23 @@ export function Navbar() {
       <nav className="mx-auto flex h-14 max-w-[1800px] items-center justify-between px-4 sm:px-6">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 28 28"
-            fill="none"
-            className="shrink-0"
-          >
-            <path d="M14 2L26 8v12l-12 6L2 20V8l12-6z" fill="currentColor" />
-            <path d="M14 6l8 4v8l-8 4-8-4V10l8-4z" fill="white" />
-            <path d="M14 10l4 2v4l-4 2-4-2v-4l4-2z" fill="currentColor" />
-          </svg>
-          <span className="text-lg font-bold">GenHub</span>
+          <img
+            src="/svg/artcraft-logo-black.svg"
+            alt="ArtCraft"
+            className="size-6 dark:invert"
+          />
+          <span className="text-xl font-extrabold">GenHub</span>
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map((link) => (
-            <Button key={link.to} variant="ghost" size="sm" asChild>
+            <Button
+              key={link.to}
+              variant="ghost"
+              className="font-semibold"
+              asChild
+            >
               <Link to={link.to}>{link.label}</Link>
             </Button>
           ))}
@@ -55,7 +54,7 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="icon-sm"
                   className="ml-1 rounded-full"
                 >
                   <Avatar className="size-7">
@@ -74,7 +73,7 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild className="ml-1">
+            <Button asChild className="ml-3">
               <Link to="/login">Login</Link>
             </Button>
           )}
@@ -106,7 +105,6 @@ export function Navbar() {
               <Button
                 key={link.to}
                 variant="ghost"
-                size="sm"
                 asChild
                 className="justify-start"
                 onClick={() => setMobileOpen(false)}
@@ -116,7 +114,6 @@ export function Navbar() {
             ))}
             {!loading && !user && (
               <Button
-                size="sm"
                 asChild
                 className="mt-2"
                 onClick={() => setMobileOpen(false)}
@@ -127,7 +124,6 @@ export function Navbar() {
             {!loading && user && (
               <Button
                 variant="ghost"
-                size="sm"
                 className="justify-start"
                 onClick={() => {
                   logout();

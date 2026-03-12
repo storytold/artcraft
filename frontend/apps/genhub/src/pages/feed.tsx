@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -25,6 +26,9 @@ const PAGE_SIZE = 20;
 const INITIAL_ITEMS = generateMockItems(PAGE_SIZE, 0);
 
 export function FeedPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [activeTab, setActiveTab] = useState<FeedTab>("featured");
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>(SORT_OPTIONS[0].value);
@@ -39,6 +43,15 @@ export function FeedPage() {
       return [...prev, ...next];
     });
   }, []);
+
+  const handleCardClick = useCallback(
+    (item: GalleryItem) => {
+      navigate(`/prompt/${item.id}`, {
+        state: { backgroundLocation: location },
+      });
+    },
+    [navigate, location],
+  );
 
   // Filter items for display (filtering happens client-side on mock data)
   const filteredItems =
@@ -56,27 +69,61 @@ export function FeedPage() {
 
   return (
     <>
-      <SEO description="Community prompt library. Copy, share, and perfect your AI-generated content." />
+      <SEO
+        title="Explore AI Art & Prompts"
+        description="Browse a community-driven gallery of AI-generated art and prompts. Discover, copy, share, and remix creations made with Stable Diffusion, Midjourney, DALL-E, and more."
+        keywords="AI art, AI prompts, stable diffusion, midjourney, DALL-E, prompt gallery, AI generated images, text to image, prompt engineering"
+        url="/"
+        jsonLd={{
+          "@type": "WebSite",
+          name: "GenHub",
+          url: "https://genhub.app",
+          description:
+            "Community-driven gallery of AI-generated art and prompts.",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://genhub.app/?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
 
       {/* Hero */}
-      <section className="mx-auto max-w-3xl px-4 pb-8 pt-10 text-center sm:px-6 sm:pt-12">
-        <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
-          Explore Prompt Gallery
-        </h1>
-        <p className="mt-3 text-base sm:text-xl text-muted-foreground">
-          Community prompt library. Copy, share, and perfect your AI-generated
-          content.
-        </p>
+      <section className="relative overflow-hidden">
+        {/* Background decoration — blueprint grid with radial fade */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.06] dark:opacity-[0.08]"
+          aria-hidden="true"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--foreground) 1px, transparent 1px), linear-gradient(90deg, var(--foreground) 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+            maskImage:
+              "radial-gradient(ellipse 60% 70% at 50% 40%, black 20%, transparent 100%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 60% 70% at 50% 40%, black 20%, transparent 100%)",
+          }}
+        />
 
-        {/* Search */}
-        <div className="relative mx-auto mt-10 max-w-lg">
-          <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search for prompts, model, or inspiration..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-12 rounded-full pl-11 pr-4 text-base"
-          />
+        <div className="relative mx-auto max-w-3xl px-4 pb-8 pt-10 text-center sm:px-6 sm:pt-12">
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl">
+            Explore Prompt Gallery
+          </h1>
+          <p className="mt-3 text-base sm:text-xl text-muted-foreground">
+            Community prompt library. Copy, share, and perfect your AI-generated
+            content.
+          </p>
+
+          {/* Search */}
+          <div className="relative mx-auto mt-10 max-w-lg">
+            <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search for prompts, model, or inspiration..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-12 rounded-full pl-11 pr-4 text-base bg-muted"
+            />
+          </div>
         </div>
       </section>
 
@@ -126,7 +173,11 @@ export function FeedPage() {
         <div className="mt-6">
           <MasonryGrid hasMore={hasMore} onLoadMore={loadMore}>
             {filteredItems.map((item) => (
-              <GalleryCard key={item.id} item={item} />
+              <GalleryCard
+                key={item.id}
+                item={item}
+                onClick={() => handleCardClick(item)}
+              />
             ))}
           </MasonryGrid>
         </div>

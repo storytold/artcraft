@@ -39,7 +39,12 @@ export function SignupPage() {
 
   return (
     <>
-      <SEO title="Sign up" url="/signup" />
+      <SEO
+        title="Sign Up"
+        description="Create a free GenHub account to discover, share, and remix AI-generated art and prompts with the community."
+        url="/signup"
+        noIndex
+      />
 
       <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-4">
         <div className="w-full max-w-sm">
