@@ -1,5 +1,5 @@
 import { defineConfig, type Plugin } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import { nxViteTsPaths } from "@nx/vite/plugins/nx-tsconfig-paths.plugin";
 import path from "path";
 import { resolve } from "node:path";
 import wasm from "vite-plugin-wasm";
@@ -56,7 +56,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [sparkWasmDataUrlFix(), tsconfigPaths(), wasm()],
+  plugins: [sparkWasmDataUrlFix(), nxViteTsPaths(), wasm()],
   server: {
     fs: {
       allow: [workspaceRoot],

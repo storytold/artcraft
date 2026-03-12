@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "name": "genhub"
+    "name": "genhub",
+    "implicitDependencies": ["!artcraft"]
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
