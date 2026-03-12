@@ -1,41 +1,19 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "jsx": "preserve",
-    "noEmit": true,
-    "emitDeclarationOnly": false,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "incremental": true,
-    "plugins": [{ "name": "next" }],
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
-    },
-    "outDir": "dist",
-    "rootDir": "."
+    }
   },
-  "include": [
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "app/**/*.js",
-    "app/**/*.jsx",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "../../apps/genhub/.next/types/**/*.ts",
-    "../../dist/apps/genhub/.next/types/**/*.ts",
-    "next-env.d.ts"
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
   ],
-  "exclude": [
-    "out-tsc",
-    "dist",
-    "node_modules",
-    "app/**/*.spec.ts",
-    "app/**/*.test.ts",
-    ".next"
-  ]
+  "extends": "../../tsconfig.base.json"
 }

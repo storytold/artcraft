@@ -49,7 +49,3 @@ vitest.config.*.timestamp*
 # Environment files
 .env.local
 .env*.local
-
-# Next.js
-.next
-out
