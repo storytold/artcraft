@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Node, NodeType } from "../Node";
-import { EnqueueImageBgRemoval } from "@storyteller/tauri-api";
+import { EnqueueImageBgRemoval } from "libs/tauri-api/src/lib/enqueue/EnqueueImageBgRemovalCommand";
 import { ImageBundle } from "~/pages/PageEdit/HistoryStack";
 import { BaseSelectorImage } from "~/pages/PageEdit/BaseImageSelector";
 
