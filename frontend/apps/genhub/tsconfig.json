@@ -9,6 +9,9 @@
   "include": [],
   "references": [
     {
+      "path": "../artcraft"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {
