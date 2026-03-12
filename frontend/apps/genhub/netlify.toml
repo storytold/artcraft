@@ -1,0 +1,6 @@
+[build]
+  command = "npx nx build genhub"
+  publish = "apps/genhub/.next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
