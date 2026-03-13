@@ -1,6 +1,6 @@
-use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use crate::connection::TaskDbConnection;
 use crate::error::SqliteTasksError;
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use enums::tauri::tasks::task_status::TaskStatus;
 use tokens::tokens::sqlite::tasks::TaskId;
 
