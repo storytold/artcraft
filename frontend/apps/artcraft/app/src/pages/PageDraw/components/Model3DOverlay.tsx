@@ -296,6 +296,8 @@ export function Model3DOverlay({
           top: screenRect.top,
           width: screenRect.width,
           height: screenRect.height,
+          transform: `rotate(${node.rotation ?? 0}deg)`,
+          transformOrigin: "0 0",
         }}
         onPointerDown={(e) => e.stopPropagation()}
       >

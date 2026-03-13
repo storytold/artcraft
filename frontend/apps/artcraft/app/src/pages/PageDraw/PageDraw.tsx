@@ -71,10 +71,12 @@ const Edit3DButton = memo(function Edit3DButton({
 }: Edit3DButtonProps) {
   const [, forceUpdate] = useState(0);
   const bump = useCallback(() => forceUpdate((t) => t + 1), []);
+  const [interacting, setInteracting] = useState(false);
 
-  // Attach Konva event listeners so the button repositions on every stage
-  // pan/zoom and on every transformer handle move (before onTransformEnd fires).
-  // Re-runs when nodeId changes so fresh transformers are picked up.
+  // Attach Konva event listeners:
+  // - Stage pan/zoom → bump() to reposition
+  // - Transformer start/end → hide/show button to avoid jitter
+  // - Node drag start/end → hide/show button
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage?.on) return;
@@ -84,35 +86,45 @@ const Edit3DButton = memo(function Edit3DButton({
       `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
       bump,
     );
+
     const transformers = stage.find("Transformer");
-    transformers.forEach((tr) => tr.on(`transform${ns}`, bump));
+    transformers.forEach((tr) => {
+      tr.on(`transformstart${ns}`, () => setInteracting(true));
+      tr.on(`transformend${ns}`, () => setInteracting(false));
+    });
+
+    const konvaNode = stage.findOne("#" + nodeId);
+    if (konvaNode) {
+      konvaNode.on(`dragstart${ns}`, () => setInteracting(true));
+      konvaNode.on(`dragend${ns}`, () => setInteracting(false));
+    }
 
     return () => {
-      stage.off(".edit3dbtn");
-      transformers.forEach((tr) => tr.off(".edit3dbtn"));
+      stage.off(ns);
+      transformers.forEach((tr) => tr.off(ns));
+      konvaNode?.off(ns);
     };
   }, [stageRef, bump, nodeId]);
+
+  if (interacting) return null;
 
   const stage = stageRef.current;
   if (!stage?.container) return null;
 
-  const stageRect = stage.container().getBoundingClientRect();
-  const sx = stage.scaleX();
-  const sy = stage.scaleY();
-
-  // Read live Konva node geometry so the button tracks transformer handles
-  // in real-time (the store value is stale until onTransformEnd commits it).
   const konvaNode = stage.findOne("#" + nodeId) as Konva.Shape | undefined;
   if (!konvaNode) return null;
 
-  const screenLeft = stageRect.left + stage.x() + konvaNode.x() * sx;
-  const screenTop = stageRect.top + stage.y() + konvaNode.y() * sy;
-  const screenW = konvaNode.width() * konvaNode.scaleX() * sx;
+  // getClientRect() returns the AABB in stage-container coords after all
+  // transforms (rotation, scale, stage pan/zoom) — no manual math needed.
+  const clientRect = konvaNode.getClientRect();
+  const stageContainerRect = stage.container().getBoundingClientRect();
+  const btnLeft = stageContainerRect.left + clientRect.x + clientRect.width / 2;
+  const btnTop = stageContainerRect.top + clientRect.y + clientRect.height / 2;
 
   return (
     <button
-      className="pointer-events-auto fixed z-40 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-blue-500"
-      style={{ left: screenLeft + screenW / 2, top: screenTop - 36 }}
+      className="pointer-events-auto fixed z-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-blue-500"
+      style={{ left: btnLeft, top: btnTop }}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={() => onEdit(nodeId)}
     >
@@ -382,14 +394,19 @@ const PageDraw = () => {
           );
           const img = new globalThis.Image();
           img.onload = () => {
+            const canvasDims = getAspectRatioDimensions();
+            const maxDim = Math.min(canvasDims.width, canvasDims.height) * 0.25;
+            const aspect = img.width / img.height;
+            const displayW = Math.min(img.width, maxDim * Math.max(1, aspect));
+            const displayH = displayW / aspect;
             createImageFrom3DModel(
-              stagePoint.x,
-              stagePoint.y,
+              stagePoint.x - displayW / 2,
+              stagePoint.y - displayH / 2,
               dataUrl,
               modelUrl,
-              DEFAULT_MODEL3D_PARAMS,
-              img.width,
-              img.height,
+              { ...DEFAULT_MODEL3D_PARAMS, nativeWidth: img.width, nativeHeight: img.height },
+              displayW,
+              displayH,
             );
             toast.success(`Added "${item.label}" to canvas`, { id: toastId });
           };
