@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n\n    jobs.status as `status: enums::common::job_status_plus::JobStatusPlus`,\n    jobs.attempt_count,\n\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n\n    jobs.product_category as `product_category: enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory`,\n    jobs.inference_category as `inference_category: enums::by_table::generic_inference_jobs::inference_category::InferenceCategory`,\n    jobs.maybe_model_type,\n    jobs.maybe_model_token,\n    jobs.maybe_raw_inference_text,\n    jobs.maybe_inference_args,\n\n    jobs.frontend_failure_category as `maybe_frontend_failure_category: enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory`,\n\n    jobs.on_success_result_entity_type as maybe_result_entity_type,\n    jobs.on_success_result_entity_token as maybe_result_entity_token,\n    jobs.on_success_result_batch_token as maybe_result_batch_token,\n\n    model_weights.title as maybe_model_weights_title,\n    tts_models.title as maybe_tts_model_title,\n    voice_conversion_models.title as maybe_voice_conversion_model_title,\n\n    tts_results.public_bucket_wav_audio_path as maybe_tts_public_bucket_path,\n    voice_conversion_results.public_bucket_hash as maybe_voice_conversion_public_bucket_hash,\n\n    media_files.public_bucket_directory_hash as maybe_media_file_public_bucket_directory_hash,\n    media_files.maybe_public_bucket_prefix as maybe_media_file_public_bucket_prefix,\n    media_files.maybe_public_bucket_extension as maybe_media_file_public_bucket_extension,\n\n    jobs.assigned_worker as maybe_assigned_worker,\n    jobs.assigned_cluster as maybe_assigned_cluster,\n\n    jobs.is_keepalive_required,\n\n    jobs.created_at,\n    jobs.updated_at,\n\n    jobs.first_started_at as maybe_first_started_at,\n    jobs.successfully_completed_at as maybe_successfully_completed_at,\n\n    NOW() as database_clock\n\nFROM generic_inference_jobs as jobs\n\nLEFT OUTER JOIN model_weights ON jobs.maybe_model_token = model_weights.token\nLEFT OUTER JOIN tts_models ON jobs.maybe_model_token = tts_models.token\nLEFT OUTER JOIN voice_conversion_models ON jobs.maybe_model_token = voice_conversion_models.token\n\nLEFT OUTER JOIN tts_results ON jobs.on_success_result_entity_token = tts_results.token\nLEFT OUTER JOIN voice_conversion_results ON jobs.on_success_result_entity_token = voice_conversion_results.token\nLEFT OUTER JOIN media_files ON jobs.on_success_result_entity_token = media_files.token\n\nWHERE jobs.token = ?\n        ",
+  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n\n    jobs.status as `status: enums::common::job_status_plus::JobStatusPlus`,\n    jobs.attempt_count,\n\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n    jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,\n    jobs.creator_ip_address,\n\n    jobs.product_category as `product_category: enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory`,\n    jobs.inference_category as `inference_category: enums::by_table::generic_inference_jobs::inference_category::InferenceCategory`,\n    jobs.maybe_model_type,\n    jobs.maybe_model_token,\n    jobs.maybe_raw_inference_text,\n    jobs.maybe_inference_args,\n\n    jobs.frontend_failure_category as `maybe_frontend_failure_category: enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory`,\n    jobs.failure_reason,\n\n    jobs.on_success_result_entity_type as maybe_result_entity_type,\n    jobs.on_success_result_entity_token as maybe_result_entity_token,\n    jobs.on_success_result_batch_token as maybe_result_batch_token,\n\n    model_weights.title as maybe_model_weights_title,\n    tts_models.title as maybe_tts_model_title,\n    voice_conversion_models.title as maybe_voice_conversion_model_title,\n\n    tts_results.public_bucket_wav_audio_path as maybe_tts_public_bucket_path,\n    voice_conversion_results.public_bucket_hash as maybe_voice_conversion_public_bucket_hash,\n\n    media_files.public_bucket_directory_hash as maybe_media_file_public_bucket_directory_hash,\n    media_files.maybe_public_bucket_prefix as maybe_media_file_public_bucket_prefix,\n    media_files.maybe_public_bucket_extension as maybe_media_file_public_bucket_extension,\n\n    jobs.assigned_worker as maybe_assigned_worker,\n    jobs.assigned_cluster as maybe_assigned_cluster,\n\n    jobs.is_keepalive_required,\n\n    jobs.created_at,\n    jobs.updated_at,\n\n    jobs.first_started_at as maybe_first_started_at,\n    jobs.successfully_completed_at as maybe_successfully_completed_at,\n\n    NOW() as database_clock\n\nFROM generic_inference_jobs as jobs\n\nLEFT OUTER JOIN model_weights ON jobs.maybe_model_token = model_weights.token\nLEFT OUTER JOIN tts_models ON jobs.maybe_model_token = tts_models.token\nLEFT OUTER JOIN voice_conversion_models ON jobs.maybe_model_token = voice_conversion_models.token\n\nLEFT OUTER JOIN tts_results ON jobs.on_success_result_entity_token = tts_results.token\nLEFT OUTER JOIN voice_conversion_results ON jobs.on_success_result_entity_token = voice_conversion_results.token\nLEFT OUTER JOIN media_files ON jobs.on_success_result_entity_token = media_files.token\n\nWHERE jobs.token = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -135,6 +135,16 @@
       },
       {
         "ordinal": 13,
+        "name": "failure_reason",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 2048
+        }
+      },
+      {
+        "ordinal": 14,
         "name": "maybe_result_entity_type",
         "type_info": {
           "type": "VarString",
@@ -144,7 +154,7 @@
         }
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "maybe_result_entity_token",
         "type_info": {
           "type": "VarString",
@@ -154,7 +164,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "maybe_result_batch_token",
         "type_info": {
           "type": "VarString",
@@ -164,7 +174,7 @@
         }
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "maybe_model_weights_title",
         "type_info": {
           "type": "VarString",
@@ -174,7 +184,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "maybe_tts_model_title",
         "type_info": {
           "type": "VarString",
@@ -184,7 +194,7 @@
         }
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "maybe_voice_conversion_model_title",
         "type_info": {
           "type": "VarString",
@@ -194,7 +204,7 @@
         }
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "maybe_tts_public_bucket_path",
         "type_info": {
           "type": "VarString",
@@ -204,7 +214,7 @@
         }
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "maybe_voice_conversion_public_bucket_hash",
         "type_info": {
           "type": "VarString",
@@ -214,7 +224,7 @@
         }
       },
       {
-        "ordinal": 21,
+        "ordinal": 22,
         "name": "maybe_media_file_public_bucket_directory_hash",
         "type_info": {
           "type": "VarString",
@@ -224,7 +234,7 @@
         }
       },
       {
-        "ordinal": 22,
+        "ordinal": 23,
         "name": "maybe_media_file_public_bucket_prefix",
         "type_info": {
           "type": "VarString",
@@ -234,7 +244,7 @@
         }
       },
       {
-        "ordinal": 23,
+        "ordinal": 24,
         "name": "maybe_media_file_public_bucket_extension",
         "type_info": {
           "type": "VarString",
@@ -244,7 +254,7 @@
         }
       },
       {
-        "ordinal": 24,
+        "ordinal": 25,
         "name": "maybe_assigned_worker",
         "type_info": {
           "type": "VarString",
@@ -254,7 +264,7 @@
         }
       },
       {
-        "ordinal": 25,
+        "ordinal": 26,
         "name": "maybe_assigned_cluster",
         "type_info": {
           "type": "VarString",
@@ -264,7 +274,7 @@
         }
       },
       {
-        "ordinal": 26,
+        "ordinal": 27,
         "name": "is_keepalive_required",
         "type_info": {
           "type": "Tiny",
@@ -274,7 +284,7 @@
         }
       },
       {
-        "ordinal": 27,
+        "ordinal": 28,
         "name": "created_at",
         "type_info": {
           "type": "Timestamp",
@@ -284,7 +294,7 @@
         }
       },
       {
-        "ordinal": 28,
+        "ordinal": 29,
         "name": "updated_at",
         "type_info": {
           "type": "Timestamp",
@@ -294,7 +304,7 @@
         }
       },
       {
-        "ordinal": 29,
+        "ordinal": 30,
         "name": "maybe_first_started_at",
         "type_info": {
           "type": "Timestamp",
@@ -304,7 +314,7 @@
         }
       },
       {
-        "ordinal": 30,
+        "ordinal": 31,
         "name": "maybe_successfully_completed_at",
         "type_info": {
           "type": "Timestamp",
@@ -314,7 +324,7 @@
         }
       },
       {
-        "ordinal": 31,
+        "ordinal": 32,
         "name": "database_clock",
         "type_info": {
           "type": "Datetime",
@@ -354,6 +364,7 @@
       true,
       true,
       true,
+      true,
       false,
       false,
       false,
@@ -362,5 +373,5 @@
       false
     ]
   },
-  "hash": "243afe0bc574f9f233c7797add9faf96440e2bafd52032e07951272fb1ec78b1"
+  "hash": "a2c9e2f61eba666254f8432b3c50a0a7738ee3b3faa77c5281bc8e4af96159b9"
 }

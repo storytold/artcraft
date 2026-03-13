@@ -298,6 +298,7 @@ fn db_record_to_response_payload(
       maybe_failure_category_updated: record
           .maybe_frontend_failure_category
           .map(|val| FrontendFailureCategoryForApiClients::from_db_enum(val)),
+      maybe_failure_message: record.failure_reason,
       progress_percentage,
       maybe_current_execution_duration_seconds,
     },

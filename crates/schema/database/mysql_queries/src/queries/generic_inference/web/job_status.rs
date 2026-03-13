@@ -25,6 +25,7 @@ pub struct GenericInferenceJobStatus {
   pub maybe_first_started_at: Option<DateTime<Utc>>,
 
   pub maybe_frontend_failure_category: Option<FrontendFailureCategory>,
+  pub failure_reason: Option<String>,
 
   pub request_details: RequestDetails,
   pub maybe_result_details: Option<ResultDetails>,

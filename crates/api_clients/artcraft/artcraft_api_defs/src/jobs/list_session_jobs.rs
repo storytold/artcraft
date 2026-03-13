@@ -110,6 +110,9 @@ pub struct ListSessionStatusDetailsResponse {
   /// An enum the frontend can use to display localized/I18N error
   /// messages. These pertain to both transient and permanent failures.
   pub maybe_failure_category_updated: Option<FrontendFailureCategoryForApiClients>,
+  
+  /// User-facing failure messages
+  pub maybe_failure_message: Option<String>,
 
   /// This is an integer number between 0 and 100 (both inclusive) that
   /// reports the completeness.

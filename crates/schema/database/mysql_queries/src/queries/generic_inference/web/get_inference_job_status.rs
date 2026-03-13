@@ -59,6 +59,7 @@ SELECT
     jobs.maybe_inference_args,
 
     jobs.frontend_failure_category as `maybe_frontend_failure_category: enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory`,
+    jobs.failure_reason,
 
     jobs.on_success_result_entity_type as maybe_result_entity_type,
     jobs.on_success_result_entity_token as maybe_result_entity_token,
@@ -231,6 +232,7 @@ fn raw_record_to_public_result(record: RawGenericInferenceJobStatus) -> GenericI
     maybe_assigned_cluster: record.maybe_assigned_cluster,
     maybe_first_started_at: record.maybe_first_started_at,
     maybe_frontend_failure_category: record.maybe_frontend_failure_category,
+    failure_reason: record.failure_reason,
     request_details: RequestDetails {
       maybe_product_category: record.product_category,
       inference_category: record.inference_category,
@@ -290,6 +292,7 @@ struct RawGenericInferenceJobStatus {
   pub maybe_assigned_cluster: Option<String>,
 
   pub maybe_frontend_failure_category: Option<FrontendFailureCategory>,
+  pub failure_reason: Option<String>,
 
   pub is_keepalive_required: i8,
 

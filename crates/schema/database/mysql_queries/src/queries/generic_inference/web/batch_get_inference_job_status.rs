@@ -100,6 +100,7 @@ SELECT
     jobs.maybe_inference_args,
 
     jobs.frontend_failure_category as maybe_frontend_failure_category,
+    jobs.failure_reason,
 
     jobs.on_success_result_entity_type as maybe_result_entity_type,
     jobs.on_success_result_entity_token as maybe_result_entity_token,
@@ -255,6 +256,7 @@ fn raw_records_to_public_result(records: Vec<RawGenericInferenceJobStatus>) -> V
           maybe_assigned_cluster: record.maybe_assigned_cluster,
           maybe_first_started_at: record.maybe_first_started_at,
           maybe_frontend_failure_category: record.maybe_frontend_failure_category,
+          failure_reason: record.failure_reason,
           request_details: RequestDetails {
             maybe_product_category: record.product_category,
             inference_category: record.inference_category,
@@ -316,6 +318,7 @@ struct RawGenericInferenceJobStatus {
   pub maybe_assigned_cluster: Option<String>,
 
   pub maybe_frontend_failure_category: Option<FrontendFailureCategory>,
+  pub failure_reason: Option<String>,
 
   pub is_keepalive_required: i8,
 
@@ -369,6 +372,7 @@ impl FromRow<'_, MySqlRow> for RawGenericInferenceJobStatus {
       maybe_assigned_worker: row.try_get("maybe_assigned_worker")?,
       maybe_assigned_cluster: row.try_get("maybe_assigned_cluster")?,
       maybe_frontend_failure_category: row.try_get("maybe_frontend_failure_category")?,
+      failure_reason: row.try_get("failure_reason")?,
       is_keepalive_required: row.try_get("is_keepalive_required")?,
       maybe_first_started_at: row.try_get("maybe_first_started_at")?,
       maybe_successfully_completed_at: row.try_get("maybe_successfully_completed_at")?,
