@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 
+use crate::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
 use crate::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use crate::error::enum_error::EnumError;
 #[cfg(test)]
@@ -51,6 +52,34 @@ impl TaskFailureType {
       FrontendFailureCategory::RuleBansGeneratedContent => Self::RuleBansGeneratedContent,
       FrontendFailureCategory::GenerationFailed => Self::GenerationFailed,
       _ => Self::Unknown,
+    }
+  }
+
+  /// Convert the API-client-facing `FrontendFailureCategoryForApiClients` to a Tauri-facing type.
+  /// `Unknown(String)` maps to `Unknown` with a debug log.
+  pub fn from_frontend_failure_category_for_api(category: &FrontendFailureCategoryForApiClients) -> Self {
+    match category {
+      FrontendFailureCategoryForApiClients::ModelRulesViolation => Self::RuleBansUserContent,
+      FrontendFailureCategoryForApiClients::RuleBansUserImage => Self::RuleBansUserImage,
+      FrontendFailureCategoryForApiClients::RuleBansUserImageWithFaces => Self::RuleBansUserImageWithFaces,
+      FrontendFailureCategoryForApiClients::RuleBansUserTextPrompt => Self::RuleBansUserTextPrompt,
+      FrontendFailureCategoryForApiClients::RuleBansUserContent => Self::RuleBansUserContent,
+      FrontendFailureCategoryForApiClients::RuleBansGeneratedVideo => Self::RuleBansGeneratedVideo,
+      FrontendFailureCategoryForApiClients::RuleBansGeneratedAudio => Self::RuleBansGeneratedAudio,
+      FrontendFailureCategoryForApiClients::RuleBansGeneratedContent => Self::RuleBansGeneratedContent,
+      FrontendFailureCategoryForApiClients::GenerationFailed => Self::GenerationFailed,
+
+      // Types ArtCraft doesn't care about
+      FrontendFailureCategoryForApiClients::FaceNotDetected => Self::Unknown,
+      FrontendFailureCategoryForApiClients::KeepAliveElapsed => Self::Unknown,
+      FrontendFailureCategoryForApiClients::NotYetImplemented => Self::Unknown,
+      FrontendFailureCategoryForApiClients::RetryableWorkerError => Self::Unknown,
+
+      // Unknown (future-proof) variant
+      FrontendFailureCategoryForApiClients::Unknown(ref value) => {
+        log::debug!("Unknown FrontendFailureCategoryForApiClients variant: {}", value);
+        Self::Unknown
+      }
     }
   }
 

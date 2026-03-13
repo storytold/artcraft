@@ -35,6 +35,8 @@ sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chron
 sqlx-core = { version = "0.7.4" , optional = true }
 sqlx-mysql = { version = "0.7.4" , optional = true }
 
+log.workspace = true
+
 utoipa = { version = "4", features = ["chrono","actix_extras"] }
 
 [dev-dependencies]

@@ -10,6 +10,8 @@ use log::info;
 use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
 use tauri::AppHandle;
+use enums::tauri::tasks::task_failure_type::TaskFailureType;
+use sqlite_tasks::queries::update_task_status_with_rich_failure::{update_task_status_with_rich_failure, UpdateTaskWithRichFailureArgs};
 
 pub async fn handle_failed_job(
   app_handle: &AppHandle,
@@ -19,10 +21,17 @@ pub async fn handle_failed_job(
 ) -> AnyhowResult<()> {
   info!("Marking storyteller job as failed: {:?}", task.id);
 
-  update_task_status(UpdateTaskArgs {
+  let maybe_failure_type = job.status
+      .maybe_failure_category_updated
+      .as_ref()
+      .map(|val| TaskFailureType::from_frontend_failure_category_for_api(val));
+
+  update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
     status: TaskStatus::CompleteFailure,
+    maybe_failure_type,
+    maybe_failure_message: None,
   }).await?;
 
   let service = to_generation_service_provider(task.provider);
