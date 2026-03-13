@@ -25,6 +25,8 @@ pub async fn handle_failed_job(
       .maybe_failure_category_updated
       .as_ref()
       .map(|val| TaskFailureType::from_frontend_failure_category_for_api(val));
+  
+  let maybe_failure_message = job.status.maybe_failure_message.as_deref();
 
   let maybe_failure_message = job.status.maybe_failure_message.as_deref();
 
