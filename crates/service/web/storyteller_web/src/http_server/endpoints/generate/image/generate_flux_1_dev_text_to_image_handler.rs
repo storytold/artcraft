@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::billing::wallets::temporary_test_wallet_deduction::temporary_test_wallet_deduction;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::endpoints::generate::common::job_failure_test::is_job_failure_test;
+use crate::http_server::endpoints::generate::common::job_failure_test::test_synthetic_failure_reason;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
@@ -10,6 +10,7 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::image::edit::flux_pro_kontext_max_edit_image::FluxProKontextMaxEditImageNumImages;
 use artcraft_api_defs::generate::image::text::generate_flux_1_dev_text_to_image::{GenerateFlux1DevTextToImageAspectRatio, GenerateFlux1DevTextToImageNumImages, GenerateFlux1DevTextToImageRequest, GenerateFlux1DevTextToImageResponse};
+use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
@@ -95,13 +96,15 @@ pub async fn generate_flux_1_dev_text_to_image_handler(
       })?;
 
   // Secret test hook: insert a synthetic "complete_failure" job without calling Fal.
-  if is_job_failure_test(request.prompt.as_deref().unwrap_or("")) {
+  if let Some(synthetic_failure) = test_synthetic_failure_reason(request.prompt.as_deref().unwrap_or("")) {
     return insert_mock_failure_job(
       &http_request,
       request.prompt.as_deref(),
       &request.uuid_idempotency_token,
       maybe_user_session.as_ref().map(|s| &s.user_token),
       maybe_avt_token.as_ref(),
+      Some(synthetic_failure.frontend_failure_category),
+      synthetic_failure.frontend_failure_message.as_deref(),
       &mut mysql_connection,
     ).await;
   }
@@ -252,6 +255,8 @@ async fn insert_mock_failure_job(
   uuid_idempotency_token: &str,
   maybe_creator_user_token: Option<&UserToken>,
   maybe_avt_token: Option<&AnonymousVisitorTrackingToken>,
+  maybe_frontend_failure_category: Option<FrontendFailureCategory>,
+  maybe_failure_reason: Option<&str>,
   mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
 ) -> Result<Json<GenerateFlux1DevTextToImageResponse>, CommonWebError> {
   let ip_address = get_request_ip(http_request);
@@ -295,6 +300,8 @@ async fn insert_mock_failure_job(
     maybe_avt_token,
     creator_ip_address: &ip_address,
     creator_set_visibility: Visibility::Public,
+    maybe_frontend_failure_category,
+    maybe_failure_reason,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
   }).await;

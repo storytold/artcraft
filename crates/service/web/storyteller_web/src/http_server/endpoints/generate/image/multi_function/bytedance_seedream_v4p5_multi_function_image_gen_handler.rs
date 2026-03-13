@@ -298,6 +298,8 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
     creator_set_visibility: Visibility::Public,
     mysql_executor: &mut *transaction,
     starting_job_status_override: None,
+    maybe_frontend_failure_category: None,
+    maybe_failure_reason: None,
     phantom: Default::default(),
   }).await;
 

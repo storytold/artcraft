@@ -366,6 +366,8 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
     creator_set_visibility: Visibility::Public,
     mysql_executor: &mut *transaction,
     starting_job_status_override: None,
+    maybe_frontend_failure_category: None,
+    maybe_failure_reason: None,
     phantom: Default::default(),
   }).await;
 
