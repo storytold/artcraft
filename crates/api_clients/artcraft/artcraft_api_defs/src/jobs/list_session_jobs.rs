@@ -9,6 +9,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use utoipa::{IntoParams, ToSchema};
+use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
+use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 
 pub const LIST_SESSION_JOBS_URL_PATH: &str = "/v1/jobs/session";
@@ -98,9 +100,16 @@ pub struct ListSessionStatusDetailsResponse {
   /// This is typically only for non-premium users.
   pub requires_keepalive: bool,
 
+  /// NB: DO NOT CHANGE: Old clients can't read the new enum payload values as they are introduced.
+  ///
   /// An enum the frontend can use to display localized/I18N error
   /// messages. These pertain to both transient and permanent failures.
-  pub maybe_failure_category: Option<FrontendFailureCategory>,
+  #[deprecated(note="use maybe_failure_category_updated")]
+  pub maybe_failure_category: Option<FrontendFailureCategoryForOldClients>,
+
+  /// An enum the frontend can use to display localized/I18N error
+  /// messages. These pertain to both transient and permanent failures.
+  pub maybe_failure_category_updated: Option<FrontendFailureCategoryForApiClients>,
 
   /// This is an integer number between 0 and 100 (both inclusive) that
   /// reports the completeness.
@@ -125,4 +134,3 @@ pub struct ListSessionResultDetailsResponse {
 
   pub maybe_successfully_completed_at: Option<DateTime<Utc>>,
 }
-

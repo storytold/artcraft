@@ -21,6 +21,8 @@ use artcraft_api_defs::jobs::list_session_jobs::{ListSessionJobsItem, ListSessio
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use bucket_paths::legacy::typified_paths::public::voice_conversion_results::bucket_file_path::VoiceConversionResultOriginalFilePath;
 use chrono::{DateTime, Utc};
+use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
+use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::common::job_status_plus::JobStatusPlus;
@@ -290,7 +292,12 @@ fn db_record_to_response_payload(
       maybe_first_started_at: record.maybe_first_started_at,
       attempt_count: record.attempt_count as u8,
       requires_keepalive: record.is_keepalive_required,
-      maybe_failure_category: record.maybe_frontend_failure_category,
+      maybe_failure_category: record
+          .maybe_frontend_failure_category
+          .and_then(|val| FrontendFailureCategoryForOldClients::try_from_db_enum(val)),
+      maybe_failure_category_updated: record
+          .maybe_frontend_failure_category
+          .map(|val| FrontendFailureCategoryForApiClients::from_db_enum(val)),
       progress_percentage,
       maybe_current_execution_duration_seconds,
     },
