@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DRAW_LAYER_ID, INPAINT_LAYER_ID, PaintSurface } from "./PaintSurface";
 import "./App.css";
@@ -50,7 +50,16 @@ import {
   DEFAULT_MODEL3D_PARAMS,
   type Model3DParams,
 } from "./utilities/render3DModel";
-import { Model3DOverlay } from "./components/Model3DOverlay";
+import {
+  Model3DOverlay,
+  type Model3DOverlayHandle,
+} from "./components/Model3DOverlay";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faUpRightAndDownLeftFromCenter,
+  faArrowsRotate,
+  faCamera,
+} from "@fortawesome/pro-solid-svg-icons";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 
@@ -133,6 +142,110 @@ const Edit3DButton = memo(function Edit3DButton({
   );
 });
 
+// ─── DragScrubButton ──────────────────────────────────────────────────────────
+// Round button that scrubs a 3D parameter on horizontal+vertical drag.
+// Uses pointer capture so the drag continues outside the button bounds.
+function DragScrubButton({
+  icon,
+  title,
+  onDrag,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  onDrag: (dx: number, dy: number) => void;
+}) {
+  const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.buttons === 0) return;
+    onDrag(e.movementX, e.movementY);
+  };
+  return (
+    <button
+      title={title}
+      className="flex h-10 w-10 cursor-move items-center justify-center rounded-full bg-black/70 text-white shadow-lg hover:bg-black/90 active:bg-blue-600"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+    >
+      {icon}
+    </button>
+  );
+}
+
+// ─── Edit3DScrubControls ──────────────────────────────────────────────────────
+// Shown in place of Edit3DButton while the 3D overlay is open. Renders the
+// scrub buttons (scale, rotate, FOV, apply) at the same node-center position,
+// communicating with Model3DOverlay via an imperative handle ref.
+interface Edit3DScrubControlsProps {
+  nodeId: string;
+  stageRef: { current: Konva.Stage };
+  overlayHandle: React.RefObject<Model3DOverlayHandle>;
+}
+
+const Edit3DScrubControls = memo(function Edit3DScrubControls({
+  nodeId,
+  stageRef,
+  overlayHandle,
+}: Edit3DScrubControlsProps) {
+  const [, forceUpdate] = useState(0);
+  const bump = useCallback(() => forceUpdate((t) => t + 1), []);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage?.on) return;
+    const ns = ".edit3dcontrols";
+    stage.on(
+      `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
+      bump,
+    );
+    return () => {
+      stage.off(ns);
+    };
+  }, [stageRef, bump, nodeId]);
+
+  const stage = stageRef.current;
+  if (!stage?.container) return null;
+  const konvaNode = stage.findOne("#" + nodeId) as Konva.Shape | undefined;
+  if (!konvaNode) return null;
+
+  const clientRect = konvaNode.getClientRect();
+  const stageContainerRect = stage.container().getBoundingClientRect();
+  const cx = stageContainerRect.left + clientRect.x + clientRect.width / 2;
+  const cy = stageContainerRect.top + clientRect.y + clientRect.height / 2;
+
+  return (
+    <div
+      className="pointer-events-auto fixed z-[60] flex -translate-x-1/2 -translate-y-1/2 items-center gap-2"
+      style={{ left: cx, top: cy }}
+    >
+      <DragScrubButton
+        icon={<FontAwesomeIcon icon={faUpRightAndDownLeftFromCenter} />}
+        title="Scale — drag"
+        onDrag={(dx, dy) => overlayHandle.current?.onScaleDrag(dx, dy)}
+      />
+      <DragScrubButton
+        icon={<FontAwesomeIcon icon={faArrowsRotate} />}
+        title="Rotate — drag"
+        onDrag={(dx, dy) => overlayHandle.current?.onRotateDrag(dx, dy)}
+      />
+      <DragScrubButton
+        icon={<FontAwesomeIcon icon={faCamera} />}
+        title="Field of view — drag"
+        onDrag={(dx, dy) => overlayHandle.current?.onFovDrag(dx, dy)}
+      />
+      <button
+        onClick={() => overlayHandle.current?.commit()}
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shadow-lg hover:bg-blue-500"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        ✓
+      </button>
+    </div>
+  );
+});
+
 export const DecodeBase64ToImage = async (
   base64String: string,
 ): Promise<ImageBitmap> => {
@@ -163,6 +276,7 @@ const PageDraw = () => {
   const canvasHeight = useRef<number>(1024);
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
   const [editing3DNodeId, setEditing3DNodeId] = useState<string | null>(null);
+  const overlayHandleRef = useRef<Model3DOverlayHandle>(null);
   const stageRef = useRef<Konva.Stage>({} as Konva.Stage);
   const transformerRefs = useRef<{ [key: string]: Konva.Transformer }>({});
 
@@ -1147,12 +1261,20 @@ const PageDraw = () => {
         (() => {
           const editingNode = nodes.find((n) => n.id === editing3DNodeId);
           return editingNode ? (
-            <Model3DOverlay
-              node={editingNode}
-              stageRef={stageRef}
-              onCommit={handle3DOverlayCommit}
-              onDismiss={() => setEditing3DNodeId(null)}
-            />
+            <>
+              <Edit3DScrubControls
+                nodeId={editing3DNodeId}
+                stageRef={stageRef}
+                overlayHandle={overlayHandleRef}
+              />
+              <Model3DOverlay
+                ref={overlayHandleRef}
+                node={editingNode}
+                stageRef={stageRef}
+                onCommit={handle3DOverlayCommit}
+                onDismiss={() => setEditing3DNodeId(null)}
+              />
+            </>
           ) : null;
         })()}
     </>
