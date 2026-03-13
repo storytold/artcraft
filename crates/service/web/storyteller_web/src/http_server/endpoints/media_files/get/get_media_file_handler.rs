@@ -366,7 +366,7 @@ async fn modern_media_file_lookup(
       maybe_batch_token: result.maybe_batch_token,
       maybe_scene_source_media_file_token: result.maybe_scene_source_media_file_token,
       media_links: MediaLinksBuilder::from_media_path_and_env(media_domain, server_state.server_environment, &public_bucket_path),
-      public_bucket_url: bucket_url_from_media_path(&public_bucket_path)
+      public_bucket_url: bucket_url_from_media_path(&public_bucket_path, media_domain, server_state.server_environment)
           .map_err(|err| {
             warn!("error creating URL: {:?}", err);
             GetMediaFileError::ServerError
@@ -504,7 +504,7 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
       maybe_batch_token: None,
       maybe_scene_source_media_file_token: None,
       media_links: MediaLinksBuilder::from_rooted_path_and_env(media_domain, server_state.server_environment, &public_bucket_path),
-      public_bucket_url: bucket_url_from_str_path(&public_bucket_path)
+      public_bucket_url: bucket_url_from_str_path(&public_bucket_path, media_domain, server_state.server_environment)
           .map_err(|err| {
             warn!("error creating URL: {:?}", err);
             GetMediaFileError::ServerError

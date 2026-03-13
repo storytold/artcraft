@@ -344,7 +344,7 @@ pub async fn list_media_files_for_user_handler(
           public_bucket_path: public_bucket_path
               .get_full_object_path_str()
               .to_string(),
-          public_bucket_url: bucket_url_string_from_media_path(&public_bucket_path),
+          public_bucket_url: bucket_url_string_from_media_path(&public_bucket_path, media_domain, server_state.server_environment),
           cover_image: MediaFileCoverImageDetails::from_optional_db_fields(
             &record.token,
             media_domain,

@@ -285,7 +285,7 @@ pub async fn list_media_files_by_batch_token_handler(
           public_bucket_path: public_bucket_path
               .get_full_object_path_str()
               .to_string(),
-          public_bucket_url: bucket_url_string_from_media_path(&public_bucket_path),
+          public_bucket_url: bucket_url_string_from_media_path(&public_bucket_path, media_domain, server_state.server_environment),
           cover_image: MediaFileCoverImageDetails::from_token(&record.token),
           creator_set_visibility: record.creator_set_visibility,
           is_user_upload: record.is_user_upload,
