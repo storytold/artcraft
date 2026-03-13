@@ -235,4 +235,96 @@ mod tests {
       url
     );
   }
+
+  #[test]
+  fn test_cover_image_links_cdn_url_production() {
+    let token = MediaFileToken::new_from_str("test_token");
+    let domain = super::MediaDomain::FakeYou;
+    let env = super::ServerEnvironment::Production;
+
+    let details = super::MediaFileCoverImageDetails::from_optional_db_fields(
+      &token,
+      domain,
+      env,
+      Some("bucket_hash"),
+      Some("image_"),
+      Some(".png"),
+    );
+
+    let links = details.maybe_links.unwrap();
+    assert!(
+      links.cdn_url.as_str().starts_with("https://cdn-2.fakeyou.com"),
+      "Production cdn_url should start with https://cdn-2.fakeyou.com, got: {}",
+      links.cdn_url
+    );
+  }
+
+  #[test]
+  fn test_cover_image_links_cdn_url_development() {
+    let token = MediaFileToken::new_from_str("test_token");
+    let domain = super::MediaDomain::FakeYou;
+    let env = super::ServerEnvironment::Development;
+
+    let details = super::MediaFileCoverImageDetails::from_optional_db_fields(
+      &token,
+      domain,
+      env,
+      Some("bucket_hash"),
+      Some("image_"),
+      Some(".png"),
+    );
+
+    let links = details.maybe_links.unwrap();
+    assert!(
+      links.cdn_url.as_str().starts_with("https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/"),
+      "Development cdn_url should start with https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/, got: {}",
+      links.cdn_url
+    );
+  }
+
+  #[test]
+  fn test_cover_image_links_thumbnail_template_production() {
+    let token = MediaFileToken::new_from_str("test_token");
+    let domain = super::MediaDomain::FakeYou;
+    let env = super::ServerEnvironment::Production;
+
+    let details = super::MediaFileCoverImageDetails::from_optional_db_fields(
+      &token,
+      domain,
+      env,
+      Some("bucket_hash"),
+      Some("image_"),
+      Some(".png"),
+    );
+
+    let links = details.maybe_links.unwrap();
+    assert!(
+      links.thumbnail_template.starts_with("https://cdn-2.fakeyou.com"),
+      "Production thumbnail_template should start with https://cdn-2.fakeyou.com, got: {}",
+      links.thumbnail_template
+    );
+  }
+
+  #[test]
+  fn test_cover_image_links_thumbnail_template_development() {
+    let token = MediaFileToken::new_from_str("test_token");
+    let domain = super::MediaDomain::FakeYou;
+    let env = super::ServerEnvironment::Development;
+
+    let details = super::MediaFileCoverImageDetails::from_optional_db_fields(
+      &token,
+      domain,
+      env,
+      Some("bucket_hash"),
+      Some("image_"),
+      Some(".png"),
+    );
+
+    let links = details.maybe_links.unwrap();
+    assert!(
+      links.thumbnail_template.starts_with("https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/"),
+      "Development thumbnail_template should start with https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/, got: {}",
+      links.thumbnail_template
+    );
+  }
 }
