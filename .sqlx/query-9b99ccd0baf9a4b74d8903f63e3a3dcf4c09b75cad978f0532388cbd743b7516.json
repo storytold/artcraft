@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n    UPDATE tasks\n    SET task_status = ?,\n    on_failure_type = ?,\n    on_failure_message = ?\n    WHERE id = ?\n  ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "9b99ccd0baf9a4b74d8903f63e3a3dcf4c09b75cad978f0532388cbd743b7516"
+}
