@@ -25,13 +25,15 @@ pub async fn handle_failed_job(
       .maybe_failure_category_updated
       .as_ref()
       .map(|val| TaskFailureType::from_frontend_failure_category_for_api(val));
+  
+  let maybe_failure_message = job.status.maybe_failure_message.as_deref();
 
   update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
     status: TaskStatus::CompleteFailure,
     maybe_failure_type,
-    maybe_failure_message: None,
+    maybe_failure_message,
   }).await?;
 
   let service = to_generation_service_provider(task.provider);

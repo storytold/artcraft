@@ -22,6 +22,7 @@ pub async fn update_task_status_with_rich_failure(
   let status_temp = args.status.to_str();
   let maybe_failure_type_temp = args.maybe_failure_type.map(|val| val.to_str());
 
+  // Trim the message so it doesn't overflow the database column
   let maybe_failure_message_temp = args.maybe_failure_message
       .map(|s| if s.len() > 255 { &s[..255] } else { s });
 

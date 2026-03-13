@@ -22,7 +22,10 @@ pub fn test_synthetic_failure_reason(prompt: &str) -> Option<SyntheticFailure> {
 
   Some(SyntheticFailure {
     frontend_failure_category: category,
-    frontend_failure_message: Some("This was a simulated failure".to_string()),
+    frontend_failure_message: Some(
+      "This was a simulated failure. This message comes from the backend and \
+      database to simulate a dynamic failure message. This message could in \
+      theory be anything.".to_string()),
   })
 }
 
