@@ -3,6 +3,7 @@ import { Node, NodeType } from "../Node";
 import { EnqueueImageBgRemoval } from "libs/tauri-api/src/lib/enqueue/EnqueueImageBgRemovalCommand";
 import { ImageBundle } from "~/pages/PageEdit/HistoryStack";
 import { BaseSelectorImage } from "~/pages/PageEdit/BaseImageSelector";
+import { Model3DParams } from "../utilities/render3DModel";
 
 // Add LineNode type
 export type LineNode = {
@@ -84,6 +85,8 @@ type SerializedNodeData = {
   offsetY: number;
   zIndex: number;
   locked: boolean;
+  modelUrl?: string;
+  model3dParams?: Model3DParams;
 };
 
 interface HistoryNodeData {
@@ -200,6 +203,17 @@ export interface SceneState {
     x: number,
     y: number,
     url: string,
+    width?: number,
+    height?: number,
+  ) => void;
+
+  // Create an image node backed by a 3D model (dataUrl is the initial render)
+  createImageFrom3DModel: (
+    x: number,
+    y: number,
+    renderedDataUrl: string,
+    modelUrl: string,
+    params: Model3DParams,
     width?: number,
     height?: number,
   ) => void;
@@ -557,6 +571,8 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
           offsetY: node.offsetY || 0, // Include offset in history
           zIndex: node.zIndex || 0,
           locked: node.locked || false,
+          modelUrl: node.modelUrl,
+          model3dParams: node.model3dParams,
         })),
         lineNodes: JSON.parse(JSON.stringify(state.lineNodes)),
       };
@@ -808,6 +824,40 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     } catch (error) {
       console.error("Error loading image from URL:", url, error);
     }
+  },
+
+  // Create an image node backed by a 3D model
+  createImageFrom3DModel: (
+    x: number,
+    y: number,
+    renderedDataUrl: string,
+    modelUrl: string,
+    params: Model3DParams,
+    width = 512,
+    height = 512,
+  ) => {
+    const nodeId = generateId();
+    const node = new Node({
+      id: nodeId,
+      type: "image",
+      x,
+      y,
+      width,
+      height,
+      fill: "transparent",
+      stroke: "#333",
+      strokeWidth: 2,
+      draggable: true,
+      imageUrl: renderedDataUrl,
+      modelUrl,
+      model3dParams: params,
+    });
+    node
+      .setImageFromUrl(renderedDataUrl)
+      .then(() => {
+        get().addNode(node);
+      })
+      .catch((error) => console.error("Error loading 3D model render:", error));
   },
 
   // Update the createImage method to handle both URLs and Files

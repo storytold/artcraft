@@ -1,3 +1,5 @@
+import type { Model3DParams } from "./utilities/render3DModel";
+
 export type NodeType = 'rectangle' | 'circle' | 'triangle' | 'image';
 
 export interface NodeProps {
@@ -22,6 +24,10 @@ export interface NodeProps {
   offsetY?: number;
   zIndex?: number;
   locked?: boolean;
+  /** If set, this image node was rendered from a 3D model and can be re-edited in 3D. */
+  modelUrl?: string;
+  /** Last-used Three.js camera/fov/scale params for re-editing the 3D model. */
+  model3dParams?: Model3DParams;
 }
 
 export class Node {
@@ -46,7 +52,9 @@ export class Node {
   offsetY: number;
   zIndex: number;
   locked: boolean;
-  
+  modelUrl?: string;
+  model3dParams?: Model3DParams;
+
   constructor({
     id,
     x,
@@ -68,7 +76,9 @@ export class Node {
     offsetX = 0,
     offsetY = 0,
     zIndex = 0,
-    locked = false
+    locked = false,
+    modelUrl,
+    model3dParams,
   }: NodeProps) {
     this.id = id;
     this.x = x;
@@ -91,6 +101,8 @@ export class Node {
     this.offsetY = offsetY;
     this.zIndex = zIndex;
     this.locked = locked;
+    this.modelUrl = modelUrl;
+    this.model3dParams = model3dParams;
   }
 
   setPosition(x: number, y: number): void {

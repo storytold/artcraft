@@ -45,6 +45,12 @@ import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
 import toast from "react-hot-toast";
+import {
+  render3DModelToDataUrl,
+  DEFAULT_MODEL3D_PARAMS,
+  type Model3DParams,
+} from "./utilities/render3DModel";
+import { Model3DOverlay } from "./components/Model3DOverlay";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 
@@ -77,6 +83,7 @@ const PageDraw = () => {
   const canvasWidth = useRef<number>(1024);
   const canvasHeight = useRef<number>(1024);
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
+  const [editing3DNodeId, setEditing3DNodeId] = useState<string | null>(null);
   const stageRef = useRef<Konva.Stage>({} as Konva.Stage);
   const transformerRefs = useRef<{ [key: string]: Konva.Transformer }>({});
 
@@ -113,6 +120,8 @@ const PageDraw = () => {
       finishRemoveBackground: state.finishRemoveBackground,
       createImageFromUrl: state.createImageFromUrl,
       createImageFromFile: state.createImageFromFile,
+      createImageFrom3DModel: state.createImageFrom3DModel,
+      updateNode: state.updateNode,
       setBaseImageInfo: state.setBaseImageInfo,
       RESET: state.RESET,
       clearLineNodes: state.clearLineNodes,
@@ -158,6 +167,8 @@ const PageDraw = () => {
     finishRemoveBackground,
     createImageFromUrl,
     createImageFromFile,
+    createImageFrom3DModel,
+    updateNode,
     setBaseImageInfo,
     RESET,
     clearLineNodes,
@@ -274,9 +285,8 @@ const PageDraw = () => {
 
   // Listen for gallery drag and drop events
   useEffect(() => {
-    const handleGallery2DDrop = (event: CustomEvent) => {
+    const handleGallery2DDrop = async (event: CustomEvent) => {
       const { item, canvasPosition } = event.detail;
-      console.log("Received 2D gallery drop:", { item, canvasPosition });
 
       const stage = stageRef.current;
       if (!stage) {
@@ -286,18 +296,45 @@ const PageDraw = () => {
         return;
       }
       // Transform canvas coordinates to stage coordinates
-      // Account for stage position, scale, and transformations
-      const stageX = stage.x();
-      const stageY = stage.y();
-      const scaleX = stage.scaleX();
-      const scaleY = stage.scaleY();
-
       const stagePoint = {
-        x: (canvasPosition.x - stageX) / scaleX,
-        y: (canvasPosition.y - stageY) / scaleY,
+        x: (canvasPosition.x - stage.x()) / stage.scaleX(),
+        y: (canvasPosition.y - stage.y()) / stage.scaleY(),
       };
 
-      console.log("Transformed stage coordinates:", stagePoint);
+      if (item.mediaClass === "dimensional") {
+        const modelUrl = item.fullImage;
+        if (!modelUrl) {
+          console.error("No model URL available for 3D item");
+          return;
+        }
+        const toastId = toast.loading(`Loading 3D model "${item.label}"…`);
+        try {
+          const dataUrl = await render3DModelToDataUrl(
+            modelUrl,
+            DEFAULT_MODEL3D_PARAMS,
+          );
+          const img = new globalThis.Image();
+          img.onload = () => {
+            createImageFrom3DModel(
+              stagePoint.x,
+              stagePoint.y,
+              dataUrl,
+              modelUrl,
+              DEFAULT_MODEL3D_PARAMS,
+              img.width,
+              img.height,
+            );
+            toast.success(`Added "${item.label}" to canvas`, { id: toastId });
+          };
+          img.src = dataUrl;
+        } catch (err) {
+          console.error("Failed to render 3D model:", err);
+          toast.error(`Failed to load 3D model "${item.label}"`, {
+            id: toastId,
+          });
+        }
+        return;
+      }
 
       const imageUrl = item.fullImage || item.thumbnail;
       if (!imageUrl) {
@@ -305,14 +342,7 @@ const PageDraw = () => {
         return;
       }
 
-      console.log("Creating image from URL:", imageUrl);
-
       createImageFromUrl(stagePoint.x, stagePoint.y, imageUrl);
-
-      console.log(
-        `Created image "${item.label}" at stage position:`,
-        stagePoint,
-      );
     };
 
     window.addEventListener(
@@ -326,8 +356,53 @@ const PageDraw = () => {
         handleGallery2DDrop as EventListener,
       );
     };
-    // Stable action ref; no need to depend on full store.
-  }, [createImageFromUrl]);
+  }, [createImageFromUrl, createImageFrom3DModel]);
+
+  // Open the 3D overlay automatically when a single 3D-model node is selected
+  useEffect(() => {
+    if (selectedNodeIds.length === 1) {
+      const node = nodes.find((n) => n.id === selectedNodeIds[0]);
+      if (node?.modelUrl) {
+        setEditing3DNodeId(node.id);
+        return;
+      }
+    }
+    setEditing3DNodeId(null);
+  }, [selectedNodeIds, nodes]);
+
+  const handle3DOverlayCommit = useCallback(
+    (dataUrl: string, params: Model3DParams) => {
+      if (!editing3DNodeId) return;
+      const img = new globalThis.Image();
+      img.onload = () => {
+        updateNode(
+          editing3DNodeId,
+          { imageUrl: dataUrl, imageElement: img, model3dParams: params },
+          true,
+        );
+      };
+      img.src = dataUrl;
+      setEditing3DNodeId(null);
+      // Deselect so the auto-open useEffect doesn't immediately re-trigger
+      // the overlay when the updated node re-appears in the Konva canvas.
+      selectNode(null);
+    },
+    [editing3DNodeId, updateNode, selectNode],
+  );
+
+  // Derive a display-only node list that hides the node currently open in the
+  // 3D overlay. We filter here rather than in the store so the node's data
+  // (position, modelUrl, model3dParams) is fully preserved and the overlay
+  // can read it via `nodes.find(...)`. The Three.js canvas sits directly on
+  // top of where the Konva image would be, so removing it from the render
+  // list eliminates the double-image without any visual gap.
+  const displayNodes = useMemo(
+    () =>
+      editing3DNodeId
+        ? nodes.filter((n) => n.id !== editing3DNodeId)
+        : nodes,
+    [nodes, editing3DNodeId],
+  );
 
   const handleImageUpload = async (files: File[]): Promise<void> => {
     // Determine current canvas dimensions from the store (according to aspect-ratio)
@@ -940,7 +1015,7 @@ const PageDraw = () => {
           })}
         >
           <PaintSurface
-            nodes={nodes}
+            nodes={displayNodes}
             lineNodes={lineNodes}
             selectedNodeIds={selectedNodeIds}
             onCanvasSizeChange={(width: number, height: number): void => {
@@ -974,6 +1049,18 @@ const PageDraw = () => {
         <CostCalculatorButton modelPage={PAGE_ID} />
         <HelpMenuButton />
       </div>
+      {editing3DNodeId &&
+        (() => {
+          const editingNode = nodes.find((n) => n.id === editing3DNodeId);
+          return editingNode ? (
+            <Model3DOverlay
+              node={editingNode}
+              stageRef={stageRef}
+              onCommit={handle3DOverlayCommit}
+              onDismiss={() => setEditing3DNodeId(null)}
+            />
+          ) : null;
+        })()}
     </>
   );
 };
