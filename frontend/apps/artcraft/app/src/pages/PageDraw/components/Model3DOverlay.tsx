@@ -208,8 +208,7 @@ export const Model3DOverlay = React.forwardRef<Model3DOverlayHandle, Model3DOver
         params.cameraTarget.y,
         params.cameraTarget.z,
       );
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
+      controls.enabled = false; // interaction handled via scrub buttons
       controls.update();
       controlsRef.current = controls;
 
@@ -257,7 +256,6 @@ export const Model3DOverlay = React.forwardRef<Model3DOverlayHandle, Model3DOver
       // RAF loop
       const animate = () => {
         animFrameRef.current = requestAnimationFrame(animate);
-        controls.update();
         renderer.render(scene, camera);
       };
       animate();
