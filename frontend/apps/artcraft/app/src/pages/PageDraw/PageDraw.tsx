@@ -99,13 +99,15 @@ const Edit3DButton = memo(function Edit3DButton({
     const transformers = stage.find("Transformer");
     transformers.forEach((tr) => {
       tr.on(`transformstart${ns}`, () => setInteracting(true));
-      tr.on(`transformend${ns}`, () => setInteracting(false));
+      // Defer one rAF so Konva finishes writing the node's new attributes
+      // (scaleX/Y, width/height) before we read getClientRect() in the render.
+      tr.on(`transformend${ns}`, () => requestAnimationFrame(() => { setInteracting(false); bump(); }));
     });
 
     const konvaNode = stage.findOne("#" + nodeId);
     if (konvaNode) {
       konvaNode.on(`dragstart${ns}`, () => setInteracting(true));
-      konvaNode.on(`dragend${ns}`, () => setInteracting(false));
+      konvaNode.on(`dragend${ns}`, () => requestAnimationFrame(() => { setInteracting(false); bump(); }));
     }
 
     return () => {
