@@ -63,6 +63,25 @@ import {
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
 
+// Pure helpers — module-level so they're not recreated on every render/call
+const mapAspectRatio = (ratio?: string): EnqueueEditImageSize | undefined => {
+  switch (ratio) {
+    case "auto": return EnqueueEditImageSize.Auto;
+    case "wide": return EnqueueEditImageSize.Wide;
+    case "tall": return EnqueueEditImageSize.Tall;
+    case "square": return EnqueueEditImageSize.Square;
+    default: return undefined;
+  }
+};
+const mapResolution = (res?: string): EnqueueEditImageResolution | undefined => {
+  switch (res) {
+    case "1k": return EnqueueEditImageResolution.OneK;
+    case "2k": return EnqueueEditImageResolution.TwoK;
+    case "4k": return EnqueueEditImageResolution.FourK;
+    default: return undefined;
+  }
+};
+
 // ─── Edit3DButton ─────────────────────────────────────────────────────────────
 // Isolated memoized component so Konva-driven position updates (stage pan/zoom,
 // transformer drag) only re-render this small button — not the entire PageDraw
@@ -602,7 +621,7 @@ const PageDraw = () => {
     [nodes, editing3DNodeId],
   );
 
-  const handleImageUpload = async (files: File[]): Promise<void> => {
+  const handleImageUpload = useCallback(async (files: File[]): Promise<void> => {
     // Determine current canvas dimensions from the store (according to aspect-ratio)
     const { width: canvasW, height: canvasH } = getAspectRatioDimensions();
 
@@ -629,7 +648,7 @@ const PageDraw = () => {
       };
       img.src = URL.createObjectURL(file);
     }
-  };
+  }, [getAspectRatioDimensions, createImageFromFile]);
 
   const handleTauriEnqueue = async (
     image: ImageBitmap,
@@ -754,40 +773,6 @@ const PageDraw = () => {
         return;
       }
 
-      // Helper to map aspect ratio string to enum
-      const mapAspectRatio = (
-        ratio?: string,
-      ): EnqueueEditImageSize | undefined => {
-        switch (ratio) {
-          case "auto":
-            return EnqueueEditImageSize.Auto;
-          case "wide":
-            return EnqueueEditImageSize.Wide;
-          case "tall":
-            return EnqueueEditImageSize.Tall;
-          case "square":
-            return EnqueueEditImageSize.Square;
-          default:
-            return undefined;
-        }
-      };
-
-      // Helper to map resolution string to enum
-      const mapResolution = (
-        res?: string,
-      ): EnqueueEditImageResolution | undefined => {
-        switch (res) {
-          case "1k":
-            return EnqueueEditImageResolution.OneK;
-          case "2k":
-            return EnqueueEditImageResolution.TwoK;
-          case "4k":
-            return EnqueueEditImageResolution.FourK;
-          default:
-            return undefined;
-        }
-      };
-
       const { width, height } = getAspectRatioDimensions();
       const subscriberId: string =
         crypto?.randomUUID?.() ??
@@ -910,7 +895,7 @@ const PageDraw = () => {
     [generationCount, getCompositeCanvasFile, selectedImageModel],
   );
 
-  const onFitPressed = async () => {
+  const onFitPressed = useCallback(async () => {
     // Get the stage and its container dimensions
     const stage = stageRef.current;
     if (!stage) return;
@@ -920,8 +905,7 @@ const PageDraw = () => {
     const containerHeight = stage.container().offsetHeight;
 
     // Get canvas dimensions from store aspect ratio
-    const canvasW = getAspectRatioDimensions().width;
-    const canvasH = getAspectRatioDimensions().height;
+    const { width: canvasW, height: canvasH } = getAspectRatioDimensions();
 
     // Add padding to ensure canvas doesn't touch the edges
     const padding = 40;
@@ -947,7 +931,7 @@ const PageDraw = () => {
 
     // Redraw the stage
     stage.batchDraw();
-  };
+  }, [getAspectRatioDimensions]);
 
   // When the model inpainting support changes, we need to auto-change the tool so it's not set to inpainting
   // Note: setActiveTool is a stable Zustand action, so we don't need it in deps
@@ -990,6 +974,119 @@ const PageDraw = () => {
     autoFitCanvas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseImageBitmap]);
+
+  // ── Stable callbacks for child components ──────────────────────────────────
+  const handleSelectTool = useCallback(() => setActiveTool("select"), [setActiveTool]);
+
+  const handleActivateShapeTool = useCallback(
+    (shape: "rectangle" | "circle" | "triangle") => {
+      selectNode(null);
+      setCurrentShape(shape);
+      setActiveTool("shape");
+      selectNode(null);
+    },
+    [selectNode, setCurrentShape, setActiveTool],
+  );
+
+  const handlePaintBrush = useCallback(
+    (hex: string, size: number, opacity: number) => {
+      setActiveTool("draw");
+      setBrushColor(hex);
+      setBrushSize(size);
+      setBrushOpacity(opacity);
+    },
+    [setActiveTool, setBrushColor, setBrushSize, setBrushOpacity],
+  );
+
+  const handleCanvasBackground = useCallback(
+    (hex: string) => { setFillColor(hex); },
+    [setFillColor],
+  );
+
+  const handleUploadImageClick = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.multiple = true;
+    input.style.display = "none";
+    document.body.appendChild(input);
+    input.onchange = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files) {
+        const imageFiles = Array.from(target.files).filter((f) =>
+          f.type.startsWith("image/"),
+        );
+        if (imageFiles.length > 0) handleImageUpload(imageFiles);
+      }
+      document.body.removeChild(input);
+    };
+    input.value = "";
+    input.click();
+  }, [handleImageUpload]);
+
+  const handleAspectRatioChange = useCallback(
+    async (ratio: string) => {
+      const ratioToType = (r: string): AspectRatioType => {
+        switch (r) {
+          case "tall":   return AspectRatioType.PORTRAIT;
+          case "wide":   return AspectRatioType.LANDSCAPE;
+          case "square": return AspectRatioType.SQUARE;
+          default:       return AspectRatioType.NONE;
+        }
+      };
+      setAspectRatioType(ratioToType(ratio));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      onFitPressed();
+    },
+    [setAspectRatioType, onFitPressed],
+  );
+
+  const handleMenuAction = useCallback(
+    async (action: string) => {
+      switch (action) {
+        case "LOCK":              toggleLock(selectedNodeIds); break;
+        case "REMOVE_BACKGROUND": await beginRemoveBackground(selectedNodeIds); break;
+        case "BRING_TO_FRONT":    bringToFront(selectedNodeIds); break;
+        case "BRING_FORWARD":     bringForward(selectedNodeIds); break;
+        case "SEND_BACKWARD":     sendBackward(selectedNodeIds); break;
+        case "SEND_TO_BACK":      sendToBack(selectedNodeIds); break;
+        case "DUPLICATE":         copySelectedItems(); pasteItems(); break;
+        case "DELETE":            deleteSelectedItems(); break;
+        default: break;
+      }
+    },
+    [
+      selectedNodeIds, toggleLock, beginRemoveBackground, bringToFront,
+      bringForward, sendBackward, sendToBack, copySelectedItems, pasteItems,
+      deleteSelectedItems,
+    ],
+  );
+
+  const handleCanvasSizeChange = useCallback((width: number, height: number) => {
+    canvasWidth.current = width;
+    canvasHeight.current = height;
+  }, []);
+
+  // ── Memoized derived values ─────────────────────────────────────────────────
+  const isLocked = useMemo(
+    () =>
+      selectedNodeIds.some((id) => {
+        const node = nodes.find((n) => n.id === id);
+        const lineNode = lineNodes.find((n) => n.id === id);
+        return (node?.locked || lineNode?.locked) ?? false;
+      }),
+    [selectedNodeIds, nodes, lineNodes],
+  );
+
+  const selectedNodeWithModel = useMemo(() => {
+    if (selectedNodeIds.length !== 1) return null;
+    return nodes.find((n) => n.id === selectedNodeIds[0]) ?? null;
+  }, [selectedNodeIds, nodes]);
+
+  const editingNode = useMemo(
+    () => (editing3DNodeId ? (nodes.find((n) => n.id === editing3DNodeId) ?? null) : null),
+    [editing3DNodeId, nodes],
+  );
 
   // Display image selector on launch, otherwise hide it
   // Also show loading state if info is set but image is loading
@@ -1060,26 +1157,7 @@ const PageDraw = () => {
         }`}
       >
         <PromptEditor
-          onAspectRatioChange={async (ratio: string) => {
-            const ratioToType = (ratio: string): AspectRatioType => {
-              switch (ratio) {
-                case "tall":
-                  return AspectRatioType.PORTRAIT;
-                case "wide":
-                  return AspectRatioType.LANDSCAPE;
-                case "square":
-                  return AspectRatioType.SQUARE;
-                default:
-                  return AspectRatioType.NONE;
-              }
-            };
-
-            const aspectRatioType = ratioToType(ratio);
-            setAspectRatioType(aspectRatioType);
-
-            await new Promise((resolve) => requestAnimationFrame(resolve));
-            onFitPressed();
-          }}
+          onAspectRatioChange={handleAspectRatioChange}
           usePrompt2DStore={promptStoreProvider}
           EncodeImageBitmapToBase64={EncodeImageBitmapToBase64}
           onGenerateClick={handleGenerate}
@@ -1094,66 +1172,11 @@ const PageDraw = () => {
       </div>
       <SideToolbar
         className="fixed left-0 top-1/2 z-10 -translate-y-1/2 transform"
-        onSelect={(): void => {
-          setActiveTool("select");
-        }}
-        onActivateShapeTool={(
-          shape: "rectangle" | "circle" | "triangle",
-        ): void => {
-          selectNode(null);
-          setCurrentShape(shape);
-          setActiveTool("shape");
-          selectNode(null);
-        }}
-        onPaintBrush={(hex: string, size: number, opacity: number): void => {
-          setActiveTool("draw");
-          setBrushColor(hex);
-          setBrushSize(size);
-          setBrushOpacity(opacity);
-        }}
-        onCanvasBackground={(hex: string): void => {
-          console.log("Canvas background activated", { color: hex });
-          // Add background change logic here
-          // TODO: minor bug needs to update the preview panel
-          // Debounce also causes issues with real time color change.
-          setFillColor(hex);
-        }}
-        onUploadImage={(): void => {
-          // Create input element dynamically like in PromptEditor
-          console.log("Upload image activated");
-          const input = document.createElement("input");
-          input.type = "file";
-          input.accept = "image/*";
-          input.multiple = true;
-          input.style.display = "none";
-          document.body.appendChild(input);
-
-          input.onchange = (e: Event) => {
-            console.log("File change event triggered");
-            const target = e.target as HTMLInputElement;
-            if (target.files) {
-              const files = Array.from(target.files);
-              console.log("Selected files:", files);
-              const imageFiles = files.filter((file) =>
-                file.type.startsWith("image/"),
-              );
-              console.log("Filtered image files:", imageFiles);
-
-              if (imageFiles.length > 0) {
-                console.log("Uploading images:", imageFiles);
-                handleImageUpload(imageFiles);
-              } else {
-                console.log("No valid image files selected");
-              }
-            } else {
-              console.log("No files selected");
-            }
-            document.body.removeChild(input);
-          };
-
-          input.value = "";
-          input.click();
-        }}
+        onSelect={handleSelectTool}
+        onActivateShapeTool={handleActivateShapeTool}
+        onPaintBrush={handlePaintBrush}
+        onCanvasBackground={handleCanvasBackground}
+        onUploadImage={handleUploadImageClick}
         supportsMaskTool={supportsMaskedInpainting}
         activeToolId={activeTool}
         currentShape={currentShape}
@@ -1173,53 +1196,14 @@ const PageDraw = () => {
             }
             return false;
           }}
-          onMenuAction={async (action) => {
-            switch (action) {
-              case "LOCK":
-                toggleLock(selectedNodeIds);
-                break;
-              case "REMOVE_BACKGROUND":
-                await beginRemoveBackground(selectedNodeIds);
-                break;
-              case "BRING_TO_FRONT":
-                bringToFront(selectedNodeIds);
-                break;
-              case "BRING_FORWARD":
-                bringForward(selectedNodeIds);
-                break;
-              case "SEND_BACKWARD":
-                sendBackward(selectedNodeIds);
-                break;
-              case "SEND_TO_BACK":
-                sendToBack(selectedNodeIds);
-                break;
-              case "DUPLICATE":
-                copySelectedItems();
-                pasteItems();
-                break;
-              case "DELETE":
-                deleteSelectedItems();
-                break;
-              default:
-              // No action
-            }
-          }}
-          isLocked={selectedNodeIds.some((id: string) => {
-            const node = nodes.find((n: (typeof nodes)[number]) => n.id === id);
-            const lineNode = lineNodes.find(
-              (n: (typeof lineNodes)[number]) => n.id === id,
-            );
-            return (node?.locked || lineNode?.locked) ?? false;
-          })}
+          onMenuAction={handleMenuAction}
+          isLocked={isLocked}
         >
           <PaintSurface
             nodes={displayNodes}
             lineNodes={lineNodes}
             selectedNodeIds={selectedNodeIds}
-            onCanvasSizeChange={(width: number, height: number): void => {
-              canvasWidth.current = width;
-              canvasHeight.current = height;
-            }}
+            onCanvasSizeChange={handleCanvasSizeChange}
             fillColor={fillColor}
             activeTool={activeTool}
             brushColor={brushColor}
@@ -1250,35 +1234,29 @@ const PageDraw = () => {
       {/* Floating "Edit 3D" button — shown above the selected 3D-model node
           when the overlay is not already open. Rendered as an isolated memoized
           component so Konva-driven position updates don't re-render PageDraw. */}
-      {!editing3DNodeId &&
-        selectedNodeIds.length === 1 &&
-        nodes.find((n) => n.id === selectedNodeIds[0])?.modelUrl && (
-          <Edit3DButton
-            nodeId={selectedNodeIds[0]}
+      {!editing3DNodeId && selectedNodeWithModel?.modelUrl && (
+        <Edit3DButton
+          nodeId={selectedNodeIds[0]}
+          stageRef={stageRef}
+          onEdit={setEditing3DNodeId}
+        />
+      )}
+      {editingNode && (
+        <>
+          <Edit3DScrubControls
+            nodeId={editing3DNodeId!}
             stageRef={stageRef}
-            onEdit={setEditing3DNodeId}
+            overlayHandle={overlayHandleRef}
           />
-        )}
-      {editing3DNodeId &&
-        (() => {
-          const editingNode = nodes.find((n) => n.id === editing3DNodeId);
-          return editingNode ? (
-            <>
-              <Edit3DScrubControls
-                nodeId={editing3DNodeId}
-                stageRef={stageRef}
-                overlayHandle={overlayHandleRef}
-              />
-              <Model3DOverlay
-                ref={overlayHandleRef}
-                node={editingNode}
-                stageRef={stageRef}
-                onCommit={handle3DOverlayCommit}
-                onDismiss={() => setEditing3DNodeId(null)}
-              />
-            </>
-          ) : null;
-        })()}
+          <Model3DOverlay
+            ref={overlayHandleRef}
+            node={editingNode}
+            stageRef={stageRef}
+            onCommit={handle3DOverlayCommit}
+            onDismiss={() => setEditing3DNodeId(null)}
+          />
+        </>
+      )}
     </>
   );
 };
