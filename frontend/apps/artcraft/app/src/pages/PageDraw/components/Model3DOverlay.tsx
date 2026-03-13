@@ -65,7 +65,8 @@ export function Model3DOverlay({
   const captureParams = useCallback((): Model3DParams => {
     const cam = cameraRef.current;
     const ctrl = controlsRef.current;
-    if (!cam || !ctrl) return node.model3dParams ?? DEFAULT_MODEL3D_PARAMS;
+    const baseParams = node.model3dParams ?? DEFAULT_MODEL3D_PARAMS;
+    if (!cam || !ctrl) return baseParams;
     return {
       cameraPosition: {
         x: cam.position.x,
@@ -79,6 +80,9 @@ export function Model3DOverlay({
       },
       fov: cam.fov,
       modelScale: modelScaleRef.current,
+      // Preserve native dims — they are fixed for the lifetime of this 3D model node
+      nativeWidth: baseParams.nativeWidth,
+      nativeHeight: baseParams.nativeHeight,
     };
   }, [node.model3dParams]);
 
@@ -95,11 +99,13 @@ export function Model3DOverlay({
       return;
     }
 
-    // Render at the node's native pixel dimensions for the committed bitmap
-    const pixelWidth = Math.round(node.width * (node.scaleX ?? 1));
-    const pixelHeight = Math.round(node.height * (node.scaleY ?? 1));
-    renderer.setSize(pixelWidth, pixelHeight);
-    camera.aspect = pixelWidth / pixelHeight;
+    // Render at native (undistorted) dimensions. Konva will stretch the committed
+    // PNG to fill the node's current frame, preserving any user-applied stretch.
+    const baseParams = node.model3dParams ?? DEFAULT_MODEL3D_PARAMS;
+    const nativeW = baseParams.nativeWidth ?? Math.round(node.width * (node.scaleX ?? 1));
+    const nativeH = baseParams.nativeHeight ?? Math.round(node.height * (node.scaleY ?? 1));
+    renderer.setSize(nativeW, nativeH);
+    camera.aspect = nativeW / nativeH;
     camera.updateProjectionMatrix();
     renderer.render(scene, camera);
 
@@ -114,6 +120,11 @@ export function Model3DOverlay({
     if (!canvas) return;
 
     const params = node.model3dParams ?? DEFAULT_MODEL3D_PARAMS;
+    // Render Three.js at native (undistorted) dimensions. The canvas element
+    // uses h-full w-full so the browser CSS-stretches the framebuffer to fill
+    // the overlay div, giving a live preview of how the stretch will look.
+    const nativeW = params.nativeWidth ?? Math.round(screenRect.width);
+    const nativeH = params.nativeHeight ?? Math.round(screenRect.height);
 
     const scene = new THREE.Scene();
     scene.background = null;
@@ -125,12 +136,15 @@ export function Model3DOverlay({
       canvas,
     });
     renderer.setClearColor(0x000000, 0);
-    renderer.setSize(Math.round(screenRect.width), Math.round(screenRect.height));
+    // Pass false so Three.js does NOT update canvas.style.width/height — we let
+    // Tailwind's h-full w-full CSS scale the native framebuffer to the overlay
+    // div's dimensions, giving a live stretched/squished preview.
+    renderer.setSize(nativeW, nativeH, false);
     rendererRef.current = renderer;
 
     const camera = new THREE.PerspectiveCamera(
       params.fov,
-      screenRect.width / screenRect.height,
+      nativeW / nativeH,
       0.1,
       1000,
     );

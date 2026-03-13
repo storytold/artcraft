@@ -6,6 +6,12 @@ export interface Model3DParams {
   cameraTarget: { x: number; y: number; z: number };
   fov: number;
   modelScale: number;
+  /** Native render dimensions — the undistorted pixel size for this 3D model.
+   *  Stored once on first drop and preserved across re-edits. When the Konva
+   *  node is stretched, the overlay renders at these native dims and Konva
+   *  CSS-stretches the result to match the node's frame, preserving the stretch. */
+  nativeWidth: number;
+  nativeHeight: number;
 }
 
 export const DEFAULT_MODEL3D_PARAMS: Model3DParams = {
@@ -13,6 +19,8 @@ export const DEFAULT_MODEL3D_PARAMS: Model3DParams = {
   cameraTarget: { x: 0, y: 0.4, z: 0 },
   fov: 50,
   modelScale: 1,
+  nativeWidth: 512,
+  nativeHeight: 512,
 };
 
 function buildScene(): {

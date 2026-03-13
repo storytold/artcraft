@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DRAW_LAYER_ID, INPAINT_LAYER_ID, PaintSurface } from "./PaintSurface";
 import "./App.css";
@@ -53,6 +53,73 @@ import {
 import { Model3DOverlay } from "./components/Model3DOverlay";
 
 const PAGE_ID: ModelPage = ModelPage.Canvas2D;
+
+// ─── Edit3DButton ─────────────────────────────────────────────────────────────
+// Isolated memoized component so Konva-driven position updates (stage pan/zoom,
+// transformer drag) only re-render this small button — not the entire PageDraw
+// tree. It owns the forceUpdate state and Konva event listeners internally.
+interface Edit3DButtonProps {
+  nodeId: string;
+  stageRef: { current: Konva.Stage };
+  onEdit: (nodeId: string) => void;
+}
+
+const Edit3DButton = memo(function Edit3DButton({
+  nodeId,
+  stageRef,
+  onEdit,
+}: Edit3DButtonProps) {
+  const [, forceUpdate] = useState(0);
+  const bump = useCallback(() => forceUpdate((t) => t + 1), []);
+
+  // Attach Konva event listeners so the button repositions on every stage
+  // pan/zoom and on every transformer handle move (before onTransformEnd fires).
+  // Re-runs when nodeId changes so fresh transformers are picked up.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage?.on) return;
+
+    const ns = ".edit3dbtn";
+    stage.on(
+      `dragmove${ns} xChange${ns} yChange${ns} scaleXChange${ns} scaleYChange${ns}`,
+      bump,
+    );
+    const transformers = stage.find("Transformer");
+    transformers.forEach((tr) => tr.on(`transform${ns}`, bump));
+
+    return () => {
+      stage.off(".edit3dbtn");
+      transformers.forEach((tr) => tr.off(".edit3dbtn"));
+    };
+  }, [stageRef, bump, nodeId]);
+
+  const stage = stageRef.current;
+  if (!stage?.container) return null;
+
+  const stageRect = stage.container().getBoundingClientRect();
+  const sx = stage.scaleX();
+  const sy = stage.scaleY();
+
+  // Read live Konva node geometry so the button tracks transformer handles
+  // in real-time (the store value is stale until onTransformEnd commits it).
+  const konvaNode = stage.findOne("#" + nodeId) as Konva.Shape | undefined;
+  if (!konvaNode) return null;
+
+  const screenLeft = stageRect.left + stage.x() + konvaNode.x() * sx;
+  const screenTop = stageRect.top + stage.y() + konvaNode.y() * sy;
+  const screenW = konvaNode.width() * konvaNode.scaleX() * sx;
+
+  return (
+    <button
+      className="pointer-events-auto fixed z-40 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-lg hover:bg-blue-500"
+      style={{ left: screenLeft + screenW / 2, top: screenTop - 36 }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={() => onEdit(nodeId)}
+    >
+      Edit 3D
+    </button>
+  );
+});
 
 export const DecodeBase64ToImage = async (
   base64String: string,
@@ -358,17 +425,15 @@ const PageDraw = () => {
     };
   }, [createImageFromUrl, createImageFrom3DModel]);
 
-  // Open the 3D overlay automatically when a single 3D-model node is selected
+  // Auto-close the 3D overlay when the editing node is no longer selected
+  // (e.g. user clicks the canvas background or selects a different node).
+  // We do NOT auto-open here — opening is gated behind the "Edit 3D" button
+  // so the Konva transformer can work normally on selection.
   useEffect(() => {
-    if (selectedNodeIds.length === 1) {
-      const node = nodes.find((n) => n.id === selectedNodeIds[0]);
-      if (node?.modelUrl) {
-        setEditing3DNodeId(node.id);
-        return;
-      }
+    if (editing3DNodeId && !selectedNodeIds.includes(editing3DNodeId)) {
+      setEditing3DNodeId(null);
     }
-    setEditing3DNodeId(null);
-  }, [selectedNodeIds, nodes]);
+  }, [selectedNodeIds, editing3DNodeId]);
 
   const handle3DOverlayCommit = useCallback(
     (dataUrl: string, params: Model3DParams) => {
@@ -1049,6 +1114,18 @@ const PageDraw = () => {
         <CostCalculatorButton modelPage={PAGE_ID} />
         <HelpMenuButton />
       </div>
+      {/* Floating "Edit 3D" button — shown above the selected 3D-model node
+          when the overlay is not already open. Rendered as an isolated memoized
+          component so Konva-driven position updates don't re-render PageDraw. */}
+      {!editing3DNodeId &&
+        selectedNodeIds.length === 1 &&
+        nodes.find((n) => n.id === selectedNodeIds[0])?.modelUrl && (
+          <Edit3DButton
+            nodeId={selectedNodeIds[0]}
+            stageRef={stageRef}
+            onEdit={setEditing3DNodeId}
+          />
+        )}
       {editing3DNodeId &&
         (() => {
           const editingNode = nodes.find((n) => n.id === editing3DNodeId);
