@@ -33,6 +33,15 @@
       "path": "../../libs/components/button"
     },
     {
+      "path": "../../libs/components/popover"
+    },
+    {
+      "path": "../../libs/components/tooltip"
+    },
+    {
+      "path": "../../libs/components/badge"
+    },
+    {
       "path": "../../libs/api"
     },
     {

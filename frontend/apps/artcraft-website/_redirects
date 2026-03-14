@@ -17,6 +17,10 @@
 /checkout* /index.html 200
 /checkout/* /index.html 200
 
+/create-image /index.html 200
+/create-image/ /index.html 200
+/create-image/* /index.html 200
+
 /download /index.html 200
 /download/ /index.html 200
 

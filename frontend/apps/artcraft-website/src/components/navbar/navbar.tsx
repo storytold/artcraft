@@ -14,6 +14,7 @@ import { UsersApi, UserInfo } from "@storyteller/api";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
+  { name: "Create Image", href: "/create-image" },
   { name: "Tutorials", href: "/tutorials" },
   { name: "News", href: "/news" },
   { name: "FAQ", href: "/faq" },

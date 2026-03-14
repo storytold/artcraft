@@ -27,6 +27,40 @@
   }
 }
 
+/* Shared component utilities (matching desktop app theme) */
+.bg-ui-badge {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.icon-auto-contrast {
+  filter: invert(1);
+}
+
+.glass {
+  @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
+  background-color: rgba(62, 62, 65, 0.5) !important;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 .bg-dots {
   background-image: radial-gradient(#ffffff20 1px, transparent 0);
   background-color: #101014;
