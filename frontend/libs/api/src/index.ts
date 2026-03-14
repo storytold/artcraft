@@ -2,6 +2,8 @@ export * from "./lib/enums/index.js";
 export * from "./lib/models/Users.js";
 export * from "./lib/AnalyticsApi.js";
 export * from "./lib/BillingApi.js";
+export * from "./lib/CreditsApi.js";
+export * from "./lib/GenerationApi.js";
 export * from "./lib/EngineApi.js";
 export * from "./lib/JobsApi.js";
 export * from "./lib/MediaFilesApi.js";

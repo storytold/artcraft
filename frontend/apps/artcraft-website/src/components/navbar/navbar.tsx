@@ -10,7 +10,9 @@ import { twMerge } from "tailwind-merge";
 import { useEffect, useState, Fragment } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
-import { UsersApi, UserInfo } from "@storyteller/api";
+import { UsersApi, UserInfo, CreditsApi } from "@storyteller/api";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
@@ -23,13 +25,26 @@ const NAV_ITEMS = [
   { name: "Download", href: "/download" },
 ];
 
+async function fetchCredits(): Promise<number | null> {
+  try {
+    const api = new CreditsApi();
+    const response = await api.GetSessionCredits();
+    if (response.success && response.data) {
+      return response.data.sumTotalCredits;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const [user, setUser] = useState<UserInfo | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [credits, setCredits] = useState<number | null>(null);
 
-  // Check session on mount
   // Check session on mount and when auth changes or location changes
   useEffect(() => {
     const checkSession = async () => {
@@ -42,8 +57,10 @@ export default function Navbar() {
         response.data.user
       ) {
         setUser(response.data.user);
+        fetchCredits().then(setCredits);
       } else {
         setUser(undefined);
+        setCredits(null);
       }
       setIsLoading(false);
     };
@@ -55,8 +72,16 @@ export default function Navbar() {
       checkSession();
     };
 
+    const handleCreditsChange = () => {
+      fetchCredits().then(setCredits);
+    };
+
     window.addEventListener("auth-change", handleAuthChange);
-    return () => window.removeEventListener("auth-change", handleAuthChange);
+    window.addEventListener("credits-change", handleCreditsChange);
+    return () => {
+      window.removeEventListener("auth-change", handleAuthChange);
+      window.removeEventListener("credits-change", handleCreditsChange);
+    };
   }, [location.pathname]);
 
   const handleLogout = async () => {
@@ -150,6 +175,15 @@ export default function Navbar() {
                 >
                   Pricing
                 </Link>
+                {credits !== null && (
+                  <div className="flex items-center gap-2 text-[15px] font-semibold text-white/90">
+                    <FontAwesomeIcon
+                      icon={faCoins}
+                      className="text-primary text-sm"
+                    />
+                    {credits.toLocaleString()} Credits
+                  </div>
+                )}
 
                 <Menu as="div" className="relative ml-3">
                   <div>

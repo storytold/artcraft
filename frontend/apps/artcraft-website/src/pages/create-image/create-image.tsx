@@ -204,6 +204,7 @@ export default function CreateImage() {
       }
 
       setBatchJobToken(batchId, result.jobToken);
+      window.dispatchEvent(new Event("credits-change"));
 
       const stopPolling = startPolling(
         result.jobToken,

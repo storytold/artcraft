@@ -1,4 +1,4 @@
-import { JobsApi } from "@storyteller/api";
+import { JobsApi, GenerationApi } from "@storyteller/api";
 import type { GeneratedVideo } from "./create-video-store";
 
 // ── Model → endpoint mapping ──────────────────────────────────────────────
@@ -143,25 +143,8 @@ export async function enqueueVideoGeneration(
 ): Promise<{ success: boolean; jobToken?: string; error?: string }> {
   const endpoint = getEndpointForModel(params.modelTauriId);
   const body = buildRequestBody(params);
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    credentials: "include",
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => "Request failed");
-    return { success: false, error: text };
-  }
-
-  const data = await response.json();
-  if (data.success && data.inference_job_token) {
-    return { success: true, jobToken: data.inference_job_token };
-  }
-
-  return { success: false, error: data.BadInput ?? "Generation failed" };
+  const api = new GenerationApi();
+  return api.Enqueue(endpoint, body);
 }
 
 // ── Poll for completion ───────────────────────────────────────────────────

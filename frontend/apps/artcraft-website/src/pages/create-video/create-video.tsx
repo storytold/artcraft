@@ -195,6 +195,7 @@ export default function CreateVideo() {
       }
 
       setBatchJobToken(batchId, result.jobToken);
+      window.dispatchEvent(new Event("credits-change"));
 
       const stopPolling = startVideoPolling(
         result.jobToken,
