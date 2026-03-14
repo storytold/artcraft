@@ -1,4 +1,4 @@
-import { faEye, faEyeSlash, faSpinner } from "@fortawesome/pro-solid-svg-icons";
+import { faEye, faEyeSlash, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { useState } from "react";
@@ -136,7 +136,7 @@ const Login = () => {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <FontAwesomeIcon icon={faSpinner} spin />
+                  <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
                 ) : (
                   "Log in"
                 )}

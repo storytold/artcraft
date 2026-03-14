@@ -1,6 +1,6 @@
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { UsersApi } from "@storyteller/api";
-import { faSpinner } from "@fortawesome/pro-solid-svg-icons";
+import { faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 
@@ -53,9 +53,8 @@ export function GoogleLoginButton({
       <div className="absolute inset-0 w-full h-full flex items-center justify-center gap-3 bg-white text-black rounded-lg font-medium border border-gray-200 hover:bg-gray-50 transition-colors">
         {isLoading ? (
           <FontAwesomeIcon
-            icon={faSpinner}
-            spin
-            className="text-lg text-gray-600"
+            icon={faSpinnerThird}
+            className="animate-spin text-lg text-gray-600"
           />
         ) : (
           <>

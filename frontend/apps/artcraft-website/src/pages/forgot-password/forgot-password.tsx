@@ -1,7 +1,7 @@
 import {
   faArrowLeft,
   faEnvelope,
-  faSpinner,
+  faSpinnerThird,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
@@ -98,7 +98,7 @@ const ForgotPassword = () => {
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <FontAwesomeIcon icon={faSpinner} spin />
+                    <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
                   ) : (
                     "Send Reset Code"
                   )}

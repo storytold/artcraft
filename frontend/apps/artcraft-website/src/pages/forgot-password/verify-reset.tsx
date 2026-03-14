@@ -3,7 +3,7 @@ import {
   faLock,
   faEye,
   faEyeSlash,
-  faSpinner,
+  faSpinnerThird,
   faKey,
   faCheckCircle,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -254,7 +254,7 @@ const VerifyReset = () => {
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <FontAwesomeIcon icon={faSpinner} spin />
+                    <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
                   ) : (
                     "Change Password"
                   )}

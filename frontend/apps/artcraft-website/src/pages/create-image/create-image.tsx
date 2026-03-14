@@ -5,7 +5,7 @@ import {
   faClock,
   faCircleExclamation,
   faImage,
-  faSpinner,
+  faSpinnerThird,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { UsersApi, UserInfo } from "@storyteller/api";
@@ -242,9 +242,8 @@ export default function CreateImage() {
     return (
       <div className="flex h-screen items-center justify-center bg-[#101014]">
         <FontAwesomeIcon
-          icon={faSpinner}
-          spin
-          className="text-2xl text-white/40"
+          icon={faSpinnerThird}
+          className="animate-spin text-2xl text-white/40"
         />
       </div>
     );
