@@ -31,8 +31,15 @@ pub struct GenerateVideoArgs<'a> {
   /// Optional end frame image URL (keyframe mode).
   pub end_frame_url: Option<String>,
 
-  /// Optional reference image URLs (reference mode). When present, takes priority over start/end frames.
+  /// Optional reference image URLs (reference mode).
+  /// When present, takes priority over start/end frames.
   pub reference_image_urls: Option<Vec<String>>,
+
+  /// Optional reference video URLs (reference mode).
+  /// Can be combined with reference_image_urls.
+  /// Videos are referenced in prompts as @video1, @video2, etc.
+  /// When present, takes priority over start/end frames.
+  pub reference_video_urls: Option<Vec<String>>,
 }
 
 impl GenerateVideoArgs<'_> {
@@ -126,12 +133,21 @@ pub struct GenerateVideoResponse {
 // --- Implementation ---
 
 pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideoResponse, Seedance2ProError> {
-  let is_reference_mode = args.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_reference_images = args.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_reference_videos = args.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let is_reference_mode = has_reference_images || has_reference_videos;
 
   let video_input_mode = if is_reference_mode { "reference" } else { "keyframe" };
 
   let uploaded_urls: Option<Vec<String>> = if is_reference_mode {
-    args.reference_image_urls
+    let mut urls = Vec::new();
+    if let Some(video_urls) = args.reference_video_urls {
+      urls.extend(video_urls);
+    }
+    if let Some(image_urls) = args.reference_image_urls {
+      urls.extend(image_urls);
+    }
+    if urls.is_empty() { None } else { Some(urls) }
   } else {
     let mut urls = Vec::new();
     if let Some(url) = args.start_frame_url {
@@ -142,6 +158,8 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
     }
     if urls.is_empty() { None } else { Some(urls) }
   };
+
+  let face_blur_mode = if is_reference_mode { Some("off") } else { None };
 
   let batch_count_value = args.batch_count.as_u8();
   let batch_count = if batch_count_value > 1 { Some(batch_count_value) } else { None };
@@ -164,6 +182,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
           model: "seedance-20",
           duration,
           mode: video_input_mode,
+          face_blur_mode,
           uploaded_urls,
           batch_count,
         },
@@ -263,6 +282,7 @@ mod tests {
       start_frame_url: None,
       end_frame_url: None,
       reference_image_urls: None,
+      reference_video_urls: None,
     }
   }
 
@@ -325,6 +345,7 @@ mod tests {
       start_frame_url: None,
       end_frame_url: None,
       reference_image_urls: None,
+      reference_video_urls: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -349,6 +370,7 @@ mod tests {
       start_frame_url: Some("https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string()),
       end_frame_url: None,
       reference_image_urls: None,
+      reference_video_urls: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -360,7 +382,7 @@ mod tests {
 
   #[tokio::test]
   #[ignore] // manually test — requires real cookies
-  async fn test_generate_reference_video() -> AnyhowResult<()> {
+  async fn test_generate_reference_image_video() -> AnyhowResult<()> {
     setup_test_logging(LevelFilter::Trace);
     let session = test_session()?;
     let args = GenerateVideoArgs {
@@ -374,6 +396,61 @@ mod tests {
       reference_image_urls: Some(vec![
         "https://static.seedance2-pro.com/materials/20260219/1771463564512-b14bfe90.png".to_string(),
         "https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string(),
+      ]),
+      reference_video_urls: None,
+    };
+    let result = generate_video(args).await?;
+    println!("Task ID: {}", result.task_id);
+    println!("Order ID: {}", result.order_id);
+    assert!(!result.task_id.is_empty());
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies
+  async fn test_generate_reference_video_only() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+    let args = GenerateVideoArgs {
+      session: &session,
+      prompt: "Change the Video @video1 to night time.".to_string(),
+      resolution: Resolution::Landscape16x9,
+      duration_seconds: 5,
+      batch_count: BatchCount::One,
+      start_frame_url: None,
+      end_frame_url: None,
+      reference_image_urls: None,
+      reference_video_urls: Some(vec![
+        "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+      ]),
+    };
+    let result = generate_video(args).await?;
+    println!("Task ID: {}", result.task_id);
+    println!("Order ID: {}", result.order_id);
+    assert!(!result.task_id.is_empty());
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies
+  async fn test_generate_reference_video_and_image() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+    let args = GenerateVideoArgs {
+      session: &session,
+      prompt: "Put the robot in @video1 next to the house in @image1".to_string(),
+      resolution: Resolution::Landscape16x9,
+      duration_seconds: 5,
+      batch_count: BatchCount::One,
+      start_frame_url: None,
+      end_frame_url: None,
+      reference_image_urls: Some(vec![
+        "https://static.seedance2-pro.com/materials/20260315/1773595053724-07a1d500.png".to_string(),
+      ]),
+      reference_video_urls: Some(vec![
+        "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
       ]),
     };
     let result = generate_video(args).await?;

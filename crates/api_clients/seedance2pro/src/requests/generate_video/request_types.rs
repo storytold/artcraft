@@ -28,6 +28,8 @@ pub (super) struct ApiParams {
   pub model: &'static str,
   pub duration: String,
   pub mode: &'static str,
+  #[serde(rename = "faceBlurMode", skip_serializing_if = "Option::is_none")]
+  pub face_blur_mode: Option<&'static str>,
   #[serde(rename = "uploadedUrls", skip_serializing_if = "Option::is_none")]
   pub uploaded_urls: Option<Vec<String>>,
   #[serde(rename = "batchCount", skip_serializing_if = "Option::is_none")]
