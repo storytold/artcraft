@@ -28,8 +28,6 @@ pub async fn handle_failed_job(
   
   let maybe_failure_message = job.status.maybe_failure_message.as_deref();
 
-  let maybe_failure_message = job.status.maybe_failure_message.as_deref();
-
   update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {
     db: task_database.get_connection(),
     task_id: &task.id,
