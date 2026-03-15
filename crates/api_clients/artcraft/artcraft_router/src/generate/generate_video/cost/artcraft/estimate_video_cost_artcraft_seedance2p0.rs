@@ -32,6 +32,7 @@ pub (crate) fn estimate_video_cost_artcraft_seedance2p0(
     end_frame_url: None,
     reference_image_urls: None,
     reference_video_urls: None,
+    use_face_blur_hack: None,
   };
 
   let cost_in_usd_cents = args.estimate_cost_in_usd_cents();

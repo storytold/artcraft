@@ -195,6 +195,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     end_frame_url,
     reference_image_urls,
     reference_video_urls: None, // TODO: Wire up video references from request
+    use_face_blur_hack: None,
   };
 
   // --- Calculate cost and charge wallet ---

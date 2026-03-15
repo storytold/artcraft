@@ -40,6 +40,9 @@ pub struct GenerateVideoArgs<'a> {
   /// Videos are referenced in prompts as @video1, @video2, etc.
   /// When present, takes priority over start/end frames.
   pub reference_video_urls: Option<Vec<String>>,
+
+  /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
+  pub use_face_blur_hack: Option<bool>,
 }
 
 impl GenerateVideoArgs<'_> {
@@ -159,7 +162,11 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
     if urls.is_empty() { None } else { Some(urls) }
   };
 
-  let face_blur_mode = if is_reference_mode { Some("off") } else { None };
+  let face_blur_mode = match args.use_face_blur_hack {
+    Some(true) => Some("on"),
+    Some(false) => Some("off"),
+    None => None,
+  };
 
   let batch_count_value = args.batch_count.as_u8();
   let batch_count = if batch_count_value > 1 { Some(batch_count_value) } else { None };
@@ -283,6 +290,7 @@ mod tests {
       end_frame_url: None,
       reference_image_urls: None,
       reference_video_urls: None,
+      use_face_blur_hack: None,
     }
   }
 
@@ -346,6 +354,7 @@ mod tests {
       end_frame_url: None,
       reference_image_urls: None,
       reference_video_urls: None,
+      use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -371,6 +380,7 @@ mod tests {
       end_frame_url: None,
       reference_image_urls: None,
       reference_video_urls: None,
+      use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -398,6 +408,7 @@ mod tests {
         "https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string(),
       ]),
       reference_video_urls: None,
+      use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -424,6 +435,7 @@ mod tests {
       reference_video_urls: Some(vec![
         "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
       ]),
+      use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -452,6 +464,7 @@ mod tests {
       reference_video_urls: Some(vec![
         "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
       ]),
+      use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
