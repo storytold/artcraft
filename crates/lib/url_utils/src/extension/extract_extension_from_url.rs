@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::extension::extension::Extension;
 use url::Url;
 
@@ -22,12 +24,12 @@ const KNOWN_VIDEO_EXTENSIONS: &[Extension] = &[
 ];
 
 /// Controls which extensions are accepted when extracting from a URL.
-pub enum ExtractExtensions<'a> {
+pub enum ExtractExtensions {
   /// Accept any extension-like string found in the URL path.
   All,
 
   /// Accept only extensions that appear in the given set.
-  Set(&'a [Extension]),
+  Set(HashSet<Extension>),
 
   /// Accept only known image extensions (png, jpg, jpeg, webp).
   KnownImage,
@@ -40,6 +42,13 @@ pub enum ExtractExtensions<'a> {
 
   /// Accept any known media extension (image, audio, or video).
   KnownMedia,
+}
+
+impl ExtractExtensions {
+  /// Creates a `Set` variant from a `Vec<Extension>`.
+  pub fn from_vec(extensions: Vec<Extension>) -> Self {
+    Self::Set(extensions.into_iter().collect())
+  }
 }
 
 /// Extracts a file extension from a URL string, filtered by `accept`.
@@ -56,31 +65,32 @@ pub fn extract_extension_from_url(url: &Url, accept: &ExtractExtensions) -> Opti
     .and_then(|ext| ext.to_str())?;
 
   let lower = raw_ext.to_lowercase();
+  let candidate = Extension::new(&lower);
 
   match accept {
-    ExtractExtensions::All => Some(Extension::new(&lower)),
+    ExtractExtensions::All => Some(candidate),
     ExtractExtensions::Set(set) => {
-      find_in_slice(set, &lower)
+      if set.contains(&candidate) { Some(candidate) } else { None }
     }
     ExtractExtensions::KnownImage => {
-      find_in_slice(KNOWN_IMAGE_EXTENSIONS, &lower)
+      find_in_slice(KNOWN_IMAGE_EXTENSIONS, &candidate)
     }
     ExtractExtensions::KnownAudio => {
-      find_in_slice(KNOWN_AUDIO_EXTENSIONS, &lower)
+      find_in_slice(KNOWN_AUDIO_EXTENSIONS, &candidate)
     }
     ExtractExtensions::KnownVideo => {
-      find_in_slice(KNOWN_VIDEO_EXTENSIONS, &lower)
+      find_in_slice(KNOWN_VIDEO_EXTENSIONS, &candidate)
     }
     ExtractExtensions::KnownMedia => {
-      find_in_slice(KNOWN_IMAGE_EXTENSIONS, &lower)
-        .or_else(|| find_in_slice(KNOWN_AUDIO_EXTENSIONS, &lower))
-        .or_else(|| find_in_slice(KNOWN_VIDEO_EXTENSIONS, &lower))
+      find_in_slice(KNOWN_IMAGE_EXTENSIONS, &candidate)
+        .or_else(|| find_in_slice(KNOWN_AUDIO_EXTENSIONS, &candidate))
+        .or_else(|| find_in_slice(KNOWN_VIDEO_EXTENSIONS, &candidate))
     }
   }
 }
 
-fn find_in_slice(extensions: &[Extension], lower: &str) -> Option<Extension> {
-  extensions.iter().find(|e| e.without_period() == lower).cloned()
+fn find_in_slice(extensions: &[Extension], candidate: &Extension) -> Option<Extension> {
+  extensions.iter().find(|e| *e == candidate).cloned()
 }
 
 #[cfg(test)]
@@ -167,20 +177,20 @@ mod tests {
 
   #[test]
   fn set_matches_custom_list() {
-    let custom = [
+    let accept = ExtractExtensions::from_vec(vec![
       Extension::from_static("csv", ".csv"),
       Extension::from_static("tsv", ".tsv"),
-    ];
-    let ext = extract_extension_from_url_str("https://example.com/data.csv", &ExtractExtensions::Set(&custom));
+    ]);
+    let ext = extract_extension_from_url_str("https://example.com/data.csv", &accept);
     assert_eq!(ext.unwrap().without_period(), "csv");
   }
 
   #[test]
   fn set_rejects_non_member() {
-    let custom = [
+    let accept = ExtractExtensions::from_vec(vec![
       Extension::from_static("csv", ".csv"),
-    ];
-    let ext = extract_extension_from_url_str("https://example.com/data.png", &ExtractExtensions::Set(&custom));
+    ]);
+    let ext = extract_extension_from_url_str("https://example.com/data.png", &accept);
     assert!(ext.is_none());
   }
 
