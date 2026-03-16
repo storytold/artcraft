@@ -120,8 +120,11 @@ mod tests {
   async fn test_poll_prediction_result() -> AnyhowResult<()> {
     setup_test_logging(LevelFilter::Trace);
     let session = get_test_api_key()?;
-    let request_id = "5fd7f575-4b9e-4c0a-b7f7-0eb036027b81";
-    let request_id = "82d622b1-8911-4cac-8362-e18efaa743ed";
+    let request_id = "5fd7f575-4b9e-4c0a-b7f7-0eb036027b81"; // Corgi shiba I2V
+    let request_id = "8a4b578b-4514-443f-b444-4fb3bc5c2cbb"; // Cat TTV
+    let request_id = "671c2dee-2ca9-47d7-a12e-d16610b1b365"; // Corgi TTV
+    let request_id = "82d622b1-8911-4cac-8362-e18efaa743ed"; // Corgi I2V
+
     let result = poll_prediction_result(PollPredictionResultArgs {
       session: &session,
       request_id,
