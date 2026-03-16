@@ -1,3 +1,4 @@
+use crate::api_types::request_id::RequestId;
 use crate::creds::muapi_session::MuapiSession;
 use crate::error::muapi_client_error::MuapiClientError;
 use crate::error::muapi_error::MuapiError;
@@ -47,7 +48,7 @@ pub struct PollPredictionResultArgs<'a> {
   pub session: &'a MuapiSession,
 
   /// The request_id returned from a submission endpoint.
-  pub request_id: &'a str,
+  pub request_id: &'a RequestId,
 }
 
 pub struct PollPredictionResultApiResponse {
@@ -55,7 +56,7 @@ pub struct PollPredictionResultApiResponse {
   pub status: PredictionStatus,
 
   /// Output URLs. Populated when `status` is `Completed`.
-  pub outputs: Option<Vec<String>>,
+  pub output_urls: Option<Vec<String>>,
 
   /// Error message. Populated when `status` is `Failed`.
   pub error: Option<String>,
@@ -66,7 +67,7 @@ pub struct PollPredictionResultApiResponse {
 pub async fn poll_prediction_result(
   args: PollPredictionResultArgs<'_>,
 ) -> Result<PollPredictionResultApiResponse, MuapiError> {
-  let url = format!("{}/{}/result", PREDICTIONS_BASE_URL, args.request_id);
+  let url = format!("{}/{}/result", PREDICTIONS_BASE_URL, args.request_id.as_str());
 
   info!("Polling Muapi prediction result: {}", url);
 
@@ -100,9 +101,11 @@ pub async fn poll_prediction_result(
   let parsed: PollPredictionResultResponse = serde_json::from_str(&response_body)
     .map_err(|err| MuapiGenericApiError::SerdeResponseParseErrorWithBody(err, response_body))?;
 
+  let output_urls = parsed.outputs.and_then(|urls| if urls.is_empty() { None } else { Some(urls) });
+
   Ok(PollPredictionResultApiResponse {
     status: PredictionStatus::from_str(&parsed.status),
-    outputs: parsed.outputs,
+    output_urls,
     error: parsed.error,
   })
 }
@@ -120,17 +123,17 @@ mod tests {
   async fn test_poll_prediction_result() -> AnyhowResult<()> {
     setup_test_logging(LevelFilter::Trace);
     let session = get_test_api_key()?;
-    let request_id = "5fd7f575-4b9e-4c0a-b7f7-0eb036027b81"; // Corgi shiba I2V
-    let request_id = "8a4b578b-4514-443f-b444-4fb3bc5c2cbb"; // Cat TTV
-    let request_id = "671c2dee-2ca9-47d7-a12e-d16610b1b365"; // Corgi TTV
-    let request_id = "82d622b1-8911-4cac-8362-e18efaa743ed"; // Corgi I2V
+    let request_id = RequestId::from_str("5fd7f575-4b9e-4c0a-b7f7-0eb036027b81"); // Corgi shiba I2V
+    let request_id = RequestId::from_str("8a4b578b-4514-443f-b444-4fb3bc5c2cbb"); // Cat TTV
+    let request_id = RequestId::from_str("82d622b1-8911-4cac-8362-e18efaa743ed"); // Corgi I2V
+    let request_id = RequestId::from_str("671c2dee-2ca9-47d7-a12e-d16610b1b365"); // Corgi TTV
 
     let result = poll_prediction_result(PollPredictionResultArgs {
       session: &session,
-      request_id,
+      request_id: &request_id,
     }).await?;
     println!("Status: {:?}", result.status);
-    println!("Outputs: {:?}", result.outputs);
+    println!("Output URLs: {:?}", result.output_urls);
     println!("Error: {:?}", result.error);
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
     Ok(())

@@ -1,3 +1,4 @@
+use crate::api_types::request_id::RequestId;
 use crate::creds::muapi_session::MuapiSession;
 use crate::error::muapi_client_error::MuapiClientError;
 use crate::error::muapi_error::MuapiError;
@@ -107,7 +108,7 @@ impl std::fmt::Debug for Seedance2p0ImageToVideoArgs<'_> {
 #[derive(Debug)]
 pub struct Seedance2p0ImageToVideoResponse {
   /// The request ID used to poll for results.
-  pub request_id: String,
+  pub request_id: RequestId,
 }
 
 // --- Implementation ---
@@ -159,7 +160,7 @@ pub async fn seedance_2p0_image_to_video(
     .map_err(|err| MuapiGenericApiError::SerdeResponseParseErrorWithBody(err, response_body))?;
 
   Ok(Seedance2p0ImageToVideoResponse {
-    request_id: parsed.request_id,
+    request_id: RequestId::new(parsed.request_id),
   })
 }
 
@@ -190,7 +191,7 @@ mod tests {
     let result = seedance_2p0_image_to_video(args).await?;
     println!("Result: {:?}", result);
     println!("Request ID: {}", result.request_id);
-    assert!(!result.request_id.is_empty());
+    assert!(!result.request_id.as_str().is_empty());
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
     Ok(())
   }
@@ -213,7 +214,7 @@ mod tests {
     let result = seedance_2p0_image_to_video(args).await?;
     println!("Result: {:?}", result);
     println!("Request ID: {}", result.request_id);
-    assert!(!result.request_id.is_empty());
+    assert!(!result.request_id.as_str().is_empty());
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
     Ok(())
   }
