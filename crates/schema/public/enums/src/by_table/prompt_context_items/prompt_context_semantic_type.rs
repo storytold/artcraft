@@ -6,6 +6,16 @@ use strum::EnumCount;
 use strum::EnumIter;
 use utoipa::ToSchema;
 
+/*
+Current DB values:
+imgref
+imgsrc
+imgmask
+vid_start_frame
+vid_end_frame
+vidref
+*/
+
 /// Used in the `prompt_context_items` table in a `VARCHAR(16)` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
@@ -34,6 +44,9 @@ pub enum PromptContextSemanticType {
   ImgrefCharacter,
   ImgrefStyle,
   ImgrefBg,
+
+  /// Audio reference (e.g. for audio-to-video generation)
+  Audioref,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -54,6 +67,7 @@ impl PromptContextSemanticType {
       Self::ImgrefCharacter => "imgref_character",
       Self::ImgrefStyle => "imgref_style",
       Self::ImgrefBg => "imgref_bg",
+      Self::Audioref => "audioref",
     }
   }
 
@@ -68,6 +82,7 @@ impl PromptContextSemanticType {
       "imgref_character" => Ok(Self::ImgrefCharacter),
       "imgref_style" => Ok(Self::ImgrefStyle),
       "imgref_bg" => Ok(Self::ImgrefBg),
+      "audioref" => Ok(Self::Audioref),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -85,6 +100,7 @@ impl PromptContextSemanticType {
       Self::ImgrefCharacter,
       Self::ImgrefStyle,
       Self::ImgrefBg,
+      Self::Audioref,
     ])
   }
 }
@@ -108,6 +124,7 @@ mod tests {
       assert_serialization(PromptContextSemanticType::ImgrefCharacter, "imgref_character");
       assert_serialization(PromptContextSemanticType::ImgrefStyle, "imgref_style");
       assert_serialization(PromptContextSemanticType::ImgrefBg, "imgref_bg");
+      assert_serialization(PromptContextSemanticType::Audioref, "audioref");
     }
   }
 
@@ -125,6 +142,7 @@ mod tests {
       assert_eq!(PromptContextSemanticType::ImgrefCharacter.to_str(), "imgref_character");
       assert_eq!(PromptContextSemanticType::ImgrefStyle.to_str(), "imgref_style");
       assert_eq!(PromptContextSemanticType::ImgrefBg.to_str(), "imgref_bg");
+      assert_eq!(PromptContextSemanticType::Audioref.to_str(), "audioref");
     }
 
     #[test]
@@ -138,6 +156,7 @@ mod tests {
       assert_eq!(PromptContextSemanticType::from_str("imgref_character").unwrap(), PromptContextSemanticType::ImgrefCharacter);
       assert_eq!(PromptContextSemanticType::from_str("imgref_style").unwrap(), PromptContextSemanticType::ImgrefStyle);
       assert_eq!(PromptContextSemanticType::from_str("imgref_bg").unwrap(), PromptContextSemanticType::ImgrefBg);
+      assert_eq!(PromptContextSemanticType::from_str("audioref").unwrap(), PromptContextSemanticType::Audioref);
       assert!(PromptContextSemanticType::from_str("foo").is_err());
     }
   }
@@ -148,7 +167,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = PromptContextSemanticType::all_variants();
-      assert_eq!(variants.len(), 9);
+      assert_eq!(variants.len(), 10);
       assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::VidStartFrame));
       assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::VidEndFrame));
       assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::VidRef));
@@ -158,6 +177,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::ImgrefCharacter));
       assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::ImgrefStyle));
       assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::ImgrefBg));
+      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::Audioref));
       assert_eq!(variants.pop_first(), None);
     }
   }
