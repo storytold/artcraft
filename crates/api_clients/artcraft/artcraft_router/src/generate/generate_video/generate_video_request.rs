@@ -1,9 +1,11 @@
 use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::common_resolution::CommonResolution;
 use crate::api::common_video_model::CommonVideoModel;
+use crate::api::audio_list_ref::AudioListRef;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
 use crate::api::provider::Provider;
+use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_pro::plan_generate_video_artcraft_kling3p0_pro;
@@ -11,7 +13,6 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use tokens::tokens::media_files::MediaFileToken;
 
 pub struct GenerateVideoRequest<'a> {
   /// Which model to use.
@@ -35,11 +36,11 @@ pub struct GenerateVideoRequest<'a> {
   /// Reference images (optional).
   pub reference_images: Option<ImageListRef<'a>>,
 
-  /// Reference video media tokens (optional).
-  pub reference_video_media_tokens: Option<&'a Vec<MediaFileToken>>,
+  /// Reference videos (optional).
+  pub reference_videos: Option<VideoListRef<'a>>,
 
-  /// Reference audio media tokens (optional).
-  pub reference_audio_media_tokens: Option<&'a Vec<MediaFileToken>>,
+  /// Reference audio (optional).
+  pub reference_audio: Option<AudioListRef<'a>>,
 
   /// The resolution to use
   pub resolution: Option<CommonResolution>,

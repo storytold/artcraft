@@ -1,6 +1,8 @@
+use crate::api::audio_list_ref::AudioListRef;
 use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
+use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
@@ -16,8 +18,8 @@ pub struct PlanArtcraftSeedance2p0<'a> {
   pub start_frame: Option<&'a MediaFileToken>,
   pub end_frame: Option<&'a MediaFileToken>,
   pub reference_images: Option<&'a Vec<MediaFileToken>>,
-  pub reference_video_media_tokens: Option<&'a Vec<MediaFileToken>>,
-  pub reference_audio_media_tokens: Option<&'a Vec<MediaFileToken>>,
+  pub reference_videos: Option<&'a Vec<MediaFileToken>>,
+  pub reference_audio: Option<&'a Vec<MediaFileToken>>,
   pub aspect_ratio: Option<Seedance2p0AspectRatio>,
   pub duration_seconds: Option<u8>,
   pub batch_count: Seedance2p0BatchCount,
@@ -32,6 +34,8 @@ pub fn plan_generate_video_artcraft_seedance2p0<'a>(
   let start_frame = resolve_image_ref(request.start_frame)?;
   let end_frame = resolve_image_ref(request.end_frame)?;
   let reference_images = resolve_image_list_ref(request.reference_images)?;
+  let reference_videos = resolve_video_list_ref(request.reference_videos)?;
+  let reference_audio = resolve_audio_list_ref(request.reference_audio)?;
 
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
@@ -42,8 +46,8 @@ pub fn plan_generate_video_artcraft_seedance2p0<'a>(
     start_frame,
     end_frame,
     reference_images,
-    reference_video_media_tokens: request.reference_video_media_tokens,
-    reference_audio_media_tokens: request.reference_audio_media_tokens,
+    reference_videos,
+    reference_audio,
     aspect_ratio,
     duration_seconds,
     batch_count,
@@ -70,6 +74,30 @@ fn resolve_image_list_ref<'a>(
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
     Some(ImageListRef::Urls(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
+    }
+  }
+}
+
+fn resolve_video_list_ref<'a>(
+  video_list_ref: Option<VideoListRef<'a>>,
+) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+  match video_list_ref {
+    None => Ok(None),
+    Some(VideoListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
+    Some(VideoListRef::Urls(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
+    }
+  }
+}
+
+fn resolve_audio_list_ref<'a>(
+  audio_list_ref: Option<AudioListRef<'a>>,
+) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+  match audio_list_ref {
+    None => Ok(None),
+    Some(AudioListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
+    Some(AudioListRef::Urls(_)) => {
       Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
     }
   }

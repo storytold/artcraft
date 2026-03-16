@@ -4,8 +4,10 @@ use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use artcraft_router::api::common_video_model::CommonVideoModel;
+use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
+use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
@@ -38,8 +40,8 @@ pub(super) async fn handle_artcraft_seedance_2p0(
     start_frame,
     end_frame,
     reference_images,
-    reference_video_media_tokens: request.reference_video_media_tokens.as_ref(),
-    reference_audio_media_tokens: request.reference_audio_media_tokens.as_ref(),
+    reference_videos: request.reference_video_media_tokens.as_ref().map(VideoListRef::MediaFileTokens),
+    reference_audio: request.reference_audio_media_tokens.as_ref().map(AudioListRef::MediaFileTokens),
     resolution: None,
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,
