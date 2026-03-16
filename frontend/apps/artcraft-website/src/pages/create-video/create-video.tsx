@@ -196,16 +196,19 @@ export default function CreateVideo() {
 
       setBatchJobToken(batchId, result.jobToken);
       window.dispatchEvent(new Event("credits-change"));
+      window.dispatchEvent(new Event("task-queue-update"));
 
       const stopPolling = startVideoPolling(
         result.jobToken,
         (video) => {
           completeBatch(batchId, video);
           pollingCleanupsRef.current.delete(batchId);
+          window.dispatchEvent(new Event("task-queue-update"));
         },
         (reason) => {
           failBatch(batchId, reason);
           pollingCleanupsRef.current.delete(batchId);
+          window.dispatchEvent(new Event("task-queue-update"));
         },
       );
 

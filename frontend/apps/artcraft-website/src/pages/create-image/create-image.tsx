@@ -205,16 +205,19 @@ export default function CreateImage() {
 
       setBatchJobToken(batchId, result.jobToken);
       window.dispatchEvent(new Event("credits-change"));
+      window.dispatchEvent(new Event("task-queue-update"));
 
       const stopPolling = startPolling(
         result.jobToken,
         (images: GeneratedImage[]) => {
           completeBatch(batchId, images);
           pollingCleanupsRef.current.delete(batchId);
+          window.dispatchEvent(new Event("task-queue-update"));
         },
         (reason: string) => {
           failBatch(batchId, reason);
           pollingCleanupsRef.current.delete(batchId);
+          window.dispatchEvent(new Event("task-queue-update"));
         },
       );
 

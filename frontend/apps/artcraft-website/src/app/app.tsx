@@ -19,6 +19,7 @@ import Signup from "../pages/signup";
 import ForgotPassword, { VerifyReset } from "../pages/forgot-password";
 import Welcome from "../pages/welcome";
 import Onboarding from "../pages/onboarding";
+import Library from "../pages/library";
 import { CheckoutSuccess, CheckoutCancel } from "../pages/checkout";
 
 export function App() {
@@ -41,6 +42,7 @@ export function App() {
         <Route path="/faq/:slug" element={<FaqArticle />} />
         <Route path="/news" element={<NewsIndex basePath="/news" />} />
         <Route path="/news/:slug" element={<NewsPost basePath="/news" />} />
+        <Route path="/library" element={<Library />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
