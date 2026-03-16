@@ -24,12 +24,12 @@ const rows: BadgeInfo[][] = [
     { id: "empty2", svg: null },
     { id: "empty3", svg: null },
     {
-      id: "flux",
-      label: "Flux Pro 1.1 Ultra",
+      id: "seedance-2",
+      label: "Seedance 2.0",
       svg: (
         <img
-          src="/model-logos/flux.svg"
-          alt="Flux logo"
+          src="/model-logos/bytedance.svg"
+          alt="Seedance logo"
           className="w-full h-full invert"
         />
       ),
@@ -54,12 +54,12 @@ const rows: BadgeInfo[][] = [
       ),
     },
     {
-      id: "gpt-image-1",
-      label: "GPT-Image 1",
+      id: "nano-banana-2",
+      label: "Nano Banana 2",
       svg: (
         <img
-          src="/model-logos/openai.svg"
-          alt="OpenAI logo"
+          src="/model-logos/google.svg"
+          alt="Google gemini icon"
           className="w-full h-full invert"
         />
       ),
@@ -77,7 +77,7 @@ const rows: BadgeInfo[][] = [
     { id: "empty17", svg: null },
     {
       id: "kling",
-      label: "Kling 2.1 Pro",
+      label: "Kling 3.0 Pro",
       svg: (
         <img
           src="/model-logos/kling.svg"

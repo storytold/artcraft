@@ -359,11 +359,10 @@ const LandingSD2 = () => {
                 <button
                   key={index}
                   onClick={() => setActiveFeature(index)}
-                  className={`snap-center shrink-0 px-5 py-2.5 rounded-full text-sm font-bold border transition-all duration-300 whitespace-nowrap ${
-                    activeFeature === index
+                  className={`snap-center shrink-0 px-5 py-2.5 rounded-full text-sm font-bold border transition-all duration-300 whitespace-nowrap ${activeFeature === index
                       ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
                       : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
-                  }`}
+                    }`}
                 >
                   {feature.title}
                 </button>
@@ -422,29 +421,26 @@ const LandingSD2 = () => {
                   >
                     <div className="max-w-lg">
                       <div
-                        className={`w-12 h-12 mb-6 rounded-2xl flex items-center justify-center text-2xl transition-all duration-500 ${
-                          activeFeature === index
+                        className={`w-12 h-12 mb-6 rounded-2xl flex items-center justify-center text-2xl transition-all duration-500 ${activeFeature === index
                             ? "bg-primary text-white shadow-lg shadow-primary/30 scale-110"
                             : "bg-white/10 text-white/50"
-                        }`}
+                          }`}
                       >
                         <FontAwesomeIcon icon={feature.icon} />
                       </div>
                       <h3
-                        className={`text-3xl xl:text-4xl font-bold mb-6 transition-all duration-500 ${
-                          activeFeature === index
+                        className={`text-3xl xl:text-4xl font-bold mb-6 transition-all duration-500 ${activeFeature === index
                             ? "text-white"
                             : "text-white/40"
-                        }`}
+                          }`}
                       >
                         {feature.title}
                       </h3>
                       <p
-                        className={`text-xl leading-relaxed transition-all duration-500 ${
-                          activeFeature === index
+                        className={`text-xl leading-relaxed transition-all duration-500 ${activeFeature === index
                             ? "text-white/80"
                             : "text-white/30"
-                        }`}
+                          }`}
                       >
                         {feature.description}
                       </p>
@@ -646,7 +642,7 @@ const LandingSD2 = () => {
                   </p>
                 </div>
                 <ModelBadgeGrid
-                  highlight="gpt-image-1"
+                  highlight="nano-banana-2"
                   rowOffsets={[-70, -90, -160]}
                   className="mt-3"
                 />

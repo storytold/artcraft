@@ -336,13 +336,12 @@ const Landing = () => {
                 <button
                   onClick={toggleMute}
                   className={`absolute top-4 right-4 sm:top-6 sm:right-6 z-20 p-2 bg-black bg-opacity-40 rounded-full w-10 h-10 md:w-12 md:h-12 text-white transition-opacity duration-200 hover:bg-opacity-80 text-md md:text-xl
-                              ${
-                                isMuted
-                                  ? "opacity-100"
-                                  : isHovering
-                                    ? "opacity-100"
-                                    : "opacity-0"
-                              }`}
+                              ${isMuted
+                      ? "opacity-100"
+                      : isHovering
+                        ? "opacity-100"
+                        : "opacity-0"
+                    }`}
                   aria-label={isMuted ? "Unmute video" : "Mute video"}
                 >
                   <FontAwesomeIcon
@@ -398,11 +397,10 @@ const Landing = () => {
                 <button
                   key={index}
                   onClick={() => setActiveFeature(index)}
-                  className={`snap-center shrink-0 px-5 py-2.5 rounded-full text-sm font-bold border transition-all duration-300 whitespace-nowrap ${
-                    activeFeature === index
+                  className={`snap-center shrink-0 px-5 py-2.5 rounded-full text-sm font-bold border transition-all duration-300 whitespace-nowrap ${activeFeature === index
                       ? "bg-primary border-primary text-white shadow-lg shadow-primary/20"
                       : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
-                  }`}
+                    }`}
                 >
                   {feature.title}
                 </button>
@@ -461,29 +459,26 @@ const Landing = () => {
                   >
                     <div className="max-w-lg">
                       <div
-                        className={`w-12 h-12 mb-6 rounded-2xl flex items-center justify-center text-2xl transition-all duration-500 ${
-                          activeFeature === index
+                        className={`w-12 h-12 mb-6 rounded-2xl flex items-center justify-center text-2xl transition-all duration-500 ${activeFeature === index
                             ? "bg-primary text-white shadow-lg shadow-primary/30 scale-110"
                             : "bg-white/10 text-white/50"
-                        }`}
+                          }`}
                       >
                         <FontAwesomeIcon icon={feature.icon} />
                       </div>
                       <h3
-                        className={`text-3xl xl:text-4xl font-bold mb-6 transition-all duration-500 ${
-                          activeFeature === index
+                        className={`text-3xl xl:text-4xl font-bold mb-6 transition-all duration-500 ${activeFeature === index
                             ? "text-white"
                             : "text-white/40"
-                        }`}
+                          }`}
                       >
                         {feature.title}
                       </h3>
                       <p
-                        className={`text-xl leading-relaxed transition-all duration-500 ${
-                          activeFeature === index
+                        className={`text-xl leading-relaxed transition-all duration-500 ${activeFeature === index
                             ? "text-white/80"
                             : "text-white/30"
-                        }`}
+                          }`}
                       >
                         {feature.description}
                       </p>
@@ -685,7 +680,7 @@ const Landing = () => {
                   </p>
                 </div>
                 <ModelBadgeGrid
-                  highlight="gpt-image-1"
+                  highlight="nano-banana-2"
                   rowOffsets={[-70, -90, -160]}
                   className="mt-3"
                 />
