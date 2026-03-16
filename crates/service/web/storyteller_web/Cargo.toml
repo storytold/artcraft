@@ -79,6 +79,7 @@ thumbnail_generator = { path = "../../../api_clients/thumbnail_generator" }
 tokens.workspace = true
 tts_common = { path = "../../../lib/tts_common" }
 url_config = { path = "../../../lib/url_config" }
+url_utils = { path = "../../../lib/url_utils" }
 user_input_common = { path = "../../../lib/user_input_common" }
 users.workspace = true
 videos = { path = "../../../lib/files/videos" }

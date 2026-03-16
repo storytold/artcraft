@@ -12,17 +12,12 @@ use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 use tokens::tokens::media_files::MediaFileToken;
 
-pub struct MediaFileUrlEntry {
-  pub cdn_url: String,
-  pub extension: String,
-}
-
 pub async fn lookup_media_file_urls_as_map(
   http_request: &HttpRequest,
   mysql_connection: &mut PoolConnection<MySql>,
   server_environment: ServerEnvironment,
   tokens: &[MediaFileToken],
-) -> Result<HashMap<MediaFileToken, MediaFileUrlEntry>, CommonWebError> {
+) -> Result<HashMap<MediaFileToken, String>, CommonWebError> {
   const CAN_SEE_DELETED: bool = false;
 
   let result = batch_get_media_files_by_tokens_with_connection(
@@ -58,10 +53,6 @@ pub async fn lookup_media_file_urls_as_map(
 
   let file_urls = media_files.into_iter()
       .map(|file| {
-        let extension = file.maybe_public_bucket_extension
-            .clone()
-            .unwrap_or_else(|| "png".to_string());
-
         let public_bucket_path = MediaFileBucketPath::from_object_hash(
           &file.public_bucket_directory_hash,
           file.maybe_public_bucket_prefix.as_deref(),
@@ -72,10 +63,7 @@ pub async fn lookup_media_file_urls_as_map(
           server_environment,
           &public_bucket_path);
 
-        (file.token, MediaFileUrlEntry {
-          cdn_url: media_links.cdn_url.to_string(),
-          extension,
-        })
+        (file.token, media_links.cdn_url.to_string())
       })
       .collect::<HashMap<_, _>>();
 

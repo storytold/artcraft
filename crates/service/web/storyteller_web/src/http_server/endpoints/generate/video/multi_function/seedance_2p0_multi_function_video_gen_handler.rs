@@ -8,7 +8,7 @@ use crate::http_server::endpoints::generate::common::payments_error_test::paymen
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
-use crate::util::lookup::lookup_media_file_urls_as_map::{lookup_media_file_urls_as_map, MediaFileUrlEntry};
+use crate::util::lookup::lookup_media_file_urls_as_map::lookup_media_file_urls_as_map;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
@@ -42,6 +42,7 @@ use seedance2pro::requests::upload_file::upload_file::{upload_file, UploadFileAr
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
+use url_utils::extension::extract_extension_from_url::{extract_extension_from_url_str, ExtractExtensions};
 
 /// Seedance 2.0 Multi-Function video generation (text-to-video, keyframe, and reference).
 #[utoipa::path(
@@ -144,7 +145,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     None => None,
     Some(token) => match file_urls_by_token.get(token) {
       None => return Err(CommonWebError::BadInputWithSimpleMessage("Start frame media not found.".to_string())),
-      Some(entry) => Some(upload_to_seedance2pro(&session, &entry.cdn_url, &entry.extension).await?),
+      Some(url) => Some(upload_to_seedance2pro(&session, url).await?),
     }
   };
 
@@ -152,7 +153,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     None => None,
     Some(token) => match file_urls_by_token.get(token) {
       None => return Err(CommonWebError::BadInputWithSimpleMessage("End frame media not found.".to_string())),
-      Some(entry) => Some(upload_to_seedance2pro(&session, &entry.cdn_url, &entry.extension).await?),
+      Some(url) => Some(upload_to_seedance2pro(&session, url).await?),
     }
   };
 
@@ -164,8 +165,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       for token in tokens {
         match file_urls_by_token.get(token) {
           None => return Err(CommonWebError::BadInputWithSimpleMessage("Reference image media not found.".to_string())),
-          Some(entry) => {
-            let seedance_url = upload_to_seedance2pro(&session, &entry.cdn_url, &entry.extension).await?;
+          Some(url) => {
+            let seedance_url = upload_to_seedance2pro(&session, url).await?;
             urls.push(seedance_url);
           }
         }
@@ -182,8 +183,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       for token in tokens {
         match file_urls_by_token.get(token) {
           None => return Err(CommonWebError::BadInputWithSimpleMessage("Reference video media not found.".to_string())),
-          Some(entry) => {
-            let seedance_url = upload_to_seedance2pro(&session, &entry.cdn_url, &entry.extension).await?;
+          Some(url) => {
+            let seedance_url = upload_to_seedance2pro(&session, url).await?;
             urls.push(seedance_url);
           }
         }
@@ -200,8 +201,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       for token in tokens {
         match file_urls_by_token.get(token) {
           None => return Err(CommonWebError::BadInputWithSimpleMessage("Reference audio media not found.".to_string())),
-          Some(entry) => {
-            let seedance_url = upload_to_seedance2pro(&session, &entry.cdn_url, &entry.extension).await?;
+          Some(url) => {
+            let seedance_url = upload_to_seedance2pro(&session, url).await?;
             urls.push(seedance_url);
           }
         }
@@ -442,8 +443,11 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 async fn upload_to_seedance2pro(
   session: &Seedance2ProSession,
   our_cdn_url: &str,
-  extension: &str,
 ) -> Result<String, CommonWebError> {
+  let extension = extract_extension_from_url_str(our_cdn_url, &ExtractExtensions::All)
+      .map(|ext| ext.without_period().to_string())
+      .unwrap_or_else(|| "png".to_string());
+
   let file_bytes = http_download_url_to_bytes(our_cdn_url)
       .await
       .map_err(|err| {
@@ -454,7 +458,7 @@ async fn upload_to_seedance2pro(
 
   let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
     session,
-    extension: extension.to_string(),
+    extension,
   })
       .await
       .map_err(|err| {
