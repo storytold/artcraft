@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use crate::extension::extension::Extension;
 use url::Url;
 
+// TODO: Lookups against these as lists will be slow
+
 /// Known image extensions.
 const KNOWN_IMAGE_EXTENSIONS: &[Extension] = &[
   Extension::from_static("png", ".png"),
@@ -73,24 +75,29 @@ pub fn extract_extension_from_url(url: &Url, accept: &ExtractExtensions) -> Opti
       if set.contains(&candidate) { Some(candidate) } else { None }
     }
     ExtractExtensions::KnownImage => {
-      find_in_slice(KNOWN_IMAGE_EXTENSIONS, &candidate)
+      if slice_contains(KNOWN_IMAGE_EXTENSIONS, &candidate) { Some(candidate) } else { None }
     }
     ExtractExtensions::KnownAudio => {
-      find_in_slice(KNOWN_AUDIO_EXTENSIONS, &candidate)
+      if slice_contains(KNOWN_AUDIO_EXTENSIONS, &candidate) { Some(candidate) } else { None }
     }
     ExtractExtensions::KnownVideo => {
-      find_in_slice(KNOWN_VIDEO_EXTENSIONS, &candidate)
+      if slice_contains(KNOWN_VIDEO_EXTENSIONS, &candidate) { Some(candidate) } else { None }
     }
     ExtractExtensions::KnownMedia => {
-      find_in_slice(KNOWN_IMAGE_EXTENSIONS, &candidate)
-        .or_else(|| find_in_slice(KNOWN_AUDIO_EXTENSIONS, &candidate))
-        .or_else(|| find_in_slice(KNOWN_VIDEO_EXTENSIONS, &candidate))
+      if slice_contains(KNOWN_IMAGE_EXTENSIONS, &candidate)
+        || slice_contains(KNOWN_AUDIO_EXTENSIONS, &candidate)
+        || slice_contains(KNOWN_VIDEO_EXTENSIONS, &candidate)
+      {
+        Some(candidate)
+      } else {
+        None
+      }
     }
   }
 }
 
-fn find_in_slice(extensions: &[Extension], candidate: &Extension) -> Option<Extension> {
-  extensions.iter().find(|e| *e == candidate).cloned()
+fn slice_contains(extensions: &[Extension], candidate: &Extension) -> bool {
+  extensions.iter().any(|e| e == candidate)
 }
 
 #[cfg(test)]
