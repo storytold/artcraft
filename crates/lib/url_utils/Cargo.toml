@@ -17,9 +17,11 @@ path = "src/lib.rs"
 workspace-build-acceleration.workspace = true
 
 # Internal
+# NB: DO NOT ALLOW ANY OTHER DEPS - THIS IS URL LOGIC ONLY
 # (None)
 
 # External
+# NB: DO NOT ALLOW ANY OTHER DEPS - THIS IS URL LOGIC ONLY
 url.workspace = true
 
 [dev-dependencies]

@@ -110,6 +110,12 @@ mod tests {
   }
 
   #[test]
+  fn all_extracts_unknown_extension_all_caps() {
+    let ext = extract_extension_from_url_str("https://example.com/file.FOOBAR", &ExtractExtensions::All);
+    assert_eq!(ext.unwrap().without_period(), "foobar");
+  }
+
+  #[test]
   fn all_lowercases() {
     let ext = extract_extension_from_url_str("https://example.com/file.PNG", &ExtractExtensions::All);
     assert_eq!(ext.unwrap().without_period(), "png");
