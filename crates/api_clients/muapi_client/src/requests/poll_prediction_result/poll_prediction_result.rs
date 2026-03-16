@@ -126,7 +126,8 @@ mod tests {
     let request_id = RequestId::from_str("5fd7f575-4b9e-4c0a-b7f7-0eb036027b81"); // Corgi shiba I2V
     let request_id = RequestId::from_str("8a4b578b-4514-443f-b444-4fb3bc5c2cbb"); // Cat TTV
     let request_id = RequestId::from_str("82d622b1-8911-4cac-8362-e18efaa743ed"); // Corgi I2V
-    let request_id = RequestId::from_str("671c2dee-2ca9-47d7-a12e-d16610b1b365"); // Corgi TTV
+    let request_id = RequestId::from_str("671c2dee-2ca9-47d7-a12e-d16610b1b365"); // Corgi TTV #1
+    let request_id = RequestId::from_str("8c5303f6-b602-433c-bae8-2d3ef915b7bb"); // Corgi TTV #2
 
     let result = poll_prediction_result(PollPredictionResultArgs {
       session: &session,
