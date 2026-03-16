@@ -38,6 +38,8 @@ pub(super) async fn handle_artcraft_seedance_2p0(
     start_frame,
     end_frame,
     reference_images,
+    reference_video_media_tokens: request.reference_video_media_tokens.as_ref(),
+    reference_audio_media_tokens: request.reference_audio_media_tokens.as_ref(),
     resolution: None,
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,

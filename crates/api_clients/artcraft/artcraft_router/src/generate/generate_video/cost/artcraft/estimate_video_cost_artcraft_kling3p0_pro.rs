@@ -69,6 +69,8 @@ mod tests {
       start_frame: None,
       end_frame: None,
       reference_images: None,
+      reference_video_media_tokens: None,
+      reference_audio_media_tokens: None,
       resolution: None,
       aspect_ratio: None,
       duration_seconds: Some(duration_seconds),

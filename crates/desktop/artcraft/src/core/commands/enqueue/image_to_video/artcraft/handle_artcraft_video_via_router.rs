@@ -38,6 +38,8 @@ pub(super) async fn handle_artcraft_video_via_router(
     start_frame,
     end_frame,
     reference_images: None,
+    reference_video_media_tokens: None,
+    reference_audio_media_tokens: None,
     resolution: None,
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,

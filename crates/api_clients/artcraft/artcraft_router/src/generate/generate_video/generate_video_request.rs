@@ -11,6 +11,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
+use tokens::tokens::media_files::MediaFileToken;
 
 pub struct GenerateVideoRequest<'a> {
   /// Which model to use.
@@ -33,6 +34,12 @@ pub struct GenerateVideoRequest<'a> {
 
   /// Reference images (optional).
   pub reference_images: Option<ImageListRef<'a>>,
+
+  /// Reference video media tokens (optional).
+  pub reference_video_media_tokens: Option<&'a Vec<MediaFileToken>>,
+
+  /// Reference audio media tokens (optional).
+  pub reference_audio_media_tokens: Option<&'a Vec<MediaFileToken>>,
 
   /// The resolution to use
   pub resolution: Option<CommonResolution>,

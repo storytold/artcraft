@@ -115,6 +115,14 @@ pub struct EnqueueImageToVideoRequest {
   /// Reference images for the video generation (e.g. character consistency, props, etc.)
   pub reference_image_media_tokens: Option<Vec<MediaFileToken>>,
 
+  /// OPTIONAL.
+  /// Reference videos for the video generation (e.g. video edits, etc.)
+  pub reference_video_media_tokens: Option<Vec<MediaFileToken>>,
+
+  /// OPTIONAL.
+  /// Reference audio for the video generation (e.g. voices, lip sync, music, etc.)
+  pub reference_audio_media_tokens: Option<Vec<MediaFileToken>>,
+
   /// Optional.
   /// Text prompt used to direct the video.
   pub prompt: Option<String>,
