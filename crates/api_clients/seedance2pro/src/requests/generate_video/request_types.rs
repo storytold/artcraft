@@ -32,6 +32,8 @@ pub (super) struct ApiParams {
   pub face_blur_mode: Option<&'static str>,
   #[serde(rename = "uploadedUrls", skip_serializing_if = "Option::is_none")]
   pub uploaded_urls: Option<Vec<String>>,
+  #[serde(rename = "audioUrls", skip_serializing_if = "Option::is_none")]
+  pub audio_urls: Option<Vec<String>>,
   #[serde(rename = "batchCount", skip_serializing_if = "Option::is_none")]
   pub batch_count: Option<u8>,
 }

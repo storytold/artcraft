@@ -41,6 +41,11 @@ pub struct GenerateVideoArgs<'a> {
   /// When present, takes priority over start/end frames.
   pub reference_video_urls: Option<Vec<String>>,
 
+  /// Optional reference audio URLs (reference mode).
+  /// Audio is referenced in prompts as @audio1, @audio2, etc.
+  /// Sent in a separate `audioUrls` field (not in `uploadedUrls`).
+  pub reference_audio_urls: Option<Vec<String>>,
+
   /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
   pub use_face_blur_hack: Option<bool>,
 }
@@ -138,7 +143,9 @@ pub struct GenerateVideoResponse {
 pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideoResponse, Seedance2ProError> {
   let has_reference_images = args.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_videos = args.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
-  let is_reference_mode = has_reference_images || has_reference_videos;
+  let has_reference_audio = args.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+
+  let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio;
 
   let video_input_mode = if is_reference_mode { "reference" } else { "keyframe" };
 
@@ -160,6 +167,12 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
       urls.push(url);
     }
     if urls.is_empty() { None } else { Some(urls) }
+  };
+
+  let audio_urls: Option<Vec<String>> = if has_reference_audio {
+    args.reference_audio_urls
+  } else {
+    None
   };
 
   let face_blur_mode = match args.use_face_blur_hack {
@@ -191,6 +204,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
           mode: video_input_mode,
           face_blur_mode,
           uploaded_urls,
+          audio_urls,
           batch_count,
         },
       },
@@ -290,6 +304,7 @@ mod tests {
       end_frame_url: None,
       reference_image_urls: None,
       reference_video_urls: None,
+      reference_audio_urls: None,
       use_face_blur_hack: None,
     }
   }
@@ -354,6 +369,7 @@ mod tests {
       end_frame_url: None,
       reference_image_urls: None,
       reference_video_urls: None,
+      reference_audio_urls: None,
       use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
@@ -380,6 +396,7 @@ mod tests {
       end_frame_url: None,
       reference_image_urls: None,
       reference_video_urls: None,
+      reference_audio_urls: None,
       use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
@@ -408,6 +425,7 @@ mod tests {
         "https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string(),
       ]),
       reference_video_urls: None,
+      reference_audio_urls: None,
       use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
@@ -435,6 +453,7 @@ mod tests {
       reference_video_urls: Some(vec![
         "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
       ]),
+      reference_audio_urls: None,
       use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
@@ -464,6 +483,7 @@ mod tests {
       reference_video_urls: Some(vec![
         "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
       ]),
+      reference_audio_urls: None,
       use_face_blur_hack: None,
     };
     let result = generate_video(args).await?;
