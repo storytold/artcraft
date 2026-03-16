@@ -14,6 +14,9 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 
+/// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
+/// This works across multiple providers by shaping a generic "GenerateVideoRequest" into a provider-specific plan.
+/// That plan can then be used to return a cost estimate for that given provider or return a struct that can be used to send a real generation request.
 pub struct GenerateVideoRequest<'a> {
   /// Which model to use.
   pub model: CommonVideoModel,
