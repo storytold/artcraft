@@ -125,4 +125,37 @@ mod tests {
 
     Ok(())
   }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies and a test image
+  async fn test_upload_video_file_that_is_too_long() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+
+    // Step 1: Get a signed upload URL
+    let cookies = get_test_cookies()?;
+    let session = Seedance2ProSession::from_cookies_string(cookies);
+    let prepare_args = PrepareFileUploadArgs {
+      session: &session,
+      extension: "mp4".to_string(),
+    };
+    let prepare_result = prepare_file_upload(prepare_args).await?;
+    println!("Upload URL: {}", prepare_result.upload_url);
+
+    // Step 2: Read a test image
+    let file_bytes = fs::read("/Users/bt/Videos/Artcraft/Artcraft Best/ArtCraft Seedance Knight.mp4")?;
+    println!("File size: {} bytes", file_bytes.len());
+
+    // Step 3: Upload
+    let upload_args = UploadFileArgs {
+      upload_url: prepare_result.upload_url,
+      file_bytes,
+    };
+    let result = upload_file(upload_args).await?;
+    println!("Public URL: {}", result.public_url);
+
+    assert!(result.public_url.starts_with("https://static.seedance2-pro.com/materials/"));
+    assert_eq!(1, 2); // NB: Intentional failure to check the response.
+
+    Ok(())
+  }
 }
