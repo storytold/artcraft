@@ -302,17 +302,21 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       });
     }
 
-    let all_ref_token_lists = [
-      request.reference_image_media_tokens.as_deref(),
-      request.reference_video_media_tokens.as_deref(),
-      request.reference_audio_media_tokens.as_deref(),
+    let ref_token_groups: [(Option<&[MediaFileToken]>, PromptContextSemanticType); 3] = [
+      (request.reference_image_media_tokens.as_deref(), PromptContextSemanticType::Imgref),
+      (request.reference_video_media_tokens.as_deref(), PromptContextSemanticType::VidRef),
+      (request.reference_audio_media_tokens.as_deref(), PromptContextSemanticType::Audioref),
     ];
 
-    for media_token in all_ref_token_lists.iter().filter_map(|o| o.as_ref()).flat_map(|s| s.iter()) {
-      context_items.push(PromptContextItem {
-        media_token: media_token.clone(),
-        context_semantic_type: PromptContextSemanticType::VidRef,
-      });
+    for (maybe_tokens, semantic_type) in ref_token_groups {
+      if let Some(tokens) = maybe_tokens {
+        for media_token in tokens {
+          context_items.push(PromptContextItem {
+            media_token: media_token.clone(),
+            context_semantic_type: semantic_type,
+          });
+        }
+      }
     }
 
     if !context_items.is_empty() {
