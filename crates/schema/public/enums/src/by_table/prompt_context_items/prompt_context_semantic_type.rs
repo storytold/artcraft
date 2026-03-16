@@ -7,7 +7,7 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 /*
-Current DB values:
+Current DB values - this is in conflict with API serializations. Need to fix!
 imgref
 imgsrc
 imgmask
