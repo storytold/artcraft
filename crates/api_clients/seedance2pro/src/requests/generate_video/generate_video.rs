@@ -50,6 +50,23 @@ pub struct GenerateVideoArgs<'a> {
   pub use_face_blur_hack: Option<bool>,
 }
 
+impl std::fmt::Debug for GenerateVideoArgs<'_> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("GenerateVideoArgs")
+      .field("prompt", &self.prompt)
+      .field("resolution", &self.resolution)
+      .field("duration_seconds", &self.duration_seconds)
+      .field("batch_count", &self.batch_count)
+      .field("start_frame_url", &self.start_frame_url)
+      .field("end_frame_url", &self.end_frame_url)
+      .field("reference_image_urls", &self.reference_image_urls)
+      .field("reference_video_urls", &self.reference_video_urls)
+      .field("reference_audio_urls", &self.reference_audio_urls)
+      .field("use_face_blur_hack", &self.use_face_blur_hack)
+      .finish()
+  }
+}
+
 impl GenerateVideoArgs<'_> {
   /// Estimates the credit cost for this generation request.
   ///
@@ -141,6 +158,9 @@ pub struct GenerateVideoResponse {
 // --- Implementation ---
 
 pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideoResponse, Seedance2ProError> {
+
+  info!("Requesting video from Seedance2Pro: {:?}", args);
+
   let has_reference_images = args.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_videos = args.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_audio = args.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
@@ -210,6 +230,8 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
       },
     },
   };
+
+  info!("Seedance2pro request : {:?}", request_body);
 
   let cookie = args.session.cookies.as_str();
 

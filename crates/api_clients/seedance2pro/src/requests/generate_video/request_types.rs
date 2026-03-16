@@ -1,17 +1,17 @@
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub (super) struct BatchRequest {
   #[serde(rename = "0")]
   pub zero: BatchRequestInner,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub (super) struct BatchRequestInner {
   pub json: BatchRequestJson,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub (super) struct BatchRequestJson {
   #[serde(rename = "businessType")]
   pub business_type: &'static str,
@@ -19,7 +19,7 @@ pub (super) struct BatchRequestJson {
   pub api_params: ApiParams,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub (super) struct ApiParams {
   pub prompt: String,
   pub resolution: String,
