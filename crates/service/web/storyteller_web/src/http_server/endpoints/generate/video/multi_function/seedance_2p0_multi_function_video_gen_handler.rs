@@ -34,10 +34,10 @@ use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro::requests::generate_video::generate_video::{
   generate_video, BatchCount, GenerateVideoArgs, Resolution,
 };
-use seedance2pro::requests::prepare_image_upload::prepare_image_upload::{
-  prepare_image_upload, PrepareImageUploadArgs,
+use seedance2pro::requests::prepare_file_upload::prepare_file_upload::{
+  prepare_file_upload, PrepareFileUploadArgs,
 };
-use seedance2pro::requests::upload_image::upload_image::{upload_image, UploadImageArgs};
+use seedance2pro::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
@@ -389,20 +389,23 @@ async fn upload_to_seedance2pro(
       })?
       .to_vec();
 
-  let prepare_result = prepare_image_upload(PrepareImageUploadArgs { session })
-      .await
-      .map_err(|err| {
-        warn!("Error preparing seedance2pro image upload: {:?}", err);
-        CommonWebError::ServerError
-      })?;
-
-  let upload_result = upload_image(UploadImageArgs {
-    upload_url: prepare_result.upload_url,
-    image_bytes,
+  let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+    session,
+    extension: "png".to_string(),
   })
       .await
       .map_err(|err| {
-        warn!("Error uploading image to seedance2pro: {:?}", err);
+        warn!("Error preparing seedance2pro file upload: {:?}", err);
+        CommonWebError::ServerError
+      })?;
+
+  let upload_result = upload_file(UploadFileArgs {
+    upload_url: prepare_result.upload_url,
+    file_bytes: image_bytes,
+  })
+      .await
+      .map_err(|err| {
+        warn!("Error uploading file to seedance2pro: {:?}", err);
         CommonWebError::ServerError
       })?;
 
