@@ -1,0 +1,192 @@
+use crate::creds::muapi_session::MuapiSession;
+use crate::error::muapi_client_error::MuapiClientError;
+use crate::error::muapi_error::MuapiError;
+use crate::error::muapi_generic_api_error::MuapiGenericApiError;
+use crate::requests::seedance_2p0_image_to_video::request_types::*;
+use log::info;
+use wreq::Client;
+
+const SEEDANCE_2P0_I2V_URL: &str = "https://api.muapi.ai/api/v1/seedance-v2.0-i2v";
+
+// --- Public enums ---
+
+/// Video aspect ratio.
+#[derive(Debug, Clone, Copy)]
+pub enum AspectRatio {
+  /// 16:9 landscape
+  Landscape16x9,
+  /// 9:16 portrait
+  Portrait9x16,
+  /// 1:1 square
+  Square1x1,
+}
+
+impl AspectRatio {
+  fn as_str(&self) -> &'static str {
+    match self {
+      Self::Landscape16x9 => "16:9",
+      Self::Portrait9x16 => "9:16",
+      Self::Square1x1 => "1:1",
+    }
+  }
+}
+
+/// Video quality tier.
+#[derive(Debug, Clone, Copy)]
+pub enum Quality {
+  Basic,
+  High,
+}
+
+impl Quality {
+  fn as_str(&self) -> &'static str {
+    match self {
+      Self::Basic => "basic",
+      Self::High => "high",
+    }
+  }
+}
+
+// --- Args & response ---
+
+pub struct Seedance2p0ImageToVideoArgs<'a> {
+  pub session: &'a MuapiSession,
+
+  /// The prompt describing the desired video.
+  pub prompt: String,
+
+  /// One or more image URLs to use as input frames.
+  pub images_list: Vec<String>,
+
+  /// The aspect ratio for the output video.
+  pub aspect_ratio: AspectRatio,
+
+  /// Duration in seconds.
+  pub duration: u8,
+
+  /// Quality tier.
+  pub quality: Quality,
+}
+
+impl std::fmt::Debug for Seedance2p0ImageToVideoArgs<'_> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("Seedance2p0ImageToVideoArgs")
+      .field("prompt", &self.prompt)
+      .field("images_list", &self.images_list)
+      .field("aspect_ratio", &self.aspect_ratio)
+      .field("duration", &self.duration)
+      .field("quality", &self.quality)
+      .finish()
+  }
+}
+
+pub struct Seedance2p0ImageToVideoResponse {
+  /// The request ID used to poll for results.
+  pub request_id: String,
+}
+
+// --- Implementation ---
+
+pub async fn seedance_2p0_image_to_video(
+  args: Seedance2p0ImageToVideoArgs<'_>,
+) -> Result<Seedance2p0ImageToVideoResponse, MuapiError> {
+  info!("Submitting Seedance 2.0 i2v task to Muapi: {:?}", args);
+
+  let request_body = Seedance2p0I2vRequest {
+    prompt: args.prompt,
+    images_list: args.images_list,
+    aspect_ratio: args.aspect_ratio.as_str(),
+    duration: args.duration,
+    quality: args.quality.as_str(),
+  };
+
+  info!("Muapi request body: {:?}", request_body);
+
+  let api_key = args.session.api_key.as_str();
+
+  let client = Client::builder()
+    .build()
+    .map_err(|err| MuapiClientError::WreqClientError(err))?;
+
+  let response = client.post(SEEDANCE_2P0_I2V_URL)
+    .header("Content-Type", "application/json")
+    .header("x-api-key", api_key)
+    .json(&request_body)
+    .send()
+    .await
+    .map_err(|err| MuapiGenericApiError::WreqError(err))?;
+
+  let status = response.status();
+  let response_body = response.text()
+    .await
+    .map_err(|err| MuapiGenericApiError::WreqError(err))?;
+
+  info!("Muapi response status: {}, body: {}", status, response_body);
+
+  if !status.is_success() {
+    return Err(MuapiGenericApiError::UncategorizedBadResponseWithStatusAndBody {
+      status_code: status,
+      body: response_body,
+    }.into());
+  }
+
+  let parsed: Seedance2p0I2vResponse = serde_json::from_str(&response_body)
+    .map_err(|err| MuapiGenericApiError::SerdeResponseParseErrorWithBody(err, response_body))?;
+
+  Ok(Seedance2p0ImageToVideoResponse {
+    request_id: parsed.request_id,
+  })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::test_utils::get_test_api_key::get_test_api_key;
+  use crate::test_utils::setup_test_logging::setup_test_logging;
+  use errors::AnyhowResult;
+  use log::LevelFilter;
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key
+  async fn test_seedance_2p0_image_to_video() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = get_test_api_key()?;
+    let args = Seedance2p0ImageToVideoArgs {
+      session: &session,
+      prompt: "The lightbulb suddenly rockets across the room like a missile, smashing through curtains while water spins violently inside.".to_string(),
+      images_list: vec![
+        "https://d3adwkbyhxyrtq.cloudfront.net/webassets/videomodels/seedance-v2.0-i2v.jpg".to_string(),
+      ],
+      aspect_ratio: AspectRatio::Landscape16x9,
+      duration: 5,
+      quality: Quality::Basic,
+    };
+    let result = seedance_2p0_image_to_video(args).await?;
+    println!("Request ID: {}", result.request_id);
+    assert!(!result.request_id.is_empty());
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real API key
+  async fn test_seedance_2p0_image_to_video_portrait() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = get_test_api_key()?;
+    let args = Seedance2p0ImageToVideoArgs {
+      session: &session,
+      prompt: "A cat slowly blinks and yawns, stretching its paws forward.".to_string(),
+      images_list: vec![
+        "https://d3adwkbyhxyrtq.cloudfront.net/webassets/videomodels/seedance-v2.0-i2v.jpg".to_string(),
+      ],
+      aspect_ratio: AspectRatio::Portrait9x16,
+      duration: 5,
+      quality: Quality::High,
+    };
+    let result = seedance_2p0_image_to_video(args).await?;
+    println!("Request ID: {}", result.request_id);
+    assert!(!result.request_id.is_empty());
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+}
