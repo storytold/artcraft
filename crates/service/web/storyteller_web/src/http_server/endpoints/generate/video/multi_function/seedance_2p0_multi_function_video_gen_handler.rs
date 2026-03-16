@@ -42,7 +42,8 @@ use seedance2pro::requests::upload_file::upload_file::{upload_file, UploadFileAr
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
-use url_utils::extension::extract_extension_from_url::{extract_extension_from_url_str, ExtractExtensions};
+use url::Url;
+use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
 
 /// Seedance 2.0 Multi-Function video generation (text-to-video, keyframe, and reference).
 #[utoipa::path(
@@ -157,59 +158,26 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     }
   };
 
-  let reference_image_urls: Option<Vec<String>> = match request.reference_image_media_tokens.as_ref() {
-    None => None,
-    Some(tokens) if tokens.is_empty() => None,
-    Some(tokens) => {
-      let mut urls = Vec::with_capacity(tokens.len());
-      for token in tokens {
-        match file_urls_by_token.get(token) {
-          None => return Err(CommonWebError::BadInputWithSimpleMessage("Reference image media not found.".to_string())),
-          Some(url) => {
-            let seedance_url = upload_to_seedance2pro(&session, url).await?;
-            urls.push(seedance_url);
-          }
-        }
-      }
-      Some(urls)
-    }
-  };
+  let reference_image_urls = upload_reference_tokens_to_seedance2pro(
+    &session,
+    &file_urls_by_token,
+    request.reference_image_media_tokens.as_deref(),
+    "Reference image",
+  ).await?;
 
-  let reference_video_urls: Option<Vec<String>> = match request.reference_video_media_tokens.as_ref() {
-    None => None,
-    Some(tokens) if tokens.is_empty() => None,
-    Some(tokens) => {
-      let mut urls = Vec::with_capacity(tokens.len());
-      for token in tokens {
-        match file_urls_by_token.get(token) {
-          None => return Err(CommonWebError::BadInputWithSimpleMessage("Reference video media not found.".to_string())),
-          Some(url) => {
-            let seedance_url = upload_to_seedance2pro(&session, url).await?;
-            urls.push(seedance_url);
-          }
-        }
-      }
-      Some(urls)
-    }
-  };
+  let reference_video_urls = upload_reference_tokens_to_seedance2pro(
+    &session,
+    &file_urls_by_token,
+    request.reference_video_media_tokens.as_deref(),
+    "Reference video",
+  ).await?;
 
-  let reference_audio_urls: Option<Vec<String>> = match request.reference_audio_media_tokens.as_ref() {
-    None => None,
-    Some(tokens) if tokens.is_empty() => None,
-    Some(tokens) => {
-      let mut urls = Vec::with_capacity(tokens.len());
-      for token in tokens {
-        match file_urls_by_token.get(token) {
-          None => return Err(CommonWebError::BadInputWithSimpleMessage("Reference audio media not found.".to_string())),
-          Some(url) => {
-            let seedance_url = upload_to_seedance2pro(&session, url).await?;
-            urls.push(seedance_url);
-          }
-        }
-      }
-      Some(urls)
-    }
-  };
+  let reference_audio_urls = upload_reference_tokens_to_seedance2pro(
+    &session,
+    &file_urls_by_token,
+    request.reference_audio_media_tokens.as_deref(),
+    "Reference audio",
+  ).await?;
 
   // --- Map request params to seedance2pro types ---
 
@@ -326,35 +294,25 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         context_semantic_type: PromptContextSemanticType::VidStartFrame,
       });
     }
+
     if let Some(media_token) = &request.end_frame_media_token {
       context_items.push(PromptContextItem {
         media_token: media_token.clone(),
         context_semantic_type: PromptContextSemanticType::VidEndFrame,
       });
     }
-    if let Some(ref_tokens) = &request.reference_image_media_tokens {
-      for media_token in ref_tokens {
-        context_items.push(PromptContextItem {
-          media_token: media_token.clone(),
-          context_semantic_type: PromptContextSemanticType::VidRef,
-        });
-      }
-    }
-    if let Some(ref_tokens) = &request.reference_video_media_tokens {
-      for media_token in ref_tokens {
-        context_items.push(PromptContextItem {
-          media_token: media_token.clone(),
-          context_semantic_type: PromptContextSemanticType::VidRef,
-        });
-      }
-    }
-    if let Some(ref_tokens) = &request.reference_audio_media_tokens {
-      for media_token in ref_tokens {
-        context_items.push(PromptContextItem {
-          media_token: media_token.clone(),
-          context_semantic_type: PromptContextSemanticType::VidRef,
-        });
-      }
+
+    let all_ref_token_lists = [
+      request.reference_image_media_tokens.as_deref(),
+      request.reference_video_media_tokens.as_deref(),
+      request.reference_audio_media_tokens.as_deref(),
+    ];
+    
+    for media_token in all_ref_token_lists.iter().filter_map(|o| o.as_ref()).flat_map(|s| s.iter()) {
+      context_items.push(PromptContextItem {
+        media_token: media_token.clone(),
+        context_semantic_type: PromptContextSemanticType::VidRef,
+      });
     }
 
     if !context_items.is_empty() {
@@ -440,15 +398,47 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   }))
 }
 
+/// Uploads a list of reference media tokens to seedance2pro, returning the resulting URLs.
+/// Returns `None` if the token list is absent or empty.
+async fn upload_reference_tokens_to_seedance2pro(
+  session: &Seedance2ProSession,
+  file_urls_by_token: &HashMap<MediaFileToken, Url>,
+  maybe_tokens: Option<&[MediaFileToken]>,
+  label: &str,
+) -> Result<Option<Vec<String>>, CommonWebError> {
+  let tokens = match maybe_tokens {
+    None => return Ok(None),
+    Some(tokens) if tokens.is_empty() => return Ok(None),
+    Some(tokens) => tokens,
+  };
+
+  let mut urls = Vec::with_capacity(tokens.len());
+
+  for token in tokens {
+    match file_urls_by_token.get(token) {
+      None => return Err(CommonWebError::BadInputWithSimpleMessage(
+        format!("{} media not found: {:?}", label, token),
+      )),
+      Some(url) => {
+        let seedance_url = upload_to_seedance2pro(session, url).await?;
+        urls.push(seedance_url);
+      }
+    }
+  }
+  Ok(Some(urls))
+}
+
 async fn upload_to_seedance2pro(
   session: &Seedance2ProSession,
-  our_cdn_url: &str,
+  our_cdn_url: &Url,
 ) -> Result<String, CommonWebError> {
-  let extension = extract_extension_from_url_str(our_cdn_url, &ExtractExtensions::All)
+  let extension = extract_extension_from_url(our_cdn_url, &ExtractExtensions::All)
       .map(|ext| ext.without_period().to_string())
       .unwrap_or_else(|| "png".to_string());
 
-  let file_bytes = http_download_url_to_bytes(our_cdn_url)
+  let cdn_url_str = our_cdn_url.as_str();
+
+  let file_bytes = http_download_url_to_bytes(cdn_url_str)
       .await
       .map_err(|err| {
         warn!("Error downloading media file from CDN: {:?}", err);

@@ -11,13 +11,14 @@ use sqlx::MySql;
 use std::collections::{HashMap, HashSet};
 use std::iter::FromIterator;
 use tokens::tokens::media_files::MediaFileToken;
+use url::Url;
 
 pub async fn lookup_media_file_urls_as_map(
   http_request: &HttpRequest,
   mysql_connection: &mut PoolConnection<MySql>,
   server_environment: ServerEnvironment,
   tokens: &[MediaFileToken],
-) -> Result<HashMap<MediaFileToken, String>, CommonWebError> {
+) -> Result<HashMap<MediaFileToken, Url>, CommonWebError> {
   const CAN_SEE_DELETED: bool = false;
 
   let result = batch_get_media_files_by_tokens_with_connection(
@@ -63,7 +64,7 @@ pub async fn lookup_media_file_urls_as_map(
           server_environment,
           &public_bucket_path);
 
-        (file.token, media_links.cdn_url.to_string())
+        (file.token, media_links.cdn_url)
       })
       .collect::<HashMap<_, _>>();
 
