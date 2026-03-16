@@ -18,6 +18,8 @@ pub async fn execute_artcraft_seedance2p0(
     start_frame_media_token: plan.start_frame.map(|t| t.to_owned()),
     end_frame_media_token: plan.end_frame.map(|t| t.to_owned()),
     reference_image_media_tokens: plan.reference_images.map(|tokens| tokens.to_owned()),
+    reference_video_media_tokens: None,
+    reference_audio_media_tokens: None,
     aspect_ratio: plan.aspect_ratio,
     duration_seconds: plan.duration_seconds,
     batch_count: Some(plan.batch_count),

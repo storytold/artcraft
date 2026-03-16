@@ -23,6 +23,12 @@ pub struct Seedance2p0MultiFunctionVideoGenRequest {
   /// Optional reference images (reference mode). When present, takes priority over start/end frames.
   pub reference_image_media_tokens: Option<Vec<MediaFileToken>>,
 
+  /// Optional reference videos.
+  pub reference_video_media_tokens: Option<Vec<MediaFileToken>>,
+
+  /// Optional reference audio files.
+  pub reference_audio_media_tokens: Option<Vec<MediaFileToken>>,
+
   /// Video aspect ratio / resolution.
   pub aspect_ratio: Option<Seedance2p0AspectRatio>,
 
