@@ -77,37 +77,53 @@ impl<'a> GenerateVideoRequest<'a> {
   /// Read the video generation request, construct a plan, then yield a means to execute it.
   pub fn build(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
     match self.provider {
-      Provider::Artcraft => match self.model {
-        CommonVideoModel::Kling3p0Pro => {
-          plan_generate_video_artcraft_kling3p0_pro(self).map(VideoGenerationPlan::ArtcraftKling3p0Pro)
-        }
-        CommonVideoModel::Kling3p0Standard => {
-          plan_generate_video_artcraft_kling3p0_standard(self).map(VideoGenerationPlan::ArtcraftKling3p0Standard)
-        }
-        CommonVideoModel::Seedance1p5Pro => {
-          plan_generate_video_artcraft_seedance1p5_pro(self).map(VideoGenerationPlan::ArtcraftSeedance1p5Pro)
-        }
-        CommonVideoModel::Seedance2p0 => {
-          plan_generate_video_artcraft_seedance2p0(self).map(VideoGenerationPlan::ArtcraftSeedance2p0)
-        }
-        _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
-      },
-      Provider::Fal => Err(ArtcraftRouterError::UnsupportedModel(
-        format!("Video generation via Fal is not yet supported (model: {:?})", self.model)
-      )),
-      Provider::Muapi => match self.model {
-        CommonVideoModel::Seedance2p0 => {
-          plan_generate_video_muapi_seedance2p0(self).map(VideoGenerationPlan::MuapiSeedance2p0)
-        }
-        _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
-      },
-      Provider::Seedance2Pro => match self.model {
-        CommonVideoModel::Seedance2p0 => {
-          plan_generate_video_seedance2pro_seedance2p0(self).map(VideoGenerationPlan::Seedance2proSeedance2p0)
-        }
-        _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
-      },
+      Provider::Artcraft => self.build_artcraft(),
+      Provider::Muapi => self.build_muapi(),
+      Provider::Seedance2Pro => self.build_seedance2pro(),
+      _ => self.unsupported_provider(),
     }
+  }
+
+  fn build_artcraft(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+    match self.model {
+      CommonVideoModel::Kling3p0Pro => {
+        plan_generate_video_artcraft_kling3p0_pro(self).map(VideoGenerationPlan::ArtcraftKling3p0Pro)
+      }
+      CommonVideoModel::Kling3p0Standard => {
+        plan_generate_video_artcraft_kling3p0_standard(self).map(VideoGenerationPlan::ArtcraftKling3p0Standard)
+      }
+      CommonVideoModel::Seedance1p5Pro => {
+        plan_generate_video_artcraft_seedance1p5_pro(self).map(VideoGenerationPlan::ArtcraftSeedance1p5Pro)
+      }
+      CommonVideoModel::Seedance2p0 => {
+        plan_generate_video_artcraft_seedance2p0(self).map(VideoGenerationPlan::ArtcraftSeedance2p0)
+      }
+      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
+    }
+  }
+
+  fn build_muapi(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+    match self.model {
+      CommonVideoModel::Seedance2p0 => {
+        plan_generate_video_muapi_seedance2p0(self).map(VideoGenerationPlan::MuapiSeedance2p0)
+      }
+      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
+    }
+  }
+
+  fn build_seedance2pro(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+    match self.model {
+      CommonVideoModel::Seedance2p0 => {
+        plan_generate_video_seedance2pro_seedance2p0(self).map(VideoGenerationPlan::Seedance2proSeedance2p0)
+      }
+      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
+    }
+  }
+
+  fn unsupported_provider(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+    Err(ArtcraftRouterError::UnsupportedModel(
+      format!("Video generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
+    ))
   }
 
   pub fn get_or_generate_idempotency_token(&self) -> String {

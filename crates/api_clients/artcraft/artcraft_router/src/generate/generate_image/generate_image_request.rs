@@ -73,73 +73,74 @@ impl<'a> GenerateImageRequest<'a> {
   /// Read the image generation request, construct a plan, then yield a means to execute it.
   pub fn build(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
     match self.provider {
-      Provider::Artcraft => match self.model {
-        CommonImageModel::Flux1Dev => {
-          plan_generate_image_artcraft_flux_1_dev(self).map(ImageGenerationPlan::ArtcraftFlux1Dev)
-        }
-        CommonImageModel::Flux1Schnell => {
-          plan_generate_image_artcraft_flux_1_schnell(self).map(ImageGenerationPlan::ArtcraftFlux1Schnell)
-        }
-        CommonImageModel::FluxPro11 => {
-          plan_generate_image_artcraft_flux_pro_1p1(self).map(ImageGenerationPlan::ArtcraftFluxPro11)
-        }
-        CommonImageModel::FluxPro11Ultra => {
-          plan_generate_image_artcraft_flux_pro_1p1_ultra(self).map(ImageGenerationPlan::ArtcraftFluxPro11Ultra)
-        }
-        CommonImageModel::GptImage1p5 => {
-          plan_generate_image_artcraft_gpt_image_1p5(self).map(ImageGenerationPlan::ArtcraftGptImage1p5)
-        }
-        CommonImageModel::NanaBanana => {
-          plan_generate_image_artcraft_nano_banana(self).map(ImageGenerationPlan::ArtcraftNanaBanana)
-        }
-        CommonImageModel::NanaBanana2 => {
-          plan_generate_image_artcraft_nano_banana_2(self).map(ImageGenerationPlan::ArtcraftNanaBanana2)
-        }
-        CommonImageModel::NanaBananaPro => {
-          plan_generate_image_artcraft_nano_banana_pro(self).map(ImageGenerationPlan::ArtcraftNanaBananaPro)
-        }
-        CommonImageModel::Seedream4 => {
-          plan_generate_image_artcraft_seedream_4(self).map(ImageGenerationPlan::ArtcraftSeedream4)
-        }
-        CommonImageModel::Seedream4p5 => {
-          plan_generate_image_artcraft_seedream_4p5(self).map(ImageGenerationPlan::ArtcraftSeedream4p5)
-        }
-        CommonImageModel::Seedream5Lite => {
-          plan_generate_image_artcraft_seedream_5_lite(self).map(ImageGenerationPlan::ArtcraftSeedream5Lite)
-        }
-        CommonImageModel::QwenEdit2511Angles => {
-          plan_generate_image_artcraft_qwen_edit_2511_angles(self).map(ImageGenerationPlan::ArtcraftQwenEdit2511Angles)
-        }
-        CommonImageModel::Flux2LoraAngles => {
-          plan_generate_image_artcraft_flux_2_lora_angles(self).map(ImageGenerationPlan::ArtcraftFlux2LoraAngles)
-        }
-      },
-      Provider::Fal => match self.model {
-        CommonImageModel::NanaBananaPro => {
-          plan_generate_image_fal_nano_banana_pro(self).map(ImageGenerationPlan::FalNanaBananaPro)
-        }
-        CommonImageModel::Flux1Dev
-        | CommonImageModel::Flux1Schnell
-        | CommonImageModel::FluxPro11
-        | CommonImageModel::FluxPro11Ultra
-        | CommonImageModel::GptImage1p5
-        | CommonImageModel::NanaBanana
-        | CommonImageModel::NanaBanana2
-        | CommonImageModel::Seedream4
-        | CommonImageModel::Seedream4p5
-        | CommonImageModel::Seedream5Lite
-        | CommonImageModel::QwenEdit2511Angles
-        | CommonImageModel::Flux2LoraAngles => {
-          Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-            field: "provider",
-            value: format!("{:?} is only available on the Artcraft provider", self.model),
-          }))
-        }
-      },
-      Provider::Muapi | Provider::Seedance2Pro => Err(ArtcraftRouterError::UnsupportedModel(
-        format!("Image generation via {:?} is not supported", self.provider)
-      )),
+      Provider::Artcraft => self.build_artcraft(),
+      Provider::Fal => self.build_fal(),
+      _ => self.unsupported_provider(),
     }
+  }
+
+  fn build_artcraft(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
+    match self.model {
+      CommonImageModel::Flux1Dev => {
+        plan_generate_image_artcraft_flux_1_dev(self).map(ImageGenerationPlan::ArtcraftFlux1Dev)
+      }
+      CommonImageModel::Flux1Schnell => {
+        plan_generate_image_artcraft_flux_1_schnell(self).map(ImageGenerationPlan::ArtcraftFlux1Schnell)
+      }
+      CommonImageModel::FluxPro11 => {
+        plan_generate_image_artcraft_flux_pro_1p1(self).map(ImageGenerationPlan::ArtcraftFluxPro11)
+      }
+      CommonImageModel::FluxPro11Ultra => {
+        plan_generate_image_artcraft_flux_pro_1p1_ultra(self).map(ImageGenerationPlan::ArtcraftFluxPro11Ultra)
+      }
+      CommonImageModel::GptImage1p5 => {
+        plan_generate_image_artcraft_gpt_image_1p5(self).map(ImageGenerationPlan::ArtcraftGptImage1p5)
+      }
+      CommonImageModel::NanaBanana => {
+        plan_generate_image_artcraft_nano_banana(self).map(ImageGenerationPlan::ArtcraftNanaBanana)
+      }
+      CommonImageModel::NanaBanana2 => {
+        plan_generate_image_artcraft_nano_banana_2(self).map(ImageGenerationPlan::ArtcraftNanaBanana2)
+      }
+      CommonImageModel::NanaBananaPro => {
+        plan_generate_image_artcraft_nano_banana_pro(self).map(ImageGenerationPlan::ArtcraftNanaBananaPro)
+      }
+      CommonImageModel::Seedream4 => {
+        plan_generate_image_artcraft_seedream_4(self).map(ImageGenerationPlan::ArtcraftSeedream4)
+      }
+      CommonImageModel::Seedream4p5 => {
+        plan_generate_image_artcraft_seedream_4p5(self).map(ImageGenerationPlan::ArtcraftSeedream4p5)
+      }
+      CommonImageModel::Seedream5Lite => {
+        plan_generate_image_artcraft_seedream_5_lite(self).map(ImageGenerationPlan::ArtcraftSeedream5Lite)
+      }
+      CommonImageModel::QwenEdit2511Angles => {
+        plan_generate_image_artcraft_qwen_edit_2511_angles(self).map(ImageGenerationPlan::ArtcraftQwenEdit2511Angles)
+      }
+      CommonImageModel::Flux2LoraAngles => {
+        plan_generate_image_artcraft_flux_2_lora_angles(self).map(ImageGenerationPlan::ArtcraftFlux2LoraAngles)
+      }
+    }
+  }
+
+  fn build_fal(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
+    match self.model {
+      CommonImageModel::NanaBananaPro => {
+        plan_generate_image_fal_nano_banana_pro(self).map(ImageGenerationPlan::FalNanaBananaPro)
+      }
+      _ => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "provider",
+          value: format!("{:?} is only available on the Artcraft provider", self.model),
+        }))
+      }
+    }
+  }
+
+  fn unsupported_provider(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
+    Err(ArtcraftRouterError::UnsupportedModel(
+      format!("Image generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
+    ))
   }
 
   pub fn get_or_generate_idempotency_token(&self) -> String {
