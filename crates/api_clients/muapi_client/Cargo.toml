@@ -1,5 +1,5 @@
 [package]
-name = "seedance2pro"
+name = "muapi_client"
 edition = "2024"
 version = "0.0.1"
 publish = false
@@ -8,17 +8,12 @@ publish = false
 normal = ["workspace-build-acceleration"]
 
 [lib]
-name = "seedance2pro"
+name = "muapi_client"
 path = "src/lib.rs"
 
 [dependencies]
-# Workspace hack (faster compile times)
 workspace-build-acceleration.workspace = true
-
-# Internal
 errors.workspace = true
-
-# External
 chrono.workspace = true
 cloudflare_errors.workspace = true
 log.workspace = true

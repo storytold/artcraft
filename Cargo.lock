@@ -7230,6 +7230,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "muapi_client"
+version = "0.0.1"
+dependencies = [
+ "chrono",
+ "cloudflare_errors",
+ "env",
+ "env_logger 0.11.9",
+ "errors",
+ "log",
+ "rand 0.9.2",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "testing",
+ "tokio",
+ "url",
+ "workspace-build-acceleration",
+ "wreq",
+ "wreq-util",
+]
+
+[[package]]
 name = "muda"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -14,10 +14,17 @@ pub enum Seedance2ProError {
 impl Seedance2ProError {
   pub fn is_having_downtime_issues(&self) -> bool {
     match self {
-      Self::ApiGeneric(Seedance2ProGenericApiError::Http502ErrorBadGateway(_)) => true,
       Self::ApiGeneric(Seedance2ProGenericApiError::CloudflareError(CloudflareError::BadGateway502)) => true,
       Self::ApiGeneric(Seedance2ProGenericApiError::CloudflareError(CloudflareError::GatewayTimeout504)) => true,
       Self::ApiGeneric(Seedance2ProGenericApiError::CloudflareError(CloudflareError::TimeoutOccurred524)) => true,
+      Self::ApiGeneric(Seedance2ProGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, body }) => {
+        match status_code.as_u16() {
+          502 => true,
+          504 => true,
+          524 => true,
+          _ => false,
+        }
+      },
       _ => false,
     }
   }

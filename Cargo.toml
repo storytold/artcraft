@@ -16,6 +16,7 @@ members = [
   "crates/api_clients/midjourney_client",
   "crates/api_clients/openai_sora_client",
   "crates/api_clients/openart_client",
+  "crates/api_clients/muapi_client",
   "crates/api_clients/seedance2pro",
   "crates/api_clients/runwayml_client",
   "crates/api_clients/thumbnail_generator",
@@ -240,6 +241,7 @@ memory_store = { path = "crates/lib/caching/memory_store" }
 midjourney_client = { path = "crates/api_clients/midjourney_client" }
 mimetypes = { path = "crates/lib/files/mimetypes" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
+muapi_client = { path = "crates/api_clients/muapi_client" }
 seedance2pro = { path = "crates/api_clients/seedance2pro" }
 primitives = { path = "crates/lib/data/primitives" }
 shared_service_components = { path = "crates/lib/shared_service_components" }
