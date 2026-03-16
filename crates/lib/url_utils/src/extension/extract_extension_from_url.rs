@@ -7,27 +7,18 @@ const KNOWN_IMAGE_EXTENSIONS: &[Extension] = &[
   Extension::from_static("jpg", ".jpg"),
   Extension::from_static("jpeg", ".jpeg"),
   Extension::from_static("webp", ".webp"),
-  Extension::from_static("gif", ".gif"),
-  Extension::from_static("bmp", ".bmp"),
-  Extension::from_static("svg", ".svg"),
 ];
 
 /// Known audio extensions.
 const KNOWN_AUDIO_EXTENSIONS: &[Extension] = &[
   Extension::from_static("wav", ".wav"),
   Extension::from_static("mp3", ".mp3"),
-  Extension::from_static("ogg", ".ogg"),
-  Extension::from_static("flac", ".flac"),
-  Extension::from_static("aac", ".aac"),
 ];
 
 /// Known video extensions.
 const KNOWN_VIDEO_EXTENSIONS: &[Extension] = &[
   Extension::from_static("mp4", ".mp4"),
   Extension::from_static("webm", ".webm"),
-  Extension::from_static("mov", ".mov"),
-  Extension::from_static("avi", ".avi"),
-  Extension::from_static("mkv", ".mkv"),
 ];
 
 /// Controls which extensions are accepted when extracting from a URL.
@@ -38,13 +29,13 @@ pub enum ExtractExtensions<'a> {
   /// Accept only extensions that appear in the given set.
   Set(&'a [Extension]),
 
-  /// Accept only known image extensions (png, jpg, jpeg, webp, gif, bmp, svg).
+  /// Accept only known image extensions (png, jpg, jpeg, webp).
   KnownImage,
 
-  /// Accept only known audio extensions (wav, mp3, ogg, flac, aac).
+  /// Accept only known audio extensions (wav, mp3).
   KnownAudio,
 
-  /// Accept only known video extensions (mp4, webm, mov, avi, mkv).
+  /// Accept only known video extensions (mp4, webm).
   KnownVideo,
 
   /// Accept any known media extension (image, audio, or video).
