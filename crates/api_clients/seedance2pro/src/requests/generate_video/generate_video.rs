@@ -280,12 +280,15 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
 
 #[cfg(test)]
 mod tests {
+  use std::fs;
   use super::*;
   use crate::creds::seedance2pro_session::Seedance2ProSession;
   use crate::test_utils::get_test_cookies::get_test_cookies;
   use crate::test_utils::setup_test_logging::setup_test_logging;
   use errors::AnyhowResult;
   use log::LevelFilter;
+  use crate::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+  use crate::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 
   fn dummy_session() -> Seedance2ProSession {
     Seedance2ProSession::from_cookies_string(String::new())
@@ -491,6 +494,57 @@ mod tests {
     println!("Order ID: {}", result.order_id);
     assert!(!result.task_id.is_empty());
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies and a test image
+  async fn test_video_ref_file_that_is_too_long() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+
+    // Step 1: Get a signed upload URL
+    let cookies = get_test_cookies()?;
+    let session = Seedance2ProSession::from_cookies_string(cookies);
+    let prepare_args = PrepareFileUploadArgs {
+      session: &session,
+      extension: "mp4".to_string(),
+    };
+    let prepare_result = prepare_file_upload(prepare_args).await?;
+    println!("Upload URL: {}", prepare_result.upload_url);
+
+    // Step 2: Read a test image
+    let file_bytes = fs::read("/Users/bt/Videos/Artcraft/Artcraft Best/ArtCraft Seedance Knight.mp4")?;
+    println!("File size: {} bytes", file_bytes.len());
+
+    // Step 3: Upload
+    let upload_args = UploadFileArgs {
+      upload_url: prepare_result.upload_url,
+      file_bytes,
+    };
+    let result = upload_file(upload_args).await?;
+    println!("Public URL: {}", result.public_url);
+
+    let args = GenerateVideoArgs {
+      session: &session,
+      prompt: "Change @video1 to night time".to_string(),
+      resolution: Resolution::Landscape16x9,
+      duration_seconds: 5,
+      batch_count: BatchCount::One,
+      start_frame_url: None,
+      end_frame_url: None,
+      reference_image_urls: None,
+      reference_video_urls: Some(vec![
+        result.public_url,
+      ]),
+      reference_audio_urls: None,
+      use_face_blur_hack: None,
+    };
+    let result = generate_video(args).await?;
+    println!("Task ID: {}", result.task_id);
+    println!("Order ID: {}", result.order_id);
+    assert!(!result.task_id.is_empty());
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+
     Ok(())
   }
 }
