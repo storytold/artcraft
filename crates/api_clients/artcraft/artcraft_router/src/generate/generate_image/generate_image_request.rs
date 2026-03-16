@@ -136,6 +136,9 @@ impl<'a> GenerateImageRequest<'a> {
           }))
         }
       },
+      Provider::Muapi | Provider::Seedance2Pro => Err(ArtcraftRouterError::UnsupportedModel(
+        format!("Image generation via {:?} is not supported", self.provider)
+      )),
     }
   }
 

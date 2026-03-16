@@ -12,6 +12,8 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::plan_generate_video_artcraft_kling3p0_standard;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
+use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seedance2p0::plan_generate_video_muapi_seedance2p0;
+use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::plan_generate_video_seedance2pro_seedance2p0;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 
 /// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
@@ -93,6 +95,18 @@ impl<'a> GenerateVideoRequest<'a> {
       Provider::Fal => Err(ArtcraftRouterError::UnsupportedModel(
         format!("Video generation via Fal is not yet supported (model: {:?})", self.model)
       )),
+      Provider::Muapi => match self.model {
+        CommonVideoModel::Seedance2p0 => {
+          plan_generate_video_muapi_seedance2p0(self).map(VideoGenerationPlan::MuapiSeedance2p0)
+        }
+        _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
+      },
+      Provider::Seedance2Pro => match self.model {
+        CommonVideoModel::Seedance2p0 => {
+          plan_generate_video_seedance2pro_seedance2p0(self).map(VideoGenerationPlan::Seedance2proSeedance2p0)
+        }
+        _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
+      },
     }
   }
 

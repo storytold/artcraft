@@ -5,6 +5,8 @@ use std::fmt::{Display, Formatter};
 pub enum ClientType {
   Artcraft,
   Fal,
+  Muapi,
+  Seedance2Pro,
 }
 
 impl Display for ClientType {
@@ -12,6 +14,8 @@ impl Display for ClientType {
     match self {
       Self::Artcraft => write!(f, "Artcraft"),
       Self::Fal => write!(f, "Fal"),
+      Self::Muapi => write!(f, "Muapi"),
+      Self::Seedance2Pro => write!(f, "Seedance2Pro"),
     }
   }
 }

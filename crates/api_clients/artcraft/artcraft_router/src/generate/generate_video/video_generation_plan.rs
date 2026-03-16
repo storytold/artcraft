@@ -4,15 +4,21 @@ use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraf
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling3p0_standard::estimate_video_cost_artcraft_kling3p0_standard;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance1p5_pro::estimate_video_cost_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance2p0::estimate_video_cost_artcraft_seedance2p0;
+use crate::generate::generate_video::cost::muapi::estimate_video_cost_muapi_seedance2p0::estimate_video_cost_muapi_seedance2p0;
+use crate::generate::generate_video::cost::seedance2pro::estimate_video_cost_seedance2pro_seedance2p0::estimate_video_cost_seedance2pro_seedance2p0;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling3p0_pro::execute_artcraft_kling3p0_pro;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling3p0_standard::execute_artcraft_kling3p0_standard;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance1p5_pro::execute_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance2p0::execute_artcraft_seedance2p0;
+use crate::generate::generate_video::execute::muapi::execute_muapi_seedance2p0::execute_muapi_seedance2p0;
+use crate::generate::generate_video::execute::seedance2pro::execute_seedance2pro_seedance2p0::execute_seedance2pro_seedance2p0;
 use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_pro::PlanArtcraftKling3p0Pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::PlanArtcraftKling3p0Standard;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::PlanArtcraftSeedance1p5Pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
+use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seedance2p0::PlanMuapiSeedance2p0;
+use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 #[derive(Debug)]
@@ -21,6 +27,8 @@ pub enum VideoGenerationPlan<'a> {
   ArtcraftKling3p0Standard(PlanArtcraftKling3p0Standard<'a>),
   ArtcraftSeedance1p5Pro(PlanArtcraftSeedance1p5Pro<'a>),
   ArtcraftSeedance2p0(PlanArtcraftSeedance2p0<'a>),
+  MuapiSeedance2p0(PlanMuapiSeedance2p0),
+  Seedance2proSeedance2p0(PlanSeedance2proSeedance2p0),
 }
 
 impl<'a> VideoGenerationPlan<'a> {
@@ -45,6 +53,14 @@ impl<'a> VideoGenerationPlan<'a> {
         let artcraft_client = client.get_artcraft_client_ref()?;
         execute_artcraft_seedance2p0(plan, artcraft_client).await
       }
+      VideoGenerationPlan::MuapiSeedance2p0(plan) => {
+        let muapi_client = client.get_muapi_client_ref()?;
+        execute_muapi_seedance2p0(plan, muapi_client).await
+      }
+      VideoGenerationPlan::Seedance2proSeedance2p0(plan) => {
+        let seedance2pro_client = client.get_seedance2pro_client_ref()?;
+        execute_seedance2pro_seedance2p0(plan, seedance2pro_client).await
+      }
     }
   }
 
@@ -61,6 +77,12 @@ impl<'a> VideoGenerationPlan<'a> {
       }
       VideoGenerationPlan::ArtcraftSeedance2p0(plan) => {
         estimate_video_cost_artcraft_seedance2p0(plan)
+      }
+      VideoGenerationPlan::MuapiSeedance2p0(plan) => {
+        estimate_video_cost_muapi_seedance2p0(plan)
+      }
+      VideoGenerationPlan::Seedance2proSeedance2p0(plan) => {
+        estimate_video_cost_seedance2pro_seedance2p0(plan)
       }
     }
   }

@@ -39,6 +39,9 @@ impl<'a> GenerateSplatRequest<'a> {
       Provider::Fal => Err(ArtcraftRouterError::UnsupportedModel(
         format!("Splat generation via Fal is not yet supported (model: {:?})", self.model)
       )),
+      Provider::Muapi | Provider::Seedance2Pro => Err(ArtcraftRouterError::UnsupportedModel(
+        format!("Splat generation via {:?} is not supported", self.provider)
+      )),
     }
   }
 

@@ -5,3 +5,5 @@ pub mod request_mismatch_mitigation_strategy;
 pub mod router_artcraft_client;
 pub mod router_client;
 pub mod router_fal_client;
+pub mod router_muapi_client;
+pub mod router_seedance2pro_client;
