@@ -120,7 +120,8 @@ mod tests {
   async fn test_poll_prediction_result() -> AnyhowResult<()> {
     setup_test_logging(LevelFilter::Trace);
     let session = get_test_api_key()?;
-    let request_id = "REPLACE_WITH_REAL_REQUEST_ID";
+    let request_id = "5fd7f575-4b9e-4c0a-b7f7-0eb036027b81";
+    let request_id = "82d622b1-8911-4cac-8362-e18efaa743ed";
     let result = poll_prediction_result(PollPredictionResultArgs {
       session: &session,
       request_id,

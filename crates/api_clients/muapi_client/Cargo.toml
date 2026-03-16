@@ -28,5 +28,6 @@ url.workspace = true
 [dev-dependencies]
 env.workspace = true
 env_logger.workspace = true
+test_data = { path = "../../lib/test_data" }
 testing = { path = "../../lib/testing" }
 tokio = { version = "1", features = ["full"] }

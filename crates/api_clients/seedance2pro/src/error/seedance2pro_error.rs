@@ -17,7 +17,7 @@ impl Seedance2ProError {
       Self::ApiGeneric(Seedance2ProGenericApiError::CloudflareError(CloudflareError::BadGateway502)) => true,
       Self::ApiGeneric(Seedance2ProGenericApiError::CloudflareError(CloudflareError::GatewayTimeout504)) => true,
       Self::ApiGeneric(Seedance2ProGenericApiError::CloudflareError(CloudflareError::TimeoutOccurred524)) => true,
-      Self::ApiGeneric(Seedance2ProGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, body }) => {
+      Self::ApiGeneric(Seedance2ProGenericApiError::UncategorizedBadResponseWithStatusAndBody { status_code, body: _ }) => {
         match status_code.as_u16() {
           502 => true,
           504 => true,

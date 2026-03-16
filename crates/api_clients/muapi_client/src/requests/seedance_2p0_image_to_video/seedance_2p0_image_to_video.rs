@@ -17,8 +17,10 @@ pub enum AspectRatio {
   Landscape16x9,
   /// 9:16 portrait
   Portrait9x16,
-  /// 1:1 square
-  Square1x1,
+  /// 4:3 standard
+  Standard4x3,
+  /// 3:4 portrait
+  Portrait3x4,
 }
 
 impl AspectRatio {
@@ -26,7 +28,29 @@ impl AspectRatio {
     match self {
       Self::Landscape16x9 => "16:9",
       Self::Portrait9x16 => "9:16",
-      Self::Square1x1 => "1:1",
+      Self::Standard4x3 => "4:3",
+      Self::Portrait3x4 => "3:4",
+    }
+  }
+}
+
+/// Video duration.
+#[derive(Debug, Clone, Copy)]
+pub enum Duration {
+  /// 5 seconds
+  FiveSeconds,
+  /// 10 seconds
+  TenSeconds,
+  /// 15 seconds
+  FifteenSeconds,
+}
+
+impl Duration {
+  fn as_u8(&self) -> u8 {
+    match self {
+      Self::FiveSeconds => 5,
+      Self::TenSeconds => 10,
+      Self::FifteenSeconds => 15,
     }
   }
 }
@@ -56,13 +80,13 @@ pub struct Seedance2p0ImageToVideoArgs<'a> {
   pub prompt: String,
 
   /// One or more image URLs to use as input frames.
-  pub images_list: Vec<String>,
+  pub image_urls: Vec<String>,
 
   /// The aspect ratio for the output video.
   pub aspect_ratio: AspectRatio,
 
-  /// Duration in seconds.
-  pub duration: u8,
+  /// Duration of the generated video.
+  pub duration: Duration,
 
   /// Quality tier.
   pub quality: Quality,
@@ -72,7 +96,7 @@ impl std::fmt::Debug for Seedance2p0ImageToVideoArgs<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("Seedance2p0ImageToVideoArgs")
       .field("prompt", &self.prompt)
-      .field("images_list", &self.images_list)
+      .field("image_urls", &self.image_urls)
       .field("aspect_ratio", &self.aspect_ratio)
       .field("duration", &self.duration)
       .field("quality", &self.quality)
@@ -80,6 +104,7 @@ impl std::fmt::Debug for Seedance2p0ImageToVideoArgs<'_> {
   }
 }
 
+#[derive(Debug)]
 pub struct Seedance2p0ImageToVideoResponse {
   /// The request ID used to poll for results.
   pub request_id: String,
@@ -94,9 +119,9 @@ pub async fn seedance_2p0_image_to_video(
 
   let request_body = Seedance2p0I2vRequest {
     prompt: args.prompt,
-    images_list: args.images_list,
+    images_list: args.image_urls,
     aspect_ratio: args.aspect_ratio.as_str(),
-    duration: args.duration,
+    duration: args.duration.as_u8(),
     quality: args.quality.as_str(),
   };
 
@@ -145,6 +170,7 @@ mod tests {
   use crate::test_utils::setup_test_logging::setup_test_logging;
   use errors::AnyhowResult;
   use log::LevelFilter;
+  use test_data::web::image_urls::*;
 
   #[tokio::test]
   #[ignore] // manually test — requires real API key
@@ -153,15 +179,16 @@ mod tests {
     let session = get_test_api_key()?;
     let args = Seedance2p0ImageToVideoArgs {
       session: &session,
-      prompt: "The lightbulb suddenly rockets across the room like a missile, smashing through curtains while water spins violently inside.".to_string(),
-      images_list: vec![
-        "https://d3adwkbyhxyrtq.cloudfront.net/webassets/videomodels/seedance-v2.0-i2v.jpg".to_string(),
+      prompt: "The dog barks and runs across the lake's pier, tail wagging.".to_string(),
+      image_urls: vec![
+        JUNO_AT_LAKE_IMAGE_URL.to_string(),
       ],
       aspect_ratio: AspectRatio::Landscape16x9,
-      duration: 5,
-      quality: Quality::Basic,
+      duration: Duration::FiveSeconds,
+      quality: Quality::High,
     };
     let result = seedance_2p0_image_to_video(args).await?;
+    println!("Result: {:?}", result);
     println!("Request ID: {}", result.request_id);
     assert!(!result.request_id.is_empty());
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
@@ -175,15 +202,16 @@ mod tests {
     let session = get_test_api_key()?;
     let args = Seedance2p0ImageToVideoArgs {
       session: &session,
-      prompt: "A cat slowly blinks and yawns, stretching its paws forward.".to_string(),
-      images_list: vec![
-        "https://d3adwkbyhxyrtq.cloudfront.net/webassets/videomodels/seedance-v2.0-i2v.jpg".to_string(),
+      prompt: "The corgi and shiba swim through the treasure-filled ocean, bubbles rising around them.".to_string(),
+      image_urls: vec![
+        TALL_CORGI_SHIBA_TREASURE_OCEAN_URL.to_string(),
       ],
       aspect_ratio: AspectRatio::Portrait9x16,
-      duration: 5,
+      duration: Duration::FiveSeconds,
       quality: Quality::High,
     };
     let result = seedance_2p0_image_to_video(args).await?;
+    println!("Result: {:?}", result);
     println!("Request ID: {}", result.request_id);
     assert!(!result.request_id.is_empty());
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
