@@ -18,8 +18,18 @@ export type ImageBatch = {
   failureReason?: string;
 };
 
+export type ImageUiState = {
+  selectedModelId: string | null;
+  prompt: string;
+  aspectRatio: string;
+  numImages: number;
+  resolution: string | undefined;
+};
+
 type CreateImageState = {
   batches: ImageBatch[];
+  ui: ImageUiState;
+  setUi: (patch: Partial<ImageUiState>) => void;
   startBatch: (
     prompt: string,
     requestedCount: number,
@@ -32,8 +42,20 @@ type CreateImageState = {
   reset: () => void;
 };
 
+const DEFAULT_UI: ImageUiState = {
+  selectedModelId: null,
+  prompt: "",
+  aspectRatio: "square",
+  numImages: 1,
+  resolution: undefined,
+};
+
 export const useCreateImageStore = create<CreateImageState>((set) => ({
   batches: [],
+  ui: { ...DEFAULT_UI },
+
+  setUi: (patch) =>
+    set((s) => ({ ui: { ...s.ui, ...patch } })),
 
   startBatch: (prompt, requestedCount, modelLabel) => {
     const id = crypto.randomUUID();

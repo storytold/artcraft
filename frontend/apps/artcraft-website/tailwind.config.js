@@ -69,6 +69,7 @@ module.exports = {
         "controls-button": "#3E3E41",
         "controls-border": "#3f3f3f",
         divider: "#515168",
+        modal: "#1f1f1f",
       },
     },
   },

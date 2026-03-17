@@ -17,8 +17,19 @@ export type VideoBatch = {
   failureReason?: string;
 };
 
+export type VideoUiState = {
+  selectedModelId: string | null;
+  prompt: string;
+  selectedSize: string;
+  duration: number | null;
+  resolution: string | null;
+  generateWithSound: boolean;
+};
+
 type CreateVideoState = {
   batches: VideoBatch[];
+  ui: VideoUiState;
+  setUi: (patch: Partial<VideoUiState>) => void;
   startBatch: (prompt: string, modelLabel: string) => string;
   setBatchJobToken: (batchId: string, jobToken: string) => void;
   completeBatch: (batchId: string, video: GeneratedVideo) => void;
@@ -27,8 +38,21 @@ type CreateVideoState = {
   reset: () => void;
 };
 
+const DEFAULT_UI: VideoUiState = {
+  selectedModelId: null,
+  prompt: "",
+  selectedSize: "wide_sixteen_by_nine",
+  duration: null,
+  resolution: null,
+  generateWithSound: false,
+};
+
 export const useCreateVideoStore = create<CreateVideoState>((set) => ({
   batches: [],
+  ui: { ...DEFAULT_UI },
+
+  setUi: (patch) =>
+    set((s) => ({ ui: { ...s.ui, ...patch } })),
 
   startBatch: (prompt, modelLabel) => {
     const id = crypto.randomUUID();

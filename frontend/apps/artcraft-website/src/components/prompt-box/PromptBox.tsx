@@ -2,15 +2,51 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import { twMerge } from "tailwind-merge";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMusic, faVideo } from "@fortawesome/pro-solid-svg-icons";
 import { GenerateButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ImagePromptRow } from "./ImagePromptRow";
-import type { RefImage } from "./types";
+import type { RefImage, MentionItem } from "./types";
+
+// ── @-mention color palette ─────────────────────────────────────────────
+
+const IMAGE_COLORS = [
+  "rgb(96, 165, 250)",
+  "rgb(251, 146, 60)",
+  "rgb(167, 139, 250)",
+  "rgb(52, 211, 153)",
+  "rgb(251, 113, 133)",
+];
+
+const VIDEO_COLORS = [
+  "rgb(250, 204, 21)",
+  "rgb(245, 158, 11)",
+  "rgb(74, 222, 128)",
+];
+
+const AUDIO_COLORS = ["rgb(192, 132, 252)", "rgb(232, 121, 249)"];
+
+function getMentionColor(label: string): string {
+  const imgMatch = label.match(/^@Image(\d+)$/);
+  if (imgMatch)
+    return IMAGE_COLORS[(parseInt(imgMatch[1]) - 1) % IMAGE_COLORS.length];
+  const vidMatch = label.match(/^@Video(\d+)$/);
+  if (vidMatch)
+    return VIDEO_COLORS[(parseInt(vidMatch[1]) - 1) % VIDEO_COLORS.length];
+  const audMatch = label.match(/^@Audio(\d+)$/);
+  if (audMatch)
+    return AUDIO_COLORS[(parseInt(audMatch[1]) - 1) % AUDIO_COLORS.length];
+  return "rgb(255, 255, 255)";
+}
+
+// ── Props ───────────────────────────────────────────────────────────────
 
 interface PromptBoxProps {
   prompt: string;
@@ -20,12 +56,20 @@ interface PromptBoxProps {
   submitLabel?: string;
   placeholder?: string;
   disabled?: boolean;
+  credits?: number | null;
 
   // Reference images
   supportsImagePrompts?: boolean;
   maxImagePromptCount?: number;
   referenceImages: RefImage[];
   onReferenceImagesChange: (images: RefImage[]) => void;
+
+  // Video mode (start/end frame)
+  isVideo?: boolean;
+  isReferenceMode?: boolean;
+  endFrameImage?: RefImage;
+  onEndFrameImageChange?: (image?: RefImage) => void;
+  showEndFrameSection?: boolean;
 
   // Toolbar slots
   leftToolbar?: ReactNode;
@@ -37,6 +81,12 @@ interface PromptBoxProps {
   // Clear session button
   showClearSession?: boolean;
   onClearSession?: () => void;
+
+  // Media reference row (video/audio refs, rendered between image row and prompt)
+  mediaReferenceRow?: ReactNode;
+
+  // @-mention support (enables colored prompt overlay + autocomplete)
+  mentionItems?: MentionItem[];
 }
 
 export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
@@ -49,25 +99,52 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       submitLabel = "Generate",
       placeholder = "Describe what you want...",
       disabled,
+      credits,
       supportsImagePrompts,
       maxImagePromptCount = 1,
       referenceImages,
       onReferenceImagesChange,
+      isVideo,
+      isReferenceMode,
+      endFrameImage,
+      onEndFrameImageChange,
+      showEndFrameSection,
       leftToolbar,
       rightToolbar,
       onPickFromLibrary,
       showClearSession,
       onClearSession,
+      mediaReferenceRow,
+      mentionItems,
     },
     ref,
   ) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const highlightRef = useRef<HTMLDivElement>(null);
     const [isFocused, setIsFocused] = useState(false);
     const [showImagePrompts, setShowImagePrompts] = useState(false);
 
+    // @-mention state
+    const [mentionOpen, setMentionOpen] = useState(false);
+    const [mentionFilter, setMentionFilter] = useState("");
+    const [mentionIndex, setMentionIndex] = useState(0);
+    const mentionAnchorRef = useRef<number | null>(null);
+
     const isImageRowVisible =
       supportsImagePrompts &&
-      (showImagePrompts || referenceImages.length > 0);
+      (isVideo || showImagePrompts || referenceImages.length > 0);
+
+    const hasMentionItems = (mentionItems?.length ?? 0) > 0;
+    const hasAnyRowAbove = isImageRowVisible || !!mediaReferenceRow;
+
+    // Filtered mention items for autocomplete
+    const filteredMentionItems = useMemo(() => {
+      if (!mentionItems?.length) return [];
+      if (!mentionFilter) return mentionItems;
+      return mentionItems.filter((item) =>
+        item.label.toLowerCase().includes(mentionFilter.toLowerCase()),
+      );
+    }, [mentionItems, mentionFilter]);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -75,17 +152,128 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
         textareaRef.current.style.height = "auto";
         textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
       }
-    });
+    }, [prompt]);
+
+    // Sync scroll between textarea and highlight overlay
+    const handleScroll = useCallback(() => {
+      if (highlightRef.current && textareaRef.current) {
+        highlightRef.current.scrollTop = textareaRef.current.scrollTop;
+      }
+    }, []);
+
+    // Handle prompt change with @-mention detection
+    const handleChange = useCallback(
+      (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const value = e.target.value;
+        const cursorPos = e.target.selectionStart;
+        onPromptChange(value);
+
+        if (hasMentionItems) {
+          const textBeforeCursor = value.slice(0, cursorPos);
+          const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
+          if (lastAtIndex !== -1) {
+            const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
+            if (!textAfterAt.includes(" ") && !textAfterAt.includes("\n")) {
+              mentionAnchorRef.current = lastAtIndex;
+              setMentionFilter("@" + textAfterAt);
+              setMentionOpen(true);
+              setMentionIndex(0);
+              return;
+            }
+          }
+        }
+
+        setMentionOpen(false);
+        setMentionFilter("");
+        mentionAnchorRef.current = null;
+      },
+      [onPromptChange, hasMentionItems],
+    );
+
+    // Insert a mention at the cursor position
+    const insertMention = useCallback(
+      (label: string) => {
+        const textarea = textareaRef.current;
+        if (!textarea || mentionAnchorRef.current === null) return;
+
+        const before = prompt.slice(0, mentionAnchorRef.current);
+        const after = prompt.slice(textarea.selectionStart);
+        const next = before + label + " " + after;
+        onPromptChange(next);
+        setMentionOpen(false);
+        setMentionFilter("");
+        mentionAnchorRef.current = null;
+
+        requestAnimationFrame(() => {
+          const pos = before.length + label.length + 1;
+          textarea.setSelectionRange(pos, pos);
+          textarea.focus();
+        });
+      },
+      [prompt, onPromptChange],
+    );
 
     const handleKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // Handle @-mention navigation
+        if (mentionOpen && filteredMentionItems.length > 0) {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setMentionIndex((prev) => (prev + 1) % filteredMentionItems.length);
+            return;
+          }
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setMentionIndex((prev) =>
+              prev <= 0 ? filteredMentionItems.length - 1 : prev - 1,
+            );
+            return;
+          }
+          if (e.key === "Enter" || e.key === "Tab") {
+            e.preventDefault();
+            insertMention(filteredMentionItems[mentionIndex].label);
+            return;
+          }
+          if (e.key === "Escape") {
+            e.preventDefault();
+            setMentionOpen(false);
+            return;
+          }
+        }
+
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           onSubmit();
         }
       },
-      [onSubmit],
+      [
+        onSubmit,
+        mentionOpen,
+        filteredMentionItems,
+        mentionIndex,
+        insertMention,
+      ],
     );
+
+    // Render highlighted prompt with colored @-mentions
+    const renderHighlightedPrompt = useCallback(() => {
+      if (!hasMentionItems) return null;
+      const parts = prompt.split(/(@(?:Image|Video|Audio)\d+)/g);
+      return parts.map((part, i) => {
+        if (/^@(?:Image|Video|Audio)\d+$/.test(part)) {
+          return (
+            <span
+              key={i}
+              style={{ color: getMentionColor(part), fontWeight: 600 }}
+            >
+              {part}
+            </span>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      });
+    }, [prompt, hasMentionItems]);
 
     return (
       <div ref={ref}>
@@ -107,30 +295,35 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               referenceImages={referenceImages}
               setReferenceImages={onReferenceImagesChange}
               onPickFromLibrary={onPickFromLibrary}
+              isVideo={isVideo}
+              isReferenceMode={isReferenceMode}
+              endFrameImage={endFrameImage}
+              setEndFrameImage={onEndFrameImageChange}
+              showEndFrameSection={showEndFrameSection}
             />
           )}
 
+          {mediaReferenceRow}
+
           <div
             className={twMerge(
-              "glass rounded-xl p-4",
-              isImageRowVisible && "rounded-t-none",
+              "glass rounded-xl p-4 !transition-all duration-200",
+              hasAnyRowAbove && "rounded-t-none",
               isFocused && "ring-1 ring-primary",
             )}
           >
-            <div className="flex gap-2">
-              {supportsImagePrompts && (
+            <div className="flex gap-3">
+              {supportsImagePrompts && !isVideo && (
                 <Tooltip
                   content="Add Image"
                   position="top"
                   closeOnClick={true}
-                  className={twMerge(
-                    isImageRowVisible && "hidden opacity-0",
-                  )}
+                  className={twMerge(isImageRowVisible && "hidden opacity-0")}
                 >
                   <button
                     type="button"
                     className={twMerge(
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-transparent p-0 transition-all hover:bg-white/10",
+                      "flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-transparent p-0 transition-all hover:text-primary-500",
                       isImageRowVisible && "text-primary",
                     )}
                     onClick={() => setShowImagePrompts((prev) => !prev)}
@@ -152,17 +345,87 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                 </Tooltip>
               )}
 
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                placeholder={placeholder}
-                className="max-h-[5.5em] flex-1 resize-none overflow-y-auto bg-transparent text-sm text-white placeholder-white/50 focus:outline-none"
-                value={prompt}
-                onChange={(e) => onPromptChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-              />
+              <div className="relative flex-1">
+                {/* Highlighted prompt overlay for @-mentions */}
+                {hasMentionItems && (
+                  <div
+                    ref={highlightRef}
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 max-h-[5.5em] overflow-y-auto whitespace-pre-wrap break-words text-sm text-white"
+                  >
+                    {renderHighlightedPrompt()}
+                  </div>
+                )}
+
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  placeholder={placeholder}
+                  className={twMerge(
+                    "max-h-[5.5em] w-full flex-1 resize-none overflow-y-auto bg-transparent text-md text-white placeholder-white/50 focus:outline-none",
+                    hasMentionItems && "text-transparent caret-white",
+                  )}
+                  value={prompt}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  onScroll={handleScroll}
+                />
+
+                {/* @-mention autocomplete dropdown */}
+                {mentionOpen && filteredMentionItems.length > 0 && (
+                  <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-white/10 bg-[#2a2a2e] shadow-lg backdrop-blur-xl">
+                    <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/50">
+                      Reference Files
+                    </div>
+                    {filteredMentionItems.map((item, i) => (
+                      <button
+                        key={item.label}
+                        className={twMerge(
+                          "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-white transition-colors",
+                          i === mentionIndex
+                            ? "bg-white/10"
+                            : "hover:bg-white/5",
+                        )}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          insertMention(item.label);
+                        }}
+                        onMouseEnter={() => setMentionIndex(i)}
+                      >
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-black/20">
+                          {item.type === "image" && item.preview ? (
+                            <img
+                              src={item.preview}
+                              alt={item.label}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : item.type === "video" && item.preview ? (
+                            <video
+                              src={item.preview}
+                              muted
+                              preload="metadata"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <FontAwesomeIcon
+                              icon={item.type === "video" ? faVideo : faMusic}
+                              className="h-3.5 w-3.5 text-white/60"
+                            />
+                          )}
+                        </div>
+                        <span
+                          className="font-medium"
+                          style={{ color: getMentionColor(item.label) }}
+                        >
+                          {item.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="mt-2 flex items-center justify-between gap-2">
@@ -174,6 +437,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                   onClick={onSubmit}
                   disabled={disabled ?? (!prompt.trim() || isSubmitting)}
                   loading={isSubmitting}
+                  credits={credits}
                 >
                   {submitLabel}
                 </GenerateButton>

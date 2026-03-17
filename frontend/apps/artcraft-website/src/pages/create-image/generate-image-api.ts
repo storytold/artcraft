@@ -1,4 +1,4 @@
-import { JobsApi, GenerationApi } from "@storyteller/api";
+import { JobsApi, GenerationApi, MediaFilesApi } from "@storyteller/api";
 import type { GeneratedImage } from "./create-image-store";
 
 // ── Model → endpoint mapping ──────────────────────────────────────────────
@@ -119,12 +119,11 @@ export interface GenerateImageParams {
   numImages?: number;
   aspectRatio?: string;
   resolution?: string;
-  disableSystemPrompt?: boolean;
   imageMediaTokens?: string[];
 }
 
 function buildRequestBody(params: GenerateImageParams): Record<string, unknown> {
-  const { prompt, modelTauriId, numImages = 1, aspectRatio, resolution, disableSystemPrompt, imageMediaTokens } = params;
+  const { prompt, modelTauriId, numImages = 1, aspectRatio, resolution, imageMediaTokens } = params;
 
   const body: Record<string, unknown> = {
     uuid_idempotency_token: crypto.randomUUID(),
@@ -150,10 +149,6 @@ function buildRequestBody(params: GenerateImageParams): Record<string, unknown> 
 
   if (resolution) {
     body.resolution = resolution;
-  }
-
-  if (disableSystemPrompt) {
-    body.disable_system_prompt = true;
   }
 
   return body;
@@ -186,13 +181,47 @@ export async function pollJobResult(
   const statusStr = state.status?.status?.toLowerCase() ?? "";
 
   if (statusStr === "complete_success" || statusStr === "complete") {
-    // Extract image data from result
     const result = state.maybe_result as Record<string, unknown> | undefined;
     const mediaLinks = (result as any)?.media_links;
+    const entityToken = (result as any)?.entity_token as string | undefined;
 
+    // The /v1/jobs/job/{token} endpoint doesn't return maybe_batch_token,
+    // so we look it up from the media file itself.
+    if (entityToken) {
+      try {
+        const mediaApi = new MediaFilesApi();
+        const mediaFile = await mediaApi.GetMediaFileByToken({
+          mediaFileToken: entityToken,
+        });
+        const batchToken = mediaFile.data?.maybe_batch_token;
+
+        if (batchToken) {
+          const batchResponse = await mediaApi.GetMediaFilesByBatchToken({
+            batchToken,
+          });
+          if (batchResponse.success && batchResponse.data?.length) {
+            const images: GeneratedImage[] = batchResponse.data
+              .map((file: any) => ({
+                media_token: file.token,
+                cdn_url: file.media_links?.cdn_url,
+                maybe_thumbnail_template:
+                  file.media_links?.maybe_thumbnail_template,
+              }))
+              .filter((img: GeneratedImage) => img.cdn_url);
+            if (images.length > 0) {
+              return { status: "complete", images };
+            }
+          }
+        }
+      } catch {
+        // Fall through to single-image extraction
+      }
+    }
+
+    // Single image fallback
     if (mediaLinks?.cdn_url) {
       const image: GeneratedImage = {
-        media_token: (result as any)?.entity_token ?? jobToken,
+        media_token: entityToken ?? jobToken,
         cdn_url: mediaLinks.cdn_url,
         maybe_thumbnail_template: mediaLinks.maybe_thumbnail_template,
       };

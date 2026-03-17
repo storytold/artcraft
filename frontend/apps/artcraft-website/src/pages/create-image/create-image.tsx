@@ -5,15 +5,12 @@ import {
   faClock,
   faCircleExclamation,
   faImage,
-  faMessageCheck,
-  faMessageXmark,
   faSpinnerThird,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { UsersApi, UserInfo } from "@storyteller/api";
-import { Button, ToggleButton } from "@storyteller/ui-button";
+import { Button } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
-import { Tooltip } from "@storyteller/ui-tooltip";
 import { Badge } from "@storyteller/ui-badge";
 import {
   IMAGE_MODELS,
@@ -25,7 +22,11 @@ import {
 import { getThumbnailUrl, THUMBNAIL_SIZES } from "@storyteller/common";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
-import { PromptBox, ImagePickerModal, type RefImage } from "../../components/prompt-box";
+import {
+  PromptBox,
+  ImagePickerModal,
+  type RefImage,
+} from "../../components/prompt-box";
 import { useCreateImageStore, type GeneratedImage } from "./create-image-store";
 import {
   enqueueImageGeneration,
@@ -35,6 +36,7 @@ import {
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
 import { GenerationCountPicker } from "./components/GenerationCountPicker";
 import { ResolutionPicker } from "./components/ResolutionPicker";
+import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 
 // ── Models available via REST ─────────────────────────────────────────────
 
@@ -42,8 +44,10 @@ const WEB_IMAGE_MODELS = IMAGE_MODELS.filter(
   (m) => m.canTextToImage && modelHasWebEndpoint(m.tauriId),
 ).sort((a, b) => a.selectorName.localeCompare(b.selectorName));
 
+const DEFAULT_MODEL_ID = "nano_banana_2";
 const DEFAULT_MODEL =
-  WEB_IMAGE_MODELS.find((m) => m.id === "nano_banana_2") ?? WEB_IMAGE_MODELS[0];
+  WEB_IMAGE_MODELS.find((m) => m.id === DEFAULT_MODEL_ID) ??
+  WEB_IMAGE_MODELS[0];
 
 const MODEL_FALLBACK_ICON = (
   <FontAwesomeIcon icon={faImage} className="h-4 w-4" />
@@ -74,20 +78,37 @@ export default function CreateImage() {
   const [user, setUser] = useState<UserInfo | undefined>(undefined);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // Generation state
-  const [prompt, setPrompt] = useState("");
-  const [selectedModel, setSelectedModel] = useState<ImageModel>(DEFAULT_MODEL);
-  const [aspectRatio, setAspectRatio] = useState<CommonAspectRatio>(
-    (DEFAULT_MODEL.defaultAspectRatio as CommonAspectRatio) ??
-      CommonAspectRatio.Square,
+  // Persisted UI state from Zustand store
+  const ui = useCreateImageStore((s) => s.ui);
+  const setUi = useCreateImageStore((s) => s.setUi);
+
+  const selectedModel = useMemo(
+    () =>
+      ui.selectedModelId
+        ? (WEB_IMAGE_MODELS.find((m) => m.id === ui.selectedModelId) ??
+          DEFAULT_MODEL)
+        : DEFAULT_MODEL,
+    [ui.selectedModelId],
   );
-  const [numImages, setNumImages] = useState(
-    DEFAULT_MODEL.defaultGenerationCount ?? 1,
+
+  const prompt = ui.prompt;
+  const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
+  const aspectRatio = ui.aspectRatio as CommonAspectRatio;
+  const setAspectRatio = useCallback(
+    (v: CommonAspectRatio) => setUi({ aspectRatio: v }),
+    [setUi],
   );
-  const [resolution, setResolution] = useState<CommonResolution | undefined>(
-    DEFAULT_MODEL.defaultResolution ?? undefined,
+  const numImages = ui.numImages;
+  const setNumImages = useCallback(
+    (v: number) => setUi({ numImages: v }),
+    [setUi],
   );
-  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
+  const resolution = ui.resolution as CommonResolution | undefined;
+  const setResolution = useCallback(
+    (v: CommonResolution | undefined) => setUi({ resolution: v }),
+    [setUi],
+  );
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [referenceImages, setReferenceImages] = useState<RefImage[]>([]);
 
@@ -123,6 +144,15 @@ export default function CreateImage() {
     (selectedModel.aspectRatios?.length ?? 0) > 0 &&
     selectedModel.supportsNewAspectRatio();
   const hasResolutions = selectedModel.supportsNewResolution();
+
+  // Cost estimate
+  const estimatedCredits = useImageCostEstimate({
+    modelTauriId: selectedModel.tauriId,
+    aspectRatio: aspectRatio as string,
+    resolution: hasResolutions ? resolution : undefined,
+    numImages,
+    hasReferenceImages: referenceImages.length > 0,
+  });
 
   // Model popover items
   const modelItems = useMemo(
@@ -171,22 +201,24 @@ export default function CreateImage() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-  const handleModelChange = useCallback((item: PopoverItem) => {
-    const model = (item as any).model as ImageModel | undefined;
-    if (!model) return;
-    setSelectedModel(model);
-    setAspectRatio(
-      (model.defaultAspectRatio as CommonAspectRatio) ??
-        CommonAspectRatio.Square,
-    );
-    setNumImages(
-      Math.min(
-        model.maxGenerationCount ?? 4,
-        model.defaultGenerationCount ?? 1,
-      ),
-    );
-    setResolution(model.defaultResolution ?? undefined);
-  }, []);
+  const handleModelChange = useCallback(
+    (item: PopoverItem) => {
+      const model = (item as any).model as ImageModel | undefined;
+      if (!model) return;
+      setUi({
+        selectedModelId: model.id,
+        aspectRatio:
+          (model.defaultAspectRatio as CommonAspectRatio) ??
+          CommonAspectRatio.Square,
+        numImages: Math.min(
+          model.maxGenerationCount ?? 4,
+          model.defaultGenerationCount ?? 1,
+        ),
+        resolution: model.defaultResolution ?? undefined,
+      });
+    },
+    [setUi],
+  );
 
   const handleLibraryImageSelect = useCallback(
     (images: { token: string; url: string; thumbnailUrl: string }[]) => {
@@ -194,15 +226,17 @@ export default function CreateImage() {
         0,
         (selectedModel.maxImagePromptCount ?? 1) - referenceImages.length,
       );
-      const newImages: RefImage[] = images.slice(0, availableSlots).map((img) => ({
-        id: Math.random().toString(36).substring(7),
-        url: img.thumbnailUrl || img.url,
-        file: new File([], "library-image"),
-        mediaToken: img.token,
-      }));
+      const newImages: RefImage[] = images
+        .slice(0, availableSlots)
+        .map((img) => ({
+          id: Math.random().toString(36).substring(7),
+          url: img.thumbnailUrl || img.url,
+          file: new File([], "library-image"),
+          mediaToken: img.token,
+        }));
       setReferenceImages([...referenceImages, ...newImages]);
     },
-    [referenceImages, selectedModel, setReferenceImages],
+    [referenceImages, selectedModel],
   );
 
   const handleGenerate = useCallback(async () => {
@@ -224,7 +258,6 @@ export default function CreateImage() {
         numImages,
         aspectRatio: aspectRatio as string,
         resolution: hasResolutions ? resolution : undefined,
-        disableSystemPrompt: !useSystemPrompt,
         imageMediaTokens: imageMediaTokens?.length
           ? imageMediaTokens
           : undefined,
@@ -267,7 +300,6 @@ export default function CreateImage() {
     numImages,
     aspectRatio,
     resolution,
-    useSystemPrompt,
     hasResolutions,
     referenceImages,
     startBatch,
@@ -283,7 +315,7 @@ export default function CreateImage() {
       <div className="flex h-screen items-center justify-center bg-[#101014]">
         <FontAwesomeIcon
           icon={faSpinnerThird}
-          className="animate-spin text-2xl text-white/40"
+          className="animate-spin text-4xl text-primary/80"
         />
       </div>
     );
@@ -341,20 +373,18 @@ export default function CreateImage() {
         description="Generate stunning AI images with ArtCraft"
       />
 
-      {/* Background image + vignette */}
+      {/* Subtle glow orbs */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div
-          className="h-full w-full bg-cover bg-center bg-no-repeat opacity-30 grayscale"
-          style={{ backgroundImage: "url('/images/digital-mountains.png')" }}
-        />
+        <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
+        <div className="absolute bottom-[-15%] right-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-purple-600 via-blue-500 to-[#00AABA] opacity-[0.08] blur-[120px] transform-gpu" />
+        <div className="absolute bottom-[20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
       </div>
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(50%_50%_at_50%_50%,_transparent_49%,_rgba(0,0,0,0.6)_100%)]" />
 
-      <div className="relative z-[1] h-full w-full p-4 lg:p-16">
+      <div className="relative z-[1] h-full w-full">
         <div className="flex h-full w-full flex-col items-center justify-center">
           {/* ── Empty state ─────────────────────────────────────────── */}
           {!hasAnyBatches && (
-            <div className="relative z-20 mb-32 flex flex-col items-center justify-center text-center drop-shadow-xl">
+            <div className="animate-fade-in-up relative z-20 mb-32 flex flex-col items-center justify-center text-center drop-shadow-xl">
               <h1 className="text-5xl font-bold text-white md:text-7xl">
                 Generate Image
               </h1>
@@ -370,7 +400,7 @@ export default function CreateImage() {
               className="h-full w-full overflow-y-auto pt-20"
               style={{ paddingBottom: bottomOffsetPx }}
             >
-              <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 px-2">
+              <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 px-4 lg:px-16">
                 {inverseBatches.map((batch) => (
                   <div
                     key={batch.id}
@@ -502,13 +532,17 @@ export default function CreateImage() {
           )}
 
           {/* ── Prompt box (fixed bottom center) ───────────────────── */}
-          <div className="fixed bottom-6 left-1/2 z-30 w-full max-w-[730px] -translate-x-1/2 px-4">
+          <div
+            className="animate-fade-in-up fixed bottom-6 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
+            style={{ animationDelay: "150ms" }}
+          >
             <PromptBox
               ref={promptBoxRef}
               prompt={prompt}
               onPromptChange={setPrompt}
               onSubmit={handleGenerate}
               isSubmitting={isGenerating}
+              credits={estimatedCredits}
               placeholder="Describe what you want in the image..."
               supportsImagePrompts={selectedModel.canUseImagePrompt}
               maxImagePromptCount={selectedModel.maxImagePromptCount}
@@ -533,19 +567,6 @@ export default function CreateImage() {
                       handleCommonResolutionSelect={setResolution}
                     />
                   )}
-                  <Tooltip
-                    content={useSystemPrompt ? "System prompt: ON" : "System prompt: OFF"}
-                    position="top"
-                    className="z-50"
-                    delay={200}
-                  >
-                    <ToggleButton
-                      isActive={useSystemPrompt}
-                      icon={faMessageXmark}
-                      activeIcon={faMessageCheck}
-                      onClick={() => setUseSystemPrompt((v) => !v)}
-                    />
-                  </Tooltip>
                 </>
               }
               rightToolbar={
@@ -559,7 +580,10 @@ export default function CreateImage() {
           </div>
 
           {/* ── Model selector (bottom left) ───────────────────────── */}
-          <div className="fixed bottom-6 left-6 z-20 hidden items-center gap-5 lg:flex">
+          <div
+            className="animate-fade-in-up fixed bottom-6 left-6 z-20 hidden items-center gap-5 lg:flex"
+            style={{ animationDelay: "300ms" }}
+          >
             <PopoverMenu
               items={modelItems}
               onSelect={handleModelChange}
@@ -575,13 +599,15 @@ export default function CreateImage() {
         </div>
       </div>
 
-      {/* ── Lightbox ──────────────────────────────────────────────── */}
       {/* ── Image Picker Modal ───────────────────────────────────── */}
       <ImagePickerModal
         isOpen={isImagePickerOpen}
         onClose={() => setIsImagePickerOpen(false)}
         onSelect={handleLibraryImageSelect}
-        maxSelect={Math.max(1, (selectedModel.maxImagePromptCount ?? 1) - referenceImages.length)}
+        maxSelect={Math.max(
+          1,
+          (selectedModel.maxImagePromptCount ?? 1) - referenceImages.length,
+        )}
       />
 
       {/* ── Lightbox ──────────────────────────────────────────────── */}

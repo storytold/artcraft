@@ -5,8 +5,6 @@ import {
   faClock,
   faCircleExclamation,
   faFilm,
-  faMessageCheck,
-  faMessageXmark,
   faSpinnerThird,
   faTriangleExclamation,
   faWaveformLines,
@@ -23,7 +21,15 @@ import {
   type SizeOption,
   getCreatorIcon,
 } from "@storyteller/model-list";
-import { PromptBox, ImagePickerModal, type RefImage } from "../../components/prompt-box";
+import {
+  PromptBox,
+  ImagePickerModal,
+  MediaReferenceRow,
+  type RefImage,
+  type RefVideo,
+  type RefAudio,
+  type MentionItem,
+} from "../../components/prompt-box";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
 import { useCreateVideoStore } from "./create-video-store";
@@ -33,15 +39,18 @@ import {
   startVideoPolling,
 } from "./generate-video-api";
 import { AspectRatioIcon } from "../create-image/components/AspectRatioIcon";
+import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 
 // ── Models available via REST ─────────────────────────────────────────────
 
-const WEB_VIDEO_MODELS = VIDEO_MODELS.filter(
-  (m) => videoModelHasWebEndpoint(m.tauriId),
+const WEB_VIDEO_MODELS = VIDEO_MODELS.filter((m) =>
+  videoModelHasWebEndpoint(m.tauriId),
 ).sort((a, b) => a.selectorName.localeCompare(b.selectorName));
 
+const DEFAULT_MODEL_ID = "seedance_2p0";
 const DEFAULT_MODEL =
-  WEB_VIDEO_MODELS.find((m) => m.id === "kling_3p0_pro") ?? WEB_VIDEO_MODELS[0];
+  WEB_VIDEO_MODELS.find((m) => m.id === DEFAULT_MODEL_ID) ??
+  WEB_VIDEO_MODELS[0];
 
 const MODEL_FALLBACK_ICON = (
   <FontAwesomeIcon icon={faFilm} className="h-4 w-4" />
@@ -84,22 +93,44 @@ export default function CreateVideo() {
   const [user, setUser] = useState<UserInfo | undefined>(undefined);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // Generation state
-  const [prompt, setPrompt] = useState("");
-  const [selectedModel, setSelectedModel] = useState<VideoModel>(DEFAULT_MODEL);
-  const [selectedSize, setSelectedSize] = useState<string>(
-    DEFAULT_MODEL.sizeOptions[0]?.tauriValue ?? "wide_sixteen_by_nine",
+  // Persisted UI state from Zustand store
+  const ui = useCreateVideoStore((s) => s.ui);
+  const setUi = useCreateVideoStore((s) => s.setUi);
+
+  const selectedModel = useMemo(
+    () =>
+      ui.selectedModelId
+        ? (WEB_VIDEO_MODELS.find((m) => m.id === ui.selectedModelId) ??
+          DEFAULT_MODEL)
+        : DEFAULT_MODEL,
+    [ui.selectedModelId],
   );
-  const [duration, setDuration] = useState<number | null>(
-    DEFAULT_MODEL.defaultDuration ?? null,
+
+  const prompt = ui.prompt;
+  const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
+  const selectedSize = ui.selectedSize;
+  const setSelectedSize = useCallback(
+    (v: string) => setUi({ selectedSize: v }),
+    [setUi],
   );
-  const [resolution, setResolution] = useState<string | null>(
-    DEFAULT_MODEL.defaultResolution ?? null,
+  const duration = ui.duration;
+  const setDuration = useCallback(
+    (v: number | null) => setUi({ duration: v }),
+    [setUi],
   );
-  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
-  const [generateWithSound, setGenerateWithSound] = useState(false);
+  const resolution = ui.resolution ?? selectedModel.defaultResolution ?? null;
+  const setResolution = useCallback(
+    (v: string | null) => setUi({ resolution: v }),
+    [setUi],
+  );
+  const generateWithSound = ui.generateWithSound;
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Reference media
   const [referenceImages, setReferenceImages] = useState<RefImage[]>([]);
+  const [endFrameImage, setEndFrameImage] = useState<RefImage | undefined>();
+  const [referenceVideos, setReferenceVideos] = useState<RefVideo[]>([]);
+  const [referenceAudios, setReferenceAudios] = useState<RefAudio[]>([]);
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
 
   // Prompt height for dynamic padding
@@ -122,10 +153,54 @@ export default function CreateVideo() {
   const inverseBatches = useMemo(() => [...batches].reverse(), [batches]);
 
   const hasSizeOptions = selectedModel.sizeOptions.length > 0;
-  const hasResolutionOptions = (selectedModel.resolutionOptions?.length ?? 0) > 0;
+  const hasResolutionOptions =
+    (selectedModel.resolutionOptions?.length ?? 0) > 0;
   const hasSound = !!selectedModel.generateWithSound;
-  const supportsImagePrompts = selectedModel.startFrame || selectedModel.requiresImage;
-  const needsImage = selectedModel.requiresImage && referenceImages.length === 0;
+  const supportsImagePrompts =
+    selectedModel.startFrame ||
+    selectedModel.requiresImage ||
+    !!selectedModel.supportsReferenceMode;
+  const hasEndFrame = !!(
+    selectedModel.endFrame && !selectedModel.supportsReferenceMode
+  );
+  const needsImage =
+    selectedModel.requiresImage && referenceImages.length === 0;
+  const isReferenceMode = !!selectedModel.supportsReferenceMode;
+
+  // Cost estimate
+  const estimatedCredits = useVideoCostEstimate({
+    modelTauriId: selectedModel.tauriId,
+    aspectRatio: selectedSize,
+    resolution,
+    duration: duration ?? selectedModel.defaultDuration,
+    hasStartFrame: !isReferenceMode && referenceImages.length > 0,
+    hasEndFrame: !isReferenceMode && hasEndFrame && !!endFrameImage,
+    isReferenceMode,
+    referenceImageCount: isReferenceMode ? referenceImages.length : 0,
+    generateAudio: hasSound ? generateWithSound : undefined,
+  });
+
+  // Build @-mention items from all references
+  const mentionItems = useMemo((): MentionItem[] => {
+    if (!isReferenceMode) return [];
+    return [
+      ...referenceImages.map((img, i) => ({
+        label: `@Image${i + 1}`,
+        type: "image" as const,
+        preview: img.url,
+      })),
+      ...referenceVideos.map((vid, i) => ({
+        label: `@Video${i + 1}`,
+        type: "video" as const,
+        preview: vid.url,
+      })),
+      ...referenceAudios.map((_aud, i) => ({
+        label: `@Audio${i + 1}`,
+        type: "audio" as const,
+        preview: undefined,
+      })),
+    ];
+  }, [isReferenceMode, referenceImages, referenceVideos, referenceAudios]);
 
   // Model popover items
   const modelItems = useMemo(
@@ -157,7 +232,7 @@ export default function CreateVideo() {
       selectedModel.resolutionOptions
         ? selectedModel.resolutionOptions.map((r) => ({
             label: r,
-            selected: r === resolution,
+            selected: r === (resolution ?? selectedModel.defaultResolution),
           }))
         : null,
     [selectedModel, resolution],
@@ -204,46 +279,66 @@ export default function CreateVideo() {
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
-  const handleModelChange = useCallback((item: PopoverItem) => {
-    const model = (item as any).model as VideoModel | undefined;
-    if (!model) return;
-    setSelectedModel(model);
-    setSelectedSize(model.sizeOptions[0]?.tauriValue ?? "wide_sixteen_by_nine");
-    setDuration(model.defaultDuration ?? null);
-    setResolution(model.defaultResolution ?? null);
-    setGenerateWithSound(false);
-    setReferenceImages([]);
-  }, []);
+  const handleModelChange = useCallback(
+    (item: PopoverItem) => {
+      const model = (item as any).model as VideoModel | undefined;
+      if (!model) return;
+      setUi({
+        selectedModelId: model.id,
+        selectedSize:
+          model.sizeOptions[0]?.tauriValue ?? "wide_sixteen_by_nine",
+        duration: model.defaultDuration ?? null,
+        resolution: model.defaultResolution ?? null,
+        generateWithSound: false,
+      });
+      setReferenceImages([]);
+      setEndFrameImage(undefined);
+      setReferenceVideos([]);
+      setReferenceAudios([]);
+    },
+    [setUi],
+  );
 
-  const handleSizeChange = useCallback((item: PopoverItem) => {
-    const opt = (item as any).sizeOption as SizeOption | undefined;
-    if (opt) setSelectedSize(opt.tauriValue);
-  }, []);
+  const handleSizeChange = useCallback(
+    (item: PopoverItem) => {
+      const opt = (item as any).sizeOption as SizeOption | undefined;
+      if (opt) setSelectedSize(opt.tauriValue);
+    },
+    [setSelectedSize],
+  );
 
-  const handleDurationChange = useCallback((item: PopoverItem) => {
-    const seconds = parseInt(item.label, 10);
-    if (!isNaN(seconds)) setDuration(seconds);
-  }, []);
+  const handleDurationChange = useCallback(
+    (item: PopoverItem) => {
+      const seconds = parseInt(item.label, 10);
+      if (!isNaN(seconds)) setDuration(seconds);
+    },
+    [setDuration],
+  );
 
-  const handleResolutionChange = useCallback((item: PopoverItem) => {
-    setResolution(item.label);
-  }, []);
+  const handleResolutionChange = useCallback(
+    (item: PopoverItem) => {
+      setResolution(item.label);
+    },
+    [setResolution],
+  );
 
   const handleLibraryImageSelect = useCallback(
     (images: { token: string; url: string; thumbnailUrl: string }[]) => {
-      const maxImages = selectedModel.supportsReferenceMode
+      const maxImages = isReferenceMode
         ? (selectedModel.maxReferenceImages ?? 3)
         : 1;
       const availableSlots = Math.max(0, maxImages - referenceImages.length);
-      const newImages: RefImage[] = images.slice(0, availableSlots).map((img) => ({
-        id: Math.random().toString(36).substring(7),
-        url: img.thumbnailUrl || img.url,
-        file: new File([], "library-image"),
-        mediaToken: img.token,
-      }));
+      const newImages: RefImage[] = images
+        .slice(0, availableSlots)
+        .map((img) => ({
+          id: Math.random().toString(36).substring(7),
+          url: img.thumbnailUrl || img.url,
+          file: new File([], "library-image"),
+          mediaToken: img.token,
+        }));
       setReferenceImages([...referenceImages, ...newImages]);
     },
-    [referenceImages, selectedModel, setReferenceImages],
+    [referenceImages, isReferenceMode, selectedModel],
   );
 
   const handleGenerate = useCallback(async () => {
@@ -253,15 +348,34 @@ export default function CreateVideo() {
     const batchId = startBatch(prompt, selectedModel.fullName);
 
     try {
-      // Get the first reference image token for start frame
-      const imageMediaToken = supportsImagePrompts && referenceImages.length > 0
-        ? referenceImages[0].mediaToken
-        : undefined;
+      // Get the first reference image token for start frame (non-reference mode)
+      const imageMediaToken =
+        !isReferenceMode && supportsImagePrompts && referenceImages.length > 0
+          ? referenceImages[0].mediaToken
+          : undefined;
 
-      // Get reference image tokens for reference mode (seedance 2.0)
+      // End frame token (non-reference mode only)
+      const endFrameMediaToken =
+        !isReferenceMode && hasEndFrame && endFrameImage?.mediaToken
+          ? endFrameImage.mediaToken
+          : undefined;
+
+      // Get reference media tokens (reference mode)
       const referenceImageMediaTokens =
-        selectedModel.supportsReferenceMode && referenceImages.length > 0
-          ? referenceImages.map((img) => img.mediaToken).filter((t) => t.length > 0)
+        isReferenceMode && referenceImages.length > 0
+          ? referenceImages
+              .map((img) => img.mediaToken)
+              .filter((t) => t.length > 0)
+          : undefined;
+
+      const referenceVideoMediaTokens =
+        isReferenceMode && referenceVideos.length > 0
+          ? referenceVideos.map((v) => v.mediaToken).filter((t) => t.length > 0)
+          : undefined;
+
+      const referenceAudioMediaTokens =
+        isReferenceMode && referenceAudios.length > 0
+          ? referenceAudios.map((a) => a.mediaToken).filter((t) => t.length > 0)
           : undefined;
 
       const result = await enqueueVideoGeneration({
@@ -269,11 +383,22 @@ export default function CreateVideo() {
         modelTauriId: selectedModel.tauriId,
         aspectRatio: selectedSize,
         duration: duration ?? selectedModel.defaultDuration,
-        resolution: hasResolutionOptions ? (resolution ?? undefined) : undefined,
+        resolution: hasResolutionOptions
+          ? (resolution ?? selectedModel.defaultResolution ?? undefined)
+          : undefined,
         generateAudio: hasSound ? generateWithSound : undefined,
         imageMediaToken: imageMediaToken?.length ? imageMediaToken : undefined,
+        endFrameImageMediaToken: endFrameMediaToken?.length
+          ? endFrameMediaToken
+          : undefined,
         referenceImageMediaTokens: referenceImageMediaTokens?.length
           ? referenceImageMediaTokens
+          : undefined,
+        referenceVideoMediaTokens: referenceVideoMediaTokens?.length
+          ? referenceVideoMediaTokens
+          : undefined,
+        referenceAudioMediaTokens: referenceAudioMediaTokens?.length
+          ? referenceAudioMediaTokens
           : undefined,
       });
 
@@ -311,6 +436,7 @@ export default function CreateVideo() {
     prompt,
     isGenerating,
     needsImage,
+    isReferenceMode,
     selectedModel,
     selectedSize,
     duration,
@@ -319,7 +445,11 @@ export default function CreateVideo() {
     hasResolutionOptions,
     hasSound,
     supportsImagePrompts,
+    hasEndFrame,
     referenceImages,
+    endFrameImage,
+    referenceVideos,
+    referenceAudios,
     startBatch,
     setBatchJobToken,
     completeBatch,
@@ -333,7 +463,7 @@ export default function CreateVideo() {
       <div className="flex h-screen items-center justify-center bg-[#101014]">
         <FontAwesomeIcon
           icon={faSpinnerThird}
-          className="animate-spin text-2xl text-white/40"
+          className="animate-spin text-4xl text-primary/80"
         />
       </div>
     );
@@ -391,20 +521,18 @@ export default function CreateVideo() {
         description="Generate stunning AI videos with ArtCraft"
       />
 
-      {/* Background image + vignette */}
+      {/* Subtle glow orbs */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div
-          className="h-full w-full bg-cover bg-center bg-no-repeat opacity-30 grayscale"
-          style={{ backgroundImage: "url('/images/forest-trees.png')" }}
-        />
+        <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
+        <div className="absolute bottom-[-15%] left-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-[#00AABA] via-blue-500 to-purple-600 opacity-[0.08] blur-[120px] transform-gpu" />
+        <div className="absolute bottom-[10%] right-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
       </div>
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(50%_50%_at_50%_50%,_transparent_49%,_rgba(0,0,0,0.6)_100%)]" />
 
       <div className="relative z-[1] h-full w-full p-4 lg:p-16">
         <div className="flex h-full w-full flex-col items-center justify-center">
           {/* ── Empty state ─────────────────────────────────────────── */}
           {!hasAnyBatches && (
-            <div className="relative z-20 mb-32 flex flex-col items-center justify-center text-center drop-shadow-xl">
+            <div className="animate-fade-in-up relative z-20 mb-32 flex flex-col items-center justify-center text-center drop-shadow-xl">
               <h1 className="text-5xl font-bold text-white md:text-7xl">
                 Generate Video
               </h1>
@@ -420,7 +548,7 @@ export default function CreateVideo() {
               className="h-full w-full overflow-y-auto pt-20"
               style={{ paddingBottom: bottomOffsetPx }}
             >
-              <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 px-2">
+              <div className="mx-auto flex max-w-screen-2xl flex-col gap-8 px-4 lg:px-16">
                 {inverseBatches.map((batch) => (
                   <div
                     key={batch.id}
@@ -491,25 +619,64 @@ export default function CreateVideo() {
           )}
 
           {/* ── Prompt box (fixed bottom center) ───────────────────── */}
-          <div className="fixed bottom-6 left-1/2 z-30 w-full max-w-[730px] -translate-x-1/2 px-4">
+          <div
+            className="animate-fade-in-up fixed bottom-6 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
+            style={{ animationDelay: "150ms" }}
+          >
             <PromptBox
               ref={promptBoxRef}
               prompt={prompt}
               onPromptChange={setPrompt}
               onSubmit={handleGenerate}
               isSubmitting={isGenerating || needsImage}
+              credits={estimatedCredits}
               placeholder="Describe the video you want to generate..."
               supportsImagePrompts={supportsImagePrompts}
-              maxImagePromptCount={selectedModel.supportsReferenceMode ? (selectedModel.maxReferenceImages ?? 3) : 1}
+              maxImagePromptCount={
+                isReferenceMode ? (selectedModel.maxReferenceImages ?? 3) : 1
+              }
               referenceImages={referenceImages}
               onReferenceImagesChange={setReferenceImages}
-              onPickFromLibrary={supportsImagePrompts ? () => setIsImagePickerOpen(true) : undefined}
+              isVideo
+              isReferenceMode={isReferenceMode}
+              endFrameImage={endFrameImage}
+              onEndFrameImageChange={setEndFrameImage}
+              showEndFrameSection={hasEndFrame}
+              onPickFromLibrary={
+                supportsImagePrompts
+                  ? () => setIsImagePickerOpen(true)
+                  : undefined
+              }
               showClearSession={hasAnyBatches}
               onClearSession={resetBatches}
+              mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
+              mediaReferenceRow={
+                isReferenceMode ? (
+                  <MediaReferenceRow
+                    referenceVideos={referenceVideos}
+                    onReferenceVideosChange={setReferenceVideos}
+                    maxVideoCount={selectedModel.maxReferenceVideos ?? 3}
+                    maxVideoRefDuration={
+                      selectedModel.maxVideoRefDuration ?? 30
+                    }
+                    referenceAudios={referenceAudios}
+                    onReferenceAudiosChange={setReferenceAudios}
+                    maxAudioCount={selectedModel.maxReferenceAudios ?? 2}
+                    maxAudioRefDuration={
+                      selectedModel.maxAudioRefDuration ?? 30
+                    }
+                  />
+                ) : undefined
+              }
               leftToolbar={
                 <>
                   {hasSizeOptions && (
-                    <Tooltip content="Aspect Ratio" position="top" className="z-50" closeOnClick>
+                    <Tooltip
+                      content="Aspect Ratio"
+                      position="top"
+                      className="z-50"
+                      closeOnClick
+                    >
                       <PopoverMenu
                         items={sizeItems}
                         onSelect={handleSizeChange}
@@ -529,7 +696,12 @@ export default function CreateVideo() {
                     </Tooltip>
                   )}
                   {resolutionItems && (
-                    <Tooltip content="Resolution" position="top" className="z-50" closeOnClick>
+                    <Tooltip
+                      content="Resolution"
+                      position="top"
+                      className="z-50"
+                      closeOnClick
+                    >
                       <PopoverMenu
                         items={resolutionItems}
                         onSelect={handleResolutionChange}
@@ -539,30 +711,23 @@ export default function CreateVideo() {
                     </Tooltip>
                   )}
                   {durationItems && (
-                    <Tooltip content="Duration" position="top" className="z-50" closeOnClick>
+                    <Tooltip
+                      content="Duration"
+                      position="top"
+                      className="z-50"
+                      closeOnClick
+                    >
                       <PopoverMenu
                         items={durationItems}
                         onSelect={handleDurationChange}
                         mode="toggle"
                         panelTitle="Duration"
                         triggerIcon={
-                          <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
+                          <FontAwesomeIcon
+                            icon={faClock}
+                            className="h-3.5 w-3.5"
+                          />
                         }
-                      />
-                    </Tooltip>
-                  )}
-                  {selectedModel.supportsSystemPrompt !== false && (
-                    <Tooltip
-                      content={useSystemPrompt ? "System prompt: ON" : "System prompt: OFF"}
-                      position="top"
-                      className="z-50"
-                      delay={200}
-                    >
-                      <ToggleButton
-                        isActive={useSystemPrompt}
-                        icon={faMessageXmark}
-                        activeIcon={faMessageCheck}
-                        onClick={() => setUseSystemPrompt((v) => !v)}
                       />
                     </Tooltip>
                   )}
@@ -577,7 +742,14 @@ export default function CreateVideo() {
                         isActive={generateWithSound}
                         icon={faWaveformLines}
                         activeIcon={faWaveformLines}
-                        onClick={() => setGenerateWithSound((v) => !v)}
+                        onClick={() =>
+                          setUi({ generateWithSound: !generateWithSound })
+                        }
+                        className={
+                          generateWithSound
+                            ? "bg-primary/40 hover:bg-primary/50 border-primary/30"
+                            : undefined
+                        }
                       />
                     </Tooltip>
                   )}
@@ -592,16 +764,20 @@ export default function CreateVideo() {
                   className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400"
                 />
                 <span>
-                  Seedance 2.0 is in Early Alpha. Generations may be slow and may
-                  experience outages. Seedance may reject safe inputs unexpectedly.
-                  Try several short generations before longer ones.
+                  Seedance 2.0 is in Early Alpha. Generations may be slow and
+                  may experience outages. Seedance may reject safe inputs
+                  unexpectedly. Try several short generations before longer
+                  ones.
                 </span>
               </div>
             )}
           </div>
 
           {/* ── Model selector (bottom left) ───────────────────────── */}
-          <div className="fixed bottom-6 left-6 z-20 hidden items-center gap-5 lg:flex">
+          <div
+            className="animate-fade-in-up fixed bottom-6 left-6 z-20 hidden items-center gap-5 lg:flex"
+            style={{ animationDelay: "300ms" }}
+          >
             <PopoverMenu
               items={modelItems}
               onSelect={handleModelChange}
@@ -624,9 +800,8 @@ export default function CreateVideo() {
         onSelect={handleLibraryImageSelect}
         maxSelect={Math.max(
           1,
-          (selectedModel.supportsReferenceMode
-            ? (selectedModel.maxReferenceImages ?? 3)
-            : 1) - referenceImages.length,
+          (isReferenceMode ? (selectedModel.maxReferenceImages ?? 3) : 1) -
+            referenceImages.length,
         )}
       />
     </div>

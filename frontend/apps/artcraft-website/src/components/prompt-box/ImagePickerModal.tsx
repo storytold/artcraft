@@ -26,7 +26,7 @@ interface ImagePickerModalProps {
   maxSelect: number;
 }
 
-const PAGE_SIZE = 40;
+const PAGE_SIZE = 60;
 
 export const ImagePickerModal = ({
   isOpen,
@@ -155,10 +155,10 @@ export const ImagePickerModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Pick from Library"
-      width={700}
+      width={1200}
       showClose
     >
-      <div className="flex flex-col" style={{ height: "min(70vh, 600px)" }}>
+      <div className="flex flex-col" style={{ height: "min(80vh, 800px)" }}>
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto p-4"
@@ -175,7 +175,7 @@ export const ImagePickerModal = ({
               No images found
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
               {images.map((img) => {
                 const isSelected = selected.has(img.token);
                 return (
