@@ -118,11 +118,13 @@ export interface GenerateImageParams {
   modelTauriId: string;
   numImages?: number;
   aspectRatio?: string;
+  resolution?: string;
+  disableSystemPrompt?: boolean;
   imageMediaTokens?: string[];
 }
 
 function buildRequestBody(params: GenerateImageParams): Record<string, unknown> {
-  const { prompt, modelTauriId, numImages = 1, aspectRatio, imageMediaTokens } = params;
+  const { prompt, modelTauriId, numImages = 1, aspectRatio, resolution, disableSystemPrompt, imageMediaTokens } = params;
 
   const body: Record<string, unknown> = {
     uuid_idempotency_token: crypto.randomUUID(),
@@ -144,6 +146,14 @@ function buildRequestBody(params: GenerateImageParams): Record<string, unknown> 
     } else {
       body.aspect_ratio = mapped;
     }
+  }
+
+  if (resolution) {
+    body.resolution = resolution;
+  }
+
+  if (disableSystemPrompt) {
+    body.disable_system_prompt = true;
   }
 
   return body;

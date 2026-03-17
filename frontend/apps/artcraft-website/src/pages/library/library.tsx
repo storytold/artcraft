@@ -48,7 +48,7 @@ const getFilterMediaClass = (filter: string): FilterMediaClasses[] | undefined =
     case "video":
       return [FilterMediaClasses.VIDEO];
     default:
-      return undefined;
+      return [FilterMediaClasses.IMAGE, FilterMediaClasses.VIDEO];
   }
 };
 

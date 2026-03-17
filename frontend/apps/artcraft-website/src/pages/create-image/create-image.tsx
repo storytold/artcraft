@@ -5,23 +5,27 @@ import {
   faClock,
   faCircleExclamation,
   faImage,
+  faMessageCheck,
+  faMessageXmark,
   faSpinnerThird,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { UsersApi, UserInfo } from "@storyteller/api";
-import { Button } from "@storyteller/ui-button";
+import { Button, ToggleButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { Badge } from "@storyteller/ui-badge";
 import {
   IMAGE_MODELS,
   ImageModel,
   getCreatorIcon,
   CommonAspectRatio,
+  CommonResolution,
 } from "@storyteller/model-list";
 import { getThumbnailUrl, THUMBNAIL_SIZES } from "@storyteller/common";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
-import { PromptBox, type RefImage } from "../../components/prompt-box";
+import { PromptBox, ImagePickerModal, type RefImage } from "../../components/prompt-box";
 import { useCreateImageStore, type GeneratedImage } from "./create-image-store";
 import {
   enqueueImageGeneration,
@@ -30,6 +34,7 @@ import {
 } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
 import { GenerationCountPicker } from "./components/GenerationCountPicker";
+import { ResolutionPicker } from "./components/ResolutionPicker";
 
 // ── Models available via REST ─────────────────────────────────────────────
 
@@ -79,12 +84,19 @@ export default function CreateImage() {
   const [numImages, setNumImages] = useState(
     DEFAULT_MODEL.defaultGenerationCount ?? 1,
   );
+  const [resolution, setResolution] = useState<CommonResolution | undefined>(
+    DEFAULT_MODEL.defaultResolution ?? undefined,
+  );
+  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [referenceImages, setReferenceImages] = useState<RefImage[]>([]);
 
   // Prompt height for dynamic padding
   const promptBoxRef = useRef<HTMLDivElement>(null);
   const [promptHeight, setPromptHeight] = useState(138);
+
+  // Image picker modal
+  const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
 
   // Lightbox
   const [lightboxImage, setLightboxImage] = useState<{
@@ -110,6 +122,7 @@ export default function CreateImage() {
   const hasAspectRatios =
     (selectedModel.aspectRatios?.length ?? 0) > 0 &&
     selectedModel.supportsNewAspectRatio();
+  const hasResolutions = selectedModel.supportsNewResolution();
 
   // Model popover items
   const modelItems = useMemo(
@@ -172,7 +185,25 @@ export default function CreateImage() {
         model.defaultGenerationCount ?? 1,
       ),
     );
+    setResolution(model.defaultResolution ?? undefined);
   }, []);
+
+  const handleLibraryImageSelect = useCallback(
+    (images: { token: string; url: string; thumbnailUrl: string }[]) => {
+      const availableSlots = Math.max(
+        0,
+        (selectedModel.maxImagePromptCount ?? 1) - referenceImages.length,
+      );
+      const newImages: RefImage[] = images.slice(0, availableSlots).map((img) => ({
+        id: Math.random().toString(36).substring(7),
+        url: img.thumbnailUrl || img.url,
+        file: new File([], "library-image"),
+        mediaToken: img.token,
+      }));
+      setReferenceImages([...referenceImages, ...newImages]);
+    },
+    [referenceImages, selectedModel, setReferenceImages],
+  );
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim() || isGenerating) return;
@@ -192,6 +223,8 @@ export default function CreateImage() {
         modelTauriId: selectedModel.tauriId,
         numImages,
         aspectRatio: aspectRatio as string,
+        resolution: hasResolutions ? resolution : undefined,
+        disableSystemPrompt: !useSystemPrompt,
         imageMediaTokens: imageMediaTokens?.length
           ? imageMediaTokens
           : undefined,
@@ -233,6 +266,9 @@ export default function CreateImage() {
     selectedModel,
     numImages,
     aspectRatio,
+    resolution,
+    useSystemPrompt,
+    hasResolutions,
     referenceImages,
     startBatch,
     setBatchJobToken,
@@ -478,16 +514,39 @@ export default function CreateImage() {
               maxImagePromptCount={selectedModel.maxImagePromptCount}
               referenceImages={referenceImages}
               onReferenceImagesChange={setReferenceImages}
+              onPickFromLibrary={() => setIsImagePickerOpen(true)}
               showClearSession={hasAnyBatches}
               onClearSession={resetBatches}
               leftToolbar={
-                hasAspectRatios ? (
-                  <AspectRatioPicker
-                    model={selectedModel}
-                    currentAspectRatio={aspectRatio}
-                    handleCommonAspectRatioSelect={setAspectRatio}
-                  />
-                ) : undefined
+                <>
+                  {hasAspectRatios && (
+                    <AspectRatioPicker
+                      model={selectedModel}
+                      currentAspectRatio={aspectRatio}
+                      handleCommonAspectRatioSelect={setAspectRatio}
+                    />
+                  )}
+                  {hasResolutions && (
+                    <ResolutionPicker
+                      model={selectedModel}
+                      currentResolution={resolution}
+                      handleCommonResolutionSelect={setResolution}
+                    />
+                  )}
+                  <Tooltip
+                    content={useSystemPrompt ? "System prompt: ON" : "System prompt: OFF"}
+                    position="top"
+                    className="z-50"
+                    delay={200}
+                  >
+                    <ToggleButton
+                      isActive={useSystemPrompt}
+                      icon={faMessageXmark}
+                      activeIcon={faMessageCheck}
+                      onClick={() => setUseSystemPrompt((v) => !v)}
+                    />
+                  </Tooltip>
+                </>
               }
               rightToolbar={
                 <GenerationCountPicker
@@ -515,6 +574,15 @@ export default function CreateImage() {
           </div>
         </div>
       </div>
+
+      {/* ── Lightbox ──────────────────────────────────────────────── */}
+      {/* ── Image Picker Modal ───────────────────────────────────── */}
+      <ImagePickerModal
+        isOpen={isImagePickerOpen}
+        onClose={() => setIsImagePickerOpen(false)}
+        onSelect={handleLibraryImageSelect}
+        maxSelect={Math.max(1, (selectedModel.maxImagePromptCount ?? 1) - referenceImages.length)}
+      />
 
       {/* ── Lightbox ──────────────────────────────────────────────── */}
       {lightboxImage && (

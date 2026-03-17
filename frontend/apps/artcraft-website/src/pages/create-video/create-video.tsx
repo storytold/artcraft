@@ -5,12 +5,17 @@ import {
   faClock,
   faCircleExclamation,
   faFilm,
+  faMessageCheck,
+  faMessageXmark,
   faSpinnerThird,
+  faTriangleExclamation,
+  faWaveformLines,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { UsersApi, UserInfo } from "@storyteller/api";
-import { Button } from "@storyteller/ui-button";
+import { Button, ToggleButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { Badge } from "@storyteller/ui-badge";
 import {
   VIDEO_MODELS,
@@ -18,7 +23,7 @@ import {
   type SizeOption,
   getCreatorIcon,
 } from "@storyteller/model-list";
-import { PromptBox, type RefImage } from "../../components/prompt-box";
+import { PromptBox, ImagePickerModal, type RefImage } from "../../components/prompt-box";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
 import { useCreateVideoStore } from "./create-video-store";
@@ -32,7 +37,7 @@ import { AspectRatioIcon } from "../create-image/components/AspectRatioIcon";
 // ── Models available via REST ─────────────────────────────────────────────
 
 const WEB_VIDEO_MODELS = VIDEO_MODELS.filter(
-  (m) => !m.requiresImage && videoModelHasWebEndpoint(m.tauriId),
+  (m) => videoModelHasWebEndpoint(m.tauriId),
 ).sort((a, b) => a.selectorName.localeCompare(b.selectorName));
 
 const DEFAULT_MODEL =
@@ -85,8 +90,17 @@ export default function CreateVideo() {
   const [selectedSize, setSelectedSize] = useState<string>(
     DEFAULT_MODEL.sizeOptions[0]?.tauriValue ?? "wide_sixteen_by_nine",
   );
+  const [duration, setDuration] = useState<number | null>(
+    DEFAULT_MODEL.defaultDuration ?? null,
+  );
+  const [resolution, setResolution] = useState<string | null>(
+    DEFAULT_MODEL.defaultResolution ?? null,
+  );
+  const [useSystemPrompt, setUseSystemPrompt] = useState(true);
+  const [generateWithSound, setGenerateWithSound] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [referenceImages] = useState<RefImage[]>([]);
+  const [referenceImages, setReferenceImages] = useState<RefImage[]>([]);
+  const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
 
   // Prompt height for dynamic padding
   const promptBoxRef = useRef<HTMLDivElement>(null);
@@ -108,6 +122,10 @@ export default function CreateVideo() {
   const inverseBatches = useMemo(() => [...batches].reverse(), [batches]);
 
   const hasSizeOptions = selectedModel.sizeOptions.length > 0;
+  const hasResolutionOptions = (selectedModel.resolutionOptions?.length ?? 0) > 0;
+  const hasSound = !!selectedModel.generateWithSound;
+  const supportsImagePrompts = selectedModel.startFrame || selectedModel.requiresImage;
+  const needsImage = selectedModel.requiresImage && referenceImages.length === 0;
 
   // Model popover items
   const modelItems = useMemo(
@@ -119,6 +137,30 @@ export default function CreateVideo() {
   const sizeItems = useMemo(
     () => buildSizePopoverItems(selectedModel.sizeOptions, selectedSize),
     [selectedModel.sizeOptions, selectedSize],
+  );
+
+  // Duration popover items
+  const durationItems = useMemo(
+    (): PopoverItem[] | null =>
+      selectedModel.durationOptions
+        ? selectedModel.durationOptions.map((d) => ({
+            label: `${d}s`,
+            selected: d === (duration ?? selectedModel.defaultDuration),
+          }))
+        : null,
+    [selectedModel, duration],
+  );
+
+  // Resolution popover items
+  const resolutionItems = useMemo(
+    (): PopoverItem[] | null =>
+      selectedModel.resolutionOptions
+        ? selectedModel.resolutionOptions.map((r) => ({
+            label: r,
+            selected: r === resolution,
+          }))
+        : null,
+    [selectedModel, resolution],
   );
 
   // ── Effects ──────────────────────────────────────────────────────────────
@@ -167,6 +209,10 @@ export default function CreateVideo() {
     if (!model) return;
     setSelectedModel(model);
     setSelectedSize(model.sizeOptions[0]?.tauriValue ?? "wide_sixteen_by_nine");
+    setDuration(model.defaultDuration ?? null);
+    setResolution(model.defaultResolution ?? null);
+    setGenerateWithSound(false);
+    setReferenceImages([]);
   }, []);
 
   const handleSizeChange = useCallback((item: PopoverItem) => {
@@ -174,18 +220,61 @@ export default function CreateVideo() {
     if (opt) setSelectedSize(opt.tauriValue);
   }, []);
 
+  const handleDurationChange = useCallback((item: PopoverItem) => {
+    const seconds = parseInt(item.label, 10);
+    if (!isNaN(seconds)) setDuration(seconds);
+  }, []);
+
+  const handleResolutionChange = useCallback((item: PopoverItem) => {
+    setResolution(item.label);
+  }, []);
+
+  const handleLibraryImageSelect = useCallback(
+    (images: { token: string; url: string; thumbnailUrl: string }[]) => {
+      const maxImages = selectedModel.supportsReferenceMode
+        ? (selectedModel.maxReferenceImages ?? 3)
+        : 1;
+      const availableSlots = Math.max(0, maxImages - referenceImages.length);
+      const newImages: RefImage[] = images.slice(0, availableSlots).map((img) => ({
+        id: Math.random().toString(36).substring(7),
+        url: img.thumbnailUrl || img.url,
+        file: new File([], "library-image"),
+        mediaToken: img.token,
+      }));
+      setReferenceImages([...referenceImages, ...newImages]);
+    },
+    [referenceImages, selectedModel, setReferenceImages],
+  );
+
   const handleGenerate = useCallback(async () => {
-    if (!prompt.trim() || isGenerating) return;
+    if (!prompt.trim() || isGenerating || needsImage) return;
 
     setIsGenerating(true);
     const batchId = startBatch(prompt, selectedModel.fullName);
 
     try {
+      // Get the first reference image token for start frame
+      const imageMediaToken = supportsImagePrompts && referenceImages.length > 0
+        ? referenceImages[0].mediaToken
+        : undefined;
+
+      // Get reference image tokens for reference mode (seedance 2.0)
+      const referenceImageMediaTokens =
+        selectedModel.supportsReferenceMode && referenceImages.length > 0
+          ? referenceImages.map((img) => img.mediaToken).filter((t) => t.length > 0)
+          : undefined;
+
       const result = await enqueueVideoGeneration({
         prompt: prompt.trim(),
         modelTauriId: selectedModel.tauriId,
         aspectRatio: selectedSize,
-        duration: selectedModel.defaultDuration,
+        duration: duration ?? selectedModel.defaultDuration,
+        resolution: hasResolutionOptions ? (resolution ?? undefined) : undefined,
+        generateAudio: hasSound ? generateWithSound : undefined,
+        imageMediaToken: imageMediaToken?.length ? imageMediaToken : undefined,
+        referenceImageMediaTokens: referenceImageMediaTokens?.length
+          ? referenceImageMediaTokens
+          : undefined,
       });
 
       if (!result.success || !result.jobToken) {
@@ -221,8 +310,16 @@ export default function CreateVideo() {
   }, [
     prompt,
     isGenerating,
+    needsImage,
     selectedModel,
     selectedSize,
+    duration,
+    resolution,
+    generateWithSound,
+    hasResolutionOptions,
+    hasSound,
+    supportsImagePrompts,
+    referenceImages,
     startBatch,
     setBatchJobToken,
     completeBatch,
@@ -400,34 +497,107 @@ export default function CreateVideo() {
               prompt={prompt}
               onPromptChange={setPrompt}
               onSubmit={handleGenerate}
-              isSubmitting={isGenerating}
+              isSubmitting={isGenerating || needsImage}
               placeholder="Describe the video you want to generate..."
-              supportsImagePrompts={false}
+              supportsImagePrompts={supportsImagePrompts}
+              maxImagePromptCount={selectedModel.supportsReferenceMode ? (selectedModel.maxReferenceImages ?? 3) : 1}
               referenceImages={referenceImages}
-              onReferenceImagesChange={() => {}}
+              onReferenceImagesChange={setReferenceImages}
+              onPickFromLibrary={supportsImagePrompts ? () => setIsImagePickerOpen(true) : undefined}
               showClearSession={hasAnyBatches}
               onClearSession={resetBatches}
               leftToolbar={
-                hasSizeOptions ? (
-                  <PopoverMenu
-                    items={sizeItems}
-                    onSelect={handleSizeChange}
-                    mode="toggle"
-                    panelTitle="Aspect Ratio"
-                    showIconsInList
-                    triggerIcon={
-                      <AspectRatioIcon
-                        sizeIcon={
-                          selectedModel.sizeOptions.find(
-                            (s) => s.tauriValue === selectedSize,
-                          )?.icon
+                <>
+                  {hasSizeOptions && (
+                    <Tooltip content="Aspect Ratio" position="top" className="z-50" closeOnClick>
+                      <PopoverMenu
+                        items={sizeItems}
+                        onSelect={handleSizeChange}
+                        mode="toggle"
+                        panelTitle="Aspect Ratio"
+                        showIconsInList
+                        triggerIcon={
+                          <AspectRatioIcon
+                            sizeIcon={
+                              selectedModel.sizeOptions.find(
+                                (s) => s.tauriValue === selectedSize,
+                              )?.icon
+                            }
+                          />
                         }
                       />
-                    }
-                  />
-                ) : undefined
+                    </Tooltip>
+                  )}
+                  {resolutionItems && (
+                    <Tooltip content="Resolution" position="top" className="z-50" closeOnClick>
+                      <PopoverMenu
+                        items={resolutionItems}
+                        onSelect={handleResolutionChange}
+                        mode="toggle"
+                        panelTitle="Resolution"
+                      />
+                    </Tooltip>
+                  )}
+                  {durationItems && (
+                    <Tooltip content="Duration" position="top" className="z-50" closeOnClick>
+                      <PopoverMenu
+                        items={durationItems}
+                        onSelect={handleDurationChange}
+                        mode="toggle"
+                        panelTitle="Duration"
+                        triggerIcon={
+                          <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
+                        }
+                      />
+                    </Tooltip>
+                  )}
+                  {selectedModel.supportsSystemPrompt !== false && (
+                    <Tooltip
+                      content={useSystemPrompt ? "System prompt: ON" : "System prompt: OFF"}
+                      position="top"
+                      className="z-50"
+                      delay={200}
+                    >
+                      <ToggleButton
+                        isActive={useSystemPrompt}
+                        icon={faMessageXmark}
+                        activeIcon={faMessageCheck}
+                        onClick={() => setUseSystemPrompt((v) => !v)}
+                      />
+                    </Tooltip>
+                  )}
+                  {hasSound && (
+                    <Tooltip
+                      content={generateWithSound ? "Sound: ON" : "Sound: OFF"}
+                      position="top"
+                      className="z-50"
+                      delay={200}
+                    >
+                      <ToggleButton
+                        isActive={generateWithSound}
+                        icon={faWaveformLines}
+                        activeIcon={faWaveformLines}
+                        onClick={() => setGenerateWithSound((v) => !v)}
+                      />
+                    </Tooltip>
+                  )}
+                </>
               }
             />
+            {/* Seedance 2.0 warning */}
+            {selectedModel.id === "seedance_2p0" && (
+              <div className="mt-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3.5 py-2.5 text-xs text-yellow-200">
+                <FontAwesomeIcon
+                  icon={faTriangleExclamation}
+                  className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400"
+                />
+                <span>
+                  Seedance 2.0 is in Early Alpha. Generations may be slow and may
+                  experience outages. Seedance may reject safe inputs unexpectedly.
+                  Try several short generations before longer ones.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* ── Model selector (bottom left) ───────────────────────── */}
@@ -446,6 +616,19 @@ export default function CreateVideo() {
           </div>
         </div>
       </div>
+
+      {/* ── Image Picker Modal ───────────────────────────────────── */}
+      <ImagePickerModal
+        isOpen={isImagePickerOpen}
+        onClose={() => setIsImagePickerOpen(false)}
+        onSelect={handleLibraryImageSelect}
+        maxSelect={Math.max(
+          1,
+          (selectedModel.supportsReferenceMode
+            ? (selectedModel.maxReferenceImages ?? 3)
+            : 1) - referenceImages.length,
+        )}
+      />
     </div>
   );
 }

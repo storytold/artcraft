@@ -96,11 +96,14 @@ export interface GenerateVideoParams {
   modelTauriId: string;
   aspectRatio?: string;
   duration?: number;
+  resolution?: string;
+  generateAudio?: boolean;
   imageMediaToken?: string;
+  referenceImageMediaTokens?: string[];
 }
 
 function buildRequestBody(params: GenerateVideoParams): Record<string, unknown> {
-  const { prompt, modelTauriId, aspectRatio, duration, imageMediaToken } = params;
+  const { prompt, modelTauriId, aspectRatio, duration, resolution, generateAudio, imageMediaToken, referenceImageMediaTokens } = params;
 
   const body: Record<string, unknown> = {
     uuid_idempotency_token: crypto.randomUUID(),
@@ -131,6 +134,18 @@ function buildRequestBody(params: GenerateVideoParams): Record<string, unknown> 
     } else {
       body.duration = DURATION_WORDS[duration] ?? `${duration}_seconds`;
     }
+  }
+
+  if (resolution) {
+    body.resolution = resolution;
+  }
+
+  if (generateAudio !== undefined) {
+    body.generate_audio = generateAudio;
+  }
+
+  if (referenceImageMediaTokens?.length) {
+    body.reference_image_media_tokens = referenceImageMediaTokens;
   }
 
   return body;

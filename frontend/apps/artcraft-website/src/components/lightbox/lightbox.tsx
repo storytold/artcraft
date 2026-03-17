@@ -23,6 +23,7 @@ import {
   faChevronLeft,
   faChevronRight,
   faTrashCan,
+  faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   addCorsParam,
@@ -165,6 +166,7 @@ export function Lightbox({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   const [isPromptClamped, setIsPromptClamped] = useState(false);
+  const [discoveredBatchToken, setDiscoveredBatchToken] = useState<string | null>(null);
   const promptRef = useRef<HTMLDivElement>(null);
 
   const promptCopy = useCopyFeedback();
@@ -181,6 +183,7 @@ export function Lightbox({
       setIsPromptExpanded(false);
       setMediaWidth(undefined);
       setMediaHeight(undefined);
+      setDiscoveredBatchToken(null);
     }
   }, [isOpen, mediaToken]);
 
@@ -200,6 +203,12 @@ export function Lightbox({
           mediaFileToken: mediaToken,
         });
         if (cancelled) return;
+
+        if (mediaResponse.success && mediaResponse.data) {
+          // Auto-discover batch token from media file
+          const batchToken = (mediaResponse.data as any)?.maybe_batch_token;
+          if (batchToken) setDiscoveredBatchToken(batchToken);
+        }
 
         if (
           mediaResponse.success &&
@@ -233,9 +242,11 @@ export function Lightbox({
     };
   }, [mediaToken, isOpen, mediaFilesApi, promptsApi]);
 
-  // Fetch batch images
+  // Fetch batch images (from prop or auto-discovered batch token)
+  const effectiveBatchToken = propBatchImageToken || discoveredBatchToken;
+
   useEffect(() => {
-    if (!propBatchImageToken || !isOpen) {
+    if (!effectiveBatchToken || !isOpen) {
       setBatchImages(null);
       setBatchTokens(null);
       return;
@@ -248,7 +259,7 @@ export function Lightbox({
     const timer = setTimeout(async () => {
       try {
         const response = await mediaFilesApi.GetMediaFilesByBatchToken({
-          batchToken: propBatchImageToken,
+          batchToken: effectiveBatchToken,
         });
         if (cancelled) return;
 
@@ -284,7 +295,7 @@ export function Lightbox({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [propBatchImageToken, mediaToken, cdnUrl, isOpen, mediaFilesApi]);
+  }, [effectiveBatchToken, mediaToken, cdnUrl, isOpen, mediaFilesApi]);
 
   // Detect prompt clamping
   useEffect(() => {
@@ -394,11 +405,20 @@ export function Lightbox({
         isOpen={isOpen}
         onClose={onClose}
         className="rounded-xl h-[680px] w-[1100px] max-w-[95vw] max-h-[90vh] p-0"
-        showClose={true}
+        showClose={false}
       >
         <div className="flex h-full">
           {/* Media preview panel */}
-          <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
+          <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black">
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 z-40 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/70 transition-colors hover:bg-black/70 hover:text-white"
+              aria-label="Close"
+            >
+              <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
+            </button>
+
             {!selectedImageUrl ? (
               <div className="flex h-full w-full items-center justify-center">
                 <span className="text-base-fg/60">Media not available</span>
@@ -428,7 +448,7 @@ export function Lightbox({
                         className="embla__slide flex-[0_0_100%]"
                         key={`${url}-${idx}`}
                       >
-                        <div className="relative flex h-full items-center justify-center overflow-hidden bg-black/20">
+                        <div className="relative flex h-full items-center justify-center overflow-hidden bg-black">
                           <img
                             src={addCorsParam(url) || url}
                             alt={`Image ${idx + 1}`}
@@ -729,7 +749,7 @@ export function Lightbox({
               {selectedMediaToken && (
                 <Button
                   icon={faTrashCan}
-                  className="w-full"
+                  className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20"
                   variant="destructive"
                   onClick={() => setConfirmDeleteOpen(true)}
                 >

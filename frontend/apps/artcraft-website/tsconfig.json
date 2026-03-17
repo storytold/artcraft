@@ -6,19 +6,10 @@
       "path": "../../libs/components/viewer-3d"
     },
     {
-      "path": "../../libs/model-list"
-    },
-    {
-      "path": "../../libs/common"
-    },
-    {
       "path": "../../libs/components/gravatar"
     },
     {
-      "path": "../../libs/components/toaster"
-    },
-    {
-      "path": "../../libs/components/loading-spinner"
+      "path": "../../libs/components/badge"
     },
     {
       "path": "../../libs/components/tab-selector"
@@ -27,19 +18,37 @@
       "path": "../../libs/state/subscription"
     },
     {
-      "path": "../../libs/markdown-content"
-    },
-    {
-      "path": "../../libs/components/button"
+      "path": "../../libs/components/close-button"
     },
     {
       "path": "../../libs/components/popover"
     },
     {
+      "path": "../../libs/components/action-reminder-modal"
+    },
+    {
+      "path": "../../libs/model-list"
+    },
+    {
+      "path": "../../libs/common"
+    },
+    {
       "path": "../../libs/components/tooltip"
     },
     {
-      "path": "../../libs/components/badge"
+      "path": "../../libs/components/toaster"
+    },
+    {
+      "path": "../../libs/components/loading-spinner"
+    },
+    {
+      "path": "../../libs/components/modal"
+    },
+    {
+      "path": "../../libs/markdown-content"
+    },
+    {
+      "path": "../../libs/components/button"
     },
     {
       "path": "../../libs/api"

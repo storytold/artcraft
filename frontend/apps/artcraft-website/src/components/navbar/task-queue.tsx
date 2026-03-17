@@ -22,6 +22,7 @@ import {
   getModelDisplayName,
 } from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
+import dayjs from "dayjs";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Lightbox } from "../lightbox/lightbox";
 
@@ -233,7 +234,7 @@ const CompletedCard = ({
         )}
         {task.completedAt && (
           <div className="text-xs text-base-fg opacity-60">
-            {task.completedAt.toISOString()}
+            {dayjs(task.completedAt).format("MMM D, h:mm A")}
           </div>
         )}
       </div>
@@ -314,6 +315,11 @@ const FailedCard = ({
                 {task.failureMessage}
               </div>
             </Tooltip>
+          )}
+          {task.failedAt && (
+            <div className="mt-0.5 text-[11px] text-base-fg/40">
+              {dayjs(task.failedAt).format("MMM D, h:mm A")}
+            </div>
           )}
         </div>
         {onDismiss && (

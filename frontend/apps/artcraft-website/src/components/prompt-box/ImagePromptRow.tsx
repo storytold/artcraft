@@ -1,12 +1,15 @@
 import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faImages,
   faPlus,
   faSpinner,
   faTrashAlt,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faImage } from "@fortawesome/pro-regular-svg-icons";
+import { Button } from "@storyteller/ui-button";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { twMerge } from "tailwind-merge";
 import { UploaderStates } from "@storyteller/common";
 import {
@@ -33,6 +36,7 @@ interface ImagePromptRowProps {
   maxImagePromptCount: number;
   referenceImages: RefImage[];
   setReferenceImages: (images: RefImage[]) => void;
+  onPickFromLibrary?: () => void;
   className?: string;
 }
 
@@ -40,6 +44,7 @@ export const ImagePromptRow = ({
   maxImagePromptCount,
   referenceImages,
   setReferenceImages,
+  onPickFromLibrary,
   className,
 }: ImagePromptRowProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -207,15 +212,55 @@ export const ImagePromptRow = ({
               ))}
 
             {canAddMore && (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
-              >
-                <FontAwesomeIcon
-                  icon={faPlus}
-                  className="text-2xl text-white/80"
-                />
-              </button>
+              onPickFromLibrary ? (
+                <Tooltip
+                  interactive
+                  position="top"
+                  delay={100}
+                  className="bg-ui-controls text-base-fg border border-ui-panel-border p-2 -mb-0.5"
+                  closeOnClick
+                  content={
+                    <div className="flex flex-col gap-1.5">
+                      <Button
+                        variant="primary"
+                        onClick={() => fileInputRef.current?.click()}
+                        icon={faPlus}
+                        className="w-full"
+                      >
+                        Upload
+                      </Button>
+                      <Button
+                        variant="action"
+                        onClick={onPickFromLibrary}
+                        icon={faImages}
+                        className="w-full"
+                      >
+                        Pick from library
+                      </Button>
+                    </div>
+                  }
+                >
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                  >
+                    <FontAwesomeIcon
+                      icon={faPlus}
+                      className="text-2xl text-white/80"
+                    />
+                  </button>
+                </Tooltip>
+              ) : (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                >
+                  <FontAwesomeIcon
+                    icon={faPlus}
+                    className="text-2xl text-white/80"
+                  />
+                </button>
+              )
             )}
           </div>
         </div>

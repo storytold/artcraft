@@ -31,6 +31,9 @@ interface PromptBoxProps {
   leftToolbar?: ReactNode;
   rightToolbar?: ReactNode;
 
+  // Pick from library
+  onPickFromLibrary?: () => void;
+
   // Clear session button
   showClearSession?: boolean;
   onClearSession?: () => void;
@@ -52,6 +55,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onReferenceImagesChange,
       leftToolbar,
       rightToolbar,
+      onPickFromLibrary,
       showClearSession,
       onClearSession,
     },
@@ -102,6 +106,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               maxImagePromptCount={maxImagePromptCount}
               referenceImages={referenceImages}
               setReferenceImages={onReferenceImagesChange}
+              onPickFromLibrary={onPickFromLibrary}
             />
           )}
 
