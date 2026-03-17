@@ -18,6 +18,7 @@ pub struct ListVideoMediaFilesWithoutThumbnailsArgs<'a> {
 }
 
 pub struct VideoMediaFileWithoutThumbnail {
+  pub id: i64,
   pub token: MediaFileToken,
   pub maybe_thumbnail_version: Option<u8>,
   pub public_bucket_directory_hash: String,
@@ -40,6 +41,7 @@ pub async fn list_video_media_files_without_thumbnails_for_job(
     VideoMediaFileWithoutThumbnail,
     r#"
 SELECT
+    id,
     token as `token: MediaFileToken`,
     maybe_thumbnail_version as `maybe_thumbnail_version: u8`,
     public_bucket_directory_hash,
@@ -67,23 +69,7 @@ LIMIT ?
   match rows {
     Ok(media_files) => {
       let next_cursor = if media_files.len() as i64 == PAGE_SIZE {
-        // We need the id of the last row for the next cursor.
-        // Since we don't select `id`, we re-query for just the id of the last token.
-        let last_token = &media_files.last().unwrap().token;
-        let id_row = sqlx::query_scalar!(
-          r#"SELECT id FROM media_files WHERE token = ? LIMIT 1"#,
-          last_token.as_str(),
-        )
-          .fetch_one(args.pool)
-          .await;
-
-        match id_row {
-          Ok(id) => Some(id),
-          Err(err) => {
-            warn!("Failed to fetch cursor id for token {:?}: {:?}", last_token, err);
-            None
-          }
-        }
+        media_files.last().map(|f| f.id)
       } else {
         None
       };
