@@ -4,6 +4,7 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen::{
   Seedance1p5ProMultiFunctionVideoGenAspectRatio,
   Seedance1p5ProMultiFunctionVideoGenDuration,
@@ -25,7 +26,7 @@ pub struct PlanArtcraftSeedance1p5Pro<'a> {
 
 pub fn plan_generate_video_artcraft_seedance1p5_pro<'a>(
   request: &'a GenerateVideoRequest<'a>,
-) -> Result<PlanArtcraftSeedance1p5Pro<'a>, ArtcraftRouterError> {
+) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let start_frame = resolve_image_ref(request.start_frame)?;
@@ -35,7 +36,7 @@ pub fn plan_generate_video_artcraft_seedance1p5_pro<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
 
-  Ok(PlanArtcraftSeedance1p5Pro {
+  Ok(VideoGenerationPlan::ArtcraftSeedance1p5Pro(PlanArtcraftSeedance1p5Pro {
     prompt: request.prompt,
     start_frame,
     end_frame,
@@ -44,7 +45,7 @@ pub fn plan_generate_video_artcraft_seedance1p5_pro<'a>(
     resolution,
     generate_audio: request.generate_audio,
     idempotency_token: request.get_or_generate_idempotency_token(),
-  })
+  }))
 }
 
 fn resolve_image_ref<'a>(

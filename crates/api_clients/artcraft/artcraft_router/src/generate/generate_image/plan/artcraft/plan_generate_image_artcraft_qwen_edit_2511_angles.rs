@@ -4,6 +4,7 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::angle::qwen_edit_2511_edit_image_angle::{
   QwenEdit2511EditImageAngleImageSize,
   QwenEdit2511EditImageAngleNumImages,
@@ -24,7 +25,7 @@ pub struct PlanArtcraftQwenEdit2511Angles<'a> {
 
 pub fn plan_generate_image_artcraft_qwen_edit_2511_angles<'a>(
   request: &'a GenerateImageRequest<'a>,
-) -> Result<PlanArtcraftQwenEdit2511Angles<'a>, ArtcraftRouterError> {
+) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   // Angle models require exactly one input image.
@@ -32,7 +33,7 @@ pub fn plan_generate_image_artcraft_qwen_edit_2511_angles<'a>(
   let image_size = plan_image_size(request.aspect_ratio, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
-  Ok(PlanArtcraftQwenEdit2511Angles {
+  Ok(ImageGenerationPlan::ArtcraftQwenEdit2511Angles(PlanArtcraftQwenEdit2511Angles {
     prompt: request.prompt,
     image_input,
     horizontal_angle: request.horizontal_angle,
@@ -41,7 +42,7 @@ pub fn plan_generate_image_artcraft_qwen_edit_2511_angles<'a>(
     image_size,
     num_images,
     idempotency_token: request.get_or_generate_idempotency_token(),
-  })
+  }))
 }
 
 fn resolve_single_image_input<'a>(
@@ -141,7 +142,6 @@ fn plan_num_images(
 mod tests {
   use super::*;
   use crate::api::image_list_ref::ImageListRef;
-  use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::base_qwen_edit_2511_angles_image_request;
   use artcraft_api_defs::generate::image::angle::qwen_edit_2511_edit_image_angle::{
     QwenEdit2511EditImageAngleImageSize as S,

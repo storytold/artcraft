@@ -4,6 +4,7 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::multi_function::nano_banana_multi_function_image_gen::{
   NanoBananaMultiFunctionImageGenAspectRatio, NanoBananaMultiFunctionImageGenNumImages,
 };
@@ -21,7 +22,7 @@ pub struct PlanArtcraftNanaBanana<'a> {
 
 pub fn plan_generate_image_artcraft_nano_banana<'a>(
   request: &'a GenerateImageRequest<'a>,
-) -> Result<PlanArtcraftNanaBanana<'a>, ArtcraftRouterError> {
+) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let is_edit_mode = request.image_inputs.is_some();
@@ -29,13 +30,13 @@ pub fn plan_generate_image_artcraft_nano_banana<'a>(
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, is_edit_mode, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
-  Ok(PlanArtcraftNanaBanana {
+  Ok(ImageGenerationPlan::ArtcraftNanaBanana(PlanArtcraftNanaBanana {
     prompt: request.prompt,
     image_inputs,
     aspect_ratio,
     num_images,
     idempotency_token: request.get_or_generate_idempotency_token(),
-  })
+  }))
 }
 
 fn resolve_image_list_ref<'a>(
@@ -148,7 +149,6 @@ mod tests {
   use crate::api::image_list_ref::ImageListRef;
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
-  use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::base_nano_banana_image_request;
   use artcraft_api_defs::generate::image::multi_function::nano_banana_multi_function_image_gen::{
     NanoBananaMultiFunctionImageGenAspectRatio as NbAr,

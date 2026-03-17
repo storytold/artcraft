@@ -86,36 +86,24 @@ impl<'a> GenerateVideoRequest<'a> {
 
   fn build_artcraft(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
-      CommonVideoModel::Kling3p0Pro => {
-        plan_generate_video_artcraft_kling3p0_pro(self).map(VideoGenerationPlan::ArtcraftKling3p0Pro)
-      }
-      CommonVideoModel::Kling3p0Standard => {
-        plan_generate_video_artcraft_kling3p0_standard(self).map(VideoGenerationPlan::ArtcraftKling3p0Standard)
-      }
-      CommonVideoModel::Seedance1p5Pro => {
-        plan_generate_video_artcraft_seedance1p5_pro(self).map(VideoGenerationPlan::ArtcraftSeedance1p5Pro)
-      }
-      CommonVideoModel::Seedance2p0 => {
-        plan_generate_video_artcraft_seedance2p0(self).map(VideoGenerationPlan::ArtcraftSeedance2p0)
-      }
+      CommonVideoModel::Kling3p0Pro => plan_generate_video_artcraft_kling3p0_pro(self),
+      CommonVideoModel::Kling3p0Standard => plan_generate_video_artcraft_kling3p0_standard(self),
+      CommonVideoModel::Seedance1p5Pro => plan_generate_video_artcraft_seedance1p5_pro(self),
+      CommonVideoModel::Seedance2p0 => plan_generate_video_artcraft_seedance2p0(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }
 
   fn build_muapi(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
-      CommonVideoModel::Seedance2p0 => {
-        plan_generate_video_muapi_seedance2p0(self).map(VideoGenerationPlan::MuapiSeedance2p0)
-      }
+      CommonVideoModel::Seedance2p0 => plan_generate_video_muapi_seedance2p0(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }
 
   fn build_seedance2pro(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
-      CommonVideoModel::Seedance2p0 => {
-        plan_generate_video_seedance2pro_seedance2p0(self).map(VideoGenerationPlan::Seedance2proSeedance2p0)
-      }
+      CommonVideoModel::Seedance2p0 => plan_generate_video_seedance2pro_seedance2p0(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }

@@ -2,6 +2,7 @@ use crate::api::image_list_ref::ImageListRef;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_splat::generate_splat_request::GenerateSplatRequest;
+use crate::generate::generate_splat::splat_generation_plan::SplatGenerationPlan;
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
@@ -13,14 +14,14 @@ pub struct PlanArtcraftMarble0p1Mini<'a> {
 
 pub fn plan_generate_splat_artcraft_marble_0p1_mini<'a>(
   request: &'a GenerateSplatRequest<'a>,
-) -> Result<PlanArtcraftMarble0p1Mini<'a>, ArtcraftRouterError> {
+) -> Result<SplatGenerationPlan<'a>, ArtcraftRouterError> {
   let reference_image = resolve_single_image_ref(request.reference_images)?;
 
-  Ok(PlanArtcraftMarble0p1Mini {
+  Ok(SplatGenerationPlan::ArtcraftMarble0p1Mini(PlanArtcraftMarble0p1Mini {
     prompt: request.prompt,
     reference_image,
     idempotency_token: request.get_or_generate_idempotency_token(),
-  })
+  }))
 }
 
 fn resolve_single_image_ref<'a>(

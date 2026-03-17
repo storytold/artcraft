@@ -2,6 +2,7 @@ use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 
 #[derive(Debug, Clone)]
 pub struct PlanSeedance2proSeedance2p0 {
@@ -11,8 +12,8 @@ pub struct PlanSeedance2proSeedance2p0 {
   pub duration_seconds: Option<u16>,
 }
 
-pub fn plan_generate_video_seedance2pro_seedance2p0(
-  _request: &GenerateVideoRequest<'_>,
-) -> Result<PlanSeedance2proSeedance2p0, ArtcraftRouterError> {
+pub fn plan_generate_video_seedance2pro_seedance2p0<'a>(
+  _request: &'a GenerateVideoRequest<'a>,
+) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
   todo!("plan_generate_video_seedance2pro_seedance2p0")
 }

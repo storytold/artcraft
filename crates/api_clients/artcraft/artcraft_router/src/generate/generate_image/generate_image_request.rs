@@ -81,53 +81,25 @@ impl<'a> GenerateImageRequest<'a> {
 
   fn build_artcraft(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
-      CommonImageModel::Flux1Dev => {
-        plan_generate_image_artcraft_flux_1_dev(self).map(ImageGenerationPlan::ArtcraftFlux1Dev)
-      }
-      CommonImageModel::Flux1Schnell => {
-        plan_generate_image_artcraft_flux_1_schnell(self).map(ImageGenerationPlan::ArtcraftFlux1Schnell)
-      }
-      CommonImageModel::FluxPro11 => {
-        plan_generate_image_artcraft_flux_pro_1p1(self).map(ImageGenerationPlan::ArtcraftFluxPro11)
-      }
-      CommonImageModel::FluxPro11Ultra => {
-        plan_generate_image_artcraft_flux_pro_1p1_ultra(self).map(ImageGenerationPlan::ArtcraftFluxPro11Ultra)
-      }
-      CommonImageModel::GptImage1p5 => {
-        plan_generate_image_artcraft_gpt_image_1p5(self).map(ImageGenerationPlan::ArtcraftGptImage1p5)
-      }
-      CommonImageModel::NanaBanana => {
-        plan_generate_image_artcraft_nano_banana(self).map(ImageGenerationPlan::ArtcraftNanaBanana)
-      }
-      CommonImageModel::NanaBanana2 => {
-        plan_generate_image_artcraft_nano_banana_2(self).map(ImageGenerationPlan::ArtcraftNanaBanana2)
-      }
-      CommonImageModel::NanaBananaPro => {
-        plan_generate_image_artcraft_nano_banana_pro(self).map(ImageGenerationPlan::ArtcraftNanaBananaPro)
-      }
-      CommonImageModel::Seedream4 => {
-        plan_generate_image_artcraft_seedream_4(self).map(ImageGenerationPlan::ArtcraftSeedream4)
-      }
-      CommonImageModel::Seedream4p5 => {
-        plan_generate_image_artcraft_seedream_4p5(self).map(ImageGenerationPlan::ArtcraftSeedream4p5)
-      }
-      CommonImageModel::Seedream5Lite => {
-        plan_generate_image_artcraft_seedream_5_lite(self).map(ImageGenerationPlan::ArtcraftSeedream5Lite)
-      }
-      CommonImageModel::QwenEdit2511Angles => {
-        plan_generate_image_artcraft_qwen_edit_2511_angles(self).map(ImageGenerationPlan::ArtcraftQwenEdit2511Angles)
-      }
-      CommonImageModel::Flux2LoraAngles => {
-        plan_generate_image_artcraft_flux_2_lora_angles(self).map(ImageGenerationPlan::ArtcraftFlux2LoraAngles)
-      }
+      CommonImageModel::Flux1Dev => plan_generate_image_artcraft_flux_1_dev(self),
+      CommonImageModel::Flux1Schnell => plan_generate_image_artcraft_flux_1_schnell(self),
+      CommonImageModel::FluxPro11 => plan_generate_image_artcraft_flux_pro_1p1(self),
+      CommonImageModel::FluxPro11Ultra => plan_generate_image_artcraft_flux_pro_1p1_ultra(self),
+      CommonImageModel::GptImage1p5 => plan_generate_image_artcraft_gpt_image_1p5(self),
+      CommonImageModel::NanaBanana => plan_generate_image_artcraft_nano_banana(self),
+      CommonImageModel::NanaBanana2 => plan_generate_image_artcraft_nano_banana_2(self),
+      CommonImageModel::NanaBananaPro => plan_generate_image_artcraft_nano_banana_pro(self),
+      CommonImageModel::Seedream4 => plan_generate_image_artcraft_seedream_4(self),
+      CommonImageModel::Seedream4p5 => plan_generate_image_artcraft_seedream_4p5(self),
+      CommonImageModel::Seedream5Lite => plan_generate_image_artcraft_seedream_5_lite(self),
+      CommonImageModel::QwenEdit2511Angles => plan_generate_image_artcraft_qwen_edit_2511_angles(self),
+      CommonImageModel::Flux2LoraAngles => plan_generate_image_artcraft_flux_2_lora_angles(self),
     }
   }
 
   fn build_fal(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
-      CommonImageModel::NanaBananaPro => {
-        plan_generate_image_fal_nano_banana_pro(self).map(ImageGenerationPlan::FalNanaBananaPro)
-      }
+      CommonImageModel::NanaBananaPro => plan_generate_image_fal_nano_banana_pro(self),
       _ => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "provider",

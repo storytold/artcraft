@@ -5,6 +5,7 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::EnqueueNanoBananaProEditImageAspectRatio;
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::EnqueueNanoBananaProTextToImageAspectRatio;
 
@@ -44,7 +45,7 @@ pub struct PlanFalNanaBananaPro<'a> {
 
 pub fn plan_generate_image_fal_nano_banana_pro<'a>(
   request: &'a GenerateImageRequest<'a>,
-) -> Result<PlanFalNanaBananaPro<'a>, ArtcraftRouterError> {
+) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let is_edit_mode = request.image_inputs.is_some();
   let image_urls = resolve_image_list_ref(request.image_inputs)?;
@@ -53,14 +54,14 @@ pub fn plan_generate_image_fal_nano_banana_pro<'a>(
   let resolution = plan_resolution(request.resolution)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
-  Ok(PlanFalNanaBananaPro {
+  Ok(ImageGenerationPlan::FalNanaBananaPro(PlanFalNanaBananaPro {
     prompt: request.prompt,
     image_urls,
     t2i_aspect_ratio,
     edit_aspect_ratio,
     resolution,
     num_images,
-  })
+  }))
 }
 
 fn resolve_image_list_ref(
@@ -263,7 +264,10 @@ mod tests {
   fn build_plan<'a>(
     request: &'a GenerateImageRequest<'a>,
   ) -> PlanFalNanaBananaPro<'a> {
-    plan_generate_image_fal_nano_banana_pro(request).expect("plan should succeed")
+    let ImageGenerationPlan::FalNanaBananaPro(plan) = plan_generate_image_fal_nano_banana_pro(request).expect("plan should succeed") else {
+      panic!("expected FalNanaBananaPro variant")
+    };
+    plan
   }
 
   // ── Image inputs / mode detection ────────────────────────────────────────────

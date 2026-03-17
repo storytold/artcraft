@@ -35,12 +35,8 @@ impl<'a> GenerateSplatRequest<'a> {
 
   fn build_artcraft(&self) -> Result<SplatGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
-      CommonSplatModel::Marble0p1Mini => {
-        plan_generate_splat_artcraft_marble_0p1_mini(self).map(SplatGenerationPlan::ArtcraftMarble0p1Mini)
-      }
-      CommonSplatModel::Marble0p1Plus => {
-        plan_generate_splat_artcraft_marble_0p1_plus(self).map(SplatGenerationPlan::ArtcraftMarble0p1Plus)
-      }
+      CommonSplatModel::Marble0p1Mini => plan_generate_splat_artcraft_marble_0p1_mini(self),
+      CommonSplatModel::Marble0p1Plus => plan_generate_splat_artcraft_marble_0p1_plus(self),
     }
   }
 

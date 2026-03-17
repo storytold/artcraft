@@ -1,5 +1,9 @@
 <component name="ProjectCodeStyleConfiguration">
   <code_scheme name="Project" version="173">
+    <codeStyleSettings language="Markdown">
+      <option name="RIGHT_MARGIN" value="100" />
+      <option name="WRAP_ON_TYPING" value="1" />
+    </codeStyleSettings>
     <codeStyleSettings language="Rust">
       <option name="RIGHT_MARGIN" value="180" />
       <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />

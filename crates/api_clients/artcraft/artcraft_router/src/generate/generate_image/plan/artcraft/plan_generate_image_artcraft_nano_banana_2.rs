@@ -5,6 +5,7 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::multi_function::nano_banana_2_multi_function_image_gen::{
   NanaBanana2MultiFunctionImageGenAspectRatio, NanaBanana2MultiFunctionImageGenImageResolution,
   NanaBanana2MultiFunctionImageGenNumImages,
@@ -24,7 +25,7 @@ pub struct PlanArtcraftNanaBanana2<'a> {
 
 pub fn plan_generate_image_artcraft_nano_banana_2<'a>(
   request: &'a GenerateImageRequest<'a>,
-) -> Result<PlanArtcraftNanaBanana2<'a>, ArtcraftRouterError> {
+) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let is_edit_mode = request.image_inputs.is_some();
@@ -33,14 +34,14 @@ pub fn plan_generate_image_artcraft_nano_banana_2<'a>(
   let resolution = plan_resolution(request.resolution, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
-  Ok(PlanArtcraftNanaBanana2 {
+  Ok(ImageGenerationPlan::ArtcraftNanaBanana2(PlanArtcraftNanaBanana2 {
     prompt: request.prompt,
     image_inputs,
     aspect_ratio,
     resolution,
     num_images,
     idempotency_token: request.get_or_generate_idempotency_token(),
-  })
+  }))
 }
 
 fn resolve_image_list_ref<'a>(
@@ -172,7 +173,6 @@ mod tests {
   use crate::api::image_list_ref::ImageListRef;
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
-  use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::base_nano_banana_2_image_request;
   use artcraft_api_defs::generate::image::multi_function::nano_banana_2_multi_function_image_gen::{
     NanaBanana2MultiFunctionImageGenAspectRatio as Nb2Ar,

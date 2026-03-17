@@ -4,6 +4,7 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
 use artcraft_api_defs::generate::image::text::generate_flux_pro_11_text_to_image::{
   GenerateFluxPro11TextToImageAspectRatio, GenerateFluxPro11TextToImageNumImages,
 };
@@ -18,7 +19,7 @@ pub struct PlanArtcraftFluxPro11<'a> {
 
 pub fn plan_generate_image_artcraft_flux_pro_1p1<'a>(
   request: &'a GenerateImageRequest<'a>,
-) -> Result<PlanArtcraftFluxPro11<'a>, ArtcraftRouterError> {
+) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
   // Flux Pro 1.1 is text-to-image only. Abort if image inputs are provided and
   // the caller has opted into strict mode.
   if request.image_inputs.is_some() {
@@ -35,12 +36,12 @@ pub fn plan_generate_image_artcraft_flux_pro_1p1<'a>(
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
-  Ok(PlanArtcraftFluxPro11 {
+  Ok(ImageGenerationPlan::ArtcraftFluxPro11(PlanArtcraftFluxPro11 {
     prompt: request.prompt,
     aspect_ratio,
     num_images,
     idempotency_token: request.get_or_generate_idempotency_token(),
-  })
+  }))
 }
 
 // Flux Pro 1.1 supported aspect ratios (no SquareHd):
@@ -134,7 +135,6 @@ mod tests {
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
   use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
-  use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::base_flux_pro_1p1_image_request;
   use artcraft_api_defs::generate::image::text::generate_flux_pro_11_text_to_image::{
     GenerateFluxPro11TextToImageAspectRatio as FlAr,
