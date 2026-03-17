@@ -801,6 +801,7 @@ dependencies = [
  "uuid 1.18.1",
  "workspace-build-acceleration",
  "world_labs_api",
+ "wreq",
 ]
 
 [[package]]

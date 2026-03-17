@@ -30,6 +30,7 @@ anyhow.workspace = true
 log.workspace = true
 reqwest.workspace = true
 serde.workspace = true
+wreq.workspace = true
 serde_derive.workspace = true
 tokio.workspace = true
 uuid.workspace = true
