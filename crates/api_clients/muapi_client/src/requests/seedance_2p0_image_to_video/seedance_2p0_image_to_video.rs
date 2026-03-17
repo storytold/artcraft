@@ -93,6 +93,42 @@ pub struct Seedance2p0ImageToVideoArgs<'a> {
   pub quality: Quality,
 }
 
+impl Seedance2p0ImageToVideoArgs<'_> {
+  /// Estimates the credit cost for this generation request.
+  ///
+  /// Pricing (as of 2026-03):
+  ///
+  /// | Duration | Basic | High |
+  /// |----------|-------|------|
+  /// | 5s       | 0.60  | 1.25 |
+  /// | 10s      | 1.20  | 2.50 |
+  /// | 15s      | 1.80  | 3.75 |
+  pub fn estimate_credits(&self) -> f64 {
+    match (&self.quality, &self.duration) {
+      (Quality::Basic, Duration::FiveSeconds) => 0.6,
+      (Quality::Basic, Duration::TenSeconds) => 1.2,
+      (Quality::Basic, Duration::FifteenSeconds) => 1.8,
+      (Quality::High, Duration::FiveSeconds) => 1.25,
+      (Quality::High, Duration::TenSeconds) => 2.5,
+      (Quality::High, Duration::FifteenSeconds) => 3.75,
+    }
+  }
+
+  /// Estimates the USD-cent cost for this generation request.
+  ///
+  /// Conversion: $1.00 = 1.0 credits.
+  ///
+  /// | Duration | Basic | High |
+  /// |----------|-------|------|
+  /// | 5s       |  60¢  | 125¢ |
+  /// | 10s      | 120¢  | 250¢ |
+  /// | 15s      | 180¢  | 375¢ |
+  pub fn estimate_cost_in_usd_cents(&self) -> u64 {
+    let credits = self.estimate_credits();
+    (credits * 100.0).round() as u64
+  }
+}
+
 impl std::fmt::Debug for Seedance2p0ImageToVideoArgs<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("Seedance2p0ImageToVideoArgs")
@@ -172,6 +208,49 @@ mod tests {
   use errors::AnyhowResult;
   use log::LevelFilter;
   use test_data::web::image_urls::*;
+
+  fn dummy_session() -> MuapiSession {
+    use crate::creds::muapi_api_key::MuapiApiKey;
+    MuapiSession::new(MuapiApiKey::new(String::new()))
+  }
+
+  fn args_with(duration: Duration, quality: Quality) -> Seedance2p0ImageToVideoArgs<'static> {
+    let session = Box::leak(Box::new(dummy_session()));
+    Seedance2p0ImageToVideoArgs {
+      session,
+      prompt: String::new(),
+      image_urls: vec![],
+      aspect_ratio: AspectRatio::Landscape16x9,
+      duration,
+      quality,
+    }
+  }
+
+  #[test]
+  fn test_estimate_credits() {
+    // Basic
+    assert_eq!(args_with(Duration::FiveSeconds, Quality::Basic).estimate_credits(), 0.6);
+    assert_eq!(args_with(Duration::TenSeconds, Quality::Basic).estimate_credits(), 1.2);
+    assert_eq!(args_with(Duration::FifteenSeconds, Quality::Basic).estimate_credits(), 1.8);
+
+    // High
+    assert_eq!(args_with(Duration::FiveSeconds, Quality::High).estimate_credits(), 1.25);
+    assert_eq!(args_with(Duration::TenSeconds, Quality::High).estimate_credits(), 2.5);
+    assert_eq!(args_with(Duration::FifteenSeconds, Quality::High).estimate_credits(), 3.75);
+  }
+
+  #[test]
+  fn test_estimate_cost_in_usd_cents() {
+    // Basic
+    assert_eq!(args_with(Duration::FiveSeconds, Quality::Basic).estimate_cost_in_usd_cents(), 60);
+    assert_eq!(args_with(Duration::TenSeconds, Quality::Basic).estimate_cost_in_usd_cents(), 120);
+    assert_eq!(args_with(Duration::FifteenSeconds, Quality::Basic).estimate_cost_in_usd_cents(), 180);
+
+    // High
+    assert_eq!(args_with(Duration::FiveSeconds, Quality::High).estimate_cost_in_usd_cents(), 125);
+    assert_eq!(args_with(Duration::TenSeconds, Quality::High).estimate_cost_in_usd_cents(), 250);
+    assert_eq!(args_with(Duration::FifteenSeconds, Quality::High).estimate_cost_in_usd_cents(), 375);
+  }
 
   #[tokio::test]
   #[ignore] // manually test — requires real API key
