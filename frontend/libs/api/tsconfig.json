@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../common"
+    },
+    {
       "path": "../tauri-utils"
     },
     {

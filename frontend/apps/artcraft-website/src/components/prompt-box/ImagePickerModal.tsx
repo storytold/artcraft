@@ -8,10 +8,7 @@ import {
   GalleryModalApi,
   FilterMediaClasses,
 } from "@storyteller/api";
-import {
-  getThumbnailUrl,
-  THUMBNAIL_SIZES,
-} from "@storyteller/common";
+import { getThumbnailUrl, THUMBNAIL_SIZES } from "@storyteller/common";
 
 interface LibraryImage {
   token: string;
@@ -82,7 +79,9 @@ export const ImagePickerModal = ({
               thumbnailUrl:
                 getThumbnailUrl(item.media_links?.maybe_thumbnail_template, {
                   width: THUMBNAIL_SIZES.MEDIUM,
-                }) ?? item.media_links?.cdn_url ?? "",
+                }) ??
+                item.media_links?.cdn_url ??
+                "",
             }))
             .filter((img: LibraryImage) => img.url);
 
@@ -155,14 +154,11 @@ export const ImagePickerModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Pick from Library"
-      width={1200}
       showClose
+      className="max-w-7xl"
     >
       <div className="flex flex-col" style={{ height: "min(80vh, 800px)" }}>
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4"
-        >
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
           {images.length === 0 && loading ? (
             <div className="flex h-full items-center justify-center">
               <FontAwesomeIcon

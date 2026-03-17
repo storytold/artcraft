@@ -77,6 +77,8 @@ interface PromptBoxProps {
 
   // Pick from library
   onPickFromLibrary?: () => void;
+  // Clear all references (images, end frame, videos, audios)
+  onClearAllRefs?: () => void;
 
   // Clear session button
   showClearSession?: boolean;
@@ -112,6 +114,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       leftToolbar,
       rightToolbar,
       onPickFromLibrary,
+      onClearAllRefs,
       showClearSession,
       onClearSession,
       mediaReferenceRow,
@@ -295,6 +298,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               referenceImages={referenceImages}
               setReferenceImages={onReferenceImagesChange}
               onPickFromLibrary={onPickFromLibrary}
+              onClearAll={onClearAllRefs}
               isVideo={isVideo}
               isReferenceMode={isReferenceMode}
               endFrameImage={endFrameImage}

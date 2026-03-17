@@ -44,6 +44,7 @@ interface ImagePromptRowProps {
   referenceImages: RefImage[];
   setReferenceImages: (images: RefImage[]) => void;
   onPickFromLibrary?: () => void;
+  onClearAll?: () => void;
   className?: string;
 
   // Video mode props
@@ -59,6 +60,7 @@ export const ImagePromptRow = ({
   referenceImages,
   setReferenceImages,
   onPickFromLibrary,
+  onClearAll,
   className,
   isVideo,
   isReferenceMode,
@@ -230,7 +232,7 @@ export const ImagePromptRow = ({
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        <div className="flex grow gap-2 px-3 py-2">
+        <div className="flex min-w-0 flex-1 gap-2 px-3 py-2">
           <div className="flex grow flex-col gap-1">
             <div className="flex items-center gap-2 text-white/90">
               <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
@@ -345,23 +347,9 @@ export const ImagePromptRow = ({
           </div>
         </div>
 
-        {referenceImages.length > 0 && (
-          <div className="flex items-center">
-            <div className="h-full w-[1px] bg-white/10" />
-            <div className="p-2">
-              <button
-                onClick={() => setReferenceImages([])}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
-              >
-                <FontAwesomeIcon icon={faTrashAlt} className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* End frame section */}
         {isVideo && showEndFrameSection && (
-          <div className="flex items-stretch gap-3 pe-3">
+          <div className="flex min-w-0 flex-1 items-stretch gap-3 pe-3">
             <div className="flex grow gap-1">
               <div className="w-[1px] bg-white/10" />
               <div className="flex grow flex-col gap-1 p-2">
@@ -411,6 +399,21 @@ export const ImagePromptRow = ({
                   />
                 </button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Clear all refs */}
+        {onClearAll && (
+          <div className="flex items-center">
+            <div className="h-full w-[1px] bg-white/10" />
+            <div className="p-2">
+              <button
+                onClick={onClearAll}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
+              >
+                <FontAwesomeIcon icon={faTrashAlt} className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
         )}

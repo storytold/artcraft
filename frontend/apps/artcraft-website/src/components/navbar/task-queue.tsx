@@ -20,11 +20,13 @@ import { Button } from "@storyteller/ui-button";
 import {
   getProviderDisplayName,
   getModelDisplayName,
+  ALL_MODELS_LIST,
 } from "@storyteller/model-list";
 import { CloseButton } from "@storyteller/ui-close-button";
 import dayjs from "dayjs";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Lightbox } from "../lightbox/lightbox";
+import { showToast } from "../toast/toast";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -367,36 +369,43 @@ function formatTitleParts(job: Job) {
   return { title, subtitle, kind };
 }
 
+// Cache per-task durations so model changes don't affect existing progress bars
+const taskDurationCache = new Map<string, number>();
+
 function jobsToInProgress(jobs: Job[]): InProgressTask[] {
   const now = Date.now();
-  return jobs
+  const activeIds = new Set<string>();
+
+  const result = jobs
     .filter((j) => IN_PROGRESS_STATUSES.has(j.status.status))
     .sort(
       (a, b) =>
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
     )
     .map((j): InProgressTask => {
+      activeIds.add(j.job_token);
       const createdMs = new Date(j.created_at).getTime();
       const parts = formatTitleParts(j);
       const isVideo =
         j.request.inference_category?.toLowerCase().includes("video") ?? false;
+      const modelType = j.request.maybe_model_type;
 
-      // Use real progress from API; fallback to time-based if 0 and STARTED
-      let progress = j.status.progress_percentage ?? 0;
-      let estimatedTimeLeftMs: number | undefined;
-      if (progress > 0 && progress < 100) {
-        const elapsed = now - createdMs;
-        const totalEstimated = elapsed / (progress / 100);
-        estimatedTimeLeftMs = Math.max(0, totalEstimated - elapsed);
-      } else if (
-        progress === 0 &&
-        j.status.status === JobStatus.STARTED
-      ) {
-        const estimatedDuration = isVideo ? 120000 : 30000;
-        const elapsed = now - createdMs;
-        progress = Math.min(95, (elapsed / estimatedDuration) * 100);
-        estimatedTimeLeftMs = Math.max(0, estimatedDuration - elapsed);
+      // Look up per-model estimated duration, cache per task
+      let duration = taskDurationCache.get(j.job_token);
+      if (!duration) {
+        const model = modelType
+          ? ALL_MODELS_LIST.find(
+              (m) => m.tauriId === modelType || m.id === modelType,
+            )
+          : undefined;
+        duration = model?.progressBarTime ?? (isVideo ? 120000 : 30000);
+        taskDurationCache.set(j.job_token, duration);
       }
+
+      // Always use time-based fake progress (matching desktop app behavior)
+      const elapsed = now - createdMs;
+      const progress = Math.min(95, (elapsed / duration) * 100);
+      const estimatedTimeLeftMs = Math.max(0, duration - elapsed);
 
       const canDismiss = now - createdMs > 5 * 60 * 1000;
 
@@ -408,9 +417,16 @@ function jobsToInProgress(jobs: Job[]): InProgressTask[] {
         updatedAt: new Date(j.updated_at),
         canDismiss,
         estimatedTimeLeftMs,
-        modelType: j.request.maybe_model_type ?? undefined,
+        modelType: modelType ?? undefined,
       };
     });
+
+  // Prune cached durations for tasks no longer in progress
+  for (const id of taskDurationCache.keys()) {
+    if (!activeIds.has(id)) taskDurationCache.delete(id);
+  }
+
+  return result;
 }
 
 function jobsToCompleted(jobs: Job[]): CompletedTask[] {
@@ -489,6 +505,7 @@ export const TaskQueue = () => {
   const [lightboxMediaToken, setLightboxMediaToken] = useState<string | undefined>();
   const [lightboxCdnUrl, setLightboxCdnUrl] = useState<string | undefined>();
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
+  const prevFailedIdsRef = useRef<Set<string>>(new Set());
 
   const [confirmationConfig, setConfirmationConfig] = useState<{
     isOpen: boolean;
@@ -608,18 +625,41 @@ export const TaskQueue = () => {
         setCompleted(done);
         setFailed(failedTasks);
 
-        // Track newly completed IDs when popover is closed
+        // Track newly completed IDs
         const newCompletedIdSet = new Set(done.map((d) => d.id));
-        const newlyCompletedIds: string[] = [];
-        newCompletedIdSet.forEach((id) => {
-          if (!prevCompletedIdsRef.current.has(id)) {
-            newlyCompletedIds.push(id);
-          }
-        });
+        const newlyCompleted = done.filter(
+          (d) => !prevCompletedIdsRef.current.has(d.id),
+        );
         prevCompletedIdsRef.current = newCompletedIdSet;
-        if (!isPopoverOpen && newlyCompletedIds.length > 0) {
-          setUnreadCompletedIds((prev) =>
-            Array.from(new Set([...(prev ?? []), ...newlyCompletedIds])),
+
+        if (newlyCompleted.length > 0) {
+          // Show toasts for newly completed jobs
+          for (const task of newlyCompleted) {
+            showToast(
+              "success",
+              `${task.title} complete${task.subtitle ? ` — ${task.subtitle}` : ""}`,
+            );
+          }
+          if (!isPopoverOpen) {
+            setUnreadCompletedIds((prev) =>
+              Array.from(
+                new Set([...(prev ?? []), ...newlyCompleted.map((d) => d.id)]),
+              ),
+            );
+          }
+        }
+
+        // Track newly failed IDs and show toasts
+        const newFailedIdSet = new Set(failedTasks.map((f) => f.id));
+        const newlyFailed = failedTasks.filter(
+          (f) => !prevFailedIdsRef.current.has(f.id),
+        );
+        prevFailedIdsRef.current = newFailedIdSet;
+
+        for (const task of newlyFailed) {
+          showToast(
+            "error",
+            `${task.title} failed${task.failureReason ? ` — ${task.failureReason}` : ""}`,
           );
         }
       } catch {

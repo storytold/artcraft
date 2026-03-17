@@ -3,6 +3,7 @@ import Download from "../pages/download";
 import Media from "../pages/media";
 import PressKit from "../pages/press-kit";
 import Navbar from "../components/navbar";
+import { ToastContainer } from "../components/toast/toast";
 import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
 import Landing2 from "../pages/landing2";
@@ -66,6 +67,7 @@ export function App() {
           element={<Navigate to="/checkout/cancel" replace />}
         />
       </Routes>
+      <ToastContainer />
     </div>
   );
 }

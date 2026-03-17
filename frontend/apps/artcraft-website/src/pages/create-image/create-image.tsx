@@ -179,14 +179,37 @@ export default function CreateImage() {
     return () => window.removeEventListener("auth-change", handleAuthChange);
   }, []);
 
-  // Cleanup polling on unmount
+  // Resume polling for pending batches on mount, cleanup on unmount
   useEffect(() => {
     const cleanups = pollingCleanupsRef.current;
+
+    // Resume polling for any pending batches that have a jobToken
+    const pendingBatches = useCreateImageStore
+      .getState()
+      .batches.filter((b) => b.status === "pending" && b.jobToken);
+    for (const batch of pendingBatches) {
+      if (cleanups.has(batch.id)) continue;
+      const stop = startPolling(
+        batch.jobToken!,
+        (images) => {
+          completeBatch(batch.id, images);
+          cleanups.delete(batch.id);
+          window.dispatchEvent(new Event("task-queue-update"));
+        },
+        (reason) => {
+          failBatch(batch.id, reason);
+          cleanups.delete(batch.id);
+          window.dispatchEvent(new Event("task-queue-update"));
+        },
+      );
+      cleanups.set(batch.id, stop);
+    }
+
     return () => {
       cleanups.forEach((stop) => stop());
       cleanups.clear();
     };
-  }, []);
+  }, [completeBatch, failBatch]);
 
   // Measure prompt box height for batch area padding
   useEffect(() => {

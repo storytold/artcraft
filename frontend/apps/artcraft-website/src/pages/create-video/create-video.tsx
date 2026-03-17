@@ -160,12 +160,12 @@ export default function CreateVideo() {
     selectedModel.startFrame ||
     selectedModel.requiresImage ||
     !!selectedModel.supportsReferenceMode;
-  const hasEndFrame = !!(
-    selectedModel.endFrame && !selectedModel.supportsReferenceMode
-  );
+  const supportsRefMode = !!selectedModel.supportsReferenceMode;
+  const inputMode = ui.inputMode;
+  const isReferenceMode = supportsRefMode && inputMode === "reference";
+  const hasEndFrame = !!(selectedModel.endFrame && !isReferenceMode);
   const needsImage =
     selectedModel.requiresImage && referenceImages.length === 0;
-  const isReferenceMode = !!selectedModel.supportsReferenceMode;
 
   // Cost estimate
   const estimatedCredits = useVideoCostEstimate({
@@ -238,6 +238,42 @@ export default function CreateVideo() {
     [selectedModel, resolution],
   );
 
+  // Input mode toggle items (keyframe vs reference)
+  const inputModeItems = useMemo(
+    (): PopoverItem[] | null =>
+      supportsRefMode
+        ? [
+            {
+              label: "Keyframe",
+              description: "First/Last frame",
+              selected: inputMode === "keyframe",
+            },
+            {
+              label: "Reference",
+              description: "Multi-media ref",
+              selected: inputMode === "reference",
+            },
+          ]
+        : null,
+    [supportsRefMode, inputMode],
+  );
+
+  const handleInputModeChange = useCallback(
+    (item: PopoverItem) => {
+      const mode = item.label === "Reference" ? "reference" : "keyframe";
+      if (mode === inputMode) return;
+      setUi({ inputMode: mode });
+      // Clear incompatible media when switching modes
+      if (mode === "reference") {
+        setEndFrameImage(undefined);
+      } else {
+        setReferenceVideos([]);
+        setReferenceAudios([]);
+      }
+    },
+    [inputMode, setUi],
+  );
+
   // ── Effects ──────────────────────────────────────────────────────────────
 
   // Check auth
@@ -257,14 +293,37 @@ export default function CreateVideo() {
     return () => window.removeEventListener("auth-change", handleAuthChange);
   }, []);
 
-  // Cleanup polling on unmount
+  // Resume polling for pending batches on mount, cleanup on unmount
   useEffect(() => {
     const cleanups = pollingCleanupsRef.current;
+
+    // Resume polling for any pending batches that have a jobToken
+    const pendingBatches = useCreateVideoStore
+      .getState()
+      .batches.filter((b) => b.status === "pending" && b.jobToken);
+    for (const batch of pendingBatches) {
+      if (cleanups.has(batch.id)) continue;
+      const stop = startVideoPolling(
+        batch.jobToken!,
+        (video) => {
+          completeBatch(batch.id, video);
+          cleanups.delete(batch.id);
+          window.dispatchEvent(new Event("task-queue-update"));
+        },
+        (reason) => {
+          failBatch(batch.id, reason);
+          cleanups.delete(batch.id);
+          window.dispatchEvent(new Event("task-queue-update"));
+        },
+      );
+      cleanups.set(batch.id, stop);
+    }
+
     return () => {
       cleanups.forEach((stop) => stop());
       cleanups.clear();
     };
-  }, []);
+  }, [completeBatch, failBatch]);
 
   // Measure prompt box height for batch area padding
   useEffect(() => {
@@ -290,6 +349,7 @@ export default function CreateVideo() {
         duration: model.defaultDuration ?? null,
         resolution: model.defaultResolution ?? null,
         generateWithSound: false,
+        inputMode: "keyframe",
       });
       setReferenceImages([]);
       setEndFrameImage(undefined);
@@ -647,6 +707,12 @@ export default function CreateVideo() {
                   ? () => setIsImagePickerOpen(true)
                   : undefined
               }
+              onClearAllRefs={() => {
+                setReferenceImages([]);
+                setEndFrameImage(undefined);
+                setReferenceVideos([]);
+                setReferenceAudios([]);
+              }}
               showClearSession={hasAnyBatches}
               onClearSession={resetBatches}
               mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
@@ -750,6 +816,21 @@ export default function CreateVideo() {
                             ? "bg-primary/40 hover:bg-primary/50 border-primary/30"
                             : undefined
                         }
+                      />
+                    </Tooltip>
+                  )}
+                  {inputModeItems && (
+                    <Tooltip
+                      content="Input Mode"
+                      position="top"
+                      className="z-50"
+                      closeOnClick
+                    >
+                      <PopoverMenu
+                        items={inputModeItems}
+                        onSelect={handleInputModeChange}
+                        mode="toggle"
+                        panelTitle="Input Mode"
                       />
                     </Tooltip>
                   )}

@@ -17,6 +17,8 @@ export type VideoBatch = {
   failureReason?: string;
 };
 
+export type VideoInputMode = "keyframe" | "reference";
+
 export type VideoUiState = {
   selectedModelId: string | null;
   prompt: string;
@@ -24,6 +26,7 @@ export type VideoUiState = {
   duration: number | null;
   resolution: string | null;
   generateWithSound: boolean;
+  inputMode: VideoInputMode;
 };
 
 type CreateVideoState = {
@@ -45,6 +48,7 @@ const DEFAULT_UI: VideoUiState = {
   duration: null,
   resolution: null,
   generateWithSound: false,
+  inputMode: "keyframe",
 };
 
 export const useCreateVideoStore = create<CreateVideoState>((set) => ({

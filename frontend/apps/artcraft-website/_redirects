@@ -21,6 +21,14 @@
 /create-image/ /index.html 200
 /create-image/* /index.html 200
 
+/create-video /index.html 200
+/create-video/ /index.html 200
+/create-video/* /index.html 200
+
+/library /index.html 200
+/library/ /index.html 200
+/library/* /index.html 200
+
 /download /index.html 200
 /download/ /index.html 200
 

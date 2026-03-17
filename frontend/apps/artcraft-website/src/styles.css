@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #363636 #171717;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #171717;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #363636;
+  border-radius: 4px;
+  border: 2px solid #171717;
+}
+
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 @layer base {
   h1,
   h2,
@@ -56,6 +83,21 @@
 /* .animate-fade-in-up {
   animation: fade-in-up 0.2s ease-out both;
 } */
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in 0.2s ease-out both;
+}
 
 @keyframes shimmer {
   0% {
