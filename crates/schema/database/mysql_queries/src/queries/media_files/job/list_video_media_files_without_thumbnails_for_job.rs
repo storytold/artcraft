@@ -1,11 +1,7 @@
-use anyhow::anyhow;
 use chrono::{TimeDelta, Utc};
-use log::warn;
 use sqlx::MySqlPool;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use tokens::tokens::media_files::MediaFileToken;
-
-use errors::AnyhowResult;
 
 /// The serialized value for `MediaFileClass::Video` as stored in the database.
 const MEDIA_CLASS_VIDEO: &str = MediaFileClass::Video.to_str();
@@ -33,11 +29,11 @@ pub struct VideoMediaFilesWithoutThumbnails {
 
 pub async fn list_video_media_files_without_thumbnails_for_job(
   args: ListVideoMediaFilesWithoutThumbnailsArgs<'_>,
-) -> AnyhowResult<VideoMediaFilesWithoutThumbnails> {
+) -> Result<VideoMediaFilesWithoutThumbnails, sqlx::Error> {
   let cutoff = Utc::now() - args.time_delta;
   let cursor = args.maybe_id_cursor.unwrap_or(i64::MAX);
 
-  let rows = sqlx::query_as!(
+  let media_files = sqlx::query_as!(
     VideoMediaFileWithoutThumbnail,
     r#"
 SELECT
@@ -64,21 +60,13 @@ LIMIT ?
     PAGE_SIZE,
   )
     .fetch_all(args.pool)
-    .await;
+    .await?;
 
-  match rows {
-    Ok(media_files) => {
-      let next_cursor = if media_files.len() as i64 == PAGE_SIZE {
-        media_files.last().map(|f| f.id)
-      } else {
-        None
-      };
+  let next_cursor = if media_files.len() as i64 == PAGE_SIZE {
+    media_files.last().map(|f| f.id)
+  } else {
+    None
+  };
 
-      Ok(VideoMediaFilesWithoutThumbnails { media_files, next_cursor })
-    }
-    Err(err) => {
-      warn!("list_video_media_files_without_thumbnails_for_job query error: {:?}", err);
-      Err(anyhow!("query error"))
-    }
-  }
+  Ok(VideoMediaFilesWithoutThumbnails { media_files, next_cursor })
 }
