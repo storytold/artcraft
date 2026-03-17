@@ -49,18 +49,18 @@ SELECT
     maybe_public_bucket_extension
 FROM media_files
 WHERE
-    media_class = ?
-    AND created_at >= ?
-    AND maybe_thumbnail_version IS NULL
+    id >= (SELECT COALESCE(MIN(id), 0) FROM media_files WHERE created_at >= ?)
     AND id < ?
+    AND media_class = ?
+    AND maybe_thumbnail_version IS NULL
     AND user_deleted_at IS NULL
     AND mod_deleted_at IS NULL
 ORDER BY id DESC
 LIMIT ?
     "#,
-    MEDIA_CLASS_VIDEO,
     cutoff,
     cursor,
+    MEDIA_CLASS_VIDEO,
     PAGE_SIZE,
   )
     .fetch_all(args.pool)
