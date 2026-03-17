@@ -224,6 +224,12 @@ CREATE TABLE media_files (
   -- If so, we may not need to add a watermark downstream in further processing steps.
   has_watermark BOOLEAN NOT NULL DEFAULT FALSE,
 
+  -- Tracks the thumbnail algorithm/type used for this media file.
+  -- NULL = no thumbnail generated yet.
+  -- 1 = video thumbnail.
+  -- Other values are reserved for future thumbnail algorithms or media-specific types.
+  maybe_thumbnail_version TINYINT UNSIGNED DEFAULT NULL,
+
   -- ========== UPLOAD, TRANSCODING, AND TRUNCATION DETAILS ==========
 
   -- The hash for the bucket directory that contains the original upload
