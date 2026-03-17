@@ -14,6 +14,7 @@ pub struct MuapiVideoResponsePayload {
 
 #[derive(Clone, Debug)]
 pub struct Seedance2proVideoResponsePayload {
+  pub order_id: String,
   pub task_id: String,
 }
 

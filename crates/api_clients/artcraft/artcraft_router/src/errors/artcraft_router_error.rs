@@ -16,6 +16,9 @@ pub enum ArtcraftRouterError {
 
   /// An error from an underlying provider.
   Provider(ProviderError),
+
+  /// Failed to download a file from a URL (e.g. when re-uploading to a provider's CDN).
+  FileDownload(String),
 }
 
 impl Error for ArtcraftRouterError {}
@@ -27,6 +30,7 @@ impl Display for ArtcraftRouterError {
       Self::UnsupportedModel(model) => write!(f, "Unsupported model: {}", model),
       Self::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
       Self::Provider(e) => write!(f, "Provider error: {}", e),
+      Self::FileDownload(msg) => write!(f, "File download error: {}", msg),
     }
   }
 }

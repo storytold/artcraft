@@ -37,6 +37,9 @@ pub enum ClientError {
 
   /// Fal only accepts image URLs for image inputs, not media tokens.
   FalOnlySupportsUrls,
+
+  /// Seedance2Pro only accepts URLs for media inputs, not media tokens.
+  Seedance2ProOnlySupportsUrls,
 }
 
 impl Error for ClientError {}
@@ -58,6 +61,9 @@ impl Display for ClientError {
       }
       Self::FalOnlySupportsUrls => {
         write!(f, "Fal only supports image URLs for image inputs, not media tokens")
+      }
+      Self::Seedance2ProOnlySupportsUrls => {
+        write!(f, "Seedance2Pro only supports URLs for media inputs; resolve media tokens to URLs before calling this provider")
       }
     }
   }
