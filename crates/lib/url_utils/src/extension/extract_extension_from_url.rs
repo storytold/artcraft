@@ -228,4 +228,17 @@ mod tests {
     let ext = extract_extension_from_url_str(url, &ExtractExtensions::All);
     assert!(ext.is_none());
   }
+
+  fn extract_extension_all(url: &str) -> Option<String> {
+    extract_extension_from_url_str(url, &ExtractExtensions::All)
+        .map(|ext| ext.without_period().to_string())
+  }
+
+  #[test]
+  fn test_extract_various_extensions() {
+    assert_eq!(extract_extension_all("https://example.com/image.png").as_deref(), Some("png"));
+    assert_eq!(extract_extension_all("https://example.com/video.mp4?token=abc").as_deref(), Some("mp4"));
+    assert_eq!(extract_extension_all("https://example.com/path/to/file.jpg").as_deref(), Some("jpg"));
+    assert_eq!(extract_extension_all("https://example.com/noext"), None);
+  }
 }

@@ -797,6 +797,7 @@ dependencies = [
  "test_data",
  "tokens",
  "tokio",
+ "url_utils",
  "uuid 1.18.1",
  "workspace-build-acceleration",
  "world_labs_api",

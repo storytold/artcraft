@@ -5,14 +5,18 @@ use crate::generate::generate_video::generate_video_response::{
   GenerateVideoResponse, Seedance2proVideoResponsePayload,
 };
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
+use crate::utils::download_file::download_file;
 use seedance2pro::requests::generate_video::generate_video::{
-  GenerateVideoArgs, generate_video,
+  generate_video, GenerateVideoArgs,
 };
 use seedance2pro::requests::prepare_file_upload::prepare_file_upload::{
-  PrepareFileUploadArgs, prepare_file_upload,
+  prepare_file_upload, PrepareFileUploadArgs,
 };
 use seedance2pro::requests::upload_file::upload_file::{
-  UploadFileArgs, upload_file,
+  upload_file, UploadFileArgs,
+};
+use url_utils::extension::extract_extension_from_url::{
+  extract_extension_from_url_str, ExtractExtensions,
 };
 
 pub async fn execute_seedance2pro_seedance2p0(
@@ -57,21 +61,19 @@ async fn upload_to_seedance2pro(
   session: &seedance2pro::creds::seedance2pro_session::Seedance2ProSession,
   source_url: &str,
 ) -> Result<String, ArtcraftRouterError> {
-  // Extract file extension from URL
-  let extension = extract_extension(source_url).unwrap_or("bin");
+  let extension = extract_extension_from_url_str(source_url, &ExtractExtensions::All)
+    .map(|ext| ext.without_period().to_string())
+    .unwrap_or_else(|| "jpg".to_string());
 
-  // Download the file
   let file_bytes = download_file(source_url).await?;
 
-  // Prepare the upload (get a signed URL)
   let prepare_response = prepare_file_upload(PrepareFileUploadArgs {
     session,
-    extension: extension.to_string(),
+    extension,
   })
     .await
     .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
 
-  // Upload the file
   let upload_response = upload_file(UploadFileArgs {
     upload_url: prepare_response.upload_url,
     file_bytes,
@@ -106,44 +108,5 @@ async fn upload_optional_url_list(
       }
       Ok(Some(uploaded))
     }
-  }
-}
-
-/// Download a file from a URL, returning its bytes.
-async fn download_file(url: &str) -> Result<Vec<u8>, ArtcraftRouterError> {
-  let response = reqwest::get(url)
-    .await
-    .map_err(|err| ArtcraftRouterError::FileDownload(format!("Failed to download {}: {}", url, err)))?;
-
-  if !response.status().is_success() {
-    return Err(ArtcraftRouterError::FileDownload(
-      format!("Download failed for {} with status {}", url, response.status())
-    ));
-  }
-
-  response.bytes()
-    .await
-    .map(|b| b.to_vec())
-    .map_err(|err| ArtcraftRouterError::FileDownload(format!("Failed to read bytes from {}: {}", url, err)))
-}
-
-/// Extract the file extension from a URL path, ignoring query parameters.
-fn extract_extension(url: &str) -> Option<&str> {
-  let path = url.split('?').next().unwrap_or(url);
-  let filename = path.rsplit('/').next()?;
-  let dot_pos = filename.rfind('.')?;
-  Some(&filename[dot_pos + 1..])
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn test_extract_extension() {
-    assert_eq!(extract_extension("https://example.com/image.png"), Some("png"));
-    assert_eq!(extract_extension("https://example.com/video.mp4?token=abc"), Some("mp4"));
-    assert_eq!(extract_extension("https://example.com/path/to/file.jpg"), Some("jpg"));
-    assert_eq!(extract_extension("https://example.com/noext"), None);
   }
 }

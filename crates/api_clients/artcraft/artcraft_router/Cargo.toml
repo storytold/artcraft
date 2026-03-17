@@ -22,6 +22,7 @@ fal_client.workspace = true
 muapi_client.workspace = true
 seedance2pro.workspace = true
 tokens.workspace = true
+url_utils.workspace = true
 world_labs_api.workspace = true
 
 # External
