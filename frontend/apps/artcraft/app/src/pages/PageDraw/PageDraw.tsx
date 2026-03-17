@@ -854,15 +854,33 @@ const PageDraw = () => {
           result = await EnqueueEditImage(request);
         } else {
           // CASE 3 - DEFAULT
+          // Tech debt: we upload the composite first then enqueue the generation as two
+          // separate HTTP requests. Ideally the backend API would accept inline image
+          // bytes in the generation request so this could be a single call.
+          const compositeFile = await getCompositeCanvasFile();
+
+          if (!compositeFile) {
+            console.error("Failed to create composite canvas");
+            return;
+          }
+
+          const api = new PromptsApi();
+          const snapshotResult = await api.uploadSceneSnapshot({
+            screenshot: compositeFile,
+          });
+
+          if (!snapshotResult.data) {
+            console.error("Failed to upload scene snapshot");
+            return;
+          }
+
           const imgs = options?.images || [];
           const request: EnqueueEditImageRequest = {
             model: selectedImageModel,
-            image_media_tokens: [
-              editedImageToken,
-              ...imgs
-                .filter((img) => img.mediaToken !== editedImageToken)
-                .map((img) => img.mediaToken),
-            ].filter((t) => t.length > 0),
+            scene_image_media_token: snapshotResult.data,
+            image_media_tokens: imgs
+              .map((img) => img.mediaToken)
+              .filter((t) => t.length > 0),
             disable_system_prompt: true,
             prompt: prompt,
             image_count: generationCount,
@@ -874,9 +892,6 @@ const PageDraw = () => {
           if (options?.selectedProvider) {
             request.provider = options.selectedProvider;
           }
-          // if (selectedImageModel?.supportsNewAspectRatio()) {
-          //   request.common_aspect_ratio = commonAspectRatio;
-          // }
           result = await EnqueueEditImage(request);
         }
         if (result?.status === "success") {
