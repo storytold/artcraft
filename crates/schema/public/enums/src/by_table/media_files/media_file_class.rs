@@ -37,7 +37,7 @@ impl_mysql_from_row!(MediaFileClass);
 
 /// NB: Legacy API for older code.
 impl MediaFileClass {
-  pub fn to_str(&self) -> &'static str {
+  pub const fn to_str(&self) -> &'static str {
     match self {
       Self::Unknown => "unknown",
       Self::Audio => "audio",
