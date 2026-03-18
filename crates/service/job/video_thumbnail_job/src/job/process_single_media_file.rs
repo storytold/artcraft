@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use log::info;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
@@ -10,35 +12,7 @@ pub async fn process_single_media_file(
   deps: &JobDependencies,
   media_file: &VideoMediaFileWithoutThumbnail,
 ) -> anyhow::Result<()> {
-  // Reconstruct the bucket object path from the media file record.
-  let bucket_path = MediaFileBucketPath::from_object_hash(
-    &media_file.public_bucket_directory_hash,
-    media_file.maybe_public_bucket_prefix.as_deref(),
-    media_file.maybe_public_bucket_extension.as_deref(),
-  );
-
-  let object_path = bucket_path.get_full_object_path_str();
-
-  info!(
-    "Downloading video for media file {} from bucket path: {}",
-    media_file.token.as_str(),
-    object_path,
-  );
-
-  // Download the video to a temp file.
-  let video_extension = media_file
-    .maybe_public_bucket_extension
-    .as_deref()
-    .unwrap_or(".mp4");
-
-  let temp_video_path = deps.temp_dir.join(
-    format!("video_thumbnail_{}{}", media_file.token.as_str(), video_extension),
-  );
-
-  deps
-    .public_bucket_client
-    .download_file_to_disk(object_path, &temp_video_path)
-    .await?;
+  let temp_video_path = download_video(deps, media_file).await?;
 
   info!(
     "Downloaded video to {:?}. Generating thumbnails for {}.",
@@ -56,4 +30,40 @@ pub async fn process_single_media_file(
     let _ = tokio::fs::remove_file(&temp_video_path).await;
     Ok(())
   }
+}
+
+/// Download the source video from the public bucket to a local temp file.
+async fn download_video(
+  deps: &JobDependencies,
+  media_file: &VideoMediaFileWithoutThumbnail,
+) -> anyhow::Result<PathBuf> {
+  let bucket_path = MediaFileBucketPath::from_object_hash(
+    &media_file.public_bucket_directory_hash,
+    media_file.maybe_public_bucket_prefix.as_deref(),
+    media_file.maybe_public_bucket_extension.as_deref(),
+  );
+
+  let object_path = bucket_path.get_full_object_path_str();
+
+  info!(
+    "Downloading video for media file {} from bucket path: {}",
+    media_file.token.as_str(),
+    object_path,
+  );
+
+  let video_extension = media_file
+    .maybe_public_bucket_extension
+    .as_deref()
+    .unwrap_or(".mp4");
+
+  let temp_video_path = deps.temp_dir.join(
+    format!("video_thumbnail_{}{}", media_file.token.as_str(), video_extension),
+  );
+
+  deps
+    .public_bucket_client
+    .download_file_to_disk(object_path, &temp_video_path)
+    .await?;
+
+  Ok(temp_video_path)
 }
