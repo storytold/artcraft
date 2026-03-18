@@ -6,16 +6,18 @@ use std::process::Command;
 
 use errors::AnyhowResult;
 
-pub struct Args<'a> {
-  pub input_video_path: &'a Path,
-  pub output_gif_path: &'a Path,
+pub struct Args<I: AsRef<Path>, O: AsRef<Path>> {
+  pub input_video_path: I,
+  pub output_gif_path: O,
 }
 
 /// Extract a short animated GIF preview from a video file.
 ///
 /// Takes the first 5 seconds, resampled to 10 fps, scaled to 360px wide
 /// (preserving aspect ratio), with an optimized color palette.
-pub fn ffmpeg_video_gif_preview(args: Args<'_>) -> AnyhowResult<()> {
+pub fn ffmpeg_video_gif_preview<I: AsRef<Path>, O: AsRef<Path>>(
+  args: Args<I, O>,
+) -> AnyhowResult<()> {
   let mut command = Command::new("ffmpeg");
 
   command
@@ -23,10 +25,10 @@ pub fn ffmpeg_video_gif_preview(args: Args<'_>) -> AnyhowResult<()> {
       .arg("-y")
       .arg("-ss").arg("0")
       .arg("-to").arg("5")
-      .arg("-i").arg(args.input_video_path)
+      .arg("-i").arg(args.input_video_path.as_ref())
       .arg("-filter_complex")
       .arg("fps=10,scale=360:-1[s]; [s]split[a][b]; [a]palettegen[palette]; [b][palette]paletteuse")
-      .arg(args.output_gif_path);
+      .arg(args.output_gif_path.as_ref());
 
   info!("Calling ffmpeg (gif preview)...");
 

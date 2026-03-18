@@ -6,9 +6,9 @@ use std::process::Command;
 
 use errors::AnyhowResult;
 
-pub struct Args<'a> {
-  pub input_video_path: &'a Path,
-  pub output_jpg_path: &'a Path,
+pub struct Args<I: AsRef<Path>, O: AsRef<Path>> {
+  pub input_video_path: I,
+  pub output_jpg_path: O,
 }
 
 /// Extract a single JPG frame from a video file, scaled down to fit within
@@ -16,17 +16,19 @@ pub struct Args<'a> {
 ///
 /// Uses `-sseof -1` to seek 1 second before the end of the file, which avoids
 /// potentially-black first frames.
-pub fn ffmpeg_video_first_frame_to_jpg_thumbnail(args: Args<'_>) -> AnyhowResult<()> {
+pub fn ffmpeg_video_first_frame_to_jpg_thumbnail<I: AsRef<Path>, O: AsRef<Path>>(
+  args: Args<I, O>,
+) -> AnyhowResult<()> {
   let mut command = Command::new("ffmpeg");
 
   command
       .arg("-nostdin")
       .arg("-y")
       .arg("-sseof").arg("-1")
-      .arg("-i").arg(args.input_video_path)
+      .arg("-i").arg(args.input_video_path.as_ref())
       .arg("-vf").arg("scale=320:320:force_original_aspect_ratio=decrease")
       .arg("-vframes").arg("1")
-      .arg(args.output_jpg_path);
+      .arg(args.output_jpg_path.as_ref());
 
   info!("Calling ffmpeg (jpg thumbnail)...");
 
