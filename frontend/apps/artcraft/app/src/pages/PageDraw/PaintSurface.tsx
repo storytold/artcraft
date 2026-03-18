@@ -31,8 +31,8 @@ import { checkerboard } from "@storyteller/common";
 import { DragState } from "../PageEdit/EditPaintSurface";
 
 export type MiraiProps = {
-  nodes: Node[];
-  lineNodes: LineNode[];
+  drawNodes: (Node | LineNode)[];
+  inpaintLineNodes: LineNode[];
   selectedNodeIds: string[];
   onCanvasSizeChange?: (width: number, height: number) => void;
   fillColor?: string;
@@ -45,6 +45,8 @@ export type MiraiProps = {
     | "inpaint";
   brushColor?: string;
   brushSize?: number;
+  inpaintOperation?: "add" | "minus";
+  inpaintBrushSize?: number;
   onSelectionChange?: (isSelecting: boolean) => void;
   stageRef: React.RefObject<Konva.Stage>;
   transformerRefs: React.RefObject<{ [key: string]: Konva.Transformer }>;
@@ -59,14 +61,16 @@ export const BG_LAYER_ID = "bg-layer";
 export const DRAW_LAYER_ID = "draw-layer";
 
 export const PaintSurface = ({
-  nodes,
-  lineNodes,
+  drawNodes,
+  inpaintLineNodes,
   selectedNodeIds,
   onCanvasSizeChange,
   fillColor,
   activeTool = "select",
   brushColor = "#000000",
   brushSize = 5,
+  inpaintOperation = "add",
+  inpaintBrushSize = 30,
   onSelectionChange,
   stageRef,
   transformerRefs,
@@ -200,7 +204,7 @@ export const PaintSurface = ({
     if (minX === Infinity) return null;
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedNodeIds, nodes, lineNodes, stageRef]);
+  }, [selectedNodeIds, drawNodes, inpaintLineNodes, stageRef]);
 
   useLayoutEffect(() => {
     const updateDimensions = () => {
@@ -348,31 +352,37 @@ export const PaintSurface = ({
     ) {
       const lineId = `line-${activeTool}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const opacity = activeTool === "draw" ? brushOpacity : 1;
+
+      const composite =
+        activeTool === "eraser"
+          ? "destination-out"
+          : activeTool === "inpaint" && inpaintOperation === "minus"
+            ? "destination-out"
+            : "source-over";
+
       const strokeColor =
         activeTool === "eraser"
           ? "#FFFFFF"
           : activeTool === "draw"
             ? brushColor
-            : InpaintingColor;
+            : inpaintOperation === "minus"
+              ? "#FFFFFF"
+              : InpaintingColor;
 
-      const composite =
-        activeTool === "eraser" ? "destination-out" : "source-over";
-
-      console.log("Starting new line with composite:", composite);
-
-      const zindex =
-        activeTool === "eraser" ? 999 : activeTool === "inpaint" ? 998 : 1;
+      const strokeWidth =
+        activeTool === "inpaint"
+          ? inpaintBrushSize / stage.scaleX()
+          : brushSize / stage.scaleX();
 
       const newLineNode: LineNode = {
         id: lineId,
         type: "line",
         points: [stagePoint.x, stagePoint.y],
         stroke: strokeColor,
-        strokeWidth: brushSize / stage.scaleX(),
+        strokeWidth,
         draggable: true,
         opacity: opacity,
         locked: false,
-        zIndex: zindex,
         globalCompositeOperation: composite,
         x: 0,
         y: 0,
@@ -388,7 +398,6 @@ export const PaintSurface = ({
         draggable: true,
         opacity: opacity,
         locked: false,
-        zIndex: zindex,
         globalCompositeOperation: composite,
         x: 0,
         y: 0,
@@ -656,8 +665,7 @@ export const PaintSurface = ({
       isDrawingShape,
       isSelecting,
       selectionRect,
-      nodes,
-      lineNodes,
+      drawNodes,
     ],
   );
 
@@ -680,29 +688,30 @@ export const PaintSurface = ({
 
       const selectedIds: string[] = [];
 
-      nodes.forEach((node) => {
-        if (
-          node.x + node.width >= left &&
-          node.x <= right &&
-          node.y + node.height >= top &&
-          node.y <= bottom
-        ) {
-          selectedIds.push(node.id);
-        }
-      });
-
-      lineNodes.forEach((node) => {
-        const isInSelection = node.points.some((point, index) => {
-          if (index % 2 === 0) {
-            const x = point;
-            const y = node.points[index + 1];
-            return x >= left && x <= right && y >= top && y <= bottom;
+      drawNodes.forEach((n) => {
+        if (n instanceof Node) {
+          if (
+            n.x + n.width >= left &&
+            n.x <= right &&
+            n.y + n.height >= top &&
+            n.y <= bottom
+          ) {
+            selectedIds.push(n.id);
           }
-          return false;
-        });
-
-        if (isInSelection) {
-          selectedIds.push(node.id);
+        } else {
+          // LineNode
+          const ln = n as LineNode;
+          const isInSelection = ln.points.some((point, index) => {
+            if (index % 2 === 0) {
+              const x = point;
+              const y = ln.points[index + 1];
+              return x >= left && x <= right && y >= top && y <= bottom;
+            }
+            return false;
+          });
+          if (isInSelection) {
+            selectedIds.push(n.id);
+          }
         }
       });
 
@@ -989,19 +998,18 @@ export const PaintSurface = ({
         }
 
         if ("button" in e.evt && (e.evt as MouseEvent).button === 2) {
-          const node = nodes.find((n) => n.id === nodeId);
-          const lineNode = lineNodes.find((n) => n.id === nodeId);
-          const isLocked = (node?.locked || lineNode?.locked) ?? false;
-
-          if (isLocked) {
+          const found =
+            drawNodes.find((n) => n.id === nodeId) ||
+            inpaintLineNodes.find((n) => n.id === nodeId);
+          if (found?.locked) {
             selectNode(nodeId);
             return;
           }
         }
 
         const draggedNode =
-          (nodes.find((n) => n.id === nodeId) as Node | LineNode | undefined) ||
-          lineNodes.find((ln) => ln.id === nodeId);
+          drawNodes.find((n) => n.id === nodeId) ||
+          inpaintLineNodes.find((n) => n.id === nodeId);
         if (draggedNode?.locked) {
           return;
         }
@@ -1039,12 +1047,10 @@ export const PaintSurface = ({
 
         let newX = targetNode.x();
         let newY = targetNode.y();
-        const draggedNode =
-          (nodes.find((n) => n.id === nodeId) as Node | LineNode | undefined) ||
-          lineNodes.find((ln) => ln.id === nodeId);
+        const draggedNode = drawNodes.find((n) => n.id === nodeId);
         if (draggedNode && draggedNode.type === "circle") {
-          newX = targetNode.x() - draggedNode.width / 2;
-          newY = targetNode.y() - draggedNode.height / 2;
+          newX = targetNode.x() - (draggedNode as Node).width / 2;
+          newY = targetNode.y() - (draggedNode as Node).height / 2;
         }
         moveNode(nodeId, newX, newY, 0, 0, false);
       };
@@ -1066,12 +1072,10 @@ export const PaintSurface = ({
 
         let newXMove = targetNode.x();
         let newYMove = targetNode.y();
-        const movingNode =
-          (nodes.find((n) => n.id === nodeId) as Node | LineNode | undefined) ||
-          lineNodes.find((ln) => ln.id === nodeId);
+        const movingNode = drawNodes.find((n) => n.id === nodeId);
         if (movingNode && movingNode.type === "circle") {
-          newXMove = targetNode.x() - movingNode.width / 2;
-          newYMove = targetNode.y() - movingNode.height / 2;
+          newXMove = targetNode.x() - (movingNode as Node).width / 2;
+          newYMove = targetNode.y() - (movingNode as Node).height / 2;
         }
 
         moveNode(nodeId, newXMove, newYMove, dx, dy, false);
@@ -1090,12 +1094,10 @@ export const PaintSurface = ({
 
         let endX = targetNode.x();
         let endY = targetNode.y();
-        const endNode =
-          (nodes.find((n) => n.id === nodeId) as Node | LineNode | undefined) ||
-          lineNodes.find((ln) => ln.id === nodeId);
+        const endNode = drawNodes.find((n) => n.id === nodeId);
         if (endNode && endNode.type === "circle") {
-          endX = targetNode.x() - endNode.width / 2;
-          endY = targetNode.y() - endNode.height / 2;
+          endX = targetNode.x() - (endNode as Node).width / 2;
+          endY = targetNode.y() - (endNode as Node).height / 2;
         }
         moveNode(nodeId, endX, endY, 0, 0, true);
       };
@@ -1137,21 +1139,11 @@ export const PaintSurface = ({
           if (selectedNodeIds.length > 1 && selectedNodeIds.includes(nodeId)) {
             selectedNodeIds.forEach((id) => {
               if (id !== nodeId) {
-                const isLineNode = lineNodes.find((ln) => ln.id === id);
-                if (isLineNode) {
+                const dn = drawNodes.find((n) => n.id === id);
+                if (dn && dn.type === "line") {
                   moveLineNode(id, dx, dy);
-                } else {
-                  const regularNode = nodes.find((n) => n.id === id);
-                  if (regularNode) {
-                    moveNode(
-                      id,
-                      regularNode.x + dx,
-                      regularNode.y + dy,
-                      dx,
-                      dy,
-                      false,
-                    );
-                  }
+                } else if (dn && dn instanceof Node) {
+                  moveNode(id, dn.x + dx, dn.y + dy, dx, dy, false);
                 }
               }
             });
@@ -1407,7 +1399,7 @@ export const PaintSurface = ({
 
       return null;
     },
-    [activeTool, nodes, lineNodes, selectedNodeIds, transformerRefs],
+    [activeTool, drawNodes, inpaintLineNodes, selectedNodeIds, transformerRefs],
   );
 
   // Load the checkboard image for transparency background
@@ -1420,7 +1412,7 @@ export const PaintSurface = ({
     // Don't render individual transformers when multiple nodes are selected
     if (selectedNodeIds.length > 1) return null;
 
-    return [...nodes, ...lineNodes].map((node) => {
+    return [...drawNodes, ...inpaintLineNodes].map((node) => {
       const isSelected = selectedNodeIds.includes(node.id);
       if (!isSelected) return null;
 
@@ -1474,7 +1466,7 @@ export const PaintSurface = ({
             const finalOffsetY = konvaNode.offsetY();
 
             // Find the corresponding node in the store to check its type
-            const storeNode = nodes.find((n) => n.id === nodeId);
+            const storeNode = drawNodes.find((n) => n.id === nodeId);
 
             // Calculate new dimensions based on the scale that the Transformer applied
             const newWidth = konvaNode.width() * finalScaleX;
@@ -1502,7 +1494,7 @@ export const PaintSurface = ({
               offsetY: finalOffsetY,
             };
 
-            const isLineNode = lineNodes.find((ln) => ln.id === nodeId);
+            const isLineNode = storeNode?.type === "line";
 
             if (isLineNode) {
               updateLineNode(
@@ -1577,20 +1569,8 @@ export const PaintSurface = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNodeIds]);
 
-  const inpaintingLineNodes: LineNode[] = [];
-  const drawLineNodes: LineNode[] = [];
-
-  lineNodes.forEach((line) => {
-    if (
-      line.id.startsWith("line-eraser") ||
-      line.id.startsWith("line-inpaint")
-    ) {
-      inpaintingLineNodes.push(line);
-    }
-    if (line.id.startsWith("line-eraser") || line.id.startsWith("line-draw")) {
-      drawLineNodes.push(line);
-    }
-  });
+  // drawNodes is already ordered — render directly, no splitting needed.
+  // inpaintLineNodes is the separate inpaint layer.
 
   return (
     <SplitPane
@@ -1684,9 +1664,7 @@ export const PaintSurface = ({
               }}
               pixelRatio={1}
             >
-              {nodes.map((node) => renderNode(node))}
-
-              {drawLineNodes.map((node) => renderNode(node))}
+              {drawNodes.map((node) => renderNode(node))}
 
               {currentLineId &&
                 !currentLineId.startsWith("line-inpaint") &&
@@ -1754,7 +1732,7 @@ export const PaintSurface = ({
               visible={showMaskLayer}
               pixelRatio={1}
             >
-              {inpaintingLineNodes.map((node) => renderNode(node))}
+              {inpaintLineNodes.map((node) => renderNode(node))}
               {currentLineId &&
                 currentLineId.startsWith("line-inpaint") &&
                 currentLinePendingRef.current && (
@@ -1830,7 +1808,7 @@ export const PaintSurface = ({
                         const finalOffsetY = konvaNode.offsetY();
 
                         // Find the corresponding node in the store to check its type
-                        const storeNode = nodes.find((n) => n.id === nodeId);
+                        const storeNode = drawNodes.find((n) => n.id === nodeId);
 
                         // Calculate new dimensions based on the scale that the Transformer applied
                         const newWidth = konvaNode.width() * finalScaleX;
@@ -1858,8 +1836,8 @@ export const PaintSurface = ({
                           offsetY: finalOffsetY,
                         };
 
-                        const isLineNode = lineNodes.find(
-                          (ln) => ln.id === nodeId,
+                        const isLineNode = drawNodes.find(
+                          (ln) => ln.id === nodeId && ln.type === "line",
                         );
 
                         if (isLineNode) {
@@ -1914,11 +1892,11 @@ export const PaintSurface = ({
                     tgt.lastY = tgt.y();
 
                     selectedNodeIds.forEach((id) => {
-                      const lineNode = lineNodes.find((ln) => ln.id === id);
+                      const lineNode = drawNodes.find((ln) => ln.id === id && ln.type === "line");
                       if (lineNode) {
                         moveLineNode(id, dx, dy);
                       } else {
-                        const currentNode = nodes.find((n) => n.id === id);
+                        const currentNode = drawNodes.find((n) => n.id === id && n.type !== "line") as Node | undefined;
                         if (currentNode) {
                           // Move each shape individually without triggering extra multi-select propagation
                           moveNode(

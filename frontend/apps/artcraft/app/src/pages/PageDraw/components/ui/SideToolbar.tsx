@@ -25,6 +25,7 @@ import { HsvaColorPicker, HsvaColor } from "react-colorful";
 import { hsvaToHex } from "@uiw/color-convert";
 import SliderWithIndicator from "./SliderWithIndicator";
 import { ActiveTool, useSceneStore } from "../../stores/SceneState";
+import { Node } from "../../Node";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   showActionReminder,
@@ -88,13 +89,13 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
   // Get selected nodes for shape color picker
   const selectedNodes =
     store.selectedNodeIds.length > 0
-      ? store.nodes.filter((node) => store.selectedNodeIds.includes(node.id))
+      ? store.drawNodes.filter((node) => store.selectedNodeIds.includes(node.id))
       : [];
 
-  // Get only colorable nodes (shapes, not images)
+  // Get only colorable nodes (shapes, not images or lines)
   const selectedColorableNodes = selectedNodes.filter(
-    (node) => node.type !== "image",
-  );
+    (node) => node.type !== "image" && node.type !== "line",
+  ) as Node[];
 
   // Get first selected colorable node for color preview (when multiple selected, show first one's color)
   const firstSelectedColorableNode =
@@ -345,7 +346,7 @@ const SideToolbar: React.FC<SideToolbarProps> = ({
       primaryActionText: "Reset all",
       onPrimaryAction: () => {
         store.setNodes([]);
-        store.lineNodes.forEach((lineNode) => {
+        store.drawNodes.filter((n) => n.type === "line").forEach((lineNode) => {
           store.removeLineNode(lineNode.id, false);
         });
         store.selectNode(null);

@@ -15,6 +15,7 @@ import { useCopyPasteHotkeys } from "./hooks/useCopyPasteHotkeys";
 import Konva from "konva";
 import { captureStageEditsBitmap } from "./hooks/useUpdateSnapshot";
 import { ContextMenuContainer } from "./components/ui/ContextMenu";
+import InpaintToolBar from "./components/ui/InpaintToolBar";
 import { ImageModel } from "@storyteller/model-list";
 import {
   CANVAS_2D_PAGE_MODEL_LIST,
@@ -321,14 +322,18 @@ const PageDraw = () => {
     () => (state: SceneState) => ({
       baseImageInfo: state.baseImageInfo,
       baseImageBitmap: state.baseImageBitmap,
-      nodes: state.nodes,
+      drawNodes: state.drawNodes,
+      inpaintLineNodes: state.inpaintLineNodes,
       selectedNodeIds: state.selectedNodeIds,
-      lineNodes: state.lineNodes,
       activeTool: state.activeTool,
       currentShape: state.currentShape,
       fillColor: state.fillColor,
       brushColor: state.brushColor,
       brushSize: state.brushSize,
+      inpaintOperation: state.inpaintOperation,
+      inpaintBrushSize: state.inpaintBrushSize,
+      setInpaintOperation: state.setInpaintOperation,
+      setInpaintBrushSize: state.setInpaintBrushSize,
       historyImageBundles: state.historyImageBundles,
       getAspectRatioDimensions: state.getAspectRatioDimensions,
       finishRemoveBackground: state.finishRemoveBackground,
@@ -338,8 +343,6 @@ const PageDraw = () => {
       updateNode: state.updateNode,
       setBaseImageInfo: state.setBaseImageInfo,
       RESET: state.RESET,
-      clearLineNodes: state.clearLineNodes,
-      setNodes: state.setNodes,
       removeHistoryImage: state.removeHistoryImage,
       addHistoryImageBundle: state.addHistoryImageBundle,
       setAspectRatioType: state.setAspectRatioType,
@@ -368,14 +371,18 @@ const PageDraw = () => {
   const {
     baseImageInfo,
     baseImageBitmap,
-    nodes,
+    drawNodes,
+    inpaintLineNodes,
     selectedNodeIds,
-    lineNodes,
     activeTool,
     currentShape,
     fillColor,
     brushColor,
     brushSize,
+    inpaintOperation,
+    inpaintBrushSize,
+    setInpaintOperation,
+    setInpaintBrushSize,
     historyImageBundles,
     getAspectRatioDimensions,
     finishRemoveBackground,
@@ -385,8 +392,6 @@ const PageDraw = () => {
     updateNode,
     setBaseImageInfo,
     RESET,
-    clearLineNodes,
-    setNodes,
     removeHistoryImage,
     addHistoryImageBundle,
     setAspectRatioType,
@@ -616,9 +621,9 @@ const PageDraw = () => {
   const displayNodes = useMemo(
     () =>
       editing3DNodeId
-        ? nodes.filter((n) => n.id !== editing3DNodeId)
-        : nodes,
-    [nodes, editing3DNodeId],
+        ? drawNodes.filter((n) => n.id !== editing3DNodeId)
+        : drawNodes,
+    [drawNodes, editing3DNodeId],
   );
 
   const handleImageUpload = useCallback(async (files: File[]): Promise<void> => {
@@ -1086,21 +1091,25 @@ const PageDraw = () => {
   const isLocked = useMemo(
     () =>
       selectedNodeIds.some((id) => {
-        const node = nodes.find((n) => n.id === id);
-        const lineNode = lineNodes.find((n) => n.id === id);
-        return (node?.locked || lineNode?.locked) ?? false;
+        const node = drawNodes.find((n) => n.id === id);
+        return node?.locked ?? false;
       }),
-    [selectedNodeIds, nodes, lineNodes],
+    [selectedNodeIds, drawNodes],
   );
 
   const selectedNodeWithModel = useMemo(() => {
     if (selectedNodeIds.length !== 1) return null;
-    return nodes.find((n) => n.id === selectedNodeIds[0]) ?? null;
-  }, [selectedNodeIds, nodes]);
+    const n = drawNodes.find((n) => n.id === selectedNodeIds[0]);
+    return n?.type !== "line" ? n : null;
+  }, [selectedNodeIds, drawNodes]);
 
   const editingNode = useMemo(
-    () => (editing3DNodeId ? (nodes.find((n) => n.id === editing3DNodeId) ?? null) : null),
-    [editing3DNodeId, nodes],
+    () => {
+      if (!editing3DNodeId) return null;
+      const n = drawNodes.find((n) => n.id === editing3DNodeId);
+      return n?.type !== "line" ? n : null;
+    },
+    [editing3DNodeId, drawNodes],
   );
 
   // Display image selector on launch, otherwise hide it
@@ -1196,6 +1205,14 @@ const PageDraw = () => {
         activeToolId={activeTool}
         currentShape={currentShape}
       />
+      {activeTool === "inpaint" && (
+        <InpaintToolBar
+          operation={inpaintOperation}
+          brushSize={inpaintBrushSize}
+          onOperationChange={setInpaintOperation}
+          onBrushSizeChange={setInpaintBrushSize}
+        />
+      )}
       <div className="relative z-0">
         <ContextMenuContainer
           onAction={(e, action) => {
@@ -1215,14 +1232,16 @@ const PageDraw = () => {
           isLocked={isLocked}
         >
           <PaintSurface
-            nodes={displayNodes}
-            lineNodes={lineNodes}
+            drawNodes={displayNodes}
+            inpaintLineNodes={inpaintLineNodes}
             selectedNodeIds={selectedNodeIds}
             onCanvasSizeChange={handleCanvasSizeChange}
             fillColor={fillColor}
             activeTool={activeTool}
             brushColor={brushColor}
             brushSize={brushSize}
+            inpaintOperation={inpaintOperation}
+            inpaintBrushSize={inpaintBrushSize}
             onSelectionChange={setIsSelecting}
             stageRef={stageRef}
             transformerRefs={transformerRefs}
