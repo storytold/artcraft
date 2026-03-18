@@ -38,6 +38,7 @@ tokens.workspace = true
 # External
 anyhow.workspace = true
 log.workspace = true
+tempdir.workspace = true
 
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
 
