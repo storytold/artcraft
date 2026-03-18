@@ -37,7 +37,7 @@ impl MediaLinksBuilder {
     MediaLinks {
       cdn_url,
       maybe_thumbnail_template: thumbnail_template(domain, server_environment, rooted_path),
-      maybe_video_previews: VideoPreviewsBuilder::from_rooted_path(domain, rooted_path),
+      maybe_video_previews: VideoPreviewsBuilder::from_rooted_path(domain, server_environment, rooted_path),
     }
   }
 }
@@ -47,16 +47,17 @@ pub struct VideoPreviewsBuilder {}
 impl VideoPreviewsBuilder {
   fn from_rooted_path(
     domain: MediaDomain,
+    server_environment: ServerEnvironment,
     rooted_path: &str,
   ) -> Option<VideoPreviews> {
     if !rooted_path.ends_with(".mp4") {
       return None;
     }
     Some(VideoPreviews {
-      still: video_preview(domain, rooted_path, PreviewType::Jpg),
-      animated: video_preview(domain, rooted_path, PreviewType::Gif),
-      still_thumbnail_template: video_preview_thumbnail_template(domain, rooted_path, PreviewType::Jpg),
-      animated_thumbnail_template: video_preview_thumbnail_template(domain, rooted_path, PreviewType::Gif),
+      still: video_preview(domain, server_environment, rooted_path, PreviewType::Jpg),
+      animated: video_preview(domain, server_environment, rooted_path, PreviewType::Gif),
+      still_thumbnail_template: video_preview_thumbnail_template(domain, server_environment, rooted_path, PreviewType::Jpg),
+      animated_thumbnail_template: video_preview_thumbnail_template(domain, server_environment, rooted_path, PreviewType::Gif),
     })
   }
 }
@@ -67,13 +68,12 @@ enum PreviewType {
 }
 
 /// Returns a jpeg or gif preview of the video.
-fn video_preview(media_domain: MediaDomain, rooted_path: &str, thumbnail_type: PreviewType) -> Url {
-  let host = media_domain.cdn_url_str();
+fn video_preview(media_domain: MediaDomain, server_environment: ServerEnvironment, rooted_path: &str, thumbnail_type: PreviewType) -> Url {
   let rooted_path = match thumbnail_type {
     PreviewType::Gif => format!("{rooted_path}{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX}"),
     PreviewType::Jpg => format!("{rooted_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}"),
   };
-  let mut url = media_domain.new_cdn_url();
+  let mut url = new_cdn_url(media_domain, server_environment);
   url.set_path(&rooted_path);
   url
 }
@@ -96,13 +96,17 @@ fn thumbnail_template(media_domain: MediaDomain, server_environment: ServerEnvir
 }
 
 /// Returns a thumbnail template for video
-fn video_preview_thumbnail_template(media_domain: MediaDomain, rooted_path: &str, thumbnail_type: PreviewType) -> String {
-  let host = media_domain.cdn_url_str();
+fn video_preview_thumbnail_template(media_domain: MediaDomain, server_environment: ServerEnvironment, rooted_path: &str, thumbnail_type: PreviewType) -> String {
+  let host = get_cdn_host(media_domain, server_environment);
   let rooted_path = match thumbnail_type {
     PreviewType::Gif => format!("{rooted_path}{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX}"),
     PreviewType::Jpg => format!("{rooted_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}"),
   };
-  format!("{host}/cdn-cgi/image/width={{WIDTH}},quality={QUALITY}{rooted_path}")
+  // NB: Development doesn't support cdn-cgi image resizing.
+  match server_environment {
+    ServerEnvironment::Development => format!("{host}{rooted_path}"),
+    ServerEnvironment::Production => format!("{host}/cdn-cgi/image/width={{WIDTH}},quality={QUALITY}{rooted_path}"),
+  }
 }
 
 
@@ -113,96 +117,131 @@ mod tests {
   use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
   use server_environment::ServerEnvironment;
 
+  const DEV_CDN: &str = "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev";
+  const PROD_CDN: &str = "https://cdn-2.fakeyou.com";
+
   mod fakeyou {
     use super::*;
 
     const DOMAIN : MediaDomain = MediaDomain::FakeYou;
 
-    // TODO(bt,2025-01-31): Write robust tests for this.
-    #[test]
-    fn spot_check_new_case() {
-      let links = MediaLinksBuilder::from_rooted_path_and_env(MediaDomain::FakeYou, ServerEnvironment::Production, "/foo/bar.wav");
-      assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.wav");
-
-      let links = MediaLinksBuilder::from_rooted_path_and_env(MediaDomain::Storyteller, ServerEnvironment::Development, "/foo/bar.wav");
-      assert_eq!(links.cdn_url.as_str(), "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/foo/bar.wav");
-    }
-
-    mod rooted_path {
+    mod production {
       use super::*;
+
+      const ENV : ServerEnvironment = ServerEnvironment::Production;
 
       #[test]
       fn wav_file() {
-        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ServerEnvironment::Production, "/foo/bar.wav");
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.wav");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.wav");
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/foo/bar.wav"));
         assert_eq!(links.maybe_thumbnail_template, None);
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
       fn glb_file() {
-        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ServerEnvironment::Production, "/foo/bar.glb");
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.glb");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.glb");
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/foo/bar.glb"));
         assert_eq!(links.maybe_thumbnail_template, None);
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
       fn jpg_image() {
-        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ServerEnvironment::Production, "/foo/bar.jpg");
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.jpg");
-        assert_eq!(links.maybe_thumbnail_template, Some("https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/foo/bar.jpg".to_string()));
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.jpg");
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/foo/bar.jpg"));
+        assert_eq!(links.maybe_thumbnail_template, Some(format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/foo/bar.jpg")));
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
       fn mp4_video() {
-        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ServerEnvironment::Production, "/foo/bar.mp4");
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.mp4");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.mp4");
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/foo/bar.mp4"));
         assert_eq!(links.maybe_thumbnail_template, None);
         let video_previews = links.maybe_video_previews.expect("should have previews");
-        assert_eq!(video_previews.animated.as_str(), "https://cdn-2.fakeyou.com/foo/bar.mp4-thumb.gif");
-        assert_eq!(video_previews.still.as_str(), "https://cdn-2.fakeyou.com/foo/bar.mp4-thumb.jpg");
-        assert_eq!(video_previews.animated_thumbnail_template, "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/foo/bar.mp4-thumb.gif");
-        assert_eq!(video_previews.still_thumbnail_template, "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/foo/bar.mp4-thumb.jpg");
+        assert_eq!(video_previews.still.as_str(), format!("{PROD_CDN}/foo/bar.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated.as_str(), format!("{PROD_CDN}/foo/bar.mp4-thumb.gif"));
+        assert_eq!(video_previews.still_thumbnail_template, format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/foo/bar.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated_thumbnail_template, format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/foo/bar.mp4-thumb.gif"));
+      }
+
+      #[test]
+      fn mp4_video_media_path() {
+        let media_path = MediaFileBucketPath::from_object_hash("t6cnyw4g3e8k7carkk2bvrt6nd3fycjv", Some("storyteller_"), Some(".mp4"));
+        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ENV, &media_path);
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4"));
+        let video_previews = links.maybe_video_previews.expect("should have previews");
+        assert_eq!(video_previews.still.as_str(), format!("{PROD_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated.as_str(), format!("{PROD_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif"));
+        assert_eq!(video_previews.still_thumbnail_template, format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated_thumbnail_template, format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif"));
+      }
+
+      #[test]
+      fn wav_media_path() {
+        let media_path = MediaFileBucketPath::from_object_hash("94a27nmbd0bqmd10tg0pp3hz45zytf67", Some("fakeyou_"), Some(".wav"));
+        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ENV, &media_path);
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/media/9/4/a/2/7/94a27nmbd0bqmd10tg0pp3hz45zytf67/fakeyou_94a27nmbd0bqmd10tg0pp3hz45zytf67.wav"));
+        assert_eq!(links.maybe_thumbnail_template, None);
+        assert_eq!(links.maybe_video_previews, None);
+      }
+
+      #[test]
+      fn png_media_path() {
+        let media_path = MediaFileBucketPath::from_object_hash("37mb3gh8fmj85y21thvbv08bzv24atjt", Some("upload_"), Some(".png"));
+        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ENV, &media_path);
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png"));
+        assert_eq!(links.maybe_thumbnail_template, Some(format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png")));
+        assert_eq!(links.maybe_video_previews, None);
       }
     }
 
-    mod media_path {
+    mod development {
       use super::*;
+
+      const ENV : ServerEnvironment = ServerEnvironment::Development;
 
       #[test]
       fn wav_file() {
-        // https://storage.googleapis.com/vocodes-public/media/9/4/a/2/7/94a27nmbd0bqmd10tg0pp3hz45zytf67/fakeyou_94a27nmbd0bqmd10tg0pp3hz45zytf67.wav
-        let media_path = MediaFileBucketPath::from_object_hash("94a27nmbd0bqmd10tg0pp3hz45zytf67", Some("fakeyou_"), Some(".wav"));
-        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ServerEnvironment::Production, &media_path);
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/media/9/4/a/2/7/94a27nmbd0bqmd10tg0pp3hz45zytf67/fakeyou_94a27nmbd0bqmd10tg0pp3hz45zytf67.wav");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.wav");
+        assert_eq!(links.cdn_url.as_str(), format!("{DEV_CDN}/foo/bar.wav"));
         assert_eq!(links.maybe_thumbnail_template, None);
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
-      fn png_image() {
-        /// https://storage.googleapis.com/vocodes-public/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png
-        let media_path = MediaFileBucketPath::from_object_hash("37mb3gh8fmj85y21thvbv08bzv24atjt", Some("upload_"), Some(".png"));
-        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ServerEnvironment::Production, &media_path);
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png");
-        assert_eq!(links.maybe_thumbnail_template, Some("https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png".to_string()));
+      fn jpg_image() {
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.jpg");
+        assert_eq!(links.cdn_url.as_str(), format!("{DEV_CDN}/foo/bar.jpg"));
+        // NB: Development doesn't support cdn-cgi, so serve the full image.
+        assert_eq!(links.maybe_thumbnail_template, Some(format!("{DEV_CDN}/foo/bar.jpg")));
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
       fn mp4_video() {
-        // https://storage.googleapis.com/vocodes-public/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4
-        let media_path = MediaFileBucketPath::from_object_hash("t6cnyw4g3e8k7carkk2bvrt6nd3fycjv", Some("storyteller_"), Some(".mp4"));
-        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ServerEnvironment::Production, &media_path);
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.mp4");
+        assert_eq!(links.cdn_url.as_str(), format!("{DEV_CDN}/foo/bar.mp4"));
         assert_eq!(links.maybe_thumbnail_template, None);
         let video_previews = links.maybe_video_previews.expect("should have previews");
-        assert_eq!(video_previews.animated.as_str(), "https://cdn-2.fakeyou.com/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif");
-        assert_eq!(video_previews.still.as_str(), "https://cdn-2.fakeyou.com/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg");
-        assert_eq!(video_previews.animated_thumbnail_template, "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif");
-        assert_eq!(video_previews.still_thumbnail_template, "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg");
+        assert_eq!(video_previews.still.as_str(), format!("{DEV_CDN}/foo/bar.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated.as_str(), format!("{DEV_CDN}/foo/bar.mp4-thumb.gif"));
+        // NB: Development doesn't support cdn-cgi, so templates are plain URLs.
+        assert_eq!(video_previews.still_thumbnail_template, format!("{DEV_CDN}/foo/bar.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated_thumbnail_template, format!("{DEV_CDN}/foo/bar.mp4-thumb.gif"));
+      }
+
+      #[test]
+      fn mp4_video_media_path() {
+        let media_path = MediaFileBucketPath::from_object_hash("t6cnyw4g3e8k7carkk2bvrt6nd3fycjv", Some("storyteller_"), Some(".mp4"));
+        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ENV, &media_path);
+        assert_eq!(links.cdn_url.as_str(), format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4"));
+        let video_previews = links.maybe_video_previews.expect("should have previews");
+        assert_eq!(video_previews.still.as_str(), format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated.as_str(), format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif"));
+        assert_eq!(video_previews.still_thumbnail_template, format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated_thumbnail_template, format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif"));
       }
     }
   }
@@ -212,83 +251,121 @@ mod tests {
 
     const DOMAIN : MediaDomain = MediaDomain::Storyteller;
 
-    mod rooted_path {
+    mod production {
       use super::*;
-      use server_environment::ServerEnvironment;
+
+      const ENV : ServerEnvironment = ServerEnvironment::Production;
 
       #[test]
       fn wav_file() {
-        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ServerEnvironment::Production, "/foo/bar.wav");
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.wav");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.wav");
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/foo/bar.wav"));
         assert_eq!(links.maybe_thumbnail_template, None);
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
       fn glb_file() {
-        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ServerEnvironment::Production, "/foo/bar.glb");
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.glb");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.glb");
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/foo/bar.glb"));
         assert_eq!(links.maybe_thumbnail_template, None);
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
       fn jpg_image() {
-        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ServerEnvironment::Production, "/foo/bar.jpg");
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.jpg");
-        assert_eq!(links.maybe_thumbnail_template, Some("https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/foo/bar.jpg".to_string()));
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.jpg");
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/foo/bar.jpg"));
+        assert_eq!(links.maybe_thumbnail_template, Some(format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/foo/bar.jpg")));
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
       fn mp4_video() {
-        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ServerEnvironment::Production, "/foo/bar.mp4");
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.mp4");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.mp4");
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/foo/bar.mp4"));
         assert_eq!(links.maybe_thumbnail_template, None);
         let video_previews = links.maybe_video_previews.expect("should have previews");
-        assert_eq!(video_previews.animated.as_str(), "https://cdn-2.fakeyou.com/foo/bar.mp4-thumb.gif");
-        assert_eq!(video_previews.still.as_str(), "https://cdn-2.fakeyou.com/foo/bar.mp4-thumb.jpg");
-        assert_eq!(video_previews.animated_thumbnail_template, "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/foo/bar.mp4-thumb.gif");
-        assert_eq!(video_previews.still_thumbnail_template, "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/foo/bar.mp4-thumb.jpg");
+        assert_eq!(video_previews.still.as_str(), format!("{PROD_CDN}/foo/bar.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated.as_str(), format!("{PROD_CDN}/foo/bar.mp4-thumb.gif"));
+        assert_eq!(video_previews.still_thumbnail_template, format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/foo/bar.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated_thumbnail_template, format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/foo/bar.mp4-thumb.gif"));
+      }
+
+      #[test]
+      fn mp4_video_media_path() {
+        let media_path = MediaFileBucketPath::from_object_hash("t6cnyw4g3e8k7carkk2bvrt6nd3fycjv", Some("storyteller_"), Some(".mp4"));
+        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ENV, &media_path);
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4"));
+        let video_previews = links.maybe_video_previews.expect("should have previews");
+        assert_eq!(video_previews.still.as_str(), format!("{PROD_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated.as_str(), format!("{PROD_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif"));
+        assert_eq!(video_previews.still_thumbnail_template, format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated_thumbnail_template, format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif"));
+      }
+
+      #[test]
+      fn wav_media_path() {
+        let media_path = MediaFileBucketPath::from_object_hash("94a27nmbd0bqmd10tg0pp3hz45zytf67", Some("fakeyou_"), Some(".wav"));
+        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ENV, &media_path);
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/media/9/4/a/2/7/94a27nmbd0bqmd10tg0pp3hz45zytf67/fakeyou_94a27nmbd0bqmd10tg0pp3hz45zytf67.wav"));
+        assert_eq!(links.maybe_thumbnail_template, None);
+        assert_eq!(links.maybe_video_previews, None);
+      }
+
+      #[test]
+      fn png_media_path() {
+        let media_path = MediaFileBucketPath::from_object_hash("37mb3gh8fmj85y21thvbv08bzv24atjt", Some("upload_"), Some(".png"));
+        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ENV, &media_path);
+        assert_eq!(links.cdn_url.as_str(), format!("{PROD_CDN}/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png"));
+        assert_eq!(links.maybe_thumbnail_template, Some(format!("{PROD_CDN}/cdn-cgi/image/width={{WIDTH}},quality=95/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png")));
+        assert_eq!(links.maybe_video_previews, None);
       }
     }
 
-    mod media_path {
+    mod development {
       use super::*;
-      use server_environment::ServerEnvironment;
+
+      const ENV : ServerEnvironment = ServerEnvironment::Development;
 
       #[test]
       fn wav_file() {
-        // https://storage.googleapis.com/vocodes-public/media/9/4/a/2/7/94a27nmbd0bqmd10tg0pp3hz45zytf67/fakeyou_94a27nmbd0bqmd10tg0pp3hz45zytf67.wav
-        let media_path = MediaFileBucketPath::from_object_hash("94a27nmbd0bqmd10tg0pp3hz45zytf67", Some("fakeyou_"), Some(".wav"));
-        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ServerEnvironment::Production, &media_path);
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/media/9/4/a/2/7/94a27nmbd0bqmd10tg0pp3hz45zytf67/fakeyou_94a27nmbd0bqmd10tg0pp3hz45zytf67.wav");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.wav");
+        assert_eq!(links.cdn_url.as_str(), format!("{DEV_CDN}/foo/bar.wav"));
         assert_eq!(links.maybe_thumbnail_template, None);
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
-      fn png_image() {
-        /// https://storage.googleapis.com/vocodes-public/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png
-        let media_path = MediaFileBucketPath::from_object_hash("37mb3gh8fmj85y21thvbv08bzv24atjt", Some("upload_"), Some(".png"));
-        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ServerEnvironment::Production, &media_path);
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png");
-        assert_eq!(links.maybe_thumbnail_template, Some("https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/media/3/7/m/b/3/37mb3gh8fmj85y21thvbv08bzv24atjt/upload_37mb3gh8fmj85y21thvbv08bzv24atjt.png".to_string()));
+      fn jpg_image() {
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.jpg");
+        assert_eq!(links.cdn_url.as_str(), format!("{DEV_CDN}/foo/bar.jpg"));
+        assert_eq!(links.maybe_thumbnail_template, Some(format!("{DEV_CDN}/foo/bar.jpg")));
         assert_eq!(links.maybe_video_previews, None);
       }
 
       #[test]
       fn mp4_video() {
-        // https://storage.googleapis.com/vocodes-public/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4
-        let media_path = MediaFileBucketPath::from_object_hash("t6cnyw4g3e8k7carkk2bvrt6nd3fycjv", Some("storyteller_"), Some(".mp4"));
-        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ServerEnvironment::Production, &media_path);
-        assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4");
+        let links = MediaLinksBuilder::from_rooted_path_and_env(DOMAIN, ENV, "/foo/bar.mp4");
+        assert_eq!(links.cdn_url.as_str(), format!("{DEV_CDN}/foo/bar.mp4"));
         assert_eq!(links.maybe_thumbnail_template, None);
         let video_previews = links.maybe_video_previews.expect("should have previews");
-        assert_eq!(video_previews.animated.as_str(), "https://cdn-2.fakeyou.com/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif");
-        assert_eq!(video_previews.still.as_str(), "https://cdn-2.fakeyou.com/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg");
-        assert_eq!(video_previews.animated_thumbnail_template, "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif");
-        assert_eq!(video_previews.still_thumbnail_template, "https://cdn-2.fakeyou.com/cdn-cgi/image/width={WIDTH},quality=95/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg");
+        assert_eq!(video_previews.still.as_str(), format!("{DEV_CDN}/foo/bar.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated.as_str(), format!("{DEV_CDN}/foo/bar.mp4-thumb.gif"));
+        assert_eq!(video_previews.still_thumbnail_template, format!("{DEV_CDN}/foo/bar.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated_thumbnail_template, format!("{DEV_CDN}/foo/bar.mp4-thumb.gif"));
+      }
+
+      #[test]
+      fn mp4_video_media_path() {
+        let media_path = MediaFileBucketPath::from_object_hash("t6cnyw4g3e8k7carkk2bvrt6nd3fycjv", Some("storyteller_"), Some(".mp4"));
+        let links = MediaLinksBuilder::from_media_path_and_env(DOMAIN, ENV, &media_path);
+        assert_eq!(links.cdn_url.as_str(), format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4"));
+        let video_previews = links.maybe_video_previews.expect("should have previews");
+        assert_eq!(video_previews.still.as_str(), format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated.as_str(), format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif"));
+        assert_eq!(video_previews.still_thumbnail_template, format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.jpg"));
+        assert_eq!(video_previews.animated_thumbnail_template, format!("{DEV_CDN}/media/t/6/c/n/y/t6cnyw4g3e8k7carkk2bvrt6nd3fycjv/storyteller_t6cnyw4g3e8k7carkk2bvrt6nd3fycjv.mp4-thumb.gif"));
       }
     }
   }
