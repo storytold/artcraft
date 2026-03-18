@@ -513,6 +513,14 @@ export const PaintSurface = ({
             const cursorNode = cursorShapeRef.current;
             const cursorLayer = cursorLayerRef.current;
             if (cursorNode && cursorLayer) {
+              const stX = stage.x();
+              const stY = stage.y();
+              const scX = stage.scaleX();
+              const scY = stage.scaleY();
+              cursorLayer.x(-stX / scX);
+              cursorLayer.y(-stY / scY);
+              cursorLayer.scaleX(1 / scX);
+              cursorLayer.scaleY(1 / scY);
               cursorNode.position(pointer);
               cursorLayer.batchDraw();
             }
@@ -954,15 +962,20 @@ export const PaintSurface = ({
 
       cursorNode.visible(true);
       cursorNode.position(cursorPositionRef.current);
-      cursorNode.radius(brushSize / 2);
+      cursorNode.radius((activeTool === "inpaint" ? inpaintBrushSize : brushSize) / 2);
 
       if (activeTool === "draw") {
         cursorNode.fill(brushColor);
         cursorNode.stroke("rgba(255, 255, 255, 0.7)");
         cursorNode.strokeWidth(1);
       } else if (activeTool === "inpaint") {
-        cursorNode.fill(InpaintingColor);
-        cursorNode.stroke("rgba(255, 255, 255, 0.7)");
+        if (inpaintOperation === "add") {
+          cursorNode.fill(InpaintingColor);
+          cursorNode.stroke("rgba(255, 255, 255, 0.7)");
+        } else {
+          cursorNode.fill("rgba(255, 255, 255, 0.3)");
+          cursorNode.stroke("rgba(0, 0, 0, 0.7)");
+        }
         cursorNode.strokeWidth(1);
       } else {
         cursorNode.fill("rgba(255, 255, 255, 0.3)");
@@ -974,7 +987,7 @@ export const PaintSurface = ({
     }
     cursorLayer.batchDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cursorVisibleLocal, activeTool, brushColor, brushSize]);
+  }, [cursorVisibleLocal, activeTool, brushColor, brushSize, inpaintBrushSize, inpaintOperation]);
 
   const renderNode = useCallback(
     (node: Node | LineNode) => {
