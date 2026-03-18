@@ -48,7 +48,7 @@ pub async fn process_single_media_file(
   info!("Generated JPG thumbnail for {}", media_file.token.as_str());
 
   let jpg_object_path = format!("{video_object_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}");
-
+  
   deps
       .public_bucket_client
       .upload_filename(&jpg_object_path, &jpg_path)

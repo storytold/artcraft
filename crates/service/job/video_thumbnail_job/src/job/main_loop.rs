@@ -54,8 +54,8 @@ async fn run_batch_cycle(deps: &JobDependencies) -> anyhow::Result<u64> {
         custom_max_lookback_hours: deps.custom_max_lookback_hours,
         custom_page_size: deps.custom_page_size,
         maybe_id_cursor: maybe_cursor,
+        executor: &deps.mysql_pool,
       },
-      &deps.mysql_pool,
     ).await?;
 
     if result.media_files.is_empty() {
