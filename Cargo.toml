@@ -65,6 +65,7 @@ members = [
   "crates/lib/easyenv", # NB: Vendored version of https://github.com/echelon/easyenv.rs that we'll improve.
   "crates/lib/email_sender",
   "crates/lib/errors",
+  "crates/lib/ffmpeg_utils",
   "crates/lib/files/archives",
   "crates/lib/files/file_to_base64_url",
   "crates/lib/files/filesys",
@@ -233,6 +234,7 @@ easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
 enums_public = { path = "crates/schema/public/enums_public" }
 errors = { path = "crates/lib/errors" }
+ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }
 fal_client = { path = "crates/api_clients/fal_client" }
 file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }
 filesys = { path = "crates/lib/files/filesys" }

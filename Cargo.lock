@@ -4243,6 +4243,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ffmpeg_utils"
+version = "0.0.1"
+dependencies = [
+ "errors",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "ffprobe"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

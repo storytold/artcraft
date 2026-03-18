@@ -1,0 +1,24 @@
+[package]
+name = "ffmpeg_utils"
+description = "Common tools and commands for ffmpeg and ffprobe."
+edition = "2024"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+name = "ffmpeg_utils"
+path = "src/lib.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# Internal
+errors.workspace = true
