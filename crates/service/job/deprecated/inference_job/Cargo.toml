@@ -39,7 +39,7 @@ images.workspace = true
 jobs_common = { path = "../../../../lib/jobs_common" }
 media = { path = "../../../../lib/files/media" }
 memory_caching = { path = "../../../../lib/caching/memory_caching" }
-migration = { path = "../../../../lib/migration" }
+migration = { path = "../../../../schema/database/migration" }
 mimetypes = { path = "../../../../lib/files/mimetypes" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
 primitives.workspace = true

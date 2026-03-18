@@ -82,7 +82,7 @@ members = [
   "crates/lib/machine_learning/ml_weights_registry",
   "crates/lib/machine_learning/prompt_engineering",
   "crates/lib/markdown",
-  "crates/lib/migration",
+  "crates/schema/database/migration",
   "crates/lib/password",
   "crates/lib/server_environment",
   "crates/lib/sqlx_mysql_helpers",

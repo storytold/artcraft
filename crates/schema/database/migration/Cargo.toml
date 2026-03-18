@@ -25,7 +25,7 @@ bucket_paths.workspace = true
 cloud_storage.workspace = true
 enums.workspace = true
 errors.workspace = true
-jobs_common = { path = "../../lib/jobs_common" }
+jobs_common = { path = "../../../lib/jobs_common" }
 mysql_queries.workspace = true
 tokens.workspace = true
 

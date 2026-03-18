@@ -62,7 +62,7 @@ images.workspace = true
 markdown = { path = "../../../lib/markdown" }
 media = { path = "../../../lib/files/media" }
 memory_caching = { path = "../../../lib/caching/memory_caching" }
-migration = { path = "../../../lib/migration" }
+migration = { path = "../../../schema/database/migration" }
 mimetypes.workspace = true
 mysql_queries.workspace = true
 password = { path = "../../../lib/password" }
