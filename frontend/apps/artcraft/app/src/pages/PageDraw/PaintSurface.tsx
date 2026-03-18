@@ -814,6 +814,17 @@ export const PaintSurface = ({
 
       stage.scale({ x: newScale, y: newScale });
       stage.position(newPos);
+
+      const cursorNode = cursorShapeRef.current;
+      const cursorLayer = cursorLayerRef.current;
+      if (cursorNode && cursorLayer && cursorPositionRef.current) {
+        cursorLayer.x(-newPos.x / newScale);
+        cursorLayer.y(-newPos.y / newScale);
+        cursorLayer.scaleX(1 / newScale);
+        cursorLayer.scaleY(1 / newScale);
+        cursorNode.position(cursorPositionRef.current);
+        cursorLayer.batchDraw();
+      }
     }
   };
 
@@ -855,6 +866,17 @@ export const PaintSurface = ({
 
         stage.scale({ x: newScale, y: newScale });
         stage.position(newPos);
+
+        const cursorNode = cursorShapeRef.current;
+        const cursorLayer = cursorLayerRef.current;
+        if (cursorNode && cursorLayer && cursorPositionRef.current) {
+          cursorLayer.x(-newPos.x / newScale);
+          cursorLayer.y(-newPos.y / newScale);
+          cursorLayer.scaleX(1 / newScale);
+          cursorLayer.scaleY(1 / newScale);
+          cursorNode.position(cursorPositionRef.current);
+          cursorLayer.batchDraw();
+        }
       }
 
       setLastPinchDistance(currentDistance);
@@ -918,6 +940,14 @@ export const PaintSurface = ({
         const cursorNode = cursorShapeRef.current;
         const cursorLayer = cursorLayerRef.current;
         if (cursorNode && cursorLayer) {
+          const stX = stage.x();
+          const stY = stage.y();
+          const scX = stage.scaleX();
+          const scY = stage.scaleY();
+          cursorLayer.x(-stX / scX);
+          cursorLayer.y(-stY / scY);
+          cursorLayer.scaleX(1 / scX);
+          cursorLayer.scaleY(1 / scY);
           cursorNode.position(pointer);
           cursorLayer.batchDraw();
         }
