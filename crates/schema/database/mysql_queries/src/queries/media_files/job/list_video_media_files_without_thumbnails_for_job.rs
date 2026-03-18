@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use sqlx::{Executor, MySql};
 use tokens::tokens::media_files::MediaFileToken;
@@ -18,6 +19,7 @@ pub struct ListVideoMediaFilesWithoutThumbnailsArgs {
 pub struct VideoMediaFileWithoutThumbnail {
   pub id: i64,
   pub token: MediaFileToken,
+  pub created_at: DateTime<Utc>,
   pub maybe_thumbnail_version: Option<u8>,
   pub public_bucket_directory_hash: String,
   pub maybe_public_bucket_prefix: Option<String>,
@@ -50,6 +52,7 @@ pub async fn list_video_media_files_without_thumbnails_for_job<'e, 'c, E>(
 SELECT
     id,
     token as `token: MediaFileToken`,
+    created_at as `created_at: DateTime<Utc>`,
     maybe_thumbnail_version as `maybe_thumbnail_version: u8`,
     public_bucket_directory_hash,
     maybe_public_bucket_prefix,
