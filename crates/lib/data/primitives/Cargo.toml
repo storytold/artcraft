@@ -17,19 +17,24 @@ path = "src/lib.rs"
 normal = ["workspace-build-acceleration"]
 
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
 
 # NB: This is designed to be a central crate with few dependencies.
 # Consider the dependencies here wisely.
 # This is used in MySQL, etc., so dependencies are ill-advised.
 
 # Internal
-#errors = { path = "../../errors" }
+# **DO NOT ADD ANY!**
+# (None)
 
 # External
+# **DO NOT ADD ANY!**
 # (None)
 
 [dev-dependencies]
-testing = { path = "../../testing" }
+# Internal
+testing.workspace = true
+
+# External
 assertor = "0.0.3"
