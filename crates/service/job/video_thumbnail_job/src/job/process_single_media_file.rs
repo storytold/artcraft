@@ -4,10 +4,11 @@ use log::info;
 use tempdir::TempDir;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use bucket_paths::path_conventions::video_thumbnail_suffixes::{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX, VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX};
+use bucket_paths::path_conventions::video_thumbnail_suffixes::{CURRENT_VIDEO_THUMBNAIL_VERSION, VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX, VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX};
 use ffmpeg_utils::ffmpeg::ffmpeg_video_first_frame_to_jpg_thumbnail;
 use ffmpeg_utils::ffmpeg::ffmpeg_video_gif_preview;
 use mysql_queries::queries::media_files::thumbnails::list_video_media_files_without_thumbnails_for_job::VideoMediaFileWithoutThumbnail;
+use mysql_queries::queries::media_files::thumbnails::update_video_media_file_with_thumbnail::update_video_media_file_with_thumbnail;
 
 use crate::job_dependencies::JobDependencies;
 
@@ -73,11 +74,16 @@ pub async fn process_single_media_file(
 
   info!("Uploaded GIF preview to {}", gif_object_path);
 
-  // TODO: Update the media file record in the database with the new thumbnail version.
-  todo!("Update DB record with thumbnail version");
+  // Mark the media file as having a thumbnail in the database.
+  update_video_media_file_with_thumbnail(
+    &media_file.token,
+    CURRENT_VIDEO_THUMBNAIL_VERSION,
+    &deps.mysql_pool,
+  ).await?;
+
+  info!("Updated thumbnail version for {}", media_file.token.as_str());
 
   // `downloaded.temp_dir` is dropped here, cleaning up the temp directory and all contents.
-  #[allow(unreachable_code)]
   Ok(())
 }
 
