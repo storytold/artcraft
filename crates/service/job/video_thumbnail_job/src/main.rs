@@ -26,13 +26,12 @@ use jobs_common::job_stats::JobStats;
 use server_environment::ServerEnvironment;
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
-use crate::main_loop::main_loop;
+use crate::job::main_loop::main_loop;
 use crate::job_dependencies::JobDependencies;
 
 pub mod http_server;
+pub mod job;
 pub mod job_dependencies;
-pub mod main_loop;
-pub mod process_job;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
