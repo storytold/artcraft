@@ -800,7 +800,7 @@ dependencies = [
  "url_utils",
  "uuid 1.18.1",
  "workspace-build-acceleration",
- "world_labs_api",
+ "worldlabs_api_client",
  "wreq",
 ]
 
@@ -11647,7 +11647,7 @@ dependencies = [
  "utoipa-swagger-ui",
  "videos",
  "workspace-build-acceleration",
- "world_labs_api",
+ "worldlabs_api_client",
  "wreq",
  "zip 0.6.6",
 ]
@@ -15094,26 +15094,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "world_labs_api"
-version = "0.0.1"
-dependencies = [
- "anyhow",
- "chrono",
- "env",
- "env_logger 0.11.9",
- "errors",
- "filesys",
- "log",
- "serde",
- "serde_json",
- "strum 0.28.0",
- "tokio",
- "uuid 1.18.1",
- "workspace-build-acceleration",
- "wreq",
-]
-
-[[package]]
 name = "world_labs_consumer_client"
 version = "0.0.1"
 dependencies = [
@@ -15179,7 +15159,27 @@ dependencies = [
  "tokens",
  "tokio",
  "workspace-build-acceleration",
- "world_labs_api",
+ "worldlabs_api_client",
+]
+
+[[package]]
+name = "worldlabs_api_client"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "env",
+ "env_logger 0.11.9",
+ "errors",
+ "filesys",
+ "log",
+ "serde",
+ "serde_json",
+ "strum 0.28.0",
+ "tokio",
+ "uuid 1.18.1",
+ "workspace-build-acceleration",
+ "wreq",
 ]
 
 [[package]]

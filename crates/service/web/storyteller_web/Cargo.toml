@@ -83,7 +83,7 @@ user_input_common = { path = "../../../lib/user_input_common" }
 users.workspace = true
 ffmpeg_utils.workspace = true
 videos = { path = "../../../lib/files/videos" }
-world_labs_api.workspace = true
+worldlabs_api_client.workspace = true
 
 # Internal Components
 billing_component = { path = "../../plugins/billing" }

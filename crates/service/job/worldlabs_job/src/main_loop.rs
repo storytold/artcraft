@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::worldlabs::list_pending_worldlabs_jobs::list_pending_worldlabs_jobs;
-use world_labs_api::api::api_types::operation_id::OperationId;
-use world_labs_api::api::requests::get_operation::get_operation::{get_operation, GetOperationArgs};
+use worldlabs_api_client::api::api_types::operation_id::OperationId;
+use worldlabs_api_client::api::requests::get_operation::get_operation::{get_operation, GetOperationArgs};
 
 use crate::process_job::process_failed_job::process_failed_job;
 use crate::process_job::process_successful_job::process_successful_job;

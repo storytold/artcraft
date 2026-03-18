@@ -13,7 +13,7 @@ use mysql_queries::queries::generic_inference::worldlabs::list_pending_worldlabs
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use tokens::tokens::media_files::MediaFileToken;
-use world_labs_api::api::requests::get_operation::get_operation::GetOperationResponse;
+use worldlabs_api_client::api::requests::get_operation::get_operation::GetOperationResponse;
 use crate::job_dependencies::JobDependencies;
 
 const SPLAT_PREFIX: &str = "artcraft_";

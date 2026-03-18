@@ -23,7 +23,7 @@ use config::shared_constants::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 use jobs_common::job_stats::JobStats;
 use server_environment::ServerEnvironment;
-use world_labs_api::credentials::world_labs_api_creds::WorldLabsApiCreds;
+use worldlabs_api_client::credentials::world_labs_api_creds::WorldLabsApiCreds;
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
 use crate::main_loop::main_loop;

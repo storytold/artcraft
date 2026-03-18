@@ -23,11 +23,11 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
-use world_labs_api::api::api_types::world_labs_model::WorldLabsModel;
-use world_labs_api::api::requests::generate_world::generate_world::{generate_world, GenerateWorldArgs};
-use world_labs_api::api::requests::generate_world::http_request::{ContentReference, WorldPrompt};
-use world_labs_api::credentials::world_labs_api_creds::WorldLabsApiCreds;
-use world_labs_api::pricing::check_pricing::{calculate_cost, InputType};
+use worldlabs_api_client::api::api_types::world_labs_model::WorldLabsModel;
+use worldlabs_api_client::api::requests::generate_world::generate_world::{generate_world, GenerateWorldArgs};
+use worldlabs_api_client::api::requests::generate_world::http_request::{ContentReference, WorldPrompt};
+use worldlabs_api_client::credentials::world_labs_api_creds::WorldLabsApiCreds;
+use worldlabs_api_client::pricing::check_pricing::{calculate_cost, InputType};
 
 /// World Labs Marble 0.1-plus Splat Generation
 #[utoipa::path(

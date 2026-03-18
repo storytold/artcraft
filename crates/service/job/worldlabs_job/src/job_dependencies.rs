@@ -3,7 +3,7 @@ use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_stats::JobStats;
 use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
-use world_labs_api::credentials::world_labs_api_creds::WorldLabsApiCreds;
+use worldlabs_api_client::credentials::world_labs_api_creds::WorldLabsApiCreds;
 
 pub struct JobDependencies {
   pub mysql_pool: MySqlPool,

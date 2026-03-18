@@ -1,7 +1,7 @@
 use crate::generate::generate_splat::plan::artcraft::plan_generate_splat_artcraft_marble_0p1_mini::PlanArtcraftMarble0p1Mini;
 use crate::generate::generate_splat::splat_generation_cost_estimate::SplatGenerationCostEstimate;
-use world_labs_api::api::api_types::world_labs_model::WorldLabsModel;
-use world_labs_api::pricing::check_pricing::{calculate_cost, InputType};
+use worldlabs_api_client::api::api_types::world_labs_model::WorldLabsModel;
+use worldlabs_api_client::pricing::check_pricing::{calculate_cost, InputType};
 
 pub(crate) fn estimate_splat_cost_artcraft_marble_0p1_mini(
   plan: &PlanArtcraftMarble0p1Mini<'_>,
