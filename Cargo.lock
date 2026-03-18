@@ -4246,8 +4246,10 @@ dependencies = [
 name = "ffmpeg_utils"
 version = "0.0.1"
 dependencies = [
+ "anyhow",
  "errors",
  "ffprobe",
+ "log",
  "testing",
  "workspace-build-acceleration",
 ]

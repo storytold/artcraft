@@ -6,7 +6,7 @@ use std::process::Command;
 use std::time::Duration;
 
 use errors::AnyhowResult;
-use ffmpeg_utils::ffmpeg::ffmpeg_timestamp_from_duration::ffmpeg_timestamp_from_duration;
+use crate::ffmpeg::ffmpeg_timestamp_from_duration::ffmpeg_timestamp_from_duration;
 
 pub struct Args<'a> {
   pub video_input_path: &'a Path,

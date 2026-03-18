@@ -1,2 +1,1 @@
-pub mod ffmpeg_trim_and_resample;
 pub mod upload_new_video_media_file_handler;

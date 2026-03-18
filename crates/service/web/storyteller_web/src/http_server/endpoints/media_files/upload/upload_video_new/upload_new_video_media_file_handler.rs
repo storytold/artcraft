@@ -17,6 +17,8 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
+use ffmpeg_utils::ffmpeg::ffmpeg_trim_and_resample::{ffmpeg_trim_and_resample, Args};
+use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 use filesys::file_read_bytes::file_read_bytes;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
@@ -28,10 +30,8 @@ use mysql_queries::queries::media_files::create::specialized_insert::insert_medi
 use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
-use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
-use crate::http_server::endpoints::media_files::upload::upload_video_new::ffmpeg_trim_and_resample::{ffmpeg_trim_and_resample, Args};
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 
