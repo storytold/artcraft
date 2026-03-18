@@ -47,7 +47,7 @@ config = { path = "../../../lib/deprecated/config" }
 cookies.workspace = true
 crockford = { path = "../../../lib/data/crockford" }
 datetimes = { path = "../../../lib/data/datetimes" }
-easyenv = { path = "../../../lib/easyenv" }
+easyenv.workspace = true
 elasticsearch_schema = { path = "../../../schema/database/elasticsearch_schema" }
 email_sender= { path = "../../../lib/email_sender" }
 enums.workspace = true

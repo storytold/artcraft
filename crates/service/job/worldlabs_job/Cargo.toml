@@ -21,12 +21,12 @@ workspace-build-acceleration = { workspace = true }
 
 # Internal
 actix_helpers.workspace = true
-bootstrap = { path = "../../../lib/bootstrap" }
+bootstrap.workspace = true
 bucket_paths = { path = "../../../lib/bucket_paths" }
 cloud_storage.workspace = true
-concurrency = { path = "../../../lib/concurrency" }
+concurrency.workspace = true
 config = { path = "../../../lib/deprecated/config" }
-easyenv = { path = "../../../lib/easyenv" }
+easyenv.workspace = true
 enums.workspace = true
 errors.workspace = true
 hashing = { path = "../../../lib/files/hashing" }

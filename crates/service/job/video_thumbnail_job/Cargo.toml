@@ -24,11 +24,11 @@ actix_helpers.workspace = true
 bootstrap.workspace = true
 bucket_paths = { path = "../../../lib/bucket_paths" }
 cloud_storage.workspace = true
-concurrency = { path = "../../../lib/concurrency" }
+concurrency.workspace = true
 config = { path = "../../../lib/deprecated/config" }
 easyenv.workspace = true
 errors.workspace = true
-jobs_common = { path = "../../../lib/jobs_common" }
+jobs_common.workspace = true
 mysql_queries.workspace = true
 server_environment = { path = "../../../lib/server_environment" }
 
