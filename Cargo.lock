@@ -13687,6 +13687,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
+name = "video-thumbnail-job"
+version = "0.0.1"
+dependencies = [
+ "actix-web",
+ "actix_helpers",
+ "anyhow",
+ "bootstrap",
+ "bucket_paths",
+ "cloud_storage",
+ "concurrency",
+ "config",
+ "easyenv",
+ "enums",
+ "errors",
+ "hashing",
+ "jobs_common",
+ "log",
+ "mysql_queries",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "server_environment",
+ "sqlx",
+ "tokens",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "videos"
 version = "0.0.1"
 dependencies = [
