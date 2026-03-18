@@ -7,7 +7,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use bucket_paths::path_conventions::video_thumbnail_suffixes::{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX, VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX};
 use ffmpeg_utils::ffmpeg::ffmpeg_video_first_frame_to_jpg_thumbnail;
 use ffmpeg_utils::ffmpeg::ffmpeg_video_gif_preview;
-use mysql_queries::queries::media_files::job::list_video_media_files_without_thumbnails_for_job::VideoMediaFileWithoutThumbnail;
+use mysql_queries::queries::media_files::thumbnails::list_video_media_files_without_thumbnails_for_job::VideoMediaFileWithoutThumbnail;
 
 use crate::job_dependencies::JobDependencies;
 

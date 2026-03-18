@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\n      UPDATE media_files\n      SET maybe_thumbnail_version = ?\n      WHERE token = ?\n      LIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "87d7233bb9a4bcae7c9b7d55bb93fab182343847f0bcf8d8ce849f3a2dcfb704"
+}

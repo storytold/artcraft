@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use log::{error, info, warn};
 
-use mysql_queries::queries::media_files::job::list_video_media_files_without_thumbnails_for_job::{
+use mysql_queries::queries::media_files::thumbnails::list_video_media_files_without_thumbnails_for_job::{
   list_video_media_files_without_thumbnails_for_job,
   ListVideoMediaFilesWithoutThumbnailsArgs,
 };
