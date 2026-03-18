@@ -1,13 +1,15 @@
-use crate::extension::download_extension::DownloadExtension;
+use crate::download_extension::DownloadExtension;
 use url::Url;
 
 /// This should be used for naming files on the local file system based on their URL.
+#[deprecated(note = "Use `extract_extension_from_url_str` in `url_utils::extension::extract_extension_from_url` instead")]
 pub fn extract_download_extension_from_url_str(url: &str) -> Option<DownloadExtension> {
   let parsed_url = Url::parse(url).ok()?;
   extract_download_extension_from_url(&parsed_url)
 }
 
 /// This should be used for naming files on the local file system based on their URL.
+#[deprecated(note = "Use `extract_extension_from_url` in `url_utils::extension::extract_extension_from_url` instead")]
 pub fn extract_download_extension_from_url(url: &Url) -> Option<DownloadExtension> {
   let path = url.path();
   let extension = std::path::Path::new(path)
@@ -18,8 +20,8 @@ pub fn extract_download_extension_from_url(url: &Url) -> Option<DownloadExtensio
 
 #[cfg(test)]
 mod tests {
-  use crate::extension::download_extension::DownloadExtension;
-  use crate::extension::extract_download_extension_from_url::extract_download_extension_from_url_str;
+  use crate::download_extension::DownloadExtension;
+  use crate::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str;
 
   #[test]
   fn success_case() {

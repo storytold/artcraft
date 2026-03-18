@@ -1,5 +1,6 @@
 
 /// When downloading a remote file, it makes sense to try to match the same file extension (with reasonable safeguards).
+#[deprecated(note = "Use `Extension` in `url_utils::extension::extension` instead")]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum DownloadExtension {
   // Image

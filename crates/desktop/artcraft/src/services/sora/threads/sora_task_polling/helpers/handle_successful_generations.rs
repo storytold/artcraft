@@ -43,7 +43,7 @@ use artcraft_client::endpoints::media_files::upload_video_media_file_from_file::
 use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
 use tauri::AppHandle;
 use tempdir::TempDir;
-use url_utils::extension::extract_download_extension_from_url::{extract_download_extension_from_url, extract_download_extension_from_url_str};
+use url_utils::download_extension::extract_download_extension_from_url::{extract_download_extension_from_url, extract_download_extension_from_url_str};
 
 pub struct SuccessfulGeneration {
   pub prompt: Option<String>,
