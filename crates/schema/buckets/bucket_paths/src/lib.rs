@@ -24,6 +24,5 @@
 #![allow(non_snake_case)]
 
 pub mod legacy;
-pub mod pathing;
-pub mod traits;
+pub mod path_conventions;
 pub mod util;

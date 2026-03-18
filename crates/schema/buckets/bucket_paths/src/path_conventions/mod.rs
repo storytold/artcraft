@@ -1,0 +1,1 @@
+pub mod video_thumbnail_suffixes;

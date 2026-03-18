@@ -16,13 +16,15 @@ path = "src/lib.rs"
 normal = ["workspace-build-acceleration"]
 
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration = { workspace = true }
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
 
-# Internal
+# Internal 
+# (try not to add new deps as this is used by many crates)
 crockford.workspace = true
 
 # External
+# (try not to add new deps as this is used by many crates)
 # (None yet)
 
 [dev-dependencies]
