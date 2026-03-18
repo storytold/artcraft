@@ -18,7 +18,7 @@ normal = ["workspace-build-acceleration"]
 [dependencies]
 
 # Internal
-bucket_paths = { path = "../../../lib/bucket_paths" }
+bucket_paths.workspace = true
 cloud_storage.workspace = true
 config = { path = "../../../lib/deprecated/config" }
 easyenv = { path = "../../../lib/easyenv" }

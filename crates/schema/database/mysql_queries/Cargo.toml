@@ -20,7 +20,7 @@ path = "src/lib.rs"
 workspace-build-acceleration.workspace = true
 
 # Internal
-bucket_paths = { path = "../../../lib/bucket_paths" }
+bucket_paths.workspace = true
 composite_identifiers = { path = "../../../schema/public/composite_identifiers" }
 enums = { workspace = true, features = ["database"] }
 errors.workspace = true

@@ -22,7 +22,7 @@ workspace-build-acceleration.workspace = true
 # Internal
 actix_helpers = { path = "../../../lib/actix_helpers" }
 bootstrap = { path = "../../../lib/bootstrap" }
-bucket_paths = { path = "../../../lib/bucket_paths" }
+bucket_paths.workspace = true
 cloud_storage.workspace = true
 collections = { path = "../../../lib/data/collections" }
 composite_identifiers = { path = "../../../schema/public/composite_identifiers" }

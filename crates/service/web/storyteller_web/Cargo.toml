@@ -38,7 +38,7 @@ actix_helpers.workspace = true
 artcraft_api_defs.workspace = true
 artcraft_router.workspace = true
 bootstrap.workspace = true
-bucket_paths = { path = "../../../lib/bucket_paths" }
+bucket_paths.workspace = true
 cloud_storage.workspace = true
 collections.workspace = true
 component_traits.workspace = true

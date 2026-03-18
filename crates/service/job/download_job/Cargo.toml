@@ -21,7 +21,7 @@ workspace-build-acceleration.workspace = true
 
 # Internal
 bootstrap = { path = "../../../lib/bootstrap" }
-bucket_paths = { path = "../../../lib/bucket_paths" }
+bucket_paths.workspace = true
 cloud_storage.workspace = true
 concurrency = { path = "../../../lib/concurrency" }
 config = { path = "../../../lib/deprecated/config" }
