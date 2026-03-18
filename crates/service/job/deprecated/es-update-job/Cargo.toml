@@ -18,21 +18,21 @@ normal = ["workspace-build-acceleration"]
 [dependencies]
 
 # Internal
-bootstrap = { path = "../../../lib/bootstrap" }
-config = { path = "../../../lib/deprecated/config" }
-easyenv = { path = "../../../lib/easyenv" }
-elasticsearch_schema = { path = "../../../schema/database/elasticsearch_schema" }
-enums = { path = "../../../schema/public/enums" }
-errors = { path = "../../../lib/errors" }
-mysql_queries = { path = "../../../schema/database/mysql_queries" }
-primitives = { path = "../../../lib/data/primitives" }
-reusable_types = { path = "../../../schema/public/reusable_types" }
-server_environment = { path = "../../../lib/server_environment" }
-storyteller_root = { path = "../../../lib/storyteller_root" }
-tokens = { path = "../../../schema/public/tokens" }
+bootstrap = { path = "../../../../lib/bootstrap" }
+config = { path = "../../../../lib/deprecated/config" }
+easyenv = { path = "../../../../lib/easyenv" }
+elasticsearch_schema = { path = "../../../../schema/database/elasticsearch_schema" }
+enums = { path = "../../../../schema/public/enums" }
+errors = { path = "../../../../lib/errors" }
+mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+primitives = { path = "../../../../lib/data/primitives" }
+reusable_types = { path = "../../../../schema/public/reusable_types" }
+server_environment = { path = "../../../../lib/server_environment" }
+storyteller_root = { path = "../../../../lib/storyteller_root" }
+tokens = { path = "../../../../schema/public/tokens" }
 
 # Workspace hack (faster compile times)
-workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
+workspace-build-acceleration = { version = "0.1", path = "../../../../workspace-build-acceleration" }
 
 # External
 anyhow = "1.0.86"

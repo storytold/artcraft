@@ -1,0 +1,59 @@
+[package]
+name = "tts-inference-job"
+edition = "2018"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[[bin]]
+name = "tts-inference-job"
+path = "src/main.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# Internal
+bucket_paths.workspace = true
+cloud_storage.workspace = true
+collections = { path = "../../../../lib/data/collections" }
+config = { path = "../../../../lib/deprecated/config" }
+easyenv = { path = "../../../../lib/easyenv" }
+errors.workspace = true
+filesys.workspace = true
+hashing = { path = "../../../../lib/files/hashing" }
+jobs_common = { path = "../../../../lib/jobs_common" }
+memory_caching = { path = "../../../../lib/caching/memory_caching" }
+mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+tts_common = { path = "../../../../lib/tts_common" }
+
+# External
+anyhow.workspace = true
+chrono.workspace = true
+dotenv = "0.15.0"
+hostname = "0.4.0"
+lfu = "0.2.5"
+log = "0.4.14"
+tempdir.workspace = true
+
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+
+# Redis
+r2d2_redis = "0.14.0"
+
+# Runtime
+tokio.workspace = true
+
+# HTTP
+reqwest = { version = "0.12.4", default-features = false, features = ["charset", "http2", "system-proxy", "blocking", "rustls-tls"] }
+
+# Serialization
+serde.workspace = true
+serde_derive.workspace = true
+serde_json.workspace = true

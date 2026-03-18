@@ -20,37 +20,37 @@ normal = ["workspace-build-acceleration"]
 workspace-build-acceleration.workspace = true
 
 # Internal
-actix_helpers = { path = "../../../lib/actix_helpers" }
-bootstrap = { path = "../../../lib/bootstrap" }
+actix_helpers = { path = "../../../../lib/actix_helpers" }
+bootstrap = { path = "../../../../lib/bootstrap" }
 bucket_paths.workspace = true
 cloud_storage.workspace = true
-collections = { path = "../../../lib/data/collections" }
-composite_identifiers = { path = "../../../schema/public/composite_identifiers" }
-concurrency = { path = "../../../lib/concurrency" }
-config = { path = "../../../lib/deprecated/config" }
+collections = { path = "../../../../lib/data/collections" }
+composite_identifiers = { path = "../../../../schema/public/composite_identifiers" }
+concurrency = { path = "../../../../lib/concurrency" }
+config = { path = "../../../../lib/deprecated/config" }
 crockford.workspace = true
-easyenv = { path = "../../../lib/easyenv" }
+easyenv = { path = "../../../../lib/easyenv" }
 enums.workspace = true
 errors.workspace = true
 filesys.workspace = true
-google_drive_common = { path = "../../../api_clients/google_drive_common" }
-hashing = { path = "../../../lib/files/hashing" }
+google_drive_common = { path = "../../../../api_clients/google_drive_common" }
+hashing = { path = "../../../../lib/files/hashing" }
 images.workspace = true
-jobs_common = { path = "../../../lib/jobs_common" }
-media = { path = "../../../lib/files/media" }
-memory_caching = { path = "../../../lib/caching/memory_caching" }
-migration = { path = "../../../lib/migration" }
-mimetypes = { path = "../../../lib/files/mimetypes" }
-mysql_queries = { path = "../../../schema/database/mysql_queries" }
+jobs_common = { path = "../../../../lib/jobs_common" }
+media = { path = "../../../../lib/files/media" }
+memory_caching = { path = "../../../../lib/caching/memory_caching" }
+migration = { path = "../../../../lib/migration" }
+mimetypes = { path = "../../../../lib/files/mimetypes" }
+mysql_queries = { path = "../../../../schema/database/mysql_queries" }
 primitives.workspace = true
-redis_common = { path = "../../../schema/database/redis_common" }
-redis_schema = { path = "../../../schema/database/redis_schema" }
-subprocess_common = { path = "../../../lib/subprocess_common" }
-thumbnail_generator = { path = "../../../api_clients/thumbnail_generator"}
+redis_common = { path = "../../../../schema/database/redis_common" }
+redis_schema = { path = "../../../../schema/database/redis_schema" }
+subprocess_common = { path = "../../../../lib/subprocess_common" }
+thumbnail_generator = { path = "../../../../api_clients/thumbnail_generator"}
 tokens.workspace = true
-tts_common = { path = "../../../lib/tts_common" }
+tts_common = { path = "../../../../lib/tts_common" }
 ffmpeg_utils.workspace = true
-videos = { path = "../../../lib/files/videos" }
+videos = { path = "../../../../lib/files/videos" }
 
 # External
 anyhow.workspace = true
@@ -102,4 +102,4 @@ zip = "2.1.3"
 url = { workspace = true }
 
 [dev-dependencies]
-testing = { path = "../../../lib/testing" }
+testing = { path = "../../../../lib/testing" }

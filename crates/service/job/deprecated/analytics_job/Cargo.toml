@@ -18,17 +18,17 @@ normal = ["workspace-build-acceleration"]
 [dependencies]
 
 # Internal
-config = { path = "../../../lib/deprecated/config" }
-datetimes = { path = "../../../lib/data/datetimes" }
-easyenv = { path = "../../../lib/easyenv" }
+config = { path = "../../../../lib/deprecated/config" }
+datetimes = { path = "../../../../lib/data/datetimes" }
+easyenv = { path = "../../../../lib/easyenv" }
 enums = { workspace = true, default-features = false, features = [] }
-errors = { path = "../../../lib/errors" }
-mysql_queries = { path = "../../../schema/database/mysql_queries" }
-reusable_types = { path = "../../../schema/public/reusable_types" }
+errors = { path = "../../../../lib/errors" }
+mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+reusable_types = { path = "../../../../schema/public/reusable_types" }
 tokens = { workspace = true, default-features = false, features = [] }
 
 # Workspace hack (faster compile times)
-workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
+workspace-build-acceleration = { version = "0.1", path = "../../../../workspace-build-acceleration" }
 
 # External
 anyhow = "1.0.86"

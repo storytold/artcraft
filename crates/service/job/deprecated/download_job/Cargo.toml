@@ -1,35 +1,44 @@
 [package]
-name = "w2l-inference-job"
+name = "download-job"
+publish = false
 edition = "2018"
 version = "0.0.1"
 authors = [
     "Brandon Thomas <bt@brand.io>",
     "Brandon Thomas <echelon@gmail.com>",
 ]
-publish = false
 
 [[bin]]
-name = "w2l-inference-job"
+name = "download-job"
 path = "src/main.rs"
 
 [package.metadata.cargo-udeps.ignore]
 normal = ["workspace-build-acceleration"]
 
 [dependencies]
-
 # Workspace hack (faster compile times)
 workspace-build-acceleration.workspace = true
 
 # Internal
+bootstrap = { path = "../../../../lib/bootstrap" }
 bucket_paths.workspace = true
 cloud_storage.workspace = true
-config = { path = "../../../lib/deprecated/config" }
-easyenv = { path = "../../../lib/easyenv" }
+concurrency = { path = "../../../../lib/concurrency" }
+config = { path = "../../../../lib/deprecated/config" }
+crockford = { path = "../../../../lib/data/crockford" }
+easyenv = { path = "../../../../lib/easyenv" }
+enums.workspace = true
 errors.workspace = true
 filesys.workspace = true
-google_drive_common = { path = "../../../api_clients/google_drive_common" }
-jobs_common = { path = "../../../lib/jobs_common" }
-mysql_queries = { path = "../../../schema/database/mysql_queries" }
+google_drive_common = { path = "../../../../api_clients/google_drive_common" }
+hashing = { path = "../../../../lib/files/hashing" }
+jobs_common = { path = "../../../../lib/jobs_common" }
+mimetypes.workspace = true
+mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+reusable_types = { path = "../../../../schema/public/reusable_types" }
+storyteller_root = { path = "../../../../lib/storyteller_root" }
+subprocess_common = { path = "../../../../lib/subprocess_common" }
+tokens.workspace = true
 
 # External
 anyhow.workspace = true
@@ -39,6 +48,7 @@ hostname = "0.4.0"
 log.workspace = true
 subprocess = "0.2.9"
 tempdir.workspace = true
+zip = "0.6.6"
 
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
 

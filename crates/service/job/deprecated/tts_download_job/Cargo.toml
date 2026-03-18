@@ -1,5 +1,5 @@
 [package]
-name = "w2l-download-job"
+name = "tts-download-job"
 edition = "2018"
 version = "0.0.1"
 authors = [
@@ -9,27 +9,29 @@ authors = [
 publish = false
 
 [[bin]]
-name = "w2l-download-job"
+name = "tts-download-job"
 path = "src/main.rs"
 
 [package.metadata.cargo-udeps.ignore]
 normal = ["workspace-build-acceleration"]
 
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration.workspace = true
 
 # Internal
 bucket_paths.workspace = true
-cloud_storage = { path = "../../../api_clients/cloud_storage" }
-config = { path = "../../../lib/deprecated/config" }
-easyenv = { path = "../../../lib/easyenv" }
+cloud_storage.workspace = true
+config = { path = "../../../../lib/deprecated/config" }
+easyenv = { path = "../../../../lib/easyenv" }
+enums.workspace = true
 errors.workspace = true
 filesys.workspace = true
-google_drive_common = { path = "../../../api_clients/google_drive_common" }
-hashing = { path = "../../../lib/files/hashing" }
-jobs_common = { path = "../../../lib/jobs_common" }
-mysql_queries = { path = "../../../schema/database/mysql_queries" }
+google_drive_common = { path = "../../../../api_clients/google_drive_common" }
+hashing = { path = "../../../../lib/files/hashing" }
+jobs_common = { path = "../../../../lib/jobs_common" }
+mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+
+# Workspace hack (faster compile times)
+workspace-build-acceleration = { version = "0.1", path = "../../../../workspace-build-acceleration" }
 
 # External
 anyhow.workspace = true
@@ -46,7 +48,6 @@ sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chron
 r2d2_redis = "0.14.0"
 
 # Runtime
-# NB: We switched to Tokio from `async-std` for broader ecosystem support.
 tokio.workspace = true
 
 # NB: Hyper is just for HTTP client use in jobs. I'd use Actix client, but I need tokio runtime

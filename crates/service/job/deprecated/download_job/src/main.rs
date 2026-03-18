@@ -77,7 +77,7 @@ async fn main() -> AnyhowResult<()> {
   let container_environment = bootstrap(BootstrapArgs {
     app_name: "download-job",
     default_logging_override: Some(DEFAULT_RUST_LOG),
-    config_search_directories: &[".", "./config", "crates/service/job/download_job/config"],
+    config_search_directories: &[".", "./config", "crates/service/job/deprecated/download_job/config"],
     ignore_legacy_dot_env_file: true,
   })?;
 

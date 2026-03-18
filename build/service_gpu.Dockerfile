@@ -178,11 +178,11 @@ RUN touch .env-secrets
 
 # Some services have default env files that live under their code directories
 # These should also be readable from the relative current path
-COPY crates/service/job/download_job/config/download-job.common.env .
-COPY crates/service/job/download_job/config/download-job.production.env .
+COPY crates/service/job/deprecated/download_job/config/download-job.common.env .
+COPY crates/service/job/deprecated/download_job/config/download-job.production.env .
 
-COPY crates/service/job/inference_job/config/inference-job.common.env .
-COPY crates/service/job/inference_job/config/inference-job.production.env .
+COPY crates/service/job/deprecated/inference_job/config/inference-job.common.env .
+COPY crates/service/job/deprecated/inference_job/config/inference-job.production.env .
 
 # # Need python to make use of other containers' venv
 # # TODO(bt,2023-04-26): This is only necessary for download-job and inference-job
