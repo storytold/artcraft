@@ -17,12 +17,12 @@ path = "src/lib.rs"
 workspace-build-acceleration = { workspace =  true }
 
 # Internal
-errors = { path = "../../errors" }
+errors.workspace = true
 
 # External
-anyhow = { workspace = true }
-base64 = { workspace = true }
-mimetypes = { workspace = true }
+anyhow.workspace = true
+base64.workspace = true
+mimetypes.workspace = true
 
 [dev-dependencies]
 testing = { path = "../../testing" }
