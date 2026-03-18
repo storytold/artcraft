@@ -6,6 +6,12 @@ use jobs_common::job_stats::JobStats;
 use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 
+/// Optional sharding configuration for distributing work across parallel job instances.
+pub struct ShardInfo {
+  pub number_of_shards: u8,
+  pub shard_index: u8,
+}
+
 pub struct JobDependencies {
   pub mysql_pool: MySqlPool,
 
@@ -33,6 +39,9 @@ pub struct JobDependencies {
 
   /// Root directory for temporary files (video downloads, thumbnail intermediates).
   pub temp_dir: PathBuf,
+
+  /// If present, only process media files where `id % number_of_shards == shard_index`.
+  pub shard_info: Option<ShardInfo>,
 
   /// Set to `true` from another thread to trigger graceful shutdown.
   pub application_shutdown: RelaxedAtomicBool,

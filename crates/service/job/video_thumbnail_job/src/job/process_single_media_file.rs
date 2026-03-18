@@ -24,6 +24,14 @@ pub async fn process_single_media_file(
   deps: &JobDependencies,
   media_file: &VideoMediaFileWithoutThumbnail,
 ) -> anyhow::Result<()> {
+
+  info!(
+    "Processing media file {:?} (id: {}, created at: {})",
+    media_file.token,
+    media_file.id,
+    media_file.created_at,
+  );
+
   let downloaded = download_video(deps, media_file).await?;
 
   info!(
@@ -86,7 +94,12 @@ pub async fn process_single_media_file(
     &deps.mysql_pool,
   ).await?;
 
-  info!("Updated thumbnail version for {}", media_file.token.as_str());
+  info!(
+    "Updated thumbnail version for media file {:?} (id: {}, created at: {})",
+    media_file.token,
+    media_file.id,
+    media_file.created_at,
+  );
 
   // `downloaded.temp_dir` is dropped here, cleaning up the temp directory and all contents.
   Ok(())

@@ -67,6 +67,14 @@ async fn run_batch_cycle(deps: &JobDependencies) -> anyhow::Result<u64> {
         break;
       }
 
+      // If sharding is enabled, skip media files that don't belong to this shard.
+      if let Some(shard_info) = &deps.shard_info {
+        let modulus = (media_file.id as u64) % (shard_info.number_of_shards as u64);
+        if modulus != shard_info.shard_index as u64 {
+          continue;
+        }
+      }
+
       match process_single_media_file(deps, media_file).await {
         Ok(()) => {
           let _ = deps.job_stats.increment_success_count();

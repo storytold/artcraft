@@ -27,7 +27,7 @@ use server_environment::ServerEnvironment;
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
 use crate::job::main_loop::main_loop;
-use crate::job_dependencies::JobDependencies;
+use crate::job_dependencies::{JobDependencies, ShardInfo};
 
 pub mod http_server;
 pub mod job;
@@ -130,6 +130,23 @@ async fn main() -> AnyhowResult<()> {
   // Ensure the temp directory exists
   tokio::fs::create_dir_all(&temp_dir).await?;
 
+  // Optional sharding configuration
+  let maybe_number_of_shards: Option<u8> = easyenv::get_env_string_optional("NUMBER_OF_SHARDS")
+      .and_then(|s| s.parse().ok());
+  let maybe_shard_index: Option<u8> = easyenv::get_env_string_optional("SHARD_INDEX")
+      .and_then(|s| s.parse().ok());
+
+  let shard_info = match (maybe_number_of_shards, maybe_shard_index) {
+    (Some(number_of_shards), Some(shard_index)) => {
+      info!("Sharding enabled: shard {shard_index} of {number_of_shards}");
+      Some(ShardInfo { number_of_shards, shard_index })
+    }
+    _ => {
+      info!("Sharding disabled: processing all media files.");
+      None
+    }
+  };
+
   let application_shutdown = RelaxedAtomicBool::new(false);
   let job_stats = JobStats::new();
 
@@ -149,6 +166,7 @@ async fn main() -> AnyhowResult<()> {
     custom_max_lookback_hours,
     custom_page_size,
     temp_dir,
+    shard_info,
     application_shutdown: application_shutdown.clone(),
   };
 
