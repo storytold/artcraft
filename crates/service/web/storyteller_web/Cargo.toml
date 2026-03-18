@@ -82,6 +82,7 @@ url_config = { path = "../../../lib/url_config" }
 url_utils = { path = "../../../lib/url_utils" }
 user_input_common = { path = "../../../lib/user_input_common" }
 users.workspace = true
+ffmpeg_utils.workspace = true
 videos = { path = "../../../lib/files/videos" }
 world_labs_api.workspace = true
 

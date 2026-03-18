@@ -3,7 +3,7 @@ use log::debug;
 use std::path::Path;
 use std::time::Duration;
 use subprocess_common::command_runner::command_args::CommandArgs;
-use videos::ffmpeg_timestamp_from_duration::ffmpeg_timestamp_from_duration;
+use ffmpeg_utils::ffmpeg::ffmpeg_timestamp_from_duration::ffmpeg_timestamp_from_duration;
 
 /// Trim a video's duration
 /// See: https://shotstack.io/learn/use-ffmpeg-to-trim-video/
