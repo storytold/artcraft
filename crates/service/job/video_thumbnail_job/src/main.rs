@@ -9,6 +9,7 @@
 
 #[macro_use] extern crate serde_derive;
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::anyhow;
@@ -96,11 +97,39 @@ async fn main() -> AnyhowResult<()> {
     Some(bucket_timeout),
   )?;
 
-  // How often to poll for work (default: 30 seconds)
+  // Job polling and timing configuration
   let poll_interval_millis: u64 = easyenv::get_env_num(
     "VIDEO_THUMBNAIL_POLL_INTERVAL_MILLIS",
     30_000,
   )?;
+
+  let query_delay_millis: u64 = easyenv::get_env_num(
+    "VIDEO_THUMBNAIL_QUERY_DELAY_MILLIS",
+    100,
+  )?;
+
+  let query_failure_retry_delay_millis: u64 = easyenv::get_env_num(
+    "VIDEO_THUMBNAIL_QUERY_FAILURE_RETRY_DELAY_MILLIS",
+    10_000,
+  )?;
+
+  // Optional overrides for query parameters
+  let custom_max_lookback_hours: Option<i32> = easyenv::get_env_string_optional(
+    "VIDEO_THUMBNAIL_MAX_LOOKBACK_HOURS",
+  ).and_then(|s| s.parse().ok());
+
+  let custom_page_size: Option<i64> = easyenv::get_env_string_optional(
+    "VIDEO_THUMBNAIL_PAGE_SIZE",
+  ).and_then(|s| s.parse().ok());
+
+  // Temp directory for video downloads and thumbnail intermediates
+  let temp_dir: PathBuf = easyenv::get_env_pathbuf_or_default(
+    "VIDEO_THUMBNAIL_TEMP_DIR",
+    "/tmp/video-thumbnails",
+  );
+
+  // Ensure the temp directory exists
+  tokio::fs::create_dir_all(&temp_dir).await?;
 
   let application_shutdown = RelaxedAtomicBool::new(false);
   let job_stats = JobStats::new();
@@ -116,6 +145,11 @@ async fn main() -> AnyhowResult<()> {
     server_environment,
     job_stats,
     poll_interval_millis,
+    query_delay_millis,
+    query_failure_retry_delay_millis,
+    custom_max_lookback_hours,
+    custom_page_size,
+    temp_dir,
     application_shutdown: application_shutdown.clone(),
   };
 
