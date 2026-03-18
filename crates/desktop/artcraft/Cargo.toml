@@ -46,7 +46,7 @@ sqlite_tasks.workspace = true
 tokens.workspace = true
 url_utils.workspace = true
 web_base64.workspace = true
-world_labs_client.workspace = true
+world_labs_consumer_client.workspace = true
 
 # External
 anyhow.workspace = true

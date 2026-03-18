@@ -58,11 +58,11 @@ use tauri::AppHandle;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use url::Url;
 use url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str;
-use world_labs_client::api::api_types::world_id::WorldObjectId;
-use world_labs_client::api::requests::worlds::poll_world_status::{poll_world_status, PollWorldStatusArgs};
-use world_labs_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;
-use world_labs_client::credentials::world_labs_cookies::WorldLabsCookies;
-use world_labs_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
+use world_labs_consumer_client::api::api_types::world_id::WorldObjectId;
+use world_labs_consumer_client::api::requests::worlds::poll_world_status::{poll_world_status, PollWorldStatusArgs};
+use world_labs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;
+use world_labs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies;
+use world_labs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
 
 pub async fn worldlabs_marble_task_polling(
   app_handle: AppHandle,

@@ -11,7 +11,7 @@ use midjourney_client::error::midjourney_error::MidjourneyError;
 use openai_sora_client::error::sora_error::SoraError;
 use artcraft_client::error::storyteller_error::StorytellerError;
 use artcraft_router::errors::download_error::DownloadError;
-use world_labs_client::error::world_labs_error::WorldLabsError;
+use world_labs_consumer_client::error::world_labs_error::WorldLabsError;
 //use fal_client::error::fal_error_plus::FalErrorPlus;
 
 #[derive(Debug)]

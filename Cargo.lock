@@ -731,7 +731,7 @@ dependencies = [
  "url_utils",
  "web_base64",
  "workspace-build-acceleration",
- "world_labs_client",
+ "world_labs_consumer_client",
 ]
 
 [[package]]
@@ -15114,7 +15114,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "world_labs_client"
+name = "world_labs_consumer_client"
 version = "0.0.1"
 dependencies = [
  "anyhow",
