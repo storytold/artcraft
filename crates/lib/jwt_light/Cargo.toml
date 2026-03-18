@@ -13,8 +13,8 @@ path = "src/lib.rs"
 
 [dependencies]
 
-# Workspace hack (faster compile times)
-workspace-build-acceleration = { workspace =  true }
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
 
 # Internal
 # (None)
