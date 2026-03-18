@@ -64,7 +64,7 @@ members = [
   "crates/lib/deprecated/email_sender",
   "crates/lib/errors",
   "crates/lib/ffmpeg_utils",
-  "crates/lib/files/archives",
+  "crates/lib/files/zip_archives",
   "crates/lib/files/file_to_base64_url",
   "crates/lib/files/filesys",
   "crates/lib/files/hashing",

@@ -1,5 +1,5 @@
 [package]
-name = "archives"
+name = "zip_archives"
 edition = "2018"
 version = "0.0.1"
 authors = [
@@ -9,9 +9,7 @@ authors = [
 publish = false
 
 [lib]
-# NB: Public "archives" crate does not exist, so it's safe to use for now.
-# We'll use this for zip, tgz, rar, etc. file types and related utilities.
-name = "archives"
+name = "zip_archives"
 path = "src/lib.rs"
 
 [package.metadata.cargo-udeps.ignore]
