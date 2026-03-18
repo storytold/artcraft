@@ -30,9 +30,9 @@ easyenv.workspace = true
 enums.workspace = true
 errors.workspace = true
 hashing = { path = "../../../lib/files/hashing" }
-jobs_common = { path = "../../../lib/jobs_common" }
-mysql_queries = { path = "../../../schema/database/mysql_queries" }
-worldlabs_api_client = { path = "../../../api_clients/worldlabs_api_client" }
+jobs_common.workspace = true
+mysql_queries.workspace = true
+worldlabs_api_client.workspace = true
 server_environment = { path = "../../../lib/server_environment" }
 tokens.workspace = true
 
