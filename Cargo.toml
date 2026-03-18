@@ -26,7 +26,6 @@ members = [
   # CLI tools for operations, etc.
   "crates/cli/devenv/dev-database-seed",
   "crates/cli/devenv/dev-upload-media-file",
-  "crates/cli/devenv/scrape-test",
   "crates/cli/production/db-backfill",
   "crates/cli/production/db-backup",
   "crates/cli/production/db-cleanup",
@@ -97,7 +96,6 @@ members = [
   "crates/lib/url_utils",
   "crates/lib/user_input_common",
   "crates/lib/users",
-  "crates/lib/web_scrapers",
   #"crates/lib/api_clients/fakeyou_client",
   #"crates/lib/machine_learning/ml_models",
 
