@@ -16,12 +16,12 @@ path = "src/main.rs"
 normal = ["workspace-build-acceleration"]
 
 [dependencies]
-# Workspace hack (faster compile times)
-workspace-build-acceleration = { workspace = true }
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
 
 # Internal
 actix_helpers.workspace = true
-bootstrap = { path = "../../../lib/bootstrap" }
+bootstrap.workspace = true
 bucket_paths = { path = "../../../lib/bucket_paths" }
 cloud_storage.workspace = true
 concurrency = { path = "../../../lib/concurrency" }
@@ -29,23 +29,16 @@ config = { path = "../../../lib/deprecated/config" }
 easyenv.workspace = true
 errors.workspace = true
 jobs_common = { path = "../../../lib/jobs_common" }
-mysql_queries = { path = "../../../schema/database/mysql_queries" }
+mysql_queries.workspace = true
 server_environment = { path = "../../../lib/server_environment" }
 
 # External
+actix-web.workspace = true
 anyhow.workspace = true
 log.workspace = true
-tempdir.workspace = true
-
-sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
-
-# Runtime
-tokio.workspace = true
-
-# HTTP Server
-actix-web.workspace = true
-
-# Serialization
 serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+tempdir.workspace = true
+tokio.workspace = true
