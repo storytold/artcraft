@@ -29,4 +29,5 @@ ffprobe = "0.4.0"
 log.workspace = true
 
 [dev-dependencies]
+tempdir.workspace = true
 testing.workspace = true

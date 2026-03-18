@@ -4250,6 +4250,7 @@ dependencies = [
  "errors",
  "ffprobe",
  "log",
+ "tempdir",
  "testing",
  "workspace-build-acceleration",
 ]
