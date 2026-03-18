@@ -24,7 +24,7 @@ bucket_paths.workspace = true
 composite_identifiers = { path = "../../../schema/public/composite_identifiers" }
 enums = { workspace = true, features = ["database"] }
 errors.workspace = true
-idempotency.workspace = true
+uuid_utils.workspace = true
 reusable_types = { path = "../../../schema/public/reusable_types" }
 tokens = { workspace = true, features = ["database"] }
 

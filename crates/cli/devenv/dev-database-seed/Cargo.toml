@@ -28,7 +28,7 @@ enums.workspace = true
 errors.workspace = true
 filesys.workspace = true
 hashing = { path = "../../../lib/files/hashing" }
-idempotency.workspace = true
+uuid_utils.workspace = true
 mimetypes.workspace = true
 mysql_queries = { path = "../../../schema/database/mysql_queries" }
 storyteller_root = { path = "../../../lib/storyteller_root" }

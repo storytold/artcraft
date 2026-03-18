@@ -1,5 +1,5 @@
 [package]
-name = "idempotency"
+name = "uuid_utils"
 edition = "2018"
 version = "0.0.1"
 authors = [
@@ -9,7 +9,7 @@ authors = [
 publish = false
 
 [lib]
-name = "idempotency"
+name = "uuid_utils"
 path = "src/lib.rs"
 
 [package.metadata.cargo-udeps.ignore]

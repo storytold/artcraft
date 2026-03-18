@@ -20,7 +20,7 @@ use enums::common::model_type::ModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums::tauri::tasks::task_status;
 use errors::AnyhowResult;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info, warn};
 use once_cell::sync::Lazy;
 use openai_sora_client::creds::sora_credential_set::SoraCredentialSet;

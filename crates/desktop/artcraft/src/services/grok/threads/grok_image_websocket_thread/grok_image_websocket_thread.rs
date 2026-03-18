@@ -25,7 +25,7 @@ use grok_client::requests::image_websocket::grok_wrapped_websocket::GrokWrappedW
 use grok_client::requests::image_websocket::listen_for_websocket_images::{listen_for_websocket_images, ImageResults, ListenForWebsocketImagesArgs};
 use grok_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
 use grok_client::requests::image_websocket::prompt_websocket_image::{prompt_websocket_image, PromptWebsocketImageArgs};
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info, warn};
 use sqlite_tasks::queries::get_task_by_provider_and_provider_job_id::{get_task_by_provider_and_provider_job_id, GetTaskByProviderAndProviderJobIdArgs};
 use sqlite_tasks::queries::list_tasks_by_provider_and_status::{list_tasks_by_provider_and_status, ListTasksByProviderAndStatusArgs};

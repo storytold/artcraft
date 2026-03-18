@@ -19,7 +19,7 @@ use artcraft_api_defs::generate::image::edit::gpt_image_1_edit_image::{GptImage1
 use artcraft_api_defs::generate::image::inpaint::flux_pro_1_inpaint_image::{FluxPro1InpaintImageNumImages, FluxPro1InpaintImageRequest};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use images::encoding::image_bytes_to_png_bytes::image_bytes_to_png_bytes;
 use images::encoding::image_bytes_to_png_bytes_with_dimensions::image_bytes_to_png_bytes_with_dimensions;
 use images::mask_images::normalize_image_bytes_to_flux_mask::normalize_image_bytes_to_flux_mask;

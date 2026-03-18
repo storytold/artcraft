@@ -15,7 +15,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::generate::video::generate_seedance_1_0_lite_image_to_video::{GenerateSeedance10LiteDuration, GenerateSeedance10LiteImageToVideoRequest, GenerateSeedance10LiteResolution};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::endpoints::generate::video::generate_kling_16_pro_image_to_video::generate_kling_16_pro_image_to_video;

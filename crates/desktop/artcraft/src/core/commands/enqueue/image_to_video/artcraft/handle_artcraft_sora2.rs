@@ -16,7 +16,7 @@ use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::{
 use artcraft_api_defs::generate::video::multi_function::sora_2_multi_function_video_gen::{Sora2MultiFunctionVideoGenAspectRatio, Sora2MultiFunctionVideoGenDuration, Sora2MultiFunctionVideoGenRequest, Sora2MultiFunctionVideoGenResolution};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use openai_sora_client::recipes::generate_sora2_video::generate_sora2_video_with_session_auto_renew::generate_sora2_video_with_session_auto_renew;
 use openai_sora_client::recipes::list_sora2_drafts::list_sora2_drafts_with_session_auto_renew::list_sora2_drafts_with_session_auto_renew;

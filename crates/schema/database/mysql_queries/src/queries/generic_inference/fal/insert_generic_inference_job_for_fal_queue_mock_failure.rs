@@ -1,4 +1,4 @@
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 

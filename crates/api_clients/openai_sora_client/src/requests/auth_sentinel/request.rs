@@ -3,7 +3,7 @@ use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use chrono::FixedOffset;
 use chrono::Utc;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use rand::Rng;
 use sha3::{Digest, Sha3_512};
 

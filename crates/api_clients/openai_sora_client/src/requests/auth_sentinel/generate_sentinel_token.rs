@@ -4,7 +4,7 @@ use crate::error::sora_error::SoraError;
 use crate::error::sora_generic_api_error::SoraGenericApiError;
 use crate::utils_internal::classify_general_http_error::classify_general_http_error;
 use errors::AnyhowResult;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::error;
 use serde_derive::{Deserialize, Serialize};
 use thiserror::Error;

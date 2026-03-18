@@ -11,7 +11,7 @@ use enums::by_table::zs_voices::model_type::ZsVoiceModelType;
 use enums::common::visibility::Visibility;
 use errors::{anyhow, AnyhowResult};
 use filesys::file_read_bytes::file_read_bytes;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use mimetypes::mimetype_for_bytes::get_mimetype_for_bytes;
 use mysql_queries::queries::users::user::get::get_user_token_by_username::get_user_token_by_username;
 use mysql_queries::queries::voice_designer::datasets::create_dataset::{create_dataset, CreateDatasetArgs};

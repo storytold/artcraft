@@ -25,7 +25,7 @@ use grok_client::error::grok_error::GrokError;
 use grok_client::requests::download_video_file::download_video_file::{download_video_file, DownloadVideoFileArgs};
 use grok_client::requests::download_video_file::grok_download_video::GrokDownloadVideo;
 use grok_client::requests::media_posts::list_media_posts::grok_list_media_posts::{GrokMediaPostList, GrokMediaPostListRequest, VideoData};
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use midjourney_client::client::midjourney_hostname::MidjourneyHostname;
 use midjourney_client::credentials::midjourney_user_id::MidjourneyUserId;

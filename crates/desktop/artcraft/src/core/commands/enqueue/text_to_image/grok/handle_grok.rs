@@ -9,7 +9,7 @@ use crate::services::grok::state::grok_image_prompt_queue::{GrokImagePromptQueue
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use grok_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use tauri::AppHandle;
 
 pub async fn handle_grok(

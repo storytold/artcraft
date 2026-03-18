@@ -15,7 +15,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::generate::video::generate_kling_2_1_pro_image_to_video::{GenerateKling21ProAspectRatio, GenerateKling21ProDuration, GenerateKling21ProImageToVideoRequest};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::endpoints::generate::video::generate_kling_21_pro_image_to_video::generate_kling_21_pro_image_to_video;

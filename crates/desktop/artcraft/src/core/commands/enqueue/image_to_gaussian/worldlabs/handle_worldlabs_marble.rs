@@ -13,7 +13,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use std::path::PathBuf;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;

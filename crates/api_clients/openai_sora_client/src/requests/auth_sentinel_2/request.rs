@@ -1,4 +1,4 @@
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use serde_derive::Serialize;
 
 // TODO: Support more of these.

@@ -10,7 +10,7 @@ use crate::requests::auth_sentinel_2::response::SentinelResponse;
 use crate::utils_internal::classify_general_http_error::classify_general_http_error;
 use chrono::{DateTime, NaiveDateTime, TimeDelta, TimeZone, Utc};
 use errors::AnyhowResult;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{debug, error, info};
 use serde_derive::{Deserialize, Serialize};
 use std::io::Write;

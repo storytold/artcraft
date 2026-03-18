@@ -17,7 +17,7 @@ use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use midjourney_client::client::midjourney_hostname::MidjourneyHostname;
 use midjourney_client::endpoints::submit_job::{submit_job, SubmitJobRequest};

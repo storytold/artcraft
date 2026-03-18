@@ -19,7 +19,7 @@ workspace-build-acceleration.workspace = true
 # Internal
 crockford.workspace = true
 errors.workspace = true
-idempotency.workspace = true
+uuid_utils.workspace = true
 subprocess_common = { path = "../../lib/subprocess_common" }
 
 # External

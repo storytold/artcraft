@@ -19,7 +19,7 @@ use enums::common::model_type::ModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use midjourney_client::client::midjourney_hostname::MidjourneyHostname;
 use midjourney_client::credentials::midjourney_user_id::MidjourneyUserId;

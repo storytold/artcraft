@@ -17,7 +17,7 @@ workspace-build-acceleration.workspace = true
 
 # Internal
 errors.workspace = true
-idempotency.workspace = true
+uuid_utils.workspace = true
 
 # External
 anyhow.workspace = true

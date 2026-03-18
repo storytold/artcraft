@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use sqlx::MySqlPool;
 
 use errors::AnyhowResult;
-use idempotency::uuid::generate_random_uuid;
+use uuid_utils::uuid::generate_random_uuid;
 
 use crate::builders::RequiredOption;
 

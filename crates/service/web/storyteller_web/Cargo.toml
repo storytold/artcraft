@@ -57,7 +57,7 @@ filesys.workspace = true
 google_sign_in = { path = "../../../api_clients/google_sign_in" }
 hashing = { path = "../../../lib/files/hashing" }
 http_server_common = { path = "../../../lib/deprecated/http_server_common" }
-idempotency = { path = "../../../lib/idempotency" }
+uuid_utils = { path = "../../../lib/uuid_utils" }
 images.workspace = true
 markdown = { path = "../../../lib/markdown" }
 media = { path = "../../../lib/files/media" }

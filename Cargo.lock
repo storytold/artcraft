@@ -706,7 +706,6 @@ dependencies = [
  "filesys",
  "futures 0.3.32",
  "grok_client",
- "idempotency",
  "image",
  "images",
  "indexmap 2.13.0",
@@ -739,6 +738,7 @@ dependencies = [
  "tokio-util",
  "url",
  "url_utils",
+ "uuid_utils",
  "web_base64",
  "workspace-build-acceleration",
  "worldlabs_consumer_client",
@@ -774,7 +774,6 @@ dependencies = [
  "enums",
  "enums_public",
  "errors",
- "idempotency",
  "log",
  "mimetypes",
  "reqwest 0.12.23",
@@ -786,6 +785,7 @@ dependencies = [
  "url",
  "url-builder",
  "uuid 1.22.0",
+ "uuid_utils",
  "workspace-build-acceleration",
 ]
 
@@ -3184,7 +3184,6 @@ dependencies = [
  "errors",
  "filesys",
  "hashing",
- "idempotency",
  "log",
  "mimetypes",
  "mysql_queries",
@@ -3193,6 +3192,7 @@ dependencies = [
  "storyteller_root",
  "tokens",
  "tokio",
+ "uuid_utils",
  "workspace-build-acceleration",
 ]
 
@@ -5652,14 +5652,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
 
 [[package]]
-name = "idempotency"
-version = "0.0.1"
-dependencies = [
- "uuid 1.22.0",
- "workspace-build-acceleration",
-]
-
-[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7170,7 +7162,6 @@ dependencies = [
  "composite_identifiers",
  "enums",
  "errors",
- "idempotency",
  "log",
  "num-traits",
  "once_cell",
@@ -7184,6 +7175,7 @@ dependencies = [
  "sqlx",
  "tokens",
  "tokio",
+ "uuid_utils",
  "workspace-build-acceleration",
 ]
 
@@ -7876,7 +7868,6 @@ dependencies = [
  "cloudflare_errors",
  "cookie 0.18.1",
  "errors",
- "idempotency",
  "log",
  "once_cell",
  "rand 0.9.2",
@@ -7889,6 +7880,7 @@ dependencies = [
  "tokio",
  "toml 1.0.7+spec-1.1.0",
  "url",
+ "uuid_utils",
  "workspace-build-acceleration",
  "wreq",
  "wreq-util",
@@ -7906,7 +7898,6 @@ dependencies = [
  "errors",
  "filesys",
  "hex-literal",
- "idempotency",
  "log",
  "once_cell",
  "rand 0.9.2",
@@ -7920,6 +7911,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "toml 1.0.7+spec-1.1.0",
+ "uuid_utils",
  "workspace-build-acceleration",
 ]
 
@@ -9739,7 +9731,6 @@ dependencies = [
  "errors",
  "filesys",
  "hex-literal",
- "idempotency",
  "jwt_light",
  "log",
  "once_cell",
@@ -9754,6 +9745,7 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "toml 1.0.7+spec-1.1.0",
+ "uuid_utils",
  "workspace-build-acceleration",
 ]
 
@@ -11353,7 +11345,6 @@ dependencies = [
  "hashing",
  "hostname 0.4.0",
  "http_server_common",
- "idempotency",
  "images",
  "infer 0.16.0",
  "jwt_signer",
@@ -11410,6 +11401,7 @@ dependencies = [
  "users",
  "utoipa",
  "utoipa-swagger-ui",
+ "uuid_utils",
  "videos",
  "workspace-build-acceleration",
  "worldlabs_api_client",
@@ -13431,6 +13423,14 @@ dependencies = [
  "js-sys",
  "serde_core",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "uuid_utils"
+version = "0.0.1"
+dependencies = [
+ "uuid 1.22.0",
+ "workspace-build-acceleration",
 ]
 
 [[package]]

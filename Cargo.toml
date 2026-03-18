@@ -73,7 +73,7 @@ members = [
   "crates/lib/files/mimetypes",
   "crates/lib/files/videos",
   "crates/lib/http_headers",
-  "crates/lib/idempotency",
+  "crates/lib/uuid_utils",
   "crates/api_clients/artcraft/artcraft_router",
   "crates/lib/deprecated/image_algorithms",
   "crates/lib/jobs_common",
@@ -236,7 +236,7 @@ file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }
 filesys = { path = "crates/lib/files/filesys" }
 grok_client = { path = "crates/api_clients/grok_client" }
 http_headers = { path = "crates/lib/http_headers" }
-idempotency = { path = "crates/lib/idempotency" }
+uuid_utils = { path = "crates/lib/uuid_utils" }
 images = { path = "crates/lib/files/images" }
 jobs_common = { path = "crates/lib/jobs_common" }
 jwt_light = { path = "crates/lib/jwt_light" }
