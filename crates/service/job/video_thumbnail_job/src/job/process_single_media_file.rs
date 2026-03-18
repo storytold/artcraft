@@ -4,6 +4,9 @@ use log::info;
 use tempdir::TempDir;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use bucket_paths::path_conventions::video_thumbnail_suffixes::{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX, VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX};
+use ffmpeg_utils::ffmpeg::ffmpeg_video_first_frame_to_jpg_thumbnail;
+use ffmpeg_utils::ffmpeg::ffmpeg_video_gif_preview;
 use mysql_queries::queries::media_files::job::list_video_media_files_without_thumbnails_for_job::VideoMediaFileWithoutThumbnail;
 
 use crate::job_dependencies::JobDependencies;
@@ -28,13 +31,65 @@ pub async fn process_single_media_file(
     media_file.token.as_str(),
   );
 
-  // TODO: Generate thumbnails (jpg + gif) from the downloaded video using ffmpeg,
-  // upload them to the bucket, and update the media file record with maybe_thumbnail_version.
-  todo!("Generate thumbnails with ffmpeg, upload, and update DB record");
+  // Generate thumbnails
+  let jpg_path = downloaded.temp_dir.path().join("thumbnail.jpg");
+  let gif_path = downloaded.temp_dir.path().join("thumbnail.gif");
+
+  ffmpeg_video_first_frame_to_jpg_thumbnail::ffmpeg_video_first_frame_to_jpg_thumbnail(
+    ffmpeg_video_first_frame_to_jpg_thumbnail::Args {
+      input_video_path: &downloaded.file_path,
+      output_jpg_path: &jpg_path,
+    },
+  )?;
+
+  info!("Generated JPG thumbnail for {}", media_file.token.as_str());
+
+  ffmpeg_video_gif_preview::ffmpeg_video_gif_preview(
+    ffmpeg_video_gif_preview::Args {
+      input_video_path: &downloaded.file_path,
+      output_gif_path: &gif_path,
+    },
+  )?;
+
+  info!("Generated GIF preview for {}", media_file.token.as_str());
+
+  // Upload thumbnails to bucket beside the original video
+  let video_object_path = get_video_object_path(media_file);
+
+  let jpg_object_path = format!("{video_object_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}");
+  let gif_object_path = format!("{video_object_path}{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX}");
+
+  deps
+    .public_bucket_client
+    .upload_filename(&jpg_object_path, &jpg_path)
+    .await?;
+
+  info!("Uploaded JPG thumbnail to {}", jpg_object_path);
+
+  deps
+    .public_bucket_client
+    .upload_filename(&gif_object_path, &gif_path)
+    .await?;
+
+  info!("Uploaded GIF preview to {}", gif_object_path);
+
+  // TODO: Update the media file record in the database with the new thumbnail version.
+  todo!("Update DB record with thumbnail version");
 
   // `downloaded.temp_dir` is dropped here, cleaning up the temp directory and all contents.
   #[allow(unreachable_code)]
   Ok(())
+}
+
+/// Build the full bucket object path for the video file.
+fn get_video_object_path(media_file: &VideoMediaFileWithoutThumbnail) -> String {
+  let bucket_path = MediaFileBucketPath::from_object_hash(
+    &media_file.public_bucket_directory_hash,
+    media_file.maybe_public_bucket_prefix.as_deref(),
+    media_file.maybe_public_bucket_extension.as_deref(),
+  );
+
+  bucket_path.get_full_object_path_str().to_string()
 }
 
 /// Download the source video from the public bucket into a new temp directory.
@@ -42,13 +97,7 @@ async fn download_video(
   deps: &JobDependencies,
   media_file: &VideoMediaFileWithoutThumbnail,
 ) -> anyhow::Result<DownloadedFile> {
-  let bucket_path = MediaFileBucketPath::from_object_hash(
-    &media_file.public_bucket_directory_hash,
-    media_file.maybe_public_bucket_prefix.as_deref(),
-    media_file.maybe_public_bucket_extension.as_deref(),
-  );
-
-  let object_path = bucket_path.get_full_object_path_str();
+  let object_path = get_video_object_path(media_file);
 
   info!(
     "Downloading video for media file {} from bucket path: {}",
@@ -68,7 +117,7 @@ async fn download_video(
 
   deps
     .public_bucket_client
-    .download_file_to_disk(object_path, &file_path)
+    .download_file_to_disk(&object_path, &file_path)
     .await?;
 
   Ok(DownloadedFile { temp_dir, file_path })

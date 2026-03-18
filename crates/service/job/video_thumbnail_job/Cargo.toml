@@ -24,6 +24,7 @@ actix_helpers.workspace = true
 bootstrap.workspace = true
 bucket_paths.workspace = true
 cloud_storage.workspace = true
+ffmpeg_utils.workspace = true
 concurrency.workspace = true
 config = { path = "../../../lib/deprecated/config" }
 easyenv.workspace = true
