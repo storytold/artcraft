@@ -136,7 +136,6 @@ members = [
   "crates/service/plugins/billing",
   "crates/service/plugins/billing_artcraft",
   "crates/service/plugins/component_traits",
-  "crates/service/plugins/inference_workloads",
   "crates/service/plugins/user_traits_component",
 
   # Vendored code

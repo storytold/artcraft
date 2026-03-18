@@ -2399,13 +2399,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "component_subsystem_inference_workloads"
-version = "0.0.1"
-dependencies = [
- "workspace-build-acceleration",
-]
-
-[[package]]
 name = "component_traits"
 version = "0.0.1"
 dependencies = [
