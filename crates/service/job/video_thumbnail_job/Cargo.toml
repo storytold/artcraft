@@ -27,13 +27,10 @@ cloud_storage.workspace = true
 concurrency = { path = "../../../lib/concurrency" }
 config = { path = "../../../lib/deprecated/config" }
 easyenv.workspace = true
-enums.workspace = true
 errors.workspace = true
-hashing = { path = "../../../lib/files/hashing" }
 jobs_common = { path = "../../../lib/jobs_common" }
 mysql_queries = { path = "../../../schema/database/mysql_queries" }
 server_environment = { path = "../../../lib/server_environment" }
-tokens.workspace = true
 
 # External
 anyhow.workspace = true
@@ -44,9 +41,6 @@ sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chron
 
 # Runtime
 tokio.workspace = true
-
-# HTTP Client
-reqwest.workspace = true
 
 # HTTP Server
 actix-web.workspace = true
