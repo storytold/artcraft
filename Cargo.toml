@@ -21,7 +21,7 @@ members = [
   "crates/api_clients/runwayml_client",
   "crates/api_clients/thumbnail_generator",
   "crates/api_clients/worldlabs_api_client",
-  "crates/api_clients/world_labs_consumer_client",
+  "crates/api_clients/worldlabs_consumer_client",
 
   # CLI tools for operations, etc.
   "crates/cli/devenv/dev-database-seed",
@@ -263,7 +263,7 @@ url_utils = { path = "crates/lib/url_utils" }
 users = { path = "crates/lib/users" }
 web_base64 = { path = "crates/lib/data/web_base64" }
 worldlabs_api_client = { path = "crates/api_clients/worldlabs_api_client" }
-world_labs_consumer_client = { path = "crates/api_clients/world_labs_consumer_client" }
+worldlabs_consumer_client = { path = "crates/api_clients/worldlabs_consumer_client" }
 
 # External libs
 # Centrally pinned versions so that we can uniformly upgrade/downgrade versions across the workspace

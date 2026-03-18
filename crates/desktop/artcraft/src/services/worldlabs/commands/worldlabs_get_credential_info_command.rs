@@ -5,8 +5,8 @@ use errors::AnyhowResult;
 use log::{error, info};
 use serde_derive::Serialize;
 use tauri::State;
-use world_labs_consumer_client::credentials::jwt_claims::JwtClaims;
-use world_labs_consumer_client::error::world_labs_error::WorldLabsError;
+use worldlabs_consumer_client::credentials::jwt_claims::JwtClaims;
+use worldlabs_consumer_client::error::world_labs_error::WorldLabsError;
 
 #[derive(Serialize)]
 pub struct WorldlabsGetCredentialInfoResponse {

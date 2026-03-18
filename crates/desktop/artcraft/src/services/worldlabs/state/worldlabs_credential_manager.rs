@@ -6,9 +6,9 @@ use errors::AnyhowResult;
 use log::{info, warn};
 use std::fs::read_to_string;
 use std::sync::{Arc, RwLock};
-use world_labs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;
-use world_labs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies;
-use world_labs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
+use worldlabs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;
+use worldlabs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies;
+use worldlabs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
 
 #[derive(Clone)]
 pub struct WorldlabsCredentialManager {

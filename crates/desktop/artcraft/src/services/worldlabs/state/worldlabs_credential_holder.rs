@@ -1,7 +1,7 @@
 use cookie_store::cookie_store::CookieStore;
-use world_labs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;
-use world_labs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies;
-use world_labs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
+use worldlabs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;
+use worldlabs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies;
+use worldlabs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
 
 #[derive(Clone)]
 pub struct WorldlabsCredentialHolder {

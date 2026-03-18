@@ -19,8 +19,8 @@ use std::path::PathBuf;
 use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
 use tauri::AppHandle;
 use tokens::tokens::media_files::MediaFileToken;
-use world_labs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies;
-use world_labs_consumer_client::recipes::upload_image_and_create_world_with_retry::{upload_image_and_create_world_with_retry, FileBytesOrPath, UploadImageAndCreateWorldWithRetryArgs};
+use worldlabs_consumer_client::credentials::world_labs_cookies::WorldLabsCookies;
+use worldlabs_consumer_client::recipes::upload_image_and_create_world_with_retry::{upload_image_and_create_world_with_retry, FileBytesOrPath, UploadImageAndCreateWorldWithRetryArgs};
 
 pub(super) const MAX_IMAGES: usize = 10;
 

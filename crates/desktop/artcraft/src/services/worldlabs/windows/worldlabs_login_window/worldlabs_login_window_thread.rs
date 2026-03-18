@@ -24,8 +24,8 @@ use openai_sora_client::creds::sora_credential_set::SoraCredentialSet;
 use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_or_renew_session;
 use openai_sora_client::utils::has_session_cookie::{has_session_cookie, SessionCookiePresence};
 use tauri::{AppHandle, Manager, WebviewWindow};
-use world_labs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;
-use world_labs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
+use worldlabs_consumer_client::credentials::world_labs_bearer_token::WorldLabsBearerToken;
+use worldlabs_consumer_client::credentials::worldlabs_refresh_token::WorldLabsRefreshToken;
 
 pub async fn worldlabs_login_window_thread(
   app: AppHandle,
