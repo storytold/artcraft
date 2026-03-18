@@ -8,7 +8,6 @@ use sqlx::MySqlPool;
 use strum_macros::Display;
 
 use crockford::crockford_entropy_lower;
-use email_sender::smtp_email_sender::SmtpEmailSender;
 use enums::by_table::email_sender_jobs::email_category::EmailCategory;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
@@ -86,7 +85,6 @@ pub async fn password_reset_request_handler(
     mysql_pool: web::Data<MySqlPool>,
     server_environment: web::Data<ServerEnvironment>,
     server_state: web::Data<Arc<ServerState>>,
-    _sender: web::Data<SmtpEmailSender>,
 ) -> Result<HttpResponse, PasswordResetRequestedErrorResponse> {
 
     let username_or_email = request.username_or_email.trim();

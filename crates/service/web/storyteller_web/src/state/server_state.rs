@@ -6,7 +6,6 @@ use billing_component::stripe::stripe_config::StripeConfig;
 use chrono::{DateTime, Utc};
 use cloud_storage::bucket_client::BucketClient;
 use elasticsearch::Elasticsearch;
-use email_sender::smtp_email_sender::SmtpEmailSender;
 use fal_client::creds::fal_api_key::FalApiKey;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
@@ -105,8 +104,6 @@ pub struct ServerState {
   pub audio_uploads_bucket_root: String,
 
   pub sort_key_crypto: SortKeyCrypto,
-
-  pub email_sender: SmtpEmailSender,
 
   pub ip_ban_list: IpBanList,
 

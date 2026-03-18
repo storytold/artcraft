@@ -11576,7 +11576,6 @@ dependencies = [
  "easyenv",
  "elasticsearch",
  "elasticsearch_schema",
- "email_sender",
  "enums",
  "enums_public",
  "errors",

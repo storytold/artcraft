@@ -50,7 +50,6 @@ use config::common_env::CommonEnv;
 use config::shared_constants::DEFAULT_RUST_LOG;
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
-use email_sender::smtp_email_sender::SmtpEmailSender;
 use errors::AnyhowResult;
 use fal_client::creds::fal_api_key::FalApiKey;
 use log::info;
@@ -393,12 +392,6 @@ async fn main() -> AnyhowResult<()> {
       .trim()
       .to_string();
 
-  // TODO(bt,2023-11-11): Password and account details should be a secret, but gotta go fast.
-  let email_sender = SmtpEmailSender::new(
-    "smtp.gmail.com",
-    "noreply@storyteller.ai".to_string(),
-    "FakeYouHanashi1".to_string())?;
-
   let server_environment_typed = match server_environment {
     ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
     ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
@@ -465,7 +458,6 @@ async fn main() -> AnyhowResult<()> {
     audio_uploads_bucket_root,
     sort_key_crypto,
     static_api_token_set,
-    email_sender,
     fal: FalData {
       api_key: fal_api_key,
       webhook_url: fal_webhook_url,
@@ -661,7 +653,6 @@ pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
       .app_data(web::Data::new(server_state_arc.stripe.clone().client.clone()))
       .app_data(web::Data::new(server_state_arc.third_party_url_redirector))
       .app_data(web::Data::new(server_state_arc.google_sign_in_cert.clone()))
-      .app_data(web::Data::new(server_state_arc.email_sender.clone()))
       .app_data(web::Data::new(old_server_environment))
       .app_data(web::Data::new(new_server_environment))
       .app_data(web::Data::from(product_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch
