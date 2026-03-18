@@ -1,10 +1,9 @@
-use sqlx::MySqlPool;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
+use sqlx::MySqlPool;
 use tokens::tokens::media_files::MediaFileToken;
 
-/// The serialized value for `MediaFileClass::Video` as stored in the database.
-const MEDIA_CLASS_VIDEO: &str = MediaFileClass::Video.to_str();
 const DEFAULT_PAGE_SIZE: i64 = 100;
+
 const DEFAULT_MAX_LOOKBACK_HOURS: i32 = 4;
 
 pub struct ListVideoMediaFilesWithoutThumbnailsArgs<'a> {
@@ -38,6 +37,8 @@ pub async fn list_video_media_files_without_thumbnails_for_job(
 
   let page_size = args.custom_page_size.unwrap_or(DEFAULT_PAGE_SIZE);
   let max_lookback_hours = args.custom_max_lookback_hours.unwrap_or(DEFAULT_MAX_LOOKBACK_HOURS);
+
+  const MEDIA_CLASS_VIDEO: &str = MediaFileClass::Video.to_str();
 
   // NB: `COALESCE ...` helps us force the index for a more performant query plan (otherwise it explodes into a table scan).
   // NB: `NOW() - INTERVAL ? HOUR` uses the database clock to avoid client/server clock skew.
