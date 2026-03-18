@@ -33,7 +33,7 @@ easyenv = { path = "../../../../lib/easyenv" }
 enums.workspace = true
 errors.workspace = true
 filesys.workspace = true
-google_drive_common = { path = "../../../../api_clients/google_drive_common" }
+google_drive_downloader = { path = "../../../../api_clients/google_drive_downloader" }
 hashing = { path = "../../../../lib/files/hashing" }
 images.workspace = true
 jobs_common = { path = "../../../../lib/jobs_common" }

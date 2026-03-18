@@ -41,7 +41,7 @@ use filesys::check_directory_exists::check_directory_exists;
 use filesys::check_file_exists::check_file_exists;
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;
 use filesys::file_deletion::safe_delete_file::safe_delete_file;
-use google_drive_common::google_drive_download_command::GoogleDriveDownloadCommand;
+use google_drive_downloader::google_drive_download_command::GoogleDriveDownloadCommand;
 use hashing::sha256::sha256_hash_file::sha256_hash_file;
 use jobs_common::noop_logger::NoOpLogger;
 use jobs_common::redis_job_status_logger::RedisJobStatusLogger;

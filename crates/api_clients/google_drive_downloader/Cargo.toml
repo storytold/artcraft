@@ -1,5 +1,5 @@
 [package]
-name = "google_drive_common"
+name = "google_drive_downloader"
 edition = "2018"
 version = "0.0.1"
 authors = [
@@ -12,7 +12,7 @@ publish = false
 normal = ["workspace-build-acceleration"]
 
 [lib]
-name = "google_drive_common"
+name = "google_drive_downloader"
 path = "src/lib.rs"
 
 [dependencies]

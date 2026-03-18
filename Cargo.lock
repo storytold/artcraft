@@ -3489,7 +3489,7 @@ dependencies = [
  "enums",
  "errors",
  "filesys",
- "google_drive_common",
+ "google_drive_downloader",
  "hashing",
  "hostname 0.4.0",
  "hyper 1.6.0",
@@ -4805,7 +4805,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "google_drive_common"
+name = "google_drive_downloader"
 version = "0.0.1"
 dependencies = [
  "anyhow",
@@ -5853,7 +5853,7 @@ dependencies = [
  "errors",
  "ffmpeg_utils",
  "filesys",
- "google_drive_common",
+ "google_drive_downloader",
  "hashing",
  "hostname 0.4.0",
  "images",
@@ -13011,7 +13011,7 @@ dependencies = [
  "enums",
  "errors",
  "filesys",
- "google_drive_common",
+ "google_drive_downloader",
  "hashing",
  "hostname 0.4.0",
  "hyper 1.6.0",
@@ -13576,7 +13576,7 @@ dependencies = [
  "easyenv",
  "errors",
  "filesys",
- "google_drive_common",
+ "google_drive_downloader",
  "hashing",
  "hostname 0.4.0",
  "hyper 1.6.0",
@@ -13607,7 +13607,7 @@ dependencies = [
  "easyenv",
  "errors",
  "filesys",
- "google_drive_common",
+ "google_drive_downloader",
  "hostname 0.4.0",
  "hyper 1.6.0",
  "jobs_common",

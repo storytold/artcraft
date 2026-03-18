@@ -12,7 +12,7 @@ use enums::common::visibility::Visibility;
 use filesys::file_exists::file_exists;
 use filesys::file_read_bytes::file_read_bytes;
 use filesys::file_size::file_size;
-use google_drive_common::google_drive_download_command::GoogleDriveDownloadCommand;
+use google_drive_downloader::google_drive_download_command::GoogleDriveDownloadCommand;
 use hashing::sha256::sha256_hash_file::sha256_hash_file;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::model_weights::create::create_weight;

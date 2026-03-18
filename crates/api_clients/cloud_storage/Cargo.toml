@@ -16,13 +16,13 @@ path = "src/lib.rs"
 normal = ["workspace-build-acceleration"]
 
 [dependencies]
-# Workspace hack (faster compile times)
+# cargo-hakari workspace hack (faster compile times)
 workspace-build-acceleration.workspace = true
 
 # Internal
 bucket_paths.workspace = true
 crockford.workspace = true
-easyenv = { path = "../../lib/easyenv" }
+easyenv.workspace = true
 errors.workspace = true
 filesys.workspace = true
 hashing = { path = "../../lib/files/hashing" }
@@ -31,12 +31,11 @@ storyteller_root = { path = "../../lib/storyteller_root" }
 
 # External
 anyhow.workspace = true
-log.workspace = true
-env_logger = "0.11.3"
 async-trait = "0.1.75"
+env_logger.workspace = true
+log.workspace = true
+tokio.workspace = true
+
 # The "never-encode-slash" feature seems to have been removed:
 # https://github.com/durch/rust-s3/pull/254
 rust-s3 = { version = "0.36.0-beta.2", default-features = false, features = ["fail-on-err", "tags", "tokio-rustls-tls"] }
-
-# Runtime
-tokio.workspace = true

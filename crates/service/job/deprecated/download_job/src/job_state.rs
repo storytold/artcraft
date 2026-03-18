@@ -7,7 +7,7 @@ use sqlx::MySqlPool;
 use bootstrap::bootstrap::ContainerEnvironment;
 use cloud_storage::bucket_client::BucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
-use google_drive_common::google_drive_download_command::GoogleDriveDownloadCommand;
+use google_drive_downloader::google_drive_download_command::GoogleDriveDownloadCommand;
 use mysql_queries::common_inputs::container_environment_arg::ContainerEnvironmentArg;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;

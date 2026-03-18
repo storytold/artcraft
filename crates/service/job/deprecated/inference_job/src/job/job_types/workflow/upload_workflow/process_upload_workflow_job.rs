@@ -10,7 +10,7 @@ use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use filesys::file_exists::file_exists;
-use google_drive_common::google_drive_download_command::GoogleDriveDownloadCommand;
+use google_drive_downloader::google_drive_download_command::GoogleDriveDownloadCommand;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::model_weights::create::create_weight;
 use mysql_queries::queries::model_weights::create::create_weight::CreateModelWeightsArgs;

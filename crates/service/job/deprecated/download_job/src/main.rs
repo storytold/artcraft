@@ -36,7 +36,7 @@ use config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
 use config::shared_constants::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 use filesys::check_directory_exists::check_directory_exists;
-use google_drive_common::google_drive_download_command::GoogleDriveDownloadCommand;
+use google_drive_downloader::google_drive_download_command::GoogleDriveDownloadCommand;
 use mysql_queries::common_inputs::container_environment_arg::ContainerEnvironmentArg;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;

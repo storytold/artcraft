@@ -10,7 +10,7 @@ members = [
   "crates/api_clients/artcraft/artcraft_client",
   "crates/api_clients/cloud_storage",
   "crates/api_clients/fal_client",
-  "crates/api_clients/google_drive_common",
+  "crates/api_clients/google_drive_downloader",
   "crates/api_clients/google_sign_in",
   "crates/api_clients/grok_client",
   "crates/api_clients/midjourney_client",
