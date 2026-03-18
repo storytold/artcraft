@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
-use cookies::jwt_signer::JwtSigner;
+use jwt_signer::jwt_signer::JwtSigner;
 use errors::AnyhowResult;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;

@@ -1,5 +1,5 @@
 [package]
-name = "cookies"
+name = "jwt_signer"
 edition = "2018"
 version = "0.0.1"
 authors = [
@@ -9,8 +9,7 @@ authors = [
 publish = false
 
 [lib]
-# NB: Public "cookies" crate is version 0.0.1 from 10 years ago!
-name = "cookies"
+name = "jwt_signer"
 path = "src/lib.rs"
 
 [package.metadata.cargo-udeps.ignore]

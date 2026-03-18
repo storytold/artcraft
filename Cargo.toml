@@ -52,7 +52,7 @@ members = [
   "crates/lib/cloudflare_mitigation",
   "crates/lib/concurrency",
   "crates/lib/cookie_store",
-  "crates/lib/cookies",
+  "crates/lib/jwt_signer",
   "crates/lib/data/collections",
   "crates/lib/data/crockford",
   "crates/lib/data/datetimes",
@@ -224,7 +224,7 @@ collections = { path = "crates/lib/data/collections" }
 component_traits = { path = "crates/service/plugins/component_traits" }
 concurrency = { path = "crates/lib/concurrency" }
 cookie_store = { path = "crates/lib/cookie_store" }
-cookies = { path = "crates/lib/cookies" }
+jwt_signer = { path = "crates/lib/jwt_signer" }
 crockford = { path = "crates/lib/data/crockford" }
 easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }

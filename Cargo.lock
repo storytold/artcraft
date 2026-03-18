@@ -339,10 +339,10 @@ dependencies = [
  "actix-web",
  "actix_helpers",
  "anyhow",
- "cookies",
  "enums",
  "errors",
  "http_headers",
+ "jwt_signer",
  "log",
  "tokens",
  "workspace-build-acceleration",
@@ -2575,17 +2575,6 @@ dependencies = [
  "serde_json",
  "time",
  "url",
-]
-
-[[package]]
-name = "cookies"
-version = "0.0.1"
-dependencies = [
- "errors",
- "hmac 0.10.1",
- "jwt",
- "sha2 0.9.9",
- "workspace-build-acceleration",
 ]
 
 [[package]]
@@ -6210,6 +6199,17 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "serde_json",
+ "workspace-build-acceleration",
+]
+
+[[package]]
+name = "jwt_signer"
+version = "0.0.1"
+dependencies = [
+ "errors",
+ "hmac 0.10.1",
+ "jwt",
+ "sha2 0.9.9",
  "workspace-build-acceleration",
 ]
 
@@ -11342,7 +11342,6 @@ dependencies = [
  "component_traits",
  "composite_identifiers",
  "config",
- "cookies",
  "crockford",
  "datetimes",
  "derive_more 0.99.17",
@@ -11366,6 +11365,7 @@ dependencies = [
  "idempotency",
  "images",
  "infer 0.16.0",
+ "jwt_signer",
  "language-tags",
  "lexical-sort",
  "limitation",

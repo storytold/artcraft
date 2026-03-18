@@ -22,7 +22,7 @@ workspace-build-acceleration.workspace = true
 
 # Internal
 actix_helpers.workspace = true
-cookies.workspace = true
+jwt_signer.workspace = true
 enums.workspace = true
 errors.workspace = true
 http_headers.workspace = true

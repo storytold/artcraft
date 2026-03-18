@@ -6,7 +6,7 @@ use log::warn;
 
 use crate::error::internal_error::InternalError;
 use crate::http_server::cookies::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
-use cookies::jwt_signer::JwtSigner;
+use jwt_signer::jwt_signer::JwtSigner;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
