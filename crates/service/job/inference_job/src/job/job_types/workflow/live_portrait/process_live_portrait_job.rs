@@ -23,7 +23,7 @@ use mysql_queries::payloads::media_file_extra_info::inner_payloads::live_portrai
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::media_files::create::insert_media_file_from_live_portrait::{insert_media_file_from_live_portrait, InsertLivePortraitArgs};
 use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
-use videos::ffprobe_get_info::ffprobe_get_info;
+use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 
 use crate::job::job_loop::job_success_result::{JobSuccessResult, ResultEntity};
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;

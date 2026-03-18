@@ -7,7 +7,7 @@ use log::{error, info};
 
 use errors::AnyhowResult;
 use filesys::path_to_string::path_to_string;
-use videos::ffprobe_get_info::{ffprobe_get_info, VideoDimensions, VideoDuration};
+use ffmpeg_utils::ffprobe::ffprobe_get_info::{ffprobe_get_info, VideoDimensions, VideoDuration};
 
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::frame_type::FrameType;
 

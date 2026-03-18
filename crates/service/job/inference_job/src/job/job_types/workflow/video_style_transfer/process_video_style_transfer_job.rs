@@ -21,7 +21,7 @@ use mysql_queries::payloads::generic_inference_args::generic_inference_args::Pol
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token_with_transactor;
 use mysql_queries::utils::transactor::Transactor;
-use videos::ffprobe_get_dimensions::ffprobe_get_dimensions;
+use ffmpeg_utils::ffprobe::ffprobe_get_dimensions::ffprobe_get_dimensions;
 
 use crate::job::job_loop::job_success_result::{JobSuccessResult, ResultEntity};
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;

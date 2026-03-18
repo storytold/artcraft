@@ -17,7 +17,7 @@ use std::io::Write;
 use tempfile::NamedTempFile;
 use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::media_files::MediaFileToken;
-use videos::ffprobe_get_info::ffprobe_get_info;
+use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 
 const PREFIX : Option<&str> = Some("artcraft_");
 

@@ -33,7 +33,7 @@ use std::time::{Duration, Instant};
 use sqlx::MySqlPool;
 use subprocess_common::command_runner::command_args::CommandArgs;
 use subprocess_common::command_runner::command_runner_args::{RunAsSubprocessArgs, StreamRedirection};
-use videos::ffprobe_get_dimensions::ffprobe_get_dimensions;
+use ffmpeg_utils::ffprobe::ffprobe_get_dimensions::ffprobe_get_dimensions;
 
 enum StudioModelPipeline<'a> {
   None,

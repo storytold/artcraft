@@ -45,7 +45,7 @@ pub fn ffprobe_get_dimensions(
 pub mod tests {
   use testing::test_file_path::test_file_path;
 
-  use crate::ffprobe_get_dimensions::ffprobe_get_dimensions;
+  use super::ffprobe_get_dimensions;
 
   #[test]
   pub fn test_decode_mp4() {

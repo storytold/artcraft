@@ -4247,6 +4247,8 @@ name = "ffmpeg_utils"
 version = "0.0.1"
 dependencies = [
  "errors",
+ "ffprobe",
+ "testing",
  "workspace-build-acceleration",
 ]
 
@@ -13728,7 +13730,6 @@ name = "videos"
 version = "0.0.1"
 dependencies = [
  "errors",
- "ffprobe",
  "log",
  "mp4",
  "testing",

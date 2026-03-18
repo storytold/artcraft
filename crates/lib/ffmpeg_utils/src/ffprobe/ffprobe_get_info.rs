@@ -114,9 +114,7 @@ fn parse_fps(ffprobe_fps: &str) -> AnyhowResult<f32> {
 pub mod tests {
   use testing::test_file_path::test_file_path;
 
-  use crate::ffprobe_get_info::ffprobe_get_info;
-
-  use super::parse_seconds;
+  use super::{ffprobe_get_info, parse_seconds};
 
   #[test]
   pub fn test_decode_mp4() {

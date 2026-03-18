@@ -28,7 +28,7 @@ use mysql_queries::queries::media_files::create::specialized_insert::insert_medi
 use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;
-use videos::ffprobe_get_info::ffprobe_get_info;
+use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 
 use crate::http_server::endpoints::media_files::upload::upload_error::MediaFileUploadError;
 use crate::http_server::endpoints::media_files::upload::upload_video_new::ffmpeg_trim_and_resample::{ffmpeg_trim_and_resample, Args};

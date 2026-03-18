@@ -6,7 +6,7 @@ use log::{error, info};
 
 use filesys::path_to_string::path_to_string;
 use mysql_queries::payloads::generic_inference_args::inner_payloads::workflow_payload::WorkflowArgs;
-use videos::ffprobe_get_dimensions::ffprobe_get_dimensions;
+use ffmpeg_utils::ffprobe::ffprobe_get_dimensions::ffprobe_get_dimensions;
 
 use crate::job::job_loop::process_single_job_error::ProcessSingleJobError;
 use crate::job::job_types::workflow::comfy_ui_dependencies::ComfyDependencies;
