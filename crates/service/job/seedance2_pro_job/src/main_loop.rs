@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::list_pending_seedance2pro_jobs;
-use seedance2pro::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs, TaskStatus};
+use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs, TaskStatus};
 
 use crate::process_job::process_failed_job::process_failed_job;
 use crate::process_job::process_successful_job::process_successful_job;

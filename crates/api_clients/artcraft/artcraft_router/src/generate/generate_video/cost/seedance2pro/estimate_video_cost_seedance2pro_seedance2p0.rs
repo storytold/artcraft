@@ -1,5 +1,5 @@
-use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro::requests::generate_video::generate_video::{GenerateVideoArgs, Resolution};
+use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoArgs, Resolution};
 
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;

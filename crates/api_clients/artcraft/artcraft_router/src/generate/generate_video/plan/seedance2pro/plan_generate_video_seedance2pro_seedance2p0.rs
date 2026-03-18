@@ -8,7 +8,7 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use seedance2pro::requests::generate_video::generate_video::{BatchCount, Resolution};
+use seedance2pro_client::requests::generate_video::generate_video::{BatchCount, Resolution};
 
 #[derive(Debug, Clone)]
 pub struct PlanSeedance2proSeedance2p0 {

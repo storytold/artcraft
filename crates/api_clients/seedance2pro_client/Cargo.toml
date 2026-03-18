@@ -1,5 +1,5 @@
 [package]
-name = "seedance2pro"
+name = "seedance2pro_client"
 edition = "2024"
 version = "0.0.1"
 publish = false
@@ -8,7 +8,7 @@ publish = false
 normal = ["workspace-build-acceleration"]
 
 [lib]
-name = "seedance2pro"
+name = "seedance2pro_client"
 path = "src/lib.rs"
 
 [dependencies]

@@ -4,8 +4,8 @@ use enums::by_table::generic_inference_jobs::frontend_failure_category::Frontend
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::PendingSeedance2ProJob;
 use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
-use seedance2pro::requests::poll_orders::failure_type::FailureType;
-use seedance2pro::requests::poll_orders::poll_orders::OrderStatus;
+use seedance2pro_client::requests::poll_orders::failure_type::FailureType;
+use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
 
 use crate::job_dependencies::JobDependencies;
 

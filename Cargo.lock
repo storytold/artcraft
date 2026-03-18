@@ -790,7 +790,7 @@ dependencies = [
  "log",
  "muapi_client",
  "reqwest 0.12.23",
- "seedance2pro",
+ "seedance2pro_client",
  "serde",
  "serde_derive",
  "strum 0.28.0",
@@ -10489,7 +10489,7 @@ dependencies = [
  "log",
  "mysql_queries",
  "reqwest 0.12.23",
- "seedance2pro",
+ "seedance2pro_client",
  "serde",
  "serde_derive",
  "serde_json",
@@ -10501,7 +10501,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "seedance2pro"
+name = "seedance2pro_client"
 version = "0.0.1"
 dependencies = [
  "chrono",
@@ -11619,7 +11619,7 @@ dependencies = [
  "reusable_types",
  "rust-s3",
  "rustls 0.23.36",
- "seedance2pro",
+ "seedance2pro_client",
  "serde",
  "serde_derive",
  "serde_json",
@@ -11801,7 +11801,7 @@ dependencies = [
  "easyenv",
  "errors",
  "log",
- "seedance2pro",
+ "seedance2pro_client",
  "serde_json",
  "tokio",
 ]

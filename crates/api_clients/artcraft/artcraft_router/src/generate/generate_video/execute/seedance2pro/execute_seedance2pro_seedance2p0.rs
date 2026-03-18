@@ -6,13 +6,13 @@ use crate::generate::generate_video::generate_video_response::{
 };
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
 use crate::utils::download_file::download_file;
-use seedance2pro::requests::generate_video::generate_video::{
+use seedance2pro_client::requests::generate_video::generate_video::{
   generate_video, GenerateVideoArgs,
 };
-use seedance2pro::requests::prepare_file_upload::prepare_file_upload::{
+use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
 };
-use seedance2pro::requests::upload_file::upload_file::{
+use seedance2pro_client::requests::upload_file::upload_file::{
   upload_file, UploadFileArgs,
 };
 use url_utils::extension::extract_extension_from_url::{
@@ -58,7 +58,7 @@ pub async fn execute_seedance2pro_seedance2p0(
 
 /// Downloads a file from a source URL and re-uploads it to seedance2pro CDN.
 async fn upload_to_seedance2pro(
-  session: &seedance2pro::creds::seedance2pro_session::Seedance2ProSession,
+  session: &seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession,
   source_url: &str,
 ) -> Result<String, ArtcraftRouterError> {
   let extension = extract_extension_from_url_str(source_url, &ExtractExtensions::All)
@@ -85,7 +85,7 @@ async fn upload_to_seedance2pro(
 }
 
 async fn upload_optional_url(
-  session: &seedance2pro::creds::seedance2pro_session::Seedance2ProSession,
+  session: &seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession,
   url: Option<&str>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   match url {
@@ -95,7 +95,7 @@ async fn upload_optional_url(
 }
 
 async fn upload_optional_url_list(
-  session: &seedance2pro::creds::seedance2pro_session::Seedance2ProSession,
+  session: &seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession,
   urls: Option<&[String]>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
   match urls {

@@ -17,7 +17,7 @@ members = [
   "crates/api_clients/openai_sora_client",
   "crates/api_clients/openart_client",
   "crates/api_clients/muapi_client",
-  "crates/api_clients/seedance2pro",
+  "crates/api_clients/seedance2pro_client",
   "crates/api_clients/runwayml_client",
   "crates/api_clients/thumbnail_generator",
   "crates/api_clients/world_labs_api",
@@ -252,7 +252,7 @@ muapi_client = { path = "crates/api_clients/muapi_client" }
 mysql_queries = { path = "crates/schema/database/mysql_queries" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }
-seedance2pro = { path = "crates/api_clients/seedance2pro" }
+seedance2pro_client = { path = "crates/api_clients/seedance2pro_client" }
 shared_service_components = { path = "crates/lib/shared_service_components" }
 sqlite_tasks = { path = "crates/schema/database/sqlite_tasks" }
 subprocess_common = { path = "crates/lib/subprocess_common" }

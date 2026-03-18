@@ -12,7 +12,7 @@ easyenv.workspace = true
 
 # Internal
 errors.workspace = true
-seedance2pro.workspace = true
+seedance2pro_client.workspace = true
 
 # External
 anyhow.workspace = true

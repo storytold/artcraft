@@ -1,6 +1,6 @@
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0BatchCount;
-use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro::requests::generate_video::generate_video::{BatchCount, GenerateVideoArgs, Resolution};
+use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_client::requests::generate_video::generate_video::{BatchCount, GenerateVideoArgs, Resolution};
 
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;

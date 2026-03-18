@@ -1,4 +1,4 @@
-use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 
 pub struct RouterSeedance2ProClient {
   pub(crate) session: Seedance2ProSession,

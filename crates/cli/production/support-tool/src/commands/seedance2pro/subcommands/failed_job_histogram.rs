@@ -2,9 +2,9 @@ use std::collections::BTreeMap;
 
 use anyhow::anyhow;
 use log::info;
-use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro::requests::poll_orders::failure_type::FailureType;
-use seedance2pro::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs, TaskStatus};
+use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_client::requests::poll_orders::failure_type::FailureType;
+use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs, TaskStatus};
 
 use super::super::state::Seedance2ProState;
 

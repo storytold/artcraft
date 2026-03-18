@@ -22,7 +22,7 @@ use config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
 use config::shared_constants::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 use jobs_common::job_stats::JobStats;
-use seedance2pro::creds::seedance2pro_session::Seedance2ProSession;
+use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use server_environment::ServerEnvironment;
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};

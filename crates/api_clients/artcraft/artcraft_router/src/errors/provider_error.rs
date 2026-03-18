@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 use artcraft_client::error::storyteller_error::StorytellerError;
 use fal_client::error::fal_error_plus::FalErrorPlus;
 use muapi_client::error::muapi_error::MuapiError;
-use seedance2pro::error::seedance2pro_error::Seedance2ProError;
+use seedance2pro_client::error::seedance2pro_error::Seedance2ProError;
 
 #[derive(Debug)]
 pub enum ProviderError {

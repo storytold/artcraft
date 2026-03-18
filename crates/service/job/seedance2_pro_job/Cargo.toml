@@ -32,7 +32,7 @@ errors.workspace = true
 hashing = { path = "../../../lib/files/hashing" }
 jobs_common = { path = "../../../lib/jobs_common" }
 mysql_queries = { path = "../../../schema/database/mysql_queries" }
-seedance2pro = { path = "../../../api_clients/seedance2pro" }
+seedance2pro_client = { path = "../../../api_clients/seedance2pro_client" }
 server_environment = { path = "../../../lib/server_environment" }
 tokens.workspace = true
 
