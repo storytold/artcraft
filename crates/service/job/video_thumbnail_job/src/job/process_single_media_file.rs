@@ -5,8 +5,8 @@ use tempdir::TempDir;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use bucket_paths::path_conventions::video_thumbnail_suffixes::{CURRENT_VIDEO_THUMBNAIL_VERSION, VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX, VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX};
-use ffmpeg_utils::ffmpeg::ffmpeg_video_first_frame_to_jpg_thumbnail;
-use ffmpeg_utils::ffmpeg::ffmpeg_video_gif_preview;
+use ffmpeg_utils::ffmpeg::ffmpeg_video_first_frame_to_jpg_thumbnail::{ffmpeg_video_first_frame_to_jpg_thumbnail, FfmpegVideoFirstFrameToJpgThumbnailArgs};
+use ffmpeg_utils::ffmpeg::ffmpeg_video_gif_preview::{ffmpeg_video_gif_preview, FfmpegVideoGifPreviewArgs};
 use mysql_queries::queries::media_files::thumbnails::list_video_media_files_without_thumbnails_for_job::VideoMediaFileWithoutThumbnail;
 use mysql_queries::queries::media_files::thumbnails::update_video_media_file_with_thumbnail::update_video_media_file_with_thumbnail;
 
@@ -27,17 +27,19 @@ pub async fn process_single_media_file(
   let downloaded = download_video(deps, media_file).await?;
 
   info!(
-    "Downloaded video to {:?}. Generating thumbnails for {}.",
+    "Downloaded video to {:?}. Generating thumbnails for {:?}.",
     downloaded.file_path,
-    media_file.token.as_str(),
+    media_file.token,
   );
 
-  // Generate thumbnails
-  let jpg_path = downloaded.temp_dir.path().join("thumbnail.jpg");
-  let gif_path = downloaded.temp_dir.path().join("thumbnail.gif");
+  // Upload thumbnails to bucket beside the original video
+  let video_object_path = get_video_object_path(media_file);
 
-  ffmpeg_video_first_frame_to_jpg_thumbnail::ffmpeg_video_first_frame_to_jpg_thumbnail(
-    ffmpeg_video_first_frame_to_jpg_thumbnail::Args {
+  // Generate jpg thumbnail
+  let jpg_path = downloaded.temp_dir.path().join("thumbnail.jpg");
+
+  ffmpeg_video_first_frame_to_jpg_thumbnail(
+    FfmpegVideoFirstFrameToJpgThumbnailArgs {
       input_video_path: &downloaded.file_path,
       output_jpg_path: &jpg_path,
     },
@@ -45,8 +47,20 @@ pub async fn process_single_media_file(
 
   info!("Generated JPG thumbnail for {}", media_file.token.as_str());
 
-  ffmpeg_video_gif_preview::ffmpeg_video_gif_preview(
-    ffmpeg_video_gif_preview::Args {
+  let jpg_object_path = format!("{video_object_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}");
+
+  deps
+      .public_bucket_client
+      .upload_filename(&jpg_object_path, &jpg_path)
+      .await?;
+
+  info!("Uploaded JPG thumbnail to {}", jpg_object_path);
+
+  // Generate gif thumbnail
+  let gif_path = downloaded.temp_dir.path().join("thumbnail.gif");
+
+  ffmpeg_video_gif_preview(
+    FfmpegVideoGifPreviewArgs {
       input_video_path: &downloaded.file_path,
       output_gif_path: &gif_path,
     },
@@ -54,18 +68,7 @@ pub async fn process_single_media_file(
 
   info!("Generated GIF preview for {}", media_file.token.as_str());
 
-  // Upload thumbnails to bucket beside the original video
-  let video_object_path = get_video_object_path(media_file);
-
-  let jpg_object_path = format!("{video_object_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}");
   let gif_object_path = format!("{video_object_path}{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX}");
-
-  deps
-    .public_bucket_client
-    .upload_filename(&jpg_object_path, &jpg_path)
-    .await?;
-
-  info!("Uploaded JPG thumbnail to {}", jpg_object_path);
 
   deps
     .public_bucket_client
@@ -73,6 +76,8 @@ pub async fn process_single_media_file(
     .await?;
 
   info!("Uploaded GIF preview to {}", gif_object_path);
+
+  info!("Marking thumbnail job for {:?} done", media_file.token);
 
   // Mark the media file as having a thumbnail in the database.
   update_video_media_file_with_thumbnail(

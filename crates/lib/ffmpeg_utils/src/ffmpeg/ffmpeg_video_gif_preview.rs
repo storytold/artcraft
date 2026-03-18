@@ -6,7 +6,7 @@ use std::process::Command;
 
 use errors::AnyhowResult;
 
-pub struct Args<I: AsRef<Path>, O: AsRef<Path>> {
+pub struct FfmpegVideoGifPreviewArgs<I: AsRef<Path>, O: AsRef<Path>> {
   pub input_video_path: I,
   pub output_gif_path: O,
 }
@@ -16,7 +16,7 @@ pub struct Args<I: AsRef<Path>, O: AsRef<Path>> {
 /// Takes the first 5 seconds, resampled to 10 fps, scaled to 360px wide
 /// (preserving aspect ratio), with an optimized color palette.
 pub fn ffmpeg_video_gif_preview<I: AsRef<Path>, O: AsRef<Path>>(
-  args: Args<I, O>,
+  args: FfmpegVideoGifPreviewArgs<I, O>,
 ) -> AnyhowResult<()> {
   let mut command = Command::new("ffmpeg");
 
@@ -62,7 +62,7 @@ mod tests {
 
     let output_path = temp_dir.path().join("preview.gif");
 
-    ffmpeg_video_gif_preview(Args {
+    ffmpeg_video_gif_preview(FfmpegVideoGifPreviewArgs {
       input_video_path: &input_path,
       output_gif_path: &output_path,
     }).expect("ffmpeg should succeed");

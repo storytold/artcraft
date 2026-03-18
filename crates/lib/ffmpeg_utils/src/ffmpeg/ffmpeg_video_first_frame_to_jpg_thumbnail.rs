@@ -6,7 +6,7 @@ use std::process::Command;
 
 use errors::AnyhowResult;
 
-pub struct Args<I: AsRef<Path>, O: AsRef<Path>> {
+pub struct FfmpegVideoFirstFrameToJpgThumbnailArgs<I: AsRef<Path>, O: AsRef<Path>> {
   pub input_video_path: I,
   pub output_jpg_path: O,
 }
@@ -17,7 +17,7 @@ pub struct Args<I: AsRef<Path>, O: AsRef<Path>> {
 /// Uses `-sseof -1` to seek 1 second before the end of the file, which avoids
 /// potentially-black first frames.
 pub fn ffmpeg_video_first_frame_to_jpg_thumbnail<I: AsRef<Path>, O: AsRef<Path>>(
-  args: Args<I, O>,
+  args: FfmpegVideoFirstFrameToJpgThumbnailArgs<I, O>,
 ) -> AnyhowResult<()> {
   let mut command = Command::new("ffmpeg");
 
@@ -63,7 +63,7 @@ mod tests {
 
     let output_path = temp_dir.path().join("thumbnail.jpg");
 
-    ffmpeg_video_first_frame_to_jpg_thumbnail(Args {
+    ffmpeg_video_first_frame_to_jpg_thumbnail(FfmpegVideoFirstFrameToJpgThumbnailArgs {
       input_video_path: &input_path,
       output_jpg_path: &output_path,
     }).expect("ffmpeg should succeed");
