@@ -17,15 +17,15 @@ path = "src/lib.rs"
 normal = ["workspace-build-acceleration"]
 
 [dependencies]
-# Workspace hack (faster compile times)
+# cargo-hakari workspace hack (faster compile times)
 workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
 
 # Internal (keep this to a minimum!)
-errors = { path = "../../errors" }
+errors.workspace = true
 
 # External
 # KEEP THIS TO A MINIMUM OR NIL.
-log = "0.4.20"
+log.workspace = true
 walkdir = "2.4.0"
 
 [dev-dependencies]
