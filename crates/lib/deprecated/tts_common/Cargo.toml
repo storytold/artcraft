@@ -18,11 +18,11 @@ normal = ["workspace-build-acceleration"]
 [dependencies]
 
 # Internal
-errors = { path = "../errors" }
-user_input_common = { path = "../user_input_common" }
+errors = { path = "../../errors" }
+user_input_common = { path = "../../user_input_common" }
 
 # Workspace hack (faster compile times)
-workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }
+workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
 
 # External
 anyhow = "1.0.86"

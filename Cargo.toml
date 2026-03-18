@@ -61,7 +61,7 @@ members = [
   "crates/lib/deprecated/config", # TODO(bt, 2023-02-13): Deprecate or repurpose
   "crates/lib/deprecated/http_server_common", # TODO(bt, 2023-03-20): Move useful pieces to actix_helpers
   "crates/lib/easyenv", # NB: Vendored version of https://github.com/echelon/easyenv.rs that we'll improve.
-  "crates/lib/email_sender",
+  "crates/lib/deprecated/email_sender",
   "crates/lib/errors",
   "crates/lib/ffmpeg_utils",
   "crates/lib/files/archives",
@@ -75,7 +75,7 @@ members = [
   "crates/lib/http_headers",
   "crates/lib/idempotency",
   "crates/api_clients/artcraft/artcraft_router",
-  "crates/lib/image_algorithms",
+  "crates/lib/deprecated/image_algorithms",
   "crates/lib/jobs_common",
   "crates/lib/jwt_light",
   "crates/lib/logging",
@@ -90,7 +90,7 @@ members = [
   "crates/lib/subprocess_common",
   "crates/lib/test_data",
   "crates/lib/testing",
-  "crates/lib/tts_common",
+  "crates/lib/deprecated/tts_common",
   "crates/lib/url_config",
   "crates/lib/url_utils",
   "crates/lib/user_input_common",

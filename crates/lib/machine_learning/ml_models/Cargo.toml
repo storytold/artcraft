@@ -23,7 +23,7 @@ workspace-build-acceleration = { workspace =  true }
 
 # Internal
 filesys = { path = "../../files/filesys" }
-image_algorithms = { path = "../../image_algorithms" }
+image_algorithms = { path = "../../deprecated/image_algorithms" }
 memory_caching = { path = "../../caching/memory_caching" }
 ml_weights_registry = { path = "../ml_weights_registry" }
 primitives = { path = "../../data/primitives" }

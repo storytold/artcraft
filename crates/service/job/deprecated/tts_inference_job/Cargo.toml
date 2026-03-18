@@ -31,7 +31,7 @@ hashing = { path = "../../../../lib/files/hashing" }
 jobs_common = { path = "../../../../lib/jobs_common" }
 memory_caching = { path = "../../../../lib/caching/memory_caching" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
-tts_common = { path = "../../../../lib/tts_common" }
+tts_common = { path = "../../../../lib/deprecated/tts_common" }
 
 # External
 anyhow.workspace = true

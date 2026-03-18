@@ -14,10 +14,10 @@ normal = ["workspace-build-acceleration"]
 
 [dependencies]
 # Internal
-errors = { path = "../errors" }
+errors = { path = "../../errors" }
 
 # Workspace hack (faster compile times)
-workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }
+workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
 
 # External
 lettre = { version = "0.11.2", default-features = false, features = ["smtp-transport", "pool", "hostname", "builder", "rustls-tls"] }

@@ -25,7 +25,7 @@ bootstrap = { path = "../../../../lib/bootstrap" }
 concurrency = { path = "../../../../lib/concurrency" }
 config = { path = "../../../../lib/deprecated/config" }
 easyenv = { path = "../../../../lib/easyenv" }
-email_sender = { path = "../../../../lib/email_sender" }
+email_sender = { path = "../../../../lib/deprecated/email_sender" }
 enums = { workspace = true }
 errors = { workspace = true }
 filesys = { path = "../../../../lib/files/filesys" }
