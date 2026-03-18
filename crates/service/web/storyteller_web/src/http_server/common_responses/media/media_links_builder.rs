@@ -2,6 +2,7 @@ use crate::http_server::common_responses::media::cdn_link::{get_cdn_host, new_cd
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use artcraft_api_defs::common::responses::media_links::{MediaLinks, VideoPreviews};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use bucket_paths::path_conventions::video_thumbnail_suffixes::{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX, VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX};
 use server_environment::ServerEnvironment;
 use url::Url;
 use utoipa::ToSchema;
@@ -69,8 +70,8 @@ enum PreviewType {
 fn video_preview(media_domain: MediaDomain, rooted_path: &str, thumbnail_type: PreviewType) -> Url {
   let host = media_domain.cdn_url_str();
   let rooted_path = match thumbnail_type {
-    PreviewType::Gif => format!("{rooted_path}-thumb.gif"),
-    PreviewType::Jpg => format!("{rooted_path}-thumb.jpg"),
+    PreviewType::Gif => format!("{rooted_path}{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX}"),
+    PreviewType::Jpg => format!("{rooted_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}"),
   };
   let mut url = media_domain.new_cdn_url();
   url.set_path(&rooted_path);
@@ -98,8 +99,8 @@ fn thumbnail_template(media_domain: MediaDomain, server_environment: ServerEnvir
 fn video_preview_thumbnail_template(media_domain: MediaDomain, rooted_path: &str, thumbnail_type: PreviewType) -> String {
   let host = media_domain.cdn_url_str();
   let rooted_path = match thumbnail_type {
-    PreviewType::Gif => format!("{rooted_path}-thumb.gif"),
-    PreviewType::Jpg => format!("{rooted_path}-thumb.jpg"),
+    PreviewType::Gif => format!("{rooted_path}{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX}"),
+    PreviewType::Jpg => format!("{rooted_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}"),
   };
   format!("{host}/cdn-cgi/image/width={{WIDTH}},quality={QUALITY}{rooted_path}")
 }
@@ -107,14 +108,13 @@ fn video_preview_thumbnail_template(media_domain: MediaDomain, rooted_path: &str
 
 #[cfg(test)]
 mod tests {
-  use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-
   use crate::http_server::common_responses::media::media_domain::MediaDomain;
   use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
+  use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+  use server_environment::ServerEnvironment;
 
   mod fakeyou {
     use super::*;
-    use server_environment::ServerEnvironment;
 
     const DOMAIN : MediaDomain = MediaDomain::FakeYou;
 
@@ -124,7 +124,7 @@ mod tests {
       let links = MediaLinksBuilder::from_rooted_path_and_env(MediaDomain::FakeYou, ServerEnvironment::Production, "/foo/bar.wav");
       assert_eq!(links.cdn_url.as_str(), "https://cdn-2.fakeyou.com/foo/bar.wav");
 
-use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;let links = MediaLinksBuilder::from_rooted_path_and_env(MediaDomain::Storyteller, ServerEnvironment::Development, "/foo/bar.wav");
+      let links = MediaLinksBuilder::from_rooted_path_and_env(MediaDomain::Storyteller, ServerEnvironment::Development, "/foo/bar.wav");
       assert_eq!(links.cdn_url.as_str(), "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/foo/bar.wav");
     }
 
