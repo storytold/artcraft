@@ -1,5 +1,6 @@
 use crate::common::responses::cover_image_links::CoverImageLinks;
 use serde_derive::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 // TODO(bt,2025-08-20): Replace the storyteller-web version of this.
 //  We can't drop the old version just yet due to the `impl` (easy)
@@ -8,7 +9,7 @@ use serde_derive::{Deserialize, Serialize};
 /// Everything we need to create a cover image.
 /// Cover images are small descriptive images that can be set for any media file.
 /// If a cover image is set, this is the path to the asset.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct MediaFileCoverImageDetails {
   // /// (DEPRECATED) URL path to the media file
   // #[deprecated(note="This field doesn't point to the full URL. Use media_links instead to leverage the CDN.")]
@@ -36,7 +37,7 @@ pub struct MediaFileCoverImageDetails {
 
 /// The default cover is composed of an image and color pair that are
 /// predefined by the frontend.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct MediaFileDefaultCover {
   pub image_index: u8,
   pub color_index: u8,

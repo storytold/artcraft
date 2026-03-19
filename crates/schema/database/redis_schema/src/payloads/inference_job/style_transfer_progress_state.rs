@@ -2,13 +2,14 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use url::Url;
+use utoipa::ToSchema;
 
 use errors::{anyhow, AnyhowResult};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
 use crate::keys::inference_job::style_transfer_progress_key::StyleTransferProgressKey;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct InferenceStageDetails {
   pub stage_progress: u32,
   pub expected_frame_count: u32,
@@ -17,7 +18,7 @@ pub struct InferenceStageDetails {
 }
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct InferenceProgressDetailsResponse {
   pub expected_stages: u32,
   pub currently_active_stage: u32,

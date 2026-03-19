@@ -11,6 +11,7 @@ use artcraft_api_defs::moderation::wallet_ledger_entries::moderator_get_wallet_l
 };
 use mysql_queries::queries::wallet_ledger_entries::get_wallet_ledger_entry_for_moderation::get_wallet_ledger_entry_for_moderation;
 
+use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;

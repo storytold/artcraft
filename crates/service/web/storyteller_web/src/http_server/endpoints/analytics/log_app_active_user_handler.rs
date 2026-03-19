@@ -23,7 +23,7 @@ const CLIENT_WAIT_FOR_RETRY_MILLIS: u64 = 1_000 * 60 * 1; // Every minute
   tag = "Analytics",
   path = "/v1/analytics/active_user",
   responses(
-    (status = 200, description = "Success", body = LogAppActiveUserSuccessResponse),
+    (status = 200, description = "Success", body = LogAppActiveUserResponse),
   ),
   params(
     ("request" = LogAppActiveUserRequest, description = "Payload for Request"),

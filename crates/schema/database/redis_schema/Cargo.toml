@@ -33,6 +33,7 @@ r2d2.workspace = true
 redis.workspace = true
 url.workspace = true
 serde.workspace = true
+utoipa.workspace = true
 
 [dev-dependencies]
 # None yet

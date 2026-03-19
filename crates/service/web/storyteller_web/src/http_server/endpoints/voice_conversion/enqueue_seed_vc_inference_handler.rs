@@ -108,13 +108,13 @@ impl fmt::Display for InferSeedVcError {
   tag = "Voice Conversion",
   path = "/v1/voice_conversion/seed_vc_inference",
   responses(
-    (status = 200, description = "Success response", body = InferTtsSuccessResponse),
+    (status = 200, description = "Success response", body = InferSeedVcSuccessResponse),
     (status = 400, description = "Bad input", body = InferSeedVcError),
     (status = 401, description = "Not authorized", body = InferSeedVcError),
     (status = 429, description = "Rate limited", body = InferSeedVcError),
     (status = 500, description = "Server error", body = InferSeedVcError)
   ),
-  params(("request" = InferTtsRequest, description = "Payload for Request"))
+  params(("request" = InferSeedVcRequest, description = "Payload for Request"))
 )]
 pub async fn enqueue_infer_seed_vc_handler(
   http_request: HttpRequest,

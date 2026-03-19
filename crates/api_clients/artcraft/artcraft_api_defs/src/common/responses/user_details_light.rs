@@ -1,8 +1,9 @@
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::users::UserToken;
+use utoipa::ToSchema;
 
 /// Everything we need to refer to a user on the public web interface.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct UserDetailsLight {
   /// The token for the user
   pub user_token: UserToken,
@@ -26,7 +27,7 @@ pub struct UserDetailsLight {
   // In the future, we'll also support user-uploaded avatars that we store on our servers.
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct UserDefaultAvatarInfo {
   pub image_index: u8,
   pub color_index: u8,

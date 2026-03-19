@@ -70,7 +70,7 @@ impl fmt::Display for GetIsFeaturedItemError {
   get,
   tag = "Featured Items",
   path = "/v1/featured_item/is_featured/{entity_type}/{entity_token}",
-  request_body = GetIsFeaturedItemRequest,
+  request_body = GetIsFeaturedItemPathInfo,
   responses(
     (status = 200, body = GetIsFeaturedItemSuccessResponse),
     (status = 400, body = GetIsFeaturedItemError),

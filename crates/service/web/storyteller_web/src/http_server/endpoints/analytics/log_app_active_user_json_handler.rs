@@ -22,7 +22,7 @@ const CLIENT_WAIT_FOR_RETRY_MILLIS: u64 = 1_000 * 60 * 1; // Every minute
   path = "/v1/analytics/active_user_v2",
   request_body = LogAppActiveUserRequest,
   responses(
-    (status = 200, description = "Success", body = LogAppActiveUserSuccessResponse),
+    (status = 200, description = "Success", body = LogAppActiveUserResponse),
   ),
 )]
 pub async fn log_app_active_user_json_handler(

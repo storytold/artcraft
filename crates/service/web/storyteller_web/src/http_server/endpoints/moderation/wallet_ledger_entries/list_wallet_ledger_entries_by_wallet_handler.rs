@@ -11,6 +11,7 @@ use artcraft_api_defs::moderation::wallet_ledger_entries::list_wallet_ledger_ent
 };
 use mysql_queries::queries::wallet_ledger_entries::list_wallet_ledger_entries_by_wallet::list_wallet_ledger_entries_by_wallet;
 
+use tokens::tokens::wallets::WalletToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;

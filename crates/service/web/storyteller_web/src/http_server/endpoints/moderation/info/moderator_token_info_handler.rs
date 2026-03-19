@@ -40,7 +40,7 @@ pub struct ModeratorTokenInfoResponse {
   pub maybe_payload: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub enum ModeratorTokenInfoError {
   ServerError,
   Unauthorized,

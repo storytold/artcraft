@@ -17,6 +17,7 @@ use mysql_queries::queries::model_weights::delete_weights::{
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
 use tokens::tokens::model_weights::ModelWeightToken;
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 use crate::util::delete_role_disambiguation::{delete_role_disambiguation, DeleteRole};

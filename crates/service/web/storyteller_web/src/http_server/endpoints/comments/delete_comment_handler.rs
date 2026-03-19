@@ -17,6 +17,7 @@ use mysql_queries::queries::comments::delete_comment::{delete_comment, DeleteCom
 use mysql_queries::queries::comments::get_comment::get_comment;
 use tokens::tokens::comments::CommentToken;
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;

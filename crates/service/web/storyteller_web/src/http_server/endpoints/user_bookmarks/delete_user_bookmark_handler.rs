@@ -20,6 +20,7 @@ use mysql_queries::queries::users::user_bookmarks::delete_user_bookmark::delete_
 use mysql_queries::queries::users::user_bookmarks::get_user_bookmark_transactional_locking::{get_user_bookmark_transactional_locking, BookmarkIdentifier};
 use tokens::tokens::user_bookmarks::UserBookmarkToken;
 
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;

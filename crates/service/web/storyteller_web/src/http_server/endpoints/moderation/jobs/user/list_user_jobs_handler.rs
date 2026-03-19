@@ -11,6 +11,7 @@ use artcraft_api_defs::moderation::jobs::user::list_user_jobs::{
 };
 use mysql_queries::queries::generic_inference::web::list_user_jobs_for_moderation::list_user_jobs_for_moderation;
 
+use tokens::tokens::users::UserToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;

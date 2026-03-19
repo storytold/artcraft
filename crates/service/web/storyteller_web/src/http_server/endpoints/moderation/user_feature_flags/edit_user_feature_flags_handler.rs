@@ -19,6 +19,7 @@ use mysql_queries::queries::users::user_profiles::get_user_profile_by_token::get
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;

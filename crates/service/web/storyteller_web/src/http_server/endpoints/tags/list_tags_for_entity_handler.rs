@@ -81,7 +81,7 @@ impl fmt::Display for ListTagsForEntityError {
     (status = 500, description = "Server error", body = ListTagsForEntityError),
   ),
   params(
-    ("request" = ListTagsForEntityRequest, description = "Payload for Request"),
+    ("request" = ListTagsForEntityPathInfo, description = "Payload for Request"),
   )
 )]
 pub async fn list_tags_for_entity_handler(

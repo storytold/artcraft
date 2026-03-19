@@ -12,6 +12,7 @@ use artcraft_api_defs::moderation::wallets::moderator_add_banked_balance_to_wall
 use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use mysql_queries::queries::wallets::add_durable_banked_balance_to_wallet::add_durable_banked_balance_to_wallet;
 
+use tokens::tokens::wallets::WalletToken;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;

@@ -333,7 +333,7 @@ tokio = { version = "1.50.0", features = ["macros"] }
 tokio-util = "0.7.12"
 toml = "1.0.7+spec-1.1.0"
 url = { version = "2.5.8", features = ["serde"] }
-utoipa = { version = "4", features = ["chrono", "actix_extras"] }
+utoipa = { version = "5.4.0", features = ["chrono", "actix_extras", "url"] }
 uuid = "1.22.0"
 walkdir = "2.4.0"
 

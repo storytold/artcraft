@@ -178,7 +178,7 @@ toml.workspace = true
 async-trait = "0.1.58"
 
 utoipa.workspace = true
-utoipa-swagger-ui = { version = "7", features = ["actix-web"] }
+utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 
 # TODO: move zip pieces into a separate library that encapsulates calls to this lib
 zip = "0.6.6"

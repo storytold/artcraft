@@ -1,7 +1,7 @@
 use actix_web::HttpResponse;
 use actix_web::web::Json;
 
-#[derive(Serialize)]
+#[derive(Serialize, utoipa::ToSchema)]
 pub struct SimpleGenericJsonSuccess {
   pub success: bool,
 }

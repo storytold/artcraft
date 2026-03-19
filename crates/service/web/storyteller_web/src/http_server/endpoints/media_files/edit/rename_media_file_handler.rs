@@ -9,6 +9,7 @@ use log::warn;
 use utoipa::ToSchema;
 
 use crate::http_server::common_requests::media_file_token_path_info::MediaFileTokenPathInfo;
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;

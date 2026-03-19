@@ -28,10 +28,10 @@ use utoipa::ToSchema;
   tag = "Generate Objects",
   path = "/v1/generate/object/hunyuan_2.0_image_to_3d",
   responses(
-    (status = 200, description = "Success", body = GenerateHunyuan2ImageTo3dResponse),
+    (status = 200, description = "Success", body = GenerateHunyuan20ImageTo3dResponse),
   ),
   params(
-    ("request" = GenerateHunyuan2ImageTo3dRequest, description = "Payload for Request"),
+    ("request" = GenerateHunyuan20ImageTo3dRequest, description = "Payload for Request"),
   )
 )]
 pub async fn generate_hunyuan_2_0_image_to_3d_handler(

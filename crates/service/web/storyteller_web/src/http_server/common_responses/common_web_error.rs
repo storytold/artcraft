@@ -5,7 +5,7 @@ use mysql_queries::errors::mysql_error::{MysqlCrateErrorSubtype, MysqlError};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, utoipa::ToSchema)]
 pub enum CommonWebError {
   // TODO: Bad input with error fields vector.
   /// Bad input with a user-facing error message.
