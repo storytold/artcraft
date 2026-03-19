@@ -24,7 +24,7 @@ tauri-build = { version = "2.1.1", features = [] }
 crockford = { path = "../../lib/data/crockford" }
 filesys = { path = "../../lib/files/filesys" }
 memory_caching = { path = "../../lib/caching/memory_caching" }
-ml_weights_registry = { path = "../../lib/machine_learning/ml_weights_registry" }
+ml_weights_registry = { path = "../../lib/deprecated/machine_learning/ml_weights_registry" }
 primitives = { path = "../../lib/data/primitives" }
 
 # Internal ML
@@ -64,7 +64,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 # tracing-subscriber = { version = "0.3", features = [ "env-filter", "fmt" ] }
 
 [target.'cfg(not(target_os = "macos"))'.dependencies]
-ml_models = { path = "../../lib/machine_learning/ml_models" }
+ml_models = { path = "../../lib/deprecated/machine_learning/ml_models" }
 
 [dev-dependencies]
 libloading = "0.8.6"

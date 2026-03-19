@@ -22,11 +22,11 @@ normal = ["workspace-build-acceleration"]
 workspace-build-acceleration = { workspace =  true }
 
 # Internal
-filesys = { path = "../../files/filesys" }
-image_algorithms = { path = "../../deprecated/image_algorithms" }
-memory_caching = { path = "../../caching/memory_caching" }
+filesys = { path = "../../../files/filesys" }
+image_algorithms = { path = "../image_algorithms" }
+memory_caching = { path = "../../../caching/memory_caching" }
 ml_weights_registry = { path = "../ml_weights_registry" }
-primitives = { path = "../../data/primitives" }
+primitives = { path = "../../../data/primitives" }
 
 # Bypass cudarc issues on Windows https://github.com/coreylowman/cudarc/issues/332
 cudarc = "0.13.7"
@@ -35,9 +35,9 @@ cudarc = "0.13.7"
 anyhow = { workspace = true }
 base64 = { workspace = true }
 bytes = "1.10"
-candle-core = { path = "../../../vendor/candle/candle-core", features = ["cuda"] }
-candle-nn = { path = "../../../vendor/candle/candle-nn", features = ["cuda"] }
-candle-transformers = { path = "../../../vendor/candle/candle-transformers", features = ["cuda"] }
+candle-core = { path = "../../../../vendor/candle/candle-core", features = ["cuda"] }
+candle-nn = { path = "../../../../vendor/candle/candle-nn", features = ["cuda"] }
+candle-transformers = { path = "../../../../vendor/candle/candle-transformers", features = ["cuda"] }
 const_format = "0.2.34"
 directories = "6.0.0"
 dirs = "6.0.0"

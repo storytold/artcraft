@@ -18,10 +18,10 @@ normal = ["workspace-build-acceleration"]
 [dependencies]
 
 # Internal
-errors = { path = "../errors" }
-filesys = { path = "../files/filesys" }
+errors = { path = "../../errors" }
+filesys = { path = "../../files/filesys" }
 
-workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }
+workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
 
 # External
 log = "0.4.14"

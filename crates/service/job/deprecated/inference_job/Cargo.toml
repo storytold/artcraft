@@ -45,7 +45,7 @@ mysql_queries = { path = "../../../../schema/database/mysql_queries" }
 primitives.workspace = true
 redis_common = { path = "../../../../schema/database/redis_common" }
 redis_schema = { path = "../../../../schema/database/redis_schema" }
-subprocess_common = { path = "../../../../lib/subprocess_common" }
+subprocess_common = { path = "../../../../lib/deprecated/subprocess_common" }
 thumbnail_generator = { path = "../../../../api_clients/thumbnail_generator"}
 tokens.workspace = true
 tts_common = { path = "../../../../lib/deprecated/tts_common" }

@@ -67,7 +67,7 @@ mimetypes.workspace = true
 mysql_queries.workspace = true
 password = { path = "../../../lib/password" }
 primitives = { path = "../../../lib/data/primitives" }
-prompt_engineering = { path = "../../../lib/machine_learning/prompt_engineering" }
+prompt_engineering = { path = "../../../lib/deprecated/machine_learning/prompt_engineering" }
 redis_caching = { path = "../../../lib/caching/redis_caching" }
 redis_common = { path = "../../../schema/database/redis_common" }
 redis_schema = { path = "../../../schema/database/redis_schema" }

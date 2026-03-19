@@ -37,7 +37,7 @@ mimetypes.workspace = true
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
 reusable_types = { path = "../../../../schema/public/reusable_types" }
 storyteller_root = { path = "../../../../lib/storyteller_root" }
-subprocess_common = { path = "../../../../lib/subprocess_common" }
+subprocess_common = { path = "../../../../lib/deprecated/subprocess_common" }
 tokens.workspace = true
 
 # External

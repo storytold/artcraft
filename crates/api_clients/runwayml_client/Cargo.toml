@@ -21,7 +21,7 @@ crockford.workspace = true
 errors.workspace = true
 uuid_utils.workspace = true
 jwt_light.workspace = true
-subprocess_common = { path = "../../lib/subprocess_common" }
+subprocess_common = { path = "../../lib/deprecated/subprocess_common" }
 
 # External
 anyhow.workspace = true
