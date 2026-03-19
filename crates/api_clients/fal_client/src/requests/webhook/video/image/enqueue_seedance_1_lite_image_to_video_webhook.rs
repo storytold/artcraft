@@ -2,8 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::bytedance::seedance::v1::lite::image_to_video::image_to_video;
-use fal::endpoints::fal_ai::bytedance::seedance::v1::lite::image_to_video::ImageToVideoRequest;
+use crate::requests::http::video::image::http_seedance_1_lite_image_to_video::{seedance_1_lite_image_to_video, Seedance1LiteImageToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -120,7 +119,7 @@ pub async fn enqueue_seedance_1_lite_image_to_video_webhook<U: IntoUrl, T: IntoU
   let end_image_url = args.end_frame_image_url
       .map(|url| url.as_str().to_string());
 
-  let request = ImageToVideoRequest {
+  let request = Seedance1LiteImageToVideoInput {
     image_url,
     end_image_url,
     prompt: args.prompt.to_string(),
@@ -134,7 +133,7 @@ pub async fn enqueue_seedance_1_lite_image_to_video_webhook<U: IntoUrl, T: IntoU
     enable_safety_checker: Some(false),
   };
 
-  let result = image_to_video(request)
+  let result = seedance_1_lite_image_to_video(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

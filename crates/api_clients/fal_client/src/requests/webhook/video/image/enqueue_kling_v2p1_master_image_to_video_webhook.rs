@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::endpoints::fal_ai::kling_video::v2_1::master::image_to_video::{image_to_video, MasterImageToVideoRequest};
+use crate::requests::http::video::image::http_kling_v2p1_master_image_to_video::{kling_v2p1_master_image_to_video, KlingV2p1MasterImageToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
@@ -61,7 +61,7 @@ pub async fn enqueue_kling_v2p1_master_image_to_video_webhook<U: IntoUrl, V: Int
 
   let image_url = args.image_url.as_str().to_string();
 
-  let request = MasterImageToVideoRequest {
+  let request = KlingV2p1MasterImageToVideoInput {
     image_url,
     prompt: args.prompt.to_string(),
     aspect_ratio,
@@ -72,7 +72,7 @@ pub async fn enqueue_kling_v2p1_master_image_to_video_webhook<U: IntoUrl, V: Int
     tail_image_url: None,
   };
 
-  let result = image_to_video(request)
+  let result = kling_v2p1_master_image_to_video(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

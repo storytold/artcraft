@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::pixverse::v5::pixverse_v5_image_to_video::{pixverse_v5_image_to_video, PixverseV5ImageToVideoInput};
+use crate::requests::http::video::image::http_pixverse_v5_image_to_video::{pixverse_v5_image_to_video, PixverseV5ImageToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 

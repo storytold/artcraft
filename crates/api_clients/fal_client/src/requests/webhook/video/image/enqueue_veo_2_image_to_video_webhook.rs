@@ -2,8 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::veo2::image_to_video::image_to_video;
-use fal::endpoints::fal_ai::veo2::image_to_video::ImageToVideoInput;
+use crate::requests::http::video::image::http_veo_2_image_to_video::{veo_2_image_to_video, Veo2ImageToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -70,7 +69,7 @@ pub async fn enqueue_veo_2_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
 
   let image_url = args.image_url.as_str().to_string();
 
-  let request = ImageToVideoInput {
+  let request = Veo2ImageToVideoInput {
     image_url,
     prompt: args.prompt.to_string(),
     aspect_ratio,
@@ -78,7 +77,7 @@ pub async fn enqueue_veo_2_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
     // Maybe expose these later
   };
 
-  let result = image_to_video(request)
+  let result = veo_2_image_to_video(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;
