@@ -130,53 +130,20 @@ RUN echo "Disk usage at current directory (after tests):"
 RUN pwd
 RUN du -hsc * | sort -hr
 
-# Build all the binaries.
+# Build all the binaries in a single cargo invocation.
+# This lets cargo parallelize shared dependency compilation across all targets,
+# which is significantly faster than building each binary sequentially.
 RUN SQLX_OFFLINE=true \
   LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
   $HOME/.cargo/bin/cargo build \
   --release \
-  --bin storyteller-web
-
-RUN SQLX_OFFLINE=true \
-  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
-  $HOME/.cargo/bin/cargo build \
-  --release \
-  --bin seedance2-pro-job
-
-RUN SQLX_OFFLINE=true \
-  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
-  $HOME/.cargo/bin/cargo build \
-  --release \
-  --bin worldlabs-job
-
-RUN SQLX_OFFLINE=true \
-  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
-  $HOME/.cargo/bin/cargo build \
-  --release \
-  --bin video-thumbnail-job
-
-RUN SQLX_OFFLINE=true \
-  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
-  $HOME/.cargo/bin/cargo build \
-  --release \
-  --bin dummy-service
-
-RUN SQLX_OFFLINE=true \
-  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
-  $HOME/.cargo/bin/cargo build \
-  --release \
-  --bin analytics-job
-
-RUN SQLX_OFFLINE=true \
-  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
-  $HOME/.cargo/bin/cargo build \
-  --release \
-  --bin email-sender-job
-
-RUN SQLX_OFFLINE=true \
-  LD_LIBRARY_PATH=/usr/lib:${LD_LIBRARY_PATH} \
-  $HOME/.cargo/bin/cargo build \
-  --release \
+  --bin storyteller-web \
+  --bin seedance2-pro-job \
+  --bin worldlabs-job \
+  --bin video-thumbnail-job \
+  --bin dummy-service \
+  --bin analytics-job \
+  --bin email-sender-job \
   --bin es-update-job
 
 # Print a report on disk space

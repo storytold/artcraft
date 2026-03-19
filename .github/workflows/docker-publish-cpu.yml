@@ -10,6 +10,20 @@ on:
       #- $default-branch
       - main
       - test
+    # Only build when files that affect the Docker image change.
+    # This avoids expensive 15-25 min builds for docs-only or config-only changes.
+    paths:
+      # Individual files
+      - '.github/workflows/docker-publish-cpu.yml'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+      - 'build/service_cpu.Dockerfile'
+      # Directories
+      - '.sqlx/**'
+      - '_database/**'
+      - 'crates/**'
+      - 'includes/**'
+      - 'test_data/**'
 env:
   IMAGE_NAME: storyteller-rust
 
