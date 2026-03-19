@@ -44,6 +44,7 @@ export function App() {
         <Route path="/news" element={<NewsIndex basePath="/news" />} />
         <Route path="/news/:slug" element={<NewsPost basePath="/news" />} />
         <Route path="/library" element={<Library />} />
+        <Route path="/library/:filter" element={<Library />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

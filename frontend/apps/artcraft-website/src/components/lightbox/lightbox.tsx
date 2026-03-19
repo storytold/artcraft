@@ -38,6 +38,7 @@ import {
   getProviderIconByName,
 } from "@storyteller/model-list";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
+import { Viewer3D } from "@storyteller/ui-viewer-3d";
 import dayjs from "dayjs";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
@@ -84,9 +85,13 @@ const COPY_TIMEOUT = 1500;
 const SHARE_URL_BASE = "https://getartcraft.com/media/";
 
 const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"];
+const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz"];
 
 const isVideoUrl = (url: string): boolean =>
   VIDEO_EXTENSIONS.some((ext) => url.toLowerCase().includes(ext));
+
+const is3DModelUrl = (url: string): boolean =>
+  MODEL_3D_EXTENSIONS.some((ext) => url.toLowerCase().includes(ext));
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -362,6 +367,7 @@ export function Lightbox({
   }, [batchTokens, propMediaTokens, selectedIndex, mediaToken]);
 
   const isVideo = selectedImageUrl ? isVideoUrl(selectedImageUrl) : (propMediaClass === "video");
+  const is3D = selectedImageUrl ? is3DModelUrl(selectedImageUrl) : (propMediaClass === "dimensional");
 
   // Keyboard navigation
   useEffect(() => {
@@ -423,6 +429,13 @@ export function Lightbox({
               <div className="flex h-full w-full items-center justify-center">
                 <span className="text-base-fg/60">Media not available</span>
               </div>
+            ) : is3D ? (
+              <Viewer3D
+                key={selectedImageUrl}
+                modelUrl={addCorsParam(selectedImageUrl) || selectedImageUrl}
+                isActive
+                className="h-full w-full"
+              />
             ) : isVideo ? (
               <video
                 key={selectedImageUrl}
@@ -507,7 +520,7 @@ export function Lightbox({
               </div>
             )}
 
-            {!mediaLoaded && selectedImageUrl && !isVideo && (
+            {!mediaLoaded && selectedImageUrl && !isVideo && !is3D && (
               <div className="absolute inset-0 flex items-center justify-center bg-ui-panel">
                 <LoadingSpinner className="h-12 w-12 text-base-fg" />
               </div>

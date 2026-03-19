@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import {
@@ -10,12 +10,14 @@ import {
 } from "@storyteller/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faArrowsRotate,
   faBorderAll,
+  faCube,
   faImage,
   faVideo,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
-  getThumbnailUrl,
+  getMediaThumbnail,
   THUMBNAIL_SIZES,
   PLACEHOLDER_IMAGES,
 } from "@storyteller/common";
@@ -36,10 +38,17 @@ interface GalleryItem {
 const PAGE_SIZE = 60;
 
 const FILTERS = [
-  { id: "all", label: "All", icon: faBorderAll },
-  { id: "image", label: "Images", icon: faImage },
-  { id: "video", label: "Videos", icon: faVideo },
+  { id: "all", label: "All", icon: faBorderAll, route: "/library" },
+  { id: "image", label: "Images", icon: faImage, route: "/library/images" },
+  { id: "video", label: "Videos", icon: faVideo, route: "/library/videos" },
+  { id: "meshes", label: "Meshes", icon: faCube, route: "/library/meshes" },
 ];
+
+const ROUTE_TO_FILTER: Record<string, string> = {
+  images: "image",
+  videos: "video",
+  meshes: "meshes",
+};
 
 const getFilterMediaClass = (filter: string): FilterMediaClasses[] | undefined => {
   switch (filter) {
@@ -47,8 +56,10 @@ const getFilterMediaClass = (filter: string): FilterMediaClasses[] | undefined =
       return [FilterMediaClasses.IMAGE];
     case "video":
       return [FilterMediaClasses.VIDEO];
+    case "meshes":
+      return [FilterMediaClasses.DIMENSIONAL];
     default:
-      return [FilterMediaClasses.IMAGE, FilterMediaClasses.VIDEO];
+      return [FilterMediaClasses.IMAGE, FilterMediaClasses.VIDEO, FilterMediaClasses.DIMENSIONAL];
   }
 };
 
@@ -68,6 +79,8 @@ const getLabel = (item: any) => {
       return "Image Generation";
     case "video":
       return "Video Generation";
+    case "dimensional":
+      return "3D Mesh";
     default:
       return "Generation";
   }
@@ -76,6 +89,10 @@ const getLabel = (item: any) => {
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function Library() {
+  const { filter: filterParam } = useParams<{ filter?: string }>();
+  const navigate = useNavigate();
+  const activeFilter = filterParam ? (ROUTE_TO_FILTER[filterParam] ?? "all") : "all";
+
   const [username, setUsername] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [allItems, setAllItems] = useState<GalleryItem[]>([]);
@@ -83,7 +100,6 @@ export default function Library() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [pageIndex, setPageIndex] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [activeFilter, setActiveFilter] = useState("all");
   const isLoadingRef = useRef(false);
 
   // Lightbox state
@@ -113,13 +129,14 @@ export default function Library() {
 
   // Map API item to GalleryItem
   const mapApiItem = useCallback((item: any): GalleryItem => {
-    const isVideo = item.media_class === "video";
-    // Video thumbnails are broken — use null so we show a video icon instead
-    const thumbnail = isVideo
+    const isDimensional = item.media_class === "dimensional";
+    // Meshes don't have image thumbnails — show cube icon instead
+    // For videos, getMediaThumbnail tries animated preview first, then template, then cdn_url
+    const thumbnail = isDimensional
       ? null
-      : getThumbnailUrl(item.media_links?.maybe_thumbnail_template, {
-        width: THUMBNAIL_SIZES.MEDIUM,
-      }) || item.media_links?.cdn_url || null;
+      : getMediaThumbnail(item.media_links, item.media_class, {
+        size: THUMBNAIL_SIZES.MEDIUM,
+      });
 
     return {
       id: item.token,
@@ -297,14 +314,33 @@ export default function Library() {
         {/* Header — sticky below navbar */}
         <div className="sticky top-16 z-10 -mx-4 md:-mx-8 lg:-mx-12 px-4 md:px-8 lg:px-12 pb-4 pt-4 bg-[#101014]">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-white">My Library</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-white">My Library</h1>
+              <button
+                onClick={() => {
+                  setAllItems([]);
+                  setPageIndex(0);
+                  setHasMore(true);
+                  setInitialLoading(true);
+                  isLoadingRef.current = false;
+                  loadItems(true);
+                }}
+                className="h-8 w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                title="Refresh library"
+              >
+                <FontAwesomeIcon
+                  icon={faArrowsRotate}
+                  className={`text-sm ${initialLoading ? "animate-spin" : ""}`}
+                />
+              </button>
+            </div>
 
             {/* Filter tabs */}
             <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1">
               {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
-                  onClick={() => setActiveFilter(filter.id)}
+                  onClick={() => navigate(filter.route)}
                   className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeFilter === filter.id
                       ? "bg-ui-controls text-white"
                       : "text-white/60 hover:text-white"
@@ -404,7 +440,11 @@ export default function Library() {
                           <div className="flex h-full w-full items-center justify-center">
                             <FontAwesomeIcon
                               icon={
-                                item.mediaClass === "video" ? faVideo : faImage
+                                item.mediaClass === "video"
+                                  ? faVideo
+                                  : item.mediaClass === "dimensional"
+                                    ? faCube
+                                    : faImage
                               }
                               className="text-xl text-white/20"
                             />
@@ -418,6 +458,16 @@ export default function Library() {
                               className="text-[8px]"
                             />
                             Video
+                          </div>
+                        )}
+                        {/* Mesh badge */}
+                        {item.mediaClass === "dimensional" && (
+                          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
+                            <FontAwesomeIcon
+                              icon={faCube}
+                              className="text-[8px]"
+                            />
+                            3D
                           </div>
                         )}
                       </button>
