@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::bytedance::seedream::bytedance_seedream_v4_edit_image::{bytedance_seedream_v4_edit_image, BytedanceSeedreamV4EditImageInput};
+use crate::requests::http::image::edit::http_seedream_4_edit_image::{seedream_4_edit_image, SeedreamV4EditImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -105,7 +105,7 @@ pub async fn enqueue_bytedance_seedream_v4_edit_image_webhook<R: IntoUrl>(
       })
       .map(|resolution| resolution.to_string());
 
-  let request = BytedanceSeedreamV4EditImageInput {
+  let request = SeedreamV4EditImageInput {
     prompt: args.prompt.to_string(),
     image_urls: args.image_urls,
     // Optionals
@@ -117,7 +117,7 @@ pub async fn enqueue_bytedance_seedream_v4_edit_image_webhook<R: IntoUrl>(
     enable_safety_checker: Some(false),
   };
 
-  let result = bytedance_seedream_v4_edit_image(request)
+  let result = seedream_4_edit_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

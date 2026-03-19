@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::qwen_image_edit::{qwen_image_edit, QwenImageEditInput};
+use crate::requests::http::image::edit::http_qwen_image_edit::{qwen_image_edit, QwenImageEditInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 

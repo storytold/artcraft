@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::bytedance::seedream::bytedance_seedream_v4p5_edit_image::{bytedance_seedream_v4p5_edit_image, BytedanceSeedreamV4p5EditImageInput};
+use crate::requests::http::image::edit::http_seedream_4p5_edit_image::{seedream_4p5_edit_image, SeedreamV4p5EditImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -103,7 +103,7 @@ pub async fn enqueue_bytedance_seedream_v4p5_edit_image_webhook<R: IntoUrl>(
       })
       .map(|resolution| resolution.to_string());
 
-  let request = BytedanceSeedreamV4p5EditImageInput {
+  let request = SeedreamV4p5EditImageInput {
     prompt: args.prompt.to_string(),
     image_urls: args.image_urls,
     // Optionals
@@ -115,7 +115,7 @@ pub async fn enqueue_bytedance_seedream_v4p5_edit_image_webhook<R: IntoUrl>(
     seed: None,
   };
 
-  let result = bytedance_seedream_v4p5_edit_image(request)
+  let result = seedream_4p5_edit_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;
@@ -135,8 +135,8 @@ mod tests {
   #[ignore]
   async fn test() -> AnyhowResult<()> {
     // XXX: Don't commit secrets!
-    //let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
-    let secret = read_to_string("/home/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    //let secret = read_to_string("/home/bt/Artcraft/credentials/fal_api_key.txt")?;
 
     let api_key = FalApiKey::from_str(&secret);
 

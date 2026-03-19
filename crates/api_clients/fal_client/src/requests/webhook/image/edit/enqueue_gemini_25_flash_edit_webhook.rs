@@ -2,8 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::gemini_25_flash_image::edit::gemini_25_flash_image_edit;
-use fal::prelude::fal_ai::gemini_25_flash_image::edit::Gemini25FlashImageEditInput;
+use crate::requests::http::image::edit::http_gemini_25_flash_edit::{gemini_25_flash_edit, Gemini25FlashEditInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -95,7 +94,7 @@ pub async fn enqueue_gemini_25_flash_edit_webhook<R: IntoUrl>(
       })
       .map(|aspect_ratio| aspect_ratio.to_string());
 
-  let request = Gemini25FlashImageEditInput {
+  let request = Gemini25FlashEditInput {
     prompt: args.prompt.to_string(),
     image_urls: args.image_urls,
     aspect_ratio,
@@ -104,7 +103,7 @@ pub async fn enqueue_gemini_25_flash_edit_webhook<R: IntoUrl>(
     output_format: Some("png".to_string()),
   };
 
-  let result = gemini_25_flash_image_edit(request)
+  let result = gemini_25_flash_edit(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

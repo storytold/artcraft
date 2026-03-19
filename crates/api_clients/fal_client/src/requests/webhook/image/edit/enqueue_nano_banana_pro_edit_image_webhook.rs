@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::nano_banana_pro::nano_banana_pro_image_edit::{nano_banana_pro_image_edit, NanoBananaProImageEditInput};
+use crate::requests::http::image::edit::http_nano_banana_pro_edit_image::{nano_banana_pro_edit_image, NanoBananaProEditImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -120,7 +120,7 @@ pub async fn enqueue_nano_banana_pro_image_edit_webhook<R: IntoUrl>(
       })
       .map(|aspect_ratio| aspect_ratio.to_string());
 
-  let request = NanoBananaProImageEditInput {
+  let request = NanoBananaProEditImageInput {
     prompt: args.prompt.to_string(),
     image_urls: args.image_urls,
     num_images: Some(num_images),
@@ -131,7 +131,7 @@ pub async fn enqueue_nano_banana_pro_image_edit_webhook<R: IntoUrl>(
     output_format: Some("png".to_string()),
   };
 
-  let result = nano_banana_pro_image_edit(request)
+  let result = nano_banana_pro_edit_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

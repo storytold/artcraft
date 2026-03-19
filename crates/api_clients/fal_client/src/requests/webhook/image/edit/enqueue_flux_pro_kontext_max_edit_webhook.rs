@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::prelude::fal_ai::flux_pro::kontext::max::{max, FluxProKontextMaxInput};
+use crate::requests::http::image::edit::http_flux_pro_kontext_max_edit::{flux_pro_kontext_max_edit, FluxProKontextMaxEditInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -35,7 +35,7 @@ pub async fn enqueue_flux_pro_kontext_max_edit_webhook<U: IntoUrl, R: IntoUrl>(
     FluxProKontextMaxNumImages::Four => 4,
   };
 
-  let request = FluxProKontextMaxInput {
+  let request = FluxProKontextMaxEditInput {
     prompt: args.prompt.to_string(),
     image_url: args.image_url.as_str().to_string(),
     num_images: Some(num_images),
@@ -50,7 +50,7 @@ pub async fn enqueue_flux_pro_kontext_max_edit_webhook<U: IntoUrl, R: IntoUrl>(
     sync_mode: None, // Synchronous / slow
   };
 
-  let result = max(request)
+  let result = flux_pro_kontext_max_edit(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

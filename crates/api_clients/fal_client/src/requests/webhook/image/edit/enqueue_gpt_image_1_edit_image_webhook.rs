@@ -3,7 +3,7 @@ use crate::creds::open_ai_api_key::OpenAiApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::gpt_image_1::edit_image::byok::{gpt_edit_image, GptEditImageRequest};
+use crate::requests::http::image::edit::http_gpt_image_1_edit_image::{gpt_image_1_edit_image, GptImage1EditImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -96,7 +96,7 @@ pub async fn enqueue_gpt_image_1_edit_image_webhook<V: IntoUrl>(
     GptEditImageNumImages::Four => 4,
   };
 
-  let request = GptEditImageRequest {
+  let request = GptImage1EditImageInput {
     image_urls: args.image_urls,
     prompt: args.prompt.to_string(),
     image_size: image_size.to_string(),
@@ -105,7 +105,7 @@ pub async fn enqueue_gpt_image_1_edit_image_webhook<V: IntoUrl>(
     openai_api_key: args.openai_api_key.0.to_string(),
   };
 
-  let result = gpt_edit_image(request)
+  let result = gpt_image_1_edit_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;
