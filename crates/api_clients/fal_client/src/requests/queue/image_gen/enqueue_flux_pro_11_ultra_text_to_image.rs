@@ -1,5 +1,4 @@
 use crate::creds::fal_api_key::FalApiKey;
-use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::model::enqueued_request::EnqueuedRequest;
 use fal::endpoints::fal_ai::flux_pro::v1_1_ultra::v1_1_ultra;
@@ -36,7 +35,7 @@ pub async fn enqueue_flux_pro_11_ultra_text_to_image(args: FluxPro11UltraTextToI
 
   let result = match result {
     Ok(result) => result,
-    Err(err) => return Err(classify_fal_error(err)),
+    Err(err) => return Err(FalErrorPlus::from(err)),
   };
   
   Ok(EnqueuedRequest::from_queue_response(&result)?)

@@ -1,4 +1,4 @@
-use fal::request::FalRequest;
+use crate::requests::api::fal_request::FalRequest;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]

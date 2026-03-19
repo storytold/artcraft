@@ -3,7 +3,7 @@ use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::http::image::angle::http_flux_2_lora_edit_image_angle::{http_flux_2_lora_edit_image_angle, Flux2LoraEditImageAngleInput};
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::webhook::WebhookResponse;
+use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueFlux2LoraEditImageAngleArgs<'a, R: IntoUrl> {

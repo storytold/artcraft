@@ -1,5 +1,4 @@
 use crate::creds::fal_api_key::FalApiKey;
-use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use fal::endpoints::fal_ai::imageutils::rembg::RemoveBackgroundInput;
 use fal::prelude::fal_ai::imageutils::rembg::rembg;
@@ -30,7 +29,7 @@ pub async fn remove_background_rembg<P: AsRef<Path>>(image_path: P, api_key: &Fa
 
   let result = match result {
     Ok(result) => result,
-    Err(err) => return Err(classify_fal_error(err)),
+    Err(err) => return Err(FalErrorPlus::from(err)),
   };
 
   let mut stream = result.stream(true).await?;

@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::http::object::http_hunyuan3d_v2_image_to_3d::{hunyuan3d_v2_image_to_3d, Hunyuan3dV2ImageTo3dInput};
-use fal::webhook::WebhookResponse;
+use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct Hunyuan3d2Args<'a, U: IntoUrl, V: IntoUrl> {

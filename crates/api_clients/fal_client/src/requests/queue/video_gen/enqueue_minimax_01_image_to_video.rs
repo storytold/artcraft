@@ -1,5 +1,4 @@
 use crate::creds::fal_api_key::FalApiKey;
-use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::model::enqueued_request::EnqueuedRequest;
 use fal::endpoints::fal_ai::minimax::image_to_video::image_to_video;
@@ -31,7 +30,7 @@ pub async fn enqueue_minimax_01_image_to_video<P: AsRef<Path>>(args: Minimax01Ar
 
   let result = match result {
     Ok(result) => result,
-    Err(err) => return Err(classify_fal_error(err)),
+    Err(err) => return Err(FalErrorPlus::from(err)),
   };
   
   Ok(EnqueuedRequest::from_queue_response(&result)?)
