@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use crate::requests::http::video::http_seedance_1p5_pro_text_to_video::{seedance_1p5_pro_text_to_video, Seedance1p5ProTextToVideoInput};
+use crate::requests::http::video::text::http_seedance_1p5_pro_text_to_video::{seedance_1p5_pro_text_to_video, Seedance1p5ProTextToVideoInput};
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
