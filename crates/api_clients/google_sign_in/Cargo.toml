@@ -37,5 +37,5 @@ serde_derive.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
-test_utils = { path = "../../lib/test_utils" }
+test_utils = { path = "../../testing/test_utils" }
 coarsetime = "0.1.34" # To set the clock for testing

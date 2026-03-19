@@ -20,7 +20,7 @@ normal = ["workspace-build-acceleration"]
 [dependencies]
 
 # Internal
-errors = { path = "../errors" }
+errors = { path = "../../lib/errors" }
 
 # Workspace hack (faster compile times)
 workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }

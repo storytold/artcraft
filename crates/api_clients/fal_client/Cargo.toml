@@ -35,5 +35,5 @@ url.workspace = true
 fal = { path = "../../vendor/fal-rs", features = ["endpoints"] }
 
 [dev-dependencies]
-test_utils = { path = "../../lib/test_utils" }
+test_utils = { path = "../../testing/test_utils" }
 test_data.workspace = true

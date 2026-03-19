@@ -43,4 +43,4 @@ wreq-util.workspace = true
 wreq.workspace = true
 
 [dev-dependencies]
-test_utils = { path = "../../lib/test_utils" }
+test_utils = { path = "../../testing/test_utils" }

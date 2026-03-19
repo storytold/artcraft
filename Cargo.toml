@@ -88,8 +88,8 @@ members = [
   "crates/lib/sqlx_mysql_helpers",
   "crates/lib/storyteller_root",
   "crates/lib/deprecated/subprocess_common",
-  "crates/lib/test_data",
-  "crates/lib/test_utils",
+  "crates/testing/test_data",
+  "crates/testing/test_utils",
   "crates/lib/deprecated/tts_common",
   "crates/lib/url_config",
   "crates/lib/url_utils",
@@ -252,8 +252,8 @@ seedance2pro_client = { path = "crates/api_clients/seedance2pro_client" }
 shared_service_components = { path = "crates/lib/shared_service_components" }
 sqlite_tasks = { path = "crates/schema/database/sqlite_tasks" }
 subprocess_common = { path = "crates/lib/deprecated/subprocess_common" }
-test_data = { path = "crates/lib/test_data" }
-test_utils = { path = "crates/lib/test_utils" }
+test_data = { path = "crates/testing/test_data" }
+test_utils = { path = "crates/testing/test_utils" }
 tokens = { path = "crates/schema/public/tokens" }
 url_utils = { path = "crates/lib/url_utils" }
 users = { path = "crates/lib/users" }

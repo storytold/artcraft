@@ -102,4 +102,4 @@ zip = "2.1.3"
 url = { workspace = true }
 
 [dev-dependencies]
-test_utils = { path = "../../../../lib/test_utils" }
+test_utils = { path = "../../../../testing/test_utils" }
