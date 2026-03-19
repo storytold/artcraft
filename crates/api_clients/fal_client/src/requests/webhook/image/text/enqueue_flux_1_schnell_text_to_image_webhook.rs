@@ -1,9 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::endpoints::fal_ai::flux::schnell::schnell;
-use fal::endpoints::fal_ai::flux::schnell::SchnellTextToImageInput;
-use fal::prelude::fal_ai::flux::schnell::ImageSizeProperty;
+use crate::requests::http::image::text::http_flux_1_schnell_text_to_image::{flux_1_schnell_text_to_image, Flux1SchnellTextToImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -46,18 +44,18 @@ pub async fn enqueue_flux_1_schnell_text_to_image_webhook<U: IntoUrl>(
   };
 
   let image_size = match args.aspect_ratio {
-    Flux1SchnellAspectRatio::Square => ImageSizeProperty::Square,
-    Flux1SchnellAspectRatio::SquareHd => ImageSizeProperty::SquareHd,
-    Flux1SchnellAspectRatio::LandscapeFourByThree => ImageSizeProperty::Landscape43,
-    Flux1SchnellAspectRatio::LandscapeSixteenByNine => ImageSizeProperty::Landscape169,
-    Flux1SchnellAspectRatio::PortraitThreeByFour => ImageSizeProperty::Portrait43,
-    Flux1SchnellAspectRatio::PortraitNineBySixteen => ImageSizeProperty::Portrait169,
+    Flux1SchnellAspectRatio::Square => "square",
+    Flux1SchnellAspectRatio::SquareHd => "square_hd",
+    Flux1SchnellAspectRatio::LandscapeFourByThree => "landscape_4_3",
+    Flux1SchnellAspectRatio::LandscapeSixteenByNine => "landscape_16_9",
+    Flux1SchnellAspectRatio::PortraitThreeByFour => "portrait_4_3",
+    Flux1SchnellAspectRatio::PortraitNineBySixteen => "portrait_16_9",
   };
 
-  let request = SchnellTextToImageInput {
+  let request = Flux1SchnellTextToImageInput {
     prompt: args.prompt.to_string(),
     num_images: Some(num_images),
-    image_size: Some(image_size),
+    image_size: Some(image_size.to_string()),
     // Maybe abstract
     enable_safety_checker: Some(false),
     // Maybe expose
@@ -67,7 +65,7 @@ pub async fn enqueue_flux_1_schnell_text_to_image_webhook<U: IntoUrl>(
     sync_mode: None, // Synchronous / slow
   };
 
-  let result = schnell(request)
+  let result = flux_1_schnell_text_to_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

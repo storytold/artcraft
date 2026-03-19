@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::endpoints::fal_ai::bytedance::seedream::bytedance_seedream_v4p5_text_to_image::{bytedance_seedream_v4p5_text_to_image, BytedanceSeedreamV4p5TextToImageInput};
+use crate::requests::http::image::text::http_seedream_4p5_text_to_image::{seedream_4p5_text_to_image, SeedreamV4p5TextToImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
@@ -104,7 +104,7 @@ pub async fn enqueue_bytedance_seedream_v4p5_text_to_image_webhook<R: IntoUrl>(
       })
       .map(|resolution| resolution.to_string());
 
-  let request = BytedanceSeedreamV4p5TextToImageInput {
+  let request = SeedreamV4p5TextToImageInput {
     prompt: args.prompt.to_string(),
     // Optionals
     num_images,
@@ -115,7 +115,7 @@ pub async fn enqueue_bytedance_seedream_v4p5_text_to_image_webhook<R: IntoUrl>(
     seed: None,
   };
 
-  let result = bytedance_seedream_v4p5_text_to_image(request)
+  let result = seedream_4p5_text_to_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

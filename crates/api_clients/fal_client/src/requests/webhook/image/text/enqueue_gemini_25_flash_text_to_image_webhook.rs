@@ -1,8 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::prelude::fal_ai::gemini_25_flash_image::text_to_image::gemini_25_flash_text_to_image;
-use fal::prelude::fal_ai::gemini_25_flash_image::text_to_image::Gemini25FlashTextToImageInput;
+use crate::requests::http::image::text::http_gemini_25_flash_text_to_image::{gemini_25_flash_text_to_image, Gemini25FlashTextToImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};

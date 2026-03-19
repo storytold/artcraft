@@ -1,9 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::endpoints::fal_ai::flux::dev::dev;
-use fal::endpoints::fal_ai::flux::dev::DevTextToImageInput;
-use fal::prelude::fal_ai::flux::dev::ImageSizeProperty;
+use crate::requests::http::image::text::http_flux_1_dev_text_to_image::{flux_1_dev_text_to_image, Flux1DevTextToImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -46,18 +44,18 @@ pub async fn enqueue_flux_1_dev_text_to_image_webhook<U: IntoUrl>(
   };
 
   let image_size = match args.aspect_ratio {
-    Flux1DevAspectRatio::Square => ImageSizeProperty::Square,
-    Flux1DevAspectRatio::SquareHd => ImageSizeProperty::SquareHd,
-    Flux1DevAspectRatio::LandscapeFourByThree => ImageSizeProperty::Landscape43,
-    Flux1DevAspectRatio::LandscapeSixteenByNine => ImageSizeProperty::Landscape169,
-    Flux1DevAspectRatio::PortraitThreeByFour => ImageSizeProperty::Portrait43,
-    Flux1DevAspectRatio::PortraitNineBySixteen => ImageSizeProperty::Portrait169,
+    Flux1DevAspectRatio::Square => "square",
+    Flux1DevAspectRatio::SquareHd => "square_hd",
+    Flux1DevAspectRatio::LandscapeFourByThree => "landscape_4_3",
+    Flux1DevAspectRatio::LandscapeSixteenByNine => "landscape_16_9",
+    Flux1DevAspectRatio::PortraitThreeByFour => "portrait_4_3",
+    Flux1DevAspectRatio::PortraitNineBySixteen => "portrait_16_9",
   };
 
-  let request = DevTextToImageInput {
+  let request = Flux1DevTextToImageInput {
     prompt: args.prompt.to_string(),
     num_images: Some(num_images),
-    image_size: Some(image_size),
+    image_size: Some(image_size.to_string()),
     // Maybe abstract
     enable_safety_checker: Some(false),
     // Maybe expose
@@ -68,7 +66,7 @@ pub async fn enqueue_flux_1_dev_text_to_image_webhook<U: IntoUrl>(
     sync_mode: None, // Synchronous / slow
   };
 
-  let result = dev(request)
+  let result = flux_1_dev_text_to_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

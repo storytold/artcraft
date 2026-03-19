@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::flux_pro::v1_1_ultra::{v1_1_ultra, AspectRatioProperty, FluxProUltraTextToImageInput};
+use crate::requests::http::image::text::http_flux_pro_11_ultra_text_to_image::{flux_pro_11_ultra_text_to_image, FluxPro11UltraTextToImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -64,21 +64,21 @@ pub async fn enqueue_flux_pro_11_ultra_text_to_image_webhook<U: IntoUrl>(
   };
 
   let aspect_ratio = match args.aspect_ratio {
-    FluxPro11UltraAspectRatio::Square => AspectRatioProperty::Property_1_1,
-    FluxPro11UltraAspectRatio::LandscapeThreeByTwo => AspectRatioProperty::Property_3_2,
-    FluxPro11UltraAspectRatio::LandscapeFourByThree => AspectRatioProperty::Property_4_3,
-    FluxPro11UltraAspectRatio::LandscapeSixteenByNine => AspectRatioProperty::Property_16_9,
-    FluxPro11UltraAspectRatio::LandscapeTwentyOneByNine => AspectRatioProperty::Property_21_9,
-    FluxPro11UltraAspectRatio::PortraitTwoByThree => AspectRatioProperty::Property_2_3,
-    FluxPro11UltraAspectRatio::PortraitThreeByFour => AspectRatioProperty::Property_3_4,
-    FluxPro11UltraAspectRatio::PortraitNineBySixteen => AspectRatioProperty::Property_9_16,
-    FluxPro11UltraAspectRatio::PortraitNineByTwentyOne => AspectRatioProperty::Property_9_21,
+    FluxPro11UltraAspectRatio::Square => "1:1",
+    FluxPro11UltraAspectRatio::LandscapeThreeByTwo => "3:2",
+    FluxPro11UltraAspectRatio::LandscapeFourByThree => "4:3",
+    FluxPro11UltraAspectRatio::LandscapeSixteenByNine => "16:9",
+    FluxPro11UltraAspectRatio::LandscapeTwentyOneByNine => "21:9",
+    FluxPro11UltraAspectRatio::PortraitTwoByThree => "2:3",
+    FluxPro11UltraAspectRatio::PortraitThreeByFour => "3:4",
+    FluxPro11UltraAspectRatio::PortraitNineBySixteen => "9:16",
+    FluxPro11UltraAspectRatio::PortraitNineByTwentyOne => "9:21",
   };
 
-  let request = FluxProUltraTextToImageInput {
+  let request = FluxPro11UltraTextToImageInput {
     prompt: args.prompt.to_string(),
     num_images: Some(num_images),
-    aspect_ratio: Some(aspect_ratio),
+    aspect_ratio: Some(aspect_ratio.to_string()),
     // Maybe expose
     seed: None,
     raw: Some(true), // Generate less processed, more natural-looking images. Default is false.
@@ -90,7 +90,7 @@ pub async fn enqueue_flux_pro_11_ultra_text_to_image_webhook<U: IntoUrl>(
     sync_mode: None, // Synchronous / slow
   };
 
-  let result = v1_1_ultra(request)
+  let result = flux_pro_11_ultra_text_to_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

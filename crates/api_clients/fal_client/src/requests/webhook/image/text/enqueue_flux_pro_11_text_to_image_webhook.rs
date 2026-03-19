@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::flux_pro::v1_1::{v1_1, FluxProPlusTextToImageInput, ImageSizeProperty};
+use crate::requests::http::image::text::http_flux_pro_11_text_to_image::{flux_pro_11_text_to_image, FluxPro11TextToImageInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -62,18 +62,18 @@ pub async fn enqueue_flux_pro_11_text_to_image_webhook<U: IntoUrl>(
   };
 
   let image_size = match args.aspect_ratio {
-    FluxPro11AspectRatio::Square => ImageSizeProperty::Square,
-    FluxPro11AspectRatio::SquareHd => ImageSizeProperty::SquareHd,
-    FluxPro11AspectRatio::LandscapeFourByThree => ImageSizeProperty::Landscape43,
-    FluxPro11AspectRatio::LandscapeSixteenByNine => ImageSizeProperty::Landscape169,
-    FluxPro11AspectRatio::PortraitThreeByFour => ImageSizeProperty::Portrait43,
-    FluxPro11AspectRatio::PortraitNineBySixteen => ImageSizeProperty::Portrait169,
+    FluxPro11AspectRatio::Square => "square",
+    FluxPro11AspectRatio::SquareHd => "square_hd",
+    FluxPro11AspectRatio::LandscapeFourByThree => "landscape_4_3",
+    FluxPro11AspectRatio::LandscapeSixteenByNine => "landscape_16_9",
+    FluxPro11AspectRatio::PortraitThreeByFour => "portrait_4_3",
+    FluxPro11AspectRatio::PortraitNineBySixteen => "portrait_16_9",
   };
 
-  let request = FluxProPlusTextToImageInput {
+  let request = FluxPro11TextToImageInput {
     prompt: args.prompt.to_string(),
     num_images: Some(num_images),
-    image_size: Some(image_size),
+    image_size: Some(image_size.to_string()),
     // Maybe expose
     seed: None,
     // Maybe abstract
@@ -84,7 +84,7 @@ pub async fn enqueue_flux_pro_11_text_to_image_webhook<U: IntoUrl>(
     sync_mode: None, // Synchronous / slow
   };
 
-  let result = v1_1(request)
+  let result = flux_pro_11_text_to_image(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;
