@@ -1,8 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::prelude::fal_ai::flux_pro::v1::fill::fill;
-use fal::prelude::fal_ai::flux_pro::v1::fill::FluxProFillInput;
+use crate::requests::http::image::infill::http_flux_pro_1_infill::{flux_pro_1_infill, FluxPro1InfillInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -37,7 +36,7 @@ pub async fn enqueue_flux_pro_1_infill_webhook<U: IntoUrl, R: IntoUrl, L: IntoUr
     FluxPro1InfillNumImages::Four => 4,
   };
 
-  let request = FluxProFillInput {
+  let request = FluxPro1InfillInput {
     prompt: args.prompt.to_string(),
     image_url: args.image_url.as_str().to_string(),
     mask_url: args.mask_url.as_str().to_string(),
@@ -52,7 +51,7 @@ pub async fn enqueue_flux_pro_1_infill_webhook<U: IntoUrl, R: IntoUrl, L: IntoUr
     sync_mode: None, // Synchronous / slow
   };
 
-  let result = fill(request)
+  let result = flux_pro_1_infill(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

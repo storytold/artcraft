@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::prelude::rundiffusion_fal::juggernaut_flux_lora::inpainting::{inpainting, InpaintInput};
+use crate::requests::http::image::infill::http_flux_dev_juggernaut_infill::{flux_dev_juggernaut_infill, FluxDevJuggernautInfillInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -36,7 +36,7 @@ pub async fn enqueue_flux_dev_juggernaut_infill_webhook<U: IntoUrl, R: IntoUrl, 
     FluxDevJuggernautInfillNumImages::Four => 4,
   };
 
-  let request = InpaintInput {
+  let request = FluxDevJuggernautInfillInput {
     prompt: args.prompt.to_string(),
     image_url: args.image_url.as_str().to_string(),
     mask_url: args.mask_url.as_str().to_string(),
@@ -46,7 +46,6 @@ pub async fn enqueue_flux_dev_juggernaut_infill_webhook<U: IntoUrl, R: IntoUrl, 
     output_format: Some("png".to_string()), // png or jpeg
     seed: None,
     strength: None,
-    loras: None,
     num_inference_steps: None,
     image_size: None,
     enable_safety_checker: None,
@@ -56,7 +55,7 @@ pub async fn enqueue_flux_dev_juggernaut_infill_webhook<U: IntoUrl, R: IntoUrl, 
     sync_mode: None, // Synchronous / slow
   };
 
-  let result = inpainting(request)
+  let result = flux_dev_juggernaut_infill(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;
