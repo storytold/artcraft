@@ -42,5 +42,5 @@ tokio.workspace = true
 toml.workspace = true
 
 [dev-dependencies]
-testing = { path = "../../lib/testing" }
+test_utils = { path = "../../lib/test_utils" }
 filesys.workspace = true

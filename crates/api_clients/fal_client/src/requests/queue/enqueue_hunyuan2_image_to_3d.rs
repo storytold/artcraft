@@ -45,7 +45,7 @@ mod tests {
   use crate::requests::queue::enqueue_hunyuan2_image_to_3d::{enqueue_hunyuan2_image_to_3d, Hunyuan2Args};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[tokio::test]
   #[ignore]

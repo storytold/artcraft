@@ -27,4 +27,4 @@ errors = { path = "../../errors" }
 image = "0.25.6"
 
 [dev-dependencies]
-testing = { path = "../../testing" }
+test_utils = { path = "../../test_utils" }

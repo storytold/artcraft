@@ -15,7 +15,7 @@ mod tests {
   use crate::iterators::iterate_trimmed_lines_without_comments::iterate_trimmed_lines_without_comments;
   use std::fs::File;
   use std::io::Read;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[test]
   fn load_file() {

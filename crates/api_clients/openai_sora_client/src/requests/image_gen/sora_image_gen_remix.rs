@@ -56,7 +56,7 @@ mod tests {
   use crate::requests::image_gen::sora_image_gen_remix::{sora_image_gen_remix, SoraImageGenRemixRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[ignore] // You can manually run "ignore" tests in the IDE, but they won't run in CI.
   #[tokio::test]

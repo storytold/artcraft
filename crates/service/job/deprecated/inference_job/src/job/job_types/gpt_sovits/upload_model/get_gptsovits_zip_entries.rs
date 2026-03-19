@@ -312,7 +312,7 @@ mod tests {
 
   use zip::ZipArchive;
 
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   use crate::job::job_types::gpt_sovits::model_package::model_package::{GptSovitsPackageError, GptSovitsPackageFileType};
   use crate::job::job_types::gpt_sovits::upload_model::get_gptsovits_zip_entries::get_gptsovits_zip_entries;

@@ -28,7 +28,7 @@ pub fn resize_image_file_preserving_aspect<P: AsRef<Path>>(
 
 #[cfg(test)]
 mod tests {
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   use crate::resize_image_file_preserving_aspect::resize_image_file_preserving_aspect;
 

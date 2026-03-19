@@ -48,7 +48,7 @@ wreq.workspace = true
 [dev-dependencies]
 filesys.workspace = true
 test_data.workspace = true
-testing.workspace = true
+test_utils.workspace = true
 log4rs = "1.4.0"
 env_logger.workspace = true
 env.workspace = true

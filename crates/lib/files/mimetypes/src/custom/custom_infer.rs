@@ -20,7 +20,7 @@ fn gltf_matcher(buf: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
   use crate::custom::custom_infer::CUSTOM_INFER;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[test]
   fn test_gltf() -> anyhow::Result<()> {

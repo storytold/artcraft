@@ -43,7 +43,7 @@ pub fn ffprobe_get_dimensions(
 
 #[cfg(test)]
 pub mod tests {
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   use super::ffprobe_get_dimensions;
 

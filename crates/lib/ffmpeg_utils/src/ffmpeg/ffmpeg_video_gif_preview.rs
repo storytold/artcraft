@@ -50,7 +50,7 @@ pub fn ffmpeg_video_gif_preview<I: AsRef<Path>, O: AsRef<Path>>(
 mod tests {
   use super::*;
   use tempdir::TempDir;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[test]
   fn test_extract_gif_preview_from_mp4() {

@@ -64,7 +64,7 @@ mod tests {
 
   mod for_files {
     use super::*;
-    use testing::test_file_path::test_file_path;
+    use test_utils::test_file_path::test_file_path;
 
     #[test]
     fn mp3() -> anyhow::Result<()> {

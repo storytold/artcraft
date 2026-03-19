@@ -33,7 +33,7 @@ where
 #[cfg(test)]
 mod tests {
   use crate::file_lines::iterate_trimmed_file_lines_without_comments::iterate_trimmed_file_lines_without_comments;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[test]
   fn load_file() {

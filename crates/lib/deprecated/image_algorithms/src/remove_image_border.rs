@@ -60,7 +60,7 @@ pub fn remove_image_border(image: &DynamicImage) -> AnyhowResult<DynamicImage> {
 mod tests {
   use image::{ImageFormat, ImageReader};
   use errors::AnyhowResult;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
   use crate::remove_image_border::remove_image_border;
 
   #[ignore] // NB: Not going to check these files into the repo. Just for manual testing.

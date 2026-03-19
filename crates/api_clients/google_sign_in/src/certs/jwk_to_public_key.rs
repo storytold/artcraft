@@ -66,7 +66,7 @@ mod tests {
   use crate::certs::jwk_to_public_key::jwk_to_public_key;
   use jwt_simple::algorithms::RSAPublicKeyLike;
   use std::fs::read_to_string;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[test]
   fn test_jwk_payload_decode() {

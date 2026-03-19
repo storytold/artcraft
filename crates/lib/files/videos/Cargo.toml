@@ -31,4 +31,4 @@ log.workspace = true
 mp4 = "0.14.0"
 
 [dev-dependencies]
-testing.workspace = true
+test_utils.workspace = true

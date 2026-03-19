@@ -50,7 +50,7 @@ mod tests {
   use crate::requests::deprecated::job_status::unimplemented_sora_job_status::unimplemented_sora_job_status;
   use errors::AnyhowResult;
   use std::fs::read_to_string;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[ignore]
   #[tokio::test]

@@ -73,7 +73,7 @@ pub mod tests {
   use std::fs::File;
   use std::io::BufReader;
 
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   use crate::get_mp4_info::get_mp4_info;
 

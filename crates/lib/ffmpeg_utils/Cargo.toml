@@ -30,4 +30,4 @@ log.workspace = true
 
 [dev-dependencies]
 tempdir.workspace = true
-testing.workspace = true
+test_utils.workspace = true

@@ -98,7 +98,7 @@ pub fn title_to_url_slug(title: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
   use filesys::file_lines::iterate_file_lines::iterate_file_lines;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   use crate::util::title_to_url_slug::title_to_url_slug;
 

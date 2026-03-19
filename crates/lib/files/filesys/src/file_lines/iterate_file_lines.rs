@@ -12,7 +12,7 @@ where P: AsRef<Path>, {
 
 #[cfg(test)]
 mod tests {
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
   use crate::file_lines::iterate_file_lines::iterate_file_lines;
 
   #[test]

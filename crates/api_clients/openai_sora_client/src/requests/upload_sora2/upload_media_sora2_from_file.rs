@@ -59,7 +59,7 @@ mod tests {
   use crate::requests::upload::upload_media_from_file::sora_media_upload_from_file;
   use errors::AnyhowResult;
   use std::fs::read_to_string;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[ignore] // You can manually run "ignore" tests in the IDE, but they won't run in CI.
   #[tokio::test]

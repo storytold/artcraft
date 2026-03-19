@@ -303,7 +303,7 @@ mod tests {
   use crate::requests::deprecated::job_status::sora_job_status::{get_image_gen_status, save_generations_to_dir, StatusRequest, VideoGenStatusResponse};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[ignore]
   #[tokio::test]

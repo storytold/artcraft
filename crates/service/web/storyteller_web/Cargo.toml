@@ -189,7 +189,7 @@ diesel = { version = "2.2.4", features = ["mysql"] }
 
 [dev-dependencies]
 # Testing/Dev Deps: Internal
-testing = { path = "../../../lib/testing" }
+test_utils = { path = "../../../lib/test_utils" }
 
 # Testing/Dev Deps: External
 speculoos = "0.11.0" # Fluent assertions

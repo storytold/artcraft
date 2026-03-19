@@ -51,7 +51,7 @@ mod tests {
   use super::*;
   use crate::ffprobe::ffprobe_get_dimensions::ffprobe_get_dimensions;
   use tempdir::TempDir;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[test]
   fn test_extract_jpg_thumbnail_from_mp4() {

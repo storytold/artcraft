@@ -34,7 +34,7 @@ workspace-build-acceleration.workspace = true
 
 [dev-dependencies]
 # Internal
-testing.workspace = true
+test_utils.workspace = true
 
 # External
 assertor = "0.0.3"

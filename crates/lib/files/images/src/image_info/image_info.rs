@@ -67,7 +67,7 @@ impl ImageInfo {
 mod tests {
   use crate::image_info::image_info::ImageInfo;
   use mimetypes::mimetype_info::file_extension::FileExtension;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[test]
   fn jpg_file() -> anyhow::Result<()> {

@@ -29,5 +29,5 @@ url.workspace = true
 env.workspace = true
 env_logger.workspace = true
 test_data = { path = "../../lib/test_data" }
-testing = { path = "../../lib/testing" }
+test_utils = { path = "../../lib/test_utils" }
 tokio = { version = "1", features = ["full"] }

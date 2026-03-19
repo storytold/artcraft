@@ -37,4 +37,4 @@ dom_query = "0.20.2"
 [dev-dependencies]
 filesys.workspace = true
 test_data.workspace = true
-testing.workspace = true
+test_utils.workspace = true

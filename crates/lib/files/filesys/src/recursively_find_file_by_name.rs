@@ -26,7 +26,7 @@ pub fn recursively_find_file_by_name<P: AsRef<Path>, Q: AsRef<Path>>(
 
 #[cfg(test)]
 mod tests {
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
   use crate::recursively_find_file_by_name::recursively_find_file_by_name;
 
   #[test]

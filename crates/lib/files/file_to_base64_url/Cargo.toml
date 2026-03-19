@@ -25,4 +25,4 @@ base64.workspace = true
 mimetypes.workspace = true
 
 [dev-dependencies]
-testing = { path = "../../testing" }
+test_utils = { path = "../../test_utils" }

@@ -118,7 +118,7 @@ mod tests {
   use crate::requests::get_session_request::get_session_request;
   use crate::requests::upload_image_from_file_request::upload_image_from_file_request;
   use errors::AnyhowResult;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   #[tokio::test]
   #[ignore] // Do not run in CI. Run manually to test session retrieval.

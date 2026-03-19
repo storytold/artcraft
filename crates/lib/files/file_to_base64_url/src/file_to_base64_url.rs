@@ -28,7 +28,7 @@ pub fn file_to_base64_url<P: AsRef<Path>>(path: P) -> AnyhowResult<String> {
 #[cfg(test)]
 mod tests {
   use errors::AnyhowResult;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
   use crate::file_to_base64_url::file_to_base64_url;
 
   #[test]

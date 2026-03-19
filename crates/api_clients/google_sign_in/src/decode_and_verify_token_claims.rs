@@ -78,7 +78,7 @@ mod tests {
   use jwt_simple::prelude::VerificationOptions;
   use std::collections::HashSet;
   use std::fs::read_to_string;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
   /*
         Example payload:
           iss https://accounts.google.com

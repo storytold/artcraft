@@ -1,5 +1,5 @@
 [package]
-name = "testing"
+name = "test_utils"
 edition = "2018"
 version = "0.0.1"
 authors = [
@@ -11,7 +11,7 @@ publish = false
 [lib]
 # NB: Public "testing" crate is used by the "swc" project as an internal project.
 # It isn't a crate meant to be consumed by others, so we'll use it internally.
-name = "testing"
+name = "test_utils"
 path = "src/lib.rs"
 
 [package.metadata.cargo-udeps.ignore]

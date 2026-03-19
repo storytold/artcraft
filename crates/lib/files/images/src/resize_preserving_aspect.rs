@@ -23,7 +23,7 @@ mod tests {
   use image::DynamicImage;
 
   use errors::AnyhowResult;
-  use testing::test_file_path::test_file_path;
+  use test_utils::test_file_path::test_file_path;
 
   use crate::resize_preserving_aspect::resize_preserving_aspect;
 
