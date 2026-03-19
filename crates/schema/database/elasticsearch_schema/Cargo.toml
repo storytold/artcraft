@@ -25,7 +25,7 @@ errors = { workspace = true }
 tokens = { workspace = true }
 
 # External
-elasticsearch = { version = "8.5.0-alpha.1", default-features = false, features = ["rustls-tls"] }
+elasticsearch.workspace = true
 jsonpath_lib = "0.3.0"
 log = "0.4.14"
 once_cell = "1.19.0"

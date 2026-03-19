@@ -28,7 +28,7 @@ reusable_types = { path = "../../../schema/public/reusable_types" }
 
 # External
 chrono = { workspace = true }
-hostname = "0.4.0"
+hostname.workspace = true
 
 # Web
 actix-http = { workspace = true }

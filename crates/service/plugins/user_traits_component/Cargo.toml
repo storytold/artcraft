@@ -26,4 +26,4 @@ workspace-build-acceleration = { workspace = true }
 actix-web = { workspace = true }
 
 [dev-dependencies]
-mockall = "0.12.1"
+mockall.workspace = true

@@ -74,7 +74,7 @@ tauri.workspace = true
 tempdir.workspace = true
 tempfile.workspace = true
 tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "fs"] }
-tokio-util = { version = "0.7", features = ["codec"] }
+tokio-util.workspace = true
 url.workspace = true
 
 # NB: We need to vendor this in so that we can access the cookies inside via the private API

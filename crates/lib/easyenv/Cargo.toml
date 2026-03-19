@@ -23,7 +23,7 @@ storyteller_root = { path = "../storyteller_root" }
 workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }
 
 # External
-dotenv = "0.15.0"
+dotenv.workspace = true
 env_logger = "0.11.3"
 log = "0.4.14"
 

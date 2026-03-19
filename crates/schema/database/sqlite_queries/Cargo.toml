@@ -23,7 +23,7 @@ tokens = { workspace = true }
 
 # External
 chrono = { version = "0.4.22", features = ["serde"] }
-dotenv = "0.15.0"
+dotenv.workspace = true
 log = "0.4.14"
 
 # Needed to safety check some queries we can't use escaping for

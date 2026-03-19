@@ -55,8 +55,8 @@ videos = { path = "../../../../lib/files/videos" }
 # External
 anyhow.workspace = true
 chrono.workspace = true
-dotenv = "0.15.0"
-hostname = "0.4.0"
+dotenv.workspace = true
+hostname.workspace = true
 lfu = "0.2.5"
 log.workspace = true
 once_cell.workspace = true
@@ -66,12 +66,12 @@ tempdir.workspace = true
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
 
 # Redis
-r2d2_redis = "0.14.0"
+r2d2_redis.workspace = true
 
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.
 tokio = { version = "1.40.0", features = ["macros", "sync"] }
-tokio-util = "0.7.12"
+tokio-util.workspace = true
 tokio-stream = "0.1.16"
 
 # HTTP Client
@@ -90,11 +90,11 @@ serde_json.workspace = true
 # The initial round of stabilizations for the async/await language feature in Rust 1.39 did not
 # include support for async fn in traits.
 async-trait = "0.1.58"
-time = "0.3.30"
+time.workspace = true
 mime = "0.3.17"
 rand = { version = "0.8.5", features = [] }
 jsonpath_lib = "0.3.0"
-walkdir = "2.4.0"
+walkdir.workspace = true
 opentelemetry = {version = "0.23.0", features = ["metrics"]}
 opentelemetry-otlp = { version = "0.16.0", features = ["metrics"] }
 opentelemetry_sdk = { version = "0.23.0", features = ["metrics", "rt-tokio"] }

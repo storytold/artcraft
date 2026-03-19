@@ -24,7 +24,7 @@ workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-
 errors = { path = "../errors" }
 
 # External
-bcrypt = "0.15" # password hashes
+bcrypt.workspace = true # password hashes
 #hmac = "0.10.0" # jwt signing
 #jwt = "0.13.0"
 #sha2 = "0.9.5" # hmac signing

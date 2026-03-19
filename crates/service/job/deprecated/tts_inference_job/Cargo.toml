@@ -36,8 +36,8 @@ tts_common = { path = "../../../../lib/deprecated/tts_common" }
 # External
 anyhow.workspace = true
 chrono.workspace = true
-dotenv = "0.15.0"
-hostname = "0.4.0"
+dotenv.workspace = true
+hostname.workspace = true
 lfu = "0.2.5"
 log = "0.4.14"
 tempdir.workspace = true
@@ -45,7 +45,7 @@ tempdir.workspace = true
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
 
 # Redis
-r2d2_redis = "0.14.0"
+r2d2_redis.workspace = true
 
 # Runtime
 tokio.workspace = true

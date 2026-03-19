@@ -33,7 +33,7 @@ serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true
 
-utoipa = { version = "4", features = ["chrono", "actix_extras"] }
+utoipa.workspace = true
 
 [dev-dependencies]
 anyhow.workspace = true

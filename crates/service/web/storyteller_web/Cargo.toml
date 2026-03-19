@@ -95,14 +95,14 @@ anyhow.workspace = true
 base64.workspace = true
 chrono.workspace = true
 derive_more = "0.99.17"
-hostname = "0.4.0"
+hostname.workspace = true
 lexical-sort = "0.3.1"
 log.workspace = true
 once_cell.workspace = true
 rand.workspace = true
 regex.workspace = true
 strum_macros = "0.26.4"
-time = "0.3.36"
+time.workspace = true
 url.workspace = true
 
 # Money
@@ -141,7 +141,7 @@ r2d2.workspace = true
 redis.workspace = true
 
 # Elasticsearch
-elasticsearch = { version = "8.5.0-alpha.1", default-features = false, features = ["rustls-tls"] }
+elasticsearch.workspace = true
 
 # Files
 infer = "0.16.0"
@@ -151,7 +151,7 @@ tempfile.workspace = true
 
 # The "never-encode-slash" feature seems to have been removed:
 # https://github.com/durch/rust-s3/pull/254
-rust-s3 = { version = "0.36.0-beta.2", default-features = false, features = ["fail-on-err", "tags", "tokio-rustls-tls"] }
+rust-s3.workspace = true
 
 actix.workspace = true
 actix-http.workspace = true
@@ -177,7 +177,7 @@ toml.workspace = true
 # include support for async fn in traits.
 async-trait = "0.1.58"
 
-utoipa = { version = "4", features = ["chrono","actix_extras"] }
+utoipa.workspace = true
 utoipa-swagger-ui = { version = "7", features = ["actix-web"] }
 
 # TODO: move zip pieces into a separate library that encapsulates calls to this lib
@@ -192,6 +192,6 @@ diesel = { version = "2.2.4", features = ["mysql"] }
 test_utils = { path = "../../../testing/test_utils" }
 
 # Testing/Dev Deps: External
-speculoos = "0.11.0" # Fluent assertions
-strum = { version = "0.26", features = ["derive"] }
+speculoos.workspace = true
+strum.workspace = true
 tempfile.workspace = true

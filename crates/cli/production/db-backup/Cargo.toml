@@ -27,5 +27,5 @@ errors = { path = "../../../lib/errors" }
 anyhow = "1.0.86"
 # TODO/NB: Commenting out clap4 as it prevents windows builds
 # NB: clap4 = { package = "clap", version = "4.0" }
-dotenv = "0.15.0"
+dotenv.workspace = true
 log = "0.4.14"

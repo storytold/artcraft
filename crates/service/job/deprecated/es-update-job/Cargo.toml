@@ -37,15 +37,15 @@ workspace-build-acceleration = { version = "0.1", path = "../../../../workspace-
 # External
 anyhow = "1.0.86"
 chrono = { version = "0.4.22", features = ["serde"] }
-dotenv = "0.15.0"
-hostname = "0.4.0"
+dotenv.workspace = true
+hostname.workspace = true
 log = "0.4.14"
 once_cell = "1.18.0"
 rand = "0.8.5"
 
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
 
-elasticsearch = { version = "8.5.0-alpha.1", default-features = false, features = ["rustls-tls"] }
+elasticsearch.workspace = true
 
 # Runtime
 # NB: We switched to Tokio from `async-std` for broader ecosystem support.

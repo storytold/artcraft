@@ -779,7 +779,7 @@ dependencies = [
  "seedance2pro_client",
  "serde",
  "serde_derive",
- "strum 0.28.0",
+ "strum",
  "test_data",
  "tokens",
  "tokio",
@@ -3635,7 +3635,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "storyteller_root",
- "strum 0.26.2",
+ "strum",
  "tokens",
  "tokio",
  "workspace-build-acceleration",
@@ -3798,7 +3798,7 @@ dependencies = [
  "sqlx",
  "sqlx-core",
  "sqlx-mysql",
- "strum 0.26.2",
+ "strum",
  "toml 1.0.7+spec-1.1.0",
  "utoipa",
  "workspace-build-acceleration",
@@ -3812,7 +3812,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "strum 0.26.2",
+ "strum",
  "toml 1.0.7+spec-1.1.0",
  "utoipa",
  "workspace-build-acceleration",
@@ -4044,7 +4044,7 @@ dependencies = [
  "log",
  "reqwest 0.12.23",
  "serde",
- "strum 0.28.0",
+ "strum",
  "test_data",
  "test_utils",
  "tokio",
@@ -6915,7 +6915,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "storyteller_root",
- "strum 0.26.2",
+ "strum",
  "tempdir",
  "tokens",
  "tokio",
@@ -11348,7 +11348,7 @@ dependencies = [
  "server_environment",
  "speculoos",
  "sqlx",
- "strum 0.26.2",
+ "strum",
  "strum_macros 0.26.4",
  "tempdir",
  "tempfile",
@@ -11430,15 +11430,6 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
-
-[[package]]
-name = "strum"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d8cec3501a5194c432b2b7976db6b7d10ec95c253208b45f83f7136aa985e29"
-dependencies = [
- "strum_macros 0.26.4",
-]
 
 [[package]]
 name = "strum"
@@ -12484,7 +12475,7 @@ dependencies = [
  "sqlx",
  "sqlx-core",
  "sqlx-mysql",
- "strum 0.26.2",
+ "strum",
  "utoipa",
  "workspace-build-acceleration",
 ]
@@ -14878,7 +14869,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
- "strum 0.28.0",
+ "strum",
  "tokio",
  "uuid 1.22.0",
  "workspace-build-acceleration",

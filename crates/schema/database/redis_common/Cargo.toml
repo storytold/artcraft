@@ -32,4 +32,4 @@ serde_derive = { workspace = true }
 serde_json = { workspace = true }
 
 # TODO: Get rid of in favor of std::time
-time = "0.3.30"
+time.workspace = true

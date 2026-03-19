@@ -55,10 +55,10 @@ async-trait = "0.1.58"
 
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
 
-utoipa = { version = "4", features = ["chrono","actix_extras"] }
+utoipa.workspace = true
 
 [dev-dependencies]
-mockall = "0.12.1"
+mockall.workspace = true
 
 # NB: Tokio version matches `async-stripe` transitive dep; features are for testing
 tokio = { version = "1.38.0", features = ["rt", "macros"] }

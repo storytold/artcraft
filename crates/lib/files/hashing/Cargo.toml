@@ -24,7 +24,7 @@ errors = { path = "../../errors" }
 workspace-build-acceleration = { version = "0.1", path = "../../../workspace-build-acceleration" }
 
 # External
-bcrypt = "0.15" # password hashes
+bcrypt.workspace = true # password hashes
 data-encoding = "2.3.2"
 md-5 = "0.10.6" # DO NOT USE FOR SERIOUS CRYPTO (we use this for gravatar)
 ring = "0.17.0-alpha.10"

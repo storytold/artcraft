@@ -35,7 +35,7 @@ tokens.workspace = true
 # External
 clap = "4.4.8"
 log.workspace = true
-strum = { version = "0.26", features = ["derive"] }
+strum.workspace = true
 tempdir.workspace = true
 
 # Async + clients

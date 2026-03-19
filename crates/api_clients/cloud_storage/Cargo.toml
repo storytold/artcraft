@@ -38,4 +38,4 @@ tokio.workspace = true
 
 # The "never-encode-slash" feature seems to have been removed:
 # https://github.com/durch/rust-s3/pull/254
-rust-s3 = { version = "0.36.0-beta.2", default-features = false, features = ["fail-on-err", "tags", "tokio-rustls-tls"] }
+rust-s3.workspace = true

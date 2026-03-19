@@ -26,7 +26,7 @@ errors.workspace = true
 # External
 # KEEP THIS TO A MINIMUM OR NIL.
 log.workspace = true
-walkdir = "2.4.0"
+walkdir.workspace = true
 
 [dev-dependencies]
 test_utils = { path = "../../../testing/test_utils" }

@@ -24,7 +24,7 @@ normal = ["workspace-build-acceleration"]
 chrono = "0.4.9"
 futures = "0.1.29"
 redis.workspace = true
-time = "0.3.30"
+time.workspace = true
 
 # Workspace hack (faster compile times)
 workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }

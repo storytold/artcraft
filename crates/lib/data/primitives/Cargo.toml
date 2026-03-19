@@ -37,4 +37,4 @@ workspace-build-acceleration.workspace = true
 test_utils.workspace = true
 
 # External
-assertor = "0.0.3"
+assertor.workspace = true

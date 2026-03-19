@@ -61,7 +61,7 @@ async-stripe-billing =  { version = "1.0.0-alpha.2", features = ["subscription",
 [dev-dependencies]
 # deserialize for tests
 async-stripe-shared= { version = "1.0.0-alpha.2", features = ["deserialize"] }
-mockall = "0.12.1"
+mockall.workspace = true
 
 # NB: Tokio version matches `async-stripe` transitive dep; features are for testing
 tokio = { version = "1.38.0", features = ["rt", "macros"] }

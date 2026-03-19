@@ -33,4 +33,4 @@ url = { workspace = true }
 
 [dev-dependencies]
 actix-rt = { workspace = true }
-speculoos = "0.11.0" # Fluent assertions
+speculoos.workspace = true
