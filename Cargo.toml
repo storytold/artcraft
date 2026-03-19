@@ -144,9 +144,6 @@ members = [
   "crates/testing/test_utils",
 
   # Vendored code
-  "crates/vendor/fal-rs",
-  "crates/vendor/fal-rs/fal-derive",
-  "crates/vendor/fal-rs/generate",
   "crates/vendor/limitation",
   "crates/vendor/tauri-plugin-http",
   "crates/vendor/Symphonia/symphonia",

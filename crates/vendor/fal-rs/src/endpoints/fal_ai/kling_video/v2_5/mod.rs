@@ -1,3 +1,0 @@
-pub mod kling_v2p5_turbo_pro_image_to_video;
-pub mod kling_v2p5_turbo_pro_text_to_video;
-pub mod kling_v2p5_turbo_standard_image_to_video;

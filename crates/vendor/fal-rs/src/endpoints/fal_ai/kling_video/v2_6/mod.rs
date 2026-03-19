@@ -1,2 +1,0 @@
-pub mod kling_v2p6_pro_image_to_video;
-pub mod kling_v2p6_pro_text_to_video;

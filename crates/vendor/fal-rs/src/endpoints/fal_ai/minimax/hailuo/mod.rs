@@ -1,3 +1,0 @@
-pub mod hailuo_v2p3_pro_image_to_video;
-pub mod hailuo_v2p3_pro_text_to_video;
-pub mod hailuo_v2p3_fast_pro_image_to_video;
