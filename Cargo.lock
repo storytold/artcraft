@@ -562,22 +562,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "418c75fa768af9c03be99d17643f93f79bbba589895012a80e3452a19ddda15b"
 dependencies = [
  "anstyle",
- "anstyle-parse 0.2.4",
- "anstyle-query",
- "anstyle-wincon",
- "colorchoice",
- "is_terminal_polyfill",
- "utf8parse",
-]
-
-[[package]]
-name = "anstream"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "824a212faf96e9acacdbd09febd34438f8f711fb84e09a8916013cd7815ca28d"
-dependencies = [
- "anstyle",
- "anstyle-parse 1.0.0",
+ "anstyle-parse",
  "anstyle-query",
  "anstyle-wincon",
  "colorchoice",
@@ -596,15 +581,6 @@ name = "anstyle-parse"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c03a11a9034d92058ceb6ee011ce58af4a9bf61491aa7e1e59ecd24bd40d22d4"
-dependencies = [
- "utf8parse",
-]
-
-[[package]]
-name = "anstyle-parse"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52ce7f38b242319f7cabaa6813055467063ecdc9d355bbb4ce0c68908cd8130e"
 dependencies = [
  "utf8parse",
 ]
@@ -2225,9 +2201,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.6.0"
+version = "4.5.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b193af5b67834b676abd72466a96c1024e6a6ad978a1f484bd90b85c94041351"
+checksum = "2797f34da339ce31042b27d23607e051786132987f595b02ba4f6a6dffb7030a"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -2235,11 +2211,11 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.6.0"
+version = "4.5.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "714a53001bf66416adb0e2ef5ac857140e7dc3a0c48fb28b2f10762fc4b5069f"
+checksum = "24a241312cea5059b13574bb9b3861cabf758b879c15190b37b6d6fd63ab6876"
 dependencies = [
- "anstream 1.0.0",
+ "anstream",
  "anstyle",
  "clap_lex 1.0.0",
  "strsim 0.11.1",
@@ -2247,9 +2223,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.6.0"
+version = "4.5.55"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1110bd8a634a1ab8cb04345d8d878267d57c3cf1b38d91b71af6686408bbca6a"
+checksum = "a92793da1a46a5f2a02a6f4c46c6496b28c43638adea8306fcb0caa1634f24e5"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -3002,7 +2978,7 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "chrono",
- "clap 4.6.0",
+ "clap 4.5.60",
  "datetimes",
  "dotenv",
  "easyenv",
@@ -3037,7 +3013,7 @@ name = "db-cleanup"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.6.0",
+ "clap 4.5.60",
  "dotenv",
  "easyenv",
  "enums",
@@ -3166,7 +3142,7 @@ name = "dev-database-seed"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.6.0",
+ "clap 4.5.60",
  "cloud_storage",
  "config",
  "easyenv",
@@ -3192,7 +3168,7 @@ name = "dev-upload-media-file"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.6.0",
+ "clap 4.5.60",
  "cloud_storage",
  "config",
  "easyenv",
@@ -3644,7 +3620,7 @@ name = "elasticsearch-cli"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.6.0",
+ "clap 4.5.60",
  "config",
  "easyenv",
  "elasticsearch",
@@ -3890,7 +3866,7 @@ version = "0.11.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2daee4ea451f429a58296525ddf28b45a3b64f1acf6587e2067437bb11e218d"
 dependencies = [
- "anstream 0.6.14",
+ "anstream",
  "anstyle",
  "env_filter 1.0.0",
  "jiff",
@@ -6628,7 +6604,7 @@ dependencies = [
 name = "lru-delete-models"
 version = "0.0.1"
 dependencies = [
- "clap 4.6.0",
+ "clap 4.5.60",
  "errors",
  "logging",
  "walkdir",
@@ -6924,7 +6900,7 @@ name = "migration-tool"
 version = "0.0.1"
 dependencies = [
  "bucket_paths",
- "clap 4.6.0",
+ "clap 4.5.60",
  "cloud_storage",
  "config",
  "easyenv",
@@ -11544,7 +11520,7 @@ name = "support-tool"
 version = "0.0.1"
 dependencies = [
  "anyhow",
- "clap 4.6.0",
+ "clap 4.5.60",
  "easyenv",
  "errors",
  "log",
@@ -14750,7 +14726,7 @@ dependencies = [
  "actix-router",
  "actix-rt",
  "ahash 0.8.12",
- "anstream 0.6.14",
+ "anstream",
  "arrayvec",
  "async-compression",
  "base64 0.21.7",
@@ -14763,7 +14739,7 @@ dependencies = [
  "bytes",
  "cc",
  "chrono",
- "clap 4.6.0",
+ "clap 4.5.60",
  "cookie 0.18.1",
  "core-foundation-sys",
  "crossbeam-utils",
