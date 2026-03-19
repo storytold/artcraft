@@ -150,7 +150,7 @@ mod tests {
   use crate::requests::webhook::image::edit::enqueue_nano_banana_2_edit_image_webhook::{enqueue_nano_banana_2_edit_image_webhook, EnqueueNanoBanana2EditImageArgs, EnqueueNanoBanana2EditImageAspectRatio, EnqueueNanoBanana2EditImageNumImages, EnqueueNanoBanana2EditImageResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
-  use test_data::web::image_urls::{ERNEST_SCARED_STUPID_IMAGE_URL, GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL};
+  use test_data::web::image_urls::{ERNEST_SCARED_STUPID_IMAGE_URL, GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL, WHITE_HOUSE_SUNSET_IMAGE_URL};
 
   #[tokio::test]
   #[ignore]
@@ -167,6 +167,33 @@ mod tests {
         ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
       ],
       prompt: "add the ghost and scared man to the image of the t-rex skeleton, make it look spooky but friendly",
+      num_images: EnqueueNanoBanana2EditImageNumImages::Two,
+      aspect_ratio: Some(EnqueueNanoBanana2EditImageAspectRatio::SixteenByNine),
+      resolution: Some(EnqueueNanoBanana2EditImageResolution::TwoK),
+      api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let result = enqueue_nano_banana_2_edit_image_webhook(args).await?;
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore]
+  async fn test_2() -> AnyhowResult<()> {
+    // XXX: Don't commit secrets!
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+
+    let api_key = FalApiKey::from_str(&secret);
+
+    let args = EnqueueNanoBanana2EditImageArgs {
+      image_urls: vec![
+        WHITE_HOUSE_SUNSET_IMAGE_URL.to_string(),
+        TREX_SKELETON_IMAGE_URL.to_string(),
+        ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
+      ],
+      prompt: "Put the scared man and the t-rex in front of the white house scene. Make the man afraid of the t-rex.",
       num_images: EnqueueNanoBanana2EditImageNumImages::Two,
       aspect_ratio: Some(EnqueueNanoBanana2EditImageAspectRatio::SixteenByNine),
       resolution: Some(EnqueueNanoBanana2EditImageResolution::TwoK),

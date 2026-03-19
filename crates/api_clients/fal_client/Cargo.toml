@@ -12,7 +12,7 @@ name = "fal_client"
 path = "src/lib.rs"
 
 [dependencies]
-# Workspace hack (faster compile times)
+# cargo-hakari workspace hack (faster compile times)
 workspace-build-acceleration.workspace = true
 
 # Internal
@@ -31,11 +31,10 @@ thiserror.workspace = true
 tokio.workspace = true
 url.workspace = true
 
-# For now, we'll vendor in fal.
-# We need to implement webhooks and the upstream doesn't support them yet.
-#fal = { version = "0.3.6", features = ["endpoints"] }
-fal = { path = "../../vendor/fal-rs", features = ["endpoints"] }
-
 [dev-dependencies]
-test_utils = { path = "../../testing/test_utils" }
+# Internal Dev
+test_utils.workspace = true
 test_data.workspace = true
+
+# External Dev
+# (None yet)

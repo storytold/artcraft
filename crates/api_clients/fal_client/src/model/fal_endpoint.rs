@@ -1,6 +1,5 @@
-use fal::queue::Queue;
+use crate::requests::api::queue::Queue;
 use serde::de::DeserializeOwned;
-
 // TODO(bt,2025-05-26): A macro to define these + tests.
 
 const FLUX_PRO_ULTRA_TEXT_TO_IMAGE: &str = "fal-ai/flux-pro/v1.1-ultra";

@@ -4038,7 +4038,6 @@ version = "0.0.1"
 dependencies = [
  "anyhow",
  "errors",
- "fal",
  "file_to_base64_url",
  "futures 0.3.32",
  "log",

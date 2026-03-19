@@ -1,8 +1,9 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::model::fal_endpoint::FalEndpoint;
 use crate::model::fal_request_id::FalRequestId;
+use crate::requests::api::queue::Queue;
+use crate::requests::api::queue_response::QueueResponse;
 use errors::AnyhowResult;
-use fal::queue::{Queue, QueueResponse};
 use reqwest::Client;
 use serde::de::DeserializeOwned;
 
