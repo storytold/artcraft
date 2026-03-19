@@ -100,7 +100,7 @@ pub struct OrderStatus {
 
 pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse, Seedance2ProError> {
   let host = resolve_host(args.host_override.as_ref());
-  let base_url = host.base_url();
+  let base_url = host.api_base_url();
   let get_orders_url = format!("{}/api/trpc/userOrder.getOrders", base_url);
 
   info!("Polling orders (cursor: {:?})...", args.cursor);

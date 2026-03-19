@@ -6,11 +6,14 @@
 pub enum KinoviHost {
   /// https://kinovi.ai (current default)
   Kinovi,
+
   /// https://seedance2-pro.com (legacy)
   Seedance2Pro,
-  /// Custom host, e.g. "https://example.com" or "http://localhost:1234"
+
+  /// Custom hosts for API and CDN.
   /// Must include the URL scheme but no trailing slash.
-  CustomHost(String),
+  /// e.g. api_host: "https://example.com", cdn_host: "http://static.example.com:1234"
+  CustomHost { api_host: String, cdn_host: String },
 }
 
 impl Default for KinoviHost {
@@ -20,30 +23,21 @@ impl Default for KinoviHost {
 }
 
 impl KinoviHost {
-  /// Returns the base URL (scheme + domain, no trailing slash).
-  pub fn base_url(&self) -> &str {
+  /// Returns the API base URL (scheme + domain, no trailing slash).
+  pub fn api_base_url(&self) -> &str {
     match self {
       Self::Kinovi => "https://kinovi.ai",
       Self::Seedance2Pro => "https://seedance2-pro.com",
-      Self::CustomHost(url) => url.as_str(),
+      Self::CustomHost { api_host, .. } => api_host.as_str(),
     }
   }
 
-  /// Returns the static content base URL (for uploaded files).
-  pub fn static_base_url(&self) -> String {
+  /// Returns the CDN base URL for uploaded/static files (no trailing slash).
+  pub fn cdn_base_url(&self) -> &str {
     match self {
-      Self::Kinovi => "https://static.kinovi.ai".to_string(),
-      Self::Seedance2Pro => "https://static.seedance2-pro.com".to_string(),
-      Self::CustomHost(url) => {
-        // For custom hosts, try to insert "static." subdomain
-        if let Some(rest) = url.strip_prefix("https://") {
-          format!("https://static.{}", rest)
-        } else if let Some(rest) = url.strip_prefix("http://") {
-          format!("http://static.{}", rest)
-        } else {
-          url.clone()
-        }
-      }
+      Self::Kinovi => "https://static.kinovi.ai",
+      Self::Seedance2Pro => "https://static.seedance2-pro.com",
+      Self::CustomHost { cdn_host, .. } => cdn_host.as_str(),
     }
   }
 }

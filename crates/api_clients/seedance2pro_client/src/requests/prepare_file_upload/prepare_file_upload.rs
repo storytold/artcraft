@@ -42,7 +42,7 @@ pub struct PrepareFileUploadResponse {
 
 pub async fn prepare_file_upload(args: PrepareFileUploadArgs<'_>) -> Result<PrepareFileUploadResponse, Seedance2ProError> {
   let host = resolve_host(args.host_override.as_ref());
-  let base_url = host.base_url();
+  let base_url = host.api_base_url();
   let signed_upload_url = format!("{}/api/trpc/uploads.signedUploadUrl?batch=1", base_url);
 
   let material_path = generate_material_path(&args.extension);

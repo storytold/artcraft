@@ -32,12 +32,12 @@ fn build_public_url(upload_url: &str, host: &KinoviHost) -> Result<String, Seeda
   let parsed = Url::parse(upload_url)
     .map_err(|err| Seedance2ProClientError::UrlParseError(err))?;
   let path = parsed.path(); // e.g. "/materials/20260219/1771463564512-b14bfe90.png"
-  Ok(format!("{}{}", host.static_base_url(), path))
+  Ok(format!("{}{}", host.cdn_base_url(), path))
 }
 
 pub async fn upload_file(args: UploadFileArgs) -> Result<UploadFileResponse, Seedance2ProError> {
   let host = resolve_host(args.host_override.as_ref());
-  let base_url = host.base_url();
+  let base_url = host.api_base_url();
 
   info!("Uploading file to: {}", args.upload_url);
 

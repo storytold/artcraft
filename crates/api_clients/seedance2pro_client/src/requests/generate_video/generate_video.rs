@@ -162,7 +162,7 @@ pub struct GenerateVideoResponse {
 
 pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideoResponse, Seedance2ProError> {
   let host = resolve_host(args.host_override.as_ref());
-  let base_url = host.base_url();
+  let base_url = host.api_base_url();
   let run_task_url = format!("{}/api/trpc/workflow.runTask?batch=1", base_url);
 
   info!("Requesting video from Seedance2Pro: {:?}", args);
@@ -544,6 +544,7 @@ mod tests {
     let prepare_args = PrepareFileUploadArgs {
       session: &session,
       extension: "mp4".to_string(),
+      host_override: None,
     };
     let prepare_result = prepare_file_upload(prepare_args).await?;
     println!("Upload URL: {}", prepare_result.upload_url);
@@ -556,6 +557,7 @@ mod tests {
     let upload_args = UploadFileArgs {
       upload_url: prepare_result.upload_url,
       file_bytes,
+      host_override: None,
     };
     let result = upload_file(upload_args).await?;
     println!("Public URL: {}", result.public_url);
