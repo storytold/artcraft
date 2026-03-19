@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use crate::requests::http::image::http_seedream_5_text_to_image::{http_seedream_5_text_to_image, SeedreamV5LiteTextToImageInput};
+use crate::requests::http::image::text::http_seedream_5_text_to_image::{http_seedream_5_text_to_image, SeedreamV5LiteTextToImageInput};
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
