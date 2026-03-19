@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::endpoints::fal_ai::imageutils::rembg::{rembg, RemoveBackgroundInput};
+use crate::requests::http::image::background::http_rembg_remove_background::{rembg_remove_background, RembgRemoveBackgroundInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -17,13 +17,13 @@ pub async fn remove_background_rembg_webhook<U: IntoUrl, V: IntoUrl>(
 
   let image_url = args.image_url.into_url()?;
   
-  let request = RemoveBackgroundInput {
+  let request = RembgRemoveBackgroundInput {
     image_url: image_url.to_string(),
     crop_to_bbox: None,
     sync_mode: None
   };
 
-  let result = rembg(request)
+  let result = rembg_remove_background(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;
