@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::veo::veo3_1::veo_3p1_text_to_video::{veo_3p1_text_to_video, Veo3p1TextToVideoInput};
+use crate::requests::http::video::text::http_veo_3p1_text_to_video::{veo_3p1_text_to_video, Veo3p1TextToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 

@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::endpoints::fal_ai::pixverse::v5::pixverse_v5_text_to_video::{pixverse_v5_text_to_video, PixverseV5TextToVideoInput};
+use crate::requests::http::video::text::http_pixverse_v5_text_to_video::{pixverse_v5_text_to_video, PixverseV5TextToVideoInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
