@@ -1,4 +1,5 @@
 use crate::error::classify_fal_error::classify_fal_error;
+use crate::error::fal_error::FalError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
@@ -37,8 +38,8 @@ impl Display for FalErrorPlus {
 
 impl Error for FalErrorPlus {}
 
-impl From<crate::error::fal_error::FalError> for FalErrorPlus {
-  fn from(err: crate::error::fal_error::FalError) -> Self {
+impl From<FalError> for FalErrorPlus {
+  fn from(err: FalError) -> Self {
     classify_fal_error(err)
   }
 }
@@ -58,21 +59,5 @@ impl From<url::ParseError> for FalErrorPlus {
 impl From<reqwest::Error> for FalErrorPlus {
   fn from(err: reqwest::Error) -> Self {
     FalErrorPlus::ReqwestError(err)
-  }
-}
-
-// Temporary: support conversion from the vendored fal crate's FalError.
-// This can be removed once all `requests/queue/*` and `utils/*` files are migrated off fal::.
-impl From<fal::FalError> for FalErrorPlus {
-  fn from(err: fal::FalError) -> Self {
-    // Convert the vendored FalError into our local FalError, then classify it.
-    let local_err = match err {
-      fal::FalError::RequestError(e) => crate::error::fal_error::FalError::RequestError(e),
-      fal::FalError::SerializeError(e) => crate::error::fal_error::FalError::SerializeError(e),
-      fal::FalError::Other(s) => crate::error::fal_error::FalError::Other(s),
-      // ImageError and StreamError don't exist in our local FalError; stringify them.
-      other => crate::error::fal_error::FalError::Other(format!("{}", other)),
-    };
-    classify_fal_error(local_err)
   }
 }
