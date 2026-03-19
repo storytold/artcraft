@@ -34,8 +34,8 @@ pub async fn remove_background_rembg_webhook<U: IntoUrl, V: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::remove_background_rembg_webhook::remove_background_rembg_webhook;
-  use crate::requests::webhook::image::remove_background_rembg_webhook::RemoveBackgroundRembgWebhookArgs;
+  use crate::requests::webhook::image::background::remove_background_rembg_webhook::remove_background_rembg_webhook;
+  use crate::requests::webhook::image::background::remove_background_rembg_webhook::RemoveBackgroundRembgWebhookArgs;
   use std::fs::read_to_string;
   use test_data::web::image_urls::ERNEST_SCARED_STUPID_IMAGE_URL;
 
