@@ -2,14 +2,13 @@ use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_client_error::Seedance2ProClientError;
 use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::error::seedance2pro_generic_api_error::Seedance2ProGenericApiError;
+use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::requests::poll_orders::failure_reason::FailureReason;
 use crate::requests::poll_orders::request_types::*;
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
 use log::info;
 use wreq::Client;
 use wreq_util::Emulation;
-
-const GET_ORDERS_BASE_URL: &str = "https://seedance2-pro.com/api/trpc/userOrder.getOrders";
 
 
 // --- Args & response ---
@@ -20,6 +19,9 @@ pub struct PollOrdersArgs<'a> {
   /// Optional cursor from a previous `PollOrdersResponse::next_cursor`.
   /// When `None`, the most recent orders are returned.
   pub cursor: Option<u64>,
+
+  /// Override the default host (kinovi.ai).
+  pub host_override: Option<KinoviHost>,
 }
 
 pub struct PollOrdersResponse {
@@ -97,6 +99,10 @@ pub struct OrderStatus {
 // --- Implementation ---
 
 pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse, Seedance2ProError> {
+  let host = resolve_host(args.host_override.as_ref());
+  let base_url = host.base_url();
+  let get_orders_url = format!("{}/api/trpc/userOrder.getOrders", base_url);
+
   info!("Polling orders (cursor: {:?})...", args.cursor);
 
   let input_json = build_input_json(args.cursor);
@@ -107,14 +113,15 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
     .map_err(|err| Seedance2ProClientError::WreqClientError(err))?;
 
   let cookie = args.session.cookies.as_str();
+  let referer = format!("{}/app/gallery", base_url);
 
-  let request = client.get(GET_ORDERS_BASE_URL)
+  let request = client.get(&get_orders_url)
     .query(&[("batch", "1"), ("input", input_json.as_str())])
     .header("User-Agent", FIREFOX_USER_AGENT)
     .header("Accept", "*/*")
     .header("Accept-Language", "en-US,en;q=0.9")
     .header("Accept-Encoding", "gzip, deflate, br, zstd")
-    .header("Referer", "https://seedance2-pro.com/app/gallery")
+    .header("Referer", &referer)
     .header("content-type", "application/json")
     .header("x-trpc-source", "client")
     .header("Connection", "keep-alive")
@@ -193,9 +200,9 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
 /// When `cursor` is `Some`, it is included in the JSON payload.
 fn build_input_json(cursor: Option<u64>) -> String {
   match cursor {
-    None => r#"{"0":{"json":{"limit":30,"format":null,"direction":"forward"},"meta":{"values":{"format":["undefined"]},"v":1}}}"#.to_string(),
+    None => r#"{"0":{"json":{"limit":30,"format":null,"toolId":null,"direction":"forward"},"meta":{"values":{"format":["undefined"],"toolId":["undefined"]},"v":1}}}"#.to_string(),
     Some(c) => format!(
-      r#"{{"0":{{"json":{{"limit":30,"format":null,"cursor":{cursor},"direction":"forward"}},"meta":{{"values":{{"format":["undefined"]}},"v":1}}}}}}"#,
+      r#"{{"0":{{"json":{{"limit":30,"format":null,"toolId":null,"cursor":{cursor},"direction":"forward"}},"meta":{{"values":{{"format":["undefined"],"toolId":["undefined"]}},"v":1}}}}}}"#,
       cursor = c
     ),
   }
@@ -220,7 +227,7 @@ mod tests {
   async fn test_poll_all_orders() -> AnyhowResult<()> {
     setup_test_logging(LevelFilter::Trace);
     let session = test_session()?;
-    let result = poll_orders(PollOrdersArgs { session: &session, cursor: None }).await?;
+    let result = poll_orders(PollOrdersArgs { session: &session, cursor: None, host_override: None }).await?;
     println!("Orders returned: {}", result.orders.len());
     println!("Next cursor: {:?}", result.next_cursor);
     for order in &result.orders {
@@ -238,7 +245,7 @@ mod tests {
     let session = test_session()?;
     // Use the cursor value returned from a prior call (e.g. 394062 from the example responses).
     let cursor: u64 = 394062;
-    let result = poll_orders(PollOrdersArgs { session: &session, cursor: Some(cursor) }).await?;
+    let result = poll_orders(PollOrdersArgs { session: &session, cursor: Some(cursor), host_override: None }).await?;
     println!("Orders returned (with cursor {}): {}", cursor, result.orders.len());
     println!("Next cursor: {:?}", result.next_cursor);
     for order in &result.orders {
@@ -261,7 +268,7 @@ mod tests {
 
     loop {
       page += 1;
-      let result = poll_orders(PollOrdersArgs { session: &session, cursor }).await?;
+      let result = poll_orders(PollOrdersArgs { session: &session, cursor, host_override: None }).await?;
       let page_count = result.orders.len();
       total_orders += page_count;
 

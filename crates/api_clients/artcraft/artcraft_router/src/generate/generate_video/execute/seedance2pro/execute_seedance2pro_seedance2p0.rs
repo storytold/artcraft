@@ -44,6 +44,7 @@ pub async fn execute_seedance2pro_seedance2p0(
     reference_video_urls,
     reference_audio_urls,
     use_face_blur_hack: None,
+    host_override: None,
   };
 
   let response = generate_video(args)
@@ -70,6 +71,7 @@ async fn upload_to_seedance2pro(
   let prepare_response = prepare_file_upload(PrepareFileUploadArgs {
     session,
     extension,
+    host_override: None,
   })
     .await
     .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
@@ -77,6 +79,7 @@ async fn upload_to_seedance2pro(
   let upload_response = upload_file(UploadFileArgs {
     upload_url: prepare_response.upload_url,
     file_bytes,
+    host_override: None,
   })
     .await
     .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;

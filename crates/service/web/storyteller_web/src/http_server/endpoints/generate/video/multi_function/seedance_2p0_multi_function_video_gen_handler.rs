@@ -211,6 +211,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     reference_video_urls,
     reference_audio_urls,
     use_face_blur_hack: None,
+    host_override: None,
   };
 
   // --- Calculate cost and charge wallet ---
@@ -453,6 +454,7 @@ async fn upload_to_seedance2pro(
   let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
     session,
     extension,
+    host_override: None,
   })
       .await
       .map_err(|err| {
@@ -463,6 +465,7 @@ async fn upload_to_seedance2pro(
   let upload_result = upload_file(UploadFileArgs {
     upload_url: prepare_result.upload_url,
     file_bytes,
+    host_override: None,
   })
       .await
       .map_err(|err| {

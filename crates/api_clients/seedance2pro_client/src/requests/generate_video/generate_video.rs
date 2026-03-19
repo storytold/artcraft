@@ -4,12 +4,11 @@ use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::error::seedance2pro_generic_api_error::Seedance2ProGenericApiError;
 use crate::error::seedance2pro_specific_api_error::Seedance2ProSpecificApiError;
 use crate::requests::generate_video::request_types::*;
+use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
 use log::info;
 use wreq::Client;
 use wreq_util::Emulation;
-
-const RUN_TASK_URL: &str = "https://seedance2-pro.com/api/trpc/workflow.runTask?batch=1";
 
 // --- Request args ---
 
@@ -48,6 +47,9 @@ pub struct GenerateVideoArgs<'a> {
 
   /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
   pub use_face_blur_hack: Option<bool>,
+
+  /// Override the default host (kinovi.ai).
+  pub host_override: Option<KinoviHost>,
 }
 
 impl std::fmt::Debug for GenerateVideoArgs<'_> {
@@ -63,6 +65,7 @@ impl std::fmt::Debug for GenerateVideoArgs<'_> {
       .field("reference_video_urls", &self.reference_video_urls)
       .field("reference_audio_urls", &self.reference_audio_urls)
       .field("use_face_blur_hack", &self.use_face_blur_hack)
+      .field("host_override", &self.host_override)
       .finish()
   }
 }
@@ -158,6 +161,9 @@ pub struct GenerateVideoResponse {
 // --- Implementation ---
 
 pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideoResponse, Seedance2ProError> {
+  let host = resolve_host(args.host_override.as_ref());
+  let base_url = host.base_url();
+  let run_task_url = format!("{}/api/trpc/workflow.runTask?batch=1", base_url);
 
   info!("Requesting video from Seedance2Pro: {:?}", args);
 
@@ -240,15 +246,17 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
     .build()
     .map_err(|err| Seedance2ProClientError::WreqClientError(err))?;
 
-  let response = client.post(RUN_TASK_URL)
+  let referer = format!("{}/", base_url);
+
+  let response = client.post(&run_task_url)
     .header("User-Agent", FIREFOX_USER_AGENT)
     .header("Accept", "*/*")
     .header("Accept-Language", "en-US,en;q=0.9")
     .header("Accept-Encoding", "gzip, deflate, br, zstd")
-    .header("Referer", "https://seedance2-pro.com/")
+    .header("Referer", &referer)
     .header("Content-Type", "application/json")
     .header("x-trpc-source", "client")
-    .header("Origin", "https://seedance2-pro.com")
+    .header("Origin", base_url)
     .header("Connection", "keep-alive")
     .header("Cookie", cookie)
     .header("Sec-Fetch-Dest", "empty")
@@ -331,6 +339,7 @@ mod tests {
       reference_video_urls: None,
       reference_audio_urls: None,
       use_face_blur_hack: None,
+      host_override: None,
     }
   }
 
@@ -396,6 +405,7 @@ mod tests {
       reference_video_urls: None,
       reference_audio_urls: None,
       use_face_blur_hack: None,
+      host_override: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -423,6 +433,7 @@ mod tests {
       reference_video_urls: None,
       reference_audio_urls: None,
       use_face_blur_hack: None,
+      host_override: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -452,6 +463,7 @@ mod tests {
       reference_video_urls: None,
       reference_audio_urls: None,
       use_face_blur_hack: None,
+      host_override: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -480,6 +492,7 @@ mod tests {
       ]),
       reference_audio_urls: None,
       use_face_blur_hack: None,
+      host_override: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -510,6 +523,7 @@ mod tests {
       ]),
       reference_audio_urls: None,
       use_face_blur_hack: None,
+      host_override: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);
@@ -560,6 +574,7 @@ mod tests {
       ]),
       reference_audio_urls: None,
       use_face_blur_hack: None,
+      host_override: None,
     };
     let result = generate_video(args).await?;
     println!("Task ID: {}", result.task_id);

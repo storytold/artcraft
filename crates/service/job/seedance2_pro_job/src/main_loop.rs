@@ -49,6 +49,7 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
     let response = poll_orders(PollOrdersArgs {
       session: &deps.seedance2pro_session,
       cursor,
+      host_override: None,
     })
       .await
       .map_err(|err| {

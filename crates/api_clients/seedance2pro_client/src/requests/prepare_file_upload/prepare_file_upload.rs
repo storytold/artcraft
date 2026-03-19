@@ -2,6 +2,7 @@ use crate::creds::seedance2pro_session::Seedance2ProSession;
 use crate::error::seedance2pro_client_error::Seedance2ProClientError;
 use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::error::seedance2pro_generic_api_error::Seedance2ProGenericApiError;
+use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::requests::prepare_file_upload::request_types::*;
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
 use chrono::Utc;
@@ -9,8 +10,6 @@ use log::info;
 use rand::Rng;
 use wreq::Client;
 use wreq_util::Emulation;
-
-const SIGNED_UPLOAD_URL: &str = "https://seedance2-pro.com/api/trpc/uploads.signedUploadUrl?batch=1";
 
 /// Generates a material path based on the current time.
 /// Format: `materials/YYYYMMDD/<unix_millis>-<random_hex>.<extension>`
@@ -28,6 +27,9 @@ pub struct PrepareFileUploadArgs<'a> {
 
   /// File extension without the dot, e.g. "png", "mp4", "mp3".
   pub extension: String,
+
+  /// Override the default host (kinovi.ai).
+  pub host_override: Option<KinoviHost>,
 }
 
 pub struct PrepareFileUploadResponse {
@@ -39,6 +41,10 @@ pub struct PrepareFileUploadResponse {
 }
 
 pub async fn prepare_file_upload(args: PrepareFileUploadArgs<'_>) -> Result<PrepareFileUploadResponse, Seedance2ProError> {
+  let host = resolve_host(args.host_override.as_ref());
+  let base_url = host.base_url();
+  let signed_upload_url = format!("{}/api/trpc/uploads.signedUploadUrl?batch=1", base_url);
+
   let material_path = generate_material_path(&args.extension);
 
   info!("Preparing file upload with path: {}", material_path);
@@ -57,16 +63,17 @@ pub async fn prepare_file_upload(args: PrepareFileUploadArgs<'_>) -> Result<Prep
   };
 
   let cookie = args.session.cookies.as_str();
+  let referer = format!("{}/", base_url);
 
-  let response = client.post(SIGNED_UPLOAD_URL)
+  let response = client.post(&signed_upload_url)
     .header("User-Agent", FIREFOX_USER_AGENT)
     .header("Accept", "*/*")
     .header("Accept-Language", "en-US,en;q=0.9")
     .header("Accept-Encoding", "gzip, deflate, br, zstd")
-    .header("Referer", "https://seedance2-pro.com/")
+    .header("Referer", &referer)
     .header("Content-Type", "application/json")
     .header("x-trpc-source", "client")
-    .header("Origin", "https://seedance2-pro.com")
+    .header("Origin", base_url)
     .header("Connection", "keep-alive")
     .header("Cookie", cookie)
     .header("Sec-Fetch-Dest", "empty")
@@ -130,12 +137,13 @@ mod tests {
     let args = PrepareFileUploadArgs {
       session: &session,
       extension: "png".to_string(),
+      host_override: None,
     };
     let result = prepare_file_upload(args).await?;
     println!("Upload URL: {}", result.upload_url);
     println!("Material path: {}", result.material_path);
     assert!(!result.upload_url.is_empty());
-    assert!(result.upload_url.contains("cloudflarestorage.com"));
+    assert!(result.upload_url.contains("cloudflarestorage.com") || result.upload_url.contains("kinovi"));
     assert!(result.material_path.starts_with("materials/"));
     assert!(result.material_path.ends_with(".png"));
 
@@ -152,6 +160,7 @@ mod tests {
     let args = PrepareFileUploadArgs {
       session: &session,
       extension: "mp4".to_string(),
+      host_override: None,
     };
     let result = prepare_file_upload(args).await?;
     println!("Upload URL: {}", result.upload_url);

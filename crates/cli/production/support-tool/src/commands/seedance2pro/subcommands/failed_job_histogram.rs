@@ -24,6 +24,7 @@ pub async fn run(state: &Seedance2ProState) -> anyhow::Result<()> {
     let result = poll_orders(PollOrdersArgs {
       session: &session,
       cursor,
+      host_override: None,
     }).await
       .map_err(|err| anyhow!("Error polling orders on page {}: {:?}", page, err))?;
 
