@@ -1,7 +1,7 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use fal::endpoints::fal_ai::hunyuan3d::v2::{v2, Hunyuan3DInput};
+use crate::requests::http::object::http_hunyuan3d_v2_image_to_3d::{hunyuan3d_v2_image_to_3d, Hunyuan3dV2ImageTo3dInput};
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
 
@@ -17,7 +17,7 @@ pub async fn enqueue_hunyuan_3d_2_image_to_3d_webhook<U: IntoUrl, V: IntoUrl>(
   
   let image_url = args.image_url.as_str().to_string();
 
-  let request = Hunyuan3DInput {
+  let request = Hunyuan3dV2ImageTo3dInput {
     input_image_url: image_url,
     textured_mesh: Some(true),
     guidance_scale: None,
@@ -26,7 +26,7 @@ pub async fn enqueue_hunyuan_3d_2_image_to_3d_webhook<U: IntoUrl, V: IntoUrl>(
     seed: None,
   };
 
-  let result = v2(request)
+  let result = hunyuan3d_v2_image_to_3d(request)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
       .await;

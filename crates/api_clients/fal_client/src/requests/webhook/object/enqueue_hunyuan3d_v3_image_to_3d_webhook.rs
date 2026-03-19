@@ -2,7 +2,7 @@ use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use fal::endpoints::fal_ai::hunyuan3d::hunyuan3d_v3_image_to_3d::{hunyuan3d_v3_image_to_3d, Hunyuan3dV3ImageTo3dInput};
+use crate::requests::http::object::http_hunyuan3d_v3_image_to_3d::{hunyuan3d_v3_image_to_3d, Hunyuan3dV3ImageTo3dInput};
 
 use fal::webhook::WebhookResponse;
 use reqwest::IntoUrl;
