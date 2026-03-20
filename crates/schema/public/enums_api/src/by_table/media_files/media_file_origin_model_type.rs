@@ -79,4 +79,3 @@ pub enum MediaFileOriginModelType {
   #[serde(rename = "rerender")]
   Rerender,
 }
-

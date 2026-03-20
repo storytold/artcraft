@@ -77,4 +77,3 @@ pub enum InferenceJobType {
   #[serde(rename = "worldlabs_queue")]
   WorldlabsQueue,
 }
-

@@ -50,6 +50,4 @@ impl WeightsType {
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
-
 }
-
