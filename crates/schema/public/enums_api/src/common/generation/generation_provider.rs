@@ -10,7 +10,7 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// NB: Keep the max length to 16 characters.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema, EnumIter, EnumCount)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationProvider {
   Artcraft,
@@ -19,6 +19,17 @@ pub enum GenerationProvider {
   Midjourney,
   Sora,
   WorldLabs,
+
+  // /// Catch-all for values the client doesn't yet know about.
+  // ///
+  // /// We need this to help prevent old versions of deployed-in-the-field
+  // /// apps from breaking, eg. Tauri Desktop, when new enum variants are added.
+  // /// This will stop deserialization from failing, but the client still has
+  // /// to behave intelligently.
+  // ///
+  // /// The contained string is the raw serialized value from the server.
+  // #[serde(untagged)]
+  // Unknown(String),
 }
 
 #[cfg(test)]
@@ -51,7 +62,7 @@ mod tests {
     }
     #[test]
     fn variants_count_check() {
-      assert_eq!(GenerationProvider::iter().count(), 6);
+      assert_eq!(GenerationProvider::iter().count(), 7);
     }
   }
 
