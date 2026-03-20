@@ -53,6 +53,7 @@ impl ModelWeightsCacheMapping {
 mod tests {
   use std::path::PathBuf;
 
+  use enums_db::by_table::model_weights::weights_types::WeightsType;
   use tokens::tokens::model_weights::ModelWeightToken;
 
   use crate::util::model_weights_cache::model_weights_cache_filename::ModelWeightsCacheMapping;

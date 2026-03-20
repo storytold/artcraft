@@ -307,6 +307,7 @@ mod tests {
     use std::path::PathBuf;
 
     use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
+    use enums_db::by_table::model_weights::weights_types::WeightsType;
     use jobs_common::semi_persistent_cache_dir::SemiPersistentCacheDir;
     use mysql_queries::queries::model_weights::inference::get_model_weight_for_voice_conversion_inference::ModelWeightForVoiceConversionInference;
     use tokens::tokens::model_weights::ModelWeightToken;

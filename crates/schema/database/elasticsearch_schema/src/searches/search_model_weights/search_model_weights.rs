@@ -176,6 +176,7 @@ mod tests {
   use serde_json::Value;
 
   use enums::by_table::model_weights::weights_category::WeightsCategory;
+  use enums_db::by_table::model_weights::weights_types::WeightsType;
   use tokens::tokens::users::UserToken;
 
   use crate::searches::search_model_weights::search_model_weights::build_query;
