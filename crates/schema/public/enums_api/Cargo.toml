@@ -1,0 +1,37 @@
+[package]
+name = "enums_api"
+edition = "2021"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "enums_api"
+path = "src/lib.rs"
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_derive.workspace = true
+
+# API documentation
+utoipa.workspace = true
+
+log.workspace = true
+
+[dev-dependencies]
+# Enum utilities
+strum.workspace = true
+
+# Test serialization
+serde_json.workspace = true
+toml.workspace = true

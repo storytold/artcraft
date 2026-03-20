@@ -111,6 +111,8 @@ members = [
   # Schema (public): common strongly-typed tokens, ids, payloads, etc.
   "crates/schema/public/composite_identifiers",
   "crates/schema/public/enums",
+  "crates/schema/public/enums_api",
+  "crates/schema/public/enums_db",
   "crates/schema/public/enums_public",
   "crates/schema/public/reusable_types", # TODO(bt, 2022-12-21): Deprecate
   "crates/schema/public/tokens",
@@ -232,6 +234,8 @@ cookie_store = { path = "crates/lib/cookie_store" }
 crockford = { path = "crates/lib/data/crockford" }
 easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
+enums_api = { path = "crates/schema/public/enums_api" }
+enums_db = { path = "crates/schema/public/enums_db" }
 enums_public = { path = "crates/schema/public/enums_public" }
 errors = { path = "crates/lib/errors" }
 fal_client = { path = "crates/api_clients/fal_client" }
