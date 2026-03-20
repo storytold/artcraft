@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;

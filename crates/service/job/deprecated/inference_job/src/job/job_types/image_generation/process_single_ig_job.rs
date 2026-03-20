@@ -1,4 +1,4 @@
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use errors::anyhow;
 use log::info;

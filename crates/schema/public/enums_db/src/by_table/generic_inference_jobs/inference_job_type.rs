@@ -7,113 +7,53 @@ use strum::EnumIter;
 
 /// Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `job_type`.
 ///
-/// TODO(bt,2024-02-01): This will replace "inference_category" and "maybe_model_type" for job control and dispatch,
-/// since those mechanisms are overloaded and inconsistent.
-///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum InferenceJobType {
-  /// Fal jobs do not run on our job runners.
-  /// Instead, we receive web hook updates from Fal.
   FalQueue,
-
-  /// Seedance 2 Pro jobs. We poll for results.
   #[serde(rename = "seedance2pro_queue")]
   Seedance2ProQueue,
-
-  /// World Labs jobs. We poll for results.
   #[serde(rename = "worldlabs_queue")]
   WorldlabsQueue,
-
-  /// Storyteller Studio and Video Style Transfer Jobs (which we may want to split).
-  /// These run in Comfy.
-  /// TODO(bt,2024-07-15): We may segregate these two job types in the future
   VideoRender,
-
-  /// Live Portrait Jobs.
-  /// These run in Comfy.
   LivePortrait,
-
-  /// Face Fusion Jobs.
-  /// These run in Comfy.
   FaceFusion,
-
-  /// Voice jobs that use GPT-Sovits
   GptSovits,
-
-  /// Jobs that run ComfyUI workflows
-  /// This is actually just for Video Style Transfer and Storyteller Studio.
   #[deprecated(note = "Use VideoRender instead.")]
   ComfyUi,
-
-  /// Second gen studio
   #[serde(rename = "studio_gen2")]
   StudioGen2,
-
-  /// Sora GPT 4o image gen
   #[serde(rename = "image_gen_api")]
   ImageGenApi,
-
-  /// A job that turns "FBX" game engine files into "GLTF" files (Bevy-compatible).
   #[serde(rename = "convert_fbx_gltf")]
   ConvertFbxToGltf,
-
-  /// Process a video into BVH mocap animation data for game engines
   MocapNet,
-
-  /// Jobs that run F5TTS
   #[serde(rename = "f5_tts")]
   F5TTS,
-
-  /// RVC is a voice conversion model. RVCv2 is the most popular such model currently.
   #[serde(rename = "rvc_v2")]
   RvcV2,
-
-  /// SadTalker does image-to-video lip-syncing when given an audio file and image.
   SadTalker,
-
-  /// so-vits-svc voice conversion. This predates RVCv2.
   SoVitsSvc,
-
   #[serde(rename = "seed_vc")]
   SeedVc,
-
-  /// Stable diffusion image generation
   StableDiffusion,
-
-  /// StyleTTS2 is a zero shot multi-speaker TTS model.
-  /// This job type should handle both speaker vector encoding and inference.
   #[serde(rename = "styletts2")]
   StyleTTS2,
-
-  /// TT2 Text to speech
   Tacotron2,
-
-  /// A value we may use in the future for historical jobs
-  /// (i.e. when we backfill the database column and make it non-nullable)
   #[default]
   Unknown,
-
-  /// DEPRECATED. DO NOT USE.
-  /// Job that converts bevy to workflow files
   #[deprecated(note = "This was for Bevy engine's server side rendering.")]
   #[serde(rename = "bevy_to_workflow")]
   BevyToWorkflow,
-
   #[deprecated(note = "This was for ReRenderAVideo, which we never productionized.")]
-  /// DEPRECATED. DO NOT USE.
-  /// Re-render a video is a video style transfer algorithm. We developed code
-  /// around it, but chose to develop AnimateDiff / ComfyUI support instead.
   RerenderAVideo,
 }
 
-// TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(InferenceJobType);
 impl_mysql_enum_coders!(InferenceJobType);
 
-/// NB: Legacy API for older code.
 impl InferenceJobType {
   pub fn to_str(&self) -> &'static str {
     match self {
@@ -173,8 +113,6 @@ impl InferenceJobType {
   }
 
   pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
       Self::FalQueue,
       Self::Seedance2ProQueue,
@@ -205,8 +143,8 @@ impl InferenceJobType {
 
 #[cfg(test)]
 mod tests {
-  use crate::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-  use crate::test_helpers::assert_serialization;
+  use super::InferenceJobType;
+  use enums_shared::test_helpers::assert_serialization;
 
   mod explicit_checks {
     use super::*;
@@ -299,13 +237,8 @@ mod tests {
 
     #[test]
     fn all_variants() {
-      // Static check
-      const EXPECTED_COUNT : usize = 23;
-      
+      const EXPECTED_COUNT: usize = 23;
       assert_eq!(InferenceJobType::all_variants().len(), EXPECTED_COUNT);
-      assert_eq!(InferenceJobType::iter().len(), EXPECTED_COUNT);
-
-      // Generated check
       use strum::IntoEnumIterator;
       assert_eq!(InferenceJobType::all_variants().len(), InferenceJobType::iter().len());
     }
@@ -331,10 +264,10 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
-      const MAX_LENGTH : usize = 32;
+      const MAX_LENGTH: usize = 32;
       for variant in InferenceJobType::all_variants() {
         let serialized = variant.to_str();
-        assert!(serialized.len() > 0, "variant {:?} is too short", variant);
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }

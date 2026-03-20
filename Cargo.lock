@@ -6879,6 +6879,7 @@ dependencies = [
  "chrono",
  "cloud_storage",
  "enums",
+ "enums_db",
  "errors",
  "jobs_common",
  "mysql_queries",

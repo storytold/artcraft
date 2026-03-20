@@ -2,7 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
