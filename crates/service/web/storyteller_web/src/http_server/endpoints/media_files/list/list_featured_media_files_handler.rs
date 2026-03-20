@@ -15,6 +15,7 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::view_as::ViewAs;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
+use enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api;
 use log::{error, warn};
 use mysql_queries::queries::media_files::list::list_featured_media_files::{list_featured_media_files, FeaturedMediaFileListPage, ListFeaturedMediaFilesArgs};
 use std::sync::Arc;
@@ -314,7 +315,7 @@ pub async fn list_featured_media_files_handler(
           origin_category: m.origin_category,
           origin_product_category: m.origin_product_category,
           maybe_origin_model_type: m.maybe_origin_model_type
-              .map(|t| MediaFileOriginModelType::from_db(t)),
+              .map(media_file_origin_model_type_to_api),
           maybe_origin_model_token: m.maybe_origin_model_token,
           maybe_creator: UserDetailsLight::from_optional_db_fields_owned(
             m.maybe_creator_user_token,

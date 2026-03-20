@@ -4,6 +4,7 @@
 #![forbid(unused_variables)]
 
 use enums_api::by_table::model_weights::weights_types::WeightsType;
+use enums_convert::by_table::model_weights::weights_types::{weights_type_to_api, weights_type_to_db};
 use std::collections::HashSet;
 use std::fmt;
 use std::sync::Arc;
@@ -158,7 +159,7 @@ pub async fn search_model_weights_impl(
   let maybe_weights_types = request.weight_type
       .map(|weight_type| {
         let mut set = HashSet::new();
-        set.insert(weight_type.to_db());
+        set.insert(weights_type_to_db(weight_type));
         set
       });
 
@@ -220,7 +221,7 @@ pub async fn search_model_weights_impl(
 
         ModelWeightSearchResult {
           weight_token: result.token,
-          weight_type: WeightsType::from_db(result.weights_type),
+          weight_type: weights_type_to_api(result.weights_type),
           weight_category: result.weights_category,
           maybe_url_slug: title_to_url_slug(&result.title),
           title: result.title,

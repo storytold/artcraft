@@ -15,6 +15,7 @@ use chrono::{DateTime, Utc};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums_api::common::generation::generation_provider::GenerationProvider;
+use enums_convert::common::generation::generation_provider::generation_provider_to_api;
 use enums::common::model_type::ModelType;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::{error, warn};
@@ -331,7 +332,7 @@ pub async fn get_prompt_handler(
       token: result.token,
       maybe_strength,
       maybe_model_type: result.maybe_model_type,
-      maybe_generation_provider: result.maybe_generation_provider.map(GenerationProvider::from_db),
+      maybe_generation_provider: result.maybe_generation_provider.map(generation_provider_to_api),
       maybe_positive_prompt: result.maybe_positive_prompt,
       maybe_negative_prompt: result.maybe_negative_prompt,
       maybe_context_images,

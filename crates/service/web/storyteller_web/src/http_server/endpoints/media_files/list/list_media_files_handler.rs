@@ -17,6 +17,7 @@ use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
+use enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api;
 use log::warn;
 use mysql_queries::queries::media_files::list::list_media_files::{list_media_files, ListMediaFilesArgs};
 use tokens::tokens::media_files::MediaFileToken;
@@ -343,7 +344,7 @@ pub async fn list_media_files_handler(
           origin_category: record.origin_category,
           origin_product_category: record.origin_product_category,
           maybe_origin_model_type: record.maybe_origin_model_type
-              .map(|m| MediaFileOriginModelType::from_db(m)),
+              .map(media_file_origin_model_type_to_api),
           maybe_origin_model_token: record.maybe_origin_model_token,
           media_links: MediaLinksBuilder::from_media_path_and_env(
             media_domain,

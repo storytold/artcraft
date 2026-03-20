@@ -1,4 +1,5 @@
 use enums_api::by_table::model_weights::weights_types::WeightsType;
+use enums_convert::by_table::model_weights::weights_types::weights_type_to_api;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
@@ -180,7 +181,7 @@ pub async fn list_pinned_weights_handler(
             title: w.title,
             maybe_ietf_language_tag: w.maybe_ietf_language_tag,
             maybe_ietf_primary_language_subtag: w.maybe_ietf_primary_language_subtag,
-            weight_type: WeightsType::from_db(w.weights_type),
+            weight_type: weights_type_to_api(w.weights_type),
             weight_category: w.weights_category,
             cover_image: cover_image_details,
             maybe_cover_image_public_bucket_path: maybe_cover_image,

@@ -1,4 +1,5 @@
 use enums_api::by_table::model_weights::weights_types::WeightsType;
+use enums_convert::by_table::model_weights::weights_types::{weights_type_to_api, weights_type_to_db};
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
@@ -180,7 +181,7 @@ pub async fn list_available_weights_handler(
         .sort_ascending(sort_ascending)
         .cursor_is_reversed(cursor_is_reversed)
         .weights_category(query.weight_category)
-        .weights_type(query.weight_type.map(|wt| wt.to_db()))
+        .weights_type(query.weight_type.map(weights_type_to_db))
         .scope_creator_username(None)
         .include_user_hidden(include_user_hidden)
         .include_user_deleted_results(false) // NB: Mods don't want to see deleted models. We'll improve this later.
@@ -255,7 +256,7 @@ pub async fn list_available_weights_handler(
                     weight_token: weight.token,
                     maybe_url_slug: title_to_url_slug(&weight.title),
                     title: weight.title,
-                    weight_type: WeightsType::from_db(weight.weights_type),
+                    weight_type: weights_type_to_api(weight.weights_type),
                     weight_category: weight.weights_category,
 
                     maybe_ietf_language_tag: weight.maybe_ietf_language_tag,

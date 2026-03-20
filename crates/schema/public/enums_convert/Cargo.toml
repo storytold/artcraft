@@ -1,5 +1,5 @@
 [package]
-name = "enums_api"
+name = "enums_convert"
 edition = "2021"
 version = "0.0.1"
 authors = [
@@ -12,7 +12,7 @@ publish = false
 normal = ["workspace-build-acceleration"]
 
 [lib]
-name = "enums_api"
+name = "enums_convert"
 path = "src/lib.rs"
 
 [dependencies]
@@ -20,21 +20,8 @@ path = "src/lib.rs"
 workspace-build-acceleration.workspace = true
 
 # Internal
-enums_shared.workspace = true
-
-# Serialization
-serde.workspace = true
-serde_derive.workspace = true
-
-# API documentation
-utoipa.workspace = true
-
-log.workspace = true
+enums_api.workspace = true
+enums_db.workspace = true
 
 [dev-dependencies]
-# Enum utilities
-strum.workspace = true
-
-# Test serialization
 serde_json.workspace = true
-toml.workspace = true

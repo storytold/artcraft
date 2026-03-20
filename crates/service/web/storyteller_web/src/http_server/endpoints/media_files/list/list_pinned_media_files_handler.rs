@@ -14,6 +14,7 @@ use enums::by_table::media_files::media_file_origin_product_category::MediaFileO
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
+use enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api;
 use log::{debug, error, warn};
 use mysql_queries::queries::media_files::get::batch_get_media_files_by_tokens::batch_get_media_files_by_tokens;
 use redis::Commands;
@@ -241,7 +242,7 @@ pub async fn list_pinned_media_files_handler(
             origin_category: m.origin_category,
             origin_product_category: m.origin_product_category,
             maybe_origin_model_type: m.maybe_origin_model_type
-                .map(|m| MediaFileOriginModelType::from_db(m)),
+                .map(media_file_origin_model_type_to_api),
             maybe_origin_model_token: m.maybe_origin_model_token,
             maybe_creator: UserDetailsLight::from_optional_db_fields_owned(
               m.maybe_creator_user_token,

@@ -1,6 +1,7 @@
 use utoipa::ToSchema;
 
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api;
 use enums_db::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType as DbMediaFileOriginModelType;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
@@ -53,14 +54,14 @@ impl MediaFileOriginDetails {
     let maybe_model = match (maybe_model_type, maybe_model_token, maybe_model_title) {
       (Some(model_type), Some(model_token), Some(model_title)) => {
         Some(MediaFileModelDetails::ModelWeight {
-          model_type: MediaFileOriginModelType::from_db(model_type),
+          model_type: media_file_origin_model_type_to_api(model_type),
           token: model_token,
           title: model_title,
         })
       },
       (Some(model_type), None, None) => {
         Some(MediaFileModelDetails::SystemModel {
-          model_type: MediaFileOriginModelType::from_db(model_type),
+          model_type: media_file_origin_model_type_to_api(model_type),
         })
       },
       _ => None,

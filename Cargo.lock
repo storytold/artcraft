@@ -679,6 +679,7 @@ dependencies = [
  "discord-rich-presence",
  "enums",
  "enums_api",
+ "enums_convert",
  "enums_db",
  "errors",
  "filesys",
@@ -3802,7 +3803,6 @@ dependencies = [
 name = "enums_api"
 version = "0.0.1"
 dependencies = [
- "enums_db",
  "enums_shared",
  "log",
  "serde",
@@ -3811,6 +3811,16 @@ dependencies = [
  "strum",
  "toml 1.0.7+spec-1.1.0",
  "utoipa",
+ "workspace-build-acceleration",
+]
+
+[[package]]
+name = "enums_convert"
+version = "0.0.1"
+dependencies = [
+ "enums_api",
+ "enums_db",
+ "serde_json",
  "workspace-build-acceleration",
 ]
 
@@ -11263,6 +11273,7 @@ dependencies = [
  "elasticsearch_schema",
  "enums",
  "enums_api",
+ "enums_convert",
  "enums_db",
  "enums_public",
  "errors",

@@ -64,31 +64,6 @@ impl GenerationProvider {
     ])
   }
 
-  /// Convert from the DB type.
-  pub fn from_db(db_value: enums_db::common::generation::generation_provider::GenerationProvider) -> Self {
-    use enums_db::common::generation::generation_provider::GenerationProvider as Db;
-    match db_value {
-      Db::Artcraft => Self::Artcraft,
-      Db::Fal => Self::Fal,
-      Db::Grok => Self::Grok,
-      Db::Midjourney => Self::Midjourney,
-      Db::Sora => Self::Sora,
-      Db::WorldLabs => Self::WorldLabs,
-    }
-  }
-
-  /// Convert to the DB type.
-  pub fn to_db(&self) -> enums_db::common::generation::generation_provider::GenerationProvider {
-    use enums_db::common::generation::generation_provider::GenerationProvider as Db;
-    match self {
-      Self::Artcraft => Db::Artcraft,
-      Self::Fal => Db::Fal,
-      Self::Grok => Db::Grok,
-      Self::Midjourney => Db::Midjourney,
-      Self::Sora => Db::Sora,
-      Self::WorldLabs => Db::WorldLabs,
-    }
-  }
 }
 
 #[cfg(test)]
@@ -184,26 +159,4 @@ mod tests {
     }
   }
 
-  mod conversion_checks {
-    use super::*;
-
-    #[test]
-    fn round_trip_from_db() {
-      use enums_db::common::generation::generation_provider::GenerationProvider as Db;
-      for variant in Db::all_variants() {
-        let api = GenerationProvider::from_db(variant);
-        let back = api.to_db();
-        assert_eq!(variant, back);
-      }
-    }
-
-    #[test]
-    fn round_trip_from_api() {
-      for variant in GenerationProvider::all_variants() {
-        let db = variant.to_db();
-        let back = GenerationProvider::from_db(db);
-        assert_eq!(variant, back);
-      }
-    }
-  }
 }

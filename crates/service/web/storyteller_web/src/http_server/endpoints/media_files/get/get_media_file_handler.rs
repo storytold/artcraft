@@ -1,4 +1,5 @@
 use enums_api::by_table::model_weights::weights_types::WeightsType;
+use enums_convert::by_table::model_weights::weights_types::weights_type_to_api;
 use enums_db::by_table::model_weights::weights_types::WeightsType as DbWeightsType;
 use std::fmt;
 use std::sync::Arc;
@@ -406,7 +407,7 @@ async fn modern_media_file_lookup(
           weight_token,
           // TODO(bt,2023-12-28): Instead of giving bogus defaults on None, make these optional or return
           //  None for *everything* on any field being absent.
-          weight_type: WeightsType::from_db(result.maybe_model_weights_type.unwrap_or(DbWeightsType::Tacotron2)),
+          weight_type: weights_type_to_api(result.maybe_model_weights_type.unwrap_or(DbWeightsType::Tacotron2)),
           weight_category: result.maybe_model_weights_category.unwrap_or(WeightsCategory::TextToSpeech),
           title: result.maybe_model_weights_title.unwrap_or_else(|| "model".to_string()),
           maybe_cover_image_public_bucket_path,

@@ -1,4 +1,5 @@
 use enums_api::by_table::model_weights::weights_types::WeightsType as ApiWeightsType;
+use enums_convert::by_table::model_weights::weights_types::weights_type_to_db;
 use enums_db::by_table::model_weights::weights_types::WeightsType as DbWeightsType;
 use std::collections::HashSet;
 
@@ -11,7 +12,8 @@ pub fn get_scoped_weights_types(
     None => None,
     Some(weights_types) => {
       Some(weights_types.iter()
-          .map(|ty| ty.to_db())
+          .copied()
+          .map(weights_type_to_db)
           .collect::<HashSet<_>>())
     },
   }

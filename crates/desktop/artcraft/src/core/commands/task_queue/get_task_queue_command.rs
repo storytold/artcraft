@@ -9,6 +9,7 @@ use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use chrono::{DateTime, Utc};
 use enums_api::common::generation::generation_provider::GenerationProvider;
+use enums_convert::common::generation::generation_provider::generation_provider_to_api;
 use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_status::TaskStatus;
 use enums::tauri::tasks::task_type::TaskType;
@@ -159,7 +160,7 @@ pub async fn handle_request(
       task_status: task.status,
       task_type: task.task_type,
       model_type: task.model_type,
-      provider: task.provider.map(|p| p.to_api()),
+      provider: task.provider.map(generation_provider_to_api),
       provider_job_id: task.provider_job_id,
       created_at: task.created_at,
       updated_at: task.updated_at,

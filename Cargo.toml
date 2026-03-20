@@ -112,6 +112,7 @@ members = [
   "crates/schema/public/composite_identifiers",
   "crates/schema/public/enums",
   "crates/schema/public/enums_api",
+  "crates/schema/public/enums_convert",
   "crates/schema/public/enums_db",
   "crates/schema/public/enums_shared",
   "crates/schema/public/enums_public",
@@ -236,6 +237,7 @@ crockford = { path = "crates/lib/data/crockford" }
 easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
 enums_api = { path = "crates/schema/public/enums_api" }
+enums_convert = { path = "crates/schema/public/enums_convert" }
 enums_db = { path = "crates/schema/public/enums_db" }
 enums_shared = { path = "crates/schema/public/enums_shared" }
 enums_public = { path = "crates/schema/public/enums_public" }

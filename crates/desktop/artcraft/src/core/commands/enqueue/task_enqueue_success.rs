@@ -1,6 +1,7 @@
 use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
 use crate::core::state::task_database::TaskDatabase;
 use enums_api::common::generation::generation_provider::GenerationProvider;
+use enums_convert::common::generation::generation_provider::generation_provider_to_db;
 use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::tauri::tasks::task_model_type::TaskModelType;
 use enums::tauri::tasks::task_status::TaskStatus;
@@ -117,7 +118,7 @@ impl TaskEnqueueSuccess{
       status: TaskStatus::Pending,
       task_type: self.task_type,
       model_type,
-      provider: DbGenerationProvider::from_api(self.provider),
+      provider: generation_provider_to_db(self.provider),
       provider_job_id: self.provider_job_id.as_deref(),
       frontend_caller,
       frontend_subscriber_id,

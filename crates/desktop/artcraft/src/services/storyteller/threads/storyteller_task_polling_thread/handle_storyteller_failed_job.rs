@@ -3,6 +3,7 @@ use crate::core::events::generation_events::generation_failed_event::GenerationF
 use crate::core::state::task_database::TaskDatabase;
 use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
 use crate::core::utils::enum_conversion::task_type::to_generation_action;
+use enums_convert::common::generation::generation_provider::generation_provider_to_api;
 use artcraft_api_defs::jobs::list_session_jobs::ListSessionJobsItem;
 use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
@@ -36,7 +37,7 @@ pub async fn handle_failed_job(
     maybe_failure_message,
   }).await?;
 
-  let service = to_generation_service_provider(task.provider.to_api());
+  let service = to_generation_service_provider(generation_provider_to_api(task.provider));
   let action = to_generation_action(task.task_type);
 
   let event = GenerationFailedEvent {
