@@ -64,3 +64,97 @@ impl GenerationProvider {
     ])
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::GenerationProvider;
+  use enums_shared::error::enums_error::EnumsError;
+  use enums_shared::test_helpers::assert_serialization;
+
+  mod explicit_checks {
+    use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(GenerationProvider::Artcraft, "artcraft");
+      assert_serialization(GenerationProvider::Fal, "fal");
+      assert_serialization(GenerationProvider::Grok, "grok");
+      assert_serialization(GenerationProvider::Midjourney, "midjourney");
+      assert_serialization(GenerationProvider::Sora, "sora");
+      assert_serialization(GenerationProvider::WorldLabs, "world_labs");
+    }
+
+    #[test]
+    fn to_str() {
+      assert_eq!(GenerationProvider::Artcraft.to_str(), "artcraft");
+      assert_eq!(GenerationProvider::Fal.to_str(), "fal");
+      assert_eq!(GenerationProvider::Grok.to_str(), "grok");
+      assert_eq!(GenerationProvider::Midjourney.to_str(), "midjourney");
+      assert_eq!(GenerationProvider::Sora.to_str(), "sora");
+      assert_eq!(GenerationProvider::WorldLabs.to_str(), "world_labs");
+    }
+
+    #[test]
+    fn from_str() {
+      assert_eq!(GenerationProvider::from_str("artcraft").unwrap(), GenerationProvider::Artcraft);
+      assert_eq!(GenerationProvider::from_str("fal").unwrap(), GenerationProvider::Fal);
+      assert_eq!(GenerationProvider::from_str("grok").unwrap(), GenerationProvider::Grok);
+      assert_eq!(GenerationProvider::from_str("midjourney").unwrap(), GenerationProvider::Midjourney);
+      assert_eq!(GenerationProvider::from_str("sora").unwrap(), GenerationProvider::Sora);
+      assert_eq!(GenerationProvider::from_str("world_labs").unwrap(), GenerationProvider::WorldLabs);
+    }
+
+    #[test]
+    fn from_str_err() {
+      let result = GenerationProvider::from_str("asdf");
+      assert!(result.is_err());
+      if let Err(EnumsError::CouldNotConvertFromString(value)) = result {
+        assert_eq!(value, "asdf");
+      } else {
+        panic!("Expected EnumsError::CouldNotConvertFromString");
+      }
+    }
+
+    #[test]
+    fn all_variants() {
+      let mut variants = GenerationProvider::all_variants();
+      assert_eq!(variants.len(), 6);
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Artcraft));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Fal));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Grok));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Midjourney));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Sora));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::WorldLabs));
+      assert_eq!(variants.pop_first(), None);
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn variant_length() {
+      use strum::IntoEnumIterator;
+      assert_eq!(GenerationProvider::all_variants().len(), GenerationProvider::iter().len());
+    }
+
+    #[test]
+    fn round_trip() {
+      for variant in GenerationProvider::all_variants() {
+        assert_eq!(variant, GenerationProvider::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, GenerationProvider::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, GenerationProvider::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 16;
+      for variant in GenerationProvider::all_variants() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
+  }
+}

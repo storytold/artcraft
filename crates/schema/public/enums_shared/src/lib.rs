@@ -18,3 +18,4 @@
 
 pub mod error;
 #[macro_use] pub mod macros;
+pub mod test_helpers;
