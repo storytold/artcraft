@@ -24,8 +24,9 @@ pub enum GenerationProvider {
 #[cfg(test)]
 mod tests {
   use super::GenerationProvider;
-  use enums_shared::test_helpers::{assert_serialization, assert_deserialization};
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
+
   mod manual_checks {
     use super::*;
 
