@@ -3140,6 +3140,7 @@ dependencies = [
  "easyenv",
  "elasticsearch",
  "enums",
+ "enums_db",
  "errors",
  "filesys",
  "hashing",

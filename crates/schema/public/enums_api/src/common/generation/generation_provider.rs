@@ -10,7 +10,7 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// NB: Keep the max length to 16 characters.
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema, EnumIter, EnumCount)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationProvider {
   Artcraft,
