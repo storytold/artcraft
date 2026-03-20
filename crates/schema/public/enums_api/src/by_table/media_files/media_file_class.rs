@@ -1,0 +1,54 @@
+use strum::EnumIter;
+use utoipa::ToSchema;
+
+/// Used in the `media_files` table in a `VARCHAR(16)` field.
+///
+/// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize, ToSchema, EnumIter, Debug)]
+#[serde(rename_all = "snake_case")]
+
+pub enum MediaFileClass {
+  /// Unknown (default value)
+  /// This will be present until we migrate all old files.
+  Unknown,
+
+  /// Audio files: wav, mp3, etc.
+  Audio,
+
+  /// Image files: png, jpeg, etc.
+  Image,
+
+  /// Video files: mp4, etc.
+  Video,
+
+  /// 3D engine data: glb, gltf, etc.
+  Dimensional,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::MediaFileClass;
+  use strum::IntoEnumIterator;
+
+  mod manual_checks {
+    use super::*;
+
+    #[test]
+    fn variants_count_check() {
+      assert_eq!(MediaFileClass::iter().count(), 5);
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip_json() {
+      for variant in MediaFileClass::iter() {
+        let json = serde_json::to_string(&variant).unwrap();
+        let back: MediaFileClass = serde_json::from_str(&json).unwrap();
+        assert_eq!(variant, back);
+      }
+    }
+  }
+}

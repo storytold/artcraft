@@ -1,0 +1,1 @@
+pub mod user_bookmark_entity_type;

@@ -1,0 +1,49 @@
+[package]
+name = "enums_db"
+edition = "2021"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "enums_db"
+path = "src/lib.rs"
+
+[features]
+default = []
+utoipa = ["dep:utoipa"]
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# Internal
+enums_shared.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_derive.workspace = true
+
+# Database
+sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
+sqlx-core = { version = "0.7.4" }
+sqlx-mysql = { version = "0.7.4" }
+
+# API Documentation (optional — enabled by crates that need ToSchema on DB enums)
+utoipa = { workspace = true, optional = true }
+
+log.workspace = true
+
+[dev-dependencies]
+# Enum utilities
+strum.workspace = true
+
+# Test serialization
+serde_json.workspace = true
+toml.workspace = true
