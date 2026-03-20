@@ -510,7 +510,6 @@ export const PromptBoxVideo = ({
     gtagEvent("enqueue_video");
 
     const isSeedance2 = selectedModel.id === "seedance_2p0";
-    const count = isSeedance2 ? generationCount : 1;
 
     const isRefMode =
       inputMode === "reference" && !!selectedModel.supportsReferenceMode;
@@ -542,6 +541,10 @@ export const PromptBoxVideo = ({
 
       if (!!selectedProvider) {
         request.provider = selectedProvider;
+      }
+
+      if (isSeedance2 && generationCount > 1) {
+        request.video_batch_count = generationCount;
       }
 
       if (selectedModel.generateWithSound) {
@@ -605,27 +608,18 @@ export const PromptBoxVideo = ({
       return request;
     };
 
-    const subscriberIds: string[] = [];
-    const enqueuePromises: Promise<void>[] = [];
-
-    for (let i = 0; i < count; i++) {
-      const subscriberId = crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
-      subscriberIds.push(subscriberId);
-      enqueuePromises.push(
-        EnqueueImageToVideo(buildRequest(subscriberId)) as Promise<void>,
-      );
-    }
+    const subscriberId = crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
 
     try {
-      await Promise.all(enqueuePromises);
+      await EnqueueImageToVideo(buildRequest(subscriberId));
     } catch (err) {
       console.error("PromptBoxVideo - enqueue failed", err);
       toast.error("Failed to start video generation. Please try again.");
     }
 
-    onEnqueuePressed?.(prompt, subscriberIds);
+    onEnqueuePressed?.(prompt, [subscriberId]);
 
     setIsEnqueueing(false);
   };

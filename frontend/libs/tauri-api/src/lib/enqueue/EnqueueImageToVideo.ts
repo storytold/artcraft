@@ -60,6 +60,9 @@ export interface EnqueueImageToVideoRequest {
 
   // Optional. Reference audio media tokens (for audio reference).
   reference_audio_media_tokens?: string[];
+
+  // Optional. Number of videos to generate in one batch (e.g. Seedance 2.0).
+  video_batch_count?: number;
 }
 
 interface RawEnqueueImageToVideoRequest {
@@ -78,6 +81,7 @@ interface RawEnqueueImageToVideoRequest {
   reference_image_media_tokens?: string[];
   reference_video_media_tokens?: string[];
   reference_audio_media_tokens?: string[];
+  video_batch_count?: number;
 }
 
 export interface EnqueueImageToVideoError extends CommandResult {
@@ -166,6 +170,10 @@ export const EnqueueImageToVideo = async (
   ) {
     mutableRequest.reference_audio_media_tokens =
       request.reference_audio_media_tokens;
+  }
+
+  if (request.video_batch_count && request.video_batch_count > 1) {
+    mutableRequest.video_batch_count = request.video_batch_count;
   }
 
   const result = await invoke("enqueue_image_to_video_command", {
