@@ -191,7 +191,7 @@ pub async fn list_weights_by_user_handler(
         sort_ascending,
         view_as,
         maybe_scoped_weight_category: query.maybe_scoped_weight_category,
-        maybe_scoped_weight_type: query.maybe_scoped_weight_type.map(weights_type_to_db),
+        maybe_scoped_weight_type: query.maybe_scoped_weight_type.map(|v| weights_type_to_db(&v)),
         mysql_pool: &server_state.mysql_pool,
     }
   ).await.map_err(|e| {

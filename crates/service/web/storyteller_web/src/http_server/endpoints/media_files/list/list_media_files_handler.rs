@@ -344,7 +344,7 @@ pub async fn list_media_files_handler(
           origin_category: record.origin_category,
           origin_product_category: record.origin_product_category,
           maybe_origin_model_type: record.maybe_origin_model_type
-              .map(media_file_origin_model_type_to_api),
+              .map(|v| media_file_origin_model_type_to_api(&v)),
           maybe_origin_model_token: record.maybe_origin_model_token,
           media_links: MediaLinksBuilder::from_media_path_and_env(
             media_domain,

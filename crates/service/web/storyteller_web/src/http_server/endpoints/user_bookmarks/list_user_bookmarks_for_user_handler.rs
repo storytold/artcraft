@@ -198,7 +198,7 @@ pub async fn list_user_bookmarks_for_user_handler(
       list_user_bookmarks_by_maybe_entity_type(ListUserBookmarksForUserArgs{
         username: path.username.as_ref(),
         maybe_filter_entity_type: query.maybe_scoped_entity_type,
-        maybe_filter_weight_type: query.maybe_scoped_weight_type.map(weights_type_to_db),
+        maybe_filter_weight_type: query.maybe_scoped_weight_type.map(|v| weights_type_to_db(&v)),
         maybe_filter_weight_category: query.maybe_scoped_weight_category,
         maybe_filter_media_file_type: query.maybe_scoped_media_file_type,
         sort_ascending,
@@ -315,7 +315,7 @@ pub async fn list_user_bookmarks_for_user_handler(
                     Some(cover) => Some(WeightsData {
                       // TODO(bt,2023-12-28): Proper default, optional, or "unknown" values would be better.
                       title: user_bookmark.maybe_entity_descriptive_text.clone().unwrap_or_else(|| "weight".to_string()),
-                      weight_type: weights_type_to_api(user_bookmark.maybe_model_weight_type.unwrap_or(DbWeightsType::Tacotron2)),
+                      weight_type: weights_type_to_api(&user_bookmark.maybe_model_weight_type.unwrap_or(DbWeightsType::Tacotron2)),
                       weight_category: user_bookmark.maybe_model_weight_category.unwrap_or(WeightsCategory::TextToSpeech),
                       cover,
                       maybe_cover_image_public_bucket_path: maybe_model_weight_cover_image,

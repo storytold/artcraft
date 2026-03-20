@@ -242,7 +242,7 @@ pub async fn list_pinned_media_files_handler(
             origin_category: m.origin_category,
             origin_product_category: m.origin_product_category,
             maybe_origin_model_type: m.maybe_origin_model_type
-                .map(media_file_origin_model_type_to_api),
+                .map(|v| media_file_origin_model_type_to_api(&v)),
             maybe_origin_model_token: m.maybe_origin_model_token,
             maybe_creator: UserDetailsLight::from_optional_db_fields_owned(
               m.maybe_creator_user_token,

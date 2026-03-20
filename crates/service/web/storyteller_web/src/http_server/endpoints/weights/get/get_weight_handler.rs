@@ -215,7 +215,7 @@ pub async fn get_weight_handler(
         weight_token: weight.token,
         maybe_url_slug: title_to_url_slug(&weight.title),
         title: weight.title,
-        weight_type: weights_type_to_api(weight.weights_type),
+        weight_type: weights_type_to_api(&weight.weights_type),
         weight_category: weight.weights_category,
         // TODO(bt,2023-12-24): Migrated the column. We should return nullable fields, but I don't want to break the frontend
         description_markdown: weight.maybe_description_markdown.unwrap_or_else(|| "".to_string()),

@@ -160,7 +160,7 @@ pub async fn handle_request(
       task_status: task.status,
       task_type: task.task_type,
       model_type: task.model_type,
-      provider: task.provider.map(generation_provider_to_api),
+      provider: task.provider.map(|v| generation_provider_to_api(&v)),
       provider_job_id: task.provider_job_id,
       created_at: task.created_at,
       updated_at: task.updated_at,

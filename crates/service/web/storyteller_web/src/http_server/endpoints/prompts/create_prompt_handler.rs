@@ -77,7 +77,7 @@ pub async fn create_prompt_handler(
         .as_ref()
         .map(|s| &s.user_token),
     maybe_model_type: request.model_type,
-    maybe_generation_provider: request.generation_provider.map(generation_provider_to_db),
+    maybe_generation_provider: request.generation_provider.map(|v| generation_provider_to_db(&v)),
     maybe_positive_prompt,
     maybe_negative_prompt,
     maybe_other_args: None,

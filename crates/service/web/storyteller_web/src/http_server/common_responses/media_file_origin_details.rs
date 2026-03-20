@@ -54,14 +54,14 @@ impl MediaFileOriginDetails {
     let maybe_model = match (maybe_model_type, maybe_model_token, maybe_model_title) {
       (Some(model_type), Some(model_token), Some(model_title)) => {
         Some(MediaFileModelDetails::ModelWeight {
-          model_type: media_file_origin_model_type_to_api(model_type),
+          model_type: media_file_origin_model_type_to_api(&model_type),
           token: model_token,
           title: model_title,
         })
       },
       (Some(model_type), None, None) => {
         Some(MediaFileModelDetails::SystemModel {
-          model_type: media_file_origin_model_type_to_api(model_type),
+          model_type: media_file_origin_model_type_to_api(&model_type),
         })
       },
       _ => None,

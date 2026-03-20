@@ -13,7 +13,7 @@ pub fn get_scoped_weights_types(
     Some(weights_types) => {
       Some(weights_types.iter()
           .copied()
-          .map(weights_type_to_db)
+          .map(|v| weights_type_to_db(&v))
           .collect::<HashSet<_>>())
     },
   }

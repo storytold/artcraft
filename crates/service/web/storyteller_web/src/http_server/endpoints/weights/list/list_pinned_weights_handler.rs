@@ -181,7 +181,7 @@ pub async fn list_pinned_weights_handler(
             title: w.title,
             maybe_ietf_language_tag: w.maybe_ietf_language_tag,
             maybe_ietf_primary_language_subtag: w.maybe_ietf_primary_language_subtag,
-            weight_type: weights_type_to_api(w.weights_type),
+            weight_type: weights_type_to_api(&w.weights_type),
             weight_category: w.weights_category,
             cover_image: cover_image_details,
             maybe_cover_image_public_bucket_path: maybe_cover_image,

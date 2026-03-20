@@ -118,7 +118,7 @@ impl TaskEnqueueSuccess{
       status: TaskStatus::Pending,
       task_type: self.task_type,
       model_type,
-      provider: generation_provider_to_db(self.provider),
+      provider: generation_provider_to_db(&self.provider),
       provider_job_id: self.provider_job_id.as_deref(),
       frontend_caller,
       frontend_subscriber_id,

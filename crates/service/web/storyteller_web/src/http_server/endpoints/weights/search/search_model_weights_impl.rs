@@ -159,7 +159,7 @@ pub async fn search_model_weights_impl(
   let maybe_weights_types = request.weight_type
       .map(|weight_type| {
         let mut set = HashSet::new();
-        set.insert(weights_type_to_db(weight_type));
+        set.insert(weights_type_to_db(&weight_type));
         set
       });
 
@@ -221,7 +221,7 @@ pub async fn search_model_weights_impl(
 
         ModelWeightSearchResult {
           weight_token: result.token,
-          weight_type: weights_type_to_api(result.weights_type),
+          weight_type: weights_type_to_api(&result.weights_type),
           weight_category: result.weights_category,
           maybe_url_slug: title_to_url_slug(&result.title),
           title: result.title,

@@ -37,7 +37,7 @@ pub async fn handle_failed_job(
     maybe_failure_message,
   }).await?;
 
-  let service = to_generation_service_provider(generation_provider_to_api(task.provider));
+  let service = to_generation_service_provider(generation_provider_to_api(&task.provider));
   let action = to_generation_action(task.task_type);
 
   let event = GenerationFailedEvent {

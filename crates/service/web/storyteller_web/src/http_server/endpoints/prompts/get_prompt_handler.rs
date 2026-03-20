@@ -332,7 +332,7 @@ pub async fn get_prompt_handler(
       token: result.token,
       maybe_strength,
       maybe_model_type: result.maybe_model_type,
-      maybe_generation_provider: result.maybe_generation_provider.map(generation_provider_to_api),
+      maybe_generation_provider: result.maybe_generation_provider.map(|v| generation_provider_to_api(&v)),
       maybe_positive_prompt: result.maybe_positive_prompt,
       maybe_negative_prompt: result.maybe_negative_prompt,
       maybe_context_images,

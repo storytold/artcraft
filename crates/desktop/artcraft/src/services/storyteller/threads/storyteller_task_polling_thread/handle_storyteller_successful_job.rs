@@ -54,7 +54,7 @@ pub async fn handle_successful_job(
 
   send_additional_success_events(app_handle, app_env_configs, creds, job, task).await;
 
-  let service = to_generation_service_provider(generation_provider_to_api(task.provider));
+  let service = to_generation_service_provider(generation_provider_to_api(&task.provider));
   let action = to_generation_action(task.task_type);
 
   let event = GenerationCompleteEvent {

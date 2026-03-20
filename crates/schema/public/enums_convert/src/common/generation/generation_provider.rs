@@ -1,7 +1,7 @@
 use enums_api::common::generation::generation_provider::GenerationProvider as Api;
 use enums_db::common::generation::generation_provider::GenerationProvider as Db;
 
-pub fn generation_provider_to_db(api_value: Api) -> Db {
+pub fn generation_provider_to_db(api_value: &Api) -> Db {
   match api_value {
     Api::Artcraft => Db::Artcraft,
     Api::Fal => Db::Fal,
@@ -12,7 +12,7 @@ pub fn generation_provider_to_db(api_value: Api) -> Db {
   }
 }
 
-pub fn generation_provider_to_api(db_value: Db) -> Api {
+pub fn generation_provider_to_api(db_value: &Db) -> Api {
   match db_value {
     Db::Artcraft => Api::Artcraft,
     Db::Fal => Api::Fal,
@@ -30,8 +30,8 @@ mod tests {
   #[test]
   fn round_trip_api_to_db() {
     for variant in Api::all_variants() {
-      let db = generation_provider_to_db(variant);
-      let back = generation_provider_to_api(db);
+      let db = generation_provider_to_db(&variant);
+      let back = generation_provider_to_api(&db);
       assert_eq!(variant, back);
     }
   }
@@ -39,8 +39,8 @@ mod tests {
   #[test]
   fn round_trip_db_to_api() {
     for variant in Db::all_variants() {
-      let api = generation_provider_to_api(variant);
-      let back = generation_provider_to_db(api);
+      let api = generation_provider_to_api(&variant);
+      let back = generation_provider_to_db(&api);
       assert_eq!(variant, back);
     }
   }
