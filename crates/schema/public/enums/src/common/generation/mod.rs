@@ -1,5 +1,6 @@
-pub mod common_aspect_ratio;
-pub mod common_image_model;
-pub mod common_splat_model;
-pub mod common_video_model;
-pub mod common_video_resolution;
+// Moved to enums_api crate:
+// - common_aspect_ratio
+// - common_image_model
+// - common_splat_model
+// - common_video_model
+// - common_video_resolution

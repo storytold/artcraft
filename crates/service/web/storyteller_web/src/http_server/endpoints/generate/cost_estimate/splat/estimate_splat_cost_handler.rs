@@ -11,7 +11,7 @@ use artcraft_router::api::common_splat_model::CommonSplatModel as RouterSplatMod
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider as RouterProvider;
 use artcraft_router::generate::generate_splat::generate_splat_request::GenerateSplatRequest;
-use enums::common::generation::common_splat_model::CommonSplatModel;
+use enums_api::common::generation::common_splat_model::CommonSplatModel;
 use enums::common::generation_provider::GenerationProvider;
 use tokens::tokens::media_files::MediaFileToken;
 
