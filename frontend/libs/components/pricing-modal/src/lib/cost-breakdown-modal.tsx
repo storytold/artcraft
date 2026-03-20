@@ -169,7 +169,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
       case ModelPage.ImageToVideo:
         return {
           resolution: promptVideo.resolution,
-          generationCount: 1, // Video doesn't have generation count
+          generationCount: promptVideo.generationCount,
           label: "Videos",
         };
       case ModelPage.ImageEditor:

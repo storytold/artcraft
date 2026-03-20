@@ -35,6 +35,7 @@ import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
 import type { UploadImageFn } from "./ImagePromptRow";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
+import { VideoGenerationCountPicker } from "./common/VideoGenerationCountPicker";
 import { twMerge } from "tailwind-merge";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -58,7 +59,7 @@ interface PromptBoxVideoProps {
   useJobContext: () => JobContextType;
   onEnqueuePressed?: (
     prompt: string,
-    subscriberId: string,
+    subscriberIds: string[],
   ) => void | Promise<void>;
   selectedModel?: VideoModel;
   selectedProvider?: GenerationProvider;
@@ -117,6 +118,8 @@ export const PromptBoxVideo = ({
   const setDuration = usePromptVideoStore((s) => s.setDuration);
   const inputMode = usePromptVideoStore((s) => s.inputMode);
   const setInputMode = usePromptVideoStore((s) => s.setInputMode);
+  const generationCount = usePromptVideoStore((s) => s.generationCount);
+  const setGenerationCount = usePromptVideoStore((s) => s.setGenerationCount);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
@@ -229,6 +232,13 @@ export const PromptBoxVideo = ({
       setInputMode("keyframe");
       setReferenceVideos([]);
       setReferenceAudios([]);
+    }
+  }, [selectedModel]);
+
+  // Reset generation count when switching away from seedance 2.0
+  useEffect(() => {
+    if (selectedModel?.id !== "seedance_2p0" && generationCount > 1) {
+      setGenerationCount(1);
     }
   }, [selectedModel]);
 
@@ -495,9 +505,8 @@ export const PromptBoxVideo = ({
 
     gtagEvent("enqueue_video");
 
-    const subscriberId = crypto.randomUUID
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
+    const isSeedance2 = selectedModel.id === "seedance_2p0";
+    const count = isSeedance2 ? generationCount : 1;
 
     const isRefMode =
       inputMode === "reference" && !!selectedModel.supportsReferenceMode;
@@ -515,83 +524,104 @@ export const PromptBoxVideo = ({
       setIsEnqueueing(false);
     }, 10000);
 
-    let request: EnqueueImageToVideoRequest = {
-      model: selectedModel,
-      image_media_token: imageMediaToken,
-      prompt: prompt,
-      end_frame_image_media_token: isRefMode
-        ? undefined
-        : endFrameImage?.mediaToken,
-      frontend_caller: "image_to_video",
-      frontend_subscriber_id: subscriberId,
-    };
+    const buildRequest = (subscriberId: string): EnqueueImageToVideoRequest => {
+      let request: EnqueueImageToVideoRequest = {
+        model: selectedModel,
+        image_media_token: imageMediaToken,
+        prompt: prompt,
+        end_frame_image_media_token: isRefMode
+          ? undefined
+          : endFrameImage?.mediaToken,
+        frontend_caller: "image_to_video",
+        frontend_subscriber_id: subscriberId,
+      };
 
-    if (!!selectedProvider) {
-      request.provider = selectedProvider;
-    }
+      if (!!selectedProvider) {
+        request.provider = selectedProvider;
+      }
 
-    if (selectedModel.generateWithSound) {
-      request.generate_audio = !!generateWithSound;
-    }
+      if (selectedModel.generateWithSound) {
+        request.generate_audio = !!generateWithSound;
+      }
 
-    // Pass reference image tokens in reference mode
-    if (isRefMode && referenceImages.length > 0) {
-      request.reference_image_media_tokens = referenceImages.map(
-        (img) => img.mediaToken,
-      );
-    }
+      // Pass reference image tokens in reference mode
+      if (isRefMode && referenceImages.length > 0) {
+        request.reference_image_media_tokens = referenceImages.map(
+          (img) => img.mediaToken,
+        );
+      }
 
-    // Pass reference video tokens in reference mode
-    if (isRefMode && referenceVideos.length > 0) {
-      request.reference_video_media_tokens = referenceVideos.map(
-        (v) => v.mediaToken,
-      );
-    }
+      // Pass reference video tokens in reference mode
+      if (isRefMode && referenceVideos.length > 0) {
+        request.reference_video_media_tokens = referenceVideos.map(
+          (v) => v.mediaToken,
+        );
+      }
 
-    // Pass reference audio tokens in reference mode
-    if (isRefMode && referenceAudios.length > 0) {
-      request.reference_audio_media_tokens = referenceAudios.map(
-        (a) => a.mediaToken,
-      );
-    }
+      // Pass reference audio tokens in reference mode
+      if (isRefMode && referenceAudios.length > 0) {
+        request.reference_audio_media_tokens = referenceAudios.map(
+          (a) => a.mediaToken,
+        );
+      }
 
-    // Pass duration if model supports it
-    if (selectedModel.durationOptions && duration !== null) {
-      request.duration_seconds = duration;
-    }
+      // Pass duration if model supports it
+      if (selectedModel.durationOptions && duration !== null) {
+        request.duration_seconds = duration;
+      }
 
-    switch (selectedModel?.tauriId) {
-      case "grok_video":
-        request.grok_aspect_ratio = getGrokAspectRatio();
-        break;
+      switch (selectedModel?.tauriId) {
+        case "grok_video":
+          request.grok_aspect_ratio = getGrokAspectRatio();
+          break;
 
-      case "sora_2":
-        request.sora_orientation =
-          resolution === "720p" ? "landscape" : "portrait";
-        break;
-    }
+        case "sora_2":
+          request.sora_orientation =
+            resolution === "720p" ? "landscape" : "portrait";
+          break;
+      }
 
-    if (selectedModel.supportsCommonAspectRatio) {
-      // NB: This should be the *new* aspect ratio behavior for all models.
-      const selectedOption = selectedModel.sizeOptions?.find(
-        (option) => option.textLabel === aspectRatio,
-      );
+      if (selectedModel.supportsCommonAspectRatio) {
+        const selectedOption = selectedModel.sizeOptions?.find(
+          (option) => option.textLabel === aspectRatio,
+        );
 
-      if (selectedOption) {
-        request.aspect_ratio =
-          selectedOption.tauriValue as typeof request.aspect_ratio;
-      } else {
-        const maybeDefault = selectedModel.sizeOptions[0];
-        if (!!maybeDefault) {
+        if (selectedOption) {
           request.aspect_ratio =
-            maybeDefault.tauriValue as typeof request.aspect_ratio;
+            selectedOption.tauriValue as typeof request.aspect_ratio;
+        } else {
+          const maybeDefault = selectedModel.sizeOptions[0];
+          if (!!maybeDefault) {
+            request.aspect_ratio =
+              maybeDefault.tauriValue as typeof request.aspect_ratio;
+          }
         }
       }
+
+      return request;
+    };
+
+    const subscriberIds: string[] = [];
+    const enqueuePromises: Promise<void>[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const subscriberId = crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+      subscriberIds.push(subscriberId);
+      enqueuePromises.push(
+        EnqueueImageToVideo(buildRequest(subscriberId)) as Promise<void>,
+      );
     }
 
-    await EnqueueImageToVideo(request);
+    try {
+      await Promise.all(enqueuePromises);
+    } catch (err) {
+      console.error("PromptBoxVideo - enqueue failed", err);
+      toast.error("Failed to start video generation. Please try again.");
+    }
 
-    onEnqueuePressed?.(prompt, subscriberId);
+    onEnqueuePressed?.(prompt, subscriberIds);
 
     setIsEnqueueing(false);
   };
@@ -972,6 +1002,7 @@ export const PromptBoxVideo = ({
                   />
                 </Tooltip>
               )}
+
             </div>
             <div className="flex items-center gap-2">
               {modelNeedsAnImageButNoneAreSelected && (
@@ -979,6 +1010,13 @@ export const PromptBoxVideo = ({
                   <FontAwesomeIcon icon={faCircleInfo} />
                   Starting frame required
                 </span>
+              )}
+              {selectedModel?.id === "seedance_2p0" && (
+                <VideoGenerationCountPicker
+                  maxCount={4}
+                  currentCount={generationCount}
+                  handleCountChange={setGenerationCount}
+                />
               )}
               <Tooltip
                 content="Add a starting image before generating"
@@ -994,7 +1032,7 @@ export const PromptBoxVideo = ({
                     onClick={handleEnqueue}
                     disabled={!prompt.trim()}
                     loading={isEnqueueing}
-                    credits={credits}
+                    credits={credits != null ? credits * generationCount : credits}
                   >
                     Generate
                   </GenerateButton>

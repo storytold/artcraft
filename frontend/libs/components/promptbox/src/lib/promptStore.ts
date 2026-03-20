@@ -139,6 +139,7 @@ interface PromptVideoStore {
   generateWithSound: boolean;
   duration: number | null;
   inputMode: VideoInputMode;
+  generationCount: number;
   setPrompt: (prompt: string) => void;
   setResolution: (resolution: Resolution | string) => void;
   setAspectRatio: (aspectRatio: string | null) => void;
@@ -150,6 +151,7 @@ interface PromptVideoStore {
   setGenerateWithSound: (value: boolean) => void;
   setDuration: (duration: number | null) => void;
   setInputMode: (mode: VideoInputMode) => void;
+  setGenerationCount: (count: number) => void;
 }
 
 export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
@@ -164,6 +166,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   generateWithSound: true,
   duration: null,
   inputMode: "keyframe",
+  generationCount: 1,
   setPrompt: (prompt) => set({ prompt }),
   setResolution: (resolution) => set({ resolution }),
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
@@ -175,6 +178,7 @@ export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
   setGenerateWithSound: (generateWithSound) => set({ generateWithSound }),
   setDuration: (duration) => set({ duration }),
   setInputMode: (inputMode) => set({ inputMode }),
+  setGenerationCount: (generationCount) => set({ generationCount }),
 }));
 
 // ----- Edit Prompt Box Store -----

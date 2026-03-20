@@ -210,9 +210,11 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
                 uploadVideo={UploadVideoMedia}
                 uploadAudio={UploadAudioMedia}
                 credits={videoCredits}
-                onEnqueuePressed={async (prompt, subscriberId) => {
+                onEnqueuePressed={async (prompt, subscriberIds) => {
                   const modelLabel = selectedVideoModel?.fullName ?? "";
-                  startBatch(prompt, modelLabel, subscriberId);
+                  for (const subscriberId of subscriberIds) {
+                    startBatch(prompt, modelLabel, subscriberId);
+                  }
                 }}
               />
             </div>
