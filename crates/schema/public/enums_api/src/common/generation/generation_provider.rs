@@ -62,7 +62,7 @@ mod tests {
     }
     #[test]
     fn variants_count_check() {
-      assert_eq!(GenerationProvider::iter().count(), 7);
+      assert_eq!(GenerationProvider::iter().count(), 6);
     }
   }
 
