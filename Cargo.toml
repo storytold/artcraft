@@ -115,7 +115,6 @@ members = [
   "crates/schema/public/enums_convert",
   "crates/schema/public/enums_db",
   "crates/schema/public/enums_shared",
-  "crates/schema/public/enums_public",
   "crates/schema/public/reusable_types", # TODO(bt, 2022-12-21): Deprecate
   "crates/schema/public/tokens",
 
@@ -240,7 +239,6 @@ enums_api = { path = "crates/schema/public/enums_api" }
 enums_convert = { path = "crates/schema/public/enums_convert" }
 enums_db = { path = "crates/schema/public/enums_db" }
 enums_shared = { path = "crates/schema/public/enums_shared" }
-enums_public = { path = "crates/schema/public/enums_public" }
 errors = { path = "crates/lib/errors" }
 fal_client = { path = "crates/api_clients/fal_client" }
 ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }

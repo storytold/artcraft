@@ -53,7 +53,6 @@ enums.workspace = true
 enums_api.workspace = true
 enums_convert.workspace = true
 enums_db.workspace = true
-enums_public.workspace = true
 errors.workspace = true
 fal_client.workspace = true
 filesys.workspace = true

@@ -3842,20 +3842,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "enums_public"
-version = "0.0.1"
-dependencies = [
- "enums",
- "serde",
- "serde_derive",
- "serde_json",
- "strum",
- "toml 1.0.7+spec-1.1.0",
- "utoipa",
- "workspace-build-acceleration",
-]
-
-[[package]]
 name = "enums_shared"
 version = "0.0.1"
 dependencies = [
@@ -11275,7 +11261,6 @@ dependencies = [
  "enums_api",
  "enums_convert",
  "enums_db",
- "enums_public",
  "errors",
  "fal_client",
  "ffmpeg_utils",
