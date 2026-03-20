@@ -1,7 +1,6 @@
 
 /// Implement `Display` and `Debug` for enums that have a `.to_str()` method.
 /// This ensures that the casing follows whatever `.to_str()` specifies.
-#[macro_export]
 macro_rules! impl_enum_display_and_debug_using_to_str {
   ($t:ident) => {
 

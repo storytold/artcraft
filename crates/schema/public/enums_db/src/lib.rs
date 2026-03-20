@@ -16,9 +16,6 @@
 #[allow(unused_imports)]
 #[macro_use] extern crate serde_derive;
 
-#[allow(unused_imports)]
-#[macro_use] extern crate enums_shared;
-
 #[macro_use] pub mod macros;
 pub mod traits;
 pub mod by_table;
