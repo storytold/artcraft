@@ -1,11 +1,9 @@
-#[cfg(test)]
 use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// Common aspect ratios for video generation.
 /// Mirrors artcraft_router::api::common_aspect_ratio::CommonAspectRatio.
-#[cfg_attr(test, derive(EnumIter))]
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema, EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonAspectRatio {
   Auto,

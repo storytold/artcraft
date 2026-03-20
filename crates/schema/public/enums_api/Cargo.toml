@@ -22,19 +22,13 @@ workspace-build-acceleration.workspace = true
 # Internal
 enums_shared.workspace = true
 
-# Serialization
+# External
+log.workspace = true
 serde.workspace = true
 serde_derive.workspace = true
-
-# API documentation
+strum.workspace = true
 utoipa.workspace = true
 
-log.workspace = true
-
 [dev-dependencies]
-# Enum utilities
-strum.workspace = true
-
-# Test serialization
 serde_json.workspace = true
 toml.workspace = true

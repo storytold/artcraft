@@ -1,11 +1,9 @@
-#[cfg(test)]
 use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// Common video resolutions.
 /// Mirrors artcraft_router::api::common_resolution::CommonResolution.
-#[cfg_attr(test, derive(EnumIter))]
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema, EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonVideoResolution {
   OneK,

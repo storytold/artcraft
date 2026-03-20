@@ -1,11 +1,9 @@
-#[cfg(test)]
 use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// Splat models available for generation.
 /// Mirrors artcraft_router::api::common_splat_model::CommonSplatModel.
-#[cfg_attr(test, derive(EnumIter))]
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema, EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonSplatModel {
   #[serde(rename = "marble_0p1_mini")]

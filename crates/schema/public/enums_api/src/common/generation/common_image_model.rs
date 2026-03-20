@@ -1,11 +1,9 @@
-#[cfg(test)]
 use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// Image models available for generation.
 /// Mirrors artcraft_router::api::common_image_model::CommonImageModel.
-#[cfg_attr(test, derive(EnumIter))]
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema, EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonImageModel {
   #[serde(rename = "flux_1_dev")]

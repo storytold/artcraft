@@ -1,9 +1,10 @@
+use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// Report certain models publicly as different from what we actually use.
 ///
 /// Previously named `PublicWeightsType` in the `enums_public` crate.
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, ToSchema, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, ToSchema, Debug, EnumIter)]
 pub enum WeightsType {
   // Renamed enum variants
 

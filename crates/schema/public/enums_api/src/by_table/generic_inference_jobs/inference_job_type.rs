@@ -1,3 +1,4 @@
+use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// Report certain jobs publicly as different from what we actually run.
@@ -5,7 +6,7 @@ use utoipa::ToSchema;
 /// the same models or workflows.
 ///
 /// Previously named `PublicInferenceJobType` in the `enums_public` crate.
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default, ToSchema, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default, ToSchema, Debug, EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum InferenceJobType {
   // ======= Renamed enum variants  ======

@@ -1,11 +1,9 @@
-#[cfg(test)]
 use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// Video models available for generation.
 /// Mirrors artcraft_router::api::common_video_model::CommonVideoModel.
-#[cfg_attr(test, derive(EnumIter))]
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema, EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonVideoModel {
   #[serde(rename = "grok_video")]
