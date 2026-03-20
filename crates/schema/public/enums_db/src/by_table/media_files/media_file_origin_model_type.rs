@@ -6,13 +6,12 @@ use serde::Serialize;
 use strum::EnumCount;
 #[cfg(test)]
 use strum::EnumIter;
-use utoipa::ToSchema;
 
 /// Used in the `media_files` table in a `VARCHAR` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, ToSchema)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MediaFileOriginModelType {
   #[serde(rename = "face_fusion")]
@@ -76,12 +75,10 @@ pub enum MediaFileOriginModelType {
   Rerender,
 }
 
-// TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(MediaFileOriginModelType);
 impl_mysql_enum_coders!(MediaFileOriginModelType);
 impl_mysql_from_row!(MediaFileOriginModelType);
 
-/// NB: Legacy API for older code.
 impl MediaFileOriginModelType {
   pub fn to_str(&self) -> &'static str {
     match self {
@@ -131,8 +128,6 @@ impl MediaFileOriginModelType {
   }
 
   pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
       Self::FaceFusion,
       Self::F5TTS,
@@ -158,8 +153,8 @@ impl MediaFileOriginModelType {
 
 #[cfg(test)]
 mod tests {
-  use crate::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
-  use crate::test_helpers::assert_serialization;
+  use super::MediaFileOriginModelType;
+  use enums_shared::test_helpers::assert_serialization;
 
   mod explicit_checks {
     use super::*;
@@ -222,14 +217,15 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::LivePortrait));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::RvcV2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SadTalker));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SeedVc));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SoVitsSvc));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::Tacotron2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::MocapNet));
+      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SeedVc));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StyleTTS2));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StableDiffusion15));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::GptSovits));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StorytellerStudio));
+      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StorytellerStudioImageGen));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::VideoStyleTransfer));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::ComfyUi));
       assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::VallEX));
@@ -237,7 +233,6 @@ mod tests {
       assert_eq!(variants.pop_first(), None);
     }
   }
-
 
   mod mechanical_checks {
     use super::*;
@@ -259,11 +254,10 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
-      // NB: The media_files table has allocated width for VARCHAR(32), but let's slim it down to 24.
-      const MAX_LENGTH : usize = 24;
+      const MAX_LENGTH: usize = 24;
       for variant in MediaFileOriginModelType::all_variants() {
         let serialized = variant.to_str();
-        assert!(serialized.len() > 0, "variant {:?} is too short", variant);
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }

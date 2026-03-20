@@ -21,6 +21,7 @@
 
 #[macro_use] pub mod macros;
 pub mod traits;
+pub mod by_table;
 pub mod common;
 
 // Re-export shared types

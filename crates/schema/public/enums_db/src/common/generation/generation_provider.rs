@@ -66,29 +66,8 @@ impl GenerationProvider {
     ])
   }
 
-  /// Convert from the API type.
-  pub fn from_api(api_value: enums_api::common::generation::generation_provider::GenerationProvider) -> Self {
-    match api_value {
-      enums_api::common::generation::generation_provider::GenerationProvider::Artcraft => Self::Artcraft,
-      enums_api::common::generation::generation_provider::GenerationProvider::Fal => Self::Fal,
-      enums_api::common::generation::generation_provider::GenerationProvider::Grok => Self::Grok,
-      enums_api::common::generation::generation_provider::GenerationProvider::Midjourney => Self::Midjourney,
-      enums_api::common::generation::generation_provider::GenerationProvider::Sora => Self::Sora,
-      enums_api::common::generation::generation_provider::GenerationProvider::WorldLabs => Self::WorldLabs,
-    }
-  }
-
-  /// Convert to the API type.
-  pub fn to_api(&self) -> enums_api::common::generation::generation_provider::GenerationProvider {
-    match self {
-      Self::Artcraft => enums_api::common::generation::generation_provider::GenerationProvider::Artcraft,
-      Self::Fal => enums_api::common::generation::generation_provider::GenerationProvider::Fal,
-      Self::Grok => enums_api::common::generation::generation_provider::GenerationProvider::Grok,
-      Self::Midjourney => enums_api::common::generation::generation_provider::GenerationProvider::Midjourney,
-      Self::Sora => enums_api::common::generation::generation_provider::GenerationProvider::Sora,
-      Self::WorldLabs => enums_api::common::generation::generation_provider::GenerationProvider::WorldLabs,
-    }
-  }
+  // Conversion methods (from_db/to_db) live on the API type in enums_api,
+  // since enums_api depends on enums_db (not the other way around).
 }
 
 #[cfg(test)]
@@ -184,25 +163,5 @@ mod tests {
     }
   }
 
-  mod conversion_checks {
-    use super::*;
-
-    #[test]
-    fn round_trip_api_conversion_from_db() {
-      for variant in GenerationProvider::all_variants() {
-        let api = variant.to_api();
-        let back = GenerationProvider::from_api(api);
-        assert_eq!(variant, back);
-      }
-    }
-
-    #[test]
-    fn round_trip_api_conversion_from_api() {
-      for variant in enums_api::common::generation::generation_provider::GenerationProvider::all_variants() {
-        let db = GenerationProvider::from_api(variant);
-        let back = db.to_api();
-        assert_eq!(variant, back);
-      }
-    }
-  }
+  // Conversion tests live in enums_api where from_db/to_db are defined.
 }

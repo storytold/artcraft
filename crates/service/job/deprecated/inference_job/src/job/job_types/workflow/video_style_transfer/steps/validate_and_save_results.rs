@@ -5,7 +5,7 @@ use anyhow::anyhow;
 use log::{debug, error, info};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
+use enums_db::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;

@@ -3801,6 +3801,7 @@ dependencies = [
 name = "enums_api"
 version = "0.0.1"
 dependencies = [
+ "enums_db",
  "enums_shared",
  "log",
  "serde",
@@ -3816,7 +3817,6 @@ dependencies = [
 name = "enums_db"
 version = "0.0.1"
 dependencies = [
- "enums_api",
  "enums_shared",
  "log",
  "serde",

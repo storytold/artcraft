@@ -11,7 +11,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use cloud_storage::bucket_client::BucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
-use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
+use enums_db::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use filesys::file_size::file_size;
 use hashing::sha256::sha256_hash_file::sha256_hash_file;
 use mysql_queries::queries::media_files::create::specialized_insert::insert_media_file_from_zero_shot_tts::insert_media_file_from_zero_shot;
