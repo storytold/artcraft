@@ -19,6 +19,9 @@ path = "src/lib.rs"
 # Workspace hack (faster compile times)
 workspace-build-acceleration.workspace = true
 
+# Internal
+enums_shared.workspace = true
+
 # Serialization
 serde.workspace = true
 serde_derive.workspace = true

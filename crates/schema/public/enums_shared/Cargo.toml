@@ -1,5 +1,5 @@
 [package]
-name = "enums_db"
+name = "enums_shared"
 edition = "2021"
 version = "0.0.1"
 authors = [
@@ -12,24 +12,16 @@ publish = false
 normal = ["workspace-build-acceleration"]
 
 [lib]
-name = "enums_db"
+name = "enums_shared"
 path = "src/lib.rs"
 
 [dependencies]
 # Workspace hack (faster compile times)
 workspace-build-acceleration.workspace = true
 
-# Internal
-enums_shared.workspace = true
-
 # Serialization
 serde.workspace = true
 serde_derive.workspace = true
-
-# Database
-sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
-sqlx-core = { version = "0.7.4" }
-sqlx-mysql = { version = "0.7.4" }
 
 log.workspace = true
 

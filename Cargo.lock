@@ -3797,6 +3797,7 @@ dependencies = [
 name = "enums_api"
 version = "0.0.1"
 dependencies = [
+ "enums_shared",
  "log",
  "serde",
  "serde_derive",
@@ -3811,6 +3812,7 @@ dependencies = [
 name = "enums_db"
 version = "0.0.1"
 dependencies = [
+ "enums_shared",
  "log",
  "serde",
  "serde_derive",
@@ -3834,6 +3836,19 @@ dependencies = [
  "strum",
  "toml 1.0.7+spec-1.1.0",
  "utoipa",
+ "workspace-build-acceleration",
+]
+
+[[package]]
+name = "enums_shared"
+version = "0.0.1"
+dependencies = [
+ "log",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "strum",
+ "toml 1.0.7+spec-1.1.0",
  "workspace-build-acceleration",
 ]
 

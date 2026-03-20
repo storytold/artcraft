@@ -4,8 +4,8 @@
 #![forbid(unused_must_use)] // NB: It's unsafe to not close/check some things
 
 // Okay to toggle
-#![forbid(unreachable_patterns)]
 #![deny(unused_imports)]
+#![forbid(unreachable_patterns)]
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
@@ -16,6 +16,11 @@
 #[allow(unused_imports)]
 #[macro_use] extern crate serde_derive;
 
-pub mod error;
+#[allow(unused_imports)]
+#[macro_use] extern crate enums_shared;
+
 pub mod macros;
 pub mod traits;
+
+// Re-export shared types
+pub use enums_shared::error;
