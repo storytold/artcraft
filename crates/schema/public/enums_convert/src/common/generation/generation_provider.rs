@@ -26,10 +26,11 @@ pub fn generation_provider_to_api(db_value: &Db) -> Api {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use strum::IntoEnumIterator;
 
   #[test]
   fn round_trip_api_to_db() {
-    for variant in Api::all_variants() {
+    for variant in Api::iter() {
       let db = generation_provider_to_db(&variant);
       let back = generation_provider_to_api(&db);
       assert_eq!(variant, back);

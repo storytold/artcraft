@@ -3821,6 +3821,7 @@ dependencies = [
  "enums_api",
  "enums_db",
  "serde_json",
+ "strum",
  "workspace-build-acceleration",
 ]
 

@@ -25,3 +25,4 @@ enums_db.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
+strum.workspace = true

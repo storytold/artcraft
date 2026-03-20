@@ -5,8 +5,6 @@
 //!
 //! Do not change the values here without cause or care.
 
-use std::collections::BTreeSet;
-
 #[cfg(test)]
 use strum::EnumCount;
 #[cfg(test)]
@@ -26,43 +24,39 @@ pub enum GenerationProvider {
   WorldLabs,
 }
 
-impl GenerationProvider {
-
-  pub fn all_variants() -> BTreeSet<Self> {
-    BTreeSet::from([
-      Self::Artcraft,
-      Self::Fal,
-      Self::Grok,
-      Self::Midjourney,
-      Self::Sora,
-      Self::WorldLabs,
-    ])
-  }
-
-}
-
 #[cfg(test)]
 mod tests {
   use super::GenerationProvider;
   use enums_shared::test_helpers::assert_serialization;
+  use strum::IntoEnumIterator;
+  mod manual_checks {
+    use super::*;
 
-  #[test]
-  fn test_serialization() {
-    assert_serialization(GenerationProvider::Artcraft, "artcraft");
-    assert_serialization(GenerationProvider::Fal, "fal");
-    assert_serialization(GenerationProvider::Grok, "grok");
-    assert_serialization(GenerationProvider::Midjourney, "midjourney");
-    assert_serialization(GenerationProvider::Sora, "sora");
-    assert_serialization(GenerationProvider::WorldLabs, "world_labs");
+    #[test]
+    fn test_serialization() {
+      assert_serialization(GenerationProvider::Artcraft, "artcraft");
+      assert_serialization(GenerationProvider::Fal, "fal");
+      assert_serialization(GenerationProvider::Grok, "grok");
+      assert_serialization(GenerationProvider::Midjourney, "midjourney");
+      assert_serialization(GenerationProvider::Sora, "sora");
+      assert_serialization(GenerationProvider::WorldLabs, "world_labs");
+    }
+    #[test]
+    fn variants_count_check() {
+      assert_eq!(GenerationProvider::iter().count(), 6);
+    }
   }
 
-  #[test]
-  fn round_trip_json() {
-    use strum::IntoEnumIterator;
-    for variant in GenerationProvider::iter() {
-      let json = serde_json::to_string(&variant).unwrap();
-      let back: GenerationProvider = serde_json::from_str(&json).unwrap();
-      assert_eq!(variant, back);
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip_json() {
+      for variant in GenerationProvider::iter() {
+        let json = serde_json::to_string(&variant).unwrap();
+        let back: GenerationProvider = serde_json::from_str(&json).unwrap();
+        assert_eq!(variant, back);
+      }
     }
   }
 }
