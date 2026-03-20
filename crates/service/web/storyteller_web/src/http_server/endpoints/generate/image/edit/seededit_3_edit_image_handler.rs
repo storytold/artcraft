@@ -12,8 +12,7 @@ use artcraft_api_defs::generate::image::edit::seededit_3_edit_image::{SeedEdit3E
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums_api::common::generation::generation_provider::GenerationProvider;
-use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
@@ -176,7 +175,7 @@ pub async fn seededit_3_edit_image_handler(
         .as_ref()
         .map(|s| &s.user_token),
     maybe_model_type: Some(ModelType::SeedEdit3),
-    maybe_generation_provider: Some(DbGenerationProvider::from_api(GenerationProvider::Artcraft)),
+    maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,

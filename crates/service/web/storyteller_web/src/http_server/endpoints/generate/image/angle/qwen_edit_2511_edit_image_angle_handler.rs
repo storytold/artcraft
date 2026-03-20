@@ -11,8 +11,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::image::angle::qwen_edit_2511_edit_image_angle::{QwenEdit2511EditImageAngleImageSize, QwenEdit2511EditImageAngleNumImages, QwenEdit2511EditImageAngleRequest, QwenEdit2511EditImageAngleResponse};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums_api::common::generation::generation_provider::GenerationProvider;
-use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
@@ -171,7 +170,7 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),
     maybe_model_type: Some(ModelType::QwenEdit2511Angles),
-    maybe_generation_provider: Some(DbGenerationProvider::from_api(GenerationProvider::Artcraft)),
+    maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: request.additional_prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
