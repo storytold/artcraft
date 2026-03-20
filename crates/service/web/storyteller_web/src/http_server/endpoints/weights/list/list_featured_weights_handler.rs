@@ -1,4 +1,4 @@
-use enums_api::by_table::model_weights::public_weights_types::WeightsType;
+use enums_api::by_table::model_weights::weights_types::WeightsType;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;

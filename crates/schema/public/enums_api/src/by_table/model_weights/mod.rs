@@ -1,1 +1,1 @@
-pub mod public_weights_types;
+pub mod weights_types;

@@ -1,4 +1,4 @@
-use enums_api::by_table::model_weights::public_weights_types::WeightsType as ApiWeightsType;
+use enums_api::by_table::model_weights::weights_types::WeightsType as ApiWeightsType;
 use enums_db::by_table::model_weights::weights_types::WeightsType as DbWeightsType;
 use std::collections::HashSet;
 
@@ -44,7 +44,7 @@ mod test {
   use std::collections::HashSet;
 
 
-  use enums_api::by_table::model_weights::public_weights_types::WeightsType as ApiWeightsType;
+  use enums_api::by_table::model_weights::weights_types::WeightsType as ApiWeightsType;
   use enums_db::by_table::model_weights::weights_types::WeightsType as DbWeightsType;
   use crate::http_server::endpoints::weights::helpers::get_scoped_weights_types::{get_scoped_public_weights_types, get_scoped_weights_types};
 

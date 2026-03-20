@@ -3,7 +3,7 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use enums_api::by_table::model_weights::public_weights_types::WeightsType;
+use enums_api::by_table::model_weights::weights_types::WeightsType;
 use std::collections::HashSet;
 use std::fmt;
 use std::sync::Arc;

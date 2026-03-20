@@ -1,5 +1,5 @@
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums_api::by_table::model_weights::public_weights_types::WeightsType;
+use enums_api::by_table::model_weights::weights_types::WeightsType;
 use utoipa::OpenApi;
 
 use crate::http_server::common_requests::auto_product_category::AutoProductCategory;
