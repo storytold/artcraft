@@ -34,21 +34,6 @@ pub enum WeightsType {
 }
 
 impl WeightsType {
-  pub fn to_str(&self) -> &'static str {
-    match self {
-      Self::Tacotron2_5 => "tacotron2.5",
-      Self::HifiganTacotron2 => "hifigan_tt2",
-      Self::RvcV2 => "rvc_v2",
-      Self::StableDiffusion15 => "sd_1.5",
-      Self::StableDiffusionXL => "sdxl",
-      Self::SoVitsSvc => "so_vits_svc",
-      Self::Tacotron2 => "tt2",
-      Self::LoRA => "loRA",
-      Self::VallE => "vall_e",
-      Self::ComfyUi => "comfy_ui",
-    }
-  }
-
   pub fn from_str(value: &str) -> Result<Self, String> {
     match value {
       "tacotron2.5" => Ok(Self::Tacotron2_5),
