@@ -1,3 +1,4 @@
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use crate::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use crate::error::api_error::ApiError;
 use crate::error::client_error::ClientError;
@@ -15,7 +16,6 @@ use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::debug;
 use reqwest::multipart::{Form, Part};

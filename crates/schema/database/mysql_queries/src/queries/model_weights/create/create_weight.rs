@@ -1,10 +1,8 @@
 use log::warn;
 use sqlx::MySqlPool;
 
-use enums::by_table::model_weights::{
-  weights_category::WeightsCategory,
-  weights_types::WeightsType,
-};
+use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::{model_weights::ModelWeightToken, users::UserToken};

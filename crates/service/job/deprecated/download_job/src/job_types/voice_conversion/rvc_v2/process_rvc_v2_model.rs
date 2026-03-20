@@ -1,3 +1,4 @@
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
@@ -7,7 +8,6 @@ use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path
 
 use crockford::crockford_entropy_lower;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;

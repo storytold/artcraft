@@ -3,6 +3,7 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
+use enums_api::by_table::model_weights::public_weights_types::WeightsType;
 use std::collections::HashSet;
 use std::fmt;
 use std::sync::Arc;
@@ -25,9 +26,7 @@ use crate::util::title_to_url_slug::title_to_url_slug;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use elasticsearch_schema::searches::search_model_weights::search_model_weights::{search_model_weights, ModelWeightsSortDirection, ModelWeightsSortField, SearchArgs};
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use primitives::numerics::i32_to_u32_zero_clamped::i32_to_u32_zero_clamped;
 use tokens::tokens::model_weights::ModelWeightToken;
 
@@ -68,7 +67,7 @@ pub enum SearchModelWeightsSortDirection {
 pub struct ModelWeightSearchResult {
   pub weight_token: ModelWeightToken,
 
-  pub weight_type: PublicWeightsType,
+  pub weight_type: WeightsType,
   pub weight_category: WeightsCategory,
 
   pub creator_set_visibility: Visibility,
@@ -159,7 +158,7 @@ pub async fn search_model_weights_impl(
   let maybe_weights_types = request.weight_type
       .map(|weight_type| {
         let mut set = HashSet::new();
-        set.insert(weight_type);
+        set.insert(weight_type.to_db());
         set
       });
 
@@ -221,7 +220,7 @@ pub async fn search_model_weights_impl(
 
         ModelWeightSearchResult {
           weight_token: result.token,
-          weight_type: PublicWeightsType::from_enum(result.weights_type),
+          weight_type: WeightsType::from_db(result.weights_type),
           weight_category: result.weights_category,
           maybe_url_slug: title_to_url_slug(&result.title),
           title: result.title,

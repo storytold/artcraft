@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n    w.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,\n\n    w.title,\n    vc.has_index_file,\n\n    w.public_bucket_hash,\n    w.maybe_public_bucket_prefix,\n    w.maybe_public_bucket_extension,\n\n    w.created_at,\n    w.updated_at,\n    w.user_deleted_at,\n    w.mod_deleted_at\n\nFROM model_weights as w\nJOIN model_weights_extension_voice_conversion_details as vc\nON vc.model_weights_token = w.token\n\nWHERE w.token = ?\n        ",
+  "query": "\nSELECT\n    w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n    w.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,\n\n    w.title,\n    vc.has_index_file,\n\n    w.public_bucket_hash,\n    w.maybe_public_bucket_prefix,\n    w.maybe_public_bucket_extension,\n\n    w.created_at,\n    w.updated_at,\n    w.user_deleted_at,\n    w.mod_deleted_at\n\nFROM model_weights as w\nJOIN model_weights_extension_voice_conversion_details as vc\nON vc.model_weights_token = w.token\n\nWHERE w.token = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -15,7 +15,7 @@
       },
       {
         "ordinal": 1,
-        "name": "weights_type: enums::by_table::model_weights::weights_types::WeightsType",
+        "name": "weights_type: enums_db::by_table::model_weights::weights_types::WeightsType",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
@@ -131,5 +131,5 @@
       true
     ]
   },
-  "hash": "ae34c2ce11250786962be50f167f15f6d2d023afe2bb31994d21a1007d81e0a0"
+  "hash": "fc42151ac09db6d655f27d83c589602d72f3d1017cf3b29dffbe0a3a5c1acaa7"
 }

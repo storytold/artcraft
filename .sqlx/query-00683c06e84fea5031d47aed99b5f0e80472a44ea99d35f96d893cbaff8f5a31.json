@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n    w.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`\nFROM model_weights as w\n        ",
+  "query": "\nSELECT\n    m.token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n    m.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`\nFROM model_weights as m\nWHERE m.token = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -15,7 +15,7 @@
       },
       {
         "ordinal": 1,
-        "name": "weights_type: enums::by_table::model_weights::weights_types::WeightsType",
+        "name": "weights_type: enums_db::by_table::model_weights::weights_types::WeightsType",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
@@ -25,12 +25,12 @@
       }
     ],
     "parameters": {
-      "Right": 0
+      "Right": 1
     },
     "nullable": [
       false,
       false
     ]
   },
-  "hash": "98d53b1732bf0b0642ac6ebae3a3a2c40f21ec732693b92ad4bda69ae2b8d5bb"
+  "hash": "00683c06e84fea5031d47aed99b5f0e80472a44ea99d35f96d893cbaff8f5a31"
 }

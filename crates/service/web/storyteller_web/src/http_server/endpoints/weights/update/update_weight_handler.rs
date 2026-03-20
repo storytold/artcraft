@@ -1,3 +1,4 @@
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use std::fmt;
 use std::sync::Arc;
 
@@ -14,7 +15,6 @@ use crate::http_server::web_utils::user_session::require_user_session::RequireUs
 use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use http_server_common::response::response_success_helpers::{simple_json_success, SimpleGenericJsonSuccess};
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;

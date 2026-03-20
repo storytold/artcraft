@@ -1,17 +1,17 @@
+use enums_api::by_table::model_weights::public_weights_types::WeightsType as ApiWeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType as DbWeightsType;
 use std::collections::HashSet;
 
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 
-/// Read the interface as PublicWeightsTypes, but convert them to internal WeightsTypes
+/// Read the interface as WeightsTypes, but convert them to internal WeightsTypes
 pub fn get_scoped_weights_types(
   maybe_query_param: Option<&str>
-) -> Option<HashSet<WeightsType>> {
+) -> Option<HashSet<DbWeightsType>> {
   match get_scoped_public_weights_types(maybe_query_param) {
     None => None,
     Some(weights_types) => {
       Some(weights_types.iter()
-          .map(|ty| ty.to_enum())
+          .map(|ty| ty.to_db())
           .collect::<HashSet<_>>())
     },
   }
@@ -19,7 +19,7 @@ pub fn get_scoped_weights_types(
 
 fn get_scoped_public_weights_types(
   maybe_query_param: Option<&str>
-) -> Option<HashSet<PublicWeightsType>> {
+) -> Option<HashSet<ApiWeightsType>> {
 
   let weights_types = match maybe_query_param {
     None => return None,
@@ -28,7 +28,7 @@ fn get_scoped_public_weights_types(
 
   // NB: This silently fails on invalid values. Probably not the best tactic.
   let weights_types = weights_types.split(",")
-      .map(|ty| PublicWeightsType::from_str(ty))
+      .map(|ty| ApiWeightsType::from_str(ty))
       .flatten()
       .collect::<HashSet<_>>();
 
@@ -43,9 +43,9 @@ fn get_scoped_public_weights_types(
 mod test {
   use std::collections::HashSet;
 
-  use enums::by_table::model_weights::weights_types::WeightsType;
-  use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 
+  use enums_api::by_table::model_weights::public_weights_types::WeightsType as ApiWeightsType;
+  use enums_db::by_table::model_weights::weights_types::WeightsType as DbWeightsType;
   use crate::http_server::endpoints::weights::helpers::get_scoped_weights_types::{get_scoped_public_weights_types, get_scoped_weights_types};
 
   #[test]
@@ -67,13 +67,13 @@ mod test {
   fn valid_scope() {
     assert_eq!(
       get_scoped_public_weights_types(Some("tt2,tacotron2.5,vall_e")),
-      Some(HashSet::from([PublicWeightsType::Tacotron2_5, PublicWeightsType::Tacotron2, PublicWeightsType::VallE])))
+      Some(HashSet::from([ApiWeightsType::Tacotron2_5, ApiWeightsType::Tacotron2, ApiWeightsType::VallE])))
   }
 
   #[test]
   fn valid_scope_internal_types() {
     assert_eq!(
       get_scoped_weights_types(Some("tt2,tacotron2.5,vall_e")),
-      Some(HashSet::from([WeightsType::GptSoVits, WeightsType::Tacotron2, WeightsType::VallE])))
+      Some(HashSet::from([DbWeightsType::GptSoVits, DbWeightsType::Tacotron2, DbWeightsType::VallE])))
   }
 }

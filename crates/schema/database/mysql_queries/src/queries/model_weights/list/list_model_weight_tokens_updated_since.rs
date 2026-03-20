@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use sqlx::{Executor, MySql};
 
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 
@@ -26,7 +26,7 @@ pub async fn list_model_weight_tokens_updated_since<'e, 'c, E>(
     r#"
       SELECT
         token as `token: tokens::tokens::model_weights::ModelWeightToken`,
-        weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
+        weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
         updated_at
       FROM model_weights
       WHERE

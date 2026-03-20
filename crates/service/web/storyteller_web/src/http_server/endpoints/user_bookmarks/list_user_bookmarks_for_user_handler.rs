@@ -3,6 +3,8 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
+use enums_api::by_table::model_weights::public_weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType as DbWeightsType;
 use std::fmt;
 use std::sync::Arc;
 
@@ -24,9 +26,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use chrono::{DateTime, Utc};
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use log::warn;
 use mysql_queries::queries::users::user_bookmarks::list_user_bookmarks::{list_user_bookmarks_by_maybe_entity_type, ListUserBookmarksForUserArgs};
 use tokens::tokens::media_files::MediaFileToken;
@@ -125,7 +125,7 @@ pub struct MediaFileData {
 #[derive(Serialize, ToSchema)]
 pub struct WeightsData {
   pub title: String,
-  pub weight_type: PublicWeightsType,
+  pub weight_type: WeightsType,
   pub weight_category: WeightsCategory,
 
   /// Cover images are small descriptive images that can be set for any model.
@@ -197,7 +197,7 @@ pub async fn list_user_bookmarks_for_user_handler(
       list_user_bookmarks_by_maybe_entity_type(ListUserBookmarksForUserArgs{
         username: path.username.as_ref(),
         maybe_filter_entity_type: query.maybe_scoped_entity_type,
-        maybe_filter_weight_type: query.maybe_scoped_weight_type,
+        maybe_filter_weight_type: query.maybe_scoped_weight_type.map(|wt| wt.to_db()),
         maybe_filter_weight_category: query.maybe_scoped_weight_category,
         maybe_filter_media_file_type: query.maybe_scoped_media_file_type,
         sort_ascending,
@@ -314,7 +314,7 @@ pub async fn list_user_bookmarks_for_user_handler(
                     Some(cover) => Some(WeightsData {
                       // TODO(bt,2023-12-28): Proper default, optional, or "unknown" values would be better.
                       title: user_bookmark.maybe_entity_descriptive_text.clone().unwrap_or_else(|| "weight".to_string()),
-                      weight_type: PublicWeightsType::from_enum(user_bookmark.maybe_model_weight_type.unwrap_or(WeightsType::Tacotron2)),
+                      weight_type: WeightsType::from_db(user_bookmark.maybe_model_weight_type.unwrap_or(DbWeightsType::Tacotron2)),
                       weight_category: user_bookmark.maybe_model_weight_category.unwrap_or(WeightsCategory::TextToSpeech),
                       cover,
                       maybe_cover_image_public_bucket_path: maybe_model_weight_cover_image,

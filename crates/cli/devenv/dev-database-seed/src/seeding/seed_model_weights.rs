@@ -1,3 +1,4 @@
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use std::path::Path;
 use std::result::Result::Ok;
 
@@ -7,7 +8,6 @@ use sqlx::{MySql, Pool};
 
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
 use enums::{
-  by_table::model_weights::{weights_category::WeightsCategory, weights_types::WeightsType},
   common::visibility::Visibility,
 };
 use errors::{anyhow, AnyhowResult};

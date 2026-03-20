@@ -11,7 +11,7 @@
 
 // Okay to toggle
 #![forbid(unreachable_patterns)]
-#![forbid(unused_imports)]
+#![deny(unused_imports)]
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
@@ -19,6 +19,7 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
+#[allow(unused_imports)]
 #[macro_use] extern crate serde_derive;
 
 #[cfg(test)] pub mod test_helpers;

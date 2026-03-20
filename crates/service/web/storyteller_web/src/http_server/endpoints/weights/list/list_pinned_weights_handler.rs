@@ -1,3 +1,4 @@
+use enums_api::by_table::model_weights::public_weights_types::WeightsType;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
@@ -10,7 +11,6 @@ use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use mysql_queries::queries::model_weights::list::list_weights_by_tokens::list_weights_by_tokens;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -32,7 +32,7 @@ pub struct ListPinnedWeightsSuccessResponse {
 pub struct PinnedModelWeightForList {
   pub weight_token: ModelWeightToken,
 
-  pub weight_type: PublicWeightsType,
+  pub weight_type: WeightsType,
   pub weight_category: WeightsCategory,
 
   pub title: String,
@@ -180,7 +180,7 @@ pub async fn list_pinned_weights_handler(
             title: w.title,
             maybe_ietf_language_tag: w.maybe_ietf_language_tag,
             maybe_ietf_primary_language_subtag: w.maybe_ietf_primary_language_subtag,
-            weight_type: PublicWeightsType::from_enum(w.weights_type),
+            weight_type: WeightsType::from_db(w.weights_type),
             weight_category: w.weights_category,
             cover_image: cover_image_details,
             maybe_cover_image_public_bucket_path: maybe_cover_image,

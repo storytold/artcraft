@@ -1,3 +1,5 @@
+use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::public_weights_types::WeightsType;
 use utoipa::OpenApi;
 
 use crate::http_server::common_requests::auto_product_category::AutoProductCategory;
@@ -203,7 +205,6 @@ use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCat
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::by_table::model_weights::{weights_category::WeightsCategory, weights_types::WeightsType};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
@@ -216,7 +217,6 @@ use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use tokens::tokens::batch_generations::*;
 use tokens::tokens::beta_keys::*;
 use tokens::tokens::browser_session_logs::*;
@@ -515,11 +515,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     PromptContextSemanticType,
     PromptType,
     MediaFileOriginModelType,
-    PublicWeightsType,
+    WeightsType,
     StyleTransferName,
     UserFeatureFlag,
     WeightsCategory,
-    WeightsType,
 
     // Other common enums
     AutoProductCategory,

@@ -1,9 +1,9 @@
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use errors::AnyhowResult;
 use mysql_queries::queries::model_weights::model_weight_info_lite::get_model_weight_info_lite::get_model_weight_info_lite_with_connection;
@@ -167,7 +167,6 @@ mod tests {
   mod new_model_weights {
     use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
     use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-    use enums::by_table::model_weights::weights_types::WeightsType;
     use mysql_queries::queries::model_weights::model_weight_info_lite::model_weight_info_lite::ModelWeightInfoLite;
     use tokens::tokens::model_weights::ModelWeightToken;
 

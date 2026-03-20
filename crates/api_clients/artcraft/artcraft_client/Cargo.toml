@@ -27,6 +27,7 @@ artcraft_api_defs.workspace = true
 cloudflare_errors.workspace = true
 enums.workspace = true
 enums_api.workspace = true
+enums_db.workspace = true
 enums_public.workspace = true
 errors.workspace = true
 uuid_utils.workspace = true

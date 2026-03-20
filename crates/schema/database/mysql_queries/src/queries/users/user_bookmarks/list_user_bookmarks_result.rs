@@ -6,9 +6,10 @@ use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCat
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
 use enums::traits::mysql_from_row::MySqlFromRow;
+use enums_db::traits::mysql_from_row::MySqlFromRow as _DbMySqlFromRowWeights;
 use tokens::tokens::user_bookmarks::UserBookmarkToken;
 use tokens::tokens::users::UserToken;
 

@@ -11,7 +11,7 @@ use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCat
 use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
@@ -364,7 +364,7 @@ SELECT
 
     model_weights.token as `maybe_model_weights_token: tokens::tokens::model_weights::ModelWeightToken`,
     model_weights.title as maybe_model_weights_title,
-    model_weights.weights_type as `maybe_model_weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
+    model_weights.weights_type as `maybe_model_weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
     model_weights.weights_category as `maybe_model_weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
 
     model_weight_cover_image.public_bucket_directory_hash as maybe_model_cover_image_public_bucket_hash,
@@ -488,7 +488,7 @@ SELECT
 
     model_weights.token as `maybe_model_weights_token: tokens::tokens::model_weights::ModelWeightToken`,
     model_weights.title as maybe_model_weights_title,
-    model_weights.weights_type as `maybe_model_weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
+    model_weights.weights_type as `maybe_model_weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
     model_weights.weights_category as `maybe_model_weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
 
     model_weight_cover_image.public_bucket_directory_hash as maybe_model_cover_image_public_bucket_hash,

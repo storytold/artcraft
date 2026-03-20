@@ -1,8 +1,8 @@
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use chrono::{DateTime, Utc};
 use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;

@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\n      SELECT\n        token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n        weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,\n        created_at,\n        updated_at\n      FROM model_weights\n      WHERE\n      updated_at > ?\n    ",
+  "query": "\n      SELECT\n        token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n        weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,\n        created_at,\n        updated_at\n      FROM model_weights\n      WHERE\n      updated_at > ?\n    ",
   "describe": {
     "columns": [
       {
@@ -15,7 +15,7 @@
       },
       {
         "ordinal": 1,
-        "name": "weights_type: enums::by_table::model_weights::weights_types::WeightsType",
+        "name": "weights_type: enums_db::by_table::model_weights::weights_types::WeightsType",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
@@ -54,5 +54,5 @@
       false
     ]
   },
-  "hash": "f68d01ee1339c0a1ea8301fcc74359e981c20abebd7024844bea6e1b9486b458"
+  "hash": "b26531db300d3dd40d2038001806449d832edd5856e70acfbf12a5d3484f4eb8"
 }

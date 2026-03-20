@@ -1,3 +1,4 @@
+use enums_api::by_table::model_weights::public_weights_types::WeightsType;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
@@ -11,10 +12,8 @@ use utoipa::ToSchema;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::model_weights::{
   weights_category::WeightsCategory,
-  weights_types::WeightsType,
 };
 use enums::common::visibility::Visibility;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use mysql_queries::queries::model_weights::list::list_weights_query_builder::ListWeightsQueryBuilder;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -32,7 +31,7 @@ pub struct ListAvailableWeightsQuery {
     pub sort_ascending: Option<bool>,
     pub page_size: Option<u16>,
     pub username: Option<String>,
-    pub weight_type: Option<PublicWeightsType>,
+    pub weight_type: Option<WeightsType>,
     pub weight_category: Option<WeightsCategory>,
     pub cursor_is_reversed: Option<bool>,
     pub cursor: Option<String>,
@@ -181,7 +180,7 @@ pub async fn list_available_weights_handler(
         .sort_ascending(sort_ascending)
         .cursor_is_reversed(cursor_is_reversed)
         .weights_category(query.weight_category)
-        .weights_type(query.weight_type.map(|wt| wt.to_enum()))
+        .weights_type(query.weight_type.map(|wt| wt.to_db()))
         .scope_creator_username(None)
         .include_user_hidden(include_user_hidden)
         .include_user_deleted_results(false) // NB: Mods don't want to see deleted models. We'll improve this later.
@@ -256,7 +255,7 @@ pub async fn list_available_weights_handler(
                     weight_token: weight.token,
                     maybe_url_slug: title_to_url_slug(&weight.title),
                     title: weight.title,
-                    weight_type: weight.weights_type,
+                    weight_type: WeightsType::from_db(weight.weights_type),
                     weight_category: weight.weights_category,
 
                     maybe_ietf_language_tag: weight.maybe_ietf_language_tag,

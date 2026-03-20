@@ -5,10 +5,8 @@
 use chrono::{DateTime, Utc};
 use sqlx::MySqlPool;
 
-use enums::by_table::model_weights::{
-    weights_category::WeightsCategory,
-    weights_types::WeightsType,
-};
+use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -478,10 +476,8 @@ struct RawWeightJoinUser {
 
 #[cfg(test)]
 mod tests {
-    use enums::by_table::model_weights::{
-        weights_category::WeightsCategory,
-        weights_types::WeightsType,
-    };
+    use enums::by_table::model_weights::weights_category::WeightsCategory;
+    use enums_db::by_table::model_weights::weights_types::WeightsType;
 
     use crate::queries::model_weights::list::list_weights_query_builder::ListWeightsQueryBuilder;
 

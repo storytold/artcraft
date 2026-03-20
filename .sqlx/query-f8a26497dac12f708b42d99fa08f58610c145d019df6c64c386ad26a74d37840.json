@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n    w.weights_type as `weight_type: enums::by_table::model_weights::weights_types::WeightsType`,\n    w.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,\n    users.username as creator_username,\n    users.display_name as creator_display_name,\n    users.email_gravatar_hash as creator_gravatar_hash,\n    w.title,\n    w_extension.ietf_language_tag,\n    w_extension.ietf_primary_language_subtag,\n    w.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n    w.created_at,\n    w.updated_at\nFROM model_weights as w\nLEFT OUTER JOIN model_weights_extension_voice_conversion_details as w_extension\n    ON w_extension.model_weights_token = w.token\nJOIN users\n    ON users.token = w.creator_user_token\nWHERE\n    w.weights_type IN (\"rvc_v2\", \"so_vits_svc\")\n    AND w.user_deleted_at IS NULL\n    AND w.mod_deleted_at IS NULL\n    ",
+  "query": "\nSELECT\n    w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n    w.weights_type as `weight_type: enums_db::by_table::model_weights::weights_types::WeightsType`,\n    w.title,\n    w.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,\n    users.username as creator_username,\n    users.display_name as creator_display_name,\n    users.email_gravatar_hash as creator_gravatar_hash,\n    w_extension.ietf_language_tag,\n    w_extension.ietf_primary_language_subtag,\n    w.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n    w.created_at,\n    w.updated_at\nFROM model_weights as w\nLEFT OUTER JOIN model_weights_extension_tts_details as w_extension\n    ON w_extension.model_weights_token = w.token\nJOIN users\n    ON users.token = w.creator_user_token\nWHERE\n    w.weights_type IN (\"tt2\")\n    AND w.user_deleted_at IS NULL\n    AND w.mod_deleted_at IS NULL\n    ",
   "describe": {
     "columns": [
       {
@@ -15,7 +15,7 @@
       },
       {
         "ordinal": 1,
-        "name": "weight_type: enums::by_table::model_weights::weights_types::WeightsType",
+        "name": "weight_type: enums_db::by_table::model_weights::weights_types::WeightsType",
         "type_info": {
           "type": "VarString",
           "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
@@ -25,6 +25,16 @@
       },
       {
         "ordinal": 2,
+        "name": "title",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 3,
         "name": "creator_user_token: tokens::tokens::users::UserToken",
         "type_info": {
           "type": "VarString",
@@ -34,7 +44,7 @@
         }
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "creator_username",
         "type_info": {
           "type": "VarString",
@@ -44,7 +54,7 @@
         }
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "creator_display_name",
         "type_info": {
           "type": "VarString",
@@ -54,23 +64,13 @@
         }
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "creator_gravatar_hash",
         "type_info": {
           "type": "String",
           "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
           "char_set": 224,
           "max_size": 128
-        }
-      },
-      {
-        "ordinal": 6,
-        "name": "title",
-        "type_info": {
-          "type": "VarString",
-          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
-          "char_set": 224,
-          "max_size": 1020
         }
       },
       {
@@ -142,5 +142,5 @@
       false
     ]
   },
-  "hash": "57a63d507ccd60824e0cf346a6aa3d69b1e34361294f7e90733a497cb8643908"
+  "hash": "f8a26497dac12f708b42d99fa08f58610c145d019df6c64c386ad26a74d37840"
 }

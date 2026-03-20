@@ -1,3 +1,4 @@
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use std::time::Duration;
 
 use anyhow::{anyhow, Result};
@@ -7,7 +8,6 @@ use bucket_paths::legacy::typified_paths::public::weight_files::bucket_directory
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
 use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use filesys::file_exists::file_exists;
 use filesys::file_read_bytes::file_read_bytes;

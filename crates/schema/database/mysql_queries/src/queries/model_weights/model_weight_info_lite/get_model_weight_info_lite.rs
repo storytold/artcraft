@@ -3,7 +3,7 @@ use log::warn;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 
@@ -27,7 +27,7 @@ pub async fn get_model_weight_info_lite_with_connection(
         r#"
 SELECT
     m.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
-    m.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`
+    m.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`
 FROM model_weights as m
 WHERE m.token = ?
         "#,

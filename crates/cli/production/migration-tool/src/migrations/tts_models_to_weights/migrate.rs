@@ -1,10 +1,10 @@
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use std::thread;
 use std::time::Duration;
 
 use log::{info, warn};
 
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
-use enums::by_table::model_weights::weights_types::WeightsType;
 use errors::AnyhowResult;
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
 use mysql_queries::queries::model_weights::migration::upsert_model_weight_from_tts_model::{CopiedTtsFileData, upsert_model_weight_from_tts_model};

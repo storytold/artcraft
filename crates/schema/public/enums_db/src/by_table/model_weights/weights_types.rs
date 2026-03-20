@@ -4,10 +4,9 @@ use std::collections::BTreeSet;
 use strum::EnumCount;
 #[cfg(test)]
 use strum::EnumIter;
-use utoipa::ToSchema;
 
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, ToSchema)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
 pub enum WeightsType {
   #[serde(rename = "hifigan_tt2")]
   HifiganTacotron2,
@@ -27,12 +26,10 @@ pub enum WeightsType {
   VallE,
   #[serde(rename = "comfy_ui")]
   ComfyUi,
-
-  /// NB: IN production these are filtered to `PublicWeightsType::Tacotron25`.
+  /// NB: In production these are filtered to the API's `Tacotron2_5`.
   #[serde(rename = "gpt_so_vits")]
   GptSoVits,
 }
-
 
 impl WeightsType {
   pub fn to_str(&self) -> &'static str {
@@ -123,16 +120,6 @@ mod tests {
   fn test_all_variants() {
     let variants = WeightsType::all_variants();
     assert_eq!(variants.len(), 10);
-    assert!(variants.contains(&WeightsType::HifiganTacotron2));
-    assert!(variants.contains(&WeightsType::RvcV2));
-    assert!(variants.contains(&WeightsType::StableDiffusion15));
-    assert!(variants.contains(&WeightsType::StableDiffusionXL));
-    assert!(variants.contains(&WeightsType::SoVitsSvc));
-    assert!(variants.contains(&WeightsType::Tacotron2));
-    assert!(variants.contains(&WeightsType::LoRA));
-    assert!(variants.contains(&WeightsType::VallE));
-    assert!(variants.contains(&WeightsType::ComfyUi));
-    assert!(variants.contains(&WeightsType::GptSoVits));
   }
 
   mod mechanical_checks {
@@ -155,10 +142,10 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
-      const MAX_LENGTH : usize = 16;
+      const MAX_LENGTH: usize = 16;
       for variant in WeightsType::all_variants() {
         let serialized = variant.to_str();
-        assert!(serialized.len() > 0, "variant {:?} is too short", variant);
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }

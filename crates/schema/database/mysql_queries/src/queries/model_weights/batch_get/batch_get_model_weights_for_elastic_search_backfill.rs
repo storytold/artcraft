@@ -5,9 +5,10 @@ use sqlx::{Executor, FromRow, MySql, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use enums::traits::mysql_from_row::MySqlFromRow;
+use enums_db::traits::mysql_from_row::MySqlFromRow as _DbMySqlFromRowWeights;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;

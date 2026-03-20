@@ -2,7 +2,7 @@ use sqlx::{MySql, MySqlPool, QueryBuilder};
 
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
 use errors::AnyhowResult;
 
