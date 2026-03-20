@@ -1,8 +1,11 @@
+#[cfg(test)]
+use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// Video models available for generation.
 /// Mirrors artcraft_router::api::common_video_model::CommonVideoModel.
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[cfg_attr(test, derive(EnumIter))]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum CommonVideoModel {
   #[serde(rename = "grok_video")]
@@ -58,4 +61,42 @@ pub enum CommonVideoModel {
 
   #[serde(rename = "veo_3p1_fast")]
   Veo3p1Fast,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::CommonVideoModel;
+  use enums_shared::test_helpers::assert_serialization;
+
+  #[test]
+  fn test_serialization() {
+    assert_serialization(CommonVideoModel::GrokVideo, "grok_video");
+    assert_serialization(CommonVideoModel::Kling16Pro, "kling_1p6_pro");
+    assert_serialization(CommonVideoModel::Kling21Pro, "kling_2p1_pro");
+    assert_serialization(CommonVideoModel::Kling21Master, "kling_2p1_master");
+    assert_serialization(CommonVideoModel::Kling2p5TurboPro, "kling_2p5_turbo_pro");
+    assert_serialization(CommonVideoModel::Kling2p6Pro, "kling_2p6_pro");
+    assert_serialization(CommonVideoModel::Kling3p0Standard, "kling_3p0_standard");
+    assert_serialization(CommonVideoModel::Kling3p0Pro, "kling_3p0_pro");
+    assert_serialization(CommonVideoModel::Seedance10Lite, "seedance_1p0_lite");
+    assert_serialization(CommonVideoModel::Seedance1p5Pro, "seedance_1p5_pro");
+    assert_serialization(CommonVideoModel::Seedance2p0, "seedance_2p0");
+    assert_serialization(CommonVideoModel::Sora2, "sora_2");
+    assert_serialization(CommonVideoModel::Sora2Pro, "sora_2_pro");
+    assert_serialization(CommonVideoModel::Veo2, "veo_2");
+    assert_serialization(CommonVideoModel::Veo3, "veo_3");
+    assert_serialization(CommonVideoModel::Veo3Fast, "veo_3_fast");
+    assert_serialization(CommonVideoModel::Veo3p1, "veo_3p1");
+    assert_serialization(CommonVideoModel::Veo3p1Fast, "veo_3p1_fast");
+  }
+
+  #[test]
+  fn round_trip_json() {
+    use strum::IntoEnumIterator;
+    for variant in CommonVideoModel::iter() {
+      let json = serde_json::to_string(&variant).unwrap();
+      let back: CommonVideoModel = serde_json::from_str(&json).unwrap();
+      assert_eq!(variant, back);
+    }
+  }
 }
