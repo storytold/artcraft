@@ -24,7 +24,7 @@ pub enum GenerationProvider {
 #[cfg(test)]
 mod tests {
   use super::GenerationProvider;
-  use enums_shared::test_helpers::assert_serialization;
+  use enums_shared::test_helpers::{assert_serialization, assert_deserialization};
   use strum::IntoEnumIterator;
   mod manual_checks {
     use super::*;
@@ -37,6 +37,16 @@ mod tests {
       assert_serialization(GenerationProvider::Midjourney, "midjourney");
       assert_serialization(GenerationProvider::Sora, "sora");
       assert_serialization(GenerationProvider::WorldLabs, "world_labs");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("artcraft", GenerationProvider::Artcraft);
+      assert_deserialization("fal", GenerationProvider::Fal);
+      assert_deserialization("grok", GenerationProvider::Grok);
+      assert_deserialization("midjourney", GenerationProvider::Midjourney);
+      assert_deserialization("sora", GenerationProvider::Sora);
+      assert_deserialization("world_labs", GenerationProvider::WorldLabs);
     }
     #[test]
     fn variants_count_check() {
