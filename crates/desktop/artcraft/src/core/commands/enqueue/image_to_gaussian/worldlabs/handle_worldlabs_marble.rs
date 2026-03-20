@@ -11,7 +11,7 @@ use crate::core::utils::get_url_file_extension::get_url_file_extension;
 use crate::core::utils::simple_http_download::simple_http_download;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCredentialManager;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};

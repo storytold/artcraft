@@ -10,7 +10,7 @@ use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::generate::object::generate_hunyuan_2_0_image_to_3d::GenerateHunyuan20ImageTo3dRequest;
 use artcraft_api_defs::generate::object::generate_hunyuan_2_1_image_to_3d::GenerateHunyuan21ImageTo3dRequest;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};

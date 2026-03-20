@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use artcraft_router::errors::provider_error::ProviderError;
 use base64::DecodeError;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use errors::AnyhowError;
 use grok_client::error::grok_error::GrokError;

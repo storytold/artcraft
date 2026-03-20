@@ -16,7 +16,7 @@ use crate::services::sora::threads::sora_task_polling::helpers::poll_classic_sor
 use crate::services::sora::threads::sora_task_polling::helpers::poll_sora_2_tasks::poll_sora_2_tasks;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::tauri::tasks::task_status;
 use errors::AnyhowResult;
@@ -78,7 +78,7 @@ async fn local_task_polling_loop(
   loop {
     let local_sqlite_tasks = list_tasks_by_provider_and_status(ListTasksByProviderAndStatusArgs {
       db: task_database.get_connection(),
-      provider: GenerationProvider::Sora,
+      provider: DbGenerationProvider::Sora,
       task_statuses: &TASK_DATABASE_PENDING_STATUSES,
     }).await?;
 

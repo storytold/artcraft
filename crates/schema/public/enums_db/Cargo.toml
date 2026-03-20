@@ -20,6 +20,7 @@ path = "src/lib.rs"
 workspace-build-acceleration.workspace = true
 
 # Internal
+enums_api.workspace = true
 enums_shared.workspace = true
 
 # Serialization

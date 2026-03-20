@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    p.token as `token: tokens::tokens::prompts::PromptToken`,\n\n    p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,\n\n    p.maybe_model_type as `maybe_model_type: enums::common::model_type::ModelType`,\n    p.maybe_generation_provider as `maybe_generation_provider: enums::common::generation_provider::GenerationProvider`,\n\n    p.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n\n    p.maybe_positive_prompt,\n    p.maybe_negative_prompt,\n    p.maybe_other_args,\n\n    p.creator_ip_address,\n    p.created_at\n\nFROM prompts as p\nWHERE\n    p.token = ?\n        ",
+  "query": "\nSELECT\n    p.token as `token: tokens::tokens::prompts::PromptToken`,\n\n    p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,\n\n    p.maybe_model_type as `maybe_model_type: enums::common::model_type::ModelType`,\n    p.maybe_generation_provider as `maybe_generation_provider: enums_db::common::generation::generation_provider::GenerationProvider`,\n\n    p.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n\n    p.maybe_positive_prompt,\n    p.maybe_negative_prompt,\n    p.maybe_other_args,\n\n    p.creator_ip_address,\n    p.created_at\n\nFROM prompts as p\nWHERE\n    p.token = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -35,7 +35,7 @@
       },
       {
         "ordinal": 3,
-        "name": "maybe_generation_provider: enums::common::generation_provider::GenerationProvider",
+        "name": "maybe_generation_provider: enums_db::common::generation::generation_provider::GenerationProvider",
         "type_info": {
           "type": "VarString",
           "flags": "BINARY",
@@ -120,5 +120,5 @@
       false
     ]
   },
-  "hash": "b46b0d022790f4e10f6e47126df0fdc55172bf8cda77d4e0b2afac9e6ebd1630"
+  "hash": "26a3b492088ab3153397ddb84a6052432749615c86a3800fe60e39dcab2e6bc7"
 }

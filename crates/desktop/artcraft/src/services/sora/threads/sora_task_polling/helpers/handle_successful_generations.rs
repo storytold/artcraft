@@ -15,7 +15,7 @@ use crate::services::sora::threads::sora_task_polling::helpers::upload_generatio
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums::tauri::tasks::task_status;

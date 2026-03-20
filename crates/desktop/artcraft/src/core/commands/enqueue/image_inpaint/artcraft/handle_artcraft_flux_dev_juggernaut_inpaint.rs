@@ -16,7 +16,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use anyhow::anyhow;
 use artcraft_api_defs::generate::image::edit::gpt_image_1_edit_image::{GptImage1EditImageImageQuality, GptImage1EditImageImageSize, GptImage1EditImageNumImages, GptImage1EditImageRequest};
 use artcraft_api_defs::generate::image::inpaint::flux_dev_juggernaut_inpaint_image::{FluxDevJuggernautInpaintImageNumImages, FluxDevJuggernautInpaintImageRequest};
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use images::encoding::image_bytes_to_png_bytes::image_bytes_to_png_bytes;

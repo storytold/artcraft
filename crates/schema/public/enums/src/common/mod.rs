@@ -1,6 +1,7 @@
 pub mod artcraft_credits_pack_slug;
 pub mod artcraft_subscription_slug;
-pub mod generation_provider;
+// Moved to enums_api and enums_db crates:
+// pub mod generation_provider;
 pub mod job_status;
 pub mod job_status_plus;
 pub mod model_type;

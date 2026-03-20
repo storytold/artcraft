@@ -6,7 +6,7 @@ use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::grok::state::grok_credential_manager::GrokCredentialManager;
 use crate::services::grok::state::grok_image_prompt_queue::{GrokImagePromptQueue, PromptItem};
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use grok_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
 use uuid_utils::uuid::generate_random_uuid;

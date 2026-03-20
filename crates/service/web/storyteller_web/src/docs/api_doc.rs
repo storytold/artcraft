@@ -210,7 +210,7 @@ use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEnti
 use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
 use enums::by_table::user_ratings::rating_value::UserRatingValue;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;

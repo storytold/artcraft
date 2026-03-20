@@ -4,7 +4,7 @@ use utoipa::ToSchema;
 use enums_api::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums_api::common::generation::common_video_model::CommonVideoModel;
 use enums_api::common::generation::common_video_resolution::CommonVideoResolution;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 
 pub const ESTIMATE_VIDEO_COST_PATH: &str = "/v1/generate/cost_estimate/video";
 

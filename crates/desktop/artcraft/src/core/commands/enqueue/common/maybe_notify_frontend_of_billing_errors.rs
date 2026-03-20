@@ -1,6 +1,6 @@
 use crate::core::commands::enqueue::generate_error::{BillingIssueReason, BillingProvider, GenerateError, ProviderFailureReason};
 use crate::core::events::functional_events::show_provider_billing_modal_event::ShowProviderBillingModalEvent;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use log::warn;
 use artcraft_client::error::api_error::ApiError;
 use artcraft_client::error::storyteller_error::StorytellerError;

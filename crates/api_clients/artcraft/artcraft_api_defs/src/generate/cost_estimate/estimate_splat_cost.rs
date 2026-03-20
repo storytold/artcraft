@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use enums_api::common::generation::common_splat_model::CommonSplatModel;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 
 pub const ESTIMATE_SPLAT_COST_PATH: &str = "/v1/generate/cost_estimate/splat";
 

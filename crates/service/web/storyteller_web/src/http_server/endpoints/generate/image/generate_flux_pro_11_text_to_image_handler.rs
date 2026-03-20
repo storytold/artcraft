@@ -12,7 +12,8 @@ use artcraft_api_defs::generate::image::text::generate_flux_1_schnell_text_to_im
 use artcraft_api_defs::generate::image::text::generate_flux_pro_11_text_to_image::GenerateFluxPro11TextToImageResponse;
 use artcraft_api_defs::generate::image::text::generate_flux_pro_11_text_to_image::{GenerateFluxPro11TextToImageAspectRatio, GenerateFluxPro11TextToImageNumImages, GenerateFluxPro11TextToImageRequest};
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
@@ -158,7 +159,7 @@ pub async fn generate_flux_pro_11_text_to_image_handler(
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),
     maybe_model_type: Some(ModelType::FluxPro11),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(DbGenerationProvider::from_api(GenerationProvider::Artcraft)),
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,

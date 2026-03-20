@@ -13,7 +13,7 @@ use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::sora::utils::upload_images_to_sora::{upload_images_to_sora, UploadImagesToSoraArgs, UploadImagesToSoraResult};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::{GenerateKling16ProAspectRatio, GenerateKling16ProDuration, GenerateKling16ProImageToVideoRequest};
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};

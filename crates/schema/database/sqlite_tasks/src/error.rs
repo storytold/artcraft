@@ -1,4 +1,5 @@
 use enums::error::enum_error::EnumError;
+use enums_shared::error::enums_error::EnumsError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
@@ -6,6 +7,7 @@ use std::fmt::{Display, Formatter};
 pub enum SqliteTasksError {
   SqlxError(sqlx::Error),
   EnumError(EnumError),
+  EnumsError(EnumsError),
   //TaskNotFound,
   //TaskAlreadyExists,
   //InvalidTaskStatus,
@@ -20,6 +22,7 @@ impl Display for SqliteTasksError {
     match self {
       SqliteTasksError::SqlxError(err) => write!(f, "SQLx error: {:?}", err),
       SqliteTasksError::EnumError(err) => write!(f, "Error parsing enum: {:?}", err),
+      SqliteTasksError::EnumsError(err) => write!(f, "Error parsing enum: {:?}", err),
     }
   }
 }
@@ -33,5 +36,11 @@ impl From<sqlx::Error> for SqliteTasksError {
 impl From<EnumError> for SqliteTasksError {
   fn from(err: EnumError) -> Self {
     SqliteTasksError::EnumError(err)
+  }
+}
+
+impl From<EnumsError> for SqliteTasksError {
+  fn from(err: EnumsError) -> Self {
+    SqliteTasksError::EnumsError(err)
   }
 }

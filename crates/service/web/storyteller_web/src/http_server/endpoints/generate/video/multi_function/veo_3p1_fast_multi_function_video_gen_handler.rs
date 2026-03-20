@@ -16,7 +16,8 @@ use artcraft_api_defs::generate::video::multi_function::veo_3p1_fast_multi_funct
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
@@ -341,7 +342,7 @@ pub async fn veo_3p1_fast_multi_function_video_gen_handler(
         .as_ref()
         .map(|s| &s.user_token),
     maybe_model_type: Some(ModelType::Veo3p1Fast),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(DbGenerationProvider::from_api(GenerationProvider::Artcraft)),
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,

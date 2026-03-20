@@ -14,7 +14,7 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::windows::sora_login_window::extract_sora_webview_cookies::extract_sora_webview_cookies;
 use anyhow::anyhow;
 use cookie_store::cookie_store::CookieStore;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
 use log::{error, info};
 use midjourney_client::client::midjourney_hostname::MidjourneyHostname;

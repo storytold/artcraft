@@ -1,5 +1,5 @@
 use crate::core::events::generation_events::common::GenerationServiceProvider;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 
 // TODO(bt,2025-07-15): Get rid of GenerationServiceProvider
 pub fn to_generation_service_provider(provider: GenerationProvider) -> GenerationServiceProvider {

@@ -3,3 +3,4 @@ pub mod common_image_model;
 pub mod common_splat_model;
 pub mod common_video_model;
 pub mod common_video_resolution;
+pub mod generation_provider;

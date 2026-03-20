@@ -19,8 +19,9 @@
 #[allow(unused_imports)]
 #[macro_use] extern crate enums_shared;
 
-pub mod macros;
+#[macro_use] pub mod macros;
 pub mod traits;
+pub mod common;
 
 // Re-export shared types
 pub use enums_shared::error;

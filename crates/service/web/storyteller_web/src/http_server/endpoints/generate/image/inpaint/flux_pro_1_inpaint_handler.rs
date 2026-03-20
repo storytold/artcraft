@@ -12,7 +12,8 @@ use artcraft_api_defs::generate::image::inpaint::flux_pro_1_inpaint_image::{Flux
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
@@ -213,7 +214,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
     // TODO(bt,2025-07-31): Should we have an "inpaint" specific variant?
     //  Depends on how we want to model provider / feature matrices, routing, and results going forward.
     maybe_model_type: Some(ModelType::FluxPro1), 
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(DbGenerationProvider::from_api(GenerationProvider::Artcraft)),
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,

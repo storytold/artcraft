@@ -1,5 +1,5 @@
 use crate::core::events::basic_sendable_event_trait::{BasicEventStatus, BasicSendableEvent};
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::tauri::ux::tauri_event_name::TauriEventName;
 use serde_derive::Serialize;
 use tauri::AppHandle;

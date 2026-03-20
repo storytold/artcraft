@@ -1,7 +1,7 @@
 use crate::connection::TaskDbConnection;
 use crate::error::SqliteTasksError;
 use chrono::{DateTime, Utc};
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_failure_type::TaskFailureType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums::tauri::tasks::task_model_type::TaskModelType;

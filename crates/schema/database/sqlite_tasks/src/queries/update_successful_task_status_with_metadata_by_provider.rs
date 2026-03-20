@@ -1,4 +1,4 @@
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use crate::connection::TaskDbConnection;
 use crate::error::SqliteTasksError;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;

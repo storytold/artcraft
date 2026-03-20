@@ -6,7 +6,7 @@
 use anyhow::anyhow;
 use chrono::{DateTime, Utc};
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
@@ -116,7 +116,7 @@ SELECT
     p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,
 
     p.maybe_model_type as `maybe_model_type: enums::common::model_type::ModelType`,
-    p.maybe_generation_provider as `maybe_generation_provider: enums::common::generation_provider::GenerationProvider`,
+    p.maybe_generation_provider as `maybe_generation_provider: enums_db::common::generation::generation_provider::GenerationProvider`,
 
     p.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
 

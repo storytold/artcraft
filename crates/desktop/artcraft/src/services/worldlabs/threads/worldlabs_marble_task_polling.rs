@@ -17,7 +17,7 @@ use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums::tauri::tasks::task_status::TaskStatus;
@@ -142,7 +142,7 @@ async fn polling_loop(
 
     let local_tasks = list_tasks_by_provider_and_status(ListTasksByProviderAndStatusArgs {
       db: task_database.get_connection(),
-      provider: GenerationProvider::WorldLabs,
+      provider: DbGenerationProvider::WorldLabs,
       task_statuses: &TASK_DATABASE_PENDING_STATUSES,
     }).await?;
 

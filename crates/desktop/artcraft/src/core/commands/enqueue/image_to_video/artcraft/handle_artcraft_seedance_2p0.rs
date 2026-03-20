@@ -13,7 +13,7 @@ use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismat
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_video::generate_video_request::GenerateVideoRequest;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;

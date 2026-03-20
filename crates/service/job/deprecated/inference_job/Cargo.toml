@@ -31,6 +31,7 @@ config = { path = "../../../../lib/deprecated/config" }
 crockford.workspace = true
 easyenv = { path = "../../../../lib/easyenv" }
 enums.workspace = true
+enums_db.workspace = true
 errors.workspace = true
 filesys.workspace = true
 google_drive_downloader = { path = "../../../../api_clients/google_drive_downloader" }
