@@ -1,0 +1,46 @@
+use strum::EnumIter;
+use utoipa::ToSchema;
+
+/// Used in the `model_categories` table in an `ENUM` field.
+/// (*WE WANT TO STOP USING ENUM FIELDS DUE TO MIGRATION ISSUES*)
+///
+/// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, ToSchema, EnumIter, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum ModelType {
+  Tts,
+  W2l,
+}
+
+/// NB: Legacy API for older code.
+impl ModelType {
+  pub fn to_str(&self) -> &'static str {
+    match self {
+      Self::Tts => "tts",
+      Self::W2l => "w2l",
+    }
+  }
+
+  pub fn from_str(value: &str) -> Result<Self, String> {
+    match value {
+      "tts" => Ok(Self::Tts),
+      "w2l" => Ok(Self::W2l),
+      _ => Err(format!("invalid value: {:?}", value)),
+    }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::ModelType;
+  use strum::IntoEnumIterator;
+
+  #[test]
+  fn round_trip_json() {
+    for variant in ModelType::iter() {
+      let json = serde_json::to_string(&variant).unwrap();
+      let back: ModelType = serde_json::from_str(&json).unwrap();
+      assert_eq!(variant, back);
+    }
+  }
+}
