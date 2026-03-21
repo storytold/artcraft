@@ -14,7 +14,7 @@ use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngin
 use enums_api::by_table::media_files::media_file_type::MediaFileType;
 use enums_api::by_table::model_weights::weights_category::WeightsCategory;
 use enums::common::visibility::Visibility;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_api::by_table::model_weights::weights_types::WeightsType;
 use log::debug;
 use serde_derive::Deserialize;

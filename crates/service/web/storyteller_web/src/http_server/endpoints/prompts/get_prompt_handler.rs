@@ -17,7 +17,7 @@ use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums_convert::common::generation::generation_provider::generation_provider_to_api;
 use enums::common::model_type::ModelType;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::{error, warn};
 use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
 use mysql_queries::queries::prompts::get_prompt::{get_prompt, get_prompt_from_connection};

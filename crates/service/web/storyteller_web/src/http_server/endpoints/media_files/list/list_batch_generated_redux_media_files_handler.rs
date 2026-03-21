@@ -28,7 +28,7 @@ use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngine
 use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use enums::common::visibility::Visibility;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::warn;
 use mysql_queries::queries::media_files::get::batch_get_media_files::batch_get_media_files;
 use mysql_queries::queries::media_files::list::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files_with_connection;

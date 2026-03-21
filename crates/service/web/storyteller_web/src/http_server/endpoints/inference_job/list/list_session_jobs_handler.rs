@@ -26,7 +26,7 @@ use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category
 use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums_convert::by_table::generic_inference_jobs::inference_category::inference_category_to_api;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::{error, warn};
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use mysql_queries::queries::generic_inference::web::list_session_jobs::{list_session_jobs_from_connection, ListSessionJobsForUserArgs, SessionUser};

@@ -12,7 +12,7 @@ use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngine
 use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api;
 use log::{debug, error, warn};

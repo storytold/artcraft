@@ -34,7 +34,7 @@ mod macros;
 // by_table has been migrated to enums_db and enums_api crates
 pub mod common;
 pub mod error;
-pub mod no_table;
+// no_table has been migrated to enums_api crate
 pub mod tauri;
 pub mod traits;
 pub mod api_safe;

@@ -215,7 +215,7 @@ use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_db::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use tokens::tokens::batch_generations::*;
 use tokens::tokens::beta_keys::*;

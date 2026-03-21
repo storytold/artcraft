@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use enums_api::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use serde::Deserialize;
 use serde::Serialize;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
