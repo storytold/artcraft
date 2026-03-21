@@ -21,7 +21,7 @@ workspace-build-acceleration.workspace = true
 
 # Internal
 enums.workspace = true
-enums_api.workspace = true
+enums_db.workspace = true
 errors.workspace = true
 tokens.workspace = true
 

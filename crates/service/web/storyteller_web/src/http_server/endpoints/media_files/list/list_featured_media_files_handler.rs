@@ -14,6 +14,7 @@ use enums_db::by_table::media_files::media_file_origin_product_category::MediaFi
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::view_as::ViewAs;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api;
 use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api;
 use log::{error, warn};
@@ -330,7 +331,8 @@ pub async fn list_featured_media_files_handler(
           maybe_style_name: m.maybe_prompt_args
               .as_ref()
               .and_then(|args| args.style_name.as_ref())
-              .and_then(|style| style.to_style_name()),
+              .and_then(|style| style.to_style_name())
+              .map(|s| style_transfer_name_to_api(&s)),
           maybe_duration_millis: m.maybe_duration_millis,
           stats: SimpleEntityStats {
             positive_rating_count: m.maybe_ratings_positive_count.unwrap_or(0),

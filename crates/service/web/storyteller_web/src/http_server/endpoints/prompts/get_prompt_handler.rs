@@ -18,6 +18,7 @@ use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums_convert::common::generation::generation_provider::generation_provider_to_api;
 use enums::common::model_type::ModelType;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api;
 use log::{error, warn};
 use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
 use mysql_queries::queries::prompts::get_prompt::{get_prompt, get_prompt_from_connection};
@@ -246,7 +247,7 @@ pub async fn get_prompt_handler(
 
   if let Some(inner_payload) = &result.maybe_other_args {
     if let Some(encoded_style_name) = &inner_payload.style_name {
-      maybe_style_name = encoded_style_name.to_style_name();
+      maybe_style_name = encoded_style_name.to_style_name().map(|s| style_transfer_name_to_api(&s));
     }
     maybe_strength = inner_payload.strength;
     maybe_inference_duration_millis = inner_payload.inference_duration_millis;

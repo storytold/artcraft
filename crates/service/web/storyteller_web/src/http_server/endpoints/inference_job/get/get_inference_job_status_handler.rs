@@ -11,6 +11,7 @@ use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_m
 use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
+use enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::{Json, Path};
@@ -285,7 +286,7 @@ fn record_to_payload(
       maybe_model_token: record.request_details.maybe_model_token,
       maybe_model_title: record.request_details.maybe_model_title,
       maybe_raw_inference_text: record.request_details.maybe_raw_inference_text,
-      maybe_style_name: record.request_details.maybe_style_name,
+      maybe_style_name: record.request_details.maybe_style_name.as_ref().map(|s| style_transfer_name_to_api(s)),
       maybe_live_portrait_details: maybe_polymorphic_args
           .as_ref()
           .and_then(|args| extract_live_portrait_details(args)),

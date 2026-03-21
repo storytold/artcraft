@@ -20,6 +20,7 @@
 pub mod traits;
 pub mod by_table;
 pub mod common;
+pub mod no_table;
 
 // Re-export shared types
 pub use enums_shared::error;

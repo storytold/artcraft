@@ -16,6 +16,7 @@ use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api;
 use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api;
 use log::warn;
@@ -381,7 +382,8 @@ pub async fn list_media_files_handler(
           maybe_style_name: record.maybe_prompt_args
               .as_ref()
               .and_then(|args| args.style_name.as_ref())
-              .and_then(|style| style.to_style_name()),
+              .and_then(|style| style.to_style_name())
+              .map(|s| style_transfer_name_to_api(&s)),
           maybe_duration_millis: record.maybe_duration_millis,
           created_at: record.created_at,
           updated_at: record.updated_at,

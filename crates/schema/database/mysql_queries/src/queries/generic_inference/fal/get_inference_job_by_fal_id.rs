@@ -9,7 +9,7 @@ use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCat
 use enums_db::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;

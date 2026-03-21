@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use enums_api::no_table::premium_product::premium_product_name::PremiumProductName;
+use enums_db::no_table::premium_product::premium_product_name::PremiumProductName;
 use crate::payloads::premium::inner_state::product_by_week_subkey::ProductByWeekSubkey;
 
 #[derive(Clone)]

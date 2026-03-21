@@ -22,6 +22,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
+use enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api;
 use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
 use enums_db::by_table::media_files::media_file_class::MediaFileClass;
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
@@ -394,7 +395,8 @@ async fn modern_media_file_lookup(
       maybe_style_name: result.maybe_prompt_args
           .as_ref()
           .and_then(|args| args.style_name.as_ref())
-          .and_then(|style| style.to_style_name()),
+          .and_then(|style| style.to_style_name())
+          .map(|s| style_transfer_name_to_api(&s)),
       used_face_detailer: result.maybe_prompt_args
           .as_ref()
           .and_then(|args| args.used_face_detailer)

@@ -1,4 +1,4 @@
-use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
 
 /// We encode the style name as a string so that we don't accidentally break
 /// forward/reverse compatibility as we remove styles.

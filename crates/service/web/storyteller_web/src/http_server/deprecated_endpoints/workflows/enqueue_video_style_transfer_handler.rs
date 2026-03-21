@@ -11,6 +11,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::{error, info, warn};
 use utoipa::ToSchema;
 
+use enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_db;
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
@@ -406,7 +407,7 @@ pub async fn enqueue_video_style_transfer_handler(
         global_ip_adapter_token: empty_media_file_token_to_null(request.global_ipa_media_token.as_ref()),
 
         // Other inputs
-        style_name: Some(request.style),
+        style_name: Some(style_transfer_name_to_db(&request.style)),
         creator_visibility: Some(set_visibility),
         trim_start_milliseconds: Some(trim_start_millis),
         trim_end_milliseconds: Some(trim_end_millis),

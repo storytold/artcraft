@@ -83,7 +83,7 @@ impl HkeyStoreAdapter for PremiumPayload {
 
 #[cfg(test)]
 mod tests {
-  use enums_api::no_table::premium_product::premium_product_name::PremiumProductName;
+  use enums_db::no_table::premium_product::premium_product_name::PremiumProductName;
 
   use super::*;
 
