@@ -24,7 +24,7 @@ database = ["sqlx", "sqlx-core", "sqlx-mysql"]
 workspace-build-acceleration.workspace = true
 
 # Internal
-# (None yet)
+enums_db.workspace = true
 
 # Serialization
 serde.workspace = true

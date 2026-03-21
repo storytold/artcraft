@@ -1,4 +1,4 @@
-use crate::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use utoipa::ToSchema;
 
 /// A restricted subset of `FrontendFailureCategory` that only includes values

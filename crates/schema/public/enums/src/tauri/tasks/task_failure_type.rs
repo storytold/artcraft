@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
-use crate::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use crate::error::enum_error::EnumError;
 #[cfg(test)]
 use strum::EnumCount;

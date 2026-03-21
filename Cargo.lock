@@ -3794,6 +3794,7 @@ dependencies = [
 name = "enums"
 version = "0.0.1"
 dependencies = [
+ "enums_db",
  "log",
  "serde",
  "serde_derive",

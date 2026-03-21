@@ -31,7 +31,7 @@ mod macros;
 
 #[cfg(test)] pub mod test_helpers;
 
-pub mod by_table;
+// by_table has been migrated to enums_db and enums_api crates
 pub mod common;
 pub mod error;
 pub mod no_table;
