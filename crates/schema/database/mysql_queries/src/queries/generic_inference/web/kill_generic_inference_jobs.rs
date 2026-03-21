@@ -3,8 +3,8 @@ use std::collections::HashSet;
 use anyhow::anyhow;
 use sqlx::{MySql, MySqlPool, QueryBuilder};
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use enums::common::job_status::JobStatus;
 use errors::AnyhowResult;
 
@@ -107,8 +107,8 @@ mod tests {
 
   use regex::Regex;
 
-  use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-  use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+  use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+  use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 
   use crate::queries::generic_inference::web::kill_generic_inference_jobs::{KillableStatus, KillableTarget, query_builder};
 

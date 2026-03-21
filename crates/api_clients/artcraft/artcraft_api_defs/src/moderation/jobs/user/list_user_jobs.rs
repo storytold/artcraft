@@ -1,4 +1,4 @@
-use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use enums_api::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use enums::common::job_status_plus::JobStatusPlus;
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;

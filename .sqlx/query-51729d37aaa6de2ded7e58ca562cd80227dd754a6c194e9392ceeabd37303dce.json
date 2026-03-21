@@ -1,0 +1,102 @@
+{
+  "db_name": "MySQL",
+  "query": "\n  SELECT\n      b2.token as `token: tokens::tokens::user_bookmarks::UserBookmarkToken`,\n\n      b2.entity_type as `entity_type: enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType`,\n      b2.entity_token,\n\n      b2.user_token as `user_token: tokens::tokens::users::UserToken`,\n\n      es.bookmark_count as unused_bookmark_count,\n\n      b2.created_at,\n      b2.updated_at,\n      b2.deleted_at\n\n  FROM\n      user_bookmarks AS b1\n\n  JOIN user_bookmarks as b2\n      ON b1.entity_type = b2.entity_type\n      AND b1.entity_token = b2.entity_token\n\n  LEFT OUTER JOIN entity_stats AS es\n      ON b1.entity_type = es.entity_type\n      AND b1.entity_token = es.entity_token\n\n  WHERE\n      b1.token = ?\n\n  FOR UPDATE\n          ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::user_bookmarks::UserBookmarkToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "entity_type: enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "entity_token",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "unused_bookmark_count",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "deleted_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "51729d37aaa6de2ded7e58ca562cd80227dd754a6c194e9392ceeabd37303dce"
+}

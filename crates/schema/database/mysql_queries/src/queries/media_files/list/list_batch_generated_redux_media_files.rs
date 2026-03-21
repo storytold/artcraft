@@ -4,8 +4,8 @@
 #![forbid(unused_variables)]
 
 use chrono::{DateTime, Utc};
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use log::warn;
@@ -210,8 +210,8 @@ async fn select_including_deleted(
 SELECT
     m.token as `token: tokens::tokens::media_files::MediaFileToken`,
 
-    m.media_class as `media_class: enums::by_table::media_files::media_file_class::MediaFileClass`,
-    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,
+    m.media_class as `media_class: enums_db::by_table::media_files::media_file_class::MediaFileClass`,
+    m.media_type as `media_type: enums_db::by_table::media_files::media_file_type::MediaFileType`,
 
     m.maybe_mime_type,
 
@@ -301,8 +301,8 @@ async fn select_without_deleted(
 SELECT
     m.token as `token: tokens::tokens::media_files::MediaFileToken`,
 
-    m.media_class as `media_class: enums::by_table::media_files::media_file_class::MediaFileClass`,
-    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,
+    m.media_class as `media_class: enums_db::by_table::media_files::media_file_class::MediaFileClass`,
+    m.media_type as `media_type: enums_db::by_table::media_files::media_file_type::MediaFileType`,
 
     m.maybe_mime_type,
 

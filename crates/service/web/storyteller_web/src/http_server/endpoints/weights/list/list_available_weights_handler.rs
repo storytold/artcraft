@@ -11,9 +11,10 @@ use rand::Rng;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::model_weights::{
+use enums_api::by_table::model_weights::{
   weights_category::WeightsCategory,
 };
+use enums_convert::by_table::model_weights::weights_category::{weights_category_to_api, weights_category_to_db};
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::model_weights::list::list_weights_query_builder::ListWeightsQueryBuilder;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
@@ -180,7 +181,7 @@ pub async fn list_available_weights_handler(
     let mut query_builder = ListWeightsQueryBuilder::new()
         .sort_ascending(sort_ascending)
         .cursor_is_reversed(cursor_is_reversed)
-        .weights_category(query.weight_category)
+        .weights_category(query.weight_category.map(|v| weights_category_to_db(&v)))
         .weights_type(query.weight_type.map(|v| weights_type_to_db(&v)))
         .scope_creator_username(None)
         .include_user_hidden(include_user_hidden)
@@ -257,7 +258,7 @@ pub async fn list_available_weights_handler(
                     maybe_url_slug: title_to_url_slug(&weight.title),
                     title: weight.title,
                     weight_type: weights_type_to_api(&weight.weights_type),
-                    weight_category: weight.weights_category,
+                    weight_category: weights_category_to_api(&weight.weights_category),
 
                     maybe_ietf_language_tag: weight.maybe_ietf_language_tag,
                     maybe_ietf_primary_language_subtag: weight.maybe_ietf_primary_language_subtag,

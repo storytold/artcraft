@@ -6,8 +6,8 @@ use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 
 use bucket_paths::legacy::typified_paths::public::media_uploads::bucket_file_path::MediaUploadOriginalFilePath;
-use enums::by_table::media_uploads::media_upload_source::MediaUploadSource;
-use enums::by_table::media_uploads::media_upload_type::MediaUploadType;
+use enums_db::by_table::media_uploads::media_upload_source::MediaUploadSource;
+use enums_db::by_table::media_uploads::media_upload_type::MediaUploadType;
 use enums::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;

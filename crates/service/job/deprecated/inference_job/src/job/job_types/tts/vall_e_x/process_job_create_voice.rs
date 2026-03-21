@@ -10,10 +10,10 @@ use bucket_paths::legacy::typified_paths::private::zs_voices::bucket_file_path::
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::bucket_client::BucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
-use enums::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
-use enums::by_table::zs_voices::model_category::ZsVoiceModelCategory;
-use enums::by_table::zs_voices::model_type::ZsVoiceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
+use enums_db::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
+use enums_db::by_table::zs_voices::model_category::ZsVoiceModelCategory;
+use enums_db::by_table::zs_voices::model_type::ZsVoiceModelType;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::voice_designer::datasets::get_dataset::get_dataset_by_token;
 use mysql_queries::queries::voice_designer::datasets::get_dataset::ZsDataset;

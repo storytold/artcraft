@@ -27,6 +27,7 @@ config = { path = "../../../../lib/deprecated/config" }
 easyenv = { path = "../../../../lib/easyenv" }
 email_sender = { path = "../../../../lib/deprecated/email_sender" }
 enums = { workspace = true }
+enums_db.workspace = true
 errors = { workspace = true }
 filesys = { path = "../../../../lib/files/filesys" }
 jobs_common = { path = "../../../../lib/jobs_common" }

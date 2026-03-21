@@ -1,0 +1,344 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    w.id,\n    w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n\n    w.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,\n\n    w.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,\n    w.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,\n\n    w.title,\n\n    w.maybe_ietf_language_tag,\n    w.maybe_ietf_primary_language_subtag,\n\n    cover_image.token as `maybe_cover_image_media_file_token: tokens::tokens::media_files::MediaFileToken`,\n    cover_image.public_bucket_directory_hash as maybe_cover_image_public_bucket_hash,\n    cover_image.maybe_public_bucket_prefix as maybe_cover_image_public_bucket_prefix,\n    cover_image.maybe_public_bucket_extension as maybe_cover_image_public_bucket_extension,\n\n    w.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,\n    users.username as creator_username,\n    users.display_name as creator_display_name,\n    users.email_gravatar_hash as creator_gravatar_hash,\n\n    featured_items.entity_token IS NOT NULL AS is_featured,\n\n    entity_stats.ratings_positive_count as maybe_ratings_positive_count,\n    entity_stats.ratings_negative_count as maybe_ratings_negative_count,\n    entity_stats.bookmark_count as maybe_bookmark_count,\n\n    w.cached_usage_count,\n\n    extension_tts.ietf_language_tag as maybe_tts_ietf_language_tag,\n    extension_tts.ietf_primary_language_subtag as maybe_tts_ietf_primary_language_subtag,\n\n    extension_vc.ietf_language_tag as maybe_vc_ietf_language_tag,\n    extension_vc.ietf_primary_language_subtag as maybe_vc_ietf_primary_language_subtag,\n\n    w.created_at,\n    w.updated_at,\n    w.user_deleted_at,\n    w.mod_deleted_at,\n\n    NOW() as database_read_time\n\nFROM model_weights as w\n\nJOIN users\n    ON users.token = w.creator_user_token\n\nLEFT OUTER JOIN model_weights_extension_tts_details as extension_tts\n    ON extension_tts.model_weights_token = w.token\nLEFT OUTER JOIN model_weights_extension_voice_conversion_details as extension_vc\n    ON extension_vc.model_weights_token = w.token\nLEFT OUTER JOIN entity_stats\n    ON entity_stats.entity_type = \"model_weight\"\n    AND entity_stats.entity_token = w.token\nLEFT OUTER JOIN media_files as cover_image\n    ON cover_image.token = w.maybe_cover_image_media_file_token\nLEFT OUTER JOIN featured_items\n    ON featured_items.entity_type = \"model_weight\"\n    AND featured_items.entity_token = w.token\n    AND featured_items.deleted_at IS NULL\n\nWHERE\n  w.id > ?\nORDER BY id ASC\nLIMIT ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | PRIMARY_KEY | AUTO_INCREMENT",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "token: tokens::tokens::model_weights::ModelWeightToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "creator_set_visibility: enums::common::visibility::Visibility",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | ENUM",
+          "char_set": 224,
+          "max_size": 28
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "weights_type: enums_db::by_table::model_weights::weights_types::WeightsType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "title",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_ietf_language_tag",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_ietf_primary_language_subtag",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_cover_image_media_file_token: tokens::tokens::media_files::MediaFileToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_cover_image_public_bucket_hash",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_cover_image_public_bucket_prefix",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "maybe_cover_image_public_bucket_extension",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "creator_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "creator_username",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "creator_display_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "creator_gravatar_hash",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "is_featured",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | BINARY",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "maybe_ratings_positive_count",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "maybe_ratings_negative_count",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "maybe_bookmark_count",
+        "type_info": {
+          "type": "Long",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "cached_usage_count",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "maybe_tts_ietf_language_tag",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "maybe_tts_ietf_primary_language_subtag",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "maybe_vc_ietf_language_tag",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 24,
+        "name": "maybe_vc_ietf_primary_language_subtag",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 48
+        }
+      },
+      {
+        "ordinal": 25,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 26,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP | ON_UPDATE_NOW",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 27,
+        "name": "user_deleted_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 28,
+        "name": "mod_deleted_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 29,
+        "name": "database_read_time",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "fc6937d3aabac65a3364f7eb57538460c58c173149e583e2f192dff9d1161fdf"
+}

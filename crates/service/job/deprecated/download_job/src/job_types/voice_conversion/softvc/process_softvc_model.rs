@@ -6,7 +6,7 @@ use anyhow::anyhow;
 use log::{info, warn};
 use tempdir::TempDir;
 
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use filesys::check_file_exists::check_file_exists;

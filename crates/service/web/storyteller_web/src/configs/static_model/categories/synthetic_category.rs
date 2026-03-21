@@ -1,4 +1,4 @@
-use enums::by_table::model_categories::model_type::ModelType;
+use enums_db::by_table::model_categories::model_type::ModelType;
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct SyntheticCategory {

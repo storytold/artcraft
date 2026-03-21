@@ -5,7 +5,7 @@
 
 use anyhow::anyhow;
 use chrono::{DateTime, Utc};
-use enums::by_table::prompts::prompt_type::PromptType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use errors::AnyhowResult;
@@ -113,7 +113,7 @@ async fn select_record(
 SELECT
     p.token as `token: tokens::tokens::prompts::PromptToken`,
 
-    p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,
+    p.prompt_type as `prompt_type: enums_db::by_table::prompts::prompt_type::PromptType`,
 
     p.maybe_model_type as `maybe_model_type: enums::common::model_type::ModelType`,
     p.maybe_generation_provider as `maybe_generation_provider: enums_db::common::generation::generation_provider::GenerationProvider`,

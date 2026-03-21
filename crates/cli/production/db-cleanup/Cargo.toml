@@ -23,6 +23,7 @@ workspace-build-acceleration = { workspace = true }
 bucket_paths.workspace = true
 easyenv = { path = "../../../lib/easyenv" }
 enums = { path = "../../../schema/public/enums" }
+enums_db.workspace = true
 errors = { path = "../../../lib/errors" }
 mysql_queries = { path = "../../../schema/database/mysql_queries" }
 storyteller_root = { path = "../../../lib/storyteller_root" }

@@ -15,8 +15,8 @@ use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_funct
   Seedance2p0AspectRatio, Seedance2p0BatchCount, Seedance2p0MultiFunctionVideoGenRequest,
   Seedance2p0MultiFunctionVideoGenResponse,
 };
-use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
-use enums::by_table::prompts::prompt_type::PromptType;
+use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;

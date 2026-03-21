@@ -16,7 +16,7 @@ use sqlx::pool::PoolConnection;
 use sqlx::MySql;
 
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use migration::voice_conversion::list_vc_models_for_migration::list_vc_models_for_migration;

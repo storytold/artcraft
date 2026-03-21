@@ -1,6 +1,6 @@
 use actix_helpers::extractors::get_request_origin_uri::get_request_origin_uri;
 use actix_web::HttpRequest;
-use enums::by_table::users::user_signup_source::UserSignupSource;
+use enums_db::by_table::users::user_signup_source::UserSignupSource;
 use log::warn;
 
 pub fn get_request_signup_source_enum(http_request: &HttpRequest) -> Option<UserSignupSource> {
@@ -52,7 +52,7 @@ mod tests {
   mod origin_header_enum {
     use super::*;
     use crate::requests::get_request_signup_source_enum::get_request_signup_source_enum;
-    use enums::by_table::users::user_signup_source::UserSignupSource;
+    use enums_db::by_table::users::user_signup_source::UserSignupSource;
 
     #[test]
     fn artcraft_dot_ai() {

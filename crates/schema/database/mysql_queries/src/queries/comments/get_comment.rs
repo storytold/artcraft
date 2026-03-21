@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use chrono::{DateTime, Utc};
 use sqlx::{Executor, MySql};
 
-use enums::by_table::comments::comment_entity_type::CommentEntityType;
+use enums_db::by_table::comments::comment_entity_type::CommentEntityType;
 use errors::AnyhowResult;
 use tokens::tokens::comments::CommentToken;
 use tokens::tokens::users::UserToken;
@@ -50,7 +50,7 @@ pub async fn get_comment<'e, 'c, E>(
 SELECT
     c.token as `token: tokens::tokens::comments::CommentToken`,
 
-    c.entity_type as `entity_type: enums::by_table::comments::comment_entity_type::CommentEntityType`,
+    c.entity_type as `entity_type: enums_db::by_table::comments::comment_entity_type::CommentEntityType`,
     c.entity_token,
 
     c.user_token as `user_token: tokens::tokens::users::UserToken`,

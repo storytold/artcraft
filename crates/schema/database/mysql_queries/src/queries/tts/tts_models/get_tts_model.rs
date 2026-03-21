@@ -9,7 +9,7 @@ use log::warn;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -203,7 +203,7 @@ async fn select_including_deleted(
         r#"
 SELECT
     tts.token as model_token,
-    tts.tts_model_type as `tts_model_type: enums::by_table::tts_models::tts_model_type::TtsModelType`,
+    tts.tts_model_type as `tts_model_type: enums_db::by_table::tts_models::tts_model_type::TtsModelType`,
     tts.text_pipeline_type,
     tts.text_preprocessing_algorithm,
     tts.maybe_default_pretrained_vocoder,
@@ -281,7 +281,7 @@ async fn select_without_deleted(
         r#"
 SELECT
     tts.token as model_token,
-    tts.tts_model_type as `tts_model_type: enums::by_table::tts_models::tts_model_type::TtsModelType`,
+    tts.tts_model_type as `tts_model_type: enums_db::by_table::tts_models::tts_model_type::TtsModelType`,
     tts.text_pipeline_type,
     tts.text_preprocessing_algorithm,
     tts.maybe_default_pretrained_vocoder,

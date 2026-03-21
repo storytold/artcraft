@@ -13,12 +13,14 @@ use actix_web_lab::extract::Query;
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory;
+use enums_convert::by_table::model_weights::weights_category::weights_category_to_api;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory as DbWeightsCategory;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::warn;
@@ -368,7 +370,7 @@ pub async fn batch_get_media_files_handler(
               // TODO(bt,2023-12-28): Instead of giving bogus defaults on None, make these optional or return
               //  None for *everything* on any field being absent.
               weight_type: weights_type_to_api(&result.maybe_model_weights_type.unwrap_or(DbWeightsType::Tacotron2)),
-              weight_category: result.maybe_model_weights_category.unwrap_or(WeightsCategory::TextToSpeech),
+              weight_category: weights_category_to_api(&result.maybe_model_weights_category.unwrap_or(DbWeightsCategory::TextToSpeech)),
               title: result.maybe_model_weights_title.unwrap_or_else(|| "model".to_string()),
               maybe_cover_image_public_bucket_path,
               maybe_weight_creator: UserDetailsLight::from_optional_db_fields_owned(

@@ -11,7 +11,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::image::text::generate_flux_1_schnell_text_to_image::GenerateFlux1SchnellTextToImageNumImages;
 use artcraft_api_defs::generate::image::text::generate_flux_pro_11_text_to_image::GenerateFluxPro11TextToImageResponse;
 use artcraft_api_defs::generate::image::text::generate_flux_pro_11_text_to_image::{GenerateFluxPro11TextToImageAspectRatio, GenerateFluxPro11TextToImageNumImages, GenerateFluxPro11TextToImageRequest};
-use enums::by_table::prompts::prompt_type::PromptType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;

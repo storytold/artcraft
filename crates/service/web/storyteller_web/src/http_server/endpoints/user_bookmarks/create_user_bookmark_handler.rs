@@ -13,7 +13,7 @@ use log::{error, warn};
 use sqlx::Acquire;
 use utoipa::ToSchema;
 
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
 use mysql_queries::queries::entity_stats::stats_entity_token::StatsEntityToken;
 use mysql_queries::queries::entity_stats::upsert_entity_stats_on_bookmark_event::{upsert_entity_stats_on_bookmark_event, BookmarkAction, UpsertEntityStatsArgs};
 use mysql_queries::queries::users::user_bookmarks::get_total_bookmark_count_for_entity::get_total_bookmark_count_for_entity;

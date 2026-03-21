@@ -3,7 +3,7 @@ use sqlx::{MySql, Pool};
 
 use bucket_paths::legacy::remote_file_manager_paths::media_descriptor::MediaVideoMp4Descriptor;
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use errors::{anyhow, AnyhowResult};
 use mysql_queries::queries::media_files::create::specialized_insert::insert_media_file_from_cli_tool::{insert_media_file_from_cli_tool, InsertArgs};

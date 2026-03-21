@@ -1,4 +1,4 @@
-use enums::by_table::tts_render_tasks::tts_render_status::TtsRenderStatus;
+use enums_db::by_table::tts_render_tasks::tts_render_status::TtsRenderStatus;
 use tokens::tokens::tts_render_tasks::TtsRenderTaskToken;
 
 pub struct TtsRenderTask {

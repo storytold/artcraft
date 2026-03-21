@@ -12,7 +12,8 @@ use log::warn;
 use utoipa::{IntoParams, ToSchema};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory;
+use enums_convert::by_table::model_weights::weights_category::weights_category_to_db;
 use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::model_weights::list::list_weights_by_user::{list_weights_by_creator_username, ListWeightsForUserArgs};
@@ -190,7 +191,7 @@ pub async fn list_weights_by_user_handler(
         page_index,
         sort_ascending,
         view_as,
-        maybe_scoped_weight_category: query.maybe_scoped_weight_category,
+        maybe_scoped_weight_category: query.maybe_scoped_weight_category.map(|v| weights_category_to_db(&v)),
         maybe_scoped_weight_type: query.maybe_scoped_weight_type.map(|v| weights_type_to_db(&v)),
         mysql_pool: &server_state.mysql_pool,
     }

@@ -1,7 +1,7 @@
 use enums_db::by_table::model_weights::weights_types::WeightsType;
 use std::collections::HashSet;
 use serde_json::{json, Value};
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use tokens::tokens::users::UserToken;
 
 pub fn must_be_not_deleted() -> Value {

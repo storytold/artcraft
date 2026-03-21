@@ -9,6 +9,7 @@ use artcraft_api_defs::moderation::wallet_ledger_entries::moderator_get_wallet_l
   ModeratorGetWalletLedgerEntryPathInfo,
   ModeratorGetWalletLedgerEntryResponse,
 };
+use enums_convert::by_table::wallet_ledger_entries::wallet_ledger_entry_type::wallet_ledger_entry_type_to_api;
 use mysql_queries::queries::wallet_ledger_entries::get_wallet_ledger_entry_for_moderation::get_wallet_ledger_entry_for_moderation;
 
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
@@ -49,7 +50,7 @@ pub async fn moderator_get_wallet_ledger_entry_handler(
 
   let maybe_entry_details = maybe_entry.map(|entry| ModeratorGetWalletLedgerEntryDetails {
     token: entry.token,
-    entry_type: entry.entry_type,
+    entry_type: wallet_ledger_entry_type_to_api(&entry.entry_type),
     maybe_entity_ref: entry.maybe_entity_ref,
     credits_delta: entry.credits_delta,
     banked_credits_before: entry.banked_credits_before,

@@ -3,7 +3,7 @@ use log::error;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use enums::common::vocoder_type::VocoderType;
@@ -170,7 +170,7 @@ async fn select_include_deleted(
         wt.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
         wt.title,
         wt.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
-        wt.weights_category as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+        wt.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
         wt.maybe_description_markdown,
         wt.maybe_description_rendered_html,
 

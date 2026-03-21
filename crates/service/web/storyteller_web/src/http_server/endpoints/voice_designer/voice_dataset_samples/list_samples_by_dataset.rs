@@ -6,7 +6,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
 
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use mysql_queries::queries::voice_designer::voice_samples::list_dataset_samples_for_dataset_token::list_dataset_samples_for_dataset_token;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;

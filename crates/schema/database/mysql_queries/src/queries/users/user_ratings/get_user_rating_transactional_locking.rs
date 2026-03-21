@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use log::error;
 use sqlx::{Executor, MySql};
 
-use enums::by_table::user_ratings::rating_value::UserRatingValue;
+use enums_db::by_table::user_ratings::rating_value::UserRatingValue;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 
@@ -32,7 +32,7 @@ pub async fn get_user_rating_transactional_locking<'e, 'c, E>(
       InternalUserRatingRecord,
         r#"
 SELECT
-    r.rating_value as `rating_value: enums::by_table::user_ratings::rating_value::UserRatingValue`,
+    r.rating_value as `rating_value: enums_db::by_table::user_ratings::rating_value::UserRatingValue`,
     r.created_at,
     r.updated_at,
 

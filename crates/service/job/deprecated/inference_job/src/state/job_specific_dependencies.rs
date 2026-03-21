@@ -18,7 +18,7 @@ use crate::job::job_types::workflow::comfy_ui_dependencies::ComfyDependencies;
 use crate::state::scoped_job_type_execution::ScopedJobTypeExecution;
 use crate::state::scoped_model_type_execution::ScopedModelTypeExecution;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use errors::AnyhowResult;
 use crate::job::job_types::studio_gen2::studio_gen2_dependencies::StudioGen2Dependencies;
 

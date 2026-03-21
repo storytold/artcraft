@@ -6,6 +6,7 @@ use strum::EnumIter;
 
 /// Used in the `tag_uses` table in a `VARCHAR(32)` field named `entity_type`.
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
 pub enum TagUseEntityType {
   /// Media files

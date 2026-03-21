@@ -6,12 +6,12 @@ use sqlx::mysql::MySqlRow;
 use sqlx::pool::PoolConnection;
 use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::traits::mysql_from_row::MySqlFromRow;
-use errors::AnyhowResult;
+use enums::traits::mysql_from_row::MySqlFromRow as _EnumsMySqlFromRow;
+use enums_db::traits::mysql_from_row::MySqlFromRow as _EnumsDbMySqlFromRow;use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -403,7 +403,7 @@ struct RawGenericInferenceJobStatus {
 // cannot have type hints, eg. the following:
 //
 //    m.token as `token: tokens::tokens::media_files::MediaFileToken`,
-//    m.origin_category as `origin_category: enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory`,
+//    m.origin_category as `origin_category: enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory`,
 //    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
 //
 // This results in the automatic mapping not being able to be found by name (for macro derive), and

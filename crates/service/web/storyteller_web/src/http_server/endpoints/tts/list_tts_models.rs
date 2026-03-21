@@ -16,7 +16,7 @@ use log::{error, info, warn};
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;
 
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use migration::text_to_speech::list_tts_models_for_migration::list_tts_models_for_migration;

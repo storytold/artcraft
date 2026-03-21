@@ -3,11 +3,11 @@ use sqlx::{MySql, Pool};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::bucket_client::BucketClient;
-use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
-use enums::by_table::media_uploads::media_upload_type::MediaUploadType;
-use enums::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
-use enums::by_table::zs_voices::model_category::ZsVoiceModelCategory;
-use enums::by_table::zs_voices::model_type::ZsVoiceModelType;
+use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_db::by_table::media_uploads::media_upload_type::MediaUploadType;
+use enums_db::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
+use enums_db::by_table::zs_voices::model_category::ZsVoiceModelCategory;
+use enums_db::by_table::zs_voices::model_type::ZsVoiceModelType;
 use enums::common::visibility::Visibility;
 use errors::{anyhow, AnyhowResult};
 use filesys::file_read_bytes::file_read_bytes;

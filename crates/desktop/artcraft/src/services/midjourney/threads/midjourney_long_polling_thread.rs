@@ -13,7 +13,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
-use enums::by_table::prompts::prompt_type::PromptType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::model_type::ModelType;

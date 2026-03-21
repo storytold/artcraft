@@ -7,7 +7,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::{info, warn};
 
 use config::bad_urls::is_bad_tts_model_download_url;
-use enums::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
+use enums_db::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 
 pub fn get_scoped_weights_categories(
   maybe_query_param: Option<&str>
@@ -28,7 +28,7 @@ pub fn get_scoped_weights_categories(
 mod test {
   use std::collections::HashSet;
 
-  use enums::by_table::model_weights::weights_category::WeightsCategory;
+  use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 
   use crate::http_server::endpoints::weights::helpers::get_scoped_weights_categories::get_scoped_weights_categories;
 

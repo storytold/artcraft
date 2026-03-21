@@ -4,8 +4,8 @@ use anyhow::anyhow;
 use futures::TryStreamExt;
 use log::warn;
 
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use errors::AnyhowResult;
 
 use crate::http_server::web_utils::read_multipart_field_bytes::{checked_read_multipart_bytes, read_multipart_field_as_text};

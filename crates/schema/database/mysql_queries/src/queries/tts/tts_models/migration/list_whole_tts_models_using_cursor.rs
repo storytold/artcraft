@@ -4,7 +4,7 @@ use log::warn;
 use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -186,7 +186,7 @@ SELECT
     id,
     token as `token: tokens::tokens::tts_models::TtsModelToken`,
 
-    tts_model_type as `tts_model_type: enums::by_table::tts_models::tts_model_type::TtsModelType`,
+    tts_model_type as `tts_model_type: enums_db::by_table::tts_models::tts_model_type::TtsModelType`,
 
     text_pipeline_type,
     has_self_contained_vocoder,

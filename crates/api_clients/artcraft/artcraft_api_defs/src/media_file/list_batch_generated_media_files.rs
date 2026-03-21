@@ -2,8 +2,8 @@ use crate::common::responses::media_file_cover_image_details::MediaFileCoverImag
 use crate::common::responses::media_links::MediaLinks;
 use crate::common::responses::user_details_light::UserDetailsLight;
 use chrono::{DateTime, Utc};
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::batch_generations::BatchGenerationToken;

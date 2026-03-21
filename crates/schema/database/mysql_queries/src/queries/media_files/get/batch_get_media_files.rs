@@ -8,15 +8,15 @@ use chrono::{DateTime, Utc};
 use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
-use enums::traits::mysql_from_row::MySqlFromRow;
+use enums::traits::mysql_from_row::MySqlFromRow as _EnumsMySqlFromRow;
 use enums_db::traits::mysql_from_row::MySqlFromRow as _DbMySqlFromRowWeights;
 use errors::AnyhowResult;
 use tokens::tokens::batch_generations::BatchGenerationToken;
@@ -374,7 +374,7 @@ LEFT OUTER JOIN prompts
 // cannot have type hints, eg. the following:
 //
 //    m.token as `token: tokens::tokens::media_files::MediaFileToken`,
-//    m.origin_category as `origin_category: enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory`,
+//    m.origin_category as `origin_category: enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory`,
 //    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
 //
 // This results in the automatic mapping not being able to be found by name (for macro derive), and

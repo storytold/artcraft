@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use chrono::Utc;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
+use enums_db::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
 use enums::common::job_status::JobStatus;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
@@ -166,7 +166,7 @@ struct AvailableDownloadJobRawInternal {
 mod tests {
   use std::collections::BTreeSet;
 
-  use enums::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
+  use enums_db::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
 
   use crate::queries::generic_download::job::list_available_generic_download_jobs::download_type_clause;
 

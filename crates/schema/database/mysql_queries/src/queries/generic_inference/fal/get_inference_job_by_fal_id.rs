@@ -4,10 +4,10 @@ use log::warn;
 use sqlx::pool::PoolConnection;
 use sqlx::{MySql, MySqlPool};
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
-use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
+use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
@@ -85,7 +85,7 @@ SELECT
 
     jobs.status as `status: enums::common::job_status_plus::JobStatusPlus`,
     
-    jobs.maybe_external_third_party as `external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,
+    jobs.maybe_external_third_party as `external_third_party: enums_db::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,
     jobs.maybe_external_third_party_id as `external_third_party_id`,
 
     jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,

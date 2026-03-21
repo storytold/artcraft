@@ -5,7 +5,7 @@ use std::time::Duration;
 use log::info;
 use sqlx::{MySql, Pool};
 
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::view_as::ViewAs;
 use errors::AnyhowResult;
 use mysql_queries::queries::media_files::delete::delete_media_file::delete_media_file_as_mod;

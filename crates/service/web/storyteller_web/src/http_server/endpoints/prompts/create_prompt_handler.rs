@@ -10,7 +10,7 @@ use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::prompts::create_prompt::{CreatePromptRequest, CreatePromptResponse};
-use enums::by_table::prompts::prompt_type::PromptType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_convert::common::generation::generation_provider::generation_provider_to_db;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, warn};

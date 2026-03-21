@@ -1,4 +1,4 @@
-use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_api::by_table::model_weights::weights_types::WeightsType;
 use std::collections::HashSet;
 use std::fmt;
 use std::sync::Arc;
@@ -21,12 +21,12 @@ use artcraft_api_defs::common::responses::simple_entity_stats::SimpleEntityStats
 use artcraft_api_defs::media_file::list_batch_generated_media_files::{BatchGeneratedReduxMediaFileInfo, ListBatchGeneratedReduxMediaFilesPathInfo, ListBatchGeneratedReduxMediaFilesSuccessResponse};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_convert::by_table::media_files::media_file_class::media_file_class_to_api;
+use enums_convert::by_table::media_files::media_file_type::media_file_type_to_api;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::warn;
@@ -107,8 +107,8 @@ pub async fn list_batch_generated_redux_media_files_handler(
 
         BatchGeneratedReduxMediaFileInfo {
           token: result.token.clone(),
-          media_class: result.media_class,
-          media_type: result.media_type,
+          media_class: media_file_class_to_api(&result.media_class),
+          media_type: media_file_type_to_api(&result.media_type),
           maybe_batch_token: result.maybe_batch_token,
           media_links: MediaLinksBuilder::from_media_path_and_env(
             media_domain,

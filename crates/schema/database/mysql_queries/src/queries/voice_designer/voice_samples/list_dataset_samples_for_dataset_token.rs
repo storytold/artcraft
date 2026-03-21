@@ -4,7 +4,7 @@ use log::warn;
 use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
@@ -102,7 +102,7 @@ async fn list_samples_by_dataset_token(
                 SELECT
                     zds.token as `token: tokens::tokens::zs_voice_dataset_samples::ZsVoiceDatasetSampleToken`,
                     zds.media_file_token as `media_file_token: tokens::tokens::media_files::MediaFileToken`,
-                    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,
+                    m.media_type as `media_type: enums_db::by_table::media_files::media_file_type::MediaFileType`,
                     m.public_bucket_directory_hash,
                     m.maybe_public_bucket_prefix,
                     m.maybe_public_bucket_extension,
@@ -125,7 +125,7 @@ async fn list_samples_by_dataset_token(
                 SELECT
                     zds.token as `token: tokens::tokens::zs_voice_dataset_samples::ZsVoiceDatasetSampleToken`,
                     zds.media_file_token as `media_file_token: tokens::tokens::media_files::MediaFileToken`,
-                    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,
+                    m.media_type as `media_type: enums_db::by_table::media_files::media_file_type::MediaFileType`,
                     m.public_bucket_directory_hash,
                     m.maybe_public_bucket_prefix,
                     m.maybe_public_bucket_extension,

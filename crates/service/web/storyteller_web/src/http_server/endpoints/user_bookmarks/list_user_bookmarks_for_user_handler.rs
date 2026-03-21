@@ -25,9 +25,11 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory;
+use enums_convert::by_table::model_weights::weights_category::{weights_category_to_api, weights_category_to_db};
+use enums_db::by_table::model_weights::weights_category::WeightsCategory as DbWeightsCategory;
+use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
 use log::warn;
 use mysql_queries::queries::users::user_bookmarks::list_user_bookmarks::{list_user_bookmarks_by_maybe_entity_type, ListUserBookmarksForUserArgs};
 use tokens::tokens::media_files::MediaFileToken;
@@ -199,7 +201,7 @@ pub async fn list_user_bookmarks_for_user_handler(
         username: path.username.as_ref(),
         maybe_filter_entity_type: query.maybe_scoped_entity_type,
         maybe_filter_weight_type: query.maybe_scoped_weight_type.map(|v| weights_type_to_db(&v)),
-        maybe_filter_weight_category: query.maybe_scoped_weight_category,
+        maybe_filter_weight_category: query.maybe_scoped_weight_category.map(|v| weights_category_to_db(&v)),
         maybe_filter_media_file_type: query.maybe_scoped_media_file_type,
         sort_ascending,
         page_size,
@@ -316,7 +318,7 @@ pub async fn list_user_bookmarks_for_user_handler(
                       // TODO(bt,2023-12-28): Proper default, optional, or "unknown" values would be better.
                       title: user_bookmark.maybe_entity_descriptive_text.clone().unwrap_or_else(|| "weight".to_string()),
                       weight_type: weights_type_to_api(&user_bookmark.maybe_model_weight_type.unwrap_or(DbWeightsType::Tacotron2)),
-                      weight_category: user_bookmark.maybe_model_weight_category.unwrap_or(WeightsCategory::TextToSpeech),
+                      weight_category: weights_category_to_api(&user_bookmark.maybe_model_weight_category.unwrap_or(DbWeightsCategory::TextToSpeech)),
                       cover,
                       maybe_cover_image_public_bucket_path: maybe_model_weight_cover_image,
                       maybe_creator: maybe_model_weight_creator,

@@ -1,0 +1,69 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    pci.media_token as `media_token: tokens::tokens::media_files::MediaFileToken`,\n    pci.context_semantic_type as `context_semantic_type: enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType`,\n\n    m.public_bucket_directory_hash,\n    m.maybe_public_bucket_prefix,\n    m.maybe_public_bucket_extension\n\nFROM prompt_context_items pci\nJOIN media_files m\nON\n    pci.media_token = m.token\nWHERE\n    pci.prompt_token = ?\nORDER BY pci.id ASC\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "media_token: tokens::tokens::media_files::MediaFileToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "context_semantic_type: enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "public_bucket_directory_hash",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_public_bucket_prefix",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_public_bucket_extension",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "419124f0fef3e9196daace36996e336c35b83df0b52a2cf8ea1a5b30895b1e95"
+}

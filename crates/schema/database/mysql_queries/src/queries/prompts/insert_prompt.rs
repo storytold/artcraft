@@ -5,7 +5,7 @@ use log::info;
 use sqlx;
 use sqlx::{Executor, MySql};
 
-use enums::by_table::prompts::prompt_type::PromptType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use errors::AnyhowResult;

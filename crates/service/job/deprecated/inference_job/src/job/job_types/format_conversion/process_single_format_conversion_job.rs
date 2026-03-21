@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use log::error;
 
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::media_files::get::get_media_file_for_inference::get_media_file_for_inference;
 use tokens::tokens::media_files::MediaFileToken;

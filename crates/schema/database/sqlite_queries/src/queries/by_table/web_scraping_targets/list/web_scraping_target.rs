@@ -1,4 +1,4 @@
-use enums::by_table::web_scraping_targets::scraping_status::ScrapingStatus;
+use enums_db::by_table::web_scraping_targets::scraping_status::ScrapingStatus;
 use enums::common::sqlite::web_content_type::WebContentType;
 
 pub struct WebScrapingTarget {

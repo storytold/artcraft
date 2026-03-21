@@ -28,6 +28,7 @@ concurrency.workspace = true
 config = { path = "../../../lib/deprecated/config" }
 easyenv.workspace = true
 enums.workspace = true
+enums_db.workspace = true
 errors.workspace = true
 hashing = { path = "../../../lib/files/hashing" }
 jobs_common.workspace = true

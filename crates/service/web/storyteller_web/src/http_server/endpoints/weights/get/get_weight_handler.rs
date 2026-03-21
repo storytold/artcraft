@@ -12,7 +12,8 @@ use log::warn;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory;
+use enums_convert::by_table::model_weights::weights_category::weights_category_to_api;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
@@ -216,7 +217,7 @@ pub async fn get_weight_handler(
         maybe_url_slug: title_to_url_slug(&weight.title),
         title: weight.title,
         weight_type: weights_type_to_api(&weight.weights_type),
-        weight_category: weight.weights_category,
+        weight_category: weights_category_to_api(&weight.weights_category),
         // TODO(bt,2023-12-24): Migrated the column. We should return nullable fields, but I don't want to break the frontend
         description_markdown: weight.maybe_description_markdown.unwrap_or_else(|| "".to_string()),
         description_rendered_html: weight.maybe_description_rendered_html.unwrap_or_else(|| "".to_string()),

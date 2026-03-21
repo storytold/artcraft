@@ -1,4 +1,4 @@
-use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
+use enums_db::by_table::user_ratings::entity_type::UserRatingEntityType;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::tts_models::TtsModelToken;

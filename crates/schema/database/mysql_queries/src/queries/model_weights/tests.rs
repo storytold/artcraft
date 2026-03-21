@@ -9,7 +9,7 @@ mod tests {
     use tokio;
 
     // common tests
-    use enums::by_table::model_weights::weights_category::WeightsCategory;
+    use enums_db::by_table::model_weights::weights_category::WeightsCategory;
     use enums_db::by_table::model_weights::weights_types::WeightsType;
     use enums::common::view_as::ViewAs;
     use enums::common::visibility::Visibility;

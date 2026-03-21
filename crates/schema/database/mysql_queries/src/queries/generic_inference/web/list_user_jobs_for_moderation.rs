@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use log::warn;
 use sqlx::MySqlPool;
 
-use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use enums::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -36,7 +36,7 @@ SELECT
     j.on_success_result_entity_token as `on_success_result_media_token: tokens::tokens::media_files::MediaFileToken`,
     j.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,
     wle.token as `wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,
-    wle.entry_type as `wallet_ledger_entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`
+    wle.entry_type as `wallet_ledger_entry_type: enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`
 FROM generic_inference_jobs as j
 LEFT OUTER JOIN users as u
     ON j.maybe_creator_user_token = u.token

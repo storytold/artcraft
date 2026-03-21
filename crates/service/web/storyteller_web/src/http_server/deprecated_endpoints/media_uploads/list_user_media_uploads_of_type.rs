@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 use log::warn;
 
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
-use enums::by_table::media_uploads::media_upload_type::MediaUploadType;
+use enums_db::by_table::media_uploads::media_upload_type::MediaUploadType;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::media_uploads::reverse_list_user_media_uploads_of_type::reverse_list_user_media_uploads_of_type_with_connection;
 use tokens::tokens::media_uploads::MediaUploadToken;

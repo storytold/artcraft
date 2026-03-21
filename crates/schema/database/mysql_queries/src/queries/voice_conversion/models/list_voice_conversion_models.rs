@@ -4,7 +4,7 @@ use log::warn;
 use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
@@ -105,7 +105,7 @@ async fn list_voice_conversion_models_for_all_creators(
         r#"
 SELECT
     vc.token as `token: tokens::tokens::voice_conversion_models::VoiceConversionModelToken`,
-    vc.model_type as `model_type: enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
+    vc.model_type as `model_type: enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
     vc.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,
     users.username as creator_username,
     users.display_name as creator_display_name,
@@ -137,7 +137,7 @@ async fn list_voice_conversion_models_creator_scoped(
         r#"
 SELECT
     vc.token as `token: tokens::tokens::voice_conversion_models::VoiceConversionModelToken`,
-    vc.model_type as `model_type: enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
+    vc.model_type as `model_type: enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
     vc.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,
     users.username as creator_username,
     users.display_name as creator_display_name,

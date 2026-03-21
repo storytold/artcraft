@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use log::warn;
 use sqlx::{MySql, Transaction};
 
-use enums::by_table::generic_synthetic_ids::id_category::IdCategory;
+use enums_db::by_table::generic_synthetic_ids::id_category::IdCategory;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 

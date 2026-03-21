@@ -20,8 +20,8 @@ use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use bucket_paths::legacy::typified_paths::public::voice_conversion_results::bucket_file_path::VoiceConversionResultOriginalFilePath;
 use chrono::{DateTime, Utc};
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::error;
@@ -389,7 +389,7 @@ fn record_to_payload(
 mod tests {
   use crate::http_server::common_responses::media::media_domain::MediaDomain;
   use crate::http_server::endpoints::inference_job::get::get_inference_job_status_handler::record_to_payload;
-  use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+  use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
   use mysql_queries::queries::generic_inference::web::job_status::{GenericInferenceJobStatus, RequestDetails, ResultDetails};
   use server_environment::ServerEnvironment;
   use url::Url;

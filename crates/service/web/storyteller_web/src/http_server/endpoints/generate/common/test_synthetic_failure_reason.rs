@@ -1,4 +1,4 @@
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 
 pub struct SyntheticFailure {
   pub frontend_failure_category: FrontendFailureCategory,

@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
+use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use enums::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use tokens::tokens::batch_generations::BatchGenerationToken;

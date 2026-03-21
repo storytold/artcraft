@@ -24,6 +24,7 @@ workspace-build-acceleration.workspace = true
 actix_helpers.workspace = true
 jwt_signer.workspace = true
 enums.workspace = true
+enums_db.workspace = true
 errors.workspace = true
 http_headers.workspace = true
 tokens.workspace = true

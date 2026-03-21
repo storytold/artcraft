@@ -3,7 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use mysql_queries::column_types::vocoder_type::VocoderType;

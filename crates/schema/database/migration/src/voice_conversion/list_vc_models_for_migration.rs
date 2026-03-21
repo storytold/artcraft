@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use mysql_queries::queries::model_weights::list::list_model_weights_for_voice_conversion::{list_model_weights_for_voice_conversion, ModelWeightForVoiceConversion};

@@ -9,6 +9,7 @@ use artcraft_api_defs::moderation::jobs::user::list_user_jobs::{
   ListUserJobsPathInfo,
   ListUserJobsResponse,
 };
+use enums_convert::by_table::wallet_ledger_entries::wallet_ledger_entry_type::wallet_ledger_entry_type_to_api;
 use mysql_queries::queries::generic_inference::web::list_user_jobs_for_moderation::list_user_jobs_for_moderation;
 
 use tokens::tokens::users::UserToken;
@@ -55,7 +56,7 @@ pub async fn list_user_jobs_handler(
     on_success_result_media_token: row.on_success_result_media_token,
     job_token: row.job_token,
     wallet_ledger_entry_token: row.wallet_ledger_entry_token,
-    wallet_ledger_entry_type: row.wallet_ledger_entry_type,
+    wallet_ledger_entry_type: row.wallet_ledger_entry_type.as_ref().map(|v| wallet_ledger_entry_type_to_api(v)),
   }).collect();
 
   Ok(Json(ListUserJobsResponse {

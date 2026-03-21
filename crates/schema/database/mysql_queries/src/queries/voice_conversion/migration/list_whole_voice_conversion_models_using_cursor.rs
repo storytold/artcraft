@@ -4,7 +4,7 @@ use log::warn;
 use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -142,7 +142,7 @@ SELECT
     id,
     token as `token: tokens::tokens::voice_conversion_models::VoiceConversionModelToken`,
 
-    model_type as `model_type: enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
+    model_type as `model_type: enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
     maybe_vocoder_token as `maybe_vocoder_token: tokens::tokens::vocoder_models::VocoderModelToken`,
 
     title,

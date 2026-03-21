@@ -8,7 +8,7 @@ use log::warn;
 use utoipa::ToSchema;
 
 use crockford::crockford_entropy_lower;
-use enums::by_table::beta_keys::beta_key_product::BetaKeyProduct;
+use enums_db::by_table::beta_keys::beta_key_product::BetaKeyProduct;
 use mysql_queries::queries::beta_keys::insert_batch_beta_keys::{insert_batch_beta_keys, InsertBatchArgs};
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::get_user_profile_by_username;
 

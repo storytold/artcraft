@@ -5,8 +5,8 @@
 
 use crate::queries::users::user::create::create_account_error::CreateAccountError;
 use crate::utils::transactor::Transactor;
-use enums::by_table::users::user_signup_method::UserSignupMethod;
-use enums::by_table::users::user_signup_source::UserSignupSource;
+use enums_db::by_table::users::user_signup_method::UserSignupMethod;
+use enums_db::by_table::users::user_signup_source::UserSignupSource;
 use log::warn;
 use sqlx::error::Error::Database;
 use tokens::tokens::users::UserToken;

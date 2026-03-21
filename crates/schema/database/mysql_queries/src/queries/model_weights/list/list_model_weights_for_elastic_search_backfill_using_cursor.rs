@@ -4,7 +4,7 @@ use log::warn;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
@@ -145,7 +145,7 @@ SELECT
     w.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
 
     w.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
-    w.weights_category as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+    w.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
 
     w.title,
 

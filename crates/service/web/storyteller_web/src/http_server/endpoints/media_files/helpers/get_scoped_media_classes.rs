@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
 
 pub fn get_scoped_media_classes(
   maybe_query_param: Option<&str>
@@ -34,7 +34,7 @@ pub fn get_scoped_media_classes(
 mod test {
   use std::collections::HashSet;
 
-  use enums::by_table::media_files::media_file_class::MediaFileClass;
+  use enums_db::by_table::media_files::media_file_class::MediaFileClass;
 
   use crate::http_server::endpoints::media_files::helpers::get_scoped_media_classes::get_scoped_media_classes;
 

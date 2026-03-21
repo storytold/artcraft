@@ -3,12 +3,11 @@ use chrono::{DateTime, Utc};
 use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
-use enums::traits::mysql_from_row::MySqlFromRow;
-use errors::AnyhowResult;
+use enums::traits::mysql_from_row::MySqlFromRow as _EnumsMySqlFromRow;use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
 

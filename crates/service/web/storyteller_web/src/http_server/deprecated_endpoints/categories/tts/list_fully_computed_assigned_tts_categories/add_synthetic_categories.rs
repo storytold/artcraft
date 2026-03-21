@@ -5,7 +5,7 @@
 
 use std::collections::BTreeSet;
 
-use enums::by_table::trending_model_analytics::window_name::WindowName;
+use enums_db::by_table::trending_model_analytics::window_name::WindowName;
 use mysql_queries::queries::trending_model_analytics::list_trending_tts_models::TrendingModels;
 use tokens::tokens::model_categories::ModelCategoryToken;
 use tokens::tokens::tts_models::TtsModelToken;

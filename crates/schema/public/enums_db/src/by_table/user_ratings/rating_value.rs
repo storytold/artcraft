@@ -16,10 +16,10 @@ use strum::EnumIter;
 ///
 /// *DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY!*
 ///
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
-#[cfg_attr(feature = "database", derive(sqlx::Type))]
-#[cfg_attr(feature = "database", sqlx(rename_all = "lowercase"))]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
+#[sqlx(rename_all = "lowercase")]
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum UserRatingValue {
   /// This is considered a ratings "soft deletion" and does not count towards a total score.

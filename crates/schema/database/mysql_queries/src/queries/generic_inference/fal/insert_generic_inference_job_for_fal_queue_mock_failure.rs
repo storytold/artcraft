@@ -2,7 +2,7 @@ use uuid_utils::uuid::generate_random_uuid;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;

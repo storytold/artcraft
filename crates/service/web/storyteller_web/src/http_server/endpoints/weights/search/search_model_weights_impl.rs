@@ -26,7 +26,8 @@ use crate::state::server_state::ServerState;
 use crate::util::title_to_url_slug::title_to_url_slug;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use elasticsearch_schema::searches::search_model_weights::search_model_weights::{search_model_weights, ModelWeightsSortDirection, ModelWeightsSortField, SearchArgs};
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory;
+use enums_convert::by_table::model_weights::weights_category::{weights_category_to_api, weights_category_to_db};
 use enums::common::visibility::Visibility;
 use primitives::numerics::i32_to_u32_zero_clamped::i32_to_u32_zero_clamped;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -152,7 +153,7 @@ pub async fn search_model_weights_impl(
   let maybe_weights_categories = request.weight_category
       .map(|weight_category| {
         let mut set = HashSet::new();
-        set.insert(weight_category);
+        set.insert(weights_category_to_db(&weight_category));
         set
       });
 
@@ -222,7 +223,7 @@ pub async fn search_model_weights_impl(
         ModelWeightSearchResult {
           weight_token: result.token,
           weight_type: weights_type_to_api(&result.weights_type),
-          weight_category: result.weights_category,
+          weight_category: weights_category_to_api(&result.weights_category),
           maybe_url_slug: title_to_url_slug(&result.title),
           title: result.title,
           creator: UserDetailsLight::from_db_fields(

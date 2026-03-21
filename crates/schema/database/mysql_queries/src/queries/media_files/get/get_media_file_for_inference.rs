@@ -6,7 +6,7 @@
 use anyhow::anyhow;
 use sqlx::MySqlPool;
 
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
@@ -86,7 +86,7 @@ async fn select_record(
 SELECT
     m.token as `token: tokens::tokens::media_files::MediaFileToken`,
 
-    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,
+    m.media_type as `media_type: enums_db::by_table::media_files::media_file_type::MediaFileType`,
 
     m.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
     m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,

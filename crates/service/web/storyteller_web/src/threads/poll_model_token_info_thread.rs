@@ -4,9 +4,9 @@ use std::time::Duration;
 use log::{debug, error, info};
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use errors::AnyhowResult;
 use mysql_queries::queries::model_weights::model_weight_info_lite::list_model_weight_info_lite::list_model_weight_info_lite;
 use mysql_queries::queries::voice_conversion::model_info_lite::list_voice_conversion_model_info_lite::list_voice_conversion_model_info_lite;

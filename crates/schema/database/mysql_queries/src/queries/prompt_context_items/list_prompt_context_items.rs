@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use chrono::{DateTime, Utc};
-use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use errors::AnyhowResult;
 use log::{info, warn};
 use sqlx::pool::PoolConnection;
@@ -33,7 +33,7 @@ pub async fn list_prompt_context_items(
         r#"
 SELECT
     pci.media_token as `media_token: tokens::tokens::media_files::MediaFileToken`,
-    pci.context_semantic_type as `context_semantic_type: enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType`,
+    pci.context_semantic_type as `context_semantic_type: enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType`,
 
     m.public_bucket_directory_hash,
     m.maybe_public_bucket_prefix,

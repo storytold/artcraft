@@ -15,6 +15,7 @@ use strum::EnumIter;
 /// NB: This will be used by a variety of tables (MySQL and sqlite)!
 /// Keep the max length to 16 characters.
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationProvider {

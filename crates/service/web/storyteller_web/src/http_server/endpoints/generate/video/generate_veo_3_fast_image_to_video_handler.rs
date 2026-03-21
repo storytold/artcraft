@@ -13,7 +13,7 @@ use actix_web::{web, HttpRequest};
 use anyhow::anyhow;
 use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::{GenerateVeo3FastDuration, GenerateVeo3FastImageToVideoRequest, GenerateVeo3FastImageToVideoResponse, GenerateVeo3FastResolution};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::prompts::prompt_type::PromptType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
