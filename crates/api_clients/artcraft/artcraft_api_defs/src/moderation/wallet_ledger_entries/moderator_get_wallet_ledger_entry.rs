@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use enums_api::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use utoipa::ToSchema;

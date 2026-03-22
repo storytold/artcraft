@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
-use enums::common::generation::common_image_model::CommonImageModel;
-use enums::common::generation::common_video_resolution::CommonVideoResolution;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums_api::common::generation::common_image_model::CommonImageModel;
+use enums_api::common::generation::common_video_resolution::CommonVideoResolution;
+use enums_api::common::generation::generation_provider::GenerationProvider;
 
 pub const ESTIMATE_IMAGE_COST_PATH: &str = "/v1/generate/cost_estimate/image";
 

@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_api::common::payments_namespace::PaymentsNamespace;
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::users::UserToken;
 use tokens::tokens::wallets::WalletToken;
