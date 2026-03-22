@@ -22,10 +22,27 @@ pub enum FrontendFailureCategoryForOldClients {
 #[cfg(test)]
 mod tests {
   use super::FrontendFailureCategoryForOldClients;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(FrontendFailureCategoryForOldClients::FaceNotDetected, "face_not_detected");
+      assert_serialization(FrontendFailureCategoryForOldClients::KeepAliveElapsed, "keep_alive_elapsed");
+      assert_serialization(FrontendFailureCategoryForOldClients::NotYetImplemented, "not_yet_implemented");
+      assert_serialization(FrontendFailureCategoryForOldClients::RetryableWorkerError, "retryable_worker_error");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("face_not_detected", FrontendFailureCategoryForOldClients::FaceNotDetected);
+      assert_deserialization("keep_alive_elapsed", FrontendFailureCategoryForOldClients::KeepAliveElapsed);
+      assert_deserialization("not_yet_implemented", FrontendFailureCategoryForOldClients::NotYetImplemented);
+      assert_deserialization("retryable_worker_error", FrontendFailureCategoryForOldClients::RetryableWorkerError);
+    }
 
     #[test]
     fn variants_count_check() {
