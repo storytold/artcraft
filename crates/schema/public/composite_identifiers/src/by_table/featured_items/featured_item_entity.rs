@@ -1,4 +1,4 @@
-use enums::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
+use enums_db::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;

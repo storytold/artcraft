@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use log::{error, info, warn};
 use opentelemetry::KeyValue as OtelAttribute;
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use errors::AnyhowResult;
 use filesys::file_exists::file_exists;
 use jobs_common::noop_logger::NoOpLogger;

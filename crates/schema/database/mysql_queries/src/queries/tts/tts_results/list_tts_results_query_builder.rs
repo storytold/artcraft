@@ -6,7 +6,7 @@
 use chrono::{DateTime, Utc};
 use sqlx::MySqlPool;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 
 use crate::config::shared_constants::DEFAULT_MYSQL_QUERY_RESULT_PAGE_SIZE;
@@ -192,9 +192,9 @@ impl ListTtsResultsQueryBuilder {
 
   pub fn build_query_string(&self) -> String {
     // TODO: I haven't figured out how to get field name disambiguation and type coercion working here.
-    //    (1) tts_results.creator_set_visibility `creator_set_visibility: crate::database::enums::record_visibility::RecordVisibility`,
+    //    (1) tts_results.creator_set_visibility `creator_set_visibility: crate::database::enums_db::record_visibility::RecordVisibility`,
     //    Query error: no column found for name: creator_set_visibility
-    //    (2) creator_set_visibility `creator_set_visibility: crate::database::enums::record_visibility::RecordVisibility`,
+    //    (2) creator_set_visibility `creator_set_visibility: crate::database::enums_db::record_visibility::RecordVisibility`,
     //    Column 'creator_set_visibility' in field list is ambiguous
 
     // TODO/NB: Unfortunately SQLx can't statically typecheck this query

@@ -1,4 +1,4 @@
-use enums::common::sqlite::awaitable_job_status::AwaitableJobStatus;
+use enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus;
 use errors::{anyhow, AnyhowResult};
 use sqlx::SqlitePool;
 use tokens::tokens::news_stories::NewsStoryToken;
@@ -18,25 +18,25 @@ SELECT
   id,
   news_story_token as `news_story_token: tokens::tokens::news_stories::NewsStoryToken`,
   original_news_canonical_url,
-  web_content_type as `web_content_type: enums::common::sqlite::web_content_type::WebContentType`,
+  web_content_type as `web_content_type: enums_db::common::sqlite::web_content_type::WebContentType`,
   original_news_title,
 
   maybe_summary_news_title,
   maybe_categorization,
 
-  overall_production_status as `overall_production_status: enums::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
+  overall_production_status as `overall_production_status: enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
 
-  llm_rendition_status as `llm_rendition_status: enums::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
+  llm_rendition_status as `llm_rendition_status: enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
   llm_rendition_attempts,
 
-  llm_title_summary_status as `llm_title_summary_status: enums::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
+  llm_title_summary_status as `llm_title_summary_status: enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
   llm_title_summary_attempts,
 
-  llm_categorization_status as `llm_categorization_status: enums::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
+  llm_categorization_status as `llm_categorization_status: enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
   llm_categorization_attempts,
 
-  audio_generation_status as `audio_generation_status: enums::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
-  image_generation_status as `image_generation_status: enums::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
+  audio_generation_status as `audio_generation_status: enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
+  image_generation_status as `image_generation_status: enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus`,
   image_generation_attempts
 FROM news_story_productions
 WHERE

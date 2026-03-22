@@ -1,4 +1,4 @@
-use enums::by_table::batch_generations::batch_generation_entity_type::BatchGenerationEntityType;
+use enums_db::by_table::batch_generations::batch_generation_entity_type::BatchGenerationEntityType;
 use tokens::tokens::media_files::MediaFileToken;
 
 // TODO(bt, 2024-01-16): A ref type with <'a> lifetime of inner data instead of ownership?

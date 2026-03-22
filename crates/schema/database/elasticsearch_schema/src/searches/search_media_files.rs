@@ -4,9 +4,9 @@ use elasticsearch::{Elasticsearch, SearchParts};
 use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 
@@ -196,9 +196,9 @@ mod tests {
 
   use serde_json::Value;
 
-  use enums::by_table::media_files::media_file_class::MediaFileClass;
-  use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-  use enums::by_table::media_files::media_file_type::MediaFileType;
+  use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+  use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+  use enums_db::by_table::media_files::media_file_type::MediaFileType;
   use tokens::tokens::users::UserToken;
 
   use crate::searches::search_media_files::{build_query, SearchArgs};

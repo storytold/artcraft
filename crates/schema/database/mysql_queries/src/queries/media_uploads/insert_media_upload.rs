@@ -3,9 +3,9 @@ use log::warn;
 use sqlx::MySqlPool;
 
 use bucket_paths::legacy::typified_paths::public::media_uploads::bucket_file_path::MediaUploadOriginalFilePath;
-use enums::by_table::media_uploads::media_upload_source::MediaUploadSource;
-use enums::by_table::media_uploads::media_upload_type::MediaUploadType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_uploads::media_upload_source::MediaUploadSource;
+use enums_db::by_table::media_uploads::media_upload_type::MediaUploadType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_uploads::MediaUploadToken;
 use tokens::tokens::users::UserToken;

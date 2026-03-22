@@ -1,6 +1,6 @@
 use crate::errors::mysql_error::MysqlError;
 use crate::errors::subtypes::upsert_error::UpsertError;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use sqlx::mysql::MySqlArguments;
 use sqlx::pool::PoolConnection;
 use sqlx::query::Query;

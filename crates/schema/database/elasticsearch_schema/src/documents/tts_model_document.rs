@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::tts_models::TtsModelToken;
 use tokens::tokens::users::UserToken;
 

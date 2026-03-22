@@ -4,7 +4,7 @@ use log::{info, warn};
 use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 
 use crate::helpers::boolean_converters::i8_to_bool;
@@ -142,7 +142,7 @@ SELECT
     tts.user_ratings_positive_count,
     tts.user_ratings_negative_count,
     tts.user_ratings_total_count,
-    tts.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    tts.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     tts.created_at,
     tts.updated_at
 FROM tts_models as tts
@@ -177,7 +177,7 @@ SELECT
     tts.user_ratings_positive_count,
     tts.user_ratings_negative_count,
     tts.user_ratings_total_count,
-    tts.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    tts.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     tts.created_at,
     tts.updated_at
 FROM tts_models as tts
@@ -223,7 +223,7 @@ SELECT
     tts.user_ratings_positive_count,
     tts.user_ratings_negative_count,
     tts.user_ratings_total_count,
-    tts.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    tts.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     tts.created_at,
     tts.updated_at
 FROM tts_models as tts
@@ -261,7 +261,7 @@ SELECT
     tts.user_ratings_positive_count,
     tts.user_ratings_negative_count,
     tts.user_ratings_total_count,
-    tts.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    tts.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     tts.created_at,
     tts.updated_at
 FROM tts_models as tts

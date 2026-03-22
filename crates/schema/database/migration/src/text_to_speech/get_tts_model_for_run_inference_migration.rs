@@ -5,7 +5,7 @@ use sqlx::MySqlPool;
 
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
 use mysql_queries::queries::model_weights::get::get_weight_for_legacy_tts_inference::{get_weight_for_legacy_tts_inference, ModelWeightForLegacyTtsInference};
 use mysql_queries::queries::tts::tts_models::get_tts_model_for_inference_improved::{get_tts_model_for_inference_improved, CustomVocoderFields, TtsModelForInferenceError, TtsModelForInferenceRecord};
 use tokens::tokens::model_weights::ModelWeightToken;

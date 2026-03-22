@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use log::error;
-use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use errors::AnyhowResult;
 use sqlx::mysql::MySqlArguments;
 use sqlx::pool::PoolConnection;

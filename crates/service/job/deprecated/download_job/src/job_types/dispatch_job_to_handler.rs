@@ -1,6 +1,6 @@
 use tempdir::TempDir;
 
-use enums::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
+use enums_db::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
 use errors::AnyhowResult;
 use jobs_common::redis_job_status_logger::RedisJobStatusLogger;
 use mysql_queries::queries::generic_download::job::list_available_generic_download_jobs::AvailableDownloadJob;

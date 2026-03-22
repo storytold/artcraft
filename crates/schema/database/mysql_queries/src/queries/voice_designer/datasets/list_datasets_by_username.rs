@@ -4,7 +4,7 @@ use log::{info, warn};
 use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
@@ -107,7 +107,7 @@ async fn list_datasets_by_creator_username(
             users.username as creator_username,
             users.display_name as creator_display_name,
             users.email_gravatar_hash as creator_email_gravatar_hash,
-            zd.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+            zd.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
             zd.created_at,
             zd.updated_at
         FROM zs_voice_datasets as zd
@@ -136,7 +136,7 @@ async fn list_datasets_by_creator_username(
             users.username as creator_username,
             users.display_name as creator_display_name,
             users.email_gravatar_hash as creator_email_gravatar_hash,
-            zd.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+            zd.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
             zd.created_at,
             zd.updated_at
         FROM zs_voice_datasets as zd

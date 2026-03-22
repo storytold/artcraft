@@ -2,15 +2,15 @@ use chrono::{DateTime, Utc};
 use sqlx::mysql::MySqlRow;
 use sqlx::{Acquire, FromRow, MySql, MySqlPool, QueryBuilder, Row};
 use sqlx::pool::PoolConnection;
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::traits::mysql_from_row::MySqlFromRow as _;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
-use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
-use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::traits::mysql_from_row::MySqlFromRow as _;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_db::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
+use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
@@ -400,8 +400,8 @@ fn map_to_media_files(dataset:Vec<RawMediaFileJoinUser>) -> Vec<MediaFilesByToke
 // cannot have type hints, eg. the following:
 //
 //    m.token as `token: tokens::tokens::media_files::MediaFileToken`,
-//    m.origin_category as `origin_category: enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory`,
-//    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+//    m.origin_category as `origin_category: enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory`,
+//    m.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 //
 // This results in the automatic mapping not being able to be found by name (for macro derive), and
 // in the manual case `row.try_get()` etc. won't have the correct column name (since the name is the

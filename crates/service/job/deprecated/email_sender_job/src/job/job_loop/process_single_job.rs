@@ -3,7 +3,7 @@ use std::time::Instant;
 use anyhow::anyhow;
 use log::{info, warn};
 
-use enums::by_table::email_sender_jobs::email_category::EmailCategory;
+use enums_db::by_table::email_sender_jobs::email_category::EmailCategory;
 use mysql_queries::queries::email_sender_jobs::list_available_email_sender_jobs::AvailableEmailSenderJob;
 use mysql_queries::queries::email_sender_jobs::mark_email_sender_job_pending_and_grab_lock::mark_email_sender_job_pending_and_grab_lock;
 use mysql_queries::queries::email_sender_jobs::mark_email_sender_job_successfully_done::mark_email_sender_job_successfully_done;

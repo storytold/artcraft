@@ -1,4 +1,4 @@
-use enums::by_table::tts_render_tasks::tts_render_status::TtsRenderStatus;
+use enums_db::by_table::tts_render_tasks::tts_render_status::TtsRenderStatus;
 use errors::{anyhow, AnyhowResult};
 use sqlx::SqlitePool;
 use tokens::tokens::tts_models::TtsModelToken;
@@ -34,7 +34,7 @@ SELECT
   maybe_result_url,
   maybe_result_relative_filesystem_location,
   maybe_audio_duration_millis,
-  tts_render_status as `tts_render_status: enums::by_table::tts_render_tasks::tts_render_status::TtsRenderStatus`,
+  tts_render_status as `tts_render_status: enums_db::by_table::tts_render_tasks::tts_render_status::TtsRenderStatus`,
   tts_render_attempts
 FROM tts_render_tasks
 WHERE

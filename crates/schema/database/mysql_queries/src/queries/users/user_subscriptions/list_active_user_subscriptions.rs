@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;
@@ -32,7 +32,7 @@ pub async fn list_active_user_subscriptions(
         r#"
 SELECT
   user_token,
-  subscription_namespace as `subscription_namespace: enums::common::payments_namespace::PaymentsNamespace`,
+  subscription_namespace as `subscription_namespace: enums_db::common::payments_namespace::PaymentsNamespace`,
   subscription_product_slug,
   subscription_expires_at
 

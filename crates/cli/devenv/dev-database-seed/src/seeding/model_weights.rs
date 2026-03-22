@@ -7,11 +7,11 @@ use sqlx::{MySql, Pool};
 use bucket_paths::legacy::remote_file_manager_paths::weights_descriptor::{WeightsLoRADescriptor, WeightsSD15Descriptor, WeightsWorkflowDescriptor};
 use bucket_paths::legacy::remote_file_manager_paths::remote_cloud_bucket_details::RemoteCloudBucketDetails;
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;
-use enums::by_table::model_weights::{
+use enums_db::by_table::model_weights::{
     weights_category::WeightsCategory,
     weights_types::WeightsType,
 };
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::{anyhow, AnyhowResult};
 use mysql_queries::queries::model_weights::create::create_weight::{create_weight, CreateModelWeightsArgs};
 use mysql_queries::queries::users::user::get::get_user_token_by_username::get_user_token_by_username;

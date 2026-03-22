@@ -3,8 +3,8 @@ use std::path::Path;
 use anyhow::anyhow;
 use sqlx::MySqlPool;
 
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::tts_models::TtsModelToken;
 use tokens::tokens::users::UserToken;

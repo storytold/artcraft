@@ -2,9 +2,9 @@ use serde_derive::{Deserialize, Serialize};
 use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use mysql_queries::queries::model_weights::get::get_weight_for_legacy_tts_enqueue::{get_weight_for_legacy_tts_enqueue_with_connection, ModelWeightForLegacyTtsEnqueue};
 use mysql_queries::queries::tts::tts_models::get_tts_model::{get_tts_model_by_token_using_connection, TtsModelRecord};
