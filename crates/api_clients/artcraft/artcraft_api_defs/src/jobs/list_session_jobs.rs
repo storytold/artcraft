@@ -9,8 +9,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use utoipa::{IntoParams, ToSchema};
-use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
-use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
+use enums_api::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
+use enums_api::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 
 pub const LIST_SESSION_JOBS_URL_PATH: &str = "/v1/jobs/session";

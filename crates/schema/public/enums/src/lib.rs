@@ -24,10 +24,7 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
-#[macro_use] extern crate serde_derive;
-
-#[macro_use]
-mod macros;
+// Macros and serde_derive are no longer needed — all enums have been migrated
 
 #[cfg(test)] pub mod test_helpers;
 
@@ -37,4 +34,4 @@ pub mod error;
 // no_table has been migrated to enums_api crate
 // tauri has been migrated to enums_db and enums_api crates
 pub mod traits;
-pub mod api_safe;
+// api_safe has been migrated to enums_api and enums_convert crates
