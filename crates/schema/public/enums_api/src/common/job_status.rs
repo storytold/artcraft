@@ -31,10 +31,31 @@ pub enum JobStatus {
 #[cfg(test)]
 mod tests {
   use super::JobStatus;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(JobStatus::Pending, "pending");
+      assert_serialization(JobStatus::Started, "started");
+      assert_serialization(JobStatus::CompleteSuccess, "complete_success");
+      assert_serialization(JobStatus::CompleteFailure, "complete_failure");
+      assert_serialization(JobStatus::AttemptFailed, "attempt_failed");
+      assert_serialization(JobStatus::Dead, "dead");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("pending", JobStatus::Pending);
+      assert_deserialization("started", JobStatus::Started);
+      assert_deserialization("complete_success", JobStatus::CompleteSuccess);
+      assert_deserialization("complete_failure", JobStatus::CompleteFailure);
+      assert_deserialization("attempt_failed", JobStatus::AttemptFailed);
+      assert_deserialization("dead", JobStatus::Dead);
+    }
 
     #[test]
     fn variants_count_check() {

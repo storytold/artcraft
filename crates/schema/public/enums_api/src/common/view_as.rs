@@ -21,10 +21,25 @@ pub enum ViewAs {
 #[cfg(test)]
 mod tests {
   use super::ViewAs;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(ViewAs::Author, "author");
+      assert_serialization(ViewAs::Moderator, "moderator");
+      assert_serialization(ViewAs::AnotherUser, "another_user");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("author", ViewAs::Author);
+      assert_deserialization("moderator", ViewAs::Moderator);
+      assert_deserialization("another_user", ViewAs::AnotherUser);
+    }
 
     #[test]
     fn variants_count_check() {

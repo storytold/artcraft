@@ -30,10 +30,31 @@ pub enum SkipReason {
 #[cfg(test)]
 mod tests {
   use super::SkipReason;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(SkipReason::EmptyContent, "empty_content");
+      assert_serialization(SkipReason::Advertisement, "advertisement");
+      assert_serialization(SkipReason::VideoContent, "video_content");
+      assert_serialization(SkipReason::FilteredTopic, "filtered_topic");
+      assert_serialization(SkipReason::FilteredTopicPolitics, "filtered_topic_politics");
+      assert_serialization(SkipReason::NobodyCares, "nobody_cares");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("empty_content", SkipReason::EmptyContent);
+      assert_deserialization("advertisement", SkipReason::Advertisement);
+      assert_deserialization("video_content", SkipReason::VideoContent);
+      assert_deserialization("filtered_topic", SkipReason::FilteredTopic);
+      assert_deserialization("filtered_topic_politics", SkipReason::FilteredTopicPolitics);
+      assert_deserialization("nobody_cares", SkipReason::NobodyCares);
+    }
 
     #[test]
     fn variants_count_check() {

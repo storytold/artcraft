@@ -26,10 +26,27 @@ pub enum PremiumProductName {
 #[cfg(test)]
 mod tests {
   use super::PremiumProductName;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(PremiumProductName::FaceAnimator, "fa");
+      assert_serialization(PremiumProductName::FaceMirror, "fm");
+      assert_serialization(PremiumProductName::Lipsync, "lip");
+      assert_serialization(PremiumProductName::VideoStyleTransfer, "vst");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("fa", PremiumProductName::FaceAnimator);
+      assert_deserialization("fm", PremiumProductName::FaceMirror);
+      assert_deserialization("lip", PremiumProductName::Lipsync);
+      assert_deserialization("vst", PremiumProductName::VideoStyleTransfer);
+    }
 
     #[test]
     fn variants_count_check() {

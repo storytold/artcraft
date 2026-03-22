@@ -15,10 +15,25 @@ pub enum VideoDimensions {
 #[cfg(test)]
 mod tests {
   use super::VideoDimensions;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(VideoDimensions::Landscape, "landscape");
+      assert_serialization(VideoDimensions::Portrait, "portrait");
+      assert_serialization(VideoDimensions::Square, "square");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("landscape", VideoDimensions::Landscape);
+      assert_deserialization("portrait", VideoDimensions::Portrait);
+      assert_deserialization("square", VideoDimensions::Square);
+    }
 
     #[test]
     fn variants_count_check() {

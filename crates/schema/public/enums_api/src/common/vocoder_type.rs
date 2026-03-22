@@ -23,10 +23,25 @@ pub enum VocoderType {
 #[cfg(test)]
 mod tests {
   use super::VocoderType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(VocoderType::HifiGan, "hifigan");
+      assert_serialization(VocoderType::HifiGanSuperResolution, "hifigan-superres");
+      assert_serialization(VocoderType::HifiGanRocketVc, "hifigan_rocket_vc");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("hifigan", VocoderType::HifiGan);
+      assert_deserialization("hifigan-superres", VocoderType::HifiGanSuperResolution);
+      assert_deserialization("hifigan_rocket_vc", VocoderType::HifiGanRocketVc);
+    }
 
     #[test]
     fn variants_count_check() {

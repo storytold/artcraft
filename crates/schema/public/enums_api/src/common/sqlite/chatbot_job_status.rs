@@ -26,10 +26,29 @@ pub enum ChatbotJobStatus {
 #[cfg(test)]
 mod tests {
   use super::ChatbotJobStatus;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(ChatbotJobStatus::New, "new");
+      assert_serialization(ChatbotJobStatus::Skipped, "skipped");
+      assert_serialization(ChatbotJobStatus::Failed, "failed");
+      assert_serialization(ChatbotJobStatus::PermanentlyFailed, "permanently_failed");
+      assert_serialization(ChatbotJobStatus::Success, "success");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("new", ChatbotJobStatus::New);
+      assert_deserialization("skipped", ChatbotJobStatus::Skipped);
+      assert_deserialization("failed", ChatbotJobStatus::Failed);
+      assert_deserialization("permanently_failed", ChatbotJobStatus::PermanentlyFailed);
+      assert_deserialization("success", ChatbotJobStatus::Success);
+    }
 
     #[test]
     fn variants_count_check() {

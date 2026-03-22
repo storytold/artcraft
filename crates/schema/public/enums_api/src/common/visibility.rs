@@ -38,10 +38,25 @@ pub enum Visibility {
 #[cfg(test)]
 mod tests {
   use super::Visibility;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(Visibility::Public, "public");
+      assert_serialization(Visibility::Hidden, "hidden");
+      assert_serialization(Visibility::Private, "private");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("public", Visibility::Public);
+      assert_deserialization("hidden", Visibility::Hidden);
+      assert_deserialization("private", Visibility::Private);
+    }
 
     #[test]
     fn variants_count_check() {

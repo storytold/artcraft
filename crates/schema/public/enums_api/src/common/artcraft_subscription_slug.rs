@@ -15,10 +15,25 @@ pub enum ArtcraftSubscriptionSlug {
 #[cfg(test)]
 mod tests {
   use super::ArtcraftSubscriptionSlug;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(ArtcraftSubscriptionSlug::ArtcraftBasic, "artcraft_basic");
+      assert_serialization(ArtcraftSubscriptionSlug::ArtcraftPro, "artcraft_pro");
+      assert_serialization(ArtcraftSubscriptionSlug::ArtcraftMax, "artcraft_max");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("artcraft_basic", ArtcraftSubscriptionSlug::ArtcraftBasic);
+      assert_deserialization("artcraft_pro", ArtcraftSubscriptionSlug::ArtcraftPro);
+      assert_deserialization("artcraft_max", ArtcraftSubscriptionSlug::ArtcraftMax);
+    }
 
     #[test]
     fn variants_count_check() {

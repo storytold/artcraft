@@ -16,10 +16,23 @@ pub enum PaymentsNamespace {
 #[cfg(test)]
 mod tests {
   use super::PaymentsNamespace;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(PaymentsNamespace::Artcraft, "artcraft");
+      assert_serialization(PaymentsNamespace::FakeYou, "fakeyou");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("artcraft", PaymentsNamespace::Artcraft);
+      assert_deserialization("fakeyou", PaymentsNamespace::FakeYou);
+    }
 
     #[test]
     fn variants_count_check() {

@@ -24,10 +24,31 @@ pub enum ArtcraftCreditsPackSlug {
 #[cfg(test)]
 mod tests {
   use super::ArtcraftCreditsPackSlug;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(ArtcraftCreditsPackSlug::Artcraft1000, "artcraft_1000");
+      assert_serialization(ArtcraftCreditsPackSlug::Artcraft2500, "artcraft_2500");
+      assert_serialization(ArtcraftCreditsPackSlug::Artcraft5000, "artcraft_5000");
+      assert_serialization(ArtcraftCreditsPackSlug::Artcraft10000, "artcraft_10000");
+      assert_serialization(ArtcraftCreditsPackSlug::Artcraft25000, "artcraft_25000");
+      assert_serialization(ArtcraftCreditsPackSlug::Artcraft50000, "artcraft_50000");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("artcraft_1000", ArtcraftCreditsPackSlug::Artcraft1000);
+      assert_deserialization("artcraft_2500", ArtcraftCreditsPackSlug::Artcraft2500);
+      assert_deserialization("artcraft_5000", ArtcraftCreditsPackSlug::Artcraft5000);
+      assert_deserialization("artcraft_10000", ArtcraftCreditsPackSlug::Artcraft10000);
+      assert_deserialization("artcraft_25000", ArtcraftCreditsPackSlug::Artcraft25000);
+      assert_deserialization("artcraft_50000", ArtcraftCreditsPackSlug::Artcraft50000);
+    }
 
     #[test]
     fn variants_count_check() {

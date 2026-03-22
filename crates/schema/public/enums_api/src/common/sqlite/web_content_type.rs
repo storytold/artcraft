@@ -43,10 +43,39 @@ pub enum WebContentType {
 #[cfg(test)]
 mod tests {
   use super::WebContentType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(WebContentType::CbsNewsArticle, "cbs_news_article");
+      assert_serialization(WebContentType::CnnArticle, "cnn_article");
+      assert_serialization(WebContentType::GizmodoArticle, "gizmodo_article");
+      assert_serialization(WebContentType::HackerNewsThread, "hacker_news_thread");
+      assert_serialization(WebContentType::KotakuArticle, "kotaku_article");
+      assert_serialization(WebContentType::RedditThread, "reddit_thread");
+      assert_serialization(WebContentType::SlashdotArticle, "slashdot_article");
+      assert_serialization(WebContentType::SubstackPost, "substack_post");
+      assert_serialization(WebContentType::TechCrunchArticle, "techcrunch_article");
+      assert_serialization(WebContentType::TheGuardianArticle, "the_guardian_article");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("cbs_news_article", WebContentType::CbsNewsArticle);
+      assert_deserialization("cnn_article", WebContentType::CnnArticle);
+      assert_deserialization("gizmodo_article", WebContentType::GizmodoArticle);
+      assert_deserialization("hacker_news_thread", WebContentType::HackerNewsThread);
+      assert_deserialization("kotaku_article", WebContentType::KotakuArticle);
+      assert_deserialization("reddit_thread", WebContentType::RedditThread);
+      assert_deserialization("slashdot_article", WebContentType::SlashdotArticle);
+      assert_deserialization("substack_post", WebContentType::SubstackPost);
+      assert_deserialization("techcrunch_article", WebContentType::TechCrunchArticle);
+      assert_deserialization("the_guardian_article", WebContentType::TheGuardianArticle);
+    }
 
     #[test]
     fn variants_count_check() {
