@@ -17,10 +17,31 @@ pub enum TaskType {
 #[cfg(test)]
 mod tests {
   use super::TaskType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(TaskType::ImageGeneration, "image_generation");
+      assert_serialization(TaskType::ImageInpaintEdit, "image_inpaint_edit");
+      assert_serialization(TaskType::VideoGeneration, "video_generation");
+      assert_serialization(TaskType::ObjectGeneration, "object_generation");
+      assert_serialization(TaskType::GaussianGeneration, "gaussian_generation");
+      assert_serialization(TaskType::BackgroundRemoval, "background_removal");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("image_generation", TaskType::ImageGeneration);
+      assert_deserialization("image_inpaint_edit", TaskType::ImageInpaintEdit);
+      assert_deserialization("video_generation", TaskType::VideoGeneration);
+      assert_deserialization("object_generation", TaskType::ObjectGeneration);
+      assert_deserialization("gaussian_generation", TaskType::GaussianGeneration);
+      assert_deserialization("background_removal", TaskType::BackgroundRemoval);
+    }
 
     #[test]
     fn variants_count_check() {

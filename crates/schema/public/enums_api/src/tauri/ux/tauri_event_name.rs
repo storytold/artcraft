@@ -107,10 +107,55 @@ pub enum TauriEventName {
 #[cfg(test)]
 mod tests {
   use super::TauriEventName;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(TauriEventName::GenerationEnqueueSuccessEvent, "generation-enqueue-success-event");
+      assert_serialization(TauriEventName::GenerationEnqueueFailureEvent, "generation-enqueue-failure-event");
+      assert_serialization(TauriEventName::GenerationCompleteEvent, "generation-complete-event");
+      assert_serialization(TauriEventName::GenerationFailedEvent, "generation-failed-event");
+      assert_serialization(TauriEventName::CreditsBalanceChangedEvent, "credits_balance_changed_event");
+      assert_serialization(TauriEventName::SubscriptionPlanChangedEvent, "subscription_plan_changed_event");
+      assert_serialization(TauriEventName::MediaFileDeletedEvent, "media_file_deleted_event");
+      assert_serialization(TauriEventName::CanvasBgRemovedEvent, "canvas_bg_removed_event");
+      assert_serialization(TauriEventName::TextToImageGenerationCompleteEvent, "text_to_image_generation_complete_event");
+      assert_serialization(TauriEventName::ImageEditCompleteEvent, "image_edit_complete_event");
+      assert_serialization(TauriEventName::ObjectGenerationCompleteEvent, "object_generation_complete_event");
+      assert_serialization(TauriEventName::GaussianGenerationCompleteEvent, "gaussian_generation_complete_event");
+      assert_serialization(TauriEventName::VideoGenerationCompleteEvent, "video_generation_complete_event");
+      assert_serialization(TauriEventName::RefreshAccountStateEvent, "refresh_account_state_event");
+      assert_serialization(TauriEventName::ShowProviderBillingModalEvent, "show_provider_billing_modal_event");
+      assert_serialization(TauriEventName::ShowProviderLoginModalEvent, "show_provider_login_modal_event");
+      assert_serialization(TauriEventName::FlashUserInputErrorEvent, "flash_user_input_error_event");
+      assert_serialization(TauriEventName::FlashFileDownloadErrorEvent, "flash_file_download_error_event");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("generation-enqueue-success-event", TauriEventName::GenerationEnqueueSuccessEvent);
+      assert_deserialization("generation-enqueue-failure-event", TauriEventName::GenerationEnqueueFailureEvent);
+      assert_deserialization("generation-complete-event", TauriEventName::GenerationCompleteEvent);
+      assert_deserialization("generation-failed-event", TauriEventName::GenerationFailedEvent);
+      assert_deserialization("credits_balance_changed_event", TauriEventName::CreditsBalanceChangedEvent);
+      assert_deserialization("subscription_plan_changed_event", TauriEventName::SubscriptionPlanChangedEvent);
+      assert_deserialization("media_file_deleted_event", TauriEventName::MediaFileDeletedEvent);
+      assert_deserialization("canvas_bg_removed_event", TauriEventName::CanvasBgRemovedEvent);
+      assert_deserialization("text_to_image_generation_complete_event", TauriEventName::TextToImageGenerationCompleteEvent);
+      assert_deserialization("image_edit_complete_event", TauriEventName::ImageEditCompleteEvent);
+      assert_deserialization("object_generation_complete_event", TauriEventName::ObjectGenerationCompleteEvent);
+      assert_deserialization("gaussian_generation_complete_event", TauriEventName::GaussianGenerationCompleteEvent);
+      assert_deserialization("video_generation_complete_event", TauriEventName::VideoGenerationCompleteEvent);
+      assert_deserialization("refresh_account_state_event", TauriEventName::RefreshAccountStateEvent);
+      assert_deserialization("show_provider_billing_modal_event", TauriEventName::ShowProviderBillingModalEvent);
+      assert_deserialization("show_provider_login_modal_event", TauriEventName::ShowProviderLoginModalEvent);
+      assert_deserialization("flash_user_input_error_event", TauriEventName::FlashUserInputErrorEvent);
+      assert_deserialization("flash_file_download_error_event", TauriEventName::FlashFileDownloadErrorEvent);
+    }
 
     #[test]
     fn variants_count_check() {

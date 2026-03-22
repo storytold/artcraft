@@ -22,10 +22,27 @@ pub enum TaskMediaFileClass {
 #[cfg(test)]
 mod tests {
   use super::TaskMediaFileClass;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(TaskMediaFileClass::Audio, "audio");
+      assert_serialization(TaskMediaFileClass::Image, "image");
+      assert_serialization(TaskMediaFileClass::Video, "video");
+      assert_serialization(TaskMediaFileClass::Dimensional, "dimensional");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("audio", TaskMediaFileClass::Audio);
+      assert_deserialization("image", TaskMediaFileClass::Image);
+      assert_deserialization("video", TaskMediaFileClass::Video);
+      assert_deserialization("dimensional", TaskMediaFileClass::Dimensional);
+    }
 
     #[test]
     fn variants_count_check() {

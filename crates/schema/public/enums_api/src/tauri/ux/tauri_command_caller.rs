@@ -23,10 +23,29 @@ pub enum TauriCommandCaller {
 #[cfg(test)]
 mod tests {
   use super::TauriCommandCaller;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(TauriCommandCaller::Canvas, "canvas");
+      assert_serialization(TauriCommandCaller::ImageEditor, "image_editor");
+      assert_serialization(TauriCommandCaller::TextToImage, "text_to_image");
+      assert_serialization(TauriCommandCaller::ImageToVideo, "image_to_video");
+      assert_serialization(TauriCommandCaller::MiniApp, "mini_app");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("canvas", TauriCommandCaller::Canvas);
+      assert_deserialization("image_editor", TauriCommandCaller::ImageEditor);
+      assert_deserialization("text_to_image", TauriCommandCaller::TextToImage);
+      assert_deserialization("image_to_video", TauriCommandCaller::ImageToVideo);
+      assert_deserialization("mini_app", TauriCommandCaller::MiniApp);
+    }
 
     #[test]
     fn variants_count_check() {
