@@ -122,10 +122,12 @@ pub fn model_type_to_api(db_value: &Db) -> Api {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use strum::IntoEnumIterator;
 
   #[test]
   fn round_trip_db_to_api() {
-    for variant in Db::all_variants() {
+    use strum::IntoEnumIterator;
+    for variant in Db::iter() {
       let api = model_type_to_api(&variant);
       let back = model_type_to_db(&api);
       assert_eq!(variant, back);

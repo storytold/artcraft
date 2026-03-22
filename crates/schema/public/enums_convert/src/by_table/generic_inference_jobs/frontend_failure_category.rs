@@ -53,7 +53,8 @@ mod tests {
 
   #[test]
   fn round_trip_db_to_api() {
-    for variant in Db::all_variants() {
+    use strum::IntoEnumIterator;
+    for variant in Db::iter() {
       let api = frontend_failure_category_to_api(&variant);
       let back = frontend_failure_category_to_db(&api);
       assert_eq!(variant, back);

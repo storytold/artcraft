@@ -30,6 +30,7 @@ mod tests {
 
   #[test]
   fn round_trip_api_to_db() {
+    use strum::IntoEnumIterator;
     for variant in Api::iter() {
       let db = generation_provider_to_db(&variant);
       let back = generation_provider_to_api(&db);

@@ -35,7 +35,8 @@ mod tests {
 
   #[test]
   fn round_trip_db_to_api() {
-    for variant in Db::all_variants() {
+    use strum::IntoEnumIterator;
+    for variant in Db::iter() {
       let api = user_feature_flag_to_api(&variant);
       let back = user_feature_flag_to_db(&api);
       assert_eq!(variant, back);

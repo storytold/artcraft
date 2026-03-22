@@ -1,14 +1,9 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// This enum is not backed by a particular database table.
 /// This is used to count premium product uses for free and paid users.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum PremiumProductName {
   #[serde(rename = "fa")]
@@ -42,15 +37,6 @@ impl PremiumProductName {
       _ => Err(format!("Unknown PremiumProductName: {}", value)),
     }
   }
-
-  pub fn all_variants() -> BTreeSet<Self> {
-    BTreeSet::from([
-      Self::FaceAnimator,
-      Self::FaceMirror,
-      Self::Lipsync,
-      Self::VideoStyleTransfer,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -68,17 +54,22 @@ mod tests {
 
   mod mechanical_checks {
     use super::*;
-
-    #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(PremiumProductName::all_variants().len(), PremiumProductName::iter().len());
-    }
+    use strum::IntoEnumIterator;
 
     #[test]
     fn round_trip() {
-      for variant in PremiumProductName::all_variants() {
+      for variant in PremiumProductName::iter() {
         assert_eq!(variant, PremiumProductName::from_str(variant.to_str()).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32; // TODO(bt): Confirm database column width, then remove this comment.
+      for variant in PremiumProductName::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

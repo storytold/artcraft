@@ -1,8 +1,8 @@
 use strum::EnumCount;
 use strum::EnumIter;
 
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
-#[derive(sqlx::Type, EnumIter, EnumCount)]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, EnumIter, EnumCount)]
+#[derive(sqlx::Type)]
 #[sqlx(rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum ViewAs {

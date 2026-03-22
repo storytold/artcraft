@@ -49,7 +49,8 @@ mod tests {
 
   #[test]
   fn round_trip_db_to_api() {
-    for variant in Db::all_variants() {
+    use strum::IntoEnumIterator;
+    for variant in Db::iter() {
       let api = media_file_subtype_to_api(&variant);
       let back = media_file_subtype_to_db(&api);
       assert_eq!(variant, back);

@@ -40,6 +40,7 @@ mod tests {
 
   #[test]
   fn round_trip_db_to_api() {
+    use strum::IntoEnumIterator;
     for api_variant in Api::iter() {
       let db = user_rating_entity_type_to_db(&api_variant);
       let back = user_rating_entity_type_to_api(&db);

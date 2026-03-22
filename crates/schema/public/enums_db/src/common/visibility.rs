@@ -13,8 +13,8 @@ use strum::EnumIter;
 ///
 /// *DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY!*
 
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
-#[derive(sqlx::Type, EnumIter, EnumCount)]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, EnumIter, EnumCount)]
+#[derive(sqlx::Type)]
 #[sqlx(rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum Visibility {

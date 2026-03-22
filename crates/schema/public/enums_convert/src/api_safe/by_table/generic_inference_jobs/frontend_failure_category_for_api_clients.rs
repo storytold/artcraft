@@ -23,10 +23,12 @@ pub fn frontend_failure_category_to_api_clients(db_value: &FrontendFailureCatego
 #[cfg(test)]
 mod tests {
   use super::*;
+  use strum::IntoEnumIterator;
 
   #[test]
   fn all_db_variants_convert() {
-    for variant in FrontendFailureCategory::all_variants() {
+    use strum::IntoEnumIterator;
+    for variant in FrontendFailureCategory::iter() {
       let _ = frontend_failure_category_to_api_clients(&variant);
     }
   }

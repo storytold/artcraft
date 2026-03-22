@@ -50,10 +50,12 @@ pub fn media_file_origin_model_type_to_api(db_value: &Db) -> Api {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use strum::IntoEnumIterator;
 
   #[test]
   fn round_trip_api_to_db() {
-    for db_variant in Db::all_variants() {
+    use strum::IntoEnumIterator;
+    for db_variant in Db::iter() {
       let api = media_file_origin_model_type_to_api(&db_variant);
       let db = media_file_origin_model_type_to_db(&api);
       let back = media_file_origin_model_type_to_api(&db);
@@ -63,7 +65,8 @@ mod tests {
 
   #[test]
   fn round_trip_db_to_api() {
-    for variant in Db::all_variants() {
+    use strum::IntoEnumIterator;
+    for variant in Db::iter() {
       let api = media_file_origin_model_type_to_api(&variant);
       let back = media_file_origin_model_type_to_db(&api);
       assert_eq!(variant, back);

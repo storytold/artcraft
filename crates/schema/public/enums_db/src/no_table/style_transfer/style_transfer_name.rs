@@ -1,16 +1,11 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// This enum is not backed by a particular database table.
 /// It's used in Jobs and DB payloads to agree upon ComfyUI style transfer style configurations.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum StyleTransferName {
   #[serde(rename = "anime_2_5d")]
@@ -203,20 +198,6 @@ impl StyleTransferName {
       Self::Dreamer => "34_dreamer.json",
     }
   }
-
-  pub fn all_variants() -> BTreeSet<Self> {
-    BTreeSet::from([
-      Self::Anime2_5D, Self::Anime2DFlat, Self::Cartoon3D, Self::ComicBook,
-      Self::AnimeGhibli, Self::InkPunk, Self::InkSplash, Self::InkBWStyle,
-      Self::JojoStyle, Self::PaperOrigami, Self::PixelArt, Self::PopArt,
-      Self::Realistic1, Self::Realistic2, Self::AnimeRetroNeon, Self::AnimeStandard,
-      Self::HrGiger, Self::Simpsons, Self::Carnage, Self::AnimePastelCute,
-      Self::BloomLighting, Self::Horror2_5D, Self::Creepy, Self::CreepyVhs,
-      Self::TrailCamFootage, Self::OldBlackWhiteMovie, Self::HorrorNoirBlackWhite,
-      Self::TechnoNoirBlackWhite, Self::BlackWhite20s, Self::CyberpunkAnime,
-      Self::Dragonball, Self::RealisticMatrix, Self::RealisticCyberpunk, Self::Dreamer,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -232,19 +213,24 @@ mod tests {
 
   mod mechanical_checks {
     use super::*;
-
-    #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(StyleTransferName::all_variants().len(), StyleTransferName::iter().len());
-    }
+    use strum::IntoEnumIterator;
 
     #[test]
     fn round_trip() {
-      for variant in StyleTransferName::all_variants() {
+      for variant in StyleTransferName::iter() {
         assert_eq!(variant, StyleTransferName::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, StyleTransferName::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, StyleTransferName::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32; // TODO(bt): Confirm database column width, then remove this comment.
+      for variant in StyleTransferName::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

@@ -40,6 +40,7 @@ mod tests {
 
   #[test]
   fn round_trip_db_to_api() {
+    use strum::IntoEnumIterator;
     for api_variant in Api::iter() {
       let db = audit_log_entity_action_to_db(&api_variant);
       let back = audit_log_entity_action_to_api(&db);
