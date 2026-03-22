@@ -1,10 +1,11 @@
+use strum::EnumIter;
 use utoipa::ToSchema;
 
 /// A forward-compatible version of `FrontendFailureCategory` for API clients.
 ///
 /// Contains all known variants plus an `Unknown(String)` catch-all so that
 /// newer server-side values never cause deserialization failures on the client.
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize, ToSchema, EnumIter)]
 #[serde(rename_all = "snake_case")]
 pub enum FrontendFailureCategoryForApiClients {
   FaceNotDetected,
