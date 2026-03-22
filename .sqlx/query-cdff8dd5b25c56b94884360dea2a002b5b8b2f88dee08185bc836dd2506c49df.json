@@ -1,0 +1,36 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,\n    w.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`\nFROM model_weights as w\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::model_weights::ModelWeightToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "weights_type: enums_db::by_table::model_weights::weights_types::WeightsType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "cdff8dd5b25c56b94884360dea2a002b5b8b2f88dee08185bc836dd2506c49df"
+}

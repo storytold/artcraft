@@ -1,0 +1,58 @@
+{
+  "db_name": "MySQL",
+  "query": "\n      SELECT\n        token as `token: tokens::tokens::wallets::WalletToken`,\n        wallet_namespace as `namespace: enums_db::common::payments_namespace::PaymentsNamespace`,\n        banked_credits,\n        monthly_credits\n      FROM wallets\n      WHERE owner_user_token = ?\n      AND wallet_namespace = ?\n      ORDER BY id ASC\n      LIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::wallets::WalletToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "namespace: enums_db::common::payments_namespace::PaymentsNamespace",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "banked_credits",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "monthly_credits",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL | UNSIGNED",
+          "char_set": 63,
+          "max_size": 10
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7c864df2ea10d9569df58288868235087680a57a56fb10c4d45c735b8061ff36"
+}
