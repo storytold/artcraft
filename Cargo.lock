@@ -3833,7 +3833,6 @@ dependencies = [
  "sqlx-mysql",
  "strum",
  "toml 1.0.7+spec-1.1.0",
- "utoipa",
  "workspace-build-acceleration",
 ]
 

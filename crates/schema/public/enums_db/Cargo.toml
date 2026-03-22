@@ -15,10 +15,6 @@ normal = ["workspace-build-acceleration"]
 name = "enums_db"
 path = "src/lib.rs"
 
-[features]
-default = []
-utoipa = ["dep:utoipa"]
-
 [dependencies]
 # Workspace hack (faster compile times)
 workspace-build-acceleration.workspace = true
@@ -34,9 +30,6 @@ serde_derive.workspace = true
 sqlx = { version = "0.7.4", features = [ "mysql", "runtime-tokio-rustls", "chrono" ] }
 sqlx-core = { version = "0.7.4" }
 sqlx-mysql = { version = "0.7.4" }
-
-# API Documentation (optional — enabled by crates that need ToSchema on DB enums)
-utoipa = { workspace = true, optional = true }
 
 # Enum utilities (EnumIter, EnumCount)
 strum.workspace = true
