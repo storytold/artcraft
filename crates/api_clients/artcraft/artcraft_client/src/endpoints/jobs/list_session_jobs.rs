@@ -37,7 +37,7 @@ pub async fn list_session_jobs(
 
 fn states_string(states: &HashSet<JobStatusPlus>) -> String {
   states.iter()
-    .map(|state| serde_json::to_string(state).unwrap().replace('"', ""))
+    .map(|state| state.to_str())
     .collect::<Vec<_>>()
     .join(",")
 }

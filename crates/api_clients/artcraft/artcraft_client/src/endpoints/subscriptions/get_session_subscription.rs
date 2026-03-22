@@ -23,6 +23,6 @@ pub async fn get_session_subscription(
 }
 
 fn get_url_path(payments_namespace: PaymentsNamespace) -> String {
-  let payments_namespace = serde_json::to_string(&payments_namespace).unwrap().replace('"', "");
+  let payments_namespace = payments_namespace.to_str();
   format!("/v1/subscriptions/namespace/{}", payments_namespace)
 }

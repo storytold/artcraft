@@ -13,6 +13,15 @@ pub enum PaymentsNamespace {
   FakeYou,
 }
 
+impl PaymentsNamespace {
+  pub const fn to_str(&self) -> &'static str {
+    match self {
+      Self::Artcraft => "artcraft",
+      Self::FakeYou => "fakeyou",
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::PaymentsNamespace;
@@ -37,6 +46,24 @@ mod tests {
     #[test]
     fn variants_count_check() {
       assert_eq!(PaymentsNamespace::iter().count(), 2);
+    }
+  }
+
+  mod to_str_checks {
+    use super::*;
+
+    #[test]
+    fn to_str() {
+      assert_eq!(PaymentsNamespace::Artcraft.to_str(), "artcraft");
+      assert_eq!(PaymentsNamespace::FakeYou.to_str(), "fakeyou");
+    }
+
+    #[test]
+    fn to_str_matches_serde() {
+      for variant in PaymentsNamespace::iter() {
+        let serde_str = serde_json::to_string(&variant).unwrap().replace('"', "");
+        assert_eq!(variant.to_str(), serde_str);
+      }
     }
   }
 
