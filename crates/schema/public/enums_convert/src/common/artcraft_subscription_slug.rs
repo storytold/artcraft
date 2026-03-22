@@ -30,5 +30,5 @@ mod tests {
       let back = artcraft_subscription_slug_to_db(&api);
       assert_eq!(variant, back);
     }
-}
+  }
 }

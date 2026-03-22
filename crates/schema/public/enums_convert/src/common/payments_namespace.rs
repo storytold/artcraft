@@ -28,5 +28,5 @@ mod tests {
       let back = payments_namespace_to_db(&api);
       assert_eq!(variant, back);
     }
-}
+  }
 }

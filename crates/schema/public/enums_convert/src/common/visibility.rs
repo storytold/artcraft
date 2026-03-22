@@ -30,5 +30,5 @@ mod tests {
       let back = visibility_to_api(&db);
       assert_eq!(api_variant, back);
     }
-}
+  }
 }

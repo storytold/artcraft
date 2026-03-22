@@ -132,5 +132,5 @@ mod tests {
       let back = model_type_to_db(&api);
       assert_eq!(variant, back);
     }
-}
+  }
 }

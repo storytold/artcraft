@@ -40,5 +40,5 @@ mod tests {
       let back = job_status_plus_to_db(&api);
       assert_eq!(variant, back);
     }
-}
+  }
 }

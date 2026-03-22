@@ -36,5 +36,5 @@ mod tests {
       let back = artcraft_credits_pack_slug_to_db(&api);
       assert_eq!(variant, back);
     }
-}
+  }
 }

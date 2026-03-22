@@ -38,5 +38,5 @@ mod tests {
       let back = awaitable_job_status_to_api(&db);
       assert_eq!(api_variant, back);
     }
-}
+  }
 }

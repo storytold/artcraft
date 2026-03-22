@@ -30,5 +30,5 @@ mod tests {
       let back = view_as_to_api(&db);
       assert_eq!(api_variant, back);
     }
-}
+  }
 }
