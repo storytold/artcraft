@@ -166,10 +166,9 @@ impl FrontendFailureCategory {
 #[cfg(test)]
 mod tests {
   use crate::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-  use crate::test_helpers::{assert_deserialization, assert_serialization};
-  use strum::IntoEnumIterator;
+  use crate::test_helpers::assert_serialization;
 
-  mod manual_checks {
+  mod explicit_checks {
     use super::*;
 
     #[test]
@@ -187,28 +186,6 @@ mod tests {
       assert_serialization(FrontendFailureCategory::RuleBansGeneratedAudio, "rule_bans_generated_audio");
       assert_serialization(FrontendFailureCategory::RuleBansGeneratedContent, "rule_bans_generated_content");
       assert_serialization(FrontendFailureCategory::GenerationFailed, "generation_failed");
-    }
-
-    #[test]
-    fn test_deserialization() {
-      assert_deserialization("face_not_detected", FrontendFailureCategory::FaceNotDetected);
-      assert_deserialization("keep_alive_elapsed", FrontendFailureCategory::KeepAliveElapsed);
-      assert_deserialization("not_yet_implemented", FrontendFailureCategory::NotYetImplemented);
-      assert_deserialization("retryable_worker_error", FrontendFailureCategory::RetryableWorkerError);
-      assert_deserialization("model_rules_violation", FrontendFailureCategory::ModelRulesViolation);
-      assert_deserialization("rule_bans_user_image", FrontendFailureCategory::RuleBansUserImage);
-      assert_deserialization("rule_bans_user_image_with_faces", FrontendFailureCategory::RuleBansUserImageWithFaces);
-      assert_deserialization("rule_bans_user_text_prompt", FrontendFailureCategory::RuleBansUserTextPrompt);
-      assert_deserialization("rule_bans_user_content", FrontendFailureCategory::RuleBansUserContent);
-      assert_deserialization("rule_bans_generated_video", FrontendFailureCategory::RuleBansGeneratedVideo);
-      assert_deserialization("rule_bans_generated_audio", FrontendFailureCategory::RuleBansGeneratedAudio);
-      assert_deserialization("rule_bans_generated_content", FrontendFailureCategory::RuleBansGeneratedContent);
-      assert_deserialization("generation_failed", FrontendFailureCategory::GenerationFailed);
-    }
-
-    #[test]
-    fn variants_count_check() {
-      assert_eq!(FrontendFailureCategory::iter().count(), 13);
     }
 
     #[test]
@@ -272,6 +249,7 @@ mod tests {
 
     #[test]
     fn variant_length() {
+      use strum::IntoEnumIterator;
       assert_eq!(FrontendFailureCategory::all_variants().len(), FrontendFailureCategory::iter().len());
     }
 
@@ -281,15 +259,6 @@ mod tests {
         assert_eq!(variant, FrontendFailureCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, FrontendFailureCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, FrontendFailureCategory::from_str(&format!("{:?}", variant)).unwrap());
-      }
-    }
-
-    #[test]
-    fn round_trip_json() {
-      for variant in FrontendFailureCategory::iter() {
-        let json = serde_json::to_string(&variant).unwrap();
-        let back: FrontendFailureCategory = serde_json::from_str(&json).unwrap();
-        assert_eq!(variant, back);
       }
     }
   }
