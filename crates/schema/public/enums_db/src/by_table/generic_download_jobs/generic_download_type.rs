@@ -90,7 +90,6 @@ impl GenericDownloadType {
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
-
 }
 
 #[cfg(test)]

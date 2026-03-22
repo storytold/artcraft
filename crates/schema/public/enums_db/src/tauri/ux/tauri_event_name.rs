@@ -156,7 +156,6 @@ impl TauriEventName {
       _ => Err(format!("invalid tauri_event_name: {:?}", job_status)),
     }
   }
-
 }
 
 #[cfg(test)]
