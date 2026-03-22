@@ -64,6 +64,11 @@ pub enum GenericDownloadType {
 
 /// NB: Legacy API for older code.
 impl GenericDownloadType {
+  pub fn all_variants() -> std::collections::BTreeSet<Self> {
+    use strum::IntoEnumIterator;
+    Self::iter().collect()
+  }
+
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::HifiGan => "hifigan",
@@ -153,6 +158,18 @@ mod tests {
         assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
+    }
+  
+    #[test]
+    fn all_variants_returns_all() {
+      let variants = GenericDownloadType::all_variants();
+      assert_eq!(variants.len(), 8);
+    }
+
+    #[test]
+    fn all_variants_matches_iter_count() {
+      use strum::IntoEnumIterator;
+      assert_eq!(GenericDownloadType::all_variants().len(), GenericDownloadType::iter().count());
     }
   }
 }

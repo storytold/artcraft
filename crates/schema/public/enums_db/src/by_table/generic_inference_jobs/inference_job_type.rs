@@ -51,6 +51,11 @@ impl_mysql_enum_coders!(InferenceJobType);
 impl_mysql_from_row!(InferenceJobType);
 
 impl InferenceJobType {
+  pub fn all_variants() -> std::collections::BTreeSet<Self> {
+    use strum::IntoEnumIterator;
+    Self::iter().collect()
+  }
+
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::FalQueue => "fal_queue",
@@ -228,6 +233,18 @@ mod tests {
         assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
+    }
+  
+    #[test]
+    fn all_variants_returns_all() {
+      let variants = InferenceJobType::all_variants();
+      assert_eq!(variants.len(), 23);
+    }
+
+    #[test]
+    fn all_variants_matches_iter_count() {
+      use strum::IntoEnumIterator;
+      assert_eq!(InferenceJobType::all_variants().len(), InferenceJobType::iter().count());
     }
   }
 }

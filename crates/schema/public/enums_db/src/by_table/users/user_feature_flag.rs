@@ -29,6 +29,11 @@ impl_mysql_from_row!(UserFeatureFlag);
 
 /// NB: Legacy API for older code.
 impl UserFeatureFlag {
+  pub fn all_variants() -> std::collections::BTreeSet<Self> {
+    use strum::IntoEnumIterator;
+    Self::iter().collect()
+  }
+
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::ExploreMedia => "explore_media",
@@ -107,6 +112,18 @@ mod tests {
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
+    }
+  
+    #[test]
+    fn all_variants_returns_all() {
+      let variants = UserFeatureFlag::all_variants();
+      assert_eq!(variants.len(), 4);
+    }
+
+    #[test]
+    fn all_variants_matches_iter_count() {
+      use strum::IntoEnumIterator;
+      assert_eq!(UserFeatureFlag::all_variants().len(), UserFeatureFlag::iter().count());
     }
   }
 }

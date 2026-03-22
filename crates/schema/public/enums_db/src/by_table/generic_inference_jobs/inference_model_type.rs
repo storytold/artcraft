@@ -60,6 +60,11 @@ impl_mysql_from_row!(InferenceModelType);
 
 /// NB: Legacy API for older code.
 impl InferenceModelType {
+  pub fn all_variants() -> std::collections::BTreeSet<Self> {
+    use strum::IntoEnumIterator;
+    Self::iter().collect()
+  }
+
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::RvcV2 => "rvc_v2",
@@ -192,6 +197,18 @@ mod tests {
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
+    }
+  
+    #[test]
+    fn all_variants_returns_all() {
+      let variants = InferenceModelType::all_variants();
+      assert_eq!(variants.len(), 15);
+    }
+
+    #[test]
+    fn all_variants_matches_iter_count() {
+      use strum::IntoEnumIterator;
+      assert_eq!(InferenceModelType::all_variants().len(), InferenceModelType::iter().count());
     }
   }
 }
