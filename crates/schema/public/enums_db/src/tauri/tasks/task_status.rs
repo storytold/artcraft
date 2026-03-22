@@ -1,13 +1,8 @@
-use std::collections::BTreeSet;
-
 use enums_shared::error::enums_error::EnumsError;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskStatus {
   Pending,
@@ -63,21 +58,6 @@ impl TaskStatus {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Pending,
-      Self::Started,
-      Self::CompleteSuccess,
-      Self::CompleteFailure,
-      Self::AttemptFailed,
-      Self::Dead,
-      Self::CancelledByUser,
-      Self::CancelledByProvider,
-      Self::CancelledByUs,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -144,39 +124,30 @@ mod tests {
       }
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = TaskStatus::all_variants();
-      assert_eq!(variants.len(), 9);
-      assert_eq!(variants.pop_first(), Some(TaskStatus::Pending));
-      assert_eq!(variants.pop_first(), Some(TaskStatus::Started));
-      assert_eq!(variants.pop_first(), Some(TaskStatus::CompleteSuccess));
-      assert_eq!(variants.pop_first(), Some(TaskStatus::CompleteFailure));
-      assert_eq!(variants.pop_first(), Some(TaskStatus::AttemptFailed));
-      assert_eq!(variants.pop_first(), Some(TaskStatus::Dead));
-      assert_eq!(variants.pop_first(), Some(TaskStatus::CancelledByUser));
-      assert_eq!(variants.pop_first(), Some(TaskStatus::CancelledByProvider));
-      assert_eq!(variants.pop_first(), Some(TaskStatus::CancelledByUs));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(TaskStatus::all_variants().len(), TaskStatus::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in TaskStatus::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in TaskStatus::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, TaskStatus::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, TaskStatus::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, TaskStatus::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in TaskStatus::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

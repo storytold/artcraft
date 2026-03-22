@@ -1,16 +1,11 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Defines the names of the Tauri-sent events that the frontend subscribes to.
 /// These event names are also stored in the database, so keep them short-ish.
 ///
 /// NB: Events should end in "_event" so they're easy to grep for in Javascript.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum TauriEventName {
   // TODO: Get rid of kebab case.
@@ -162,30 +157,6 @@ impl TauriEventName {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::GenerationEnqueueSuccessEvent,
-      Self::GenerationEnqueueFailureEvent,
-      Self::GenerationCompleteEvent,
-      Self::GenerationFailedEvent,
-      Self::CreditsBalanceChangedEvent,
-      Self::SubscriptionPlanChangedEvent,
-      Self::MediaFileDeletedEvent,
-      Self::CanvasBgRemovedEvent,
-      Self::TextToImageGenerationCompleteEvent,
-      Self::ImageEditCompleteEvent,
-      Self::ObjectGenerationCompleteEvent,
-      Self::GaussianGenerationCompleteEvent,
-      Self::VideoGenerationCompleteEvent,
-      Self::RefreshAccountStateEvent,
-      Self::ShowProviderBillingModalEvent,
-      Self::ShowProviderLoginModalEvent,
-      Self::FlashUserInputErrorEvent,
-      Self::FlashFileDownloadErrorEvent,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -262,30 +233,6 @@ mod tests {
       assert_eq!(TauriEventName::from_str("flash_file_download_error_event").unwrap(), TauriEventName::FlashFileDownloadErrorEvent);
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = TauriEventName::all_variants();
-      assert_eq!(variants.len(), 18);
-      assert_eq!(variants.pop_first(), Some(TauriEventName::GenerationEnqueueSuccessEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::GenerationEnqueueFailureEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::GenerationCompleteEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::GenerationFailedEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::CreditsBalanceChangedEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::SubscriptionPlanChangedEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::MediaFileDeletedEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::CanvasBgRemovedEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::TextToImageGenerationCompleteEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::ImageEditCompleteEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::ObjectGenerationCompleteEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::GaussianGenerationCompleteEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::VideoGenerationCompleteEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::RefreshAccountStateEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::ShowProviderBillingModalEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::ShowProviderLoginModalEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::FlashUserInputErrorEvent));
-      assert_eq!(variants.pop_first(), Some(TauriEventName::FlashFileDownloadErrorEvent));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
@@ -293,28 +240,13 @@ mod tests {
     use strum::IntoEnumIterator;
 
     #[test]
-    fn variant_length() {
-      assert_eq!(TauriEventName::all_variants().len(), TauriEventName::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in TauriEventName::all_variants() {
+      for variant in TauriEventName::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, TauriEventName::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, TauriEventName::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, TauriEventName::from_str(&format!("{:?}", variant)).unwrap());
       }
     }
-
-    //#[test]
-    //fn serialized_length_ok_for_database() {
-    //  const MAX_LENGTH : usize = 16;
-    //  for variant in TauriEventName::all_variants() {
-    //    let serialized = variant.to_str();
-    //    assert!(serialized.len() > 0, "variant {:?} is too short", variant);
-    //    assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
-    //  }
-    //}
   }
 }

@@ -1,13 +1,8 @@
-use std::collections::BTreeSet;
-
 use enums_shared::error::enums_error::EnumsError;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskType {
   ImageGeneration,
@@ -48,18 +43,6 @@ impl TaskType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::ImageGeneration,
-      Self::ImageInpaintEdit,
-      Self::VideoGeneration,
-      Self::ObjectGeneration,
-      Self::GaussianGeneration,
-      Self::BackgroundRemoval,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -112,36 +95,30 @@ mod tests {
       }
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = TaskType::all_variants();
-      assert_eq!(variants.len(), 6);
-      assert_eq!(variants.pop_first(), Some(TaskType::ImageGeneration));
-      assert_eq!(variants.pop_first(), Some(TaskType::ImageInpaintEdit));
-      assert_eq!(variants.pop_first(), Some(TaskType::VideoGeneration));
-      assert_eq!(variants.pop_first(), Some(TaskType::ObjectGeneration));
-      assert_eq!(variants.pop_first(), Some(TaskType::GaussianGeneration));
-      assert_eq!(variants.pop_first(), Some(TaskType::BackgroundRemoval));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(TaskType::all_variants().len(), TaskType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in TaskType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in TaskType::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, TaskType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, TaskType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, TaskType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in TaskType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

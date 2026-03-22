@@ -1,13 +1,8 @@
-use std::collections::BTreeSet;
-
 use enums_shared::error::enums_error::EnumsError;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskMediaFileClass {
   /// Audio files: wav, mp3, etc.
@@ -49,16 +44,6 @@ impl TaskMediaFileClass {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Audio,
-      Self::Image,
-      Self::Video,
-      Self::Dimensional,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -105,34 +90,30 @@ mod tests {
       }
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = TaskMediaFileClass::all_variants();
-      assert_eq!(variants.len(), 4);
-      assert_eq!(variants.pop_first(), Some(TaskMediaFileClass::Audio));
-      assert_eq!(variants.pop_first(), Some(TaskMediaFileClass::Image));
-      assert_eq!(variants.pop_first(), Some(TaskMediaFileClass::Video));
-      assert_eq!(variants.pop_first(), Some(TaskMediaFileClass::Dimensional));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(TaskMediaFileClass::all_variants().len(), TaskMediaFileClass::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in TaskMediaFileClass::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in TaskMediaFileClass::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, TaskMediaFileClass::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, TaskMediaFileClass::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, TaskMediaFileClass::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in TaskMediaFileClass::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

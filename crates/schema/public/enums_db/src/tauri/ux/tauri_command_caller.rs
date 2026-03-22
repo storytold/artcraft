@@ -1,15 +1,10 @@
-use std::collections::BTreeSet;
-
 use enums_shared::error::enums_error::EnumsError;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Defines the names of the Tauri-sent events that the frontend subscribes to.
 /// These event names are also stored in the database, so keep them short-ish.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum TauriCommandCaller {
   /// The 2D canvas
@@ -52,17 +47,6 @@ impl TauriCommandCaller {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Canvas,
-      Self::ImageEditor,
-      Self::TextToImage,
-      Self::ImageToVideo,
-      Self::MiniApp,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -112,17 +96,6 @@ mod tests {
       }
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = TauriCommandCaller::all_variants();
-      assert_eq!(variants.len(), 5);
-      assert_eq!(variants.pop_first(), Some(TauriCommandCaller::Canvas));
-      assert_eq!(variants.pop_first(), Some(TauriCommandCaller::ImageEditor));
-      assert_eq!(variants.pop_first(), Some(TauriCommandCaller::TextToImage));
-      assert_eq!(variants.pop_first(), Some(TauriCommandCaller::ImageToVideo));
-      assert_eq!(variants.pop_first(), Some(TauriCommandCaller::MiniApp));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
@@ -130,28 +103,13 @@ mod tests {
     use strum::IntoEnumIterator;
 
     #[test]
-    fn variant_length() {
-      assert_eq!(TauriCommandCaller::all_variants().len(), TauriCommandCaller::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in TauriCommandCaller::all_variants() {
+      for variant in TauriCommandCaller::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, TauriCommandCaller::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, TauriCommandCaller::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, TauriCommandCaller::from_str(&format!("{:?}", variant)).unwrap());
       }
     }
-
-    //#[test]
-    //fn serialized_length_ok_for_database() {
-    //  const MAX_LENGTH : usize = 16;
-    //  for variant in TauriCommandCaller::all_variants() {
-    //    let serialized = variant.to_str();
-    //    assert!(serialized.len() > 0, "variant {:?} is too short", variant);
-    //    assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
-    //  }
-    //}
   }
 }

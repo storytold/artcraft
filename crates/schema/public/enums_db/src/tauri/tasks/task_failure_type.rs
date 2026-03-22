@@ -1,10 +1,6 @@
-use std::collections::BTreeSet;
-
 use crate::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums_shared::error::enums_error::EnumsError;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Failure type for tasks in the Tauri desktop app.
@@ -12,8 +8,7 @@ use strum::EnumIter;
 /// Mirrors the relevant variants from `FrontendFailureCategory` so the desktop
 /// client can display localized failure information without depending / breaking on the
 /// server-side enum directly.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskFailureType {
   /// Catch-all for unknown failures.
@@ -82,19 +77,6 @@ impl TaskFailureType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    BTreeSet::from([
-      Self::Unknown,
-      Self::RuleBansUserImage,
-      Self::RuleBansUserImageWithFaces,
-      Self::RuleBansUserTextPrompt,
-      Self::RuleBansUserContent,
-      Self::RuleBansGeneratedVideo,
-      Self::RuleBansGeneratedAudio,
-      Self::RuleBansGeneratedContent,
-      Self::GenerationFailed,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -156,38 +138,29 @@ mod tests {
       }
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = TaskFailureType::all_variants();
-      assert_eq!(variants.len(), 9);
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::Unknown));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserImage));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserImageWithFaces));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserTextPrompt));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansUserContent));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansGeneratedVideo));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansGeneratedAudio));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::RuleBansGeneratedContent));
-      assert_eq!(variants.pop_first(), Some(TaskFailureType::GenerationFailed));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(TaskFailureType::all_variants().len(), TaskFailureType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in TaskFailureType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in TaskFailureType::iter() {
         assert_eq!(variant, TaskFailureType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, TaskFailureType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, TaskFailureType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in TaskFailureType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }
