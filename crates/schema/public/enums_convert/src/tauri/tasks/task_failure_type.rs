@@ -1,0 +1,44 @@
+use enums_api::tauri::tasks::task_failure_type::TaskFailureType as Api;
+use enums_db::tauri::tasks::task_failure_type::TaskFailureType as Db;
+
+pub fn task_failure_type_to_db(api_value: &Api) -> Db {
+  match api_value {
+    Api::Unknown => Db::Unknown,
+    Api::RuleBansUserImage => Db::RuleBansUserImage,
+    Api::RuleBansUserImageWithFaces => Db::RuleBansUserImageWithFaces,
+    Api::RuleBansUserTextPrompt => Db::RuleBansUserTextPrompt,
+    Api::RuleBansUserContent => Db::RuleBansUserContent,
+    Api::RuleBansGeneratedVideo => Db::RuleBansGeneratedVideo,
+    Api::RuleBansGeneratedAudio => Db::RuleBansGeneratedAudio,
+    Api::RuleBansGeneratedContent => Db::RuleBansGeneratedContent,
+    Api::GenerationFailed => Db::GenerationFailed,
+  }
+}
+
+pub fn task_failure_type_to_api(db_value: &Db) -> Api {
+  match db_value {
+    Db::Unknown => Api::Unknown,
+    Db::RuleBansUserImage => Api::RuleBansUserImage,
+    Db::RuleBansUserImageWithFaces => Api::RuleBansUserImageWithFaces,
+    Db::RuleBansUserTextPrompt => Api::RuleBansUserTextPrompt,
+    Db::RuleBansUserContent => Api::RuleBansUserContent,
+    Db::RuleBansGeneratedVideo => Api::RuleBansGeneratedVideo,
+    Db::RuleBansGeneratedAudio => Api::RuleBansGeneratedAudio,
+    Db::RuleBansGeneratedContent => Api::RuleBansGeneratedContent,
+    Db::GenerationFailed => Api::GenerationFailed,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn round_trip_db_to_api() {
+    for variant in Db::all_variants() {
+      let api = task_failure_type_to_api(&variant);
+      let back = task_failure_type_to_db(&api);
+      assert_eq!(variant, back);
+    }
+  }
+}

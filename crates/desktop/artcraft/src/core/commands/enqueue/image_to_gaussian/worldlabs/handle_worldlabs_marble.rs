@@ -12,7 +12,7 @@ use crate::core::utils::simple_http_download::simple_http_download;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCredentialManager;
 use enums_api::common::generation::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use std::path::PathBuf;

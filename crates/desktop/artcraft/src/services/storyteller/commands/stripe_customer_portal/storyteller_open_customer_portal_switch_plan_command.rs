@@ -10,7 +10,7 @@ use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::PlanBillin
 use artcraft_api_defs::stripe_artcraft::customer_portal_switch_plan::PlanBillingCadenceConfirmation;
 use enums::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
 use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use errors::AnyhowResult;
 use log::{error, info};
 use serde_derive::Deserialize;

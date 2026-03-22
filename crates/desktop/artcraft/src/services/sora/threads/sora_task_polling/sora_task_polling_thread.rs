@@ -18,7 +18,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::model_type::ModelType;
-use enums::tauri::tasks::task_status;
+use enums_db::tauri::tasks::task_status;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info, warn};

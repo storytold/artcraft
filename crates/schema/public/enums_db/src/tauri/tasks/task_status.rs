@@ -1,14 +1,13 @@
 use std::collections::BTreeSet;
 
-use crate::error::enum_error::EnumError;
+use enums_shared::error::enums_error::EnumsError;
 #[cfg(test)]
 use strum::EnumCount;
 #[cfg(test)]
 use strum::EnumIter;
-use utoipa::ToSchema;
 
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskStatus {
   Pending,
@@ -49,7 +48,7 @@ impl TaskStatus {
     }
   }
 
-  pub fn from_str(value: &str) -> Result<Self, EnumError> {
+  pub fn from_str(value: &str) -> Result<Self, EnumsError> {
     match value {
       "pending" => Ok(Self::Pending),
       "started" => Ok(Self::Started),
@@ -60,7 +59,7 @@ impl TaskStatus {
       "cancelled_by_user" => Ok(Self::CancelledByUser),
       "cancelled_by_provider" => Ok(Self::CancelledByProvider),
       "cancelled_by_us" => Ok(Self::CancelledByUs),
-      _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
+      _ => Err(EnumsError::CouldNotConvertFromString(value.to_string())),
     }
   }
 
@@ -83,12 +82,12 @@ impl TaskStatus {
 
 #[cfg(test)]
 mod tests {
-  use crate::tauri::tasks::task_status::TaskStatus;
-  use crate::test_helpers::assert_serialization;
+  use super::TaskStatus;
+  use enums_shared::test_helpers::assert_serialization;
 
   mod explicit_checks {
     use super::*;
-    use crate::error::enum_error::EnumError;
+    use enums_shared::error::enums_error::EnumsError;
 
     #[test]
     fn test_default() {
@@ -138,10 +137,10 @@ mod tests {
     fn from_str_err() {
       let result = TaskStatus::from_str("asdf");
       assert!(result.is_err());
-      if let Err(EnumError::CouldNotConvertFromString(value)) = result {
+      if let Err(EnumsError::CouldNotConvertFromString(value)) = result {
         assert_eq!(value, "asdf");
       } else {
-        panic!("Expected EnumError::CouldNotConvertFromString");
+        panic!("Expected EnumsError::CouldNotConvertFromString");
       }
     }
 

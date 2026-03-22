@@ -11,7 +11,7 @@ use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_splat::generate_splat_request::GenerateSplatRequest;
 use enums_api::common::generation::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 
 pub(super) async fn handle_artcraft_splat_via_router(

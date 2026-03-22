@@ -12,7 +12,7 @@ use artcraft_api_defs::jobs::list_session_jobs::ListSessionJobsItem;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use errors::AnyhowResult;
 use log::error;
 use log::info;

@@ -1,14 +1,13 @@
 use std::collections::BTreeSet;
 
-use crate::error::enum_error::EnumError;
+use enums_shared::error::enums_error::EnumsError;
 #[cfg(test)]
 use strum::EnumCount;
 #[cfg(test)]
 use strum::EnumIter;
-use utoipa::ToSchema;
 
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskMediaFileClass {
   /// Audio files: wav, mp3, etc.
@@ -40,13 +39,13 @@ impl TaskMediaFileClass {
     }
   }
 
-  pub fn from_str(value: &str) -> Result<Self, EnumError> {
+  pub fn from_str(value: &str) -> Result<Self, EnumsError> {
     match value {
       "audio" => Ok(Self::Audio),
       "image" => Ok(Self::Image),
       "video" => Ok(Self::Video),
       "dimensional" => Ok(Self::Dimensional),
-      _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
+      _ => Err(EnumsError::CouldNotConvertFromString(value.to_string())),
     }
   }
 
@@ -64,12 +63,12 @@ impl TaskMediaFileClass {
 
 #[cfg(test)]
 mod tests {
-  use crate::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-  use crate::test_helpers::assert_serialization;
+  use super::TaskMediaFileClass;
+  use enums_shared::test_helpers::assert_serialization;
 
   mod explicit_checks {
     use super::*;
-    use crate::error::enum_error::EnumError;
+    use enums_shared::error::enums_error::EnumsError;
 
     #[test]
     fn test_serialization() {
@@ -99,10 +98,10 @@ mod tests {
     fn from_str_err() {
       let result = TaskMediaFileClass::from_str("asdf");
       assert!(result.is_err());
-      if let Err(EnumError::CouldNotConvertFromString(value)) = result {
+      if let Err(EnumsError::CouldNotConvertFromString(value)) = result {
         assert_eq!(value, "asdf");
       } else {
-        panic!("Expected EnumError::CouldNotConvertFromString");
+        panic!("Expected EnumsError::CouldNotConvertFromString");
       }
     }
 

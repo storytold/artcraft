@@ -9,7 +9,7 @@ use artcraft_client::error::api_error::ApiError;
 use artcraft_client::error::storyteller_error::StorytellerError;
 use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::tauri::tasks::task_status::TaskStatus;
+use enums_db::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use log::error;
 use sqlite_tasks::queries::list_tasks_by_provider_and_tokens::{list_tasks_by_provider_and_tokens, ListTasksArgs};

@@ -35,6 +35,6 @@ mod macros;
 pub mod common;
 pub mod error;
 // no_table has been migrated to enums_api crate
-pub mod tauri;
+// tauri has been migrated to enums_db and enums_api crates
 pub mod traits;
 pub mod api_safe;

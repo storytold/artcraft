@@ -1,13 +1,11 @@
 use std::collections::BTreeSet;
 
-use crate::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
-use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use crate::error::enum_error::EnumError;
+use crate::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_shared::error::enums_error::EnumsError;
 #[cfg(test)]
 use strum::EnumCount;
 #[cfg(test)]
 use strum::EnumIter;
-use utoipa::ToSchema;
 
 /// Failure type for tasks in the Tauri desktop app.
 ///
@@ -15,7 +13,7 @@ use utoipa::ToSchema;
 /// client can display localized failure information without depending / breaking on the
 /// server-side enum directly.
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskFailureType {
   /// Catch-all for unknown failures.
@@ -55,34 +53,6 @@ impl TaskFailureType {
     }
   }
 
-  /// Convert the API-client-facing `FrontendFailureCategoryForApiClients` to a Tauri-facing type.
-  /// `Unknown(String)` maps to `Unknown` with a debug log.
-  pub fn from_frontend_failure_category_for_api(category: &FrontendFailureCategoryForApiClients) -> Self {
-    match category {
-      FrontendFailureCategoryForApiClients::ModelRulesViolation => Self::RuleBansUserContent,
-      FrontendFailureCategoryForApiClients::RuleBansUserImage => Self::RuleBansUserImage,
-      FrontendFailureCategoryForApiClients::RuleBansUserImageWithFaces => Self::RuleBansUserImageWithFaces,
-      FrontendFailureCategoryForApiClients::RuleBansUserTextPrompt => Self::RuleBansUserTextPrompt,
-      FrontendFailureCategoryForApiClients::RuleBansUserContent => Self::RuleBansUserContent,
-      FrontendFailureCategoryForApiClients::RuleBansGeneratedVideo => Self::RuleBansGeneratedVideo,
-      FrontendFailureCategoryForApiClients::RuleBansGeneratedAudio => Self::RuleBansGeneratedAudio,
-      FrontendFailureCategoryForApiClients::RuleBansGeneratedContent => Self::RuleBansGeneratedContent,
-      FrontendFailureCategoryForApiClients::GenerationFailed => Self::GenerationFailed,
-
-      // Types ArtCraft doesn't care about
-      FrontendFailureCategoryForApiClients::FaceNotDetected => Self::Unknown,
-      FrontendFailureCategoryForApiClients::KeepAliveElapsed => Self::Unknown,
-      FrontendFailureCategoryForApiClients::NotYetImplemented => Self::Unknown,
-      FrontendFailureCategoryForApiClients::RetryableWorkerError => Self::Unknown,
-
-      // Unknown (future-proof) variant
-      FrontendFailureCategoryForApiClients::Unknown(ref value) => {
-        log::debug!("Unknown FrontendFailureCategoryForApiClients variant: {}", value);
-        Self::Unknown
-      }
-    }
-  }
-
   pub const fn to_str(&self) -> &'static str {
     match self {
       Self::Unknown => "unknown",
@@ -97,7 +67,7 @@ impl TaskFailureType {
     }
   }
 
-  pub fn from_str(value: &str) -> Result<Self, EnumError> {
+  pub fn from_str(value: &str) -> Result<Self, EnumsError> {
     match value {
       "unknown" => Ok(Self::Unknown),
       "rule_bans_user_image" => Ok(Self::RuleBansUserImage),
@@ -108,7 +78,7 @@ impl TaskFailureType {
       "rule_bans_generated_audio" => Ok(Self::RuleBansGeneratedAudio),
       "rule_bans_generated_content" => Ok(Self::RuleBansGeneratedContent),
       "generation_failed" => Ok(Self::GenerationFailed),
-      _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
+      _ => Err(EnumsError::CouldNotConvertFromString(value.to_string())),
     }
   }
 
@@ -129,12 +99,12 @@ impl TaskFailureType {
 
 #[cfg(test)]
 mod tests {
-  use crate::tauri::tasks::task_failure_type::TaskFailureType;
-  use crate::test_helpers::assert_serialization;
+  use super::TaskFailureType;
+  use enums_shared::test_helpers::assert_serialization;
 
   mod explicit_checks {
     use super::*;
-    use crate::error::enum_error::EnumError;
+    use enums_shared::error::enums_error::EnumsError;
 
     #[test]
     fn test_serialization() {
@@ -179,10 +149,10 @@ mod tests {
     fn from_str_err() {
       let result = TaskFailureType::from_str("asdf");
       assert!(result.is_err());
-      if let Err(EnumError::CouldNotConvertFromString(value)) = result {
+      if let Err(EnumsError::CouldNotConvertFromString(value)) = result {
         assert_eq!(value, "asdf");
       } else {
-        panic!("Expected EnumError::CouldNotConvertFromString");
+        panic!("Expected EnumsError::CouldNotConvertFromString");
       }
     }
 

@@ -1,16 +1,15 @@
 use std::collections::BTreeSet;
 
-use crate::error::enum_error::EnumError;
+use enums_shared::error::enums_error::EnumsError;
 #[cfg(test)]
 use strum::EnumCount;
 #[cfg(test)]
 use strum::EnumIter;
-use utoipa::ToSchema;
 
 /// Defines the names of the Tauri-sent events that the frontend subscribes to.
 /// These event names are also stored in the database, so keep them short-ish.
 #[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TauriCommandCaller {
   /// The 2D canvas
@@ -42,14 +41,14 @@ impl TauriCommandCaller {
     }
   }
 
-  pub fn from_str(value: &str) -> Result<Self, EnumError> {
+  pub fn from_str(value: &str) -> Result<Self, EnumsError> {
     match value {
       "canvas" => Ok(Self::Canvas),
       "image_editor" => Ok(Self::ImageEditor),
       "text_to_image" => Ok(Self::TextToImage),
       "image_to_video" => Ok(Self::ImageToVideo),
       "mini_app" => Ok(Self::MiniApp),
-      _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
+      _ => Err(EnumsError::CouldNotConvertFromString(value.to_string())),
     }
   }
 
@@ -68,9 +67,9 @@ impl TauriCommandCaller {
 
 #[cfg(test)]
 mod tests {
-  use crate::error::enum_error::EnumError;
-  use crate::tauri::ux::tauri_command_caller::TauriCommandCaller;
-  use crate::test_helpers::assert_serialization;
+  use enums_shared::error::enums_error::EnumsError;
+  use super::TauriCommandCaller;
+  use enums_shared::test_helpers::assert_serialization;
 
   mod explicit_checks {
     use super::*;
@@ -106,10 +105,10 @@ mod tests {
     fn from_str_err() {
       let result = TauriCommandCaller::from_str("asdf");
       assert!(result.is_err());
-      if let Err(EnumError::CouldNotConvertFromString(value)) = result {
+      if let Err(EnumsError::CouldNotConvertFromString(value)) = result {
         assert_eq!(value, "asdf");
       } else {
-        panic!("Expected EnumError::CouldNotConvertFromString");
+        panic!("Expected EnumsError::CouldNotConvertFromString");
       }
     }
 

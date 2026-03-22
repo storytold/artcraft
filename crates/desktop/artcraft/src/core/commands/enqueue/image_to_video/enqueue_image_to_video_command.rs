@@ -25,7 +25,7 @@ use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio;
 use enums_api::common::generation::generation_provider::GenerationProvider;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use log::{error, info, warn};
 use serde_derive::{Deserialize, Serialize};
 use tauri::{AppHandle, State};

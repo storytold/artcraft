@@ -16,8 +16,8 @@ use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_
 use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
 use enums::common::model_type::ModelType;
-use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_model_type::TaskModelType;
+use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums_db::tauri::tasks::task_model_type::TaskModelType;
 use errors::AnyhowResult;
 use grok_client::recipes::prompt_websocket_image_with_retry::{prompt_websocket_image_with_retry, PromptWebsocketImageWithRetryArgs};
 use grok_client::requests::image_websocket::create_listen_websocket::{create_listen_websocket, CreateListenWebsocketArgs};

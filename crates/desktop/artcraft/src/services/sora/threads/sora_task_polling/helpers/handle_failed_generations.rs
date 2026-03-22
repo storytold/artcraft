@@ -6,7 +6,7 @@ use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::task_database::TaskDatabase;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::sora::threads::sora_task_polling::helpers::handle_successful_generations::GenerationItem;
-use enums::tauri::tasks::task_status;
+use enums_db::tauri::tasks::task_status;
 use errors::AnyhowResult;
 use log::info;
 use openai_sora_client::requests::common::task_id::TaskId;

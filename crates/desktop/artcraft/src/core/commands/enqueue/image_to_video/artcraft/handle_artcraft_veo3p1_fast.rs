@@ -14,7 +14,7 @@ use crate::services::sora::utils::upload_images_to_sora::{upload_images_to_sora,
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::generate::video::multi_function::veo_3p1_fast_multi_function_video_gen::{Veo3p1FastMultiFunctionVideoGenAspectRatio, Veo3p1FastMultiFunctionVideoGenDuration, Veo3p1FastMultiFunctionVideoGenRequest, Veo3p1FastMultiFunctionVideoGenResolution};
 use enums_api::common::generation::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;

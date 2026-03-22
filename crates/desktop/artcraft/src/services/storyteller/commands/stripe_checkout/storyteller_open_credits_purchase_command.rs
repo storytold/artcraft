@@ -9,7 +9,7 @@ use crate::services::storyteller::windows::open_storyteller_billing_window::{ope
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::PlanBillingCadence;
 use enums::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
 use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use errors::AnyhowResult;
 use log::{error, info};
 use serde_derive::Deserialize;
