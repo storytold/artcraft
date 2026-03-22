@@ -3809,6 +3809,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "enums_convert"
+version = "0.0.1"
+dependencies = [
+ "enums_api",
+ "enums_db",
+ "serde_json",
+ "strum",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "enums_db"
 version = "0.0.1"
 dependencies = [

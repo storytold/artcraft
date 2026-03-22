@@ -112,6 +112,7 @@ members = [
   "crates/schema/public/composite_identifiers",
   "crates/schema/public/enums",
   "crates/schema/public/enums_api",
+  "crates/schema/public/enums_convert",
   "crates/schema/public/enums_db",
   "crates/schema/public/enums_public",
   "crates/schema/public/enums_shared",
