@@ -84,6 +84,31 @@ pub enum MediaFileType {
   Mp3,
 }
 
+impl MediaFileType {
+  /// Jpeg and Png are the most widely supported static image formats for AI inference.
+  /// Webp, Webm, and Gif aren't as widely supported, so we don't include them here.
+  pub fn is_jpg_or_png(&self) -> bool {
+    matches!(self, Self::Jpg | Self::Png)
+  }
+
+  /// A little bit less strict than `is_jpg_or_png`, this includes the legacy `Image` type.
+  pub fn is_jpg_or_png_or_legacy_image(&self) -> bool {
+    matches!(self, Self::Jpg | Self::Png | Self::Image)
+  }
+
+  /// Returns the `MediaFileType` if the mime type matches one of the known types.
+  /// This is not exhaustive.
+  pub fn try_from_mime_type(mime_type: &str) -> Option<Self> {
+    match mime_type {
+      "image/jpeg" => Some(Self::Jpg),
+      "image/png" => Some(Self::Png),
+      "video/mp4" => Some(Self::Mp4),
+      "model/gltf-binary" => Some(Self::Glb),
+      _ => None,
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::MediaFileType;
@@ -144,6 +169,67 @@ mod tests {
     #[test]
     fn variants_count_check() {
       assert_eq!(MediaFileType::iter().count(), 20);
+    }
+  }
+
+  mod test_is_jpg_or_png {
+    use super::*;
+
+    #[test]
+    fn true_for_jpg_and_png() {
+      assert!(MediaFileType::Jpg.is_jpg_or_png());
+      assert!(MediaFileType::Png.is_jpg_or_png());
+    }
+
+    #[test]
+    fn false_for_everything_else() {
+      for variant in MediaFileType::iter() {
+        if matches!(variant, MediaFileType::Jpg | MediaFileType::Png) {
+          continue;
+        }
+        assert!(!variant.is_jpg_or_png(), "Expected {:?} to be false", variant);
+      }
+    }
+  }
+
+  mod test_is_jpg_or_png_or_legacy_image {
+    use super::*;
+
+    #[test]
+    fn true_for_jpg_png_image() {
+      assert!(MediaFileType::Jpg.is_jpg_or_png_or_legacy_image());
+      assert!(MediaFileType::Png.is_jpg_or_png_or_legacy_image());
+      assert!(MediaFileType::Image.is_jpg_or_png_or_legacy_image());
+    }
+
+    #[test]
+    fn false_for_everything_else() {
+      for variant in MediaFileType::iter() {
+        if matches!(variant, MediaFileType::Jpg | MediaFileType::Png | MediaFileType::Image) {
+          continue;
+        }
+        assert!(!variant.is_jpg_or_png_or_legacy_image(), "Expected {:?} to be false", variant);
+      }
+    }
+  }
+
+  mod test_try_from_mime_type {
+    use super::*;
+
+    #[test]
+    fn known_mime_types() {
+      assert_eq!(MediaFileType::try_from_mime_type("image/jpeg"), Some(MediaFileType::Jpg));
+      assert_eq!(MediaFileType::try_from_mime_type("image/png"), Some(MediaFileType::Png));
+      assert_eq!(MediaFileType::try_from_mime_type("video/mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_mime_type("model/gltf-binary"), Some(MediaFileType::Glb));
+    }
+
+    #[test]
+    fn unknown_mime_types_return_none() {
+      assert_eq!(MediaFileType::try_from_mime_type("audio/wav"), None);
+      assert_eq!(MediaFileType::try_from_mime_type("image/gif"), None);
+      assert_eq!(MediaFileType::try_from_mime_type("text/plain"), None);
+      assert_eq!(MediaFileType::try_from_mime_type(""), None);
     }
   }
 
