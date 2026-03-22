@@ -1,8 +1,8 @@
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::prompts::PromptToken;
 use utoipa::ToSchema;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums_api::common::generation::generation_provider::GenerationProvider;
+use enums_api::common::model_type::ModelType;
 
 pub const CREATE_PROMPT_PATH: &str = "/v1/prompts/create";
 

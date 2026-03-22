@@ -3,7 +3,7 @@ use crate::error::storyteller_error::StorytellerError;
 use crate::utils::api_host::ApiHost;
 use crate::utils::basic_json_get_request::basic_json_get_request;
 use artcraft_api_defs::credits::get_session_credits::GetSessionCreditsResponse;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_api::common::payments_namespace::PaymentsNamespace;
 
 pub async fn get_session_credits(
   api_host: &ApiHost,
@@ -21,7 +21,7 @@ pub async fn get_session_credits(
 
 
 fn get_url_path(payments_namespace: PaymentsNamespace) -> String {
-  let payments_namespace = payments_namespace.to_str();
+  let payments_namespace = serde_json::to_string(&payments_namespace).unwrap().replace('"', "");
   format!("/v1/credits/namespace/{}", payments_namespace)
 }
 

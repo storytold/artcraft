@@ -3,7 +3,7 @@ use crate::error::storyteller_error::StorytellerError;
 use crate::utils::api_host::ApiHost;
 use crate::utils::basic_json_get_request::basic_json_get_request;
 use artcraft_api_defs::jobs::list_session_jobs::{ListSessionJobsSuccessResponse, LIST_SESSION_JOBS_URL_PATH};
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_api::common::job_status_plus::JobStatusPlus;
 use std::collections::HashSet;
 
 #[derive(Clone)]
@@ -37,7 +37,7 @@ pub async fn list_session_jobs(
 
 fn states_string(states: &HashSet<JobStatusPlus>) -> String {
   states.iter()
-    .map(|state| state.to_str())
+    .map(|state| serde_json::to_string(state).unwrap().replace('"', ""))
     .collect::<Vec<_>>()
     .join(",")
 }
