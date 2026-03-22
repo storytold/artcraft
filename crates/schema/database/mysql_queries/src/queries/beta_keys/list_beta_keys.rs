@@ -4,7 +4,7 @@ use sqlx::{Execute, FromRow, MySql, MySqlPool, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 
 use enums::by_table::beta_keys::beta_key_product::BetaKeyProduct;
-use enums::traits::mysql_from_row::MySqlFromRow;
+use enums::traits::mysql_from_row::MySqlFromRow as _;
 use errors::AnyhowResult;
 use tokens::tokens::beta_keys::BetaKeyToken;
 use tokens::tokens::users::UserToken;

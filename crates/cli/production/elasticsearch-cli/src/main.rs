@@ -16,7 +16,6 @@ use std::iter::FromIterator;
 
 use config::shared_constants::DEFAULT_RUST_LOG;
 use elasticsearch_schema::searches::search_tts_models::search_tts_models;
-use enums::by_table::model_weights::weights_types::WeightsType;
 use errors::AnyhowResult;
 
 use crate::cli_args::{parse_cli_args, Action, Environment};

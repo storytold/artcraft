@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use sqlx::{Executor, MySql};
 
-use enums::by_table::model_weights::weights_types::WeightsType;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 

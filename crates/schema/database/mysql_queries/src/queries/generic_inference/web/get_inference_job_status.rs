@@ -8,7 +8,6 @@ use enums::by_table::generic_inference_jobs::frontend_failure_category::Frontend
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
@@ -27,7 +26,6 @@ pub async fn get_inference_job_status(job_token: &InferenceJobToken, mysql_pool:
   let mut connection = mysql_pool.acquire().await?;
   get_inference_job_status_from_connection(job_token, &mut connection).await
 }
-
 
 /// Look up job status.
 /// Returns Ok(None) when the record cannot be found.

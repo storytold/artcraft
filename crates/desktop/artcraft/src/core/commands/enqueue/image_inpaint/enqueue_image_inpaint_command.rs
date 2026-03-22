@@ -24,8 +24,6 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_status::TaskStatus;
-use enums::tauri::tasks::task_type::TaskType;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use errors::AnyhowError;
 use log::{error, info, warn};

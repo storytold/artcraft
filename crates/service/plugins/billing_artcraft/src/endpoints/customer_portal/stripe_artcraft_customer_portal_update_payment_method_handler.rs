@@ -10,7 +10,6 @@ use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBilli
 use artcraft_api_defs::stripe_artcraft::customer_portal_switch_plan::{PlanBillingCadenceConfirmation, StripeArtcraftCustomerPortalSwitchPlanRequest, StripeArtcraftCustomerPortalSwitchPlanResponse};
 use artcraft_api_defs::stripe_artcraft::customer_portal_update_payment_method::{StripeArtcraftCustomerPortalUpdatePaymentMethodRequest, StripeArtcraftCustomerPortalUpdatePaymentMethodResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
 use enums::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::{find_subscription_for_owner_user_using_connection, UserSubscription};

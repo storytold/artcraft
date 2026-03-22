@@ -9,7 +9,6 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::stripe_artcraft::create_credits_pack_checkout::{StripeArtcraftCreateCreditsPackCheckoutRequest, StripeArtcraftCreateCreditsPackCheckoutResponse};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBillingCadence, StripeArtcraftCreateSubscriptionCheckoutRequest, StripeArtcraftCreateSubscriptionCheckoutResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
 use enums::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_stripe_customer_links::find_user_stripe_customer_link::find_user_stripe_customer_link_using_connection;

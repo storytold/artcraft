@@ -6,7 +6,6 @@ use actix_web::web::{Data, Json};
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBillingCadence, StripeArtcraftCreateSubscriptionCheckoutRequest, StripeArtcraftCreateSubscriptionCheckoutResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
 use enums::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_subscriptions::find_possibly_inactive_first_subscription_for_owner_user::find_possibly_inactive_first_subscription_for_owner_user_using_connection;

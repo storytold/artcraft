@@ -9,6 +9,7 @@ use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 
 use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums::traits::mysql_from_row::MySqlFromRow as _;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
@@ -16,7 +17,6 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums::by_table::model_weights::weights_types::WeightsType;
 use enums::common::visibility::Visibility;
-use enums::traits::mysql_from_row::MySqlFromRow;
 use errors::AnyhowResult;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;

@@ -18,7 +18,6 @@ use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::model_type::ModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_status;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info, warn};
@@ -55,7 +54,6 @@ pub struct GenerationItem {
   pub item_id: String,
   pub url: String,
 }
-
 
 pub async fn handle_classic_successful_generations(
   app_handle: &AppHandle,
@@ -182,7 +180,6 @@ pub async fn handle_classic_successful_generations(
 
   Ok(())
 }
-
 
 async fn download_generation_item(
   generation: &GenerationItem,

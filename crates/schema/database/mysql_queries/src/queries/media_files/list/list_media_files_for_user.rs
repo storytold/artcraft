@@ -5,6 +5,7 @@ use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 
 use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums::traits::mysql_from_row::MySqlFromRow as _;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
@@ -13,7 +14,6 @@ use enums::by_table::media_files::media_file_origin_product_category::MediaFileO
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
-use enums::traits::mysql_from_row::MySqlFromRow;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -75,7 +75,6 @@ pub struct MediaFileListItem {
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
 }
-
 
 pub struct ListMediaFileForUserArgs<'a> {
   pub username: &'a str,
@@ -177,7 +176,6 @@ pub async fn list_media_files_for_user(args: ListMediaFileForUserArgs<'_>) -> An
     total_page_count: number_of_pages,
   })
 }
-
 
 fn select_result_fields() -> String {
   r#"

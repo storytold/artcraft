@@ -16,11 +16,8 @@ use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCr
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
-use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use futures::poll;
 use grok_client::credentials::grok_full_credentials::GrokFullCredentials;
@@ -192,7 +189,6 @@ async fn poll_grok_tasks(
       })
       .collect::<HashMap<String, Task>>();
 
-
   for (world_id, local_task) in local_tasks_by_world_labs_world_id.iter() {
     let world_id = WorldObjectId(world_id.to_string());
 
@@ -216,7 +212,6 @@ async fn poll_grok_tasks(
       }
     };
 
-
     upload_spz_splat(
       &app_handle,
       &app_env_configs,
@@ -227,7 +222,6 @@ async fn poll_grok_tasks(
       &spz_url,
     ).await?;
   }
-
 
   tokio::time::sleep(Duration::from_millis(5_000)).await;
 

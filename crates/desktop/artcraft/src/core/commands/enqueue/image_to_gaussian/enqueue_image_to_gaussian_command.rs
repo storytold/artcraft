@@ -23,8 +23,6 @@ use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_status::TaskStatus;
-use enums::tauri::tasks::task_type::TaskType;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
@@ -84,7 +82,6 @@ pub struct EnqueueImageToGaussianRequest {
   pub frontend_subscriber_payload: Option<String>,
 }
 
-
 #[derive(Serialize)]
 pub struct EnqueueImageToGaussianSuccessResponse {
 }
@@ -103,7 +100,6 @@ pub enum EnqueueImageToGaussianErrorType {
   /// Needs to be logged into Artcraft
   NeedsStorytellerCredentials,
 }
-
 
 #[tauri::command]
 pub async fn enqueue_image_to_gaussian_command(
@@ -178,7 +174,6 @@ pub async fn enqueue_image_to_gaussian_command(
     }
   }
 }
-
 
 pub async fn handle_request(
   request: EnqueueImageToGaussianRequest,

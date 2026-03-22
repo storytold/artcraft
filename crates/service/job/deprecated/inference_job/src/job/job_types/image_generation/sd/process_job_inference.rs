@@ -15,8 +15,6 @@ use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginM
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
 use filesys::path_to_string::path_to_string;
 use mysql_queries::payloads::media_file_extra_info::inner_payloads::stable_diffusion_extra_info::StableDiffusionExtraInfo;
 use mysql_queries::payloads::media_file_extra_info::media_file_extra_info::MediaFileExtraInfo;
@@ -201,7 +199,6 @@ pub async fn process_job_inference(
     }
     return Err(error);
   }
-
 
   // hack to check the directory before clean up.
   //   let thirtyMinutes = 1800;
