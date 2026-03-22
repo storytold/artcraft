@@ -37,10 +37,33 @@ pub enum CommentEntityType {
 #[cfg(test)]
 mod tests {
   use super::CommentEntityType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(CommentEntityType::User, "user");
+      assert_serialization(CommentEntityType::MediaFile, "media_file");
+      assert_serialization(CommentEntityType::ModelWeight, "model_weight");
+      assert_serialization(CommentEntityType::TtsModel, "tts_model");
+      assert_serialization(CommentEntityType::TtsResult, "tts_result");
+      assert_serialization(CommentEntityType::W2lTemplate, "w2l_template");
+      assert_serialization(CommentEntityType::W2lResult, "w2l_result");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("user", CommentEntityType::User);
+      assert_deserialization("media_file", CommentEntityType::MediaFile);
+      assert_deserialization("model_weight", CommentEntityType::ModelWeight);
+      assert_deserialization("tts_model", CommentEntityType::TtsModel);
+      assert_deserialization("tts_result", CommentEntityType::TtsResult);
+      assert_deserialization("w2l_template", CommentEntityType::W2lTemplate);
+      assert_deserialization("w2l_result", CommentEntityType::W2lResult);
+    }
 
     #[test]
     fn variants_count_check() {

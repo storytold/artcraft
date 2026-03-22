@@ -19,10 +19,23 @@ pub enum ZsVoiceModelType {
 #[cfg(test)]
 mod tests {
   use super::ZsVoiceModelType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(ZsVoiceModelType::VallEX, "vall-e-x");
+      assert_serialization(ZsVoiceModelType::StyleTTS2, "styletts2");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("vall-e-x", ZsVoiceModelType::VallEX);
+      assert_deserialization("styletts2", ZsVoiceModelType::StyleTTS2);
+    }
 
     #[test]
     fn variants_count_check() {

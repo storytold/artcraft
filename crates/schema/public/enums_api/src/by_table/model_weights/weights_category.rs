@@ -19,10 +19,29 @@ pub enum WeightsCategory {
 #[cfg(test)]
 mod tests {
   use super::WeightsCategory;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(WeightsCategory::ImageGeneration, "image_generation");
+      assert_serialization(WeightsCategory::TextToSpeech, "text_to_speech");
+      assert_serialization(WeightsCategory::Vocoder, "vocoder");
+      assert_serialization(WeightsCategory::VoiceConversion, "voice_conversion");
+      assert_serialization(WeightsCategory::WorkflowConfig, "workflow_config");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("image_generation", WeightsCategory::ImageGeneration);
+      assert_deserialization("text_to_speech", WeightsCategory::TextToSpeech);
+      assert_deserialization("vocoder", WeightsCategory::Vocoder);
+      assert_deserialization("voice_conversion", WeightsCategory::VoiceConversion);
+      assert_deserialization("workflow_config", WeightsCategory::WorkflowConfig);
+    }
 
     #[test]
     fn variants_count_check() {

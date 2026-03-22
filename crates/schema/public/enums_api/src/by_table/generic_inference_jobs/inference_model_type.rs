@@ -57,10 +57,49 @@ pub enum InferenceModelType {
 #[cfg(test)]
 mod tests {
   use super::InferenceModelType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(InferenceModelType::ComfyUi, "comfy_ui");
+      assert_serialization(InferenceModelType::RvcV2, "rvc_v2");
+      assert_serialization(InferenceModelType::SadTalker, "sad_talker");
+      assert_serialization(InferenceModelType::SoVitsSvc, "so_vits_svc");
+      assert_serialization(InferenceModelType::SeedVc, "seed_vc");
+      assert_serialization(InferenceModelType::ImageGenApi, "image_gen_api");
+      assert_serialization(InferenceModelType::Tacotron2, "tacotron2");
+      assert_serialization(InferenceModelType::Vits, "vits");
+      assert_serialization(InferenceModelType::VallEX, "vall_e_x");
+      assert_serialization(InferenceModelType::RerenderAVideo, "rerender_a_video");
+      assert_serialization(InferenceModelType::StableDiffusion, "stable_diffusion");
+      assert_serialization(InferenceModelType::MocapNet, "mocap_net");
+      assert_serialization(InferenceModelType::StyleTTS2, "styletts2");
+      assert_serialization(InferenceModelType::ConvertFbxToGltf, "convert_fbx_gltf");
+      assert_serialization(InferenceModelType::BvhToWorkflow, "bvh_to_workflow");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("comfy_ui", InferenceModelType::ComfyUi);
+      assert_deserialization("rvc_v2", InferenceModelType::RvcV2);
+      assert_deserialization("sad_talker", InferenceModelType::SadTalker);
+      assert_deserialization("so_vits_svc", InferenceModelType::SoVitsSvc);
+      assert_deserialization("seed_vc", InferenceModelType::SeedVc);
+      assert_deserialization("image_gen_api", InferenceModelType::ImageGenApi);
+      assert_deserialization("tacotron2", InferenceModelType::Tacotron2);
+      assert_deserialization("vits", InferenceModelType::Vits);
+      assert_deserialization("vall_e_x", InferenceModelType::VallEX);
+      assert_deserialization("rerender_a_video", InferenceModelType::RerenderAVideo);
+      assert_deserialization("stable_diffusion", InferenceModelType::StableDiffusion);
+      assert_deserialization("mocap_net", InferenceModelType::MocapNet);
+      assert_deserialization("styletts2", InferenceModelType::StyleTTS2);
+      assert_deserialization("convert_fbx_gltf", InferenceModelType::ConvertFbxToGltf);
+      assert_deserialization("bvh_to_workflow", InferenceModelType::BvhToWorkflow);
+    }
 
     #[test]
     fn variants_count_check() {

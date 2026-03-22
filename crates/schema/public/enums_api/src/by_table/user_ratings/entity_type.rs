@@ -33,10 +33,31 @@ pub enum UserRatingEntityType {
 #[cfg(test)]
 mod tests {
   use super::UserRatingEntityType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(UserRatingEntityType::MediaFile, "media_file");
+      assert_serialization(UserRatingEntityType::ModelWeight, "model_weight");
+      assert_serialization(UserRatingEntityType::TtsModel, "tts_model");
+      assert_serialization(UserRatingEntityType::TtsResult, "tts_result");
+      assert_serialization(UserRatingEntityType::W2lTemplate, "w2l_template");
+      assert_serialization(UserRatingEntityType::W2lResult, "w2l_result");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("media_file", UserRatingEntityType::MediaFile);
+      assert_deserialization("model_weight", UserRatingEntityType::ModelWeight);
+      assert_deserialization("tts_model", UserRatingEntityType::TtsModel);
+      assert_deserialization("tts_result", UserRatingEntityType::TtsResult);
+      assert_deserialization("w2l_template", UserRatingEntityType::W2lTemplate);
+      assert_deserialization("w2l_result", UserRatingEntityType::W2lResult);
+    }
 
     #[test]
     fn variants_count_check() {

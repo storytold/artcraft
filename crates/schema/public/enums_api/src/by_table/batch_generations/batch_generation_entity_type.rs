@@ -14,10 +14,21 @@ pub enum BatchGenerationEntityType {
 #[cfg(test)]
 mod tests {
   use super::BatchGenerationEntityType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(BatchGenerationEntityType::MediaFile, "media_file");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("media_file", BatchGenerationEntityType::MediaFile);
+    }
 
     #[test]
     fn variants_count_check() {

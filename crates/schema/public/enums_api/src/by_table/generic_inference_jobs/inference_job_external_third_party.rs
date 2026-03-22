@@ -25,10 +25,25 @@ pub enum InferenceJobExternalThirdParty {
 #[cfg(test)]
 mod tests {
   use super::InferenceJobExternalThirdParty;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(InferenceJobExternalThirdParty::Fal, "fal");
+      assert_serialization(InferenceJobExternalThirdParty::Seedance2Pro, "seedance2pro");
+      assert_serialization(InferenceJobExternalThirdParty::Worldlabs, "worldlabs");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("fal", InferenceJobExternalThirdParty::Fal);
+      assert_deserialization("seedance2pro", InferenceJobExternalThirdParty::Seedance2Pro);
+      assert_deserialization("worldlabs", InferenceJobExternalThirdParty::Worldlabs);
+    }
 
     #[test]
     fn variants_count_check() {

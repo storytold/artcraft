@@ -81,10 +81,51 @@ pub enum MediaFileOriginProductCategory {
 #[cfg(test)]
 mod tests {
   use super::MediaFileOriginProductCategory;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(MediaFileOriginProductCategory::Unknown, "unknown");
+      assert_serialization(MediaFileOriginProductCategory::FaceAnimator, "face_animator");
+      assert_serialization(MediaFileOriginProductCategory::FaceFusion, "face_fusion");
+      assert_serialization(MediaFileOriginProductCategory::FaceMirror, "face_mirror");
+      assert_serialization(MediaFileOriginProductCategory::VideoStyleTransfer, "vst");
+      assert_serialization(MediaFileOriginProductCategory::ImageStudio, "image_studio");
+      assert_serialization(MediaFileOriginProductCategory::StorytellerStudio, "studio");
+      assert_serialization(MediaFileOriginProductCategory::TextToSpeech, "tts");
+      assert_serialization(MediaFileOriginProductCategory::VoiceConversion, "voice_conversion");
+      assert_serialization(MediaFileOriginProductCategory::ZeroShotVoice, "zs_voice");
+      assert_serialization(MediaFileOriginProductCategory::Mocap, "mocap");
+      assert_serialization(MediaFileOriginProductCategory::ImageGeneration, "image_gen");
+      assert_serialization(MediaFileOriginProductCategory::VideoGeneration, "video_gen");
+      assert_serialization(MediaFileOriginProductCategory::WorldGeneration, "world_gen");
+      assert_serialization(MediaFileOriginProductCategory::VideoFilter, "video_filter");
+      assert_serialization(MediaFileOriginProductCategory::Workflow, "workflow");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("unknown", MediaFileOriginProductCategory::Unknown);
+      assert_deserialization("face_animator", MediaFileOriginProductCategory::FaceAnimator);
+      assert_deserialization("face_fusion", MediaFileOriginProductCategory::FaceFusion);
+      assert_deserialization("face_mirror", MediaFileOriginProductCategory::FaceMirror);
+      assert_deserialization("vst", MediaFileOriginProductCategory::VideoStyleTransfer);
+      assert_deserialization("image_studio", MediaFileOriginProductCategory::ImageStudio);
+      assert_deserialization("studio", MediaFileOriginProductCategory::StorytellerStudio);
+      assert_deserialization("tts", MediaFileOriginProductCategory::TextToSpeech);
+      assert_deserialization("voice_conversion", MediaFileOriginProductCategory::VoiceConversion);
+      assert_deserialization("zs_voice", MediaFileOriginProductCategory::ZeroShotVoice);
+      assert_deserialization("mocap", MediaFileOriginProductCategory::Mocap);
+      assert_deserialization("image_gen", MediaFileOriginProductCategory::ImageGeneration);
+      assert_deserialization("video_gen", MediaFileOriginProductCategory::VideoGeneration);
+      assert_deserialization("world_gen", MediaFileOriginProductCategory::WorldGeneration);
+      assert_deserialization("video_filter", MediaFileOriginProductCategory::VideoFilter);
+      assert_deserialization("workflow", MediaFileOriginProductCategory::Workflow);
+    }
 
     #[test]
     fn variants_count_check() {

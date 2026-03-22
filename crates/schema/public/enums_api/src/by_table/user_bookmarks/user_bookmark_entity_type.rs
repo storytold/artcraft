@@ -45,10 +45,37 @@ pub enum UserBookmarkEntityType {
 #[cfg(test)]
 mod tests {
   use super::UserBookmarkEntityType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(UserBookmarkEntityType::User, "user");
+      assert_serialization(UserBookmarkEntityType::TtsModel, "tts_model");
+      assert_serialization(UserBookmarkEntityType::TtsResult, "tts_result");
+      assert_serialization(UserBookmarkEntityType::W2lTemplate, "w2l_template");
+      assert_serialization(UserBookmarkEntityType::W2lResult, "w2l_result");
+      assert_serialization(UserBookmarkEntityType::MediaFile, "media_file");
+      assert_serialization(UserBookmarkEntityType::ModelWeight, "model_weight");
+      assert_serialization(UserBookmarkEntityType::VoiceConversionModel, "voice_conversion_model");
+      assert_serialization(UserBookmarkEntityType::ZsVoice, "zs_voice");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("user", UserBookmarkEntityType::User);
+      assert_deserialization("tts_model", UserBookmarkEntityType::TtsModel);
+      assert_deserialization("tts_result", UserBookmarkEntityType::TtsResult);
+      assert_deserialization("w2l_template", UserBookmarkEntityType::W2lTemplate);
+      assert_deserialization("w2l_result", UserBookmarkEntityType::W2lResult);
+      assert_deserialization("media_file", UserBookmarkEntityType::MediaFile);
+      assert_deserialization("model_weight", UserBookmarkEntityType::ModelWeight);
+      assert_deserialization("voice_conversion_model", UserBookmarkEntityType::VoiceConversionModel);
+      assert_deserialization("zs_voice", UserBookmarkEntityType::ZsVoice);
+    }
 
     #[test]
     fn variants_count_check() {

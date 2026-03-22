@@ -42,10 +42,35 @@ pub enum UserSignupSource {
 #[cfg(test)]
 mod tests {
   use super::UserSignupSource;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(UserSignupSource::ArtCraft, "artcraft");
+      assert_serialization(UserSignupSource::ArtCraftApp, "artcraft_app");
+      assert_serialization(UserSignupSource::ArtCraftAiWeb, "artcraft_ai_web");
+      assert_serialization(UserSignupSource::ArtCraftAiStripe, "artcraft_ai_s");
+      assert_serialization(UserSignupSource::ArtCraftGetWeb, "artcraft_get_web");
+      assert_serialization(UserSignupSource::ArtCraftGetStripe, "artcraft_get_s");
+      assert_serialization(UserSignupSource::FakeYou, "fakeyou");
+      assert_serialization(UserSignupSource::Storyteller, "storyteller");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("artcraft", UserSignupSource::ArtCraft);
+      assert_deserialization("artcraft_app", UserSignupSource::ArtCraftApp);
+      assert_deserialization("artcraft_ai_web", UserSignupSource::ArtCraftAiWeb);
+      assert_deserialization("artcraft_ai_s", UserSignupSource::ArtCraftAiStripe);
+      assert_deserialization("artcraft_get_web", UserSignupSource::ArtCraftGetWeb);
+      assert_deserialization("artcraft_get_s", UserSignupSource::ArtCraftGetStripe);
+      assert_deserialization("fakeyou", UserSignupSource::FakeYou);
+      assert_deserialization("storyteller", UserSignupSource::Storyteller);
+    }
 
     #[test]
     fn variants_count_check() {

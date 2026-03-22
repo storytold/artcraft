@@ -22,10 +22,25 @@ pub enum VoiceConversionModelType {
 #[cfg(test)]
 mod tests {
   use super::VoiceConversionModelType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(VoiceConversionModelType::RvcV2, "rvc_v2");
+      assert_serialization(VoiceConversionModelType::SoftVc, "soft_vc");
+      assert_serialization(VoiceConversionModelType::SoVitsSvc, "so_vits_svc");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("rvc_v2", VoiceConversionModelType::RvcV2);
+      assert_deserialization("soft_vc", VoiceConversionModelType::SoftVc);
+      assert_deserialization("so_vits_svc", VoiceConversionModelType::SoVitsSvc);
+    }
 
     #[test]
     fn variants_count_check() {

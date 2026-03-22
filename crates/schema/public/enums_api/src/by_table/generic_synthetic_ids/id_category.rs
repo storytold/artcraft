@@ -74,10 +74,49 @@ pub enum IdCategory {
 #[cfg(test)]
 mod tests {
   use super::IdCategory;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(IdCategory::MediaFile, "media_file");
+      assert_serialization(IdCategory::LipsyncAnimationResult, "lipsync_animation");
+      assert_serialization(IdCategory::FaceFusionResult, "face_fusion");
+      assert_serialization(IdCategory::VideoFilterResult, "video_filter");
+      assert_serialization(IdCategory::LivePortraitResult, "live_portrait");
+      assert_serialization(IdCategory::StudioRender, "studio_render");
+      assert_serialization(IdCategory::MocapResult, "mocap");
+      assert_serialization(IdCategory::WorkflowResult, "workflow");
+      assert_serialization(IdCategory::TtsResult, "tts_result");
+      assert_serialization(IdCategory::VoiceConversionResult, "voice_conversion");
+      assert_serialization(IdCategory::ZeroShotTtsResult, "zs_tts_result");
+      assert_serialization(IdCategory::ZeroShotVoiceDataset, "zs_dataset");
+      assert_serialization(IdCategory::ZeroShotVoiceEmbedding, "zs_voice");
+      assert_serialization(IdCategory::ModelWeights, "model_weights");
+      assert_serialization(IdCategory::FileUpload, "file_upload");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("media_file", IdCategory::MediaFile);
+      assert_deserialization("lipsync_animation", IdCategory::LipsyncAnimationResult);
+      assert_deserialization("face_fusion", IdCategory::FaceFusionResult);
+      assert_deserialization("video_filter", IdCategory::VideoFilterResult);
+      assert_deserialization("live_portrait", IdCategory::LivePortraitResult);
+      assert_deserialization("studio_render", IdCategory::StudioRender);
+      assert_deserialization("mocap", IdCategory::MocapResult);
+      assert_deserialization("workflow", IdCategory::WorkflowResult);
+      assert_deserialization("tts_result", IdCategory::TtsResult);
+      assert_deserialization("voice_conversion", IdCategory::VoiceConversionResult);
+      assert_deserialization("zs_tts_result", IdCategory::ZeroShotTtsResult);
+      assert_deserialization("zs_dataset", IdCategory::ZeroShotVoiceDataset);
+      assert_deserialization("zs_voice", IdCategory::ZeroShotVoiceEmbedding);
+      assert_deserialization("model_weights", IdCategory::ModelWeights);
+      assert_deserialization("file_upload", IdCategory::FileUpload);
+    }
 
     #[test]
     fn variants_count_check() {

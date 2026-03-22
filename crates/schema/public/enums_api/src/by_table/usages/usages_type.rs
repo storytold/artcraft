@@ -18,10 +18,23 @@ pub enum UsagesType {
 #[cfg(test)]
 mod tests {
   use super::UsagesType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(UsagesType::ModelWeight, "model_weight");
+      assert_serialization(UsagesType::MediaFile, "media_file");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("model_weight", UsagesType::ModelWeight);
+      assert_deserialization("media_file", UsagesType::MediaFile);
+    }
 
     #[test]
     fn variants_count_check() {

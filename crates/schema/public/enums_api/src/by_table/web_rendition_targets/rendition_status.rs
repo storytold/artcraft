@@ -24,10 +24,29 @@ pub enum RenditionStatus {
 #[cfg(test)]
 mod tests {
   use super::RenditionStatus;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(RenditionStatus::New, "new");
+      assert_serialization(RenditionStatus::Skipped, "skipped");
+      assert_serialization(RenditionStatus::Failed, "failed");
+      assert_serialization(RenditionStatus::PermanentlyFailed, "permanently_failed");
+      assert_serialization(RenditionStatus::Success, "success");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("new", RenditionStatus::New);
+      assert_deserialization("skipped", RenditionStatus::Skipped);
+      assert_deserialization("failed", RenditionStatus::Failed);
+      assert_deserialization("permanently_failed", RenditionStatus::PermanentlyFailed);
+      assert_deserialization("success", RenditionStatus::Success);
+    }
 
     #[test]
     fn variants_count_check() {

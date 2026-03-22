@@ -24,10 +24,27 @@ pub enum MediaUploadType {
 #[cfg(test)]
 mod tests {
   use super::MediaUploadType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(MediaUploadType::Audio, "audio");
+      assert_serialization(MediaUploadType::Image, "image");
+      assert_serialization(MediaUploadType::Video, "video");
+      assert_serialization(MediaUploadType::Binary, "binary");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("audio", MediaUploadType::Audio);
+      assert_deserialization("image", MediaUploadType::Image);
+      assert_deserialization("video", MediaUploadType::Video);
+      assert_deserialization("binary", MediaUploadType::Binary);
+    }
 
     #[test]
     fn variants_count_check() {

@@ -24,10 +24,29 @@ pub enum ScrapingStatus {
 #[cfg(test)]
 mod tests {
   use super::ScrapingStatus;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(ScrapingStatus::New, "new");
+      assert_serialization(ScrapingStatus::Skipped, "skipped");
+      assert_serialization(ScrapingStatus::Failed, "failed");
+      assert_serialization(ScrapingStatus::PermanentlyFailed, "permanently_failed");
+      assert_serialization(ScrapingStatus::Success, "success");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("new", ScrapingStatus::New);
+      assert_deserialization("skipped", ScrapingStatus::Skipped);
+      assert_deserialization("failed", ScrapingStatus::Failed);
+      assert_deserialization("permanently_failed", ScrapingStatus::PermanentlyFailed);
+      assert_deserialization("success", ScrapingStatus::Success);
+    }
 
     #[test]
     fn variants_count_check() {

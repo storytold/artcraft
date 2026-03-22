@@ -21,10 +21,25 @@ pub enum StatsEntityType {
 #[cfg(test)]
 mod tests {
   use super::StatsEntityType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(StatsEntityType::Comment, "comment");
+      assert_serialization(StatsEntityType::MediaFile, "media_file");
+      assert_serialization(StatsEntityType::ModelWeight, "model_weight");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("comment", StatsEntityType::Comment);
+      assert_deserialization("media_file", StatsEntityType::MediaFile);
+      assert_deserialization("model_weight", StatsEntityType::ModelWeight);
+    }
 
     #[test]
     fn variants_count_check() {

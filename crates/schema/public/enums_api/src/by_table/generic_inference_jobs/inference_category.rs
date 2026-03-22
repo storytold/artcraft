@@ -90,10 +90,53 @@ pub enum InferenceCategory {
 #[cfg(test)]
 mod tests {
   use super::InferenceCategory;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(InferenceCategory::DeprecatedField, "deprecated_field");
+      assert_serialization(InferenceCategory::LipsyncAnimation, "lipsync_animation");
+      assert_serialization(InferenceCategory::TextToSpeech, "text_to_speech");
+      assert_serialization(InferenceCategory::VoiceConversion, "voice_conversion");
+      assert_serialization(InferenceCategory::ImageGeneration, "image_generation");
+      assert_serialization(InferenceCategory::VideoGeneration, "video_generation");
+      assert_serialization(InferenceCategory::ObjectGeneration, "object_generation");
+      assert_serialization(InferenceCategory::SplatGeneration, "splat_generation");
+      assert_serialization(InferenceCategory::BackgroundRemoval, "background_removal");
+      assert_serialization(InferenceCategory::Mocap, "mocap");
+      assert_serialization(InferenceCategory::Workflow, "workflow");
+      assert_serialization(InferenceCategory::FormatConversion, "format_conversion");
+      assert_serialization(InferenceCategory::LivePortrait, "live_portrait");
+      assert_serialization(InferenceCategory::SeedVc, "seed_vc");
+      assert_serialization(InferenceCategory::VideoFilter, "video_filter");
+      assert_serialization(InferenceCategory::ConvertBvhToWorkflow, "convert_bvh_to_workflow");
+      assert_serialization(InferenceCategory::F5TTS, "f5_tts");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("deprecated_field", InferenceCategory::DeprecatedField);
+      assert_deserialization("lipsync_animation", InferenceCategory::LipsyncAnimation);
+      assert_deserialization("text_to_speech", InferenceCategory::TextToSpeech);
+      assert_deserialization("voice_conversion", InferenceCategory::VoiceConversion);
+      assert_deserialization("image_generation", InferenceCategory::ImageGeneration);
+      assert_deserialization("video_generation", InferenceCategory::VideoGeneration);
+      assert_deserialization("object_generation", InferenceCategory::ObjectGeneration);
+      assert_deserialization("splat_generation", InferenceCategory::SplatGeneration);
+      assert_deserialization("background_removal", InferenceCategory::BackgroundRemoval);
+      assert_deserialization("mocap", InferenceCategory::Mocap);
+      assert_deserialization("workflow", InferenceCategory::Workflow);
+      assert_deserialization("format_conversion", InferenceCategory::FormatConversion);
+      assert_deserialization("live_portrait", InferenceCategory::LivePortrait);
+      assert_deserialization("seed_vc", InferenceCategory::SeedVc);
+      assert_deserialization("video_filter", InferenceCategory::VideoFilter);
+      assert_deserialization("convert_bvh_to_workflow", InferenceCategory::ConvertBvhToWorkflow);
+      assert_deserialization("f5_tts", InferenceCategory::F5TTS);
+    }
 
     #[test]
     fn variants_count_check() {

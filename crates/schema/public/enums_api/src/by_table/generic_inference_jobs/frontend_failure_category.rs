@@ -97,10 +97,45 @@ pub enum FrontendFailureCategory {
 #[cfg(test)]
 mod tests {
   use super::FrontendFailureCategory;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(FrontendFailureCategory::FaceNotDetected, "face_not_detected");
+      assert_serialization(FrontendFailureCategory::KeepAliveElapsed, "keep_alive_elapsed");
+      assert_serialization(FrontendFailureCategory::NotYetImplemented, "not_yet_implemented");
+      assert_serialization(FrontendFailureCategory::RetryableWorkerError, "retryable_worker_error");
+      assert_serialization(FrontendFailureCategory::ModelRulesViolation, "model_rules_violation");
+      assert_serialization(FrontendFailureCategory::RuleBansUserImage, "rule_bans_user_image");
+      assert_serialization(FrontendFailureCategory::RuleBansUserImageWithFaces, "rule_bans_user_image_with_faces");
+      assert_serialization(FrontendFailureCategory::RuleBansUserTextPrompt, "rule_bans_user_text_prompt");
+      assert_serialization(FrontendFailureCategory::RuleBansUserContent, "rule_bans_user_content");
+      assert_serialization(FrontendFailureCategory::RuleBansGeneratedVideo, "rule_bans_generated_video");
+      assert_serialization(FrontendFailureCategory::RuleBansGeneratedAudio, "rule_bans_generated_audio");
+      assert_serialization(FrontendFailureCategory::RuleBansGeneratedContent, "rule_bans_generated_content");
+      assert_serialization(FrontendFailureCategory::GenerationFailed, "generation_failed");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("face_not_detected", FrontendFailureCategory::FaceNotDetected);
+      assert_deserialization("keep_alive_elapsed", FrontendFailureCategory::KeepAliveElapsed);
+      assert_deserialization("not_yet_implemented", FrontendFailureCategory::NotYetImplemented);
+      assert_deserialization("retryable_worker_error", FrontendFailureCategory::RetryableWorkerError);
+      assert_deserialization("model_rules_violation", FrontendFailureCategory::ModelRulesViolation);
+      assert_deserialization("rule_bans_user_image", FrontendFailureCategory::RuleBansUserImage);
+      assert_deserialization("rule_bans_user_image_with_faces", FrontendFailureCategory::RuleBansUserImageWithFaces);
+      assert_deserialization("rule_bans_user_text_prompt", FrontendFailureCategory::RuleBansUserTextPrompt);
+      assert_deserialization("rule_bans_user_content", FrontendFailureCategory::RuleBansUserContent);
+      assert_deserialization("rule_bans_generated_video", FrontendFailureCategory::RuleBansGeneratedVideo);
+      assert_deserialization("rule_bans_generated_audio", FrontendFailureCategory::RuleBansGeneratedAudio);
+      assert_deserialization("rule_bans_generated_content", FrontendFailureCategory::RuleBansGeneratedContent);
+      assert_deserialization("generation_failed", FrontendFailureCategory::GenerationFailed);
+    }
 
     #[test]
     fn variants_count_check() {

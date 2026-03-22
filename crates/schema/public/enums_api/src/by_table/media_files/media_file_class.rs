@@ -28,10 +28,29 @@ pub enum MediaFileClass {
 #[cfg(test)]
 mod tests {
   use super::MediaFileClass;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(MediaFileClass::Unknown, "unknown");
+      assert_serialization(MediaFileClass::Audio, "audio");
+      assert_serialization(MediaFileClass::Image, "image");
+      assert_serialization(MediaFileClass::Video, "video");
+      assert_serialization(MediaFileClass::Dimensional, "dimensional");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("unknown", MediaFileClass::Unknown);
+      assert_deserialization("audio", MediaFileClass::Audio);
+      assert_deserialization("image", MediaFileClass::Image);
+      assert_deserialization("video", MediaFileClass::Video);
+      assert_deserialization("dimensional", MediaFileClass::Dimensional);
+    }
 
     #[test]
     fn variants_count_check() {

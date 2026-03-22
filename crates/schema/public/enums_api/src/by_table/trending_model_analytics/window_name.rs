@@ -25,10 +25,25 @@ pub enum WindowName {
 #[cfg(test)]
 mod tests {
   use super::WindowName;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(WindowName::Last3Hours, "last_3_hours");
+      assert_serialization(WindowName::Last3Days, "last_3_days");
+      assert_serialization(WindowName::AllTime, "all_time");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("last_3_hours", WindowName::Last3Hours);
+      assert_deserialization("last_3_days", WindowName::Last3Days);
+      assert_deserialization("all_time", WindowName::AllTime);
+    }
 
     #[test]
     fn variants_count_check() {

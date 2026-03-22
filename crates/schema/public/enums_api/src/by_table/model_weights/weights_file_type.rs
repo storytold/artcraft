@@ -14,10 +14,23 @@ pub enum WeightsFileType {
 #[cfg(test)]
 mod tests {
   use super::WeightsFileType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(WeightsFileType::Checkpoint, "checkpoint");
+      assert_serialization(WeightsFileType::SafeTensors, "safetensors");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("checkpoint", WeightsFileType::Checkpoint);
+      assert_deserialization("safetensors", WeightsFileType::SafeTensors);
+    }
 
     #[test]
     fn variants_count_check() {

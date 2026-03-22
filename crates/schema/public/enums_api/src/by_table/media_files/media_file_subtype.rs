@@ -57,10 +57,41 @@ pub enum MediaFileSubtype {
 #[cfg(test)]
 mod tests {
   use super::MediaFileSubtype;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(MediaFileSubtype::Deprecated, "deprecated");
+      assert_serialization(MediaFileSubtype::Mixamo, "mixamo");
+      assert_serialization(MediaFileSubtype::MocapNet, "mocap_net");
+      assert_serialization(MediaFileSubtype::AnimationOnly, "animation_only");
+      assert_serialization(MediaFileSubtype::SceneImport, "scene_import");
+      assert_serialization(MediaFileSubtype::StorytellerScene, "storyteller_scene");
+      assert_serialization(MediaFileSubtype::Scene, "scene");
+      assert_serialization(MediaFileSubtype::Character, "character");
+      assert_serialization(MediaFileSubtype::Animation, "animation");
+      assert_serialization(MediaFileSubtype::Object, "object");
+      assert_serialization(MediaFileSubtype::Skybox, "skybox");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("deprecated", MediaFileSubtype::Deprecated);
+      assert_deserialization("mixamo", MediaFileSubtype::Mixamo);
+      assert_deserialization("mocap_net", MediaFileSubtype::MocapNet);
+      assert_deserialization("animation_only", MediaFileSubtype::AnimationOnly);
+      assert_deserialization("scene_import", MediaFileSubtype::SceneImport);
+      assert_deserialization("storyteller_scene", MediaFileSubtype::StorytellerScene);
+      assert_deserialization("scene", MediaFileSubtype::Scene);
+      assert_deserialization("character", MediaFileSubtype::Character);
+      assert_deserialization("animation", MediaFileSubtype::Animation);
+      assert_deserialization("object", MediaFileSubtype::Object);
+      assert_deserialization("skybox", MediaFileSubtype::Skybox);
+    }
 
     #[test]
     fn variants_count_check() {

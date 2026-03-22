@@ -33,10 +33,29 @@ pub enum InferenceResultType {
 #[cfg(test)]
 mod tests {
   use super::InferenceResultType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(InferenceResultType::MediaFile, "media_file");
+      assert_serialization(InferenceResultType::TextToSpeech, "text_to_speech");
+      assert_serialization(InferenceResultType::VoiceConversion, "voice_conversion");
+      assert_serialization(InferenceResultType::ZeroShotVoiceEmbedding, "zs_voice_embedding");
+      assert_serialization(InferenceResultType::UploadModel, "upload_model");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("media_file", InferenceResultType::MediaFile);
+      assert_deserialization("text_to_speech", InferenceResultType::TextToSpeech);
+      assert_deserialization("voice_conversion", InferenceResultType::VoiceConversion);
+      assert_deserialization("zs_voice_embedding", InferenceResultType::ZeroShotVoiceEmbedding);
+      assert_deserialization("upload_model", InferenceResultType::UploadModel);
+    }
 
     #[test]
     fn variants_count_check() {

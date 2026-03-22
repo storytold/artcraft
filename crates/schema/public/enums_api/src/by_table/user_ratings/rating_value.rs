@@ -33,10 +33,25 @@ pub enum UserRatingValue {
 #[cfg(test)]
 mod tests {
   use super::UserRatingValue;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(UserRatingValue::Neutral, "neutral");
+      assert_serialization(UserRatingValue::Positive, "positive");
+      assert_serialization(UserRatingValue::Negative, "negative");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("neutral", UserRatingValue::Neutral);
+      assert_deserialization("positive", UserRatingValue::Positive);
+      assert_deserialization("negative", UserRatingValue::Negative);
+    }
 
     #[test]
     fn variants_count_check() {

@@ -14,10 +14,21 @@ pub enum BetaKeyProduct {
 #[cfg(test)]
 mod tests {
   use super::BetaKeyProduct;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(BetaKeyProduct::Studio, "studio");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("studio", BetaKeyProduct::Studio);
+    }
 
     #[test]
     fn variants_count_check() {

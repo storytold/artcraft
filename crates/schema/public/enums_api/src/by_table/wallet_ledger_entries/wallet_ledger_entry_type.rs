@@ -52,10 +52,35 @@ pub enum WalletLedgerEntryType {
 #[cfg(test)]
 mod tests {
   use super::WalletLedgerEntryType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(WalletLedgerEntryType::Create, "create");
+      assert_serialization(WalletLedgerEntryType::CreditBanked, "credit_banked");
+      assert_serialization(WalletLedgerEntryType::CreditMonthly, "credit_monthly");
+      assert_serialization(WalletLedgerEntryType::DeductMixed, "deduct_mixed");
+      assert_serialization(WalletLedgerEntryType::DeductBanked, "deduct_banked");
+      assert_serialization(WalletLedgerEntryType::DeductMonthly, "deduct_monthly");
+      assert_serialization(WalletLedgerEntryType::RefundBanked, "refund_banked");
+      assert_serialization(WalletLedgerEntryType::StaffAddBanked, "staff_add_banked");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("create", WalletLedgerEntryType::Create);
+      assert_deserialization("credit_banked", WalletLedgerEntryType::CreditBanked);
+      assert_deserialization("credit_monthly", WalletLedgerEntryType::CreditMonthly);
+      assert_deserialization("deduct_mixed", WalletLedgerEntryType::DeductMixed);
+      assert_deserialization("deduct_banked", WalletLedgerEntryType::DeductBanked);
+      assert_deserialization("deduct_monthly", WalletLedgerEntryType::DeductMonthly);
+      assert_deserialization("refund_banked", WalletLedgerEntryType::RefundBanked);
+      assert_deserialization("staff_add_banked", WalletLedgerEntryType::StaffAddBanked);
+    }
 
     #[test]
     fn variants_count_check() {

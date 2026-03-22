@@ -23,10 +23,25 @@ pub enum UserSignupMethod {
 #[cfg(test)]
 mod tests {
   use super::UserSignupMethod;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(UserSignupMethod::EmailPassword, "email_password");
+      assert_serialization(UserSignupMethod::GoogleSignIn, "google_sign_in");
+      assert_serialization(UserSignupMethod::StripeCheckout, "stripe_checkout");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("email_password", UserSignupMethod::EmailPassword);
+      assert_deserialization("google_sign_in", UserSignupMethod::GoogleSignIn);
+      assert_deserialization("stripe_checkout", UserSignupMethod::StripeCheckout);
+    }
 
     #[test]
     fn variants_count_check() {

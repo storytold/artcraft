@@ -18,10 +18,23 @@ pub enum TtsModelType {
 #[cfg(test)]
 mod tests {
   use super::TtsModelType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(TtsModelType::Tacotron2, "tacotron2");
+      assert_serialization(TtsModelType::Vits, "vits");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("tacotron2", TtsModelType::Tacotron2);
+      assert_deserialization("vits", TtsModelType::Vits);
+    }
 
     #[test]
     fn variants_count_check() {

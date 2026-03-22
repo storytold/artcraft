@@ -47,10 +47,39 @@ pub enum PromptContextSemanticType {
 #[cfg(test)]
 mod tests {
   use super::PromptContextSemanticType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(PromptContextSemanticType::VidStartFrame, "vid_start_frame");
+      assert_serialization(PromptContextSemanticType::VidEndFrame, "vid_end_frame");
+      assert_serialization(PromptContextSemanticType::VidRef, "vid_ref");
+      assert_serialization(PromptContextSemanticType::Imgsrc, "imgsrc");
+      assert_serialization(PromptContextSemanticType::Imgmask, "imgmask");
+      assert_serialization(PromptContextSemanticType::Imgref, "imgref");
+      assert_serialization(PromptContextSemanticType::ImgrefCharacter, "imgref_character");
+      assert_serialization(PromptContextSemanticType::ImgrefStyle, "imgref_style");
+      assert_serialization(PromptContextSemanticType::ImgrefBg, "imgref_bg");
+      assert_serialization(PromptContextSemanticType::Audioref, "audioref");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("vid_start_frame", PromptContextSemanticType::VidStartFrame);
+      assert_deserialization("vid_end_frame", PromptContextSemanticType::VidEndFrame);
+      assert_deserialization("vid_ref", PromptContextSemanticType::VidRef);
+      assert_deserialization("imgsrc", PromptContextSemanticType::Imgsrc);
+      assert_deserialization("imgmask", PromptContextSemanticType::Imgmask);
+      assert_deserialization("imgref", PromptContextSemanticType::Imgref);
+      assert_deserialization("imgref_character", PromptContextSemanticType::ImgrefCharacter);
+      assert_deserialization("imgref_style", PromptContextSemanticType::ImgrefStyle);
+      assert_deserialization("imgref_bg", PromptContextSemanticType::ImgrefBg);
+      assert_deserialization("audioref", PromptContextSemanticType::Audioref);
+    }
 
     #[test]
     fn variants_count_check() {

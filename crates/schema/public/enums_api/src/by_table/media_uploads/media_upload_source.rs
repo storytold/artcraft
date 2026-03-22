@@ -23,10 +23,25 @@ pub enum MediaUploadSource {
 #[cfg(test)]
 mod tests {
   use super::MediaUploadSource;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(MediaUploadSource::DeviceApi, "device_api");
+      assert_serialization(MediaUploadSource::File, "file");
+      assert_serialization(MediaUploadSource::Unknown, "unknown");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("device_api", MediaUploadSource::DeviceApi);
+      assert_deserialization("file", MediaUploadSource::File);
+      assert_deserialization("unknown", MediaUploadSource::Unknown);
+    }
 
     #[test]
     fn variants_count_check() {

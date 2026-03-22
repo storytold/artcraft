@@ -17,10 +17,21 @@ pub enum ZsVoiceModelCategory {
 #[cfg(test)]
 mod tests {
   use super::ZsVoiceModelCategory;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(ZsVoiceModelCategory::Tts, "tts");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("tts", ZsVoiceModelCategory::Tts);
+    }
 
     #[test]
     fn variants_count_check() {

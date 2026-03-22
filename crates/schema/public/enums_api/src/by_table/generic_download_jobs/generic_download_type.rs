@@ -58,10 +58,35 @@ pub enum GenericDownloadType {
 #[cfg(test)]
 mod tests {
   use super::GenericDownloadType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(GenericDownloadType::HifiGan, "hifigan");
+      assert_serialization(GenericDownloadType::HifiGanRocketVc, "hifigan_rocket_vc");
+      assert_serialization(GenericDownloadType::HifiGanSoVitsSvc, "hifigan_so_vits_svc");
+      assert_serialization(GenericDownloadType::RocketVc, "rocket_vc");
+      assert_serialization(GenericDownloadType::RvcV2, "rvc_v2");
+      assert_serialization(GenericDownloadType::SoVitsSvc, "so_vits_svc");
+      assert_serialization(GenericDownloadType::Tacotron2, "tacotron2");
+      assert_serialization(GenericDownloadType::Vits, "vits");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("hifigan", GenericDownloadType::HifiGan);
+      assert_deserialization("hifigan_rocket_vc", GenericDownloadType::HifiGanRocketVc);
+      assert_deserialization("hifigan_so_vits_svc", GenericDownloadType::HifiGanSoVitsSvc);
+      assert_deserialization("rocket_vc", GenericDownloadType::RocketVc);
+      assert_deserialization("rvc_v2", GenericDownloadType::RvcV2);
+      assert_deserialization("so_vits_svc", GenericDownloadType::SoVitsSvc);
+      assert_deserialization("tacotron2", GenericDownloadType::Tacotron2);
+      assert_deserialization("vits", GenericDownloadType::Vits);
+    }
 
     #[test]
     fn variants_count_check() {

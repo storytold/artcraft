@@ -16,10 +16,23 @@ pub enum ModelType {
 #[cfg(test)]
 mod tests {
   use super::ModelType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(ModelType::Tts, "tts");
+      assert_serialization(ModelType::W2l, "w2l");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("tts", ModelType::Tts);
+      assert_deserialization("w2l", ModelType::W2l);
+    }
 
     #[test]
     fn variants_count_check() {

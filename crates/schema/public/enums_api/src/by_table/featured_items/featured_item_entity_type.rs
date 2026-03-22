@@ -21,10 +21,25 @@ pub enum FeaturedItemEntityType {
 #[cfg(test)]
 mod tests {
   use super::FeaturedItemEntityType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(FeaturedItemEntityType::MediaFile, "media_file");
+      assert_serialization(FeaturedItemEntityType::ModelWeight, "model_weight");
+      assert_serialization(FeaturedItemEntityType::User, "user");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("media_file", FeaturedItemEntityType::MediaFile);
+      assert_deserialization("model_weight", FeaturedItemEntityType::ModelWeight);
+      assert_deserialization("user", FeaturedItemEntityType::User);
+    }
 
     #[test]
     fn variants_count_check() {

@@ -15,10 +15,21 @@ pub enum VoiceConversionMediaTokenType {
 #[cfg(test)]
 mod tests {
   use super::VoiceConversionMediaTokenType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(VoiceConversionMediaTokenType::MediaUpload, "media_upload");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("media_upload", VoiceConversionMediaTokenType::MediaUpload);
+    }
 
     #[test]
     fn variants_count_check() {

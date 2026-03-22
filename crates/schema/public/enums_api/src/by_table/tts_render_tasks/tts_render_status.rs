@@ -28,10 +28,31 @@ pub enum TtsRenderStatus {
 #[cfg(test)]
 mod tests {
   use super::TtsRenderStatus;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(TtsRenderStatus::New, "new");
+      assert_serialization(TtsRenderStatus::Processing, "processing");
+      assert_serialization(TtsRenderStatus::Skipped, "skipped");
+      assert_serialization(TtsRenderStatus::Failed, "failed");
+      assert_serialization(TtsRenderStatus::PermanentlyFailed, "permanently_failed");
+      assert_serialization(TtsRenderStatus::Success, "success");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("new", TtsRenderStatus::New);
+      assert_deserialization("processing", TtsRenderStatus::Processing);
+      assert_deserialization("skipped", TtsRenderStatus::Skipped);
+      assert_deserialization("failed", TtsRenderStatus::Failed);
+      assert_deserialization("permanently_failed", TtsRenderStatus::PermanentlyFailed);
+      assert_deserialization("success", TtsRenderStatus::Success);
+    }
 
     #[test]
     fn variants_count_check() {

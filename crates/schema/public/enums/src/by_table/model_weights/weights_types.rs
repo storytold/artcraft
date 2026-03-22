@@ -89,50 +89,89 @@ impl_mysql_from_row!(WeightsType);
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::test_helpers::{assert_deserialization, assert_serialization};
+  use strum::IntoEnumIterator;
 
-  #[test]
-  fn test_to_str() {
-    assert_eq!(WeightsType::HifiganTacotron2.to_str(), "hifigan_tt2");
-    assert_eq!(WeightsType::RvcV2.to_str(), "rvc_v2");
-    assert_eq!(WeightsType::StableDiffusion15.to_str(), "sd_1.5");
-    assert_eq!(WeightsType::StableDiffusionXL.to_str(), "sdxl");
-    assert_eq!(WeightsType::SoVitsSvc.to_str(), "so_vits_svc");
-    assert_eq!(WeightsType::Tacotron2.to_str(), "tt2");
-    assert_eq!(WeightsType::LoRA.to_str(), "loRA");
-    assert_eq!(WeightsType::VallE.to_str(), "vall_e");
-    assert_eq!(WeightsType::ComfyUi.to_str(), "comfy_ui");
-    assert_eq!(WeightsType::GptSoVits.to_str(), "gpt_so_vits");
-  }
+  mod manual_checks {
+    use super::*;
 
-  #[test]
-  fn test_from_str() {
-    assert_eq!(WeightsType::from_str("hifigan_tt2").unwrap(), WeightsType::HifiganTacotron2);
-    assert_eq!(WeightsType::from_str("rvc_v2").unwrap(), WeightsType::RvcV2);
-    assert_eq!(WeightsType::from_str("sd_1.5").unwrap(), WeightsType::StableDiffusion15);
-    assert_eq!(WeightsType::from_str("sdxl").unwrap(), WeightsType::StableDiffusionXL);
-    assert_eq!(WeightsType::from_str("so_vits_svc").unwrap(), WeightsType::SoVitsSvc);
-    assert_eq!(WeightsType::from_str("tt2").unwrap(), WeightsType::Tacotron2);
-    assert_eq!(WeightsType::from_str("loRA").unwrap(), WeightsType::LoRA);
-    assert_eq!(WeightsType::from_str("vall_e").unwrap(), WeightsType::VallE);
-    assert_eq!(WeightsType::from_str("comfy_ui").unwrap(), WeightsType::ComfyUi);
-    assert_eq!(WeightsType::from_str("gpt_so_vits").unwrap(), WeightsType::GptSoVits);
-    assert!(WeightsType::from_str("invalid").is_err());
-  }
+    #[test]
+    fn test_serialization() {
+      assert_serialization(WeightsType::HifiganTacotron2, "hifigan_tt2");
+      assert_serialization(WeightsType::RvcV2, "rvc_v2");
+      assert_serialization(WeightsType::StableDiffusion15, "sd_1.5");
+      assert_serialization(WeightsType::StableDiffusionXL, "sdxl");
+      assert_serialization(WeightsType::SoVitsSvc, "so_vits_svc");
+      assert_serialization(WeightsType::Tacotron2, "tt2");
+      assert_serialization(WeightsType::LoRA, "loRA");
+      assert_serialization(WeightsType::VallE, "vall_e");
+      assert_serialization(WeightsType::ComfyUi, "comfy_ui");
+      assert_serialization(WeightsType::GptSoVits, "gpt_so_vits");
+    }
 
-  #[test]
-  fn test_all_variants() {
-    let variants = WeightsType::all_variants();
-    assert_eq!(variants.len(), 10);
-    assert!(variants.contains(&WeightsType::HifiganTacotron2));
-    assert!(variants.contains(&WeightsType::RvcV2));
-    assert!(variants.contains(&WeightsType::StableDiffusion15));
-    assert!(variants.contains(&WeightsType::StableDiffusionXL));
-    assert!(variants.contains(&WeightsType::SoVitsSvc));
-    assert!(variants.contains(&WeightsType::Tacotron2));
-    assert!(variants.contains(&WeightsType::LoRA));
-    assert!(variants.contains(&WeightsType::VallE));
-    assert!(variants.contains(&WeightsType::ComfyUi));
-    assert!(variants.contains(&WeightsType::GptSoVits));
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("hifigan_tt2", WeightsType::HifiganTacotron2);
+      assert_deserialization("rvc_v2", WeightsType::RvcV2);
+      assert_deserialization("sd_1.5", WeightsType::StableDiffusion15);
+      assert_deserialization("sdxl", WeightsType::StableDiffusionXL);
+      assert_deserialization("so_vits_svc", WeightsType::SoVitsSvc);
+      assert_deserialization("tt2", WeightsType::Tacotron2);
+      assert_deserialization("loRA", WeightsType::LoRA);
+      assert_deserialization("vall_e", WeightsType::VallE);
+      assert_deserialization("comfy_ui", WeightsType::ComfyUi);
+      assert_deserialization("gpt_so_vits", WeightsType::GptSoVits);
+    }
+
+    #[test]
+    fn variants_count_check() {
+      assert_eq!(WeightsType::iter().count(), 10);
+    }
+
+    #[test]
+    fn to_str() {
+      assert_eq!(WeightsType::HifiganTacotron2.to_str(), "hifigan_tt2");
+      assert_eq!(WeightsType::RvcV2.to_str(), "rvc_v2");
+      assert_eq!(WeightsType::StableDiffusion15.to_str(), "sd_1.5");
+      assert_eq!(WeightsType::StableDiffusionXL.to_str(), "sdxl");
+      assert_eq!(WeightsType::SoVitsSvc.to_str(), "so_vits_svc");
+      assert_eq!(WeightsType::Tacotron2.to_str(), "tt2");
+      assert_eq!(WeightsType::LoRA.to_str(), "loRA");
+      assert_eq!(WeightsType::VallE.to_str(), "vall_e");
+      assert_eq!(WeightsType::ComfyUi.to_str(), "comfy_ui");
+      assert_eq!(WeightsType::GptSoVits.to_str(), "gpt_so_vits");
+    }
+
+    #[test]
+    fn from_str() {
+      assert_eq!(WeightsType::from_str("hifigan_tt2").unwrap(), WeightsType::HifiganTacotron2);
+      assert_eq!(WeightsType::from_str("rvc_v2").unwrap(), WeightsType::RvcV2);
+      assert_eq!(WeightsType::from_str("sd_1.5").unwrap(), WeightsType::StableDiffusion15);
+      assert_eq!(WeightsType::from_str("sdxl").unwrap(), WeightsType::StableDiffusionXL);
+      assert_eq!(WeightsType::from_str("so_vits_svc").unwrap(), WeightsType::SoVitsSvc);
+      assert_eq!(WeightsType::from_str("tt2").unwrap(), WeightsType::Tacotron2);
+      assert_eq!(WeightsType::from_str("loRA").unwrap(), WeightsType::LoRA);
+      assert_eq!(WeightsType::from_str("vall_e").unwrap(), WeightsType::VallE);
+      assert_eq!(WeightsType::from_str("comfy_ui").unwrap(), WeightsType::ComfyUi);
+      assert_eq!(WeightsType::from_str("gpt_so_vits").unwrap(), WeightsType::GptSoVits);
+      assert!(WeightsType::from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn all_variants() {
+      let variants = WeightsType::all_variants();
+      assert_eq!(variants.len(), 10);
+      assert!(variants.contains(&WeightsType::HifiganTacotron2));
+      assert!(variants.contains(&WeightsType::RvcV2));
+      assert!(variants.contains(&WeightsType::StableDiffusion15));
+      assert!(variants.contains(&WeightsType::StableDiffusionXL));
+      assert!(variants.contains(&WeightsType::SoVitsSvc));
+      assert!(variants.contains(&WeightsType::Tacotron2));
+      assert!(variants.contains(&WeightsType::LoRA));
+      assert!(variants.contains(&WeightsType::VallE));
+      assert!(variants.contains(&WeightsType::ComfyUi));
+      assert!(variants.contains(&WeightsType::GptSoVits));
+    }
   }
 
   mod mechanical_checks {
@@ -140,7 +179,6 @@ mod tests {
 
     #[test]
     fn variant_length() {
-      use strum::IntoEnumIterator;
       assert_eq!(WeightsType::all_variants().len(), WeightsType::iter().len());
     }
 
@@ -150,6 +188,15 @@ mod tests {
         assert_eq!(variant, WeightsType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, WeightsType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, WeightsType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn round_trip_json() {
+      for variant in WeightsType::iter() {
+        let json = serde_json::to_string(&variant).unwrap();
+        let back: WeightsType = serde_json::from_str(&json).unwrap();
+        assert_eq!(variant, back);
       }
     }
 

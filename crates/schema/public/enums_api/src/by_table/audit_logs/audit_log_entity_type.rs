@@ -25,10 +25,27 @@ pub enum AuditLogEntityType {
 #[cfg(test)]
 mod tests {
   use super::AuditLogEntityType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(AuditLogEntityType::Comment, "comment");
+      assert_serialization(AuditLogEntityType::MediaFile, "media_file");
+      assert_serialization(AuditLogEntityType::ModelWeight, "model_weight");
+      assert_serialization(AuditLogEntityType::User, "user");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("comment", AuditLogEntityType::Comment);
+      assert_deserialization("media_file", AuditLogEntityType::MediaFile);
+      assert_deserialization("model_weight", AuditLogEntityType::ModelWeight);
+      assert_deserialization("user", AuditLogEntityType::User);
+    }
 
     #[test]
     fn variants_count_check() {

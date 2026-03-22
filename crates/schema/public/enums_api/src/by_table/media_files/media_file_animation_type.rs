@@ -64,10 +64,45 @@ pub enum MediaFileAnimationType {
 #[cfg(test)]
 mod tests {
   use super::MediaFileAnimationType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(MediaFileAnimationType::ArKit, "ar_kit");
+      assert_serialization(MediaFileAnimationType::MikuMikuDance, "miku_miku_dance");
+      assert_serialization(MediaFileAnimationType::MikuMikuDanceArKit, "miku_miku_dance_ar_kit");
+      assert_serialization(MediaFileAnimationType::Mixamo, "mixamo");
+      assert_serialization(MediaFileAnimationType::MixamoArKit, "mixamo_ar_kit");
+      assert_serialization(MediaFileAnimationType::MocapNet, "mocap_net");
+      assert_serialization(MediaFileAnimationType::MocapNetArKit, "mocap_net_ar_kit");
+      assert_serialization(MediaFileAnimationType::MoveAi, "move_ai");
+      assert_serialization(MediaFileAnimationType::MoveAiArKit, "move_ai_ar_kit");
+      assert_serialization(MediaFileAnimationType::Rigify, "rigify");
+      assert_serialization(MediaFileAnimationType::RigifyArKit, "rigify_ar_kit");
+      assert_serialization(MediaFileAnimationType::Rokoko, "rokoko");
+      assert_serialization(MediaFileAnimationType::RokokoArKit, "rokoko_ar_kit");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("ar_kit", MediaFileAnimationType::ArKit);
+      assert_deserialization("miku_miku_dance", MediaFileAnimationType::MikuMikuDance);
+      assert_deserialization("miku_miku_dance_ar_kit", MediaFileAnimationType::MikuMikuDanceArKit);
+      assert_deserialization("mixamo", MediaFileAnimationType::Mixamo);
+      assert_deserialization("mixamo_ar_kit", MediaFileAnimationType::MixamoArKit);
+      assert_deserialization("mocap_net", MediaFileAnimationType::MocapNet);
+      assert_deserialization("mocap_net_ar_kit", MediaFileAnimationType::MocapNetArKit);
+      assert_deserialization("move_ai", MediaFileAnimationType::MoveAi);
+      assert_deserialization("move_ai_ar_kit", MediaFileAnimationType::MoveAiArKit);
+      assert_deserialization("rigify", MediaFileAnimationType::Rigify);
+      assert_deserialization("rigify_ar_kit", MediaFileAnimationType::RigifyArKit);
+      assert_deserialization("rokoko", MediaFileAnimationType::Rokoko);
+      assert_deserialization("rokoko_ar_kit", MediaFileAnimationType::RokokoArKit);
+    }
 
     #[test]
     fn variants_count_check() {

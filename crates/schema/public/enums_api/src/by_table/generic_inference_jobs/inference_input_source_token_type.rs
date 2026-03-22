@@ -16,10 +16,23 @@ pub enum InferenceInputSourceTokenType {
 #[cfg(test)]
 mod tests {
   use super::InferenceInputSourceTokenType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(InferenceInputSourceTokenType::MediaFile, "media_file");
+      assert_serialization(InferenceInputSourceTokenType::MediaUpload, "media_upload");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("media_file", InferenceInputSourceTokenType::MediaFile);
+      assert_deserialization("media_upload", InferenceInputSourceTokenType::MediaUpload);
+    }
 
     #[test]
     fn variants_count_check() {

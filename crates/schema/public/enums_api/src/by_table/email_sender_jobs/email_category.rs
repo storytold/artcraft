@@ -21,10 +21,23 @@ pub enum EmailCategory {
 #[cfg(test)]
 mod tests {
   use super::EmailCategory;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(EmailCategory::Welcome, "welcome");
+      assert_serialization(EmailCategory::PasswordReset, "password_reset");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("welcome", EmailCategory::Welcome);
+      assert_deserialization("password_reset", EmailCategory::PasswordReset);
+    }
 
     #[test]
     fn variants_count_check() {

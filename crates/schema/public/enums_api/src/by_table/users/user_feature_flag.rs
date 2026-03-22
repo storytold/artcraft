@@ -26,10 +26,27 @@ pub enum UserFeatureFlag {
 #[cfg(test)]
 mod tests {
   use super::UserFeatureFlag;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(UserFeatureFlag::ExploreMedia, "explore_media");
+      assert_serialization(UserFeatureFlag::Studio, "studio");
+      assert_serialization(UserFeatureFlag::Upload3d, "upload_3d");
+      assert_serialization(UserFeatureFlag::VideoStyleTransfer, "video_style_transfer");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("explore_media", UserFeatureFlag::ExploreMedia);
+      assert_deserialization("studio", UserFeatureFlag::Studio);
+      assert_deserialization("upload_3d", UserFeatureFlag::Upload3d);
+      assert_deserialization("video_style_transfer", UserFeatureFlag::VideoStyleTransfer);
+    }
 
     #[test]
     fn variants_count_check() {

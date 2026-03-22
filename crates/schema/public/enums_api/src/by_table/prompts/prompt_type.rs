@@ -23,10 +23,25 @@ pub enum PromptType {
 #[cfg(test)]
 mod tests {
   use super::PromptType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(PromptType::ArtcraftApp, "artcraft_app");
+      assert_serialization(PromptType::StableDiffusion, "stable_diffusion");
+      assert_serialization(PromptType::ComfyUi, "comfy_ui");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("artcraft_app", PromptType::ArtcraftApp);
+      assert_deserialization("stable_diffusion", PromptType::StableDiffusion);
+      assert_deserialization("comfy_ui", PromptType::ComfyUi);
+    }
 
     #[test]
     fn variants_count_check() {

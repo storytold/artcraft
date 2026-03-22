@@ -17,10 +17,23 @@ pub enum TagUseEntityType {
 #[cfg(test)]
 mod tests {
   use super::TagUseEntityType;
+  use enums_shared::test_helpers::{assert_deserialization, assert_serialization};
   use strum::IntoEnumIterator;
 
   mod manual_checks {
     use super::*;
+
+    #[test]
+    fn test_serialization() {
+      assert_serialization(TagUseEntityType::MediaFile, "media_file");
+      assert_serialization(TagUseEntityType::ModelWeight, "model_weight");
+    }
+
+    #[test]
+    fn test_deserialization() {
+      assert_deserialization("media_file", TagUseEntityType::MediaFile);
+      assert_deserialization("model_weight", TagUseEntityType::ModelWeight);
+    }
 
     #[test]
     fn variants_count_check() {
