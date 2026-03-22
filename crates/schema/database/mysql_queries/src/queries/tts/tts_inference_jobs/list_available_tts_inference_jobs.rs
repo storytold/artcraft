@@ -6,8 +6,8 @@
 use chrono::{DateTime, Utc};
 use sqlx::MySqlPool;
 
-use enums::common::job_status::JobStatus;
-use enums::common::visibility::Visibility;
+use enums_db::common::job_status::JobStatus;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 
 use crate::helpers::boolean_converters::i8_to_bool;
@@ -77,13 +77,13 @@ SELECT
 
   creator_ip_address,
   maybe_creator_user_token,
-  creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+  creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
   is_from_api,
   is_for_twitch,
   is_debug_request,
 
-  status as `status: enums::common::job_status::JobStatus`,
+  status as `status: enums_db::common::job_status::JobStatus`,
   priority_level,
   attempt_count,
   failure_reason,
@@ -126,13 +126,13 @@ SELECT
 
   creator_ip_address,
   maybe_creator_user_token,
-  creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+  creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
   is_from_api,
   is_for_twitch,
   is_debug_request,
 
-  status as `status: enums::common::job_status::JobStatus`,
+  status as `status: enums_db::common::job_status::JobStatus`,
   priority_level,
   attempt_count,
   failure_reason,
@@ -218,13 +218,13 @@ SELECT
   
   creator_ip_address,
   maybe_creator_user_token,
-  creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+  creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
   is_from_api,
   is_for_twitch,
   is_debug_request,
 
-  status as `status: enums::common::job_status::JobStatus`,
+  status as `status: enums_db::common::job_status::JobStatus`,
   priority_level,
   attempt_count,
   failure_reason,

@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use enums::common::sqlite::web_content_type::WebContentType;
+use enums_db::common::sqlite::web_content_type::WebContentType;
 use errors::{anyhow, AnyhowResult};
 use sqlx::SqlitePool;
 use tokens::tokens::news_stories::NewsStoryToken;

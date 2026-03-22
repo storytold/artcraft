@@ -3,7 +3,7 @@ use log::warn;
 use sqlx::MySqlPool;
 
 use chrono::{DateTime, Utc};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::wallets::WalletToken;
@@ -27,7 +27,7 @@ pub async fn list_user_wallets_for_moderation(
     r#"
 SELECT
     w.token as `token: tokens::tokens::wallets::WalletToken`,
-    w.wallet_namespace as `wallet_namespace: enums::common::payments_namespace::PaymentsNamespace`,
+    w.wallet_namespace as `wallet_namespace: enums_db::common::payments_namespace::PaymentsNamespace`,
     w.banked_credits as `banked_credits: u32`,
     w.monthly_credits as `monthly_credits: u32`,
     w.version,

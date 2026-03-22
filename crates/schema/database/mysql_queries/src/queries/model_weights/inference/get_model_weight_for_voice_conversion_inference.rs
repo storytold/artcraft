@@ -3,7 +3,7 @@ use log::warn;
 use sqlx;
 use sqlx::MySqlPool;
 
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use tokens::tokens::model_weights::ModelWeightToken;
 
 use crate::helpers::boolean_converters::i8_to_bool;
@@ -60,7 +60,7 @@ pub async fn get_model_weight_for_voice_conversion_inference(
         r#"
 SELECT
     w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
-    w.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
+    w.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
 
     w.title,
     vc.has_index_file,

@@ -4,8 +4,8 @@ use sqlx::MySqlPool;
 
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use jobs_common::semi_persistent_cache_dir::SemiPersistentCacheDir;
 use mysql_queries::queries::model_weights::inference::get_model_weight_for_voice_conversion_inference::{get_model_weight_for_voice_conversion_inference, ModelWeightError, ModelWeightForVoiceConversionInference};
 use mysql_queries::queries::voice_conversion::inference::get_voice_conversion_model_for_inference::{get_voice_conversion_model_for_inference, VoiceConversionModelForInference, VoiceConversionModelForInferenceError};
@@ -219,7 +219,7 @@ mod tests {
     use std::path::PathBuf;
 
     use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
-    use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+    use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
     use jobs_common::semi_persistent_cache_dir::SemiPersistentCacheDir;
     use mysql_queries::queries::voice_conversion::inference::get_voice_conversion_model_for_inference::VoiceConversionModelForInference;
     use tokens::tokens::voice_conversion_models::VoiceConversionModelToken;
@@ -307,7 +307,7 @@ mod tests {
     use std::path::PathBuf;
 
     use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
-    use enums::by_table::model_weights::weights_types::WeightsType;
+    use enums_db::by_table::model_weights::weights_types::WeightsType;
     use jobs_common::semi_persistent_cache_dir::SemiPersistentCacheDir;
     use mysql_queries::queries::model_weights::inference::get_model_weight_for_voice_conversion_inference::ModelWeightForVoiceConversionInference;
     use tokens::tokens::model_weights::ModelWeightToken;

@@ -1,4 +1,4 @@
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use tokens::tokens::model_weights::ModelWeightToken;
 
 /// This is meant to be used for quick in-memory caches, particularly ones that

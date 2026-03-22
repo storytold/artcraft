@@ -2,8 +2,8 @@ use anyhow::anyhow;
 use log::warn;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -52,7 +52,7 @@ SELECT
     jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
     jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,
     jobs.creator_ip_address,
-    jobs.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    jobs.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,
     jobs.maybe_wallet_ledger_entry_token as `maybe_wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`
 

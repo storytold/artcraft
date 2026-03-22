@@ -1,11 +1,12 @@
 use std::collections::BTreeSet;
 
 use chrono::Utc;
+use strum::IntoEnumIterator;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
-use enums::common::job_status::JobStatus;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
+use enums_db::common::job_status::JobStatus;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::generic_download_jobs::DownloadJobToken;
 use tokens::tokens::users::UserToken;
@@ -44,7 +45,7 @@ pub async fn list_available_generic_download_jobs(
 {
   let download_types = maybe_scoped_download_types
       .map(|types| types.clone())
-      .unwrap_or(GenericDownloadType::all_variants()); // NB: All model types
+      .unwrap_or_else(|| GenericDownloadType::iter().collect()); // NB: All model types
 
   // NB/TODO(bt,2023-07-20): Non-statically typed SQL can't do type annotations AFAIK
   let mut query = String::from(r#"
@@ -166,7 +167,7 @@ struct AvailableDownloadJobRawInternal {
 mod tests {
   use std::collections::BTreeSet;
 
-  use enums::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
+  use enums_db::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
 
   use crate::queries::generic_download::job::list_available_generic_download_jobs::download_type_clause;
 

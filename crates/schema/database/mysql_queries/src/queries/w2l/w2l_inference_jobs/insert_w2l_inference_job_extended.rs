@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use sqlx::MySqlPool;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::w2l_inference_jobs::W2lInferenceJobToken;
 

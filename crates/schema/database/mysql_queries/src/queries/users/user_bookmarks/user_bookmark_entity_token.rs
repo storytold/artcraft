@@ -1,4 +1,4 @@
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::tts_models::TtsModelToken;

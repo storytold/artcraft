@@ -1,5 +1,5 @@
 use crate::queries::wallet_ledger_entries::internal_insert_wallet_created_ledger_entry::internal_insert_wallet_created_ledger_entry;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::error;
 use sqlx::MySql;
 use tokens::tokens::users::UserToken;

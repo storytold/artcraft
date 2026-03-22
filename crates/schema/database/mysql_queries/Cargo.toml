@@ -22,8 +22,9 @@ workspace-build-acceleration.workspace = true
 # Internal
 bucket_paths.workspace = true
 composite_identifiers = { path = "../../../schema/public/composite_identifiers" }
-enums = { workspace = true, features = ["database"] }
+enums_db.workspace = true
 errors.workspace = true
+strum.workspace = true
 uuid_utils.workspace = true
 reusable_types = { path = "../../../schema/public/reusable_types" }
 tokens = { workspace = true, features = ["database"] }

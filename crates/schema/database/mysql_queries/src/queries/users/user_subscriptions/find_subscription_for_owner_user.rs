@@ -2,12 +2,12 @@ use crate::errors::select_optional_record_error::SelectOptionalRecordError;
 use crate::helpers::boolean_converters::nullable_i8_to_bool_default_false;
 use crate::types::query_map::QueryMap;
 use chrono::{DateTime, Utc};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use sqlx;
 use sqlx::mysql::MySqlRow;
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;
-use enums::common::stripe_subscription_status::StripeSubscriptionStatus;
+use enums_db::common::stripe_subscription_status::StripeSubscriptionStatus;
 use tokens::tokens::user_subscriptions::UserSubscriptionToken;
 use tokens::tokens::users::UserToken;
 
@@ -121,12 +121,12 @@ fn query(user_token: &UserToken, namespace: PaymentsNamespace)
 SELECT
   token as `token: tokens::tokens::user_subscriptions::UserSubscriptionToken`,
   user_token as `user_token: tokens::tokens::users::UserToken`,
-  subscription_namespace as `subscription_namespace: enums::common::payments_namespace::PaymentsNamespace`,
+  subscription_namespace as `subscription_namespace: enums_db::common::payments_namespace::PaymentsNamespace`,
   subscription_product_slug,
   maybe_stripe_customer_id,
   maybe_stripe_product_id,
   maybe_stripe_subscription_id,
-  maybe_stripe_subscription_status as `maybe_stripe_subscription_status: enums::common::stripe_subscription_status::StripeSubscriptionStatus`,
+  maybe_stripe_subscription_status as `maybe_stripe_subscription_status: enums_db::common::stripe_subscription_status::StripeSubscriptionStatus`,
   maybe_stripe_invoice_is_paid,
   subscription_start_at,
   subscription_expires_at,

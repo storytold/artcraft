@@ -17,7 +17,7 @@ path = "src/lib.rs"
 [dependencies]
 
 # Internal
-enums = { workspace = true }
+enums_db = { workspace = true }
 errors = { workspace = true }
 tokens = { workspace = true }
 

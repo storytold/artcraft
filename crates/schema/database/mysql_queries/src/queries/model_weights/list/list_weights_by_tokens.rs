@@ -2,11 +2,11 @@ use chrono::{DateTime, Utc};
 use sqlx::{Acquire, FromRow, MySql, MySqlConnection, MySqlPool, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 
-use enums::by_table::model_weights::{
+use enums_db::by_table::model_weights::{
   weights_category::WeightsCategory,
   weights_types::WeightsType,
 };
-use enums::traits::mysql_from_row::MySqlFromRow;
+use enums_db::traits::mysql_from_row::MySqlFromRow;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
@@ -257,8 +257,8 @@ struct RawWeightJoinUser {
 // cannot have type hints, eg. the following:
 //
 //    m.token as `token: tokens::tokens::media_files::MediaFileToken`,
-//    m.origin_category as `origin_category: enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory`,
-//    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+//    m.origin_category as `origin_category: enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory`,
+//    m.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 //
 // This results in the automatic mapping not being able to be found by name (for macro derive), and
 // in the manual case `row.try_get()` etc. won't have the correct column name (since the name is the

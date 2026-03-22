@@ -1,6 +1,6 @@
 use crate::errors::select_optional_record_error::SelectOptionalRecordError;
 use crate::types::query_map::QueryMap;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use sqlx;
 use sqlx::mysql::MySqlRow;
 use sqlx::pool::PoolConnection;
@@ -73,7 +73,7 @@ fn query(user_token: &UserToken, namespace: PaymentsNamespace)
     r#"
       SELECT
         token as `token: tokens::tokens::wallets::WalletToken`,
-        wallet_namespace as `namespace: enums::common::payments_namespace::PaymentsNamespace`,
+        wallet_namespace as `namespace: enums_db::common::payments_namespace::PaymentsNamespace`,
         banked_credits,
         monthly_credits
       FROM wallets

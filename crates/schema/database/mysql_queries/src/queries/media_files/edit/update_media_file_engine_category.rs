@@ -1,6 +1,6 @@
 use sqlx::MySqlPool;
 
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 

@@ -1,4 +1,4 @@
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct GptSovitsPayload {

@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use log::warn;
 use sqlx::MySqlPool;
 
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 
@@ -23,7 +23,7 @@ pub async fn lookup_users_by_stripe_customer_id(
     UserByStripeCustomerIdResult,
     r#"
 SELECT
-    user_subscriptions.subscription_namespace as `subscription_namespace: enums::common::payments_namespace::PaymentsNamespace`,
+    user_subscriptions.subscription_namespace as `subscription_namespace: enums_db::common::payments_namespace::PaymentsNamespace`,
     user_subscriptions.maybe_stripe_subscription_id,
     users.token as `user_token: tokens::tokens::users::UserToken`,
     users.email_address,

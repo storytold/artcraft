@@ -1,6 +1,6 @@
 use chrono::Duration;
 
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 

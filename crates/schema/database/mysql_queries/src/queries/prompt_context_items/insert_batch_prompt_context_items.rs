@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use log::error;
 use sqlx::{MySql, QueryBuilder, Transaction};
 
-use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::prompts::PromptToken;

@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 use chrono::NaiveDateTime;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use errors::AnyhowResult;
 use reusable_types::stripe::stripe_recurring_interval::StripeRecurringInterval;
 use reusable_types::stripe::stripe_subscription_status::StripeSubscriptionStatus;
