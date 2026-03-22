@@ -17,7 +17,7 @@ use crate::services::worldlabs::windows::worldlabs_login_window::worldlabs_login
 use crate::services::worldlabs::windows::worldlabs_login_window::worldlabs_login_window_open::WORLDLABS_LOGIN_WINDOW_NAME;
 use anyhow::anyhow;
 use cookie_store::cookie_store::CookieStore;
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
 use log::{error, info};
 use openai_sora_client::creds::sora_credential_set::SoraCredentialSet;

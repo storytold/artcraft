@@ -13,10 +13,10 @@ use artcraft_router::api::common_video_model::CommonVideoModel as RouterVideoMod
 use artcraft_router::api::provider::Provider as RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_video::generate_video_request::GenerateVideoRequest;
-use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
-use enums::common::generation::common_video_model::CommonVideoModel;
-use enums::common::generation::common_video_resolution::CommonVideoResolution;
-use enums::common::generation_provider::GenerationProvider;
+use enums_api::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums_api::common::generation::common_video_model::CommonVideoModel;
+use enums_api::common::generation::common_video_resolution::CommonVideoResolution;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 
 
 /// Estimate the credit and USD cost of a video generation request.

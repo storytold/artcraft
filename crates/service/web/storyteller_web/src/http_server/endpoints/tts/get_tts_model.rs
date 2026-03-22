@@ -15,8 +15,8 @@ use log::warn;
 
 use crate::http_server::common_responses::user_avatars::default_avatar_color_from_username::default_avatar_color_from_username;
 use crate::http_server::common_responses::user_avatars::default_avatar_from_username::default_avatar_from_username;
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use migration::text_to_speech::get_tts_model_info_migration::get_tts_model_info_migration;
 use mysql_queries::column_types::vocoder_type::VocoderType;

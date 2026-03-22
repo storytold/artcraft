@@ -5,7 +5,7 @@ use log::info;
 use tempdir::TempDir;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
+use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;
 use filesys::file_deletion::safe_delete_file::safe_delete_file;
 use hashing::sha256::sha256_hash_file::sha256_hash_file;

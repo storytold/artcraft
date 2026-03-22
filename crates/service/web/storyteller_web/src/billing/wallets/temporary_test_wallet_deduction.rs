@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use errors::AnyhowResult;
 use log::{error, info, warn};
 use mysql_queries::queries::wallets::create_new_artcraft_wallet_for_owner_user::create_new_artcraft_wallet_for_owner_user;

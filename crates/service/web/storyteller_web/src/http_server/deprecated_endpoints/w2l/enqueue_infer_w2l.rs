@@ -12,7 +12,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::{info, warn};
 use redis::Commands;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::w2l::w2l_inference_jobs::insert_w2l_inference_job::{insert_w2l_inference_job, InsertW2lInferenceJobArgs};
 use redis_common::redis_keys::RedisKeys;

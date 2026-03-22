@@ -12,10 +12,10 @@ use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{
@@ -194,7 +194,7 @@ pub async fn create_voice_handler(
         }),
         maybe_creator_user_token: maybe_user_token.as_ref(),
         creator_ip_address: &ip_address,
-        creator_set_visibility: enums::common::visibility::Visibility::Public,
+        creator_set_visibility: enums_db::common::visibility::Visibility::Public,
         priority_level,
         requires_keepalive: true,
         maybe_avt_token: maybe_avt_token.as_ref(),

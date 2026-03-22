@@ -16,7 +16,7 @@ use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::error;
 
-use enums::by_table::trending_model_analytics::window_name::WindowName;
+use enums_db::by_table::trending_model_analytics::window_name::WindowName;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::trending_model_analytics::list_trending_tts_models::list_trending_tts_models_with_pool;
 use tokens::tokens::tts_models::TtsModelToken;

@@ -10,6 +10,7 @@ use strum::EnumIter;
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum MediaFileOriginProductCategory {
   /// Unknown which product is attached to the file (generated the file, the file was
   /// uploaded on behalf of, etc.)

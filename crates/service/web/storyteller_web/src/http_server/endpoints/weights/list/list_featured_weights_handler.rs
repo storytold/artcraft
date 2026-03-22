@@ -9,8 +9,8 @@ use log::warn;
 use utoipa::{IntoParams, ToSchema};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::common::view_as::ViewAs;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::common::view_as::ViewAs;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use mysql_queries::queries::model_weights::list::list_featured_weights::{list_featured_weights, ListFeaturedWeightsArgs};
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;

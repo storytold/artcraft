@@ -7,8 +7,8 @@ use actix_web_lab::extract::Query;
 use log::error;
 use utoipa::{IntoParams, ToSchema};
 
-use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
-use enums::by_table::user_ratings::rating_value::UserRatingValue;
+use enums_db::by_table::user_ratings::entity_type::UserRatingEntityType;
+use enums_db::by_table::user_ratings::rating_value::UserRatingValue;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::users::user_ratings::batch_get_user_rating::{batch_get_user_ratings, BatchUserRating};
 use tokens::tokens::media_files::MediaFileToken;

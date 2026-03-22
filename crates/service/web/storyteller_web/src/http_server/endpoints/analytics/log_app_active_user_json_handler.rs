@@ -6,7 +6,7 @@ use actix_helpers::extractors::get_request_user_agent::get_request_user_agent;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::analytics::log_active_user::{LogAppActiveUserRequest, LogAppActiveUserResponse};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{info, warn};
 use mysql_queries::queries::analytics_active_users::upsert_analytics_app_active_user::UpsertAnalyticsAppActiveUser;

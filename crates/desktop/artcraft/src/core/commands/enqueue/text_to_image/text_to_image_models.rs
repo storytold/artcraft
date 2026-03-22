@@ -1,5 +1,5 @@
 use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::TextToImageModel;
-use enums::common::model_type::ModelType;
+use enums_db::common::model_type::ModelType;
 
 pub fn text_to_image_model_to_model_type(model: TextToImageModel) -> ModelType {
   match model {

@@ -12,10 +12,10 @@ use crate::services::sora::windows::sora_login_window::open_sora_login_window::o
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use crate::services::storyteller::windows::open_storyteller_billing_window::{open_storyteller_billing_window, OpenStorytellerBillingWindowArgs, BillingWindowCase};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::PlanBillingCadence;
-use enums::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
-use enums::common::payments_namespace::PaymentsNamespace;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_api::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
+use enums_api::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
+use enums_api::common::payments_namespace::PaymentsNamespace;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use errors::AnyhowResult;
 use log::{error, info};
 use serde_derive::{Deserialize, Serialize};
@@ -82,7 +82,7 @@ async fn get(
   Ok(GetSubscriptionResponse {
     active_subscription: response.active_subscription
         .map(|sub| {
-          let product_slug = match ArtcraftSubscriptionSlug::from_str(&sub.product_slug) {
+          let product_slug = match serde_json::from_str::<ArtcraftSubscriptionSlug>(&format!("\"{}\"", &sub.product_slug)) {
             Ok(product_slug) => product_slug,
             Err(err) => {
               error!("Received unknown product slug from storyteller: {:?}, error: {:?}", sub.product_slug, err);

@@ -2,6 +2,7 @@ use strum::EnumCount;
 use strum::EnumIter;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum WeightsCategory {
     #[serde(rename = "image_generation")]
     ImageGeneration,

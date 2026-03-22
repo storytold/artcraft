@@ -16,9 +16,9 @@ use crate::services::sora::threads::sora_task_polling::helpers::poll_classic_sor
 use crate::services::sora::threads::sora_task_polling::helpers::poll_sora_2_tasks::poll_sora_2_tasks;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::tauri::tasks::task_status;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_db::tauri::tasks::task_status;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info, warn};

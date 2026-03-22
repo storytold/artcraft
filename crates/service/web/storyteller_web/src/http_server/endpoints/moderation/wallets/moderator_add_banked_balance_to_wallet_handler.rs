@@ -9,7 +9,7 @@ use artcraft_api_defs::moderation::wallets::moderator_add_banked_balance_to_wall
   ModeratorAddBankedBalanceToWalletRequest,
   ModeratorAddBankedBalanceToWalletResponse,
 };
-use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use mysql_queries::queries::wallets::add_durable_banked_balance_to_wallet::add_durable_banked_balance_to_wallet;
 
 use tokens::tokens::wallets::WalletToken;

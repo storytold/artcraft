@@ -1,5 +1,5 @@
 use crate::configs::subscriptions::stripe_artcraft_subscription_info::StripeArtcraftSubscriptionInfo;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
+use enums_api::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
 
 //
 // SANDBOX

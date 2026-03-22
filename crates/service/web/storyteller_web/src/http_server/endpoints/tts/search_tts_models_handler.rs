@@ -14,7 +14,7 @@ use chrono::{DateTime, Utc};
 use log::error;
 
 use elasticsearch_schema::searches::search_tts_models::search_tts_models;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::tts_models::TtsModelToken;
 use tokens::tokens::users::UserToken;
 

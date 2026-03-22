@@ -1,10 +1,10 @@
 use crate::core::events::generation_events::common::{GenerationAction, GenerationModel, GenerationServiceProvider};
 use crate::core::state::task_database::TaskDatabase;
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_model_type::TaskModelType;
-use enums::tauri::tasks::task_status::TaskStatus;
-use enums::tauri::tasks::task_type::TaskType;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::tasks::task_model_type::TaskModelType;
+use enums_db::tauri::tasks::task_status::TaskStatus;
+use enums_db::tauri::tasks::task_type::TaskType;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use sqlite_tasks::error::SqliteTasksError;
 use sqlite_tasks::queries::create_task::{create_task, CreateTaskArgs};
 use tokens::tokens::sqlite::tasks::TaskId;

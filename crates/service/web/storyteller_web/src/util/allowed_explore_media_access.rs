@@ -1,4 +1,4 @@
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;

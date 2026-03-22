@@ -13,7 +13,7 @@ use chrono::{DateTime, Utc};
 use log::error;
 
 use datetimes::CHRONO_DATETIME_UNIX_EPOCH;
-use enums::by_table::model_categories::model_type::ModelType;
+use enums_db::by_table::model_categories::model_type::ModelType;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use tokens::tokens::model_categories::ModelCategoryToken;
 

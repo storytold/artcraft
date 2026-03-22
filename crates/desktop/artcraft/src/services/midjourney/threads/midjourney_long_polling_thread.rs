@@ -13,11 +13,15 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
-use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_status::TaskStatus;
+use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider as ApiGenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_api::common::model_type::ModelType as ApiModelType;
+use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums_api::tauri::tasks::task_media_file_class::TaskMediaFileClass as ApiTaskMediaFileClass;
+use enums_db::tauri::tasks::task_status::TaskStatus;
+use enums_api::tauri::tasks::task_status::TaskStatus as ApiTaskStatus;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
@@ -251,8 +255,8 @@ async fn upload_midjourney_batch(
     uuid_idempotency_token: generate_random_uuid(),
     positive_prompt: midjourney_item.full_command.clone(),
     negative_prompt: None,
-    model_type: Some(model_type),
-    generation_provider: Some(GenerationProvider::Midjourney),
+    model_type: Some(enums_convert::common::model_type::model_type_to_api(&model_type)),
+    generation_provider: Some(ApiGenerationProvider::Midjourney),
   };
 
   let prompt_response = create_prompt(

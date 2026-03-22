@@ -8,7 +8,7 @@ use sqlx::MySqlPool;
 use strum_macros::Display;
 
 use crockford::crockford_entropy_lower;
-use enums::by_table::email_sender_jobs::email_category::EmailCategory;
+use enums_db::by_table::email_sender_jobs::email_category::EmailCategory;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use uuid_utils::uuid::generate_random_uuid;

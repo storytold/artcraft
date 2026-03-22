@@ -12,11 +12,11 @@ use artcraft_api_defs::generate::object::multi_function::hunyuan3d_v3_multi_func
   Hunyuan3dV3GenerateType, Hunyuan3dV3MultiFunctionObjectGenRequest,
   Hunyuan3dV3MultiFunctionObjectGenResponse, Hunyuan3dV3PolygonType,
 };
-use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
-use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::webhook::object::enqueue_hunyuan3d_v3_image_to_3d_webhook::{
   enqueue_hunyuan3d_v3_image_to_3d_webhook, EnqueueHunyuan3dV3ImageTo3dArgs,
   EnqueueHunyuan3dV3ImageTo3dGenerateType, EnqueueHunyuan3dV3ImageTo3dPolygonType,

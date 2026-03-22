@@ -1,6 +1,6 @@
 use once_cell::sync::Lazy;
 
-use enums::by_table::model_categories::model_type::ModelType;
+use enums_db::by_table::model_categories::model_type::ModelType;
 
 use crate::configs::static_model::categories::synthetic_category::SyntheticCategory;
 

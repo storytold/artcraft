@@ -3,6 +3,7 @@ use strum::EnumIter;
 
 /// Used in the `batch_generations` table in a `VARCHAR(32)` field named `entity_type`.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, Ord, PartialOrd, EnumIter, EnumCount)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum BetaKeyProduct {
   /// Media files
   /// This will probably be the only type supported, but we'll leave the possibility of future types.

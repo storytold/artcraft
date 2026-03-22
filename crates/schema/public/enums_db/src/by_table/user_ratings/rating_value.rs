@@ -15,6 +15,7 @@ use strum::EnumIter;
 /// *DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY!*
 ///
 #[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, sqlx::Type, EnumIter, EnumCount)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[sqlx(rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum UserRatingValue {

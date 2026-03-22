@@ -8,7 +8,7 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::windows::sora_login_window::extract_sora_webview_cookies::extract_sora_webview_cookies;
 use crate::services::sora::windows::sora_login_window::open_sora_login_window::LOGIN_WINDOW_NAME;
 use anyhow::anyhow;
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
 use log::{error, info};
 use openai_sora_client::creds::sora_credential_set::SoraCredentialSet;

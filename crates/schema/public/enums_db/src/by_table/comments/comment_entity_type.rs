@@ -3,6 +3,7 @@ use strum::EnumIter;
 
 /// Used in the `comments` table in a `VARCHAR(32)` field named `entity_type`.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum CommentEntityType {
   /// User
   #[serde(rename = "user")]

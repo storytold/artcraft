@@ -1,8 +1,8 @@
 use utoipa::ToSchema;
 
-use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
-use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
-use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
+use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums_public::by_table::media_files::public_media_file_model_type::PublicMediaFileModelType;
 use tokens::tokens::model_weights::ModelWeightToken;
 

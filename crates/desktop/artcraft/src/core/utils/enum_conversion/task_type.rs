@@ -1,5 +1,5 @@
 use crate::core::events::generation_events::common::GenerationAction;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::tauri::tasks::task_type::TaskType;
 
 pub fn to_generation_action(task_type: TaskType) -> GenerationAction {
   match task_type {

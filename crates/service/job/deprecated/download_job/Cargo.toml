@@ -27,7 +27,9 @@ concurrency = { path = "../../../../lib/concurrency" }
 config = { path = "../../../../lib/deprecated/config" }
 crockford = { path = "../../../../lib/data/crockford" }
 easyenv = { path = "../../../../lib/easyenv" }
-enums.workspace = true
+enums_db.workspace = true
+enums_api.workspace = true
+enums_convert.workspace = true
 errors.workspace = true
 filesys.workspace = true
 google_drive_downloader = { path = "../../../../api_clients/google_drive_downloader" }

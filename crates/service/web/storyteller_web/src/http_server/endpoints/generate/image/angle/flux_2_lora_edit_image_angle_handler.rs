@@ -9,11 +9,11 @@ use crate::util::lookup::lookup_image_urls_as_optional_list::lookup_image_urls_a
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::image::angle::flux_2_lora_edit_image_angle::{Flux2LoraEditImageAngleImageSize, Flux2LoraEditImageAngleNumImages, Flux2LoraEditImageAngleRequest, Flux2LoraEditImageAngleResponse};
-use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
-use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs, EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraAngleImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;

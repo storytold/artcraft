@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 
 use crate::http_server::common_requests::auto_product_category::AutoProductCategory;
 
@@ -33,7 +33,7 @@ pub fn get_scoped_product_categories(
 mod test {
   use std::collections::HashSet;
 
-  use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+  use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 
   use crate::http_server::endpoints::media_files::helpers::get_scoped_product_categories::get_scoped_product_categories;
 

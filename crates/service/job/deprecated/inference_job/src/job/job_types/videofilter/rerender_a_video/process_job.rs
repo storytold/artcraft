@@ -6,7 +6,7 @@ use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
+use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use filesys::check_file_exists::check_file_exists;
 use filesys::file_size::file_size;
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;

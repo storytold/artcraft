@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use anyhow::anyhow;
 use log::info;
 
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use errors::AnyhowResult;
 
 /// Execution can be scoped down to run on only certain model types or inference categories.
@@ -77,7 +77,7 @@ pub fn parse_job_types(comma_separated_types: &str) -> AnyhowResult<BTreeSet<Inf
 mod tests {
   use std::collections::BTreeSet;
 
-  use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+  use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 
   use crate::state::scoped_job_type_execution::{parse_job_types, ScopedJobTypeExecution};
 

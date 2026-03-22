@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use enums::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 
 /// Read the interface as PublicWeightsTypes, but convert them to internal WeightsTypes
@@ -43,7 +43,7 @@ fn get_scoped_public_weights_types(
 mod test {
   use std::collections::HashSet;
 
-  use enums::by_table::model_weights::weights_types::WeightsType;
+  use enums_db::by_table::model_weights::weights_types::WeightsType;
   use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 
   use crate::http_server::endpoints::weights::helpers::get_scoped_weights_types::{get_scoped_public_weights_types, get_scoped_weights_types};

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 
 pub fn get_scoped_engine_categories(
   maybe_query_param: Option<&str>
@@ -28,7 +28,7 @@ pub fn get_scoped_engine_categories(
 mod test {
   use std::collections::HashSet;
 
-  use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+  use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 
   use crate::http_server::endpoints::media_files::helpers::get_scoped_engine_categories::get_scoped_engine_categories;
 

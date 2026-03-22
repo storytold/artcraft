@@ -3,7 +3,7 @@ use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::Ne
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use actix_artcraft::requests::get_request_signup_source_enum::get_request_signup_source_enum;
 use actix_web::HttpRequest;
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_api::by_table::users::user_feature_flag::UserFeatureFlag;
 use google_sign_in::claims::claims::Claims;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};

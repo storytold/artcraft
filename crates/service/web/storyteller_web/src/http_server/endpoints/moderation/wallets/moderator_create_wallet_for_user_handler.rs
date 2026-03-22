@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_api::common::payments_namespace::PaymentsNamespace;
 use log::{error, warn};
 use sqlx::Acquire;
 

@@ -1,6 +1,6 @@
 use anyhow::anyhow;
 
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 
 use crate::job::job_loop::job_success_result::JobSuccessResult;

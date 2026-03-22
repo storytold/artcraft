@@ -16,6 +16,7 @@ use strum::EnumIter;
 ///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum FrontendFailureCategory {
   /// When a face is not detected in the image used for animation.
   /// For SadTalker (and possibly Wav2Lip)

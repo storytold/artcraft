@@ -3,6 +3,7 @@ use strum::EnumIter;
 
 /// Used in the `user_bookmarks` table in a `VARCHAR(32)` field named `entity_type`.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
+#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub enum FeaturedItemEntityType {
     /// MediaFile
     #[serde(rename = "media_file")]
