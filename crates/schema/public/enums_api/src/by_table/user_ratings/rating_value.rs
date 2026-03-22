@@ -15,8 +15,6 @@ use utoipa::ToSchema;
 /// *DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY!*
 ///
 #[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, ToSchema, EnumIter, Debug)]
-#[cfg_attr(feature = "database", derive(sqlx::Type))]
-#[cfg_attr(feature = "database", sqlx(rename_all = "lowercase"))]
 #[serde(rename_all = "lowercase")]
 
 pub enum UserRatingValue {

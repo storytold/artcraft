@@ -15,8 +15,6 @@ use utoipa::ToSchema;
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
 
 #[derive(Clone, Debug, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, ToSchema, EnumIter, Deserialize)]
-#[cfg_attr(feature = "database", derive(sqlx::Type))]
-#[cfg_attr(feature = "database", sqlx(rename_all = "snake_case"))]
 #[serde(rename_all = "snake_case")]
 
 pub enum JobStatus {

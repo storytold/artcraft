@@ -2,8 +2,6 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 #[derive(Clone, Debug, Copy, Eq, PartialEq, Deserialize, Serialize, EnumIter, ToSchema)]
-#[cfg_attr(feature = "database", derive(sqlx::Type))]
-#[cfg_attr(feature = "database", sqlx(rename_all = "snake_case"))]
 #[serde(rename_all = "snake_case")]
 
 pub enum ViewAs {

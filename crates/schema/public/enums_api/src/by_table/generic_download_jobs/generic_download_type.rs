@@ -11,8 +11,6 @@ use utoipa::ToSchema;
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, ToSchema, EnumIter, Hash, Ord, PartialOrd)]
-#[cfg_attr(feature = "database", derive(sqlx::Type))]
-
 pub enum GenericDownloadType {
   /// NB: Note - this is hifigan for Tacotron2.
   /// Some work will be needed to unify this with other hifigan types.
