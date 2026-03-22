@@ -6,7 +6,7 @@ use rand::thread_rng;
 use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::trending_model_analytics::window_name::WindowName;
+use enums_db::by_table::trending_model_analytics::window_name::WindowName;
 use errors::AnyhowResult;
 use mysql_queries::queries::trending_model_analytics::upsert_trending_model_analytics::{Args, ModelToken, upsert_trending_model_analytics};
 use mysql_queries::queries::tts::tts_models::count_tts_model_uses::count_tts_model_uses;

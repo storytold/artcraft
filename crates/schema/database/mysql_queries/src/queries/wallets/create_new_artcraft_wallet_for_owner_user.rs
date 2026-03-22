@@ -1,5 +1,5 @@
 use crate::queries::wallets::create_new_wallet_for_owner_user::create_new_wallet_for_owner_user;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use sqlx::MySql;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::wallets::WalletToken;

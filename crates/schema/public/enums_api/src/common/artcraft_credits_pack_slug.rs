@@ -21,6 +21,19 @@ pub enum ArtcraftCreditsPackSlug {
   Artcraft50000,
 }
 
+impl ArtcraftCreditsPackSlug {
+  pub const fn to_str(&self) -> &'static str {
+    match self {
+      Self::Artcraft1000 => "artcraft_1000",
+      Self::Artcraft2500 => "artcraft_2500",
+      Self::Artcraft5000 => "artcraft_5000",
+      Self::Artcraft10000 => "artcraft_10000",
+      Self::Artcraft25000 => "artcraft_25000",
+      Self::Artcraft50000 => "artcraft_50000",
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::ArtcraftCreditsPackSlug;
@@ -53,6 +66,28 @@ mod tests {
     #[test]
     fn variants_count_check() {
       assert_eq!(ArtcraftCreditsPackSlug::iter().count(), 6);
+    }
+  }
+
+  mod to_str_checks {
+    use super::*;
+
+    #[test]
+    fn to_str() {
+      assert_eq!(ArtcraftCreditsPackSlug::Artcraft1000.to_str(), "artcraft_1000");
+      assert_eq!(ArtcraftCreditsPackSlug::Artcraft2500.to_str(), "artcraft_2500");
+      assert_eq!(ArtcraftCreditsPackSlug::Artcraft5000.to_str(), "artcraft_5000");
+      assert_eq!(ArtcraftCreditsPackSlug::Artcraft10000.to_str(), "artcraft_10000");
+      assert_eq!(ArtcraftCreditsPackSlug::Artcraft25000.to_str(), "artcraft_25000");
+      assert_eq!(ArtcraftCreditsPackSlug::Artcraft50000.to_str(), "artcraft_50000");
+    }
+
+    #[test]
+    fn to_str_matches_serde() {
+      for variant in ArtcraftCreditsPackSlug::iter() {
+        let serde_str = serde_json::to_string(&variant).unwrap().replace('"', "");
+        assert_eq!(variant.to_str(), serde_str);
+      }
     }
   }
 

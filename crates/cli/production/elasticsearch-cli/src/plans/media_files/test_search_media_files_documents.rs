@@ -4,7 +4,7 @@ use std::iter::FromIterator;
 use elasticsearch::Elasticsearch;
 
 use elasticsearch_schema::searches::search_media_files::{search_media_files, SearchArgs};
-use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
 use errors::AnyhowResult;
 
 pub async fn test_search_media_files(client: &Elasticsearch) -> AnyhowResult<()> {

@@ -1,8 +1,8 @@
 use anyhow::anyhow;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_synthetic_ids::id_category::IdCategory;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_synthetic_ids::id_category::IdCategory;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;

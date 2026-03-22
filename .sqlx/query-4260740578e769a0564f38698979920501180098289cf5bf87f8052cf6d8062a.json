@@ -1,0 +1,36 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    vc.token as `token: tokens::tokens::voice_conversion_models::VoiceConversionModelToken`,\n    vc.model_type as `model_type: enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`\nFROM voice_conversion_models as vc\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::voice_conversion_models::VoiceConversionModelToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "model_type: enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "4260740578e769a0564f38698979920501180098289cf5bf87f8052cf6d8062a"
+}

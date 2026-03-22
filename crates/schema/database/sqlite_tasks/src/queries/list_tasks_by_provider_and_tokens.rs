@@ -1,11 +1,11 @@
 use crate::connection::TaskDbConnection;
 use crate::error::SqliteTasksError;
 use crate::queries::task::{RawTask, Task};
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_model_type::TaskModelType;
-use enums::tauri::tasks::task_status::TaskStatus;
-use enums::tauri::tasks::task_type::TaskType;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::tasks::task_model_type::TaskModelType;
+use enums_db::tauri::tasks::task_status::TaskStatus;
+use enums_db::tauri::tasks::task_type::TaskType;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use sqlx::{QueryBuilder, Sqlite};
 use tokens::tokens::sqlite::tasks::TaskId;
 

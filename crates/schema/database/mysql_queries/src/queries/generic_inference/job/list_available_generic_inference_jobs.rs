@@ -5,12 +5,12 @@ use chrono::Utc;
 use log::debug;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::job_status_plus::JobStatusPlus;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::common::job_status_plus::JobStatusPlus;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -412,9 +412,9 @@ fn inference_category_predicate(categories: &BTreeSet<InferenceCategory>) -> Str
 mod tests {
   use std::collections::BTreeSet;
 
-  use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-  use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-  use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+  use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+  use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+  use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 
   use crate::queries::generic_inference::job::list_available_generic_inference_jobs::{inference_category_predicate, job_type_predicate, model_type_predicate};
 

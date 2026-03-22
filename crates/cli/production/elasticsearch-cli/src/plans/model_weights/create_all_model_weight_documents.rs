@@ -8,7 +8,7 @@ use sqlx::{MySql, Pool};
 use elasticsearch_schema::documents::model_weight_document::{MODEL_WEIGHT_INDEX, ModelWeightDocument};
 use elasticsearch_schema::traits::document::Document;
 use elasticsearch_schema::utils::create_index_if_not_exists::{create_index_if_not_exists, CreateIndexArgs};
-use enums::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use errors::AnyhowResult;
 use mysql_queries::queries::model_weights::list::list_model_weights_for_elastic_search_backfill_using_cursor::{list_model_weights_for_elastic_search_backfill_using_cursor, ModelWeightForElasticsearchRecord};
 use primitives::numerics::u64_to_i32_saturating::u64_to_i32_saturating;

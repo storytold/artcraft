@@ -5,14 +5,14 @@
 
 use anyhow::anyhow;
 use chrono::{DateTime, Utc};
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
 use sqlx::{MySql, MySqlPool};
@@ -321,13 +321,13 @@ async fn select_including_deleted(
 SELECT
     m.token as `token: tokens::tokens::media_files::MediaFileToken`,
 
-    m.media_class as `media_class: enums::by_table::media_files::media_file_class::MediaFileClass`,
-    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,
+    m.media_class as `media_class: enums_db::by_table::media_files::media_file_class::MediaFileClass`,
+    m.media_type as `media_type: enums_db::by_table::media_files::media_file_type::MediaFileType`,
 
-    m.maybe_engine_category as `maybe_engine_category: enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory`,
-    m.maybe_animation_type as `maybe_animation_type: enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType`,
+    m.maybe_engine_category as `maybe_engine_category: enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory`,
+    m.maybe_animation_type as `maybe_animation_type: enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType`,
 
-    m.maybe_media_subtype as `maybe_media_subtype: enums::by_table::media_files::media_file_subtype::MediaFileSubtype`,
+    m.maybe_media_subtype as `maybe_media_subtype: enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype`,
 
     m.maybe_mime_type,
 
@@ -357,15 +357,15 @@ SELECT
     media_file_cover_image.maybe_public_bucket_prefix as maybe_file_cover_image_public_bucket_prefix,
     media_file_cover_image.maybe_public_bucket_extension as maybe_file_cover_image_public_bucket_extension,
 
-    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    m.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
     m.is_user_upload,
     m.is_intermediate_system_file,
 
     model_weights.token as `maybe_model_weights_token: tokens::tokens::model_weights::ModelWeightToken`,
     model_weights.title as maybe_model_weights_title,
-    model_weights.weights_type as `maybe_model_weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-    model_weights.weights_category as `maybe_model_weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+    model_weights.weights_type as `maybe_model_weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+    model_weights.weights_category as `maybe_model_weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
 
     model_weight_cover_image.public_bucket_directory_hash as maybe_model_cover_image_public_bucket_hash,
     model_weight_cover_image.maybe_public_bucket_prefix as maybe_model_cover_image_public_bucket_prefix,
@@ -444,13 +444,13 @@ async fn select_without_deleted(
 SELECT
     m.token as `token: tokens::tokens::media_files::MediaFileToken`,
 
-    m.media_class as `media_class: enums::by_table::media_files::media_file_class::MediaFileClass`,
-    m.media_type as `media_type: enums::by_table::media_files::media_file_type::MediaFileType`,
+    m.media_class as `media_class: enums_db::by_table::media_files::media_file_class::MediaFileClass`,
+    m.media_type as `media_type: enums_db::by_table::media_files::media_file_type::MediaFileType`,
 
-    m.maybe_engine_category as `maybe_engine_category: enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory`,
-    m.maybe_animation_type as `maybe_animation_type: enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType`,
+    m.maybe_engine_category as `maybe_engine_category: enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory`,
+    m.maybe_animation_type as `maybe_animation_type: enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType`,
 
-    m.maybe_media_subtype as `maybe_media_subtype: enums::by_table::media_files::media_file_subtype::MediaFileSubtype`,
+    m.maybe_media_subtype as `maybe_media_subtype: enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype`,
 
     m.maybe_mime_type,
 
@@ -481,15 +481,15 @@ SELECT
     media_file_cover_image.maybe_public_bucket_prefix as maybe_file_cover_image_public_bucket_prefix,
     media_file_cover_image.maybe_public_bucket_extension as maybe_file_cover_image_public_bucket_extension,
 
-    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    m.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
     m.is_user_upload,
     m.is_intermediate_system_file,
 
     model_weights.token as `maybe_model_weights_token: tokens::tokens::model_weights::ModelWeightToken`,
     model_weights.title as maybe_model_weights_title,
-    model_weights.weights_type as `maybe_model_weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-    model_weights.weights_category as `maybe_model_weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+    model_weights.weights_type as `maybe_model_weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+    model_weights.weights_category as `maybe_model_weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
 
     model_weight_cover_image.public_bucket_directory_hash as maybe_model_cover_image_public_bucket_hash,
     model_weight_cover_image.maybe_public_bucket_prefix as maybe_model_cover_image_public_bucket_prefix,

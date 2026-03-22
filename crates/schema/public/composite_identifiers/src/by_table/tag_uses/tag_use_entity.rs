@@ -1,4 +1,4 @@
-use enums::by_table::tag_uses::tag_use_entity_type::TagUseEntityType;
+use enums_db::by_table::tag_uses::tag_use_entity_type::TagUseEntityType;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 

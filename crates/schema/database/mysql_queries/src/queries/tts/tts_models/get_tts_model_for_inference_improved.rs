@@ -8,8 +8,8 @@ use log::warn;
 use sqlx;
 use sqlx::MySqlPool;
 
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::vocoder_type::VocoderType;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::common::vocoder_type::VocoderType;
 use tokens::tokens::tts_models::TtsModelToken;
 use tokens::tokens::users::UserToken;
 
@@ -94,7 +94,7 @@ pub async fn get_tts_model_for_inference_improved(
         r#"
 SELECT
     tts.token as `model_token: tokens::tokens::tts_models::TtsModelToken`,
-    tts.tts_model_type as `tts_model_type: enums::by_table::tts_models::tts_model_type::TtsModelType`,
+    tts.tts_model_type as `tts_model_type: enums_db::by_table::tts_models::tts_model_type::TtsModelType`,
     tts.text_pipeline_type,
 
     tts.use_default_mel_multiply_factor,
@@ -103,7 +103,7 @@ SELECT
     tts.maybe_default_pretrained_vocoder,
 
     tts.maybe_custom_vocoder_token,
-    vocoder.vocoder_type as `maybe_custom_vocoder_type: enums::common::vocoder_type::VocoderType`,
+    vocoder.vocoder_type as `maybe_custom_vocoder_type: enums_db::common::vocoder_type::VocoderType`,
     vocoder.title as maybe_custom_vocoder_title,
     vocoder.private_bucket_hash as maybe_custom_vocoder_private_bucket_hash,
 

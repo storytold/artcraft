@@ -4,9 +4,9 @@ use log::error;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::{model_weights::ModelWeightToken, users::UserToken};
 
@@ -143,8 +143,8 @@ async fn select_include_deleted(
         SELECT
         wt.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
         wt.title,
-        wt.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-        wt.weights_category as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+        wt.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+        wt.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
         wt.maybe_description_markdown,
         wt.maybe_description_rendered_html,
 
@@ -154,7 +154,7 @@ async fn select_include_deleted(
         users.email_gravatar_hash AS creator_gravatar_hash,
 
         wt.creator_ip_address,
-        wt.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        wt.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
         wt.maybe_last_update_user_token as `maybe_last_update_user_token: tokens::tokens::users::UserToken`,
         wt.original_download_url,
         wt.original_filename,
@@ -208,8 +208,8 @@ async fn select_without_deleted(
     weight_token: &ModelWeightToken,
     mysql_connection: &mut PoolConnection<MySql>
 ) -> Result<RawWeight, sqlx::Error> {
-    //as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-    //as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`
+    //as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+    //as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`
     sqlx
         ::query_as!(
             RawWeight,
@@ -217,12 +217,12 @@ async fn select_without_deleted(
         SELECT
         wt.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
         wt.title,
-        wt.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-        wt.weights_category as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+        wt.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+        wt.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
         wt.maybe_description_markdown,
         wt.maybe_description_rendered_html,
         wt.creator_ip_address,
-        wt.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        wt.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
         wt.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,
         users.username as creator_username,

@@ -3,7 +3,7 @@ use log::warn;
 use sqlx;
 use sqlx::MySqlPool;
 
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use tokens::tokens::voice_conversion_models::VoiceConversionModelToken;
 
 use crate::helpers::boolean_converters::i8_to_bool;
@@ -57,7 +57,7 @@ pub async fn get_voice_conversion_model_for_inference(
         r#"
 SELECT
     vc.token as `token: tokens::tokens::voice_conversion_models::VoiceConversionModelToken`,
-    vc.model_type as `model_type: enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
+    vc.model_type as `model_type: enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
 
     vc.title,
     vc.has_index_file,

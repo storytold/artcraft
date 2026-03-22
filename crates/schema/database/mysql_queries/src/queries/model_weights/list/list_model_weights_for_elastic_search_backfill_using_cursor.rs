@@ -4,9 +4,9 @@ use log::warn;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -142,10 +142,10 @@ SELECT
     w.id,
     w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
 
-    w.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    w.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
-    w.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-    w.weights_category as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+    w.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+    w.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
 
     w.title,
 

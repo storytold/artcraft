@@ -1,0 +1,157 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  b.token as `token: tokens::tokens::beta_keys::BetaKeyToken`,\n\n  b.product as `product: enums_db::by_table::beta_keys::beta_key_product::BetaKeyProduct`,\n  b.key_value,\n\n  b.maybe_referrer_user_token as `maybe_referrer_user_token: tokens::tokens::users::UserToken`,\n  referrer.username as maybe_referrer_username,\n  referrer.display_name as maybe_referrer_display_name,\n  referrer.email_gravatar_hash as maybe_referrer_gravatar_hash,\n\n  b.maybe_redeemer_user_token as `maybe_redeemer_user_token: tokens::tokens::users::UserToken`,\n  redeemer.username as maybe_redeemer_username,\n  redeemer.display_name as maybe_redeemer_display_name,\n  redeemer.email_gravatar_hash as maybe_redeemer_gravatar_hash,\n\n  b.created_at,\n  b.maybe_redeemed_at\n\nFROM beta_keys AS b\n\nLEFT OUTER JOIN users AS referrer\n    ON b.maybe_referrer_user_token = referrer.token\n\nLEFT OUTER JOIN users AS redeemer\n    ON b.maybe_redeemer_user_token = redeemer.token\n\nWHERE\n    b.key_value = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::beta_keys::BetaKeyToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "product: enums_db::by_table::beta_keys::beta_key_product::BetaKeyProduct",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "key_value",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_referrer_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_referrer_username",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "maybe_referrer_display_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_referrer_gravatar_hash",
+        "type_info": {
+          "type": "String",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_redeemer_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_redeemer_username",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_redeemer_display_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_redeemer_gravatar_hash",
+        "type_info": {
+          "type": "String",
+          "flags": "BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "maybe_redeemed_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "23face277cecb9cb56f1eb552f13f132d0c327b0f6886f6499a02d3491707e58"
+}

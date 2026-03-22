@@ -2,8 +2,8 @@ use anyhow::anyhow;
 use chrono::Utc;
 use sqlx::MySqlPool;
 
-use enums::by_table::email_sender_jobs::email_category::EmailCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::by_table::email_sender_jobs::email_category::EmailCategory;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::email_sender_job_token::EmailSenderJobToken;

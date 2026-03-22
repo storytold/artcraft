@@ -1,4 +1,4 @@
-use enums::by_table::audit_logs::audit_log_entity_type::AuditLogEntityType;
+use enums_db::by_table::audit_logs::audit_log_entity_type::AuditLogEntityType;
 use tokens::tokens::comments::CommentToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;

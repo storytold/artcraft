@@ -12,6 +12,16 @@ pub enum ArtcraftSubscriptionSlug {
   ArtcraftMax,
 }
 
+impl ArtcraftSubscriptionSlug {
+  pub const fn to_str(&self) -> &'static str {
+    match self {
+      Self::ArtcraftBasic => "artcraft_basic",
+      Self::ArtcraftPro => "artcraft_pro",
+      Self::ArtcraftMax => "artcraft_max",
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::ArtcraftSubscriptionSlug;
@@ -38,6 +48,25 @@ mod tests {
     #[test]
     fn variants_count_check() {
       assert_eq!(ArtcraftSubscriptionSlug::iter().count(), 3);
+    }
+  }
+
+  mod to_str_checks {
+    use super::*;
+
+    #[test]
+    fn to_str() {
+      assert_eq!(ArtcraftSubscriptionSlug::ArtcraftBasic.to_str(), "artcraft_basic");
+      assert_eq!(ArtcraftSubscriptionSlug::ArtcraftPro.to_str(), "artcraft_pro");
+      assert_eq!(ArtcraftSubscriptionSlug::ArtcraftMax.to_str(), "artcraft_max");
+    }
+
+    #[test]
+    fn to_str_matches_serde() {
+      for variant in ArtcraftSubscriptionSlug::iter() {
+        let serde_str = serde_json::to_string(&variant).unwrap().replace('"', "");
+        assert_eq!(variant.to_str(), serde_str);
+      }
     }
   }
 

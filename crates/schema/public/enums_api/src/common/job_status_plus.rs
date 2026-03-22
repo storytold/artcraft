@@ -24,6 +24,21 @@ pub enum JobStatusPlus {
   CancelledBySystem,
 }
 
+impl JobStatusPlus {
+  pub const fn to_str(&self) -> &'static str {
+    match self {
+      Self::Pending => "pending",
+      Self::Started => "started",
+      Self::CompleteSuccess => "complete_success",
+      Self::CompleteFailure => "complete_failure",
+      Self::AttemptFailed => "attempt_failed",
+      Self::Dead => "dead",
+      Self::CancelledByUser => "cancelled_by_user",
+      Self::CancelledBySystem => "cancelled_by_system",
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::JobStatusPlus;
@@ -60,6 +75,30 @@ mod tests {
     #[test]
     fn variants_count_check() {
       assert_eq!(JobStatusPlus::iter().count(), 8);
+    }
+  }
+
+  mod to_str_checks {
+    use super::*;
+
+    #[test]
+    fn to_str() {
+      assert_eq!(JobStatusPlus::Pending.to_str(), "pending");
+      assert_eq!(JobStatusPlus::Started.to_str(), "started");
+      assert_eq!(JobStatusPlus::CompleteSuccess.to_str(), "complete_success");
+      assert_eq!(JobStatusPlus::CompleteFailure.to_str(), "complete_failure");
+      assert_eq!(JobStatusPlus::AttemptFailed.to_str(), "attempt_failed");
+      assert_eq!(JobStatusPlus::Dead.to_str(), "dead");
+      assert_eq!(JobStatusPlus::CancelledByUser.to_str(), "cancelled_by_user");
+      assert_eq!(JobStatusPlus::CancelledBySystem.to_str(), "cancelled_by_system");
+    }
+
+    #[test]
+    fn to_str_matches_serde() {
+      for variant in JobStatusPlus::iter() {
+        let serde_str = serde_json::to_string(&variant).unwrap().replace('"', "");
+        assert_eq!(variant.to_str(), serde_str);
+      }
     }
   }
 

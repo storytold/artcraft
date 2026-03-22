@@ -3,8 +3,8 @@ use chrono::{DateTime, Utc};
 use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
@@ -75,7 +75,7 @@ async fn list_voice_conversion_models_for_all_creators(
     r#"
 SELECT
     w.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
-    w.weights_type as `weight_type: enums::by_table::model_weights::weights_types::WeightsType`,
+    w.weights_type as `weight_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
     w.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,
     users.username as creator_username,
     users.display_name as creator_display_name,
@@ -83,7 +83,7 @@ SELECT
     w.title,
     w_extension.ietf_language_tag,
     w_extension.ietf_primary_language_subtag,
-    w.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    w.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     w.created_at,
     w.updated_at
 FROM model_weights as w

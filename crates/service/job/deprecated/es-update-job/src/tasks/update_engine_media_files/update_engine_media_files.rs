@@ -10,9 +10,9 @@ use serde_json::Value;
 
 use elasticsearch_schema::documents::media_file_document::{MEDIA_FILE_INDEX, MediaFileDocument};
 use elasticsearch_schema::traits::document::Document;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
 use mysql_queries::queries::media_files::list::list_media_files_for_elastic_search_backfill_using_cursor::{list_media_files_for_elastic_search_backfill_using_cursor, ListArgs, MediaFileForElasticsearchRecord};
 

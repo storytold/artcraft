@@ -4,8 +4,8 @@ use log::warn;
 use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::tts_models::TtsModelToken;
@@ -186,7 +186,7 @@ SELECT
     id,
     token as `token: tokens::tokens::tts_models::TtsModelToken`,
 
-    tts_model_type as `tts_model_type: enums::by_table::tts_models::tts_model_type::TtsModelType`,
+    tts_model_type as `tts_model_type: enums_db::by_table::tts_models::tts_model_type::TtsModelType`,
 
     text_pipeline_type,
     has_self_contained_vocoder,
@@ -225,7 +225,7 @@ SELECT
     creator_ip_address_creation,
     creator_ip_address_last_update,
 
-    creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
     private_bucket_hash,
     private_bucket_object_name,

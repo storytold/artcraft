@@ -3,7 +3,7 @@ use std::time::Duration;
 use anyhow::anyhow;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
+use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use errors::AnyhowResult;
 
 use crate::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;

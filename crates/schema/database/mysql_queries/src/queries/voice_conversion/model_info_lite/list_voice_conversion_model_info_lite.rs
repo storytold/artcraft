@@ -1,7 +1,7 @@
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
 use errors::AnyhowResult;
 use tokens::tokens::voice_conversion_models::VoiceConversionModelToken;
 
@@ -23,7 +23,7 @@ pub async fn list_voice_conversion_model_info_lite_with_connection(
         r#"
 SELECT
     vc.token as `token: tokens::tokens::voice_conversion_models::VoiceConversionModelToken`,
-    vc.model_type as `model_type: enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`
+    vc.model_type as `model_type: enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`
 FROM voice_conversion_models as vc
         "#)
           .fetch_all(&mut **mysql_connection)

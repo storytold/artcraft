@@ -1,5 +1,5 @@
 use crate::common::responses::user_details_light::UserDetailsLight;
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_api::by_table::users::user_feature_flag::UserFeatureFlag;
 use serde_derive::Serialize;
 use std::collections::BTreeSet;
 use tokens::tokens::users::UserToken;

@@ -1,4 +1,4 @@
-use enums::common::sqlite::awaitable_job_status::AwaitableJobStatus;
+use enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus;
 use errors::{anyhow, AnyhowResult};
 use sqlx::SqlitePool;
 use tokens::tokens::news_stories::NewsStoryToken;

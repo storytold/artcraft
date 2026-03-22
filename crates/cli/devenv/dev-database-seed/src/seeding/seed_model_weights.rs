@@ -6,7 +6,7 @@ use rand::Rng;
 use sqlx::{MySql, Pool};
 
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
-use enums::{
+use enums_db::{
   by_table::model_weights::{weights_category::WeightsCategory, weights_types::WeightsType},
   common::visibility::Visibility,
 };
