@@ -61,4 +61,14 @@ mod tests {
       assert_eq!(variant, back);
     }
   }
+
+  #[test]
+  fn round_trip_api_to_db() {
+    use strum::IntoEnumIterator;
+    for variant in Api::iter() {
+      let db = tauri_event_name_to_db(&variant);
+      let back = tauri_event_name_to_api(&db);
+      assert_eq!(variant, back);
+    }
+  }
 }

@@ -133,4 +133,14 @@ mod tests {
       assert_eq!(variant, back);
     }
   }
+
+  #[test]
+  fn round_trip_api_to_db() {
+    use strum::IntoEnumIterator;
+    for variant in Api::iter() {
+      let db = model_type_to_db(&variant);
+      let back = model_type_to_api(&db);
+      assert_eq!(variant, back);
+    }
+  }
 }
