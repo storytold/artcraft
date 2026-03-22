@@ -16,18 +16,12 @@
 //   - commented out all other impls.
 // 
 
-use std::collections::BTreeSet;
-
 use enums_shared::error::enums_error::EnumsError;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
-
 // NB: Added "sqlx::Type".
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum StripeSubscriptionStatus {
   Active,
@@ -72,20 +66,6 @@ impl StripeSubscriptionStatus {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Active,
-      Self::Canceled,
-      Self::Incomplete,
-      Self::IncompleteExpired,
-      Self::PastDue,
-      Self::Trialing,
-      Self::Unpaid,
-      Self::Paused,
-    ])
-  }
 }
 
 //impl AsRef<str> for StripeSubscriptionStatus {
@@ -171,34 +151,15 @@ mod tests {
       }
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = StripeSubscriptionStatus::all_variants();
-      assert_eq!(variants.len(), 8);
-      assert_eq!(variants.pop_first(), Some(StripeSubscriptionStatus::Active));
-      assert_eq!(variants.pop_first(), Some(StripeSubscriptionStatus::Canceled));
-      assert_eq!(variants.pop_first(), Some(StripeSubscriptionStatus::Incomplete));
-      assert_eq!(variants.pop_first(), Some(StripeSubscriptionStatus::IncompleteExpired));
-      assert_eq!(variants.pop_first(), Some(StripeSubscriptionStatus::PastDue));
-      assert_eq!(variants.pop_first(), Some(StripeSubscriptionStatus::Trialing));
-      assert_eq!(variants.pop_first(), Some(StripeSubscriptionStatus::Unpaid));
-      assert_eq!(variants.pop_first(), Some(StripeSubscriptionStatus::Paused));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::StripeSubscriptionStatus;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(StripeSubscriptionStatus::all_variants().len(), StripeSubscriptionStatus::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in StripeSubscriptionStatus::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in StripeSubscriptionStatus::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, StripeSubscriptionStatus::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, StripeSubscriptionStatus::from_str(&format!("{}", variant)).unwrap());
@@ -208,8 +169,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 32;
-      for variant in StripeSubscriptionStatus::all_variants() {
+      for variant in StripeSubscriptionStatus::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
@@ -217,31 +179,4 @@ mod tests {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

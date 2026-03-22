@@ -4,19 +4,13 @@
 //!
 //! Do not change the values here without cause or care.
 
-use std::collections::BTreeSet;
-
 use enums_shared::error::enums_error::EnumsError;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// NB: This will be used by a variety of tables (MySQL and sqlite)!
 /// Keep the max length to 16 characters.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationProvider {
   Artcraft,
@@ -54,17 +48,6 @@ impl GenerationProvider {
       "world_labs" => Ok(Self::WorldLabs),
       _ => Err(EnumsError::CouldNotConvertFromString(value.to_string())),
     }
-  }
-
-  pub fn all_variants() -> BTreeSet<Self> {
-    BTreeSet::from([
-      Self::Artcraft,
-      Self::Fal,
-      Self::Grok,
-      Self::Midjourney,
-      Self::Sora,
-      Self::WorldLabs,
-    ])
   }
 
   // Conversion methods (from_db/to_db) live on the API type in enums_api,
@@ -121,32 +104,15 @@ mod tests {
       }
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = GenerationProvider::all_variants();
-      assert_eq!(variants.len(), 6);
-      assert_eq!(variants.pop_first(), Some(GenerationProvider::Artcraft));
-      assert_eq!(variants.pop_first(), Some(GenerationProvider::Fal));
-      assert_eq!(variants.pop_first(), Some(GenerationProvider::Grok));
-      assert_eq!(variants.pop_first(), Some(GenerationProvider::Midjourney));
-      assert_eq!(variants.pop_first(), Some(GenerationProvider::Sora));
-      assert_eq!(variants.pop_first(), Some(GenerationProvider::WorldLabs));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(GenerationProvider::all_variants().len(), GenerationProvider::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in GenerationProvider::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in GenerationProvider::iter() {
         assert_eq!(variant, GenerationProvider::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, GenerationProvider::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, GenerationProvider::from_str(&format!("{:?}", variant)).unwrap());
@@ -155,8 +121,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH: usize = 16;
-      for variant in GenerationProvider::all_variants() {
+      for variant in GenerationProvider::iter() {
         let serialized = variant.to_str();
         assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

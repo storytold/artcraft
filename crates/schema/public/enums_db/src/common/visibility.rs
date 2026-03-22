@@ -1,6 +1,4 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 /// Visibility
 ///
@@ -15,12 +13,9 @@ use strum::EnumIter;
 ///
 /// *DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY!*
 
-
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
-#[derive(sqlx::Type)]
+#[derive(sqlx::Type, EnumIter, EnumCount)]
 #[sqlx(rename_all = "lowercase")]
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
 #[serde(rename_all = "lowercase")]
 pub enum Visibility {
   /// Public entities are able to be listed in public lists.
@@ -37,7 +32,6 @@ pub enum Visibility {
   //  This should perhaps be its own type, eg. VisibilityV2., so that we don't use it in tables that
   //  have not yet been migrated to this scheme.
 }
-
 
 impl_enum_display_and_debug_using_to_str!(Visibility);
 impl_mysql_from_row!(Visibility);
@@ -189,6 +183,31 @@ mod tests {
       };
 
       assert_eq!(expected, serde_json::from_str::<CompositeType>(&payload).unwrap());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in Visibility::iter() {
+        assert_eq!(variant, Visibility::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, Visibility::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, Visibility::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in Visibility::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

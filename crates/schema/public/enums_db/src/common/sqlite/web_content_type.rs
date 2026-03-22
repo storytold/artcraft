@@ -1,15 +1,12 @@
 use serde::Deserialize;
 use serde::Serialize;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the SqLite `web_scraping_targets` table in a `TEXT` field named `web_content_type`.
 /// Used in the SqLite `news_story_productions` table in a `TEXT` field named `web_content_type`.
 /// Used in the SqLite `news_stories` table in a `TEXT` field named `web_content_type`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum WebContentType {
   #[serde(rename = "cbs_news_article")]
   CbsNewsArticle,
@@ -133,6 +130,31 @@ mod tests {
       assert_eq!(WebContentType::from_str("techcrunch_article").unwrap(), WebContentType::TechCrunchArticle);
       assert_eq!(WebContentType::from_str("the_guardian_article").unwrap(), WebContentType::TheGuardianArticle);
       assert!(WebContentType::from_str("foo").is_err());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in WebContentType::iter() {
+        assert_eq!(variant, WebContentType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, WebContentType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, WebContentType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in WebContentType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

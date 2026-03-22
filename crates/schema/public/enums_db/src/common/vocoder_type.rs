@@ -1,4 +1,7 @@
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize)]
+use strum::EnumCount;
+use strum::EnumIter;
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, EnumIter, EnumCount)]
 #[derive(sqlx::Type)]
 pub enum VocoderType {
   /// NB: Note - this is hifigan for Tacotron2.
@@ -64,5 +67,28 @@ mod tests {
     assert_eq!(VocoderType::from_str("hifigan").unwrap(), VocoderType::HifiGan);
     assert_eq!(VocoderType::from_str("hifigan-superres").unwrap(), VocoderType::HifiGanSuperResolution);
     assert_eq!(VocoderType::from_str("hifigan_rocket_vc").unwrap(), VocoderType::HifiGanRocketVc);
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in VocoderType::iter() {
+        assert_eq!(variant, VocoderType::from_str(variant.to_str()).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in VocoderType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }

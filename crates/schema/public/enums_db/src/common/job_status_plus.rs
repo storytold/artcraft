@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// This is used in newer jobs (that add additional enum states)
@@ -14,9 +10,7 @@ use strum::EnumIter;
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
 
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum JobStatusPlus {
   Pending,
@@ -70,20 +64,6 @@ impl JobStatusPlus {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Pending,
-      Self::Started,
-      Self::CompleteSuccess,
-      Self::CompleteFailure,
-      Self::AttemptFailed,
-      Self::Dead,
-      Self::CancelledByUser,
-      Self::CancelledBySystem,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -135,38 +115,30 @@ mod tests {
       assert_eq!(JobStatusPlus::from_str("cancelled_by_system").unwrap(), JobStatusPlus::CancelledBySystem);
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = JobStatusPlus::all_variants();
-      assert_eq!(variants.len(), 8);
-      assert_eq!(variants.pop_first(), Some(JobStatusPlus::Pending));
-      assert_eq!(variants.pop_first(), Some(JobStatusPlus::Started));
-      assert_eq!(variants.pop_first(), Some(JobStatusPlus::CompleteSuccess));
-      assert_eq!(variants.pop_first(), Some(JobStatusPlus::CompleteFailure));
-      assert_eq!(variants.pop_first(), Some(JobStatusPlus::AttemptFailed));
-      assert_eq!(variants.pop_first(), Some(JobStatusPlus::Dead));
-      assert_eq!(variants.pop_first(), Some(JobStatusPlus::CancelledByUser));
-      assert_eq!(variants.pop_first(), Some(JobStatusPlus::CancelledBySystem));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(JobStatusPlus::all_variants().len(), JobStatusPlus::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in JobStatusPlus::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in JobStatusPlus::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, JobStatusPlus::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, JobStatusPlus::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, JobStatusPlus::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in JobStatusPlus::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

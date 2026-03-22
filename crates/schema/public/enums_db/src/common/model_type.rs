@@ -1,15 +1,9 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// NB: This will be used by a variety of tables (MySQL and sqlite)!
 /// Keep the max length to 24 characters.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum ModelType {
   // Image models
@@ -280,73 +274,6 @@ impl ModelType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      // Image models
-      Self::Flux1Dev,
-      Self::Flux1Schnell,
-      Self::FluxDevJuggernaut,
-      Self::FluxPro1,
-      Self::FluxPro11,
-      Self::FluxPro11Ultra,
-      Self::FluxProKontextMax,
-      Self::Flux2LoraAngles,
-      Self::GptImage1,
-      Self::GptImage1p5,
-      Self::GrokImage,
-      Self::Recraft3,
-      Self::SeedEdit3,
-      Self::Qwen,
-      Self::QwenEdit2511Angles,
-      Self::Gemini25Flash,
-      Self::NanoBanana,
-      Self::NanoBanana2,
-      Self::NanoBananaPro,
-      Self::Seedream4,
-      Self::Seedream4p5,
-      Self::Seedream5Lite,
-      Self::Midjourney,
-      Self::MidjourneyV6,
-      Self::MidjourneyV6p1,
-      Self::MidjourneyV6p1Raw,
-      Self::MidjourneyV7,
-      Self::MidjourneyV7Draft,
-      Self::MidjourneyV7DraftRaw,
-      Self::MidjourneyV7Raw,
-
-      // Video models
-      Self::GrokVideo,
-      Self::Kling16Pro,
-      Self::Kling21Pro,
-      Self::Kling21Master,
-      Self::Kling2p5TurboPro,
-      Self::Kling2p6Pro,
-      Self::Kling3p0Standard,
-      Self::Kling3p0Pro,
-      Self::Seedance10Lite,
-      Self::Seedance10Pro,
-      Self::Seedance1p5Pro,
-      Self::Seedance2p0,
-      Self::Sora2,
-      Self::Sora2Pro,
-      Self::Veo2,
-      Self::Veo3,
-      Self::Veo3Fast,
-      Self::Veo3p1,
-      Self::Veo3p1Fast,
-
-      // 3D Object generation models
-      Self::Hunyuan3d2_0,
-      Self::Hunyuan3d2_1,
-      Self::Hunyuan3d3,
-
-      // Splat generation models (World Labs)
-      Self::Marble0p1Mini,
-      Self::Marble0p1Plus,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -546,85 +473,15 @@ mod tests {
       assert_eq!(ModelType::from_str("marble_0p1_plus").unwrap(), ModelType::Marble0p1Plus);
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = ModelType::all_variants();
-      assert_eq!(variants.len(), 54);
-      // Image models
-      assert_eq!(variants.pop_first(), Some(ModelType::Flux1Dev));
-      assert_eq!(variants.pop_first(), Some(ModelType::Flux1Schnell));
-      assert_eq!(variants.pop_first(), Some(ModelType::FluxDevJuggernaut));
-      assert_eq!(variants.pop_first(), Some(ModelType::FluxPro1));
-      assert_eq!(variants.pop_first(), Some(ModelType::FluxPro11));
-      assert_eq!(variants.pop_first(), Some(ModelType::FluxPro11Ultra));
-      assert_eq!(variants.pop_first(), Some(ModelType::FluxProKontextMax));
-      assert_eq!(variants.pop_first(), Some(ModelType::Flux2LoraAngles));
-      assert_eq!(variants.pop_first(), Some(ModelType::GptImage1));
-      assert_eq!(variants.pop_first(), Some(ModelType::GptImage1p5));
-      assert_eq!(variants.pop_first(), Some(ModelType::GrokImage));
-      assert_eq!(variants.pop_first(), Some(ModelType::Recraft3));
-      assert_eq!(variants.pop_first(), Some(ModelType::SeedEdit3));
-      assert_eq!(variants.pop_first(), Some(ModelType::Qwen));
-      assert_eq!(variants.pop_first(), Some(ModelType::QwenEdit2511Angles));
-      assert_eq!(variants.pop_first(), Some(ModelType::Gemini25Flash));
-      assert_eq!(variants.pop_first(), Some(ModelType::NanoBanana));
-      assert_eq!(variants.pop_first(), Some(ModelType::NanoBanana2));
-      assert_eq!(variants.pop_first(), Some(ModelType::NanoBananaPro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Seedream4));
-      assert_eq!(variants.pop_first(), Some(ModelType::Seedream4p5));
-      assert_eq!(variants.pop_first(), Some(ModelType::Seedream5Lite));
-      assert_eq!(variants.pop_first(), Some(ModelType::Midjourney));
-      assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV6));
-      assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV6p1));
-      assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV6p1Raw));
-      assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV7));
-      assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV7Draft));
-      assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV7DraftRaw));
-      assert_eq!(variants.pop_first(), Some(ModelType::MidjourneyV7Raw));
-      // Video models
-      assert_eq!(variants.pop_first(), Some(ModelType::GrokVideo));
-      assert_eq!(variants.pop_first(), Some(ModelType::Kling16Pro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Kling21Pro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Kling21Master));
-      assert_eq!(variants.pop_first(), Some(ModelType::Kling2p5TurboPro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Kling2p6Pro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Kling3p0Standard));
-      assert_eq!(variants.pop_first(), Some(ModelType::Kling3p0Pro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Seedance10Lite));
-      assert_eq!(variants.pop_first(), Some(ModelType::Seedance10Pro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Seedance1p5Pro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Seedance2p0));
-      assert_eq!(variants.pop_first(), Some(ModelType::Sora2));
-      assert_eq!(variants.pop_first(), Some(ModelType::Sora2Pro));
-      assert_eq!(variants.pop_first(), Some(ModelType::Veo2));
-      assert_eq!(variants.pop_first(), Some(ModelType::Veo3));
-      assert_eq!(variants.pop_first(), Some(ModelType::Veo3Fast));
-      assert_eq!(variants.pop_first(), Some(ModelType::Veo3p1));
-      assert_eq!(variants.pop_first(), Some(ModelType::Veo3p1Fast));
-      // 3D Object generation models
-      assert_eq!(variants.pop_first(), Some(ModelType::Hunyuan3d2_0));
-      assert_eq!(variants.pop_first(), Some(ModelType::Hunyuan3d2_1));
-      assert_eq!(variants.pop_first(), Some(ModelType::Hunyuan3d3));
-      // Splat generation models (World Labs)
-      assert_eq!(variants.pop_first(), Some(ModelType::Marble0p1Mini));
-      assert_eq!(variants.pop_first(), Some(ModelType::Marble0p1Plus));
-
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(ModelType::all_variants().len(), ModelType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in ModelType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in ModelType::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, ModelType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, ModelType::from_str(&format!("{}", variant)).unwrap());
@@ -634,8 +491,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 24;
-      for variant in ModelType::all_variants() {
+      for variant in ModelType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

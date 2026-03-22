@@ -1,14 +1,9 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// NB: This will be used by a variety of tables (MySQL and sqlite)!
 /// Keep the max length to 16 characters.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum ArtcraftCreditsPackSlug {
   #[serde(rename= "artcraft_1000")]
@@ -55,18 +50,6 @@ impl ArtcraftCreditsPackSlug {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Artcraft1000,
-      Self::Artcraft2500,
-      Self::Artcraft5000,
-      Self::Artcraft10000,
-      Self::Artcraft25000,
-      Self::Artcraft50000,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -108,32 +91,15 @@ mod tests {
 
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = ArtcraftCreditsPackSlug::all_variants();
-      assert_eq!(variants.len(), 6);
-      assert_eq!(variants.pop_first(), Some(ArtcraftCreditsPackSlug::Artcraft1000));
-      assert_eq!(variants.pop_first(), Some(ArtcraftCreditsPackSlug::Artcraft2500));
-      assert_eq!(variants.pop_first(), Some(ArtcraftCreditsPackSlug::Artcraft5000));
-      assert_eq!(variants.pop_first(), Some(ArtcraftCreditsPackSlug::Artcraft10000));
-      assert_eq!(variants.pop_first(), Some(ArtcraftCreditsPackSlug::Artcraft25000));
-      assert_eq!(variants.pop_first(), Some(ArtcraftCreditsPackSlug::Artcraft50000));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(ArtcraftCreditsPackSlug::all_variants().len(), ArtcraftCreditsPackSlug::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in ArtcraftCreditsPackSlug::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in ArtcraftCreditsPackSlug::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, ArtcraftCreditsPackSlug::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, ArtcraftCreditsPackSlug::from_str(&format!("{}", variant)).unwrap());
@@ -143,8 +109,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in ArtcraftCreditsPackSlug::all_variants() {
+      for variant in ArtcraftCreditsPackSlug::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

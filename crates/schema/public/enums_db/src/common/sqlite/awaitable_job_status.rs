@@ -1,14 +1,11 @@
 use serde::Deserialize;
 use serde::Serialize;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the following SqLite tables and columns:
 ///   `web_scraping_targets` . `maybe_skip_reason`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum AwaitableJobStatus {
   #[serde(rename = "not_ready")]
   NotReady,
@@ -108,6 +105,31 @@ mod tests {
       assert_eq!(AwaitableJobStatus::from_str("skipped").unwrap(), AwaitableJobStatus::Skipped);
       assert_eq!(AwaitableJobStatus::from_str("done").unwrap(), AwaitableJobStatus::Done);
       assert!(AwaitableJobStatus::from_str("foo").is_err());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in AwaitableJobStatus::iter() {
+        assert_eq!(variant, AwaitableJobStatus::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, AwaitableJobStatus::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, AwaitableJobStatus::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in AwaitableJobStatus::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

@@ -1,12 +1,9 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 #[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
-#[derive(sqlx::Type)]
+#[derive(sqlx::Type, EnumIter, EnumCount)]
 #[sqlx(rename_all = "snake_case")]
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
 #[serde(rename_all = "snake_case")]
 pub enum ViewAs {
     /// Public entities are able to be listed in public lists.
@@ -19,7 +16,6 @@ pub enum ViewAs {
     /// website moderation staff.
     AnotherUser,
 }
-
 
 impl_enum_display_and_debug_using_to_str!(ViewAs);
 impl_mysql_from_row!(ViewAs);
@@ -149,4 +145,29 @@ mod tests {
             assert_eq!(expected, serde_json::from_str::<CompositeType>(&payload).unwrap());
         }
     }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in ViewAs::iter() {
+        assert_eq!(variant, ViewAs::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, ViewAs::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, ViewAs::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in ViewAs::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
+  }
 }

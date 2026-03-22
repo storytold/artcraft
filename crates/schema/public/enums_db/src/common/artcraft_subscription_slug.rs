@@ -1,14 +1,9 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// NB: This will be used by a variety of tables (MySQL and sqlite)!
 /// Keep the max length to 16 characters.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum ArtcraftSubscriptionSlug {
   ArtcraftBasic,
@@ -40,15 +35,6 @@ impl ArtcraftSubscriptionSlug {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::ArtcraftBasic,
-      Self::ArtcraftPro,
-      Self::ArtcraftMax,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -80,29 +66,15 @@ mod tests {
       assert_eq!(ArtcraftSubscriptionSlug::from_str("artcraft_max").unwrap(), ArtcraftSubscriptionSlug::ArtcraftMax);
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = ArtcraftSubscriptionSlug::all_variants();
-      assert_eq!(variants.len(), 3);
-      assert_eq!(variants.pop_first(), Some(ArtcraftSubscriptionSlug::ArtcraftBasic));
-      assert_eq!(variants.pop_first(), Some(ArtcraftSubscriptionSlug::ArtcraftPro));
-      assert_eq!(variants.pop_first(), Some(ArtcraftSubscriptionSlug::ArtcraftMax));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(ArtcraftSubscriptionSlug::all_variants().len(), ArtcraftSubscriptionSlug::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in ArtcraftSubscriptionSlug::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in ArtcraftSubscriptionSlug::iter() {
         // Test to_str(), from_str(), Display, and Debug.
         assert_eq!(variant, ArtcraftSubscriptionSlug::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, ArtcraftSubscriptionSlug::from_str(&format!("{}", variant)).unwrap());
@@ -112,8 +84,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in ArtcraftSubscriptionSlug::all_variants() {
+      for variant in ArtcraftSubscriptionSlug::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
