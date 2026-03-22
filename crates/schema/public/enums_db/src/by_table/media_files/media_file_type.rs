@@ -202,6 +202,48 @@ mod tests {
     }
   }
 
+  mod test_is_jpg_or_png_or_legacy_image {
+    use super::*;
+    use strum::IntoEnumIterator;
+
+    #[test]
+    fn true_for_jpg_png_image() {
+      assert!(MediaFileType::Jpg.is_jpg_or_png_or_legacy_image());
+      assert!(MediaFileType::Png.is_jpg_or_png_or_legacy_image());
+      assert!(MediaFileType::Image.is_jpg_or_png_or_legacy_image());
+    }
+
+    #[test]
+    fn false_for_everything_else() {
+      for variant in MediaFileType::iter() {
+        if matches!(variant, MediaFileType::Jpg | MediaFileType::Png | MediaFileType::Image) {
+          continue;
+        }
+        assert!(!variant.is_jpg_or_png_or_legacy_image(), "Expected {:?} to be false", variant);
+      }
+    }
+  }
+
+  mod test_try_from_mime_type {
+    use super::*;
+
+    #[test]
+    fn known_mime_types() {
+      assert_eq!(MediaFileType::try_from_mime_type("image/jpeg"), Some(MediaFileType::Jpg));
+      assert_eq!(MediaFileType::try_from_mime_type("image/png"), Some(MediaFileType::Png));
+      assert_eq!(MediaFileType::try_from_mime_type("video/mp4"), Some(MediaFileType::Mp4));
+      assert_eq!(MediaFileType::try_from_mime_type("model/gltf-binary"), Some(MediaFileType::Glb));
+    }
+
+    #[test]
+    fn unknown_mime_types_return_none() {
+      assert_eq!(MediaFileType::try_from_mime_type("audio/wav"), None);
+      assert_eq!(MediaFileType::try_from_mime_type("image/gif"), None);
+      assert_eq!(MediaFileType::try_from_mime_type("text/plain"), None);
+      assert_eq!(MediaFileType::try_from_mime_type(""), None);
+    }
+  }
+
   mod serde {
     use super::*;
 
