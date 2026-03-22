@@ -122,7 +122,7 @@ mod tests {
     #[test]
     fn serialized_length_ok_for_database() {
       use strum::IntoEnumIterator;
-      const MAX_LENGTH: usize = 16;
+      const MAX_LENGTH: usize = 16; // TODO(bt): Confirm database column width, then remove this comment.
       for variant in GenerationProvider::iter() {
         let serialized = variant.to_str();
         assert!(!serialized.is_empty(), "variant {:?} is too short", variant);

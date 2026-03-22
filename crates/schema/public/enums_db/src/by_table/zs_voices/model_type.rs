@@ -85,7 +85,7 @@ mod tests {
   
     #[test]
     fn serialized_length_ok_for_database() {
-      const MAX_LENGTH: usize = 16;
+      const MAX_LENGTH: usize = 16; // TODO(bt): Confirm database column width, then remove this comment.
       use strum::IntoEnumIterator;
       for variant in ZsVoiceModelType::iter() {
         let serialized = variant.to_str();

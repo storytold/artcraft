@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
-      const MAX_LENGTH: usize = 32;
+      const MAX_LENGTH: usize = 32; // TODO(bt): Confirm database column width, then remove this comment.
       use strum::IntoEnumIterator;
       for variant in WindowName::iter() {
         let serialized = variant.to_str();
