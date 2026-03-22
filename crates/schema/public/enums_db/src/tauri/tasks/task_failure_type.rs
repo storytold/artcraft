@@ -140,6 +140,45 @@ mod tests {
 
   }
 
+  mod from_frontend_failure_category {
+    use super::*;
+    use crate::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+
+    #[test]
+    fn direct_mappings() {
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::RuleBansUserImage), TaskFailureType::RuleBansUserImage);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::RuleBansUserImageWithFaces), TaskFailureType::RuleBansUserImageWithFaces);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::RuleBansUserTextPrompt), TaskFailureType::RuleBansUserTextPrompt);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::RuleBansUserContent), TaskFailureType::RuleBansUserContent);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::RuleBansGeneratedVideo), TaskFailureType::RuleBansGeneratedVideo);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::RuleBansGeneratedAudio), TaskFailureType::RuleBansGeneratedAudio);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::RuleBansGeneratedContent), TaskFailureType::RuleBansGeneratedContent);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::GenerationFailed), TaskFailureType::GenerationFailed);
+    }
+
+    #[test]
+    fn legacy_model_rules_violation_maps_to_rule_bans_user_content() {
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::ModelRulesViolation), TaskFailureType::RuleBansUserContent);
+    }
+
+    #[test]
+    fn unmapped_variants_become_unknown() {
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::FaceNotDetected), TaskFailureType::Unknown);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::KeepAliveElapsed), TaskFailureType::Unknown);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::NotYetImplemented), TaskFailureType::Unknown);
+      assert_eq!(TaskFailureType::from_frontend_failure_category(FrontendFailureCategory::RetryableWorkerError), TaskFailureType::Unknown);
+    }
+
+    #[test]
+    fn all_frontend_variants_are_handled() {
+      use strum::IntoEnumIterator;
+      for variant in FrontendFailureCategory::iter() {
+        // Should not panic — every variant produces a valid TaskFailureType.
+        let _ = TaskFailureType::from_frontend_failure_category(variant);
+      }
+    }
+  }
+
   mod mechanical_checks {
     use super::*;
 
