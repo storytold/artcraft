@@ -22,7 +22,6 @@ workspace-build-acceleration = { workspace = true }
 # Internal
 datetimes = { path = "../../../lib/data/datetimes" }
 easyenv = { path = "../../../lib/easyenv" }
-enums = { path = "../../../schema/public/enums" }
 errors = { path = "../../../lib/errors" }
 mysql_queries = { path = "../../../schema/database/mysql_queries" }
 tokens = { path = "../../../schema/public/tokens" }

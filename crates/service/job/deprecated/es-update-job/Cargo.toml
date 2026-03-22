@@ -22,7 +22,6 @@ bootstrap = { path = "../../../../lib/bootstrap" }
 config = { path = "../../../../lib/deprecated/config" }
 easyenv = { path = "../../../../lib/easyenv" }
 elasticsearch_schema = { path = "../../../../schema/database/elasticsearch_schema" }
-enums = { path = "../../../../schema/public/enums" }
 enums_db.workspace = true
 errors = { path = "../../../../lib/errors" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }

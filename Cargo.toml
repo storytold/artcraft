@@ -110,7 +110,6 @@ members = [
 
   # Schema (public): common strongly-typed tokens, ids, payloads, etc.
   "crates/schema/public/composite_identifiers",
-  "crates/schema/public/enums",
   "crates/schema/public/enums_api",
   "crates/schema/public/enums_convert",
   "crates/schema/public/enums_db",
@@ -234,7 +233,6 @@ concurrency = { path = "crates/lib/concurrency" }
 cookie_store = { path = "crates/lib/cookie_store" }
 crockford = { path = "crates/lib/data/crockford" }
 easyenv = { path = "crates/lib/easyenv" }
-enums = { path = "crates/schema/public/enums" }
 enums_api = { path = "crates/schema/public/enums_api" }
 enums_convert = { path = "crates/schema/public/enums_convert" }
 enums_db = { path = "crates/schema/public/enums_db" }

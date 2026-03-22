@@ -24,7 +24,6 @@ workspace-build-acceleration.workspace = true
 actix_artcraft.workspace = true
 artcraft_api_defs.workspace = true
 component_traits.workspace = true
-enums.workspace = true
 enums_convert.workspace = true
 enums_db = { workspace = true, features = ["utoipa"] }
 errors.workspace = true

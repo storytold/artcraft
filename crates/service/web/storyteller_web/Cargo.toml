@@ -49,7 +49,6 @@ crockford = { path = "../../../lib/data/crockford" }
 datetimes = { path = "../../../lib/data/datetimes" }
 easyenv.workspace = true
 elasticsearch_schema = { path = "../../../schema/database/elasticsearch_schema" }
-enums.workspace = true
 enums_api.workspace = true
 enums_convert.workspace = true
 enums_db = { workspace = true, features = ["utoipa"] }

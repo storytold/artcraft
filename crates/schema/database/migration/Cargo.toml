@@ -23,7 +23,6 @@ workspace-build-acceleration.workspace = true
 # Internal
 bucket_paths.workspace = true
 cloud_storage.workspace = true
-enums.workspace = true
 enums_db.workspace = true
 errors.workspace = true
 jobs_common = { path = "../../../lib/jobs_common" }

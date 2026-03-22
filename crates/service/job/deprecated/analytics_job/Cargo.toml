@@ -21,7 +21,6 @@ normal = ["workspace-build-acceleration"]
 config = { path = "../../../../lib/deprecated/config" }
 datetimes = { path = "../../../../lib/data/datetimes" }
 easyenv = { path = "../../../../lib/easyenv" }
-enums = { workspace = true, default-features = false, features = [] }
 enums_db.workspace = true
 errors = { path = "../../../../lib/errors" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }

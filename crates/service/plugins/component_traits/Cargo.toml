@@ -22,7 +22,6 @@ workspace-build-acceleration.workspace = true
 # Internal
 #url_config = { path = "../../../lib/url_config" }
 artcraft_api_defs.workspace = true
-enums.workspace = true
 enums_db.workspace = true
 errors.workspace = true
 http_server_common = { path = "../../../lib/deprecated/http_server_common" }

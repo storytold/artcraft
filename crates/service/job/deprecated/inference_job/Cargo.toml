@@ -30,7 +30,6 @@ concurrency = { path = "../../../../lib/concurrency" }
 config = { path = "../../../../lib/deprecated/config" }
 crockford.workspace = true
 easyenv = { path = "../../../../lib/easyenv" }
-enums.workspace = true
 enums_db.workspace = true
 errors.workspace = true
 filesys.workspace = true
