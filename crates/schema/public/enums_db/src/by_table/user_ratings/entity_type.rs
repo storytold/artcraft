@@ -1,12 +1,8 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `user_ratings` table in a `VARCHAR(32)` field named `entity_type`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum UserRatingEntityType {
   /// Media files (inference results, uploads, etc.)
   #[serde(rename = "media_file")]
@@ -36,6 +32,7 @@ pub enum UserRatingEntityType {
 // TODO(bt, 2023-01-17): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(UserRatingEntityType);
 impl_mysql_enum_coders!(UserRatingEntityType);
+impl_mysql_from_row!(UserRatingEntityType);
 
 /// NB: Legacy API for older code.
 impl UserRatingEntityType {
@@ -104,6 +101,31 @@ mod tests {
       assert_eq!(UserRatingEntityType::from_str("w2l_template").unwrap(), UserRatingEntityType::W2lTemplate);
       assert_eq!(UserRatingEntityType::from_str("w2l_result").unwrap(), UserRatingEntityType::W2lResult);
       assert!(UserRatingEntityType::from_str("foo").is_err());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in UserRatingEntityType::iter() {
+        assert_eq!(variant, UserRatingEntityType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, UserRatingEntityType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, UserRatingEntityType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in UserRatingEntityType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

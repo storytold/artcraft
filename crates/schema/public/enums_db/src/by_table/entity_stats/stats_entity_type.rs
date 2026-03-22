@@ -1,13 +1,8 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `user_stats` table in a `VARCHAR(32)` field named `entity_type`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, Ord, PartialOrd, EnumIter, EnumCount)]
 pub enum StatsEntityType {
     /// Comment
     #[serde(rename = "comment")]
@@ -46,15 +41,6 @@ impl StatsEntityType {
         }
     }
 
-    pub fn all_variants() -> BTreeSet<Self> {
-        // NB: BTreeSet is sorted
-        // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-        BTreeSet::from([
-            Self::Comment,
-            Self::MediaFile,
-            Self::ModelWeight,
-        ])
-    }
 }
 
 #[cfg(test)]
@@ -87,33 +73,30 @@ mod tests {
             assert!(StatsEntityType::from_str("foo").is_err());
         }
 
-        #[test]
-        fn all_variants() {
-            let mut variants = StatsEntityType::all_variants();
-            assert_eq!(variants.len(), 3);
-            assert_eq!(variants.pop_first(), Some(StatsEntityType::Comment));
-            assert_eq!(variants.pop_first(), Some(StatsEntityType::MediaFile));
-            assert_eq!(variants.pop_first(), Some(StatsEntityType::ModelWeight));
-            assert_eq!(variants.pop_first(), None);
-        }
     }
 
     mod mechanical_checks {
       use super::*;
 
-      #[test]
-        fn variant_length() {
-            use strum::IntoEnumIterator;
-            assert_eq!(StatsEntityType::all_variants().len(), StatsEntityType::iter().len());
-        }
-
         #[test]
         fn round_trip() {
-            for variant in StatsEntityType::all_variants() {
+          use strum::IntoEnumIterator;
+            for variant in StatsEntityType::iter() {
                 assert_eq!(variant, StatsEntityType::from_str(variant.to_str()).unwrap());
                 assert_eq!(variant, StatsEntityType::from_str(&format!("{}", variant)).unwrap());
                 assert_eq!(variant, StatsEntityType::from_str(&format!("{:?}", variant)).unwrap());
             }
         }
+    
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in StatsEntityType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
+  }
 }

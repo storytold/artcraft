@@ -1,13 +1,8 @@
-use std::collections::BTreeSet;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `tag_uses` table in a `VARCHAR(32)` field named `entity_type`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum TagUseEntityType {
   /// Media files
   #[serde(rename = "media_file")]
@@ -21,6 +16,7 @@ pub enum TagUseEntityType {
 // TODO(bt, 2023-01-17): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(TagUseEntityType);
 impl_mysql_enum_coders!(TagUseEntityType);
+impl_mysql_from_row!(TagUseEntityType);
 
 /// NB: Legacy API for older code.
 impl TagUseEntityType {
@@ -39,14 +35,6 @@ impl TagUseEntityType {
     }
   }
   
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::MediaFile,
-      Self::ModelWeight,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -81,31 +69,13 @@ mod tests {
     }
   }
   
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = TagUseEntityType::all_variants();
-      assert_eq!(variants.len(), 2);
-      assert_eq!(variants.pop_first(), Some(TagUseEntityType::MediaFile));
-      assert_eq!(variants.pop_first(), Some(TagUseEntityType::ModelWeight));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(TagUseEntityType::all_variants().len(), TagUseEntityType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in TagUseEntityType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in TagUseEntityType::iter() {
         assert_eq!(variant, TagUseEntityType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, TagUseEntityType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, TagUseEntityType::from_str(&format!("{:?}", variant)).unwrap());
@@ -114,8 +84,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 32;
-      for variant in TagUseEntityType::all_variants() {
+      for variant in TagUseEntityType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

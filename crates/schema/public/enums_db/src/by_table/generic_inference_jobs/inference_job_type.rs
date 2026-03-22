@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `job_type`.
 ///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum InferenceJobType {
   FalQueue,
@@ -54,6 +48,7 @@ pub enum InferenceJobType {
 
 impl_enum_display_and_debug_using_to_str!(InferenceJobType);
 impl_mysql_enum_coders!(InferenceJobType);
+impl_mysql_from_row!(InferenceJobType);
 
 impl InferenceJobType {
   pub fn to_str(&self) -> &'static str {
@@ -113,33 +108,6 @@ impl InferenceJobType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    BTreeSet::from([
-      Self::FalQueue,
-      Self::Seedance2ProQueue,
-      Self::WorldlabsQueue,
-      Self::VideoRender,
-      Self::LivePortrait,
-      Self::FaceFusion,
-      Self::F5TTS,
-      Self::GptSovits,
-      Self::ComfyUi,
-      Self::StudioGen2,
-      Self::ImageGenApi,
-      Self::ConvertFbxToGltf,
-      Self::MocapNet,
-      Self::RvcV2,
-      Self::SadTalker,
-      Self::SeedVc,
-      Self::SoVitsSvc,
-      Self::StableDiffusion,
-      Self::StyleTTS2,
-      Self::Tacotron2,
-      Self::Unknown,
-      Self::BevyToWorkflow,
-      Self::RerenderAVideo,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -236,27 +204,15 @@ mod tests {
       assert_eq!(InferenceJobType::from_str("rerender_a_video").unwrap(), InferenceJobType::RerenderAVideo);
     }
 
-    #[test]
-    fn all_variants() {
-      const EXPECTED_COUNT: usize = 23;
-      assert_eq!(InferenceJobType::all_variants().len(), EXPECTED_COUNT);
-      use strum::IntoEnumIterator;
-      assert_eq!(InferenceJobType::all_variants().len(), InferenceJobType::iter().len());
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(InferenceJobType::all_variants().len(), InferenceJobType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in InferenceJobType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in InferenceJobType::iter() {
         assert_eq!(variant, InferenceJobType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, InferenceJobType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, InferenceJobType::from_str(&format!("{:?}", variant)).unwrap());
@@ -265,8 +221,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH: usize = 32;
-      for variant in InferenceJobType::all_variants() {
+      for variant in InferenceJobType::iter() {
         let serialized = variant.to_str();
         assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

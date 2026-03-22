@@ -1,15 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `usages` table in a `VARCHAR(16)` field. (Two fields!)
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum UsagesType {
   /// Represents a foreign key link against a model_weights record
@@ -41,14 +36,6 @@ impl UsagesType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::ModelWeight,
-      Self::MediaFile,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -83,31 +70,13 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = UsagesType::all_variants();
-      assert_eq!(variants.len(), 2);
-      assert_eq!(variants.pop_first(), Some(UsagesType::ModelWeight));
-      assert_eq!(variants.pop_first(), Some(UsagesType::MediaFile));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(UsagesType::all_variants().len(), UsagesType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in UsagesType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in UsagesType::iter() {
         assert_eq!(variant, UsagesType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, UsagesType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, UsagesType::from_str(&format!("{:?}", variant)).unwrap());
@@ -116,8 +85,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in UsagesType::all_variants() {
+      for variant in UsagesType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

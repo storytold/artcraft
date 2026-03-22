@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `users` table in a `VARCHAR(255)` (which should be a `VARCHAR(16)`) field, `maybe_source`.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum UserSignupSource {
   #[deprecated(since = "2026-01-30", note = "Use other Artcraft* enum variants instead")]
@@ -78,20 +72,6 @@ impl UserSignupSource {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::ArtCraft,
-      Self::ArtCraftApp,
-      Self::ArtCraftAiWeb,
-      Self::ArtCraftAiStripe,
-      Self::ArtCraftGetWeb,
-      Self::ArtCraftGetStripe,
-      Self::FakeYou,
-      Self::Storyteller,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -143,37 +123,13 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = UserSignupSource::all_variants();
-      assert_eq!(variants.len(), 8);
-      assert_eq!(variants.pop_first(), Some(UserSignupSource::ArtCraft));
-      assert_eq!(variants.pop_first(), Some(UserSignupSource::ArtCraftApp));
-      assert_eq!(variants.pop_first(), Some(UserSignupSource::ArtCraftAiWeb));
-      assert_eq!(variants.pop_first(), Some(UserSignupSource::ArtCraftAiStripe));
-      assert_eq!(variants.pop_first(), Some(UserSignupSource::ArtCraftGetWeb));
-      assert_eq!(variants.pop_first(), Some(UserSignupSource::ArtCraftGetStripe));
-      assert_eq!(variants.pop_first(), Some(UserSignupSource::FakeYou));
-      assert_eq!(variants.pop_first(), Some(UserSignupSource::Storyteller));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(UserSignupSource::all_variants().len(), UserSignupSource::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in UserSignupSource::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in UserSignupSource::iter() {
         assert_eq!(variant, UserSignupSource::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, UserSignupSource::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, UserSignupSource::from_str(&format!("{:?}", variant)).unwrap());
@@ -182,8 +138,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in UserSignupSource::all_variants() {
+      for variant in UserSignupSource::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

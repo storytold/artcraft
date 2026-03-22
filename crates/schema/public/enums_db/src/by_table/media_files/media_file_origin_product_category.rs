@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_files` table in `VARCHAR(16)` field `origin_product_category`.
@@ -13,9 +9,7 @@ use strum::EnumIter;
 /// "Voice Designer" dataset samples in a video generation flow.)
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum MediaFileOriginProductCategory {
   /// Unknown which product is attached to the file (generated the file, the file was
   /// uploaded on behalf of, etc.)
@@ -133,28 +127,6 @@ impl MediaFileOriginProductCategory {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Unknown,
-      Self::FaceAnimator,
-      Self::FaceFusion,
-      Self::FaceMirror,
-      Self::VideoStyleTransfer,
-      Self::ImageStudio,
-      Self::StorytellerStudio,
-      Self::TextToSpeech,
-      Self::VoiceConversion,
-      Self::ZeroShotVoice,
-      Self::Mocap,
-      Self::ImageGeneration,
-      Self::VideoGeneration,
-      Self::WorldGeneration,
-      Self::VideoFilter,
-      Self::Workflow,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -225,42 +197,15 @@ mod tests {
       assert_eq!(MediaFileOriginProductCategory::from_str("workflow").unwrap(), MediaFileOriginProductCategory::Workflow);
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = MediaFileOriginProductCategory::all_variants();
-      assert_eq!(variants.len(), 16);
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::Unknown));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::FaceAnimator));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::FaceFusion));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::FaceMirror));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::VideoStyleTransfer));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::ImageStudio));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::StorytellerStudio));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::TextToSpeech));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::VoiceConversion));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::ZeroShotVoice));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::Mocap));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::ImageGeneration));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::VideoGeneration));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::WorldGeneration));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::VideoFilter));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginProductCategory::Workflow));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(MediaFileOriginProductCategory::all_variants().len(), MediaFileOriginProductCategory::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in MediaFileOriginProductCategory::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in MediaFileOriginProductCategory::iter() {
         assert_eq!(variant, MediaFileOriginProductCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, MediaFileOriginProductCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, MediaFileOriginProductCategory::from_str(&format!("{:?}", variant)).unwrap());
@@ -269,8 +214,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in MediaFileOriginProductCategory::all_variants() {
+      for variant in MediaFileOriginProductCategory::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

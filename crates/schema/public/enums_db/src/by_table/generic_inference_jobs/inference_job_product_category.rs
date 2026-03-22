@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `product_category`.
@@ -12,8 +8,7 @@ use strum::EnumIter;
 /// "storyteller studio" and also separate "live portrait" from "webcam live portrait".
 ///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum InferenceJobProductCategory {
   // =============== DOWNLOAD ===============
@@ -126,6 +121,7 @@ pub enum InferenceJobProductCategory {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(InferenceJobProductCategory);
 impl_mysql_enum_coders!(InferenceJobProductCategory);
+impl_mysql_from_row!(InferenceJobProductCategory);
 
 /// NB: Legacy API for older code.
 impl InferenceJobProductCategory {
@@ -198,41 +194,6 @@ impl InferenceJobProductCategory {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::DownloadGptSoVits,
-      Self::FalImage,
-      Self::FalVideo,
-      Self::FalObject,
-      Self::FalBgRemoval,
-      Self::Seedance2ProVideo,
-      Self::WorldlabsSplat,
-      Self::TtsGptSoVits,
-      Self::TtsStyleTts2,
-      Self::TtsTacotron2,
-      Self::TtsF5,
-      Self::VcSeedVc,
-      Self::VcSvc,
-      Self::VcRvc2,
-      Self::VidLipsyncFaceFusion,
-      Self::VidLipsyncSadTalker,
-      Self::VidLivePortrait,
-      Self::VidLivePortraitWebcam,
-      Self::VidStudio,
-      Self::VidStudioGen2,
-      Self::VidStyleTransfer,
-      Self::LipsyncFaceFusion,
-      Self::LipsyncSadTalker,
-      Self::LivePortrait,
-      Self::LivePortraitWebcam,
-      Self::StableDiffusion,
-      Self::Studio,
-      Self::VidFaceFusion,
-      Self::Vst,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -340,32 +301,15 @@ mod tests {
       assert_eq!(InferenceJobProductCategory::from_str("vst").unwrap(), InferenceJobProductCategory::Vst);
     }
 
-    #[test]
-    fn all_variants() {
-      // Static check
-      const EXPECTED_COUNT : usize = 29;
-
-      assert_eq!(InferenceJobProductCategory::all_variants().len(), EXPECTED_COUNT);
-      assert_eq!(InferenceJobProductCategory::iter().len(), EXPECTED_COUNT);
-      
-      // Generated check
-      use strum::IntoEnumIterator;
-      assert_eq!(InferenceJobProductCategory::all_variants().len(), InferenceJobProductCategory::iter().len());
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(InferenceJobProductCategory::all_variants().len(), InferenceJobProductCategory::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in InferenceJobProductCategory::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in InferenceJobProductCategory::iter() {
         assert_eq!(variant, InferenceJobProductCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, InferenceJobProductCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, InferenceJobProductCategory::from_str(&format!("{:?}", variant)).unwrap());
@@ -374,8 +318,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 32;
-      for variant in InferenceJobProductCategory::all_variants() {
+      for variant in InferenceJobProductCategory::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

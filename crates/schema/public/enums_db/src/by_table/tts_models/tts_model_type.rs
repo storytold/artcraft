@@ -1,14 +1,11 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `tts_models` table in an `ENUM` field.
 /// -- Furthermore -- not all enum values are represented !!
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum TtsModelType {
   #[serde(rename = "tacotron2")]
   Tacotron2,
@@ -20,6 +17,7 @@ pub enum TtsModelType {
 // TODO(bt, 2023-04-03): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(TtsModelType);
 impl_mysql_enum_coders!(TtsModelType);
+impl_mysql_from_row!(TtsModelType);
 
 /// NB: Legacy API for older code.
 impl TtsModelType {
@@ -61,5 +59,30 @@ mod tests {
     assert_eq!(TtsModelType::from_str("tacotron2").unwrap(), TtsModelType::Tacotron2);
     assert_eq!(TtsModelType::from_str("vits").unwrap(), TtsModelType::Vits);
     assert!(TtsModelType::from_str("foo").is_err());
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in TtsModelType::iter() {
+        assert_eq!(variant, TtsModelType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, TtsModelType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, TtsModelType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in TtsModelType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }

@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_files` table in a `VARCHAR(16)` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum MediaFileType {
   // TODO(bt): Deprecate and split into audio mime types; use media_class to represent broadly
@@ -177,32 +171,6 @@ impl MediaFileType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Audio,
-      Self::Image,
-      Self::Video,
-      Self::Bvh,
-      Self::Fbx,
-      Self::Glb,
-      Self::Gltf,
-      Self::Spz,
-      Self::SceneRon,
-      Self::SceneJson,
-      Self::Pmd,
-      Self::Vmd,
-      Self::Pmx,
-      Self::Csv,
-      Self::Jpg,
-      Self::Png,
-      Self::Gif,
-      Self::Mp4,
-      Self::Wav,
-      Self::Mp3,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -215,6 +183,7 @@ mod tests {
     
     #[test]
     fn test_jpg_or_png() {
+      use strum::IntoEnumIterator;
       // True
       assert!(MediaFileType::Jpg.is_jpg_or_png());
       assert!(MediaFileType::Png.is_jpg_or_png());
@@ -224,7 +193,7 @@ mod tests {
       assert!(!MediaFileType::Image.is_jpg_or_png());
       
       // Everything else is false
-      for variant in MediaFileType::all_variants() {
+      for variant in MediaFileType::iter() {
         if matches!(variant, MediaFileType::Jpg | MediaFileType::Png) {
           continue;
         }
@@ -314,49 +283,13 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = MediaFileType::all_variants();
-      assert_eq!(variants.len(), 20);
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Audio));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Image));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Video));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Bvh));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Fbx));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Glb));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Gltf));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Spz));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::SceneRon));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::SceneJson));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Pmd));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Vmd));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Pmx));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Csv));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Jpg));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Png));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Gif));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Mp4));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Wav));
-      assert_eq!(variants.pop_first(), Some(MediaFileType::Mp3));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(MediaFileType::all_variants().len(), MediaFileType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in MediaFileType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in MediaFileType::iter() {
         assert_eq!(variant, MediaFileType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, MediaFileType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, MediaFileType::from_str(&format!("{:?}", variant)).unwrap());
@@ -365,8 +298,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in MediaFileType::all_variants() {
+      for variant in MediaFileType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

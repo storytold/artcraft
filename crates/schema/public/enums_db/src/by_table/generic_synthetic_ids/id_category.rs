@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `generic_synthetic_ids` table in `VARCHAR(32)` field `id_category`.
@@ -10,8 +6,7 @@ use strum::EnumIter;
 /// This lets us create synthetic increment IDs on a per-user, per-category basis.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum IdCategory {
   /// media_files table
   #[serde(rename = "media_file")]
@@ -78,6 +73,7 @@ pub enum IdCategory {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(IdCategory);
 impl_mysql_enum_coders!(IdCategory);
+impl_mysql_from_row!(IdCategory);
 
 /// NB: Legacy API for older code.
 impl IdCategory {
@@ -122,27 +118,6 @@ impl IdCategory {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::MediaFile,
-      Self::LipsyncAnimationResult,
-      Self::FaceFusionResult,
-      Self::VideoFilterResult,
-      Self::LivePortraitResult,
-      Self::StudioRender,
-      Self::TtsResult,
-      Self::VoiceConversionResult,
-      Self::ZeroShotTtsResult,
-      Self::ZeroShotVoiceDataset,
-      Self::ZeroShotVoiceEmbedding,
-      Self::ModelWeights,
-      Self::FileUpload,
-      Self::MocapResult,
-      Self::WorkflowResult,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -210,49 +185,29 @@ mod tests {
       assert_eq!(IdCategory::from_str("workflow").unwrap(), IdCategory::WorkflowResult);
     }
 
-    #[test]
-    fn all_variants() {
-      // Static check
-      let mut variants = IdCategory::all_variants();
-      assert_eq!(variants.len(), 15);
-      assert_eq!(variants.pop_first(), Some(IdCategory::MediaFile));
-      assert_eq!(variants.pop_first(), Some(IdCategory::LipsyncAnimationResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::FaceFusionResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::VideoFilterResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::LivePortraitResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::StudioRender));
-      assert_eq!(variants.pop_first(), Some(IdCategory::MocapResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::WorkflowResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::TtsResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::VoiceConversionResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::ZeroShotTtsResult));
-      assert_eq!(variants.pop_first(), Some(IdCategory::ZeroShotVoiceDataset));
-      assert_eq!(variants.pop_first(), Some(IdCategory::ZeroShotVoiceEmbedding));
-      assert_eq!(variants.pop_first(), Some(IdCategory::ModelWeights));
-      assert_eq!(variants.pop_first(), Some(IdCategory::FileUpload));
-      assert_eq!(variants.pop_first(), None);
-
-      // Generated check
-      use strum::IntoEnumIterator;
-      assert_eq!(IdCategory::all_variants().len(), IdCategory::iter().len());
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(IdCategory::all_variants().len(), IdCategory::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in IdCategory::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in IdCategory::iter() {
         assert_eq!(variant, IdCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, IdCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, IdCategory::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in IdCategory::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

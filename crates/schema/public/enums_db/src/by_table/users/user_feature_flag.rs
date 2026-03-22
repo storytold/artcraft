@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `users` table in a `VARCHAR` field (stored as comma separated set).
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum UserFeatureFlag {
   /// Grants a user the ability to list media
@@ -54,16 +48,6 @@ impl UserFeatureFlag {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::ExploreMedia,
-      Self::Studio,
-      Self::Upload3d,
-      Self::VideoStyleTransfer,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -99,30 +83,15 @@ mod tests {
       assert!(UserFeatureFlag::from_str("foo").is_err());
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = UserFeatureFlag::all_variants();
-      assert_eq!(variants.len(), 4);
-      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ExploreMedia));
-      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Studio));
-      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Upload3d));
-      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::VideoStyleTransfer));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(UserFeatureFlag::all_variants().len(), UserFeatureFlag::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in UserFeatureFlag::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in UserFeatureFlag::iter() {
         assert_eq!(variant, UserFeatureFlag::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, UserFeatureFlag::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, UserFeatureFlag::from_str(&format!("{:?}", variant)).unwrap());
@@ -131,8 +100,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 32;
-      for variant in UserFeatureFlag::all_variants() {
+      for variant in UserFeatureFlag::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

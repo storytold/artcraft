@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `frontend_failure_category`.
@@ -19,9 +15,7 @@ use strum::EnumIter;
 /// come to handle some in a cross-cutting way.
 ///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum FrontendFailureCategory {
   /// When a face is not detected in the image used for animation.
   /// For SadTalker (and possibly Wav2Lip)
@@ -102,6 +96,7 @@ pub enum FrontendFailureCategory {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(FrontendFailureCategory);
 impl_mysql_enum_coders!(FrontendFailureCategory);
+impl_mysql_from_row!(FrontendFailureCategory);
 
 /// NB: Legacy API for older code.
 impl FrontendFailureCategory {
@@ -142,25 +137,6 @@ impl FrontendFailureCategory {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::FaceNotDetected,
-      Self::KeepAliveElapsed,
-      Self::NotYetImplemented,
-      Self::RetryableWorkerError,
-      Self::ModelRulesViolation,
-      Self::RuleBansUserImage,
-      Self::RuleBansUserImageWithFaces,
-      Self::RuleBansUserTextPrompt,
-      Self::RuleBansUserContent,
-      Self::RuleBansGeneratedVideo,
-      Self::RuleBansGeneratedAudio,
-      Self::RuleBansGeneratedContent,
-      Self::GenerationFailed,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -223,42 +199,29 @@ mod tests {
       assert_eq!(FrontendFailureCategory::from_str("invalid_value").is_err(), true);
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = FrontendFailureCategory::all_variants();
-      assert_eq!(variants.len(), 13);
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::FaceNotDetected));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::KeepAliveElapsed));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::NotYetImplemented));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RetryableWorkerError));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::ModelRulesViolation));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserImage));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserImageWithFaces));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserTextPrompt));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansUserContent));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansGeneratedVideo));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansGeneratedAudio));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansGeneratedContent));
-      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::GenerationFailed));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(FrontendFailureCategory::all_variants().len(), FrontendFailureCategory::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in FrontendFailureCategory::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in FrontendFailureCategory::iter() {
         assert_eq!(variant, FrontendFailureCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, FrontendFailureCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, FrontendFailureCategory::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in FrontendFailureCategory::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

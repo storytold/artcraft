@@ -1,11 +1,8 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the SqLite `web_scraping_targets` table in a `TEXT` field named `scraping_status`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum RenditionStatus {
   #[serde(rename = "new")]
   New,
@@ -89,6 +86,31 @@ mod tests {
       assert_eq!(RenditionStatus::from_str("permanently_failed").unwrap(), RenditionStatus::PermanentlyFailed);
       assert_eq!(RenditionStatus::from_str("success").unwrap(), RenditionStatus::Success);
       assert!(RenditionStatus::from_str("foo").is_err());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in RenditionStatus::iter() {
+        assert_eq!(variant, RenditionStatus::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, RenditionStatus::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, RenditionStatus::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in RenditionStatus::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

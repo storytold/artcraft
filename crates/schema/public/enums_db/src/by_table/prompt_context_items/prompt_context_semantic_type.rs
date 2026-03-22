@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /*
@@ -18,9 +14,7 @@ vidref
 /// Used in the `prompt_context_items` table in a `VARCHAR(16)` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum PromptContextSemanticType {
   /// Image-to-Video starting frame
@@ -88,22 +82,6 @@ impl PromptContextSemanticType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::VidStartFrame,
-      Self::VidEndFrame,
-      Self::VidRef,
-      Self::Imgsrc,
-      Self::Imgmask,
-      Self::Imgref,
-      Self::ImgrefCharacter,
-      Self::ImgrefStyle,
-      Self::ImgrefBg,
-      Self::Audioref,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -162,39 +140,13 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = PromptContextSemanticType::all_variants();
-      assert_eq!(variants.len(), 10);
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::VidStartFrame));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::VidEndFrame));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::VidRef));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::Imgsrc));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::Imgmask));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::Imgref));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::ImgrefCharacter));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::ImgrefStyle));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::ImgrefBg));
-      assert_eq!(variants.pop_first(), Some(PromptContextSemanticType::Audioref));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(PromptContextSemanticType::all_variants().len(), PromptContextSemanticType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in PromptContextSemanticType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in PromptContextSemanticType::iter() {
         assert_eq!(variant, PromptContextSemanticType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, PromptContextSemanticType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, PromptContextSemanticType::from_str(&format!("{:?}", variant)).unwrap());
@@ -203,8 +155,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in PromptContextSemanticType::all_variants() {
+      for variant in PromptContextSemanticType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

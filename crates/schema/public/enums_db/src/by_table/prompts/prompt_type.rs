@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `prompts` table in a `VARCHAR(16)` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum PromptType {
   /// Artcraft (App)
@@ -49,15 +43,6 @@ impl PromptType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::ArtcraftApp,
-      Self::StableDiffusion,
-      Self::ComfyUi,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -95,32 +80,13 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = PromptType::all_variants();
-      assert_eq!(variants.len(), 3);
-      assert_eq!(variants.pop_first(), Some(PromptType::ArtcraftApp));
-      assert_eq!(variants.pop_first(), Some(PromptType::StableDiffusion));
-      assert_eq!(variants.pop_first(), Some(PromptType::ComfyUi));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(PromptType::all_variants().len(), PromptType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in PromptType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in PromptType::iter() {
         assert_eq!(variant, PromptType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, PromptType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, PromptType::from_str(&format!("{:?}", variant)).unwrap());
@@ -129,8 +95,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in PromptType::all_variants() {
+      for variant in PromptType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

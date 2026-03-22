@@ -1,11 +1,8 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the SqLite `tts_render_tasks` table in a `TEXT` field named `tts_render_status`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum TtsRenderStatus {
   #[serde(rename = "new")]
   New,
@@ -98,6 +95,31 @@ mod tests {
       assert_eq!(TtsRenderStatus::from_str("permanently_failed").unwrap(), TtsRenderStatus::PermanentlyFailed);
       assert_eq!(TtsRenderStatus::from_str("success").unwrap(), TtsRenderStatus::Success);
       assert!(TtsRenderStatus::from_str("foo").is_err());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in TtsRenderStatus::iter() {
+        assert_eq!(variant, TtsRenderStatus::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, TtsRenderStatus::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, TtsRenderStatus::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in TtsRenderStatus::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

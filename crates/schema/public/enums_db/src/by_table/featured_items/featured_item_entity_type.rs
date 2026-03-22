@@ -1,14 +1,8 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `user_bookmarks` table in a `VARCHAR(32)` field named `entity_type`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum FeaturedItemEntityType {
     /// MediaFile
     #[serde(rename = "media_file")]
@@ -47,15 +41,6 @@ impl FeaturedItemEntityType {
         }
     }
 
-    pub fn all_variants() -> BTreeSet<Self> {
-        // NB: BTreeSet is sorted
-        // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-        BTreeSet::from([
-            Self::MediaFile,
-            Self::ModelWeight,
-            Self::User,
-        ])
-    }
 }
 
 #[cfg(test)]
@@ -96,15 +81,10 @@ mod tests {
     mod mechanical_checks {
       use super::*;
 
-      #[test]
-        fn variant_length() {
-            use strum::IntoEnumIterator;
-            assert_eq!(FeaturedItemEntityType::all_variants().len(), FeaturedItemEntityType::iter().len());
-        }
-
         #[test]
         fn round_trip() {
-            for variant in FeaturedItemEntityType::all_variants() {
+          use strum::IntoEnumIterator;
+            for variant in FeaturedItemEntityType::iter() {
                 assert_eq!(variant, FeaturedItemEntityType::from_str(variant.to_str()).unwrap());
                 assert_eq!(variant, FeaturedItemEntityType::from_str(&format!("{}", variant)).unwrap());
                 assert_eq!(variant, FeaturedItemEntityType::from_str(&format!("{:?}", variant)).unwrap());
@@ -113,8 +93,9 @@ mod tests {
 
         #[test]
         fn serialized_length_ok_for_database() {
+          use strum::IntoEnumIterator;
             const MAX_LENGTH : usize = 32;
-            for variant in FeaturedItemEntityType::all_variants() {
+            for variant in FeaturedItemEntityType::iter() {
                 let serialized = variant.to_str();
                 assert!(serialized.len() > 0, "variant {:?} is too short", variant);
                 assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

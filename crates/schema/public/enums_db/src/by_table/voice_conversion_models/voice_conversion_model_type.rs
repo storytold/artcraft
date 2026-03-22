@@ -1,15 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `voice_conversion_models` table in `VARCHAR(32)` field `model_type`.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum VoiceConversionModelType {
   // We're skipping RVC "v1" models as "v2" are much higher quality.
   // Future incompatible upgrades may deserve a different enum variant.
@@ -26,6 +21,7 @@ pub enum VoiceConversionModelType {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(VoiceConversionModelType);
 impl_mysql_enum_coders!(VoiceConversionModelType);
+impl_mysql_from_row!(VoiceConversionModelType);
 
 /// NB: Legacy API for older code.
 impl VoiceConversionModelType {
@@ -46,15 +42,6 @@ impl VoiceConversionModelType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::RvcV2,
-      Self::SoftVc,
-      Self::SoVitsSvc,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -83,18 +70,28 @@ mod tests {
     assert_eq!(VoiceConversionModelType::from_str("so_vits_svc").unwrap(), VoiceConversionModelType::SoVitsSvc);
   }
 
-  #[test]
-  fn all_variants() {
-    // Static check
-    let mut variants = VoiceConversionModelType::all_variants();
-    assert_eq!(variants.len(), 3);
-    assert_eq!(variants.pop_first(), Some(VoiceConversionModelType::RvcV2));
-    assert_eq!(variants.pop_first(), Some(VoiceConversionModelType::SoftVc));
-    assert_eq!(variants.pop_first(), Some(VoiceConversionModelType::SoVitsSvc));
-    assert_eq!(variants.pop_first(), None);
+  mod mechanical_checks {
+    use super::*;
 
-    // Generated check
-    use strum::IntoEnumIterator;
-    assert_eq!(VoiceConversionModelType::all_variants().len(), VoiceConversionModelType::iter().len());
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in VoiceConversionModelType::iter() {
+        assert_eq!(variant, VoiceConversionModelType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, VoiceConversionModelType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, VoiceConversionModelType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in VoiceConversionModelType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }

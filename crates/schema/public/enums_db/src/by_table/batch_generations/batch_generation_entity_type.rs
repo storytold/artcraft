@@ -1,13 +1,8 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `batch_generations` table in a `VARCHAR(32)` field named `entity_type`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, Ord, PartialOrd, EnumIter, EnumCount)]
 pub enum BatchGenerationEntityType {
   /// Media files
   /// This will probably be the only type supported, but we'll leave the possibility of future types.
@@ -35,13 +30,6 @@ impl BatchGenerationEntityType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::MediaFile,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -73,33 +61,27 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = BatchGenerationEntityType::all_variants();
-      assert_eq!(variants.len(), 1);
-      assert_eq!(variants.pop_first(), Some(BatchGenerationEntityType::MediaFile));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(BatchGenerationEntityType::all_variants().len(), BatchGenerationEntityType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in BatchGenerationEntityType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in BatchGenerationEntityType::iter() {
         assert_eq!(variant, BatchGenerationEntityType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, BatchGenerationEntityType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, BatchGenerationEntityType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in BatchGenerationEntityType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

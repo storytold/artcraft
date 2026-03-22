@@ -1,15 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `maybe_input_source_token`.
 ///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum InferenceInputSourceTokenType {
   #[serde(rename = "media_file")]
   MediaFile,
@@ -20,6 +15,7 @@ pub enum InferenceInputSourceTokenType {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(InferenceInputSourceTokenType);
 impl_mysql_enum_coders!(InferenceInputSourceTokenType);
+impl_mysql_from_row!(InferenceInputSourceTokenType);
 
 /// NB: Legacy API for older code.
 impl InferenceInputSourceTokenType {
@@ -38,14 +34,6 @@ impl InferenceInputSourceTokenType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<InferenceInputSourceTokenType> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      InferenceInputSourceTokenType::MediaFile,
-      InferenceInputSourceTokenType::MediaUpload,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -71,17 +59,28 @@ mod tests {
     assert_eq!(InferenceInputSourceTokenType::from_str("media_upload").unwrap(), InferenceInputSourceTokenType::MediaUpload);
   }
 
-  #[test]
-  fn all_variants() {
-    // Static check
-    let mut variants = InferenceInputSourceTokenType::all_variants();
-    assert_eq!(variants.len(), 2);
-    assert_eq!(variants.pop_first(), Some(InferenceInputSourceTokenType::MediaFile));
-    assert_eq!(variants.pop_first(), Some(InferenceInputSourceTokenType::MediaUpload));
-    assert_eq!(variants.pop_first(), None);
+  mod mechanical_checks {
+    use super::*;
 
-    // Generated check
-    use strum::IntoEnumIterator;
-    assert_eq!(InferenceInputSourceTokenType::all_variants().len(), InferenceInputSourceTokenType::iter().len());
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in InferenceInputSourceTokenType::iter() {
+        assert_eq!(variant, InferenceInputSourceTokenType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, InferenceInputSourceTokenType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, InferenceInputSourceTokenType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in InferenceInputSourceTokenType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }

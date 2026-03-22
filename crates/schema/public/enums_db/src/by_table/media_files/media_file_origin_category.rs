@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_files` table in a `VARCHAR` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum MediaFileOriginCategory {
   /// ML model inference output - uploaded models or zero shot.
@@ -65,18 +59,6 @@ impl MediaFileOriginCategory {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Inference,
-      Self::Processed,
-      Self::Upload,
-      Self::DeviceApi,
-      Self::StorytellerStudio,
-      Self::StoryEngine,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -118,32 +100,15 @@ mod tests {
       assert!(MediaFileOriginCategory::from_str("foo").is_err());
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = MediaFileOriginCategory::all_variants();
-      assert_eq!(variants.len(), 6);
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginCategory::Inference));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginCategory::Processed));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginCategory::Upload));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginCategory::DeviceApi));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginCategory::StorytellerStudio));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginCategory::StoryEngine));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(MediaFileOriginCategory::all_variants().len(), MediaFileOriginCategory::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in MediaFileOriginCategory::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in MediaFileOriginCategory::iter() {
         assert_eq!(variant, MediaFileOriginCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, MediaFileOriginCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, MediaFileOriginCategory::from_str(&format!("{:?}", variant)).unwrap());
@@ -152,8 +117,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in MediaFileOriginCategory::all_variants() {
+      for variant in MediaFileOriginCategory::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

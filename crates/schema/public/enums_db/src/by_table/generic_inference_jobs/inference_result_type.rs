@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `on_success_result_entity_type`.
@@ -13,8 +9,7 @@ use strum::EnumIter;
 /// These types are present in the HTTP API and database columns as serialized here.
 ///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum InferenceResultType {
   /// Result is stored in the "media_files" table.
   /// (The upstream model could have produced any type of media - image, video, audio. That is irrelevant.)
@@ -37,6 +32,7 @@ pub enum InferenceResultType {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(InferenceResultType);
 impl_mysql_enum_coders!(InferenceResultType);
+impl_mysql_from_row!(InferenceResultType);
 
 /// NB: Legacy API for older code.
 impl InferenceResultType {
@@ -61,17 +57,6 @@ impl InferenceResultType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<InferenceResultType> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      InferenceResultType::MediaFile,
-      InferenceResultType::TextToSpeech,
-      InferenceResultType::VoiceConversion,
-      InferenceResultType::ZeroShotVoiceEmbedding,
-      InferenceResultType::UploadModel,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -106,20 +91,28 @@ mod tests {
     assert_eq!(InferenceResultType::from_str("upload_model").unwrap(), InferenceResultType::UploadModel);
   }
 
-  #[test]
-  fn all_variants() {
-    // Static check
-    let mut variants = InferenceResultType::all_variants();
-    assert_eq!(variants.len(), 5);
-    assert_eq!(variants.pop_first(), Some(InferenceResultType::MediaFile));
-    assert_eq!(variants.pop_first(), Some(InferenceResultType::TextToSpeech));
-    assert_eq!(variants.pop_first(), Some(InferenceResultType::VoiceConversion));
-    assert_eq!(variants.pop_first(), Some(InferenceResultType::ZeroShotVoiceEmbedding));
-    assert_eq!(variants.pop_first(), Some(InferenceResultType::UploadModel));
-    assert_eq!(variants.pop_first(), None);
+  mod mechanical_checks {
+    use super::*;
 
-    // Generated check
-    use strum::IntoEnumIterator;
-    assert_eq!(InferenceResultType::all_variants().len(), InferenceResultType::iter().len());
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in InferenceResultType::iter() {
+        assert_eq!(variant, InferenceResultType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, InferenceResultType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, InferenceResultType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in InferenceResultType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }

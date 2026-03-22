@@ -1,13 +1,7 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum WeightsType {
   #[serde(rename = "hifigan_tt2")]
   HifiganTacotron2,
@@ -64,20 +58,6 @@ impl WeightsType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    BTreeSet::from([
-      Self::HifiganTacotron2,
-      Self::RvcV2,
-      Self::StableDiffusion15,
-      Self::StableDiffusionXL,
-      Self::SoVitsSvc,
-      Self::Tacotron2,
-      Self::LoRA,
-      Self::VallE,
-      Self::ComfyUi,
-      Self::GptSoVits,
-    ])
-  }
 }
 
 impl_enum_display_and_debug_using_to_str!(WeightsType);
@@ -119,7 +99,8 @@ mod tests {
 
   #[test]
   fn test_all_variants() {
-    let variants = WeightsType::all_variants();
+    use strum::IntoEnumIterator;
+    let variants = WeightsType::iter();
     assert_eq!(variants.len(), 10);
   }
 
@@ -127,14 +108,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(WeightsType::all_variants().len(), WeightsType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in WeightsType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in WeightsType::iter() {
         assert_eq!(variant, WeightsType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, WeightsType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, WeightsType::from_str(&format!("{:?}", variant)).unwrap());
@@ -143,8 +119,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH: usize = 16;
-      for variant in WeightsType::all_variants() {
+      for variant in WeightsType::iter() {
         let serialized = variant.to_str();
         assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

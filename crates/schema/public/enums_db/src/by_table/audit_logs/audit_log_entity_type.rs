@@ -1,11 +1,8 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `audit_logs` table in a `VARCHAR(32)` field named `entity_type`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum AuditLogEntityType {
   /// Comment system
   #[serde(rename = "comment")]
@@ -27,6 +24,7 @@ pub enum AuditLogEntityType {
 // TODO(bt, 2023-01-17): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(AuditLogEntityType);
 impl_mysql_enum_coders!(AuditLogEntityType);
+impl_mysql_from_row!(AuditLogEntityType);
 
 /// NB: Legacy API for older code.
 impl AuditLogEntityType {
@@ -85,6 +83,31 @@ mod tests {
       assert_eq!(AuditLogEntityType::from_str("model_weight").unwrap(), AuditLogEntityType::ModelWeight);
       assert_eq!(AuditLogEntityType::from_str("user").unwrap(), AuditLogEntityType::User);
       assert!(AuditLogEntityType::from_str("foo").is_err());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in AuditLogEntityType::iter() {
+        assert_eq!(variant, AuditLogEntityType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, AuditLogEntityType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, AuditLogEntityType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in AuditLogEntityType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

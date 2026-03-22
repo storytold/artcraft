@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 // TODO: Use macro-derived impls
@@ -14,9 +10,8 @@ use strum::EnumIter;
 /// These types are present in the HTTP API and database columns as serialized here.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, Hash, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Deserialize, Serialize, Hash, Ord, PartialOrd, EnumIter, EnumCount)]
 #[cfg_attr(feature = "database", derive(sqlx::Type))]
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
 pub enum GenericDownloadType {
   /// NB: Note - this is hifigan for Tacotron2.
   /// Some work will be needed to unify this with other hifigan types.
@@ -96,20 +91,6 @@ impl GenericDownloadType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::HifiGan,
-      Self::HifiGanRocketVc,
-      Self::HifiGanSoVitsSvc,
-      Self::RocketVc,
-      Self::RvcV2,
-      Self::SoVitsSvc,
-      Self::Tacotron2,
-      Self::Vits,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -153,23 +134,26 @@ mod tests {
     assert_eq!(GenericDownloadType::from_str("vits").unwrap(), GenericDownloadType::Vits);
   }
 
-  #[test]
-  fn all_variants() {
-    // Static check
-    let mut variants = GenericDownloadType::all_variants();
-    assert_eq!(variants.len(), 8);
-    assert_eq!(variants.pop_first(), Some(GenericDownloadType::HifiGan));
-    assert_eq!(variants.pop_first(), Some(GenericDownloadType::HifiGanRocketVc));
-    assert_eq!(variants.pop_first(), Some(GenericDownloadType::HifiGanSoVitsSvc));
-    assert_eq!(variants.pop_first(), Some(GenericDownloadType::RocketVc));
-    assert_eq!(variants.pop_first(), Some(GenericDownloadType::RvcV2));
-    assert_eq!(variants.pop_first(), Some(GenericDownloadType::SoVitsSvc));
-    assert_eq!(variants.pop_first(), Some(GenericDownloadType::Tacotron2));
-    assert_eq!(variants.pop_first(), Some(GenericDownloadType::Vits));
-    assert_eq!(variants.pop_first(), None);
+  mod mechanical_checks {
+    use super::*;
 
-    // Generated check
-    use strum::IntoEnumIterator;
-    assert_eq!(GenericDownloadType::all_variants().len(), GenericDownloadType::iter().len());
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in GenericDownloadType::iter() {
+        assert_eq!(variant, GenericDownloadType::from_str(variant.to_str()).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in GenericDownloadType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }

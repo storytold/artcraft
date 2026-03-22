@@ -1,13 +1,10 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_uploads` table in a `VARCHAR` field `media_source`.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum MediaUploadSource {
   /// Eg. browser javascript APIs to access the microphone, webcam, etc.
   #[serde(rename = "device_api")]
@@ -25,6 +22,7 @@ pub enum MediaUploadSource {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(MediaUploadSource);
 impl_mysql_enum_coders!(MediaUploadSource);
+impl_mysql_from_row!(MediaUploadSource);
 
 /// NB: Legacy API for older code.
 impl MediaUploadSource {
@@ -71,5 +69,30 @@ mod tests {
     assert_eq!(MediaUploadSource::from_str("file").unwrap(), MediaUploadSource::File);
     assert_eq!(MediaUploadSource::from_str("unknown").unwrap(), MediaUploadSource::Unknown);
     assert!(MediaUploadSource::from_str("foo").is_err());
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in MediaUploadSource::iter() {
+        assert_eq!(variant, MediaUploadSource::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, MediaUploadSource::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, MediaUploadSource::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 16;
+      use strum::IntoEnumIterator;
+      for variant in MediaUploadSource::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }

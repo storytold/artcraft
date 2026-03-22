@@ -1,11 +1,8 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `audit_logs` table in a `VARCHAR(32)` field named `entity_action`.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum AuditLogEntityAction {
   /// Create action
   #[serde(rename = "create")]
@@ -35,6 +32,7 @@ pub enum AuditLogEntityAction {
 // TODO(bt, 2023-01-17): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(AuditLogEntityAction);
 impl_mysql_enum_coders!(AuditLogEntityAction);
+impl_mysql_from_row!(AuditLogEntityAction);
 
 /// NB: Legacy API for older code.
 impl AuditLogEntityAction {
@@ -103,6 +101,31 @@ mod tests {
       assert_eq!(AuditLogEntityAction::from_str("featured_item_create").unwrap(), AuditLogEntityAction::FeaturedItemCreate);
       assert_eq!(AuditLogEntityAction::from_str("featured_item_delete").unwrap(), AuditLogEntityAction::FeaturedItemDelete);
       assert!(AuditLogEntityAction::from_str("foo").is_err());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in AuditLogEntityAction::iter() {
+        assert_eq!(variant, AuditLogEntityAction::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, AuditLogEntityAction::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, AuditLogEntityAction::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in AuditLogEntityAction::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

@@ -1,15 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `users` table in a `VARCHAR(16)` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum UserSignupMethod {
   /// Email + Password
@@ -48,15 +43,6 @@ impl UserSignupMethod {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::EmailPassword,
-      Self::GoogleSignIn,
-      Self::StripeCheckout,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -94,32 +80,13 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = UserSignupMethod::all_variants();
-      assert_eq!(variants.len(), 3);
-      assert_eq!(variants.pop_first(), Some(UserSignupMethod::EmailPassword));
-      assert_eq!(variants.pop_first(), Some(UserSignupMethod::GoogleSignIn));
-      assert_eq!(variants.pop_first(), Some(UserSignupMethod::StripeCheckout));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(UserSignupMethod::all_variants().len(), UserSignupMethod::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in UserSignupMethod::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in UserSignupMethod::iter() {
         assert_eq!(variant, UserSignupMethod::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, UserSignupMethod::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, UserSignupMethod::from_str(&format!("{:?}", variant)).unwrap());
@@ -128,8 +95,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in UserSignupMethod::all_variants() {
+      for variant in UserSignupMethod::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

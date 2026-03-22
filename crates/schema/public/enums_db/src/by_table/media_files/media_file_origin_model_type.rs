@@ -1,18 +1,12 @@
-use std::collections::BTreeSet;
-
 use serde::Deserialize;
 use serde::Serialize;
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_files` table in a `VARCHAR` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum MediaFileOriginModelType {
   #[serde(rename = "face_fusion")]
@@ -128,28 +122,6 @@ impl MediaFileOriginModelType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    BTreeSet::from([
-      Self::FaceFusion,
-      Self::F5TTS,
-      Self::LivePortrait,
-      Self::RvcV2,
-      Self::SadTalker,
-      Self::SeedVc,
-      Self::SoVitsSvc,
-      Self::Tacotron2,
-      Self::MocapNet,
-      Self::StyleTTS2,
-      Self::StableDiffusion15,
-      Self::GptSovits,
-      Self::StorytellerStudio,
-      Self::StorytellerStudioImageGen,
-      Self::VideoStyleTransfer,
-      Self::ComfyUi,
-      Self::VallEX,
-      Self::Rerender,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -209,44 +181,15 @@ mod tests {
       assert!(MediaFileOriginModelType::from_str("foo").is_err());
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = MediaFileOriginModelType::all_variants();
-      assert_eq!(variants.len(), 18);
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::FaceFusion));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::F5TTS));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::LivePortrait));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::RvcV2));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SadTalker));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SoVitsSvc));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::Tacotron2));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::MocapNet));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::SeedVc));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StyleTTS2));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StableDiffusion15));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::GptSovits));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StorytellerStudio));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::StorytellerStudioImageGen));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::VideoStyleTransfer));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::ComfyUi));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::VallEX));
-      assert_eq!(variants.pop_first(), Some(MediaFileOriginModelType::Rerender));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(MediaFileOriginModelType::all_variants().len(), MediaFileOriginModelType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in MediaFileOriginModelType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in MediaFileOriginModelType::iter() {
         assert_eq!(variant, MediaFileOriginModelType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, MediaFileOriginModelType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, MediaFileOriginModelType::from_str(&format!("{:?}", variant)).unwrap());
@@ -255,8 +198,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH: usize = 24;
-      for variant in MediaFileOriginModelType::all_variants() {
+      for variant in MediaFileOriginModelType::iter() {
         let serialized = variant.to_str();
         assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

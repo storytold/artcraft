@@ -1,6 +1,4 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// UserRatingValue
@@ -16,10 +14,8 @@ use strum::EnumIter;
 ///
 /// *DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY!*
 ///
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, sqlx::Type)]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, sqlx::Type, EnumIter, EnumCount)]
 #[sqlx(rename_all = "lowercase")]
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 #[serde(rename_all = "lowercase")]
 pub enum UserRatingValue {
   /// This is considered a ratings "soft deletion" and does not count towards a total score.
@@ -156,6 +152,31 @@ mod tests {
       };
 
       assert_eq!(expected, serde_json::from_str::<CompositeType>(&payload).unwrap());
+    }
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in UserRatingValue::iter() {
+        assert_eq!(variant, UserRatingValue::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, UserRatingValue::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, UserRatingValue::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in UserRatingValue::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
     }
   }
 }

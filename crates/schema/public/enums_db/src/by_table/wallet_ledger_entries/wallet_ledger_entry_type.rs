@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `wallet_ledger_entries` table in a `VARCHAR(16)` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum WalletLedgerEntryType {
   /// Wallet created
@@ -88,20 +82,6 @@ impl WalletLedgerEntryType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Create,
-      Self::CreditBanked,
-      Self::CreditMonthly,
-      Self::DeductMixed,
-      Self::DeductBanked,
-      Self::DeductMonthly,
-      Self::RefundBanked,
-      Self::StaffAddBanked,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -154,37 +134,13 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = WalletLedgerEntryType::all_variants();
-      assert_eq!(variants.len(), 8);
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::Create));
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::CreditBanked));
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::CreditMonthly));
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::DeductMixed));
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::DeductBanked));
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::DeductMonthly));
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::RefundBanked));
-      assert_eq!(variants.pop_first(), Some(WalletLedgerEntryType::StaffAddBanked));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(WalletLedgerEntryType::all_variants().len(), WalletLedgerEntryType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in WalletLedgerEntryType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in WalletLedgerEntryType::iter() {
         assert_eq!(variant, WalletLedgerEntryType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, WalletLedgerEntryType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, WalletLedgerEntryType::from_str(&format!("{:?}", variant)).unwrap());
@@ -193,8 +149,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in WalletLedgerEntryType::all_variants() {
+      for variant in WalletLedgerEntryType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

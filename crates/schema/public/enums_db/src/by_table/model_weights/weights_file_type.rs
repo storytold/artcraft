@@ -1,13 +1,8 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 // TODO we will need to scan the checkpoints for malicious code.  We can't just trust the file extension.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum WeightsFileType {
     #[serde(rename = "checkpoint")]
     Checkpoint,
@@ -31,16 +26,11 @@ impl WeightsFileType {
         }
     }
 
-    pub fn all_variants() -> BTreeSet<Self> {
-        BTreeSet::from([
-            Self::Checkpoint,
-            Self::SafeTensors,
-        ])
-    }
 }
 
 impl_enum_display_and_debug_using_to_str!(WeightsFileType);
 impl_mysql_enum_coders!(WeightsFileType);
+impl_mysql_from_row!(WeightsFileType);
 
 #[cfg(test)]
 mod tests {
@@ -59,11 +49,28 @@ mod tests {
         assert!(WeightsFileType::from_str("invalid").is_err());
     }
 
+  mod mechanical_checks {
+    use super::*;
+
     #[test]
-    fn test_all_variants() {
-        let variants = WeightsFileType::all_variants();
-        assert_eq!(variants.len(), 2);
-        assert!(variants.contains(&WeightsFileType::Checkpoint));
-        assert!(variants.contains(&WeightsFileType::SafeTensors));
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in WeightsFileType::iter() {
+        assert_eq!(variant, WeightsFileType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, WeightsFileType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, WeightsFileType::from_str(&format!("{:?}", variant)).unwrap());
+      }
     }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in WeightsFileType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
+  }
 }

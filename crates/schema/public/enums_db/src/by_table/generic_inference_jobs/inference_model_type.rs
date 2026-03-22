@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `maybe_model_type`.
@@ -14,8 +10,7 @@ use strum::EnumIter;
 /// These types are present in the HTTP API and database columns as serialized here.
 ///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum InferenceModelType {
   // TODO(bt,2024-07-15): This is too generic. We probably need "StorytellerStudio", "LivePortrait", etc.
   #[serde(rename = "comfy_ui")]
@@ -61,6 +56,7 @@ pub enum InferenceModelType {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(InferenceModelType);
 impl_mysql_enum_coders!(InferenceModelType);
+impl_mysql_from_row!(InferenceModelType);
 
 /// NB: Legacy API for older code.
 impl InferenceModelType {
@@ -105,27 +101,6 @@ impl InferenceModelType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::ComfyUi,
-      Self::RvcV2,
-      Self::SadTalker,
-      Self::SoVitsSvc,
-      Self::SeedVc,
-      Self::Tacotron2,
-      Self::Vits,
-      Self::VallEX,
-      Self::RerenderAVideo,
-      Self::StableDiffusion,
-      Self::ImageGenApi,
-      Self::MocapNet,
-      Self::StyleTTS2,
-      Self::ConvertFbxToGltf,
-      Self::BvhToWorkflow,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -193,46 +168,15 @@ mod tests {
       assert_eq!(InferenceModelType::from_str("bvh_to_workflow").unwrap(), InferenceModelType::BvhToWorkflow);
     }
 
-    #[test]
-    fn all_variants() {
-      // Static check
-      let mut variants = InferenceModelType::all_variants();
-      assert_eq!(variants.len(), 15);
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::ComfyUi));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::RvcV2));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::SadTalker));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::SoVitsSvc));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::SeedVc));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::ImageGenApi));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::Tacotron2));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::Vits));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::VallEX));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::RerenderAVideo));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::StableDiffusion));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::MocapNet));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::StyleTTS2));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::ConvertFbxToGltf));
-      assert_eq!(variants.pop_first(), Some(InferenceModelType::BvhToWorkflow));
-      assert_eq!(variants.pop_first(), None);
-
-      // Generated check
-      use strum::IntoEnumIterator;
-      assert_eq!(InferenceModelType::all_variants().len(), InferenceModelType::iter().len());
-    }
   }
   
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(InferenceModelType::all_variants().len(), InferenceModelType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in InferenceModelType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in InferenceModelType::iter() {
         assert_eq!(variant, InferenceModelType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, InferenceModelType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, InferenceModelType::from_str(&format!("{:?}", variant)).unwrap());
@@ -241,8 +185,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 32;
-      for variant in InferenceModelType::all_variants() {
+      for variant in InferenceModelType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

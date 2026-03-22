@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `zs_voices` table in a `VARCHAR(16)` field named `model_type`.
@@ -10,8 +6,7 @@ use strum::EnumIter;
 /// This indicates what type of features are used in the embeddings.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum ZsVoiceModelType {
   /// TTS-type zero shot models
   #[serde(rename = "vall-e-x")]
@@ -23,6 +18,7 @@ pub enum ZsVoiceModelType {
 // TODO(bt, 2023-01-17): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(ZsVoiceModelType);
 impl_mysql_enum_coders!(ZsVoiceModelType);
+impl_mysql_from_row!(ZsVoiceModelType);
 
 /// NB: Legacy API for older code.
 impl ZsVoiceModelType {
@@ -41,14 +37,6 @@ impl ZsVoiceModelType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::VallEX,
-      Self::StyleTTS2,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -82,34 +70,27 @@ mod tests {
     }
   }
 
-  mod manual_variant_checks {
-    use super::*;
-
-    #[test]
-    fn all_variants() {
-      let mut variants = ZsVoiceModelType::all_variants();
-      assert_eq!(variants.len(), 2);
-      assert_eq!(variants.pop_first(), Some(ZsVoiceModelType::VallEX));
-      assert_eq!(variants.pop_first(), Some(ZsVoiceModelType::StyleTTS2));
-      assert_eq!(variants.pop_first(), None);
-    }
-  }
-
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(ZsVoiceModelType::all_variants().len(), ZsVoiceModelType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in ZsVoiceModelType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in ZsVoiceModelType::iter() {
         assert_eq!(variant, ZsVoiceModelType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, ZsVoiceModelType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, ZsVoiceModelType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 16;
+      use strum::IntoEnumIterator;
+      for variant in ZsVoiceModelType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

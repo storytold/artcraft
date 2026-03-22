@@ -38,11 +38,12 @@ sqlx-mysql = { version = "0.7.4" }
 # API Documentation (optional — enabled by crates that need ToSchema on DB enums)
 utoipa = { workspace = true, optional = true }
 
+# Enum utilities (EnumIter, EnumCount)
+strum.workspace = true
+
 log.workspace = true
 
 [dev-dependencies]
-# Enum utilities
-strum.workspace = true
 
 # Test serialization
 serde_json.workspace = true

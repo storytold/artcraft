@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `email_sender_jobs` table in `VARCHAR(32)` field `id_category`.
@@ -10,8 +6,7 @@ use strum::EnumIter;
 /// This denotes the type of email being sent.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 pub enum EmailCategory {
   /// User is recently registered
   #[serde(rename = "welcome")]
@@ -25,6 +20,7 @@ pub enum EmailCategory {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(EmailCategory);
 impl_mysql_enum_coders!(EmailCategory);
+impl_mysql_from_row!(EmailCategory);
 
 /// NB: Legacy API for older code.
 impl EmailCategory {
@@ -43,14 +39,6 @@ impl EmailCategory {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Welcome,
-      Self::PasswordReset,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -79,36 +67,29 @@ mod tests {
       assert_eq!(EmailCategory::from_str("password_reset").unwrap(), EmailCategory::PasswordReset);
     }
 
-    #[test]
-    fn all_variants() {
-      // Static check
-      let mut variants = EmailCategory::all_variants();
-      assert_eq!(variants.len(), 2);
-      assert_eq!(variants.pop_first(), Some(EmailCategory::Welcome));
-      assert_eq!(variants.pop_first(), Some(EmailCategory::PasswordReset));
-      assert_eq!(variants.pop_first(), None);
-
-      // Generated check
-      use strum::IntoEnumIterator;
-      assert_eq!(EmailCategory::all_variants().len(), EmailCategory::iter().len());
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(EmailCategory::all_variants().len(), EmailCategory::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in EmailCategory::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in EmailCategory::iter() {
         assert_eq!(variant, EmailCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, EmailCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, EmailCategory::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+  
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in EmailCategory::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
       }
     }
   }

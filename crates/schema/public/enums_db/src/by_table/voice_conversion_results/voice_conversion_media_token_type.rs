@@ -1,13 +1,10 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `voice_conversion_results` table in a `VARCHAR` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum VoiceConversionMediaTokenType {
   /// Media token refers to record in `media_uploads` table.
@@ -17,6 +14,7 @@ pub enum VoiceConversionMediaTokenType {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(VoiceConversionMediaTokenType);
 impl_mysql_enum_coders!(VoiceConversionMediaTokenType);
+impl_mysql_from_row!(VoiceConversionMediaTokenType);
 
 /// NB: Legacy API for older code.
 impl VoiceConversionMediaTokenType {
@@ -53,5 +51,30 @@ mod tests {
   fn test_from_str() {
     assert_eq!(VoiceConversionMediaTokenType::from_str("media_upload").unwrap(), VoiceConversionMediaTokenType::MediaUpload);
     assert!(VoiceConversionMediaTokenType::from_str("foo").is_err());
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in VoiceConversionMediaTokenType::iter() {
+        assert_eq!(variant, VoiceConversionMediaTokenType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, VoiceConversionMediaTokenType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, VoiceConversionMediaTokenType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 32;
+      use strum::IntoEnumIterator;
+      for variant in VoiceConversionMediaTokenType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }

@@ -1,8 +1,4 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `generic_inference_jobs` table in `VARCHAR(32)` field `inference_category`.
@@ -12,9 +8,7 @@ use strum::EnumIter;
 /// These types are present in the HTTP API and database columns as serialized here.
 ///
 /// YOU CAN ADD NEW VALUES, BUT DO NOT CHANGE EXISTING VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, Default, EnumIter, EnumCount)]
 pub enum InferenceCategory {
   /// Deprecate this field !!!
   /// We should drain all jobs from using this database field, then remove it.
@@ -144,29 +138,6 @@ impl InferenceCategory {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::DeprecatedField,
-      Self::LipsyncAnimation,
-      Self::TextToSpeech,
-      Self::VoiceConversion,
-      Self::ImageGeneration,
-      Self::ObjectGeneration,
-      Self::SplatGeneration,
-      Self::VideoGeneration,
-      Self::BackgroundRemoval,
-      Self::Mocap,
-      Self::F5TTS,
-      Self::SeedVc,
-      Self::Workflow,
-      Self::FormatConversion,
-      Self::LivePortrait,
-      Self::VideoFilter,
-      Self::ConvertBvhToWorkflow,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -240,32 +211,15 @@ mod tests {
       assert_eq!(InferenceCategory::from_str("convert_bvh_to_workflow").unwrap(), InferenceCategory::ConvertBvhToWorkflow);
     }
 
-    #[test]
-    fn all_variants() {
-      // Static check
-      const EXPECTED_COUNT : usize = 17;
-
-      assert_eq!(InferenceCategory::all_variants().len(), EXPECTED_COUNT);
-      assert_eq!(InferenceCategory::iter().len(), EXPECTED_COUNT);
-
-      // Generated check
-      use strum::IntoEnumIterator;
-      assert_eq!(InferenceCategory::all_variants().len(), InferenceCategory::iter().len());
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(InferenceCategory::all_variants().len(), InferenceCategory::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in InferenceCategory::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in InferenceCategory::iter() {
         assert_eq!(variant, InferenceCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, InferenceCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, InferenceCategory::from_str(&format!("{:?}", variant)).unwrap());
@@ -274,8 +228,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 32;
-      for variant in InferenceCategory::all_variants() {
+      for variant in InferenceCategory::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

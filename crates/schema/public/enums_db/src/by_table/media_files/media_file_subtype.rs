@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_files` table in a `VARCHAR` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 #[deprecated(note = "This was primarily for Bevy")]
 pub enum MediaFileSubtype {
@@ -99,23 +93,6 @@ impl MediaFileSubtype {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Deprecated,
-      Self::Mixamo,
-      Self::MocapNet,
-      Self::AnimationOnly,
-      Self::SceneImport,
-      Self::StorytellerScene,
-      Self::Scene,
-      Self::Character,
-      Self::Animation,
-      Self::Object,
-      Self::Skybox,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -172,37 +149,15 @@ mod tests {
       assert!(MediaFileSubtype::from_str("foo").is_err());
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = MediaFileSubtype::all_variants();
-      assert_eq!(variants.len(), 11);
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::Deprecated));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::Mixamo));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::MocapNet));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::AnimationOnly));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::SceneImport));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::StorytellerScene));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::Scene));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::Character));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::Animation));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::Object));
-      assert_eq!(variants.pop_first(), Some(MediaFileSubtype::Skybox));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(MediaFileSubtype::all_variants().len(), MediaFileSubtype::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in MediaFileSubtype::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in MediaFileSubtype::iter() {
         assert_eq!(variant, MediaFileSubtype::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, MediaFileSubtype::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, MediaFileSubtype::from_str(&format!("{:?}", variant)).unwrap());
@@ -211,8 +166,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 32;
-      for variant in MediaFileSubtype::all_variants() {
+      for variant in MediaFileSubtype::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

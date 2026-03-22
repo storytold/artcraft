@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_files` table in a `VARCHAR` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum MediaFileEngineCategory {
   /// A 3D scene full of objects, characters, animations, etc.
@@ -94,23 +88,6 @@ impl MediaFileEngineCategory {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::Scene,
-      Self::Character,
-      Self::Creature,
-      Self::Animation,
-      Self::Expression,
-      Self::Location,
-      Self::SetDressing,
-      Self::Object,
-      Self::Skybox,
-      Self::ImagePlane,
-      Self::VideoPlane,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -167,37 +144,15 @@ mod tests {
       assert!(MediaFileEngineCategory::from_str("foo").is_err());
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = MediaFileEngineCategory::all_variants();
-      assert_eq!(variants.len(), 11);
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::Scene));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::Character));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::Creature));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::Animation));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::Expression));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::Location));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::SetDressing));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::Object));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::Skybox));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::ImagePlane));
-      assert_eq!(variants.pop_first(), Some(MediaFileEngineCategory::VideoPlane));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(MediaFileEngineCategory::all_variants().len(), MediaFileEngineCategory::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in MediaFileEngineCategory::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in MediaFileEngineCategory::iter() {
         assert_eq!(variant, MediaFileEngineCategory::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, MediaFileEngineCategory::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, MediaFileEngineCategory::from_str(&format!("{:?}", variant)).unwrap());
@@ -206,8 +161,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 16;
-      for variant in MediaFileEngineCategory::all_variants() {
+      for variant in MediaFileEngineCategory::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

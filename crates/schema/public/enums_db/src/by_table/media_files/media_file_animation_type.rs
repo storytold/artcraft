@@ -1,16 +1,10 @@
-use std::collections::BTreeSet;
-
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_files` table in a `VARCHAR` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "snake_case")]
 pub enum MediaFileAnimationType {
   /// Body: No body animation or rig.
@@ -110,25 +104,6 @@ impl MediaFileAnimationType {
     }
   }
 
-  pub fn all_variants() -> BTreeSet<Self> {
-    // NB: BTreeSet is sorted
-    // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-    BTreeSet::from([
-      Self::ArKit,
-      Self::MikuMikuDance,
-      Self::MikuMikuDanceArKit,
-      Self::Mixamo,
-      Self::MixamoArKit,
-      Self::MocapNet,
-      Self::MocapNetArKit,
-      Self::MoveAi,
-      Self::MoveAiArKit,
-      Self::Rigify,
-      Self::RigifyArKit,
-      Self::Rokoko,
-      Self::RokokoArKit,
-    ])
-  }
 }
 
 #[cfg(test)]
@@ -191,39 +166,15 @@ mod tests {
       assert!(MediaFileAnimationType::from_str("foo").is_err());
     }
 
-    #[test]
-    fn all_variants() {
-      let mut variants = MediaFileAnimationType::all_variants();
-      assert_eq!(variants.len(), 13);
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::ArKit));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::MikuMikuDance));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::MikuMikuDanceArKit));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::Mixamo));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::MixamoArKit));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::MocapNet));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::MocapNetArKit));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::MoveAi));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::MoveAiArKit));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::Rigify));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::RigifyArKit));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::Rokoko));
-      assert_eq!(variants.pop_first(), Some(MediaFileAnimationType::RokokoArKit));
-      assert_eq!(variants.pop_first(), None);
-    }
   }
 
   mod mechanical_checks {
     use super::*;
 
     #[test]
-    fn variant_length() {
-      use strum::IntoEnumIterator;
-      assert_eq!(MediaFileAnimationType::all_variants().len(), MediaFileAnimationType::iter().len());
-    }
-
-    #[test]
     fn round_trip() {
-      for variant in MediaFileAnimationType::all_variants() {
+      use strum::IntoEnumIterator;
+      for variant in MediaFileAnimationType::iter() {
         assert_eq!(variant, MediaFileAnimationType::from_str(variant.to_str()).unwrap());
         assert_eq!(variant, MediaFileAnimationType::from_str(&format!("{}", variant)).unwrap());
         assert_eq!(variant, MediaFileAnimationType::from_str(&format!("{:?}", variant)).unwrap());
@@ -232,8 +183,9 @@ mod tests {
 
     #[test]
     fn serialized_length_ok_for_database() {
+      use strum::IntoEnumIterator;
       const MAX_LENGTH : usize = 32;
-      for variant in MediaFileAnimationType::all_variants() {
+      for variant in MediaFileAnimationType::iter() {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);

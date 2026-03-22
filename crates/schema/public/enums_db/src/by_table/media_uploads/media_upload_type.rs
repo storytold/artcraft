@@ -1,13 +1,10 @@
-#[cfg(test)]
 use strum::EnumCount;
-#[cfg(test)]
 use strum::EnumIter;
 
 /// Used in the `media_uploads` table in a `VARCHAR` field.
 ///
 /// DO NOT CHANGE VALUES WITHOUT A MIGRATION STRATEGY.
-#[cfg_attr(test, derive(EnumIter, EnumCount))]
-#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, Deserialize, Serialize, EnumIter, EnumCount)]
 #[serde(rename_all = "lowercase")]
 pub enum MediaUploadType {
   /// Audio files: wav, mp3, etc.
@@ -26,6 +23,7 @@ pub enum MediaUploadType {
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
 impl_enum_display_and_debug_using_to_str!(MediaUploadType);
 impl_mysql_enum_coders!(MediaUploadType);
+impl_mysql_from_row!(MediaUploadType);
 
 /// NB: Legacy API for older code.
 impl MediaUploadType {
@@ -77,5 +75,30 @@ mod tests {
     assert_eq!(MediaUploadType::from_str("video").unwrap(), MediaUploadType::Video);
     assert_eq!(MediaUploadType::from_str("binary").unwrap(), MediaUploadType::Binary);
     assert!(MediaUploadType::from_str("foo").is_err());
+  }
+
+  mod mechanical_checks {
+    use super::*;
+
+    #[test]
+    fn round_trip() {
+      use strum::IntoEnumIterator;
+      for variant in MediaUploadType::iter() {
+        assert_eq!(variant, MediaUploadType::from_str(variant.to_str()).unwrap());
+        assert_eq!(variant, MediaUploadType::from_str(&format!("{}", variant)).unwrap());
+        assert_eq!(variant, MediaUploadType::from_str(&format!("{:?}", variant)).unwrap());
+      }
+    }
+
+    #[test]
+    fn serialized_length_ok_for_database() {
+      const MAX_LENGTH: usize = 16;
+      use strum::IntoEnumIterator;
+      for variant in MediaUploadType::iter() {
+        let serialized = variant.to_str();
+        assert!(!serialized.is_empty(), "variant {:?} is too short", variant);
+        assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
   }
 }
