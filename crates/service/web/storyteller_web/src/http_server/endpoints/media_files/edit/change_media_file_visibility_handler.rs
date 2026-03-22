@@ -8,7 +8,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 use utoipa::ToSchema;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::response_success_helpers::{simple_json_success, SimpleGenericJsonSuccess};
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;

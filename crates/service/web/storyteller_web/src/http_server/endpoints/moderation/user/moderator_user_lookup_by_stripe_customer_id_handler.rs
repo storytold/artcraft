@@ -9,6 +9,7 @@ use artcraft_api_defs::moderation::user::user_lookup_by_stripe_customer_id::{
   ModeratorUserLookupByStripeCustomerIdRequest,
   ModeratorUserLookupByStripeCustomerIdResponse,
 };
+use enums_convert::common::payments_namespace::payments_namespace_to_api;
 use mysql_queries::queries::users::user_subscriptions::lookup_users_by_stripe_customer_id::lookup_users_by_stripe_customer_id;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
@@ -54,7 +55,7 @@ pub async fn moderator_user_lookup_by_stripe_customer_id_handler(
     })?;
 
   let users = results.into_iter().map(|row| ModeratorUserLookupByStripeCustomerIdEntry {
-    subscription_namespace: row.subscription_namespace,
+    subscription_namespace: payments_namespace_to_api(&row.subscription_namespace),
     maybe_stripe_subscription_id: row.maybe_stripe_subscription_id,
     token: row.user_token,
     email_address: row.email_address,

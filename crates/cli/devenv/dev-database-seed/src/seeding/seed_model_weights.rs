@@ -8,7 +8,7 @@ use sqlx::{MySql, Pool};
 
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::{anyhow, AnyhowResult};
 use filesys::file_read_bytes::file_read_bytes;
 use filesys::file_size::file_size;

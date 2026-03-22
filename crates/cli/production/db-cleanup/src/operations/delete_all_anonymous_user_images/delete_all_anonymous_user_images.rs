@@ -6,7 +6,7 @@ use log::info;
 use sqlx::{MySql, Pool};
 
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::view_as::ViewAs;
+use enums_db::common::view_as::ViewAs;
 use errors::AnyhowResult;
 use mysql_queries::queries::media_files::delete::delete_media_file::delete_media_file_as_mod;
 use mysql_queries::queries::media_files::list::list_media_files::{list_media_files, ListMediaFilesArgs};

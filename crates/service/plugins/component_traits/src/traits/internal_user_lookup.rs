@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use actix_web::HttpRequest;
 use async_trait::async_trait;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use sqlx::pool::PoolConnection;
 use sqlx::MySql;
 use tokens::tokens::users::UserToken;

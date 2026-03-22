@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 use log::warn;
 use sqlx::MySqlPool;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::w2l_results::W2lResultToken;
 
@@ -78,7 +78,7 @@ SELECT
   creator_ip_address,
   maybe_creator_user_token,
 
-  creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+  creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
   disable_end_bump,
   disable_watermark,
 

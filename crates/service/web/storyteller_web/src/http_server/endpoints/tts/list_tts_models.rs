@@ -17,7 +17,7 @@ use sqlx::pool::PoolConnection;
 use sqlx::MySql;
 
 use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use migration::text_to_speech::list_tts_models_for_migration::list_tts_models_for_migration;
 use mysql_queries::queries::tts::tts_category_assignments::fetch_and_build_tts_model_category_map::fetch_and_build_tts_model_category_map_with_connection;

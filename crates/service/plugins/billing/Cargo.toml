@@ -22,6 +22,7 @@ workspace-build-acceleration.workspace = true
 # Internal
 component_traits.workspace = true
 enums.workspace = true
+enums_db = { workspace = true, features = ["utoipa"] }
 errors.workspace = true
 http_server_common = { path = "../../../lib/deprecated/http_server_common" }
 mysql_queries = { path = "../../../schema/database/mysql_queries" }

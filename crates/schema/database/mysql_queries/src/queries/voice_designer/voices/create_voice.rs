@@ -5,7 +5,7 @@ use enums_db::by_table::generic_synthetic_ids::id_category::IdCategory;
 use enums_db::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
 use enums_db::by_table::zs_voices::model_category::ZsVoiceModelCategory;
 use enums_db::by_table::zs_voices::model_type::ZsVoiceModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;

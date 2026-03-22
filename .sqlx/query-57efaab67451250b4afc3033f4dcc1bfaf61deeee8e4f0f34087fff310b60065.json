@@ -1,0 +1,102 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    mu.token as `token: tokens::tokens::media_uploads::MediaUploadToken`,\n    mu.media_type as `media_type: enums_db::by_table::media_uploads::media_upload_type::MediaUploadType`,\n    mu.maybe_original_filename,\n    mu.original_file_size_bytes,\n    mu.original_duration_millis,\n    mu.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,\n    mu.created_at,\n    mu.updated_at\nFROM media_uploads as mu\nWHERE\n    mu.maybe_creator_user_token = ?\n    AND mu.maybe_creator_user_token IS NOT NULL\n    AND mu.media_type = ?\n    AND mu.user_deleted_at IS NULL\n    AND mu.mod_deleted_at IS NULL\nORDER BY id DESC\nLIMIT 25\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::media_uploads::MediaUploadToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "media_type: enums_db::by_table::media_uploads::media_upload_type::MediaUploadType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "maybe_original_filename",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "original_file_size_bytes",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "original_duration_millis",
+        "type_info": {
+          "type": "Long",
+          "flags": "NOT_NULL",
+          "char_set": 63,
+          "max_size": 10
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "creator_set_visibility: enums_db::common::visibility::Visibility",
+        "type_info": {
+          "type": "String",
+          "flags": "NOT_NULL | BINARY | ENUM",
+          "char_set": 224,
+          "max_size": 28
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "57efaab67451250b4afc3033f4dcc1bfaf61deeee8e4f0f34087fff310b60065"
+}

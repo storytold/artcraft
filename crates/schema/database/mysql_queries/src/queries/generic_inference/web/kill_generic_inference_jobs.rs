@@ -5,7 +5,7 @@ use sqlx::{MySql, MySqlPool, QueryBuilder};
 
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::job_status::JobStatus;
+use enums_db::common::job_status::JobStatus;
 use errors::AnyhowResult;
 
 /// Only certain job statuses should be modified.

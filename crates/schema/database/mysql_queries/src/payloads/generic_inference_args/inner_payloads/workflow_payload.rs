@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;

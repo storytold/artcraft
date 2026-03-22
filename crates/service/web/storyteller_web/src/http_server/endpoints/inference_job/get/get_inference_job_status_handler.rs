@@ -23,7 +23,7 @@ use bucket_paths::legacy::typified_paths::public::voice_conversion_results::buck
 use chrono::{DateTime, Utc};
 use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::error;
 use mysql_queries::queries::generic_inference::web::get_inference_job_status::get_inference_job_status;

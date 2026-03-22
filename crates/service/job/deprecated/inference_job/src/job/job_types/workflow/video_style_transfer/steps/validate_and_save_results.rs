@@ -9,7 +9,7 @@ use enums_db::by_table::media_files::media_file_origin_model_type::MediaFileOrig
 use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums_db::common::model_type::ModelType;
 use filesys::file_size::file_size;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_file::sha256_hash_file;

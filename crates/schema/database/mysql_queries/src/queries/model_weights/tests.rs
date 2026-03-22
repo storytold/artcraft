@@ -11,8 +11,8 @@ mod tests {
     // common tests
     use enums_db::by_table::model_weights::weights_category::WeightsCategory;
     use enums_db::by_table::model_weights::weights_types::WeightsType;
-    use enums::common::view_as::ViewAs;
-    use enums::common::visibility::Visibility;
+    use enums_db::common::view_as::ViewAs;
+    use enums_db::common::visibility::Visibility;
     use errors::AnyhowResult;
     use tokens::tokens::{model_weights::ModelWeightToken, users::UserToken};
 

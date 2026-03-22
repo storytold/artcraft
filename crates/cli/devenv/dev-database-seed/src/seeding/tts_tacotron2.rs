@@ -5,7 +5,7 @@ use sqlx::{MySql, Pool};
 
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use filesys::file_read_bytes::file_read_bytes;
 use filesys::path_to_string::path_to_string;

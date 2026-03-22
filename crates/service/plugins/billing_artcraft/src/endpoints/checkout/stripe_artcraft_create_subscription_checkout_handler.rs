@@ -6,8 +6,8 @@ use actix_web::web::{Data, Json};
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBillingCadence, StripeArtcraftCreateSubscriptionCheckoutRequest, StripeArtcraftCreateSubscriptionCheckoutResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_convert::common::artcraft_subscription_slug::artcraft_subscription_slug_to_db;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_subscriptions::find_possibly_inactive_first_subscription_for_owner_user::find_possibly_inactive_first_subscription_for_owner_user_using_connection;
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::find_subscription_for_owner_user_using_connection;
@@ -56,7 +56,7 @@ pub async fn stripe_artcraft_create_subscription_session_handler(
     Some(cadence) => cadence,
   };
 
-  let plan = get_artcraft_subscription_by_slug_and_env(slug, **server_environment);
+  let plan = get_artcraft_subscription_by_slug_and_env(artcraft_subscription_slug_to_db(&slug), **server_environment);
 
   let mut mysql_connection = mysql_pool
       .acquire()

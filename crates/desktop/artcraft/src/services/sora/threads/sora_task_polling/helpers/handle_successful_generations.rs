@@ -16,7 +16,8 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use enums_api::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums_convert::common::model_type::model_type_to_api;
+use enums_db::common::model_type::ModelType;
 use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums_db::tauri::tasks::task_status;
 use errors::AnyhowResult;
@@ -89,7 +90,7 @@ pub async fn handle_classic_successful_generations(
       uuid_idempotency_token: generate_random_uuid(),
       positive_prompt: generation.prompt.clone(),
       negative_prompt: None,
-      model_type: Some(generation.model_type),
+      model_type: Some(model_type_to_api(&generation.model_type)),
       generation_provider: Some(GenerationProvider::Sora),
     };
 

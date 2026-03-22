@@ -1,7 +1,7 @@
 use log::error;
 use sqlx::MySqlPool;
 use stripe::Subscription;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use mysql_queries::queries::users::user_subscriptions::get_user_subscription_by_stripe_subscription_id::get_user_subscription_by_stripe_subscription_id;
 use mysql_queries::queries::users::user_subscriptions::upsert_user_subscription_by_stripe_id::UpsertUserSubscription;
 use reusable_types::stripe::stripe_subscription_status::StripeSubscriptionStatus;

@@ -13,8 +13,8 @@ use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_f
 use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1p5_pro_image_to_video_webhook::{enqueue_seedance_1p5_pro_image_to_video_webhook, EnqueueSeedance1p5ProImageToVideoArgs, EnqueueSeedance1p5ProImageToVideoAspectRatio, EnqueueSeedance1p5ProImageToVideoDuration, EnqueueSeedance1p5ProImageToVideoResolution};
 use fal_client::requests::webhook::video::text::enqueue_seedance_1p5_pro_text_to_video_webhook::{enqueue_seedance_1p5_pro_text_to_video_webhook, EnqueueSeedance1p5ProTextToVideoArgs, EnqueueSeedance1p5ProTextToVideoAspectRatio, EnqueueSeedance1p5ProTextToVideoDuration, EnqueueSeedance1p5ProTextToVideoResolution};

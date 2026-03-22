@@ -3,7 +3,7 @@ use log::warn;
 use sqlx::MySqlPool;
 
 use enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -29,7 +29,7 @@ pub async fn list_user_jobs_for_moderation(
     UserJobForModerationResult,
     r#"
 SELECT
-    j.status as `job_status: enums::common::job_status_plus::JobStatusPlus`,
+    j.status as `job_status: enums_db::common::job_status_plus::JobStatusPlus`,
     j.failure_reason as job_failure_reason,
     wle.credits_delta,
     wle.maybe_linked_refund_ledger_token as `maybe_linked_refund_ledger_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,

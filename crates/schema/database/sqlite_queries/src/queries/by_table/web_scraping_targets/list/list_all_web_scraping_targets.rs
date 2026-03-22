@@ -1,5 +1,5 @@
 use enums_db::by_table::web_scraping_targets::scraping_status::ScrapingStatus;
-use enums::common::sqlite::web_content_type::WebContentType;
+use enums_db::common::sqlite::web_content_type::WebContentType;
 use errors::{anyhow, AnyhowResult};
 use sqlx::SqlitePool;
 
@@ -22,7 +22,7 @@ pub async fn list_all_web_scraping_targets(
 SELECT
   id,
   canonical_url,
-  web_content_type as `web_content_type: enums::common::sqlite::web_content_type::WebContentType`,
+  web_content_type as `web_content_type: enums_db::common::sqlite::web_content_type::WebContentType`,
   maybe_title,
   maybe_article_full_image_url,
   maybe_article_thumbnail_image_url,

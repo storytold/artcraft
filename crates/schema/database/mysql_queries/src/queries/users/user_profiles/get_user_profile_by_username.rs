@@ -4,7 +4,7 @@ use log::warn;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 
@@ -112,8 +112,8 @@ SELECT
     profile_rendered_html,
     user_role_slug,
     disable_gravatar,
-    preferred_tts_result_visibility as `preferred_tts_result_visibility: enums::common::visibility::Visibility`,
-    preferred_w2l_result_visibility as `preferred_w2l_result_visibility: enums::common::visibility::Visibility`,
+    preferred_tts_result_visibility as `preferred_tts_result_visibility: enums_db::common::visibility::Visibility`,
+    preferred_w2l_result_visibility as `preferred_w2l_result_visibility: enums_db::common::visibility::Visibility`,
     discord_username,
     twitch_username,
     twitter_username,

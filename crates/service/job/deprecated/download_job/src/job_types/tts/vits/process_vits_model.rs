@@ -5,7 +5,7 @@ use log::{error, info, warn};
 use tempdir::TempDir;
 
 use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use filesys::check_file_exists::check_file_exists;
 use filesys::file_size::file_size;

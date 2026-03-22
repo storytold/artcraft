@@ -12,6 +12,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::prompts::create_prompt::{CreatePromptRequest, CreatePromptResponse};
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_convert::common::generation::generation_provider::generation_provider_to_db;
+use enums_convert::common::model_type::model_type_to_db;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, warn};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
@@ -76,7 +77,7 @@ pub async fn create_prompt_handler(
     maybe_creator_user_token: maybe_user_session
         .as_ref()
         .map(|s| &s.user_token),
-    maybe_model_type: request.model_type,
+    maybe_model_type: request.model_type.as_ref().map(|v| model_type_to_db(v)),
     maybe_generation_provider: request.generation_provider.map(|v| generation_provider_to_db(&v)),
     maybe_positive_prompt,
     maybe_negative_prompt,

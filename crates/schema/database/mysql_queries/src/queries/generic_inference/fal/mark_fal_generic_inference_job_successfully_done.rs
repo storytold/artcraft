@@ -3,7 +3,7 @@ use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
 use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;

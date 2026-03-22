@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;

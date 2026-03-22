@@ -18,8 +18,8 @@ use artcraft_api_defs::generate::video::generate_seedance_1_0_pro_image_to_video
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::enqueue_seedance_1_pro_image_to_video_webhook;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::Seedance1ProDuration;

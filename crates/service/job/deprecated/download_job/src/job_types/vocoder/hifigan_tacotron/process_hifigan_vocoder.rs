@@ -6,7 +6,7 @@ use anyhow::anyhow;
 use log::{info, warn};
 use tempdir::TempDir;
 
-use enums::common::vocoder_type::VocoderType;
+use enums_db::common::vocoder_type::VocoderType;
 use errors::AnyhowResult;
 use filesys::check_file_exists::check_file_exists;
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;

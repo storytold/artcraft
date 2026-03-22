@@ -12,8 +12,8 @@ use artcraft_api_defs::generate::image::angle::qwen_edit_2511_edit_image_angle::
 use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{enqueue_qwen_edit_2511_edit_image_angle_webhook, EnqueueQwenEdit2511EditImageAngleArgs, EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511AngleImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;

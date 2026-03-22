@@ -13,8 +13,8 @@ use artcraft_api_defs::generate::splat::generate_worldlabs_marble_0p1_mini_splat
 use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::worldlabs::insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token::{insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token, InsertGenericInferenceForWorldlabsWithAprioriJobTokenArgs};

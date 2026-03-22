@@ -1,5 +1,5 @@
 use crate::payloads::generic_inference_args::common::watermark_type::WatermarkType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use std::time::Duration;
 use tokens::tokens::media_files::MediaFileToken;
 

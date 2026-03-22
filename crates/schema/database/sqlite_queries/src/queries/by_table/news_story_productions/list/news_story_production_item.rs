@@ -1,5 +1,5 @@
-use enums::common::sqlite::awaitable_job_status::AwaitableJobStatus;
-use enums::common::sqlite::web_content_type::WebContentType;
+use enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus;
+use enums_db::common::sqlite::web_content_type::WebContentType;
 use tokens::tokens::news_stories::NewsStoryToken;
 
 pub struct NewsStoryProductionItem {

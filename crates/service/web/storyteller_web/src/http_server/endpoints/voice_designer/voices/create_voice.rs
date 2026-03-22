@@ -194,7 +194,7 @@ pub async fn create_voice_handler(
         }),
         maybe_creator_user_token: maybe_user_token.as_ref(),
         creator_ip_address: &ip_address,
-        creator_set_visibility: enums::common::visibility::Visibility::Public,
+        creator_set_visibility: enums_db::common::visibility::Visibility::Public,
         priority_level,
         requires_keepalive: true,
         maybe_avt_token: maybe_avt_token.as_ref(),

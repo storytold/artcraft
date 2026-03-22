@@ -1,5 +1,5 @@
 use enums_db::by_table::tts_render_tasks::tts_render_status::TtsRenderStatus;
-use enums::common::sqlite::awaitable_job_status::AwaitableJobStatus;
+use enums_db::common::sqlite::awaitable_job_status::AwaitableJobStatus;
 use errors::{anyhow, AnyhowResult};
 use sqlx::SqlitePool;
 use tokens::tokens::news_stories::NewsStoryToken;

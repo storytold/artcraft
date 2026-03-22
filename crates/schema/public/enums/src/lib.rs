@@ -32,7 +32,7 @@ mod macros;
 #[cfg(test)] pub mod test_helpers;
 
 // by_table has been migrated to enums_db and enums_api crates
-pub mod common;
+// common has been migrated to enums_db and enums_api crates
 pub mod error;
 // no_table has been migrated to enums_api crate
 // tauri has been migrated to enums_db and enums_api crates

@@ -4,7 +4,7 @@ use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
 use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use mysql_queries::column_types::vocoder_type::VocoderType;
 use mysql_queries::queries::model_weights::get::get_weight_for_legacy_tts_info::{get_weight_for_legacy_tts_info_with_connection, ModelWeightForLegacyTtsInfo};

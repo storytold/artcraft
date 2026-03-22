@@ -10,8 +10,8 @@ use actix_web::web::{Data, Json};
 use actix_web::{web, HttpRequest, HttpResponse};
 use artcraft_api_defs::stripe_artcraft::create_create_new_user_account_and_subscription_checkout::{PlanBillingCadence, SessionDetails, StripeArtcraftCreateSubscriptionCheckoutWithUserSignupRequest, StripeArtcraftCreateSubscriptionCheckoutWithUserSignupResponse, UserDetails};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_convert::common::artcraft_subscription_slug::artcraft_subscription_slug_to_db;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use http_headers::values::content_type::CONTENT_TYPE_APPLICATION_JSON;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_stripe_customer_links::find_user_stripe_customer_link::find_user_stripe_customer_link_using_connection;
@@ -64,7 +64,7 @@ pub async fn stripe_artcraft_create_subscription_checkout_with_user_signup_handl
     Some(cadence) => cadence,
   };
 
-  let plan = get_artcraft_subscription_by_slug_and_env(slug, **server_environment);
+  let plan = get_artcraft_subscription_by_slug_and_env(artcraft_subscription_slug_to_db(&slug), **server_environment);
 
   let mut mysql_connection = mysql_pool
       .acquire()

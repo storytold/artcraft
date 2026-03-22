@@ -2,7 +2,7 @@ use crate::errors::select_exactly_one_error::SelectExactlyOneError;
 use crate::helpers::boolean_converters::i8_to_bool;
 use sqlx;
 use sqlx::MySql;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::wallets::WalletToken;
 
@@ -27,7 +27,7 @@ pub (super) async fn internal_select_wallet_balance_for_update(
         r#"
 SELECT
   token as `token: tokens::tokens::wallets::WalletToken`,
-  wallet_namespace as `namespace: enums::common::payments_namespace::PaymentsNamespace`,
+  wallet_namespace as `namespace: enums_db::common::payments_namespace::PaymentsNamespace`,
   owner_user_token as `owner_user_token: tokens::tokens::users::UserToken`,
   banked_credits,
   monthly_credits

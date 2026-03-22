@@ -16,7 +16,7 @@ use utoipa::ToSchema;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums_db::by_table::media_files::media_file_class::MediaFileClass;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use ffmpeg_utils::ffmpeg::ffmpeg_trim_and_resample::{ffmpeg_trim_and_resample, Args};
 use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 use filesys::file_read_bytes::file_read_bytes;

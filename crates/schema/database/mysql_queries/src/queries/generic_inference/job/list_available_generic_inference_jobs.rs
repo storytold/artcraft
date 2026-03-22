@@ -9,8 +9,8 @@ use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCat
 use enums_db::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::job_status_plus::JobStatusPlus;
-use enums::common::visibility::Visibility;
+use enums_db::common::job_status_plus::JobStatusPlus;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;

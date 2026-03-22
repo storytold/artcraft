@@ -8,7 +8,7 @@ use enums_db::by_table::media_files::media_file_class::MediaFileClass;
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 

@@ -8,7 +8,7 @@ use enums_db::by_table::media_uploads::media_upload_type::MediaUploadType;
 use enums_db::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
 use enums_db::by_table::zs_voices::model_category::ZsVoiceModelCategory;
 use enums_db::by_table::zs_voices::model_type::ZsVoiceModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::{anyhow, AnyhowResult};
 use filesys::file_read_bytes::file_read_bytes;
 use uuid_utils::uuid::generate_random_uuid;

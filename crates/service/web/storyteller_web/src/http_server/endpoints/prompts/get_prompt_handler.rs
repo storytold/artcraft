@@ -16,7 +16,7 @@ use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::Prom
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums_convert::common::generation::generation_provider::generation_provider_to_api;
-use enums::common::model_type::ModelType;
+use enums_db::common::model_type::ModelType;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api;
 use log::{error, warn};

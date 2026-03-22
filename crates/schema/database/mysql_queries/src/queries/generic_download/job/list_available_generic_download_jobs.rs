@@ -4,8 +4,8 @@ use chrono::Utc;
 use sqlx::MySqlPool;
 
 use enums_db::by_table::generic_download_jobs::generic_download_type::GenericDownloadType;
-use enums::common::job_status::JobStatus;
-use enums::common::visibility::Visibility;
+use enums_db::common::job_status::JobStatus;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::generic_download_jobs::DownloadJobToken;
 use tokens::tokens::users::UserToken;

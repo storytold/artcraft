@@ -1,7 +1,7 @@
 use actix_http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::error;
 use utoipa::ToSchema;

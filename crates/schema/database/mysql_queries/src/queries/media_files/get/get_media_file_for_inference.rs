@@ -7,7 +7,7 @@ use anyhow::anyhow;
 use sqlx::MySqlPool;
 
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
@@ -89,7 +89,7 @@ SELECT
     m.media_type as `media_type: enums_db::by_table::media_files::media_file_type::MediaFileType`,
 
     m.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
-    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    m.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
     m.file_size_bytes,
     m.maybe_duration_millis,

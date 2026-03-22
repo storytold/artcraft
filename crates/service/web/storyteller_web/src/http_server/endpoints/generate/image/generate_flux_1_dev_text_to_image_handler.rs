@@ -13,8 +13,8 @@ use artcraft_api_defs::generate::image::text::generate_flux_1_dev_text_to_image:
 use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::enqueue_flux_1_dev_text_to_image_webhook;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::{Flux1DevArgs, Flux1DevAspectRatio, Flux1DevNumImages};
 use http_server_common::request::get_request_ip::get_request_ip;

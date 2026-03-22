@@ -7,7 +7,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use cloud_storage::bucket_client::BucketClient;
 use config::shared_constants::{DEFAULT_MYSQL_CONNECTION_STRING, DEFAULT_RUST_LOG};
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::{AnyhowResult, bail};
 use filesys::file_read_bytes::file_read_bytes;
 use mimetypes::mimetype_for_bytes::get_mimetype_for_bytes;

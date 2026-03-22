@@ -39,10 +39,11 @@ mod tests {
 
   #[test]
   fn round_trip_db_to_api() {
-    for variant in Db::all_variants() {
-      let api = generation_provider_to_api(&variant);
-      let back = generation_provider_to_db(&api);
-      assert_eq!(variant, back);
+    use strum::IntoEnumIterator;
+    for api_variant in Api::iter() {
+      let db = generation_provider_to_db(&api_variant);
+      let back = generation_provider_to_api(&db);
+      assert_eq!(api_variant, back);
     }
-  }
+}
 }

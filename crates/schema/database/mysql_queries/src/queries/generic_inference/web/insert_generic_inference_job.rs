@@ -7,7 +7,7 @@ use enums_db::by_table::generic_inference_jobs::inference_input_source_token_typ
 use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;

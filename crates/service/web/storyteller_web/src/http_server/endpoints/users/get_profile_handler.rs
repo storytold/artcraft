@@ -18,7 +18,7 @@ use sqlx::MySqlPool;
 use utoipa::ToSchema;
 
 use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use http_server_common::util::timer::MultiBenchmarkingTimer;

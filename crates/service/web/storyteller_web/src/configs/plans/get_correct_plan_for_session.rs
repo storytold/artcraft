@@ -65,7 +65,7 @@ pub mod tests {
   use std::ops::{Add, Sub};
 
   use chrono::{Duration, Utc};
-  use enums::common::payments_namespace::PaymentsNamespace;
+  use enums_db::common::payments_namespace::PaymentsNamespace;
   use reusable_types::server_environment::ServerEnvironment;
 
   use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;

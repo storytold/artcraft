@@ -8,7 +8,7 @@ use bucket_paths::legacy::remote_file_manager_paths::weights_descriptor::Weights
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;
 use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use filesys::file_exists::file_exists;
 use google_drive_downloader::google_drive_download_command::GoogleDriveDownloadCommand;
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;

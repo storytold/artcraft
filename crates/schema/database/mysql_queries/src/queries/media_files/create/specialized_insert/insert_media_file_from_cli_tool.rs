@@ -6,7 +6,7 @@ use sqlx::MySqlPool;
 use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;

@@ -10,6 +10,7 @@ use artcraft_api_defs::moderation::jobs::user::list_user_jobs::{
   ListUserJobsResponse,
 };
 use enums_convert::by_table::wallet_ledger_entries::wallet_ledger_entry_type::wallet_ledger_entry_type_to_api;
+use enums_convert::common::job_status_plus::job_status_plus_to_api;
 use mysql_queries::queries::generic_inference::web::list_user_jobs_for_moderation::list_user_jobs_for_moderation;
 
 use tokens::tokens::users::UserToken;
@@ -49,7 +50,7 @@ pub async fn list_user_jobs_handler(
     })?;
 
   let jobs = results.into_iter().map(|row| ListUserJobsEntry {
-    job_status: row.job_status,
+    job_status: job_status_plus_to_api(&row.job_status),
     job_failure_reason: row.job_failure_reason,
     credits_delta: row.credits_delta,
     maybe_linked_refund_ledger_token: row.maybe_linked_refund_ledger_token,

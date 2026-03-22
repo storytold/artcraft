@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 use log::warn;
 use sqlx::MySqlPool;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 
 use crate::helpers::boolean_converters::{i8_to_bool, nullable_i8_to_optional_bool};

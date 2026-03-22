@@ -5,7 +5,7 @@ use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
 use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::tts_models::TtsModelToken;
@@ -225,7 +225,7 @@ SELECT
     creator_ip_address_creation,
     creator_ip_address_last_update,
 
-    creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
     private_bucket_hash,
     private_bucket_object_name,

@@ -12,7 +12,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 use sqlx::MySqlPool;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use markdown::simple_markdown_to_html::simple_markdown_to_html;

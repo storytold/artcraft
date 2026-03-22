@@ -7,7 +7,7 @@ use sqlx::{Executor, MySql};
 
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums_db::common::model_type::ModelType;
 use errors::AnyhowResult;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;

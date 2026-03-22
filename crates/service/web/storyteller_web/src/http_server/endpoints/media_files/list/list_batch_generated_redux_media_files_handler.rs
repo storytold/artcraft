@@ -27,7 +27,7 @@ use enums_convert::by_table::media_files::media_file_type::media_file_type_to_ap
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
-use enums::common::visibility::Visibility;
+use enums_convert::common::visibility::visibility_to_api;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::warn;
 use mysql_queries::queries::media_files::get::batch_get_media_files::batch_get_media_files;
@@ -130,7 +130,7 @@ pub async fn list_batch_generated_redux_media_files_handler(
             result.maybe_creator_display_name,
             result.maybe_creator_gravatar_hash,
           ),
-          creator_set_visibility: result.creator_set_visibility,
+          creator_set_visibility: visibility_to_api(&result.creator_set_visibility),
           maybe_prompt_token: result.maybe_prompt_token,
           maybe_original_filename: result.maybe_origin_filename,
           maybe_duration_millis: result.maybe_duration_millis,

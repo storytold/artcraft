@@ -18,7 +18,7 @@ use crate::configs::supported_languages_for_models::get_canonicalized_language_t
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
 use crate::state::server_state::ServerState;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use markdown::simple_markdown_to_html::simple_markdown_to_html;
 use mysql_queries::column_types::vocoder_type::VocoderType;

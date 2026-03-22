@@ -9,6 +9,7 @@ use artcraft_api_defs::moderation::wallets::list_user_wallets::{
   ListUserWalletsPathInfo,
   ListUserWalletsResponse,
 };
+use enums_convert::common::payments_namespace::payments_namespace_to_api;
 use mysql_queries::queries::wallets::list_user_wallets_for_moderation::list_user_wallets_for_moderation;
 
 use tokens::tokens::users::UserToken;
@@ -49,7 +50,7 @@ pub async fn list_user_wallets_handler(
 
   let wallets = results.into_iter().map(|row| ListUserWalletsEntry {
     token: row.token,
-    wallet_namespace: row.wallet_namespace,
+    wallet_namespace: payments_namespace_to_api(&row.wallet_namespace),
     banked_credits: row.banked_credits,
     monthly_credits: row.monthly_credits,
     version: row.version,

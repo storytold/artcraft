@@ -5,7 +5,7 @@ use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
 use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::voice_conversion_models::VoiceConversionModelToken;
@@ -114,7 +114,7 @@ SELECT
     vc.ietf_language_tag,
     vc.ietf_primary_language_subtag,
     vc.is_front_page_featured,
-    vc.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    vc.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     vc.created_at,
     vc.updated_at
 FROM voice_conversion_models as vc
@@ -146,7 +146,7 @@ SELECT
     vc.ietf_language_tag,
     vc.ietf_primary_language_subtag,
     vc.is_front_page_featured,
-    vc.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    vc.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     vc.created_at,
     vc.updated_at
 FROM voice_conversion_models as vc

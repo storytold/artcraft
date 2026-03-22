@@ -4,7 +4,7 @@ use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
 use enums_db::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
@@ -92,7 +92,7 @@ SELECT
     users.email_gravatar_hash as creator_gravatar_hash,
     w_extension.ietf_language_tag,
     w_extension.ietf_primary_language_subtag,
-    w.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    w.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     w.created_at,
     w.updated_at
 FROM model_weights as w

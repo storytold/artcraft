@@ -14,7 +14,7 @@ use utoipa::ToSchema;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums_api::by_table::model_weights::weights_category::WeightsCategory;
 use enums_convert::by_table::model_weights::weights_category::weights_category_to_api;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
 use tokens::tokens::model_weights::ModelWeightToken;

@@ -28,7 +28,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use elasticsearch_schema::searches::search_model_weights::search_model_weights::{search_model_weights, ModelWeightsSortDirection, ModelWeightsSortField, SearchArgs};
 use enums_api::by_table::model_weights::weights_category::WeightsCategory;
 use enums_convert::by_table::model_weights::weights_category::{weights_category_to_api, weights_category_to_db};
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use primitives::numerics::i32_to_u32_zero_clamped::i32_to_u32_zero_clamped;
 use tokens::tokens::model_weights::ModelWeightToken;
 

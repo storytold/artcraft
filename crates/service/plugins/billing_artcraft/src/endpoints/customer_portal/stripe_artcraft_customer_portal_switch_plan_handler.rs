@@ -9,8 +9,8 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBillingCadence, StripeArtcraftCreateSubscriptionCheckoutRequest, StripeArtcraftCreateSubscriptionCheckoutResponse};
 use artcraft_api_defs::stripe_artcraft::customer_portal_switch_plan::{PlanBillingCadenceConfirmation, StripeArtcraftCustomerPortalSwitchPlanRequest, StripeArtcraftCustomerPortalSwitchPlanResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_convert::common::artcraft_subscription_slug::artcraft_subscription_slug_to_db;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::{find_subscription_for_owner_user_using_connection, UserSubscription};
 use reusable_types::server_environment::ServerEnvironment;
@@ -120,7 +120,7 @@ async fn update_confirm(
     Some(cadence) => cadence,
   };
 
-  let new_plan = get_artcraft_subscription_by_slug_and_env(slug, server_environment);
+  let new_plan = get_artcraft_subscription_by_slug_and_env(artcraft_subscription_slug_to_db(&slug), server_environment);
 
   let new_price_id = match cadence {
     PlanBillingCadenceConfirmation::Monthly => new_plan.monthly_price_id.clone(),
@@ -147,7 +147,7 @@ async fn update_confirm(
     &user_subscription.stripe_customer_id,
     &existing_subscription_id,
     &existing_product_id,
-    &slug,
+    slug.to_str(),
     &new_price_id,
   );
 

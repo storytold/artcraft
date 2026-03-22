@@ -15,7 +15,8 @@ use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
-use enums::common::model_type::ModelType;
+use enums_convert::common::model_type::model_type_to_api;
+use enums_db::common::model_type::ModelType;
 use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums_db::tauri::tasks::task_model_type::TaskModelType;
 use errors::AnyhowResult;
@@ -184,7 +185,7 @@ async fn upload_images_to_storyteller(
       uuid_idempotency_token: generate_random_uuid(),
       positive_prompt: Some(prompt),
       negative_prompt: None,
-      model_type: Some(ModelType::GrokImage),
+      model_type: Some(model_type_to_api(&ModelType::GrokImage)),
       generation_provider: Some(GenerationProvider::Grok),
     };
 

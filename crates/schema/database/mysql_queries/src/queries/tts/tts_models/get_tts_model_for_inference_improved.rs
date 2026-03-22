@@ -9,7 +9,7 @@ use sqlx;
 use sqlx::MySqlPool;
 
 use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
-use enums::common::vocoder_type::VocoderType;
+use enums_db::common::vocoder_type::VocoderType;
 use tokens::tokens::tts_models::TtsModelToken;
 use tokens::tokens::users::UserToken;
 
@@ -103,7 +103,7 @@ SELECT
     tts.maybe_default_pretrained_vocoder,
 
     tts.maybe_custom_vocoder_token,
-    vocoder.vocoder_type as `maybe_custom_vocoder_type: enums::common::vocoder_type::VocoderType`,
+    vocoder.vocoder_type as `maybe_custom_vocoder_type: enums_db::common::vocoder_type::VocoderType`,
     vocoder.title as maybe_custom_vocoder_title,
     vocoder.private_bucket_hash as maybe_custom_vocoder_private_bucket_hash,
 

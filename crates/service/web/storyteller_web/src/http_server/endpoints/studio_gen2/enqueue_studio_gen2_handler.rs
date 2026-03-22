@@ -14,7 +14,7 @@ use utoipa::ToSchema;
 
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::payloads::generic_inference_args::common::watermark_type::WatermarkType;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{GenericInferenceArgs, InferenceCategoryAbbreviated, PolymorphicInferenceArgs};

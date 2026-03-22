@@ -210,7 +210,7 @@ pub async fn enqueue_image_generation_request(
     // TODO: Brandon need to figure out premium vs not premium
 
     let mut maybe_user_token: Option<UserToken> = None;
-    let visbility = enums::common::visibility::Visibility::Public;
+    let visbility = enums_db::common::visibility::Visibility::Public;
 
     let mut mysql_connection = server_state.mysql_pool.acquire().await.map_err(|err| {
         warn!("MySql pool error: {:?}", err);

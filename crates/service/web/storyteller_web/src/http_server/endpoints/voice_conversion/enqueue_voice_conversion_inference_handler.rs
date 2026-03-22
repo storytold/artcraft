@@ -21,7 +21,7 @@ use enums_db::by_table::generic_inference_jobs::inference_input_source_token_typ
 use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
 use migration::voice_conversion::query_vc_model_info_lite_for_migration::query_vc_model_info_lite_for_migration_with_connection;

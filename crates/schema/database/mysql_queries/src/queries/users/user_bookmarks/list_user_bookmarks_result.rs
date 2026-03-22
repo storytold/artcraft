@@ -8,7 +8,7 @@ use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
 use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
-use enums_db::traits::mysql_from_row::MySqlFromRow as _DbMySqlFromRowWeights;
+use enums_db::traits::mysql_from_row::MySqlFromRow as _;
 use tokens::tokens::user_bookmarks::UserBookmarkToken;
 use tokens::tokens::users::UserToken;
 

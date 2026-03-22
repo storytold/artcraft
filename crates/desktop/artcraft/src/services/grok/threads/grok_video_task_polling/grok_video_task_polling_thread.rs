@@ -17,7 +17,8 @@ use cookie_store::cookie_store::CookieStore;
 use enums_db::by_table::prompts::prompt_type::PromptType;
 use enums_api::common::generation::generation_provider::GenerationProvider;
 use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
-use enums::common::model_type::ModelType;
+use enums_convert::common::model_type::model_type_to_api;
+use enums_db::common::model_type::ModelType;
 use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use enums_db::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
@@ -223,7 +224,7 @@ async fn upload_grok_video(
     uuid_idempotency_token: generate_random_uuid(),
     positive_prompt: grok_video_post.prompt.clone(),
     negative_prompt: None,
-    model_type: Some(ModelType::GrokVideo),
+    model_type: Some(model_type_to_api(&ModelType::GrokVideo)),
     generation_provider: Some(GenerationProvider::Grok),
   };
 

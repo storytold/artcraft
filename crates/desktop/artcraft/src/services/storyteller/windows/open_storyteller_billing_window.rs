@@ -10,8 +10,10 @@ use artcraft_api_defs::stripe_artcraft::customer_portal_cancel_plan::StripeArtcr
 use artcraft_api_defs::stripe_artcraft::customer_portal_manage_plan::StripeArtcraftCustomerPortalManagePlanRequest;
 use artcraft_api_defs::stripe_artcraft::customer_portal_switch_plan::{PlanBillingCadenceConfirmation, StripeArtcraftCustomerPortalSwitchPlanRequest};
 use artcraft_api_defs::stripe_artcraft::customer_portal_update_payment_method::StripeArtcraftCustomerPortalUpdatePaymentMethodRequest;
-use enums::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
+use enums_convert::common::artcraft_credits_pack_slug::artcraft_credits_pack_slug_to_api;
+use enums_convert::common::artcraft_subscription_slug::artcraft_subscription_slug_to_api;
+use enums_db::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
+use enums_db::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
 use errors::AnyhowResult;
 use log::info;
 use reqwest::Url;
@@ -136,7 +138,7 @@ async fn get_subscription_url(
   info!("Getting URL for subscription checkout...");
 
   let request = StripeArtcraftCreateSubscriptionCheckoutRequest {
-    plan: Some(plan),
+    plan: Some(artcraft_subscription_slug_to_api(&plan)),
     cadence: Some(cadence),
   };
 
@@ -161,7 +163,7 @@ async fn get_credits_pack_url(
   info!("Getting URL for credits pack checkout...");
 
   let request = StripeArtcraftCreateCreditsPackCheckoutRequest {
-    credits_pack: Some(credits_pack),
+    credits_pack: Some(artcraft_credits_pack_slug_to_api(&credits_pack)),
   };
 
   let result = create_credits_pack_checkout(
@@ -227,7 +229,7 @@ async fn get_customer_portal_switch_plan_url(
 
   let request = StripeArtcraftCustomerPortalSwitchPlanRequest {
     portal_config_id: None,
-    plan: Some(plan),
+    plan: Some(artcraft_subscription_slug_to_api(&plan)),
     cadence: Some(cadence),
   };
 

@@ -14,7 +14,7 @@ use enums_db::by_table::generic_inference_jobs::inference_result_type::Inference
 use enums_db::by_table::zs_voices::encoding_type::ZsVoiceEncodingType;
 use enums_db::by_table::zs_voices::model_category::ZsVoiceModelCategory;
 use enums_db::by_table::zs_voices::model_type::ZsVoiceModelType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use mysql_queries::queries::voice_designer::datasets::get_dataset::get_dataset_by_token;
 use mysql_queries::queries::voice_designer::datasets::get_dataset::ZsDataset;
 use mysql_queries::queries::voice_designer::voice_samples::list_dataset_samples_for_dataset_token::DatasetSampleRecordForList;

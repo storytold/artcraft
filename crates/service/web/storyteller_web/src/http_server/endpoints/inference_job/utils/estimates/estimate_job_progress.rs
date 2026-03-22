@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::PolymorphicInferenceArgs;
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 
@@ -105,7 +105,7 @@ pub fn estimate_job_progress(job: &GenericInferenceJobStatus, maybe_args: Option
 mod tests {
   use chrono::{Duration, Utc};
 
-  use enums::common::job_status_plus::JobStatusPlus;
+  use enums_db::common::job_status_plus::JobStatusPlus;
   use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 
   use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;

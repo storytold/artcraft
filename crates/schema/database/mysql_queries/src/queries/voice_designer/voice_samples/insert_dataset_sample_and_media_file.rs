@@ -5,7 +5,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums_db::by_table::media_uploads::media_upload_type::MediaUploadType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::media_files::MediaFileToken;

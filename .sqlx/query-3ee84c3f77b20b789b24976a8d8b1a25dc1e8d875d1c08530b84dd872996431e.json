@@ -1,0 +1,168 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  token as `token: tokens::tokens::user_subscriptions::UserSubscriptionToken`,\n  user_token as `user_token: tokens::tokens::users::UserToken`,\n  subscription_namespace as `subscription_namespace: enums_db::common::payments_namespace::PaymentsNamespace`,\n  subscription_product_slug,\n  maybe_stripe_customer_id,\n  maybe_stripe_product_id,\n  maybe_stripe_subscription_id,\n  maybe_stripe_subscription_status as `maybe_stripe_subscription_status: enums_db::common::stripe_subscription_status::StripeSubscriptionStatus`,\n  maybe_stripe_invoice_is_paid,\n  subscription_start_at,\n  subscription_expires_at,\n  current_billing_period_end_at,\n  maybe_cancel_at,\n  maybe_canceled_at\n\nFROM user_subscriptions\n\nWHERE\n  user_token = ?\n  AND subscription_namespace = ?\n  AND maybe_stripe_customer_id IS NOT NULL\n  AND maybe_stripe_subscription_id IS NOT NULL\n  AND maybe_stripe_subscription_status IS NOT NULL\n  AND maybe_stripe_subscription_status NOT IN ('canceled', 'incomplete_expired')\n  AND subscription_expires_at > CURRENT_TIMESTAMP\n  ORDER BY id ASC\n  LIMIT 1\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::user_subscriptions::UserSubscriptionToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "subscription_namespace: enums_db::common::payments_namespace::PaymentsNamespace",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "subscription_product_slug",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_stripe_customer_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "maybe_stripe_product_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_stripe_subscription_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "UNIQUE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_stripe_subscription_status: enums_db::common::stripe_subscription_status::StripeSubscriptionStatus",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_stripe_invoice_is_paid",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "subscription_start_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "subscription_expires_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "current_billing_period_end_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "maybe_cancel_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "maybe_canceled_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "3ee84c3f77b20b789b24976a8d8b1a25dc1e8d875d1c08530b84dd872996431e"
+}

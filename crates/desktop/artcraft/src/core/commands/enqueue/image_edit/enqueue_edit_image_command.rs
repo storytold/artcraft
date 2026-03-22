@@ -25,7 +25,7 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums_api::common::generation::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums_db::common::model_type::ModelType;
 use enums_db::tauri::tasks::task_status::TaskStatus;
 use enums_db::tauri::tasks::task_type::TaskType;
 use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;

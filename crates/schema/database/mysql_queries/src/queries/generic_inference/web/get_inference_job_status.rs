@@ -7,7 +7,7 @@ use sqlx::{MySql, MySqlPool};
 use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -44,7 +44,7 @@ pub async fn get_inference_job_status_from_connection(job_token: &InferenceJobTo
 SELECT
     jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,
 
-    jobs.status as `status: enums::common::job_status_plus::JobStatusPlus`,
+    jobs.status as `status: enums_db::common::job_status_plus::JobStatusPlus`,
     jobs.attempt_count,
 
     jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,

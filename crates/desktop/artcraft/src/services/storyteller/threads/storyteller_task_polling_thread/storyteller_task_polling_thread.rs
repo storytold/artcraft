@@ -8,7 +8,7 @@ use artcraft_client::endpoints::jobs::list_session_jobs::{list_session_jobs, Sta
 use artcraft_client::error::api_error::ApiError;
 use artcraft_client::error::storyteller_error::StorytellerError;
 use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_api::common::job_status_plus::JobStatusPlus;
 use enums_db::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use log::error;

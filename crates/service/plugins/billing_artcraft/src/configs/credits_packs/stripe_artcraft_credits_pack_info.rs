@@ -1,4 +1,4 @@
-use enums::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
+use enums_db::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
 
 #[derive(Debug, Clone)]
 pub struct StripeArtcraftCreditsPackInfo {

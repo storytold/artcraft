@@ -5,7 +5,7 @@ use sqlx::{MySql, Pool};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use filesys::file_read_bytes::file_read_bytes;
 use filesys::file_size::file_size;

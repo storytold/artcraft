@@ -15,10 +15,9 @@ use enums_db::by_table::media_files::media_file_origin_model_type::MediaFileOrig
 use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::view_as::ViewAs;
-use enums::common::visibility::Visibility;
-use enums::traits::mysql_from_row::MySqlFromRow as _EnumsMySqlFromRow;
-use enums_db::traits::mysql_from_row::MySqlFromRow as _EnumsDbMySqlFromRow;
+use enums_db::common::view_as::ViewAs;
+use enums_db::common::visibility::Visibility;
+use enums_db::traits::mysql_from_row::MySqlFromRow as _;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;

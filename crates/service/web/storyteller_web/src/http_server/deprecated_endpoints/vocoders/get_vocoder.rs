@@ -13,8 +13,8 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
 
-use enums::common::visibility::Visibility;
-use enums::common::vocoder_type::VocoderType;
+use enums_db::common::visibility::Visibility;
+use enums_db::common::vocoder_type::VocoderType;
 use mysql_queries::queries::vocoder::get_vocoder_model::get_vocoder_model_by_token;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;

@@ -15,7 +15,7 @@ use enums_api::by_table::model_weights::{
   weights_category::WeightsCategory,
 };
 use enums_convert::by_table::model_weights::weights_category::{weights_category_to_api, weights_category_to_db};
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use mysql_queries::queries::model_weights::list::list_weights_query_builder::ListWeightsQueryBuilder;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
 use tokens::tokens::model_weights::ModelWeightToken;

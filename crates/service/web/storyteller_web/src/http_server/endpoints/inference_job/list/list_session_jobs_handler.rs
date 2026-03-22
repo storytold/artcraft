@@ -25,8 +25,10 @@ use chrono::{DateTime, Utc};
 use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
 use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
 use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::common::job_status_plus::JobStatusPlus as JobStatusPlusApi;
 use enums_convert::by_table::generic_inference_jobs::inference_category::inference_category_to_api;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_convert::common::job_status_plus::job_status_plus_to_api;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::{error, warn};
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
@@ -220,7 +222,7 @@ fn records_to_response(
   let mut success_count = 0;
 
   records.retain(|record| {
-    if record.status.status != JobStatusPlus::CompleteSuccess {
+    if record.status.status != JobStatusPlusApi::CompleteSuccess {
       return true;
     }
     match record.request.inference_category {
@@ -286,7 +288,7 @@ fn db_record_to_response_payload(
           .and_then(|args| extract_lipsync_details(args)),
     },
     status: ListSessionStatusDetailsResponse {
-      status: record.status,
+      status: job_status_plus_to_api(&record.status),
       maybe_extra_status_description,
       maybe_assigned_worker: maybe_filter_model_name(record.maybe_assigned_worker.as_deref()),
       maybe_assigned_cluster: record.maybe_assigned_cluster,

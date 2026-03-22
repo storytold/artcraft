@@ -3,8 +3,8 @@ use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
 use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::common::job_status_plus::JobStatusPlus;
-use enums::common::visibility::Visibility;
+use enums_db::common::job_status_plus::JobStatusPlus;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::prompts::PromptToken;

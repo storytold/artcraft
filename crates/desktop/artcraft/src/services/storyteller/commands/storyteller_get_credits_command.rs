@@ -9,9 +9,10 @@ use crate::services::sora::windows::sora_login_window::open_sora_login_window::o
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use crate::services::storyteller::windows::open_storyteller_billing_window::{open_storyteller_billing_window, OpenStorytellerBillingWindowArgs, BillingWindowCase};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::PlanBillingCadence;
-use enums::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
+use enums_db::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
+use enums_convert::common::payments_namespace::payments_namespace_to_api;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use errors::AnyhowResult;
 use log::{error, info};
@@ -62,7 +63,7 @@ async fn get_credits(
   let response = get_session_credits(
     &app_env_configs.storyteller_host,
     maybe_creds.as_ref(),
-    PaymentsNamespace::Artcraft,
+    payments_namespace_to_api(&PaymentsNamespace::Artcraft),
   ).await?;
 
   Ok(GetCreditsResponse {

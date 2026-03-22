@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use sqlx::{MySql, QueryBuilder};
 
 use crate::utils::transactor::Transactor;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;

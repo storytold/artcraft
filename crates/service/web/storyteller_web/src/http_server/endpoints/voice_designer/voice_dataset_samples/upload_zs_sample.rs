@@ -9,7 +9,7 @@ use once_cell::sync::Lazy;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums_db::by_table::media_uploads::media_upload_type::MediaUploadType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;

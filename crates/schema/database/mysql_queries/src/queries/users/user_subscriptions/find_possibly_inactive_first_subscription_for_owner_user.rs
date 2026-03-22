@@ -1,6 +1,6 @@
 use crate::errors::select_optional_record_error::SelectOptionalRecordError;
 use crate::types::query_map::QueryMap;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use sqlx;
 use sqlx::mysql::MySqlRow;
 use sqlx::pool::PoolConnection;
@@ -119,7 +119,7 @@ fn query_only_active(user_token: &UserToken, namespace: PaymentsNamespace)
 SELECT
   token as `token: tokens::tokens::user_subscriptions::UserSubscriptionToken`,
   user_token as `user_token: tokens::tokens::users::UserToken`,
-  subscription_namespace as `subscription_namespace: enums::common::payments_namespace::PaymentsNamespace`,
+  subscription_namespace as `subscription_namespace: enums_db::common::payments_namespace::PaymentsNamespace`,
   subscription_product_slug,
   maybe_stripe_subscription_status,
   maybe_stripe_customer_id,
@@ -157,7 +157,7 @@ fn query_possibly_inactive(user_token: &UserToken, namespace: PaymentsNamespace)
 SELECT
   token as `token: tokens::tokens::user_subscriptions::UserSubscriptionToken`,
   user_token as `user_token: tokens::tokens::users::UserToken`,
-  subscription_namespace as `subscription_namespace: enums::common::payments_namespace::PaymentsNamespace`,
+  subscription_namespace as `subscription_namespace: enums_db::common::payments_namespace::PaymentsNamespace`,
   subscription_product_slug,
   maybe_stripe_subscription_status,
   maybe_stripe_customer_id,

@@ -12,7 +12,7 @@ use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
 use sqlx::{MySql, MySqlPool};
@@ -357,7 +357,7 @@ SELECT
     media_file_cover_image.maybe_public_bucket_prefix as maybe_file_cover_image_public_bucket_prefix,
     media_file_cover_image.maybe_public_bucket_extension as maybe_file_cover_image_public_bucket_extension,
 
-    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    m.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
     m.is_user_upload,
     m.is_intermediate_system_file,
@@ -481,7 +481,7 @@ SELECT
     media_file_cover_image.maybe_public_bucket_prefix as maybe_file_cover_image_public_bucket_prefix,
     media_file_cover_image.maybe_public_bucket_extension as maybe_file_cover_image_public_bucket_extension,
 
-    m.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    m.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
     m.is_user_upload,
     m.is_intermediate_system_file,

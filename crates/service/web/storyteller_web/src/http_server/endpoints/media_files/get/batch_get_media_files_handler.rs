@@ -22,7 +22,7 @@ use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums_api::by_table::model_weights::weights_category::WeightsCategory;
 use enums_convert::by_table::model_weights::weights_category::weights_category_to_api;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory as DbWeightsCategory;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::warn;
 use mysql_queries::queries::media_files::get::batch_get_media_files::batch_get_media_files;
