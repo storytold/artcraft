@@ -1,4 +1,4 @@
-use enums::common::model_type::ModelType;
+use enums_db::common::model_type::ModelType;
 use crate::core::commands::enqueue::image_edit::enqueue_edit_image_command::ImageEditModel;
 
 pub fn image_edit_model_to_model_type(model: ImageEditModel) -> ModelType {

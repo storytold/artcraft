@@ -3,8 +3,8 @@ use crate::core::events::functional_events::text_to_image_generation_complete_ev
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use anyhow::anyhow;
 use artcraft_api_defs::jobs::list_session_jobs::{ListSessionJobsItem, ListSessionResultDetailsResponse};
-use enums::tauri::tasks::task_type::TaskType;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_db::tauri::tasks::task_type::TaskType;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use errors::AnyhowResult;
 use log::{error, warn};
 use sqlite_tasks::queries::list_tasks_by_provider_and_tokens::{list_tasks_by_provider_and_tokens, ListTasksArgs};

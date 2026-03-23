@@ -4,13 +4,14 @@ use crate::core::state::task_database::TaskDatabase;
 use crate::core::utils::enum_conversion::generation_provider::to_generation_service_provider;
 use crate::core::utils::enum_conversion::task_type::to_generation_action;
 use artcraft_api_defs::jobs::list_session_jobs::ListSessionJobsItem;
-use enums::tauri::tasks::task_status::TaskStatus;
+use enums_db::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use log::info;
 use sqlite_tasks::queries::task::Task;
 use sqlite_tasks::queries::update_task_status::{update_task_status, UpdateTaskArgs};
 use tauri::AppHandle;
-use enums::tauri::tasks::task_failure_type::TaskFailureType;
+use enums_convert::tauri::tasks::task_failure_type::task_failure_type_from_frontend_failure_category_for_api;
+use enums_db::tauri::tasks::task_failure_type::TaskFailureType;
 use sqlite_tasks::queries::update_task_status_with_rich_failure::{update_task_status_with_rich_failure, UpdateTaskWithRichFailureArgs};
 
 pub async fn handle_failed_job(
@@ -24,8 +25,10 @@ pub async fn handle_failed_job(
   let maybe_failure_type = job.status
       .maybe_failure_category_updated
       .as_ref()
-      .map(|val| TaskFailureType::from_frontend_failure_category_for_api(val));
-  
+      .map(|val| {
+        task_failure_type_from_frontend_failure_category_for_api(val)
+      });
+
   let maybe_failure_message = job.status.maybe_failure_message.as_deref();
 
   update_task_status_with_rich_failure(UpdateTaskWithRichFailureArgs {

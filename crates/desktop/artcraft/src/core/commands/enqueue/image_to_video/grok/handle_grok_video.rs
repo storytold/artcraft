@@ -15,8 +15,8 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::sora::utils::upload_images_to_sora::{upload_images_to_sora, UploadImagesToSoraArgs};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::tasks::task_type::TaskType;
 use grok_client::credentials::grok_cookies::GrokCookies;
 use grok_client::credentials::grok_full_credentials::GrokFullCredentials;
 use grok_client::datatypes::api::aspect_ratio::AspectRatio;

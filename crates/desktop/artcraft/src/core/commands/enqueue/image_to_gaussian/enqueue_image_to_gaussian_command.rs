@@ -22,8 +22,8 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCredentialManager;
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use sqlite_tasks::queries::create_task::{create_task, CreateTaskArgs};

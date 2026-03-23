@@ -16,8 +16,8 @@ use crate::services::worldlabs::state::worldlabs_credential_manager::WorldlabsCr
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use errors::AnyhowResult;
 use futures::poll;
 use grok_client::credentials::grok_full_credentials::GrokFullCredentials;

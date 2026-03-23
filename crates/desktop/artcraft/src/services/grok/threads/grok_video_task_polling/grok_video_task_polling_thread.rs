@@ -14,9 +14,11 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_api::common::generation::generation_provider::GenerationProvider as GenerationProviderApi;
+use enums_api::common::model_type::ModelType as ModelTypeApi;
+use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use errors::AnyhowResult;
 use grok_client::credentials::grok_full_credentials::GrokFullCredentials;
 use grok_client::error::grok_error::GrokError;
@@ -220,8 +222,8 @@ async fn upload_grok_video(
     uuid_idempotency_token: generate_random_uuid(),
     positive_prompt: grok_video_post.prompt.clone(),
     negative_prompt: None,
-    model_type: Some(ModelType::GrokVideo),
-    generation_provider: Some(GenerationProvider::Grok),
+    model_type: Some(ModelTypeApi::GrokVideo),
+    generation_provider: Some(GenerationProviderApi::Grok),
   };
 
   let prompt_response = create_prompt(

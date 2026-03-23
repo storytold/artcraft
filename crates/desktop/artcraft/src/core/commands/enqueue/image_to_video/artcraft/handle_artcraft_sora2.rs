@@ -14,8 +14,8 @@ use crate::services::sora::utils::upload_images_to_sora::{upload_images_to_sora,
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::{GenerateKling16ProAspectRatio, GenerateKling16ProImageToVideoRequest};
 use artcraft_api_defs::generate::video::multi_function::sora_2_multi_function_video_gen::{Sora2MultiFunctionVideoGenAspectRatio, Sora2MultiFunctionVideoGenDuration, Sora2MultiFunctionVideoGenRequest, Sora2MultiFunctionVideoGenResolution};
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use openai_sora_client::recipes::generate_sora2_video::generate_sora2_video_with_session_auto_renew::generate_sora2_video_with_session_auto_renew;

@@ -13,9 +13,10 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
+use enums_db::common::generation::generation_provider::GenerationProvider as DbGenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider as ApiGenerationProvider;
+use enums_api::common::model_type::ModelType;
+use enums_db::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
@@ -120,7 +121,7 @@ async fn polling_loop(
 
     let local_tasks = list_tasks_by_provider_and_status(ListTasksByProviderAndStatusArgs {
       db: task_database.get_connection(),
-      provider: GenerationProvider::Midjourney,
+      provider: DbGenerationProvider::Midjourney,
       task_statuses: &TASK_DATABASE_PENDING_STATUSES,
     }).await?;
 
@@ -250,7 +251,7 @@ async fn upload_midjourney_batch(
     positive_prompt: midjourney_item.full_command.clone(),
     negative_prompt: None,
     model_type: Some(model_type),
-    generation_provider: Some(GenerationProvider::Midjourney),
+    generation_provider: Some(ApiGenerationProvider::Midjourney),
   };
 
   let prompt_response = create_prompt(
