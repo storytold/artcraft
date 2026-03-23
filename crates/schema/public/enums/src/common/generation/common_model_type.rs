@@ -12,6 +12,9 @@ pub const MAX_LENGTH: usize = 24;
 
 /// Common model type enum used across image, video, 3D, and splat generation.
 ///
+/// This is used in the MySQL database, the HTTP API, and throughout
+/// ArtCraft (the Tauri app).
+///
 /// Stored in the `prompts` table (`maybe_model_type` column).
 /// Also used by other tables and the sqlite tasks table.
 ///
@@ -648,6 +651,32 @@ mod tests {
         let serialized = variant.to_str();
         assert!(serialized.len() > 0, "variant {:?} is too short", variant);
         assert!(serialized.len() <= MAX_LENGTH, "variant {:?} is too long", variant);
+      }
+    }
+
+    #[test]
+    fn serialized_names_must_not_contain_dots() {
+      for variant in CommonModelType::all_variants() {
+        let to_str_value = variant.to_str();
+        assert!(!to_str_value.contains('.'), "to_str() for {:?} contains a dot: {:?}", variant, to_str_value);
+
+        let json_value = serde_json::to_string(&variant).unwrap().replace('"', "");
+        assert!(!json_value.contains('.'), "JSON serialization for {:?} contains a dot: {:?}", variant, json_value);
+      }
+    }
+
+    #[test]
+    fn serialized_names_must_only_contain_lowercase_alphanumeric_and_underscore() {
+      let valid_pattern = regex::Regex::new(r"^[a-z0-9_]+$").unwrap();
+
+      for variant in CommonModelType::all_variants() {
+        let to_str_value = variant.to_str();
+        assert!(valid_pattern.is_match(to_str_value),
+          "to_str() for {:?} contains invalid characters: {:?} (only a-z, 0-9, _ allowed)", variant, to_str_value);
+
+        let json_value = serde_json::to_string(&variant).unwrap().replace('"', "");
+        assert!(valid_pattern.is_match(&json_value),
+          "JSON serialization for {:?} contains invalid characters: {:?} (only a-z, 0-9, _ allowed)", variant, json_value);
       }
     }
   }

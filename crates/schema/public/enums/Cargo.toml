@@ -47,3 +47,4 @@ strum.workspace = true
 # Test serialization
 serde_json.workspace = true
 toml.workspace = true
+regex.workspace = true
