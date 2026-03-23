@@ -677,7 +677,6 @@ dependencies = [
  "directories",
  "dirs",
  "discord-rich-presence",
- "enums",
  "enums_api",
  "enums_convert",
  "enums_db",
