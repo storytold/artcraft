@@ -50,7 +50,7 @@ import {
   useCostBreakdownModalStore,
   CreditsModal,
 } from "@storyteller/ui-pricing-modal";
-import { RefImage, usePromptVideoStore } from "@storyteller/ui-promptbox";
+import { RefImage, usePromptImageStore, usePromptVideoStore } from "@storyteller/ui-promptbox";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -255,6 +255,50 @@ export const TopBar = ({ pageName }: Props) => {
       // Update zustand store for Video directly
       usePromptVideoStore.getState().setReferenceImages([referenceImage]);
       useTabStore.getState().setActiveTab("VIDEO");
+      galleryModalVisibleViewMode.value = false;
+      galleryModalVisibleDuringDrag.value = false;
+      galleryModalLightboxVisible.value = false;
+    } catch (e) {
+      // no-op
+    }
+  };
+
+  const handleRecreateFromGallery = (data: {
+    prompt: string | null;
+    mediaClass: string | undefined;
+    contextImages: Array<{
+      media_links: {
+        cdn_url: string;
+        maybe_thumbnail_template: string;
+      };
+      media_token: string;
+      semantic: string;
+    }> | null;
+  }) => {
+    try {
+      const { prompt: recreatePrompt, mediaClass: recreateMediaClass, contextImages: recreateContextImages } = data;
+
+      // Build reference images from context images
+      const refImages: RefImage[] = (recreateContextImages || []).map((ci) => ({
+        id: Math.random().toString(36).substring(7),
+        url: ci.media_links.cdn_url,
+        file: new File([], "recreate-ref"),
+        mediaToken: ci.media_token,
+      }));
+
+      if (recreateMediaClass === "video") {
+        const videoStore = usePromptVideoStore.getState();
+        if (recreatePrompt) videoStore.setPrompt(recreatePrompt);
+        if (refImages.length > 0) videoStore.setReferenceImages(refImages);
+        useTabStore.getState().setActiveTab("VIDEO");
+      } else {
+        // Default to image
+        const imageStore = usePromptImageStore.getState();
+        if (recreatePrompt) imageStore.setPrompt(recreatePrompt);
+        if (refImages.length > 0) imageStore.setReferenceImages(refImages);
+        useTabStore.getState().setActiveTab("IMAGE");
+      }
+
       galleryModalVisibleViewMode.value = false;
       galleryModalVisibleDuringDrag.value = false;
       galleryModalLightboxVisible.value = false;
@@ -640,6 +684,7 @@ export const TopBar = ({ pageName }: Props) => {
         onRemoveBackgroundClicked={handleRemoveBackgroundFromGallery}
         onMake3DObjectClicked={handleMake3DObjectFromGallery}
         onMake3DWorldClicked={handleMake3DWorldFromGallery}
+        onRecreateClicked={handleRecreateFromGallery}
       />
 
       <ProviderSetupModal />
