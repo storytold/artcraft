@@ -4,7 +4,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_api::common::payments_namespace::PaymentsNamespace;
 use log::{error, warn};
 use mysql_queries::queries::wallets::create_new_artcraft_wallet_for_owner_user::create_new_artcraft_wallet_for_owner_user;
 use mysql_queries::queries::wallets::find_primary_wallet_token_for_owner::find_primary_wallet_token_for_owner_using_connection;
@@ -59,6 +59,9 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
   let maybe_wallet_token = find_primary_wallet_token_for_owner_using_connection(
     &user_token,
     PaymentsNamespace::Artcraft,
+
+
+
     &mut mysql_connection,
   ).await.map_err(|err| {
     error!("Error finding primary artcraft wallet for user {:?}: {:?}", user_token, err);

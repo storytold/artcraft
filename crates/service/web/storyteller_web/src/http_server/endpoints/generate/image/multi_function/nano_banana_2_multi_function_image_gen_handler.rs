@@ -9,11 +9,11 @@ use crate::util::lookup::lookup_image_urls_as_optional_list::lookup_image_urls_a
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::image::multi_function::nano_banana_2_multi_function_image_gen::{NanaBanana2MultiFunctionImageGenAspectRatio, NanaBanana2MultiFunctionImageGenImageResolution, NanaBanana2MultiFunctionImageGenNumImages, NanaBanana2MultiFunctionImageGenRequest, NanaBanana2MultiFunctionImageGenResponse};
-use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
-use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_2_edit_image_webhook::{enqueue_nano_banana_2_edit_image_webhook, EnqueueNanoBanana2EditImageArgs, EnqueueNanoBanana2EditImageAspectRatio, EnqueueNanoBanana2EditImageNumImages, EnqueueNanoBanana2EditImageResolution};
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_2_text_to_image_webhook::{enqueue_nano_banana_2_text_to_image_webhook, EnqueueNanoBanana2TextToImageArgs, EnqueueNanoBanana2TextToImageAspectRatio, EnqueueNanoBanana2TextToImageNumImages, EnqueueNanoBanana2TextToImageResolution};
@@ -249,7 +249,8 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),
     maybe_model_type: Some(ModelType::NanoBanana2),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(enums_convert::common::generation::generation_provider::generation_provider_to_api(&GenerationProvider::Artcraft)),
+
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
@@ -295,7 +296,8 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
     maybe_creator_user_token: Some(&user_token),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Public,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
     mysql_executor: &mut *transaction,
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,

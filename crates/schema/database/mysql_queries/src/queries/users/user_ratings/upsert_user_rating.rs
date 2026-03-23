@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use sqlx::{Executor, MySql};
 
-use enums::by_table::user_ratings::rating_value::UserRatingValue;
+use enums_db::by_table::user_ratings::rating_value::UserRatingValue;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 

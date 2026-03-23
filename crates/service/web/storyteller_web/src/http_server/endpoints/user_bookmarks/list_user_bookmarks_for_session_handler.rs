@@ -8,7 +8,8 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
 
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_api::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType as ApiUserBookmarkEntityType;
 use tokens::tokens::user_bookmarks::UserBookmarkToken;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
@@ -38,7 +39,7 @@ pub struct UserBookmark {
 #[derive(Serialize)]
 pub struct UserBookmarkDetails {
   // TODO: This needs titles or some other summary metadata.
-  pub entity_type: UserBookmarkEntityType,
+  pub entity_type: ApiUserBookmarkEntityType,
   pub entity_token: String,
 
   // TODO: Populate this for TTS

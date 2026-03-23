@@ -12,7 +12,7 @@ use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::{error, info, warn};
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use markdown::simple_markdown_to_html::simple_markdown_to_html;
 use mysql_queries::queries::w2l::w2l_templates::edit_w2l_template::{edit_w2l_template, CreatorOrModFields, EditW2lTemplateArgs, ModFields};

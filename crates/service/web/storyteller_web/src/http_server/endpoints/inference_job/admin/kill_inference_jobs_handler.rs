@@ -7,8 +7,8 @@ use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::generic_inference::web::kill_generic_inference_jobs;
 use mysql_queries::queries::generic_inference::web::kill_generic_inference_jobs::{kill_generic_inference_jobs, KillGenericInferenceJobsArgs};

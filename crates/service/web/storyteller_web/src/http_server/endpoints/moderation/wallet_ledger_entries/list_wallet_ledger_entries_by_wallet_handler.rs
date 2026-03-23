@@ -50,7 +50,8 @@ pub async fn list_wallet_ledger_entries_by_wallet_handler(
   let entries = results.into_iter().map(|row| ListWalletLedgerEntriesByWalletEntry {
     token: row.token,
     wallet_token: row.wallet_token,
-    entry_type: row.entry_type,
+    entry_type: enums_convert::by_table::wallet_ledger_entries::wallet_ledger_entry_type::wallet_ledger_entry_type_to_api(&row.entry_type),
+
     maybe_entity_ref: row.maybe_entity_ref,
     credits_delta: row.credits_delta,
     banked_credits_before: row.banked_credits_before,

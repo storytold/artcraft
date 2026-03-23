@@ -10,7 +10,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::image::bg_removal::remove_image_background::RemoveImageBackgroundRequest;
 use artcraft_api_defs::generate::image::bg_removal::remove_image_background::RemoveImageBackgroundResponse;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::common::visibility::Visibility;
+use enums_api::common::visibility::Visibility;
 use fal_client::requests::webhook::image::background::remove_background_rembg_webhook::{remove_background_rembg_webhook, RemoveBackgroundRembgWebhookArgs};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -155,7 +155,8 @@ pub async fn remove_image_background_handler(
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Public,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
   }).await;

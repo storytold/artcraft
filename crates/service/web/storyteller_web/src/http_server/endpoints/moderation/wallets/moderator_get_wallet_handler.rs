@@ -49,7 +49,8 @@ pub async fn moderator_get_wallet_handler(
 
   let maybe_wallet_details = maybe_wallet.map(|wallet| ModeratorGetWalletDetails {
     token: wallet.token,
-    wallet_namespace: wallet.wallet_namespace,
+    wallet_namespace: enums_convert::common::payments_namespace::payments_namespace_to_api(&wallet.wallet_namespace),
+
     owner_user_token: wallet.owner_user_token,
     banked_credits: wallet.banked_credits,
     monthly_credits: wallet.monthly_credits,

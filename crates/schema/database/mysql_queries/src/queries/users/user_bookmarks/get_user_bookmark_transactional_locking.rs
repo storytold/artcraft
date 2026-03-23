@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use chrono::{DateTime, Utc};
 use sqlx::{Error, Executor, MySql};
 
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
 use errors::AnyhowResult;
 use tokens::tokens::user_bookmarks::UserBookmarkToken;
 use tokens::tokens::users::UserToken;
@@ -74,7 +74,7 @@ async fn query_by_entity<'e, 'c, E>(mysql_executor: E, bookmark_entity_token: &U
   SELECT
       b.token as `token: tokens::tokens::user_bookmarks::UserBookmarkToken`,
 
-      b.entity_type as `entity_type: enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType`,
+      b.entity_type as `entity_type: enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType`,
       b.entity_token,
 
       b.user_token as `user_token: tokens::tokens::users::UserToken`,
@@ -115,7 +115,7 @@ async fn query_by_bookmark_token<'e, 'c, E>(mysql_executor: E, bookmark_token: &
   SELECT
       b2.token as `token: tokens::tokens::user_bookmarks::UserBookmarkToken`,
 
-      b2.entity_type as `entity_type: enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType`,
+      b2.entity_type as `entity_type: enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType`,
       b2.entity_token,
 
       b2.user_token as `user_token: tokens::tokens::users::UserToken`,

@@ -1,6 +1,6 @@
 use log::{error, info, warn};
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
 use mysql_queries::queries::generic_inference::worldlabs::list_pending_worldlabs_jobs::PendingWorldlabsJob;
 use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};

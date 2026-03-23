@@ -9,8 +9,8 @@ use crate::core::events::generation_events::common::{GenerationAction, Generatio
 use crate::core::events::generation_events::generation_enqueue_failure_event::GenerationEnqueueFailureEvent;
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::tasks::task_type::TaskType;
 use errors::AnyhowResult;
 use grok_client::requests::image_websocket::messages::websocket_client_message::ClientMessageAspectRatio;
 use log::{error, info};

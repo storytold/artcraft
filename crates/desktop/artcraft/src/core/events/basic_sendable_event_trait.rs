@@ -1,5 +1,5 @@
 use crate::core::events::sendable_event_error::SendableEventError;
-use enums::tauri::ux::tauri_event_name::TauriEventName;
+use enums_db::tauri::ux::tauri_event_name::TauriEventName;
 use log::{error, info};
 use serde::Serialize;
 use std::fmt::Debug;

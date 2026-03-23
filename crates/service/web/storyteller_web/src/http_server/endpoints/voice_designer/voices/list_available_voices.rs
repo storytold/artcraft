@@ -7,7 +7,7 @@ use chrono::{DateTime, Utc};
 use log::{info, warn};
 
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use mysql_queries::queries::voice_designer::voices::list_voices_query_builder::ListVoicesQueryBuilder;
 use tokens::tokens::zs_voices::ZsVoiceToken;
 

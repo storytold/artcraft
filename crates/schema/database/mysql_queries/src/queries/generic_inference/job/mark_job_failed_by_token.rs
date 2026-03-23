@@ -1,8 +1,8 @@
 use anyhow::anyhow;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 

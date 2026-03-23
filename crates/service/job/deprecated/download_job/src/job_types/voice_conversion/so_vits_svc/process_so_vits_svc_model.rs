@@ -5,10 +5,10 @@ use log::{error, info, warn};
 use tempdir::TempDir;
 use bucket_paths::legacy::typified_paths::public::weight_files::bucket_file_path::WeightFileBucketPath;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use filesys::check_file_exists::check_file_exists;
 use filesys::file_size::file_size;

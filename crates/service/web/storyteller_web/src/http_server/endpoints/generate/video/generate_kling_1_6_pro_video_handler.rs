@@ -14,10 +14,13 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::{GenerateKling16ProAspectRatio, GenerateKling16ProImageToVideoRequest};
 use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::{GenerateKling16ProDuration, GenerateKling16ProImageToVideoResponse};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_api::by_table::prompts::prompt_type::PromptType as ApiPromptType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider as ApiGenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_api::common::model_type::ModelType as ApiModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_kling_v1p6_pro_image_to_video_webhook::{enqueue_kling_v1p6_pro_image_to_video_webhook, Kling1p6ProArgs, Kling1p6ProAspectRatio, Kling1p6ProDuration};
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -217,7 +220,8 @@ pub async fn generate_kling_1_6_pro_video_handler(
         .as_ref()
         .map(|s| &s.user_token),
     maybe_model_type: Some(ModelType::Kling16Pro),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(enums_convert::common::generation::generation_provider::generation_provider_to_api(&GenerationProvider::Artcraft)),
+
     maybe_positive_prompt: Some(prompt),
     maybe_negative_prompt: None,
     maybe_other_args: None,
@@ -246,7 +250,8 @@ pub async fn generate_kling_1_6_pro_video_handler(
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Public,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
     mysql_executor: &mut *transaction,
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,

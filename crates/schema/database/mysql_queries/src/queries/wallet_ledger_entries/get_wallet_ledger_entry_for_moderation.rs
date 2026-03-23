@@ -3,7 +3,7 @@ use log::warn;
 use sqlx::MySqlPool;
 
 use chrono::{DateTime, Utc};
-use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use errors::AnyhowResult;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
@@ -30,7 +30,7 @@ pub async fn get_wallet_ledger_entry_for_moderation(
     r#"
 SELECT
     token as `token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,
-    entry_type as `entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`,
+    entry_type as `entry_type: enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`,
     maybe_entity_ref,
     credits_delta,
     banked_credits_before as `banked_credits_before: u32`,

@@ -37,6 +37,20 @@ impl JobStatusPlus {
       Self::CancelledBySystem => "cancelled_by_system",
     }
   }
+
+  pub fn from_str(value: &str) -> Result<Self, String> {
+    match value {
+      "pending" => Ok(Self::Pending),
+      "started" => Ok(Self::Started),
+      "complete_success" => Ok(Self::CompleteSuccess),
+      "complete_failure" => Ok(Self::CompleteFailure),
+      "attempt_failed" => Ok(Self::AttemptFailed),
+      "dead" => Ok(Self::Dead),
+      "cancelled_by_user" => Ok(Self::CancelledByUser),
+      "cancelled_by_system" => Ok(Self::CancelledBySystem),
+      _ => Err(format!("invalid JobStatusPlus: {:?}", value)),
+    }
+  }
 }
 
 #[cfg(test)]

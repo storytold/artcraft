@@ -1,7 +1,8 @@
 use actix_http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_api::common::payments_namespace::PaymentsNamespace;
+use enums_convert::common::payments_namespace::{payments_namespace_to_api, payments_namespace_to_db};
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::error;
 use utoipa::ToSchema;
@@ -86,7 +87,7 @@ pub async fn list_active_user_subscriptions_handler(
     active_subscriptions: user_metadata.existing_subscription_keys
         .into_iter()
         .map(|sub| SubscriptionProductKey {
-          namespace: sub.internal_subscription_namespace,
+          namespace: payments_namespace_to_api(&sub.internal_subscription_namespace),
           product_slug: sub.internal_subscription_product_slug,
         })
         .collect(),

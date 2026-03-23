@@ -4,8 +4,8 @@ use log::warn;
 use sqlx::{Error, MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
@@ -142,7 +142,7 @@ SELECT
     id,
     token as `token: tokens::tokens::voice_conversion_models::VoiceConversionModelToken`,
 
-    model_type as `model_type: enums::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
+    model_type as `model_type: enums_db::by_table::voice_conversion_models::voice_conversion_model_type::VoiceConversionModelType`,
     maybe_vocoder_token as `maybe_vocoder_token: tokens::tokens::vocoder_models::VocoderModelToken`,
 
     title,
@@ -167,7 +167,7 @@ SELECT
 
     maybe_last_update_user_token as `maybe_last_update_user_token: tokens::tokens::users::UserToken`,
 
-    creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
     private_bucket_hash,
     private_bucket_object_name,

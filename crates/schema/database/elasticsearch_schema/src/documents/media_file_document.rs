@@ -3,12 +3,12 @@ use std::path::PathBuf;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_subtype::MediaFileSubtype;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
 

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use utoipa::ToSchema;
 
-use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums_api::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 
 /// AutoProductCategory can be used in APIs to auto-expand to multiple product categories,
 /// deprecated product categories, etc.

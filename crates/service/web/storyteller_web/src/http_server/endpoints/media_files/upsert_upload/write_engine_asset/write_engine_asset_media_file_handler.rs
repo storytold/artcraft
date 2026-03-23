@@ -7,9 +7,11 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
+use enums_db::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
@@ -227,7 +229,8 @@ pub async fn write_engine_asset_media_file_handler(
   // TODO(bt, 2024-02-22): This should be a transaction.
   let (token, record_id) = upsert_media_file_from_file_upload(UpsertMediaFileFromUploadArgs {
     maybe_media_file_token: upload_media_request.media_file_token.as_ref(),
-    maybe_media_class: Some(MediaFileClass::Dimensional),
+    maybe_media_class: Some(enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&MediaFileClass::Dimensional)),
+
     media_file_type,
     maybe_engine_category: upload_media_request.maybe_engine_category,
     maybe_animation_type: upload_media_request.maybe_animation_type,

@@ -7,7 +7,8 @@ use actix_web_lab::extract::Query;
 use log::error;
 use utoipa::{IntoParams, ToSchema};
 
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_api::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_api::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType as ApiUserBookmarkEntityType;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::users::user_bookmarks::batch_get_user_bookmarks::{batch_get_user_bookmarks, BatchUserBookmark};
 use tokens::tokens::media_files::MediaFileToken;
@@ -49,7 +50,7 @@ pub struct BookmarkRow {
   /// The passed token
   pub entity_token: String,
   /// The type of entity
-  pub entity_type: UserBookmarkEntityType,
+  pub entity_type: ApiUserBookmarkEntityType,
   /// Whether the entity is bookmarked or not
   pub is_bookmarked: bool,
   /// If the object is bookmarked, this is the bookmark token (used to delete the bookmark).
@@ -178,7 +179,8 @@ fn fill_in_missed_bookmarks(request_tokens: &HashSet<String>, db_response: Vec<B
       // NB: We clear out the token if it's deleted for the sake of the frontend.
       maybe_bookmark_token: if is_bookmarked { Some(record.token) } else { None },
       entity_token: record.entity_token,
-      entity_type: record.entity_type,
+      entity_type: enums_convert::by_table::user_bookmarks::user_bookmark_entity_type::user_bookmark_entity_type_to_api(&record.entity_type),
+
       is_bookmarked,
     });
   }

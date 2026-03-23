@@ -7,7 +7,7 @@ use log::warn;
 use sqlx::{Executor, MySql};
 use sqlx::pool::PoolConnection;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 
@@ -132,8 +132,8 @@ SELECT
     users.disable_gravatar,
     users.auto_play_audio_preference,
     users.auto_play_video_preference,
-    users.preferred_tts_result_visibility as `preferred_tts_result_visibility: enums::common::visibility::Visibility`,
-    users.preferred_w2l_result_visibility as `preferred_w2l_result_visibility: enums::common::visibility::Visibility`,
+    users.preferred_tts_result_visibility as `preferred_tts_result_visibility: enums_db::common::visibility::Visibility`,
+    users.preferred_w2l_result_visibility as `preferred_w2l_result_visibility: enums_db::common::visibility::Visibility`,
 
     users.user_role_slug,
     users.is_banned,

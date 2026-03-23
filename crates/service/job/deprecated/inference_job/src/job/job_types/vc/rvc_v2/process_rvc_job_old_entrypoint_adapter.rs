@@ -1,7 +1,7 @@
 use anyhow::anyhow;
 use log::{error, info};
 
-use enums::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
+use enums_db::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
 use migration::voice_conversion::query_vc_model_for_migration::{query_vc_model_for_migration, VcModelType};
 use mysql_queries::queries::generic_inference::job::list_available_generic_inference_jobs::AvailableInferenceJob;
 use mysql_queries::queries::media_files::get::get_media_file_for_inference::get_media_file_for_inference;

@@ -4,7 +4,7 @@ use log::error;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
@@ -92,7 +92,7 @@ async fn select_include_deleted(
         zd.ietf_language_tag,
         zd.ietf_primary_language_subtag,
         zd.maybe_creator_user_token,
-        zd.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        zd.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
         zd.created_at,
         zd.updated_at
         FROM zs_voice_datasets as zd
@@ -117,7 +117,7 @@ async fn select_without_deleted(
         zd.ietf_language_tag,
         zd.ietf_primary_language_subtag,
         zd.maybe_creator_user_token,
-        zd.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        zd.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
         zd.created_at,
         zd.updated_at
         FROM zs_voice_datasets as zd

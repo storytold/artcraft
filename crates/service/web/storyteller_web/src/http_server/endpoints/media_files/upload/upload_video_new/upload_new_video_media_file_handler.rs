@@ -14,9 +14,11 @@ use std::time::Duration;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
+use enums_db::common::visibility::Visibility;
 use ffmpeg_utils::ffmpeg::ffmpeg_trim_and_resample::{ffmpeg_trim_and_resample, Args};
 use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 use filesys::file_read_bytes::file_read_bytes;
@@ -373,7 +375,8 @@ pub async fn upload_new_video_media_file_handler(
       form.is_intermediate_system_file.map(|b| b.0).unwrap_or(false);
 
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
-    maybe_media_class: Some(MediaFileClass::Video),
+    maybe_media_class: Some(enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&MediaFileClass::Video)),
+
     media_file_type: MediaFileType::Video,
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),

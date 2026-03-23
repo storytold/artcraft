@@ -15,8 +15,8 @@ use crate::util::common_commands::ffmpeg::ffmpeg_resample_fps_and_duration::Ffmp
 use crate::util::common_commands::ffmpeg::ffmpeg_resample_fps_args::FfmpegResampleFpsArgs;
 use anyhow::anyhow;
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use filesys::check_file_exists::check_file_exists;
 use filesys::create_dir_all_if_missing::create_dir_all_if_missing;
 use filesys::file_deletion::safe_delete_possible_files_and_directories::safe_delete_possible_files_and_directories;

@@ -6,7 +6,7 @@ use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 
 use crate::state::server_state::ServerState;

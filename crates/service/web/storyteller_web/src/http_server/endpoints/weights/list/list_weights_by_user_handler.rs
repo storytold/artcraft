@@ -10,9 +10,11 @@ use log::warn;
 use utoipa::{IntoParams, ToSchema};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::common::view_as::ViewAs;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory as ApiWeightsCategory;
+use enums_db::common::view_as::ViewAs;
+use enums_api::common::view_as::ViewAs as ApiViewAs;
+use enums_db::common::visibility::Visibility;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use mysql_queries::queries::model_weights::list::list_weights_by_user::{list_weights_by_creator_username, ListWeightsForUserArgs};
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
@@ -97,7 +99,7 @@ pub struct ListWeightsForUserQueryParams {
   /// Optional. Scope to only the exact weight category, which may include
   /// multiple types of model (eg voice_conversion includes RVC, SVC, etc.)
   /// Shouldn't be used with weight type scoping
-  pub maybe_scoped_weight_category: Option<WeightsCategory>,
+  pub maybe_scoped_weight_category: Option<ApiWeightsCategory>,
 }
 
 #[derive(Deserialize,ToSchema)]
@@ -189,8 +191,10 @@ pub async fn list_weights_by_user_handler(
         page_index,
         sort_ascending,
         view_as,
-        maybe_scoped_weight_category: query.maybe_scoped_weight_category,
-        maybe_scoped_weight_type: query.maybe_scoped_weight_type.map(|w| w.to_enum()),
+        maybe_scoped_weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&query.maybe_scoped_weight_category),
+
+        maybe_scoped_weight_type: enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&query.maybe_scoped_weight_type.map(|w| w.to_enum())),
+
         mysql_pool: &server_state.mysql_pool,
     }
   ).await.map_err(|e| {
@@ -248,7 +252,8 @@ pub async fn list_weights_by_user_handler(
       maybe_cover_image_public_bucket_path: maybe_cover_image,
       file_size_bytes: weight.file_size_bytes,
       file_checksum_sha2: weight.file_checksum_sha2,
-      creator_set_visibility: weight.creator_set_visibility,
+      creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&weight.creator_set_visibility),
+
       stats: SimpleEntityStats {
         positive_rating_count: weight.maybe_ratings_positive_count.unwrap_or(0),
         bookmark_count: weight.maybe_bookmark_count.unwrap_or(0),

@@ -4,7 +4,7 @@ use log::error;
 use sqlx::MySql;
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::user_ratings::rating_value::UserRatingValue;
+use enums_db::by_table::user_ratings::rating_value::UserRatingValue;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 
@@ -32,7 +32,7 @@ pub async fn get_user_rating(args: Args<'_>) -> AnyhowResult<Option<UserRating>>
       InternalUserRatingRecord,
         r#"
 SELECT
-    rating_value as `rating_value: enums::by_table::user_ratings::rating_value::UserRatingValue`,
+    rating_value as `rating_value: enums_db::by_table::user_ratings::rating_value::UserRatingValue`,
     created_at,
     updated_at
 

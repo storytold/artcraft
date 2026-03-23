@@ -12,9 +12,11 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::{error, info, warn};
 use utoipa::ToSchema;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::payloads::generic_inference_args::common::watermark_type::WatermarkType;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{GenericInferenceArgs, InferenceCategoryAbbreviated, PolymorphicInferenceArgs};
@@ -268,7 +270,8 @@ pub async fn enqueue_studio_gen2_handler(
   let inference_args = StudioGen2Payload {
     image_file: Some(request.image_file.clone()),
     video_file: Some(request.video_file.clone()),
-    creator_visibility: Some(set_visibility),
+    creator_visibility: Some(enums_convert::common::visibility::visibility_to_db(&set_visibility)),
+
     watermark_type,
     after_job_debug_sleep_millis: request.debug_sleep_millis,
     output_width: request.output_width,
@@ -304,7 +307,8 @@ pub async fn enqueue_studio_gen2_handler(
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility:  set_visibility,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&set_visibility),
+
     priority_level,
     requires_keepalive: false,
     is_debug_request,

@@ -3,7 +3,7 @@ use log::error;
 use sqlx::{MySqlPool, QueryBuilder};
 
 use composite_identifiers::by_table::batch_generations::batch_generation_entity::BatchGenerationEntity;
-use enums::by_table::beta_keys::beta_key_product::BetaKeyProduct;
+use enums_db::by_table::beta_keys::beta_key_product::BetaKeyProduct;
 use errors::AnyhowResult;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::beta_keys::BetaKeyToken;

@@ -3,10 +3,10 @@ use log::error;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
-use enums::common::vocoder_type::VocoderType;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::common::visibility::Visibility;
+use enums_db::common::vocoder_type::VocoderType;
 use tokens::tokens::{model_weights::ModelWeightToken, users::UserToken};
 
 use crate::helpers::boolean_converters::nullable_i8_to_bool_default_false;
@@ -169,8 +169,8 @@ async fn select_include_deleted(
         SELECT
         wt.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
         wt.title,
-        wt.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-        wt.weights_category as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+        wt.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+        wt.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
         wt.maybe_description_markdown,
         wt.maybe_description_rendered_html,
 
@@ -180,7 +180,7 @@ async fn select_include_deleted(
         users.email_gravatar_hash AS creator_gravatar_hash,
 
         wt.creator_ip_address,
-        wt.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        wt.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
         wt.maybe_last_update_user_token as `maybe_last_update_user_token: tokens::tokens::users::UserToken`,
         wt.original_download_url,
         wt.original_filename,
@@ -208,7 +208,7 @@ async fn select_include_deleted(
 
         w_extension.maybe_custom_vocoder_token,
 
-        vocoder.vocoder_type as `maybe_custom_vocoder_type: enums::common::vocoder_type::VocoderType`,
+        vocoder.vocoder_type as `maybe_custom_vocoder_type: enums_db::common::vocoder_type::VocoderType`,
         vocoder.title as maybe_custom_vocoder_title,
         vocoder.private_bucket_hash as maybe_custom_vocoder_private_bucket_hash,
 

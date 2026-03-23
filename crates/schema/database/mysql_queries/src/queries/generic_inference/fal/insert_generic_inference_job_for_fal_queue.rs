@@ -1,7 +1,7 @@
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::prompts::PromptToken;

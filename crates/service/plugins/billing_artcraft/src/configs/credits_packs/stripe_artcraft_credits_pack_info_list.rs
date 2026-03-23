@@ -1,5 +1,5 @@
 use crate::configs::credits_packs::stripe_artcraft_credits_pack_info::StripeArtcraftCreditsPackInfo;
-use enums::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
+use enums_db::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
 
 //
 // SANDBOX

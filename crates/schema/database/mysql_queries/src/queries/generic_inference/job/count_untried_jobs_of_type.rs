@@ -4,9 +4,9 @@ use anyhow::anyhow;
 use chrono::Utc;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -153,9 +153,9 @@ fn inference_category_predicate(categories: &BTreeSet<InferenceCategory>) -> Str
 mod tests {
   use std::collections::BTreeSet;
 
-  use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-  use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-  use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+  use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+  use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+  use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 
   use crate::queries::generic_inference::job::count_untried_jobs_of_type::{inference_category_predicate, job_type_predicate, model_type_predicate};
 

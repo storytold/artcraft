@@ -9,7 +9,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_router::api::common_image_model::CommonImageModel;
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use tauri::AppHandle;
 
 pub async fn handle_text_to_image_artcraft(

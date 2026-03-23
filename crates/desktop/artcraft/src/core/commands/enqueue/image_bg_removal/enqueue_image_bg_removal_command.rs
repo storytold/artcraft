@@ -23,7 +23,7 @@ use crate::core::utils::simple_http_download::simple_http_download;
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
+use enums_db::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use errors::AnyhowError;
 use log::{error, info, warn};
 use openai_sora_client::recipes::image_remix_with_session_auto_renew::{image_remix_with_session_auto_renew, ImageRemixAutoRenewRequest};

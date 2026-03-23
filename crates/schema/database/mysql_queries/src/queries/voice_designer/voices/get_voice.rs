@@ -4,7 +4,7 @@ use log::error;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::zs_voices::ZsVoiceToken;
@@ -99,7 +99,7 @@ async fn select_include_deleted(
         zv.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
         zv.bucket_hash,
         zv.model_version,
-        zv.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        zv.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
         zv.created_at,
         zv.updated_at
         FROM zs_voices as zv
@@ -126,7 +126,7 @@ async fn select_without_deleted(
         zv.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
         zv.bucket_hash,
         zv.model_version,
-        zv.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        zv.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
         zv.created_at,
         zv.updated_at
         FROM zs_voices as zv

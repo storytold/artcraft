@@ -1,6 +1,6 @@
 use sqlx::MySqlPool;
 
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
 use errors::AnyhowResult;
 use tokens::tokens::media_files::MediaFileToken;
 

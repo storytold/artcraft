@@ -5,7 +5,7 @@ use crate::utils::common_web_error::CommonWebError;
 use crate::utils::create_checkout::create_subscription_checkout_session::{create_subscription_checkout_session, CreateSubscriptionCheckoutSessionArgs};
 use actix_web::web::Data;
 use component_traits::traits::internal_user_lookup::UserMetadata;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_stripe_customer_links::find_user_stripe_customer_link::find_user_stripe_customer_link_using_connection;
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::find_subscription_for_owner_user_using_connection;

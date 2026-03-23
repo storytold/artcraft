@@ -13,7 +13,8 @@ use log::{error, warn};
 use sqlx::Acquire;
 use utoipa::ToSchema;
 
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_api::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType as ApiUserBookmarkEntityType;
 use mysql_queries::queries::entity_stats::stats_entity_token::StatsEntityToken;
 use mysql_queries::queries::entity_stats::upsert_entity_stats_on_bookmark_event::{upsert_entity_stats_on_bookmark_event, BookmarkAction, UpsertEntityStatsArgs};
 use mysql_queries::queries::users::user_bookmarks::get_total_bookmark_count_for_entity::get_total_bookmark_count_for_entity;
@@ -189,6 +190,7 @@ pub async fn create_user_bookmark_handler(
     // NB: Not all bookmarkable things have stats (eg. deprecated record types don't have stats).
     let maybe_stats_entity_token =
         StatsEntityToken::from_bookmark_entity_type_and_token(request.entity_type, &request.entity_token);
+
 
     if let Some(stats_entity_token) = maybe_stats_entity_token {
       upsert_entity_stats_on_bookmark_event(UpsertEntityStatsArgs {

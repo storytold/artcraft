@@ -3,7 +3,7 @@ use log::warn;
 use sqlx;
 use sqlx::MySqlPool;
 
-use enums::by_table::voice_conversion_results::voice_conversion_media_token_type::VoiceConversionMediaTokenType;
+use enums_db::by_table::voice_conversion_results::voice_conversion_media_token_type::VoiceConversionMediaTokenType;
 use errors::AnyhowResult;
 use tokens::tokens::voice_conversion_results::VoiceConversionResultToken;
 

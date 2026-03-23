@@ -21,10 +21,12 @@ use artcraft_api_defs::jobs::list_session_jobs::{ListSessionJobsItem, ListSessio
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use bucket_paths::legacy::typified_paths::public::voice_conversion_results::bucket_file_path::VoiceConversionResultOriginalFilePath;
 use chrono::{DateTime, Utc};
-use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
-use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_api::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
+use enums_api::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
+use enums_db::common::job_status_plus::JobStatusPlus;
+use enums_api::common::job_status_plus::JobStatusPlus as ApiJobStatusPlus;
 use log::{error, warn};
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use mysql_queries::queries::generic_inference::web::list_session_jobs::{list_session_jobs_from_connection, ListSessionJobsForUserArgs, SessionUser};
@@ -152,8 +154,10 @@ pub async fn list_session_jobs_handler(
 
   let args = ListSessionJobsForUserArgs {
     user,
-    maybe_include_job_statuses: include_states.as_ref(),
-    maybe_exclude_job_statuses: exclude_states.as_ref(),
+    maybe_include_job_statuses: enums_convert::common::job_status_plus::job_status_plus_to_api(&include_states.as_ref()),
+
+    maybe_exclude_job_statuses: enums_convert::common::job_status_plus::job_status_plus_to_api(&exclude_states.as_ref()),
+
   };
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
@@ -216,15 +220,15 @@ fn records_to_response(
   let mut success_count = 0;
 
   records.retain(|record| {
-    if record.status.status != JobStatusPlus::CompleteSuccess {
+    if record.status.status != ApiJobStatusPlus::CompleteSuccess {
       return true;
     }
     match record.request.inference_category {
       // Show all audio results
-      InferenceCategory::TextToSpeech
-      | InferenceCategory::VoiceConversion
-      | InferenceCategory::SeedVc
-      | InferenceCategory::F5TTS => return true,
+      ApiInferenceCategory::TextToSpeech
+      | ApiInferenceCategory::VoiceConversion
+      | ApiInferenceCategory::SeedVc
+      | ApiInferenceCategory::F5TTS => return true,
       // Fall through for everything else
       _ => {},
     }
@@ -258,6 +262,7 @@ fn db_record_to_response_payload(
   /// If the job's updated_at timestamp is updated elsewhere, then this is not accurate at all.
   let maybe_current_execution_duration_seconds = match record.status {
     JobStatusPlus::Started => {
+
       let now = Utc::now();
       let duration = now.signed_duration_since(record.updated_at);
       Some(i64_to_u64_zero_clamped(duration.num_seconds()))
@@ -268,12 +273,14 @@ fn db_record_to_response_payload(
   ListSessionJobsItem {
     job_token: record.job_token,
     request: ListSessionRequestDetailsResponse {
-      inference_category: record.request_details.inference_category,
+      inference_category: enums_convert::by_table::generic_inference_jobs::inference_category::inference_category_to_api(&record.request_details.inference_category),
+
       maybe_model_type: maybe_filter_model_name(record.request_details.maybe_model_type.as_deref()),
       maybe_model_token: record.request_details.maybe_model_token,
       maybe_model_title: record.request_details.maybe_model_title,
       maybe_raw_inference_text: record.request_details.maybe_raw_inference_text,
-      maybe_style_name: record.request_details.maybe_style_name,
+      maybe_style_name: enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api(&record.request_details.maybe_style_name),
+
       maybe_live_portrait_details: maybe_polymorphic_args
           .as_ref()
           .and_then(|args| extract_live_portrait_details(args)),
@@ -282,7 +289,8 @@ fn db_record_to_response_payload(
           .and_then(|args| extract_lipsync_details(args)),
     },
     status: ListSessionStatusDetailsResponse {
-      status: record.status,
+      status: enums_convert::common::job_status_plus::job_status_plus_to_api(&record.status),
+
       maybe_extra_status_description,
       maybe_assigned_worker: maybe_filter_model_name(record.maybe_assigned_worker.as_deref()),
       maybe_assigned_cluster: record.maybe_assigned_cluster,
@@ -304,7 +312,9 @@ fn db_record_to_response_payload(
       let public_bucket_media_path = match inference_category {
         // NB: Be careful here, because this varies based on the type of inference result.
         InferenceCategory::TextToSpeech |
+
         InferenceCategory::F5TTS => {
+
           match result_details.entity_type.as_str() {
             "media_file" => {
               // NB: We're migrating TTS to media_files.
@@ -345,11 +355,14 @@ fn db_record_to_response_payload(
         }
         // Unsupported media files.
         InferenceCategory::FormatConversion |
+
         InferenceCategory::ConvertBvhToWorkflow => {
+
           "".to_string()
         }
         // Deprecated
         InferenceCategory::DeprecatedField => {
+
           "".to_string() // TODO(bt,2024-07-16): Read job type instead
         }
         // The blessed path that modern media files use.

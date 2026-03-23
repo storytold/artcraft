@@ -12,11 +12,15 @@ use serde::Deserialize;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
+use enums_api::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType as ApiInferenceInputSourceTokenType;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_api::by_table::generic_inference_jobs::inference_model_type::InferenceModelType as ApiInferenceModelType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{GenericInferenceArgs, InferenceCategoryAbbreviated, PolymorphicInferenceArgs};
@@ -251,10 +255,12 @@ pub async fn enqueue_render_engine_scene_to_video_handler(
         job_type: InferenceJobType::BevyToWorkflow,
         maybe_product_category: None, // This is not a product anymore
         inference_category: InferenceCategory::ConvertBvhToWorkflow,
-        maybe_model_type: Some(InferenceModelType::BvhToWorkflow),
+        maybe_model_type: Some(enums_convert::by_table::generic_inference_jobs::inference_model_type::inference_model_type_to_api(&InferenceModelType::BvhToWorkflow)),
+
         maybe_model_token: None,
         maybe_input_source_token: Some(&request.media_file_token.as_str()),
-        maybe_input_source_token_type: Some(InferenceInputSourceTokenType::MediaFile),
+        maybe_input_source_token_type: Some(enums_convert::by_table::generic_inference_jobs::inference_input_source_token_type::inference_input_source_token_type_to_api(&InferenceInputSourceTokenType::MediaFile)),
+
         maybe_download_url: None,
         maybe_cover_image_media_file_token: None,
         maybe_raw_inference_text: None,
@@ -266,7 +272,8 @@ pub async fn enqueue_render_engine_scene_to_video_handler(
         maybe_creator_user_token: maybe_user_token.as_ref(),
         maybe_avt_token: maybe_avt_token.as_ref(),
         creator_ip_address: &ip_address,
-        creator_set_visibility: Visibility::Public,
+        creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
         priority_level,
         requires_keepalive: true,
         is_debug_request,

@@ -1,6 +1,6 @@
 use std::num::ParseIntError;
 use chrono::{Datelike, Utc};
-use enums::no_table::premium_product::premium_product_name::PremiumProductName;
+use enums_db::no_table::premium_product::premium_product_name::PremiumProductName;
 use errors::{anyhow, AnyhowResult};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

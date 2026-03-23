@@ -7,7 +7,7 @@ use anyhow::anyhow;
 use log::{error, info};
 use tempdir::TempDir;
 
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
+use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
 use errors::AnyhowResult;
 use filesys::check_file_exists::check_file_exists;
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;

@@ -9,7 +9,9 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::stripe_artcraft::create_credits_pack_checkout::{StripeArtcraftCreateCreditsPackCheckoutRequest, StripeArtcraftCreateCreditsPackCheckoutResponse};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBillingCadence, StripeArtcraftCreateSubscriptionCheckoutRequest, StripeArtcraftCreateSubscriptionCheckoutResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_convert::common::artcraft_credits_pack_slug::artcraft_credits_pack_slug_to_db;
+use enums_convert::common::artcraft_subscription_slug::artcraft_subscription_slug_to_db;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_stripe_customer_links::find_user_stripe_customer_link::find_user_stripe_customer_link_using_connection;
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::find_subscription_for_owner_user_using_connection;
@@ -52,7 +54,8 @@ pub async fn stripe_artcraft_create_credits_pack_checkout_handler(
     Some(slug) => slug,
   };
 
-  let credits_pack = get_artcraft_credits_pack_by_slug_and_env(slug, **server_environment);
+  let db_slug = artcraft_credits_pack_slug_to_db(&slug);
+  let credits_pack = get_artcraft_credits_pack_by_slug_and_env(db_slug, **server_environment);
 
   let mut mysql_connection = mysql_pool
       .acquire()

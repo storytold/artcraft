@@ -5,7 +5,7 @@
 use chrono::{DateTime, Utc};
 use sqlx::MySqlPool;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::zs_voices::ZsVoiceToken;

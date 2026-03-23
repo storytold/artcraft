@@ -12,7 +12,8 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 use utoipa::ToSchema;
 
-use enums::by_table::comments::comment_entity_type::CommentEntityType;
+use enums_db::by_table::comments::comment_entity_type::CommentEntityType;
+use enums_api::by_table::comments::comment_entity_type::CommentEntityType as ApiCommentEntityType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use markdown::simple_markdown_to_html::simple_markdown_to_html;
 use mysql_queries::queries::comments::comment_entity_token::CommentEntityToken;

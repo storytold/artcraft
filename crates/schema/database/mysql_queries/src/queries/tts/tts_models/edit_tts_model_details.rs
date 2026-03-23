@@ -2,7 +2,7 @@ use sqlx;
 use sqlx::mysql::MySqlQueryResult;
 use sqlx::MySqlPool;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 
 use crate::column_types::vocoder_type::VocoderType;
 

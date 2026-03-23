@@ -1,3 +1,4 @@
+use enums_shared::error::enums_error::EnumsError;
 use strum::EnumIter;
 use utoipa::ToSchema;
 
@@ -18,6 +19,15 @@ impl ArtcraftSubscriptionSlug {
       Self::ArtcraftBasic => "artcraft_basic",
       Self::ArtcraftPro => "artcraft_pro",
       Self::ArtcraftMax => "artcraft_max",
+    }
+  }
+
+  pub fn from_str(value: &str) -> Result<Self, EnumsError> {
+    match value {
+      "artcraft_basic" => Ok(Self::ArtcraftBasic),
+      "artcraft_pro" => Ok(Self::ArtcraftPro),
+      "artcraft_max" => Ok(Self::ArtcraftMax),
+      _ => Err(EnumsError::CouldNotConvertFromString(value.to_string())),
     }
   }
 }
@@ -66,6 +76,41 @@ mod tests {
       for variant in ArtcraftSubscriptionSlug::iter() {
         let serde_str = serde_json::to_string(&variant).unwrap().replace('"', "");
         assert_eq!(variant.to_str(), serde_str);
+      }
+    }
+  }
+
+  mod from_str_checks {
+    use super::*;
+
+    #[test]
+    fn from_str() {
+      assert_eq!(ArtcraftSubscriptionSlug::from_str("artcraft_basic").unwrap(), ArtcraftSubscriptionSlug::ArtcraftBasic);
+      assert_eq!(ArtcraftSubscriptionSlug::from_str("artcraft_pro").unwrap(), ArtcraftSubscriptionSlug::ArtcraftPro);
+      assert_eq!(ArtcraftSubscriptionSlug::from_str("artcraft_max").unwrap(), ArtcraftSubscriptionSlug::ArtcraftMax);
+    }
+
+    #[test]
+    fn from_str_invalid() {
+      assert!(ArtcraftSubscriptionSlug::from_str("invalid").is_err());
+      assert!(ArtcraftSubscriptionSlug::from_str("").is_err());
+    }
+
+    #[test]
+    fn from_str_matches_serde() {
+      for variant in ArtcraftSubscriptionSlug::iter() {
+        let serde_str = serde_json::to_string(&variant).unwrap().replace('"', "");
+        let from_str_result = ArtcraftSubscriptionSlug::from_str(&serde_str).unwrap();
+        assert_eq!(variant, from_str_result);
+      }
+    }
+
+    #[test]
+    fn from_str_round_trips_with_to_str() {
+      for variant in ArtcraftSubscriptionSlug::iter() {
+        let s = variant.to_str();
+        let back = ArtcraftSubscriptionSlug::from_str(s).unwrap();
+        assert_eq!(variant, back);
       }
     }
   }

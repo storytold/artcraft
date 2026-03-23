@@ -12,7 +12,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
 
-use enums::common::vocoder_type::VocoderType;
+use enums_db::common::vocoder_type::VocoderType;
 use mysql_queries::queries::vocoder::list_vocoder_models::{list_vocoder_models, VocoderModelListItem};
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;

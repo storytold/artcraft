@@ -8,7 +8,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 use utoipa::ToSchema;
 
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::response_success_helpers::{simple_json_success, SimpleGenericJsonSuccess};
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
@@ -142,7 +142,8 @@ pub async fn change_media_file_visibility_handler(
     let query_result = update_media_file_visibility(
         UpdateMediaFileArgs {
             media_file_token: &media_file_token.clone(),
-            creator_set_visibility: &creator_set_visibility,
+            creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&&creator_set_visibility),
+
             maybe_mod_user_token: maybe_mod_user_token.as_deref(),
             mysql_pool: &server_state.mysql_pool
         }

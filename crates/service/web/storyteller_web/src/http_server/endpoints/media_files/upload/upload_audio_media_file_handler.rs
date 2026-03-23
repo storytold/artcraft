@@ -13,9 +13,11 @@ use once_cell::sync::Lazy;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
+use enums_db::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
 use media::decode_basic_audio_info::decode_basic_audio_bytes_info;
@@ -315,7 +317,8 @@ pub async fn upload_audio_media_file_handler(
       })?;
 
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
-    maybe_media_class: Some(MediaFileClass::Audio),
+    maybe_media_class: Some(enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&MediaFileClass::Audio)),
+
     media_file_type: MediaFileType::Audio,
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),

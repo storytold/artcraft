@@ -8,7 +8,8 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 use utoipa::ToSchema;
 
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngineCategory as ApiMediaFileEngineCategory;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::media_files::edit::update_media_file_engine_category::update_media_file_engine_category;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
@@ -20,7 +21,7 @@ use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]
 pub struct ChangeMediaFileEngineCategoryRequest {
-    pub engine_category: MediaFileEngineCategory,
+    pub engine_category: ApiMediaFileEngineCategory,
 }
 
 // =============== Error Response ===============
@@ -122,7 +123,7 @@ pub async fn change_media_file_engine_category_handler(
         }
     }
 
-    if !is_valid_transition(request.engine_category) {
+    if !is_valid_transition(enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&request.engine_category)) {
         return Err(ChangeMediaFileEngineCategoryError::BadInput(
             format!("Invalid engine category: {:?}", request.engine_category)));
     }
@@ -137,7 +138,7 @@ pub async fn change_media_file_engine_category_handler(
 
     let query_result = update_media_file_engine_category(
         &media_file_token,
-        request.engine_category,
+        enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&request.engine_category),
         &server_state.mysql_pool
     ).await;
 

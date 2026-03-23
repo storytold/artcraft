@@ -2,7 +2,7 @@ use anyhow::anyhow;
 use chrono::{DateTime, Utc};
 use sqlx::{Executor, MySql};
 
-use enums::by_table::beta_keys::beta_key_product::BetaKeyProduct;
+use enums_db::by_table::beta_keys::beta_key_product::BetaKeyProduct;
 use errors::AnyhowResult;
 use tokens::tokens::beta_keys::BetaKeyToken;
 use tokens::tokens::users::UserToken;
@@ -41,7 +41,7 @@ pub async fn get_beta_key_by_value<'e, 'c, E>(
 SELECT
   b.token as `token: tokens::tokens::beta_keys::BetaKeyToken`,
 
-  b.product as `product: enums::by_table::beta_keys::beta_key_product::BetaKeyProduct`,
+  b.product as `product: enums_db::by_table::beta_keys::beta_key_product::BetaKeyProduct`,
   b.key_value,
 
   b.maybe_referrer_user_token as `maybe_referrer_user_token: tokens::tokens::users::UserToken`,

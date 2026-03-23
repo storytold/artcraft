@@ -10,7 +10,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::object::generate_hunyuan_2_0_image_to_3d::GenerateHunyuan20ImageTo3dRequest;
 use artcraft_api_defs::generate::object::generate_hunyuan_2_0_image_to_3d::GenerateHunyuan20ImageTo3dResponse;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::common::visibility::Visibility;
+use enums_api::common::visibility::Visibility;
 use fal_client::requests::webhook::object::enqueue_hunyuan_3d_2_image_to_3d_webhook::enqueue_hunyuan_3d_2_image_to_3d_webhook;
 use fal_client::requests::webhook::object::enqueue_hunyuan_3d_2_image_to_3d_webhook::Hunyuan3d2Args;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -154,7 +154,8 @@ pub async fn generate_hunyuan_2_0_image_to_3d_handler(
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Public,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
   }).await;

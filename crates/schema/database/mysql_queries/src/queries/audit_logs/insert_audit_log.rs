@@ -6,7 +6,7 @@ use anyhow::anyhow;
 use sqlx::{Executor, MySql};
 
 use composite_identifiers::by_table::audit_logs::audit_log_entity::AuditLogEntity;
-use enums::by_table::audit_logs::audit_log_entity_action::AuditLogEntityAction;
+use enums_db::by_table::audit_logs::audit_log_entity_action::AuditLogEntityAction;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::audit_logs::AuditLogToken;

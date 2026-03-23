@@ -15,7 +15,7 @@ use log::warn;
 use utoipa::ToSchema;
 
 use crate::http_server::common_responses::user_details_lite::{UserDefaultAvatarInfo, UserDetailsLight};
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_api::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
 use mysql_queries::queries::users::user_bookmarks::list_user_bookmarks_for_entity::list_user_bookmarks_for_entity;
 use mysql_queries::queries::users::user_bookmarks::user_bookmark_entity_token::UserBookmarkEntityToken;
 use tokens::tokens::user_bookmarks::UserBookmarkToken;
@@ -95,7 +95,7 @@ pub async fn list_user_bookmarks_for_entity_handler(
 ) -> Result<HttpResponse, ListUserBookmarksForEntityError>
 {
   let entity_token = UserBookmarkEntityToken::from_entity_type_and_token(
-    path.entity_type, &path.entity_token);
+    enums_convert::by_table::user_bookmarks::user_bookmark_entity_type::user_bookmark_entity_type_to_api(&path.entity_type), &path.entity_token);
   
   let query_results = list_user_bookmarks_for_entity(
     entity_token,

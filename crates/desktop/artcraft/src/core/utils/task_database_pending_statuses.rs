@@ -1,4 +1,4 @@
-use enums::tauri::tasks::task_status::TaskStatus;
+use enums_db::tauri::tasks::task_status::TaskStatus;
 use once_cell::sync::Lazy;
 use std::collections::HashSet;
 

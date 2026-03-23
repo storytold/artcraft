@@ -9,11 +9,11 @@ use rand::Rng;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::model_weights::{
+use enums_db::by_table::model_weights::{
   weights_category::WeightsCategory,
   weights_types::WeightsType,
 };
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use mysql_queries::queries::model_weights::list::list_weights_query_builder::ListWeightsQueryBuilder;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
@@ -181,7 +181,7 @@ pub async fn list_available_weights_handler(
         .sort_ascending(sort_ascending)
         .cursor_is_reversed(cursor_is_reversed)
         .weights_category(query.weight_category)
-        .weights_type(query.weight_type.map(|wt| wt.to_enum()))
+        .weights_type(enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&query.weight_type.map(|wt| wt.to_enum())))
         .scope_creator_username(None)
         .include_user_hidden(include_user_hidden)
         .include_user_deleted_results(false) // NB: Mods don't want to see deleted models. We'll improve this later.
@@ -256,8 +256,10 @@ pub async fn list_available_weights_handler(
                     weight_token: weight.token,
                     maybe_url_slug: title_to_url_slug(&weight.title),
                     title: weight.title,
-                    weight_type: weight.weights_type,
-                    weight_category: weight.weights_category,
+                    weight_type: enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&weight.weights_type),
+
+                    weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&weight.weights_category),
+
 
                     maybe_ietf_language_tag: weight.maybe_ietf_language_tag,
                     maybe_ietf_primary_language_subtag: weight.maybe_ietf_primary_language_subtag,
@@ -271,7 +273,8 @@ pub async fn list_available_weights_handler(
                         &weight.creator_display_name,
                         &weight.creator_email_gravatar_hash
                     ),
-                    creator_set_visibility: weight.creator_set_visibility,
+                    creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&weight.creator_set_visibility),
+
 
                     file_size_bytes: weight.file_size_bytes,
                     file_checksum_sha2: weight.file_checksum_sha2,

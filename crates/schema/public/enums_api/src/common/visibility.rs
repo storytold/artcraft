@@ -32,6 +32,31 @@ pub enum Visibility {
   //  have not yet been migrated to this scheme.
 }
 
+impl Default for Visibility {
+  fn default() -> Self {
+    Self::Public
+  }
+}
+
+impl Visibility {
+  pub const fn to_str(&self) -> &'static str {
+    match self {
+      Self::Public => "public",
+      Self::Hidden => "hidden",
+      Self::Private => "private",
+    }
+  }
+
+  pub fn from_str(value: &str) -> Result<Self, String> {
+    match value {
+      "public" => Ok(Self::Public),
+      "hidden" => Ok(Self::Hidden),
+      "private" => Ok(Self::Private),
+      _ => Err(format!("invalid Visibility: {:?}", value)),
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::Visibility;

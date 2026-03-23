@@ -49,7 +49,8 @@ pub async fn list_user_wallets_handler(
 
   let wallets = results.into_iter().map(|row| ListUserWalletsEntry {
     token: row.token,
-    wallet_namespace: row.wallet_namespace,
+    wallet_namespace: enums_convert::common::payments_namespace::payments_namespace_to_api(&row.wallet_namespace),
+
     banked_credits: row.banked_credits,
     monthly_credits: row.monthly_credits,
     version: row.version,

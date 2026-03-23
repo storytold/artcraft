@@ -11,10 +11,13 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
+use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_api::by_table::media_files::media_file_origin_category::MediaFileOriginCategory as ApiMediaFileOriginCategory;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
+use enums_db::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mimetypes::mimetype_for_bytes::get_mimetype_for_bytes;

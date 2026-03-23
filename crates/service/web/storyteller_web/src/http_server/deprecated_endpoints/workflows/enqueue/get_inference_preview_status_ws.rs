@@ -16,8 +16,8 @@ use redis::{Commands, RedisResult};
 use utoipa::ToSchema;
 use web::Data;
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_api::common::job_status_plus::JobStatusPlus;
 use mysql_queries::queries::generic_inference::web::get_inference_job_status::get_inference_job_status;
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use redis_schema::keys::inference_job::style_transfer_progress_key::StyleTransferProgressKey;
@@ -92,6 +92,8 @@ pub struct StatusDetailsResponse {
 
   /// An enum the frontend can use to display localized/I18N error
   /// messages. These pertain to both transient and permanent failures.
+  #[schema(value_type = String)]
+
   pub maybe_failure_category: Option<FrontendFailureCategory>,
 
   /// This is an integer number between 0 and 100 (both inclusive) that
@@ -234,7 +236,8 @@ fn record_to_payload(
       // maybe_style_name: record.request_details.maybe_style_name,
     },
     status: StatusDetailsResponse {
-      status: record.status,
+      status: enums_convert::common::job_status_plus::job_status_plus_to_api(&record.status),
+
       maybe_extra_status_description,
       maybe_assigned_worker: maybe_filter_model_name(record.maybe_assigned_worker.as_deref()),
       maybe_assigned_cluster: record.maybe_assigned_cluster,

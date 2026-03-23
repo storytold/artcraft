@@ -11,11 +11,16 @@ use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::bucket_client::BucketClient;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
-use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
+use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_api::by_table::media_files::media_file_origin_category::MediaFileOriginCategory as ApiMediaFileOriginCategory;
+use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums_api::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory as ApiMediaFileOriginProductCategory;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
+use enums_db::common::job_status_plus::JobStatusPlus;
+use enums_api::common::job_status_plus::JobStatusPlus as ApiJobStatusPlus;
 use errors::AnyhowResult;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use images::image_info::image_info::ImageInfo;
@@ -138,6 +143,7 @@ pub async fn update_gpt_image_job_status_handler(
 
   match inference_job.status {
     JobStatusPlus::CompleteSuccess => {
+
       // Job has already been completed. Don't replay the request.
       return Ok(Json(UpdateGptImageJobStatusSuccessResponse { success: true }))
     },

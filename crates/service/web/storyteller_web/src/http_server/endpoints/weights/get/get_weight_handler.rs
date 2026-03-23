@@ -10,8 +10,9 @@ use log::warn;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory as ApiWeightsCategory;
+use enums_db::common::visibility::Visibility;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use mysql_queries::queries::model_weights::get::get_weight::get_weight_by_token;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
@@ -214,8 +215,10 @@ pub async fn get_weight_handler(
         weight_token: weight.token,
         maybe_url_slug: title_to_url_slug(&weight.title),
         title: weight.title,
-        weight_type: PublicWeightsType::from_enum(weight.weights_type),
-        weight_category: weight.weights_category,
+        weight_type: enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&PublicWeightsType::from_enum(weight.weights_type)),
+
+        weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&weight.weights_category),
+
         // TODO(bt,2023-12-24): Migrated the column. We should return nullable fields, but I don't want to break the frontend
         description_markdown: weight.maybe_description_markdown.unwrap_or_else(|| "".to_string()),
         description_rendered_html: weight.maybe_description_rendered_html.unwrap_or_else(|| "".to_string()),
@@ -224,7 +227,8 @@ pub async fn get_weight_handler(
         cover_image: cover_image_details,
         maybe_cover_image_public_bucket_path: maybe_cover_image,
         creator,
-        creator_set_visibility: weight.creator_set_visibility,
+        creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&weight.creator_set_visibility),
+
         file_size_bytes: weight.file_size_bytes,
         file_checksum_sha2: weight.file_checksum_sha2,
         is_featured: weight.is_featured,

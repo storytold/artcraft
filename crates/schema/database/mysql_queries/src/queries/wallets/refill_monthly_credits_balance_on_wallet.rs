@@ -1,7 +1,7 @@
 use crate::queries::wallet_ledger_entries::internal_insert_wallet_ledger_entry::InsertWalletLedgerEntry;
 use crate::queries::wallets::internal_select_wallet_balance_for_update::internal_select_wallet_balance_for_update;
 use crate::queries::wallets::wallet_update_summary::WalletUpdateSummary;
-use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use num_traits::ToPrimitive;
 use sqlx::MySql;
 use tokens::tokens::wallets::WalletToken;

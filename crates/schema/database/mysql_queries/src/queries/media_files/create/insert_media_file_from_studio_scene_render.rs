@@ -1,12 +1,12 @@
 use sqlx;
 use sqlx::MySqlPool;
 
-use enums::by_table::generic_synthetic_ids::id_category::IdCategory;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
-use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_synthetic_ids::id_category::IdCategory;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::media_files::MediaFileToken;

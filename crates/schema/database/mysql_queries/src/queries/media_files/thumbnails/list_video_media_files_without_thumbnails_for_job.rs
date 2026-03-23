@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use enums::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
 use sqlx::{Executor, MySql};
 use tokens::tokens::media_files::MediaFileToken;
 

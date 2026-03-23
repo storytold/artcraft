@@ -9,10 +9,13 @@ use log::warn;
 use utoipa::ToSchema;
 
 use config::bad_urls::is_bad_tts_model_download_url;
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_api::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory as ApiInferenceJobProductCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{GenericInferenceArgs, InferenceCategoryAbbreviated, PolymorphicInferenceArgs};
@@ -168,7 +171,8 @@ pub async fn enqueue_gptsovits_model_download_handler(
   let query_result = insert_generic_inference_job(InsertGenericInferenceArgs {
     uuid_idempotency_token: &request.uuid_idempotency_token,
     job_type: InferenceJobType::GptSovits,
-    maybe_product_category: Some(InferenceJobProductCategory::DownloadGptSoVits),
+    maybe_product_category: Some(enums_convert::by_table::generic_inference_jobs::inference_job_product_category::inference_job_product_category_to_api(&InferenceJobProductCategory::DownloadGptSoVits)),
+
     inference_category: InferenceCategory::DeprecatedField,
     maybe_model_type: None,
     maybe_model_token: None,
@@ -184,7 +188,8 @@ pub async fn enqueue_gptsovits_model_download_handler(
         GptSovitsPayload {
           maybe_title: title.map(|s| s.to_string()),
           maybe_description: description.map(|s| s.to_string()),
-          creator_visibility: Some(creator_set_visibility),
+          creator_visibility: Some(enums_convert::common::visibility::visibility_to_db(&creator_set_visibility)),
+
           // Inference only args:
           append_advertisement: None,
         })

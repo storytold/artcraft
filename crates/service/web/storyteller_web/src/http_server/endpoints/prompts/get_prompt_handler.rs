@@ -12,11 +12,16 @@ use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
-use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
-use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums_api::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType as ApiPromptContextSemanticType;
+use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_api::by_table::prompts::prompt_type::PromptType as ApiPromptType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider as ApiGenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_api::common::model_type::ModelType as ApiModelType;
+use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName as ApiStyleTransferName;
 use log::{error, warn};
 use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
 use mysql_queries::queries::prompts::get_prompt::{get_prompt, get_prompt_from_connection};
@@ -39,7 +44,7 @@ pub struct GetPromptSuccessResponse {
 #[derive(Serialize, ToSchema)]
 pub struct GetPromptImageContextItem {
   pub media_token: MediaFileToken,
-  pub semantic: PromptContextSemanticType,
+  pub semantic: ApiPromptContextSemanticType,
   pub media_links: MediaLinks,
 }
 
@@ -49,13 +54,13 @@ pub struct PromptInfo {
 
   /// The type of prompt.
   /// Note: Prompts may or may not be compatible across systems.
-  pub prompt_type: PromptType,
+  pub prompt_type: ApiPromptType,
 
   /// The type of model used
-  pub maybe_model_type: Option<ModelType>,
+  pub maybe_model_type: Option<ApiModelType>,
 
   /// The service provider used
-  pub maybe_generation_provider: Option<GenerationProvider>,
+  pub maybe_generation_provider: Option<ApiGenerationProvider>,
   
   /// Positive prompt (technically optional, but usually present)
   pub maybe_positive_prompt: Option<String>,
@@ -72,7 +77,7 @@ pub struct PromptInfo {
   /// If a "style" was used, this is the name of it.
   /// This might not be present for all types of inference
   /// and typically only applies to video style transfer.
-  pub maybe_style_name: Option<StyleTransferName>,
+  pub maybe_style_name: Option<ApiStyleTransferName>,
 
   /// How many milliseconds it took to run generation.
   pub maybe_inference_duration_millis: Option<u64>,
@@ -292,11 +297,17 @@ pub async fn get_prompt_handler(
   let items = items.iter().filter_map(|item| {
     match item.context_semantic_type {
       PromptContextSemanticType::VidStartFrame => {},
+
       PromptContextSemanticType::VidEndFrame => {},
+
       PromptContextSemanticType::Imgref => {},
+
       PromptContextSemanticType::ImgrefCharacter => {},
+
       PromptContextSemanticType::ImgrefStyle => {},
+
       PromptContextSemanticType::ImgrefBg => {},
+
       _ => {
         // NB: Only return images. In the future we may add context items for stages, persisted data, etc.
         return None
@@ -310,7 +321,8 @@ pub async fn get_prompt_handler(
 
     Some(GetPromptImageContextItem {
       media_token: item.media_token.clone(),
-      semantic: item.context_semantic_type,
+      semantic: enums_convert::by_table::prompt_context_items::prompt_context_semantic_type::prompt_context_semantic_type_to_api(&item.context_semantic_type),
+
       media_links: MediaLinksBuilder::from_media_path_and_env(
         media_domain,
         server_state.server_environment,
@@ -330,20 +342,23 @@ pub async fn get_prompt_handler(
     prompt: PromptInfo {
       token: result.token,
       maybe_strength,
-      maybe_model_type: result.maybe_model_type,
-      maybe_generation_provider: result.maybe_generation_provider,
+      maybe_model_type: enums_convert::common::model_type::model_type_to_api(&result.maybe_model_type),
+
+      maybe_generation_provider: enums_convert::common::generation::generation_provider::generation_provider_to_api(&result.maybe_generation_provider),
+
       maybe_positive_prompt: result.maybe_positive_prompt,
       maybe_negative_prompt: result.maybe_negative_prompt,
       maybe_context_images,
       maybe_travel_prompt,
-      maybe_style_name,
+      enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api(&maybe_style_name),
       maybe_inference_duration_millis,
       used_face_detailer,
       used_upscaler,
       lipsync_enabled,
       lcm_disabled,
       use_cinematic,
-      prompt_type: result.prompt_type,
+      prompt_type: enums_convert::by_table::prompts::prompt_type::prompt_type_to_api(&result.prompt_type),
+
       created_at: result.created_at,
       maybe_moderator_fields,
       maybe_global_ipa_image_token,

@@ -11,10 +11,13 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngineCategory as ApiMediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
+use enums_db::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
@@ -217,16 +220,19 @@ pub async fn upload_scene_snapshot_media_file_handler(
       })?;
 
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
-    maybe_media_class: Some(MediaFileClass::Dimensional),
+    maybe_media_class: Some(enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&MediaFileClass::Dimensional)),
+
     media_file_type: MediaFileType::SceneJson,
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Hidden,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Hidden),
+
     upload_type: UploadType::Filesystem,
     maybe_prompt_token: None,
     maybe_batch_token: None,
-    maybe_engine_category: Some(MediaFileEngineCategory::Scene),
+    maybe_engine_category: Some(enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&MediaFileEngineCategory::Scene)),
+
     maybe_animation_type: None,
     maybe_mime_type: Some(MIMETYPE),
     file_size_bytes: file_size_bytes as u64,

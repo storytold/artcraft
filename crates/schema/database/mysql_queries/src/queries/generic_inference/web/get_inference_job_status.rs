@@ -4,10 +4,10 @@ use log::warn;
 use sqlx::pool::PoolConnection;
 use sqlx::{MySql, MySqlPool};
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
@@ -42,21 +42,21 @@ pub async fn get_inference_job_status_from_connection(job_token: &InferenceJobTo
 SELECT
     jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,
 
-    jobs.status as `status: enums::common::job_status_plus::JobStatusPlus`,
+    jobs.status as `status: enums_db::common::job_status_plus::JobStatusPlus`,
     jobs.attempt_count,
 
     jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
     jobs.maybe_creator_anonymous_visitor_token as `maybe_creator_anonymous_visitor_token: tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken`,
     jobs.creator_ip_address,
 
-    jobs.product_category as `product_category: enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory`,
-    jobs.inference_category as `inference_category: enums::by_table::generic_inference_jobs::inference_category::InferenceCategory`,
+    jobs.product_category as `product_category: enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory`,
+    jobs.inference_category as `inference_category: enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory`,
     jobs.maybe_model_type,
     jobs.maybe_model_token,
     jobs.maybe_raw_inference_text,
     jobs.maybe_inference_args,
 
-    jobs.frontend_failure_category as `maybe_frontend_failure_category: enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory`,
+    jobs.frontend_failure_category as `maybe_frontend_failure_category: enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory`,
     jobs.failure_reason,
 
     jobs.on_success_result_entity_type as maybe_result_entity_type,
@@ -307,7 +307,7 @@ struct RawGenericInferenceJobStatus {
 
 #[cfg(test)]
 mod tests {
-  use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+  use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 
   use crate::queries::generic_inference::web::get_inference_job_status::{raw_record_to_public_result, RawGenericInferenceJobStatus};
 

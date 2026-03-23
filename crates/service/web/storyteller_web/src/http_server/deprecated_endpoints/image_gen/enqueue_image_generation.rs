@@ -15,9 +15,12 @@ use serde::Serialize;
 use utoipa::ToSchema;
 use web::Data;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_api::by_table::generic_inference_jobs::inference_model_type::InferenceModelType as ApiInferenceModelType;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{
@@ -210,7 +213,7 @@ pub async fn enqueue_image_generation_request(
     // TODO: Brandon need to figure out premium vs not premium
 
     let mut maybe_user_token: Option<UserToken> = None;
-    let visbility = enums::common::visibility::Visibility::Public;
+    let visbility = enums_db::common::visibility::Visibility::Public;
 
     let mut mysql_connection = server_state.mysql_pool.acquire().await.map_err(|err| {
         warn!("MySql pool error: {:?}", err);

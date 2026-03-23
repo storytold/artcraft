@@ -4,9 +4,9 @@ use log::error;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::model_weights::weights_category::WeightsCategory;
-use enums::by_table::model_weights::weights_types::WeightsType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::{model_weights::ModelWeightToken, users::UserToken};
 
@@ -75,11 +75,11 @@ async fn select_include_deleted(
             r#"
         SELECT
         wt.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
-        wt.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-        wt.weights_category as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+        wt.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+        wt.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
 
         wt.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,
-        wt.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        wt.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
         wt.user_deleted_at,
         wt.mod_deleted_at
@@ -103,11 +103,11 @@ async fn select_without_deleted(
             r#"
         SELECT
         wt.token as `token: tokens::tokens::model_weights::ModelWeightToken`,
-        wt.weights_type as `weights_type: enums::by_table::model_weights::weights_types::WeightsType`,
-        wt.weights_category as `weights_category: enums::by_table::model_weights::weights_category::WeightsCategory`,
+        wt.weights_type as `weights_type: enums_db::by_table::model_weights::weights_types::WeightsType`,
+        wt.weights_category as `weights_category: enums_db::by_table::model_weights::weights_category::WeightsCategory`,
 
         wt.creator_user_token as `creator_user_token: tokens::tokens::users::UserToken`,
-        wt.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+        wt.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
 
         wt.user_deleted_at,
         wt.mod_deleted_at

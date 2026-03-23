@@ -8,7 +8,7 @@ use actix_web::web::{Json, Path};
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use artcraft_api_defs::credits::get_session_credits::GetSessionCreditsResponse;
 use chrono::{DateTime, Utc};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_api::common::payments_namespace::PaymentsNamespace;
 use log::{error, warn};
 use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
 use mysql_queries::queries::prompts::get_prompt::{get_prompt, get_prompt_from_connection};
@@ -64,7 +64,8 @@ pub async fn get_session_credits_handler(
 
   let maybe_wallet = find_primary_wallet_for_owner_using_connection(
     &user_token,
-    path.namespace,
+    enums_convert::common::payments_namespace::payments_namespace_to_api(&path.namespace),
+
     &mut mysql_connection,
   ).await.map_err(|err| {
     error!("Error finding primary wallet for user: {:?}, error: {:?}", user_token, err);

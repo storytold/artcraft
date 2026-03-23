@@ -17,8 +17,9 @@ use redis::{Client, Commands};
 use sqlx::MySqlPool;
 use utoipa::ToSchema;
 
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_api::by_table::users::user_feature_flag::UserFeatureFlag as ApiUserFeatureFlag;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use http_server_common::util::timer::MultiBenchmarkingTimer;
@@ -268,8 +269,10 @@ pub async fn get_profile_handler(
     profile_rendered_html: user_data.user_profile.profile_rendered_html,
     user_role_slug: user_data.user_profile.user_role_slug,
     disable_gravatar: user_data.user_profile.disable_gravatar,
-    preferred_tts_result_visibility: user_data.user_profile.preferred_tts_result_visibility,
-    preferred_w2l_result_visibility: user_data.user_profile.preferred_w2l_result_visibility,
+    preferred_tts_result_visibility: enums_convert::common::visibility::visibility_to_api(&user_data.user_profile.preferred_tts_result_visibility),
+
+    preferred_w2l_result_visibility: enums_convert::common::visibility::visibility_to_api(&user_data.user_profile.preferred_w2l_result_visibility),
+
     discord_username: user_data.user_profile.discord_username,
     twitch_username: user_data.user_profile.twitch_username,
     twitter_username: user_data.user_profile.twitter_username,
@@ -286,7 +289,8 @@ pub async fn get_profile_handler(
         is_banned: mod_fields.is_banned,
         maybe_mod_comments: mod_fields.maybe_mod_comments,
         maybe_mod_user_token: mod_fields.maybe_mod_user_token,
-        maybe_feature_flags: feature_flags.clone_flags(),
+        maybe_feature_flags: enums_convert::by_table::users::user_feature_flag::user_feature_flag_to_api(&feature_flags.clone_flags()),
+
       }
     }),
     badges: user_data.badges

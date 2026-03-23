@@ -16,7 +16,7 @@ use crate::services::sora::windows::sora_login_window::extract_sora_webview_cook
 use crate::services::storyteller::windows::open_storyteller_billing_window::BILLING_WINDOW_NAME;
 use anyhow::anyhow;
 use cookie_store::cookie_store::CookieStore;
-use enums::common::generation_provider::GenerationProvider;
+use enums_db::common::generation::generation_provider::GenerationProvider;
 use errors::AnyhowResult;
 use log::{error, info};
 use midjourney_client::client::midjourney_hostname::MidjourneyHostname;

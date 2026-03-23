@@ -10,9 +10,10 @@ use utoipa::ToSchema;
 
 use composite_identifiers::by_table::audit_logs::audit_log_entity::AuditLogEntity;
 use composite_identifiers::by_table::featured_items::featured_item_entity::FeaturedItemEntity;
-use enums::by_table::audit_logs::audit_log_entity_action::AuditLogEntityAction;
-use enums::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::audit_logs::audit_log_entity_action::AuditLogEntityAction;
+use enums_db::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
+use enums_api::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType as ApiFeaturedItemEntityType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::audit_logs::insert_audit_log_transactional::{insert_audit_log_transactional, InsertAuditLogTransactionalArgs};
 use mysql_queries::queries::featured_items::upsert_featured_item::{upsert_featured_item, UpsertFeaturedItemArgs};
@@ -149,7 +150,8 @@ pub async fn create_featured_item_handler(
       let token = MediaFileToken::new_from_str(&request.entity_token);
       let result = update_media_file_visibility_transactional(UpdateMediaFileTransactionalArgs {
         media_file_token: &token,
-        creator_set_visibility: Visibility::Public,
+        creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
         transaction: &mut transaction,
       }).await;
 

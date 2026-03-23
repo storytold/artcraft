@@ -15,10 +15,13 @@ use serde::Serialize;
 use utoipa::ToSchema;
 use web::Data;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_api::by_table::generic_inference_jobs::inference_model_type::InferenceModelType as ApiInferenceModelType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{
@@ -220,7 +223,8 @@ pub async fn enqueue_workflow_upload_request(
         maybe_title: Some(title),
         maybe_description: Some(description),
         maybe_commit_hash: Some(commit_hash),
-        creator_visibility: Some(visibility),
+        creator_visibility: Some(enums_convert::common::visibility::visibility_to_db(&visibility)),
+
         remove_watermark: None,
         // NB: The following args are irrelevant for uploading workflows
         maybe_lora_model: None,
@@ -287,7 +291,8 @@ pub async fn enqueue_workflow_upload_request(
         maybe_creator_user_token: maybe_user_token.as_ref(),
         maybe_avt_token: maybe_avt_token.as_ref(),
         creator_ip_address: &ip_address,
-        creator_set_visibility: Visibility::Private,
+        creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Private),
+
         priority_level,
         requires_keepalive: false, //reverse ...  TODO fix this. we set it base on account is premium or not ... 
         is_debug_request,

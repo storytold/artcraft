@@ -7,10 +7,13 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::{error, info, warn};
 use utoipa::ToSchema;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_api::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory as ApiInferenceJobProductCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::payloads::generic_inference_args::common::watermark_type::WatermarkType;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{GenericInferenceArgs, InferenceCategoryAbbreviated, PolymorphicInferenceArgs};
@@ -245,7 +248,8 @@ pub async fn enqueue_face_fusion_workflow_handler(
   let query_result = insert_generic_inference_job(InsertGenericInferenceArgs {
     uuid_idempotency_token: &request.uuid_idempotency_token,
     job_type: InferenceJobType::FaceFusion,
-    maybe_product_category: Some(InferenceJobProductCategory::VidLipsyncFaceFusion),
+    maybe_product_category: Some(enums_convert::by_table::generic_inference_jobs::inference_job_product_category::inference_job_product_category_to_api(&InferenceJobProductCategory::VidLipsyncFaceFusion)),
+
     inference_category: InferenceCategory::LipsyncAnimation,
     maybe_model_type: None,
     maybe_model_token: None,
@@ -262,7 +266,8 @@ pub async fn enqueue_face_fusion_workflow_handler(
     maybe_creator_user_token: Some(&user_session.user_token_typed),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: set_visibility,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&set_visibility),
+
     priority_level,
     requires_keepalive: plan.workflow_requires_frontend_keepalive(),
     is_debug_request,

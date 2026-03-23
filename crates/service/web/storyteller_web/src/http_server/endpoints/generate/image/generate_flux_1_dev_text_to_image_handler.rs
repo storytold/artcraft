@@ -10,11 +10,14 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::image::edit::flux_pro_kontext_max_edit_image::FluxProKontextMaxEditImageNumImages;
 use artcraft_api_defs::generate::image::text::generate_flux_1_dev_text_to_image::{GenerateFlux1DevTextToImageAspectRatio, GenerateFlux1DevTextToImageNumImages, GenerateFlux1DevTextToImageRequest, GenerateFlux1DevTextToImageResponse};
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_api::by_table::prompts::prompt_type::PromptType as ApiPromptType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider as ApiGenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_api::common::model_type::ModelType as ApiModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::enqueue_flux_1_dev_text_to_image_webhook;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::{Flux1DevArgs, Flux1DevAspectRatio, Flux1DevNumImages};
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -194,7 +197,8 @@ pub async fn generate_flux_1_dev_text_to_image_handler(
         .as_ref()
         .map(|s| &s.user_token),
     maybe_model_type: Some(ModelType::Flux1Dev),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(enums_convert::common::generation::generation_provider::generation_provider_to_api(&GenerationProvider::Artcraft)),
+
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
@@ -220,7 +224,8 @@ pub async fn generate_flux_1_dev_text_to_image_handler(
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Public,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
   }).await;
@@ -274,7 +279,8 @@ async fn insert_mock_failure_job(
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token,
     maybe_model_type: Some(ModelType::Flux1Dev),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(enums_convert::common::generation::generation_provider::generation_provider_to_api(&GenerationProvider::Artcraft)),
+
     maybe_positive_prompt: prompt,
     maybe_negative_prompt: None,
     maybe_other_args: None,
@@ -299,7 +305,8 @@ async fn insert_mock_failure_job(
     maybe_creator_user_token,
     maybe_avt_token,
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Public,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
     maybe_frontend_failure_category,
     maybe_failure_reason,
     mysql_executor: &mut *transaction,

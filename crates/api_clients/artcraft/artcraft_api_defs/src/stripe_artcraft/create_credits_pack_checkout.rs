@@ -1,4 +1,4 @@
-use enums::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
+use enums_api::common::artcraft_credits_pack_slug::ArtcraftCreditsPackSlug;
 use serde_derive::{Deserialize, Serialize};
 use utoipa::ToSchema;
 

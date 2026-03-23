@@ -16,12 +16,17 @@ use sqlx::pool::PoolConnection;
 use sqlx::MySql;
 use utoipa::ToSchema;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
-use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
-use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
+use enums_api::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType as ApiInferenceInputSourceTokenType;
+use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_api::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory as ApiInferenceJobProductCategory;
+use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_api::by_table::generic_inference_jobs::inference_model_type::InferenceModelType as ApiInferenceModelType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
 use migration::voice_conversion::query_vc_model_info_lite_for_migration::query_vc_model_info_lite_for_migration_with_connection;
@@ -358,7 +363,8 @@ pub async fn enqueue_voice_conversion_inference_handler(
     maybe_model_type: Some(model_inference_info.job_model_type),
     maybe_model_token: Some(&model_token),
     maybe_input_source_token: Some(&media_token),
-    maybe_input_source_token_type: Some(media_token_type),
+    maybe_input_source_token_type: Some(enums_convert::by_table::generic_inference_jobs::inference_input_source_token_type::inference_input_source_token_type_to_api(&media_token_type)),
+
     maybe_download_url: None,
     maybe_cover_image_media_file_token: None,
     maybe_raw_inference_text: None, // NB: Voice conversion isn't TTS, so there's no text.
@@ -370,7 +376,8 @@ pub async fn enqueue_voice_conversion_inference_handler(
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: set_visibility,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&set_visibility),
+
     priority_level,
     requires_keepalive: plan.web_vc_requires_frontend_keepalive(),
     is_debug_request,

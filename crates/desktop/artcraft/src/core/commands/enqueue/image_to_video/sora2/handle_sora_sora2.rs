@@ -9,8 +9,8 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::sora::utils::upload_images_to_sora::{upload_images_to_sora, UploadImagesToSoraArgs, UploadImagesToSoraResult};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 use openai_sora_client::recipes::generate_sora2_video::generate_sora2_video_with_session_auto_renew::generate_sora2_video_with_session_auto_renew;
 use openai_sora_client::recipes::list_sora2_drafts::list_sora2_drafts_with_session_auto_renew::list_sora2_drafts_with_session_auto_renew;

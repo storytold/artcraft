@@ -1,8 +1,11 @@
 use utoipa::ToSchema;
 
-use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
-use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
-use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums_api::by_table::media_files::media_file_origin_category::MediaFileOriginCategory as ApiMediaFileOriginCategory;
+use enums_api::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType as ApiMediaFileOriginModelType;
+use enums_api::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory as ApiMediaFileOriginProductCategory;
+use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_db::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
+use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums_public::by_table::media_files::public_media_file_model_type::PublicMediaFileModelType;
 use tokens::tokens::model_weights::ModelWeightToken;
 
@@ -10,10 +13,10 @@ use tokens::tokens::model_weights::ModelWeightToken;
 #[derive(Clone, Serialize, ToSchema)]
 pub struct MediaFileOriginDetails {
   /// Where the file came from (broadly)
-  pub origin_category: MediaFileOriginCategory,
+  pub origin_category: ApiMediaFileOriginCategory,
 
   /// Where the file came from (specifically, a product area, eg. "face_animator")
-  pub product_category: MediaFileOriginProductCategory,
+  pub product_category: ApiMediaFileOriginProductCategory,
 
   /// If the file was produced by a model, the details.
   pub maybe_model: Option<MediaFileModelDetails>,
@@ -53,22 +56,24 @@ impl MediaFileOriginDetails {
     let maybe_model = match (maybe_model_type, maybe_model_token, maybe_model_title) {
       (Some(model_type), Some(model_token), Some(model_title)) => {
         Some(MediaFileModelDetails::ModelWeight {
-          model_type: PublicMediaFileModelType::from_enum(model_type),
+          model_type: enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api(&PublicMediaFileModelType::from_enum(model_type)),
+
           token: model_token,
           title: model_title,
         })
       },
       (Some(model_type), None, None) => {
         Some(MediaFileModelDetails::SystemModel {
-          model_type: PublicMediaFileModelType::from_enum(model_type),
+          model_type: enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api(&PublicMediaFileModelType::from_enum(model_type)),
+
         })
       },
       _ => None,
     };
 
     Self {
-      origin_category,
-      product_category,
+      origin_category: enums_convert::by_table::media_files::media_file_origin_category::media_file_origin_category_to_api(&origin_category),
+      product_category: enums_convert::by_table::media_files::media_file_origin_product_category::media_file_origin_product_category_to_api(&product_category),
       maybe_model,
     }
   }

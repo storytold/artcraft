@@ -12,8 +12,8 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::generate::image::text::generate_gpt_image_1_text_to_image::{GenerateGptImage1TextToImageImageQuality, GenerateGptImage1TextToImageImageSize, GenerateGptImage1TextToImageNumImages, GenerateGptImage1TextToImageRequest};
-use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_type::TaskType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use openai_sora_client::recipes::maybe_upgrade_or_renew_session::maybe_upgrade_or_renew_session;

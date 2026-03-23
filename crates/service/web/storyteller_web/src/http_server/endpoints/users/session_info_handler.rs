@@ -13,7 +13,8 @@ use sqlx::MySqlPool;
 use utoipa::ToSchema;
 
 use artcraft_api_defs::users::session_info::{FakeYouPlan, SessionInfoSuccessResponse, SessionOnboardingState, SessionUserInfo, StorytellerStreamPlan};
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_api::by_table::users::user_feature_flag::UserFeatureFlag as ApiUserFeatureFlag;
 use http_server_common::response::response_error_helpers::to_simple_json_error;
 
 use crate::http_server::common_responses::user_details_lite_builder::UserDetailsLightBuilder;
@@ -112,8 +113,10 @@ pub async fn session_info_handler(
           email_gravatar_hash: session_data.email_gravatar_hash.to_string(),
 
           // Rollout / feature flags:
-          can_access_studio: feature_flags.has_flag(UserFeatureFlag::Studio),
-          maybe_feature_flags: feature_flags.clone_flags(),
+          can_access_studio: enums_convert::by_table::users::user_feature_flag::user_feature_flag_to_api(&feature_flags.has_flag(UserFeatureFlag::Studio)),
+
+          maybe_feature_flags: enums_convert::by_table::users::user_feature_flag::user_feature_flag_to_api(&feature_flags.clone_flags()),
+
 
           // Premium plans:
           fakeyou_plan: FakeYouPlan::Free,

@@ -8,8 +8,8 @@ use log::{debug, error, info, warn};
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::remote_file_manager::remote_cloud_file_manager::RemoteCloudFileClient;
-use enums::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::generic_inference_jobs::inference_result_type::InferenceResultType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use filesys::check_file_exists::check_file_exists;
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;
 use filesys::file_deletion::safe_delete_file::safe_delete_file;

@@ -1,5 +1,5 @@
 use crate::errors::select_exactly_one_error::SelectExactlyOneError;
-use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use enums_db::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 

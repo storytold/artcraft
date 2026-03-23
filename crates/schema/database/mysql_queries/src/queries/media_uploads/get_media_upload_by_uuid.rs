@@ -4,8 +4,8 @@ use log::error;
 use sqlx::{MySql, MySqlPool};
 use sqlx::pool::PoolConnection;
 
-use enums::by_table::media_uploads::media_upload_type::MediaUploadType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_uploads::media_upload_type::MediaUploadType;
+use enums_db::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::media_uploads::MediaUploadToken;
 
@@ -46,11 +46,11 @@ pub async fn get_media_upload_by_uuid_with_connection(
         r#"
 SELECT
     mu.token as `token: tokens::tokens::media_uploads::MediaUploadToken`,
-    mu.media_type as `media_type: enums::by_table::media_uploads::media_upload_type::MediaUploadType`,
+    mu.media_type as `media_type: enums_db::by_table::media_uploads::media_upload_type::MediaUploadType`,
     mu.maybe_original_filename,
     mu.original_file_size_bytes,
     mu.original_duration_millis,
-    mu.creator_set_visibility as `creator_set_visibility: enums::common::visibility::Visibility`,
+    mu.creator_set_visibility as `creator_set_visibility: enums_db::common::visibility::Visibility`,
     mu.created_at,
     mu.updated_at
 FROM media_uploads as mu

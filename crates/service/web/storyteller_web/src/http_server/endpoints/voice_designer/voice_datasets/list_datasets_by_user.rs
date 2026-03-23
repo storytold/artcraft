@@ -10,7 +10,7 @@ use log::warn;
 use utoipa::ToSchema;
 
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
-use enums::common::visibility::Visibility;
+use enums_api::common::visibility::Visibility;
 use mysql_queries::queries::voice_designer::datasets::list_datasets_by_username::list_datasets_by_username;
 use tokens::tokens::zs_voice_datasets::ZsVoiceDatasetToken;
 
@@ -129,7 +129,8 @@ pub async fn list_datasets_by_user_handler(
     ZsDatasetRecord {
       dataset_token: dataset.dataset_token,
       title: dataset.title,
-      creator_set_visibility: dataset.creator_set_visibility,
+      creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&dataset.creator_set_visibility),
+
       ietf_language_tag: dataset.ietf_language_tag,
       ietf_primary_language_subtag: dataset.ietf_primary_language_subtag,
       creator: UserDetailsLight::from_db_fields(

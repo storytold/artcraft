@@ -1,5 +1,5 @@
-use enums::by_table::web_scraping_targets::scraping_status::ScrapingStatus;
-use enums::common::sqlite::web_content_type::WebContentType;
+use enums_db::by_table::web_scraping_targets::scraping_status::ScrapingStatus;
+use enums_db::common::sqlite::web_content_type::WebContentType;
 use errors::{anyhow, AnyhowResult};
 use sqlx::SqlitePool;
 
@@ -22,11 +22,11 @@ pub async fn list_web_scraping_targets(
 SELECT
   id,
   canonical_url,
-  web_content_type as `web_content_type: enums::common::sqlite::web_content_type::WebContentType`,
+  web_content_type as `web_content_type: enums_db::common::sqlite::web_content_type::WebContentType`,
   maybe_title,
   maybe_article_full_image_url,
   maybe_article_thumbnail_image_url,
-  scraping_status as `scraping_status: enums::by_table::web_scraping_targets::scraping_status::ScrapingStatus`,
+  scraping_status as `scraping_status: enums_db::by_table::web_scraping_targets::scraping_status::ScrapingStatus`,
   scrape_attempts
 FROM web_scraping_targets
 WHERE

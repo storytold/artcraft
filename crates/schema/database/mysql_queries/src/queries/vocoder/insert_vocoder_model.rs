@@ -8,8 +8,8 @@ use std::path::Path;
 use anyhow::anyhow;
 use sqlx::MySqlPool;
 
-use enums::common::visibility::Visibility;
-use enums::common::vocoder_type::VocoderType;
+use enums_db::common::visibility::Visibility;
+use enums_db::common::vocoder_type::VocoderType;
 use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::vocoder_models::VocoderModelToken;
