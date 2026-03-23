@@ -1,4 +1,4 @@
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
