@@ -6,7 +6,7 @@ use actix_web::web::{Data, Json};
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBillingCadence, StripeArtcraftCreateSubscriptionCheckoutRequest, StripeArtcraftCreateSubscriptionCheckoutResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_subscriptions::find_possibly_inactive_first_subscription_for_owner_user::find_possibly_inactive_first_subscription_for_owner_user_using_connection;
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::find_subscription_for_owner_user_using_connection;
@@ -18,6 +18,7 @@ use std::sync::Arc;
 use stripe_checkout::checkout_session::{CreateCheckoutSession, CreateCheckoutSessionAutomaticTax, CreateCheckoutSessionLineItems, CreateCheckoutSessionSavedPaymentMethodOptions, CreateCheckoutSessionSavedPaymentMethodOptionsAllowRedisplayFilters, CreateCheckoutSessionSavedPaymentMethodOptionsPaymentMethodSave, CreateCheckoutSessionSubscriptionData};
 use stripe_checkout::CheckoutSessionMode;
 use stripe_core::CustomerId;
+use enums_convert::common::artcraft_subscription_slug::artcraft_subscription_slug_to_db;
 use mysql_queries::queries::users::user_stripe_customer_links::find_user_stripe_customer_link::find_user_stripe_customer_link_using_connection;
 use user_traits_component::traits::internal_session_cache_purge::InternalSessionCachePurge;
 
@@ -49,13 +50,15 @@ pub async fn stripe_artcraft_create_subscription_session_handler(
     None => return Err(CommonWebError::BadInputWithSimpleMessage("no plan supplied".to_string())),
     Some(slug) => slug,
   };
+  
+  let slug_db = artcraft_subscription_slug_to_db(&slug);
 
   let cadence = match request.cadence {
     None => return Err(CommonWebError::BadInputWithSimpleMessage("no cadence supplied".to_string())),
     Some(cadence) => cadence,
   };
 
-  let plan = get_artcraft_subscription_by_slug_and_env(slug, **server_environment);
+  let plan = get_artcraft_subscription_by_slug_and_env(slug_db, **server_environment);
 
   let mut mysql_connection = mysql_pool
       .acquire()

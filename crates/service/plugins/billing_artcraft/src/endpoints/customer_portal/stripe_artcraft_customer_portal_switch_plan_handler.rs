@@ -9,7 +9,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBillingCadence, StripeArtcraftCreateSubscriptionCheckoutRequest, StripeArtcraftCreateSubscriptionCheckoutResponse};
 use artcraft_api_defs::stripe_artcraft::customer_portal_switch_plan::{PlanBillingCadenceConfirmation, StripeArtcraftCustomerPortalSwitchPlanRequest, StripeArtcraftCustomerPortalSwitchPlanResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::{find_subscription_for_owner_user_using_connection, UserSubscription};
 use reusable_types::server_environment::ServerEnvironment;
@@ -22,6 +22,7 @@ use stripe_billing::BillingPortalSession;
 use stripe_checkout::checkout_session::{CreateCheckoutSession, CreateCheckoutSessionAutomaticTax, CreateCheckoutSessionLineItems, CreateCheckoutSessionSubscriptionData};
 use stripe_checkout::CheckoutSessionMode;
 use stripe_core::CustomerId;
+use enums_convert::common::artcraft_subscription_slug::artcraft_subscription_slug_to_db;
 use tokens::tokens::users::UserToken;
 use user_traits_component::traits::internal_session_cache_purge::InternalSessionCachePurge;
 
@@ -113,13 +114,15 @@ async fn update_confirm(
     None => return Err(CommonWebError::BadInputWithSimpleMessage("no plan supplied".to_string())),
     Some(slug) => slug,
   };
+  
+  let slug_db = artcraft_subscription_slug_to_db(&slug);
 
   let cadence = match request.cadence {
     None => return Err(CommonWebError::BadInputWithSimpleMessage("no cadence supplied".to_string())),
     Some(cadence) => cadence,
   };
 
-  let new_plan = get_artcraft_subscription_by_slug_and_env(slug, server_environment);
+  let new_plan = get_artcraft_subscription_by_slug_and_env(slug_db, server_environment);
 
   let new_price_id = match cadence {
     PlanBillingCadenceConfirmation::Monthly => new_plan.monthly_price_id.clone(),
@@ -141,7 +144,7 @@ async fn update_confirm(
     CommonWebError::ServerError
   })?;
 
-  info!("Switching user {} (stripe customer {}) with existing subscription {} and product {} to new plan {} with price ID {}",
+  info!("Switching user {} (stripe customer {}) with existing subscription {} and product {} to new plan {:?} with price ID {}",
     &user_subscription.user_token,
     &user_subscription.stripe_customer_id,
     &existing_subscription_id,

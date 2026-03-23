@@ -24,6 +24,7 @@ use stripe_checkout::checkout_session::{CreateCheckoutSession, CreateCheckoutSes
 use stripe_checkout::CheckoutSessionMode;
 use stripe_core::CustomerId;
 use stripe_shared::{CheckoutSession, PriceId};
+use enums_convert::common::artcraft_subscription_slug::artcraft_subscription_slug_to_db;
 use user_traits_component::traits::internal_session_cache_purge::InternalSessionCachePurge;
 
 // /// Create a new user account and Stripe Checkout session and return the redirect URL in Json.
@@ -56,13 +57,15 @@ pub async fn stripe_artcraft_create_subscription_checkout_with_user_signup_handl
     None => return Err(CommonWebError::BadInputWithSimpleMessage("no plan supplied".to_string())),
     Some(slug) => slug,
   };
+  
+  let slug_db = artcraft_subscription_slug_to_db(&slug);
 
   let cadence = match request.cadence {
     None => return Err(CommonWebError::BadInputWithSimpleMessage("no cadence supplied".to_string())),
     Some(cadence) => cadence,
   };
 
-  let plan = get_artcraft_subscription_by_slug_and_env(slug, **server_environment);
+  let plan = get_artcraft_subscription_by_slug_and_env(slug_db, **server_environment);
 
   let mut mysql_connection = mysql_pool
       .acquire()

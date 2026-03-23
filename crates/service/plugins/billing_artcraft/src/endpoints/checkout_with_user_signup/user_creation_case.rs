@@ -5,8 +5,9 @@ use crate::utils::common_web_error::CommonWebError;
 use crate::utils::create_checkout::create_subscription_checkout_session::{create_subscription_checkout_session, CreateSubscriptionCheckoutSessionArgs};
 use actix_artcraft::requests::get_request_signup_source_enum::get_request_signup_source_enum;
 use actix_web::HttpRequest;
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
-use enums::by_table::users::user_signup_source::UserSignupSource;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_api::by_table::users::user_signup_source::UserSignupSource;
+use enums_convert::by_table::users::user_signup_source::user_signup_source_to_db;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user::create::create_account_error::CreateAccountError;
@@ -82,7 +83,7 @@ pub (super) async fn user_creation_case(
         email_gravatar_hash: &user_email_gravatar_hash,
         maybe_feature_flags: Some(&user_feature_flags),
         ip_address: &ip_address,
-        maybe_source,
+        maybe_source: maybe_source.map(|source| user_signup_source_to_db(&source)),
         maybe_referral_url: maybe_referral_url.clone(),
       },
       Transactor::for_transaction(&mut transaction),

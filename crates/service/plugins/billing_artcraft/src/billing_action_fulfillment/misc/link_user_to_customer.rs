@@ -1,5 +1,5 @@
 use crate::billing_action_fulfillment::artcraft_billing_action::UserCustomerLink;
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::info;
 use mysql_queries::queries::users::user_stripe_customer_links::find_user_stripe_customer_link::find_user_stripe_customer_link_using_transaction;
 use mysql_queries::queries::users::user_stripe_customer_links::upsert_user_stripe_customer_link::UpsertUserStripeCustomerLink;
