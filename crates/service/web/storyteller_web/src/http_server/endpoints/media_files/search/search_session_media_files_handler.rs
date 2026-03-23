@@ -9,9 +9,13 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use chrono::{DateTime, Utc};
 use elasticsearch_schema::searches::search_media_files::{search_media_files, SearchArgs};
 use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_api::by_table::media_files::media_file_animation_type::MediaFileAnimationType as ApiMediaFileAnimationType;
 use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngineCategory as ApiMediaFileEngineCategory;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
 use enums_db::common::visibility::Visibility;
 use log::warn;
 use tokens::tokens::media_files::MediaFileToken;
@@ -76,22 +80,22 @@ pub struct SearchMediaFileListItem {
   pub token: MediaFileToken,
 
   /// The coarse-grained class of media file: image, video, etc.
-  pub media_class: MediaFileClass,
+  pub media_class: ApiMediaFileClass,
 
   /// Type of media will dictate which fields are populated and what
   /// the frontend should display (eg. video player vs audio player).
   /// This is closer in meaning to a "mime type".
-  pub media_type: MediaFileType,
+  pub media_type: ApiMediaFileType,
 
   /// If this is an engine/3D asset, this is the broad category (scene,
   /// animation, etc.) of that object.
   /// This can also be used for filtering in list/batch endpoints.
-  pub maybe_engine_category: Option<MediaFileEngineCategory>,
+  pub maybe_engine_category: Option<ApiMediaFileEngineCategory>,
 
   /// If this is an engine/3D asset for an animation or a rig that can
   /// be animated with either (or both) skeletal or blend shape animations,
   /// this describes the animation regime used or supported.
-  pub maybe_animation_type: Option<MediaFileAnimationType>,
+  pub maybe_animation_type: Option<ApiMediaFileAnimationType>,
 
   /// (DEPRECATED) URL path to the media file
   #[deprecated(note="This field doesn't point to the full URL. Use media_links instead to leverage the CDN.")]
@@ -250,10 +254,14 @@ pub async fn search_session_media_files_handler(
           result.maybe_public_bucket_extension.as_deref());
         SearchMediaFileListItem {
           token: result.token.clone(),
-          media_class: result.media_class,
-          media_type: result.media_type,
-          maybe_engine_category: result.maybe_engine_category,
-          maybe_animation_type: result.maybe_animation_type,
+          media_class: enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&result.media_class),
+
+          media_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&result.media_type),
+
+          maybe_engine_category: enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&result.maybe_engine_category),
+
+          maybe_animation_type: enums_convert::by_table::media_files::media_file_animation_type::media_file_animation_type_to_api(&result.maybe_animation_type),
+
           media_links: MediaLinksBuilder::from_media_path_and_env(
             media_domain, 
             server_state.server_environment,
@@ -284,7 +292,8 @@ pub async fn search_session_media_files_handler(
           is_featured: result.is_featured,
           is_user_upload: result.is_user_upload.unwrap_or(false),
           is_intermediate_system_file: result.is_intermediate_system_file.unwrap_or(false),
-          creator_set_visibility: result.creator_set_visibility,
+          creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&result.creator_set_visibility),
+
           maybe_title: result.maybe_title,
           //  maybe_text_transcript: result.maybe_text_transcript,
           //  maybe_style_name: result.maybe_prompt_args

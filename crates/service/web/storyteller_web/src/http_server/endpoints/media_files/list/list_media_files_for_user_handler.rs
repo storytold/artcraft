@@ -8,14 +8,22 @@ use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
 use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_api::by_table::media_files::media_file_animation_type::MediaFileAnimationType as ApiMediaFileAnimationType;
 use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngineCategory as ApiMediaFileEngineCategory;
 use enums_db::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums_api::by_table::media_files::media_file_origin_category::MediaFileOriginCategory as ApiMediaFileOriginCategory;
 use enums_db::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
+use enums_api::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory as ApiMediaFileOriginProductCategory;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
 use enums_db::common::view_as::ViewAs;
+use enums_api::common::view_as::ViewAs as ApiViewAs;
 use enums_db::common::visibility::Visibility;
 use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName as ApiStyleTransferName;
 use enums_public::by_table::media_files::public_media_file_model_type::PublicMediaFileModelType;
 use log::{info, warn};
 use mysql_queries::queries::media_files::list::list_media_files_for_user::{list_media_files_for_user, ListMediaFileForUserArgs};
@@ -96,31 +104,31 @@ pub struct MediaFileForUserListItem {
   pub token: MediaFileToken,
 
   /// The coarse-grained class of media file: image, video, etc.
-  pub media_class: MediaFileClass,
+  pub media_class: ApiMediaFileClass,
 
   /// Type of media will dictate which fields are populated and what
   /// the frontend should display (eg. video player vs audio player).
   /// This is closer in meaning to a "mime type".
-  pub media_type: MediaFileType,
+  pub media_type: ApiMediaFileType,
 
   /// If this is an engine/3D asset, this is the broad category (scene,
   /// animation, etc.) of that object.
   /// This can also be used for filtering in list/batch endpoints.
-  pub maybe_engine_category: Option<MediaFileEngineCategory>,
+  pub maybe_engine_category: Option<ApiMediaFileEngineCategory>,
 
   /// If this is an engine/3D asset for an animation or a rig that can
   /// be animated with either (or both) skeletal or blend shape animations,
   /// this describes the animation regime used or supported.
-  pub maybe_animation_type: Option<MediaFileAnimationType>,
+  pub maybe_animation_type: Option<ApiMediaFileAnimationType>,
 
   /// Details where the media file came from.
   pub origin: MediaFileOriginDetails,
 
   #[deprecated(note="Use MediaFileOriginDetails instead")]
-  pub origin_category: MediaFileOriginCategory,
+  pub origin_category: ApiMediaFileOriginCategory,
 
   #[deprecated(note="Use MediaFileOriginDetails instead")]
-  pub origin_product_category: MediaFileOriginProductCategory,
+  pub origin_product_category: ApiMediaFileOriginProductCategory,
 
   #[deprecated(note="Use MediaFileOriginDetails instead")]
   pub maybe_origin_model_type: Option<PublicMediaFileModelType>,
@@ -162,7 +170,7 @@ pub struct MediaFileForUserListItem {
 
   /// For Comfy / Video Style Transfer jobs, this might include
   /// the name of the selected style.
-  pub maybe_style_name: Option<StyleTransferName>,
+  pub maybe_style_name: Option<ApiStyleTransferName>,
 
   /// Duration for audio and video files, if available.
   /// Measured in milliseconds.
@@ -301,10 +309,15 @@ pub async fn list_media_files_for_user_handler(
         // Don't allow access to certain media types.
         match record.media_type {
           MediaFileType::Bvh |
+
           MediaFileType::Fbx |
+
           MediaFileType::Glb |
+
           MediaFileType::Gltf |
+
           MediaFileType::SceneRon => return false,
+
           _ => {},
         }
         // // Don't allow access to certain products.
@@ -324,18 +337,25 @@ pub async fn list_media_files_for_user_handler(
         );
         MediaFileForUserListItem {
           token: record.token.clone(),
-          media_class: record.media_class,
-          media_type: record.media_type,
-          maybe_engine_category: record.maybe_engine_category,
-          maybe_animation_type: record.maybe_animation_type,
-          origin: MediaFileOriginDetails::from_db_fields_str(
+          media_class: enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&record.media_class),
+
+          media_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&record.media_type),
+
+          maybe_engine_category: enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&record.maybe_engine_category),
+
+          maybe_animation_type: enums_convert::by_table::media_files::media_file_animation_type::media_file_animation_type_to_api(&record.maybe_animation_type),
+
+          origin: enums_convert::by_table::media_files::media_file_origin_product_category::media_file_origin_product_category_to_api(&MediaFileOriginDetails::from_db_fields_str()
+
             record.origin_category,
             record.origin_product_category,
             record.maybe_origin_model_type,
             record.maybe_origin_model_token.as_deref(),
             record.maybe_origin_model_title.as_deref()),
-          origin_category: record.origin_category,
-          origin_product_category: record.origin_product_category,
+          origin_category: enums_convert::by_table::media_files::media_file_origin_category::media_file_origin_category_to_api(&record.origin_category),
+
+          origin_product_category: enums_convert::by_table::media_files::media_file_origin_product_category::media_file_origin_product_category_to_api(&record.origin_product_category),
+
           maybe_origin_model_type: record.maybe_origin_model_type
               .map(|t| PublicMediaFileModelType::from_enum(t)),
           maybe_origin_model_token: record.maybe_origin_model_token,
@@ -353,12 +373,14 @@ pub async fn list_media_files_for_user_handler(
             record.maybe_file_cover_image_public_bucket_prefix.as_deref(),
             record.maybe_file_cover_image_public_bucket_extension.as_deref(),
           ),
-          creator_set_visibility: record.creator_set_visibility,
+          creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&record.creator_set_visibility),
+
           is_user_upload: record.is_user_upload,
           is_intermediate_system_file: record.is_intermediate_system_file,
           maybe_title: record.maybe_title,
           maybe_text_transcript: record.maybe_text_transcript,
-          maybe_style_name: record.maybe_prompt_args
+          maybe_style_name: enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api(&record.maybe_prompt_args)
+
               .as_ref()
               .and_then(|args| args.style_name.as_ref())
               .and_then(|style| style.to_style_name()),

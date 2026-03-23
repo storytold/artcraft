@@ -15,9 +15,13 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::video::multi_function::sora_2_pro_multi_function_video_gen::{Sora2ProMultiFunctionVideoGenAspectRatio, Sora2ProMultiFunctionVideoGenDuration, Sora2ProMultiFunctionVideoGenRequest, Sora2ProMultiFunctionVideoGenResolution, Sora2ProMultiFunctionVideoGenResponse};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums_db::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums_api::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType as ApiPromptContextSemanticType;
 use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_api::by_table::prompts::prompt_type::PromptType as ApiPromptType;
 use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_api::common::generation::generation_provider::GenerationProvider as ApiGenerationProvider;
 use enums_db::common::model_type::ModelType;
+use enums_api::common::model_type::ModelType as ApiModelType;
 use enums_db::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
@@ -278,7 +282,8 @@ pub async fn sora_2_pro_multi_function_video_gen_handler(
         .as_ref()
         .map(|s| &s.user_token),
     maybe_model_type: Some(ModelType::Sora2Pro),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(enums_convert::common::generation::generation_provider::generation_provider_to_api(&GenerationProvider::Artcraft)),
+
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
@@ -336,7 +341,8 @@ pub async fn sora_2_pro_multi_function_video_gen_handler(
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Public,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
     mysql_executor: &mut *transaction,
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,

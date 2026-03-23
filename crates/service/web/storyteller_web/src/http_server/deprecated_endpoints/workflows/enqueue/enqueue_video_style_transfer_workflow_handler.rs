@@ -11,9 +11,13 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_api::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory as ApiInferenceJobProductCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
 use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_api::by_table::generic_inference_jobs::inference_model_type::InferenceModelType as ApiInferenceModelType;
 use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -278,8 +282,10 @@ pub async fn enqueue_video_style_transfer_workflow_handler(
     global_ip_adapter_token: empty_media_file_token_to_null(request.global_ipa_media_token.as_ref()),
 
     // Other inputs
-    style_name: Some(request.style),
-    creator_visibility: Some(set_visibility),
+    style_name: Some(enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api(&request.style)),
+
+    creator_visibility: Some(enums_convert::common::visibility::visibility_to_db(&set_visibility)),
+
     trim_start_milliseconds: Some(trim_start_millis),
     trim_end_milliseconds: Some(trim_end_millis),
     strength: maybe_strength,
@@ -323,7 +329,8 @@ pub async fn enqueue_video_style_transfer_workflow_handler(
   let query_result = insert_generic_inference_job(InsertGenericInferenceArgs {
     uuid_idempotency_token: &request.uuid_idempotency_token,
     job_type: InferenceJobType::ComfyUi,
-    maybe_product_category: Some(InferenceJobProductCategory::VidStyleTransfer),
+    maybe_product_category: Some(enums_convert::by_table::generic_inference_jobs::inference_job_product_category::inference_job_product_category_to_api(&InferenceJobProductCategory::VidStyleTransfer)),
+
     inference_category: InferenceCategory::Workflow,
     maybe_model_type: Some(InferenceModelType::ComfyUi), // NB: Model is static during inference
     maybe_model_token: None, // NB: Model is static during inference
@@ -340,7 +347,8 @@ pub async fn enqueue_video_style_transfer_workflow_handler(
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility:  set_visibility,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&set_visibility),
+
     priority_level,
     requires_keepalive: false,
     is_debug_request,

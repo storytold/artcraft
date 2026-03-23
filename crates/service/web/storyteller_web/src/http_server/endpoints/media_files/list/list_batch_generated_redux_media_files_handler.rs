@@ -99,8 +99,10 @@ pub async fn list_batch_generated_redux_media_files_handler(
 
         BatchGeneratedReduxMediaFileInfo {
           token: result.token.clone(),
-          media_class: result.media_class,
-          media_type: result.media_type,
+          media_class: enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&result.media_class),
+
+          media_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&result.media_type),
+
           maybe_batch_token: result.maybe_batch_token,
           media_links: MediaLinksBuilder::from_media_path_and_env(
             media_domain,
@@ -122,7 +124,8 @@ pub async fn list_batch_generated_redux_media_files_handler(
             result.maybe_creator_display_name,
             result.maybe_creator_gravatar_hash,
           ),
-          creator_set_visibility: result.creator_set_visibility,
+          creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&result.creator_set_visibility),
+
           maybe_prompt_token: result.maybe_prompt_token,
           maybe_original_filename: result.maybe_origin_filename,
           maybe_duration_millis: result.maybe_duration_millis,

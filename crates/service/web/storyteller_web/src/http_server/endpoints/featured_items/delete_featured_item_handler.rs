@@ -12,6 +12,7 @@ use composite_identifiers::by_table::audit_logs::audit_log_entity::AuditLogEntit
 use composite_identifiers::by_table::featured_items::featured_item_entity::FeaturedItemEntity;
 use enums_db::by_table::audit_logs::audit_log_entity_action::AuditLogEntityAction;
 use enums_db::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
+use enums_api::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType as ApiFeaturedItemEntityType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::audit_logs::insert_audit_log_transactional::{insert_audit_log_transactional, InsertAuditLogTransactionalArgs};
 use mysql_queries::queries::featured_items::delete_featured_item::delete_featured_item;

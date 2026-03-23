@@ -9,7 +9,9 @@ use log::warn;
 use utoipa::ToSchema;
 
 use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_api::by_table::media_files::media_file_animation_type::MediaFileAnimationType as ApiMediaFileAnimationType;
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngineCategory as ApiMediaFileEngineCategory;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::media_files::edit::update_media_file_animation_type::update_media_file_animation_type;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
@@ -23,7 +25,7 @@ use crate::state::server_state::ServerState;
 pub struct ChangeMediaFileAnimationTypeRequest {
     /// The new animation type for the media file.
     /// It can be cleared to null, but only for characters.
-    pub maybe_animation_type: Option<MediaFileAnimationType>,
+    pub maybe_animation_type: Option<ApiMediaFileAnimationType>,
 }
 
 // =============== Error Response ===============

@@ -11,14 +11,22 @@ use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
 use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_api::by_table::media_files::media_file_animation_type::MediaFileAnimationType as ApiMediaFileAnimationType;
 use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngineCategory as ApiMediaFileEngineCategory;
 use enums_db::by_table::media_files::media_file_subtype::MediaFileSubtype;
+use enums_api::by_table::media_files::media_file_subtype::MediaFileSubtype as ApiMediaFileSubtype;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory as ApiWeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_api::by_table::model_weights::weights_types::WeightsType as ApiWeightsType;
 use enums_db::common::visibility::Visibility;
 use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName as ApiStyleTransferName;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use log::warn;
 use mysql_queries::queries::media_files::get::batch_get_media_files::batch_get_media_files;
@@ -66,27 +74,27 @@ pub struct BatchMediaFileInfo {
   pub token: MediaFileToken,
 
   /// The coarse-grained class of media file: image, video, etc.
-  pub media_class: MediaFileClass,
+  pub media_class: ApiMediaFileClass,
 
   /// Type of media will dictate which fields are populated and what
   /// the frontend should display (eg. video player vs audio player).
   /// This is closer in meaning to a "mime type".
-  pub media_type: MediaFileType,
+  pub media_type: ApiMediaFileType,
 
   /// If this is an engine/3D asset, this is the broad category (scene,
   /// animation, etc.) of that object.
   /// This can also be used for filtering in list/batch endpoints.
-  pub maybe_engine_category: Option<MediaFileEngineCategory>,
+  pub maybe_engine_category: Option<ApiMediaFileEngineCategory>,
 
   /// If this is an engine/3D asset for an animation or a rig that can
   /// be animated with either (or both) skeletal or blend shape animations,
   /// this describes the animation regime used or supported.
-  pub maybe_animation_type: Option<MediaFileAnimationType>,
+  pub maybe_animation_type: Option<ApiMediaFileAnimationType>,
 
   /// If the media file has a subtype, we'll report it.
   /// This is mostly used for Bevy engine files.
   #[deprecated(note="This was for the Bevy engine. Do not use.")]
-  pub maybe_media_subtype: Option<MediaFileSubtype>,
+  pub maybe_media_subtype: Option<ApiMediaFileSubtype>,
 
   /// Extension for the engine to load over remote:// URLs.
   #[deprecated(note="This was for the Bevy engine. Do not use.")]
@@ -146,7 +154,7 @@ pub struct BatchMediaFileInfo {
 
   /// For Comfy / Video Style Transfer jobs, this might include
   /// the name of the selected style.
-  pub maybe_style_name: Option<StyleTransferName>,
+  pub maybe_style_name: Option<ApiStyleTransferName>,
 
   /// The foreign key to the prompt used to generate the media, if applicable.
   pub maybe_prompt_token: Option<PromptToken>,
@@ -186,7 +194,7 @@ pub struct BatchMediaFileInfo {
 pub struct BatchGetMediaFilesModelInfo {
   pub weight_token: ModelWeightToken,
   pub weight_type: PublicWeightsType,
-  pub weight_category: WeightsCategory,
+  pub weight_category: ApiWeightsCategory,
   pub title: String,
 
   /// Cover images are small descriptive images that can be set for any model.
@@ -318,19 +326,28 @@ pub async fn batch_get_media_files_handler(
         // NB: Some engine pages will need to know the engine extension to load the file.
         let maybe_engine_extension = match result.media_type {
           MediaFileType::Bvh => Some(".bvh".to_string()),
+
           MediaFileType::Glb => Some(".glb".to_string()),
+
           MediaFileType::Gltf => Some(".gltf".to_string()),
+
           MediaFileType::SceneRon => Some(".scn.ron".to_string()),
+
           _ => None,
         };
 
         BatchMediaFileInfo {
           token: result.token.clone(),
-          media_class: result.media_class,
-          media_type: result.media_type,
-          maybe_engine_category: result.maybe_engine_category,
-          maybe_animation_type: result.maybe_animation_type,
-          maybe_media_subtype: result.maybe_media_subtype,
+          media_class: enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&result.media_class),
+
+          media_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&result.media_type),
+
+          maybe_engine_category: enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&result.maybe_engine_category),
+
+          maybe_animation_type: enums_convert::by_table::media_files::media_file_animation_type::media_file_animation_type_to_api(&result.maybe_animation_type),
+
+          maybe_media_subtype: enums_convert::by_table::media_files::media_file_subtype::media_file_subtype_to_api(&result.maybe_media_subtype),
+
           maybe_engine_extension,
           maybe_batch_token: result.maybe_batch_token,
           media_links: MediaLinksBuilder::from_media_path_and_env(
@@ -356,7 +373,8 @@ pub async fn batch_get_media_files_handler(
               .as_ref()
               .map(|info| MediaFileLivePortraitDetails::maybe_from_extra_info(&info))
               .flatten(),
-          maybe_style_name: result.maybe_prompt_args
+          maybe_style_name: enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api(&result.maybe_prompt_args)
+
               .as_ref()
               .and_then(|args| args.style_name.as_ref())
               .and_then(|style| style.to_style_name()),
@@ -366,8 +384,10 @@ pub async fn batch_get_media_files_handler(
               weight_token,
               // TODO(bt,2023-12-28): Instead of giving bogus defaults on None, make these optional or return
               //  None for *everything* on any field being absent.
-              weight_type: PublicWeightsType::from_enum(result.maybe_model_weights_type.unwrap_or(WeightsType::Tacotron2)),
-              weight_category: result.maybe_model_weights_category.unwrap_or(WeightsCategory::TextToSpeech),
+              weight_type: enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&PublicWeightsType::from_enum(result.maybe_model_weights_type.unwrap_or(WeightsType::Tacotron2))),
+
+              weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&result.maybe_model_weights_category.unwrap_or(WeightsCategory::TextToSpeech)),
+
               title: result.maybe_model_weights_title.unwrap_or_else(|| "model".to_string()),
               maybe_cover_image_public_bucket_path,
               maybe_weight_creator: UserDetailsLight::from_optional_db_fields_owned(
@@ -384,7 +404,8 @@ pub async fn batch_get_media_files_handler(
           result.maybe_creator_display_name,
           result.maybe_creator_gravatar_hash,
           ),
-          creator_set_visibility: result.creator_set_visibility,
+          creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&result.creator_set_visibility),
+
           is_user_upload: result.is_user_upload,
           is_intermediate_system_file: result.is_intermediate_system_file,
           maybe_prompt_token: result.maybe_prompt_token,

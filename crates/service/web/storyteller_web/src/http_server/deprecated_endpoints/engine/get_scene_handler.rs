@@ -10,7 +10,7 @@ use log::warn;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -150,7 +150,8 @@ async fn modern_media_file_lookup(
     success: true,
     media_file: MediaFileInfo {
       token: result.token,
-      media_type: result.media_type,
+      media_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&result.media_type),
+
       public_bucket_path,
       created_at: result.created_at,
       updated_at: result.updated_at,

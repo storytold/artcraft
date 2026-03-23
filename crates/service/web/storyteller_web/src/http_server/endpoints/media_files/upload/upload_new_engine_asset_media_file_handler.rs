@@ -12,9 +12,13 @@ use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_api::by_table::media_files::media_file_animation_type::MediaFileAnimationType as ApiMediaFileAnimationType;
 use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngineCategory as ApiMediaFileEngineCategory;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
 use enums_db::common::visibility::Visibility;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -199,17 +203,22 @@ pub async fn upload_new_engine_asset_media_file_handler(
 
   // TODO(bt, 2024-02-22): This should be a transaction.
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
-    maybe_media_class: Some(file_info.media_class),
-    media_file_type: file_info.media_type,
+    maybe_media_class: Some(enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&file_info.media_class)),
+
+    media_file_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&file_info.media_type),
+
     maybe_creator_user_token: maybe_user_token.as_ref(),
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: file_info.creator_set_visibility,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&file_info.creator_set_visibility),
+
     upload_type: UploadType::Filesystem,
     maybe_prompt_token: None,
     maybe_batch_token: None,
-    maybe_engine_category: Some(file_info.engine_category),
-    maybe_animation_type: file_info.maybe_animation_type,
+    maybe_engine_category: Some(enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&file_info.engine_category)),
+
+    maybe_animation_type: enums_convert::by_table::media_files::media_file_animation_type::media_file_animation_type_to_api(&file_info.maybe_animation_type),
+
     maybe_mime_type: Some(file_info.mimetype),
     file_size_bytes: file_info.file_size_bytes as u64,
     maybe_duration_millis: file_info.maybe_duration_millis,

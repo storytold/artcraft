@@ -23,9 +23,13 @@ use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory as ApiWeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_api::by_table::model_weights::weights_types::WeightsType as ApiWeightsType;
 use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_api::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType as ApiUserBookmarkEntityType;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use log::warn;
 use mysql_queries::queries::users::user_bookmarks::list_user_bookmarks::{list_user_bookmarks_by_maybe_entity_type, ListUserBookmarksForUserArgs};
@@ -84,7 +88,7 @@ pub struct UserBookmarkListItem {
 #[derive(Serialize, ToSchema)]
 pub struct UserBookmarkDetailsForUserList {
   // TODO: This needs titles or some other summary metadata.
-  pub entity_type: UserBookmarkEntityType,
+  pub entity_type: ApiUserBookmarkEntityType,
   pub entity_token: String,
 
   // TODO: Populate this for TTS
@@ -105,7 +109,7 @@ pub struct UserBookmarkDetailsForUserList {
 
 #[derive(Serialize, ToSchema)]
 pub struct MediaFileData {
-  pub media_type: MediaFileType,
+  pub media_type: ApiMediaFileType,
 
   /// (DEPRECATED) URL path to the media file
   #[deprecated(note="This field doesn't point to the full URL. Use media_links instead to leverage the CDN.")]
@@ -126,7 +130,7 @@ pub struct MediaFileData {
 pub struct WeightsData {
   pub title: String,
   pub weight_type: PublicWeightsType,
-  pub weight_category: WeightsCategory,
+  pub weight_category: ApiWeightsCategory,
 
   /// Cover images are small descriptive images that can be set for any model.
   /// If a cover image is set, this is the path to the asset.
@@ -196,10 +200,14 @@ pub async fn list_user_bookmarks_for_user_handler(
   let query_results =
       list_user_bookmarks_by_maybe_entity_type(ListUserBookmarksForUserArgs{
         username: path.username.as_ref(),
-        maybe_filter_entity_type: query.maybe_scoped_entity_type,
-        maybe_filter_weight_type: query.maybe_scoped_weight_type,
-        maybe_filter_weight_category: query.maybe_scoped_weight_category,
-        maybe_filter_media_file_type: query.maybe_scoped_media_file_type,
+        maybe_filter_entity_type: enums_convert::by_table::user_bookmarks::user_bookmark_entity_type::user_bookmark_entity_type_to_api(&query.maybe_scoped_entity_type),
+
+        maybe_filter_weight_type: enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&query.maybe_scoped_weight_type),
+
+        maybe_filter_weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&query.maybe_scoped_weight_category),
+
+        maybe_filter_media_file_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&query.maybe_scoped_media_file_type),
+
         sort_ascending,
         page_size,
         page_index,
@@ -240,6 +248,7 @@ pub async fn list_user_bookmarks_for_user_handler(
 
           match user_bookmark.entity_type {
             UserBookmarkEntityType::MediaFile => {
+
               maybe_media_file_cover = Some(MediaFileCoverImageDetails::from_optional_db_fields(
                 &MediaFileToken::new_from_str(&user_bookmark.entity_token),
                 media_domain,
@@ -250,6 +259,7 @@ pub async fn list_user_bookmarks_for_user_handler(
               ));
             }
             UserBookmarkEntityType::ModelWeight => {
+
               maybe_model_weight_cover = Some(WeightsCoverImageDetails::from_optional_db_fields(
                 media_domain,
                 server_state.server_environment,
@@ -291,14 +301,17 @@ pub async fn list_user_bookmarks_for_user_handler(
           UserBookmarkListItem {
             token: user_bookmark.token,
             details: UserBookmarkDetailsForUserList {
-              entity_type: user_bookmark.entity_type,
+              entity_type: enums_convert::by_table::user_bookmarks::user_bookmark_entity_type::user_bookmark_entity_type_to_api(&user_bookmark.entity_type),
+
               entity_token: user_bookmark.entity_token,
               maybe_media_file_data: match user_bookmark.entity_type {
                 UserBookmarkEntityType::MediaFile =>
+
                   match (maybe_media_file_bucket_path, maybe_media_file_media_links, maybe_media_file_cover) {
                     (Some(path), Some(links), Some(cover)) => Some(MediaFileData {
                       // TODO(bt,2023-12-28): Proper default, optional, or "unknown" values would be better.
-                      media_type: user_bookmark.maybe_media_file_type.unwrap_or(MediaFileType::Image),
+                      media_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&user_bookmark.maybe_media_file_type.unwrap_or(MediaFileType::Image)),
+
                       media_links: links,
                       cover,
                       public_bucket_path: path.get_full_object_path_str().to_string(),
@@ -310,12 +323,15 @@ pub async fn list_user_bookmarks_for_user_handler(
               },
               maybe_weight_data: match user_bookmark.entity_type {
                 UserBookmarkEntityType::ModelWeight =>
+
                   match maybe_model_weight_cover {
                     Some(cover) => Some(WeightsData {
                       // TODO(bt,2023-12-28): Proper default, optional, or "unknown" values would be better.
                       title: user_bookmark.maybe_entity_descriptive_text.clone().unwrap_or_else(|| "weight".to_string()),
-                      weight_type: PublicWeightsType::from_enum(user_bookmark.maybe_model_weight_type.unwrap_or(WeightsType::Tacotron2)),
-                      weight_category: user_bookmark.maybe_model_weight_category.unwrap_or(WeightsCategory::TextToSpeech),
+                      weight_type: enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&PublicWeightsType::from_enum(user_bookmark.maybe_model_weight_type.unwrap_or(WeightsType::Tacotron2))),
+
+                      weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&user_bookmark.maybe_model_weight_category.unwrap_or(WeightsCategory::TextToSpeech)),
+
                       cover,
                       maybe_cover_image_public_bucket_path: maybe_model_weight_cover_image,
                       maybe_creator: maybe_model_weight_creator,

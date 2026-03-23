@@ -16,9 +16,13 @@ use rand::Rng;
 use utoipa::ToSchema;
 
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
+use enums_api::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType as ApiInferenceInputSourceTokenType;
 use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_api::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory as ApiInferenceJobProductCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
 use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_api_token::get_request_api_token;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
@@ -370,7 +374,8 @@ pub async fn enqueue_infer_f5_tts_handler(
     maybe_model_type,
     maybe_model_token: None,
     maybe_input_source_token: Some(&media_token),
-    maybe_input_source_token_type: Some(media_token_type),
+    maybe_input_source_token_type: Some(enums_convert::by_table::generic_inference_jobs::inference_input_source_token_type::inference_input_source_token_type_to_api(&media_token_type)),
+
     maybe_download_url: None,
     maybe_cover_image_media_file_token: None,
     maybe_raw_inference_text: Some(inference_text.as_str()),
@@ -379,7 +384,8 @@ pub async fn enqueue_infer_f5_tts_handler(
     maybe_creator_user_token: maybe_creator_user_token_typed.as_ref(),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: set_visibility,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&set_visibility),
+
     priority_level,
     requires_keepalive: false, // TODO: We may want this to be the case in the future.
     is_debug_request,
@@ -480,8 +486,11 @@ async fn check_if_authorized_to_use_model(
 
   match tts_model.creator_set_visibility() {
     Visibility::Public => return true,
+
     Visibility::Hidden => return true,
+
     Visibility::Private => {} // Fall through
+
   }
 
   let is_authorized = maybe_user_session

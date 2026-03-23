@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 use log::warn;
 use utoipa::{IntoParams, ToSchema};
 
-use enums_db::by_table::beta_keys::beta_key_product::BetaKeyProduct;
+use enums_api::by_table::beta_keys::beta_key_product::BetaKeyProduct;
 use markdown::markdown_with_socials_to_html::markdown_with_socials_to_html;
 use mysql_queries::queries::beta_keys::list_beta_keys::{list_beta_keys, FilterToKeys, ListBetaKeysArgs};
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_username::get_user_profile_by_username;
@@ -201,7 +201,8 @@ pub async fn list_beta_keys_handler(
       .map(|beta_key| {
         BetaKeyItem {
           token: beta_key.token.clone(),
-          product: beta_key.product,
+          product: enums_convert::by_table::beta_keys::beta_key_product::beta_key_product_to_api(&beta_key.product),
+
           key_value: beta_key.key_value,
           creator: UserDetailsLight::from_db_fields(
             &beta_key.creator_user_token,

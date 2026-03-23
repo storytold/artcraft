@@ -17,9 +17,13 @@ use redis::Commands;
 use utoipa::ToSchema;
 
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
+use enums_api::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory as ApiInferenceJobProductCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
 use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_api::by_table::generic_inference_jobs::inference_model_type::InferenceModelType as ApiInferenceModelType;
 use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_api_token::get_request_api_token;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
@@ -405,15 +409,18 @@ pub async fn enqueue_infer_tts_handler(
 
   let maybe_model_type = match tts_model.job_type() {
     InferenceJobType::GptSovits => None, // TODO(bt,2024-08-07): why don't we set this?
+
     _ => Some(InferenceModelType::Tacotron2)
   };
 
   let maybe_inference_args = match tts_model.job_type() {
     InferenceJobType::Tacotron2 => Some(GenericInferenceArgs {
+
       inference_category: Some(InferenceCategoryAbbreviated::TextToSpeech),
       args: None, // NB: We don't need to encode any args yet for TT2.
     }),
     InferenceJobType::GptSovits => Some(GenericInferenceArgs {
+
       inference_category: Some(InferenceCategoryAbbreviated::GptSovits),
       args: Some(PolymorphicInferenceArgs::Gs(GptSovitsPayload {
         append_advertisement: None,
@@ -449,7 +456,8 @@ pub async fn enqueue_infer_tts_handler(
     maybe_creator_user_token: maybe_creator_user_token_typed.as_ref(),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: set_visibility,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&set_visibility),
+
     priority_level,
     requires_keepalive: false, // TODO: We may want this to be the case in the future.
     is_debug_request,
@@ -557,8 +565,11 @@ async fn check_if_authorized_to_use_model(
 
   match tts_model.creator_set_visibility() {
     Visibility::Public => return true,
+
     Visibility::Hidden => return true,
+
     Visibility::Private => {} // Fall through
+
   }
 
   let is_authorized = maybe_user_session

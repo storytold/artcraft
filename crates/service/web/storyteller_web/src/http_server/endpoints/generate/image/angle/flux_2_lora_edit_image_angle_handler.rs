@@ -169,7 +169,8 @@ pub async fn flux_2_lora_edit_image_angle_handler(
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),
     maybe_model_type: Some(ModelType::Flux2LoraAngles),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(enums_convert::common::generation::generation_provider::generation_provider_to_api(&GenerationProvider::Artcraft)),
+
     maybe_positive_prompt: None,
     maybe_negative_prompt: None,
     maybe_other_args: None,
@@ -213,7 +214,8 @@ pub async fn flux_2_lora_edit_image_angle_handler(
     maybe_creator_user_token: Some(&user_token),
     maybe_avt_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
-    creator_set_visibility: Visibility::Public,
+    creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
     mysql_executor: &mut *transaction,
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,

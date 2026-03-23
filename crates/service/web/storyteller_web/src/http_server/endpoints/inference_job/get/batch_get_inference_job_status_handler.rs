@@ -24,8 +24,11 @@ use bucket_paths::legacy::typified_paths::public::voice_conversion_results::buck
 use chrono::{DateTime, Utc};
 use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
 use enums_db::common::job_status_plus::JobStatusPlus;
+use enums_api::common::job_status_plus::JobStatusPlus as ApiJobStatusPlus;
 use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName as ApiStyleTransferName;
 use log::error;
 use mysql_queries::queries::generic_inference::web::batch_get_inference_job_status::batch_get_inference_job_status;
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
@@ -75,7 +78,7 @@ pub struct BatchInferenceJobStatusResponsePayload {
 /// Details about what the user requested for generation
 #[derive(Serialize, ToSchema)]
 pub struct BatchRequestDetailsResponse {
-  pub inference_category: InferenceCategory,
+  pub inference_category: ApiInferenceCategory,
   pub maybe_model_type: Option<String>,
   pub maybe_model_token: Option<String>,
 
@@ -87,7 +90,7 @@ pub struct BatchRequestDetailsResponse {
 
   /// OPTIONAL. For Comfy / Video Style Transfer jobs, this might include
   /// the name of the selected style.
-  pub maybe_style_name: Option<StyleTransferName>,
+  pub maybe_style_name: Option<ApiStyleTransferName>,
 
   /// OPTIONAL. For Live Portrait jobs, this is additional information on the request.
   pub maybe_live_portrait_details: Option<JobDetailsLivePortraitRequest>,
@@ -101,7 +104,7 @@ pub struct BatchRequestDetailsResponse {
 #[derive(Serialize, ToSchema)]
 pub struct BatchStatusDetailsResponse {
   /// Primary status from the database (a state machine).
-  pub status: JobStatusPlus,
+  pub status: ApiJobStatusPlus,
 
   /// Extra, temporary status from Redis.
   /// This can denote inference progress, and the Python code can write to it.
@@ -290,12 +293,14 @@ fn db_record_to_response_payload(
   BatchInferenceJobStatusResponsePayload {
     job_token: record.job_token,
     request: BatchRequestDetailsResponse {
-      inference_category: record.request_details.inference_category,
+      inference_category: enums_convert::by_table::generic_inference_jobs::inference_category::inference_category_to_api(&record.request_details.inference_category),
+
       maybe_model_type: maybe_filter_model_name(record.request_details.maybe_model_type.as_deref()),
       maybe_model_token: record.request_details.maybe_model_token,
       maybe_model_title: record.request_details.maybe_model_title,
       maybe_raw_inference_text: record.request_details.maybe_raw_inference_text,
-      maybe_style_name: record.request_details.maybe_style_name,
+      maybe_style_name: enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api(&record.request_details.maybe_style_name),
+
       maybe_live_portrait_details: maybe_polymorphic_args
           .as_ref()
           .and_then(|args| extract_live_portrait_details(args)),
@@ -304,7 +309,8 @@ fn db_record_to_response_payload(
           .and_then(|args| extract_lipsync_details(args)),
     },
     status: BatchStatusDetailsResponse {
-      status: record.status,
+      status: enums_convert::common::job_status_plus::job_status_plus_to_api(&record.status),
+
       maybe_extra_status_description,
       maybe_assigned_worker: maybe_filter_model_name(record.maybe_assigned_worker.as_deref()),
       maybe_assigned_cluster: record.maybe_assigned_cluster,
@@ -319,7 +325,9 @@ fn db_record_to_response_payload(
       let public_bucket_media_path = match inference_category {
         // NB: TTS has to be special cased due to legacy behavior
         InferenceCategory::TextToSpeech |
+
         InferenceCategory::F5TTS => {
+
           match result_details.entity_type.as_str() {
             "media_file" => {
               // NB: We're migrating TTS to media_files.
@@ -360,11 +368,14 @@ fn db_record_to_response_payload(
         }
         // Unsupported media files.
         InferenceCategory::FormatConversion |
+
         InferenceCategory::ConvertBvhToWorkflow => {
+
           "".to_string()
         }
         // Deprecated
         InferenceCategory::DeprecatedField => {
+
           "".to_string() // TODO(bt,2024-07-16): Read job type instead
         }
         // The blessed path that modern media files use.

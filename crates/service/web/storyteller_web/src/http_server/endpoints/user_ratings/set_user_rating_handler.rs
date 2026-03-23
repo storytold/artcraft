@@ -7,7 +7,9 @@ use sqlx::Acquire;
 use utoipa::ToSchema;
 
 use enums_db::by_table::user_ratings::entity_type::UserRatingEntityType;
+use enums_api::by_table::user_ratings::entity_type::UserRatingEntityType as ApiUserRatingEntityType;
 use enums_db::by_table::user_ratings::rating_value::UserRatingValue;
+use enums_api::by_table::user_ratings::rating_value::UserRatingValue as ApiUserRatingValue;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::composite_keys::by_table::user_ratings::user_rating_entity::UserRatingEntity;
@@ -31,12 +33,12 @@ use crate::state::server_state::ServerState;
 #[derive(Deserialize, ToSchema)]
 pub struct SetUserRatingRequest {
   /// The type of the entity being rated.
-  pub entity_type: UserRatingEntityType,
+  pub entity_type: ApiUserRatingEntityType,
 
   /// Entity token is meant to be polymorphic. It can be a TTS model, TTS result, W2L template, ... anything.
   pub entity_token: String,
 
-  pub rating_value: UserRatingValue,
+  pub rating_value: ApiUserRatingValue,
 }
 
 // =============== Success Response ===============
@@ -180,7 +182,8 @@ pub async fn set_user_rating_handler(
   let _r = upsert_user_rating(Args {
     user_token: &user_session.user_token,
     user_rating_entity: &entity,
-    user_rating_value: request.rating_value,
+    user_rating_value: enums_convert::by_table::user_ratings::rating_value::rating_value_to_api(&request.rating_value),
+
     ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
@@ -213,6 +216,7 @@ pub async fn set_user_rating_handler(
     // NB: Not all rateable things have stats (eg. deprecated record types don't have stats).
     let maybe_stats_entity_token =
         StatsEntityToken::from_rating_entity_type_and_token(request.entity_type, &request.entity_token);
+
 
     if let Some(stats_entity_token) = maybe_stats_entity_token {
       upsert_entity_stats_on_ratings_event(UpsertEntityStatsArgs {

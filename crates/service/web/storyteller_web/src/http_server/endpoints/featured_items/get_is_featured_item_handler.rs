@@ -10,6 +10,7 @@ use utoipa::ToSchema;
 
 use composite_identifiers::by_table::featured_items::featured_item_entity::FeaturedItemEntity;
 use enums_db::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
+use enums_api::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType as ApiFeaturedItemEntityType;
 use mysql_queries::queries::featured_items::get_is_featured_by_token::get_is_featured_by_token;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::model_weights::ModelWeightToken;

@@ -15,6 +15,7 @@ use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest, HttpResponse};
 use composite_identifiers::by_table::tag_uses::tag_use_entity::TagUseEntity;
 use enums_db::by_table::tag_uses::tag_use_entity_type::TagUseEntityType;
+use enums_api::by_table::tag_uses::tag_use_entity_type::TagUseEntityType as ApiTagUseEntityType;
 use log::warn;
 use mysql_queries::queries::tags::list_tags_for_entity::list_tags_for_entity;
 use mysql_queries::utils::transactor::Transactor;

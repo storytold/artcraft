@@ -9,6 +9,7 @@ use log::{info, warn};
 use utoipa::ToSchema;
 
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::queries::media_files::edit::set_media_file_cover_image::{set_media_file_cover_image, UpdateArgs};
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;

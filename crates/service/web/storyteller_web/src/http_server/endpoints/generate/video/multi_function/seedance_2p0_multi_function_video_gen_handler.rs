@@ -269,7 +269,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
     maybe_model_type: Some(ModelType::Seedance2p0),
-    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_generation_provider: Some(enums_convert::common::generation::generation_provider::generation_provider_to_api(&GenerationProvider::Artcraft)),
+
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
@@ -314,7 +315,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         for media_token in tokens {
           context_items.push(PromptContextItem {
             media_token: media_token.clone(),
-            context_semantic_type: semantic_type,
+            context_semantic_type: enums_convert::by_table::prompt_context_items::prompt_context_semantic_type::prompt_context_semantic_type_to_api(&semantic_type),
+
           });
         }
       }
@@ -364,7 +366,8 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         maybe_creator_user_token: maybe_user_session.as_ref().map(|s| &s.user_token),
         maybe_avt_token: maybe_avt_token.as_ref(),
         creator_ip_address: &ip_address,
-        creator_set_visibility: Visibility::Public,
+        creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&Visibility::Public),
+
         mysql_executor: &mut *transaction,
         phantom: Default::default(),
       }

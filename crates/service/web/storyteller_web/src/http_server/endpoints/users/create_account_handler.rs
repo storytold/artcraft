@@ -17,6 +17,7 @@ use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use enums_db::by_table::users::user_signup_source::UserSignupSource;
+use enums_api::by_table::users::user_signup_source::UserSignupSource as ApiUserSignupSource;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::{info, warn};
@@ -40,7 +41,7 @@ pub struct CreateAccountRequest {
   
   /// Optional: Source of the signup, e.g. "artcraft", "fakeyou", "storyteller", etc.
   /// If not provided, we try to infer it from the Origin header instead.
-  pub signup_source: Option<UserSignupSource>,
+  pub signup_source: Option<ApiUserSignupSource>,
 
   /// Optional: The referral URL the user arrived from when signing up.
   /// The browser can send `document.referrer` to the backend so we know how people are finding us.

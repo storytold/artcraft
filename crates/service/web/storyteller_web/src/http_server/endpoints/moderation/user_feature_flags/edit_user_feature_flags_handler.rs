@@ -12,6 +12,7 @@ use redis::{Client, Commands};
 use utoipa::ToSchema;
 
 use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_api::by_table::users::user_feature_flag::UserFeatureFlag as ApiUserFeatureFlag;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::users::user::get::get_user_token_by_username::get_user_token_by_username;
 use mysql_queries::queries::users::user::update::set_user_feature_flags::{set_user_feature_flags, SetUserFeatureFlagArgs};

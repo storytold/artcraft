@@ -7,6 +7,7 @@ use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::analytics::log_active_user::{LogAppActiveUserRequest, LogAppActiveUserResponse};
 use enums_db::common::payments_namespace::PaymentsNamespace;
+use enums_api::common::payments_namespace::PaymentsNamespace as ApiPaymentsNamespace;
 use errors::AnyhowResult;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{info, warn};

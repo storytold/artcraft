@@ -25,7 +25,9 @@ use crate::util::title_to_url_slug::title_to_url_slug;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use elasticsearch_schema::searches::search_model_weights::search_model_weights::{search_model_weights, ModelWeightsSortDirection, ModelWeightsSortField, SearchArgs};
 use enums_db::by_table::model_weights::weights_category::WeightsCategory;
+use enums_api::by_table::model_weights::weights_category::WeightsCategory as ApiWeightsCategory;
 use enums_db::by_table::model_weights::weights_types::WeightsType;
+use enums_api::by_table::model_weights::weights_types::WeightsType as ApiWeightsType;
 use enums_db::common::visibility::Visibility;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use primitives::numerics::i32_to_u32_zero_clamped::i32_to_u32_zero_clamped;
@@ -34,8 +36,8 @@ use tokens::tokens::model_weights::ModelWeightToken;
 #[derive(Deserialize, ToSchema)]
 pub struct SearchModelWeightsRequest {
   pub search_term: String,
-  pub weight_type: Option<WeightsType>,
-  pub weight_category: Option<WeightsCategory>,
+  pub weight_type: Option<ApiWeightsType>,
+  pub weight_category: Option<ApiWeightsCategory>,
   pub ietf_language_subtag: Option<String>,
   pub minimum_score: Option<u64>,
   pub sort_field: Option<SearchModelWeightsSortField>,
@@ -69,7 +71,7 @@ pub struct ModelWeightSearchResult {
   pub weight_token: ModelWeightToken,
 
   pub weight_type: PublicWeightsType,
-  pub weight_category: WeightsCategory,
+  pub weight_category: ApiWeightsCategory,
 
   pub creator_set_visibility: Visibility,
 
@@ -221,8 +223,10 @@ pub async fn search_model_weights_impl(
 
         ModelWeightSearchResult {
           weight_token: result.token,
-          weight_type: PublicWeightsType::from_enum(result.weights_type),
-          weight_category: result.weights_category,
+          weight_type: enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&PublicWeightsType::from_enum(result.weights_type)),
+
+          weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&result.weights_category),
+
           maybe_url_slug: title_to_url_slug(&result.title),
           title: result.title,
           creator: UserDetailsLight::from_db_fields(
@@ -241,7 +245,8 @@ pub async fn search_model_weights_impl(
           usage_count: i32_to_u32_zero_clamped(result.cached_usage_count.unwrap_or(0)),
           maybe_ietf_language_tag: result.maybe_ietf_language_tag,
           maybe_ietf_primary_language_subtag: result.maybe_ietf_primary_language_subtag,
-          creator_set_visibility: result.creator_set_visibility,
+          creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&result.creator_set_visibility),
+
           created_at: result.created_at,
           updated_at: result.updated_at,
         }

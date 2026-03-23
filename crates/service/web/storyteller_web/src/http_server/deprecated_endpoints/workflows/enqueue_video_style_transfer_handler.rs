@@ -12,10 +12,14 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_api::by_table::generic_inference_jobs::inference_category::InferenceCategory as ApiInferenceCategory;
 use enums_db::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
+use enums_api::by_table::generic_inference_jobs::inference_job_type::InferenceJobType as ApiInferenceJobType;
 use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_api::by_table::generic_inference_jobs::inference_model_type::InferenceModelType as ApiInferenceModelType;
 use enums_db::common::visibility::Visibility;
 use enums_db::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName as ApiStyleTransferName;
 use http_server_common::request::get_request_header_optional::get_request_header_optional;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::payloads::generic_inference_args::generic_inference_args::{GenericInferenceArgs, InferenceCategoryAbbreviated, PolymorphicInferenceArgs};
@@ -406,8 +410,10 @@ pub async fn enqueue_video_style_transfer_handler(
         global_ip_adapter_token: empty_media_file_token_to_null(request.global_ipa_media_token.as_ref()),
 
         // Other inputs
-        style_name: Some(request.style),
-        creator_visibility: Some(set_visibility),
+        style_name: Some(enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api(&request.style)),
+
+        creator_visibility: Some(enums_convert::common::visibility::visibility_to_db(&set_visibility)),
+
         trim_start_milliseconds: Some(trim_start_millis),
         trim_end_milliseconds: Some(trim_end_millis),
         strength: maybe_strength,
@@ -468,7 +474,8 @@ pub async fn enqueue_video_style_transfer_handler(
         maybe_creator_user_token: maybe_user_token.as_ref(),
         maybe_avt_token: maybe_avt_token.as_ref(),
         creator_ip_address: &ip_address,
-        creator_set_visibility:  set_visibility,
+        creator_set_visibility: enums_convert::common::visibility::visibility_to_db(&set_visibility),
+
         priority_level,
         requires_keepalive: plan.workflow_requires_frontend_keepalive(),
         is_debug_request,

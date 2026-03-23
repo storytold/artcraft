@@ -256,8 +256,10 @@ pub async fn list_available_weights_handler(
                     weight_token: weight.token,
                     maybe_url_slug: title_to_url_slug(&weight.title),
                     title: weight.title,
-                    weight_type: weight.weights_type,
-                    weight_category: weight.weights_category,
+                    weight_type: enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&weight.weights_type),
+
+                    weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&weight.weights_category),
+
 
                     maybe_ietf_language_tag: weight.maybe_ietf_language_tag,
                     maybe_ietf_primary_language_subtag: weight.maybe_ietf_primary_language_subtag,
@@ -271,7 +273,8 @@ pub async fn list_available_weights_handler(
                         &weight.creator_display_name,
                         &weight.creator_email_gravatar_hash
                     ),
-                    creator_set_visibility: weight.creator_set_visibility,
+                    creator_set_visibility: enums_convert::common::visibility::visibility_to_api(&weight.creator_set_visibility),
+
 
                     file_size_bytes: weight.file_size_bytes,
                     file_checksum_sha2: weight.file_checksum_sha2,

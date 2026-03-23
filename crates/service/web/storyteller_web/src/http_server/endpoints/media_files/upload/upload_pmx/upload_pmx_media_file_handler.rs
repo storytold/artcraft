@@ -11,9 +11,13 @@ use log::{error, info, warn};
 use utoipa::ToSchema;
 
 use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_api::by_table::media_files::media_file_animation_type::MediaFileAnimationType as ApiMediaFileAnimationType;
 use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_api::by_table::media_files::media_file_class::MediaFileClass as ApiMediaFileClass;
 use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngineCategory as ApiMediaFileEngineCategory;
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
 use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
@@ -255,14 +259,16 @@ pub async fn upload_pmx_media_file_handler(
 
   // TODO(bt, 2024-02-22): This should be a transaction.
   let (token, record_id) = insert_media_file_from_file_upload(InsertMediaFileFromUploadArgs {
-    maybe_media_class: Some(MediaFileClass::Dimensional),
+    maybe_media_class: Some(enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&MediaFileClass::Dimensional)),
+
     media_file_type: MediaFileType::Pmx,
     maybe_creator_user_token: Some(&user_session.get_strongly_typed_user_token()),
     maybe_creator_anonymous_visitor_token: maybe_avt_token.as_ref(),
     creator_ip_address: &ip_address,
     creator_set_visibility,
     upload_type: UploadType::Filesystem,
-    maybe_engine_category: Some(engine_category),
+    maybe_engine_category: Some(enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&engine_category)),
+
     maybe_animation_type,
     maybe_prompt_token: None,
     maybe_batch_token: None,
