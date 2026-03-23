@@ -52,6 +52,27 @@ CREATE TABLE prompts (
   -- TEXT = 65,535 bytes (64 KiB), ~= 4 bytes per UTF-8 character, ~ 16383 characters.
   maybe_other_args TEXT DEFAULT NULL,
 
+  -- ========== GENERATION PARAMETERS ==========
+
+  -- The generation mode (eg. keyframe, reference, inpaint, etc.)
+  maybe_generation_mode VARCHAR(24) DEFAULT NULL,
+
+  -- The aspect ratio for the prompt (eg. square, auto, wide_three_by_two, etc.)
+  maybe_aspect_ratio VARCHAR(24) DEFAULT NULL,
+
+  -- The resolution for the prompt (eg. four_k, 720p, etc.)
+  maybe_resolution VARCHAR(16) DEFAULT NULL,
+
+  -- The duration (eg. 8s, 16s, 2m, etc.)
+  -- Not an integer because we want to potentially support other units
+  maybe_duration VARCHAR(8) DEFAULT NULL,
+
+  -- The number of outputs to generate (0-255)
+  maybe_batch_count TINYINT UNSIGNED DEFAULT NULL,
+
+  -- Whether to generate audio
+  maybe_generate_audio BOOLEAN DEFAULT NULL,
+
   -- ========== ABUSE TRACKING ==========
 
   -- For abuse tracking.
