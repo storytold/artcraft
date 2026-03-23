@@ -9,4 +9,6 @@ pub enum CommonResolution {
   TwoK,
   ThreeK,
   FourK,
+  
+  // TODO: Add 480p(?), 720p(?), 1080p, etc. as there are some models that use these
 }

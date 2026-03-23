@@ -56,15 +56,19 @@ CREATE TABLE prompts (
 
   -- ========== GENERATION PARAMETERS ==========
 
+  -- Represented by the enum `CommonGenerationMode`.
   -- The generation mode (eg. keyframe, reference, inpaint, etc.)
   maybe_generation_mode VARCHAR(24) DEFAULT NULL,
 
+  -- Represented by the enum `CommonAspectRatio`.
   -- The aspect ratio for the prompt (eg. square, auto, wide_three_by_two, etc.)
   maybe_aspect_ratio VARCHAR(24) DEFAULT NULL,
 
+  -- Represented by the enum `CommonResolution`.
   -- The resolution for the prompt (eg. four_k, 720p, etc.)
   maybe_resolution VARCHAR(16) DEFAULT NULL,
 
+  -- TODO: Let's change this to an integer before writing to it.
   -- The duration (eg. 8s, 16s, 2m, etc.)
   -- Not an integer because we want to potentially support other units
   maybe_duration VARCHAR(8) DEFAULT NULL,
