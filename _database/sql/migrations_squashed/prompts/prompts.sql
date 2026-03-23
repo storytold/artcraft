@@ -27,6 +27,8 @@ CREATE TABLE prompts (
   -- What type of model was used to generate the result.
   -- NB: We're conflating prompts with outputs, but in a
   -- sense the model is inextricably part of the prompt.
+  --
+  -- Represented by the `CommonModelType` enum.
   maybe_model_type VARCHAR(32) DEFAULT NULL,
 
   -- What service provided the generation.
