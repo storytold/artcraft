@@ -169,6 +169,7 @@ impl fmt::Display for GetPromptError {
   }
 }
 
+/// Get details on a prompt.
 #[utoipa::path(
   get,
   tag = "Prompts",

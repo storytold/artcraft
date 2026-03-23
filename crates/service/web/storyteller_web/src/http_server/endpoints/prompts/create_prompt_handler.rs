@@ -17,7 +17,7 @@ use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 
 
-/// Create a new prompt record
+/// Create a new prompt record (note: most inference endpoints do this internally for us automatically).
 #[utoipa::path(
   post,
   tag = "Prompts",
