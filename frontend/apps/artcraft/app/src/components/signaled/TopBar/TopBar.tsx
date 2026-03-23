@@ -16,7 +16,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { FilterMediaClasses } from "@storyteller/api";
-import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
+import { getCreatorIcon, ModelCreator, IMAGE_MODELS_BY_ID, VIDEO_MODELS_BY_ID } from "@storyteller/model-list";
+import { useClassyModelSelectorStore, ModelPage } from "@storyteller/ui-model-selector";
 import { useCreditsState } from "@storyteller/credits";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
@@ -266,6 +267,7 @@ export const TopBar = ({ pageName }: Props) => {
   const handleRecreateFromGallery = (data: {
     prompt: string | null;
     mediaClass: string | undefined;
+    modelType: string | null;
     contextImages: Array<{
       media_links: {
         cdn_url: string;
@@ -276,7 +278,7 @@ export const TopBar = ({ pageName }: Props) => {
     }> | null;
   }) => {
     try {
-      const { prompt: recreatePrompt, mediaClass: recreateMediaClass, contextImages: recreateContextImages } = data;
+      const { prompt: recreatePrompt, mediaClass: recreateMediaClass, modelType: recreateModelType, contextImages: recreateContextImages } = data;
 
       // Build reference images from context images
       const refImages: RefImage[] = (recreateContextImages || []).map((ci) => ({
@@ -286,16 +288,26 @@ export const TopBar = ({ pageName }: Props) => {
         mediaToken: ci.media_token,
       }));
 
+      const modelStore = useClassyModelSelectorStore.getState();
+
       if (recreateMediaClass === "video") {
         const videoStore = usePromptVideoStore.getState();
         if (recreatePrompt) videoStore.setPrompt(recreatePrompt);
         if (refImages.length > 0) videoStore.setReferenceImages(refImages);
+        if (recreateModelType) {
+          const model = VIDEO_MODELS_BY_ID.get(recreateModelType);
+          if (model) modelStore.setSelectedModel(ModelPage.ImageToVideo, model);
+        }
         useTabStore.getState().setActiveTab("VIDEO");
       } else {
         // Default to image
         const imageStore = usePromptImageStore.getState();
         if (recreatePrompt) imageStore.setPrompt(recreatePrompt);
         if (refImages.length > 0) imageStore.setReferenceImages(refImages);
+        if (recreateModelType) {
+          const model = IMAGE_MODELS_BY_ID.get(recreateModelType);
+          if (model) modelStore.setSelectedModel(ModelPage.TextToImage, model);
+        }
         useTabStore.getState().setActiveTab("IMAGE");
       }
 

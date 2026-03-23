@@ -94,6 +94,7 @@ interface LightboxModalProps {
   onRecreateClicked?: (data: {
     prompt: string | null;
     mediaClass: string | undefined;
+    modelType: string | null;
     contextImages: Array<{
       media_links: {
         cdn_url: string;
@@ -958,6 +959,7 @@ export function LightboxModal({
                         onRecreateClicked({
                           prompt,
                           mediaClass: derivedMediaClass,
+                          modelType,
                           contextImages,
                         });
                       }}
