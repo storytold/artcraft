@@ -6,11 +6,14 @@ use strum::EnumCount;
 use strum::EnumIter;
 use utoipa::ToSchema;
 
+use crate::common::generation::common_model_class::CommonModelClass;
+
 /// Maximum serialized string length for database storage.
 /// Stored in the `prompts` table (`maybe_model_type` column) as VARCHAR(24).
 pub const MAX_LENGTH: usize = 24;
 
 /// Common model type enum used across image, video, 3D, and splat generation.
+/// This forms part of our core data model for generative models.
 ///
 /// This is used in the MySQL database, the HTTP API, and throughout
 /// ArtCraft (the Tauri app).
@@ -359,10 +362,78 @@ impl CommonModelType {
       Self::Marble0p1Plus,
     ])
   }
+
+  /// Returns the broad model class for this model type.
+  pub fn get_model_class(&self) -> CommonModelClass {
+    match self {
+      // Image models
+      Self::Flux1Dev => CommonModelClass::Image,
+      Self::Flux1Schnell => CommonModelClass::Image,
+      Self::FluxDevJuggernaut => CommonModelClass::Image,
+      Self::FluxPro1 => CommonModelClass::Image,
+      Self::FluxPro11 => CommonModelClass::Image,
+      Self::FluxPro11Ultra => CommonModelClass::Image,
+      Self::FluxProKontextMax => CommonModelClass::Image,
+      Self::Flux2LoraAngles => CommonModelClass::Image,
+      Self::GptImage1 => CommonModelClass::Image,
+      Self::GptImage1p5 => CommonModelClass::Image,
+      Self::GrokImage => CommonModelClass::Image,
+      Self::Recraft3 => CommonModelClass::Image,
+      Self::SeedEdit3 => CommonModelClass::Image,
+      Self::Qwen => CommonModelClass::Image,
+      Self::QwenEdit2511Angles => CommonModelClass::Image,
+      Self::Gemini25Flash => CommonModelClass::Image,
+      Self::NanoBanana => CommonModelClass::Image,
+      Self::NanoBanana2 => CommonModelClass::Image,
+      Self::NanoBananaPro => CommonModelClass::Image,
+      Self::Seedream4 => CommonModelClass::Image,
+      Self::Seedream4p5 => CommonModelClass::Image,
+      Self::Seedream5Lite => CommonModelClass::Image,
+      Self::Midjourney => CommonModelClass::Image,
+      Self::MidjourneyV6 => CommonModelClass::Image,
+      Self::MidjourneyV6p1 => CommonModelClass::Image,
+      Self::MidjourneyV6p1Raw => CommonModelClass::Image,
+      Self::MidjourneyV7 => CommonModelClass::Image,
+      Self::MidjourneyV7Draft => CommonModelClass::Image,
+      Self::MidjourneyV7DraftRaw => CommonModelClass::Image,
+      Self::MidjourneyV7Raw => CommonModelClass::Image,
+
+      // Video models
+      Self::GrokVideo => CommonModelClass::Video,
+      Self::Kling16Pro => CommonModelClass::Video,
+      Self::Kling21Pro => CommonModelClass::Video,
+      Self::Kling21Master => CommonModelClass::Video,
+      Self::Kling2p5TurboPro => CommonModelClass::Video,
+      Self::Kling2p6Pro => CommonModelClass::Video,
+      Self::Kling3p0Standard => CommonModelClass::Video,
+      Self::Kling3p0Pro => CommonModelClass::Video,
+      Self::Seedance10Lite => CommonModelClass::Video,
+      Self::Seedance10Pro => CommonModelClass::Video,
+      Self::Seedance1p5Pro => CommonModelClass::Video,
+      Self::Seedance2p0 => CommonModelClass::Video,
+      Self::Sora2 => CommonModelClass::Video,
+      Self::Sora2Pro => CommonModelClass::Video,
+      Self::Veo2 => CommonModelClass::Video,
+      Self::Veo3 => CommonModelClass::Video,
+      Self::Veo3Fast => CommonModelClass::Video,
+      Self::Veo3p1 => CommonModelClass::Video,
+      Self::Veo3p1Fast => CommonModelClass::Video,
+
+      // 3D Object generation models (mesh)
+      Self::Hunyuan3d2_0 => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d2_1 => CommonModelClass::DimensionalMesh,
+      Self::Hunyuan3d3 => CommonModelClass::DimensionalMesh,
+
+      // Splat generation models (World Labs)
+      Self::Marble0p1Mini => CommonModelClass::DimensionalSplat,
+      Self::Marble0p1Plus => CommonModelClass::DimensionalSplat,
+    }
+  }
 }
 
 #[cfg(test)]
 mod tests {
+  use crate::common::generation::common_model_class::CommonModelClass;
   use crate::common::generation::common_model_type::CommonModelType;
   use crate::common::generation::common_model_type::MAX_LENGTH;
   use crate::test_helpers::assert_serialization;
@@ -678,6 +749,38 @@ mod tests {
         assert!(valid_pattern.is_match(&json_value),
           "JSON serialization for {:?} contains invalid characters: {:?} (only a-z, 0-9, _ allowed)", variant, json_value);
       }
+    }
+
+    #[test]
+    fn every_variant_has_a_model_class() {
+      for variant in CommonModelType::all_variants() {
+        let class = variant.get_model_class();
+        // Verify the class is a known value (not panicking is the main test)
+        assert!(CommonModelClass::all_variants().contains(&class),
+          "get_model_class() for {:?} returned {:?} which is not a known CommonModelClass variant", variant, class);
+      }
+    }
+
+    #[test]
+    fn image_models_return_image_class() {
+      assert_eq!(CommonModelType::Flux1Dev.get_model_class(), CommonModelClass::Image);
+      assert_eq!(CommonModelType::GptImage1.get_model_class(), CommonModelClass::Image);
+      assert_eq!(CommonModelType::Midjourney.get_model_class(), CommonModelClass::Image);
+    }
+
+    #[test]
+    fn video_models_return_video_class() {
+      assert_eq!(CommonModelType::Veo3.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Sora2.get_model_class(), CommonModelClass::Video);
+      assert_eq!(CommonModelType::Kling3p0Pro.get_model_class(), CommonModelClass::Video);
+    }
+
+    #[test]
+    fn dimensional_models_return_correct_class() {
+      assert_eq!(CommonModelType::Hunyuan3d2_0.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Hunyuan3d3.get_model_class(), CommonModelClass::DimensionalMesh);
+      assert_eq!(CommonModelType::Marble0p1Mini.get_model_class(), CommonModelClass::DimensionalSplat);
+      assert_eq!(CommonModelType::Marble0p1Plus.get_model_class(), CommonModelClass::DimensionalSplat);
     }
   }
 }
