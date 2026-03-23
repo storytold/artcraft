@@ -15,7 +15,7 @@ use crate::services::sora::threads::sora_task_polling::helpers::handle_failed_ge
 use crate::services::sora::threads::sora_task_polling::helpers::handle_successful_generations::{handle_classic_successful_generations, GenerationItem, SuccessfulGeneration};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info, warn};
@@ -73,7 +73,7 @@ pub async fn poll_sora_2_tasks(
           success_draft.task_id,
           SuccessfulGeneration {
             prompt: Some(success_draft.prompt),
-            model_type: ModelType::Sora2,
+            model_type: CommonModelType::Sora2,
             items: vec![GenerationItem {
               item_id: success_draft.id,
               url: success_draft.url,

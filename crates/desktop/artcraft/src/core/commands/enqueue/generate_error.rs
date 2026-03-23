@@ -4,7 +4,7 @@ use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use artcraft_router::errors::provider_error::ProviderError;
 use base64::DecodeError;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use errors::AnyhowError;
 use grok_client::error::grok_error::GrokError;
 use midjourney_client::error::midjourney_error::MidjourneyError;
@@ -29,7 +29,7 @@ pub enum GenerateError {
   /// Wrong provider for the model
   BadProviderForModel {
     provider: GenerationProvider,
-    model: ModelType,
+    model: CommonModelType,
   },
 
   /// If the response didn't contain job tokens to track.

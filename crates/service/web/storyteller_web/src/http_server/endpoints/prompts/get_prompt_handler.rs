@@ -15,7 +15,7 @@ use chrono::{DateTime, Utc};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::{error, warn};
 use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
@@ -52,7 +52,7 @@ pub struct PromptInfo {
   pub prompt_type: PromptType,
 
   /// The type of model used
-  pub maybe_model_type: Option<ModelType>,
+  pub maybe_model_type: Option<CommonModelType>,
 
   /// The service provider used
   pub maybe_generation_provider: Option<GenerationProvider>,

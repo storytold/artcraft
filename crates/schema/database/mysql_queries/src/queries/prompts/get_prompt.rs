@@ -7,7 +7,7 @@ use anyhow::anyhow;
 use chrono::{DateTime, Utc};
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
 use sqlx::{MySql, MySqlPool};
@@ -22,7 +22,7 @@ pub struct Prompt {
 
   pub prompt_type: PromptType,
 
-  pub maybe_model_type: Option<ModelType>,
+  pub maybe_model_type: Option<CommonModelType>,
   pub maybe_generation_provider: Option<GenerationProvider>,
 
   pub maybe_creator_user_token: Option<UserToken>,
@@ -44,7 +44,7 @@ pub struct PromptRaw {
 
   pub prompt_type: PromptType,
 
-  pub maybe_model_type: Option<ModelType>,
+  pub maybe_model_type: Option<CommonModelType>,
   pub maybe_generation_provider: Option<GenerationProvider>,
 
   pub maybe_creator_user_token: Option<UserToken>,
@@ -115,7 +115,7 @@ SELECT
 
     p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,
 
-    p.maybe_model_type as `maybe_model_type: enums::common::model_type::ModelType`,
+    p.maybe_model_type as `maybe_model_type: enums::common::generation::common_model_type::CommonModelType`,
     p.maybe_generation_provider as `maybe_generation_provider: enums::common::generation_provider::GenerationProvider`,
 
     p.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,

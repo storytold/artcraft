@@ -212,7 +212,7 @@ use enums::by_table::user_ratings::rating_value::UserRatingValue;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_public::by_table::media_files::public_media_file_model_type::PublicMediaFileModelType;
@@ -511,7 +511,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileOriginProductCategory,
     MediaFileSubtype,
     MediaFileType,
-    ModelType,
+    CommonModelType,
     PromptContextSemanticType,
     PromptType,
     PublicMediaFileModelType,

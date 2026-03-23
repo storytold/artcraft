@@ -16,7 +16,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
@@ -47,7 +47,7 @@ use url_utils::download_extension::extract_download_extension_from_url::{extract
 pub struct SuccessfulGeneration {
   pub prompt: Option<String>,
   pub items: Vec<GenerationItem>,
-  pub model_type: ModelType,
+  pub model_type: CommonModelType,
 }
 
 pub struct GenerationItem {
@@ -74,8 +74,8 @@ pub async fn handle_classic_successful_generations(
     info!("Task succeeded: {:?}", task_id);
 
     let generation_type = match generation.model_type {
-      ModelType::GptImage1 => GenerationType::Image,
-      ModelType::Sora2 => GenerationType::Video,
+      CommonModelType::GptImage1 => GenerationType::Image,
+      CommonModelType::Sora2 => GenerationType::Video,
       _ => {
         // Fallback
         warn!("Unexpected model type: {:?}", generation.model_type);

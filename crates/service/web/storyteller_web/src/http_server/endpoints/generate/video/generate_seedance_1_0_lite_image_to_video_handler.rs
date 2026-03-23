@@ -18,7 +18,7 @@ use artcraft_api_defs::generate::video::generate_seedance_1_0_lite_image_to_vide
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::Seedance1LiteDuration;
@@ -233,7 +233,7 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
     maybe_creator_user_token: maybe_user_session
         .as_ref()
         .map(|s| &s.user_token),
-    maybe_model_type: Some(ModelType::Seedance10Lite),
+    maybe_model_type: Some(CommonModelType::Seedance10Lite),
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: Some(prompt),
     maybe_negative_prompt: None,

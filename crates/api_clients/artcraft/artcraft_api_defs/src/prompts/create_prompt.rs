@@ -2,7 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::prompts::PromptToken;
 use utoipa::ToSchema;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 
 pub const CREATE_PROMPT_PATH: &str = "/v1/prompts/create";
 
@@ -18,7 +18,7 @@ pub struct CreatePromptRequest {
   pub negative_prompt: Option<String>,
   
   /// OPTIONAL. The model type.
-  pub model_type: Option<ModelType>,
+  pub model_type: Option<CommonModelType>,
 
   /// OPTIONAL. The service used.
   pub generation_provider: Option<GenerationProvider>,

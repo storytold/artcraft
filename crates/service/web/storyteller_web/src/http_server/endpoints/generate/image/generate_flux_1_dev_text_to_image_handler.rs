@@ -13,7 +13,7 @@ use artcraft_api_defs::generate::image::text::generate_flux_1_dev_text_to_image:
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::enqueue_flux_1_dev_text_to_image_webhook;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::{Flux1DevArgs, Flux1DevAspectRatio, Flux1DevNumImages};
@@ -193,7 +193,7 @@ pub async fn generate_flux_1_dev_text_to_image_handler(
     maybe_creator_user_token: maybe_user_session
         .as_ref()
         .map(|s| &s.user_token),
-    maybe_model_type: Some(ModelType::Flux1Dev),
+    maybe_model_type: Some(CommonModelType::Flux1Dev),
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
@@ -273,7 +273,7 @@ async fn insert_mock_failure_job(
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token,
-    maybe_model_type: Some(ModelType::Flux1Dev),
+    maybe_model_type: Some(CommonModelType::Flux1Dev),
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: prompt,
     maybe_negative_prompt: None,

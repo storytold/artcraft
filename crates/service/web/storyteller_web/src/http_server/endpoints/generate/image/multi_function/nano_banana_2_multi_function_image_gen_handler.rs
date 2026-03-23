@@ -12,7 +12,7 @@ use artcraft_api_defs::generate::image::multi_function::nano_banana_2_multi_func
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_2_edit_image_webhook::{enqueue_nano_banana_2_edit_image_webhook, EnqueueNanoBanana2EditImageArgs, EnqueueNanoBanana2EditImageAspectRatio, EnqueueNanoBanana2EditImageNumImages, EnqueueNanoBanana2EditImageResolution};
@@ -248,7 +248,7 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),
-    maybe_model_type: Some(ModelType::NanoBanana2),
+    maybe_model_type: Some(CommonModelType::NanoBanana2),
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,

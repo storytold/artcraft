@@ -7,7 +7,7 @@ use sqlx::{Executor, MySql};
 
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use errors::AnyhowResult;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
@@ -24,7 +24,7 @@ pub struct InsertPromptArgs<'e, 'c,  E>
 
   pub maybe_creator_user_token: Option<&'e UserToken>,
   
-  pub maybe_model_type: Option<ModelType>,
+  pub maybe_model_type: Option<CommonModelType>,
   
   pub maybe_generation_provider: Option<GenerationProvider>,
 
