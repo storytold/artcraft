@@ -10,7 +10,7 @@ use log::warn;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use mysql_queries::queries::media_files::get::get_media_file::get_media_file;
 use tokens::tokens::media_files::MediaFileToken;
 

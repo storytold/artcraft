@@ -9,11 +9,11 @@ use rand::Rng;
 use utoipa::ToSchema;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::model_weights::{
+use enums_db::by_table::model_weights::{
   weights_category::WeightsCategory,
   weights_types::WeightsType,
 };
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use mysql_queries::queries::model_weights::list::list_weights_query_builder::ListWeightsQueryBuilder;
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;

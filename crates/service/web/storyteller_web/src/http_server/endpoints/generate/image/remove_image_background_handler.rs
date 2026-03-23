@@ -10,7 +10,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::image::bg_removal::remove_image_background::RemoveImageBackgroundRequest;
 use artcraft_api_defs::generate::image::bg_removal::remove_image_background::RemoveImageBackgroundResponse;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::webhook::image::background::remove_background_rembg_webhook::{remove_background_rembg_webhook, RemoveBackgroundRembgWebhookArgs};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};

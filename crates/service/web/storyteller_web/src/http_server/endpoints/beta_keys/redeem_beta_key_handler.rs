@@ -8,8 +8,8 @@ use log::warn;
 use utoipa::ToSchema;
 
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
-use enums::by_table::beta_keys::beta_key_product::BetaKeyProduct;
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_db::by_table::beta_keys::beta_key_product::BetaKeyProduct;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::beta_keys::get_beta_key_by_value::get_beta_key_by_value;
 use mysql_queries::queries::beta_keys::redeem_beta_key::redeem_beta_key;

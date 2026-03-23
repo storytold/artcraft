@@ -1,5 +1,5 @@
 use billing_component::stripe::traits::internal_subscription_product_lookup::{InternalProductLookupError, InternalSubscriptionProduct, InternalSubscriptionProductLookup};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use crate::configs::plans::plan_list::{PLANS_BY_STRIPE_PRICE_ID, PLANS_BY_STRIPE_PRODUCT_ID};
 
 const SUBSCRIPTION_CATEGORY : PaymentsNamespace = PaymentsNamespace::FakeYou;

@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
 
 #[derive(Default, Clone)]
 pub struct UserSessionFeatureFlags {
@@ -89,7 +89,7 @@ impl UserSessionFeatureFlags {
 mod tests {
   use std::collections::BTreeSet;
 
-  use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+  use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
 
   use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 

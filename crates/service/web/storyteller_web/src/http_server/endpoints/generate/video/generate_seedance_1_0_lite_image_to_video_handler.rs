@@ -16,10 +16,10 @@ use artcraft_api_defs::generate::video::generate_seedance_1_0_lite_image_to_vide
 use artcraft_api_defs::generate::video::generate_seedance_1_0_lite_image_to_video::GenerateSeedance10LiteResolution;
 use artcraft_api_defs::generate::video::generate_seedance_1_0_lite_image_to_video::{GenerateSeedance10LiteAspectRatio, GenerateSeedance10LiteDuration};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
-use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::prompts::prompt_type::PromptType;
+use enums_db::common::generation::generation_provider::GenerationProvider;
+use enums_db::common::model_type::ModelType;
+use enums_db::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::Seedance1LiteDuration;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::{enqueue_seedance_1_lite_image_to_video_webhook, Seedance1LiteAspectRatio};

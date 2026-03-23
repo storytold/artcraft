@@ -1,5 +1,5 @@
 use crate::http_server::session::lookup::user_session_extended::{UserSessionExtended, UserSessionRoleAndPermissions};
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
 use std::collections::BTreeSet;
 use utoipa::ToSchema;
 

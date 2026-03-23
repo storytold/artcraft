@@ -21,10 +21,10 @@ use artcraft_api_defs::jobs::list_session_jobs::{ListSessionJobsItem, ListSessio
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use bucket_paths::legacy::typified_paths::public::voice_conversion_results::bucket_file_path::VoiceConversionResultOriginalFilePath;
 use chrono::{DateTime, Utc};
-use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
-use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_api::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
+use enums_api::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use log::{error, warn};
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use mysql_queries::queries::generic_inference::web::list_session_jobs::{list_session_jobs_from_connection, ListSessionJobsForUserArgs, SessionUser};

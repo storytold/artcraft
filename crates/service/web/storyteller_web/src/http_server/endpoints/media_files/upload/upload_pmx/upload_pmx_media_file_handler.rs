@@ -10,11 +10,11 @@ use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use utoipa::ToSchema;
 
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::by_table::media_files::media_file_class::MediaFileClass;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
-use enums::by_table::media_files::media_file_type::MediaFileType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::by_table::media_files::media_file_class::MediaFileClass;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_type::MediaFileType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::media_files::create::specialized_insert::insert_media_file_from_file_upload::{insert_media_file_from_file_upload, InsertMediaFileFromUploadArgs, UploadType};

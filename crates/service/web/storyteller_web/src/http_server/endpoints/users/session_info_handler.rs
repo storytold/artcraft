@@ -13,7 +13,7 @@ use sqlx::MySqlPool;
 use utoipa::ToSchema;
 
 use artcraft_api_defs::users::session_info::{FakeYouPlan, SessionInfoSuccessResponse, SessionOnboardingState, SessionUserInfo, StorytellerStreamPlan};
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
 use http_server_common::response::response_error_helpers::to_simple_json_error;
 
 use crate::http_server::common_responses::user_details_lite_builder::UserDetailsLightBuilder;

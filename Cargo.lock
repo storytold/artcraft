@@ -11267,7 +11267,6 @@ dependencies = [
  "easyenv",
  "elasticsearch",
  "elasticsearch_schema",
- "enums",
  "enums_api",
  "enums_convert",
  "enums_db",

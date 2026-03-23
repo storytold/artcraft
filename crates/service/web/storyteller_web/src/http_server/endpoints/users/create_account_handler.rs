@@ -16,7 +16,7 @@ use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
-use enums::by_table::users::user_signup_source::UserSignupSource;
+use enums_db::by_table::users::user_signup_source::UserSignupSource;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::{info, warn};

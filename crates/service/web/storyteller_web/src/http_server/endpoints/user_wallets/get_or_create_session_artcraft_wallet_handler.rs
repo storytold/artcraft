@@ -4,7 +4,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::{error, warn};
 use mysql_queries::queries::wallets::create_new_artcraft_wallet_for_owner_user::create_new_artcraft_wallet_for_owner_user;
 use mysql_queries::queries::wallets::find_primary_wallet_token_for_owner::find_primary_wallet_token_for_owner_using_connection;

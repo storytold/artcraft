@@ -9,7 +9,7 @@ use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use artcraft_api_defs::credits::get_session_credits::GetSessionCreditsResponse;
 use artcraft_api_defs::subscriptions::get_session_subscription::{GetSessionSubscriptionResponse, SubscriptionInfo};
 use chrono::{DateTime, Utc};
-use enums::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::payments_namespace::PaymentsNamespace;
 use log::{error, warn};
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::find_subscription_for_owner_user_using_connection;
 use tokens::tokens::media_files::MediaFileToken;

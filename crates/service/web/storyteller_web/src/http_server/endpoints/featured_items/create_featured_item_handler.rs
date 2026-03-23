@@ -10,9 +10,9 @@ use utoipa::ToSchema;
 
 use composite_identifiers::by_table::audit_logs::audit_log_entity::AuditLogEntity;
 use composite_identifiers::by_table::featured_items::featured_item_entity::FeaturedItemEntity;
-use enums::by_table::audit_logs::audit_log_entity_action::AuditLogEntityAction;
-use enums::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
-use enums::common::visibility::Visibility;
+use enums_db::by_table::audit_logs::audit_log_entity_action::AuditLogEntityAction;
+use enums_db::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::audit_logs::insert_audit_log_transactional::{insert_audit_log_transactional, InsertAuditLogTransactionalArgs};
 use mysql_queries::queries::featured_items::upsert_featured_item::{upsert_featured_item, UpsertFeaturedItemArgs};

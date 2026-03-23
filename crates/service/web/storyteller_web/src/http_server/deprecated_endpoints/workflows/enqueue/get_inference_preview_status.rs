@@ -10,8 +10,8 @@ use log::error;
 use redis::{Commands, RedisResult};
 use utoipa::ToSchema;
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::common::job_status_plus::JobStatusPlus;
+use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums_db::common::job_status_plus::JobStatusPlus;
 use mysql_queries::queries::generic_inference::web::get_inference_job_status::get_inference_job_status;
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use redis_schema::keys::inference_job::style_transfer_progress_key::StyleTransferProgressKey;

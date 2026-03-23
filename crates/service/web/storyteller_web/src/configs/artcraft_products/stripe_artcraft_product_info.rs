@@ -1,4 +1,4 @@
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
+use enums_db::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
 
 pub struct StripeArtcraftProductInfo {
   pub slug: ArtcraftSubscriptionSlug,

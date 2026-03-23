@@ -8,7 +8,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use chrono::{DateTime, Utc};
 use log::warn;
 
-use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+use enums_db::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
 use tokens::tokens::user_bookmarks::UserBookmarkToken;
 
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;

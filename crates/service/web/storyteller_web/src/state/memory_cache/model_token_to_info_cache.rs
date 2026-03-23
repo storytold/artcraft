@@ -3,8 +3,8 @@ use std::sync::{Arc, RwLock};
 
 use anyhow::anyhow;
 
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
+use enums_db::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums_db::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
 use errors::AnyhowResult;
 
 /// Associate model tokens with these to know immediately what metadata to populate an inference job with.

@@ -12,7 +12,7 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 
 use config::is_bad_video_download_url::is_bad_video_download_url;
-use enums::common::visibility::Visibility;
+use enums_db::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::w2l::w2l_template_upload_jobs::insert_w2l_template_upload_job::{insert_w2l_template_upload_job, InsertW2lTemplateUploadJobArgs};
 use user_input_common::check_for_slurs::contains_slurs;

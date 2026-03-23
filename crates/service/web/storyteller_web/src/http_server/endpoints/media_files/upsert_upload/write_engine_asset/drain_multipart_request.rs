@@ -3,8 +3,8 @@ use actix_web::web::BytesMut;
 use futures::TryStreamExt;
 use log::warn;
 
-use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
-use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
+use enums_db::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
+use enums_db::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::endpoints::media_files::upsert_upload::write_error::MediaFileWriteError;

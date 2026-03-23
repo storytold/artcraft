@@ -6,8 +6,8 @@ use log::{error, info, warn};
 use sqlx::Acquire;
 use utoipa::ToSchema;
 
-use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
-use enums::by_table::user_ratings::rating_value::UserRatingValue;
+use enums_db::by_table::user_ratings::entity_type::UserRatingEntityType;
+use enums_db::by_table::user_ratings::rating_value::UserRatingValue;
 use http_server_common::request::get_request_ip::get_request_ip;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use mysql_queries::composite_keys::by_table::user_ratings::user_rating_entity::UserRatingEntity;

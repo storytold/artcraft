@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
-use enums::common::payments_namespace::PaymentsNamespace;
-use enums::common::visibility::Visibility;
+use enums_db::common::payments_namespace::PaymentsNamespace;
+use enums_db::common::visibility::Visibility;
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;

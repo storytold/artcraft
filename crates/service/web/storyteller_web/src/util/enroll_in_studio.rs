@@ -1,6 +1,6 @@
 use sqlx::MySqlPool;
 
-use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums_db::by_table::users::user_feature_flag::UserFeatureFlag;
 use errors::AnyhowResult;
 use mysql_queries::queries::users::user::update::set_can_access_studio_transactional::{set_can_access_studio_transactional, SetCanAccessStudioArgs};
 use mysql_queries::queries::users::user::update::set_user_feature_flags_transactional::{set_user_feature_flags_transactional, SetUserFeatureFlagTransactionalArgs};
