@@ -35,7 +35,7 @@ use config::bad_urls::is_bad_tts_model_download_url;
 use config::common_env::CommonEnv;
 use config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
 use config::shared_constants::DEFAULT_RUST_LOG;
-use enums::by_table::tts_models::tts_model_type::TtsModelType;
+use enums_db::by_table::tts_models::tts_model_type::TtsModelType;
 use errors::AnyhowResult;
 use filesys::check_directory_exists::check_directory_exists;
 use filesys::check_file_exists::check_file_exists;
