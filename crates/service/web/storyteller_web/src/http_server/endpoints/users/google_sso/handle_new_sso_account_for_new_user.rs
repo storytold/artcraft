@@ -63,7 +63,7 @@ pub async fn handle_new_sso_account_for_new_user(
         email_confirmed_by_google: args.claims.email_verified(),
         maybe_feature_flags: user_feature_flags.as_deref(),
         ip_address: &ip_address,
-        maybe_source,
+        enums_convert::by_table::users::user_feature_flag::user_feature_flag_to_api(&maybe_source),
       },
       Transactor::for_transaction(&mut transaction),
     ).await;

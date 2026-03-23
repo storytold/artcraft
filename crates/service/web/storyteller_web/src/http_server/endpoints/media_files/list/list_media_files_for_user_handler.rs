@@ -356,7 +356,7 @@ pub async fn list_media_files_for_user_handler(
 
           origin_product_category: enums_convert::by_table::media_files::media_file_origin_product_category::media_file_origin_product_category_to_api(&record.origin_product_category),
 
-          maybe_origin_model_type: record.maybe_origin_model_type
+          maybe_origin_model_type: enums_convert::by_table::media_files::media_file_origin_model_type::media_file_origin_model_type_to_api(&record.maybe_origin_model_type)
               .map(|t| PublicMediaFileModelType::from_enum(t)),
           maybe_origin_model_token: record.maybe_origin_model_token,
           media_links: MediaLinksBuilder::from_media_path_and_env(

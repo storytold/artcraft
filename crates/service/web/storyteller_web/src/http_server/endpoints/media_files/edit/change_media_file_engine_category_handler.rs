@@ -123,7 +123,7 @@ pub async fn change_media_file_engine_category_handler(
         }
     }
 
-    if !is_valid_transition(request.engine_category) {
+    if !is_valid_transition(enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&request.engine_category)) {
         return Err(ChangeMediaFileEngineCategoryError::BadInput(
             format!("Invalid engine category: {:?}", request.engine_category)));
     }
@@ -138,7 +138,7 @@ pub async fn change_media_file_engine_category_handler(
 
     let query_result = update_media_file_engine_category(
         &media_file_token,
-        request.engine_category,
+        enums_convert::by_table::media_files::media_file_engine_category::media_file_engine_category_to_api(&request.engine_category),
         &server_state.mysql_pool
     ).await;
 

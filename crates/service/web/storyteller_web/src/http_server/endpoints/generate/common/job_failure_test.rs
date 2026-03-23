@@ -1,6 +1,8 @@
 use enums_db::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 
 pub struct SyntheticFailure {
+  #[schema(value_type = String)]
+
   pub frontend_failure_category: FrontendFailureCategory,
   pub frontend_failure_message: Option<String>,
 }

@@ -105,7 +105,9 @@ pub async fn set_user_rating_handler(
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
   // attachment. This is a bit of a bad process, though, since the token types are supposed to be opaque.
   let token = request.entity_token.as_str();
-  let token_prefix_matches = match request.entity_type {
+  let entity_type = enums_convert::by_table::user_ratings::entity_type::user_rating_entity_type_to_db(&request.entity_type);
+  let rating_value = enums_convert::by_table::user_ratings::rating_value::rating_value_to_db(&request.rating_value);
+  let token_prefix_matches = match entity_type {
     // NB: Users had an older prefix (U:) that got replaced with the new prefix (user_)
     UserRatingEntityType::MediaFile => token.starts_with(MediaFileToken::token_prefix()),
     UserRatingEntityType::ModelWeight => token.starts_with(ModelWeightToken::token_prefix()),
@@ -118,7 +120,7 @@ pub async fn set_user_rating_handler(
   };
 
   if !token_prefix_matches {
-    warn!("invalid token prefix: {:?} for {:?}", request.entity_token, request.entity_type);
+    warn!("invalid token prefix: {:?} for {:?}", request.entity_token, entity_type);
     return Err(SetUserRatingError::BadInput("invalid token prefix".to_string()));
   }
 
@@ -148,7 +150,7 @@ pub async fn set_user_rating_handler(
 
   let ip_address = get_request_ip(&http_request);
 
-  let entity= match request.entity_type {
+  let entity= match entity_type {
     UserRatingEntityType::MediaFile => UserRatingEntity::MediaFile(MediaFileToken::new_from_str(&request.entity_token)),
     UserRatingEntityType::ModelWeight => UserRatingEntity::ModelWeight(ModelWeightToken::new_from_str(&request.entity_token)),
 
@@ -182,7 +184,7 @@ pub async fn set_user_rating_handler(
   let _r = upsert_user_rating(Args {
     user_token: &user_session.user_token,
     user_rating_entity: &entity,
-    user_rating_value: enums_convert::by_table::user_ratings::rating_value::rating_value_to_api(&request.rating_value),
+    user_rating_value: rating_value,
 
     ip_address: &ip_address,
     mysql_executor: &mut *transaction,
@@ -199,7 +201,7 @@ pub async fn set_user_rating_handler(
       .unwrap_or(UserRatingValue::Neutral);
 
   let mut maybe_rating_action =
-      match (existing_rating_value, request.rating_value) {
+      match (existing_rating_value, rating_value) {
         (UserRatingValue::Neutral, UserRatingValue::Neutral) => None,
         (UserRatingValue::Neutral, UserRatingValue::Positive) => Some(RatingsAction::NeutralToPositive),
         (UserRatingValue::Neutral, UserRatingValue::Negative) => Some(RatingsAction::NeutralToNegative),
@@ -215,7 +217,8 @@ pub async fn set_user_rating_handler(
 
     // NB: Not all rateable things have stats (eg. deprecated record types don't have stats).
     let maybe_stats_entity_token =
-        StatsEntityToken::from_rating_entity_type_and_token(request.entity_type, &request.entity_token);
+        StatsEntityToken::from_rating_entity_type_and_token(entity_type, &request.entity_token);
+
 
 
     if let Some(stats_entity_token) = maybe_stats_entity_token {
@@ -240,7 +243,7 @@ pub async fn set_user_rating_handler(
       })?;
 
   // NB: Legacy
-  match request.entity_type {
+  match entity_type {
     UserRatingEntityType::TtsModel => {
       let token = TtsModelToken::new_from_str(&request.entity_token);
       update_tts_model_ratings(&token, &mut mysql_connection)

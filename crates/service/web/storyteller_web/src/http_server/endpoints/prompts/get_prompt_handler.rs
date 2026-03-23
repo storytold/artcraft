@@ -342,14 +342,15 @@ pub async fn get_prompt_handler(
     prompt: PromptInfo {
       token: result.token,
       maybe_strength,
-      maybe_model_type: result.maybe_model_type,
+      maybe_model_type: enums_convert::common::model_type::model_type_to_api(&result.maybe_model_type),
+
       maybe_generation_provider: enums_convert::common::generation::generation_provider::generation_provider_to_api(&result.maybe_generation_provider),
 
       maybe_positive_prompt: result.maybe_positive_prompt,
       maybe_negative_prompt: result.maybe_negative_prompt,
       maybe_context_images,
       maybe_travel_prompt,
-      maybe_style_name,
+      enums_convert::no_table::style_transfer::style_transfer_name::style_transfer_name_to_api(&maybe_style_name),
       maybe_inference_duration_millis,
       used_face_detailer,
       used_upscaler,

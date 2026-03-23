@@ -2,6 +2,7 @@ use utoipa::ToSchema;
 
 use enums_api::common::visibility::Visibility;
 use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName as ApiStyleTransferName;
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Deserialize, ToSchema)]
@@ -10,7 +11,7 @@ pub struct VstRequest {
   pub uuid_idempotency_token: String,
 
   /// The name of the style to invoke (required)
-  pub style: StyleTransferName,
+  pub style: ApiStyleTransferName,
 
   /// The input video media file (required)
   pub input_file: MediaFileToken,

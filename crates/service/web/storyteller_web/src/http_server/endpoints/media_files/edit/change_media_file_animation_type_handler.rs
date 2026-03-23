@@ -144,7 +144,7 @@ pub async fn change_media_file_animation_type_handler(
 
     let query_result = update_media_file_animation_type(
         &media_file_token,
-        request.maybe_animation_type,
+        enums_convert::by_table::media_files::media_file_animation_type::media_file_animation_type_to_api(&request.maybe_animation_type),
         &server_state.mysql_pool
     ).await;
 

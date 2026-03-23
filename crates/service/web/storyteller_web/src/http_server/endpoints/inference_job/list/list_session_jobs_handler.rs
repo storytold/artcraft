@@ -220,16 +220,15 @@ fn records_to_response(
   let mut success_count = 0;
 
   records.retain(|record| {
-    if record.status.status != JobStatusPlus::CompleteSuccess {
+    if record.status.status != ApiJobStatusPlus::CompleteSuccess {
       return true;
     }
     match record.request.inference_category {
       // Show all audio results
-      InferenceCategory::TextToSpeech
-
-      | InferenceCategory::VoiceConversion
-      | InferenceCategory::SeedVc
-      | InferenceCategory::F5TTS => return true,
+      ApiInferenceCategory::TextToSpeech
+      | ApiInferenceCategory::VoiceConversion
+      | ApiInferenceCategory::SeedVc
+      | ApiInferenceCategory::F5TTS => return true,
       // Fall through for everything else
       _ => {},
     }

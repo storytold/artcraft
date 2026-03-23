@@ -515,8 +515,9 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
     success: true,
     media_file: MediaFileInfo {
       token,
-      media_class: MediaFileClass::Audio, // NB: Always audio
-      media_type: MediaFileType::Audio, // NB: Always audio
+      media_class: enums_convert::by_table::media_files::media_file_class::media_file_class_to_api(&MediaFileClass::Audio), // NB: Always audio
+      media_type: enums_convert::by_table::media_files::media_file_type::media_file_type_to_api(&MediaFileType::Audio), // NB: Always audio
+
       maybe_engine_category: None,
       maybe_animation_type: None,
       maybe_media_subtype: None,
@@ -535,7 +536,8 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
         // NB: These should be reasonable synthetic defaults for emulated TT2 results, even the "ModelWeightToken".
         weight_token: ModelWeightToken::new_from_str(&result.tts_model_token),
         weight_type: PublicWeightsType::Tacotron2,
-        weight_category: WeightsCategory::TextToSpeech,
+        weight_category: enums_convert::by_table::model_weights::weights_category::weights_category_to_api(&WeightsCategory::TextToSpeech),
+
         title: result.tts_model_title.unwrap_or_else(|| "tacotron2 model".to_string()),
         maybe_cover_image_public_bucket_path: None,
         maybe_weight_creator: None, // NB: Not worth the trouble of synthesizing this

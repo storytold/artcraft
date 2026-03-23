@@ -61,6 +61,7 @@ pub async fn get_or_create_session_artcraft_wallet_handler(
     PaymentsNamespace::Artcraft,
 
 
+
     &mut mysql_connection,
   ).await.map_err(|err| {
     error!("Error finding primary artcraft wallet for user {:?}: {:?}", user_token, err);

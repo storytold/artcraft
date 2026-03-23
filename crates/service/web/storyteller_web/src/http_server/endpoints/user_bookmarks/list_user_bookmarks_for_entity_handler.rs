@@ -95,7 +95,7 @@ pub async fn list_user_bookmarks_for_entity_handler(
 ) -> Result<HttpResponse, ListUserBookmarksForEntityError>
 {
   let entity_token = UserBookmarkEntityToken::from_entity_type_and_token(
-    path.entity_type, &path.entity_token);
+    enums_convert::by_table::user_bookmarks::user_bookmark_entity_type::user_bookmark_entity_type_to_api(&path.entity_type), &path.entity_token);
   
   let query_results = list_user_bookmarks_for_entity(
     entity_token,

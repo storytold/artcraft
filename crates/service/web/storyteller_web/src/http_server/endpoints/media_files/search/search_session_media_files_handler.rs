@@ -17,6 +17,7 @@ use enums_api::by_table::media_files::media_file_engine_category::MediaFileEngin
 use enums_db::by_table::media_files::media_file_type::MediaFileType;
 use enums_api::by_table::media_files::media_file_type::MediaFileType as ApiMediaFileType;
 use enums_db::common::visibility::Visibility;
+use enums_api::no_table::style_transfer::style_transfer_name::StyleTransferName as ApiStyleTransferName;
 use log::warn;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
@@ -139,7 +140,7 @@ pub struct SearchMediaFileListItem {
 
   //  /// For Comfy / Video Style Transfer jobs, this might include
   //  /// the name of the selected style.
-  //  pub maybe_style_name: Option<StyleTransferName>,
+  //  pub maybe_style_name: Option<ApiStyleTransferName>,
 
   //  /// Duration for audio and video files, if available.
   //  /// Measured in milliseconds.

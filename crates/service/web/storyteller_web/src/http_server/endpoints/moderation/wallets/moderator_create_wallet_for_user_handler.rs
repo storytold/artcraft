@@ -69,7 +69,7 @@ pub async fn moderator_create_wallet_for_user_handler(
 
   let maybe_wallet_token = find_primary_wallet_token_for_owner_using_connection(
     user_token,
-    namespace,
+    enums_convert::common::payments_namespace::payments_namespace_to_api(&namespace),
     &mut mysql_connection,
   ).await.map_err(|err| {
     error!("Error finding wallet for user {:?}: {:?}", user_token, err);
@@ -94,7 +94,7 @@ pub async fn moderator_create_wallet_for_user_handler(
 
   let wallet_token = create_new_wallet_for_owner_user(
     user_token,
-    namespace,
+    enums_convert::common::payments_namespace::payments_namespace_to_api(&namespace),
     &mut transaction,
   ).await.map_err(|err| {
     error!("Error creating wallet for user {:?}: {:?}", user_token, err);

@@ -123,6 +123,8 @@ pub struct BatchStatusDetailsResponse {
 
   /// An enum the frontend can use to display localized/I18N error
   /// messages. These pertain to both transient and permanent failures.
+  #[schema(value_type = String)]
+
   pub maybe_failure_category: Option<FrontendFailureCategory>,
 
   /// This is an integer number between 0 and 100 (both inclusive) that

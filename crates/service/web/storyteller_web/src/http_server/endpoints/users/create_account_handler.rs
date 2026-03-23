@@ -219,7 +219,7 @@ pub async fn create_account_handler(
       email_gravatar_hash: &email_gravatar_hash,
       password_hash: &password_hash,
       ip_address: &ip_address,
-      maybe_source,
+      enums_convert::by_table::users::user_signup_source::user_signup_source_to_api(&maybe_source),
       maybe_referral_url,
       maybe_user_token: None, // NB: This parameter is for internal testing only
     }

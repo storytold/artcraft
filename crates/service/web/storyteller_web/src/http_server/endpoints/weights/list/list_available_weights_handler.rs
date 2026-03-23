@@ -181,7 +181,7 @@ pub async fn list_available_weights_handler(
         .sort_ascending(sort_ascending)
         .cursor_is_reversed(cursor_is_reversed)
         .weights_category(query.weight_category)
-        .weights_type(query.weight_type.map(|wt| wt.to_enum()))
+        .weights_type(enums_convert::by_table::model_weights::weights_types::weights_type_to_api(&query.weight_type.map(|wt| wt.to_enum())))
         .scope_creator_username(None)
         .include_user_hidden(include_user_hidden)
         .include_user_deleted_results(false) // NB: Mods don't want to see deleted models. We'll improve this later.
