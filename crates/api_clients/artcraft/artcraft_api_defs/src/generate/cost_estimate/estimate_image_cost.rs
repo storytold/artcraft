@@ -3,7 +3,7 @@ use utoipa::ToSchema;
 
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_image_model::CommonImageModel;
-use enums::common::generation::common_video_resolution::CommonVideoResolution;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 
 pub const ESTIMATE_IMAGE_COST_PATH: &str = "/v1/generate/cost_estimate/image";
@@ -27,7 +27,7 @@ pub struct EstimateImageCostRequest {
   pub aspect_ratio: Option<CommonAspectRatio>,
 
   /// Optional resolution.
-  pub resolution: Option<CommonVideoResolution>,
+  pub resolution: Option<CommonResolution>,
 
   /// Number of images to generate in parallel.
   pub image_batch_count: Option<u16>,

@@ -1,7 +1,7 @@
 pub mod common_aspect_ratio;
 pub mod common_image_model;
+pub mod common_model_class;
+pub mod common_model_type;
+pub mod common_resolution;
 pub mod common_splat_model;
 pub mod common_video_model;
-pub mod common_video_resolution;
-pub mod common_model_type;
-pub mod common_model_class;
