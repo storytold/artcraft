@@ -1,1 +1,0 @@
-pub mod wallet_ledger_entry_type;

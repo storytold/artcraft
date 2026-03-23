@@ -111,11 +111,7 @@ members = [
   # Schema (public): common strongly-typed tokens, ids, payloads, etc.
   "crates/schema/public/composite_identifiers",
   "crates/schema/public/enums",
-  "crates/schema/public/enums_api",
-  "crates/schema/public/enums_convert",
-  "crates/schema/public/enums_db",
   "crates/schema/public/enums_public",
-  "crates/schema/public/enums_shared",
   "crates/schema/public/reusable_types", # TODO(bt, 2022-12-21): Deprecate
   "crates/schema/public/tokens",
 
@@ -237,10 +233,6 @@ crockford = { path = "crates/lib/data/crockford" }
 easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
 enums_public = { path = "crates/schema/public/enums_public" }
-enums_db = { path = "crates/schema/public/enums_db" }
-enums_api = { path = "crates/schema/public/enums_api" }
-enums_shared = { path = "crates/schema/public/enums_shared" }
-enums_convert = { path = "crates/schema/public/enums_convert" }
 errors = { path = "crates/lib/errors" }
 fal_client = { path = "crates/api_clients/fal_client" }
 ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }

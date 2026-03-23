@@ -1,1 +1,0 @@
-pub mod batch_generation_entity_type;

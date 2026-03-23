@@ -3794,49 +3794,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "enums_api"
-version = "0.0.1"
-dependencies = [
- "enums_shared",
- "log",
- "serde",
- "serde_derive",
- "serde_json",
- "strum",
- "toml 1.0.7+spec-1.1.0",
- "utoipa",
- "workspace-build-acceleration",
-]
-
-[[package]]
-name = "enums_convert"
-version = "0.0.1"
-dependencies = [
- "enums_api",
- "enums_db",
- "serde_json",
- "strum",
- "workspace-build-acceleration",
-]
-
-[[package]]
-name = "enums_db"
-version = "0.0.1"
-dependencies = [
- "enums_shared",
- "log",
- "serde",
- "serde_derive",
- "serde_json",
- "sqlx",
- "sqlx-core",
- "sqlx-mysql",
- "strum",
- "toml 1.0.7+spec-1.1.0",
- "workspace-build-acceleration",
-]
-
-[[package]]
 name = "enums_public"
 version = "0.0.1"
 dependencies = [
@@ -3847,19 +3804,6 @@ dependencies = [
  "strum",
  "toml 1.0.7+spec-1.1.0",
  "utoipa",
- "workspace-build-acceleration",
-]
-
-[[package]]
-name = "enums_shared"
-version = "0.0.1"
-dependencies = [
- "log",
- "serde",
- "serde_derive",
- "serde_json",
- "strum",
- "toml 1.0.7+spec-1.1.0",
  "workspace-build-acceleration",
 ]
 

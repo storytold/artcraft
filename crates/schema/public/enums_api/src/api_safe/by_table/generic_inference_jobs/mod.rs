@@ -1,2 +1,0 @@
-pub mod frontend_failure_category_for_api_clients;
-pub mod frontend_failure_category_for_old_clients;
