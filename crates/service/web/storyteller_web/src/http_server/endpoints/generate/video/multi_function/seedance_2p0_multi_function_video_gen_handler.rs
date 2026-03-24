@@ -20,6 +20,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
@@ -179,6 +180,21 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     "Reference audio",
   ).await?;
 
+  let is_keyframe = request.start_frame_media_token.is_some()
+      || request.end_frame_media_token.is_some();
+
+  let is_reference = request.reference_image_media_tokens.is_some()
+      || request.reference_video_media_tokens.is_some()
+      || request.reference_audio_media_tokens.is_some();
+
+  let generation_mode = if is_keyframe {
+    CommonGenerationMode::Keyframe
+  } else if is_reference {
+    CommonGenerationMode::Reference
+  } else {
+    CommonGenerationMode::Text
+  };
+
   // --- Map request params to seedance2pro types ---
 
   let resolution = match request.aspect_ratio {
@@ -273,7 +289,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None, // TODO: Multi-function handlers support multiple modes
+    maybe_generation_mode: Some(generation_mode),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,

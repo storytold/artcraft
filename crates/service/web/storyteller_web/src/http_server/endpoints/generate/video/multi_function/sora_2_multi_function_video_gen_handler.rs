@@ -19,6 +19,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_sora_2_image_to_video_webhook::{enqueue_sora_2_image_to_video_webhook, EnqueueSora2ImageToVideoArgs, EnqueueSora2ImageToVideoAspectRatio, EnqueueSora2ImageToVideoDurationSeconds, EnqueueSora2ImageToVideoResolution};
@@ -147,9 +148,11 @@ pub async fn sora_2_multi_function_video_gen_handler(
   let apriori_job_token = InferenceJobToken::generate();
 
   let fal_result;
+  let generation_mode;
 
   if let Some(image_url) = maybe_image_url {
     info!("image-to-video case");
+    generation_mode = CommonGenerationMode::Keyframe;
 
     let duration = match request.duration {
       Some(Sora2MultiFunctionVideoGenDuration::FourSeconds) => EnqueueSora2ImageToVideoDurationSeconds::Four,
@@ -201,6 +204,7 @@ pub async fn sora_2_multi_function_video_gen_handler(
 
   } else {
     info!("text-to-video case");
+    generation_mode = CommonGenerationMode::Text;
     
     let duration = match request.duration {
       Some(Sora2MultiFunctionVideoGenDuration::FourSeconds) => EnqueueSora2TextToVideoDurationSeconds::Four,
@@ -280,7 +284,7 @@ pub async fn sora_2_multi_function_video_gen_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None, // TODO: Multi-function handlers support multiple modes
+    maybe_generation_mode: Some(generation_mode),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,

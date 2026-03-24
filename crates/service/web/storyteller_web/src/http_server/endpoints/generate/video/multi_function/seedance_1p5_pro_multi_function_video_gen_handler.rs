@@ -12,8 +12,9 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen::{Seedance1p5ProMultiFunctionVideoGenAspectRatio, Seedance1p5ProMultiFunctionVideoGenDuration, Seedance1p5ProMultiFunctionVideoGenRequest, Seedance1p5ProMultiFunctionVideoGenResolution, Seedance1p5ProMultiFunctionVideoGenResponse};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1p5_pro_image_to_video_webhook::{enqueue_seedance_1p5_pro_image_to_video_webhook, EnqueueSeedance1p5ProImageToVideoArgs, EnqueueSeedance1p5ProImageToVideoAspectRatio, EnqueueSeedance1p5ProImageToVideoDuration, EnqueueSeedance1p5ProImageToVideoResolution};
@@ -28,79 +29,6 @@ use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPrompt
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 
-fn map_duration_i2v(d: Option<Seedance1p5ProMultiFunctionVideoGenDuration>) -> EnqueueSeedance1p5ProImageToVideoDuration {
-  match d {
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::FourSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::FiveSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::SixSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::SevenSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::EightSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::NineSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::TenSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::ElevenSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::TwelveSeconds,
-    None => EnqueueSeedance1p5ProImageToVideoDuration::FiveSeconds,
-  }
-}
-
-fn map_duration_t2v(d: Option<Seedance1p5ProMultiFunctionVideoGenDuration>) -> EnqueueSeedance1p5ProTextToVideoDuration {
-  match d {
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::FourSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::FiveSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::SixSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::SevenSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::EightSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::NineSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::TenSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::ElevenSeconds,
-    Some(Seedance1p5ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::TwelveSeconds,
-    None => EnqueueSeedance1p5ProTextToVideoDuration::FiveSeconds,
-  }
-}
-
-fn map_aspect_ratio_i2v(ar: Option<Seedance1p5ProMultiFunctionVideoGenAspectRatio>) -> EnqueueSeedance1p5ProImageToVideoAspectRatio {
-  match ar {
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::TwentyOneByNine) => EnqueueSeedance1p5ProImageToVideoAspectRatio::TwentyOneByNine,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueSeedance1p5ProImageToVideoAspectRatio::SixteenByNine,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::FourByThree) => EnqueueSeedance1p5ProImageToVideoAspectRatio::FourByThree,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::Square) => EnqueueSeedance1p5ProImageToVideoAspectRatio::Square,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::ThreeByFour) => EnqueueSeedance1p5ProImageToVideoAspectRatio::ThreeByFour,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueSeedance1p5ProImageToVideoAspectRatio::NineBySixteen,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::Auto) => EnqueueSeedance1p5ProImageToVideoAspectRatio::Auto,
-    None => EnqueueSeedance1p5ProImageToVideoAspectRatio::SixteenByNine,
-  }
-}
-
-fn map_aspect_ratio_t2v(ar: Option<Seedance1p5ProMultiFunctionVideoGenAspectRatio>) -> EnqueueSeedance1p5ProTextToVideoAspectRatio {
-  match ar {
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::TwentyOneByNine) => EnqueueSeedance1p5ProTextToVideoAspectRatio::TwentyOneByNine,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::FourByThree) => EnqueueSeedance1p5ProTextToVideoAspectRatio::FourByThree,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::Square) => EnqueueSeedance1p5ProTextToVideoAspectRatio::Square,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::ThreeByFour) => EnqueueSeedance1p5ProTextToVideoAspectRatio::ThreeByFour,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueSeedance1p5ProTextToVideoAspectRatio::NineBySixteen,
-    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::Auto) => EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine,
-    None => EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine,
-  }
-}
-
-fn map_resolution_i2v(r: Option<Seedance1p5ProMultiFunctionVideoGenResolution>) -> EnqueueSeedance1p5ProImageToVideoResolution {
-  match r {
-    Some(Seedance1p5ProMultiFunctionVideoGenResolution::FourEightyP) => EnqueueSeedance1p5ProImageToVideoResolution::FourEightyP,
-    Some(Seedance1p5ProMultiFunctionVideoGenResolution::SevenTwentyP) => EnqueueSeedance1p5ProImageToVideoResolution::SevenTwentyP,
-    Some(Seedance1p5ProMultiFunctionVideoGenResolution::TenEightyP) => EnqueueSeedance1p5ProImageToVideoResolution::TenEightyP,
-    None => EnqueueSeedance1p5ProImageToVideoResolution::SevenTwentyP,
-  }
-}
-
-fn map_resolution_t2v(r: Option<Seedance1p5ProMultiFunctionVideoGenResolution>) -> EnqueueSeedance1p5ProTextToVideoResolution {
-  match r {
-    Some(Seedance1p5ProMultiFunctionVideoGenResolution::FourEightyP) => EnqueueSeedance1p5ProTextToVideoResolution::FourEightyP,
-    Some(Seedance1p5ProMultiFunctionVideoGenResolution::SevenTwentyP) => EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP,
-    Some(Seedance1p5ProMultiFunctionVideoGenResolution::TenEightyP) => EnqueueSeedance1p5ProTextToVideoResolution::TenEightyP,
-    None => EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP,
-  }
-}
 
 /// Seedance 1.5 Pro Multi-Function (text and image to video)
 #[utoipa::path(
@@ -210,9 +138,11 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
   let generate_audio = request.generate_audio.unwrap_or(true);
 
   let fal_result;
+  let generation_mode;
 
   if let Some(image_url) = maybe_image_url {
     info!("image-to-video case");
+    generation_mode = CommonGenerationMode::Keyframe;
 
     let duration = map_duration_i2v(request.duration);
     let aspect_ratio = map_aspect_ratio_i2v(request.aspect_ratio);
@@ -250,6 +180,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
 
   } else {
     info!("text-to-video case");
+    generation_mode = CommonGenerationMode::Text;
 
     let duration = map_duration_t2v(request.duration);
     let aspect_ratio = map_aspect_ratio_t2v(request.aspect_ratio);
@@ -314,7 +245,7 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None, // TODO: Multi-function handlers support multiple modes
+    maybe_generation_mode: Some(generation_mode),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,
@@ -401,4 +332,78 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     success: true,
     inference_job_token: job_token,
   }))
+}
+
+fn map_duration_i2v(d: Option<Seedance1p5ProMultiFunctionVideoGenDuration>) -> EnqueueSeedance1p5ProImageToVideoDuration {
+  match d {
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::FourSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::FiveSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::SixSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::SevenSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::EightSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::NineSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::TenSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::ElevenSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueSeedance1p5ProImageToVideoDuration::TwelveSeconds,
+    None => EnqueueSeedance1p5ProImageToVideoDuration::FiveSeconds,
+  }
+}
+
+fn map_duration_t2v(d: Option<Seedance1p5ProMultiFunctionVideoGenDuration>) -> EnqueueSeedance1p5ProTextToVideoDuration {
+  match d {
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::FourSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::FiveSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::SixSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::SevenSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::EightSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::NineSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::TenSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::ElevenSeconds,
+    Some(Seedance1p5ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueSeedance1p5ProTextToVideoDuration::TwelveSeconds,
+    None => EnqueueSeedance1p5ProTextToVideoDuration::FiveSeconds,
+  }
+}
+
+fn map_aspect_ratio_i2v(ar: Option<Seedance1p5ProMultiFunctionVideoGenAspectRatio>) -> EnqueueSeedance1p5ProImageToVideoAspectRatio {
+  match ar {
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::TwentyOneByNine) => EnqueueSeedance1p5ProImageToVideoAspectRatio::TwentyOneByNine,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueSeedance1p5ProImageToVideoAspectRatio::SixteenByNine,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::FourByThree) => EnqueueSeedance1p5ProImageToVideoAspectRatio::FourByThree,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::Square) => EnqueueSeedance1p5ProImageToVideoAspectRatio::Square,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::ThreeByFour) => EnqueueSeedance1p5ProImageToVideoAspectRatio::ThreeByFour,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueSeedance1p5ProImageToVideoAspectRatio::NineBySixteen,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::Auto) => EnqueueSeedance1p5ProImageToVideoAspectRatio::Auto,
+    None => EnqueueSeedance1p5ProImageToVideoAspectRatio::SixteenByNine,
+  }
+}
+
+fn map_aspect_ratio_t2v(ar: Option<Seedance1p5ProMultiFunctionVideoGenAspectRatio>) -> EnqueueSeedance1p5ProTextToVideoAspectRatio {
+  match ar {
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::TwentyOneByNine) => EnqueueSeedance1p5ProTextToVideoAspectRatio::TwentyOneByNine,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::FourByThree) => EnqueueSeedance1p5ProTextToVideoAspectRatio::FourByThree,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::Square) => EnqueueSeedance1p5ProTextToVideoAspectRatio::Square,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::ThreeByFour) => EnqueueSeedance1p5ProTextToVideoAspectRatio::ThreeByFour,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueSeedance1p5ProTextToVideoAspectRatio::NineBySixteen,
+    Some(Seedance1p5ProMultiFunctionVideoGenAspectRatio::Auto) => EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine,
+    None => EnqueueSeedance1p5ProTextToVideoAspectRatio::SixteenByNine,
+  }
+}
+
+fn map_resolution_i2v(r: Option<Seedance1p5ProMultiFunctionVideoGenResolution>) -> EnqueueSeedance1p5ProImageToVideoResolution {
+  match r {
+    Some(Seedance1p5ProMultiFunctionVideoGenResolution::FourEightyP) => EnqueueSeedance1p5ProImageToVideoResolution::FourEightyP,
+    Some(Seedance1p5ProMultiFunctionVideoGenResolution::SevenTwentyP) => EnqueueSeedance1p5ProImageToVideoResolution::SevenTwentyP,
+    Some(Seedance1p5ProMultiFunctionVideoGenResolution::TenEightyP) => EnqueueSeedance1p5ProImageToVideoResolution::TenEightyP,
+    None => EnqueueSeedance1p5ProImageToVideoResolution::SevenTwentyP,
+  }
+}
+
+fn map_resolution_t2v(r: Option<Seedance1p5ProMultiFunctionVideoGenResolution>) -> EnqueueSeedance1p5ProTextToVideoResolution {
+  match r {
+    Some(Seedance1p5ProMultiFunctionVideoGenResolution::FourEightyP) => EnqueueSeedance1p5ProTextToVideoResolution::FourEightyP,
+    Some(Seedance1p5ProMultiFunctionVideoGenResolution::SevenTwentyP) => EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP,
+    Some(Seedance1p5ProMultiFunctionVideoGenResolution::TenEightyP) => EnqueueSeedance1p5ProTextToVideoResolution::TenEightyP,
+    None => EnqueueSeedance1p5ProTextToVideoResolution::SevenTwentyP,
+  }
 }

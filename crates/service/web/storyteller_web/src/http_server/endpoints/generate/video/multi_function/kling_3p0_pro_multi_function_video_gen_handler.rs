@@ -16,8 +16,9 @@ use artcraft_api_defs::generate::video::multi_function::kling_3p0_pro_multi_func
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
@@ -39,61 +40,6 @@ use sqlx::{Acquire, MySql};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
-
-fn map_duration_i2v(duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>) -> EnqueueKling3p0ProImageToVideoDuration {
-  match duration {
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKling3p0ProImageToVideoDuration::ThreeSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKling3p0ProImageToVideoDuration::FourSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKling3p0ProImageToVideoDuration::FiveSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKling3p0ProImageToVideoDuration::SixSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKling3p0ProImageToVideoDuration::SevenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKling3p0ProImageToVideoDuration::EightSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKling3p0ProImageToVideoDuration::NineSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKling3p0ProImageToVideoDuration::TenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKling3p0ProImageToVideoDuration::ElevenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKling3p0ProImageToVideoDuration::TwelveSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKling3p0ProImageToVideoDuration::ThirteenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKling3p0ProImageToVideoDuration::FourteenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKling3p0ProImageToVideoDuration::FifteenSeconds,
-    None => EnqueueKling3p0ProImageToVideoDuration::FiveSeconds,
-  }
-}
-
-fn map_duration_t2v(duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>) -> EnqueueKling3p0ProTextToVideoDuration {
-  match duration {
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKling3p0ProTextToVideoDuration::ThreeSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKling3p0ProTextToVideoDuration::FourSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKling3p0ProTextToVideoDuration::FiveSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKling3p0ProTextToVideoDuration::SixSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKling3p0ProTextToVideoDuration::SevenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKling3p0ProTextToVideoDuration::EightSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKling3p0ProTextToVideoDuration::NineSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKling3p0ProTextToVideoDuration::TenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKling3p0ProTextToVideoDuration::ElevenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKling3p0ProTextToVideoDuration::TwelveSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::ThirteenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::FourteenSeconds,
-    Some(Kling3p0ProMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::FifteenSeconds,
-    None => EnqueueKling3p0ProTextToVideoDuration::FiveSeconds,
-  }
-}
-
-fn map_aspect_ratio_t2v(aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAspectRatio>) -> EnqueueKling3p0ProTextToVideoAspectRatio {
-  match aspect_ratio {
-    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::Square) => EnqueueKling3p0ProTextToVideoAspectRatio::Square,
-    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine,
-    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueKling3p0ProTextToVideoAspectRatio::NineBySixteen,
-    None => EnqueueKling3p0ProTextToVideoAspectRatio::Square,
-  }
-}
-
-fn map_aspect_ratio_i2v(aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAspectRatio>) -> Option<EnqueueKling3p0ProImageToVideoAspectRatio> {
-  aspect_ratio.map(|ar| match ar {
-    Kling3p0ProMultiFunctionVideoGenAspectRatio::Square => EnqueueKling3p0ProImageToVideoAspectRatio::Square,
-    Kling3p0ProMultiFunctionVideoGenAspectRatio::SixteenByNine => EnqueueKling3p0ProImageToVideoAspectRatio::SixteenByNine,
-    Kling3p0ProMultiFunctionVideoGenAspectRatio::NineBySixteen => EnqueueKling3p0ProImageToVideoAspectRatio::NineBySixteen,
-  })
-}
 
 /// Kling 3.0 Pro Multi-Function (text and image to video)
 #[utoipa::path(
@@ -204,9 +150,11 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
   let generate_audio = request.generate_audio.unwrap_or(true);
 
   let fal_result;
+  let generation_mode;
 
   if let Some(start_frame_url) = maybe_start_frame_image_url {
     info!("image-to-video case");
+    generation_mode = CommonGenerationMode::Keyframe;
 
     let duration = map_duration_i2v(request.duration);
     let aspect_ratio = map_aspect_ratio_i2v(request.aspect_ratio);
@@ -244,6 +192,7 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
 
   } else {
     info!("text-to-video case");
+    generation_mode = CommonGenerationMode::Text;
 
     let duration = map_duration_t2v(request.duration);
 
@@ -309,7 +258,7 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None, // TODO: Multi-function handlers support multiple modes
+    maybe_generation_mode: Some(generation_mode),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,
@@ -396,4 +345,59 @@ pub async fn kling_3p0_pro_multi_function_video_gen_handler(
     success: true,
     inference_job_token: job_token,
   }))
+}
+
+fn map_duration_i2v(duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>) -> EnqueueKling3p0ProImageToVideoDuration {
+  match duration {
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKling3p0ProImageToVideoDuration::ThreeSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKling3p0ProImageToVideoDuration::FourSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKling3p0ProImageToVideoDuration::FiveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKling3p0ProImageToVideoDuration::SixSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKling3p0ProImageToVideoDuration::SevenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKling3p0ProImageToVideoDuration::EightSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKling3p0ProImageToVideoDuration::NineSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKling3p0ProImageToVideoDuration::TenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKling3p0ProImageToVideoDuration::ElevenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKling3p0ProImageToVideoDuration::TwelveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKling3p0ProImageToVideoDuration::ThirteenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKling3p0ProImageToVideoDuration::FourteenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKling3p0ProImageToVideoDuration::FifteenSeconds,
+    None => EnqueueKling3p0ProImageToVideoDuration::FiveSeconds,
+  }
+}
+
+fn map_duration_t2v(duration: Option<Kling3p0ProMultiFunctionVideoGenDuration>) -> EnqueueKling3p0ProTextToVideoDuration {
+  match duration {
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThreeSeconds) => EnqueueKling3p0ProTextToVideoDuration::ThreeSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourSeconds) => EnqueueKling3p0ProTextToVideoDuration::FourSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKling3p0ProTextToVideoDuration::FiveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::SixSeconds) => EnqueueKling3p0ProTextToVideoDuration::SixSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::SevenSeconds) => EnqueueKling3p0ProTextToVideoDuration::SevenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::EightSeconds) => EnqueueKling3p0ProTextToVideoDuration::EightSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::NineSeconds) => EnqueueKling3p0ProTextToVideoDuration::NineSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::TenSeconds) => EnqueueKling3p0ProTextToVideoDuration::TenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ElevenSeconds) => EnqueueKling3p0ProTextToVideoDuration::ElevenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::TwelveSeconds) => EnqueueKling3p0ProTextToVideoDuration::TwelveSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::ThirteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::ThirteenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FourteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::FourteenSeconds,
+    Some(Kling3p0ProMultiFunctionVideoGenDuration::FifteenSeconds) => EnqueueKling3p0ProTextToVideoDuration::FifteenSeconds,
+    None => EnqueueKling3p0ProTextToVideoDuration::FiveSeconds,
+  }
+}
+
+fn map_aspect_ratio_t2v(aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAspectRatio>) -> EnqueueKling3p0ProTextToVideoAspectRatio {
+  match aspect_ratio {
+    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::Square) => EnqueueKling3p0ProTextToVideoAspectRatio::Square,
+    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::SixteenByNine) => EnqueueKling3p0ProTextToVideoAspectRatio::SixteenByNine,
+    Some(Kling3p0ProMultiFunctionVideoGenAspectRatio::NineBySixteen) => EnqueueKling3p0ProTextToVideoAspectRatio::NineBySixteen,
+    None => EnqueueKling3p0ProTextToVideoAspectRatio::Square,
+  }
+}
+
+fn map_aspect_ratio_i2v(aspect_ratio: Option<Kling3p0ProMultiFunctionVideoGenAspectRatio>) -> Option<EnqueueKling3p0ProImageToVideoAspectRatio> {
+  aspect_ratio.map(|ar| match ar {
+    Kling3p0ProMultiFunctionVideoGenAspectRatio::Square => EnqueueKling3p0ProImageToVideoAspectRatio::Square,
+    Kling3p0ProMultiFunctionVideoGenAspectRatio::SixteenByNine => EnqueueKling3p0ProImageToVideoAspectRatio::SixteenByNine,
+    Kling3p0ProMultiFunctionVideoGenAspectRatio::NineBySixteen => EnqueueKling3p0ProImageToVideoAspectRatio::NineBySixteen,
+  })
 }

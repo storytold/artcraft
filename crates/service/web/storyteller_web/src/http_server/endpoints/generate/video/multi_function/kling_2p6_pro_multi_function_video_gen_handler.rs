@@ -16,8 +16,9 @@ use artcraft_api_defs::generate::video::multi_function::kling_2_6_multi_function
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
@@ -147,9 +148,11 @@ pub async fn kling_2p6_pro_multi_function_video_gen_handler(
   let apriori_job_token = InferenceJobToken::generate();
   
   let fal_result;
+  let generation_mode;
 
   if let Some(start_frame_url) = maybe_start_frame_image_url {
     info!("image-to-video case");
+    generation_mode = CommonGenerationMode::Keyframe;
 
     let duration = match request.duration {
       Some(Kling2p6ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKlingV2p6ProImageToVideoDurationSeconds::Five,
@@ -187,6 +190,7 @@ pub async fn kling_2p6_pro_multi_function_video_gen_handler(
 
   } else {
     info!("text-to-video case");
+    generation_mode = CommonGenerationMode::Text;
     
     let duration = match request.duration {
       Some(Kling2p6ProMultiFunctionVideoGenDuration::FiveSeconds) => EnqueueKlingV2p6ProTextToVideoDurationSeconds::Five,
@@ -260,7 +264,7 @@ pub async fn kling_2p6_pro_multi_function_video_gen_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None, // TODO: Multi-function handlers support multiple modes
+    maybe_generation_mode: Some(generation_mode),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,
