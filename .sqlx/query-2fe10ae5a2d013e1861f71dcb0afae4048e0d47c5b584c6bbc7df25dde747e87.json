@@ -1,0 +1,168 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    u.id as `id: u64`,\n    u.token as `token: tokens::tokens::users::UserToken`,\n    u.username,\n    u.display_name,\n    u.username_is_not_customized as `username_is_not_customized: bool`,\n    u.email_address,\n    u.email_confirmed as `email_confirmed: bool`,\n    u.is_without_password as `is_without_password: bool`,\n    u.ip_address_creation,\n    u.maybe_source as `maybe_source: enums::by_table::users::user_signup_source::UserSignupSource`,\n    u.maybe_signup_method as `maybe_signup_method: enums::by_table::users::user_signup_method::UserSignupMethod`,\n    u.created_at,\n    u.maybe_referral_url,\n    u.is_temporary as `is_temporary: bool`\nFROM users AS u\nWHERE\n    u.id < ?\n    AND u.user_deleted_at IS NULL\n    AND u.mod_deleted_at IS NULL\nORDER BY u.id DESC\nLIMIT ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | PRIMARY_KEY | AUTO_INCREMENT | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "username",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 80
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "username_is_not_customized: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "email_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "email_confirmed: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "is_without_password: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "ip_address_creation",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_source: enums::by_table::users::user_signup_source::UserSignupSource",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_signup_method: enums::by_table::users::user_signup_method::UserSignupMethod",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "maybe_referral_url",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "is_temporary: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 63,
+          "max_size": 1
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "2fe10ae5a2d013e1861f71dcb0afae4048e0d47c5b584c6bbc7df25dde747e87"
+}
