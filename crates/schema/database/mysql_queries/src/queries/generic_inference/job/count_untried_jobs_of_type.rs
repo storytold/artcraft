@@ -5,11 +5,8 @@ use chrono::Utc;
 use sqlx::MySqlPool;
 
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
-use enums::by_table::generic_inference_jobs::inference_input_source_token_type::InferenceInputSourceTokenType;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::by_table::generic_inference_jobs::inference_model_type::InferenceModelType;
-use enums::common::job_status_plus::JobStatusPlus;
-use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -113,7 +110,6 @@ WHERE
   query
 }
 
-
 #[derive(Debug)]
 #[derive(sqlx::FromRow)]
 struct UntriedJobCountRawInternal {
@@ -183,7 +179,6 @@ mod tests {
     ]);
     assert_eq!(job_type_predicate(&types), "\"mocap_net\", \"rvc_v2\"".to_string());
   }
-
 
   #[test]
   fn test_model_type_predicate() {

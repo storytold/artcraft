@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use enums::traits::mysql_from_row::MySqlFromRow as _;
 use sqlx::{Acquire, FromRow, MySql, MySqlConnection, MySqlPool, QueryBuilder, Row};
 use sqlx::mysql::MySqlRow;
 
@@ -6,7 +7,6 @@ use enums::by_table::model_weights::{
   weights_category::WeightsCategory,
   weights_types::WeightsType,
 };
-use enums::traits::mysql_from_row::MySqlFromRow;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;

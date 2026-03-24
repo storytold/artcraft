@@ -7,10 +7,10 @@ use sqlx::pool::PoolConnection;
 use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use enums::traits::mysql_from_row::MySqlFromRow as _;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::traits::mysql_from_row::MySqlFromRow;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
@@ -45,7 +45,6 @@ pub async fn list_session_jobs(
   let mut connection = mysql_pool.acquire().await?;
   list_session_jobs_from_connection(args, &mut connection).await
 }
-
 
 /// Look up job status.
 /// Returns Ok(Vec::new()) when the records cannot be found.

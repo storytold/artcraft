@@ -5,7 +5,6 @@ use crate::utils::basic_json_delete_request::basic_json_delete_request;
 use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use artcraft_api_defs::media_file::delete_media_file::DeleteMediaFileRequest;
 use artcraft_api_defs::subscriptions::get_session_subscription::GetSessionSubscriptionResponse;
-use enums::common::payments_namespace::PaymentsNamespace;
 use log::debug;
 use tokens::tokens::media_files::MediaFileToken;
 

@@ -4,12 +4,8 @@ use log::warn;
 use sqlx::pool::PoolConnection;
 use sqlx::{MySql, MySqlPool};
 
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
-use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
@@ -67,7 +63,6 @@ pub async fn get_inference_job_by_fal_id(fal_id: &str, mysql_pool: &MySqlPool)
   let mut connection = mysql_pool.acquire().await?;
   get_inference_job_by_fal_id_from_connection(fal_id, &mut connection).await
 }
-
 
 /// Returns Ok(None) when the record cannot be found.
 pub async fn get_inference_job_by_fal_id_from_connection(fal_id: &str, mysql_connection: &mut PoolConnection<MySql>)

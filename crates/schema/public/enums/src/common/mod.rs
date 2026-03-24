@@ -4,7 +4,6 @@ pub mod generation;
 pub mod generation_provider;
 pub mod job_status;
 pub mod job_status_plus;
-pub mod model_type;
 pub mod payments_namespace;
 pub mod stripe_subscription_status;
 pub mod view_as;

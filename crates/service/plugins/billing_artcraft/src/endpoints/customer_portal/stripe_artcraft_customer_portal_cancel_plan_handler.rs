@@ -8,7 +8,6 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::stripe_artcraft::create_subscription_checkout::{PlanBillingCadence, StripeArtcraftCreateSubscriptionCheckoutRequest, StripeArtcraftCreateSubscriptionCheckoutResponse};
 use artcraft_api_defs::stripe_artcraft::customer_portal_cancel_plan::{StripeArtcraftCustomerPortalCancelPlanRequest, StripeArtcraftCustomerPortalCancelPlanResponse};
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use enums::common::artcraft_subscription_slug::ArtcraftSubscriptionSlug;
 use enums::common::payments_namespace::PaymentsNamespace;
 use log::{error, info, warn};
 use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::{find_subscription_for_owner_user_using_connection, UserSubscription};
@@ -24,7 +23,6 @@ use stripe_checkout::CheckoutSessionMode;
 use stripe_core::CustomerId;
 use tokens::tokens::users::UserToken;
 use user_traits_component::traits::internal_session_cache_purge::InternalSessionCachePurge;
-
 
 pub async fn stripe_artcraft_customer_portal_cancel_plan_handler(
   http_request: HttpRequest,

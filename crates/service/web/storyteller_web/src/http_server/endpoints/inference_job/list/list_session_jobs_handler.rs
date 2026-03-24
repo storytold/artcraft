@@ -23,10 +23,8 @@ use bucket_paths::legacy::typified_paths::public::voice_conversion_results::buck
 use chrono::{DateTime, Utc};
 use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_api_clients::FrontendFailureCategoryForApiClients;
 use enums::api_safe::by_table::generic_inference_jobs::frontend_failure_category_for_old_clients::FrontendFailureCategoryForOldClients;
-use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use log::{error, warn};
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use mysql_queries::queries::generic_inference::web::list_session_jobs::{list_session_jobs_from_connection, ListSessionJobsForUserArgs, SessionUser};
@@ -77,7 +75,6 @@ impl fmt::Display for ListSessionJobsError {
     write!(f, "{:?}", self)
   }
 }
-
 
 /// List job statuses for jobs that are associated with the user's session.
 ///

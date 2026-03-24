@@ -16,7 +16,7 @@ use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismat
 use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_image_model::CommonImageModel;
-use enums::common::generation::common_video_resolution::CommonVideoResolution;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 
 /// Estimate the credit and USD cost of an image generation request.
@@ -162,11 +162,11 @@ fn map_aspect_ratio(ar: CommonAspectRatio) -> RouterAspectRatio {
   }
 }
 
-fn map_resolution(res: CommonVideoResolution) -> RouterResolution {
+fn map_resolution(res: CommonResolution) -> RouterResolution {
   match res {
-    CommonVideoResolution::OneK => RouterResolution::OneK,
-    CommonVideoResolution::TwoK => RouterResolution::TwoK,
-    CommonVideoResolution::ThreeK => RouterResolution::ThreeK,
-    CommonVideoResolution::FourK => RouterResolution::FourK,
+    CommonResolution::OneK => RouterResolution::OneK,
+    CommonResolution::TwoK => RouterResolution::TwoK,
+    CommonResolution::ThreeK => RouterResolution::ThreeK,
+    CommonResolution::FourK => RouterResolution::FourK,
   }
 }

@@ -1,0 +1,179 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    p.token as `token: tokens::tokens::prompts::PromptToken`,\n\n    p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,\n\n    p.maybe_model_type as `maybe_model_type: enums::common::generation::common_model_type::CommonModelType`,\n    p.maybe_generation_provider as `maybe_generation_provider: enums::common::generation_provider::GenerationProvider`,\n\n    p.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n\n    p.maybe_positive_prompt,\n    p.maybe_negative_prompt,\n\n    p.maybe_generation_mode as `maybe_generation_mode: enums::common::generation::common_generation_mode::CommonGenerationMode`,\n    p.maybe_aspect_ratio as `maybe_aspect_ratio: enums::common::generation::common_aspect_ratio::CommonAspectRatio`,\n    p.maybe_resolution as `maybe_resolution: enums::common::generation::common_resolution::CommonResolution`,\n    p.maybe_batch_count as `maybe_batch_count: u8`,\n    p.maybe_generate_audio as `maybe_generate_audio: bool`,\n\n    p.maybe_other_args,\n\n    p.creator_ip_address,\n    p.created_at\n\nFROM prompts as p\nWHERE\n    p.token = ?\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::prompts::PromptToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "prompt_type: enums::by_table::prompts::prompt_type::PromptType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "maybe_model_type: enums::common::generation::common_model_type::CommonModelType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_generation_provider: enums::common::generation_provider::GenerationProvider",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_creator_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "maybe_positive_prompt",
+        "type_info": {
+          "type": "Blob",
+          "flags": "BLOB | BINARY",
+          "char_set": 224,
+          "max_size": 262140
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_negative_prompt",
+        "type_info": {
+          "type": "Blob",
+          "flags": "BLOB | BINARY",
+          "char_set": 224,
+          "max_size": 262140
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_generation_mode: enums::common::generation::common_generation_mode::CommonGenerationMode",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_aspect_ratio: enums::common::generation::common_aspect_ratio::CommonAspectRatio",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "maybe_resolution: enums::common::generation::common_resolution::CommonResolution",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "maybe_batch_count: u8",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "UNSIGNED",
+          "char_set": 63,
+          "max_size": 3
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "maybe_generate_audio: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "maybe_other_args",
+        "type_info": {
+          "type": "Blob",
+          "flags": "BLOB | BINARY",
+          "char_set": 224,
+          "max_size": 262140
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "creator_ip_address",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 160
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "e674d80b86990bf3266eb81dd9445adf7a85646596c76ac975921c42a23005ea"
+}

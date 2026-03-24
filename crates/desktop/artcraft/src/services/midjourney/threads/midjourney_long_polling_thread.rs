@@ -13,11 +13,9 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
-use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
@@ -233,18 +231,18 @@ async fn upload_midjourney_batch(
   midjourney_item: &ImagineItem
 ) -> AnyhowResult<()> {
   let model_type = match midjourney_item.job_type {
-    Some(MidjourneyJobType::V6Diffusion) => ModelType::MidjourneyV6,
-    Some(MidjourneyJobType::V6p1Diffusion) => ModelType::MidjourneyV6p1,
-    Some(MidjourneyJobType::V6p1RawDiffusion) => ModelType::MidjourneyV6p1Raw,
-    Some(MidjourneyJobType::V7Diffusion) => ModelType::MidjourneyV7,
-    Some(MidjourneyJobType::V7RawDiffusion) => ModelType::MidjourneyV7Raw,
-    Some(MidjourneyJobType::V7DraftDiffusion) => ModelType::MidjourneyV7Draft,
-    Some(MidjourneyJobType::V7DraftRawDiffusion) => ModelType::MidjourneyV7DraftRaw,
+    Some(MidjourneyJobType::V6Diffusion) => CommonModelType::MidjourneyV6,
+    Some(MidjourneyJobType::V6p1Diffusion) => CommonModelType::MidjourneyV6p1,
+    Some(MidjourneyJobType::V6p1RawDiffusion) => CommonModelType::MidjourneyV6p1Raw,
+    Some(MidjourneyJobType::V7Diffusion) => CommonModelType::MidjourneyV7,
+    Some(MidjourneyJobType::V7RawDiffusion) => CommonModelType::MidjourneyV7Raw,
+    Some(MidjourneyJobType::V7DraftDiffusion) => CommonModelType::MidjourneyV7Draft,
+    Some(MidjourneyJobType::V7DraftRawDiffusion) => CommonModelType::MidjourneyV7DraftRaw,
     Some(MidjourneyJobType::Other(ref other)) => {
       info!("Unknown Midjourney job type (for job id {}): {}", midjourney_job_id, other);
-      ModelType::Midjourney
+      CommonModelType::Midjourney
     },
-    _ => ModelType::Midjourney,
+    _ => CommonModelType::Midjourney,
   };
 
   let request = CreatePromptRequest {
@@ -253,6 +251,11 @@ async fn upload_midjourney_batch(
     negative_prompt: None,
     model_type: Some(model_type),
     generation_provider: Some(GenerationProvider::Midjourney),
+    maybe_generation_mode: None,
+    maybe_aspect_ratio: None,
+    maybe_resolution: None,
+    maybe_batch_count: None,
+    maybe_generate_audio: None,
   };
 
   let prompt_response = create_prompt(

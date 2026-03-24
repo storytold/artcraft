@@ -16,7 +16,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { FilterMediaClasses } from "@storyteller/api";
-import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
+import { getCreatorIcon, ModelCreator, IMAGE_MODELS_BY_ID, VIDEO_MODELS_BY_ID } from "@storyteller/model-list";
+import { useClassyModelSelectorStore, ModelPage } from "@storyteller/ui-model-selector";
 import { useCreditsState } from "@storyteller/credits";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
@@ -50,7 +51,7 @@ import {
   useCostBreakdownModalStore,
   CreditsModal,
 } from "@storyteller/ui-pricing-modal";
-import { RefImage, usePromptVideoStore } from "@storyteller/ui-promptbox";
+import { RefImage, usePromptImageStore, usePromptVideoStore } from "@storyteller/ui-promptbox";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -255,6 +256,61 @@ export const TopBar = ({ pageName }: Props) => {
       // Update zustand store for Video directly
       usePromptVideoStore.getState().setReferenceImages([referenceImage]);
       useTabStore.getState().setActiveTab("VIDEO");
+      galleryModalVisibleViewMode.value = false;
+      galleryModalVisibleDuringDrag.value = false;
+      galleryModalLightboxVisible.value = false;
+    } catch (e) {
+      // no-op
+    }
+  };
+
+  const handleRecreateFromGallery = (data: {
+    prompt: string | null;
+    mediaClass: string | undefined;
+    modelType: string | null;
+    contextImages: Array<{
+      media_links: {
+        cdn_url: string;
+        maybe_thumbnail_template: string;
+      };
+      media_token: string;
+      semantic: string;
+    }> | null;
+  }) => {
+    try {
+      const { prompt: recreatePrompt, mediaClass: recreateMediaClass, modelType: recreateModelType, contextImages: recreateContextImages } = data;
+
+      // Build reference images from context images
+      const refImages: RefImage[] = (recreateContextImages || []).map((ci) => ({
+        id: Math.random().toString(36).substring(7),
+        url: ci.media_links.cdn_url,
+        file: new File([], "recreate-ref"),
+        mediaToken: ci.media_token,
+      }));
+
+      const modelStore = useClassyModelSelectorStore.getState();
+
+      if (recreateMediaClass === "video") {
+        const videoStore = usePromptVideoStore.getState();
+        if (recreatePrompt) videoStore.setPrompt(recreatePrompt);
+        if (refImages.length > 0) videoStore.setReferenceImages(refImages);
+        if (recreateModelType) {
+          const model = VIDEO_MODELS_BY_ID.get(recreateModelType);
+          if (model) modelStore.setSelectedModel(ModelPage.ImageToVideo, model);
+        }
+        useTabStore.getState().setActiveTab("VIDEO");
+      } else {
+        // Default to image
+        const imageStore = usePromptImageStore.getState();
+        if (recreatePrompt) imageStore.setPrompt(recreatePrompt);
+        if (refImages.length > 0) imageStore.setReferenceImages(refImages);
+        if (recreateModelType) {
+          const model = IMAGE_MODELS_BY_ID.get(recreateModelType);
+          if (model) modelStore.setSelectedModel(ModelPage.TextToImage, model);
+        }
+        useTabStore.getState().setActiveTab("IMAGE");
+      }
+
       galleryModalVisibleViewMode.value = false;
       galleryModalVisibleDuringDrag.value = false;
       galleryModalLightboxVisible.value = false;
@@ -640,6 +696,7 @@ export const TopBar = ({ pageName }: Props) => {
         onRemoveBackgroundClicked={handleRemoveBackgroundFromGallery}
         onMake3DObjectClicked={handleMake3DObjectFromGallery}
         onMake3DWorldClicked={handleMake3DWorldFromGallery}
+        onRecreateClicked={handleRecreateFromGallery}
       />
 
       <ProviderSetupModal />

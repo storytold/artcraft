@@ -27,6 +27,8 @@ CREATE TABLE prompts (
   -- What type of model was used to generate the result.
   -- NB: We're conflating prompts with outputs, but in a
   -- sense the model is inextricably part of the prompt.
+  --
+  -- Represented by the `CommonModelType` enum.
   maybe_model_type VARCHAR(32) DEFAULT NULL,
 
   -- What service provided the generation.
@@ -51,6 +53,31 @@ CREATE TABLE prompts (
   -- Polymorphic arguments payload that depends on the type of inference job.
   -- TEXT = 65,535 bytes (64 KiB), ~= 4 bytes per UTF-8 character, ~ 16383 characters.
   maybe_other_args TEXT DEFAULT NULL,
+
+  -- ========== GENERATION PARAMETERS ==========
+
+  -- Represented by the enum `CommonGenerationMode`.
+  -- The generation mode (eg. keyframe, reference, inpaint, etc.)
+  maybe_generation_mode VARCHAR(24) DEFAULT NULL,
+
+  -- Represented by the enum `CommonAspectRatio`.
+  -- The aspect ratio for the prompt (eg. square, auto, wide_three_by_two, etc.)
+  maybe_aspect_ratio VARCHAR(24) DEFAULT NULL,
+
+  -- Represented by the enum `CommonResolution`.
+  -- The resolution for the prompt (eg. four_k, 720p, etc.)
+  maybe_resolution VARCHAR(16) DEFAULT NULL,
+
+  -- TODO: Let's change this to an integer before writing to it.
+  -- The duration (eg. 8s, 16s, 2m, etc.)
+  -- Not an integer because we want to potentially support other units
+  maybe_duration VARCHAR(8) DEFAULT NULL,
+
+  -- The number of outputs to generate (0-255)
+  maybe_batch_count TINYINT UNSIGNED DEFAULT NULL,
+
+  -- Whether to generate audio
+  maybe_generate_audio BOOLEAN DEFAULT NULL,
 
   -- ========== ABUSE TRACKING ==========
 

@@ -16,9 +16,8 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_status;
 use errors::AnyhowResult;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info, warn};
@@ -48,14 +47,13 @@ use url_utils::download_extension::extract_download_extension_from_url::{extract
 pub struct SuccessfulGeneration {
   pub prompt: Option<String>,
   pub items: Vec<GenerationItem>,
-  pub model_type: ModelType,
+  pub model_type: CommonModelType,
 }
 
 pub struct GenerationItem {
   pub item_id: String,
   pub url: String,
 }
-
 
 pub async fn handle_classic_successful_generations(
   app_handle: &AppHandle,
@@ -76,8 +74,8 @@ pub async fn handle_classic_successful_generations(
     info!("Task succeeded: {:?}", task_id);
 
     let generation_type = match generation.model_type {
-      ModelType::GptImage1 => GenerationType::Image,
-      ModelType::Sora2 => GenerationType::Video,
+      CommonModelType::GptImage1 => GenerationType::Image,
+      CommonModelType::Sora2 => GenerationType::Video,
       _ => {
         // Fallback
         warn!("Unexpected model type: {:?}", generation.model_type);
@@ -91,6 +89,11 @@ pub async fn handle_classic_successful_generations(
       negative_prompt: None,
       model_type: Some(generation.model_type),
       generation_provider: Some(GenerationProvider::Sora),
+      maybe_generation_mode: None,
+      maybe_aspect_ratio: None,
+      maybe_resolution: None,
+      maybe_batch_count: None,
+      maybe_generate_audio: None,
     };
 
     let prompt_response = create_prompt(
@@ -182,7 +185,6 @@ pub async fn handle_classic_successful_generations(
 
   Ok(())
 }
-
 
 async fn download_generation_item(
   generation: &GenerationItem,

@@ -14,11 +14,9 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use cookie_store::cookie_store::CookieStore;
-use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_status::TaskStatus;
 use errors::AnyhowResult;
 use grok_client::credentials::grok_full_credentials::GrokFullCredentials;
 use grok_client::error::grok_error::GrokError;
@@ -222,8 +220,13 @@ async fn upload_grok_video(
     uuid_idempotency_token: generate_random_uuid(),
     positive_prompt: grok_video_post.prompt.clone(),
     negative_prompt: None,
-    model_type: Some(ModelType::GrokVideo),
+    model_type: Some(CommonModelType::GrokVideo),
     generation_provider: Some(GenerationProvider::Grok),
+    maybe_generation_mode: None,
+    maybe_aspect_ratio: None,
+    maybe_resolution: None,
+    maybe_batch_count: None,
+    maybe_generate_audio: None,
   };
 
   let prompt_response = create_prompt(

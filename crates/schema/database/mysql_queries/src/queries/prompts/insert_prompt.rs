@@ -6,8 +6,11 @@ use sqlx;
 use sqlx::{Executor, MySql};
 
 use enums::by_table::prompts::prompt_type::PromptType;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
 use errors::AnyhowResult;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
@@ -24,13 +27,17 @@ pub struct InsertPromptArgs<'e, 'c,  E>
 
   pub maybe_creator_user_token: Option<&'e UserToken>,
   
-  pub maybe_model_type: Option<ModelType>,
-  
+  pub maybe_model_type: Option<CommonModelType>,
   pub maybe_generation_provider: Option<GenerationProvider>,
 
   pub maybe_positive_prompt: Option<&'e str>,
-
   pub maybe_negative_prompt: Option<&'e str>,
+
+  pub maybe_generation_mode: Option<CommonGenerationMode>,
+  pub maybe_aspect_ratio: Option<CommonAspectRatio>,
+  pub maybe_resolution: Option<CommonResolution>,
+  pub maybe_batch_count: Option<u8>,
+  pub maybe_generate_audio: Option<bool>,
 
   pub maybe_other_args: Option<&'e PromptInnerPayload>,
 
@@ -77,6 +84,12 @@ SET
 
   maybe_positive_prompt = ?,
   maybe_negative_prompt = ?,
+
+  maybe_generation_mode = ?,
+  maybe_aspect_ratio = ?,
+  maybe_resolution = ?,
+  maybe_batch_count = ?,
+  maybe_generate_audio = ?,
   
   maybe_other_args = ?,
 
@@ -89,6 +102,11 @@ SET
     args.maybe_generation_provider.map(|g| g.to_str()),
     args.maybe_positive_prompt,
     args.maybe_negative_prompt,
+    args.maybe_generation_mode.map(|m| m.to_str()),
+    args.maybe_aspect_ratio.map(|a| a.to_str()),
+    args.maybe_resolution.map(|r| r.to_str()),
+    args.maybe_batch_count,
+    args.maybe_generate_audio,
     maybe_other_args,
     args.creator_ip_address,
   );

@@ -12,7 +12,7 @@ use artcraft_api_defs::generate::image::angle::flux_2_lora_edit_image_angle::{Fl
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs, EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraAngleImageSize};
@@ -168,11 +168,16 @@ pub async fn flux_2_lora_edit_image_angle_handler(
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(&user_token),
-    maybe_model_type: Some(ModelType::Flux2LoraAngles),
+    maybe_model_type: Some(CommonModelType::Flux2LoraAngles),
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: None,
     maybe_negative_prompt: None,
     maybe_other_args: None,
+    maybe_generation_mode: None,
+    maybe_aspect_ratio: None,
+    maybe_resolution: None,
+    maybe_batch_count: None,
+    maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

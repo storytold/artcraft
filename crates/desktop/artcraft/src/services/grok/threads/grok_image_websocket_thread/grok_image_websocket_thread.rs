@@ -14,9 +14,8 @@ use anyhow::anyhow;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::utils::media_links_to_thumbnail_template::media_links_to_thumbnail_template;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::tauri::tasks::task_media_file_class::TaskMediaFileClass;
-use enums::tauri::tasks::task_model_type::TaskModelType;
 use errors::AnyhowResult;
 use grok_client::recipes::prompt_websocket_image_with_retry::{prompt_websocket_image_with_retry, PromptWebsocketImageWithRetryArgs};
 use grok_client::requests::image_websocket::create_listen_websocket::{create_listen_websocket, CreateListenWebsocketArgs};
@@ -183,8 +182,13 @@ async fn upload_images_to_storyteller(
       uuid_idempotency_token: generate_random_uuid(),
       positive_prompt: Some(prompt),
       negative_prompt: None,
-      model_type: Some(ModelType::GrokImage),
+      model_type: Some(CommonModelType::GrokImage),
       generation_provider: Some(GenerationProvider::Grok),
+      maybe_generation_mode: None,
+      maybe_aspect_ratio: None,
+      maybe_resolution: None,
+      maybe_batch_count: None,
+      maybe_generate_audio: None,
     };
 
     let prompt_response = create_prompt(

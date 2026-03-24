@@ -7,7 +7,10 @@ use anyhow::anyhow;
 use chrono::{DateTime, Utc};
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::model_type::ModelType;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation::common_resolution::CommonResolution;
 use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
 use sqlx::{MySql, MySqlPool};
@@ -22,7 +25,7 @@ pub struct Prompt {
 
   pub prompt_type: PromptType,
 
-  pub maybe_model_type: Option<ModelType>,
+  pub maybe_model_type: Option<CommonModelType>,
   pub maybe_generation_provider: Option<GenerationProvider>,
 
   pub maybe_creator_user_token: Option<UserToken>,
@@ -31,6 +34,12 @@ pub struct Prompt {
   pub maybe_negative_prompt: Option<String>,
 
   pub maybe_other_args: Option<PromptInnerPayload>,
+
+  pub maybe_generation_mode: Option<CommonGenerationMode>,
+  pub maybe_aspect_ratio: Option<CommonAspectRatio>,
+  pub maybe_resolution: Option<CommonResolution>,
+  pub maybe_batch_count: Option<u8>,
+  pub maybe_generate_audio: Option<bool>,
 
   /// For moderators only
   pub creator_ip_address: Option<String>,
@@ -44,7 +53,7 @@ pub struct PromptRaw {
 
   pub prompt_type: PromptType,
 
-  pub maybe_model_type: Option<ModelType>,
+  pub maybe_model_type: Option<CommonModelType>,
   pub maybe_generation_provider: Option<GenerationProvider>,
 
   pub maybe_creator_user_token: Option<UserToken>,
@@ -53,6 +62,12 @@ pub struct PromptRaw {
   pub maybe_negative_prompt: Option<String>,
 
   pub maybe_other_args: Option<String>,
+
+  pub maybe_generation_mode: Option<CommonGenerationMode>,
+  pub maybe_aspect_ratio: Option<CommonAspectRatio>,
+  pub maybe_resolution: Option<CommonResolution>,
+  pub maybe_batch_count: Option<u8>,
+  pub maybe_generate_audio: Option<bool>,
 
   /// For moderators only
   pub creator_ip_address: Option<String>,
@@ -94,6 +109,11 @@ pub async fn get_prompt_from_connection(
     maybe_creator_user_token: record.maybe_creator_user_token,
     maybe_positive_prompt: record.maybe_positive_prompt,
     maybe_negative_prompt: record.maybe_negative_prompt,
+    maybe_generation_mode: record.maybe_generation_mode,
+    maybe_aspect_ratio: record.maybe_aspect_ratio,
+    maybe_resolution: record.maybe_resolution,
+    maybe_batch_count: record.maybe_batch_count,
+    maybe_generate_audio: record.maybe_generate_audio,
     maybe_other_args: record.maybe_other_args
         .as_deref()
         .map(|args| PromptInnerPayload::from_json(args))
@@ -115,13 +135,20 @@ SELECT
 
     p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,
 
-    p.maybe_model_type as `maybe_model_type: enums::common::model_type::ModelType`,
+    p.maybe_model_type as `maybe_model_type: enums::common::generation::common_model_type::CommonModelType`,
     p.maybe_generation_provider as `maybe_generation_provider: enums::common::generation_provider::GenerationProvider`,
 
     p.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
 
     p.maybe_positive_prompt,
     p.maybe_negative_prompt,
+
+    p.maybe_generation_mode as `maybe_generation_mode: enums::common::generation::common_generation_mode::CommonGenerationMode`,
+    p.maybe_aspect_ratio as `maybe_aspect_ratio: enums::common::generation::common_aspect_ratio::CommonAspectRatio`,
+    p.maybe_resolution as `maybe_resolution: enums::common::generation::common_resolution::CommonResolution`,
+    p.maybe_batch_count as `maybe_batch_count: u8`,
+    p.maybe_generate_audio as `maybe_generate_audio: bool`,
+
     p.maybe_other_args,
 
     p.creator_ip_address,

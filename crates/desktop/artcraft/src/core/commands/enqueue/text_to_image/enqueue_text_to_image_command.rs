@@ -30,8 +30,6 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
-use enums::tauri::tasks::task_status::TaskStatus;
-use enums::tauri::tasks::task_type::TaskType;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
@@ -184,7 +182,6 @@ pub enum EnqueueTextToImageErrorType {
   NeedsStorytellerCredentials,
 }
 
-
 #[tauri::command]
 pub async fn enqueue_text_to_image_command(
   request: EnqueueTextToImageRequest,
@@ -275,7 +272,6 @@ pub async fn enqueue_text_to_image_command(
     }
   }
 }
-
 
 pub async fn handle_request(
   request: EnqueueTextToImageRequest,

@@ -8,8 +8,8 @@ use enums::by_table::model_weights::{
   weights_types::WeightsType,
 };
 use enums::common::view_as::ViewAs;
+use enums::traits::mysql_from_row::MySqlFromRow as _;
 use enums::common::visibility::Visibility;
-use enums::traits::mysql_from_row::MySqlFromRow;
 use errors::AnyhowResult;
 use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
@@ -323,7 +323,6 @@ LEFT OUTER JOIN entity_stats
   query_builder
 }
 
-
 async fn map_to_weights(dataset:Vec<RawWeightJoinUser>) -> Vec<FeaturedWeight> {
   let weights: Vec<FeaturedWeight> = dataset
       .into_iter()
@@ -372,7 +371,6 @@ async fn map_to_weights(dataset:Vec<RawWeightJoinUser>) -> Vec<FeaturedWeight> {
       }).collect();
   weights
 }
-
 
 struct RawWeightJoinUser {
   id: i64,

@@ -87,46 +87,6 @@ use crate::http_server::endpoints::media_files::upsert_upload::write_scene_file:
 use crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::edit_user_feature_flags_handler::*;
 use crate::http_server::endpoints::prompts::get_prompt_handler::*;
-use crate::http_server::endpoints::service::status_alert_handler::*;
-use crate::http_server::endpoints::stats::get_unified_queue_stats_handler::*;
-use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::EnqueueStudioGen2Request;
-use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::*;
-use crate::http_server::endpoints::tags::list_tags_for_entity_handler::*;
-use crate::http_server::endpoints::tags::set_tags_for_entity_handler::*;
-use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::*;
-use crate::http_server::endpoints::user_bookmarks::batch_get_user_bookmarks_handler::*;
-use crate::http_server::endpoints::user_bookmarks::create_user_bookmark_handler::*;
-use crate::http_server::endpoints::user_bookmarks::delete_user_bookmark_handler::*;
-use crate::http_server::endpoints::user_bookmarks::list_user_bookmarks_for_entity_handler::*;
-use crate::http_server::endpoints::user_bookmarks::list_user_bookmarks_for_user_handler::*;
-use crate::http_server::endpoints::user_ratings::batch_get_user_rating_handler::*;
-use crate::http_server::endpoints::user_ratings::get_user_rating_handler::*;
-use crate::http_server::endpoints::user_ratings::set_user_rating_handler::*;
-use crate::http_server::endpoints::users::change_password_handler::*;
-use crate::http_server::endpoints::users::create_account_handler::*;
-use crate::http_server::endpoints::users::edit_email_handler::*;
-use crate::http_server::endpoints::users::edit_username_handler::*;
-use crate::http_server::endpoints::users::get_profile_handler::*;
-use crate::http_server::endpoints::users::google_sso::google_sso_handler::*;
-use crate::http_server::endpoints::users::login_handler::*;
-use crate::http_server::endpoints::users::logout_handler::*;
-use crate::http_server::endpoints::users::session_info_handler::*;
-use crate::http_server::endpoints::users::session_token_info_handler::*;
-use crate::http_server::endpoints::voice_conversion::enqueue_voice_conversion_inference_handler::*;
-use crate::http_server::endpoints::voice_designer::inference::enqueue_tts_request::*;
-use crate::http_server::endpoints::voice_designer::voice_datasets::list_datasets_by_user::*;
-use crate::http_server::endpoints::weights::delete::delete_weight_handler::*;
-use crate::http_server::endpoints::weights::get::get_weight_handler::*;
-use crate::http_server::endpoints::weights::list::list_available_weights_handler::*;
-use crate::http_server::endpoints::weights::list::list_featured_weights_handler::*;
-use crate::http_server::endpoints::weights::list::list_pinned_weights_handler::*;
-use crate::http_server::endpoints::weights::list::list_weights_by_user_handler::*;
-use crate::http_server::endpoints::weights::search::search_model_weights_impl::*;
-use crate::http_server::endpoints::weights::update::set_model_weight_cover_image_handler::*;
-use crate::http_server::endpoints::weights::update::update_weight_handler::*;
-use artcraft_api_defs::users::change_password::{ChangePasswordRequest, ChangePasswordResponse};
-use artcraft_api_defs::users::edit_email::{EditEmailRequest, EditEmailResponse};
-use artcraft_api_defs::users::edit_username::{EditUsernameRequest, EditUsernameResponse};
 use artcraft_api_defs::common::responses::job_details::JobDetailsLipsyncRequest;
 use artcraft_api_defs::common::responses::job_details::JobDetailsLivePortraitRequest;
 use artcraft_api_defs::common::responses::media_links::*;
@@ -188,9 +148,50 @@ use artcraft_api_defs::media_file::delete_media_file::DeleteMediaFilePathInfo;
 use artcraft_api_defs::media_file::delete_media_file::DeleteMediaFileRequest;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptResponse;
+use artcraft_api_defs::prompts::get_prompt::*;
+use artcraft_api_defs::users::change_password::{ChangePasswordRequest, ChangePasswordResponse};
+use artcraft_api_defs::users::edit_email::{EditEmailRequest, EditEmailResponse};
+use artcraft_api_defs::users::edit_username::{EditUsernameRequest, EditUsernameResponse};
 use billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_error::CreateCheckoutSessionError;
 use billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_json_handler::*;
 use billing_component::users::http_endpoints::list_active_user_subscriptions_handler::*;
+use crate::http_server::endpoints::service::status_alert_handler::*;
+use crate::http_server::endpoints::stats::get_unified_queue_stats_handler::*;
+use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::*;
+use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::EnqueueStudioGen2Request;
+use crate::http_server::endpoints::tags::list_tags_for_entity_handler::*;
+use crate::http_server::endpoints::tags::set_tags_for_entity_handler::*;
+use crate::http_server::endpoints::tts::enqueue_infer_tts_handler::enqueue_infer_tts_handler::*;
+use crate::http_server::endpoints::user_bookmarks::batch_get_user_bookmarks_handler::*;
+use crate::http_server::endpoints::user_bookmarks::create_user_bookmark_handler::*;
+use crate::http_server::endpoints::user_bookmarks::delete_user_bookmark_handler::*;
+use crate::http_server::endpoints::user_bookmarks::list_user_bookmarks_for_entity_handler::*;
+use crate::http_server::endpoints::user_bookmarks::list_user_bookmarks_for_user_handler::*;
+use crate::http_server::endpoints::user_ratings::batch_get_user_rating_handler::*;
+use crate::http_server::endpoints::user_ratings::get_user_rating_handler::*;
+use crate::http_server::endpoints::user_ratings::set_user_rating_handler::*;
+use crate::http_server::endpoints::users::change_password_handler::*;
+use crate::http_server::endpoints::users::create_account_handler::*;
+use crate::http_server::endpoints::users::edit_email_handler::*;
+use crate::http_server::endpoints::users::edit_username_handler::*;
+use crate::http_server::endpoints::users::get_profile_handler::*;
+use crate::http_server::endpoints::users::google_sso::google_sso_handler::*;
+use crate::http_server::endpoints::users::login_handler::*;
+use crate::http_server::endpoints::users::logout_handler::*;
+use crate::http_server::endpoints::users::session_info_handler::*;
+use crate::http_server::endpoints::users::session_token_info_handler::*;
+use crate::http_server::endpoints::voice_conversion::enqueue_voice_conversion_inference_handler::*;
+use crate::http_server::endpoints::voice_designer::inference::enqueue_tts_request::*;
+use crate::http_server::endpoints::voice_designer::voice_datasets::list_datasets_by_user::*;
+use crate::http_server::endpoints::weights::delete::delete_weight_handler::*;
+use crate::http_server::endpoints::weights::get::get_weight_handler::*;
+use crate::http_server::endpoints::weights::list::list_available_weights_handler::*;
+use crate::http_server::endpoints::weights::list::list_featured_weights_handler::*;
+use crate::http_server::endpoints::weights::list::list_pinned_weights_handler::*;
+use crate::http_server::endpoints::weights::list::list_weights_by_user_handler::*;
+use crate::http_server::endpoints::weights::search::search_model_weights_impl::*;
+use crate::http_server::endpoints::weights::update::set_model_weight_cover_image_handler::*;
+use crate::http_server::endpoints::weights::update::update_weight_handler::*;
 use enums::by_table::beta_keys::beta_key_product::BetaKeyProduct;
 use enums::by_table::comments::comment_entity_type::CommentEntityType;
 use enums::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
@@ -210,9 +211,12 @@ use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEnti
 use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
 use enums::by_table::user_ratings::rating_value::UserRatingValue;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::job_status_plus::JobStatusPlus;
-use enums::common::model_type::ModelType;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums_public::by_table::media_files::public_media_file_model_type::PublicMediaFileModelType;
@@ -511,7 +515,10 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileOriginProductCategory,
     MediaFileSubtype,
     MediaFileType,
-    ModelType,
+    CommonModelType,
+    CommonAspectRatio,
+    CommonGenerationMode,
+    CommonResolution,
     PromptContextSemanticType,
     PromptType,
     PublicMediaFileModelType,
