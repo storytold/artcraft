@@ -6,11 +6,11 @@ use crate::http_server::endpoints::generate::image::edit::gemini_25_flash_edit_i
 use crate::http_server::endpoints::generate::image::edit::gpt_image_1_edit_image_handler::gpt_image_1_edit_image_handler;
 use crate::http_server::endpoints::generate::image::edit::qwen_edit_image_handler::qwen_edit_image_handler;
 use crate::http_server::endpoints::generate::image::edit::seededit_3_edit_image_handler::seededit_3_edit_image_handler;
-use crate::http_server::endpoints::generate::image::generate_flux_1_dev_text_to_image_handler::generate_flux_1_dev_text_to_image_handler;
-use crate::http_server::endpoints::generate::image::generate_flux_1_schnell_text_to_image_handler::generate_flux_1_schnell_text_to_image_handler;
-use crate::http_server::endpoints::generate::image::generate_flux_pro_11_text_to_image_handler::generate_flux_pro_11_text_to_image_handler;
-use crate::http_server::endpoints::generate::image::generate_flux_pro_11_ultra_text_to_image_handler::generate_flux_pro_11_ultra_text_to_image_handler;
-use crate::http_server::endpoints::generate::image::generate_gpt_image_1_text_to_image_handler::generate_gpt_image_1_text_to_image_handler;
+use crate::http_server::endpoints::generate::image::text::generate_flux_1_dev_text_to_image_handler::generate_flux_1_dev_text_to_image_handler;
+use crate::http_server::endpoints::generate::image::text::generate_flux_1_schnell_text_to_image_handler::generate_flux_1_schnell_text_to_image_handler;
+use crate::http_server::endpoints::generate::image::text::generate_flux_pro_11_text_to_image_handler::generate_flux_pro_11_text_to_image_handler;
+use crate::http_server::endpoints::generate::image::text::generate_flux_pro_11_ultra_text_to_image_handler::generate_flux_pro_11_ultra_text_to_image_handler;
+use crate::http_server::endpoints::generate::image::text::generate_gpt_image_1_text_to_image_handler::generate_gpt_image_1_text_to_image_handler;
 use crate::http_server::endpoints::generate::image::inpaint::flux_dev_juggernaut_inpaint_handler::flux_dev_juggernaut_inpaint_image_handler;
 use crate::http_server::endpoints::generate::image::inpaint::flux_pro_1_inpaint_handler::flux_pro_1_inpaint_image_handler;
 use crate::http_server::endpoints::generate::image::multi_function::bytedance_seedream_v4_multi_function_image_gen_handler::bytedance_seedream_v4_multi_function_image_gen_handler;
@@ -22,7 +22,7 @@ use crate::http_server::endpoints::generate::image::multi_function::nano_banana_
 use crate::http_server::endpoints::generate::image::multi_function::nano_banana_pro_multi_function_image_gen_handler::nano_banana_pro_multi_function_image_gen_handler;
 use crate::http_server::endpoints::generate::image::angle::flux_2_lora_edit_image_angle_handler::flux_2_lora_edit_image_angle_handler;
 use crate::http_server::endpoints::generate::image::angle::qwen_edit_2511_edit_image_angle_handler::qwen_edit_2511_edit_image_angle_handler;
-use crate::http_server::endpoints::generate::image::remove_image_background_handler::remove_image_background_handler;
+use crate::http_server::endpoints::generate::image::bg_removal::remove_image_background_handler::remove_image_background_handler;
 use crate::http_server::endpoints::generate::object::generate_hunyuan_2_0_image_to_3d_handler::generate_hunyuan_2_0_image_to_3d_handler;
 use crate::http_server::endpoints::generate::splat::generate_worldlabs_marble_0p1_mini_splat_handler::generate_worldlabs_marble_0p1_mini_splat_handler;
 use crate::http_server::endpoints::generate::splat::generate_worldlabs_marble_0p1_plus_splat_handler::generate_worldlabs_marble_0p1_plus_splat_handler;

@@ -1,0 +1,5 @@
+pub mod generate_flux_1_dev_text_to_image_handler;
+pub mod generate_flux_1_schnell_text_to_image_handler;
+pub mod generate_flux_pro_11_text_to_image_handler;
+pub mod generate_flux_pro_11_ultra_text_to_image_handler;
+pub mod generate_gpt_image_1_text_to_image_handler;
