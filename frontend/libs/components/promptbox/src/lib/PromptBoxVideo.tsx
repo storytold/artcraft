@@ -354,10 +354,7 @@ export const PromptBoxVideo = ({
         return (
           <span
             key={i}
-            style={{
-              color: IMAGE_COLORS[idx % IMAGE_COLORS.length],
-              fontWeight: 600,
-            }}
+            style={{ color: IMAGE_COLORS[idx % IMAGE_COLORS.length] }}
           >
             {part}
           </span>
@@ -369,10 +366,7 @@ export const PromptBoxVideo = ({
         return (
           <span
             key={i}
-            style={{
-              color: VIDEO_COLORS[idx % VIDEO_COLORS.length],
-              fontWeight: 600,
-            }}
+            style={{ color: VIDEO_COLORS[idx % VIDEO_COLORS.length] }}
           >
             {part}
           </span>
@@ -384,10 +378,7 @@ export const PromptBoxVideo = ({
         return (
           <span
             key={i}
-            style={{
-              color: AUDIO_COLORS[idx % AUDIO_COLORS.length],
-              fontWeight: 600,
-            }}
+            style={{ color: AUDIO_COLORS[idx % AUDIO_COLORS.length] }}
           >
             {part}
           </span>
