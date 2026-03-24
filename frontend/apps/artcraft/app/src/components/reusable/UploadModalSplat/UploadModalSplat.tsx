@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { Modal } from "@storyteller/ui-modal";
 import { UploadAssetError, UploadSuccess } from "@storyteller/ui-upload-modal";
@@ -6,19 +6,14 @@ import { initialUploaderState, UploaderState } from "../../../models";
 import {
   FilterEngineCategories,
   UploaderStates,
-  MediaFileAnimationType,
   SPLAT_FILE_TYPE,
 } from "../../../enums";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import {
-  galleryModalVisibleViewMode,
-  galleryModalVisibleDuringDrag,
-} from "@storyteller/ui-gallery-modal";
 import { UploadFilesSplat } from "./UploadFilesSplat";
 
 interface Props {
   onClose: () => void;
-  onSuccess: (splatArrayBuffer: ArrayBuffer, shouldFlip: boolean) => void;
+  onSuccess: (mediaToken: string) => void;
   isOpen: boolean;
   title: string;
   titleIcon: IconDefinition;
@@ -52,12 +47,8 @@ export function UploadModalSplat(props: Props) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (uploaderState.status === UploaderStates.success) {
-      // Automatically open the global Gallery modal after a successful upload
-      // galleryModalVisibleViewMode.value = true;
-      // galleryModalVisibleDuringDrag.value = true;
-
-      // onSuccess(selectedCategory);
+    if (uploaderState.status === UploaderStates.success && uploaderState.data) {
+      onSuccess(uploaderState.data);
       onClose();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,7 +68,6 @@ export function UploadModalSplat(props: Props) {
               }}
               onClose={onClose}
               onUploadProgress={updateUploaderState}
-              onLocalBytes={(buffer, shouldFlip) => { onSuccess(buffer, shouldFlip); }}
             />
           </div>
         );
@@ -94,10 +84,7 @@ export function UploadModalSplat(props: Props) {
         return (
           <UploadSuccess
             title="Splat"
-            onOk={() => {
-              onClose();
-              // onSuccess(selectedCategory);
-            }}
+            onOk={onClose}
           />
         );
       }

@@ -22,6 +22,7 @@ export interface ObjectJSON {
   object_uuid: string;
   object_user_data_name: string;
   media_file_token: string;
+  media_file_type: MediaFileType;
   color: string;
   metalness: number;
   shininess: number;
@@ -127,6 +128,7 @@ export class StoryTellerProxy3DObject {
       object_uuid: this.object_uuid,
       object_user_data_name: this.object_user_data_name,
       media_file_token: this.media_file_token,
+      media_file_type: this.userData.media_file_type ?? MediaFileType.None,
       color: this.color,
       metalness: this.metalness,
       shininess: this.shininess,

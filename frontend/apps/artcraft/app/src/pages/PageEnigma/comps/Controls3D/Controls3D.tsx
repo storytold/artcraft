@@ -16,11 +16,6 @@ import { EngineContext } from "../../contexts/EngineContext";
 import { useContext, useEffect, useState } from "react";
 import { assetModalVisibleDuringDrag, assetModalVisible } from "../../signals";
 import { useTabStore } from "~/pages/Stores/TabState";
-// import { v4 as uuidv4 } from "uuid";
-// import { addObject } from "../../signals/objectGroup/addObject";
-// import { MediaItem } from "../../models/assets";
-// eslint-disable-next-line import/no-unresolved
-// import { AssetType } from "~/enums";
 import { AssetModal } from "../AssetMenu/AssetModal";
 import { selectedMode } from "../../signals/selectedMode";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -37,6 +32,9 @@ import {
 import { twMerge } from "tailwind-merge";
 import { UploadModalImage } from "../../../../components/reusable/UploadModalImage";
 import { UploadModalSplat } from "~/components/reusable/UploadModalSplat";
+import { addObject } from "../../signals/objectGroup/addObject";
+import { AssetType } from "~/enums";
+import { v4 as uuidv4 } from "uuid";
 
 export const Controls3D = () => {
   useSignals();
@@ -119,31 +117,6 @@ export const Controls3D = () => {
     }
     editorEngine.change_mode("scale");
   };
-
-  // ----- TODO LATER - BFlat for auto add 3d model to scene -----
-
-  // Function to add the generated 3D model to the scene
-  // const addGeneratedModelToScene = useCallback((mediaToken: string) => {
-  //   console.log("[DEBUG] addGeneratedModelToScene called with token:", mediaToken);
-
-  //   // Create a MediaItem object for the 3D model
-  //   const mediaItem: MediaItem = {
-  //     version: 1,
-  //     type: AssetType.OBJECT,
-  //     media_id: mediaToken,
-  //     name: "3D Model",
-  //     object_uuid: uuidv4(),
-  //   };
-
-  //   // Add the object to the scene
-  //   console.log("[DEBUG] Calling addObject with:", mediaItem);
-  //   try {
-  //     addObject(mediaItem);
-  //     console.log("[DEBUG] addObject called successfully");
-  //   } catch (error) {
-  //     console.error("[DEBUG] Error in addObject:", error);
-  //   }
-  // }, []);
 
   const handleOpenModal = () => {
     assetModalVisibleDuringDrag.value = true;
@@ -352,9 +325,9 @@ export const Controls3D = () => {
       <UploadModalSplat
         isOpen={uploadSplatIsShowing}
         onClose={() => setUploadSplatIsShowing(false)}
-        onSuccess={(buffer, shouldFlip) => {
-          setUploadSplatIsShowing(false)
-          editorEngine?.timeline.addLocalSplat(buffer, shouldFlip);
+        onSuccess={(mediaToken) => {
+          setUploadSplatIsShowing(false);
+          addObject({ type: AssetType.SPLAT, media_id: mediaToken, name: "Splat", object_uuid: uuidv4() });
         }}
         title="Upload an spz file"
         titleIcon={faCube}

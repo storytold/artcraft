@@ -21,7 +21,6 @@ interface Props {
   };
   onClose: () => void;
   onUploadProgress: (newState: UploaderState) => void;
-  onLocalBytes: (bytes: ArrayBuffer, shouldFlip) => void;
 }
 
 export const UploadFilesSplat = ({
@@ -30,7 +29,6 @@ export const UploadFilesSplat = ({
   options,
   onClose,
   onUploadProgress,
-  onLocalBytes,
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | undefined>(undefined);
   const canvasCallbackRef = useCallback((node: HTMLCanvasElement) => {
@@ -74,14 +72,6 @@ export const UploadFilesSplat = ({
 
     // Use the filename as the title
     const title = assetFile.value.name.split(".")[0];
-
-    // const shouldFlip = title.search("ceramic") != -1;
-    //
-    // assetFile.value.arrayBuffer().then((arrayBuffer) => {
-    //   onLocalBytes(arrayBuffer, shouldFlip);
-    // }).catch((error) => {
-    //   console.error("Error reading file as ArrayBuffer:", error);
-    // });
 
     upload3DObjects({
       title: title,
