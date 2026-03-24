@@ -22,6 +22,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::payments_namespace::PaymentsNamespace;
 use enums::common::stripe_subscription_status::StripeSubscriptionStatus;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{enqueue_gemini_25_flash_edit_webhook, Gemini25FlashEditArgs, Gemini25FlashEditAspectRatio, Gemini25FlashEditNumImages};
@@ -142,9 +143,11 @@ pub async fn nano_banana_multi_function_image_gen_handler(
   let apriori_job_token = InferenceJobToken::generate();
 
   let fal_result;
+  let generation_mode;
 
   if let Some(input_image_urls) = image_urls.as_deref() {
     info!("nano banana edit image");
+    generation_mode = CommonGenerationMode::Edit;
 
     let mut num_images = match request.num_images {
       Some(NanoBananaMultiFunctionImageGenNumImages::One) => Gemini25FlashEditNumImages::One,
@@ -202,6 +205,7 @@ pub async fn nano_banana_multi_function_image_gen_handler(
 
   } else {
     info!("nano banana text-to-image");
+    generation_mode = CommonGenerationMode::Text;
 
     let mut num_images = match request.num_images {
       Some(NanoBananaMultiFunctionImageGenNumImages::One) => Gemini25FlashTextToImageNumImages::One,
@@ -285,7 +289,7 @@ pub async fn nano_banana_multi_function_image_gen_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None, // TODO: Multi-function handlers support multiple modes
+    maybe_generation_mode: Some(generation_mode),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,

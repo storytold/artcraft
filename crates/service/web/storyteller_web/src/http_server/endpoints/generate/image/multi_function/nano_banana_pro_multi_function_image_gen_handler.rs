@@ -21,6 +21,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::payments_namespace::PaymentsNamespace;
 use enums::common::stripe_subscription_status::StripeSubscriptionStatus;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{enqueue_nano_banana_pro_image_edit_webhook, EnqueueNanoBananaProEditImageArgs, EnqueueNanoBananaProEditImageAspectRatio, EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageResolution};
@@ -139,9 +140,11 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
   let apriori_job_token = InferenceJobToken::generate();
 
   let fal_result;
+  let generation_mode;
 
   if let Some(input_image_urls) = image_urls.as_deref() {
     info!("nano banana pro edit image");
+    generation_mode = CommonGenerationMode::Edit;
 
     let mut num_images = match request.num_images {
       Some(NanoBananaProMultiFunctionImageGenNumImages::One) => EnqueueNanoBananaProEditImageNumImages::One,
@@ -208,6 +211,7 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
 
   } else {
     info!("nano banana pro text-to-image");
+    generation_mode = CommonGenerationMode::Text;
 
     let mut num_images = match request.num_images {
       Some(NanoBananaProMultiFunctionImageGenNumImages::One) => EnqueueNanoBananaProTextToImageNumImages::One,
@@ -300,7 +304,7 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None, // TODO: Multi-function handlers support multiple modes
+    maybe_generation_mode: Some(generation_mode),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,
