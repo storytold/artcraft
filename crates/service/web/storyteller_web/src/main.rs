@@ -400,8 +400,6 @@ async fn main() -> AnyhowResult<()> {
   let fal_api_key = FalApiKey::new(easyenv::get_env_string_required("FAL_API_KEY")?);
   let fal_webhook_url = easyenv::get_env_string_required("FAL_WEBHOOK_URL")?;
 
-  let seedance2pro_cookies = easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")?;
-
   let openai_api_key= easyenv::get_env_string_required("OPENAI_API_KEY")?;
 
   let resend_api_key = easyenv::get_env_string_required("RESEND_API_KEY")?;
@@ -463,7 +461,8 @@ async fn main() -> AnyhowResult<()> {
       webhook_url: fal_webhook_url,
     },
     seedance2pro: Seedance2ProData {
-      cookies: seedance2pro_cookies,
+      cookies: easyenv::get_env_string_required("SEEDANCE2PRO_COOKIES")?,
+      cookies_whitelist: easyenv::get_env_string_required("SEEDANCE2PRO_WHITELIST_COOKIES")?,
     },
     openai: OpenAiData {
       api_key: openai_api_key,

@@ -83,6 +83,12 @@ impl UserSessionFeatureFlags {
   pub fn clear_flags(&mut self) {
     self.feature_flags = BTreeSet::new();
   }
+  
+  // ----------- Specific Flags ---------- //
+  
+  pub fn has_seedance_whitelist(&self) -> bool {
+    self.feature_flags.contains(&UserFeatureFlag::SeedanceWhitelist)
+  }
 }
 
 #[cfg(test)]

@@ -46,6 +46,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
+use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 
 /// Seedance 2.0 Multi-Function video generation (text-to-video, keyframe, and reference).
 #[utoipa::path(
@@ -139,6 +140,13 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       })?;
 
   // --- Build seedance2pro session ---
+
+  let user_feature_flags =
+      UserSessionFeatureFlags::new(user_session.maybe_feature_flags.as_deref());
+
+  if user_feature_flags.has_seedance_whitelist() {
+    // TODO - this user will get the "whitelisted" client, with the regular client as a fallback.
+  }
 
   let session = Seedance2ProSession::from_cookies_string(
     server_state.seedance2pro.cookies.clone()

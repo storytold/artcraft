@@ -317,6 +317,9 @@ pub struct FalData {
 pub struct Seedance2ProData {
   /// Cookie string for seedance2-pro.com
   pub cookies: String,
+
+  /// Cookie string for seedance2-pro.com (Whitelisted account)
+  pub cookies_whitelist: String,
 }
 
 /// OpenAI integration
