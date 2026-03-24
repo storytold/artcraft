@@ -33,6 +33,7 @@ use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPrompt
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use utoipa::ToSchema;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 
 /// Kling 1.6 Pro Image to Video
@@ -223,7 +224,11 @@ pub async fn generate_kling_1_6_pro_video_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Keyframe), // TODO: This endpoint only supports keyframes for now
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio: request.aspect_ratio.as_ref().map(|ar| match ar {
+      GenerateKling16ProAspectRatio::Square => CommonAspectRatio::Square,
+      GenerateKling16ProAspectRatio::WideSixteenNine => CommonAspectRatio::WideSixteenByNine,
+      GenerateKling16ProAspectRatio::TallNineSixteen => CommonAspectRatio::TallNineBySixteen,
+    }),
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,

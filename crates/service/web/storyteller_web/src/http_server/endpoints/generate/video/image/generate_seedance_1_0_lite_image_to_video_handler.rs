@@ -20,6 +20,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::Seedance1LiteDuration;
@@ -240,7 +241,15 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Keyframe), // TODO: This endpoint only supports keyframes for now
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio: request.aspect_ratio.as_ref().map(|ar| match ar {
+      GenerateSeedance10LiteAspectRatio::Auto => CommonAspectRatio::Auto,
+      GenerateSeedance10LiteAspectRatio::TwentyOneByNine => CommonAspectRatio::WideTwentyOneByNine,
+      GenerateSeedance10LiteAspectRatio::SixteenByNine => CommonAspectRatio::WideSixteenByNine,
+      GenerateSeedance10LiteAspectRatio::FourByThree => CommonAspectRatio::WideFourByThree,
+      GenerateSeedance10LiteAspectRatio::Square => CommonAspectRatio::Square,
+      GenerateSeedance10LiteAspectRatio::ThreeByFour => CommonAspectRatio::TallThreeByFour,
+      GenerateSeedance10LiteAspectRatio::NineBySixteen => CommonAspectRatio::TallNineBySixteen,
+    }),
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,

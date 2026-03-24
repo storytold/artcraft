@@ -20,6 +20,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::enqueue_veo_2_image_to_video_webhook;
@@ -221,7 +222,12 @@ pub async fn generate_veo_2_image_to_video_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Keyframe), // TODO: This endpoint only supports keyframes for now
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio: request.aspect_ratio.as_ref().map(|ar| match ar {
+      GenerateVeo2AspectRatio::Auto => CommonAspectRatio::Auto,
+      GenerateVeo2AspectRatio::AutoPreferPortrait => CommonAspectRatio::Auto,
+      GenerateVeo2AspectRatio::WideSixteenNine => CommonAspectRatio::WideSixteenByNine,
+      GenerateVeo2AspectRatio::TallNineSixteen => CommonAspectRatio::TallNineBySixteen,
+    }),
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,
