@@ -5,7 +5,7 @@ use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::list_pending_seedance2pro_jobs;
 use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, TaskStatus};
 
-use crate::process_page_batch::process_page_batch;
+use crate::jobs::process_page_batch::process_page_batch;
 use crate::job_dependencies::JobDependencies;
 
 pub async fn main_loop(job_dependencies: JobDependencies) {
