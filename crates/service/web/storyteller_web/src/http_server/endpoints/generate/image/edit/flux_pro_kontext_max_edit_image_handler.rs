@@ -208,6 +208,14 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
       })?;
 
   // NB: Don't fail the job if the query fails.
+  let maybe_batch_count: Option<u8> = match request.num_images {
+    Some(FluxProKontextMaxEditImageNumImages::One) => Some(1),
+    Some(FluxProKontextMaxEditImageNumImages::Two) => Some(2),
+    Some(FluxProKontextMaxEditImageNumImages::Three) => Some(3),
+    Some(FluxProKontextMaxEditImageNumImages::Four) => Some(4),
+    None => None,
+  };
+
   let prompt_result = insert_prompt(InsertPromptArgs {
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
@@ -222,7 +230,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
     maybe_generation_mode: Some(CommonGenerationMode::Edit), // TODO: This endpoint only supports "edit" (and not "text") for now
     maybe_aspect_ratio: None,
     maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_batch_count,
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,

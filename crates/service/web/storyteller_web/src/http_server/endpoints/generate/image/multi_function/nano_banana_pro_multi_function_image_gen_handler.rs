@@ -22,6 +22,8 @@ use enums::common::payments_namespace::PaymentsNamespace;
 use enums::common::stripe_subscription_status::StripeSubscriptionStatus;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_resolution::CommonResolution;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{enqueue_nano_banana_pro_image_edit_webhook, EnqueueNanoBananaProEditImageArgs, EnqueueNanoBananaProEditImageAspectRatio, EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageResolution};
@@ -295,6 +297,36 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
       })?;
 
   // NB: Don't fail the job if the query fails.
+  let maybe_aspect_ratio = match request.aspect_ratio {
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::Auto) => Some(CommonAspectRatio::Auto),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::OneByOne) => Some(CommonAspectRatio::Square),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::FiveByFour) => Some(CommonAspectRatio::WideFiveByFour),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::FourByThree) => Some(CommonAspectRatio::WideFourByThree),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::ThreeByTwo) => Some(CommonAspectRatio::WideThreeByTwo),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::SixteenByNine) => Some(CommonAspectRatio::WideSixteenByNine),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::TwentyOneByNine) => Some(CommonAspectRatio::WideTwentyOneByNine),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::FourByFive) => Some(CommonAspectRatio::TallFourByFive),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::ThreeByFour) => Some(CommonAspectRatio::TallThreeByFour),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::TwoByThree) => Some(CommonAspectRatio::TallTwoByThree),
+    Some(NanoBananaProMultiFunctionImageGenAspectRatio::NineBySixteen) => Some(CommonAspectRatio::TallNineBySixteen),
+    None => None,
+  };
+
+  let maybe_resolution = match request.resolution {
+    Some(NanoBananaProMultiFunctionImageGenImageResolution::OneK) => Some(CommonResolution::OneK),
+    Some(NanoBananaProMultiFunctionImageGenImageResolution::TwoK) => Some(CommonResolution::TwoK),
+    Some(NanoBananaProMultiFunctionImageGenImageResolution::FourK) => Some(CommonResolution::FourK),
+    None => None,
+  };
+
+  let maybe_batch_count: Option<u8> = match request.num_images {
+    Some(NanoBananaProMultiFunctionImageGenNumImages::One) => Some(1),
+    Some(NanoBananaProMultiFunctionImageGenNumImages::Two) => Some(2),
+    Some(NanoBananaProMultiFunctionImageGenNumImages::Three) => Some(3),
+    Some(NanoBananaProMultiFunctionImageGenNumImages::Four) => Some(4),
+    None => None,
+  };
+
   let prompt_result = insert_prompt(InsertPromptArgs {
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
@@ -305,9 +337,9 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(generation_mode),
-    maybe_aspect_ratio: None,
-    maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_aspect_ratio,
+    maybe_resolution,
+    maybe_batch_count,
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,

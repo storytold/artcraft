@@ -20,6 +20,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4p5_edit_image_webhook::{enqueue_bytedance_seedream_v4p5_edit_image_webhook, EnqueueBytedanceSeedreamV4p5EditImageArgs, EnqueueBytedanceSeedreamV4p5EditImageNumImages, EnqueueBytedanceSeedreamV4p5EditImageSize};
@@ -247,6 +248,26 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
       })?;
 
   // NB: Don't fail the job if the query fails.
+  let maybe_aspect_ratio = match request.image_size {
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenImageSize::Square) => Some(CommonAspectRatio::Square),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenImageSize::SquareHd) => Some(CommonAspectRatio::SquareHd),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenImageSize::PortraitFourThree) => Some(CommonAspectRatio::TallThreeByFour),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenImageSize::PortraitSixteenNine) => Some(CommonAspectRatio::TallNineBySixteen),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenImageSize::LandscapeFourThree) => Some(CommonAspectRatio::WideFourByThree),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenImageSize::LandscapeSixteenNine) => Some(CommonAspectRatio::WideSixteenByNine),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenImageSize::Auto2k) => Some(CommonAspectRatio::Auto2k),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenImageSize::Auto4k) => Some(CommonAspectRatio::Auto4k),
+    None => None,
+  };
+
+  let maybe_batch_count: Option<u8> = match request.num_images {
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenNumImages::One) => Some(1),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenNumImages::Two) => Some(2),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenNumImages::Three) => Some(3),
+    Some(BytedanceSeedreamV4p5MultiFunctionImageGenNumImages::Four) => Some(4),
+    None => None,
+  };
+
   let prompt_result = insert_prompt(InsertPromptArgs {
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
@@ -257,9 +278,9 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(generation_mode),
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio,
     maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_batch_count,
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,

@@ -16,6 +16,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_ultra_text_to_image_webhook::FluxPro11UltraArgs;
 use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_ultra_text_to_image_webhook::{enqueue_flux_pro_11_ultra_text_to_image_webhook, FluxPro11UltraAspectRatio, FluxPro11UltraNumImages};
@@ -158,6 +159,27 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
       })?;
 
   // NB: Don't fail the job if the query fails.
+  let maybe_aspect_ratio = match request.aspect_ratio {
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::Square) => Some(CommonAspectRatio::Square),
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::LandscapeThreeByTwo) => Some(CommonAspectRatio::WideThreeByTwo),
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::LandscapeFourByThree) => Some(CommonAspectRatio::WideFourByThree),
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::LandscapeSixteenByNine) => Some(CommonAspectRatio::WideSixteenByNine),
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::LandscapeTwentyOneByNine) => Some(CommonAspectRatio::WideTwentyOneByNine),
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::PortraitTwoByThree) => Some(CommonAspectRatio::TallTwoByThree),
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::PortraitThreeByFour) => Some(CommonAspectRatio::TallThreeByFour),
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::PortraitNineBySixteen) => Some(CommonAspectRatio::TallNineBySixteen),
+    Some(GenerateFluxPro11UltraTextToImageAspectRatio::PortraitNineByTwentyOne) => Some(CommonAspectRatio::TallNineByTwentyOne),
+    None => None,
+  };
+
+  let maybe_batch_count: Option<u8> = match request.num_images {
+    Some(GenerateFluxPro11UltraTextToImageNumImages::One) => Some(1),
+    Some(GenerateFluxPro11UltraTextToImageNumImages::Two) => Some(2),
+    Some(GenerateFluxPro11UltraTextToImageNumImages::Three) => Some(3),
+    Some(GenerateFluxPro11UltraTextToImageNumImages::Four) => Some(4),
+    None => None,
+  };
+
   let prompt_result = insert_prompt(InsertPromptArgs {
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
@@ -168,9 +190,9 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Text), // TODO: This endpoint only supports "text" for now
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio,
     maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_batch_count,
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,

@@ -13,6 +13,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::enqueue_flux_1_schnell_text_to_image_webhook;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::{Flux1SchnellArgs, Flux1SchnellAspectRatio, Flux1SchnellNumImages};
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -168,6 +169,24 @@ pub async fn generate_flux_1_schnell_text_to_image_handler(
       })?;
 
   // NB: Don't fail the job if the query fails.
+  let maybe_aspect_ratio = match request.aspect_ratio {
+    Some(GenerateFlux1SchnellTextToImageAspectRatio::Square) => Some(CommonAspectRatio::Square),
+    Some(GenerateFlux1SchnellTextToImageAspectRatio::SquareHd) => Some(CommonAspectRatio::SquareHd),
+    Some(GenerateFlux1SchnellTextToImageAspectRatio::LandscapeFourByThree) => Some(CommonAspectRatio::WideFourByThree),
+    Some(GenerateFlux1SchnellTextToImageAspectRatio::LandscapeSixteenByNine) => Some(CommonAspectRatio::WideSixteenByNine),
+    Some(GenerateFlux1SchnellTextToImageAspectRatio::PortraitThreeByFour) => Some(CommonAspectRatio::TallThreeByFour),
+    Some(GenerateFlux1SchnellTextToImageAspectRatio::PortraitNineBySixteen) => Some(CommonAspectRatio::TallNineBySixteen),
+    None => None,
+  };
+
+  let maybe_batch_count: Option<u8> = match request.num_images {
+    Some(GenerateFlux1SchnellTextToImageNumImages::One) => Some(1),
+    Some(GenerateFlux1SchnellTextToImageNumImages::Two) => Some(2),
+    Some(GenerateFlux1SchnellTextToImageNumImages::Three) => Some(3),
+    Some(GenerateFlux1SchnellTextToImageNumImages::Four) => Some(4),
+    None => None,
+  };
+
   let prompt_result = insert_prompt(InsertPromptArgs {
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
@@ -180,9 +199,9 @@ pub async fn generate_flux_1_schnell_text_to_image_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Text), // TODO: This endpoint only supports "text" for now
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio,
     maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_batch_count,
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
