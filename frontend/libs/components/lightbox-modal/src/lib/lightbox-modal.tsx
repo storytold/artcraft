@@ -29,6 +29,7 @@ import {
 } from "react";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
+import type { Prompts } from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCopy, faLink, faCheck } from "@fortawesome/pro-solid-svg-icons";
@@ -92,17 +93,8 @@ interface LightboxModalProps {
     media_id?: string,
   ) => Promise<void> | void;
   onRecreateClicked?: (data: {
-    prompt: string | null;
+    promptData: Prompts;
     mediaClass: string | undefined;
-    modelType: string | null;
-    contextImages: Array<{
-      media_links: {
-        cdn_url: string;
-        maybe_thumbnail_template: string;
-      };
-      media_token: string;
-      semantic: string;
-    }> | null;
   }) => void;
   batchImageToken?: string;
   onNavigatePrev?: () => void;
@@ -148,7 +140,11 @@ export function LightboxModal({
 
   const [refPreviewUrl, setRefPreviewUrl] = useState<string | null>(null);
   const [mediaLoaded, setMediaLoaded] = useState<boolean>(false);
-  const [prompt, setPrompt] = useState<string | null>(null);
+  const [promptData, setPromptData] = useState<Prompts | null>(null);
+  const prompt = promptData?.maybe_positive_prompt ?? null;
+  const generationProvider = promptData?.maybe_generation_provider ?? null;
+  const modelType = promptData?.maybe_model_type ?? null;
+  const contextImages = promptData?.maybe_context_images ?? null;
   const [promptLoading, setPromptLoading] = useState<boolean>(false);
   const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState<boolean>(false);
@@ -156,18 +152,6 @@ export function LightboxModal({
   const [isPromptClamped, setIsPromptClamped] = useState<boolean>(false);
   const [promptCopied, setPromptCopied] = useState<boolean>(false);
   const promptCopiedTimeoutRef = useRef<number | null>(null);
-  const [generationProvider, setGenerationProvider] = useState<string | null>(
-    null,
-  );
-  const [modelType, setModelType] = useState<string | null>(null);
-  const [contextImages, setContextImages] = useState<Array<{
-    media_links: {
-      cdn_url: string;
-      maybe_thumbnail_template: string;
-    };
-    media_token: string;
-    semantic: string;
-  }> | null>(null);
   const [batchImages, setBatchImages] = useState<string[] | null>(null);
   const [batchTokens, setBatchTokens] = useState<string[] | null>(null);
   const [shareCopied, setShareCopied] = useState<boolean>(false);
@@ -204,21 +188,15 @@ export function LightboxModal({
   // rapid next/prev navigation, with cancellation for stale responses.
   useEffect(() => {
     if (!mediaId) {
-      setPrompt(null);
+      setPromptData(null);
       setHasPromptToken(false);
-      setGenerationProvider(null);
-      setModelType(null);
-      setContextImages(null);
       setPromptLoading(false);
       return;
     }
 
     // Immediately show skeletons & clear stale data
     setPromptLoading(true);
-    setPrompt(null);
-    setGenerationProvider(null);
-    setModelType(null);
-    setContextImages(null);
+    setPromptData(null);
 
     let cancelled = false;
 
@@ -237,32 +215,19 @@ export function LightboxModal({
           if (cancelled) return;
 
           if (promptResponse.success && promptResponse.data) {
-            const promptData = promptResponse.data;
-            setPrompt(promptData.maybe_positive_prompt || null);
-            setGenerationProvider(promptData.maybe_generation_provider || null);
-            setModelType(promptData.maybe_model_type || null);
-            setContextImages(promptData.maybe_context_images || null);
+            setPromptData(promptResponse.data);
           } else {
-            setPrompt(null);
-            setGenerationProvider(null);
-            setModelType(null);
-            setContextImages(null);
+            setPromptData(null);
           }
         } else {
           setHasPromptToken(false);
-          setPrompt(null);
-          setGenerationProvider(null);
-          setModelType(null);
-          setContextImages(null);
+          setPromptData(null);
         }
       } catch (error) {
         if (cancelled) return;
         console.error("Error fetching prompt:", error);
         setHasPromptToken(false);
-        setPrompt(null);
-        setGenerationProvider(null);
-        setModelType(null);
-        setContextImages(null);
+        setPromptData(null);
       } finally {
         if (!cancelled) setPromptLoading(false);
       }
@@ -959,6 +924,7 @@ export function LightboxModal({
               <div className="mt-4 grid grid-cols-2 gap-1.5">
                 {onRecreateClicked &&
                   hasPromptToken &&
+                  promptData &&
                   (derivedMediaClass === "image" ||
                     derivedMediaClass === "video") && (
                     <Button
@@ -969,10 +935,8 @@ export function LightboxModal({
                         e.stopPropagation();
                         gtagEvent("recreate_clicked");
                         onRecreateClicked({
-                          prompt,
+                          promptData,
                           mediaClass: derivedMediaClass,
-                          modelType,
-                          contextImages,
                         });
                       }}
                     >

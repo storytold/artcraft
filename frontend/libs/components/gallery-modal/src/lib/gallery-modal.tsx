@@ -3,6 +3,7 @@ import { LightboxModal } from "@storyteller/ui-lightbox-modal";
 import { Button } from "@storyteller/ui-button";
 import { CloseButton } from "@storyteller/ui-close-button";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
+import type { Prompts } from "@storyteller/api";
 import React, {
   useState,
   useEffect,
@@ -252,17 +253,8 @@ interface GalleryModalProps {
     media_id?: string,
   ) => Promise<void> | void;
   onRecreateClicked?: (data: {
-    prompt: string | null;
+    promptData: Prompts;
     mediaClass: string | undefined;
-    modelType: string | null;
-    contextImages: Array<{
-      media_links: {
-        cdn_url: string;
-        maybe_thumbnail_template: string;
-      };
-      media_token: string;
-      semantic: string;
-    }> | null;
   }) => void;
 }
 

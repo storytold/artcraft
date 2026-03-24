@@ -16,7 +16,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { FilterMediaClasses } from "@storyteller/api";
-import { getCreatorIcon, ModelCreator, IMAGE_MODELS_BY_ID, VIDEO_MODELS_BY_ID } from "@storyteller/model-list";
+import { getCreatorIcon, ModelCreator, IMAGE_MODELS_BY_ID, VIDEO_MODELS_BY_ID, CommonAspectRatio, CommonResolution } from "@storyteller/model-list";
 import { useClassyModelSelectorStore, ModelPage } from "@storyteller/ui-model-selector";
 import { useCreditsState } from "@storyteller/credits";
 import { gtagEvent } from "@storyteller/google-analytics";
@@ -51,7 +51,8 @@ import {
   useCostBreakdownModalStore,
   CreditsModal,
 } from "@storyteller/ui-pricing-modal";
-import { RefImage, usePromptImageStore, usePromptVideoStore } from "@storyteller/ui-promptbox";
+import { RefImage, RefVideo, RefAudio, usePromptImageStore, usePromptVideoStore } from "@storyteller/ui-promptbox";
+import type { Prompts } from "@storyteller/api";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -265,47 +266,126 @@ export const TopBar = ({ pageName }: Props) => {
   };
 
   const handleRecreateFromGallery = (data: {
-    prompt: string | null;
+    promptData: Prompts;
     mediaClass: string | undefined;
-    modelType: string | null;
-    contextImages: Array<{
-      media_links: {
-        cdn_url: string;
-        maybe_thumbnail_template: string;
-      };
-      media_token: string;
-      semantic: string;
-    }> | null;
   }) => {
     try {
-      const { prompt: recreatePrompt, mediaClass: recreateMediaClass, modelType: recreateModelType, contextImages: recreateContextImages } = data;
+      const { promptData, mediaClass: recreateMediaClass } = data;
+      const contextImages = promptData.maybe_context_images || [];
 
-      // Build reference images from context images
-      const refImages: RefImage[] = (recreateContextImages || []).map((ci) => ({
-        id: Math.random().toString(36).substring(7),
-        url: ci.media_links.cdn_url,
-        file: new File([], "recreate-ref"),
-        mediaToken: ci.media_token,
-      }));
+      // Partition context images by semantic type
+      const imgRefs: RefImage[] = [];
+      let endFrameImage: RefImage | undefined;
+      const vidRefs: RefVideo[] = [];
+      const audioRefs: RefAudio[] = [];
+
+      for (const ci of contextImages) {
+        const base = {
+          id: Math.random().toString(36).substring(7),
+          url: ci.media_links.cdn_url,
+          mediaToken: ci.media_token,
+        };
+
+        switch (ci.semantic) {
+          case "vid_end_frame":
+            endFrameImage = { ...base, file: new File([], "recreate-ref") };
+            break;
+          case "vid_ref":
+            vidRefs.push({ ...base, file: new File([], "recreate-ref"), duration: 0 });
+            break;
+          case "audioref":
+            audioRefs.push({ ...base, file: new File([], "recreate-ref"), duration: 0 });
+            break;
+          default:
+            // imgref, imgref_character, imgref_style, imgref_bg, imgsrc, vid_start_frame, imgmask
+            imgRefs.push({ ...base, file: new File([], "recreate-ref") });
+            break;
+        }
+      }
+
+      // Determine input mode from generation_mode or context image semantics
+      const hasKeyframeSemantics = contextImages.some(
+        (ci) => ci.semantic === "vid_start_frame" || ci.semantic === "vid_end_frame",
+      );
+      const inputMode: "keyframe" | "reference" =
+        promptData.maybe_generation_mode === "keyframe" || hasKeyframeSemantics
+          ? "keyframe"
+          : promptData.maybe_generation_mode === "reference"
+            ? "reference"
+            : imgRefs.length > 0
+              ? "reference"
+              : "keyframe";
 
       const modelStore = useClassyModelSelectorStore.getState();
 
       if (recreateMediaClass === "video") {
         const videoStore = usePromptVideoStore.getState();
-        if (recreatePrompt) videoStore.setPrompt(recreatePrompt);
-        if (refImages.length > 0) videoStore.setReferenceImages(refImages);
-        if (recreateModelType) {
-          const model = VIDEO_MODELS_BY_ID.get(recreateModelType);
-          if (model) modelStore.setSelectedModel(ModelPage.ImageToVideo, model);
+
+        // Set model first so the UI syncs sizeOptions / durationOptions
+        const videoModel = promptData.maybe_model_type
+          ? VIDEO_MODELS_BY_ID.get(promptData.maybe_model_type)
+          : undefined;
+        if (videoModel) {
+          modelStore.setSelectedModel(ModelPage.ImageToVideo, videoModel);
         }
+
+        if (promptData.maybe_positive_prompt) {
+          videoStore.setPrompt(promptData.maybe_positive_prompt);
+        }
+        if (imgRefs.length > 0) videoStore.setReferenceImages(imgRefs);
+        if (endFrameImage) videoStore.setEndFrameImage(endFrameImage);
+        if (vidRefs.length > 0) videoStore.setReferenceVideos(vidRefs);
+        if (audioRefs.length > 0) videoStore.setReferenceAudios(audioRefs);
+        if (promptData.maybe_generate_audio !== null) {
+          videoStore.setGenerateWithSound(promptData.maybe_generate_audio);
+        }
+        if (promptData.maybe_duration_seconds !== null) {
+          videoStore.setDuration(promptData.maybe_duration_seconds);
+        }
+
+        // Map API aspect ratio (tauriValue like "wide_sixteen_by_nine") → textLabel (like "16:9")
+        if (promptData.maybe_aspect_ratio && videoModel?.sizeOptions) {
+          const match = videoModel.sizeOptions.find(
+            (opt) => opt.tauriValue === promptData.maybe_aspect_ratio,
+          );
+          if (match) {
+            videoStore.setAspectRatio(match.textLabel);
+          }
+        }
+
+        // Map API resolution (like "one_k") → video store format (like "1080p")
+        if (promptData.maybe_resolution && videoModel?.resolutionOptions) {
+          const resolutionMap: Record<string, string> = {
+            one_k: "1080p",
+            two_k: "2k",
+            three_k: "3k",
+            four_k: "4k",
+          };
+          const mapped = resolutionMap[promptData.maybe_resolution];
+          if (mapped && videoModel.resolutionOptions.includes(mapped)) {
+            videoStore.setResolution(mapped);
+          }
+        }
+
+        videoStore.setInputMode(inputMode);
         useTabStore.getState().setActiveTab("VIDEO");
       } else {
         // Default to image
         const imageStore = usePromptImageStore.getState();
-        if (recreatePrompt) imageStore.setPrompt(recreatePrompt);
-        if (refImages.length > 0) imageStore.setReferenceImages(refImages);
-        if (recreateModelType) {
-          const model = IMAGE_MODELS_BY_ID.get(recreateModelType);
+
+        if (promptData.maybe_positive_prompt) {
+          imageStore.setPrompt(promptData.maybe_positive_prompt);
+        }
+        if (imgRefs.length > 0) imageStore.setReferenceImages(imgRefs);
+        if (promptData.maybe_aspect_ratio) {
+          imageStore.setCommonAspectRatio(promptData.maybe_aspect_ratio as CommonAspectRatio);
+        }
+        if (promptData.maybe_resolution) {
+          imageStore.setCommonResolution(promptData.maybe_resolution as CommonResolution);
+        }
+
+        if (promptData.maybe_model_type) {
+          const model = IMAGE_MODELS_BY_ID.get(promptData.maybe_model_type);
           if (model) modelStore.setSelectedModel(ModelPage.TextToImage, model);
         }
         useTabStore.getState().setActiveTab("IMAGE");
