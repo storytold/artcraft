@@ -20,6 +20,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -290,9 +291,19 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(generation_mode),
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio: request.aspect_ratio.as_ref().map(|ar| match ar {
+      Seedance2p0AspectRatio::Landscape16x9 => CommonAspectRatio::WideSixteenByNine,
+      Seedance2p0AspectRatio::Portrait9x16 => CommonAspectRatio::TallNineBySixteen,
+      Seedance2p0AspectRatio::Square1x1 => CommonAspectRatio::Square,
+      Seedance2p0AspectRatio::Standard4x3 => CommonAspectRatio::WideFourByThree,
+      Seedance2p0AspectRatio::Portrait3x4 => CommonAspectRatio::TallThreeByFour,
+    }),
     maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_batch_count: request.batch_count.map(|bc| match bc {
+      Seedance2p0BatchCount::One => 1,
+      Seedance2p0BatchCount::Two => 2,
+      Seedance2p0BatchCount::Four => 4,
+    }),
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,

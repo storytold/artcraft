@@ -12,6 +12,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen::{Seedance1p5ProMultiFunctionVideoGenAspectRatio, Seedance1p5ProMultiFunctionVideoGenDuration, Seedance1p5ProMultiFunctionVideoGenRequest, Seedance1p5ProMultiFunctionVideoGenResolution, Seedance1p5ProMultiFunctionVideoGenResponse};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
@@ -246,7 +247,15 @@ pub async fn seedance_1p5_pro_multi_function_video_gen_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(generation_mode),
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio: request.aspect_ratio.as_ref().map(|ar| match ar {
+      Seedance1p5ProMultiFunctionVideoGenAspectRatio::Auto => CommonAspectRatio::Auto,
+      Seedance1p5ProMultiFunctionVideoGenAspectRatio::TwentyOneByNine => CommonAspectRatio::WideTwentyOneByNine,
+      Seedance1p5ProMultiFunctionVideoGenAspectRatio::SixteenByNine => CommonAspectRatio::WideSixteenByNine,
+      Seedance1p5ProMultiFunctionVideoGenAspectRatio::FourByThree => CommonAspectRatio::WideFourByThree,
+      Seedance1p5ProMultiFunctionVideoGenAspectRatio::Square => CommonAspectRatio::Square,
+      Seedance1p5ProMultiFunctionVideoGenAspectRatio::ThreeByFour => CommonAspectRatio::TallThreeByFour,
+      Seedance1p5ProMultiFunctionVideoGenAspectRatio::NineBySixteen => CommonAspectRatio::TallNineBySixteen,
+    }),
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: Some(generate_audio),
