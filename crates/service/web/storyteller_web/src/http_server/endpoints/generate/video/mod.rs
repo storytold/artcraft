@@ -1,10 +1,2 @@
-pub mod generate_kling_1_6_pro_video_handler;
-pub mod generate_kling_2_1_master_video_handler;
-pub mod generate_kling_2_1_pro_video_handler;
-pub mod generate_seedance_1_0_lite_image_to_video_handler;
-pub mod generate_seedance_1_0_pro_image_to_video_handler;
-pub mod generate_veo_2_image_to_video_handler;
-pub mod generate_veo_3_fast_image_to_video_handler;
-pub mod generate_veo_3_image_to_video_handler;
-pub mod multi_function;
 pub mod image;
+pub mod multi_function;
