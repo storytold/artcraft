@@ -35,6 +35,7 @@ use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPrompt
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use utoipa::ToSchema;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 
 /// Kling 2.1 Pro Image to Video
 #[utoipa::path(
@@ -223,7 +224,7 @@ pub async fn generate_kling_2_1_pro_video_handler(
     maybe_positive_prompt: Some(prompt),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None,
+    maybe_generation_mode: Some(CommonGenerationMode::Keyframe), // TODO: This endpoint only supports keyframes for now
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,

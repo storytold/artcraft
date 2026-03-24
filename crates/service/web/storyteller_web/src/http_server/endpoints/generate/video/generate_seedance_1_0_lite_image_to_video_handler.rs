@@ -239,7 +239,7 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
     maybe_positive_prompt: Some(prompt),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: Some(CommonGenerationMode::Keyframe),
+    maybe_generation_mode: Some(CommonGenerationMode::Keyframe), // TODO: This endpoint only supports keyframes for now
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,

@@ -7,3 +7,4 @@ pub mod generate_veo_2_image_to_video_handler;
 pub mod generate_veo_3_fast_image_to_video_handler;
 pub mod generate_veo_3_image_to_video_handler;
 pub mod multi_function;
+pub mod image;
