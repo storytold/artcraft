@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO prompts\nSET\n  token = ?,\n  prompt_type = ?,\n\n  maybe_creator_user_token = ?,\n  \n  maybe_model_type = ?,\n  maybe_generation_provider = ?,\n\n  maybe_positive_prompt = ?,\n  maybe_negative_prompt = ?,\n\n  maybe_generation_mode = ?,\n  maybe_aspect_ratio = ?,\n  maybe_resolution = ?,\n  maybe_batch_count = ?,\n  maybe_generate_audio = ?,\n  maybe_duration_seconds = ?,\n\n  maybe_other_args = ?,\n\n  creator_ip_address = ?\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 15
+    },
+    "nullable": []
+  },
+  "hash": "ccf92ebe0328d3019ac6b01be4b442df706a183362fa7e5c331f5a4bf1a74a00"
+}
