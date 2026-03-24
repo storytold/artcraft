@@ -212,6 +212,9 @@ use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
 use enums::by_table::user_ratings::rating_value::UserRatingValue;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
@@ -513,6 +516,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileSubtype,
     MediaFileType,
     CommonModelType,
+    CommonAspectRatio,
+    CommonGenerationMode,
+    CommonResolution,
     PromptContextSemanticType,
     PromptType,
     PublicMediaFileModelType,

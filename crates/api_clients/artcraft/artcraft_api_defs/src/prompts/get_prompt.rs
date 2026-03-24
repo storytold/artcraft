@@ -2,7 +2,10 @@ use crate::common::responses::media_links::MediaLinks;
 use chrono::{DateTime, Utc};
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use serde_derive::{Deserialize, Serialize};
@@ -49,6 +52,21 @@ pub struct PromptInfo {
 
   /// Negative prompt (optional)
   pub maybe_negative_prompt: Option<String>,
+
+  /// OPTIONAL. The generation mode (eg. keyframe, reference, inpaint, etc.)
+  pub maybe_generation_mode: Option<CommonGenerationMode>,
+
+  /// OPTIONAL. The aspect ratio (eg. square, auto, wide_three_by_two, etc.)
+  pub maybe_aspect_ratio: Option<CommonAspectRatio>,
+
+  /// OPTIONAL. The resolution (eg. one_k, two_k, four_k, etc.)
+  pub maybe_resolution: Option<CommonResolution>,
+
+  /// OPTIONAL. The number of outputs to generate (0-255).
+  pub maybe_batch_count: Option<u8>,
+
+  /// OPTIONAL. Whether to generate audio.
+  pub maybe_generate_audio: Option<bool>,
 
   /// Context images (optional)
   pub maybe_context_images: Option<Vec<GetPromptImageContextItem>>,

@@ -332,6 +332,11 @@ pub async fn process_job_inference(
     maybe_positive_prompt: Some(&positive_prompt),
     maybe_negative_prompt: maybe_negative_prompt.as_deref(),
     maybe_other_args: None, // TODO(bt,2024-02-22): Support other arguments
+    maybe_generation_mode: None,
+    maybe_aspect_ratio: None,
+    maybe_resolution: None,
+    maybe_batch_count: None,
+    maybe_generate_audio: None,
     creator_ip_address: &job.creator_ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

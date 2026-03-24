@@ -222,6 +222,11 @@ async fn upload_grok_video(
     negative_prompt: None,
     model_type: Some(CommonModelType::GrokVideo),
     generation_provider: Some(GenerationProvider::Grok),
+    maybe_generation_mode: None,
+    maybe_aspect_ratio: None,
+    maybe_resolution: None,
+    maybe_batch_count: None,
+    maybe_generate_audio: None,
   };
 
   let prompt_response = create_prompt(

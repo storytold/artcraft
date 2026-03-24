@@ -89,6 +89,11 @@ pub async fn handle_classic_successful_generations(
       negative_prompt: None,
       model_type: Some(generation.model_type),
       generation_provider: Some(GenerationProvider::Sora),
+      maybe_generation_mode: None,
+      maybe_aspect_ratio: None,
+      maybe_resolution: None,
+      maybe_batch_count: None,
+      maybe_generate_audio: None,
     };
 
     let prompt_response = create_prompt(
