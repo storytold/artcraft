@@ -193,6 +193,7 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
       QwenEdit2511EditImageAngleNumImages::Four => 4,
     }),
     maybe_generate_audio: None,
+    maybe_duration_seconds: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

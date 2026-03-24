@@ -305,6 +305,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       Seedance2p0BatchCount::Four => 4,
     }),
     maybe_generate_audio: None,
+    maybe_duration_seconds: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

@@ -192,6 +192,7 @@ pub async fn flux_2_lora_edit_image_angle_handler(
       Flux2LoraEditImageAngleNumImages::Four => 4,
     }),
     maybe_generate_audio: None,
+    maybe_duration_seconds: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

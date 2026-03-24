@@ -40,6 +40,7 @@ pub struct Prompt {
   pub maybe_resolution: Option<CommonResolution>,
   pub maybe_batch_count: Option<u8>,
   pub maybe_generate_audio: Option<bool>,
+  pub maybe_duration_seconds: Option<u32>,
 
   /// For moderators only
   pub creator_ip_address: Option<String>,
@@ -68,6 +69,7 @@ pub struct PromptRaw {
   pub maybe_resolution: Option<CommonResolution>,
   pub maybe_batch_count: Option<u8>,
   pub maybe_generate_audio: Option<bool>,
+  pub maybe_duration_seconds: Option<u32>,
 
   /// For moderators only
   pub creator_ip_address: Option<String>,
@@ -114,6 +116,7 @@ pub async fn get_prompt_from_connection(
     maybe_resolution: record.maybe_resolution,
     maybe_batch_count: record.maybe_batch_count,
     maybe_generate_audio: record.maybe_generate_audio,
+    maybe_duration_seconds: record.maybe_duration_seconds,
     maybe_other_args: record.maybe_other_args
         .as_deref()
         .map(|args| PromptInnerPayload::from_json(args))
@@ -148,6 +151,7 @@ SELECT
     p.maybe_resolution as `maybe_resolution: enums::common::generation::common_resolution::CommonResolution`,
     p.maybe_batch_count as `maybe_batch_count: u8`,
     p.maybe_generate_audio as `maybe_generate_audio: bool`,
+    p.maybe_duration_seconds as `maybe_duration_seconds: u32`,
 
     p.maybe_other_args,
 

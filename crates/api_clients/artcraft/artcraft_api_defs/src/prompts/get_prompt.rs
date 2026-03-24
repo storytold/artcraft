@@ -72,6 +72,9 @@ pub struct PromptInfo {
   /// OPTIONAL. Whether to generate audio.
   pub maybe_generate_audio: Option<bool>,
 
+  /// OPTIONAL. The duration in seconds.
+  pub maybe_duration_seconds: Option<u32>,
+
   /// Context images (optional)
   pub maybe_context_images: Option<Vec<GetPromptImageContextItem>>,
 

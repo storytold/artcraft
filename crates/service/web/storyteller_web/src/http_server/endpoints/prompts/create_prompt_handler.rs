@@ -85,6 +85,7 @@ pub async fn create_prompt_handler(
     maybe_resolution: request.maybe_resolution,
     maybe_batch_count: request.maybe_batch_count,
     maybe_generate_audio: request.maybe_generate_audio,
+    maybe_duration_seconds: request.maybe_duration_seconds,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),

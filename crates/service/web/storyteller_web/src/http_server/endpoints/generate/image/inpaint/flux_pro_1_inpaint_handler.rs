@@ -228,6 +228,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
       FluxPro1InpaintImageNumImages::Four => 4,
     }),
     maybe_generate_audio: None,
+    maybe_duration_seconds: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

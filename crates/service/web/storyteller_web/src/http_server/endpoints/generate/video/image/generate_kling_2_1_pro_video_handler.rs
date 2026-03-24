@@ -234,6 +234,7 @@ pub async fn generate_kling_2_1_pro_video_handler(
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,
+    maybe_duration_seconds: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

@@ -194,6 +194,7 @@ pub async fn generate_flux_pro_11_ultra_text_to_image_handler(
     maybe_resolution: None,
     maybe_batch_count,
     maybe_generate_audio: None,
+    maybe_duration_seconds: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

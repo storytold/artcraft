@@ -223,6 +223,7 @@ pub async fn get_prompt_handler(
       maybe_resolution: result.maybe_resolution,
       maybe_batch_count: result.maybe_batch_count,
       maybe_generate_audio: result.maybe_generate_audio,
+      maybe_duration_seconds: result.maybe_duration_seconds,
       maybe_context_images,
       maybe_travel_prompt,
       maybe_style_name,

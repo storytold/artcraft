@@ -38,6 +38,7 @@ pub struct InsertPromptArgs<'e, 'c,  E>
   pub maybe_resolution: Option<CommonResolution>,
   pub maybe_batch_count: Option<u8>,
   pub maybe_generate_audio: Option<bool>,
+  pub maybe_duration_seconds: Option<u32>,
 
   pub maybe_other_args: Option<&'e PromptInnerPayload>,
 
@@ -90,7 +91,8 @@ SET
   maybe_resolution = ?,
   maybe_batch_count = ?,
   maybe_generate_audio = ?,
-  
+  maybe_duration_seconds = ?,
+
   maybe_other_args = ?,
 
   creator_ip_address = ?
@@ -107,6 +109,7 @@ SET
     args.maybe_resolution.map(|r| r.to_str()),
     args.maybe_batch_count,
     args.maybe_generate_audio,
+    args.maybe_duration_seconds,
     maybe_other_args,
     args.creator_ip_address,
   );

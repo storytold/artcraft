@@ -300,6 +300,7 @@ pub async fn validate_and_save_results(args: SaveResultsArgs<'_>) -> Result<Medi
       maybe_resolution: None,
       maybe_batch_count: None,
       maybe_generate_audio: None,
+      maybe_duration_seconds: None,
       creator_ip_address: &args.job.creator_ip_address,
       mysql_executor: &args.deps.db.mysql_pool,
       phantom: Default::default(),

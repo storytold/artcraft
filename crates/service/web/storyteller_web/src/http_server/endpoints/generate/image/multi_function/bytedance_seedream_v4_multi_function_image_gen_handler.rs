@@ -285,6 +285,7 @@ pub async fn bytedance_seedream_v4_multi_function_image_gen_handler(
     maybe_resolution: None,
     maybe_batch_count,
     maybe_generate_audio: None,
+    maybe_duration_seconds: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

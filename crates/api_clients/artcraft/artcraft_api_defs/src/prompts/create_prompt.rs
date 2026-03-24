@@ -40,6 +40,9 @@ pub struct CreatePromptRequest {
 
   /// OPTIONAL. Whether to generate audio.
   pub maybe_generate_audio: Option<bool>,
+
+  /// OPTIONAL. The duration in seconds.
+  pub maybe_duration_seconds: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]

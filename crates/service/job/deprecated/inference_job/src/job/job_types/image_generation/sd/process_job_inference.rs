@@ -337,6 +337,7 @@ pub async fn process_job_inference(
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,
+    maybe_duration_seconds: None,
     creator_ip_address: &job.creator_ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
