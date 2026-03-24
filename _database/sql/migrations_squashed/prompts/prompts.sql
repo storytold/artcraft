@@ -68,10 +68,8 @@ CREATE TABLE prompts (
   -- The resolution for the prompt (eg. four_k, 720p, etc.)
   maybe_resolution VARCHAR(16) DEFAULT NULL,
 
-  -- TODO: Let's change this to an integer before writing to it.
-  -- The duration (eg. 8s, 16s, 2m, etc.)
-  -- Not an integer because we want to potentially support other units
-  maybe_duration VARCHAR(8) DEFAULT NULL,
+  -- The duration in seconds
+  maybe_duration_seconds INT UNSIGNED DEFAULT NULL,
 
   -- The number of outputs to generate (0-255)
   maybe_batch_count TINYINT UNSIGNED DEFAULT NULL,
