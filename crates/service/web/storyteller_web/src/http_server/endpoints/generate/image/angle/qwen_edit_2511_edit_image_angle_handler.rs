@@ -14,6 +14,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{enqueue_qwen_edit_2511_edit_image_angle_webhook, EnqueueQwenEdit2511EditImageAngleArgs, EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511AngleImageSize};
@@ -176,9 +177,21 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Edit),
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio: request.image_size.map(|size| match size {
+      QwenEdit2511EditImageAngleImageSize::Square => CommonAspectRatio::Square,
+      QwenEdit2511EditImageAngleImageSize::SquareHd => CommonAspectRatio::SquareHd,
+      QwenEdit2511EditImageAngleImageSize::PortraitFourThree => CommonAspectRatio::TallThreeByFour,
+      QwenEdit2511EditImageAngleImageSize::PortraitSixteenNine => CommonAspectRatio::TallNineBySixteen,
+      QwenEdit2511EditImageAngleImageSize::LandscapeFourThree => CommonAspectRatio::WideFourByThree,
+      QwenEdit2511EditImageAngleImageSize::LandscapeSixteenNine => CommonAspectRatio::WideSixteenByNine,
+    }),
     maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_batch_count: request.num_images.map(|n| match n {
+      QwenEdit2511EditImageAngleNumImages::One => 1,
+      QwenEdit2511EditImageAngleNumImages::Two => 2,
+      QwenEdit2511EditImageAngleNumImages::Three => 3,
+      QwenEdit2511EditImageAngleNumImages::Four => 4,
+    }),
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,

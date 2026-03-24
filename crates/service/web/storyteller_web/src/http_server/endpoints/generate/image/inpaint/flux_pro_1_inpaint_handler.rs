@@ -221,7 +221,12 @@ pub async fn flux_pro_1_inpaint_image_handler(
     maybe_generation_mode: Some(CommonGenerationMode::Inpaint),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_batch_count: request.num_images.map(|n| match n {
+      FluxPro1InpaintImageNumImages::One => 1,
+      FluxPro1InpaintImageNumImages::Two => 2,
+      FluxPro1InpaintImageNumImages::Three => 3,
+      FluxPro1InpaintImageNumImages::Four => 4,
+    }),
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,

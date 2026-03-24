@@ -14,6 +14,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::angle::enqueue_flux_2_lora_edit_image_angle_webhook::{enqueue_flux_2_lora_edit_image_angle_webhook, EnqueueFlux2LoraEditImageAngleArgs, EnqueueFlux2LoraAngleNumImages, EnqueueFlux2LoraAngleImageSize};
@@ -175,9 +176,21 @@ pub async fn flux_2_lora_edit_image_angle_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Edit),
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio: request.image_size.map(|size| match size {
+      Flux2LoraEditImageAngleImageSize::Square => CommonAspectRatio::Square,
+      Flux2LoraEditImageAngleImageSize::SquareHd => CommonAspectRatio::SquareHd,
+      Flux2LoraEditImageAngleImageSize::PortraitFourThree => CommonAspectRatio::TallThreeByFour,
+      Flux2LoraEditImageAngleImageSize::PortraitSixteenNine => CommonAspectRatio::TallNineBySixteen,
+      Flux2LoraEditImageAngleImageSize::LandscapeFourThree => CommonAspectRatio::WideFourByThree,
+      Flux2LoraEditImageAngleImageSize::LandscapeSixteenNine => CommonAspectRatio::WideSixteenByNine,
+    }),
     maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_batch_count: request.num_images.map(|n| match n {
+      Flux2LoraEditImageAngleNumImages::One => 1,
+      Flux2LoraEditImageAngleNumImages::Two => 2,
+      Flux2LoraEditImageAngleNumImages::Three => 3,
+      Flux2LoraEditImageAngleNumImages::Four => 4,
+    }),
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
