@@ -4,7 +4,6 @@ use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
 use http_server_common::request::get_request_ip::get_request_ip;
-use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::{error, warn};
 use mysql_queries::queries::users::user_password_resets::change_password_from_password_reset::{change_password_from_password_reset, ChangePasswordFromPasswordResetArgs};
 use mysql_queries::queries::users::user_password_resets::lookup_password_reset_request::lookup_password_reset_request;
@@ -40,11 +39,31 @@ pub enum PasswordResetRedemptionError {
     Internal,
 }
 
+impl PasswordResetRedemptionError {
+    pub fn message(&self) -> &'static str {
+        match self {
+            Self::InvalidRedemption => "The redemption code is invalid, has already been redeemed, or has been replaced by a newer code.",
+            Self::PasswordsDoNotMatch => "The passwords do not match.",
+            Self::Internal => "An internal error occurred. Please try again later.",
+        }
+    }
+
+    pub fn status_code(&self) -> StatusCode {
+        match self {
+            Self::InvalidRedemption => StatusCode::BAD_REQUEST,
+            Self::PasswordsDoNotMatch => StatusCode::BAD_REQUEST,
+            Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+}
+
 #[derive(Serialize, Debug)]
 pub struct PasswordResetRedemptionErrorResponse {
     success: bool,
     kind: PasswordResetRedemptionError,
+    message: String,
 }
+
 impl Display for PasswordResetRedemptionErrorResponse {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
@@ -53,26 +72,35 @@ impl Display for PasswordResetRedemptionErrorResponse {
 
 impl From<PasswordResetRedemptionError> for PasswordResetRedemptionErrorResponse {
     fn from(value: PasswordResetRedemptionError) -> Self {
-        Self { kind: value, success: false }
+        let message = value.message().to_string();
+        Self { kind: value, success: false, message }
     }
 }
+
 impl From<errors::AnyhowError> for PasswordResetRedemptionErrorResponse {
     fn from(value: errors::AnyhowError) -> Self {
         log::error!("Internal error: {value}");
-        Self { kind: PasswordResetRedemptionError::Internal, success: false }
+        let error = PasswordResetRedemptionError::Internal;
+        let message = error.message().to_string();
+        Self { kind: error, success: false, message }
     }
 }
 
 impl ResponseError for PasswordResetRedemptionErrorResponse {
-    //TODO: Yknow, clean this up and stuff
     fn status_code(&self) -> StatusCode {
-        StatusCode::INTERNAL_SERVER_ERROR
+        self.kind.status_code()
     }
-  
+
     fn error_response(&self) -> HttpResponse {
-        serialize_as_json_error(self)
+        let body = serde_json::to_string(self).unwrap_or_else(|_| {
+            r#"{"success":false,"kind":"Internal","message":"An internal error occurred."}"#.to_string()
+        });
+
+        HttpResponse::build(self.status_code())
+            .content_type("application/json")
+            .body(body)
     }
-  }
+}
 
 pub async fn password_reset_redeem_handler(
     http_request: HttpRequest,
@@ -84,10 +112,7 @@ pub async fn password_reset_redeem_handler(
     let new_password = request.new_password.trim();
 
     if new_password != request.new_password_validation.trim() {
-        return Err(PasswordResetRedemptionErrorResponse {
-            kind: PasswordResetRedemptionError::PasswordsDoNotMatch,
-            success: false,
-        });
+        return Err(PasswordResetRedemptionError::PasswordsDoNotMatch.into());
     }
 
     let result = lookup_password_reset_request(&request.reset_token, &mysql_pool).await
@@ -100,17 +125,11 @@ pub async fn password_reset_redeem_handler(
         Ok(Some(reset_state)) => reset_state,
         Ok(None) => {
             warn!("No such reset request.");
-            return Err(PasswordResetRedemptionErrorResponse {
-                kind: PasswordResetRedemptionError::InvalidRedemption,
-                success: false,
-            });
+            return Err(PasswordResetRedemptionError::InvalidRedemption.into());
         }
         Err(err) => {
             error!("lookup error: {err}");
-            return Err(PasswordResetRedemptionErrorResponse {
-                kind: PasswordResetRedemptionError::InvalidRedemption,
-                success: false,
-            });
+            return Err(PasswordResetRedemptionError::InvalidRedemption.into());
         }
     };
 
@@ -120,10 +139,7 @@ pub async fn password_reset_redeem_handler(
         Ok(hash) => hash,
         Err(err) => {
             error!("password hash error: {err}");
-            return Err(PasswordResetRedemptionErrorResponse {
-                kind: PasswordResetRedemptionError::Internal,
-                success: false,
-            });
+            return Err(PasswordResetRedemptionError::Internal.into());
         }
     };
 
@@ -137,10 +153,7 @@ pub async fn password_reset_redeem_handler(
 
     if let Err(err) = result {
         error!("password reset error: {err}");
-        return Err(PasswordResetRedemptionErrorResponse {
-            kind: PasswordResetRedemptionError::Internal,
-            success: false,
-        });
+        return Err(PasswordResetRedemptionError::Internal.into());
     }
 
     let create_session_result =
@@ -150,10 +163,7 @@ pub async fn password_reset_redeem_handler(
         Ok(token) => token,
         Err(err) => {
             error!("error creating session: {err}");
-            return Err(PasswordResetRedemptionErrorResponse {
-                kind: PasswordResetRedemptionError::Internal,
-                success: false,
-            });
+            return Err(PasswordResetRedemptionError::Internal.into());
         }
     };
 
@@ -163,10 +173,7 @@ pub async fn password_reset_redeem_handler(
         Ok(cookie) => cookie,
         Err(err) => {
             error!("error creating session cookie: {err}");
-            return Err(PasswordResetRedemptionErrorResponse {
-                kind: PasswordResetRedemptionError::Internal,
-                success: false,
-            });
+            return Err(PasswordResetRedemptionError::Internal.into());
         },
     };
 
@@ -174,10 +181,7 @@ pub async fn password_reset_redeem_handler(
         Ok(payload) => payload,
         Err(err) => {
             error!("error creating session payload: {err}");
-            return Err(PasswordResetRedemptionErrorResponse {
-                kind: PasswordResetRedemptionError::Internal,
-                success: false,
-            });
+            return Err(PasswordResetRedemptionError::Internal.into());
         },
     };
 
