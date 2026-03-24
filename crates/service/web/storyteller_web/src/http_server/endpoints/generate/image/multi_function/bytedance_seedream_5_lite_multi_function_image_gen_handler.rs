@@ -14,7 +14,9 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_resolution::CommonResolution;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v5_lite_edit_image_webhook::{enqueue_bytedance_seedream_v5_lite_edit_image_webhook, EnqueueBytedanceSeedreamV5LiteEditImageArgs, EnqueueBytedanceSeedreamV5LiteEditImageNumImages, EnqueueBytedanceSeedreamV5LiteEditImageSize};
 use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::{enqueue_bytedance_seedream_v5_lite_text_to_image_webhook, EnqueueBytedanceSeedreamV5LiteTextToImageArgs, EnqueueBytedanceSeedreamV5LiteTextToImageNumImages, EnqueueBytedanceSeedreamV5LiteTextToImageSize};
@@ -225,6 +227,30 @@ pub async fn bytedance_seedream_5_lite_multi_function_image_gen_handler(
         CommonWebError::ServerError
       })?;
 
+  let maybe_aspect_ratio = request.image_size.map(|size| match size {
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Square => CommonAspectRatio::Square,
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::SquareHd => CommonAspectRatio::SquareHd,
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::PortraitFourThree => CommonAspectRatio::TallThreeByFour,
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::PortraitSixteenNine => CommonAspectRatio::TallNineBySixteen,
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::LandscapeFourThree => CommonAspectRatio::WideFourByThree,
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::LandscapeSixteenNine => CommonAspectRatio::WideSixteenByNine,
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Auto2k => CommonAspectRatio::Auto2k,
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Auto3k => CommonAspectRatio::Auto,
+  });
+
+  let maybe_resolution = request.image_size.and_then(|size| match size {
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Auto2k => Some(CommonResolution::TwoK),
+    BytedanceSeedream5LiteMultiFunctionImageGenImageSize::Auto3k => Some(CommonResolution::ThreeK),
+    _ => None,
+  });
+
+  let maybe_batch_count: Option<u8> = request.num_images.map(|n| match n {
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages::One => 1,
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Two => 2,
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Three => 3,
+    BytedanceSeedream5LiteMultiFunctionImageGenNumImages::Four => 4,
+  });
+
   let prompt_result = insert_prompt(InsertPromptArgs {
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
@@ -235,9 +261,9 @@ pub async fn bytedance_seedream_5_lite_multi_function_image_gen_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(generation_mode),
-    maybe_aspect_ratio: None,
-    maybe_resolution: None,
-    maybe_batch_count: None,
+    maybe_aspect_ratio,
+    maybe_resolution,
+    maybe_batch_count,
     maybe_generate_audio: None,
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
