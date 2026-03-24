@@ -15,6 +15,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::FluxPro11Args;
 use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{enqueue_flux_pro_11_text_to_image_webhook, FluxPro11AspectRatio, FluxPro11NumImages};
@@ -162,7 +163,7 @@ pub async fn generate_flux_pro_11_text_to_image_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None,
+    maybe_generation_mode: Some(CommonGenerationMode::Text),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,

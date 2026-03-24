@@ -300,7 +300,7 @@ pub async fn nano_banana_pro_multi_function_image_gen_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None,
+    maybe_generation_mode: None, // TODO: Multi-function handlers support multiple modes
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,

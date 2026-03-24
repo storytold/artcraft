@@ -15,6 +15,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::webhook::image::infill::enqueue_flux_pro_1_infill_webhook::{enqueue_flux_pro_1_infill_webhook, FluxPro1InfillArgs, FluxPro1InfillNumImages};
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -217,7 +218,7 @@ pub async fn flux_pro_1_inpaint_image_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None,
+    maybe_generation_mode: Some(CommonGenerationMode::Inpaint),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,

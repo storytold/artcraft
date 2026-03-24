@@ -15,6 +15,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::worldlabs::insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token::{insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_token, InsertGenericInferenceForWorldlabsWithAprioriJobTokenArgs};
@@ -179,7 +180,7 @@ pub async fn generate_worldlabs_marble_0p1_plus_splat_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: None,
+    maybe_generation_mode: Some(CommonGenerationMode::Reference),
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,
