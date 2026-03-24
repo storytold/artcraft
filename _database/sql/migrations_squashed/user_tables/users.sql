@@ -66,6 +66,7 @@ CREATE TABLE users (
   --   - "explore_media"
   --   - "studio"
   --   - "video_style_transfer"
+  --   - "sd_wl" (seedance whitelist)
   maybe_feature_flags VARCHAR(255) DEFAULT NULL,
 
   -- DEPRECATED

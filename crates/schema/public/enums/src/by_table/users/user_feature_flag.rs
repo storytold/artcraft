@@ -28,6 +28,10 @@ pub enum UserFeatureFlag {
 
   /// Access to video style transfer
   VideoStyleTransfer,
+
+  /// Access to the faster Seedance 2.0 whitelist
+  #[serde(rename = "sd_wl")]
+  SeedanceWhitelist,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -43,6 +47,7 @@ impl UserFeatureFlag {
       Self::Studio => "studio",
       Self::Upload3d => "upload_3d",
       Self::VideoStyleTransfer => "video_style_transfer",
+      Self::SeedanceWhitelist => "sd_wl",
     }
   }
 
@@ -52,6 +57,7 @@ impl UserFeatureFlag {
       "studio" => Ok(Self::Studio),
       "upload_3d" => Ok(Self::Upload3d),
       "video_style_transfer" => Ok(Self::VideoStyleTransfer),
+      "sd_wl" => Ok(Self::SeedanceWhitelist),
       _ => Err(format!("invalid value: {:?}", value)),
     }
   }
@@ -64,6 +70,7 @@ impl UserFeatureFlag {
       Self::Studio,
       Self::Upload3d,
       Self::VideoStyleTransfer,
+      Self::SeedanceWhitelist,
     ])
   }
 }
@@ -82,6 +89,7 @@ mod tests {
       assert_serialization(UserFeatureFlag::Studio, "studio");
       assert_serialization(UserFeatureFlag::Upload3d, "upload_3d");
       assert_serialization(UserFeatureFlag::VideoStyleTransfer, "video_style_transfer");
+      assert_serialization(UserFeatureFlag::SeedanceWhitelist, "sd_wl");
     }
 
     #[test]
@@ -90,6 +98,7 @@ mod tests {
       assert_eq!(UserFeatureFlag::Studio.to_str(), "studio");
       assert_eq!(UserFeatureFlag::Upload3d.to_str(), "upload_3d");
       assert_eq!(UserFeatureFlag::VideoStyleTransfer.to_str(), "video_style_transfer");
+      assert_eq!(UserFeatureFlag::SeedanceWhitelist.to_str(), "sd_wl");
     }
 
     #[test]
@@ -98,17 +107,19 @@ mod tests {
       assert_eq!(UserFeatureFlag::from_str("studio").unwrap(), UserFeatureFlag::Studio);
       assert_eq!(UserFeatureFlag::from_str("upload_3d").unwrap(), UserFeatureFlag::Upload3d);
       assert_eq!(UserFeatureFlag::from_str("video_style_transfer").unwrap(), UserFeatureFlag::VideoStyleTransfer);
+      assert_eq!(UserFeatureFlag::from_str("sd_wl").unwrap(), UserFeatureFlag::SeedanceWhitelist);
       assert!(UserFeatureFlag::from_str("foo").is_err());
     }
 
     #[test]
     fn all_variants() {
       let mut variants = UserFeatureFlag::all_variants();
-      assert_eq!(variants.len(), 4);
+      assert_eq!(variants.len(), 5);
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ExploreMedia));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Studio));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Upload3d));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::VideoStyleTransfer));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::SeedanceWhitelist));
       assert_eq!(variants.pop_first(), None);
     }
   }
