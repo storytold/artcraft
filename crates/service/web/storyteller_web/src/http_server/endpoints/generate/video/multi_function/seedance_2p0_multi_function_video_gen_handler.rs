@@ -35,7 +35,7 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, BatchCount, GenerateVideoArgs, Resolution,
+  generate_video, BatchCount, GenerateVideoArgs, GenerateVideoResponse, Resolution,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -47,6 +47,16 @@ use tokens::tokens::media_files::MediaFileToken;
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+
+// ======================== Result of a successful generation ========================
+
+/// Everything the caller needs after a successful upload + generate cycle.
+struct SeedanceGenerationResult {
+  gen_response: GenerateVideoResponse,
+  generation_mode: CommonGenerationMode,
+}
+
+// ======================== Handler ========================
 
 /// Seedance 2.0 Multi-Function video generation (text-to-video, keyframe, and reference).
 #[utoipa::path(
@@ -139,111 +149,13 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
-  // --- Build seedance2pro session ---
+  // --- Calculate cost and charge wallet upfront (before uploads) ---
 
-  let user_feature_flags =
-      UserSessionFeatureFlags::new(user_session.maybe_feature_flags.as_deref());
-
-  if user_feature_flags.has_seedance_whitelist() {
-    // TODO - this user will get the "whitelisted" client, with the regular client as a fallback.
-  }
-
-  let session = Seedance2ProSession::from_cookies_string(
-    server_state.seedance2pro.cookies.clone()
-  );
-
-  // --- Upload files to seedance2pro CDN ---
-
-  let start_frame_url = match request.start_frame_media_token.as_ref() {
-    None => None,
-    Some(token) => match file_urls_by_token.get(token) {
-      None => return Err(CommonWebError::BadInputWithSimpleMessage("Start frame media not found.".to_string())),
-      Some(url) => Some(upload_to_seedance2pro(&session, url).await?),
-    }
-  };
-
-  let end_frame_url = match request.end_frame_media_token.as_ref() {
-    None => None,
-    Some(token) => match file_urls_by_token.get(token) {
-      None => return Err(CommonWebError::BadInputWithSimpleMessage("End frame media not found.".to_string())),
-      Some(url) => Some(upload_to_seedance2pro(&session, url).await?),
-    }
-  };
-
-  let reference_image_urls = upload_reference_tokens_to_seedance2pro(
-    &session,
-    &file_urls_by_token,
-    request.reference_image_media_tokens.as_deref(),
-    "Reference image",
-  ).await?;
-
-  let reference_video_urls = upload_reference_tokens_to_seedance2pro(
-    &session,
-    &file_urls_by_token,
-    request.reference_video_media_tokens.as_deref(),
-    "Reference video",
-  ).await?;
-
-  let reference_audio_urls = upload_reference_tokens_to_seedance2pro(
-    &session,
-    &file_urls_by_token,
-    request.reference_audio_media_tokens.as_deref(),
-    "Reference audio",
-  ).await?;
-
-  let is_keyframe = request.start_frame_media_token.is_some()
-      || request.end_frame_media_token.is_some();
-
-  let is_reference = request.reference_image_media_tokens.is_some()
-      || request.reference_video_media_tokens.is_some()
-      || request.reference_audio_media_tokens.is_some();
-
-  let generation_mode = if is_keyframe {
-    CommonGenerationMode::Keyframe
-  } else if is_reference {
-    CommonGenerationMode::Reference
-  } else {
-    CommonGenerationMode::Text
-  };
-
-  // --- Map request params to seedance2pro types ---
-
-  let resolution = match request.aspect_ratio {
-    Some(Seedance2p0AspectRatio::Landscape16x9) => Resolution::Landscape16x9,
-    Some(Seedance2p0AspectRatio::Portrait9x16) => Resolution::Portrait9x16,
-    Some(Seedance2p0AspectRatio::Square1x1) => Resolution::Square1x1,
-    Some(Seedance2p0AspectRatio::Standard4x3) => Resolution::Standard4x3,
-    Some(Seedance2p0AspectRatio::Portrait3x4) => Resolution::Portrait3x4,
-    None => Resolution::Landscape16x9,
-  };
-
-  let batch_count = match request.batch_count {
-    Some(Seedance2p0BatchCount::One) | None => BatchCount::One,
-    Some(Seedance2p0BatchCount::Two) => BatchCount::Two,
-    Some(Seedance2p0BatchCount::Four) => BatchCount::Four,
-  };
-
+  let resolution = map_resolution(request.aspect_ratio);
+  let batch_count = map_batch_count(request.batch_count);
   let duration_seconds = request.duration_seconds.unwrap_or(5).clamp(4, 15);
-  let prompt = request.prompt.clone().unwrap_or_else(|| "".to_string());
 
-  let video_gen_args = GenerateVideoArgs {
-    session: &session,
-    prompt,
-    resolution,
-    duration_seconds,
-    batch_count,
-    start_frame_url,
-    end_frame_url,
-    reference_image_urls,
-    reference_video_urls,
-    reference_audio_urls,
-    use_face_blur_hack: None,
-    host_override: None,
-  };
-
-  // --- Calculate cost and charge wallet ---
-
-  let cost_in_cents = video_gen_args.estimate_cost_in_usd_cents(); // NB: ArtCraft credits are 1:1 with USD cents.
+  let cost_in_cents = estimate_cost_upfront(resolution, batch_count, duration_seconds);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -256,22 +168,91 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     &mut mysql_connection,
   ).await?;
 
-  // --- Call seedance2pro API ---
+  // --- Determine session and generate ---
 
-  // TODO: The refund logic here could use work. We shouldn't hold MySQL transactions open during the HTTP
-  //  transaction (as that could last forever), but this is slightly risky in that a tiny percentage of errors
-  //  may leak. We need to engineer two-phase transactions (a lot of work) to make every step atomic.
+  let user_feature_flags =
+      UserSessionFeatureFlags::new(user_session.maybe_feature_flags.as_deref());
 
-  let gen_response = match generate_video(video_gen_args).await {
-    Ok(resp) => resp,
-    Err(err) => {
-      warn!("Error calling seedance2pro generate_video: {:?}", err);
-      refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
+  let is_whitelisted = user_feature_flags.has_seedance_whitelist();
 
-      // TODO: We need to start returning robust failure messages to the caller.
-      return Err(CommonWebError::ServerError);
+  let gen_result = if is_whitelisted {
+    info!("User {:?} is seedance-whitelisted, trying whitelist session first", user_token);
+
+    let whitelist_session = Seedance2ProSession::from_cookies_string(
+      server_state.seedance2pro.cookies_whitelist.clone()
+    );
+
+    let result = upload_and_generate(
+      &whitelist_session,
+      &request,
+      &file_urls_by_token,
+      resolution,
+      batch_count,
+      duration_seconds,
+    ).await;
+
+    match result {
+      Ok(result) => {
+        info!("Whitelist session succeeded for user {:?}", user_token);
+        result
+      }
+      Err(err) => {
+        warn!("Whitelist session failed for user {:?}: {:?}, falling back to regular session", user_token, err);
+
+        let regular_session = Seedance2ProSession::from_cookies_string(
+          server_state.seedance2pro.cookies.clone()
+        );
+
+        let result = upload_and_generate(
+          &regular_session,
+          &request,
+          &file_urls_by_token,
+          resolution,
+          batch_count,
+          duration_seconds,
+        ).await;
+
+        match result {
+          Ok(result) => {
+            info!("Regular session fallback succeeded for whitelisted user {:?}", user_token);
+            result
+          }
+          Err(err) => {
+            warn!("Regular session fallback also failed for user {:?}: {:?}", user_token, err);
+            refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
+            return Err(CommonWebError::ServerError);
+          }
+        }
+      }
+    }
+  } else {
+    info!("User {:?} using regular seedance session", user_token);
+
+    let regular_session = Seedance2ProSession::from_cookies_string(
+      server_state.seedance2pro.cookies.clone()
+    );
+
+    let result = upload_and_generate(
+      &regular_session,
+      &request,
+      &file_urls_by_token,
+      resolution,
+      batch_count,
+      duration_seconds,
+    ).await;
+
+    match result {
+      Ok(result) => result,
+      Err(err) => {
+        warn!("Error calling seedance2pro generate_video: {:?}", err);
+        refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
+        return Err(CommonWebError::ServerError);
+      }
     }
   };
+
+  let gen_response = gen_result.gen_response;
+  let generation_mode = gen_result.generation_mode;
 
   info!(
     "Seedance2pro task_id={}, order_id={}",
@@ -444,6 +425,146 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     inference_job_token: first_job_token,
     all_inference_job_tokens: all_job_tokens,
   }))
+}
+
+// ======================== Helpers ========================
+
+fn map_resolution(aspect_ratio: Option<Seedance2p0AspectRatio>) -> Resolution {
+  match aspect_ratio {
+    Some(Seedance2p0AspectRatio::Landscape16x9) => Resolution::Landscape16x9,
+    Some(Seedance2p0AspectRatio::Portrait9x16) => Resolution::Portrait9x16,
+    Some(Seedance2p0AspectRatio::Square1x1) => Resolution::Square1x1,
+    Some(Seedance2p0AspectRatio::Standard4x3) => Resolution::Standard4x3,
+    Some(Seedance2p0AspectRatio::Portrait3x4) => Resolution::Portrait3x4,
+    None => Resolution::Landscape16x9,
+  }
+}
+
+fn map_batch_count(batch_count: Option<Seedance2p0BatchCount>) -> BatchCount {
+  match batch_count {
+    Some(Seedance2p0BatchCount::One) | None => BatchCount::One,
+    Some(Seedance2p0BatchCount::Two) => BatchCount::Two,
+    Some(Seedance2p0BatchCount::Four) => BatchCount::Four,
+  }
+}
+
+/// Estimate the cost without needing uploaded URLs. We construct a temporary
+/// `GenerateVideoArgs` with dummy values for the session and URL fields.
+fn estimate_cost_upfront(resolution: Resolution, batch_count: BatchCount, duration_seconds: u8) -> u64 {
+  let dummy_session = Seedance2ProSession::from_cookies_string(String::new());
+  let args = GenerateVideoArgs {
+    session: &dummy_session,
+    prompt: String::new(),
+    resolution,
+    duration_seconds,
+    batch_count,
+    start_frame_url: None,
+    end_frame_url: None,
+    reference_image_urls: None,
+    reference_video_urls: None,
+    reference_audio_urls: None,
+    use_face_blur_hack: None,
+    host_override: None,
+  };
+  args.estimate_cost_in_usd_cents()
+}
+
+/// Uploads all media files and calls generate_video using the given session.
+/// Returns the generation response and the computed generation mode.
+async fn upload_and_generate(
+  session: &Seedance2ProSession,
+  request: &Seedance2p0MultiFunctionVideoGenRequest,
+  file_urls_by_token: &HashMap<MediaFileToken, Url>,
+  resolution: Resolution,
+  batch_count: BatchCount,
+  duration_seconds: u8,
+) -> Result<SeedanceGenerationResult, CommonWebError> {
+
+  // --- Upload files to seedance2pro CDN ---
+
+  let start_frame_url = match request.start_frame_media_token.as_ref() {
+    None => None,
+    Some(token) => match file_urls_by_token.get(token) {
+      None => return Err(CommonWebError::BadInputWithSimpleMessage("Start frame media not found.".to_string())),
+      Some(url) => Some(upload_to_seedance2pro(session, url).await?),
+    }
+  };
+
+  let end_frame_url = match request.end_frame_media_token.as_ref() {
+    None => None,
+    Some(token) => match file_urls_by_token.get(token) {
+      None => return Err(CommonWebError::BadInputWithSimpleMessage("End frame media not found.".to_string())),
+      Some(url) => Some(upload_to_seedance2pro(session, url).await?),
+    }
+  };
+
+  let reference_image_urls = upload_reference_tokens_to_seedance2pro(
+    session,
+    file_urls_by_token,
+    request.reference_image_media_tokens.as_deref(),
+    "Reference image",
+  ).await?;
+
+  let reference_video_urls = upload_reference_tokens_to_seedance2pro(
+    session,
+    file_urls_by_token,
+    request.reference_video_media_tokens.as_deref(),
+    "Reference video",
+  ).await?;
+
+  let reference_audio_urls = upload_reference_tokens_to_seedance2pro(
+    session,
+    file_urls_by_token,
+    request.reference_audio_media_tokens.as_deref(),
+    "Reference audio",
+  ).await?;
+
+  // --- Determine generation mode ---
+
+  let is_keyframe = request.start_frame_media_token.is_some()
+      || request.end_frame_media_token.is_some();
+
+  let is_reference = request.reference_image_media_tokens.is_some()
+      || request.reference_video_media_tokens.is_some()
+      || request.reference_audio_media_tokens.is_some();
+
+  let generation_mode = if is_keyframe {
+    CommonGenerationMode::Keyframe
+  } else if is_reference {
+    CommonGenerationMode::Reference
+  } else {
+    CommonGenerationMode::Text
+  };
+
+  // --- Build args and generate ---
+
+  let prompt = request.prompt.clone().unwrap_or_else(|| "".to_string());
+
+  let video_gen_args = GenerateVideoArgs {
+    session,
+    prompt,
+    resolution,
+    duration_seconds,
+    batch_count,
+    start_frame_url,
+    end_frame_url,
+    reference_image_urls,
+    reference_video_urls,
+    reference_audio_urls,
+    use_face_blur_hack: None,
+    host_override: None,
+  };
+
+  let gen_response = generate_video(video_gen_args).await
+    .map_err(|err| {
+      warn!("Error calling seedance2pro generate_video: {:?}", err);
+      CommonWebError::ServerError
+    })?;
+
+  Ok(SeedanceGenerationResult {
+    gen_response,
+    generation_mode,
+  })
 }
 
 /// Uploads a list of reference media tokens to seedance2pro, returning the resulting URLs.
