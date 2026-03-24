@@ -33,6 +33,7 @@ pub mod http_server;
 pub mod job_dependencies;
 pub mod main_loop;
 pub mod process_job;
+pub mod process_page_batch;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
@@ -123,6 +124,7 @@ async fn main() -> AnyhowResult<()> {
     server_environment,
     job_stats,
     poll_interval_millis,
+    maybe_pages_per_batch: None, // TODO: Make configurable via env var if needed.
     application_shutdown: application_shutdown.clone(),
   };
 

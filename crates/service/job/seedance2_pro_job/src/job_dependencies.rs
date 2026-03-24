@@ -21,6 +21,11 @@ pub struct JobDependencies {
   /// How long to sleep between poll iterations (milliseconds).
   pub poll_interval_millis: u64,
 
+  /// If set, process jobs in batches of this many pages instead of
+  /// exhausting all pages before processing. This prevents starvation
+  /// when the order list is very long.
+  pub maybe_pages_per_batch: Option<u32>,
+
   /// Set to `true` from another thread to trigger graceful shutdown.
   pub application_shutdown: RelaxedAtomicBool,
 }

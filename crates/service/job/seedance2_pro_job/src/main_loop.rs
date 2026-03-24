@@ -3,10 +3,9 @@ use std::time::Duration;
 
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::list_pending_seedance2pro_jobs;
-use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, PollOrdersArgs, TaskStatus};
+use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, TaskStatus};
 
-use crate::process_job::process_failed_job::process_failed_job;
-use crate::process_job::process_successful_job::process_successful_job;
+use crate::process_page_batch::process_page_batch;
 use crate::job_dependencies::JobDependencies;
 
 pub async fn main_loop(job_dependencies: JobDependencies) {
@@ -35,20 +34,31 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
 
   info!("Found {} pending Seedance2Pro job(s).", pending_jobs.len());
 
-  // Build a lookup: order_id -> job
+  // Build a lookup: order_id -> job. This is mutated as batches are processed
+  // so that each order is handled at most once.
   let mut job_by_order_id: HashMap<String, _> = pending_jobs
     .into_iter()
     .map(|job| (job.order_id.clone(), job))
     .collect();
 
-  // 2. Poll all orders from seedance2pro API (exhausting pagination).
-  let mut all_orders = Vec::new();
+  // 2. Poll orders from seedance2pro API, optionally processing in chunks.
   let mut cursor: Option<u64> = None;
-  let mut page_number: u32 = 0;
+  let mut total_page_number: u32 = 0;
+  let mut total_orders_seen: u32 = 0;
+
+  // Accumulates orders for the current batch (when chunking is enabled)
+  // or all orders (when chunking is disabled).
+  let mut batch_orders: Vec<OrderStatus> = Vec::new();
+  let mut pages_in_current_batch: u32 = 0;
 
   loop {
-    page_number += 1;
-    info!("Beginning request for page {}... (cursor={:?}, total_orders_so_far={})", page_number, cursor, all_orders.len());
+    total_page_number += 1;
+    pages_in_current_batch += 1;
+
+    info!(
+      "Beginning request for page {}... (cursor={:?}, total_orders_so_far={})",
+      total_page_number, cursor, total_orders_seen
+    );
 
     let response = poll_orders(PollOrdersArgs {
       session: &deps.seedance2pro_session,
@@ -61,21 +71,56 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
         anyhow::anyhow!("poll_orders failed: {:?}", err)
       })?;
 
-    info!("Done polling page {}. Got {} orders on this page.", page_number, response.orders.len());
-    all_orders.extend(response.orders);
+    let page_count = response.orders.len() as u32;
+    info!("Done polling page {}. Got {} orders on this page.", total_page_number, page_count);
+
+    total_orders_seen += page_count;
+    batch_orders.extend(response.orders);
 
     cursor = response.next_cursor;
-    if cursor.is_none() {
+    let reached_end = cursor.is_none();
+
+    // Determine if we should process the current batch now.
+    let should_process_batch = reached_end
+      || deps.maybe_pages_per_batch
+        .map(|limit| pages_in_current_batch >= limit)
+        .unwrap_or(false);
+
+    if should_process_batch && !batch_orders.is_empty() {
+      log_batch_summary(&batch_orders, pages_in_current_batch);
+
+      process_page_batch(deps, &batch_orders, &mut job_by_order_id).await;
+
+      batch_orders.clear();
+      pages_in_current_batch = 0;
+
+      // If all pending jobs have been matched, no need to keep paging.
+      if job_by_order_id.is_empty() {
+        info!("All pending jobs have been matched. Stopping pagination early.");
+        break;
+      }
+    }
+
+    if reached_end {
       break;
     }
   }
 
-  // Summarize polling results.
+  info!(
+    "Poll iteration complete: {} total pages, {} total orders seen.",
+    total_page_number, total_orders_seen
+  );
+
+  Ok(())
+}
+
+fn log_batch_summary(orders: &[OrderStatus], pages_in_batch: u32) {
   let mut succeeded = 0u32;
   let mut failed = 0u32;
   let mut in_progress = 0u32;
   let mut unknown = 0u32;
-  for order in &all_orders {
+
+  for order in orders {
     match &order.task_status {
       TaskStatus::Completed => succeeded += 1,
       TaskStatus::Failed => failed += 1,
@@ -83,47 +128,9 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
       TaskStatus::Unknown(_) => unknown += 1,
     }
   }
+
   info!(
-    "Polling complete: {} pages, {} total orders (succeeded={}, failed={}, in_progress={}, unknown={})",
-    page_number, all_orders.len(), succeeded, failed, in_progress, unknown
+    "Processing batch of {} pages, {} orders (succeeded={}, failed={}, in_progress={}, unknown={})",
+    pages_in_batch, orders.len(), succeeded, failed, in_progress, unknown
   );
-
-  // 3. Match API orders to DB jobs and process terminal ones.
-  for order in &all_orders {
-    let job = match job_by_order_id.remove(&order.order_id) {
-      Some(j) => j,
-      None => continue, // Not one of our pending jobs.
-    };
-
-    match &order.task_status {
-      TaskStatus::Completed => {
-        info!(
-          "Order {} completed, processing job {}",
-          order.order_id,
-          job.job_token.as_str()
-        );
-        if let Err(err) = process_successful_job(deps, &job, order).await {
-          warn!(
-            "Error processing completed order {}: {:?}",
-            order.order_id, err
-          );
-          let _ = deps.job_stats.increment_failure_count();
-        } else {
-          let _ = deps.job_stats.increment_success_count();
-        }
-      }
-      TaskStatus::Failed => {
-        process_failed_job(deps, &job, order).await;
-      }
-      TaskStatus::Pending | TaskStatus::Processing => {
-        // Still in progress — check again next poll.
-      }
-      TaskStatus::Unknown(unknown_status) => {
-        // NB: Keep polling it?
-        warn!("Unknown order status: {:?}", unknown_status);
-      }
-    }
-  }
-
-  Ok(())
 }
