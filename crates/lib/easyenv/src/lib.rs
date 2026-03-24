@@ -46,6 +46,7 @@ pub use types::duration::get_env_duration_seconds_optional;
 pub use types::duration::get_env_duration_seconds_or_default;
 pub use types::duration::get_env_duration_seconds_required;
 pub use types::num::get_env_num;
+pub use types::num::try_get_env_num_optional;
 pub use types::pathbuf::get_env_pathbuf_optional;
 pub use types::pathbuf::get_env_pathbuf_or_default;
 pub use types::pathbuf::get_env_pathbuf_required;

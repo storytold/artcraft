@@ -107,6 +107,12 @@ async fn main() -> AnyhowResult<()> {
     5_000,
   )?;
 
+  let maybe_pages_per_batch: Option<u32> = easyenv::try_get_env_num_optional("BATCH_PAGE_COUNT")?;
+
+  if let Some(count) = maybe_pages_per_batch {
+    info!("Batch page count: {}", count);
+  }
+
   let application_shutdown = RelaxedAtomicBool::new(false);
   let job_stats = JobStats::new();
 
@@ -122,7 +128,7 @@ async fn main() -> AnyhowResult<()> {
     server_environment,
     job_stats,
     poll_interval_millis,
-    maybe_pages_per_batch: None, // TODO: Make configurable via env var if needed.
+    maybe_pages_per_batch,
     application_shutdown: application_shutdown.clone(),
   };
 
