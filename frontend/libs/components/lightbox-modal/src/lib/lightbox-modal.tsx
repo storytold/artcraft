@@ -456,7 +456,7 @@ export function LightboxModal({
     [mediaClass, batchImages],
   );
 
-  // Keyboard navigation for gallery prev/next
+  // Keyboard navigation for carousel slides and gallery prev/next
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -464,17 +464,25 @@ export function LightboxModal({
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      if (e.key === "ArrowLeft" && onNavigatePrev) {
+      if (e.key === "ArrowLeft") {
         e.preventDefault();
-        onNavigatePrev();
-      } else if (e.key === "ArrowRight" && onNavigateNext) {
+        if (emblaMainApi && selectedIndex > 0) {
+          emblaMainApi.scrollPrev(true); // jump = instant for keyboard nav
+        } else if (onNavigatePrev) {
+          onNavigatePrev();
+        }
+      } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        onNavigateNext();
+        if (emblaMainApi && selectedIndex < effectiveImageUrls.length - 1) {
+          emblaMainApi.scrollNext(true); // jump = instant for keyboard nav
+        } else if (onNavigateNext) {
+          onNavigateNext();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onNavigatePrev, onNavigateNext]);
+  }, [isOpen, emblaMainApi, selectedIndex, effectiveImageUrls, onNavigatePrev, onNavigateNext]);
 
   return (
     <>
