@@ -296,7 +296,11 @@ pub async fn sora_2_pro_multi_function_video_gen_handler(
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,
-    maybe_duration_seconds: None,
+    maybe_duration_seconds: request.duration.as_ref().map(|d| match d {
+      Sora2ProMultiFunctionVideoGenDuration::FourSeconds => 4,
+      Sora2ProMultiFunctionVideoGenDuration::EightSeconds => 8,
+      Sora2ProMultiFunctionVideoGenDuration::TwelveSeconds => 12,
+    }),
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

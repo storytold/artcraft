@@ -360,7 +360,11 @@ pub async fn veo_3p1_multi_function_video_gen_handler(
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: Some(generate_audio),
-    maybe_duration_seconds: None,
+    maybe_duration_seconds: request.duration.as_ref().map(|d| match d {
+      Veo3p1MultiFunctionVideoGenDuration::FourSeconds => 4,
+      Veo3p1MultiFunctionVideoGenDuration::SixSeconds => 6,
+      Veo3p1MultiFunctionVideoGenDuration::EightSeconds => 8,
+    }),
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

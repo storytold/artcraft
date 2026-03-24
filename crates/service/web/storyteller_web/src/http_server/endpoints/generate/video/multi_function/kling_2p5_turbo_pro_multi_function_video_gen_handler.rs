@@ -277,7 +277,10 @@ pub async fn kling_2p5_turbo_pro_multi_function_video_gen_handler(
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,
-    maybe_duration_seconds: None,
+    maybe_duration_seconds: request.duration.as_ref().map(|d| match d {
+      Kling2p5TurboProMultiFunctionVideoGenDuration::FiveSeconds => 5,
+      Kling2p5TurboProMultiFunctionVideoGenDuration::TenSeconds => 10,
+    }),
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
