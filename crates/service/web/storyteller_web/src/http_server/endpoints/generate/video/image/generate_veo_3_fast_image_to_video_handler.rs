@@ -218,7 +218,9 @@ pub async fn generate_veo_3_fast_image_to_video_handler(
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: Some(generate_audio),
-    maybe_duration_seconds: None,
+    maybe_duration_seconds: request.duration.as_ref().map(|d| match d {
+      GenerateVeo3FastDuration::EightSeconds => 8,
+    }),
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

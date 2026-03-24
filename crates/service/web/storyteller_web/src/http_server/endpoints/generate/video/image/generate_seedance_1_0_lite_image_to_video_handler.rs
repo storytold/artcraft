@@ -253,7 +253,10 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,
-    maybe_duration_seconds: None,
+    maybe_duration_seconds: request.duration.as_ref().map(|d| match d {
+      GenerateSeedance10LiteDuration::FiveSeconds => 5,
+      GenerateSeedance10LiteDuration::TenSeconds => 10,
+    }),
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

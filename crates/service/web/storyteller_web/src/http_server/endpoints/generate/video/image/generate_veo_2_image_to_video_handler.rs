@@ -231,7 +231,12 @@ pub async fn generate_veo_2_image_to_video_handler(
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,
-    maybe_duration_seconds: None,
+    maybe_duration_seconds: request.duration.as_ref().map(|d| match d {
+      GenerateVeo2Duration::FiveSeconds => 5,
+      GenerateVeo2Duration::SixSeconds => 6,
+      GenerateVeo2Duration::SevenSeconds => 7,
+      GenerateVeo2Duration::EightSeconds => 8,
+    }),
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
