@@ -44,8 +44,12 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
   // 2. Poll all orders from seedance2pro API (exhausting pagination).
   let mut all_orders = Vec::new();
   let mut cursor: Option<u64> = None;
+  let mut page_number: u32 = 0;
 
   loop {
+    page_number += 1;
+    info!("Beginning request for page {}... (cursor={:?}, total_orders_so_far={})", page_number, cursor, all_orders.len());
+
     let response = poll_orders(PollOrdersArgs {
       session: &deps.seedance2pro_session,
       cursor,
@@ -57,7 +61,7 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
         anyhow::anyhow!("poll_orders failed: {:?}", err)
       })?;
 
-    info!("Polled {} orders (cursor={:?})", response.orders.len(), cursor);
+    info!("Done polling page {}. Got {} orders on this page.", page_number, response.orders.len());
     all_orders.extend(response.orders);
 
     cursor = response.next_cursor;
@@ -65,6 +69,24 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
       break;
     }
   }
+
+  // Summarize polling results.
+  let mut succeeded = 0u32;
+  let mut failed = 0u32;
+  let mut in_progress = 0u32;
+  let mut unknown = 0u32;
+  for order in &all_orders {
+    match &order.task_status {
+      TaskStatus::Completed => succeeded += 1,
+      TaskStatus::Failed => failed += 1,
+      TaskStatus::Pending | TaskStatus::Processing => in_progress += 1,
+      TaskStatus::Unknown(_) => unknown += 1,
+    }
+  }
+  info!(
+    "Polling complete: {} pages, {} total orders (succeeded={}, failed={}, in_progress={}, unknown={})",
+    page_number, all_orders.len(), succeeded, failed, in_progress, unknown
+  );
 
   // 3. Match API orders to DB jobs and process terminal ones.
   for order in &all_orders {
