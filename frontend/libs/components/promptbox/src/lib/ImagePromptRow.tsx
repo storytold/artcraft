@@ -905,7 +905,7 @@ export const ImagePromptRow = ({
                             setIsGalleryModalOpen(true);
                           }}
                           icon={faImages}
-                          className="w-full"
+                          className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                         >
                           Pick from library
                         </Button>
@@ -1017,7 +1017,7 @@ export const ImagePromptRow = ({
                               setIsGalleryModalOpen(true);
                             }}
                             icon={faImages}
-                            className="w-full"
+                            className="w-full bg-base-fg/10 hover:bg-base-fg/20"
                           >
                             Pick from library
                           </Button>
