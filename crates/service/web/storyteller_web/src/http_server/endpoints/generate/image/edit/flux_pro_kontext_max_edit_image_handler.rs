@@ -219,7 +219,7 @@ pub async fn flux_pro_kontext_max_edit_image_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: Some(CommonGenerationMode::Edit),
+    maybe_generation_mode: Some(CommonGenerationMode::Edit), // TODO: This endpoint only supports "edit" (and not "text") for now
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,
