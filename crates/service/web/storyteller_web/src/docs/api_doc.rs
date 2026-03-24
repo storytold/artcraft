@@ -278,6 +278,7 @@ use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
 // Handler modules with locally-defined types
 use crate::http_server::endpoints::moderation::info::moderator_token_info_handler::*;
+use artcraft_api_defs::moderation::user::list_subscribing_users_by_signup_date::*;
 use artcraft_api_defs::moderation::user::list_users_by_signup_date::*;
 use artcraft_api_defs::moderation::user::user_lookup::*;
 use artcraft_api_defs::moderation::user::user_lookup_by_stripe_customer_id::*;
@@ -467,6 +468,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::tts::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler,
     // Moderation
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,
+    crate::http_server::endpoints::moderation::user::moderator_list_subscribing_users_by_signup_date::moderator_list_subscribing_users_by_signup_date_handler,
     crate::http_server::endpoints::moderation::user::moderator_list_users_by_signup_date::moderator_list_users_by_signup_date_handler,
     crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler,
     crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler,
@@ -659,6 +661,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     EditUserFeatureFlagsError,
     EditUserFeatureFlagsOption,
     EditUserFeatureFlagsRequest,
+    ModeratorListSubscribingUsersBySignupDateRequest,
+    ModeratorListSubscribingUsersBySignupDateResponse,
+    ModeratorListSubscribingUsersBySignupDateEntry,
     ModeratorListUsersBySignupDateRequest,
     ModeratorListUsersBySignupDateResponse,
     ModeratorListUsersBySignupDateEntry,

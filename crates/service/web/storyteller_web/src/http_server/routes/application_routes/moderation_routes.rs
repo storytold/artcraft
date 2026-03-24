@@ -31,6 +31,7 @@ use crate::http_server::endpoints::moderation::jobs::get_w2l_inference_queue_cou
 use crate::http_server::endpoints::moderation::jobs::kill_tts_inference_jobs::kill_tts_inference_jobs_handler;
 use crate::http_server::endpoints::moderation::user_bans::ban_user::ban_user_handler;
 use crate::http_server::endpoints::moderation::user_bans::list_banned_users::list_banned_users_handler;
+use crate::http_server::endpoints::moderation::user::moderator_list_subscribing_users_by_signup_date::moderator_list_subscribing_users_by_signup_date_handler;
 use crate::http_server::endpoints::moderation::user::moderator_list_users_by_signup_date::moderator_list_users_by_signup_date_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler;
@@ -63,6 +64,10 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
             )
             .service(web::resource("/list_all_by_signup_date")
                 .route(web::post().to(moderator_list_users_by_signup_date_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/list_subscribers_by_signup_date")
+                .route(web::post().to(moderator_list_subscribing_users_by_signup_date_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )

@@ -1,3 +1,4 @@
+pub mod moderator_list_subscribing_users_by_signup_date;
 pub mod moderator_list_users_by_signup_date;
 pub mod moderator_user_lookup_by_stripe_customer_id_handler;
 pub mod moderator_user_lookup_handler;
