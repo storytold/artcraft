@@ -209,7 +209,7 @@ pub async fn generate_gpt_image_1_text_to_image_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
     maybe_other_args: None,
-    maybe_generation_mode: Some(CommonGenerationMode::Text),
+    maybe_generation_mode: Some(CommonGenerationMode::Text), // TODO: This endpoint only supports "text" for now
     maybe_aspect_ratio: None,
     maybe_resolution: None,
     maybe_batch_count: None,
