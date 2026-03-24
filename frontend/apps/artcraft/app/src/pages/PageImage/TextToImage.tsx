@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   JobContextType,
   getThumbnailUrl,
@@ -31,6 +31,8 @@ import {
   galleryModalLightboxImage,
   galleryModalLightboxMediaId,
   galleryModalLightboxVisible,
+  galleryModalLightboxNavPrev,
+  galleryModalLightboxNavNext,
 } from "@storyteller/ui-gallery-modal";
 import { Badge } from "@storyteller/ui-badge";
 import { twMerge } from "tailwind-merge";
@@ -124,6 +126,63 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   // Show the batches in reverse order, with the newest items at top.
   // Like Midjourney instead of a "chat history" style.
   const inverseBatch = [...batches].reverse();
+
+  // Keep a ref so nav callbacks always see the latest batch list without
+  // needing to be recreated on every render.
+  const inverseBatchRef = useRef(inverseBatch);
+  inverseBatchRef.current = inverseBatch;
+
+  const openBatchInLightbox = useCallback(
+    (targetBatch: (typeof inverseBatch)[0], startIndex = 0) => {
+      const images = targetBatch.images;
+      if (!images.length) return;
+
+      const imageUrls = images.map(
+        (img) =>
+          getThumbnailUrl(img.maybe_thumbnail_template, { width: 3200 }) ??
+          img.cdn_url,
+      );
+      const mediaTokens = images.map((img) => img.media_token);
+      const actionUrls = images.map((img) => img.cdn_url);
+
+      const clickedImg = images[startIndex];
+      const batchIndex = inverseBatchRef.current.findIndex(
+        (b) => b.id === targetBatch.id,
+      );
+
+      galleryModalLightboxNavPrev.value =
+        batchIndex > 0
+          ? () => openBatchInLightbox(inverseBatchRef.current[batchIndex - 1])
+          : null;
+      galleryModalLightboxNavNext.value =
+        batchIndex < inverseBatchRef.current.length - 1
+          ? () => openBatchInLightbox(inverseBatchRef.current[batchIndex + 1])
+          : null;
+
+      galleryModalLightboxMediaId.value = clickedImg.media_token;
+      galleryModalLightboxImage.value = {
+        id: clickedImg.media_token,
+        label: targetBatch.prompt || "Generated Image",
+        thumbnail:
+          getThumbnailUrl(clickedImg.maybe_thumbnail_template, {
+            width: THUMBNAIL_SIZES.MEDIUM,
+          }) ?? clickedImg.cdn_url,
+        fullImage:
+          getThumbnailUrl(clickedImg.maybe_thumbnail_template, {
+            width: 2048,
+          }) ?? clickedImg.cdn_url,
+        createdAt: new Date(targetBatch.createdAt).toISOString(),
+        mediaClass: "image" as const,
+        mediaTokens,
+        imageUrls,
+        actionUrls,
+        initialIndex: startIndex,
+        thumbnailUrlTemplate: clickedImg.maybe_thumbnail_template,
+      };
+      galleryModalLightboxVisible.value = true;
+    },
+    [],
+  );
 
   return (
     <div
@@ -223,43 +282,8 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                             <button
                               key={img.media_token}
                               onClick={() => {
-                                const lightboxItem = {
-                                  id: img.media_token,
-                                  label: batch.prompt || "Generated Image",
-                                  thumbnail:
-                                    getThumbnailUrl(
-                                      img.maybe_thumbnail_template,
-                                      { width: THUMBNAIL_SIZES.MEDIUM },
-                                    ) ?? img.cdn_url,
-                                  fullImage:
-                                    getThumbnailUrl(
-                                      img.maybe_thumbnail_template,
-                                      { width: 2048 },
-                                    ) ?? img.cdn_url,
-                                  createdAt: new Date(
-                                    batch.createdAt,
-                                  ).toISOString(),
-                                  mediaClass: "image" as const,
-                                  mediaTokens: batch.images.map(
-                                    (image) => image.media_token,
-                                  ),
-                                  imageUrls: batch.images.map(
-                                    (image) =>
-                                      getThumbnailUrl(
-                                        image.maybe_thumbnail_template,
-                                        { width: 3200 },
-                                      ) ?? image.cdn_url,
-                                  ),
-                                  actionUrls: batch.images.map(
-                                    (image) => image.cdn_url,
-                                  ),
-                                  thumbnailUrlTemplate:
-                                    img.maybe_thumbnail_template,
-                                };
-                                galleryModalLightboxMediaId.value =
-                                  lightboxItem.id;
-                                galleryModalLightboxImage.value = lightboxItem;
-                                galleryModalLightboxVisible.value = true;
+                                const startIndex = batch.images.indexOf(img);
+                                openBatchInLightbox(batch, startIndex);
                               }}
                               className="aspect-square w-full overflow-hidden rounded-lg transition-opacity duration-200 hover:cursor-pointer hover:opacity-75"
                             >
