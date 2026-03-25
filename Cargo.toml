@@ -75,6 +75,7 @@ members = [
   "crates/lib/jwt_signer",
   "crates/lib/logging",
   "crates/lib/markdown",
+  "crates/lib/pager",
   "crates/lib/password",
   "crates/lib/server_environment",
   "crates/lib/sqlx_mysql_helpers",
@@ -252,6 +253,7 @@ midjourney_client = { path = "crates/api_clients/midjourney_client" }
 mimetypes = { path = "crates/lib/files/mimetypes" }
 muapi_client = { path = "crates/api_clients/muapi_client" }
 mysql_queries = { path = "crates/schema/database/mysql_queries" }
+pager = { path = "crates/lib/pager" }
 openai_sora_client = { path = "crates/api_clients/openai_sora_client" }
 primitives = { path = "crates/lib/data/primitives" }
 seedance2pro_client = { path = "crates/api_clients/seedance2pro_client" }

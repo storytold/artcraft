@@ -1,0 +1,28 @@
+[package]
+name = "pager"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "pager"
+path = "src/lib.rs"
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[dependencies]
+# Workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# Internal
+errors.workspace = true
+rootly_client.workspace = true
+
+# External
+chrono.workspace = true
+log.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
