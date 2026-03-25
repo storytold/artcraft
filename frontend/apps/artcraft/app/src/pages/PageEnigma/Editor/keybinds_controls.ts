@@ -20,6 +20,7 @@ import {
   selectedMode,
   poseMode,
   showPoseControls,
+  transformSpace,
 } from "../signals/selectedMode";
 import { Euler } from "three";
 
@@ -341,16 +342,25 @@ export class MouseControls {
     } else if (event.key === "t") {
       // transform
       this.control?.setMode("translate");
+      if (this.control) this.control.space = transformSpace.value;
       selectedMode.value = "move";
+      return;
+    } else if (event.key === "x") {
+      // toggle world/local space (blocked in scale mode)
+      if (this.control?.mode === "scale") return;
+      transformSpace.value = transformSpace.value === "world" ? "local" : "world";
+      if (this.control) this.control.space = transformSpace.value;
       return;
     } else if (event.key === "r" && !event.ctrlKey) {
       // rotate
       this.control?.setMode("rotate");
+      if (this.control) this.control.space = transformSpace.value;
       selectedMode.value = "rotate";
       return;
     } else if (event.key === "g") {
       // scale
       this.control?.setMode("scale");
+      if (this.control) this.control.space = transformSpace.value;
       selectedMode.value = "scale";
       return;
     } else if (event.key === "k") {

@@ -22,7 +22,7 @@ import { useTabStore } from "~/pages/Stores/TabState";
 // eslint-disable-next-line import/no-unresolved
 // import { AssetType } from "~/enums";
 import { AssetModal } from "../AssetMenu/AssetModal";
-import { selectedMode } from "../../signals/selectedMode";
+import { selectedMode, transformSpace } from "../../signals/selectedMode";
 import { useSignals } from "@preact/signals-react/runtime";
 import { outlinerState } from "../../signals/outliner/outliner";
 // eslint-disable-next-line import/no-unresolved
@@ -320,6 +320,33 @@ export const Controls3D = () => {
               onOptionChange={handleModeChange}
               selectedOption={selectedMode.value}
             />
+            {selectedMode.value === "scale" ? (
+              <Tooltip
+                content="Scale is always in local space"
+                position="bottom"
+                delay={300}
+              >
+                <button
+                  disabled
+                  className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 uppercase tracking-wide opacity-40 cursor-not-allowed"
+                >
+                  Local
+                </button>
+              </Tooltip>
+            ) : (
+              <Tooltip
+                content={`Transform space: ${transformSpace.value} (X to toggle)`}
+                position="bottom"
+                delay={300}
+              >
+                <button
+                  className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 hover:bg-white/25 transition-colors uppercase tracking-wide"
+                  onClick={() => editorEngine?.toggleTransformSpace()}
+                >
+                  {transformSpace.value === "world" ? "World" : "Local"}
+                </button>
+              </Tooltip>
+            )}
           </div>
         </div>
       </div>

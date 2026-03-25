@@ -42,6 +42,7 @@ import {
 } from "~/signals";
 
 import { outlinerState, updateObjectPanel } from "../signals";
+import { transformSpace } from "../signals/selectedMode";
 import { IGenerationOptions } from "../models/generationOptions";
 import { toEngineActions } from "../Queue/toEngineActions";
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
@@ -592,8 +593,7 @@ class Editor {
     this.cameraViewControls.enabled = true;
 
     this.control = new TransformControls(this.camera, this.renderer.domElement);
-    this.control.space = "local"; // Local transformation mode
-    // .space = 'world'; // Global mode
+    this.control.space = "world"; // Default to world space for translate mode
     this.control.setScaleSnap(0.01);
     this.control.setTranslationSnap(0.01);
     this.control.setRotationSnap(0.01);
@@ -1538,7 +1538,16 @@ class Editor {
       return;
     }
     this.control.mode = type;
+    this.control.space = type === "scale" ? "local" : transformSpace.value;
     this.transform_interaction = true;
+  }
+
+  toggleTransformSpace() {
+    if (this.control == undefined || this.control.mode === "scale") {
+      return;
+    }
+    transformSpace.value = transformSpace.value === "world" ? "local" : "world";
+    this.control.space = transformSpace.value;
   }
 
   async stopPlaybackAndUploadVideo() {
