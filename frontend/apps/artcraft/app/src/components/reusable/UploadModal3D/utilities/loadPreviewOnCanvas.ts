@@ -38,14 +38,13 @@ export const loadPreviewOnCanvas = ({
   const camera = new THREE.PerspectiveCamera(35, aspectRatio, 0.1, 1000);
   camera.position.z = 2;
 
-  const gl2ctx = canvas.getContext("webgl2");
+  const gl2ctx = canvas.getContext("webgl2", { preserveDrawingBuffer: true });
 
   const renderer = new THREE.WebGLRenderer({
     alpha: true,
     antialias: true,
     canvas: canvas,
     context: gl2ctx!,
-    preserveDrawingBuffer: true,
   });
 
   renderer.setSize(width, height);

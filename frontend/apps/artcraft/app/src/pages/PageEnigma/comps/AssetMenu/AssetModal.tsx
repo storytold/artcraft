@@ -97,6 +97,11 @@ const categoryToTabIdMap: Record<FilterEngineCategories, string> = {
   [FilterEngineCategories.VIDEO_PLANE]: "all",
 };
 
+// Names (lowercase) to pin to the front of the characters list, in order.
+const CHARACTER_PRIORITY_ORDER = ["storyboy", "story girl", "knight", "news anchor"];
+// Names (lowercase) of featured characters that should appear in Memes instead.
+const MEME_OVERRIDES = ["ai trump"];
+
 export const AssetModal = () => {
   useSignals();
   const [activeLibraryTab, setActiveLibraryTab] = useState("library");
@@ -253,8 +258,35 @@ export const AssetModal = () => {
   //   { id: "mine", label: "Mine" },
   // ];
 
-  const assetTabs = useMemo<AssetTab[]>(
-    () => [
+  const assetTabs = useMemo<AssetTab[]>(() => {
+    const allCharacterCandidates =
+      activeLibraryTab === "library"
+        ? [...demoCharacterItems.value, ...(featuredCharacters ?? [])]
+        : (userCharacters ?? []);
+
+    // Split out items that belong in Memes
+    const memeOverrideItems = allCharacterCandidates.filter((item) =>
+      MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
+    );
+    const characterCandidates = allCharacterCandidates.filter(
+      (item) => !MEME_OVERRIDES.includes(item.name?.toLowerCase() ?? ""),
+    );
+
+    // Reorder: priority names first (in specified order), then the rest
+    const priorityCharacters: MediaItem[] = [];
+    for (const name of CHARACTER_PRIORITY_ORDER) {
+      const found = characterCandidates.find(
+        (item) => item.name?.toLowerCase() === name,
+      );
+      if (found) priorityCharacters.push(found);
+    }
+    const remainingCharacters = characterCandidates.filter(
+      (item) =>
+        !CHARACTER_PRIORITY_ORDER.includes(item.name?.toLowerCase() ?? ""),
+    );
+    const orderedCharacters = [...priorityCharacters, ...remainingCharacters];
+
+    return [
       { id: "all", label: "All", icon: faLayerGroup, items: [] },
       {
         id: "character",
@@ -262,10 +294,7 @@ export const AssetModal = () => {
         labelSingle: "Character",
         icon: faUser,
         engineCategory: FilterEngineCategories.CHARACTER,
-        items:
-          activeLibraryTab === "library"
-            ? [...demoCharacterItems.value, ...(featuredCharacters ?? [])]
-            : (userCharacters ?? []),
+        items: orderedCharacters,
       },
       {
         id: "objects",
@@ -284,7 +313,10 @@ export const AssetModal = () => {
         labelSingle: "Meme",
         icon: faFaceGrinStars,
         engineCategory: FilterEngineCategories.CHARACTER,
-        items: activeLibraryTab === "library" ? demoMemeItems.value : [],
+        items:
+          activeLibraryTab === "library"
+            ? [...demoMemeItems.value, ...memeOverrideItems]
+            : [],
       },
       {
         id: "sets",
@@ -326,7 +358,8 @@ export const AssetModal = () => {
       //       ? (featuredImagePlanes ?? [])
       //       : (userImagePlanes ?? []),
       // },
-    ],
+    ];
+  },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeLibraryTab,

@@ -126,14 +126,19 @@ export const UploadFilesSplat = ({
 
   useEffect(() => {
     if (previewStatus.type === "OK" && canvasRef.current) {
-      snapshotCanvasAsThumbnail({
-        targetNode: canvasRef.current!,
-        resultCallback: (snapshotBlob) => {
-          if (snapshotBlob) {
-            setThumbnailFile(snapshotBlob);
-          }
-        },
+      const canvas = canvasRef.current;
+      // Defer one animation frame so the splat renderer has produced a visible frame
+      const rafId = requestAnimationFrame(() => {
+        snapshotCanvasAsThumbnail({
+          targetNode: canvas,
+          resultCallback: (snapshotBlob) => {
+            if (snapshotBlob) {
+              setThumbnailFile(snapshotBlob);
+            }
+          },
+        });
       });
+      return () => cancelAnimationFrame(rafId);
     }
   }, [previewStatus]);
 
