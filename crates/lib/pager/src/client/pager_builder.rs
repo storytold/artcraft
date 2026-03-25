@@ -5,6 +5,8 @@ use rootly_client::creds::rootly_api_key::RootlyApiKey;
 
 use crate::client::pager::Pager;
 use crate::client::pager_client::{PagerClient, PagerClientConfig};
+use crate::error::pager_client_error::PagerClientError;
+use crate::error::pager_error::PagerError;
 use crate::worker::pager_worker_message_queue::{new_shared_queue, new_shared_queue_with_capacity, SharedMessageQueue};
 use crate::worker::pager_worker_thread::PagerWorkerThread;
 
@@ -74,11 +76,9 @@ impl PagerBuilder {
   ///
   /// If `with_worker()` was called, this also creates a `PagerWorkerThread`.
   /// The caller is responsible for spawning the worker thread (via `Pager::worker()`).
-  pub fn build(self) -> Pager {
-    let api_key = self.api_key.unwrap_or_else(|| {
-      log::warn!("PagerBuilder: No API key set. Pages will fail at send time.");
-      RootlyApiKey::new(String::new())
-    });
+  pub fn build(self) -> Result<Pager, PagerError> {
+    let api_key = self.api_key
+        .ok_or(PagerClientError::NotConfigured("no api key set".to_string()))?;
 
     let source = self.source.unwrap_or_else(|| "unknown".to_string());
 
@@ -106,6 +106,6 @@ impl PagerBuilder {
       (None, None, None)
     };
 
-    Pager::new(client, queue, worker, worker_shutdown)
+    Ok(Pager::new(client, queue, worker, worker_shutdown))
   }
 }
