@@ -8,6 +8,12 @@ use rootly_client::requests::create_alert::create_alert::{
 use crate::error::pager_client_error::PagerClientError;
 use crate::notification::notification_details::NotificationDetails;
 
+/// The actual client that sends pages.
+#[derive(Clone)]
+pub struct PagerClient {
+  config: PagerClientConfig,
+}
+
 /// Configuration for the pager client backend.
 #[derive(Clone)]
 pub enum PagerClientConfig {
@@ -42,11 +48,6 @@ pub struct PageSentResult {
   pub short_id: Option<String>,
 }
 
-/// The actual client that sends pages.
-#[derive(Clone)]
-pub struct PagerClient {
-  config: PagerClientConfig,
-}
 
 impl PagerClient {
   pub fn new(config: PagerClientConfig) -> Self {
