@@ -54,9 +54,9 @@ impl PagerWorkerThread {
     while !self.shutdown.load(Ordering::Relaxed) {
       // Block until items are available (or we're woken up for shutdown).
       let items = match self.queue.wait_and_drain() {
-        Some(items) => items,
-        None => {
-          warn!("Pager worker queue lock was poisoned. Retrying in 5s.");
+        Ok(items) => items,
+        Err(err) => {
+          error!("Pager worker queue error: {}. Retrying in 5s.", err);
           tokio::time::sleep(Duration::from_secs(5)).await;
           continue;
         }
@@ -94,12 +94,17 @@ impl PagerWorkerThread {
     }
 
     // Drain any remaining items on shutdown.
-    let remaining = self.queue.drain_available();
-    if !remaining.is_empty() {
-      warn!(
-        "Pager worker shutting down with {} unsent notification(s) in queue.",
-        remaining.len()
-      );
+    match self.queue.drain_available() {
+      Ok(remaining) if !remaining.is_empty() => {
+        warn!(
+          "Pager worker shutting down with {} unsent notification(s) in queue.",
+          remaining.len()
+        );
+      }
+      Err(err) => {
+        error!("Pager worker could not drain queue on shutdown: {}", err);
+      }
+      _ => {}
     }
 
     info!("Pager worker thread stopped.");

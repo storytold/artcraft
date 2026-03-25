@@ -16,15 +16,8 @@ use crate::worker::pager_worker_thread::PagerWorkerThread;
 /// - **Immediate**: `send_page_immediately()` sends inline (blocks until API responds).
 /// - **Queued**: `enqueue_page()` pushes to a background worker (non-blocking).
 ///
-/// Build via `PagerBuilder`:
-/// ```ignore
-/// let pager = PagerBuilder::new()
-///     .application_name("seedance2-pro-job".to_string())
-///     .environment("production".to_string())
-///     .rootly(api_key)
-///     .notification_target("User".to_string(), user_id)
-///     .build()?;
-/// ```
+/// Build an instance via `PagerBuilder`.
+///
 pub struct Pager {
   client: PagerClient,
   queue: Option<SharedMessageQueue>,
@@ -33,6 +26,8 @@ pub struct Pager {
 }
 
 impl Pager {
+
+  /// External users will need to create instances via `PagerBuilder`.
   pub(crate) fn new(
     client: PagerClient,
     queue: Option<SharedMessageQueue>,
@@ -47,7 +42,9 @@ impl Pager {
     &self,
     notification: NotificationDetails,
   ) -> Result<PageSentResult, PagerError> {
-    self.client.send_page(&notification).await.map_err(PagerError::Client)
+    self.client.send_page(&notification)
+        .await
+        .map_err(PagerError::Client)
   }
 
   /// Enqueue a page to be sent by the background worker thread.
@@ -61,7 +58,8 @@ impl Pager {
     let queue = self.queue.as_ref()
       .ok_or(PagerServiceError::WorkerNotAvailable)?;
 
-    let dropped = queue.push(notification);
+    let dropped = queue.push(notification)
+      .map_err(PagerError::Service)?;
 
     if let Some(dropped_summary) = dropped {
       // We still enqueued the new item — just warn that we lost an old one.

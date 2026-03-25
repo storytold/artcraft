@@ -9,6 +9,9 @@ pub enum PagerServiceError {
 
   /// The message queue is full and the oldest item was dropped.
   QueueFull { dropped_summary: String },
+
+  /// A mutex lock was poisoned (another thread panicked while holding it).
+  MutexPoisoned(String),
 }
 
 impl Error for PagerServiceError {}
@@ -20,6 +23,7 @@ impl Display for PagerServiceError {
       Self::QueueFull { dropped_summary } => {
         write!(f, "Pager queue is full. Dropped oldest item: {}", dropped_summary)
       }
+      Self::MutexPoisoned(msg) => write!(f, "Pager mutex poisoned: {}", msg),
     }
   }
 }
