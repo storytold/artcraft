@@ -35,7 +35,7 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, BatchCount, GenerateVideoArgs, GenerateVideoResponse, Resolution,
+  generate_video, BatchCount, GenerateVideoArgs, GenerateVideoResponse, ModelType, Resolution,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -454,6 +454,7 @@ fn estimate_cost_upfront(resolution: Resolution, batch_count: BatchCount, durati
   let dummy_session = Seedance2ProSession::from_cookies_string(String::new());
   let args = GenerateVideoArgs {
     session: &dummy_session,
+    model_type: ModelType::Seedance2Pro,
     prompt: String::new(),
     resolution,
     duration_seconds,
@@ -542,6 +543,7 @@ async fn upload_and_generate(
 
   let video_gen_args = GenerateVideoArgs {
     session,
+    model_type: ModelType::Seedance2Pro,
     prompt,
     resolution,
     duration_seconds,

@@ -15,6 +15,8 @@ use wreq_util::Emulation;
 pub struct GenerateVideoArgs<'a> {
   pub session: &'a Seedance2ProSession,
 
+  pub model_type: ModelType,
+
   pub prompt: String,
 
   pub resolution: Resolution,
@@ -55,6 +57,7 @@ pub struct GenerateVideoArgs<'a> {
 impl std::fmt::Debug for GenerateVideoArgs<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     f.debug_struct("GenerateVideoArgs")
+      .field("model_type", &self.model_type)
       .field("prompt", &self.prompt)
       .field("resolution", &self.resolution)
       .field("duration_seconds", &self.duration_seconds)
@@ -144,6 +147,24 @@ impl BatchCount {
   }
 }
 
+/// The Seedance model variant to use.
+#[derive(Debug, Clone, Copy)]
+pub enum ModelType {
+  /// Seedance 2.0 Pro (higher quality, slower).
+  Seedance2Pro,
+  /// Seedance 2.0 Fast (lower quality, faster).
+  Seedance2Fast,
+}
+
+impl ModelType {
+  fn as_api_str(&self) -> &'static str {
+    match self {
+      Self::Seedance2Pro => "seedance-20",
+      Self::Seedance2Fast => "seedance2-fast",
+    }
+  }
+}
+
 // --- Response ---
 
 pub struct GenerateVideoResponse {
@@ -225,7 +246,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
           prompt: args.prompt,
           resolution: args.resolution.as_str().to_string(),
           content_mode: "normal",
-          model: "seedance-20",
+          model: args.model_type.as_api_str(),
           duration,
           mode: video_input_mode,
           face_blur_mode,
@@ -329,6 +350,7 @@ mod tests {
     let session = Box::leak(Box::new(dummy_session()));
     GenerateVideoArgs {
       session,
+      model_type: ModelType::Seedance2Pro,
       prompt: String::new(),
       resolution: Resolution::Square1x1,
       duration_seconds,
@@ -395,6 +417,7 @@ mod tests {
     let session = test_session()?;
     let args = GenerateVideoArgs {
       session: &session,
+      model_type: ModelType::Seedance2Pro,
       prompt: "A corgi eating a cake in a fancy kitchen.".to_string(),
       resolution: Resolution::Square1x1,
       duration_seconds: 5,
@@ -423,6 +446,7 @@ mod tests {
     let session = test_session()?;
     let args = GenerateVideoArgs {
       session: &session,
+      model_type: ModelType::Seedance2Pro,
       prompt: "A dog shakes the glasses off its head. The camera pans out as the shiba shakes. The shiba barks.".to_string(),
       resolution: Resolution::Landscape16x9,
       duration_seconds: 5,
@@ -450,6 +474,7 @@ mod tests {
     let session = test_session()?;
     let args = GenerateVideoArgs {
       session: &session,
+      model_type: ModelType::Seedance2Pro,
       prompt: "The dog in @2 is in the office at @1 without the man. The office is dark and moonlight streams in through the windows. Particles of dust gleam in the moon beams. Suddenly, the dog jumps walks in front of the desk and barks.".to_string(),
       resolution: Resolution::Standard4x3,
       duration_seconds: 10,
@@ -480,6 +505,7 @@ mod tests {
     let session = test_session()?;
     let args = GenerateVideoArgs {
       session: &session,
+      model_type: ModelType::Seedance2Pro,
       prompt: "Change the Video @video1 to night time.".to_string(),
       resolution: Resolution::Landscape16x9,
       duration_seconds: 5,
@@ -509,6 +535,7 @@ mod tests {
     let session = test_session()?;
     let args = GenerateVideoArgs {
       session: &session,
+      model_type: ModelType::Seedance2Pro,
       prompt: "Put the robot in @video1 next to the house in @image1".to_string(),
       resolution: Resolution::Landscape16x9,
       duration_seconds: 5,
@@ -564,6 +591,7 @@ mod tests {
 
     let args = GenerateVideoArgs {
       session: &session,
+      model_type: ModelType::Seedance2Pro,
       prompt: "Change @video1 to night time".to_string(),
       resolution: Resolution::Landscape16x9,
       duration_seconds: 5,

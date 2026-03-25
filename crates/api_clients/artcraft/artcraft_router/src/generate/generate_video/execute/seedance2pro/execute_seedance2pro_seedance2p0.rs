@@ -7,7 +7,7 @@ use crate::generate::generate_video::generate_video_response::{
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
 use crate::utils::download_file::download_file;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, GenerateVideoArgs,
+  generate_video, GenerateVideoArgs, ModelType,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -34,6 +34,7 @@ pub async fn execute_seedance2pro_seedance2p0(
 
   let args = GenerateVideoArgs {
     session,
+    model_type: ModelType::Seedance2Pro,
     prompt: plan.prompt.clone().unwrap_or_default(),
     resolution: plan.resolution,
     duration_seconds: plan.duration_seconds,
