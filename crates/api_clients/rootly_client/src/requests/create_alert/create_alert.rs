@@ -40,8 +40,15 @@ pub struct CreateAlertArgs {
   /// Optional external URL for linking to an external system.
   pub external_url: Option<String>,
 
-  /// Optional alert urgency ID.
+  /// Optional alert urgency ID (get IDs from GET /v1/alert_urgencies).
   pub alert_urgency_id: Option<String>,
+
+  /// Who to notify. One of: "User", "Group", "EscalationPolicy", "Service".
+  /// Requires On-Call to be enabled.
+  pub notification_target_type: Option<String>,
+
+  /// The ID of the notification target (user ID, group ID, escalation policy ID, or service ID).
+  pub notification_target_id: Option<String>,
 
   /// Optional labels as key-value pairs.
   pub labels: Option<Vec<(String, String)>>,
@@ -96,8 +103,8 @@ pub async fn create_alert(args: CreateAlertArgs) -> Result<CreateAlertSuccess, R
         external_id: args.external_id,
         external_url: args.external_url,
         alert_urgency_id: args.alert_urgency_id,
-        notification_target_type: None,
-        notification_target_id: None,
+        notification_target_type: args.notification_target_type,
+        notification_target_id: args.notification_target_id,
         labels,
         deduplication_key: args.deduplication_key,
       },
@@ -181,6 +188,8 @@ mod tests {
       external_id: None,
       external_url: None,
       alert_urgency_id: None,
+      notification_target_type: None,
+      notification_target_id: None,
       labels: None,
       deduplication_key: None,
     }).await?;
@@ -209,6 +218,8 @@ mod tests {
       external_id: None,
       external_url: None,
       alert_urgency_id: None,
+      notification_target_type: None,
+      notification_target_id: None,
       labels: Some(vec![
         ("environment".to_string(), "test".to_string()),
         ("component".to_string(), "seedance2pro_job".to_string()),
@@ -240,12 +251,59 @@ mod tests {
       external_id: Some("ext-test-123".to_string()),
       external_url: Some("https://artcraft.com/test".to_string()),
       alert_urgency_id: None,
+      notification_target_type: None,
+      notification_target_id: None,
       labels: None,
       deduplication_key: Some(dedup_key),
     }).await?;
 
     println!("Alert ID: {}", result.id);
     println!("Short ID: {:?}", result.short_id);
+    assert!(!result.id.is_empty());
+    Ok(())
+  }
+
+  /// WARNING: This test triggers a real page via the SRE escalation policy.
+  /// Only run manually when you want to verify paging works end-to-end.
+  #[tokio::test]
+  #[ignore] // manually test — triggers a real page!
+  async fn test_create_paging_sev1_alert() -> AnyhowResult<()> {
+    let api_key = test_api_key()?;
+
+    // IDs from our Rootly org (GET /v1/alert_urgencies, GET /v1/escalation_policies)
+    let high_urgency_id = "62fde143-1258-4639-9ee6-1400ebf7308d"; // "High"
+    let sre_escalation_policy_id = "d1f176a9-edb8-48f3-a2df-c505835498e5"; // "SRE (Site Reliability Engineering) Team"
+
+    let result = create_alert(CreateAlertArgs {
+      api_key,
+      source: "artcraft".to_string(),
+      summary: "[TEST] SEV-1: Critical production issue — paging test".to_string(),
+      description: Some(
+        "This is a test SEV-1 alert to verify paging works. \
+         If you received this page, the Rootly integration is working correctly. \
+         Please acknowledge and resolve.".to_string()
+      ),
+      status: Some("triggered".to_string()),
+      service_ids: None,
+      group_ids: None,
+      environment_ids: None,
+      external_id: None,
+      external_url: None,
+      alert_urgency_id: Some(high_urgency_id.to_string()),
+      notification_target_type: Some("EscalationPolicy".to_string()),
+      notification_target_id: Some(sre_escalation_policy_id.to_string()),
+      labels: Some(vec![
+        ("severity".to_string(), "sev-1".to_string()),
+        ("environment".to_string(), "production".to_string()),
+        ("test".to_string(), "true".to_string()),
+      ]),
+      deduplication_key: None,
+    }).await?;
+
+    println!("Alert ID: {}", result.id);
+    println!("Short ID: {:?}", result.short_id);
+    println!("Status: {:?}", result.status);
+    println!("Source: {:?}", result.source);
     assert!(!result.id.is_empty());
     Ok(())
   }
