@@ -46,6 +46,7 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
+use pager::notification::notification_details::NotificationDetails;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 
 // ======================== Result of a successful generation ========================
@@ -219,6 +220,11 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           }
           Err(err) => {
             warn!("Regular session fallback also failed for user {:?}: {:?}", user_token, err);
+            if let Err(page_err) = server_state.pager.enqueue_page(
+              NotificationDetails::from_error_with_context("Seedance 2.0 generation failed (whitelist + fallback)", &err)
+            ) {
+              warn!("Failed to enqueue pager alert: {:?}", page_err);
+            }
             refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
             return Err(CommonWebError::ServerError);
           }
@@ -245,6 +251,11 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       Ok(result) => result,
       Err(err) => {
         warn!("Error calling seedance2pro generate_video: {:?}", err);
+        if let Err(page_err) = server_state.pager.enqueue_page(
+          NotificationDetails::from_error_with_context("Seedance 2.0 generation failed", &err)
+        ) {
+          warn!("Failed to enqueue pager alert: {:?}", page_err);
+        }
         refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
         return Err(CommonWebError::ServerError);
       }
