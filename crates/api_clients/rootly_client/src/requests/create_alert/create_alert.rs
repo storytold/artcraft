@@ -79,8 +79,6 @@ pub struct CreateAlertSuccess {
 pub async fn create_alert(args: CreateAlertArgs) -> Result<CreateAlertSuccess, RootlyError> {
   let url = format!("{}/alerts", ROOTLY_API_BASE_URL);
 
-  println!("URL: {}", url);
-
   info!("Creating Rootly alert: source={}, summary={}", args.source, args.summary);
 
   let labels = args.labels.map(|pairs| {
@@ -122,9 +120,6 @@ pub async fn create_alert(args: CreateAlertArgs) -> Result<CreateAlertSuccess, R
     .map_err(|err| RootlyClientError::ReqwestClientError(err))?;
 
   let bearer = format!("Bearer {}", args.api_key.api_key);
-
-  println!("Bearer: `{}`", bearer);
-
 
   // NB: Use .body() instead of .json() to preserve the Content-Type header.
   // .json() would override it with "application/json", but Rootly requires "application/vnd.api+json".
