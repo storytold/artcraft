@@ -97,9 +97,9 @@ mod tests {
     assert_eq!(estimate_usd_cents(5, 2), 160);
     assert_eq!(estimate_usd_cents(15, 2), 480);
 
-    // Batch 4 = 3× (not 4×)
-    assert_eq!(estimate_usd_cents(4, 4), 192);
-    assert_eq!(estimate_usd_cents(5, 4), 240);
-    assert_eq!(estimate_usd_cents(15, 4), 720);
+    // Batch 4 = 4×
+    assert_eq!(estimate_usd_cents(4, 4), 256);
+    assert_eq!(estimate_usd_cents(5, 4), 320);
+    assert_eq!(estimate_usd_cents(15, 4), 960);
   }
 }
