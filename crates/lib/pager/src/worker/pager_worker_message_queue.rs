@@ -95,13 +95,10 @@ impl PagerWorkerMessageQueue {
   }
 }
 
-/// Shareable handle to a message queue.
-pub type SharedMessageQueue = Arc<PagerWorkerMessageQueue>;
-
-pub fn new_shared_queue() -> SharedMessageQueue {
+pub fn new_shared_queue() -> Arc<PagerWorkerMessageQueue> {
   Arc::new(PagerWorkerMessageQueue::new())
 }
 
-pub fn new_shared_queue_with_capacity(max_size: usize) -> SharedMessageQueue {
+pub fn new_shared_queue_with_capacity(max_size: usize) -> Arc<PagerWorkerMessageQueue> {
   Arc::new(PagerWorkerMessageQueue::with_capacity(max_size))
 }

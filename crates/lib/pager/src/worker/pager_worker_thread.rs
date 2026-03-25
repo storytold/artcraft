@@ -5,18 +5,18 @@ use std::time::Duration;
 use log::{error, info, warn};
 
 use crate::client::pager_client::PagerClient;
-use crate::worker::pager_worker_message_queue::SharedMessageQueue;
+use crate::worker::pager_worker_message_queue::PagerWorkerMessageQueue;
 
 /// A background worker thread that consumes a message queue and sends pages.
 pub struct PagerWorkerThread {
-  queue: SharedMessageQueue,
+  queue: Arc<PagerWorkerMessageQueue>,
   client: PagerClient,
   shutdown: Arc<AtomicBool>,
 }
 
 impl PagerWorkerThread {
   pub fn new(
-    queue: SharedMessageQueue,
+    queue: Arc<PagerWorkerMessageQueue>,
     client: PagerClient,
   ) -> Self {
     Self {

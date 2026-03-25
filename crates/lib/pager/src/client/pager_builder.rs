@@ -4,7 +4,8 @@ use crate::client::pager::Pager;
 use crate::client::pager_client::{PagerClient, PagerClientConfig};
 use crate::error::pager_client_error::PagerClientError;
 use crate::error::pager_error::PagerError;
-use crate::worker::pager_worker_message_queue::{new_shared_queue, new_shared_queue_with_capacity, SharedMessageQueue};
+use std::sync::Arc;
+use crate::worker::pager_worker_message_queue::{new_shared_queue, new_shared_queue_with_capacity, PagerWorkerMessageQueue};
 use crate::worker::pager_worker_thread::PagerWorkerThread;
 
 /// Builder for constructing a `Pager` instance.
@@ -80,7 +81,7 @@ impl PagerBuilder {
     let client = PagerClient::new(client_config, self.application_name, self.environment);
 
     let (queue, worker, worker_shutdown) = if self.enable_worker {
-      let queue: SharedMessageQueue = match self.queue_capacity {
+      let queue: Arc<PagerWorkerMessageQueue> = match self.queue_capacity {
         Some(capacity) => new_shared_queue_with_capacity(capacity),
         None => new_shared_queue(),
       };

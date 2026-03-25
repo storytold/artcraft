@@ -7,7 +7,7 @@ use crate::client::pager_client::{PageSentResult, PagerClient};
 use crate::error::pager_error::PagerError;
 use crate::error::pager_service_error::PagerServiceError;
 use crate::notification::notification_details::NotificationDetails;
-use crate::worker::pager_worker_message_queue::SharedMessageQueue;
+use crate::worker::pager_worker_message_queue::PagerWorkerMessageQueue;
 use crate::worker::pager_worker_thread::PagerWorkerThread;
 
 /// The main programmer interface to the pager system.
@@ -20,7 +20,7 @@ use crate::worker::pager_worker_thread::PagerWorkerThread;
 ///
 pub struct Pager {
   client: PagerClient,
-  queue: Option<SharedMessageQueue>,
+  queue: Option<Arc<PagerWorkerMessageQueue>>,
   worker: Option<PagerWorkerThread>,
   worker_shutdown: Option<Arc<AtomicBool>>,
 }
@@ -30,7 +30,7 @@ impl Pager {
   /// External users will need to create instances via `PagerBuilder`.
   pub(crate) fn new(
     client: PagerClient,
-    queue: Option<SharedMessageQueue>,
+    queue: Option<Arc<PagerWorkerMessageQueue>>,
     worker: Option<PagerWorkerThread>,
     worker_shutdown: Option<Arc<AtomicBool>>,
   ) -> Self {
