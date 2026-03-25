@@ -302,4 +302,49 @@ mod tests {
     assert!(!result.id.is_empty());
     Ok(())
   }
+
+  /// WARNING: This test triggers a real page directly to Brandon Thomas.
+  /// Only run manually when you want to verify paging works end-to-end.
+  #[tokio::test]
+  #[ignore] // manually test — triggers a real page!
+  async fn test_create_paging_sev1_alert_direct_user() -> AnyhowResult<()> {
+    let api_key = test_api_key()?;
+
+    // IDs from our Rootly org
+    let high_urgency_id = "62fde143-1258-4639-9ee6-1400ebf7308d"; // "High"
+    let brandon_user_id = "236693"; // Brandon Thomas
+
+    let result = create_alert(CreateAlertArgs {
+      api_key,
+      source: "artcraft".to_string(),
+      summary: "[TEST] SEV-1: Direct user page test".to_string(),
+      description: Some(
+        "This is a test SEV-1 alert sent directly to a user (not via escalation policy). \
+         If you received this page, the Rootly direct-user paging works correctly. \
+         Please acknowledge and resolve.".to_string()
+      ),
+      status: Some("triggered".to_string()),
+      service_ids: None,
+      group_ids: None,
+      environment_ids: None,
+      external_id: None,
+      external_url: None,
+      alert_urgency_id: Some(high_urgency_id.to_string()),
+      notification_target_type: Some("User".to_string()),
+      notification_target_id: Some(brandon_user_id.to_string()),
+      labels: Some(vec![
+        ("severity".to_string(), "sev-1".to_string()),
+        ("environment".to_string(), "production".to_string()),
+        ("test".to_string(), "true".to_string()),
+      ]),
+      deduplication_key: None,
+    }).await?;
+
+    println!("Alert ID: {}", result.id);
+    println!("Short ID: {:?}", result.short_id);
+    println!("Status: {:?}", result.status);
+    println!("Source: {:?}", result.source);
+    assert!(!result.id.is_empty());
+    Ok(())
+  }
 }
