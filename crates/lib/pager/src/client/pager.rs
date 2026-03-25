@@ -59,9 +59,7 @@ impl Pager {
     &self,
     notification: NotificationDetails,
   ) -> Result<PageSentResult, PagerError> {
-    self.client.send_page(&notification)
-        .await
-        .map_err(PagerError::Service)
+    self.client.send_page(&notification).await
   }
 
   /// Enqueue a page to be sent by the background worker thread.
@@ -75,8 +73,7 @@ impl Pager {
     let queue = self.queue.as_ref()
       .ok_or(PagerSystemError::QueueFull)?;
 
-    let dropped = queue.push(notification)
-      .map_err(PagerError::System)?;
+    let dropped = queue.push(notification)?;
 
     if let Some(dropped) = dropped {
       log::warn!("Pager queue overflow: dropped '{}'", dropped.summary);

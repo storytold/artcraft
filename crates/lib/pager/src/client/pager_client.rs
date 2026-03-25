@@ -5,6 +5,7 @@ use rootly_client::requests::create_alert::create_alert::{
   create_alert, CreateAlertArgs,
 };
 
+use crate::error::pager_error::PagerError;
 use crate::error::pager_service_error::PagerServiceError;
 use crate::notification::notification_details::NotificationDetails;
 
@@ -59,7 +60,7 @@ impl PagerClient {
   }
 
   /// Send a page immediately.
-  pub async fn send_page(&self, notification: &NotificationDetails) -> Result<PageSentResult, PagerServiceError> {
+  pub async fn send_page(&self, notification: &NotificationDetails) -> Result<PageSentResult, PagerError> {
     match &self.client_config {
       PagerClientConfig::Rootly { .. } => self.send_page_via_rootly(notification).await,
     }
@@ -68,7 +69,7 @@ impl PagerClient {
   async fn send_page_via_rootly(
     &self,
     notification: &NotificationDetails,
-  ) -> Result<PageSentResult, PagerServiceError> {
+  ) -> Result<PageSentResult, PagerError> {
     let PagerClientConfig::Rootly {
       api_key,
       alert_urgency_id,
@@ -118,7 +119,7 @@ impl PagerClient {
       }
       Err(err) => {
         error!("Failed to send page via Rootly: {}", err);
-        Err(PagerServiceError::RootlyError(err))
+        Err(PagerError::Service(PagerServiceError::RootlyError(err)))
       }
     }
   }

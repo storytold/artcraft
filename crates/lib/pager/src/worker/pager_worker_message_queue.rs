@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex, Condvar};
 
 use log::warn;
 
+use crate::error::pager_error::PagerError;
 use crate::error::pager_system_error::PagerSystemError;
 use crate::notification::notification_details::NotificationDetails;
 
@@ -35,7 +36,7 @@ impl PagerWorkerMessageQueue {
   ///
   /// If the queue is full, the oldest item is dropped and a warning is logged.
   /// Returns `Ok(Some(summary))` if an old item was evicted, `Ok(None)` otherwise.
-  pub fn push(&self, notification: NotificationDetails) -> Result<Option<NotificationDetails>, PagerSystemError> {
+  pub fn push(&self, notification: NotificationDetails) -> Result<Option<NotificationDetails>, PagerError> {
     let mut queue = self.inner.lock()
       .map_err(|e| PagerSystemError::MutexPoisoned(format!("push: {}", e)))?;
 
@@ -57,7 +58,7 @@ impl PagerWorkerMessageQueue {
   /// Block until at least one item is available, then drain all items.
   ///
   /// Returns an error if the mutex is poisoned.
-  pub fn wait_and_drain(&self) -> Result<Vec<NotificationDetails>, PagerSystemError> {
+  pub fn wait_and_drain(&self) -> Result<Vec<NotificationDetails>, PagerError> {
     let mut queue = self.inner.lock()
       .map_err(|e| PagerSystemError::MutexPoisoned(format!("wait_and_drain lock: {}", e)))?;
 
@@ -71,7 +72,7 @@ impl PagerWorkerMessageQueue {
   }
 
   /// Non-blocking drain of all currently queued items.
-  pub fn drain_available(&self) -> Result<Vec<NotificationDetails>, PagerSystemError> {
+  pub fn drain_available(&self) -> Result<Vec<NotificationDetails>, PagerError> {
     let mut queue = self.inner.lock()
       .map_err(|e| PagerSystemError::MutexPoisoned(format!("drain_available: {}", e)))?;
     Ok(queue.drain(..).collect())
@@ -84,13 +85,13 @@ impl PagerWorkerMessageQueue {
     self.condvar.notify_all();
   }
 
-  pub fn len(&self) -> Result<usize, PagerSystemError> {
+  pub fn len(&self) -> Result<usize, PagerError> {
     let queue = self.inner.lock()
       .map_err(|e| PagerSystemError::MutexPoisoned(format!("len: {}", e)))?;
     Ok(queue.len())
   }
 
-  pub fn is_empty(&self) -> Result<bool, PagerSystemError> {
+  pub fn is_empty(&self) -> Result<bool, PagerError> {
     Ok(self.len()? == 0)
   }
 }
