@@ -684,5 +684,165 @@ mod tests {
 
       Ok(())
     }
+
+    // --- Seedance 2 Fast tests ---
+
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_fast_keyframe_with_start_frame() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      // Upload a start frame image from our CDN
+      let image_bytes = crate::test_utils::http_download::http_download_to_bytes(
+        test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+      ).await?;
+
+      let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+        session: &session,
+        extension: "jpg".to_string(),
+        host_override: None,
+      }).await?;
+
+      let upload_result = upload_file(UploadFileArgs {
+        upload_url: prepare_result.upload_url,
+        file_bytes: image_bytes,
+        host_override: None,
+      }).await?;
+
+      println!("Uploaded start frame: {}", upload_result.public_url);
+
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Fast,
+        prompt: "A corgi dog runs along the lake shore, splashing water. Camera follows.".to_string(),
+        resolution: Resolution::Landscape16x9,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: Some(upload_result.public_url),
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_fast_three_image_references() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      // Upload three reference images from our CDN
+      let image_urls_to_upload = [
+        test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+        test_data::web::image_urls::WHITE_HOUSE_SUNSET_IMAGE_URL,
+        test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL,
+      ];
+
+      let mut uploaded_urls = Vec::new();
+      for (i, source_url) in image_urls_to_upload.iter().enumerate() {
+        let image_bytes = crate::test_utils::http_download::http_download_to_bytes(source_url).await?;
+        let ext = if source_url.ends_with(".png") { "png" } else { "jpg" };
+
+        let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+          session: &session,
+          extension: ext.to_string(),
+          host_override: None,
+        }).await?;
+
+        let upload_result = upload_file(UploadFileArgs {
+          upload_url: prepare_result.upload_url,
+          file_bytes: image_bytes,
+          host_override: None,
+        }).await?;
+
+        println!("Uploaded ref image {}: {}", i + 1, upload_result.public_url);
+        uploaded_urls.push(upload_result.public_url);
+      }
+
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Fast,
+        prompt: "The dog in @1 is running through the scenery in @3 towards the building in @2. Golden hour lighting.".to_string(),
+        resolution: Resolution::Landscape16x9,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: Some(uploaded_urls),
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_fast_audio_reference_with_text() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      // Upload a test audio file
+      let audio_path = test_utils::test_file_path::test_file_path(
+        "test_data/audio/mp3/super_mario_rpg_beware_the_forests_mushrooms.mp3",
+      )?;
+      let audio_bytes = fs::read(&audio_path)?;
+      println!("Audio file size: {} bytes", audio_bytes.len());
+
+      let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+        session: &session,
+        extension: "mp3".to_string(),
+        host_override: None,
+      }).await?;
+
+      let upload_result = upload_file(UploadFileArgs {
+        upload_url: prepare_result.upload_url,
+        file_bytes: audio_bytes,
+        host_override: None,
+      }).await?;
+
+      println!("Uploaded audio: {}", upload_result.public_url);
+
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Fast,
+        prompt: "A fantasy forest with mushrooms glowing in the dark. Fireflies dance between the trees. A small character walks along a winding path.".to_string(),
+        resolution: Resolution::Landscape16x9,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: Some(vec![upload_result.public_url]),
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
   }
 }
