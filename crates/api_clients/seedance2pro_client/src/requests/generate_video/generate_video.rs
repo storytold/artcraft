@@ -470,213 +470,217 @@ mod tests {
     }
   }
 
-  fn test_session() -> AnyhowResult<Seedance2ProSession> {
-    let cookies = get_test_cookies()?;
-    Ok(Seedance2ProSession::from_cookies_string(cookies))
-  }
+  mod real_requests {
+    use super::*;
 
-  #[tokio::test]
-  #[ignore] // manually test — requires real cookies
-  async fn test_generate_text_to_video() -> AnyhowResult<()> {
-    setup_test_logging(LevelFilter::Trace);
-    let session = test_session()?;
-    let args = GenerateVideoArgs {
-      session: &session,
-      model_type: ModelType::Seedance2Pro,
-      prompt: "A corgi eating a cake in a fancy kitchen.".to_string(),
-      resolution: Resolution::Square1x1,
-      duration_seconds: 5,
-      batch_count: BatchCount::One,
-      start_frame_url: None,
-      end_frame_url: None,
-      reference_image_urls: None,
-      reference_video_urls: None,
-      reference_audio_urls: None,
-      use_face_blur_hack: None,
-      host_override: None,
-    };
-    let result = generate_video(args).await?;
-    println!("Task ID: {}", result.task_id);
-    println!("Order ID: {}", result.order_id);
-    assert!(!result.task_id.is_empty());
-    assert!(!result.order_id.is_empty());
-    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
-    Ok(())
-  }
+    fn test_session() -> AnyhowResult<Seedance2ProSession> {
+      let cookies = get_test_cookies()?;
+      Ok(Seedance2ProSession::from_cookies_string(cookies))
+    }
 
-  #[tokio::test]
-  #[ignore] // manually test — requires real cookies
-  async fn test_generate_keyframe_video() -> AnyhowResult<()> {
-    setup_test_logging(LevelFilter::Trace);
-    let session = test_session()?;
-    let args = GenerateVideoArgs {
-      session: &session,
-      model_type: ModelType::Seedance2Pro,
-      prompt: "A dog shakes the glasses off its head. The camera pans out as the shiba shakes. The shiba barks.".to_string(),
-      resolution: Resolution::Landscape16x9,
-      duration_seconds: 5,
-      batch_count: BatchCount::One,
-      start_frame_url: Some("https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string()),
-      end_frame_url: None,
-      reference_image_urls: None,
-      reference_video_urls: None,
-      reference_audio_urls: None,
-      use_face_blur_hack: None,
-      host_override: None,
-    };
-    let result = generate_video(args).await?;
-    println!("Task ID: {}", result.task_id);
-    println!("Order ID: {}", result.order_id);
-    assert!(!result.task_id.is_empty());
-    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
-    Ok(())
-  }
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_generate_text_to_video() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Pro,
+        prompt: "A corgi eating a cake in a fancy kitchen.".to_string(),
+        resolution: Resolution::Square1x1,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
 
-  #[tokio::test]
-  #[ignore] // manually test — requires real cookies
-  async fn test_generate_reference_image_video() -> AnyhowResult<()> {
-    setup_test_logging(LevelFilter::Trace);
-    let session = test_session()?;
-    let args = GenerateVideoArgs {
-      session: &session,
-      model_type: ModelType::Seedance2Pro,
-      prompt: "The dog in @2 is in the office at @1 without the man. The office is dark and moonlight streams in through the windows. Particles of dust gleam in the moon beams. Suddenly, the dog jumps walks in front of the desk and barks.".to_string(),
-      resolution: Resolution::Standard4x3,
-      duration_seconds: 10,
-      batch_count: BatchCount::One,
-      start_frame_url: None,
-      end_frame_url: None,
-      reference_image_urls: Some(vec![
-        "https://static.seedance2-pro.com/materials/20260219/1771463564512-b14bfe90.png".to_string(),
-        "https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string(),
-      ]),
-      reference_video_urls: None,
-      reference_audio_urls: None,
-      use_face_blur_hack: None,
-      host_override: None,
-    };
-    let result = generate_video(args).await?;
-    println!("Task ID: {}", result.task_id);
-    println!("Order ID: {}", result.order_id);
-    assert!(!result.task_id.is_empty());
-    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
-    Ok(())
-  }
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_generate_keyframe_video() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Pro,
+        prompt: "A dog shakes the glasses off its head. The camera pans out as the shiba shakes. The shiba barks.".to_string(),
+        resolution: Resolution::Landscape16x9,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: Some("https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string()),
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
 
-  #[tokio::test]
-  #[ignore] // manually test — requires real cookies
-  async fn test_generate_reference_video_only() -> AnyhowResult<()> {
-    setup_test_logging(LevelFilter::Trace);
-    let session = test_session()?;
-    let args = GenerateVideoArgs {
-      session: &session,
-      model_type: ModelType::Seedance2Pro,
-      prompt: "Change the Video @video1 to night time.".to_string(),
-      resolution: Resolution::Landscape16x9,
-      duration_seconds: 5,
-      batch_count: BatchCount::One,
-      start_frame_url: None,
-      end_frame_url: None,
-      reference_image_urls: None,
-      reference_video_urls: Some(vec![
-        "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
-      ]),
-      reference_audio_urls: None,
-      use_face_blur_hack: None,
-      host_override: None,
-    };
-    let result = generate_video(args).await?;
-    println!("Task ID: {}", result.task_id);
-    println!("Order ID: {}", result.order_id);
-    assert!(!result.task_id.is_empty());
-    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
-    Ok(())
-  }
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_generate_reference_image_video() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Pro,
+        prompt: "The dog in @2 is in the office at @1 without the man. The office is dark and moonlight streams in through the windows. Particles of dust gleam in the moon beams. Suddenly, the dog jumps walks in front of the desk and barks.".to_string(),
+        resolution: Resolution::Standard4x3,
+        duration_seconds: 10,
+        batch_count: BatchCount::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: Some(vec![
+          "https://static.seedance2-pro.com/materials/20260219/1771463564512-b14bfe90.png".to_string(),
+          "https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string(),
+        ]),
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
 
-  #[tokio::test]
-  #[ignore] // manually test — requires real cookies
-  async fn test_generate_reference_video_and_image() -> AnyhowResult<()> {
-    setup_test_logging(LevelFilter::Trace);
-    let session = test_session()?;
-    let args = GenerateVideoArgs {
-      session: &session,
-      model_type: ModelType::Seedance2Pro,
-      prompt: "Put the robot in @video1 next to the house in @image1".to_string(),
-      resolution: Resolution::Landscape16x9,
-      duration_seconds: 5,
-      batch_count: BatchCount::One,
-      start_frame_url: None,
-      end_frame_url: None,
-      reference_image_urls: Some(vec![
-        "https://static.seedance2-pro.com/materials/20260315/1773595053724-07a1d500.png".to_string(),
-      ]),
-      reference_video_urls: Some(vec![
-        "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
-      ]),
-      reference_audio_urls: None,
-      use_face_blur_hack: None,
-      host_override: None,
-    };
-    let result = generate_video(args).await?;
-    println!("Task ID: {}", result.task_id);
-    println!("Order ID: {}", result.order_id);
-    assert!(!result.task_id.is_empty());
-    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
-    Ok(())
-  }
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_generate_reference_video_only() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Pro,
+        prompt: "Change the Video @video1 to night time.".to_string(),
+        resolution: Resolution::Landscape16x9,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: Some(vec![
+          "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+        ]),
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
 
-  #[tokio::test]
-  #[ignore] // manually test — requires real cookies and a test image
-  async fn test_video_ref_file_that_is_too_long() -> AnyhowResult<()> {
-    setup_test_logging(LevelFilter::Trace);
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_generate_reference_video_and_image() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Pro,
+        prompt: "Put the robot in @video1 next to the house in @image1".to_string(),
+        resolution: Resolution::Landscape16x9,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: Some(vec![
+          "https://static.seedance2-pro.com/materials/20260315/1773595053724-07a1d500.png".to_string(),
+        ]),
+        reference_video_urls: Some(vec![
+          "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+        ]),
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
 
-    // Step 1: Get a signed upload URL
-    let cookies = get_test_cookies()?;
-    let session = Seedance2ProSession::from_cookies_string(cookies);
-    let prepare_args = PrepareFileUploadArgs {
-      session: &session,
-      extension: "mp4".to_string(),
-      host_override: None,
-    };
-    let prepare_result = prepare_file_upload(prepare_args).await?;
-    println!("Upload URL: {}", prepare_result.upload_url);
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies and a test image
+    async fn test_video_ref_file_that_is_too_long() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
 
-    // Step 2: Read a test image
-    let file_bytes = fs::read("/Users/bt/Videos/Artcraft/Artcraft Best/ArtCraft Seedance Knight.mp4")?;
-    println!("File size: {} bytes", file_bytes.len());
+      // Step 1: Get a signed upload URL
+      let cookies = get_test_cookies()?;
+      let session = Seedance2ProSession::from_cookies_string(cookies);
+      let prepare_args = PrepareFileUploadArgs {
+        session: &session,
+        extension: "mp4".to_string(),
+        host_override: None,
+      };
+      let prepare_result = prepare_file_upload(prepare_args).await?;
+      println!("Upload URL: {}", prepare_result.upload_url);
 
-    // Step 3: Upload
-    let upload_args = UploadFileArgs {
-      upload_url: prepare_result.upload_url,
-      file_bytes,
-      host_override: None,
-    };
-    let result = upload_file(upload_args).await?;
-    println!("Public URL: {}", result.public_url);
+      // Step 2: Read a test image
+      let file_bytes = fs::read("/Users/bt/Videos/Artcraft/Artcraft Best/ArtCraft Seedance Knight.mp4")?;
+      println!("File size: {} bytes", file_bytes.len());
 
-    let args = GenerateVideoArgs {
-      session: &session,
-      model_type: ModelType::Seedance2Pro,
-      prompt: "Change @video1 to night time".to_string(),
-      resolution: Resolution::Landscape16x9,
-      duration_seconds: 5,
-      batch_count: BatchCount::One,
-      start_frame_url: None,
-      end_frame_url: None,
-      reference_image_urls: None,
-      reference_video_urls: Some(vec![
-        result.public_url,
-      ]),
-      reference_audio_urls: None,
-      use_face_blur_hack: None,
-      host_override: None,
-    };
-    let result = generate_video(args).await?;
-    println!("Task ID: {}", result.task_id);
-    println!("Order ID: {}", result.order_id);
-    assert!(!result.task_id.is_empty());
-    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      // Step 3: Upload
+      let upload_args = UploadFileArgs {
+        upload_url: prepare_result.upload_url,
+        file_bytes,
+        host_override: None,
+      };
+      let result = upload_file(upload_args).await?;
+      println!("Public URL: {}", result.public_url);
 
-    Ok(())
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Pro,
+        prompt: "Change @video1 to night time".to_string(),
+        resolution: Resolution::Landscape16x9,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: Some(vec![
+          result.public_url,
+        ]),
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+
+      Ok(())
+    }
   }
 }
