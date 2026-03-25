@@ -47,6 +47,7 @@ import {
   getPlaceholderForMediaClass,
 } from "@storyteller/common";
 import { coverImageCache } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
+import { useCreditsState } from "@storyteller/credits";
 
 type InProgressTask = {
   id: string;
@@ -694,6 +695,10 @@ export const TaskQueue = () => {
       unlistenFailed = listen("generation-failed-event", () => {
         if (!cancelled) {
           load();
+          // Refunded credits may take a moment to settle in the database
+          setTimeout(() => {
+            useCreditsState.getState().fetchFromServer();
+          }, 2000);
         }
       });
     })();
