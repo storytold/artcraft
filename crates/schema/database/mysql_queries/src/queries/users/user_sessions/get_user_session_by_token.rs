@@ -13,6 +13,8 @@ use tokens::tokens::users::UserToken;
 
 use crate::helpers::boolean_converters::{i8_to_bool, nullable_i8_to_bool_default_false, nullable_i8_to_optional_bool};
 
+const ADMIN_ROLE_SLUG: &str = "admin";
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SessionUserRecord {
   pub user_token: UserToken,
@@ -90,7 +92,7 @@ impl SessionUserRecord {
   }
 
   pub fn is_mod(&self) -> bool {
-    self.can_ban_users
+    self.can_ban_users || self.user_role_slug == ADMIN_ROLE_SLUG
   }
 }
 

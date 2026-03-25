@@ -35,6 +35,7 @@ use crate::http_server::endpoints::moderation::user::moderator_list_subscribing_
 use crate::http_server::endpoints::moderation::user::moderator_list_users_by_signup_date::moderator_list_users_by_signup_date_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler;
+use crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::edit_user_feature_flags_handler::edit_user_feature_flags_handler;
 
 pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
@@ -49,6 +50,12 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
       >,
 {
   app.service(web::scope("/v1/moderation")
+        .service(web::scope("/alerts")
+            .service(web::resource("/send")
+                .route(web::post().to(moderation_send_alert_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
         .service(web::resource("/user_feature_flags/{username_or_token}")
             .route(web::post().to(edit_user_feature_flags_handler))
             .route(web::head().to(|| HttpResponse::Ok()))

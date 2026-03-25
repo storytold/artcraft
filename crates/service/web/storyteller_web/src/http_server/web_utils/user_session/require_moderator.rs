@@ -75,7 +75,7 @@ pub async fn require_moderator(
     }
   };
 
-  if !user_session.can_ban_users {
+  if !user_session.is_mod() {
     warn!("user is not a moderator: {:?}", user_session.user_token.as_str());
     return Err(RequireModeratorError::NotAuthorized);
   }

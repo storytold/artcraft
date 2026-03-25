@@ -1,3 +1,4 @@
+pub mod alerts;
 pub mod jobs;
 pub mod user;
 pub mod wallet_ledger_entries;

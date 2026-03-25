@@ -1,3 +1,4 @@
+pub mod alerts;
 pub mod info;
 pub mod ip_bans;
 pub mod jobs;
