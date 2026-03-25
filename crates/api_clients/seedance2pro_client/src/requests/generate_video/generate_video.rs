@@ -77,12 +77,17 @@ impl GenerateVideoArgs<'_> {
   /// Estimates the credit cost for this generation request.
   ///
   /// Pricing rules:
-  /// - 40 credits per second of video (4s = 160, 15s = 600)
+  /// - Seedance 2 Pro:  40 credits per second of video
+  /// - Seedance 2 Fast: 28 credits per second of video
   /// - Resolution has no effect on cost
   /// - Input mode (text, keyframe, reference) has no effect on cost
   /// - Batch 1 = 1×, Batch 2 = 2×, Batch 4 = 3× (not 4×)
   pub fn estimate_credits(&self) -> u32 {
-    let per_video = u32::from(self.duration_seconds) * 40;
+    let credits_per_second = match self.model_type {
+      ModelType::Seedance2Pro => 40,
+      ModelType::Seedance2Fast => 28,
+    };
+    let per_video = u32::from(self.duration_seconds) * credits_per_second;
     let batch_multiplier = match self.batch_count {
       BatchCount::One => 1,
       BatchCount::Two => 2,
@@ -345,12 +350,12 @@ mod tests {
     Seedance2ProSession::from_cookies_string(String::new())
   }
 
-  fn args_with(duration_seconds: u8, batch_count: BatchCount) -> GenerateVideoArgs<'static> {
+  fn args_with(model_type: ModelType, duration_seconds: u8, batch_count: BatchCount) -> GenerateVideoArgs<'static> {
     // Safety: the dummy session is leaked so the reference is 'static for test purposes.
     let session = Box::leak(Box::new(dummy_session()));
     GenerateVideoArgs {
       session,
-      model_type: ModelType::Seedance2Pro,
+      model_type,
       prompt: String::new(),
       resolution: Resolution::Square1x1,
       duration_seconds,
@@ -365,44 +370,97 @@ mod tests {
     }
   }
 
-  #[test]
-  fn test_estimate_credits() {
-    // 40 credits per second, batch 1
-    assert_eq!(args_with(4, BatchCount::One).estimate_credits(), 160);
-    assert_eq!(args_with(5, BatchCount::One).estimate_credits(), 200);
-    assert_eq!(args_with(6, BatchCount::One).estimate_credits(), 240);
-    assert_eq!(args_with(7, BatchCount::One).estimate_credits(), 280);
-    assert_eq!(args_with(15, BatchCount::One).estimate_credits(), 600);
+  fn pro(duration_seconds: u8, batch_count: BatchCount) -> GenerateVideoArgs<'static> {
+    args_with(ModelType::Seedance2Pro, duration_seconds, batch_count)
+  }
 
-    // Batch 2 = 2×
-    assert_eq!(args_with(4, BatchCount::Two).estimate_credits(), 320);
-    assert_eq!(args_with(5, BatchCount::Two).estimate_credits(), 400);
-    assert_eq!(args_with(15, BatchCount::Two).estimate_credits(), 1200);
-
-    // Batch 4 = 3× (not 4×)
-    assert_eq!(args_with(4, BatchCount::Four).estimate_credits(), 480);
-    assert_eq!(args_with(5, BatchCount::Four).estimate_credits(), 600);
-    assert_eq!(args_with(15, BatchCount::Four).estimate_credits(), 1800);
+  fn fast(duration_seconds: u8, batch_count: BatchCount) -> GenerateVideoArgs<'static> {
+    args_with(ModelType::Seedance2Fast, duration_seconds, batch_count)
   }
 
   #[test]
-  fn test_estimate_cost_usd_cents() {
+  fn test_estimate_credits_pro() {
     // 40 credits per second, batch 1
-    assert_eq!(args_with(4, BatchCount::One).estimate_cost_in_usd_cents(), 64);
-    assert_eq!(args_with(5, BatchCount::One).estimate_cost_in_usd_cents(), 80);
-    assert_eq!(args_with(6, BatchCount::One).estimate_cost_in_usd_cents(), 96);
-    assert_eq!(args_with(7, BatchCount::One).estimate_cost_in_usd_cents(), 112);
-    assert_eq!(args_with(15, BatchCount::One).estimate_cost_in_usd_cents(), 240);
+    assert_eq!(pro(4, BatchCount::One).estimate_credits(), 160);
+    assert_eq!(pro(5, BatchCount::One).estimate_credits(), 200);
+    assert_eq!(pro(6, BatchCount::One).estimate_credits(), 240);
+    assert_eq!(pro(7, BatchCount::One).estimate_credits(), 280);
+    assert_eq!(pro(15, BatchCount::One).estimate_credits(), 600);
 
     // Batch 2 = 2×
-    assert_eq!(args_with(4, BatchCount::Two).estimate_cost_in_usd_cents(), 128);
-    assert_eq!(args_with(5, BatchCount::Two).estimate_cost_in_usd_cents(), 160);
-    assert_eq!(args_with(15, BatchCount::Two).estimate_cost_in_usd_cents(), 480);
+    assert_eq!(pro(4, BatchCount::Two).estimate_credits(), 320);
+    assert_eq!(pro(5, BatchCount::Two).estimate_credits(), 400);
+    assert_eq!(pro(15, BatchCount::Two).estimate_credits(), 1200);
 
     // Batch 4 = 3× (not 4×)
-    assert_eq!(args_with(4, BatchCount::Four).estimate_cost_in_usd_cents(), 192);
-    assert_eq!(args_with(5, BatchCount::Four).estimate_cost_in_usd_cents(), 240);
-    assert_eq!(args_with(15, BatchCount::Four).estimate_cost_in_usd_cents(), 720);
+    assert_eq!(pro(4, BatchCount::Four).estimate_credits(), 480);
+    assert_eq!(pro(5, BatchCount::Four).estimate_credits(), 600);
+    assert_eq!(pro(15, BatchCount::Four).estimate_credits(), 1800);
+  }
+
+  #[test]
+  fn test_estimate_credits_fast() {
+    // 28 credits per second, batch 1
+    assert_eq!(fast(4, BatchCount::One).estimate_credits(), 112);
+    assert_eq!(fast(5, BatchCount::One).estimate_credits(), 140);
+    assert_eq!(fast(6, BatchCount::One).estimate_credits(), 168);
+    assert_eq!(fast(7, BatchCount::One).estimate_credits(), 196);
+    assert_eq!(fast(15, BatchCount::One).estimate_credits(), 420);
+
+    // Batch 2 = 2×
+    assert_eq!(fast(4, BatchCount::Two).estimate_credits(), 224);
+    assert_eq!(fast(5, BatchCount::Two).estimate_credits(), 280);
+    assert_eq!(fast(15, BatchCount::Two).estimate_credits(), 840);
+
+    // Batch 4 = 3× (not 4×)
+    assert_eq!(fast(4, BatchCount::Four).estimate_credits(), 336);
+    assert_eq!(fast(5, BatchCount::Four).estimate_credits(), 420);
+    assert_eq!(fast(15, BatchCount::Four).estimate_credits(), 1260);
+  }
+
+  #[test]
+  fn test_estimate_cost_usd_cents_pro() {
+    // 40 credits per second, batch 1
+    assert_eq!(pro(4, BatchCount::One).estimate_cost_in_usd_cents(), 64);
+    assert_eq!(pro(5, BatchCount::One).estimate_cost_in_usd_cents(), 80);
+    assert_eq!(pro(6, BatchCount::One).estimate_cost_in_usd_cents(), 96);
+    assert_eq!(pro(7, BatchCount::One).estimate_cost_in_usd_cents(), 112);
+    assert_eq!(pro(15, BatchCount::One).estimate_cost_in_usd_cents(), 240);
+
+    // Batch 2 = 2×
+    assert_eq!(pro(4, BatchCount::Two).estimate_cost_in_usd_cents(), 128);
+    assert_eq!(pro(5, BatchCount::Two).estimate_cost_in_usd_cents(), 160);
+    assert_eq!(pro(15, BatchCount::Two).estimate_cost_in_usd_cents(), 480);
+
+    // Batch 4 = 3× (not 4×)
+    assert_eq!(pro(4, BatchCount::Four).estimate_cost_in_usd_cents(), 192);
+    assert_eq!(pro(5, BatchCount::Four).estimate_cost_in_usd_cents(), 240);
+    assert_eq!(pro(15, BatchCount::Four).estimate_cost_in_usd_cents(), 720);
+  }
+
+  #[test]
+  fn test_estimate_cost_usd_cents_fast() {
+    // 28 credits per second, batch 1
+    // 28 * 4 = 112 credits => 112 / 250 * 100 = 44.8 => 45 cents
+    assert_eq!(fast(4, BatchCount::One).estimate_cost_in_usd_cents(), 45);
+    // 28 * 5 = 140 credits => 140 / 250 * 100 = 56 cents
+    assert_eq!(fast(5, BatchCount::One).estimate_cost_in_usd_cents(), 56);
+    // 28 * 6 = 168 credits => 168 / 250 * 100 = 67.2 => 67 cents
+    assert_eq!(fast(6, BatchCount::One).estimate_cost_in_usd_cents(), 67);
+    // 28 * 7 = 196 credits => 196 / 250 * 100 = 78.4 => 78 cents
+    assert_eq!(fast(7, BatchCount::One).estimate_cost_in_usd_cents(), 78);
+    // 28 * 15 = 420 credits => 420 / 250 * 100 = 168 cents
+    assert_eq!(fast(15, BatchCount::One).estimate_cost_in_usd_cents(), 168);
+
+    // Batch 2 = 2×
+    assert_eq!(fast(4, BatchCount::Two).estimate_cost_in_usd_cents(), 90);
+    assert_eq!(fast(5, BatchCount::Two).estimate_cost_in_usd_cents(), 112);
+    assert_eq!(fast(15, BatchCount::Two).estimate_cost_in_usd_cents(), 336);
+
+    // Batch 4 = 3× (not 4×)
+    assert_eq!(fast(4, BatchCount::Four).estimate_cost_in_usd_cents(), 134);
+    assert_eq!(fast(5, BatchCount::Four).estimate_cost_in_usd_cents(), 168);
+    assert_eq!(fast(15, BatchCount::Four).estimate_cost_in_usd_cents(), 504);
   }
 
   fn test_session() -> AnyhowResult<Seedance2ProSession> {
