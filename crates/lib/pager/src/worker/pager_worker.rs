@@ -1,8 +1,8 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 
 use crate::client::pager_client::PagerClient;
 use crate::worker::pager_worker_message_queue::PagerWorkerMessageQueue;
@@ -67,7 +67,7 @@ impl PagerWorker {
         continue;
       }
 
-      info!("Pager worker processing {} queued notification(s).", items.len());
+      debug!("Pager worker processing {} queued notification(s).", items.len());
 
       for notification in &items {
         if self.shutdown.load(Ordering::Relaxed) {
@@ -76,11 +76,14 @@ impl PagerWorker {
         }
 
         match self.client.send_page(notification).await {
-          Ok(success) => {
-            info!(
+          Ok(Some(success)) => {
+            debug!(
               "Pager worker sent page: id={}, summary={}",
               success.id, notification.summary
             );
+          }
+          Ok(None) => {
+            // NoOp — already logged by the client.
           }
           Err(err) => {
             error!(

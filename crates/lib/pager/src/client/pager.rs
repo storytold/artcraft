@@ -1,7 +1,7 @@
-use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
 
-use log::{info, warn};
+use log::{debug, info, warn};
 
 use crate::client::pager_client::{PageSentResult, PagerClient};
 use crate::error::pager_error::PagerError;
@@ -44,31 +44,43 @@ impl Pager {
   }
 
   /// Send a page immediately, blocking until the API responds.
+  /// Returns `Ok(None)` if the pager is configured as NoOp.
   pub async fn send_page_immediately(
     &self,
     notification: NotificationDetails,
-  ) -> Result<PageSentResult, PagerError> {
+  ) -> Result<Option<PageSentResult>, PagerError> {
     self.client.send_page(&notification).await
   }
 
-  /// Send a page immediately, blocking until the API responds.
+  /// Send a page immediately. Logs errors but never fails.
+  /// Returns `None` if the pager is NoOp or if sending failed.
   pub async fn send_page_immediately_infallible(
     &self,
     notification: NotificationDetails,
-  ) {
-    if let Err(err) = self.send_page_immediately(notification).await {
-      warn!("Failure sending page: {:?}", err);
+  ) -> Option<PageSentResult> {
+    match self.send_page_immediately(notification).await {
+      Ok(result) => result,
+      Err(err) => {
+        warn!("Failure sending page: {:?}", err);
+        None
+      }
     }
   }
 
   /// Enqueue a page to be sent by the background worker thread.
   ///
+  /// Returns `Ok(())` immediately if the pager is NoOp.
   /// Returns an error if the worker is not configured (use `build_with_worker()`).
   /// If the queue is full, the oldest item is dropped.
   pub fn enqueue_page(
     &self,
     notification: NotificationDetails,
   ) -> Result<(), PagerError> {
+    if self.client.is_noop() {
+      debug!("Pager no-op: would have enqueued page: {}", notification.summary);
+      return Ok(());
+    }
+
     let queue = self.queue.as_ref()
       .ok_or(PagerSystemError::QueueNotConfigured)?;
 

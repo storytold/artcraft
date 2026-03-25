@@ -20,7 +20,7 @@ pub fn build_pager(server_environment: server_environment::ServerEnvironment) ->
     }
     None => {
       warn!("ROOTLY_API_KEY not set. Pager will not send real pages.");
-      build_fallback_pager(environment)
+      build_noop_pager(environment)
     }
   }
 }
@@ -42,20 +42,12 @@ fn build_rootly_pager(environment: &str, api_key: String) -> (Pager, PagerWorker
     rootly_builder = rootly_builder.notification_target(t_type, t_id);
   }
 
-  match rootly_builder.build_with_worker() {
-    Ok((pager, worker)) => (pager, worker),
-    Err(err) => {
-      warn!("Failed to build pager with Rootly backend: {}. Pages will not be sent.", err);
-      build_fallback_pager(environment)
-    }
-  }
+  rootly_builder.build_with_worker()
 }
 
-fn build_fallback_pager(environment: &str) -> (Pager, PagerWorker) {
+fn build_noop_pager(environment: &str) -> (Pager, PagerWorker) {
   PagerBuilder::new()
     .application_name("storyteller-web".to_string())
     .environment(environment.to_string())
-    .rootly(RootlyApiKey::new(String::new()))
     .build_with_worker()
-    .expect("fallback pager build should not fail")
 }

@@ -1,4 +1,4 @@
-use log::{error, info};
+use log::{debug, warn};
 
 use rootly_client::creds::rootly_api_key::RootlyApiKey;
 use rootly_client::requests::create_alert::create_alert::{
@@ -25,6 +25,9 @@ pub struct PagerClient {
 /// Configuration for the pager client backend.
 #[derive(Clone)]
 pub enum PagerClientConfig {
+  /// No-op backend. All calls are silently ignored.
+  NoOp,
+
   /// Use Rootly as the paging backend.
   Rootly {
     api_key: RootlyApiKey,
@@ -59,10 +62,20 @@ impl PagerClient {
     Self { client_config, application_name, environment }
   }
 
-  /// Send a page immediately.
-  pub async fn send_page(&self, notification: &NotificationDetails) -> Result<PageSentResult, PagerError> {
+  pub fn is_noop(&self) -> bool {
+    matches!(self.client_config, PagerClientConfig::NoOp)
+  }
+
+  /// Send a page immediately. Returns `Ok(None)` for NoOp.
+  pub async fn send_page(&self, notification: &NotificationDetails) -> Result<Option<PageSentResult>, PagerError> {
     match &self.client_config {
-      PagerClientConfig::Rootly { .. } => self.send_page_via_rootly(notification).await,
+      PagerClientConfig::NoOp => {
+        debug!("Pager no-op: would have sent page: {}", notification.summary);
+        Ok(None)
+      }
+      PagerClientConfig::Rootly { .. } => {
+        self.send_page_via_rootly(notification).await.map(Some)
+      }
     }
   }
 
@@ -75,13 +88,15 @@ impl PagerClient {
       alert_urgency_id,
       notification_target_type,
       notification_target_id,
-    } = &self.client_config;
+    } = &self.client_config else {
+      return Ok(PageSentResult { id: String::new(), short_id: None });
+    };
 
     let source = self.application_name
         .clone()
         .unwrap_or_else(|| "unknown".to_string());
 
-    info!("Sending page via Rootly (source={}): {}", source, notification.summary);
+    debug!("Sending page via Rootly (source={}): {}", source, notification.summary);
 
     let mut labels: Vec<(String, String)> = Vec::new();
 
@@ -111,14 +126,14 @@ impl PagerClient {
 
     match result {
       Ok(success) => {
-        info!("Page sent successfully via Rootly: id={}, short_id={:?}", success.id, success.short_id);
+        debug!("Page sent successfully via Rootly: id={}, short_id={:?}", success.id, success.short_id);
         Ok(PageSentResult {
           id: success.id,
           short_id: success.short_id,
         })
       }
       Err(err) => {
-        error!("Failed to send page via Rootly: {}", err);
+        warn!("Failed to send page via Rootly: {}", err);
         Err(PagerError::Service(PagerServiceError::RootlyError(err)))
       }
     }
