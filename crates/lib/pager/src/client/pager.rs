@@ -3,9 +3,7 @@ use std::sync::atomic::AtomicBool;
 
 use log::info;
 
-use rootly_client::requests::create_alert::create_alert::CreateAlertSuccess;
-
-use crate::client::pager_client::PagerClient;
+use crate::client::pager_client::{PageSentResult, PagerClient};
 use crate::error::pager_error::PagerError;
 use crate::error::pager_service_error::PagerServiceError;
 use crate::notification::notification_details::NotificationDetails;
@@ -21,11 +19,10 @@ use crate::worker::pager_worker_thread::PagerWorkerThread;
 /// Build via `PagerBuilder`:
 /// ```ignore
 /// let pager = PagerBuilder::new()
-///     .api_key(key)
-///     .source("my-service".to_string())
+///     .rootly(api_key, "my-service".to_string())
 ///     .notification_target("EscalationPolicy".to_string(), policy_id)
-///     .with_worker()
-///     .build();
+///     .environment("production".to_string())
+///     .build()?;
 /// ```
 pub struct Pager {
   client: PagerClient,
@@ -48,7 +45,7 @@ impl Pager {
   pub async fn send_page_immediately(
     &self,
     notification: NotificationDetails,
-  ) -> Result<CreateAlertSuccess, PagerError> {
+  ) -> Result<PageSentResult, PagerError> {
     self.client.send_page(&notification).await.map_err(PagerError::Client)
   }
 
