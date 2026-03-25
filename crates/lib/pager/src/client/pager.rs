@@ -71,7 +71,7 @@ impl Pager {
     notification: NotificationDetails,
   ) -> Result<(), PagerError> {
     let queue = self.queue.as_ref()
-      .ok_or(PagerSystemError::QueueFull)?;
+      .ok_or(PagerSystemError::QueueNotConfigured)?;
 
     let dropped = queue.push(notification)?;
 
