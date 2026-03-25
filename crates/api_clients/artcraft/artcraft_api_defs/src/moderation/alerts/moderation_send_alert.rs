@@ -15,10 +15,4 @@ pub struct ModerationSendAlertRequest {
 #[derive(Serialize, ToSchema)]
 pub struct ModerationSendAlertResponse {
   pub success: bool,
-
-  /// The backend-specific ID of the sent alert.
-  pub alert_id: Option<String>,
-
-  /// A short human-readable ID (if the backend provides one).
-  pub short_id: Option<String>,
 }

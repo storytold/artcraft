@@ -45,9 +45,8 @@ pub async fn moderation_send_alert_handler(
 
   let notification = NotificationDetails::with_summary_and_description(title, description);
 
-  let result = server_state.pager
-    .send_page_immediately(notification)
-    .await
+  server_state.pager
+    .enqueue_page(notification)
     .map_err(|err| {
       warn!("moderation_send_alert error: {:?}", err);
       CommonWebError::ServerError
@@ -55,7 +54,5 @@ pub async fn moderation_send_alert_handler(
 
   Ok(Json(ModerationSendAlertResponse {
     success: true,
-    alert_id: Some(result.id),
-    short_id: result.short_id,
   }))
 }

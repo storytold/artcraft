@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-use log::info;
+use log::{info, warn};
 
 use crate::client::pager_client::{PageSentResult, PagerClient};
 use crate::error::pager_error::PagerError;
@@ -49,6 +49,16 @@ impl Pager {
     notification: NotificationDetails,
   ) -> Result<PageSentResult, PagerError> {
     self.client.send_page(&notification).await
+  }
+
+  /// Send a page immediately, blocking until the API responds.
+  pub async fn send_page_immediately_infallible(
+    &self,
+    notification: NotificationDetails,
+  ) {
+    if let Err(err) = self.send_page_immediately(notification).await {
+      warn!("Failure sending page: {:?}", err);
+    }
   }
 
   /// Enqueue a page to be sent by the background worker thread.
