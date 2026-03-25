@@ -47,7 +47,7 @@ pub enum PagerClientConfig {
 #[derive(Debug, Clone)]
 pub struct PageSentResult {
   /// A backend-specific identifier for the sent notification.
-  pub id: String,
+  pub id: Option<String>,
 
   /// A short human-readable ID (if the backend provides one).
   pub short_id: Option<String>,
@@ -89,7 +89,7 @@ impl PagerClient {
       notification_target_type,
       notification_target_id,
     } = &self.client_config else {
-      return Ok(PageSentResult { id: String::new(), short_id: None });
+      return Ok(PageSentResult { id: None, short_id: None });
     };
 
     let source = self.application_name
@@ -128,7 +128,7 @@ impl PagerClient {
       Ok(success) => {
         debug!("Page sent successfully via Rootly: id={}, short_id={:?}", success.id, success.short_id);
         Ok(PageSentResult {
-          id: success.id,
+          id: Some(success.id),
           short_id: success.short_id,
         })
       }

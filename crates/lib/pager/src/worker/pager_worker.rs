@@ -78,7 +78,7 @@ impl PagerWorker {
         match self.client.send_page(notification).await {
           Ok(Some(success)) => {
             debug!(
-              "Pager worker sent page: id={}, summary={}",
+              "Pager worker sent page: id={:?}, summary={}",
               success.id, notification.summary
             );
           }
