@@ -35,17 +35,16 @@ impl PagerWorkerMessageQueue {
   ///
   /// If the queue is full, the oldest item is dropped and a warning is logged.
   /// Returns `Ok(Some(summary))` if an old item was evicted, `Ok(None)` otherwise.
-  pub fn push(&self, notification: NotificationDetails) -> Result<Option<String>, PagerServiceError> {
+  pub fn push(&self, notification: NotificationDetails) -> Result<Option<NotificationDetails>, PagerServiceError> {
     let mut queue = self.inner.lock()
       .map_err(|e| PagerServiceError::MutexPoisoned(format!("push: {}", e)))?;
 
     let dropped = if queue.len() >= self.max_size {
       let old = queue.pop_front();
-      let dropped_summary = old.as_ref().map(|n| n.summary.clone());
-      if let Some(ref summary) = dropped_summary {
-        warn!("Pager queue full (max={}). Dropped oldest: {}", self.max_size, summary);
+      if let Some(ref n) = old {
+        warn!("Pager queue full (max={}). Dropped oldest: {}", self.max_size, n.summary);
       }
-      dropped_summary
+      old
     } else {
       None
     };

@@ -61,9 +61,9 @@ impl Pager {
     let dropped = queue.push(notification)
       .map_err(PagerError::Service)?;
 
-    if let Some(dropped_summary) = dropped {
+    if let Some(dropped) = dropped {
       // We still enqueued the new item — just warn that we lost an old one.
-      log::warn!("Pager queue overflow: dropped '{}'", dropped_summary);
+      log::warn!("Pager queue overflow: dropped '{}'", dropped.summary);
     }
 
     Ok(())
