@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { GeneratedImage } from "@storyteller/tauri-events";
+import type { ModelCreator } from "@storyteller/model-list";
 
 export type TextToImageBatch = {
   id: string;
@@ -9,6 +10,7 @@ export type TextToImageBatch = {
   createdAt: number;
   requestedCount: number;
   modelLabel: string;
+  modelCreator?: ModelCreator;
   subscriberId: string;
   failureReason?: string;
 };
@@ -20,6 +22,7 @@ type TextToImageState = {
     requestedCount: number,
     modelLabel: string,
     subscriberId?: string,
+    modelCreator?: ModelCreator,
   ) => string;
   completeBatch: (
     images: GeneratedImage[],
@@ -38,6 +41,7 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
     requestedCount: number,
     modelLabel: string,
     subscriberId?: string,
+    modelCreator?: ModelCreator,
   ) => {
     const id = subscriberId
       ? subscriberId
@@ -52,6 +56,7 @@ export const useTextToImageStore = create<TextToImageState>((set, get) => ({
       createdAt: Date.now(),
       requestedCount,
       modelLabel,
+      modelCreator,
       subscriberId: id,
     };
     set((s) => ({ batches: [...s.batches, batch] }));

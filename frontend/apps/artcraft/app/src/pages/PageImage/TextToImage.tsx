@@ -17,9 +17,14 @@ import {
   //ProviderSelector,
   //PROVIDER_LOOKUP_BY_PAGE,
 } from "@storyteller/ui-model-selector";
-import { ImageModel } from "@storyteller/model-list";
+import { ImageModel, getCreatorIcon } from "@storyteller/model-list";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCheck,
+  faCircleExclamation,
+  faCopy,
+  faXmark,
+} from "@fortawesome/pro-solid-svg-icons";
 interface TextToImageProps {
   imageMediaId?: string;
   imageUrl?: string;
@@ -42,6 +47,7 @@ import {
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
+import Button from "node_modules/@storyteller/ui-button/src/lib/button";
 
 const PAGE_ID: ModelPage = ModelPage.TextToImage;
 
@@ -54,6 +60,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
   const dismissBatch = useTextToImageStore((s) => s.dismissBatch);
   const resetBatches = useTextToImageStore((s) => s.reset);
   const [imageRowVisible, setImageRowVisible] = useState(false);
+  const [copiedBatchId, setCopiedBatchId] = useState<string | null>(null);
   const promptContentRef = useRef<HTMLDivElement>(null);
   const [promptHeight, setPromptHeight] = useState<number>(138);
 
@@ -69,9 +76,9 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
 
   const jobContext: JobContextType = {
     jobTokens: [],
-    addJobToken: () => {},
-    removeJobToken: () => {},
-    clearJobTokens: () => {},
+    addJobToken: () => { },
+    removeJobToken: () => { },
+    clearJobTokens: () => { },
   };
 
   const hasAnyBatches = batches.length > 0;
@@ -264,10 +271,10 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                             length: Math.max(
                               0,
                               4 -
-                                Math.max(
-                                  1,
-                                  Math.min(4, batch.requestedCount ?? 4),
-                                ),
+                              Math.max(
+                                1,
+                                Math.min(4, batch.requestedCount ?? 4),
+                              ),
                             ),
                           }).map((_, i) => (
                             <div
@@ -322,9 +329,24 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                       <div className="glass min-h-0 overflow-y-auto rounded-xl px-4 py-3 text-left text-sm text-base-fg/90">
                         <div>{batch.prompt}</div>
                       </div>
-                      <div className="flex justify-end pt-2">
+                      <div className="flex items-center justify-end gap-2 pt-2">
+                        <Button
+                          onClick={() => {
+                            navigator.clipboard.writeText(batch.prompt || "");
+                            setCopiedBatchId(batch.id);
+                            setTimeout(() => setCopiedBatchId(null), 2000);
+                          }}
+                          className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-white/50 transition-colors bg-transparent hover:bg-white/10 hover:text-white/70"
+                        >
+                          <FontAwesomeIcon
+                            icon={copiedBatchId === batch.id ? faCheck : faCopy}
+                            className="h-3 w-3"
+                          />
+                          {copiedBatchId === batch.id ? "Copied" : "Copy"}
+                        </Button>
                         <Badge
                           label={batch.modelLabel}
+                          icon={batch.modelCreator ? getCreatorIcon(batch.modelCreator, "h-3.5 w-3.5 icon-auto-contrast") : undefined}
                           className="px-2 py-1 text-xs opacity-70"
                         />
                       </div>
@@ -365,7 +387,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
                 credits={imageCredits}
                 onEnqueuePressed={async (prompt, count, subscriberId) => {
                   const modelLabel = selectedImageModel?.fullName ?? "";
-                  startBatch(prompt, count, modelLabel, subscriberId);
+                  startBatch(prompt, count, modelLabel, subscriberId, selectedImageModel?.creator);
                 }}
               />
             </div>
