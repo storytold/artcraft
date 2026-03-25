@@ -72,6 +72,8 @@ pub struct CreateAlertSuccess {
 pub async fn create_alert(args: CreateAlertArgs) -> Result<CreateAlertSuccess, RootlyError> {
   let url = format!("{}/alerts", ROOTLY_API_BASE_URL);
 
+  println!("URL: {}", url);
+
   info!("Creating Rootly alert: source={}, summary={}", args.source, args.summary);
 
   let labels = args.labels.map(|pairs| {
@@ -102,14 +104,27 @@ pub async fn create_alert(args: CreateAlertArgs) -> Result<CreateAlertSuccess, R
     },
   };
 
+  let body_json = serde_json::to_string(&request_body)
+    .map_err(|err| RootlyGenericApiError::SerdeResponseParseErrorWithBody(err, String::new()))?;
+
+  info!("Rootly create alert URL: {}", url);
+  info!("Rootly create alert body: {}", body_json);
+
   let client = reqwest::Client::builder()
     .build()
     .map_err(|err| RootlyClientError::ReqwestClientError(err))?;
 
+  let bearer = format!("Bearer {}", args.api_key.api_key);
+
+  println!("Bearer: `{}`", bearer);
+
+
+  // NB: Use .body() instead of .json() to preserve the Content-Type header.
+  // .json() would override it with "application/json", but Rootly requires "application/vnd.api+json".
   let response = client.post(&url)
-    .header("Authorization", format!("Bearer {}", args.api_key.api_key))
+    .header("Authorization", bearer)
     .header("Content-Type", "application/vnd.api+json")
-    .json(&request_body)
+    .body(body_json)
     .send()
     .await
     .map_err(|err| RootlyGenericApiError::ReqwestError(err))?;
