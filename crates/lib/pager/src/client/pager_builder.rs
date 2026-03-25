@@ -7,7 +7,7 @@ use crate::client::pager_client::{PagerClient, PagerClientConfig};
 use crate::error::pager_client_error::PagerClientError;
 use crate::error::pager_error::PagerError;
 use crate::worker::pager_worker_message_queue::{new_shared_queue, new_shared_queue_with_capacity, PagerWorkerMessageQueue};
-use crate::worker::pager_worker_thread::PagerWorkerThread;
+use crate::worker::pager_worker::PagerWorker;
 
 /// Builder for constructing a `Pager` instance.
 pub struct PagerBuilder {
@@ -74,7 +74,7 @@ impl PagerBuilder {
 
   /// Build a `Pager` with a background worker thread.
   ///
-  /// Returns both the `Pager` (for enqueuing) and the `PagerWorkerThread` (to spawn).
+  /// Returns both the `Pager` (for enqueuing) and the `PagerWorker` (to spawn).
   /// The caller is responsible for running the worker on a dedicated thread:
   /// ```ignore
   /// let (pager, worker) = PagerBuilder::new()
@@ -87,7 +87,7 @@ impl PagerBuilder {
   ///   rt.block_on(worker.run());
   /// });
   /// ```
-  pub fn build_with_worker(self) -> Result<(Pager, PagerWorkerThread), PagerError> {
+  pub fn build_with_worker(self) -> Result<(Pager, PagerWorker), PagerError> {
     let client = self.make_client()?;
 
     let queue: Arc<PagerWorkerMessageQueue> = match self.queue_capacity {
@@ -95,7 +95,7 @@ impl PagerBuilder {
       None => new_shared_queue(),
     };
 
-    let worker = PagerWorkerThread::new(queue.clone(), client.clone());
+    let worker = PagerWorker::new(queue.clone(), client.clone());
     let shutdown = worker.shutdown_handle();
     let pager = Pager::with_queue(client, queue, shutdown);
 
@@ -153,7 +153,7 @@ impl RootlyConfigBuilder {
   }
 
   /// Shortcut: finish Rootly config and build with a worker.
-  pub fn build_with_worker(self) -> Result<(Pager, PagerWorkerThread), PagerError> {
+  pub fn build_with_worker(self) -> Result<(Pager, PagerWorker), PagerError> {
     self.done().build_with_worker()
   }
 }
