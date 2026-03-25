@@ -395,6 +395,17 @@ export const PromptBox3D = ({
           request.common_aspect_ratio = commonAspectRatio;
         }
 
+        window.__storeTaskEnqueueMeta?.({
+          prompt,
+          refImageUrls: referenceImages
+            ?.map((image) => image.url)
+            .filter(Boolean),
+          modelType:
+            (selectedImageModel as any)?.tauriId ||
+            String(selectedImageModel),
+          timestamp: Date.now(),
+        });
+
         const generateResponse = await EnqueueEditImage(request);
 
         console.log("generateResponse", generateResponse);

@@ -48,6 +48,7 @@ import {
 } from "@storyteller/common";
 import { coverImageCache } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useCreditsState } from "@storyteller/credits";
+import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
 
 type InProgressTask = {
   id: string;
@@ -58,6 +59,8 @@ type InProgressTask = {
   canDismiss?: boolean;
   estimatedTimeLeftMs?: number;
   modelType?: string;
+  prompt?: string;
+  refImageUrls?: string[];
 };
 
 type CompletedTask = {
@@ -71,6 +74,7 @@ type CompletedTask = {
   mediaTokens?: string[];
   mediaFileClass?: TaskMediaFileClass;
   batchImageToken?: string;
+  prompt?: string;
 };
 
 type FailedTask = {
@@ -81,6 +85,8 @@ type FailedTask = {
   status: string;
   failureReason?: string;
   failureMessage?: string;
+  prompt?: string;
+  refImageUrls?: string[];
 };
 
 const formatTimeLeft = (ms: number): string => {
@@ -110,16 +116,67 @@ const InProgressCard = ({
       ? formatTimeLeft(task.estimatedTimeLeftMs)
       : null;
   const isSeedance2 = task.modelType === "seedance_2p0";
-  return (
-    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+  const hasRefImages =
+    task.refImageUrls && task.refImageUrls.length > 0;
+
+  const thumbnailContent = hasRefImages ? (
+    <Tooltip
+      content={task.prompt || ""}
+      position="bottom"
+      strategy="fixed"
+      className="max-w-[320px] text-wrap text-xs"
+      zIndex={50}
+      delay={200}
+      disabled={!task.prompt}
+    >
+      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded">
+        <img
+          src={task.refImageUrls![0]}
+          alt="Reference"
+          className="h-full w-full object-cover opacity-50"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 flex items-center justify-center">
           <FontAwesomeIcon
             icon={faSpinnerThird}
-            className="animate-spin text-base-fg/60"
+            className="animate-spin text-white/80"
             size="lg"
           />
         </div>
+        {task.refImageUrls!.length > 1 && (
+          <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
+            +{task.refImageUrls!.length - 1}
+          </div>
+        )}
+      </div>
+    </Tooltip>
+  ) : (
+    <Tooltip
+      content={task.prompt || ""}
+      position="bottom"
+      strategy="fixed"
+      className="max-w-[320px] text-wrap text-xs"
+      zIndex={50}
+      delay={200}
+      disabled={!task.prompt}
+    >
+      <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+        <FontAwesomeIcon
+          icon={faSpinnerThird}
+          className="animate-spin text-base-fg/60"
+          size="lg"
+        />
+      </div>
+    </Tooltip>
+  );
+
+  return (
+    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+      <div className="flex items-center gap-2.5">
+        {thumbnailContent}
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-1.5 truncate font-medium text-base-fg/90">
@@ -196,28 +253,38 @@ const CompletedCard = ({
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : -1}
     >
-      <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded bg-ui-controls">
-        {task.thumbnailUrl ? (
-          <img
-            src={task.thumbnailUrl}
-            alt={task.title}
-            onError={(e) => {
-              e.currentTarget.src = getPlaceholderForMediaClass(
-                task.mediaFileClass,
-              );
-              e.currentTarget.style.opacity = "0.3";
-              // Set the `data-brokenurl` property for debugging the broken images:
-              (e.currentTarget as HTMLImageElement).dataset.brokenurl =
-                task.thumbnailUrl;
-            }}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">
-            Done
-          </div>
-        )}
-      </div>
+      <Tooltip
+        content={task.prompt || ""}
+        position="bottom"
+        strategy="fixed"
+        className="max-w-[320px] text-wrap text-xs"
+        zIndex={50}
+        delay={200}
+        disabled={!task.prompt}
+      >
+        <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded bg-ui-controls">
+          {task.thumbnailUrl ? (
+            <img
+              src={task.thumbnailUrl}
+              alt={task.title}
+              onError={(e) => {
+                e.currentTarget.src = getPlaceholderForMediaClass(
+                  task.mediaFileClass,
+                );
+                e.currentTarget.style.opacity = "0.3";
+                // Set the `data-brokenurl` property for debugging the broken images:
+                (e.currentTarget as HTMLImageElement).dataset.brokenurl =
+                  task.thumbnailUrl;
+              }}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">
+              Done
+            </div>
+          )}
+        </div>
+      </Tooltip>
       <div className="min-w-0">
         <div className="truncate text-sm font-medium text-base-fg/90">
           {task.title}
@@ -278,16 +345,67 @@ const FailedCard = ({
   onDismiss?: () => void;
 }) => {
   const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
-  return (
-    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
+  const hasRefImages =
+    task.refImageUrls && task.refImageUrls.length > 0;
+
+  const thumbnailContent = hasRefImages ? (
+    <Tooltip
+      content={task.prompt || ""}
+      position="bottom"
+      strategy="fixed"
+      className="max-w-[320px] text-wrap text-xs"
+      zIndex={50}
+      delay={200}
+      disabled={!task.prompt}
+    >
+      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded">
+        <img
+          src={task.refImageUrls![0]}
+          alt="Reference"
+          className="h-full w-full object-cover opacity-50"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
+        <div className="absolute inset-0 bg-red-900/40" />
+        <div className="absolute inset-0 flex items-center justify-center">
           <FontAwesomeIcon
             icon={faCircleExclamation}
             className="text-red-400"
             size="lg"
           />
         </div>
+        {task.refImageUrls!.length > 1 && (
+          <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
+            +{task.refImageUrls!.length - 1}
+          </div>
+        )}
+      </div>
+    </Tooltip>
+  ) : (
+    <Tooltip
+      content={task.prompt || ""}
+      position="bottom"
+      strategy="fixed"
+      className="max-w-[320px] text-wrap text-xs"
+      zIndex={50}
+      delay={200}
+      disabled={!task.prompt}
+    >
+      <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
+        <FontAwesomeIcon
+          icon={faCircleExclamation}
+          className="text-red-400"
+          size="lg"
+        />
+      </div>
+    </Tooltip>
+  );
+
+  return (
+    <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
+      <div className="flex items-center gap-2.5">
+        {thumbnailContent}
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
             <div className="truncate font-medium text-base-fg/90">
@@ -299,38 +417,42 @@ const FailedCard = ({
               {task.subtitle}
             </div>
           )}
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="rounded bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
+            <span className="shrink-0 rounded bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
               {statusLabel}
             </span>
             {task.failureReason && (
-              <Tooltip
-                content={task.failureReason}
-                position="bottom"
-                strategy="fixed"
-                className="max-w-[280px] text-wrap bg-danger text-xs"
-                zIndex={50}
-                delay={300}
-              >
-                <span className="truncate text-[11px] text-red-400/60">
-                  {task.failureReason}
-                </span>
-              </Tooltip>
+              <div className="min-w-0 overflow-hidden">
+                <Tooltip
+                  content={task.failureReason}
+                  position="bottom"
+                  strategy="fixed"
+                  className="max-w-[280px] text-wrap bg-danger text-xs"
+                  zIndex={50}
+                  delay={300}
+                >
+                  <div className="truncate text-[11px] text-red-400/60">
+                    {task.failureReason}
+                  </div>
+                </Tooltip>
+              </div>
             )}
           </div>
           {task.failureMessage && (
-            <Tooltip
-              content={task.failureMessage}
-              position="bottom"
-              strategy="fixed"
-              className="max-w-[280px] text-wrap text-xs"
-              zIndex={50}
-              delay={200}
-            >
-              <div className="mt-0.5 cursor-default truncate text-[11px] text-base-fg/40">
-                {task.failureMessage}
-              </div>
-            </Tooltip>
+            <div className="overflow-hidden">
+              <Tooltip
+                content={task.failureMessage}
+                position="bottom"
+                strategy="fixed"
+                className="max-w-[280px] text-wrap text-xs"
+                zIndex={50}
+                delay={200}
+              >
+                <div className="mt-0.5 cursor-default truncate text-[11px] text-base-fg/40">
+                  {task.failureMessage}
+                </div>
+              </Tooltip>
+            </div>
           )}
         </div>
         {onDismiss && (
@@ -380,7 +502,7 @@ export const TaskQueue = () => {
     primaryActionText: "",
     primaryActionIcon: faTrashAlt,
     primaryActionBtnClassName: "",
-    onConfirm: async () => {},
+    onConfirm: async () => { },
   });
 
   const handleClearCompleted = (onSuccess?: () => void) => {
@@ -538,8 +660,8 @@ export const TaskQueue = () => {
             if (!duration) {
               const actualModel = t.model_type
                 ? ALL_MODELS_LIST.find(
-                    (m) => m.tauriId === t.model_type || m.id === t.model_type,
-                  )
+                  (m) => m.tauriId === t.model_type || m.id === t.model_type,
+                )
                 : undefined;
               duration =
                 actualModel?.progressBarTime ??
@@ -555,6 +677,11 @@ export const TaskQueue = () => {
             const estimatedTimeLeftMs = Math.max(0, duration - elapsed);
             const parts = formatTitleParts(t);
             const canDismiss = now - createdMs > 5 * 60 * 1000; // 5 minutes
+            const meta = getMetaForTask(
+              t.id,
+              t.model_type ? String(t.model_type) : undefined,
+              createdMs,
+            );
             return {
               id: t.id,
               title: `Generating ${parts.kind || "Task"}...`,
@@ -564,6 +691,8 @@ export const TaskQueue = () => {
               canDismiss,
               estimatedTimeLeftMs,
               modelType: t.model_type ? String(t.model_type) : undefined,
+              prompt: meta?.prompt,
+              refImageUrls: meta?.refImageUrls,
             };
           });
 
@@ -594,10 +723,17 @@ export const TaskQueue = () => {
               ? coverImageCache.get(mediaToken)
               : undefined;
 
+            const meta = getMetaForTask(
+              t.id,
+              t.model_type ? String(t.model_type) : undefined,
+              t.created_at.getTime(),
+            );
+
             return {
               id: t.id,
               ...formatTitleParts(t),
               thumbnailUrl: serverThumbnail || cachedThumbnail || undefined,
+              prompt: meta?.prompt,
               imageUrls: t.completed_item?.primary_media_file?.cdn_url
                 ? [t.completed_item?.primary_media_file?.cdn_url]
                 : [],
@@ -636,6 +772,11 @@ export const TaskQueue = () => {
               fr?.failure_message && fr.failure_type !== "unknown"
                 ? fr.failure_message
                 : undefined;
+            const meta = getMetaForTask(
+              t.id,
+              t.model_type ? String(t.model_type) : undefined,
+              t.created_at.getTime(),
+            );
             return {
               id: t.id,
               title: parts.title || "Task",
@@ -644,6 +785,8 @@ export const TaskQueue = () => {
               status: t.task_status,
               failureReason: failureReason || fr?.failure_message || undefined,
               failureMessage,
+              prompt: meta?.prompt,
+              refImageUrls: meta?.refImageUrls,
             };
           });
 
@@ -670,6 +813,7 @@ export const TaskQueue = () => {
       }
     };
 
+    cleanupOldEntries();
     load();
     const id = setInterval(load, 5000);
 

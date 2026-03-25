@@ -596,6 +596,15 @@ export const PromptBoxVideo = ({
       return request;
     };
 
+    window.__storeTaskEnqueueMeta?.({
+      prompt,
+      refImageUrls: referenceImages
+        ?.map((img) => img.url)
+        .filter(Boolean),
+      modelType: (selectedModel as any)?.tauriId || String(selectedModel),
+      timestamp: Date.now(),
+    });
+
     const subscriberIds: string[] = [];
     const enqueuePromises: Promise<void>[] = [];
 

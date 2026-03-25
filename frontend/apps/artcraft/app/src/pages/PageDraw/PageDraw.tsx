@@ -796,6 +796,16 @@ const PageDraw = () => {
         return;
       }
 
+      window.__storeTaskEnqueueMeta?.({
+        prompt,
+        refImageUrls: (options?.images || [])
+          .map((img) => img.url)
+          .filter(Boolean),
+        modelType:
+          (selectedImageModel as any)?.tauriId || String(selectedImageModel),
+        timestamp: Date.now(),
+      });
+
       try {
         let result;
 

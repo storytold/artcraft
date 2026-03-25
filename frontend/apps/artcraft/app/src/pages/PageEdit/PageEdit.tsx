@@ -390,6 +390,16 @@ const PageEdit = () => {
         crypto?.randomUUID?.() ??
         `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+      window.__storeTaskEnqueueMeta?.({
+        prompt,
+        refImageUrls: (options?.images || [])
+          .map((img) => img.url)
+          .filter(Boolean),
+        modelType:
+          (selectedImageModel as any)?.tauriId || String(selectedImageModel),
+        timestamp: Date.now(),
+      });
+
       try {
         let result;
 

@@ -406,6 +406,18 @@ export const ImageTo3DExperience = ({
         worldStartGeneration("image", note, firstPreview, subscriberId);
         setSelectedResultId(subscriberId);
 
+        window.__storeTaskEnqueueMeta?.({
+          prompt: worldPrompt.trim() || undefined,
+          refImageUrls: worldImages
+            .map((img) => img.preview)
+            .filter(Boolean) as string[],
+          modelType:
+            (selectedWorldModel as any)?.tauriId ||
+            (SPLAT_MODELS[0] as any)?.tauriId ||
+            String(selectedWorldModel ?? SPLAT_MODELS[0]),
+          timestamp: Date.now(),
+        });
+
         const result = await EnqueueImageToGaussian({
           image_media_tokens: readyTokens,
           prompt: worldPrompt.trim() || undefined,
@@ -435,6 +447,14 @@ export const ImageTo3DExperience = ({
           subscriberId,
         );
         setSelectedResultId(subscriberId);
+
+        window.__storeTaskEnqueueMeta?.({
+          prompt: snapshotPrompt || undefined,
+          refImageUrls: snapshotPreview ? [snapshotPreview] : undefined,
+          modelType:
+            (selectedModel as any)?.tauriId || String(selectedModel),
+          timestamp: Date.now(),
+        });
 
         const result = await EnqueueImageTo3dObject({
           image_media_token: uploadedMediaToken || undefined,

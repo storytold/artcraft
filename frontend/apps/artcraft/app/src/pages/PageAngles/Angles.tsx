@@ -272,6 +272,12 @@ export const Angles = () => {
     const subscriberId = uuidv4();
     state.startGeneration(subscriberId);
 
+    window.__storeTaskEnqueueMeta?.({
+      prompt: "",
+      modelType: (selectedModel as any)?.tauriId || "flux_2_lora_angles",
+      timestamp: Date.now(),
+    });
+
     try {
       await EnqueueEditImage({
         model: selectedModel ?? ("flux_2_lora_angles" as any),

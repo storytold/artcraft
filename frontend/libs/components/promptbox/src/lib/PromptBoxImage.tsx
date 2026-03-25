@@ -297,6 +297,15 @@ export const PromptBoxImage = ({
           .filter((t) => t.length > 0);
       }
 
+      window.__storeTaskEnqueueMeta?.({
+        prompt,
+        refImageUrls: referenceImages
+          ?.map((img) => img.url)
+          .filter(Boolean),
+        modelType: (selectedModel as any)?.tauriId || String(selectedModel),
+        timestamp: Date.now(),
+      });
+
       const generateResponse = await EnqueueTextToImage(request);
       console.debug("PromptBoxImage - generateResponse", generateResponse);
 
