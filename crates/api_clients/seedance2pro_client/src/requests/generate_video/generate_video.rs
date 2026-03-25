@@ -97,10 +97,14 @@ impl GenerateVideoArgs<'_> {
   }
 
   pub fn estimate_cost_in_usd_cents(&self) -> u64 {
-    // 25000 Credits costs $99.99 as of 2026-02-20
-    // 250 for $1.
     let credits = self.estimate_credits() as f64;
-    let cost = credits / 250.0 * 100.0;
+    let credits_per_dollar = match self.model_type {
+      // Legacy pricing from seedance2-pro.com: 25,000 credits for $99.99 (~250 credits/$1)
+      ModelType::Seedance2Pro => 250.0,
+      // Seedance 2 Fast pricing: 22,000 credits for $99.99 (~220 credits/$1)
+      ModelType::Seedance2Fast => 220.0,
+    };
+    let cost = credits / credits_per_dollar * 100.0;
     cost.round() as u64
   }
 }
@@ -443,30 +447,27 @@ mod tests {
 
     #[test]
     fn test_estimate_cost_usd_cents_fast() {
-      // 28 credits per second, batch 1
-      // 28 * 4 = 112 credits => 112 / 250 * 100 = 44.8 => 45 cents
-      assert_eq!(fast(4, BatchCount::One).estimate_cost_in_usd_cents(), 45);
-      // 28 * 5 = 140 credits => 140 / 250 * 100 = 56 cents
-      assert_eq!(fast(5, BatchCount::One).estimate_cost_in_usd_cents(), 56);
-      // 28 * 6 = 168 credits => 168 / 250 * 100 = 67.2 => 67 cents
-      assert_eq!(fast(6, BatchCount::One).estimate_cost_in_usd_cents(), 67);
-      // 28 * 7 = 196 credits => 196 / 250 * 100 = 78.4 => 78 cents
-      assert_eq!(fast(7, BatchCount::One).estimate_cost_in_usd_cents(), 78);
-      // 28 * 15 = 420 credits => 420 / 250 * 100 = 168 cents
-      assert_eq!(fast(15, BatchCount::One).estimate_cost_in_usd_cents(), 168);
+      // 28 credits per second, 220 credits/$1 (22,000 credits for $99.99)
+      // 28 * 4 = 112 credits => 112 / 220 * 100 = 50.9 => 51 cents
+      assert_eq!(fast(4, BatchCount::One).estimate_cost_in_usd_cents(), 51);
+      // 28 * 5 = 140 credits => 140 / 220 * 100 = 63.6 => 64 cents
+      assert_eq!(fast(5, BatchCount::One).estimate_cost_in_usd_cents(), 64);
+      // 28 * 6 = 168 credits => 168 / 220 * 100 = 76.4 => 76 cents
+      assert_eq!(fast(6, BatchCount::One).estimate_cost_in_usd_cents(), 76);
+      // 28 * 7 = 196 credits => 196 / 220 * 100 = 89.1 => 89 cents
+      assert_eq!(fast(7, BatchCount::One).estimate_cost_in_usd_cents(), 89);
+      // 28 * 15 = 420 credits => 420 / 220 * 100 = 190.9 => 191 cents
+      assert_eq!(fast(15, BatchCount::One).estimate_cost_in_usd_cents(), 191);
 
       // Batch 2 = 2×
-      assert_eq!(fast(4, BatchCount::Two).estimate_cost_in_usd_cents(), 90);
-      assert_eq!(fast(5, BatchCount::Two).estimate_cost_in_usd_cents(), 112);
-      assert_eq!(fast(15, BatchCount::Two).estimate_cost_in_usd_cents(), 336);
+      assert_eq!(fast(4, BatchCount::Two).estimate_cost_in_usd_cents(), 102);
+      assert_eq!(fast(5, BatchCount::Two).estimate_cost_in_usd_cents(), 127);
+      assert_eq!(fast(15, BatchCount::Two).estimate_cost_in_usd_cents(), 382);
 
       // Batch 4 = 4×
-      // 28*4*4=448 credits => 448/250*100 = 179.2 => 179 cents
-      assert_eq!(fast(4, BatchCount::Four).estimate_cost_in_usd_cents(), 179);
-      // 28*5*4=560 credits => 560/250*100 = 224 cents
-      assert_eq!(fast(5, BatchCount::Four).estimate_cost_in_usd_cents(), 224);
-      // 28*15*4=1680 credits => 1680/250*100 = 672 cents
-      assert_eq!(fast(15, BatchCount::Four).estimate_cost_in_usd_cents(), 672);
+      assert_eq!(fast(4, BatchCount::Four).estimate_cost_in_usd_cents(), 204);
+      assert_eq!(fast(5, BatchCount::Four).estimate_cost_in_usd_cents(), 255);
+      assert_eq!(fast(15, BatchCount::Four).estimate_cost_in_usd_cents(), 764);
     }
   }
 
