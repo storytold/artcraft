@@ -52,7 +52,7 @@ use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
 use errors::AnyhowResult;
 use fal_client::creds::fal_api_key::FalApiKey;
-use log::info;
+use log::{info, warn};
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
@@ -79,6 +79,9 @@ use crate::http_server::web_utils::handle_multipart_error::handle_multipart_erro
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
+use pager::client::pager::Pager;
+use pager::client::pager_builder::PagerBuilder;
+use rootly_client::creds::rootly_api_key::RootlyApiKey;
 use crate::state::server_state::{DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo, ServerState, StaticFeatureFlags, StripeSettings, TrollBans, WorldLabsData};
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;
@@ -406,6 +409,8 @@ async fn main() -> AnyhowResult<()> {
 
   let worldlabs_api_key = easyenv::get_env_string_required("WORLDLABS_API_KEY")?;
 
+  let pager = build_pager(server_environment_typed);
+
   let startup_time = Utc::now();
 
   let server_state = ServerState {
@@ -473,6 +478,7 @@ async fn main() -> AnyhowResult<()> {
     worldlabs: WorldLabsData {
       api_key: worldlabs_api_key,
     },
+    pager,
     caches: InMemoryCaches {
       durable: DurableInMemoryCaches {
         model_token_info: model_token_info_cache,
@@ -512,6 +518,60 @@ async fn main() -> AnyhowResult<()> {
   serve(server_state)
     .await?;
   Ok(())
+}
+
+fn build_pager(server_environment: server_environment::ServerEnvironment) -> Pager {
+  let environment = if server_environment.is_deployed_in_production() {
+    "production"
+  } else {
+    "development"
+  };
+
+  let maybe_api_key = easyenv::get_env_string_optional("ROOTLY_API_KEY");
+
+  match maybe_api_key {
+    Some(api_key) => {
+      info!("Rootly API key found. Configuring pager with Rootly backend.");
+
+      let mut rootly_builder = PagerBuilder::new()
+        .application_name("storyteller-web".to_string())
+        .environment(environment.to_string())
+        .rootly(RootlyApiKey::new(api_key));
+
+      if let Some(urgency_id) = easyenv::get_env_string_optional("ROOTLY_ALERT_URGENCY_ID") {
+        rootly_builder = rootly_builder.alert_urgency_id(urgency_id);
+      }
+
+      let target_type = easyenv::get_env_string_optional("ROOTLY_NOTIFICATION_TARGET_TYPE");
+      let target_id = easyenv::get_env_string_optional("ROOTLY_NOTIFICATION_TARGET_ID");
+
+      if let (Some(t_type), Some(t_id)) = (target_type, target_id) {
+        rootly_builder = rootly_builder.notification_target(t_type, t_id);
+      }
+
+      match rootly_builder.build() {
+        Ok(pager) => pager,
+        Err(err) => {
+          warn!("Failed to build pager with Rootly backend: {}. Pages will not be sent.", err);
+          PagerBuilder::new()
+            .application_name("storyteller-web".to_string())
+            .environment(environment.to_string())
+            .rootly(RootlyApiKey::new(String::new()))
+            .build()
+            .expect("fallback pager build should not fail")
+        }
+      }
+    }
+    None => {
+      warn!("ROOTLY_API_KEY not set. Pager will not send real pages.");
+      PagerBuilder::new()
+        .application_name("storyteller-web".to_string())
+        .environment(environment.to_string())
+        .rootly(RootlyApiKey::new(String::new()))
+        .build()
+        .expect("fallback pager build should not fail")
+    }
+  }
 }
 
 fn read_static_api_tokens() -> StaticApiTokenSet {

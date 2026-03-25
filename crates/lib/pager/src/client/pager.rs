@@ -15,20 +15,9 @@ use crate::worker::pager_worker_message_queue::PagerWorkerMessageQueue;
 /// - **Immediate**: `send_page_immediately()` sends inline (blocks until API responds).
 /// - **Queued**: `enqueue_page()` pushes to a background worker (non-blocking).
 ///
-/// Build an instance via `PagerBuilder`:
-/// ```ignore
-/// // Without worker:
-/// let pager = PagerBuilder::new()
-///     .application_name("my-service".to_string())
-///     .rootly(api_key)
-///     .build()?;
+/// Build an instance via `PagerBuilder`.
 ///
-/// // With worker:
-/// let (pager, worker) = PagerBuilder::new()
-///     .application_name("my-service".to_string())
-///     .rootly(api_key)
-///     .build_with_worker()?;
-/// ```
+#[derive(Clone)]
 pub struct Pager {
   client: PagerClient,
   queue: Option<Arc<PagerWorkerMessageQueue>>,

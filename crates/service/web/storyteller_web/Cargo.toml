@@ -65,7 +65,9 @@ memory_caching = { path = "../../../lib/caching/memory_caching" }
 migration = { path = "../../../schema/database/migration" }
 mimetypes.workspace = true
 mysql_queries.workspace = true
+pager.workspace = true
 password = { path = "../../../lib/password" }
+rootly_client.workspace = true
 primitives = { path = "../../../lib/data/primitives" }
 prompt_engineering = { path = "../../../lib/deprecated/machine_learning/prompt_engineering" }
 redis_caching = { path = "../../../lib/caching/redis_caching" }

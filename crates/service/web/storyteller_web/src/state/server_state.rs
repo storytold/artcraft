@@ -9,6 +9,7 @@ use elasticsearch::Elasticsearch;
 use fal_client::creds::fal_api_key::FalApiKey;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
+use pager::client::pager::Pager;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_queries::queries::generic_inference::web::get_pending_inference_job_count::InferenceQueueLengthResult;
@@ -99,6 +100,8 @@ pub struct ServerState {
   pub resend: ResendData,
 
   pub worldlabs: WorldLabsData,
+
+  pub pager: Pager,
 
   /// Where to store audio uploads for w2l
   pub audio_uploads_bucket_root: String,
