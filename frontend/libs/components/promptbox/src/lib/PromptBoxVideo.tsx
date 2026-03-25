@@ -312,6 +312,8 @@ export const PromptBoxVideo = ({
   const maxImageCount = isReferenceMode
     ? (selectedModel?.maxReferenceImages ?? 3)
     : 1;
+  const widePromptBox = isReferenceMode && maxImageCount > 6;
+  const promptBoxWidth = widePromptBox ? "w-[900px]" : "w-[730px]";
 
   const highlightRef = useRef<HTMLDivElement>(null);
 
@@ -726,6 +728,7 @@ export const PromptBoxVideo = ({
           <ImagePromptRow
             visible={true}
             isVideo={true}
+            className={widePromptBox ? "w-[900px]" : undefined}
             isReferenceMode={isReferenceMode}
             maxImagePromptCount={maxImageCount}
             allowUpload={true}
@@ -765,7 +768,7 @@ export const PromptBoxVideo = ({
         )}
         <div
           className={twMerge(
-            "glass w-[730px] rounded-xl p-4",
+            `glass ${promptBoxWidth} rounded-xl p-4`,
             isImageRowVisible && "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"

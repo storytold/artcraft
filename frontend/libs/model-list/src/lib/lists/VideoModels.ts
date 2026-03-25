@@ -290,7 +290,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     durationOptions: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     defaultDuration: 5,
     supportsReferenceMode: true,
-    maxReferenceImages: 6,
+    maxReferenceImages: 9,
     maxReferenceVideos: 2,
     maxVideoRefDuration: 15,
     maxReferenceAudios: 2,
