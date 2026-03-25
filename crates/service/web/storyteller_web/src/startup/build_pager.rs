@@ -13,22 +13,24 @@ pub fn build_pager(server_environment: server_environment::ServerEnvironment) ->
 
   let maybe_api_key = easyenv::get_env_string_optional("ROOTLY_API_KEY");
 
+  let builder = PagerBuilder::new()
+      .application_name("storyteller-web".to_string())
+      .environment(environment.to_string());
+
   match maybe_api_key {
     Some(api_key) => {
       info!("Rootly API key found. Configuring pager with Rootly backend.");
-      build_rootly_pager(environment, api_key)
+      build_rootly_pager(builder, api_key)
     }
     None => {
       warn!("ROOTLY_API_KEY not set. Pager will not send real pages.");
-      build_noop_pager(environment)
+      builder.build_with_worker()
     }
   }
 }
 
-fn build_rootly_pager(environment: &str, api_key: String) -> (Pager, PagerWorker) {
-  let mut rootly_builder = PagerBuilder::new()
-      .application_name("storyteller-web".to_string())
-      .environment(environment.to_string())
+fn build_rootly_pager(mut builder: PagerBuilder, api_key: String) -> (Pager, PagerWorker) {
+  let mut rootly_builder = builder
       .rootly(RootlyApiKey::new(api_key));
 
   if let Some(urgency_id) = easyenv::get_env_string_optional("ROOTLY_ALERT_URGENCY_ID") {
@@ -43,11 +45,4 @@ fn build_rootly_pager(environment: &str, api_key: String) -> (Pager, PagerWorker
   }
 
   rootly_builder.build_with_worker()
-}
-
-fn build_noop_pager(environment: &str) -> (Pager, PagerWorker) {
-  PagerBuilder::new()
-    .application_name("storyteller-web".to_string())
-    .environment(environment.to_string())
-    .build_with_worker()
 }
