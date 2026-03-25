@@ -1,10 +1,11 @@
+use std::sync::Arc;
+
 use rootly_client::creds::rootly_api_key::RootlyApiKey;
 
 use crate::client::pager::Pager;
 use crate::client::pager_client::{PagerClient, PagerClientConfig};
 use crate::error::pager_client_error::PagerClientError;
 use crate::error::pager_error::PagerError;
-use std::sync::Arc;
 use crate::worker::pager_worker_message_queue::{new_shared_queue, new_shared_queue_with_capacity, PagerWorkerMessageQueue};
 use crate::worker::pager_worker_thread::PagerWorkerThread;
 
@@ -13,7 +14,6 @@ pub struct PagerBuilder {
   client_config: Option<PagerClientConfig>,
   application_name: Option<String>,
   environment: Option<String>,
-  enable_worker: bool,
   queue_capacity: Option<usize>,
 }
 
@@ -23,7 +23,6 @@ impl PagerBuilder {
       client_config: None,
       application_name: None,
       environment: None,
-      enable_worker: false,
       queue_capacity: None,
     }
   }
@@ -57,44 +56,59 @@ impl PagerBuilder {
     self
   }
 
-  /// Enable the background worker thread for async paging via `enqueue_page()`.
-  pub fn with_worker(mut self) -> Self {
-    self.enable_worker = true;
-    self
-  }
-
   /// Set the maximum capacity for the worker message queue.
-  /// Only relevant if `with_worker()` is called.
+  /// Only relevant when using `build_with_worker()`.
   pub fn queue_capacity(mut self, capacity: usize) -> Self {
     self.queue_capacity = Some(capacity);
     self
   }
 
-  /// Build the `Pager`.
+  /// Build a `Pager` without a background worker.
   ///
-  /// If `with_worker()` was called, this also creates a `PagerWorkerThread`.
-  /// The caller is responsible for spawning the worker thread (via `Pager::take_worker()`).
+  /// Only `send_page_immediately()` will be available.
+  /// Calling `enqueue_page()` will return `PagerServiceError::WorkerNotAvailable`.
   pub fn build(self) -> Result<Pager, PagerError> {
-    let client_config = self.client_config
-      .ok_or(PagerClientError::NotConfigured("no backend configured — call .rootly() or .client_config()".to_string()))?;
+    let client = self.make_client()?;
+    Ok(Pager::new(client))
+  }
 
-    let client = PagerClient::new(client_config, self.application_name, self.environment);
+  /// Build a `Pager` with a background worker thread.
+  ///
+  /// Returns both the `Pager` (for enqueuing) and the `PagerWorkerThread` (to spawn).
+  /// The caller is responsible for running the worker on a dedicated thread:
+  /// ```ignore
+  /// let (pager, worker) = PagerBuilder::new()
+  ///     .application_name("my-service".to_string())
+  ///     .rootly(api_key)
+  ///     .build_with_worker()?;
+  ///
+  /// std::thread::spawn(move || {
+  ///   let rt = tokio::runtime::Runtime::new().unwrap();
+  ///   rt.block_on(worker.run());
+  /// });
+  /// ```
+  pub fn build_with_worker(self) -> Result<(Pager, PagerWorkerThread), PagerError> {
+    let client = self.make_client()?;
 
-    let (queue, worker, worker_shutdown) = if self.enable_worker {
-      let queue: Arc<PagerWorkerMessageQueue> = match self.queue_capacity {
-        Some(capacity) => new_shared_queue_with_capacity(capacity),
-        None => new_shared_queue(),
-      };
-
-      let worker = PagerWorkerThread::new(queue.clone(), client.clone());
-      let shutdown = worker.shutdown_handle();
-
-      (Some(queue), Some(worker), Some(shutdown))
-    } else {
-      (None, None, None)
+    let queue: Arc<PagerWorkerMessageQueue> = match self.queue_capacity {
+      Some(capacity) => new_shared_queue_with_capacity(capacity),
+      None => new_shared_queue(),
     };
 
-    Ok(Pager::new(client, queue, worker, worker_shutdown))
+    let worker = PagerWorkerThread::new(queue.clone(), client.clone());
+    let shutdown = worker.shutdown_handle();
+    let pager = Pager::with_queue(client, queue, shutdown);
+
+    Ok((pager, worker))
+  }
+
+  fn make_client(&self) -> Result<PagerClient, PagerError> {
+    let client_config = self.client_config.clone()
+      .ok_or(PagerClientError::NotConfigured(
+        "no backend configured — call .rootly() or .client_config()".to_string()
+      ))?;
+
+    Ok(PagerClient::new(client_config, self.application_name.clone(), self.environment.clone()))
   }
 }
 
@@ -133,13 +147,13 @@ impl RootlyConfigBuilder {
     self.parent
   }
 
-  /// Shortcut: finish Rootly config, enable worker, and build.
-  pub fn with_worker(self) -> PagerBuilder {
-    self.done().with_worker()
-  }
-
-  /// Shortcut: finish Rootly config and build immediately.
+  /// Shortcut: finish Rootly config and build without a worker.
   pub fn build(self) -> Result<Pager, PagerError> {
     self.done().build()
+  }
+
+  /// Shortcut: finish Rootly config and build with a worker.
+  pub fn build_with_worker(self) -> Result<(Pager, PagerWorkerThread), PagerError> {
+    self.done().build_with_worker()
   }
 }

@@ -8,7 +8,6 @@ use crate::error::pager_error::PagerError;
 use crate::error::pager_service_error::PagerServiceError;
 use crate::notification::notification_details::NotificationDetails;
 use crate::worker::pager_worker_message_queue::PagerWorkerMessageQueue;
-use crate::worker::pager_worker_thread::PagerWorkerThread;
 
 /// The main programmer interface to the pager system.
 ///
@@ -16,25 +15,43 @@ use crate::worker::pager_worker_thread::PagerWorkerThread;
 /// - **Immediate**: `send_page_immediately()` sends inline (blocks until API responds).
 /// - **Queued**: `enqueue_page()` pushes to a background worker (non-blocking).
 ///
-/// Build an instance via `PagerBuilder`.
+/// Build an instance via `PagerBuilder`:
+/// ```ignore
+/// // Without worker:
+/// let pager = PagerBuilder::new()
+///     .application_name("my-service".to_string())
+///     .rootly(api_key)
+///     .build()?;
 ///
+/// // With worker:
+/// let (pager, worker) = PagerBuilder::new()
+///     .application_name("my-service".to_string())
+///     .rootly(api_key)
+///     .build_with_worker()?;
+/// ```
 pub struct Pager {
   client: PagerClient,
   queue: Option<Arc<PagerWorkerMessageQueue>>,
-  worker: Option<PagerWorkerThread>,
   worker_shutdown: Option<Arc<AtomicBool>>,
 }
 
 impl Pager {
+  /// Create a Pager without a worker (immediate-only mode).
+  pub(crate) fn new(client: PagerClient) -> Self {
+    Self { client, queue: None, worker_shutdown: None }
+  }
 
-  /// External users will need to create instances via `PagerBuilder`.
-  pub(crate) fn new(
+  /// Create a Pager with a shared queue and shutdown handle (worker mode).
+  pub(crate) fn with_queue(
     client: PagerClient,
-    queue: Option<Arc<PagerWorkerMessageQueue>>,
-    worker: Option<PagerWorkerThread>,
-    worker_shutdown: Option<Arc<AtomicBool>>,
+    queue: Arc<PagerWorkerMessageQueue>,
+    worker_shutdown: Arc<AtomicBool>,
   ) -> Self {
-    Self { client, queue, worker, worker_shutdown }
+    Self {
+      client,
+      queue: Some(queue),
+      worker_shutdown: Some(worker_shutdown),
+    }
   }
 
   /// Send a page immediately, blocking until the API responds.
@@ -49,7 +66,7 @@ impl Pager {
 
   /// Enqueue a page to be sent by the background worker thread.
   ///
-  /// Returns an error if the worker is not configured.
+  /// Returns an error if the worker is not configured (use `build_with_worker()`).
   /// If the queue is full, the oldest item is dropped.
   pub fn enqueue_page(
     &self,
@@ -62,18 +79,10 @@ impl Pager {
       .map_err(PagerError::Service)?;
 
     if let Some(dropped) = dropped {
-      // We still enqueued the new item — just warn that we lost an old one.
       log::warn!("Pager queue overflow: dropped '{}'", dropped.summary);
     }
 
     Ok(())
-  }
-
-  /// Take the worker thread out of this Pager so it can be spawned.
-  ///
-  /// Returns `None` if the worker was not configured or was already taken.
-  pub fn take_worker(&mut self) -> Option<PagerWorkerThread> {
-    self.worker.take()
   }
 
   /// Signal the worker thread to shut down.
@@ -81,9 +90,10 @@ impl Pager {
     if let Some(ref shutdown) = self.worker_shutdown {
       info!("Pager: signaling worker shutdown.");
       shutdown.store(true, std::sync::atomic::Ordering::Relaxed);
-      if let Some(ref queue) = self.queue {
-        queue.notify_all();
-      }
+    }
+    if let Some(ref queue) = self.queue {
+      info!("Pager: notifying threads blocking on queue of shutdown.");
+      queue.notify_all();
     }
   }
 }
