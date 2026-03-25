@@ -19,9 +19,10 @@ use crate::worker::pager_worker_thread::PagerWorkerThread;
 /// Build via `PagerBuilder`:
 /// ```ignore
 /// let pager = PagerBuilder::new()
-///     .rootly(api_key, "my-service".to_string())
-///     .notification_target("EscalationPolicy".to_string(), policy_id)
+///     .application_name("seedance2-pro-job".to_string())
 ///     .environment("production".to_string())
+///     .rootly(api_key)
+///     .notification_target("User".to_string(), user_id)
 ///     .build()?;
 /// ```
 pub struct Pager {

@@ -9,7 +9,9 @@ use crate::worker::pager_worker_thread::PagerWorkerThread;
 
 /// Builder for constructing a `Pager` instance.
 pub struct PagerBuilder {
-  config: Option<PagerClientConfig>,
+  client_config: Option<PagerClientConfig>,
+  application_name: Option<String>,
+  environment: Option<String>,
   enable_worker: bool,
   queue_capacity: Option<usize>,
 }
@@ -17,32 +19,40 @@ pub struct PagerBuilder {
 impl PagerBuilder {
   pub fn new() -> Self {
     Self {
-      config: None,
+      client_config: None,
+      application_name: None,
+      environment: None,
       enable_worker: false,
       queue_capacity: None,
     }
   }
 
+  /// Set the application name (used as the "source" tag on alerts).
+  pub fn application_name(mut self, name: String) -> Self {
+    self.application_name = Some(name);
+    self
+  }
+
+  /// Set the environment label (e.g. "production", "staging").
+  pub fn environment(mut self, environment: String) -> Self {
+    self.environment = Some(environment);
+    self
+  }
+
   /// Configure the Rootly backend. Returns a sub-builder for Rootly-specific options.
-  pub fn rootly(
-    self,
-    api_key: RootlyApiKey,
-    source: String,
-  ) -> RootlyConfigBuilder {
+  pub fn rootly(self, api_key: RootlyApiKey) -> RootlyConfigBuilder {
     RootlyConfigBuilder {
       parent: self,
       api_key,
-      source,
       alert_urgency_id: None,
       notification_target_type: None,
       notification_target_id: None,
-      environment: None,
     }
   }
 
   /// Set the backend config directly (for advanced use or future backends).
-  pub fn config(mut self, config: PagerClientConfig) -> Self {
-    self.config = Some(config);
+  pub fn client_config(mut self, config: PagerClientConfig) -> Self {
+    self.client_config = Some(config);
     self
   }
 
@@ -64,10 +74,10 @@ impl PagerBuilder {
   /// If `with_worker()` was called, this also creates a `PagerWorkerThread`.
   /// The caller is responsible for spawning the worker thread (via `Pager::take_worker()`).
   pub fn build(self) -> Result<Pager, PagerError> {
-    let config = self.config
-      .ok_or(PagerClientError::NotConfigured("no backend configured — call .rootly() or .config()".to_string()))?;
+    let client_config = self.client_config
+      .ok_or(PagerClientError::NotConfigured("no backend configured — call .rootly() or .client_config()".to_string()))?;
 
-    let client = PagerClient::new(config);
+    let client = PagerClient::new(client_config, self.application_name, self.environment);
 
     let (queue, worker, worker_shutdown) = if self.enable_worker {
       let queue: SharedMessageQueue = match self.queue_capacity {
@@ -92,11 +102,9 @@ impl PagerBuilder {
 pub struct RootlyConfigBuilder {
   parent: PagerBuilder,
   api_key: RootlyApiKey,
-  source: String,
   alert_urgency_id: Option<String>,
   notification_target_type: Option<String>,
   notification_target_id: Option<String>,
-  environment: Option<String>,
 }
 
 impl RootlyConfigBuilder {
@@ -113,21 +121,13 @@ impl RootlyConfigBuilder {
     self
   }
 
-  /// Set the environment label (e.g. "production", "staging").
-  pub fn environment(mut self, environment: String) -> Self {
-    self.environment = Some(environment);
-    self
-  }
-
   /// Finish Rootly configuration and return to the parent builder.
   pub fn done(mut self) -> PagerBuilder {
-    self.parent.config = Some(PagerClientConfig::Rootly {
+    self.parent.client_config = Some(PagerClientConfig::Rootly {
       api_key: self.api_key,
       alert_urgency_id: self.alert_urgency_id,
-      source: self.source,
       notification_target_type: self.notification_target_type,
       notification_target_id: self.notification_target_id,
-      environment: self.environment,
     });
     self.parent
   }

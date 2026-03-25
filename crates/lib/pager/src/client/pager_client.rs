@@ -11,7 +11,14 @@ use crate::notification::notification_details::NotificationDetails;
 /// The actual client that sends pages.
 #[derive(Clone)]
 pub struct PagerClient {
-  config: PagerClientConfig,
+  /// The backend-specific configuration.
+  pub client_config: PagerClientConfig,
+
+  /// Application name used as the "source" tag in alerts (e.g. "storyteller-web", "seedance2-pro-job").
+  pub application_name: Option<String>,
+
+  /// Environment label (e.g. "production", "staging"). Inserted as a label on alerts.
+  pub environment: Option<String>,
 }
 
 /// Configuration for the pager client backend.
@@ -24,17 +31,11 @@ pub enum PagerClientConfig {
     /// Alert urgency ID (e.g. "62fde143-..." maps to "High" in our org).
     alert_urgency_id: Option<String>,
 
-    /// The source tag sent with every alert (e.g. "storyteller-web", "seedance2-pro-job").
-    source: String,
-
     /// Notification target type (e.g. "User", "EscalationPolicy").
     notification_target_type: Option<String>,
 
     /// Notification target ID (e.g. a user ID or escalation policy ID).
     notification_target_id: Option<String>,
-
-    /// Environment label (e.g. "production"). Inserted as a ("environment", value) label.
-    environment: Option<String>,
   },
 }
 
@@ -48,15 +49,18 @@ pub struct PageSentResult {
   pub short_id: Option<String>,
 }
 
-
 impl PagerClient {
-  pub fn new(config: PagerClientConfig) -> Self {
-    Self { config }
+  pub fn new(
+    client_config: PagerClientConfig,
+    application_name: Option<String>,
+    environment: Option<String>,
+  ) -> Self {
+    Self { client_config, application_name, environment }
   }
 
   /// Send a page immediately.
   pub async fn send_page(&self, notification: &NotificationDetails) -> Result<PageSentResult, PagerClientError> {
-    match &self.config {
+    match &self.client_config {
       PagerClientConfig::Rootly { .. } => self.send_page_via_rootly(notification).await,
     }
   }
@@ -68,23 +72,27 @@ impl PagerClient {
     let PagerClientConfig::Rootly {
       api_key,
       alert_urgency_id,
-      source,
       notification_target_type,
       notification_target_id,
-      environment,
-    } = &self.config;
+    } = &self.client_config;
 
-    info!("Sending page via Rootly: {}", notification.summary);
+    let source = self.application_name
+        .clone()
+        .unwrap_or_else(|| "unknown".to_string());
+
+    info!("Sending page via Rootly (source={}): {}", source, notification.summary);
 
     let mut labels: Vec<(String, String)> = Vec::new();
-    if let Some(env) = environment {
+
+    if let Some(env) = &self.environment {
       labels.push(("environment".to_string(), env.clone()));
     }
+
     let labels = if labels.is_empty() { None } else { Some(labels) };
 
     let result = create_alert(CreateAlertArgs {
       api_key: api_key.clone(),
-      source: source.clone(),
+      source,
       summary: notification.summary.clone(),
       description: notification.description.clone(),
       status: Some("triggered".to_string()),
