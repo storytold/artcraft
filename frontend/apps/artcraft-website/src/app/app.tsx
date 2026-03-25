@@ -30,8 +30,8 @@ export function App() {
 
       <Routes>
         <Route path="/" element={<Landing2 />} />
-        {/* <Route path="/create-image" element={<CreateImage />} /> */}
-        {/* <Route path="/create-video" element={<CreateVideo />} /> */}
+        <Route path="/create-image" element={<CreateImage />} />
+        <Route path="/create-video" element={<CreateVideo />} />
         <Route path="/seedance-2" element={<LandingSD2 />} />
         <Route path="/download" element={<Download />} />
         <Route path="/media" element={<Media />} />

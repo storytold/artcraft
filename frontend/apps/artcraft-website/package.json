@@ -1,5 +1,8 @@
 {
   "name": "@frontend/artcraft-website",
   "version": "0.0.1",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "react-masonry-css": "^1.0.16"
+  }
 }

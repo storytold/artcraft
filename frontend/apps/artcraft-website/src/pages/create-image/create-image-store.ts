@@ -39,6 +39,7 @@ type CreateImageState = {
   completeBatch: (batchId: string, images: GeneratedImage[]) => void;
   failBatch: (batchId: string, reason?: string) => void;
   dismissBatch: (id: string) => void;
+  clearCompleted: () => void;
   reset: () => void;
 };
 
@@ -102,6 +103,12 @@ export const useCreateImageStore = create<CreateImageState>((set) => ({
 
   dismissBatch: (id) => {
     set((s) => ({ batches: s.batches.filter((b) => b.id !== id) }));
+  },
+
+  clearCompleted: () => {
+    set((s) => ({
+      batches: s.batches.filter((b) => b.status !== "complete"),
+    }));
   },
 
   reset: () => set({ batches: [] }),
