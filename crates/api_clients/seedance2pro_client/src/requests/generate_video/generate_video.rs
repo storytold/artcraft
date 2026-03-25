@@ -15,6 +15,7 @@ use wreq_util::Emulation;
 pub struct GenerateVideoArgs<'a> {
   pub session: &'a Seedance2ProSession,
 
+  /// Seedance 2.0 Pro vs Fast
   pub model_type: ModelType,
 
   pub prompt: String,
