@@ -18,6 +18,7 @@ members = [
   "crates/api_clients/muapi_client",
   "crates/api_clients/openai_sora_client",
   "crates/api_clients/openart_client",
+  "crates/api_clients/rootly_client",
   "crates/api_clients/runwayml_client",
   "crates/api_clients/seedance2pro_client",
   "crates/api_clients/thumbnail_generator",
@@ -239,6 +240,7 @@ ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }
 file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }
 filesys = { path = "crates/lib/files/filesys" }
 grok_client = { path = "crates/api_clients/grok_client" }
+rootly_client = { path = "crates/api_clients/rootly_client" }
 http_headers = { path = "crates/lib/http_headers" }
 images = { path = "crates/lib/files/images" }
 jobs_common = { path = "crates/lib/jobs_common" }

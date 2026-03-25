@@ -9585,6 +9585,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "rootly_client"
+version = "0.0.1"
+dependencies = [
+ "env",
+ "env_logger 0.11.9",
+ "errors",
+ "log",
+ "reqwest 0.12.23",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "rsa"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
