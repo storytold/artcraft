@@ -330,6 +330,21 @@ async fn main() -> AnyhowResult<()> {
     poll_model_token_info_thread(model_token_info_cache2, mysql_pool5).await;
   });
 
+  let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
+      .ok_or(anyhow!("invalid server environment"))?;
+
+  let server_environment_typed = match server_environment {
+    ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
+    ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
+  };
+
+  let (pager, pager_worker) = build_pager(server_environment_typed);
+
+  info!("Spawning pager worker thread.");
+
+  tokio_runtime.spawn(async move {
+    pager_worker.run().await;
+  });
 
   let stripe_configs = StripeConfig {
     checkout: StripeCheckoutConfigs {
@@ -346,9 +361,6 @@ async fn main() -> AnyhowResult<()> {
       secret_webhook_signing_key: easyenv::get_env_string_required("STRIPE_SECRET_WEBHOOK_SIGNING_KEY")?,
     },
   };
-
-  let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
-      .ok_or(anyhow!("invalid server environment"))?;
 
   let service_feature_flags = StaticFeatureFlags {
     // Permanent (control plane / safety) flags : messaging
@@ -393,11 +405,6 @@ async fn main() -> AnyhowResult<()> {
       .unwrap_or(String::from("unknown"))
       .trim()
       .to_string();
-
-  let server_environment_typed = match server_environment {
-    ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
-    ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
-  };
   
   let fal_api_key = FalApiKey::new(easyenv::get_env_string_required("FAL_API_KEY")?);
   let fal_webhook_url = easyenv::get_env_string_required("FAL_WEBHOOK_URL")?;
@@ -407,8 +414,6 @@ async fn main() -> AnyhowResult<()> {
   let resend_api_key = easyenv::get_env_string_required("RESEND_API_KEY")?;
 
   let worldlabs_api_key = easyenv::get_env_string_required("WORLDLABS_API_KEY")?;
-
-  let pager = build_pager(server_environment_typed);
 
   let startup_time = Utc::now();
 
@@ -657,6 +662,7 @@ pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
       .app_data(web::Data::new(server_state_arc.stripe.clone().client.clone()))
       .app_data(web::Data::new(server_state_arc.third_party_url_redirector))
       .app_data(web::Data::new(server_state_arc.google_sign_in_cert.clone()))
+      .app_data(web::Data::new(server_state_arc.pager.clone()))
       .app_data(web::Data::new(old_server_environment))
       .app_data(web::Data::new(new_server_environment))
       .app_data(web::Data::from(product_lookup)) // NB: Data::from(Arc<T>) for dynamic dispatch

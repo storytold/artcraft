@@ -1,9 +1,10 @@
 use log::{info, warn};
 use pager::client::pager::Pager;
 use pager::client::pager_builder::PagerBuilder;
+use pager::worker::pager_worker::PagerWorker;
 use rootly_client::creds::rootly_api_key::RootlyApiKey;
 
-pub fn build_pager(server_environment: server_environment::ServerEnvironment) -> Pager {
+pub fn build_pager(server_environment: server_environment::ServerEnvironment) -> (Pager, PagerWorker) {
   let environment = if server_environment.is_deployed_in_production() {
     "production"
   } else {
@@ -24,7 +25,7 @@ pub fn build_pager(server_environment: server_environment::ServerEnvironment) ->
   }
 }
 
-fn build_rootly_pager(environment: &str, api_key: String) -> Pager {
+fn build_rootly_pager(environment: &str, api_key: String) -> (Pager, PagerWorker) {
   let mut rootly_builder = PagerBuilder::new()
       .application_name("storyteller-web".to_string())
       .environment(environment.to_string())
@@ -41,8 +42,8 @@ fn build_rootly_pager(environment: &str, api_key: String) -> Pager {
     rootly_builder = rootly_builder.notification_target(t_type, t_id);
   }
 
-  match rootly_builder.build() {
-    Ok(pager) => pager,
+  match rootly_builder.build_with_worker() {
+    Ok((pager, worker)) => (pager, worker),
     Err(err) => {
       warn!("Failed to build pager with Rootly backend: {}. Pages will not be sent.", err);
       build_fallback_pager(environment)
@@ -50,11 +51,11 @@ fn build_rootly_pager(environment: &str, api_key: String) -> Pager {
   }
 }
 
-fn build_fallback_pager(environment: &str) -> Pager {
+fn build_fallback_pager(environment: &str) -> (Pager, PagerWorker) {
   PagerBuilder::new()
     .application_name("storyteller-web".to_string())
     .environment(environment.to_string())
     .rootly(RootlyApiKey::new(String::new()))
-    .build()
+    .build_with_worker()
     .expect("fallback pager build should not fail")
 }
