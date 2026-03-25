@@ -1,12 +1,9 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-/// Errors from our own pager system (configuration, concurrency, etc.).
+/// Errors from our own pager system at runtime (concurrency, queue, etc.).
 #[derive(Debug)]
 pub enum PagerSystemError {
-  /// The pager was not configured with a backend.
-  NoBackendConfigured,
-
   /// The message queue was not configured. Use `build_with_worker()` to enable queuing.
   QueueNotConfigured,
 
@@ -19,7 +16,6 @@ impl Error for PagerSystemError {}
 impl Display for PagerSystemError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      Self::NoBackendConfigured => write!(f, "No pager backend configured. Call .rootly() or .client_config() on PagerBuilder."),
       Self::QueueNotConfigured => write!(f, "Pager message queue not configured. Use build_with_worker() to enable queuing."),
       Self::MutexPoisoned(msg) => write!(f, "Pager mutex poisoned: {}", msg),
     }
