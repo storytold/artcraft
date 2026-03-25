@@ -4,8 +4,8 @@ use rootly_client::creds::rootly_api_key::RootlyApiKey;
 
 use crate::client::pager::Pager;
 use crate::client::pager_client::{PagerClient, PagerClientConfig};
-use crate::error::pager_client_error::PagerClientError;
 use crate::error::pager_error::PagerError;
+use crate::error::pager_system_error::PagerSystemError;
 use crate::worker::pager_worker_message_queue::{new_shared_queue, new_shared_queue_with_capacity, PagerWorkerMessageQueue};
 use crate::worker::pager_worker::PagerWorker;
 
@@ -104,9 +104,7 @@ impl PagerBuilder {
 
   fn make_client(&self) -> Result<PagerClient, PagerError> {
     let client_config = self.client_config.clone()
-      .ok_or(PagerClientError::NotConfigured(
-        "no backend configured — call .rootly() or .client_config()".to_string()
-      ))?;
+      .ok_or(PagerSystemError::NoBackendConfigured)?;
 
     Ok(PagerClient::new(client_config, self.application_name.clone(), self.environment.clone()))
   }

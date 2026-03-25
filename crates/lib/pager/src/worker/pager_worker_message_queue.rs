@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, Condvar};
 
 use log::warn;
 
-use crate::error::pager_service_error::PagerServiceError;
+use crate::error::pager_system_error::PagerSystemError;
 use crate::notification::notification_details::NotificationDetails;
 
 const DEFAULT_MAX_SIZE: usize = 256;
@@ -35,9 +35,9 @@ impl PagerWorkerMessageQueue {
   ///
   /// If the queue is full, the oldest item is dropped and a warning is logged.
   /// Returns `Ok(Some(summary))` if an old item was evicted, `Ok(None)` otherwise.
-  pub fn push(&self, notification: NotificationDetails) -> Result<Option<NotificationDetails>, PagerServiceError> {
+  pub fn push(&self, notification: NotificationDetails) -> Result<Option<NotificationDetails>, PagerSystemError> {
     let mut queue = self.inner.lock()
-      .map_err(|e| PagerServiceError::MutexPoisoned(format!("push: {}", e)))?;
+      .map_err(|e| PagerSystemError::MutexPoisoned(format!("push: {}", e)))?;
 
     let dropped = if queue.len() >= self.max_size {
       let old = queue.pop_front();
@@ -57,13 +57,13 @@ impl PagerWorkerMessageQueue {
   /// Block until at least one item is available, then drain all items.
   ///
   /// Returns an error if the mutex is poisoned.
-  pub fn wait_and_drain(&self) -> Result<Vec<NotificationDetails>, PagerServiceError> {
+  pub fn wait_and_drain(&self) -> Result<Vec<NotificationDetails>, PagerSystemError> {
     let mut queue = self.inner.lock()
-      .map_err(|e| PagerServiceError::MutexPoisoned(format!("wait_and_drain lock: {}", e)))?;
+      .map_err(|e| PagerSystemError::MutexPoisoned(format!("wait_and_drain lock: {}", e)))?;
 
     while queue.is_empty() {
       queue = self.condvar.wait(queue)
-        .map_err(|e| PagerServiceError::MutexPoisoned(format!("wait_and_drain wait: {}", e)))?;
+        .map_err(|e| PagerSystemError::MutexPoisoned(format!("wait_and_drain wait: {}", e)))?;
     }
 
     let items: Vec<NotificationDetails> = queue.drain(..).collect();
@@ -71,9 +71,9 @@ impl PagerWorkerMessageQueue {
   }
 
   /// Non-blocking drain of all currently queued items.
-  pub fn drain_available(&self) -> Result<Vec<NotificationDetails>, PagerServiceError> {
+  pub fn drain_available(&self) -> Result<Vec<NotificationDetails>, PagerSystemError> {
     let mut queue = self.inner.lock()
-      .map_err(|e| PagerServiceError::MutexPoisoned(format!("drain_available: {}", e)))?;
+      .map_err(|e| PagerSystemError::MutexPoisoned(format!("drain_available: {}", e)))?;
     Ok(queue.drain(..).collect())
   }
 
@@ -84,13 +84,13 @@ impl PagerWorkerMessageQueue {
     self.condvar.notify_all();
   }
 
-  pub fn len(&self) -> Result<usize, PagerServiceError> {
+  pub fn len(&self) -> Result<usize, PagerSystemError> {
     let queue = self.inner.lock()
-      .map_err(|e| PagerServiceError::MutexPoisoned(format!("len: {}", e)))?;
+      .map_err(|e| PagerSystemError::MutexPoisoned(format!("len: {}", e)))?;
     Ok(queue.len())
   }
 
-  pub fn is_empty(&self) -> Result<bool, PagerServiceError> {
+  pub fn is_empty(&self) -> Result<bool, PagerSystemError> {
     Ok(self.len()? == 0)
   }
 }

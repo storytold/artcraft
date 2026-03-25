@@ -5,7 +5,7 @@ use log::info;
 
 use crate::client::pager_client::{PageSentResult, PagerClient};
 use crate::error::pager_error::PagerError;
-use crate::error::pager_service_error::PagerServiceError;
+use crate::error::pager_system_error::PagerSystemError;
 use crate::notification::notification_details::NotificationDetails;
 use crate::worker::pager_worker_message_queue::PagerWorkerMessageQueue;
 
@@ -61,7 +61,7 @@ impl Pager {
   ) -> Result<PageSentResult, PagerError> {
     self.client.send_page(&notification)
         .await
-        .map_err(PagerError::Client)
+        .map_err(PagerError::Service)
   }
 
   /// Enqueue a page to be sent by the background worker thread.
@@ -73,10 +73,10 @@ impl Pager {
     notification: NotificationDetails,
   ) -> Result<(), PagerError> {
     let queue = self.queue.as_ref()
-      .ok_or(PagerServiceError::WorkerNotAvailable)?;
+      .ok_or(PagerSystemError::QueueFull)?;
 
     let dropped = queue.push(notification)
-      .map_err(PagerError::Service)?;
+      .map_err(PagerError::System)?;
 
     if let Some(dropped) = dropped {
       log::warn!("Pager queue overflow: dropped '{}'", dropped.summary);
