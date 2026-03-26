@@ -178,5 +178,9 @@ fn map_resolution(res: CommonResolution) -> RouterResolution {
     CommonResolution::TwoK => RouterResolution::TwoK,
     CommonResolution::ThreeK => RouterResolution::ThreeK,
     CommonResolution::FourK => RouterResolution::FourK,
+    CommonResolution::HalfK => RouterResolution::HalfK,
+    CommonResolution::FourEightyP => RouterResolution::FourEightyP,
+    CommonResolution::SevenTwentyP => RouterResolution::SevenTwentyP,
+    CommonResolution::TenEightyP => RouterResolution::TenEightyP,
   }
 }

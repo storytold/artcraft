@@ -8,5 +8,10 @@ pub fn resolution_to_artcraft_nano_banana_pro(resolution: CommonResolution) -> N
     // NB: ThreeK doesn't exist in Nano Banana Pro, use FourK as nearest higher resolution
     CommonResolution::ThreeK => NanoBananaProMultiFunctionImageGenImageResolution::FourK,
     CommonResolution::FourK => NanoBananaProMultiFunctionImageGenImageResolution::FourK,
+    // Fall back to nearest supported resolution
+    CommonResolution::HalfK => NanoBananaProMultiFunctionImageGenImageResolution::OneK,
+    CommonResolution::FourEightyP => NanoBananaProMultiFunctionImageGenImageResolution::OneK,
+    CommonResolution::SevenTwentyP => NanoBananaProMultiFunctionImageGenImageResolution::OneK,
+    CommonResolution::TenEightyP => NanoBananaProMultiFunctionImageGenImageResolution::OneK,
   }
 }

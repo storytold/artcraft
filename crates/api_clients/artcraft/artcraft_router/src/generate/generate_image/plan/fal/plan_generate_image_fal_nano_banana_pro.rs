@@ -202,6 +202,11 @@ fn plan_resolution(
     Some(CommonResolution::FourK) => Ok(Some(FalNbpResolution::FourK)),
     // No 3K option; fall back to 2K
     Some(CommonResolution::ThreeK) => Ok(Some(FalNbpResolution::TwoK)),
+    // Fall back to nearest supported resolution
+    Some(CommonResolution::HalfK) => Ok(Some(FalNbpResolution::OneK)),
+    Some(CommonResolution::FourEightyP) => Ok(Some(FalNbpResolution::OneK)),
+    Some(CommonResolution::SevenTwentyP) => Ok(Some(FalNbpResolution::OneK)),
+    Some(CommonResolution::TenEightyP) => Ok(Some(FalNbpResolution::OneK)),
   }
 }
 

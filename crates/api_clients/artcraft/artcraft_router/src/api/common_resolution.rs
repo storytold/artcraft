@@ -14,4 +14,16 @@ pub enum CommonResolution {
   ThreeK,
   /// Models: Nano Banana Pro
   FourK,
+
+  /// Used by Nano Banana 2 (and others)
+  HalfK,
+
+  /// Used by the Seedance family (and others)
+  FourEightyP,
+
+  /// Used by the Seedance family (and others)
+  SevenTwentyP,
+
+  /// Used by the Seedance family (and others)
+  TenEightyP,
 }

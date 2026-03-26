@@ -167,6 +167,10 @@ fn plan_resolution(
     Some(CommonResolution::TwoK) => Ok(Some(Seedance1p5ProMultiFunctionVideoGenResolution::TenEightyP)),
     Some(CommonResolution::ThreeK) => Ok(Some(Seedance1p5ProMultiFunctionVideoGenResolution::TenEightyP)),
     Some(CommonResolution::FourK) => Ok(Some(Seedance1p5ProMultiFunctionVideoGenResolution::TenEightyP)),
+    // HalfK and FourEightyP map to the lowest supported resolution
+    Some(CommonResolution::HalfK | CommonResolution::FourEightyP) => Ok(Some(Seedance1p5ProMultiFunctionVideoGenResolution::FourEightyP)),
+    Some(CommonResolution::SevenTwentyP) => Ok(Some(Seedance1p5ProMultiFunctionVideoGenResolution::SevenTwentyP)),
+    Some(CommonResolution::TenEightyP) => Ok(Some(Seedance1p5ProMultiFunctionVideoGenResolution::TenEightyP)),
   }
 }
 

@@ -23,7 +23,17 @@ pub enum CommonResolution {
   ThreeK,
   FourK,
 
-  // TODO: Add 480p(?), 720p(?), 1080p, etc. as there are some models that use these
+  /// Used by Nano Banana 2 (and others)
+  HalfK,
+
+  /// Used by the Seedance family (and others)
+  FourEightyP,
+
+  /// Used by the Seedance family (and others)
+  SevenTwentyP,
+
+  /// Used by the Seedance family (and others)
+  TenEightyP,
 }
 
 impl_enum_display_and_debug_using_to_str!(CommonResolution);
@@ -37,6 +47,10 @@ impl CommonResolution {
       Self::TwoK => "two_k",
       Self::ThreeK => "three_k",
       Self::FourK => "four_k",
+      Self::HalfK => "half_k",
+      Self::FourEightyP => "four_eighty_p",
+      Self::SevenTwentyP => "seven_twenty_p",
+      Self::TenEightyP => "ten_eighty_p",
     }
   }
 
@@ -46,6 +60,10 @@ impl CommonResolution {
       "two_k" => Ok(Self::TwoK),
       "three_k" => Ok(Self::ThreeK),
       "four_k" => Ok(Self::FourK),
+      "half_k" => Ok(Self::HalfK),
+      "four_eighty_p" => Ok(Self::FourEightyP),
+      "seven_twenty_p" => Ok(Self::SevenTwentyP),
+      "ten_eighty_p" => Ok(Self::TenEightyP),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
     }
   }
@@ -56,6 +74,10 @@ impl CommonResolution {
       Self::TwoK,
       Self::ThreeK,
       Self::FourK,
+      Self::HalfK,
+      Self::FourEightyP,
+      Self::SevenTwentyP,
+      Self::TenEightyP,
     ])
   }
 }
@@ -76,6 +98,10 @@ mod tests {
       assert_serialization(CommonResolution::TwoK, "two_k");
       assert_serialization(CommonResolution::ThreeK, "three_k");
       assert_serialization(CommonResolution::FourK, "four_k");
+      assert_serialization(CommonResolution::HalfK, "half_k");
+      assert_serialization(CommonResolution::FourEightyP, "four_eighty_p");
+      assert_serialization(CommonResolution::SevenTwentyP, "seven_twenty_p");
+      assert_serialization(CommonResolution::TenEightyP, "ten_eighty_p");
     }
 
     #[test]
@@ -84,6 +110,10 @@ mod tests {
       assert_eq!(CommonResolution::TwoK.to_str(), "two_k");
       assert_eq!(CommonResolution::ThreeK.to_str(), "three_k");
       assert_eq!(CommonResolution::FourK.to_str(), "four_k");
+      assert_eq!(CommonResolution::HalfK.to_str(), "half_k");
+      assert_eq!(CommonResolution::FourEightyP.to_str(), "four_eighty_p");
+      assert_eq!(CommonResolution::SevenTwentyP.to_str(), "seven_twenty_p");
+      assert_eq!(CommonResolution::TenEightyP.to_str(), "ten_eighty_p");
     }
 
     #[test]
@@ -92,6 +122,10 @@ mod tests {
       assert_eq!(CommonResolution::from_str("two_k").unwrap(), CommonResolution::TwoK);
       assert_eq!(CommonResolution::from_str("three_k").unwrap(), CommonResolution::ThreeK);
       assert_eq!(CommonResolution::from_str("four_k").unwrap(), CommonResolution::FourK);
+      assert_eq!(CommonResolution::from_str("half_k").unwrap(), CommonResolution::HalfK);
+      assert_eq!(CommonResolution::from_str("four_eighty_p").unwrap(), CommonResolution::FourEightyP);
+      assert_eq!(CommonResolution::from_str("seven_twenty_p").unwrap(), CommonResolution::SevenTwentyP);
+      assert_eq!(CommonResolution::from_str("ten_eighty_p").unwrap(), CommonResolution::TenEightyP);
     }
 
     #[test]
@@ -108,11 +142,15 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonResolution::all_variants();
-      assert_eq!(variants.len(), 4);
+      assert_eq!(variants.len(), 8);
       assert_eq!(variants.pop_first(), Some(CommonResolution::OneK));
       assert_eq!(variants.pop_first(), Some(CommonResolution::TwoK));
       assert_eq!(variants.pop_first(), Some(CommonResolution::ThreeK));
       assert_eq!(variants.pop_first(), Some(CommonResolution::FourK));
+      assert_eq!(variants.pop_first(), Some(CommonResolution::HalfK));
+      assert_eq!(variants.pop_first(), Some(CommonResolution::FourEightyP));
+      assert_eq!(variants.pop_first(), Some(CommonResolution::SevenTwentyP));
+      assert_eq!(variants.pop_first(), Some(CommonResolution::TenEightyP));
       assert_eq!(variants.pop_first(), None);
     }
   }

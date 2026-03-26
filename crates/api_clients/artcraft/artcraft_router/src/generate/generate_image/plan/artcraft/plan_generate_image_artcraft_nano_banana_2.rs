@@ -135,6 +135,8 @@ fn plan_resolution(
       // No 3K option; default to 2K
       Ok(Some(Nb2Res::TwoK))
     }
+    // HalfK, FourEightyP, SevenTwentyP, TenEightyP — nearest supported is OneK
+    Some(R::HalfK | R::FourEightyP | R::SevenTwentyP | R::TenEightyP) => Ok(Some(Nb2Res::OneK)),
   }
 }
 

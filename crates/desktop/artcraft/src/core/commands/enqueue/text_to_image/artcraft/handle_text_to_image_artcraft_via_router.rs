@@ -144,5 +144,9 @@ fn convert_desktop_resolution(res: CommonResolution2) -> RouterCommonResolution 
     CommonResolution2::TwoK => RouterCommonResolution::TwoK,
     CommonResolution2::ThreeK => RouterCommonResolution::ThreeK,
     CommonResolution2::FourK => RouterCommonResolution::FourK,
+    CommonResolution2::HalfK => RouterCommonResolution::HalfK,
+    CommonResolution2::FourEightyP => RouterCommonResolution::FourEightyP,
+    CommonResolution2::SevenTwentyP => RouterCommonResolution::SevenTwentyP,
+    CommonResolution2::TenEightyP => RouterCommonResolution::TenEightyP,
   }
 }
