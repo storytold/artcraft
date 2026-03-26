@@ -146,20 +146,22 @@ export function CreateMediaPageShell({
           {promptBox}
 
           <div
-            className="animate-fade-in-up fixed bottom-6 left-6 z-20 hidden items-center gap-5 lg:flex"
+            className="animate-fade-in-up fixed bottom-3 left-6 z-20 hidden items-center gap-5 lg:flex"
             style={{ animationDelay: "300ms" }}
           >
-            <PopoverMenu
-              items={modelItems}
-              onSelect={onModelChange}
-              mode="hoverSelect"
-              panelTitle="Select Model"
-              panelClassName="min-w-[300px]"
-              buttonClassName="bg-transparent border-0 shadow-none p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-              showIconsInList
-              triggerLabel="Model"
-              maxListHeight={400}
-            />
+            <div className="rounded-xl border border-white/10 px-3 py-2 shadow-lg backdrop-blur-xl" style={{ backgroundColor: "rgba(30, 30, 33, 0.85)" }}>
+              <PopoverMenu
+                items={modelItems}
+                onSelect={onModelChange}
+                mode="hoverSelect"
+                panelTitle="Select Model"
+                panelClassName="min-w-[300px]"
+                buttonClassName="bg-transparent border-0 shadow-none p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
+                showIconsInList
+                triggerLabel="Model"
+                maxListHeight={400}
+              />
+            </div>
           </div>
         </div>
       </div>

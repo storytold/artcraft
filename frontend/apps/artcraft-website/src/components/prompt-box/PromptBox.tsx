@@ -364,6 +364,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                 <textarea
                   ref={textareaRef}
                   rows={1}
+                  autoFocus
                   placeholder={placeholder}
                   className={twMerge(
                     "max-h-[5.5em] w-full flex-1 resize-none overflow-y-auto bg-transparent text-md text-white placeholder-white/50 focus:outline-none",

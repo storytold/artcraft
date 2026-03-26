@@ -304,7 +304,7 @@ export default function CreateImage() {
       hasContent={hasContent}
       emptyStateTitle="Generate Image"
       emptyStateSubtitle="Add a prompt, then generate"
-      bottomOffset={promptHeight + 48}
+      bottomOffset={promptHeight + 24}
       modelItems={modelItems}
       onModelChange={handleModelChange}
       gridContent={
@@ -323,7 +323,7 @@ export default function CreateImage() {
       }
       promptBox={
         <div
-          className="animate-fade-in-up fixed bottom-6 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
+          className="animate-fade-in-up fixed bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
           style={{ animationDelay: "150ms" }}
         >
           <PromptBox

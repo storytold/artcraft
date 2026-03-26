@@ -73,7 +73,7 @@ export const GalleryCard = memo(function GalleryCard({
 
   return (
     <button
-      className="group relative w-full overflow-hidden rounded-lg bg-ui-controls/40 transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400"
+      className="group relative block w-full overflow-hidden rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400"
       style={style}
       onClick={() => onClick(item)}
     >
@@ -83,7 +83,7 @@ export const GalleryCard = memo(function GalleryCard({
           alt={item.label}
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-cover"
+          className="block h-full w-full object-cover"
           onLoad={(e) => {
             if (cached != null) return;
             const img = e.currentTarget;

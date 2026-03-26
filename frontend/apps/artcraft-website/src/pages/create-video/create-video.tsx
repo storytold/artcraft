@@ -474,7 +474,7 @@ export default function CreateVideo() {
       hasContent={hasContent}
       emptyStateTitle="Generate Video"
       emptyStateSubtitle="Add a prompt, then generate"
-      bottomOffset={promptHeight + 48}
+      bottomOffset={promptHeight + 24}
       modelItems={modelItems}
       onModelChange={handleModelChange}
       glowOrbs={videoGlowOrbs}
@@ -494,9 +494,18 @@ export default function CreateVideo() {
       }
       promptBox={
         <div
-          className="animate-fade-in-up fixed bottom-6 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
+          className="animate-fade-in-up fixed bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
           style={{ animationDelay: "150ms" }}
         >
+          {selectedModel.id === "seedance_2p0" && (
+            <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
+              <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
+              <span>
+                Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.
+                Seedance may reject safe inputs unexpectedly. Try several short generations before longer ones.
+              </span>
+            </div>
+          )}
           <PromptBox
             ref={promptBoxRef}
             prompt={prompt}
@@ -591,15 +600,6 @@ export default function CreateVideo() {
               </>
             }
           />
-          {selectedModel.id === "seedance_2p0" && (
-            <div className="mt-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3.5 py-2.5 text-xs text-yellow-200">
-              <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
-              <span>
-                Seedance 2.0 is in Early Alpha. Generations may be slow and may experience outages.
-                Seedance may reject safe inputs unexpectedly. Try several short generations before longer ones.
-              </span>
-            </div>
-          )}
         </div>
       }
       modals={

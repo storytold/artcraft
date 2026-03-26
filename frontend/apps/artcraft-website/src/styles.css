@@ -25,11 +25,13 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
 }
 
 @layer base {
+
   h1,
   h2,
   h3,
@@ -38,6 +40,7 @@
   h6 {
     font-family: "Outfit", sans-serif;
   }
+
   body {
     font-family:
       "Source Sans 3",
@@ -65,7 +68,7 @@
 
 .glass {
   @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
-  background-color: rgba(62, 62, 65, 0.5) !important;
+  background-color: rgba(46, 46, 49, 0.85) !important;
 }
 
 @keyframes fade-in-up {
@@ -73,6 +76,7 @@
     opacity: 0;
     translate: 0 12px;
   }
+
   to {
     opacity: 1;
     translate: 0 0;
@@ -89,6 +93,7 @@
     opacity: 0;
     translate: 0 8px;
   }
+
   to {
     opacity: 1;
     translate: 0 0;
@@ -103,18 +108,17 @@
   0% {
     background-position: 200% 0;
   }
+
   100% {
     background-position: -200% 0;
   }
 }
 
 .animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
@@ -136,6 +140,7 @@
   0% {
     --angle: 0deg;
   }
+
   100% {
     --angle: 360deg;
   }
@@ -150,17 +155,15 @@
   content: "";
   position: absolute;
   inset: -3px;
-  background: conic-gradient(
-    from var(--angle),
-    transparent 0%,
-    transparent 80%,
-    rgba(147, 197, 253, 0.4) 85%,
-    rgba(191, 219, 254, 0.9) 90%,
-    rgba(255, 255, 255, 1) 92.5%,
-    rgba(191, 219, 254, 0.9) 95%,
-    rgba(147, 197, 253, 0.4) 100%,
-    transparent 100%
-  );
+  background: conic-gradient(from var(--angle),
+      transparent 0%,
+      transparent 80%,
+      rgba(147, 197, 253, 0.4) 85%,
+      rgba(191, 219, 254, 0.9) 90%,
+      rgba(255, 255, 255, 1) 92.5%,
+      rgba(191, 219, 254, 0.9) 95%,
+      rgba(147, 197, 253, 0.4) 100%,
+      transparent 100%);
   border-radius: inherit;
   animation: rotate 2.2s linear infinite;
   z-index: -1;

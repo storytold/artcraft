@@ -42,6 +42,12 @@ async function fetchCredits(): Promise<number | null> {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+
+  // Pages with content flush to top need a solid navbar background always
+  const alwaysSolid =
+    location.pathname === "/create-image" ||
+    location.pathname === "/create-video" ||
+    location.pathname === "/library";
   const [user, setUser] = useState<UserInfo | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [credits, setCredits] = useState<number | null>(null);
@@ -106,7 +112,7 @@ export default function Navbar() {
       as="nav"
       className={twMerge(
         "z-20 fixed top-0 left-0 w-full transition-all duration-200 bg-transparent",
-        scrolled
+        scrolled || alwaysSolid
           ? "bg-[#1b1b1f]/70 backdrop-blur-lg"
           : "bg-transparent",
       )}
