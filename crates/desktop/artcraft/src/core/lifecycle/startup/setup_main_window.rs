@@ -34,10 +34,6 @@ pub async fn setup_main_window(
   let win_builder = win_builder
       .decorations(false); // NB: This breaks Mac! (And breaks resize on Linux)
 
-  #[cfg(target_os = "windows")]
-  let win_builder = win_builder
-      .drag_and_drop(false); // TODO: Is this necessary on Windows?
-
   let _window = win_builder.build()?;
 
   Ok(())
