@@ -8,14 +8,19 @@ use log::{debug, warn};
 use pager::client::pager::Pager;
 use pager::notification::notification_details::NotificationDetails;
 
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+
 // ======================== Transform (factory) ========================
 
 /// Middleware that intercepts error responses and enqueues pager alerts.
 ///
-/// Currently catches:
-/// - 500 Internal Server Error responses
+/// Inspects errors in two ways:
+/// 1. **Typed error matching** via downcast (e.g. `CommonWebError::ServerError`)
+/// 2. **Status code fallback** for untyped 500s that slip through
 ///
-/// Extensible: add new matchers to `check_response_for_alerts()`.
+/// To add new error types, add a new branch to `check_common_web_error()`
+/// or add a new `if let Some(...)` downcast block in the matcher functions.
+/// To add new status-based rules, add to `check_status_fallback()`.
 #[derive(Clone)]
 pub struct ErrorAlertingMiddleware {
   pager: Pager,
@@ -73,19 +78,31 @@ impl<S, B> Service<ServiceRequest> for ErrorAlertingService<S>
     let fut = self.service.call(req);
 
     Box::pin(async move {
-      let res = fut.await?;
-      check_response_for_alerts(&pager, &method, &path, &res);
-      Ok(res)
+      match fut.await {
+        Ok(res) => {
+          // The handler returned a response (possibly an error response via ResponseError).
+          // Check for typed errors stashed in the response, then fall back to status code.
+          check_ok_response_for_alerts(&pager, &method, &path, &res);
+          Ok(res)
+        }
+        Err(err) => {
+          // The handler (or inner middleware) returned an Err(actix_web::Error).
+          // Try typed downcast first, then fall back to status code.
+          check_err_for_alerts(&pager, &method, &path, &err);
+          Err(err)
+        }
+      }
     })
   }
 }
 
-// ======================== Alert matchers ========================
+// ======================== Ok(response) path ========================
 
-/// Inspect a response and enqueue pager alerts for error conditions.
+/// Inspect a successful `ServiceResponse` that may contain an error response.
 ///
-/// To add new alerting rules, add a new function call here.
-fn check_response_for_alerts<B>(
+/// Actix-web converts `ResponseError` types into HTTP responses and stashes
+/// the original error in `response.error()`. We can downcast from there.
+fn check_ok_response_for_alerts<B>(
   pager: &Pager,
   method: &str,
   path: &str,
@@ -93,33 +110,124 @@ fn check_response_for_alerts<B>(
 ) {
   let status = response.status();
 
-  // Rule: Alert on 500 Internal Server Error
-  if status.as_u16() == 500 {
-    alert_on_500(pager, method, path);
+  // Try to get the original typed error from the response (if it came from ResponseError).
+  if let Some(err) = response.response().error() {
+    // --- Typed matchers (add new error types here) ---
+
+    if let Some(common_err) = err.as_error::<CommonWebError>() {
+      if check_common_web_error(pager, method, path, common_err) {
+        return;
+      }
+    }
+
+    // Add more typed matchers here:
+    // if let Some(my_err) = err.as_error::<MyOtherError>() {
+    //   if check_my_other_error(pager, method, path, my_err) { return; }
+    // }
   }
 
-  // Future rules can be added here:
-  // - alert_on_repeated_429s(pager, method, path, status);
-  // - alert_on_specific_error_type(pager, response);
-  // etc.
+  // --- Status code fallback ---
+  check_status_fallback(pager, method, path, status.as_u16());
 }
 
-fn alert_on_500(pager: &Pager, method: &str, path: &str) {
-  let summary = format!("HTTP 500: {} {}", method, path);
-  let description = format!(
-    "An internal server error (HTTP 500) was returned.\n\n\
-     Endpoint: {} {}\n\
-     Time: {}",
-    method,
-    path,
-    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
-  );
+// ======================== Err(error) path ========================
 
+/// Inspect an `actix_web::Error` returned from the handler or inner middleware.
+fn check_err_for_alerts(
+  pager: &Pager,
+  method: &str,
+  path: &str,
+  err: &Error,
+) {
+  // --- Typed matchers (add new error types here) ---
+
+  if let Some(common_err) = err.as_error::<CommonWebError>() {
+    if check_common_web_error(pager, method, path, common_err) {
+      return;
+    }
+  }
+
+  // Add more typed matchers here:
+  // if let Some(my_err) = err.as_error::<MyOtherError>() {
+  //   if check_my_other_error(pager, method, path, my_err) { return; }
+  // }
+
+  // --- Status code fallback ---
+  let status = err.as_response_error().status_code();
+  check_status_fallback(pager, method, path, status.as_u16());
+}
+
+// ======================== Typed error matchers ========================
+
+/// Check `CommonWebError` and alert on server errors.
+/// Returns `true` if the error was handled (alerted or intentionally skipped).
+fn check_common_web_error(
+  pager: &Pager,
+  method: &str,
+  path: &str,
+  error: &CommonWebError,
+) -> bool {
+  match error {
+    CommonWebError::ServerError => {
+      enqueue_alert(
+        pager,
+        format!("CommonWebError::ServerError on {} {}", method, path),
+        format!(
+          "A CommonWebError::ServerError was returned.\n\n\
+           Endpoint: {} {}\n\
+           Error: {:?}\n\
+           Time: {}",
+          method, path, error,
+          chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
+        ),
+      );
+      true
+    }
+    // Don't alert on client errors (400, 401, 404, 402).
+    CommonWebError::BadInputWithSimpleMessage(_) => true,
+    CommonWebError::NotFound => true,
+    CommonWebError::NotAuthorized => true,
+    CommonWebError::PaymentRequired => true,
+  }
+}
+
+// ======================== Status code fallback ========================
+
+/// Fallback alerting based on HTTP status code when no typed error matched.
+fn check_status_fallback(
+  pager: &Pager,
+  method: &str,
+  path: &str,
+  status_code: u16,
+) {
+  match status_code {
+    500 => {
+      enqueue_alert(
+        pager,
+        format!("HTTP 500: {} {}", method, path),
+        format!(
+          "An untyped HTTP 500 response was returned (no typed error matched).\n\n\
+           Endpoint: {} {}\n\
+           Time: {}",
+          method, path,
+          chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
+        ),
+      );
+    }
+    // Add more status-based rules here:
+    // 503 => { enqueue_alert(...); }
+    _ => {}
+  }
+}
+
+// ======================== Helpers ========================
+
+fn enqueue_alert(pager: &Pager, summary: String, description: String) {
   let notification = NotificationDetails::with_summary_and_description(summary, description);
 
   if let Err(err) = pager.enqueue_page(notification) {
     warn!("Error alerting middleware: failed to enqueue page: {:?}", err);
   } else {
-    debug!("Error alerting middleware: enqueued alert for 500 on {} {}", method, path);
+    debug!("Error alerting middleware: enqueued alert");
   }
 }
