@@ -339,7 +339,7 @@ async fn main() -> AnyhowResult<()> {
     ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
   };
 
-  let (pager, pager_worker) = build_pager(server_environment_typed);
+  let (pager, pager_worker, paging_flags) = build_pager(server_environment_typed);
 
   info!("Spawning pager worker thread.");
 
@@ -392,6 +392,9 @@ async fn main() -> AnyhowResult<()> {
     // Disable voice features
     disable_tts: easyenv::get_env_bool_or_default("DISABLE_TTS", false),
     disable_voice_conversion: easyenv::get_env_bool_or_default("DISABLE_VOICE_CONVERSION", false),
+
+    // Paging
+    paging: paging_flags,
   };
 
   let third_party_url_redirector = ThirdPartyUrlRedirector::new(server_environment);
@@ -626,11 +629,13 @@ pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
     ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
   };
 
-  let enable_error_alerting = easyenv::get_env_bool_or_default("ENABLE_ERROR_ALERTING_MIDDLEWARE", false);
+  let paging_flags_for_middleware = server_state.flags.paging.clone();
   let pager_for_middleware = server_state.pager.clone();
+  let enable_error_alerting = paging_flags_for_middleware.is_paging_enabled
+    && paging_flags_for_middleware.is_paging_for_500s_enabled;
 
   if enable_error_alerting {
-    info!("Error alerting middleware is ENABLED.");
+    info!("Error alerting middleware is ENABLED (ENABLE_PAGING=true, ENABLE_PAGING_FOR_500S=true).");
   }
 
   let server_state_arc = web::Data::new(Arc::new(server_state));
@@ -692,7 +697,7 @@ pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
         .header("X-Build-Sha", server_state_arc.server_info.build_sha.clone()))
       .wrap(middleware::Condition::new(
         enable_error_alerting,
-        ErrorAlertingMiddleware::new(pager_for_middleware.clone()),
+        ErrorAlertingMiddleware::new(pager_for_middleware.clone(), paging_flags_for_middleware.clone()),
       ))
       .wrap(PushbackFilter::new(&server_state_arc.flags.clone()))
       .wrap(DisabledEndpointFilter::new(disabled_endpoints.clone()))

@@ -33,6 +33,7 @@ use crate::http_server::endpoints::stats::result_transformer::CacheableQueueStat
 use crate::http_server::endpoints::tts::list_tts_models::TtsModelRecordForResponse;
 use crate::http_server::endpoints::voice_conversion::list_voice_conversion_models_handler::VoiceConversionModel;
 use crate::http_server::session::session_checker::SessionChecker;
+use crate::state::flags::paging_flags::PagingFlags;
 use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
@@ -298,6 +299,9 @@ pub struct StaticFeatureFlags {
   /// Disable voice conversion endpoints
   /// If true, respond with 429.
   pub disable_voice_conversion: bool,
+
+  /// Paging system flags.
+  pub paging: PagingFlags,
 }
 
 /// Instead of top level service denial, these are bans against entities that instead return
