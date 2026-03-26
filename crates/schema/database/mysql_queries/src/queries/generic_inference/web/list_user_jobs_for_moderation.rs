@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use chrono::{DateTime, Utc};
 use log::warn;
 use sqlx::MySqlPool;
 
@@ -22,6 +23,8 @@ pub struct UserJobForModerationResult {
   pub wallet_ledger_entry_type: Option<WalletLedgerEntryType>,
   pub maybe_external_third_party: Option<InferenceJobExternalThirdParty>,
   pub maybe_external_third_party_id: Option<String>,
+  pub created_at: DateTime<Utc>,
+  pub updated_at: DateTime<Utc>,
 }
 
 pub async fn list_user_jobs_for_moderation(
@@ -41,7 +44,9 @@ SELECT
     wle.token as `wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,
     wle.entry_type as `wallet_ledger_entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`,
     j.maybe_external_third_party as `maybe_external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,
-    j.maybe_external_third_party_id
+    j.maybe_external_third_party_id,
+    j.created_at,
+    j.updated_at
 FROM generic_inference_jobs as j
 LEFT OUTER JOIN users as u
     ON j.maybe_creator_user_token = u.token

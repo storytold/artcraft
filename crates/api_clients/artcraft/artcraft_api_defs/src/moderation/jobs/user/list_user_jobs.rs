@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use enums::common::job_status_plus::JobStatusPlus;
@@ -33,4 +34,6 @@ pub struct ListUserJobsEntry {
   pub wallet_ledger_entry_type: Option<WalletLedgerEntryType>,
   pub maybe_external_third_party: Option<InferenceJobExternalThirdParty>,
   pub maybe_external_third_party_id: Option<String>,
+  pub created_at: DateTime<Utc>,
+  pub updated_at: DateTime<Utc>,
 }

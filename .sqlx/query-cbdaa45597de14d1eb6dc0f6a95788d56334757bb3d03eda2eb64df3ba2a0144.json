@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    j.status as `job_status: enums::common::job_status_plus::JobStatusPlus`,\n    j.failure_reason as job_failure_reason,\n    wle.credits_delta,\n    wle.maybe_linked_refund_ledger_token as `maybe_linked_refund_ledger_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,\n    j.on_success_result_entity_token as `on_success_result_media_token: tokens::tokens::media_files::MediaFileToken`,\n    j.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n    wle.token as `wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,\n    wle.entry_type as `wallet_ledger_entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`,\n    j.maybe_external_third_party as `maybe_external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,\n    j.maybe_external_third_party_id\nFROM generic_inference_jobs as j\nLEFT OUTER JOIN users as u\n    ON j.maybe_creator_user_token = u.token\nLEFT OUTER JOIN wallet_ledger_entries as wle\n    ON wle.maybe_entity_ref = j.token\nWHERE u.token = ?\nORDER BY j.id DESC\n    ",
+  "query": "\nSELECT\n    j.status as `job_status: enums::common::job_status_plus::JobStatusPlus`,\n    j.failure_reason as job_failure_reason,\n    wle.credits_delta,\n    wle.maybe_linked_refund_ledger_token as `maybe_linked_refund_ledger_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,\n    j.on_success_result_entity_token as `on_success_result_media_token: tokens::tokens::media_files::MediaFileToken`,\n    j.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n    wle.token as `wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,\n    wle.entry_type as `wallet_ledger_entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`,\n    j.maybe_external_third_party as `maybe_external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,\n    j.maybe_external_third_party_id,\n    j.created_at,\n    j.updated_at\nFROM generic_inference_jobs as j\nLEFT OUTER JOIN users as u\n    ON j.maybe_creator_user_token = u.token\nLEFT OUTER JOIN wallet_ledger_entries as wle\n    ON wle.maybe_entity_ref = j.token\nWHERE u.token = ?\nORDER BY j.id DESC\n    ",
   "describe": {
     "columns": [
       {
@@ -88,7 +88,7 @@
         "name": "maybe_external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty",
         "type_info": {
           "type": "VarString",
-          "flags": "BINARY",
+          "flags": "MULTIPLE_KEY | BINARY",
           "char_set": 224,
           "max_size": 64
         }
@@ -101,6 +101,26 @@
           "flags": "MULTIPLE_KEY | BINARY",
           "char_set": 224,
           "max_size": 256
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | TIMESTAMP",
+          "char_set": 63,
+          "max_size": 19
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": {
+          "type": "Timestamp",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
+          "char_set": 63,
+          "max_size": 19
         }
       }
     ],
@@ -117,8 +137,10 @@
       true,
       true,
       true,
-      true
+      true,
+      false,
+      false
     ]
   },
-  "hash": "e33b7adf5854195981cc6af85ffa0257483170f6402d0277a5470699ab3c6b2c"
+  "hash": "cbdaa45597de14d1eb6dc0f6a95788d56334757bb3d03eda2eb64df3ba2a0144"
 }
