@@ -67,6 +67,7 @@ export function GlobalFileDropHandler() {
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const blob = await response.blob();
                 const file = new File([blob], fileName);
+                await appWindow.setFocus();
                 setModalType(type);
                 setPendingFile(file);
               } catch (err) {
