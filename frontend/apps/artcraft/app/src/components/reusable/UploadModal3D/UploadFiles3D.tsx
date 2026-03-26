@@ -145,7 +145,7 @@ export const UploadFiles3D = ({
 
         <div className="relative m-auto w-full overflow-hidden rounded-lg bg-brand-secondary">
           <canvas
-            className="pointer-events-none h-full w-full"
+            className="pointer-events-none h-full !w-full"
             ref={canvasCallbackRef}
           />
           {!assetFile.value && (
