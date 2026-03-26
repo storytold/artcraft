@@ -358,7 +358,7 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
           )}
 
           <animated.div
-            className="fixed left-1/2 z-20 w-[730px] -translate-x-1/2"
+            className="fixed left-1/2 z-20 -translate-x-1/2"
             style={promptAnim}
           >
             {showPromptAtBottom && batches.length > 0 && (

@@ -262,10 +262,23 @@ export const PromptBoxEdit = ({
 
   const modes = isNanoBananaModel
     ? [
+      {
+        value: "marker",
+        icon: faPen,
+        text: "Marker",
+      },
+      {
+        value: "eraser",
+        icon: faEraser,
+        text: "Eraser",
+      },
+    ]
+    : supportsMaskedInpainting
+      ? [
         {
-          value: "marker",
-          icon: faPen,
-          text: "Marker",
+          value: "edit",
+          icon: faEdit,
+          text: "Edit Region",
         },
         {
           value: "eraser",
@@ -273,31 +286,18 @@ export const PromptBoxEdit = ({
           text: "Eraser",
         },
       ]
-    : supportsMaskedInpainting
-      ? [
-          {
-            value: "edit",
-            icon: faEdit,
-            text: "Edit Region",
-          },
-          {
-            value: "eraser",
-            icon: faEraser,
-            text: "Eraser",
-          },
-        ]
       : [
-          {
-            value: "edit",
-            icon: faEdit,
-            text: "Edit Region",
-          },
-          {
-            value: "select",
-            icon: faMousePointer,
-            text: "Select",
-          },
-        ];
+        {
+          value: "edit",
+          icon: faEdit,
+          text: "Edit Region",
+        },
+        {
+          value: "select",
+          icon: faMousePointer,
+          text: "Select",
+        },
+      ];
 
   return (
     <>
@@ -307,8 +307,8 @@ export const PromptBoxEdit = ({
             className={twMerge(
               "glass w-fit mx-auto rounded-xl px-2 py-2 flex items-center gap-3",
               selectedImageModel?.canUseImagePrompt &&
-                isImageRowVisible &&
-                "mb-[72px]",
+              isImageRowVisible &&
+              "mb-[72px]",
             )}
           >
             <ButtonIconSelect
@@ -352,17 +352,17 @@ export const PromptBoxEdit = ({
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage}
-              onImageClick={() => {}}
+              onImageClick={() => { }}
               className=""
             />
           )}
           <div
             className={twMerge(
-              "glass w-[730px] rounded-xl p-4",
+              "glass w-[860px] rounded-xl p-4",
               isFocused && "ring-1 ring-primary border-primary",
               selectedImageModel?.canUseImagePrompt &&
-                isImageRowVisible &&
-                "rounded-t-none",
+              isImageRowVisible &&
+              "rounded-t-none",
             )}
           >
             <div className="flex justify-center gap-2">

@@ -219,9 +219,9 @@ export default function CreateVideo() {
     (): PopoverItem[] | null =>
       selectedModel.durationOptions
         ? selectedModel.durationOptions.map((d) => ({
-            label: `${d}s`,
-            selected: d === (duration ?? selectedModel.defaultDuration),
-          }))
+          label: `${d}s`,
+          selected: d === (duration ?? selectedModel.defaultDuration),
+        }))
         : null,
     [selectedModel, duration],
   );
@@ -231,9 +231,9 @@ export default function CreateVideo() {
     (): PopoverItem[] | null =>
       selectedModel.resolutionOptions
         ? selectedModel.resolutionOptions.map((r) => ({
-            label: r,
-            selected: r === (resolution ?? selectedModel.defaultResolution),
-          }))
+          label: r,
+          selected: r === (resolution ?? selectedModel.defaultResolution),
+        }))
         : null,
     [selectedModel, resolution],
   );
@@ -243,17 +243,17 @@ export default function CreateVideo() {
     (): PopoverItem[] | null =>
       supportsRefMode
         ? [
-            {
-              label: "Keyframe",
-              description: "First/Last frame",
-              selected: inputMode === "keyframe",
-            },
-            {
-              label: "Reference",
-              description: "Multi-media ref",
-              selected: inputMode === "reference",
-            },
-          ]
+          {
+            label: "Keyframe",
+            description: "First/Last frame",
+            selected: inputMode === "keyframe",
+          },
+          {
+            label: "Reference",
+            description: "Multi-media ref",
+            selected: inputMode === "reference",
+          },
+        ]
         : null,
     [supportsRefMode, inputMode],
   );
@@ -424,8 +424,8 @@ export default function CreateVideo() {
       const referenceImageMediaTokens =
         isReferenceMode && referenceImages.length > 0
           ? referenceImages
-              .map((img) => img.mediaToken)
-              .filter((t) => t.length > 0)
+            .map((img) => img.mediaToken)
+            .filter((t) => t.length > 0)
           : undefined;
 
       const referenceVideoMediaTokens =
@@ -680,7 +680,7 @@ export default function CreateVideo() {
 
           {/* ── Prompt box (fixed bottom center) ───────────────────── */}
           <div
-            className="animate-fade-in-up fixed bottom-6 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
+            className="animate-fade-in-up fixed bottom-6 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-4"
             style={{ animationDelay: "150ms" }}
           >
             <PromptBox
@@ -882,7 +882,7 @@ export default function CreateVideo() {
         maxSelect={Math.max(
           1,
           (isReferenceMode ? (selectedModel.maxReferenceImages ?? 3) : 1) -
-            referenceImages.length,
+          referenceImages.length,
         )}
       />
     </div>

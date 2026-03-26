@@ -58,9 +58,9 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
 
   const jobContext: JobContextType = {
     jobTokens: [],
-    addJobToken: () => {},
-    removeJobToken: () => {},
-    clearJobTokens: () => {},
+    addJobToken: () => { },
+    removeJobToken: () => { },
+    clearJobTokens: () => { },
   };
 
   useVideoGenerationCompleteEvent(
@@ -124,10 +124,10 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
             className={twMerge(
               "relative z-20 mb-52 flex flex-col items-center justify-center text-center drop-shadow-xl",
               imageRowVisible &&
-                (inputMode === "reference" &&
+              (inputMode === "reference" &&
                 selectedVideoModel?.supportsReferenceMode
-                  ? "mb-[30rem]"
-                  : "mb-80"),
+                ? "mb-[30rem]"
+                : "mb-80"),
             )}
           >
             <h1 className="text-7xl font-bold text-base-fg">Generate Video</h1>
@@ -182,7 +182,7 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
           )} */}
 
           <animated.div
-            className="fixed left-1/2 z-20 w-[730px] -translate-x-1/2"
+            className="fixed left-1/2 z-20 w-[860px] -translate-x-1/2"
             style={promptAnim}
           >
             {/* TODO: Uncomment when backend supports history frontend id */}

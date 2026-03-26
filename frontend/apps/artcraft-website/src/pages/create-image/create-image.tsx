@@ -271,8 +271,8 @@ export default function CreateImage() {
     try {
       const imageMediaTokens = selectedModel.canUseImagePrompt
         ? referenceImages
-            .map((img) => img.mediaToken)
-            .filter((t) => t.length > 0)
+          .map((img) => img.mediaToken)
+          .filter((t) => t.length > 0)
         : undefined;
 
       const result = await enqueueImageGeneration({
@@ -476,7 +476,7 @@ export default function CreateImage() {
                             length: Math.max(
                               0,
                               4 -
-                                Math.max(1, Math.min(4, batch.requestedCount)),
+                              Math.max(1, Math.min(4, batch.requestedCount)),
                             ),
                           }).map((_, i) => (
                             <div
@@ -556,7 +556,7 @@ export default function CreateImage() {
 
           {/* ── Prompt box (fixed bottom center) ───────────────────── */}
           <div
-            className="animate-fade-in-up fixed bottom-6 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
+            className="animate-fade-in-up fixed bottom-6 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-4"
             style={{ animationDelay: "150ms" }}
           >
             <PromptBox

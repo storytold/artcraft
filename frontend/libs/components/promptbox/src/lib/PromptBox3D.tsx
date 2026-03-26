@@ -70,11 +70,11 @@ interface PromptBox3DProps {
   selectedImageModel?: ImageModel;
   selectedProvider?: GenerationProvider;
   snapshotCurrentFrame:
-    | ((shouldDownload?: boolean) => {
-        base64Snapshot: string;
-        file: File;
-      } | null)
-    | undefined;
+  | ((shouldDownload?: boolean) => {
+    base64Snapshot: string;
+    file: File;
+  } | null)
+  | undefined;
   credits?: number | null;
 }
 
@@ -548,11 +548,11 @@ export const PromptBox3D = ({
         )}
         <div
           className={twMerge(
-            "glass w-[730px] rounded-xl p-4",
+            "glass w-[860px] rounded-xl p-4",
             isPromptBoxFocused.value ? "!border !border-primary" : "",
             selectedImageModel?.canUseImagePrompt &&
-              isImageRowVisible &&
-              "rounded-t-none",
+            isImageRowVisible &&
+            "rounded-t-none",
           )}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}

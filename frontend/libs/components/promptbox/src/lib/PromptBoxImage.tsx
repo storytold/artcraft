@@ -408,7 +408,7 @@ export const PromptBoxImage = ({
 
         <div
           className={twMerge(
-            "glass w-[730px] rounded-xl p-4",
+            "glass w-[860px] rounded-xl p-4",
             isImageRowVisible &&
             selectedModel?.canUseImagePrompt &&
             "rounded-t-none",

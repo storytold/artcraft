@@ -350,10 +350,10 @@ export const PromptBox2D = ({
         )}
         <div
           className={twMerge(
-            "glass w-[730px] rounded-xl p-4",
+            "glass w-[860px] rounded-xl p-4",
             selectedImageModel?.canUseImagePrompt &&
-              isImageRowVisible &&
-              "rounded-t-none",
+            isImageRowVisible &&
+            "rounded-t-none",
           )}
         >
           <div className="flex justify-center gap-2">
@@ -399,8 +399,8 @@ export const PromptBox2D = ({
               onChange={handleChange}
               onPaste={handlePaste}
               onKeyDown={handleKeyDown}
-              onFocus={() => {}}
-              onBlur={() => {}}
+              onFocus={() => { }}
+              onBlur={() => { }}
             />
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
