@@ -1,3 +1,4 @@
+use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use enums::common::job_status_plus::JobStatusPlus;
 use serde_derive::{Deserialize, Serialize};
@@ -30,4 +31,6 @@ pub struct ListUserJobsEntry {
   pub job_token: InferenceJobToken,
   pub wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
   pub wallet_ledger_entry_type: Option<WalletLedgerEntryType>,
+  pub maybe_external_third_party: Option<InferenceJobExternalThirdParty>,
+  pub maybe_external_third_party_id: Option<String>,
 }

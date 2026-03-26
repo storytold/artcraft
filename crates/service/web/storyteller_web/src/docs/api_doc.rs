@@ -197,6 +197,7 @@ use enums::by_table::comments::comment_entity_type::CommentEntityType;
 use enums::by_table::featured_items::featured_item_entity_type::FeaturedItemEntityType;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
+use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationType;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
@@ -680,6 +681,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListUserJobsPathInfo,
     ListUserJobsResponse,
     ListUserJobsEntry,
+    InferenceJobExternalThirdParty,
     ListUserWalletsPathInfo,
     ListUserWalletsResponse,
     ListUserWalletsEntry,

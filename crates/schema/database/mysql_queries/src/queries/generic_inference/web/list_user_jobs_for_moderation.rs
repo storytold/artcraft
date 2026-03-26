@@ -2,6 +2,7 @@ use anyhow::anyhow;
 use log::warn;
 use sqlx::MySqlPool;
 
+use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
 use enums::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
@@ -19,6 +20,8 @@ pub struct UserJobForModerationResult {
   pub job_token: InferenceJobToken,
   pub wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
   pub wallet_ledger_entry_type: Option<WalletLedgerEntryType>,
+  pub maybe_external_third_party: Option<InferenceJobExternalThirdParty>,
+  pub maybe_external_third_party_id: Option<String>,
 }
 
 pub async fn list_user_jobs_for_moderation(
@@ -36,7 +39,9 @@ SELECT
     j.on_success_result_entity_token as `on_success_result_media_token: tokens::tokens::media_files::MediaFileToken`,
     j.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,
     wle.token as `wallet_ledger_entry_token: tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken`,
-    wle.entry_type as `wallet_ledger_entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`
+    wle.entry_type as `wallet_ledger_entry_type: enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType`,
+    j.maybe_external_third_party as `maybe_external_third_party: enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty`,
+    j.maybe_external_third_party_id
 FROM generic_inference_jobs as j
 LEFT OUTER JOIN users as u
     ON j.maybe_creator_user_token = u.token
