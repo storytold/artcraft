@@ -8,6 +8,7 @@ use crate::state::flags::paging_flags::PagingFlags;
 
 pub fn build_pager(
   server_environment: server_environment::ServerEnvironment,
+  hostname: &str,
 ) -> (Pager, PagerWorker, PagingFlags) {
   let paging_flags = PagingFlags::from_env();
 
@@ -19,21 +20,19 @@ pub fn build_pager(
     "development"
   };
 
+  let builder = PagerBuilder::new()
+      .application_name("storyteller-web".to_string())
+      .environment(environment.to_string())
+      .hostname(hostname.to_string());
+  
   // If paging is globally disabled, use a NoOp pager regardless of API key.
   if !paging_flags.is_paging_enabled {
     warn!("ENABLE_PAGING is false. Pager will be NoOp.");
-    let (pager, worker) = PagerBuilder::new()
-      .application_name("storyteller-web".to_string())
-      .environment(environment.to_string())
-      .build_with_worker();
+    let (pager, worker) = builder.build_with_worker();
     return (pager, worker, paging_flags);
   }
 
   let maybe_api_key = easyenv::get_env_string_optional("ROOTLY_API_KEY");
-
-  let builder = PagerBuilder::new()
-      .application_name("storyteller-web".to_string())
-      .environment(environment.to_string());
 
   let (pager, worker) = match maybe_api_key {
     Some(api_key) => {

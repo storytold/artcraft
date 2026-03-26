@@ -339,7 +339,7 @@ async fn main() -> AnyhowResult<()> {
     ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
   };
 
-  let (pager, pager_worker, paging_flags) = build_pager(server_environment_typed);
+  let (pager, pager_worker, paging_flags) = build_pager(server_environment_typed, &server_hostname);
 
   info!("Spawning pager worker thread.");
 

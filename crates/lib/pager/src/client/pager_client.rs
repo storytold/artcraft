@@ -20,6 +20,9 @@ pub struct PagerClient {
 
   /// Environment label (e.g. "production", "staging"). Inserted as a label on alerts.
   pub environment: Option<String>,
+
+  /// Hostname of the machine sending alerts. Inserted as a label on alerts.
+  pub hostname: Option<String>,
 }
 
 /// Configuration for the pager client backend.
@@ -58,8 +61,9 @@ impl PagerClient {
     client_config: PagerClientConfig,
     application_name: Option<String>,
     environment: Option<String>,
+    hostname: Option<String>,
   ) -> Self {
-    Self { client_config, application_name, environment }
+    Self { client_config, application_name, environment, hostname }
   }
 
   pub fn is_noop(&self) -> bool {
@@ -104,13 +108,23 @@ impl PagerClient {
       labels.push(("environment".to_string(), env.clone()));
     }
 
+    if let Some(h) = &self.hostname {
+      labels.push(("hostname".to_string(), h.clone()));
+    }
+
     let labels = if labels.is_empty() { None } else { Some(labels) };
+
+    // Enrich the description with hostname if both are present.
+    let description = match (&notification.description, &self.hostname) {
+      (Some(desc), Some(h)) => Some(format!("{}\n\nHostname: {}", desc, h)),
+      (desc, _) => desc.clone(),
+    };
 
     let result = create_alert(CreateAlertArgs {
       api_key: api_key.clone(),
       source,
       summary: notification.summary.clone(),
-      description: notification.description.clone(),
+      description,
       status: Some("triggered".to_string()),
       service_ids: None,
       group_ids: None,

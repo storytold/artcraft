@@ -13,6 +13,7 @@ pub struct PagerBuilder {
   client_config: Option<PagerClientConfig>,
   application_name: Option<String>,
   environment: Option<String>,
+  hostname: Option<String>,
   queue_capacity: Option<usize>,
 }
 
@@ -22,6 +23,7 @@ impl PagerBuilder {
       client_config: None,
       application_name: None,
       environment: None,
+      hostname: None,
       queue_capacity: None,
     }
   }
@@ -35,6 +37,12 @@ impl PagerBuilder {
   /// Set the environment label (e.g. "production", "staging").
   pub fn environment(mut self, environment: String) -> Self {
     self.environment = Some(environment);
+    self
+  }
+
+  /// Set the hostname of the machine sending alerts.
+  pub fn hostname(mut self, hostname: String) -> Self {
+    self.hostname = Some(hostname);
     self
   }
 
@@ -105,7 +113,7 @@ impl PagerBuilder {
       }
     };
 
-    PagerClient::new(client_config, self.application_name.clone(), self.environment.clone())
+    PagerClient::new(client_config, self.application_name.clone(), self.environment.clone(), self.hostname.clone())
   }
 }
 
