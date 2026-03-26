@@ -72,6 +72,7 @@ use crate::configs::app_startup::redis_rate_limiters::configure_redis_rate_limit
 use crate::configs::connect_to_database::connect_to_database;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
 use crate::http_server::cookies::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
+use crate::http_server::middleware::error_alerting_middleware::ErrorAlertingMiddleware;
 use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
 use crate::http_server::routes::add_routes::add_routes;
 use crate::http_server::session::session_checker::SessionChecker;
@@ -625,6 +626,13 @@ pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
     ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
   };
 
+  let enable_error_alerting = easyenv::get_env_bool_or_default("ENABLE_ERROR_ALERTING_MIDDLEWARE", false);
+  let pager_for_middleware = server_state.pager.clone();
+
+  if enable_error_alerting {
+    info!("Error alerting middleware is ENABLED.");
+  }
+
   let server_state_arc = web::Data::new(Arc::new(server_state));
 
   let disabled_endpoints = read_disabled_endpoints();
@@ -682,6 +690,10 @@ pub async fn serve(server_state: ServerState) -> AnyhowResult<()>
       .wrap(DefaultHeaders::new()
         .header("X-Backend-Hostname", &hostname)
         .header("X-Build-Sha", server_state_arc.server_info.build_sha.clone()))
+      .wrap(middleware::Condition::new(
+        enable_error_alerting,
+        ErrorAlertingMiddleware::new(pager_for_middleware.clone()),
+      ))
       .wrap(PushbackFilter::new(&server_state_arc.flags.clone()))
       .wrap(DisabledEndpointFilter::new(disabled_endpoints.clone()))
       .wrap(BannedIpFilter::new(ip_ban_list))
