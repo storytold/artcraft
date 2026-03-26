@@ -14,6 +14,7 @@ interface Props {
   title: string;
   fileTypes: string[];
   engineCategory: FilterEngineCategories;
+  initialFile?: File;
   options?: {
     fileSubtypes?: { [key: string]: string }[];
     hasLength?: boolean;
@@ -27,6 +28,7 @@ interface Props {
 export const UploadFilesSplat = ({
   fileTypes,
   engineCategory,
+  initialFile,
   options,
   onClose,
   onUploadProgress,
@@ -52,7 +54,7 @@ export const UploadFilesSplat = ({
   const [assetFile, setAssetFile] = useState<{
     value: File | null;
     error?: string;
-  }>({ value: null });
+  }>({ value: initialFile ?? null });
 
   const [previewStatus, setPreviewStatus] = useState<{
     type: string;

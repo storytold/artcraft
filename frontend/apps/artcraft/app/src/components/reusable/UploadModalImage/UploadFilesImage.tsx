@@ -7,19 +7,21 @@ import { UploaderState } from "../../../models";
 interface Props {
   title: string;
   fileTypes: string[];
+  initialFile?: File;
   onClose: () => void;
   onUploadProgress: (newState: UploaderState) => void;
 }
 
 export const UploadFilesImage = ({
   fileTypes,
+  initialFile,
   onClose,
   onUploadProgress,
 }: Props) => {
   const [assetFile, setAssetFile] = useState<{
     value: File | null;
     error?: string;
-  }>({ value: null });
+  }>({ value: initialFile ?? null });
 
   const handleSubmit = () => {
     if (!assetFile.value) {

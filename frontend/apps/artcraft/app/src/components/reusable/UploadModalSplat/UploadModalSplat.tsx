@@ -22,6 +22,7 @@ interface Props {
   isOpen: boolean;
   title: string;
   titleIcon: IconDefinition;
+  initialFile?: File;
   options?: {
     fileSubtypes?: { [key: string]: string }[];
     hasLength?: boolean;
@@ -33,7 +34,7 @@ const splatFileTypes = Object.values(SPLAT_FILE_TYPE);
 
 export function UploadModalSplat(props: Props) {
   const selectedCategory = FilterEngineCategories.SPLAT;
-  const { isOpen, onClose, onSuccess, title, titleIcon, options } = props;
+  const { isOpen, onClose, onSuccess, title, titleIcon, initialFile, options } = props;
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
 
@@ -72,6 +73,7 @@ export function UploadModalSplat(props: Props) {
               title={title}
               engineCategory={selectedCategory}
               fileTypes={splatFileTypes}
+              initialFile={initialFile}
               options={{
                 ...(options ?? {}),
               }}

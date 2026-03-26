@@ -13,6 +13,7 @@ interface Props {
   title: string;
   fileTypes: string[];
   engineCategory: FilterEngineCategories;
+  initialFile?: File;
   options?: {
     fileSubtypes?: { [key: string]: string }[];
     hasLength?: boolean;
@@ -25,6 +26,7 @@ interface Props {
 export const UploadFiles3D = ({
   fileTypes,
   engineCategory,
+  initialFile,
   options,
   onClose,
   onUploadProgress,
@@ -49,7 +51,7 @@ export const UploadFiles3D = ({
   const [assetFile, setAssetFile] = useState<{
     value: File | null;
     error?: string;
-  }>({ value: null });
+  }>({ value: initialFile ?? null });
 
   const [previewStatus, setPreviewStatus] = useState<{
     type: string;

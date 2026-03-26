@@ -21,12 +21,13 @@ interface Props {
   isOpen: boolean;
   title: string;
   titleIcon: IconDefinition;
+  initialFile?: File;
 }
 
 const imageFileTypes = Object.values(IMAGEPLANE_FILE_TYPE);
 
 export function UploadModalImage(props: Props) {
-  const { isOpen, onClose, onSuccess, title, titleIcon } = props;
+  const { isOpen, onClose, onSuccess, title, titleIcon, initialFile } = props;
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
 
@@ -67,6 +68,7 @@ export function UploadModalImage(props: Props) {
             <UploadFilesImage
               title={title}
               fileTypes={imageFileTypes}
+              initialFile={initialFile}
               onClose={onClose}
               onUploadProgress={updateUploaderState}
             />
