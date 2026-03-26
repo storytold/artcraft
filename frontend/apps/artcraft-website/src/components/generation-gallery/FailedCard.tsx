@@ -23,7 +23,7 @@ export const FailedCard = memo(function FailedCard({
   onDismiss,
 }: FailedCardProps) {
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-lg bg-red-500/10">
+    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-red-500/10">
       <div className="flex h-full flex-col items-center justify-center gap-2 px-4">
         <FontAwesomeIcon
           icon={faCircleExclamation}

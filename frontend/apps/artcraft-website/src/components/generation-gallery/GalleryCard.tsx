@@ -5,10 +5,11 @@ import { PLACEHOLDER_IMAGES } from "@storyteller/common";
 import type { GalleryItem } from "./useGalleryData";
 
 // ── Persistent aspect ratio cache ─────────────────────────────────────────
-// Survives in-memory across navigations, and in sessionStorage across
-// refreshes so cards never flash as squares on reload.
 
 const STORAGE_KEY = "gallery-aspect-ratios";
+
+// Cap ratio so tall portraits don't dominate — 1.4 ≈ 5:7
+const MAX_RATIO = 1.4;
 
 function loadCache(): Map<string, number> {
   const map = new Map<string, number>();
@@ -29,7 +30,6 @@ function loadCache(): Map<string, number> {
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
 function persistCache(cache: Map<string, number>) {
-  // Debounce — batch writes instead of writing on every image load
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
     try {
@@ -58,13 +58,23 @@ export const GalleryCard = memo(function GalleryCard({
   item,
   onClick,
 }: GalleryCardProps) {
-  const cached = aspectRatioCache.has(item.id);
-  const [, setLoaded] = useState(cached);
+  const cached = aspectRatioCache.get(item.id);
+  const [ratio, setRatio] = useState<number | undefined>(cached);
+
+  // Use the capped ratio for the card's own aspect-ratio so it sizes itself
+  // correctly inside the masonry column. Image uses object-cover to fill.
+  const displayRatio = ratio ? Math.min(ratio, MAX_RATIO) : 1;
+
+  const style: React.CSSProperties = {
+    aspectRatio: `1 / ${displayRatio}`,
+    contentVisibility: "auto",
+    containIntrinsicSize: "auto 200px",
+  };
 
   return (
     <button
-      className="group relative h-full w-full overflow-hidden rounded-lg bg-ui-controls/40 transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400"
-      style={{ contentVisibility: "auto" }}
+      className="group relative w-full overflow-hidden rounded-lg bg-ui-controls/40 transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400"
+      style={style}
       onClick={() => onClick(item)}
     >
       {item.thumbnail ? (
@@ -75,15 +85,13 @@ export const GalleryCard = memo(function GalleryCard({
           decoding="async"
           className="h-full w-full object-cover"
           onLoad={(e) => {
-            if (cached) return;
+            if (cached != null) return;
             const img = e.currentTarget;
             if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-              aspectRatioCache.set(
-                item.id,
-                img.naturalHeight / img.naturalWidth,
-              );
+              const r = img.naturalHeight / img.naturalWidth;
+              aspectRatioCache.set(item.id, r);
               persistCache(aspectRatioCache);
-              setLoaded(true);
+              setRatio(r);
             }
           }}
           onError={(e) => {

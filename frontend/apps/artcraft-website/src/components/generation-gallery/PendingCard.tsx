@@ -37,7 +37,7 @@ export const PendingCard = memo(function PendingCard({
       : null;
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-lg bg-white/[0.03]">
+    <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-white/[0.03]">
       <div className="animate-shimmer h-full w-full" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
         <FontAwesomeIcon
