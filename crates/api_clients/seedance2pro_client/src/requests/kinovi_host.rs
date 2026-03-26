@@ -35,7 +35,11 @@ impl KinoviHost {
   /// Returns the CDN base URL for uploaded/static files (no trailing slash).
   pub fn cdn_base_url(&self) -> &str {
     match self {
-      Self::Kinovi => "https://static.kinovi.ai",
+      // NB: The API endpoint moved to kinovi.ai but the CDN for uploaded materials
+      // still uses the legacy seedance2-pro.com domain. The generate_video API
+      // expects URLs on this domain.
+      Self::Kinovi => "https://static.seedance2-pro.com",
+      // Self::Kinovi => "https://static.kinovi.ai",
       Self::Seedance2Pro => "https://static.seedance2-pro.com",
       Self::CustomHost { cdn_host, .. } => cdn_host.as_str(),
     }

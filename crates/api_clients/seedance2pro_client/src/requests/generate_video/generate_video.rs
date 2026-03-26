@@ -685,6 +685,55 @@ mod tests {
       Ok(())
     }
 
+    #[tokio::test]
+    #[ignore] // manually test — requires real cookies
+    async fn test_pro_keyframe_with_start_frame() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      // Upload a start frame image from our CDN
+      let image_bytes = crate::test_utils::http_download::http_download_to_bytes(
+        test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+      ).await?;
+
+      let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+        session: &session,
+        extension: "jpg".to_string(),
+        host_override: None,
+      }).await?;
+
+      let upload_result = upload_file(UploadFileArgs {
+        upload_url: prepare_result.upload_url,
+        file_bytes: image_bytes,
+        host_override: None,
+      }).await?;
+
+      println!("Uploaded start frame: {}", upload_result.public_url);
+
+      let args = GenerateVideoArgs {
+        session: &session,
+        model_type: ModelType::Seedance2Pro,
+        prompt: "The corgi dog watches the lake.".to_string(),
+        resolution: Resolution::Portrait9x16,
+        duration_seconds: 5,
+        batch_count: BatchCount::One,
+        start_frame_url: Some(upload_result.public_url),
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        use_face_blur_hack: None,
+        host_override: None,
+      };
+      let result = generate_video(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+      Ok(())
+    }
+
     // --- Seedance 2 Fast tests ---
 
     #[tokio::test]
