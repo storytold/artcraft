@@ -16,6 +16,8 @@ import {
   faMessageXmark,
   faMessageCheck,
   faExpand,
+  faChevronDown,
+  faChevronUp,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
@@ -96,6 +98,21 @@ export const PromptBoxImage = ({
   const setGenerationCount = usePromptImageStore((s) => s.setGenerationCount);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpand = () => {
+    setIsExpanded((prev) => {
+      const next = !prev;
+      if (textareaRef.current) {
+        if (next) {
+          textareaRef.current.style.height = `${window.innerHeight - 300}px`;
+        } else {
+          textareaRef.current.style.height = "auto";
+        }
+      }
+      return next;
+    });
+  };
   const referenceImages = usePromptImageStore((s) => s.referenceImages);
   const setReferenceImages = usePromptImageStore((s) => s.setReferenceImages);
   const [uploadingImages, _setUploadingImages] = useState<
@@ -408,7 +425,7 @@ export const PromptBoxImage = ({
 
         <div
           className={twMerge(
-            "glass w-[860px] rounded-xl p-4",
+            "glass relative w-[860px] rounded-xl p-4",
             isImageRowVisible &&
             selectedModel?.canUseImagePrompt &&
             "rounded-t-none",
@@ -544,6 +561,17 @@ export const PromptBoxImage = ({
                 Generate
               </GenerateButton>
             </div>
+          </div>
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
+              <button
+                type="button"
+                onClick={toggleExpand}
+                className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
+              >
+                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="text-xs" />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

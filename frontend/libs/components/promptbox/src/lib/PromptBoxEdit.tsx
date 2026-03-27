@@ -15,6 +15,8 @@ import {
   faRedo,
   faExpand,
   faArrowsUpDownLeftRight,
+  faChevronDown,
+  faChevronUp,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
@@ -82,6 +84,17 @@ export const PromptBoxEdit = ({
   const [prompt, setPrompt] = useState("");
   const [useSystemPrompt, setUseSystemPrompt] = useState(true);
   const [isFocused, setIsFocused] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpand = () => {
+    setIsExpanded((prev) => {
+      const next = !prev;
+      if (textareaRef.current) {
+        textareaRef.current.style.height = next ? "300px" : "auto";
+      }
+      return next;
+    });
+  };
   const [internalEnqueueing, setInternalEnqueueing] = useState(false);
   const referenceImages = usePromptEditStore((s) => s.referenceImages);
   const setReferenceImages = usePromptEditStore((s) => s.setReferenceImages);
@@ -358,7 +371,7 @@ export const PromptBoxEdit = ({
           )}
           <div
             className={twMerge(
-              "glass w-[860px] rounded-xl p-4",
+              "glass relative w-[860px] rounded-xl p-4",
               isFocused && "ring-1 ring-primary border-primary",
               selectedImageModel?.canUseImagePrompt &&
               isImageRowVisible &&
@@ -404,7 +417,7 @@ export const PromptBoxEdit = ({
                   rows={1}
                   maxLength={1000}
                   placeholder="Write what you want to change in your image and click generate..."
-                  className="promptbox-scrollbar text-md mb-2 max-h-[5.5em] w-full resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none"
+                  className={`promptbox-scrollbar text-md mb-2 w-full resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -506,6 +519,17 @@ export const PromptBoxEdit = ({
                 </GenerateButton>
               </div>
             </div>
+          </div>
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
+              <button
+                type="button"
+                onClick={toggleExpand}
+                className="text-white/30 hover:text-white/90 transition-colors px-3 py-0.5"
+              >
+                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="text-xs" />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

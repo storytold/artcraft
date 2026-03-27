@@ -9,6 +9,8 @@ import {
   faMessageCheck,
   faFrame,
   faExpand,
+  faChevronDown,
+  faChevronUp,
 } from "@fortawesome/pro-solid-svg-icons";
 import {
   faRectangleVertical,
@@ -68,6 +70,17 @@ export const PromptBox2D = ({
   useSignals();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpand = () => {
+    setIsExpanded((prev) => {
+      const next = !prev;
+      if (textareaRef.current) {
+        textareaRef.current.style.height = next ? "300px" : "auto";
+      }
+      return next;
+    });
+  };
   const [content, setContent] = useState<React.ReactNode>("");
 
   //const { lastRenderedBitmap } = useCanvasSignal();
@@ -350,7 +363,7 @@ export const PromptBox2D = ({
         )}
         <div
           className={twMerge(
-            "glass w-[860px] rounded-xl p-4",
+            "glass relative w-[860px] rounded-xl p-4",
             selectedImageModel?.canUseImagePrompt &&
             isImageRowVisible &&
             "rounded-t-none",
@@ -396,7 +409,7 @@ export const PromptBox2D = ({
                 rows={1}
                 maxLength={1000}
                 placeholder="Describe your image..."
-                className="promptbox-scrollbar text-md mb-2 max-h-[5.5em] w-full resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+                className={`promptbox-scrollbar text-md mb-2 w-full resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -488,6 +501,17 @@ export const PromptBox2D = ({
                 Generate
               </GenerateButton>
             </div>
+          </div>
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
+              <button
+                type="button"
+                onClick={toggleExpand}
+                className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
+              >
+                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="text-xs" />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>
