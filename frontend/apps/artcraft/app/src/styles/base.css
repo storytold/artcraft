@@ -244,6 +244,55 @@ img {
 }
 
 /* Hide native scrollbars while preserving scrollability */
+/* Minimal thin scrollbar for prompt textareas */
+.promptbox-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.promptbox-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.promptbox-scrollbar::-webkit-scrollbar:vertical {
+  width: 4px;
+}
+.promptbox-scrollbar::-webkit-scrollbar:horizontal {
+  height: 4px;
+}
+.promptbox-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.promptbox-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+.promptbox-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+}
+.promptbox-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.promptbox-scrollbar::-webkit-resizer {
+  background: transparent;
+  border: none;
+}
+.promptbox-resize-wrap {
+  position: relative;
+}
+.promptbox-resize-wrap::after {
+  content: "";
+  position: absolute;
+  bottom: 16px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg,
+    transparent 40%, rgba(255, 255, 255, 0.5) 40%, rgba(255, 255, 255, 0.5) 45%, transparent 45%,
+    transparent 55%, rgba(255, 255, 255, 0.5) 55%, rgba(255, 255, 255, 0.5) 60%, transparent 60%,
+    transparent 70%, rgba(255, 255, 255, 0.5) 70%, rgba(255, 255, 255, 0.5) 75%, transparent 75%);
+}
+
 .scrollbar-hidden {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */

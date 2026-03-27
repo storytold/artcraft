@@ -202,17 +202,17 @@ export const PromptBoxEdit = ({
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
     const next =
-      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
+      (value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd)).slice(0, 1000);
     setPrompt(next);
     requestAnimationFrame(() => {
-      const pos = selectionStart + pastedText.length;
+      const pos = Math.min(selectionStart + pastedText.length, next.length);
       textareaRef.current?.setSelectionRange(pos, pos);
     });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
-    setPrompt(e.target.value);
+    setPrompt(e.target.value.slice(0, 1000));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -398,18 +398,24 @@ export const PromptBoxEdit = ({
                   </Button>
                 </Tooltip>
               )}
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                placeholder="Write what you want to change in your image and click generate..."
-                className="text-md mb-2 max-h-[5.5em] flex-1 resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none"
-                value={prompt}
-                onChange={handleChange}
-                onPaste={handlePaste}
-                onKeyDown={handleKeyDown}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-              />
+              <div className="relative flex-1">
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  maxLength={1000}
+                  placeholder="Write what you want to change in your image and click generate..."
+                  className="promptbox-scrollbar text-md mb-2 max-h-[5.5em] w-full resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none"
+                  value={prompt}
+                  onChange={handleChange}
+                  onPaste={handlePaste}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                />
+                <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length >= 1000 ? "text-red-500" : "text-white/40"}`}>
+                  {prompt.length} / 1000
+                </span>
+              </div>
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">

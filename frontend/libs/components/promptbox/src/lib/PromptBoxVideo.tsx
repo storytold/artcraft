@@ -441,16 +441,16 @@ export const PromptBoxVideo = ({
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
     const next =
-      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
+      (value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd)).slice(0, 1000);
     setPrompt(next);
     requestAnimationFrame(() => {
-      const pos = selectionStart + pastedText.length;
+      const pos = Math.min(selectionStart + pastedText.length, next.length);
       textareaRef.current?.setSelectionRange(pos, pos);
     });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
+    const value = e.target.value.slice(0, 1000);
     const cursorPos = e.target.selectionStart;
     setPrompt(value);
 
@@ -849,7 +849,7 @@ export const PromptBoxVideo = ({
               </Button>
             </Tooltip> */}
 
-            <div className="relative flex-1">
+            <div className="promptbox-resize-wrap relative flex-1">
               {isReferenceMode && hasAnyRefs && (
                 <div
                   ref={highlightRef}
@@ -862,13 +862,14 @@ export const PromptBoxVideo = ({
               <textarea
                 ref={textareaRef}
                 rows={1}
+                maxLength={1000}
                 placeholder={
                   isReferenceMode
                     ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                     : "Describe what you want to happen in the video..."
                 }
                 className={twMerge(
-                  "text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 placeholder-base-fg/60 focus:outline-none",
+                  "promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 placeholder-base-fg/60 focus:outline-none",
                   isReferenceMode && hasAnyRefs
                     ? "text-transparent caret-base-fg"
                     : "text-base-fg",
@@ -881,6 +882,9 @@ export const PromptBoxVideo = ({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
               />
+              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length >= 1000 ? "text-red-500" : "text-base-fg/40"}`}>
+                {prompt.length} / 1000
+              </span>
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
