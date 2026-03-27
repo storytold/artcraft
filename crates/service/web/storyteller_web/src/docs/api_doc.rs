@@ -280,6 +280,14 @@ use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
 // Handler modules with locally-defined types
 use crate::http_server::endpoints::moderation::info::moderator_token_info_handler::*;
 use artcraft_api_defs::moderation::alerts::moderation_send_alert::*;
+use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::*;
+use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::*;
+use artcraft_api_defs::omni_gen::cost_response::omni_gen_image_cost_response::*;
+use artcraft_api_defs::omni_gen::cost_response::omni_gen_video_cost_response::*;
+use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::*;
+use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::*;
+use artcraft_api_defs::omni_gen::models::omni_gen_image_models::*;
+use artcraft_api_defs::omni_gen::models::omni_gen_video_models::*;
 use artcraft_api_defs::moderation::user::list_subscribing_users_by_signup_date::*;
 use artcraft_api_defs::moderation::user::list_users_by_signup_date::*;
 use artcraft_api_defs::moderation::user::user_lookup::*;
@@ -468,6 +476,13 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::enqueue_infer_seed_vc_handler,
     // TTS
     crate::http_server::endpoints::tts::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler,
+    // Omni Gen
+    crate::http_server::endpoints::omni_gen::cost::image::omni_gen_image_cost_handler::omni_gen_image_cost_handler,
+    crate::http_server::endpoints::omni_gen::cost::video::omni_gen_video_cost_handler::omni_gen_video_cost_handler,
+    crate::http_server::endpoints::omni_gen::generate::image::omni_gen_image_generate_handler::omni_gen_image_generate_handler,
+    crate::http_server::endpoints::omni_gen::generate::video::omni_gen_video_generate_handler::omni_gen_video_generate_handler,
+    crate::http_server::endpoints::omni_gen::models::image::omni_gen_image_models_handler::omni_gen_image_models_handler,
+    crate::http_server::endpoints::omni_gen::models::video::omni_gen_video_models_handler::omni_gen_video_models_handler,
     // Moderation
     crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler,
     crate::http_server::endpoints::moderation::info::moderator_token_info_handler::moderator_get_token_info_handler,
@@ -666,6 +681,16 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     EditUserFeatureFlagsRequest,
     ModerationSendAlertRequest,
     ModerationSendAlertResponse,
+    OmniGenImageCostAndGenerateRequest,
+    OmniGenImageCostResponse,
+    OmniGenImageGenerateResponse,
+    OmniGenImageModelsProvider,
+    OmniGenImageModelsResponse,
+    OmniGenVideoCostAndGenerateRequest,
+    OmniGenVideoCostResponse,
+    OmniGenVideoGenerateResponse,
+    OmniGenVideoModelsProvider,
+    OmniGenVideoModelsResponse,
     ModeratorListSubscribingUsersBySignupDateRequest,
     ModeratorListSubscribingUsersBySignupDateResponse,
     ModeratorListSubscribingUsersBySignupDateEntry,
