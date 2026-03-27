@@ -1,14 +1,9 @@
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import ImageStyleSelector from "./ImageStyleSelector";
-import { PromptEditorProps, ImageStyle } from "./types";
+import { ImageStyle } from "./types";
 import { PromptBox2D, PromptBox2DProps } from "@storyteller/ui-promptbox";
-import { uploadImage } from "../../../components/reusable/UploadModalMedia/uploadImage";
-import { EncodeImageBitmapToBase64 } from "../utilities/EncodeImageBitmapToBase64";
-import { JobProvider, useJobContext } from "../JobContext";
-
-// Set this value on when enqueue is pressed nasty global variable.
-import { getCanvasRenderBitmap } from "../../../signals/canvasRenderBitmap";
+import { JobProvider } from "../JobContext";
 
 const PromptEditor: React.FC<PromptBox2DProps> = ({
   uploadImage,

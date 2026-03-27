@@ -21,14 +21,14 @@ import Konva from "konva";
 import { LineNode, SceneState, useSceneStore } from "./stores/SceneState";
 import { Node } from "./Node";
 import { useStageSnapshot } from "./hooks/useUpdateSnapshot";
-import "./App.css";
+import "./pagedraw.css";
 import SplitPane from "./components/ui/SplitPane";
 import { useRightPanelLayoutManagement } from "./hooks/useRightPanelLayoutManagement";
 import { useStageCentering } from "./hooks/useCenteredStage";
 import { useGlobalMouseUp } from "./hooks/useGlobalMouseUp";
-import { loadImageFromUrl } from "~/Helpers/ImageHelpers";
+import { loadImageFromUrl } from "./utilities/imageHelpers";
 import { checkerboard } from "@storyteller/common";
-import { DragState } from "../PageEdit/EditPaintSurface";
+import { DragState } from "./types";
 
 export type MiraiProps = {
   drawNodes: (Node | LineNode)[];

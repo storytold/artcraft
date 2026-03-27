@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useSceneStore } from "../PageDraw/stores/SceneState";
+import { useSceneStore } from "@storyteller/ui-pagedraw";
 
 export type TabId =
   | "2D"

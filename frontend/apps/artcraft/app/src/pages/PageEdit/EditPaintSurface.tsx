@@ -14,12 +14,7 @@ import Konva from "konva"; // Import Konva namespace for types
 // https://github.com/SaladTechnologies/comfyui-api
 
 import { ActiveEditTool, useEditStore } from "./stores/EditState";
-import SplitPane from "../PageDraw/components/ui/SplitPane";
-import { useStageCentering } from "../PageDraw/hooks/useCenteredStage";
-import { useGlobalMouseUp } from "../PageDraw/hooks/useGlobalMouseUp";
-import { useRightPanelLayoutManagement } from "../PageDraw/hooks/useRightPanelLayoutManagement";
-import { LineNode } from "../PageDraw/stores/SceneState";
-import { Node } from "../PageDraw/Node";
+import { SplitPane, useStageCentering, useGlobalMouseUp, useRightPanelLayoutManagement, type LineNode, Node } from "@storyteller/ui-pagedraw";
 import { checkerboard } from "@storyteller/common";
 import { loadImageFromUrl } from "~/Helpers/ImageHelpers";
 import { Vector2d } from "konva/lib/types";

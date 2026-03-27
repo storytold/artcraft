@@ -1,6 +1,6 @@
 import { Vector2d } from "konva/lib/types";
 import { useEffect } from "react";
-import { DragState } from "~/pages/PageEdit/EditPaintSurface";
+import { DragState } from "../types";
 // This piece of code ensures that when you are selecting or dragging and go off the stage,
 // it releases the controls mouse drag.
 export const useGlobalMouseUp = (

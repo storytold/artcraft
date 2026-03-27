@@ -20,7 +20,7 @@ import {
   faTriangle,
   faDroplet,
 } from "@fortawesome/pro-regular-svg-icons";
-import "../../App.css";
+import "../../pagedraw.css";
 import { HsvaColorPicker, HsvaColor } from "react-colorful";
 import { hsvaToHex } from "@uiw/color-convert";
 import SliderWithIndicator from "./SliderWithIndicator";

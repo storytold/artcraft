@@ -59,7 +59,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { APP_DESCRIPTORS } from "~/config/appMenu";
-import { useSceneStore } from "~/pages/PageDraw/stores/SceneState";
+import { useSceneStore } from "@storyteller/ui-pagedraw";
 import {
   is3DEditorInitialized,
   is3DSceneLoaded,

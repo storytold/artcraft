@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { Node, NodeType } from "../Node";
-import { EnqueueImageBgRemoval } from "libs/tauri-api/src/lib/enqueue/EnqueueImageBgRemovalCommand";
-import { ImageBundle } from "~/pages/PageEdit/HistoryStack";
-import { BaseSelectorImage } from "~/pages/PageEdit/BaseImageSelector";
+import { ImageBundle, BaseSelectorImage } from "../types";
 import { Model3DParams } from "../utilities/render3DModel";
 
 // LineNode type — ordering in PageDraw is by position in drawNodes array (zIndex ignored there)
@@ -273,15 +271,21 @@ export interface SceneState {
   bringForward: (nodeIds: string[]) => void;
   sendBackward: (nodeIds: string[]) => void;
 
-  // Start background removal (enqueues task with Tauri)
-  beginRemoveBackground: (nodeIds: string[]) => Promise<void>;
+  // Start background removal — returns {base64, nodeId} for the caller to enqueue via adapter
+  beginRemoveBackground: (nodeIds: string[]) => Promise<{ base64: string; nodeId: string } | null>;
 
-  // Finish background removal (handoff back from a Tauri-sent event)
+  // Finish background removal (handoff back from the platform event)
   finishRemoveBackground: (
     nodeId: string,
     mediaToken: string,
     imageCdnUrl: string,
   ) => Promise<void>;
+
+  // Pending AI generation placeholders (shown in HistoryStack)
+  pendingGenerations: { id: string; count: number }[];
+  addPendingGeneration: (id: string, count: number) => void;
+  resolvePendingGeneration: (id: string) => void;
+  clearPendingGenerations: () => void;
 
   toggleLock: (nodeIds: string[]) => void;
 
@@ -338,6 +342,9 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
 
   // History stack state
   historyImageBundles: [],
+
+  // Pending AI generations
+  pendingGenerations: [],
 
   aspectRatioType: AspectRatioType.NONE,
 
@@ -876,7 +883,7 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   RESET: () => {
-    set(store.getInitialState());
+    set({ ...store.getInitialState(), pendingGenerations: [] });
   },
 
   // Clipboard actions
@@ -1268,17 +1275,14 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
     ) as Node | undefined;
 
     if (!firstNode || !firstNode.imageFile) {
-      return;
+      return null;
     }
     try {
       const base64Image = await convertFileToBase64(firstNode.imageFile);
-      const _response = await EnqueueImageBgRemoval({
-        base64_image: base64Image,
-        frontend_caller: "canvas",
-        frontend_subscriber_id: firstNode.id,
-      });
+      return { base64: base64Image, nodeId: firstNode.id };
     } catch (error) {
-      console.error("Error starting background removal:", error);
+      console.error("Error preparing background removal:", error);
+      return null;
     }
   },
 
@@ -1477,5 +1481,21 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       console.log("Updated history image bundles:", updatedBundles);
       return { historyImageBundles: updatedBundles };
     });
+  },
+
+  addPendingGeneration: (id: string, count: number) => {
+    set((state) => ({
+      pendingGenerations: [...state.pendingGenerations, { id, count }],
+    }));
+  },
+
+  resolvePendingGeneration: (id: string) => {
+    set((state) => ({
+      pendingGenerations: state.pendingGenerations.filter((p) => p.id !== id),
+    }));
+  },
+
+  clearPendingGenerations: () => {
+    set({ pendingGenerations: [] });
   },
 }));

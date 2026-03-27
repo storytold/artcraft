@@ -10,10 +10,7 @@ import {
 } from "@storyteller/tauri-api";
 import { PromptsApi } from "@storyteller/api";
 import { RefImage, usePromptEditStore } from "@storyteller/ui-promptbox";
-import { ContextMenuContainer } from "../PageDraw/components/ui/ContextMenu";
-import { useCopyPasteHotkeys } from "../PageDraw/hooks/useCopyPasteHotkeys";
-import { useDeleteHotkeys } from "../PageDraw/hooks/useDeleteHotkeys";
-import { useUndoRedoHotkeys } from "../PageDraw/hooks/useUndoRedoHotkeys";
+import { ContextMenuContainer, useCopyPasteHotkeys, useDeleteHotkeys, useUndoRedoHotkeys } from "@storyteller/ui-pagedraw";
 import PromptEditor from "./PromptEditor/PromptEditor";
 import { ActiveEditTool, useEditStore } from "./stores/EditState";
 import { EditPaintSurface } from "./EditPaintSurface";

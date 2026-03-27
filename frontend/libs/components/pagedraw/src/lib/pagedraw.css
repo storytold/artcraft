@@ -1,0 +1,35 @@
+/* PageDraw component styles — imported by PageDraw.tsx and PaintSurface.tsx */
+
+.pegboard-bg {
+  inset: 0;
+  z-index: 0;
+  background-color: #1b1b1b;
+  background-size: 50px 50px;
+  background-position:
+    0 0,
+    15px 15px;
+}
+
+/* react-colorful overrides for the brush color picker in SideToolbar */
+.brush-picker .react-colorful {
+  border: 1px solid rgb(255, 255, 255);
+  margin-bottom: 16px;
+}
+
+.brush-picker .react-colorful__saturation {
+  border: 1px solid rgb(255, 255, 255);
+  border-radius: 15px;
+  margin-bottom: 12px;
+}
+
+.brush-picker .react-colorful__hue {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  margin-bottom: 12px;
+}
+
+.brush-picker .react-colorful__alpha {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  margin-bottom: 12px;
+}
