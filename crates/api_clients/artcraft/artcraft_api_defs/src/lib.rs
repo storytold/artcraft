@@ -5,6 +5,7 @@ pub mod generate;
 pub mod jobs;
 pub mod media_file;
 pub mod moderation;
+pub mod omni_gen;
 pub mod prompts;
 pub mod stripe_artcraft;
 pub mod subscriptions;
