@@ -27,6 +27,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: false,
     maxImagePromptCount: 6,
     progressBarTime: 10000,
+    maxPromptLength: 8000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
     aspectRatios: [
@@ -54,6 +55,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: false,
     maxImagePromptCount: 6,
     progressBarTime: 45000,
+    maxPromptLength: 6000,
     canChangeAspectRatio: true,
     // TODO: Rust client doesn't support aspect ratios for MidJourney yet.
   }),
@@ -71,6 +73,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 35000,
+    maxPromptLength: 4000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
     aspectRatios: [
@@ -99,6 +102,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 10000,
+    maxPromptLength: 4000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
     aspectRatios: [
@@ -123,6 +127,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 10000,
+    maxPromptLength: 4000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
     aspectRatios: [
@@ -148,6 +153,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 10000,
+    maxPromptLength: 4000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
     aspectRatios: [
@@ -176,6 +182,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canTextToImage: true,
     tags: [ModelTag.InstructiveEdit],
     progressBarTime: 25000,
+    maxPromptLength: 2500,
     // canChangeResolution: true,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
@@ -210,6 +217,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canTextToImage: true,
     tags: [ModelTag.InstructiveEdit],
     progressBarTime: 25000,
+    maxPromptLength: 2500,
     canChangeResolution: true,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
@@ -249,6 +257,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canTextToImage: true,
     tags: [ModelTag.InstructiveEdit],
     progressBarTime: 25000,
+    maxPromptLength: 2500,
     canChangeResolution: true,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
@@ -278,7 +287,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     category: "image",
     creator: ModelCreator.OpenAi,
     providers: [
-      GenerationProvider.Artcraft, 
+      GenerationProvider.Artcraft,
       GenerationProvider.Sora
     ],
     selectorName: "GPT Image 1 (GPT-4o)",
@@ -291,6 +300,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 60000,
+    maxPromptLength: 1500,
     canChangeAspectRatio: true,
   }),
   new ImageModel({
@@ -309,6 +319,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 60000,
+    maxPromptLength: 1500,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.Square,
     aspectRatios: [
@@ -333,6 +344,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 60000,
+    maxPromptLength: 4000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.SquareHd,
     aspectRatios: [
@@ -362,6 +374,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 60000,
+    maxPromptLength: 4000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.SquareHd,
     aspectRatios: [
@@ -391,6 +404,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     canUseImagePrompt: true,
     maxImagePromptCount: 6,
     progressBarTime: 60000,
+    maxPromptLength: 4000,
     canChangeAspectRatio: true,
     defaultAspectRatio: CommonAspectRatio.SquareHd,
     aspectRatios: [
@@ -414,6 +428,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["30 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 1,
+    maxPromptLength: 800,
     canTextToImage: false,
     canEditImages: false,
     canEditAngles: true,
@@ -442,6 +457,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["30 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 1,
+    maxPromptLength: 4000,
     canTextToImage: false,
     canEditImages: false,
     canEditAngles: true,
@@ -470,6 +486,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["20 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
+    maxPromptLength: 4000,
     canEditImages: true,
     canTextToImage: false,
     tags: [ModelTag.InstructiveEdit],
@@ -486,6 +503,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorDescription: "Fast inpainting",
     selectorBadges: ["30 sec."],
     maxGenerationCount: 1, // NB: Fal only allows one image for some reason!
+    maxPromptLength: 4000,
     defaultGenerationCount: 1, // NB: Fal only allows one image for some reason!
     canEditImages: true,
     usesInpaintingMask: true,
@@ -505,6 +523,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     selectorBadges: ["10 sec."],
     maxGenerationCount: 4,
     defaultGenerationCount: 4,
+    maxPromptLength: 4000,
     canEditImages: true,
     usesInpaintingMask: true,
     editingIsInpainting: true,

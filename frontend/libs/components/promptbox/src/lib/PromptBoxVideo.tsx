@@ -458,7 +458,7 @@ export const PromptBoxVideo = ({
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
     const next =
-      (value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd)).slice(0, 1000);
+      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
     setPrompt(next);
     requestAnimationFrame(() => {
       const pos = Math.min(selectionStart + pastedText.length, next.length);
@@ -467,7 +467,7 @@ export const PromptBoxVideo = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value.slice(0, 1000);
+    const value = e.target.value;
     const cursorPos = e.target.selectionStart;
     setPrompt(value);
 
@@ -494,10 +494,16 @@ export const PromptBoxVideo = ({
     mentionAnchorRef.current = null;
   };
 
+  const maxLen = selectedModel?.maxPromptLength ?? 1000;
+
   const handleEnqueue = async () => {
     if (!prompt.trim()) {
       console.warn("Cannot generate video: prompt is empty");
       toast.error("Please enter a prompt to generate video");
+      return;
+    }
+    if (prompt.length > maxLen) {
+      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
     }
 
@@ -879,7 +885,6 @@ export const PromptBoxVideo = ({
               <textarea
                 ref={textareaRef}
                 rows={1}
-                maxLength={1000}
                 placeholder={
                   isReferenceMode
                     ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
@@ -899,8 +904,8 @@ export const PromptBoxVideo = ({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
               />
-              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length >= 1000 ? "text-red-500" : "text-base-fg/40"}`}>
-                {prompt.length} / 1000
+              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
+                {prompt.length} / {maxLen}
               </span>
             </div>
           </div>

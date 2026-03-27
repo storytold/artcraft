@@ -94,6 +94,7 @@ export class ImageModel extends Model {
     resolutions?: CommonResolution[];
     defaultAspectRatio?: CommonAspectRatio;
     defaultResolution?: CommonResolution;
+    maxPromptLength?: number;
   }) {
     if (args.maxGenerationCount < 1) {
       throw new Error("maxGenerationCount must be at least 1");

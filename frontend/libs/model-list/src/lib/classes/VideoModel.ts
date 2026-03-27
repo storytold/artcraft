@@ -94,6 +94,7 @@ export class VideoModel extends Model {
     defaultResolution?: string;
     supportsSystemPrompt?: boolean;
     supportsCommonAspectRatio?: boolean;
+    maxPromptLength?: number;
   }) {
     super(args);
     this.startFrame = args.startFrame;

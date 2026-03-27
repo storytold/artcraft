@@ -18,6 +18,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     endFrame: false,
     requiresImage: true,
     progressBarTime: 50000,
+    maxPromptLength: 4096,
     sizeOptions: [
       {
         tauriValue: "landscape",
@@ -49,6 +50,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     endFrame: true,
     requiresImage: true,
     progressBarTime: 300000,
+    maxPromptLength: 2500,
     generateWithSound: false,
   }),
   new VideoModel({
@@ -64,6 +66,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     endFrame: true,
     requiresImage: true,
     progressBarTime: 300000,
+    maxPromptLength: 2500,
     generateWithSound: false,
   }),
   new VideoModel({
@@ -79,6 +82,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     endFrame: false,
     requiresImage: true,
     progressBarTime: 300000,
+    maxPromptLength: 2500,
     generateWithSound: false,
   }),
   new VideoModel({
@@ -94,6 +98,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     endFrame: true,
     requiresImage: false,
     progressBarTime: 300000,
+    maxPromptLength: 2500,
     generateWithSound: false,
   }),
   new VideoModel({
@@ -109,6 +114,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     endFrame: false,
     requiresImage: true,
     progressBarTime: 300000,
+    maxPromptLength: 2500,
     generateWithSound: false,
   }),
   new VideoModel({
@@ -144,6 +150,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     durationOptions: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     defaultDuration: 5,
     progressBarTime: 300000,
+    maxPromptLength: 2500,
     generateWithSound: true,
   }),
   new VideoModel({
@@ -179,6 +186,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     durationOptions: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     defaultDuration: 5,
     progressBarTime: 300000,
+    maxPromptLength: 2500,
     generateWithSound: true,
   }),
   new VideoModel({
@@ -194,6 +202,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     endFrame: false,
     requiresImage: true,
     progressBarTime: 100000,
+    maxPromptLength: 3000,
   }),
   new VideoModel({
     id: "seedance_1p5_pro",
@@ -246,6 +255,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     supportsSystemPrompt: false,
     generateWithSound: true,
     progressBarTime: 180000,
+    maxPromptLength: 3000,
   }),
   new VideoModel({
     id: "seedance_2p0",
@@ -299,6 +309,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     defaultResolution: "720p",
     supportsSystemPrompt: false,
     progressBarTime: 10800000, //3 hours for now
+    maxPromptLength: 3000,
   }),
   new VideoModel({
     id: "sora_2",
@@ -326,6 +337,7 @@ export const VIDEO_MODELS: VideoModel[] = [
       },
     ],
     progressBarTime: 100000,
+    maxPromptLength: 2000,
   }),
   new VideoModel({
     id: "sora_2_pro",
@@ -352,6 +364,7 @@ export const VIDEO_MODELS: VideoModel[] = [
       },
     ],
     progressBarTime: 100000,
+    maxPromptLength: 2000,
   }),
   new VideoModel({
     id: "veo_2",
@@ -367,6 +380,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     requiresImage: true,
     generateWithSound: false,
     progressBarTime: 100000,
+    maxPromptLength: 5000,
   }),
   new VideoModel({
     id: "veo_3",
@@ -382,6 +396,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     requiresImage: true,
     generateWithSound: true,
     progressBarTime: 100000,
+    maxPromptLength: 5000,
   }),
   new VideoModel({
     id: "veo_3_fast",
@@ -397,6 +412,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     requiresImage: true,
     generateWithSound: true,
     progressBarTime: 100000,
+    maxPromptLength: 5000,
   }),
   new VideoModel({
     id: "veo_3p1",
@@ -412,6 +428,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     requiresImage: true,
     generateWithSound: true,
     progressBarTime: 100000,
+    maxPromptLength: 5000,
   }),
   new VideoModel({
     id: "veo_3p1_fast",
@@ -427,6 +444,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     requiresImage: true,
     generateWithSound: true,
     progressBarTime: 100000,
+    maxPromptLength: 5000,
   }),
 ];
 

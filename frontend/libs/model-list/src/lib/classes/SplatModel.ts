@@ -23,6 +23,7 @@ export class SplatModel extends Model {
     tags?: ModelTag[];
     providers?: GenerationProvider[];
     progressBarTime?: number;
+    maxPromptLength?: number;
   }) {
     super(args);
   }

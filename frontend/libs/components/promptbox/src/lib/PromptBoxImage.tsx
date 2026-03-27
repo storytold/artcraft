@@ -239,7 +239,7 @@ export const PromptBoxImage = ({
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
     const next =
-      (value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd)).slice(0, 1000);
+      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
     setPrompt(next);
     requestAnimationFrame(() => {
       const pos = Math.min(selectionStart + pastedText.length, next.length);
@@ -248,12 +248,18 @@ export const PromptBoxImage = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setPrompt(e.target.value.slice(0, 1000));
+    setPrompt(e.target.value);
   };
+
+  const maxLen = selectedModel?.maxPromptLength ?? 1000;
 
   const handleEnqueue = async () => {
     if (!prompt.trim()) {
       console.warn("Cannot generate image: prompt is empty");
+      return;
+    }
+    if (prompt.length > maxLen) {
+      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
     }
 
@@ -472,7 +478,6 @@ export const PromptBoxImage = ({
               <textarea
                 ref={textareaRef}
                 rows={1}
-                maxLength={1000}
                 placeholder="Describe what you want in the image..."
                 className="promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
                 value={prompt}
@@ -482,8 +487,8 @@ export const PromptBoxImage = ({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
               />
-              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length >= 1000 ? "text-red-500" : "text-base-fg/40"}`}>
-                {prompt.length} / 1000
+              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
+                {prompt.length} / {maxLen}
               </span>
             </div>
           </div>

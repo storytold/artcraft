@@ -248,7 +248,7 @@ export const PromptBox3D = ({
     const target = e.currentTarget;
     const { selectionStart, selectionEnd, value } = target;
     const next =
-      (value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd)).slice(0, 1000);
+      value.slice(0, selectionStart) + pastedText + value.slice(selectionEnd);
     setPrompt(next);
     requestAnimationFrame(() => {
       const pos = Math.min(selectionStart + pastedText.length, next.length);
@@ -258,7 +258,7 @@ export const PromptBox3D = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
-    setPrompt(e.target.value.slice(0, 1000));
+    setPrompt(e.target.value);
   };
 
   const handleError = (errorMessage: string) => {
@@ -266,7 +266,13 @@ export const PromptBox3D = ({
     setIsModalOpen(true);
   };
 
+  const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
+
   const handleEnqueue = async () => {
+    if (prompt.length > maxLen) {
+      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
+      return;
+    }
     gtagEvent("enqueue_3d");
     const isDesktop = IsDesktopApp();
     console.log("Is Desktop?", isDesktop);
@@ -607,13 +613,12 @@ export const PromptBox3D = ({
               </Tooltip>
             )}
 
-            <div className="relative flex-1">
+            <div className="promptbox-resize-wrap relative flex-1">
               <textarea
                 ref={textareaRef}
                 rows={1}
-                maxLength={1000}
                 placeholder="Describe your image..."
-                className={`promptbox-scrollbar text-md mb-2 min-h-[36px] w-full resize-none overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
+                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
@@ -627,8 +632,8 @@ export const PromptBox3D = ({
                   isPromptBoxFocused.value = false;
                 }}
               />
-              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length >= 1000 ? "text-red-500" : "text-base-fg/40"}`}>
-                {prompt.length} / 1000
+              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
+                {prompt.length} / {maxLen}
               </span>
             </div>
           </div>

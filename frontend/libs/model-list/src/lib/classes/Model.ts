@@ -50,6 +50,9 @@ export class Model {
   // Time in milliseconds for the fake progress bar to reach 100% (UI-only)
   readonly progressBarTime: number;
 
+  // Maximum character length for the prompt text input
+  readonly maxPromptLength: number;
+
   protected constructor(args: {
     id: string;
     tauriId: string;
@@ -63,6 +66,7 @@ export class Model {
     providers?: GenerationProvider[];
     preferredProvidersByPage?: Partial<Record<string, string[]>>;
     progressBarTime?: number;
+    maxPromptLength?: number;
   }) {
     this.id = args.id;
     this.tauriId = args.tauriId;
@@ -76,6 +80,7 @@ export class Model {
     this.providers = args.providers;
     this.preferredProvidersByPage = args.preferredProvidersByPage;
     this.progressBarTime = args.progressBarTime ?? 20000;
+    this.maxPromptLength = args.maxPromptLength ?? 1000;
   }
 
   getProviders(): GenerationProvider[] {
