@@ -2,7 +2,7 @@ use serde_derive::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
 /// Query string parameters for the image models endpoint.
-#[derive(Deserialize, IntoParams)]
+#[derive(Deserialize, IntoParams, ToSchema)]
 pub struct OmniGenImageModelsQuery {
   /// Which provider's models to list. Defaults to "artcraft" if absent.
   pub provider: Option<OmniGenImageModelsProvider>,
