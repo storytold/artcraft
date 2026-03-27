@@ -6,6 +6,7 @@ mod generate_routes;
 mod job_routes;
 mod media_files_routes;
 mod moderation_routes;
+mod omni_gen_routes;
 mod prompts_routes;
 mod stripe_artcraft_routes;
 mod subscription_routes;

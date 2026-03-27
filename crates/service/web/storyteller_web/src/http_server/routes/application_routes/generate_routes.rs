@@ -46,9 +46,6 @@ use crate::http_server::endpoints::generate::video::multi_function::sora_2_multi
 use crate::http_server::endpoints::generate::video::multi_function::sora_2_pro_multi_function_video_gen_handler::sora_2_pro_multi_function_video_gen_handler;
 use crate::http_server::endpoints::generate::video::multi_function::veo_3p1_fast_multi_function_video_gen_handler::veo_3p1_fast_multi_function_video_gen_handler;
 use crate::http_server::endpoints::generate::video::multi_function::veo_3p1_multi_function_video_gen_handler::veo_3p1_multi_function_video_gen_handler;
-use crate::http_server::endpoints::generate::omni_gen::cost::video::omni_gen_video_cost_handler::omni_gen_video_cost_handler;
-use crate::http_server::endpoints::generate::omni_gen::generate::video::omni_gen_video_generate_handler::omni_gen_video_generate_handler;
-use crate::http_server::endpoints::generate::omni_gen::models::video::omni_gen_video_models_handler::omni_gen_video_models_handler;
 use actix_http::body::MessageBody;
 use actix_service::ServiceFactory;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
@@ -277,26 +274,6 @@ where
           )
           .service(web::resource("/worldlabs_marble_0p1_plus")
               .route(web::post().to(generate_worldlabs_marble_0p1_plus_splat_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-          )
-      )
-  )
-  .service(web::scope("/v1/omni_gen")
-      .service(web::scope("/cost")
-          .service(web::resource("/video")
-              .route(web::post().to(omni_gen_video_cost_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-          )
-      )
-      .service(web::scope("/generate")
-          .service(web::resource("/video")
-              .route(web::post().to(omni_gen_video_generate_handler))
-              .route(web::head().to(|| HttpResponse::Ok()))
-          )
-      )
-      .service(web::scope("/models")
-          .service(web::resource("/video")
-              .route(web::get().to(omni_gen_video_models_handler))
               .route(web::head().to(|| HttpResponse::Ok()))
           )
       )
