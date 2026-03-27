@@ -1,1 +1,2 @@
+pub mod omni_gen_image_cost_and_generate_request;
 pub mod omni_gen_video_cost_and_generate_request;
