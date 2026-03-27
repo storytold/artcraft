@@ -27,7 +27,7 @@ import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack } from "./HistoryStack";
-import { type BaseSelectorImage, type ImageBundle } from "./types";
+import { type BaseSelectorImage } from "./types";
 import { normalizeCanvas } from "./utilities/canvasHelpers";
 import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
