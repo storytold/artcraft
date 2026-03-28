@@ -27,12 +27,7 @@ pub async fn omni_gen_image_models_handler(
   _query: Query<OmniGenImageModelsQuery>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageModelsResponse>, CommonWebError> {
-  info!("Handling request for Omni Gen image models");
-
   let providers = (*OMNI_GEN_IMAGE_MODELS).clone();
-
-  info!("Cloning providers...");
-
   Ok(Json(OmniGenImageModelsResponse {
     success: true,
     providers,
