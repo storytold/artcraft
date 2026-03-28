@@ -46,6 +46,7 @@ pub struct OmniGenImageProviderModels {
 pub struct OmniGenImageModelDetails {
   pub model: CommonImageModel,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub full_name: Option<String>,
 
   // TODO: model_creator: ModelCreator,
@@ -56,28 +57,53 @@ pub struct OmniGenImageModelDetails {
   // TODO: sub-features like inpainting masking,
   // TODO: angle edit models
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub text_prompt_supported: Option<bool>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub text_prompt_max_length: Option<u16>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub negative_text_prompt_supported: Option<bool>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub negative_text_prompt_max_length: Option<u16>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub image_refs_supported: Option<bool>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub image_refs_max: Option<u16>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub has_fixed_editing_aspect_ratio: Option<bool>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub aspect_ratio_options: Option<Vec<CommonAspectRatio>>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub aspect_ratio_default: Option<CommonAspectRatio>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution_options: Option<Vec<CommonResolution>>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution_default: Option<CommonResolution>,
 
   pub quality_options: Option<Vec<CommonQuality>>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub default_quality: Option<CommonQuality>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub batch_size_min: Option<u16>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub batch_size_max: Option<u16>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub batch_size_options: Option<Vec<u16>>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub batch_size_default: Option<u16>,
 }
