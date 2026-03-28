@@ -85,6 +85,9 @@ pub struct OmniGenImageModelDetails {
   pub aspect_ratio_default: Option<CommonAspectRatio>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
+  pub aspect_ratio_default_when_editing: Option<CommonAspectRatio>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution_options: Option<Vec<CommonResolution>>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -106,4 +109,13 @@ pub struct OmniGenImageModelDetails {
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub batch_size_default: Option<u16>,
+}
+
+impl Default for OmniGenImageModelDetails {
+  fn default() -> Self {
+    Self {
+      model: CommonImageModel::NanaBananaPro,
+      ..Default::default()
+    }
+  }
 }

@@ -7,3 +7,4 @@ pub mod static_model;
 pub mod stripe_artcraft_metadata_keys;
 pub mod supported_languages_for_models;
 pub mod artcraft_products;
+mod omni_gen;
