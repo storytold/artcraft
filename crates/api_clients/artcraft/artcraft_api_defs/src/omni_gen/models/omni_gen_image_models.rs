@@ -34,13 +34,22 @@ impl Default for OmniGenImageModelsProvider {
 #[derive(Serialize, ToSchema, Clone)]
 pub struct OmniGenImageModelsResponse {
   pub success: bool,
-  pub providers: Vec<OmniGenImageProviderModels>,
+  pub models: Vec<OmniGenImageModelDetails>,
+  pub providers: Vec<OmniGenImageModelProviderDetails>,
 }
 
 #[derive(Serialize, ToSchema, Clone)]
-pub struct OmniGenImageProviderModels {
+pub struct OmniGenImageModelProviderDetails {
   pub provider: GenerationProvider,
-  pub models: Vec<OmniGenImageModelDetails>,
+  pub models: Vec<OmniGenImageProviderModelDetails>,
+}
+
+#[derive(Serialize, ToSchema, Clone)]
+pub struct OmniGenImageProviderModelDetails {
+  pub model: CommonImageModel,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub overrides: Option<OmniGenImageModelDetails>,
 }
 
 #[derive(Serialize, ToSchema, Clone)]
