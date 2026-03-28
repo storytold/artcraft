@@ -5,11 +5,11 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
-use log::info;
 use artcraft_api_defs::omni_gen::models::omni_gen_image_models::{
   OmniGenImageModelsQuery,
   OmniGenImageModelsResponse,
 };
+use log::info;
 
 /// List available image models.
 #[utoipa::path(

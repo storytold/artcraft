@@ -148,7 +148,37 @@ impl Default for OmniGenVideoModelDetails {
   fn default() -> Self {
     Self {
       model: CommonVideoModel::Seedance2p0,
-      ..Default::default()
+      full_name: None,
+      text_prompt_supported: None,
+      text_prompt_max_length: None,
+      negative_text_prompt_supported: None,
+      negative_text_prompt_max_length: None,
+      starting_keyframe_supported: None,
+      starting_keyframe_required: None,
+      ending_keyframe_supported: None,
+      image_references_supported: None,
+      image_references_max: None,
+      video_references_supported: None,
+      video_references_max: None,
+      video_references_max_total_duration_seconds: None,
+      audio_references_supported: None,
+      audio_references_max: None,
+      audio_references_max_total_duration_seconds: None,
+      show_generate_with_sound_toggle: None,
+      aspect_ratio_options: None,
+      aspect_ratio_default: None,
+      resolution_options: None,
+      resolution_default: None,
+      quality_options: None,
+      default_quality: None,
+      duration_seconds_min: None,
+      duration_seconds_max: None,
+      duration_seconds_options: None,
+      duration_seconds_default: None,
+      batch_size_min: None,
+      batch_size_max: None,
+      batch_size_options: None,
+      batch_size_default: None,
     }
   }
 }

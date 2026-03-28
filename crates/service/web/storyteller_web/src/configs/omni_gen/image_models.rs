@@ -6,6 +6,10 @@ use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
 
 pub const OMNI_GEN_IMAGE_MODELS: Lazy<Vec<OmniGenImageProviderModels>> = Lazy::new(|| {
+  build_omni_gen_image_models()
+});
+
+pub fn build_omni_gen_image_models() -> Vec<OmniGenImageProviderModels> {
   let mut models = Vec::new();
 
   models.push(OmniGenImageProviderModels {
@@ -165,4 +169,4 @@ pub const OMNI_GEN_IMAGE_MODELS: Lazy<Vec<OmniGenImageProviderModels>> = Lazy::n
   });
 
   models
-});
+}
