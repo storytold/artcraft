@@ -50,26 +50,29 @@ pub struct OmniGenVideoModelDetails {
   pub full_name: Option<String>,
   // TODO: model_creator: ModelCreator,
 
-  pub supports_text_prompt: Option<bool>,
-  pub supports_negative_text_prompt: Option<bool>,
+  pub text_prompt_supported: Option<bool>,
+  pub text_prompt_max_length: Option<u16>,
+  
+  pub negative_text_prompt_supported: Option<bool>,
+  pub negative_text_prompt_max_length: Option<u16>,
 
-  pub supports_starting_keyframe: Option<bool>,
-  pub requires_starting_keyframe: Option<bool>,
+  pub starting_keyframe_supported: Option<bool>,
+  pub starting_keyframe_required: Option<bool>,
 
-  pub supports_ending_keyframe: Option<bool>,
+  pub ending_keyframe_supported: Option<bool>,
 
-  pub supports_image_references: Option<bool>,
-  pub max_image_references: Option<u16>,
+  pub image_references_supported: Option<bool>,
+  pub image_references_max: Option<u16>,
 
-  pub supports_video_references: Option<bool>,
-  pub max_video_references: Option<u16>,
-  pub max_video_reference_total_duration_seconds: Option<u16>,
+  pub video_references_supported: Option<bool>,
+  pub video_references_max: Option<u16>,
+  pub video_reference_max_total_duration_seconds: Option<u16>,
 
-  pub supports_audio_references: Option<bool>,
-  pub max_audio_references: Option<u16>,
-  pub max_audio_reference_total_duration_seconds: Option<u16>,
+  pub audio_references_supported: Option<bool>,
+  pub audio_references_max: Option<u16>,
+  pub audio_reference_max_total_duration_seconds: Option<u16>,
 
-  pub supports_generate_with_sound_toggle: Option<bool>,
+  pub show_generate_with_sound_toggle: Option<bool>,
 
   pub aspect_ratio_options: Option<Vec<CommonAspectRatio>>,
   pub aspect_ratio_default: Option<CommonAspectRatio>,
@@ -84,4 +87,9 @@ pub struct OmniGenVideoModelDetails {
   pub duration_seconds_max: Option<u16>,
   pub duration_seconds_options: Option<Vec<u16>>,
   pub duration_seconds_default: Option<u16>,
+  
+  pub batch_size_min: Option<u16>,
+  pub batch_size_max: Option<u16>,
+  pub batch_size_options: Option<Vec<u16>>,
+  pub batch_size_default: Option<u16>,
 }
