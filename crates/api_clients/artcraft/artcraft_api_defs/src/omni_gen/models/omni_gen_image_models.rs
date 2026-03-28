@@ -31,18 +31,19 @@ impl Default for OmniGenImageModelsProvider {
 
 /// Response body for the image models endpoint.
 /// TBD — fields will be added later.
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, ToSchema, Clone)]
 pub struct OmniGenImageModelsResponse {
   pub success: bool,
+  pub providers: Vec<OmniGenImageProviderModels>,
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, ToSchema, Clone)]
 pub struct OmniGenImageProviderModels {
   pub provider: GenerationProvider,
   pub models: Vec<OmniGenImageModelDetails>,
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, ToSchema, Clone)]
 pub struct OmniGenImageModelDetails {
   pub model: CommonImageModel,
 

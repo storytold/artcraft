@@ -31,19 +31,19 @@ impl Default for OmniGenVideoModelsProvider {
 
 /// Response body for the video models endpoint.
 /// TBD — fields will be added later.
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, ToSchema, Clone)]
 pub struct OmniGenVideoModelsResponse {
   pub success: bool,
-  pub providers: OmniGenVideoProviderModels,
+  pub providers: Vec<OmniGenVideoProviderModels>,
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, ToSchema, Clone)]
 pub struct OmniGenVideoProviderModels {
   pub provider: GenerationProvider,
   pub models: Vec<OmniGenVideoModelDetails>,
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, ToSchema, Clone)]
 pub struct OmniGenVideoModelDetails {
 
   pub model: CommonVideoModel,

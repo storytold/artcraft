@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
+use crate::configs::omni_gen::video_models::OMNI_GEN_VIDEO_MODELS;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
-
 use artcraft_api_defs::omni_gen::models::omni_gen_video_models::{
   OmniGenVideoModelsQuery,
   OmniGenVideoModelsResponse,
 };
-
-use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::state::server_state::ServerState;
 
 /// List available video models.
 #[utoipa::path(
@@ -27,5 +26,9 @@ pub async fn omni_gen_video_models_handler(
   _query: Query<OmniGenVideoModelsQuery>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenVideoModelsResponse>, CommonWebError> {
-  todo!()
+  let providers = (*OMNI_GEN_VIDEO_MODELS).clone();
+  Ok(Json(OmniGenVideoModelsResponse {
+    success: true,
+    providers,
+  }))
 }

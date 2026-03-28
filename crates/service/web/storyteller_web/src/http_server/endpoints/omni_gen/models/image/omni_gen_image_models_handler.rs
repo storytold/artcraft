@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
+use crate::configs::omni_gen::image_models::OMNI_GEN_IMAGE_MODELS;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
-
 use artcraft_api_defs::omni_gen::models::omni_gen_image_models::{
   OmniGenImageModelsQuery,
   OmniGenImageModelsResponse,
 };
-
-use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::state::server_state::ServerState;
 
 /// List available image models.
 #[utoipa::path(
@@ -27,5 +26,9 @@ pub async fn omni_gen_image_models_handler(
   _query: Query<OmniGenImageModelsQuery>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageModelsResponse>, CommonWebError> {
-  todo!()
+  let providers = (*OMNI_GEN_IMAGE_MODELS).clone();
+  Ok(Json(OmniGenImageModelsResponse {
+    success: true,
+    providers,
+  }))
 }

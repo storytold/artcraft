@@ -1,11 +1,11 @@
 use artcraft_api_defs::omni_gen::models::omni_gen_image_models::{OmniGenImageModelDetails, OmniGenImageProviderModels};
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_image_model::CommonImageModel;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
-use enums::common::generation::common_resolution::CommonResolution;
 
-pub const IMAGE_MODELS: Lazy<Vec<OmniGenImageProviderModels>> = Lazy::new(|| {
+pub const OMNI_GEN_IMAGE_MODELS: Lazy<Vec<OmniGenImageProviderModels>> = Lazy::new(|| {
   let mut models = Vec::new();
 
   models.push(OmniGenImageProviderModels {

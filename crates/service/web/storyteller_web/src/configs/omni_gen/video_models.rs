@@ -5,7 +5,7 @@ use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
 
-pub const VIDEO_MODELS: Lazy<Vec<OmniGenVideoProviderModels>> = Lazy::new(|| {
+pub const OMNI_GEN_VIDEO_MODELS: Lazy<Vec<OmniGenVideoProviderModels>> = Lazy::new(|| {
   let mut models = Vec::new();
 
   models.push(OmniGenVideoProviderModels {
