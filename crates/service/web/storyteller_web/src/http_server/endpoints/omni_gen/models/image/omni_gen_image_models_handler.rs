@@ -5,6 +5,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
+use log::info;
 use artcraft_api_defs::omni_gen::models::omni_gen_image_models::{
   OmniGenImageModelsQuery,
   OmniGenImageModelsResponse,
@@ -26,7 +27,12 @@ pub async fn omni_gen_image_models_handler(
   _query: Query<OmniGenImageModelsQuery>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageModelsResponse>, CommonWebError> {
+  info!("Handling request for Omni Gen image models");
+
   let providers = (*OMNI_GEN_IMAGE_MODELS).clone();
+
+  info!("Cloning providers...");
+
   Ok(Json(OmniGenImageModelsResponse {
     success: true,
     providers,
