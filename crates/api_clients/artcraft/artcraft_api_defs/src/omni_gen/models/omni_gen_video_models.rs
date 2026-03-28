@@ -87,7 +87,7 @@ pub struct OmniGenVideoModelDetails {
   pub video_references_max: Option<u16>,
   
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub video_reference_max_total_duration_seconds: Option<u16>,
+  pub video_references_max_total_duration_seconds: Option<u16>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub audio_references_supported: Option<bool>,
@@ -96,7 +96,7 @@ pub struct OmniGenVideoModelDetails {
   pub audio_references_max: Option<u16>,
   
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub audio_reference_max_total_duration_seconds: Option<u16>,
+  pub audio_references_max_total_duration_seconds: Option<u16>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub show_generate_with_sound_toggle: Option<bool>,
@@ -142,4 +142,13 @@ pub struct OmniGenVideoModelDetails {
   
   #[serde(skip_serializing_if = "Option::is_none")]
   pub batch_size_default: Option<u16>,
+}
+
+impl Default for OmniGenVideoModelDetails {
+  fn default() -> Self {
+    Self {
+      model: CommonVideoModel::Seedance2p0,
+      ..Default::default()
+    }
+  }
 }
