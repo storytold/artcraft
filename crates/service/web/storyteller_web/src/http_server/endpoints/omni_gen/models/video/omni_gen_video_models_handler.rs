@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::configs::omni_gen::video_models::OMNI_GEN_VIDEO_MODELS;
+use crate::configs::omni_gen::video_models::OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
@@ -26,9 +26,6 @@ pub async fn omni_gen_video_models_handler(
   _query: Query<OmniGenVideoModelsQuery>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenVideoModelsResponse>, CommonWebError> {
-  let providers = (*OMNI_GEN_VIDEO_MODELS).clone();
-  Ok(Json(OmniGenVideoModelsResponse {
-    success: true,
-    providers,
-  }))
+  let response = (*OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS).clone();
+  Ok(Json(response))
 }

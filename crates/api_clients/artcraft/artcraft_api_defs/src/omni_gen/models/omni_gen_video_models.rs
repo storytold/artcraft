@@ -34,13 +34,27 @@ impl Default for OmniGenVideoModelsProvider {
 #[derive(Serialize, ToSchema, Clone)]
 pub struct OmniGenVideoModelsResponse {
   pub success: bool,
-  pub providers: Vec<OmniGenVideoProviderModels>,
+  
+  /// A list of all models: details, features, and capabilities
+  pub models: Vec<OmniGenVideoModelDetails>,
+  
+  /// Provider-by-provider model offering and capability list, 
+  /// with possible capability overrides (future)
+  pub providers: Vec<OmniGenVideoModelProviderDetails>,
 }
 
 #[derive(Serialize, ToSchema, Clone)]
-pub struct OmniGenVideoProviderModels {
+pub struct OmniGenVideoModelProviderDetails {
   pub provider: GenerationProvider,
-  pub models: Vec<OmniGenVideoModelDetails>,
+  pub models: Vec<OmniGenVideoProviderModelDetails>,
+}
+
+#[derive(Serialize, ToSchema, Clone)]
+pub struct OmniGenVideoProviderModelDetails {
+  pub model: CommonVideoModel,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub overrides: Option<OmniGenVideoModelDetails>,
 }
 
 #[derive(Serialize, ToSchema, Clone)]
@@ -51,8 +65,6 @@ pub struct OmniGenVideoModelDetails {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub full_name: Option<String>,
   
-  // TODO: model_creator: ModelCreator,
-
   #[serde(skip_serializing_if = "Option::is_none")]
   pub text_prompt_supported: Option<bool>,
   
