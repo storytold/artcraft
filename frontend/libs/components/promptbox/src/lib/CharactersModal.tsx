@@ -1,0 +1,588 @@
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Modal } from "@storyteller/ui-modal";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faPlus,
+  faArrowLeft,
+  faUpload,
+  faTrash,
+  faUserGroup,
+  faSpinnerThird,
+  faImages,
+  faXmark,
+} from "@fortawesome/pro-solid-svg-icons";
+import { twMerge } from "tailwind-merge";
+import { CharactersApi, Character, downloadFileFromUrl } from "@storyteller/api";
+import { toast } from "@storyteller/ui-toaster";
+import { MediaUploadApi } from "@storyteller/api";
+import { v4 as uuidv4 } from "uuid";
+import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
+import { useCharactersStore } from "./promptStore";
+
+interface CharactersModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectCharacter?: (character: Character) => void;
+}
+
+type ModalView = "list" | "create";
+
+interface UploadedImage {
+  file: File;
+  url: string;
+  mediaToken?: string;
+}
+
+export const CharactersModal = ({
+  isOpen,
+  onClose,
+  onSelectCharacter,
+}: CharactersModalProps) => {
+  const [view, setView] = useState<ModalView>("list");
+
+  const handleClose = () => {
+    setView("list");
+    onClose();
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={view === "list" ? "Characters" : undefined}
+      width={520}
+      className="max-h-[80vh]"
+    >
+      {view === "list" ? (
+        <CharacterListView
+          onCreateClick={() => setView("create")}
+          onSelectCharacter={onSelectCharacter}
+        />
+      ) : (
+        <NewCharacterView
+          onBack={() => setView("list")}
+          onCreated={() => setView("list")}
+        />
+      )}
+    </Modal>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Character List View
+// ---------------------------------------------------------------------------
+
+const CharacterListView = ({
+  onCreateClick,
+  onSelectCharacter,
+}: {
+  onCreateClick: () => void;
+  onSelectCharacter?: (character: Character) => void;
+}) => {
+  const [characters, setCharacters] = useState<Character[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingMoreRef = useRef(false);
+  const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
+  const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
+
+  const fetchCharacters = useCallback(
+    async (nextCursor?: string) => {
+      if (loadingMoreRef.current) return;
+      loadingMoreRef.current = true;
+
+      try {
+        const api = new CharactersApi();
+        const res = await api.ListCharacters({
+          pageSize: 20,
+          cursor: nextCursor,
+        });
+
+        if (res.success && res.data) {
+          setCharacters((prev) => {
+            const updated = nextCursor ? [...prev, ...res.data!] : res.data!;
+            // Sync to global store for @-mention system
+            storeSetCharacters(
+              updated.map((c) => ({
+                character_token: c.character_token,
+                name: c.name,
+                avatar_image_url: c.avatar_image_url,
+              })),
+            );
+            storeSetLoaded(true);
+            return updated;
+          });
+          const nextPage = res.pagination?.maybe_next;
+          setCursor(nextPage);
+          setHasMore(!!nextPage);
+        }
+      } catch {
+        // API not available yet - expected during development
+        storeSetLoaded(true);
+      } finally {
+        setLoading(false);
+        loadingMoreRef.current = false;
+      }
+    },
+    [storeSetCharacters, storeSetLoaded],
+  );
+
+  useEffect(() => {
+    fetchCharacters();
+  }, [fetchCharacters]);
+
+  // Infinite scroll via IntersectionObserver
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && cursor) {
+          fetchCharacters(cursor);
+        }
+      },
+      { root: scrollContainerRef.current, threshold: 0.1 },
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, cursor, fetchCharacters]);
+
+  return (
+    <div className="flex flex-col">
+      <div
+        ref={scrollContainerRef}
+        className="max-h-[60vh] overflow-y-auto px-1"
+      >
+        {/* Create New button */}
+        <button
+          onClick={onCreateClick}
+          className="mb-3 flex h-28 w-40 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-white/20 text-white/60 transition-colors hover:border-white/40 hover:text-white/80"
+        >
+          <FontAwesomeIcon icon={faPlus} className="text-lg" />
+          <span className="text-sm font-medium">Create New</span>
+        </button>
+
+        {loading && characters.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-white/40">
+            <FontAwesomeIcon
+              icon={faSpinnerThird}
+              className="mb-3 text-2xl animate-spin"
+            />
+            <p className="text-sm">Loading characters...</p>
+          </div>
+        ) : characters.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-white/40">
+            <FontAwesomeIcon
+              icon={faUserGroup}
+              className="mb-3 text-3xl"
+            />
+            <p className="text-sm">No characters yet</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            {characters.map((character) => (
+              <button
+                key={character.character_token}
+                onClick={() => onSelectCharacter?.(character)}
+                className="group relative flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/5 transition-colors hover:border-white/25 hover:bg-white/10"
+              >
+                <div className="aspect-square w-full overflow-hidden bg-white/5">
+                  {character.avatar_image_url ? (
+                    <img
+                      src={character.avatar_image_url}
+                      alt={character.name}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-white/20">
+                      <FontAwesomeIcon
+                        icon={faUserGroup}
+                        className="text-2xl"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="px-2 py-1.5">
+                  <p className="truncate text-xs font-medium text-white/80">
+                    {character.name}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Sentinel for infinite scroll */}
+        {hasMore && (
+          <div ref={sentinelRef} className="flex justify-center py-4">
+            <FontAwesomeIcon
+              icon={faSpinnerThird}
+              className="text-white/30 animate-spin"
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// New Character View
+// ---------------------------------------------------------------------------
+
+const NewCharacterView = ({
+  onBack,
+  onCreated,
+}: {
+  onBack: () => void;
+  onCreated: () => void;
+}) => {
+  const addCharacterToStore = useCharactersStore((s) => s.addCharacter);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
+
+  const processFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const imageFiles = Array.from(files).filter((f) =>
+        f.type.startsWith("image/"),
+      );
+      if (imageFiles.length === 0) {
+        toast.error("Please upload image files");
+        return;
+      }
+
+      // Only keep the first file (single image)
+      const file = imageFiles[0]!;
+      const newImages: UploadedImage[] = [{ file, url: URL.createObjectURL(file) }];
+
+      // Replace any existing image
+      setImages((prev) => {
+        prev.forEach((img) => URL.revokeObjectURL(img.url));
+        return newImages;
+      });
+
+      // Upload each image to get media tokens
+      setUploading(true);
+      const uploadApi = new MediaUploadApi();
+      const updatedImages: UploadedImage[] = [];
+
+      for (const img of newImages) {
+        try {
+          const res = await uploadApi.UploadImage({
+            uuid: uuidv4(),
+            blob: img.file,
+            fileName: img.file.name,
+            maybe_title: `character_ref_${name || "unnamed"}`,
+          });
+
+          if (res.success && res.data) {
+            updatedImages.push({ ...img, mediaToken: res.data });
+          } else {
+            toast.error(`Failed to upload ${img.file.name}`);
+            updatedImages.push(img);
+          }
+        } catch {
+          toast.error(`Failed to upload ${img.file.name}`);
+          updatedImages.push(img);
+        }
+      }
+
+      setImages((prev) =>
+        prev.map((existing) => {
+          const updated = updatedImages.find((u) => u.url === existing.url);
+          return updated || existing;
+        }),
+      );
+      setUploading(false);
+    },
+    [name],
+  );
+
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isDragging) setIsDragging(true);
+      if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+    },
+    [isDragging],
+  );
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+    const { clientX: x, clientY: y } = e;
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      if (e.dataTransfer.files?.length) {
+        processFiles(e.dataTransfer.files);
+      }
+    },
+    [processFiles],
+  );
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      processFiles(e.target.files);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => {
+      const removed = prev[index];
+      if (removed) URL.revokeObjectURL(removed.url);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleCreate = async () => {
+    if (!name.trim()) {
+      toast.error("Please enter a character name");
+      return;
+    }
+
+    const uploadedImages = images.filter((img) => img.mediaToken);
+    if (uploadedImages.length < 1) {
+      toast.error("Please upload a reference image");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const api = new CharactersApi();
+      const res = await api.CreateCharacter({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        image_media_file_token: uploadedImages[0]!.mediaToken!,
+      });
+
+      if (res.success) {
+        toast.success(`Character "${name.trim()}" created!`);
+        // Add to global store so it appears in @-mentions immediately
+        addCharacterToStore({
+          character_token: res.data?.character_token ?? "",
+          name: name.trim(),
+          avatar_image_url: uploadedImages[0]!.url,
+        });
+        // Cleanup object URLs
+        images.forEach((img) => URL.revokeObjectURL(img.url));
+        onCreated();
+      } else {
+        toast.error(res.errorMessage || "Failed to create character");
+      }
+    } catch {
+      toast.error("Failed to create character");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      images.forEach((img) => URL.revokeObjectURL(img.url));
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Header with back button */}
+      <button
+        onClick={onBack}
+        className="flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white/90 -mt-1"
+      >
+        <FontAwesomeIcon icon={faArrowLeft} className="text-xs" />
+        New Character
+      </button>
+
+      {/* Image upload area */}
+      <div
+        ref={dropZoneRef}
+        className={twMerge(
+          "flex h-56 max-h-56 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-white/5 transition-colors overflow-hidden",
+          isDragging && "border-blue-400 bg-blue-500/10",
+        )}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {images.length > 0 ? (
+          <div className="group relative flex h-full w-full items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={images[0]!.url}
+              alt="Reference"
+              className="max-h-full max-w-full object-contain"
+            />
+            {!images[0]!.mediaToken && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <FontAwesomeIcon
+                  icon={faSpinnerThird}
+                  className="text-white animate-spin"
+                />
+              </div>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeImage(0);
+              }}
+              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500"
+            >
+              <FontAwesomeIcon icon={faXmark} className="text-sm" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center text-white/60">
+            <FontAwesomeIcon
+              icon={faUpload}
+              className="mb-2 text-xl text-white/40"
+            />
+            <p className="text-sm">Upload reference image</p>
+            <p className="mb-3 text-xs text-white/40">
+              Click or drag an image here
+            </p>
+            <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => setIsGalleryOpen(true)}
+                className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/20"
+              >
+                <FontAwesomeIcon icon={faImages} className="text-xs" />
+                Choose from Library
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/20"
+              >
+                <FontAwesomeIcon icon={faUpload} className="text-xs" />
+                Upload Image
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      {/* Name input */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-white/80">
+          Name
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Character name"
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/25"
+        />
+      </div>
+
+      {/* Description input */}
+      <div>
+        <label className="mb-1 block text-sm font-medium text-white/80">
+          Description{" "}
+          <span className="font-normal text-white/40">(optional)</span>
+        </label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe this character..."
+          rows={3}
+          className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/25"
+        />
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={onBack}
+          className="rounded-lg px-4 py-2 text-sm text-white/60 transition-colors hover:text-white/90"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleCreate}
+          disabled={
+            creating ||
+            uploading ||
+            !name.trim() ||
+            images.filter((i) => i.mediaToken).length < 1
+          }
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {creating ? (
+            <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
+          ) : (
+            "Create"
+          )}
+        </button>
+      </div>
+
+      <GalleryModal
+        isOpen={isGalleryOpen}
+        onClose={() => {
+          setIsGalleryOpen(false);
+          setSelectedGalleryImages([]);
+        }}
+        mode="select"
+        selectedItemIds={selectedGalleryImages}
+        onSelectItem={(id) => {
+          setSelectedGalleryImages((prev) => (prev.includes(id) ? [] : [id]));
+        }}
+        maxSelections={1}
+        onUseSelected={(selectedItems: GalleryItem[]) => {
+          const item = selectedItems[0];
+          if (item && item.fullImage) {
+            // Clean up previous image
+            images.forEach((img) => URL.revokeObjectURL(img.url));
+            setImages([
+              {
+                file: new File([], "library-image"),
+                url: item.fullImage,
+                mediaToken: item.id,
+              },
+            ]);
+          }
+          setIsGalleryOpen(false);
+          setSelectedGalleryImages([]);
+        }}
+        onDownloadClicked={downloadFileFromUrl}
+        forceFilter="image"
+      />
+    </div>
+  );
+};

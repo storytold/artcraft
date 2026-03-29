@@ -23,5 +23,7 @@ export * from "./lib/WeightsApi.js";
 export * from "./lib/GetCdnOrigin.js";
 export * from "./lib/GalleryModalApi.js";
 export * from "./lib/OmniGenApi.js";
+export * from "./lib/CharactersApi.js";
+export * from "./lib/models/Character.js";
 export * from "./lib/config/StorytellerApiHostStore.js";
 export * from "./lib/enums/EIntermediateFile.js";

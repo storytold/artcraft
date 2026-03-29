@@ -30,7 +30,12 @@ import {
   SizeOption,
   VideoModel,
 } from "@storyteller/model-list";
-import { usePromptVideoStore, RefImage, VideoInputMode } from "./promptStore";
+import {
+  usePromptVideoStore,
+  RefImage,
+  VideoInputMode,
+  useCharactersStore,
+} from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
 import type { UploadImageFn } from "./ImagePromptRow";
@@ -39,6 +44,9 @@ import { VideoGenerationCountPicker } from "./common/VideoGenerationCountPicker"
 import { twMerge } from "tailwind-merge";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
+import { CharactersModal } from "./CharactersModal";
+import { CharactersApi } from "@storyteller/api";
+import { faUser } from "@fortawesome/pro-solid-svg-icons";
 
 declare global {
   interface Window {
@@ -132,6 +140,34 @@ export const PromptBoxVideo = ({
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
+
+  // Characters store for @-mentions
+  const storedCharacters = useCharactersStore((s) => s.characters);
+  const charactersLoaded = useCharactersStore((s) => s.loaded);
+  const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
+  const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
+
+  // Load characters on mount if not already loaded
+  useEffect(() => {
+    if (charactersLoaded) return;
+    const api = new CharactersApi();
+    api
+      .ListCharacters({ pageSize: 100 })
+      .then((res) => {
+        if (res.success && res.data) {
+          storeSetCharacters(
+            res.data.map((c) => ({
+              character_token: c.character_token,
+              name: c.name,
+              avatar_image_url: c.avatar_image_url,
+            })),
+          );
+        }
+      })
+      .catch(() => {})
+      .finally(() => storeSetLoaded(true));
+  }, [charactersLoaded, storeSetCharacters, storeSetLoaded]);
 
   // CSS viewport units handle resize reactivity automatically
   const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
@@ -380,15 +416,35 @@ export const PromptBoxVideo = ({
     "rgb(192, 132, 252)", // violet
     "rgb(232, 121, 249)", // fuchsia
   ];
+  const CHARACTER_COLORS = [
+    "rgb(45, 212, 191)", // teal
+    "rgb(34, 197, 94)", // emerald
+    "rgb(14, 165, 233)", // sky
+  ];
 
   const hasAnyRefs =
     referenceImages.length > 0 ||
     referenceVideos.length > 0 ||
     referenceAudios.length > 0;
 
+  // Build a set of character names for highlight matching
+  const characterNames = storedCharacters.map((c) => c.name);
+
+  const hasAnyMentionables = hasAnyRefs || storedCharacters.length > 0;
+
   const renderHighlightedPrompt = () => {
-    if (!isReferenceMode || !hasAnyRefs) return null;
-    const parts = prompt.split(/(@(?:Image|Video|Audio)\d+)/g);
+    if (!hasAnyMentionables) return null;
+    // Build regex that matches @Image1, @Video1, @Audio1 and @CharacterName
+    const charPattern = characterNames
+      .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|");
+    const refPattern = "@(?:Image|Video|Audio)\\d+";
+    const fullPattern = charPattern
+      ? `(${refPattern}|@(?:${charPattern}))`
+      : `(${refPattern})`;
+    const regex = new RegExp(fullPattern, "g");
+    const parts = prompt.split(regex);
+
     return parts.map((part, i) => {
       const imgMatch = part.match(/^@Image(\d+)$/);
       if (imgMatch) {
@@ -426,6 +482,23 @@ export const PromptBoxVideo = ({
           </span>
         );
       }
+      // Check character match
+      if (part.startsWith("@")) {
+        const charName = part.slice(1);
+        const charIdx = characterNames.indexOf(charName);
+        if (charIdx !== -1) {
+          return (
+            <span
+              key={i}
+              style={{
+                color: CHARACTER_COLORS[charIdx % CHARACTER_COLORS.length],
+              }}
+            >
+              {part}
+            </span>
+          );
+        }
+      }
       return <span key={i}>{part}</span>;
     });
   };
@@ -436,29 +509,36 @@ export const PromptBoxVideo = ({
   const [mentionIndex, setMentionIndex] = useState(0);
   const mentionAnchorRef = useRef<number | null>(null);
 
-  const mentionItems = isReferenceMode
-    ? [
-        ...referenceImages.map((img, i) => ({
-          label: `@Image${i + 1}`,
-          type: "image" as const,
-          preview: img.url,
-        })),
-        ...referenceVideos.map((vid, i) => ({
-          label: `@Video${i + 1}`,
-          type: "video" as const,
-          preview: vid.url,
-        })),
-        ...referenceAudios.map((_aud, i) => ({
-          label: `@Audio${i + 1}`,
-          type: "audio" as const,
-          preview: undefined as string | undefined,
-        })),
-      ].filter((item) =>
-        mentionFilter
-          ? item.label.toLowerCase().includes(mentionFilter.toLowerCase())
-          : true,
-      )
-    : [];
+  const mentionItems = [
+    ...(isReferenceMode
+      ? [
+          ...referenceImages.map((img, i) => ({
+            label: `@Image${i + 1}`,
+            type: "image" as const,
+            preview: img.url,
+          })),
+          ...referenceVideos.map((vid, i) => ({
+            label: `@Video${i + 1}`,
+            type: "video" as const,
+            preview: vid.url,
+          })),
+          ...referenceAudios.map((_aud, i) => ({
+            label: `@Audio${i + 1}`,
+            type: "audio" as const,
+            preview: undefined as string | undefined,
+          })),
+        ]
+      : []),
+    ...storedCharacters.map((char) => ({
+      label: `@${char.name}`,
+      type: "character" as const,
+      preview: char.avatar_image_url,
+    })),
+  ].filter((item) =>
+    mentionFilter
+      ? item.label.toLowerCase().includes(mentionFilter.toLowerCase())
+      : true,
+  );
 
   const insertMention = (label: string) => {
     const textarea = textareaRef.current;
@@ -496,8 +576,8 @@ export const PromptBoxVideo = ({
     const cursorPos = e.target.selectionStart;
     setPrompt(value);
 
-    if (isReferenceMode && hasAnyRefs) {
-      // Find the last '@' before cursor that could be a mention trigger
+    // Trigger @-mention for reference files (in reference mode) or characters (always)
+    if ((isReferenceMode && hasAnyRefs) || storedCharacters.length > 0) {
       const textBeforeCursor = value.slice(0, cursorPos);
       const lastAtIndex = textBeforeCursor.lastIndexOf("@");
 
@@ -823,7 +903,7 @@ export const PromptBoxVideo = ({
             {mentionOpen && mentionItems.length > 0 && (
               <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl">
                 <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
-                  Reference Files
+                  References
                 </div>
                 {mentionItems.map((item, i) => (
                   <button
@@ -839,7 +919,18 @@ export const PromptBoxVideo = ({
                     onMouseEnter={() => setMentionIndex(i)}
                   >
                     <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/20 flex items-center justify-center bg-black/20">
-                      {item.type === "image" && item.preview ? (
+                      {item.type === "character" && item.preview ? (
+                        <img
+                          src={item.preview}
+                          alt={item.label}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : item.type === "character" ? (
+                        <FontAwesomeIcon
+                          icon={faUser}
+                          className="h-3.5 w-3.5 text-base-fg/60"
+                        />
+                      ) : item.type === "image" && item.preview ? (
                         <img
                           src={item.preview}
                           alt={item.label}
@@ -896,7 +987,7 @@ export const PromptBoxVideo = ({
             </Tooltip> */}
 
             <div className="promptbox-resize-wrap relative flex-1">
-              {isReferenceMode && hasAnyRefs && (
+              {hasAnyMentionables && (
                 <div
                   ref={highlightRef}
                   aria-hidden
@@ -915,7 +1006,7 @@ export const PromptBoxVideo = ({
                 }
                 className={twMerge(
                   "promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 placeholder-base-fg/60 focus:outline-none",
-                  isReferenceMode && hasAnyRefs
+                  hasAnyMentionables
                     ? "text-transparent caret-base-fg"
                     : "text-base-fg",
                 )}
@@ -1037,6 +1128,23 @@ export const PromptBoxVideo = ({
                   />
                 </Tooltip>
               )}
+
+              {selectedModel?.id === "seedance_2p0" && (
+                <Tooltip
+                  content="Characters"
+                  position="top"
+                  className="z-50"
+                  delay={200}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setIsCharactersModalOpen(true)}
+                    className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
+                  >
+                    @Characters
+                  </button>
+                </Tooltip>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {modelNeedsAnImageButNoneAreSelected && (
@@ -1109,6 +1217,30 @@ export const PromptBoxVideo = ({
           </div>
         )}
       </div>
+      <CharactersModal
+        isOpen={isCharactersModalOpen}
+        onClose={() => setIsCharactersModalOpen(false)}
+        onSelectCharacter={(character) => {
+          const mention = `@${character.name}`;
+          const textarea = textareaRef.current;
+          if (textarea) {
+            const pos = textarea.selectionStart ?? prompt.length;
+            const before = prompt.slice(0, pos);
+            const after = prompt.slice(pos);
+            const spaceBefore =
+              before.length > 0 && !before.endsWith(" ") ? " " : "";
+            setPrompt(before + spaceBefore + mention + " " + after);
+            requestAnimationFrame(() => {
+              const newPos = pos + spaceBefore.length + mention.length + 1;
+              textarea.setSelectionRange(newPos, newPos);
+              textarea.focus();
+            });
+          } else {
+            setPrompt(prompt ? prompt + " " + mention + " " : mention + " ");
+          }
+          setIsCharactersModalOpen(false);
+        }}
+      />
       <GalleryModal
         isOpen={!!isGalleryModalOpen}
         onClose={() => {

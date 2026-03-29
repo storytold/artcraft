@@ -201,3 +201,27 @@ export const usePromptEditStore = create<PromptEditStore>()((set) => ({
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
   setResolution: (resolution) => set({ resolution }),
 }));
+
+// ----- Characters Store -----
+export interface StoredCharacter {
+  character_token: string;
+  name: string;
+  avatar_image_url?: string;
+}
+
+interface CharactersStore {
+  characters: StoredCharacter[];
+  loaded: boolean;
+  setCharacters: (characters: StoredCharacter[]) => void;
+  addCharacter: (character: StoredCharacter) => void;
+  setLoaded: (loaded: boolean) => void;
+}
+
+export const useCharactersStore = create<CharactersStore>()((set) => ({
+  characters: [],
+  loaded: false,
+  setCharacters: (characters) => set({ characters }),
+  addCharacter: (character) =>
+    set((state) => ({ characters: [...state.characters, character] })),
+  setLoaded: (loaded) => set({ loaded }),
+}));
