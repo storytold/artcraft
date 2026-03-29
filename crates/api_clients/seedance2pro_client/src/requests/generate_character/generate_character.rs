@@ -131,3 +131,102 @@ pub async fn generate_character(args: GenerateCharacterArgs<'_>) -> Result<Gener
     created_at: data.created_at,
   })
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::creds::seedance2pro_session::Seedance2ProSession;
+  use crate::test_utils::get_test_cookies::get_test_cookies;
+  use crate::test_utils::setup_test_logging::setup_test_logging;
+  use crate::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+  use crate::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+  use errors::AnyhowResult;
+  use log::LevelFilter;
+
+  fn test_session() -> AnyhowResult<Seedance2ProSession> {
+    let cookies = get_test_cookies()?;
+    Ok(Seedance2ProSession::from_cookies_string(cookies))
+  }
+
+  async fn upload_image_from_url(session: &Seedance2ProSession, image_url: &str, extension: &str) -> AnyhowResult<String> {
+    let image_bytes = crate::test_utils::http_download::http_download_to_bytes(image_url).await?;
+
+    let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+      session,
+      extension: extension.to_string(),
+      host_override: None,
+    }).await?;
+
+    let upload_result = upload_file(UploadFileArgs {
+      upload_url: prepare_result.upload_url,
+      file_bytes: image_bytes,
+      host_override: None,
+    }).await?;
+
+    Ok(upload_result.public_url)
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies
+  async fn test_create_character_juno() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+
+    let public_url = upload_image_from_url(
+      &session,
+      test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+      "jpg",
+    ).await?;
+
+    println!("Uploaded image: {}", public_url);
+
+    let result = generate_character(GenerateCharacterArgs {
+      session: &session,
+      name: "Juno".to_string(),
+      description: "Juno the shiba inu at the lake".to_string(),
+      reference_image_urls: vec![public_url],
+      is_public: false,
+      host_override: None,
+    }).await?;
+
+    println!("Character ID: {}", result.character_id);
+    println!("Name: {}", result.name);
+    println!("Created at: {}", result.created_at);
+    assert!(!result.character_id.is_empty());
+    assert_eq!(result.name, "Juno");
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies
+  async fn test_create_character_ernest() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+
+    let public_url = upload_image_from_url(
+      &session,
+      test_data::web::image_urls::ERNEST_SCARED_STUPID_IMAGE_URL,
+      "jpg",
+    ).await?;
+
+    println!("Uploaded image: {}", public_url);
+
+    let result = generate_character(GenerateCharacterArgs {
+      session: &session,
+      name: "Ernest".to_string(),
+      description: "Ernest P. Worrell from Ernest Scared Stupid".to_string(),
+      reference_image_urls: vec![public_url],
+      is_public: false,
+      host_override: None,
+    }).await?;
+
+    println!("Character ID: {}", result.character_id);
+    println!("Name: {}", result.name);
+    println!("Created at: {}", result.created_at);
+    assert!(!result.character_id.is_empty());
+    assert_eq!(result.name, "Ernest");
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+}

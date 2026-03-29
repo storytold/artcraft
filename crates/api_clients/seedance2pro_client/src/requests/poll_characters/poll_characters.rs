@@ -204,3 +204,93 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
 
   Ok(PollCharactersResponse { characters })
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::creds::seedance2pro_session::Seedance2ProSession;
+  use crate::test_utils::get_test_cookies::get_test_cookies;
+  use crate::test_utils::setup_test_logging::setup_test_logging;
+  use errors::AnyhowResult;
+  use log::LevelFilter;
+
+  fn test_session() -> AnyhowResult<Seedance2ProSession> {
+    let cookies = get_test_cookies()?;
+    Ok(Seedance2ProSession::from_cookies_string(cookies))
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies
+  async fn test_poll_characters() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+    let result = poll_characters(PollCharactersArgs {
+      session: &session,
+      limit: 50,
+      host_override: None,
+    }).await?;
+
+    println!("Characters returned: {}", result.characters.len());
+    for ch in &result.characters {
+      println!(
+        "  {} | {} | {:?} | asset_id={:?} | avatar={:?}",
+        ch.character_id, ch.name, ch.task_status, ch.asset_id, ch.avatar_url,
+      );
+    }
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies
+  async fn test_poll_characters_small_limit() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+    let result = poll_characters(PollCharactersArgs {
+      session: &session,
+      limit: 2,
+      host_override: None,
+    }).await?;
+
+    println!("Characters returned (limit=2): {}", result.characters.len());
+    for ch in &result.characters {
+      println!(
+        "  {} | {} | {:?} | asset_id={:?}",
+        ch.character_id, ch.name, ch.task_status, ch.asset_id,
+      );
+    }
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies; logs all character details
+  async fn test_poll_all_characters_verbose() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+    let result = poll_characters(PollCharactersArgs {
+      session: &session,
+      limit: 50,
+      host_override: None,
+    }).await?;
+
+    println!("=== All Characters ({} total) ===", result.characters.len());
+    for ch in &result.characters {
+      println!("Character: {} ({})", ch.name, ch.character_id);
+      println!("  Description: {:?}", ch.description);
+      println!("  Status: {:?}", ch.task_status);
+      println!("  Avatar URL: {:?}", ch.avatar_url);
+      println!("  Asset ID: {:?}", ch.asset_id);
+      println!("  Asset Status: {:?}", ch.asset_status);
+      println!("  Fail Reason: {:?}", ch.fail_reason);
+      println!("  Created At: {}", ch.created_at);
+      println!("  Result Images:");
+      for img in &ch.result_images {
+        println!("    {} (type={:?})", img.url, img.image_type);
+      }
+      println!();
+    }
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+}
