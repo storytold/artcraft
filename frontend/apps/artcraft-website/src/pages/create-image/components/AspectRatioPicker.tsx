@@ -1,53 +1,39 @@
-import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { AspectRatioIcon, AutoIcon } from "./AspectRatioIcon";
 
 interface AspectRatioPickerProps {
-  model: ImageModel;
-  currentAspectRatio?: CommonAspectRatio;
-  handleCommonAspectRatioSelect: (selected: CommonAspectRatio) => void;
+  aspectRatioOptions: string[];
+  defaultAspectRatio?: string;
+  currentAspectRatio?: string;
+  handleAspectRatioSelect: (selected: string) => void;
 }
 
-export const AspectRatioPicker = ({
-  model,
-  currentAspectRatio,
-  handleCommonAspectRatioSelect,
-}: AspectRatioPickerProps) => {
-  const useAspectRatio =
-    currentAspectRatio ?? model.defaultAspectRatio ?? undefined;
+const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_4k"]);
 
-  const isAutoRatio =
-    useAspectRatio === CommonAspectRatio.Auto ||
-    useAspectRatio === CommonAspectRatio.Auto2k ||
-    useAspectRatio === CommonAspectRatio.Auto4k;
+export const AspectRatioPicker = ({
+  aspectRatioOptions,
+  defaultAspectRatio,
+  currentAspectRatio,
+  handleAspectRatioSelect,
+}: AspectRatioPickerProps) => {
+  const useAspectRatio = currentAspectRatio ?? defaultAspectRatio ?? undefined;
+  const isAutoRatio = !!useAspectRatio && AUTO_RATIOS.has(useAspectRatio);
 
   const handleSelectAdapter = (item: PopoverItem) => {
-    const ratio = popOverLabelToAspectRatio(item.label, model);
-    handleCommonAspectRatioSelect(ratio);
+    const ratio = labelToAspectRatio(item.label);
+    if (ratio) handleAspectRatioSelect(ratio);
   };
 
-  const isAutoAspectRatio = (ratio: CommonAspectRatio): boolean => {
-    return (
-      ratio === CommonAspectRatio.Auto ||
-      ratio === CommonAspectRatio.Auto2k ||
-      ratio === CommonAspectRatio.Auto4k
-    );
-  };
-
-  const aspectRatioList: PopoverItem[] = [];
-
-  model.aspectRatios?.forEach((ratio: CommonAspectRatio) => {
-    aspectRatioList.push({
-      label: getAspectRatioTextLabel(ratio),
-      selected: useAspectRatio === ratio,
-      icon: isAutoAspectRatio(ratio) ? (
-        <AutoIcon />
-      ) : (
-        <AspectRatioIcon commonAspectRatio={ratio} />
-      ),
-    });
-  });
+  const aspectRatioList: PopoverItem[] = aspectRatioOptions.map((ratio) => ({
+    label: getAspectRatioTextLabel(ratio),
+    selected: useAspectRatio === ratio,
+    icon: AUTO_RATIOS.has(ratio) ? (
+      <AutoIcon />
+    ) : (
+      <AspectRatioIcon commonAspectRatio={ratio} />
+    ),
+  }));
 
   return (
     <Tooltip
@@ -74,86 +60,34 @@ export const AspectRatioPicker = ({
   );
 };
 
-const getAspectRatioTextLabel = (aspectRatio: CommonAspectRatio): string => {
-  switch (aspectRatio) {
-    case CommonAspectRatio.Auto:
-      return "Auto";
-    case CommonAspectRatio.Square:
-      return "Square";
-    case CommonAspectRatio.WideFiveByFour:
-      return "5:4 (Wide)";
-    case CommonAspectRatio.WideFourByThree:
-      return "4:3 (Wide)";
-    case CommonAspectRatio.WideThreeByTwo:
-      return "3:2 (Wide)";
-    case CommonAspectRatio.WideSixteenByNine:
-      return "16:9 (Wide)";
-    case CommonAspectRatio.WideTwentyOneByNine:
-      return "21:9 (Wide)";
-    case CommonAspectRatio.TallFourByFive:
-      return "4:5 (Tall)";
-    case CommonAspectRatio.TallThreeByFour:
-      return "3:4 (Tall)";
-    case CommonAspectRatio.TallTwoByThree:
-      return "2:3 (Tall)";
-    case CommonAspectRatio.TallNineBySixteen:
-      return "9:16 (Tall)";
-    case CommonAspectRatio.TallNineByTwentyOne:
-      return "9:21 (Tall)";
-    case CommonAspectRatio.Auto2k:
-      return "Auto (2K)";
-    case CommonAspectRatio.Auto4k:
-      return "Auto (4K)";
-    case CommonAspectRatio.SquareHd:
-      return "Square (HD)";
-    case CommonAspectRatio.Wide:
-      return "Wide";
-    case CommonAspectRatio.Tall:
-      return "Tall";
-    default:
-      return "Square";
-  }
+const ASPECT_RATIO_LABELS: Record<string, string> = {
+  auto: "Auto",
+  square: "Square",
+  wide_five_by_four: "5:4 (Wide)",
+  wide_four_by_three: "4:3 (Wide)",
+  wide_three_by_two: "3:2 (Wide)",
+  wide_sixteen_by_nine: "16:9 (Wide)",
+  wide_twenty_one_by_nine: "21:9 (Wide)",
+  tall_four_by_five: "4:5 (Tall)",
+  tall_three_by_four: "3:4 (Tall)",
+  tall_two_by_three: "2:3 (Tall)",
+  tall_nine_by_sixteen: "9:16 (Tall)",
+  tall_nine_by_twenty_one: "9:21 (Tall)",
+  auto_2k: "Auto (2K)",
+  auto_4k: "Auto (4K)",
+  square_hd: "Square (HD)",
+  wide: "Wide",
+  tall: "Tall",
 };
 
-const popOverLabelToAspectRatio = (
-  label: string,
-  model: ImageModel,
-): CommonAspectRatio => {
-  switch (label) {
-    case "Auto":
-      return CommonAspectRatio.Auto;
-    case "Square":
-      return CommonAspectRatio.Square;
-    case "Wide":
-      return CommonAspectRatio.Wide;
-    case "Tall":
-      return CommonAspectRatio.Tall;
-    case "5:4 (Wide)":
-      return CommonAspectRatio.WideFiveByFour;
-    case "4:3 (Wide)":
-      return CommonAspectRatio.WideFourByThree;
-    case "3:2 (Wide)":
-      return CommonAspectRatio.WideThreeByTwo;
-    case "16:9 (Wide)":
-      return CommonAspectRatio.WideSixteenByNine;
-    case "21:9 (Wide)":
-      return CommonAspectRatio.WideTwentyOneByNine;
-    case "4:5 (Tall)":
-      return CommonAspectRatio.TallFourByFive;
-    case "3:4 (Tall)":
-      return CommonAspectRatio.TallThreeByFour;
-    case "2:3 (Tall)":
-      return CommonAspectRatio.TallTwoByThree;
-    case "9:16 (Tall)":
-      return CommonAspectRatio.TallNineBySixteen;
-    case "9:21 (Tall)":
-      return CommonAspectRatio.TallNineByTwentyOne;
-    case "Auto (2K)":
-      return CommonAspectRatio.Auto2k;
-    case "Auto (4K)":
-      return CommonAspectRatio.Auto4k;
-    case "Square (HD)":
-      return CommonAspectRatio.SquareHd;
-  }
-  return model.defaultAspectRatio || CommonAspectRatio.Square;
-};
+const LABEL_TO_RATIO: Record<string, string> = Object.fromEntries(
+  Object.entries(ASPECT_RATIO_LABELS).map(([k, v]) => [v, k]),
+);
+
+function getAspectRatioTextLabel(ratio: string): string {
+  return ASPECT_RATIO_LABELS[ratio] ?? ratio;
+}
+
+function labelToAspectRatio(label: string): string | undefined {
+  return LABEL_TO_RATIO[label];
+}

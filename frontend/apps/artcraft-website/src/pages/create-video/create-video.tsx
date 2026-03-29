@@ -7,15 +7,10 @@ import {
   faWaveformLines,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FilterMediaClasses } from "@storyteller/api";
+import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { ToggleButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  VIDEO_MODELS,
-  VideoModel,
-  type SizeOption,
-  getCreatorIcon,
-} from "@storyteller/model-list";
 import {
   PromptBox,
   ImagePickerModal,
@@ -38,75 +33,107 @@ import { Lightbox } from "../../components/lightbox/lightbox";
 import { useCreateVideoStore } from "./create-video-store";
 import {
   enqueueVideoGeneration,
-  videoModelHasWebEndpoint,
   startVideoPolling,
 } from "./generate-video-api";
-import { AspectRatioIcon } from "../create-image/components/AspectRatioIcon";
+import { AspectRatioIcon, AutoIcon } from "../create-image/components/AspectRatioIcon";
 import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
+import {
+  useOmniGenVideoModels,
+  getModelCreatorIconPath,
+  getModelDisplayName,
+} from "../../lib/omni-gen-hooks";
 
-// ── Models available via REST ─────────────────────────────────────────────
-
-const WEB_VIDEO_MODELS = VIDEO_MODELS.filter((m) =>
-  videoModelHasWebEndpoint(m.tauriId),
-).sort((a, b) => a.selectorName.localeCompare(b.selectorName));
+// ── Constants ────────────────────────────────────────────────────────────
 
 const DEFAULT_MODEL_ID = "seedance_2p0";
-const DEFAULT_MODEL =
-  WEB_VIDEO_MODELS.find((m) => m.id === DEFAULT_MODEL_ID) ??
-  WEB_VIDEO_MODELS[0];
-
-const MODEL_FALLBACK_ICON = (
-  <FontAwesomeIcon icon={faFilm} className="h-4 w-4" />
-);
 
 const VIDEO_FILTER = [FilterMediaClasses.VIDEO];
 
+const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_4k"]);
+
+// ── Aspect ratio labels (shared with image page) ─────────────────────────
+
+const AR_LABELS: Record<string, string> = {
+  auto: "Auto",
+  square: "Square",
+  wide_five_by_four: "5:4 (Wide)",
+  wide_four_by_three: "4:3 (Wide)",
+  wide_three_by_two: "3:2 (Wide)",
+  wide_sixteen_by_nine: "16:9 (Wide)",
+  wide_twenty_one_by_nine: "21:9 (Wide)",
+  tall_four_by_five: "4:5 (Tall)",
+  tall_three_by_four: "3:4 (Tall)",
+  tall_two_by_three: "2:3 (Tall)",
+  tall_nine_by_sixteen: "9:16 (Tall)",
+  tall_nine_by_twenty_one: "9:21 (Tall)",
+  auto_2k: "Auto (2K)",
+  auto_4k: "Auto (4K)",
+  square_hd: "Square (HD)",
+  wide: "Wide",
+  tall: "Tall",
+};
+
+// ── Model lookup ─────────────────────────────────────────────────────────
+
+let _modelLookup = new Map<string, OmniGenVideoModelInfo>();
+
 function buildModelPopoverItems(
-  models: VideoModel[],
+  models: OmniGenVideoModelInfo[],
   selectedId: string,
 ): PopoverItem[] {
+  _modelLookup = new Map(models.map((m) => [m.model, m]));
   return models.map((model) => ({
-    label: model.selectorName,
-    selected: model.id === selectedId,
-    icon: getCreatorIcon(model.creator) ?? MODEL_FALLBACK_ICON,
-    description: model.selectorDescription,
-    badges: model.toLegacyBadges()?.map((b) => ({
-      label: b.label,
-      icon: <FontAwesomeIcon icon={faClock} />,
-    })),
-    model: model,
+    label: getModelDisplayName(model.model, model.full_name),
+    selected: model.model === selectedId,
+    icon: (
+      <img
+        src={getModelCreatorIconPath(model.model)}
+        alt={`${model.model} logo`}
+        className="h-4 w-4 icon-auto-contrast"
+      />
+    ),
+    action: model.model,
   }));
 }
 
 function buildSizePopoverItems(
-  sizeOptions: SizeOption[],
+  aspectRatioOptions: string[],
   selectedValue: string,
 ): PopoverItem[] {
-  return sizeOptions.map((opt) => ({
-    label: opt.textLabel,
-    selected: opt.tauriValue === selectedValue,
-    icon: <AspectRatioIcon sizeIcon={opt.icon} />,
-    sizeOption: opt,
+  return aspectRatioOptions.map((ar) => ({
+    label: AR_LABELS[ar] ?? ar,
+    selected: ar === selectedValue,
+    icon: AUTO_RATIOS.has(ar) ? (
+      <AutoIcon />
+    ) : (
+      <AspectRatioIcon commonAspectRatio={ar} />
+    ),
+    action: ar,
   }));
 }
 
-// ── Component ─────────────────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────
 
 export default function CreateVideo() {
   const { user, authChecked } = useAuthCheck();
   const { promptBoxRef, promptHeight } = usePromptHeight();
 
+  // Fetch models from API
+  const { models: apiModels } = useOmniGenVideoModels();
+
   // UI state
   const ui = useCreateVideoStore((s) => s.ui);
   const setUi = useCreateVideoStore((s) => s.setUi);
 
-  const selectedModel = useMemo(
-    () =>
-      ui.selectedModelId
-        ? (WEB_VIDEO_MODELS.find((m) => m.id === ui.selectedModelId) ?? DEFAULT_MODEL)
-        : DEFAULT_MODEL,
-    [ui.selectedModelId],
-  );
+  const selectedModel = useMemo((): OmniGenVideoModelInfo | undefined => {
+    if (!apiModels.length) return undefined;
+    if (ui.selectedModelId) {
+      return apiModels.find((m) => m.model === ui.selectedModelId) ??
+        apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ??
+        apiModels[0];
+    }
+    return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
+  }, [apiModels, ui.selectedModelId]);
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
@@ -120,7 +147,7 @@ export default function CreateVideo() {
     (v: number | null) => setUi({ duration: v }),
     [setUi],
   );
-  const resolution = ui.resolution ?? selectedModel.defaultResolution ?? null;
+  const resolution = ui.resolution ?? selectedModel?.resolution_default ?? null;
   const setResolution = useCallback(
     (v: string | null) => setUi({ resolution: v }),
     [setUi],
@@ -144,18 +171,21 @@ export default function CreateVideo() {
   const pollingCleanupsRef = useRef<Map<string, () => void>>(new Map());
 
   // Derived model capabilities
-  const hasSizeOptions = selectedModel.sizeOptions.length > 0;
-  const hasResolutionOptions = (selectedModel.resolutionOptions?.length ?? 0) > 0;
-  const hasSound = !!selectedModel.generateWithSound;
+  const hasSizeOptions = (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
+  const hasResolutionOptions = (selectedModel?.resolution_options?.length ?? 0) > 0;
+  const hasSound = !!selectedModel?.show_generate_with_sound_toggle;
   const supportsImagePrompts =
-    selectedModel.startFrame ||
-    selectedModel.requiresImage ||
-    !!selectedModel.supportsReferenceMode;
-  const supportsRefMode = !!selectedModel.supportsReferenceMode;
+    !!selectedModel?.starting_keyframe_supported ||
+    !!selectedModel?.starting_keyframe_required ||
+    !!selectedModel?.image_references_supported;
+  const supportsRefMode =
+    !!selectedModel?.image_references_supported ||
+    !!selectedModel?.video_references_supported ||
+    !!selectedModel?.audio_references_supported;
   const inputMode = ui.inputMode;
   const isReferenceMode = supportsRefMode && inputMode === "reference";
-  const hasEndFrame = !!(selectedModel.endFrame && !isReferenceMode);
-  const needsImage = selectedModel.requiresImage && referenceImages.length === 0;
+  const hasEndFrame = !!(selectedModel?.ending_keyframe_supported && !isReferenceMode);
+  const needsImage = !!selectedModel?.starting_keyframe_required && referenceImages.length === 0;
 
   // Jobs + gallery
   const jobs = useGenerationJobs({ mediaType: "video" });
@@ -179,10 +209,10 @@ export default function CreateVideo() {
 
   // Cost estimate
   const estimatedCredits = useVideoCostEstimate({
-    modelTauriId: selectedModel.tauriId,
+    model: selectedModel?.model ?? "",
     aspectRatio: selectedSize,
     resolution,
-    duration: duration ?? selectedModel.defaultDuration,
+    duration: duration ?? selectedModel?.duration_seconds_default ?? null,
     hasStartFrame: !isReferenceMode && referenceImages.length > 0,
     hasEndFrame: !isReferenceMode && hasEndFrame && !!endFrameImage,
     isReferenceMode,
@@ -213,30 +243,30 @@ export default function CreateVideo() {
   }, [isReferenceMode, referenceImages, referenceVideos, referenceAudios]);
 
   const modelItems = useMemo(
-    () => buildModelPopoverItems(WEB_VIDEO_MODELS, selectedModel.id),
-    [selectedModel.id],
+    () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
+    [apiModels, selectedModel?.model],
   );
   const sizeItems = useMemo(
-    () => buildSizePopoverItems(selectedModel.sizeOptions, selectedSize),
-    [selectedModel.sizeOptions, selectedSize],
+    () => buildSizePopoverItems(selectedModel?.aspect_ratio_options ?? [], selectedSize),
+    [selectedModel?.aspect_ratio_options, selectedSize],
   );
   const durationItems = useMemo(
     (): PopoverItem[] | null =>
-      selectedModel.durationOptions
-        ? selectedModel.durationOptions.map((d) => ({
-          label: `${d}s`,
-          selected: d === (duration ?? selectedModel.defaultDuration),
-        }))
+      selectedModel?.duration_seconds_options
+        ? selectedModel.duration_seconds_options.map((d) => ({
+            label: `${d}s`,
+            selected: d === (duration ?? selectedModel.duration_seconds_default),
+          }))
         : null,
     [selectedModel, duration],
   );
   const resolutionItems = useMemo(
     (): PopoverItem[] | null =>
-      selectedModel.resolutionOptions
-        ? selectedModel.resolutionOptions.map((r) => ({
-          label: r,
-          selected: r === (resolution ?? selectedModel.defaultResolution),
-        }))
+      selectedModel?.resolution_options
+        ? selectedModel.resolution_options.map((r) => ({
+            label: r,
+            selected: r === (resolution ?? selectedModel.resolution_default),
+          }))
         : null,
     [selectedModel, resolution],
   );
@@ -244,17 +274,17 @@ export default function CreateVideo() {
     (): PopoverItem[] | null =>
       supportsRefMode
         ? [
-          {
-            label: "Keyframe",
-            description: "First/Last frame",
-            selected: inputMode === "keyframe",
-          },
-          {
-            label: "Reference",
-            description: "Multi-media ref",
-            selected: inputMode === "reference",
-          },
-        ]
+            {
+              label: "Keyframe",
+              description: "First/Last frame",
+              selected: inputMode === "keyframe",
+            },
+            {
+              label: "Reference",
+              description: "Multi-media ref",
+              selected: inputMode === "reference",
+            },
+          ]
         : null,
     [supportsRefMode, inputMode],
   );
@@ -302,13 +332,13 @@ export default function CreateVideo() {
 
   const handleModelChange = useCallback(
     (item: PopoverItem) => {
-      const model = (item as any).model as VideoModel | undefined;
+      const model = item.action ? _modelLookup.get(item.action) : undefined;
       if (!model) return;
       setUi({
-        selectedModelId: model.id,
-        selectedSize: model.sizeOptions[0]?.tauriValue ?? "wide_sixteen_by_nine",
-        duration: model.defaultDuration ?? null,
-        resolution: model.defaultResolution ?? null,
+        selectedModelId: model.model,
+        selectedSize: model.aspect_ratio_default ?? "wide_sixteen_by_nine",
+        duration: model.duration_seconds_default ?? null,
+        resolution: model.resolution_default ?? null,
         generateWithSound: false,
         inputMode: "keyframe",
       });
@@ -322,8 +352,7 @@ export default function CreateVideo() {
 
   const handleSizeChange = useCallback(
     (item: PopoverItem) => {
-      const opt = (item as any).sizeOption as SizeOption | undefined;
-      if (opt) setSelectedSize(opt.tauriValue);
+      if (item.action) setSelectedSize(item.action);
     },
     [setSelectedSize],
   );
@@ -358,7 +387,7 @@ export default function CreateVideo() {
 
   const handleLibraryImageSelect = useCallback(
     (images: { token: string; url: string; thumbnailUrl: string }[]) => {
-      const maxImages = isReferenceMode ? (selectedModel.maxReferenceImages ?? 3) : 1;
+      const maxImages = isReferenceMode ? (selectedModel?.image_references_max ?? 3) : 1;
       const availableSlots = Math.max(0, maxImages - referenceImages.length);
       const newImages: RefImage[] = images.slice(0, availableSlots).map((img) => ({
         id: Math.random().toString(36).substring(7),
@@ -372,48 +401,46 @@ export default function CreateVideo() {
   );
 
   const handleGenerate = useCallback(async () => {
-    if (!prompt.trim() || isGenerating || needsImage) return;
+    if (!prompt.trim() || isGenerating || needsImage || !selectedModel) return;
     setIsGenerating(true);
-    const batchId = startBatch(prompt, selectedModel.fullName);
+    const batchId = startBatch(prompt, selectedModel.full_name ?? selectedModel.model);
 
     try {
-      const imageMediaToken =
+      const startFrameToken =
         !isReferenceMode && supportsImagePrompts && referenceImages.length > 0
           ? referenceImages[0].mediaToken
           : undefined;
-      const endFrameMediaToken =
+      const endFrameToken =
         !isReferenceMode && hasEndFrame && endFrameImage?.mediaToken
           ? endFrameImage.mediaToken
           : undefined;
-      const referenceImageMediaTokens =
+      const referenceImageTokens =
         isReferenceMode && referenceImages.length > 0
-          ? referenceImages
-            .map((img) => img.mediaToken)
-            .filter((t) => t.length > 0)
+          ? referenceImages.map((img) => img.mediaToken).filter((t) => t.length > 0)
           : undefined;
-      const referenceVideoMediaTokens =
+      const referenceVideoTokens =
         isReferenceMode && referenceVideos.length > 0
           ? referenceVideos.map((v) => v.mediaToken).filter((t) => t.length > 0)
           : undefined;
-      const referenceAudioMediaTokens =
+      const referenceAudioTokens =
         isReferenceMode && referenceAudios.length > 0
           ? referenceAudios.map((a) => a.mediaToken).filter((t) => t.length > 0)
           : undefined;
 
       const result = await enqueueVideoGeneration({
         prompt: prompt.trim(),
-        modelTauriId: selectedModel.tauriId,
+        model: selectedModel.model,
         aspectRatio: selectedSize,
-        duration: duration ?? selectedModel.defaultDuration,
+        duration: duration ?? selectedModel.duration_seconds_default ?? undefined,
         resolution: hasResolutionOptions
-          ? (resolution ?? selectedModel.defaultResolution ?? undefined)
+          ? (resolution ?? selectedModel.resolution_default ?? undefined)
           : undefined,
         generateAudio: hasSound ? generateWithSound : undefined,
-        imageMediaToken: imageMediaToken?.length ? imageMediaToken : undefined,
-        endFrameImageMediaToken: endFrameMediaToken?.length ? endFrameMediaToken : undefined,
-        referenceImageMediaTokens: referenceImageMediaTokens?.length ? referenceImageMediaTokens : undefined,
-        referenceVideoMediaTokens: referenceVideoMediaTokens?.length ? referenceVideoMediaTokens : undefined,
-        referenceAudioMediaTokens: referenceAudioMediaTokens?.length ? referenceAudioMediaTokens : undefined,
+        startFrameImageMediaToken: startFrameToken?.length ? startFrameToken : undefined,
+        endFrameImageMediaToken: endFrameToken?.length ? endFrameToken : undefined,
+        referenceImageMediaTokens: referenceImageTokens?.length ? referenceImageTokens : undefined,
+        referenceVideoMediaTokens: referenceVideoTokens?.length ? referenceVideoTokens : undefined,
+        referenceAudioMediaTokens: referenceAudioTokens?.length ? referenceAudioTokens : undefined,
       });
 
       if (!result.success || !result.jobToken) {
@@ -497,7 +524,7 @@ export default function CreateVideo() {
           className="animate-fade-in-up fixed bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
           style={{ animationDelay: "150ms" }}
         >
-          {selectedModel.id === "seedance_2p0" && (
+          {selectedModel?.model === "seedance_2p0" && (
             <div className="mb-2 flex items-start gap-2.5 rounded-lg border border-yellow-500/40 px-3.5 py-2.5 text-xs text-yellow-200 shadow-lg backdrop-blur-xl bg-yellow-800/60">
               <FontAwesomeIcon icon={faTriangleExclamation} className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-yellow-400" />
               <span>
@@ -515,7 +542,7 @@ export default function CreateVideo() {
             credits={estimatedCredits}
             placeholder="Describe the video you want to generate..."
             supportsImagePrompts={supportsImagePrompts}
-            maxImagePromptCount={isReferenceMode ? (selectedModel.maxReferenceImages ?? 3) : 1}
+            maxImagePromptCount={isReferenceMode ? (selectedModel?.image_references_max ?? 3) : 1}
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             isVideo
@@ -538,12 +565,12 @@ export default function CreateVideo() {
                 <MediaReferenceRow
                   referenceVideos={referenceVideos}
                   onReferenceVideosChange={setReferenceVideos}
-                  maxVideoCount={selectedModel.maxReferenceVideos ?? 3}
-                  maxVideoRefDuration={selectedModel.maxVideoRefDuration ?? 30}
+                  maxVideoCount={selectedModel?.video_references_max ?? 3}
+                  maxVideoRefDuration={selectedModel?.video_references_max_total_duration_seconds ?? 30}
                   referenceAudios={referenceAudios}
                   onReferenceAudiosChange={setReferenceAudios}
-                  maxAudioCount={selectedModel.maxReferenceAudios ?? 2}
-                  maxAudioRefDuration={selectedModel.maxAudioRefDuration ?? 30}
+                  maxAudioCount={selectedModel?.audio_references_max ?? 2}
+                  maxAudioRefDuration={selectedModel?.audio_references_max_total_duration_seconds ?? 30}
                 />
               ) : undefined
             }
@@ -558,9 +585,11 @@ export default function CreateVideo() {
                       panelTitle="Aspect Ratio"
                       showIconsInList
                       triggerIcon={
-                        <AspectRatioIcon
-                          sizeIcon={selectedModel.sizeOptions.find((s) => s.tauriValue === selectedSize)?.icon}
-                        />
+                        AUTO_RATIOS.has(selectedSize) ? (
+                          <AutoIcon />
+                        ) : (
+                          <AspectRatioIcon commonAspectRatio={selectedSize} />
+                        )
                       }
                     />
                   </Tooltip>
@@ -610,7 +639,7 @@ export default function CreateVideo() {
             onSelect={handleLibraryImageSelect}
             maxSelect={Math.max(
               1,
-              (isReferenceMode ? (selectedModel.maxReferenceImages ?? 3) : 1) - referenceImages.length,
+              (isReferenceMode ? (selectedModel?.image_references_max ?? 3) : 1) - referenceImages.length,
             )}
           />
           <Lightbox

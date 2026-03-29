@@ -1,15 +1,10 @@
-import { CommonAspectRatio } from "@storyteller/model-list";
-import { SizeIconOption } from "@storyteller/model-list";
-
 export const AspectRatioIcon = ({
   ratio,
   commonAspectRatio,
-  sizeIcon,
   size = 16,
 }: {
   ratio?: [number, number];
-  commonAspectRatio?: CommonAspectRatio;
-  sizeIcon?: SizeIconOption;
+  commonAspectRatio?: string;
   size?: number;
 }) => {
   let rw: number;
@@ -18,9 +13,7 @@ export const AspectRatioIcon = ({
   if (ratio) {
     [rw, rh] = ratio;
   } else if (commonAspectRatio !== undefined) {
-    [rw, rh] = commonAspectRatioToProportions(commonAspectRatio);
-  } else if (sizeIcon !== undefined) {
-    [rw, rh] = sizeIconToProportions(sizeIcon);
+    [rw, rh] = aspectRatioStringToProportions(commonAspectRatio);
   } else {
     [rw, rh] = [16, 10];
   }
@@ -75,63 +68,26 @@ export const AutoIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
-function commonAspectRatioToProportions(
-  ratio: CommonAspectRatio,
-): [number, number] {
-  switch (ratio) {
-    case CommonAspectRatio.Square:
-    case CommonAspectRatio.SquareHd:
-      return [1, 1];
-    case CommonAspectRatio.Wide:
-      return [16, 10];
-    case CommonAspectRatio.WideFiveByFour:
-      return [5, 4];
-    case CommonAspectRatio.WideFourByThree:
-      return [4, 3];
-    case CommonAspectRatio.WideThreeByTwo:
-      return [3, 2];
-    case CommonAspectRatio.WideSixteenByNine:
-      return [16, 9];
-    case CommonAspectRatio.WideTwentyOneByNine:
-      return [21, 9];
-    case CommonAspectRatio.Tall:
-      return [10, 16];
-    case CommonAspectRatio.TallFourByFive:
-      return [4, 5];
-    case CommonAspectRatio.TallThreeByFour:
-      return [3, 4];
-    case CommonAspectRatio.TallTwoByThree:
-      return [2, 3];
-    case CommonAspectRatio.TallNineBySixteen:
-      return [9, 16];
-    case CommonAspectRatio.TallNineByTwentyOne:
-      return [9, 21];
-    case CommonAspectRatio.Auto:
-    case CommonAspectRatio.Auto2k:
-    case CommonAspectRatio.Auto4k:
-      return [1, 1];
-    default:
-      return [1, 1];
-  }
-}
+const ASPECT_RATIO_PROPORTIONS: Record<string, [number, number]> = {
+  square: [1, 1],
+  square_hd: [1, 1],
+  wide: [16, 10],
+  wide_five_by_four: [5, 4],
+  wide_four_by_three: [4, 3],
+  wide_three_by_two: [3, 2],
+  wide_sixteen_by_nine: [16, 9],
+  wide_twenty_one_by_nine: [21, 9],
+  tall: [10, 16],
+  tall_four_by_five: [4, 5],
+  tall_three_by_four: [3, 4],
+  tall_two_by_three: [2, 3],
+  tall_nine_by_sixteen: [9, 16],
+  tall_nine_by_twenty_one: [9, 21],
+  auto: [1, 1],
+  auto_2k: [1, 1],
+  auto_4k: [1, 1],
+};
 
-function sizeIconToProportions(icon: SizeIconOption): [number, number] {
-  switch (icon) {
-    case SizeIconOption.Landscape16x9:
-      return [16, 9];
-    case SizeIconOption.Landscape:
-      return [16, 10];
-    case SizeIconOption.Standard4x3:
-      return [4, 3];
-    case SizeIconOption.Square:
-      return [1, 1];
-    case SizeIconOption.Portrait3x4:
-      return [3, 4];
-    case SizeIconOption.Portrait:
-      return [10, 16];
-    case SizeIconOption.Portrait9x16:
-      return [9, 16];
-    default:
-      return [16, 10];
-  }
+function aspectRatioStringToProportions(ratio: string): [number, number] {
+  return ASPECT_RATIO_PROPORTIONS[ratio] ?? [1, 1];
 }

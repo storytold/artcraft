@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faImage } from "@fortawesome/pro-solid-svg-icons";
+import { faImage } from "@fortawesome/pro-solid-svg-icons";
 import { FilterMediaClasses } from "@storyteller/api";
+import type { OmniGenImageModelInfo } from "@storyteller/api";
 import { type PopoverItem } from "@storyteller/ui-popover";
-import {
-  IMAGE_MODELS,
-  ImageModel,
-  getCreatorIcon,
-  CommonAspectRatio,
-  CommonResolution,
-} from "@storyteller/model-list";
 import {
   PromptBox,
   ImagePickerModal,
@@ -28,71 +21,74 @@ import { Lightbox } from "../../components/lightbox/lightbox";
 import { useCreateImageStore } from "./create-image-store";
 import {
   enqueueImageGeneration,
-  modelHasWebEndpoint,
   startPolling,
 } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
 import { GenerationCountPicker } from "./components/GenerationCountPicker";
 import { ResolutionPicker } from "./components/ResolutionPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
+import {
+  useOmniGenImageModels,
+  getModelCreatorIconPath,
+  getModelDisplayName,
+} from "../../lib/omni-gen-hooks";
 
-// ── Models available via REST ─────────────────────────────────────────────
-
-const WEB_IMAGE_MODELS = IMAGE_MODELS.filter(
-  (m) => m.canTextToImage && modelHasWebEndpoint(m.tauriId),
-).sort((a, b) => a.selectorName.localeCompare(b.selectorName));
+// ── Constants ────────────────────────────────────────────────────────────
 
 const DEFAULT_MODEL_ID = "nano_banana_2";
-const DEFAULT_MODEL =
-  WEB_IMAGE_MODELS.find((m) => m.id === DEFAULT_MODEL_ID) ??
-  WEB_IMAGE_MODELS[0];
-
-const MODEL_FALLBACK_ICON = (
-  <FontAwesomeIcon icon={faImage} className="h-4 w-4" />
-);
 
 const IMAGE_FILTER = [FilterMediaClasses.IMAGE];
 
+// Store API model data alongside popover items via a lookup map
+let _modelLookup = new Map<string, OmniGenImageModelInfo>();
+
 function buildModelPopoverItems(
-  models: ImageModel[],
+  models: OmniGenImageModelInfo[],
   selectedId: string,
 ): PopoverItem[] {
+  _modelLookup = new Map(models.map((m) => [m.model, m]));
   return models.map((model) => ({
-    label: model.selectorName,
-    selected: model.id === selectedId,
-    icon: getCreatorIcon(model.creator) ?? MODEL_FALLBACK_ICON,
-    description: model.selectorDescription,
-    badges: model.toLegacyBadges()?.map((b) => ({
-      label: b.label,
-      icon: <FontAwesomeIcon icon={faClock} />,
-    })),
-    model: model,
+    label: getModelDisplayName(model.model, model.full_name),
+    selected: model.model === selectedId,
+    icon: (
+      <img
+        src={getModelCreatorIconPath(model.model)}
+        alt={`${model.model} logo`}
+        className="h-4 w-4 icon-auto-contrast"
+      />
+    ),
+    action: model.model, // use action to carry the model id
   }));
 }
 
-// ── Component ─────────────────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────
 
 export default function CreateImage() {
   const { user, authChecked } = useAuthCheck();
   const { promptBoxRef, promptHeight } = usePromptHeight();
 
+  // Fetch models from API
+  const { models: apiModels } = useOmniGenImageModels();
+
   // UI state
   const ui = useCreateImageStore((s) => s.ui);
   const setUi = useCreateImageStore((s) => s.setUi);
 
-  const selectedModel = useMemo(
-    () =>
-      ui.selectedModelId
-        ? (WEB_IMAGE_MODELS.find((m) => m.id === ui.selectedModelId) ?? DEFAULT_MODEL)
-        : DEFAULT_MODEL,
-    [ui.selectedModelId],
-  );
+  const selectedModel = useMemo((): OmniGenImageModelInfo | undefined => {
+    if (!apiModels.length) return undefined;
+    if (ui.selectedModelId) {
+      return apiModels.find((m) => m.model === ui.selectedModelId) ??
+        apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ??
+        apiModels[0];
+    }
+    return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
+  }, [apiModels, ui.selectedModelId]);
 
   const prompt = ui.prompt;
   const setPrompt = useCallback((v: string) => setUi({ prompt: v }), [setUi]);
-  const aspectRatio = ui.aspectRatio as CommonAspectRatio;
+  const aspectRatio = ui.aspectRatio;
   const setAspectRatio = useCallback(
-    (v: CommonAspectRatio) => setUi({ aspectRatio: v }),
+    (v: string) => setUi({ aspectRatio: v }),
     [setUi],
   );
   const numImages = ui.numImages;
@@ -100,9 +96,9 @@ export default function CreateImage() {
     (v: number) => setUi({ numImages: v }),
     [setUi],
   );
-  const resolution = ui.resolution as CommonResolution | undefined;
+  const resolution = ui.resolution;
   const setResolution = useCallback(
-    (v: CommonResolution | undefined) => setUi({ resolution: v }),
+    (v: string | undefined) => setUi({ resolution: v }),
     [setUi],
   );
 
@@ -139,22 +135,20 @@ export default function CreateImage() {
   const lightbox = useLightboxNav(flatItems);
 
   // Derived
-  const hasAspectRatios =
-    (selectedModel.aspectRatios?.length ?? 0) > 0 &&
-    selectedModel.supportsNewAspectRatio();
-  const hasResolutions = selectedModel.supportsNewResolution();
+  const hasAspectRatios = (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
+  const hasResolutions = (selectedModel?.resolution_options?.length ?? 0) > 0;
 
   const estimatedCredits = useImageCostEstimate({
-    modelTauriId: selectedModel.tauriId,
-    aspectRatio: aspectRatio as string,
+    model: selectedModel?.model ?? "",
+    aspectRatio: aspectRatio,
     resolution: hasResolutions ? resolution : undefined,
     numImages,
     hasReferenceImages: referenceImages.length > 0,
   });
 
   const modelItems = useMemo(
-    () => buildModelPopoverItems(WEB_IMAGE_MODELS, selectedModel.id),
-    [selectedModel.id],
+    () => buildModelPopoverItems(apiModels, selectedModel?.model ?? ""),
+    [apiModels, selectedModel?.model],
   );
 
   const hasContent =
@@ -201,17 +195,16 @@ export default function CreateImage() {
 
   const handleModelChange = useCallback(
     (item: PopoverItem) => {
-      const model = (item as any).model as ImageModel | undefined;
+      const model = item.action ? _modelLookup.get(item.action) : undefined;
       if (!model) return;
       setUi({
-        selectedModelId: model.id,
-        aspectRatio:
-          (model.defaultAspectRatio as CommonAspectRatio) ?? CommonAspectRatio.Square,
+        selectedModelId: model.model,
+        aspectRatio: model.aspect_ratio_default ?? "square",
         numImages: Math.min(
-          model.maxGenerationCount ?? 4,
-          model.defaultGenerationCount ?? 1,
+          model.batch_size_max ?? 4,
+          model.batch_size_default ?? 1,
         ),
-        resolution: model.defaultResolution ?? undefined,
+        resolution: model.resolution_default ?? undefined,
       });
     },
     [setUi],
@@ -219,10 +212,8 @@ export default function CreateImage() {
 
   const handleLibraryImageSelect = useCallback(
     (images: { token: string; url: string; thumbnailUrl: string }[]) => {
-      const availableSlots = Math.max(
-        0,
-        (selectedModel.maxImagePromptCount ?? 1) - referenceImages.length,
-      );
+      const maxImages = selectedModel?.image_refs_max ?? 1;
+      const availableSlots = Math.max(0, maxImages - referenceImages.length);
       const newImages: RefImage[] = images.slice(0, availableSlots).map((img) => ({
         id: Math.random().toString(36).substring(7),
         url: img.thumbnailUrl || img.url,
@@ -235,23 +226,27 @@ export default function CreateImage() {
   );
 
   const handleGenerate = useCallback(async () => {
-    if (!prompt.trim() || isGenerating) return;
+    if (!prompt.trim() || isGenerating || !selectedModel) return;
 
     setIsGenerating(true);
-    const batchId = startBatch(prompt, numImages, selectedModel.fullName);
+    const batchId = startBatch(
+      prompt,
+      numImages,
+      selectedModel.full_name ?? selectedModel.model,
+    );
 
     try {
-      const imageMediaTokens = selectedModel.canUseImagePrompt
+      const imageMediaTokens = selectedModel.image_refs_supported
         ? referenceImages
-          .map((img) => img.mediaToken)
-          .filter((t) => t.length > 0)
+            .map((img) => img.mediaToken)
+            .filter((t) => t.length > 0)
         : undefined;
 
       const result = await enqueueImageGeneration({
         prompt: prompt.trim(),
-        modelTauriId: selectedModel.tauriId,
+        model: selectedModel.model,
         numImages,
-        aspectRatio: aspectRatio as string,
+        aspectRatio: aspectRatio,
         resolution: hasResolutions ? resolution : undefined,
         imageMediaTokens: imageMediaTokens?.length ? imageMediaTokens : undefined,
       });
@@ -334,8 +329,8 @@ export default function CreateImage() {
             isSubmitting={isGenerating}
             credits={estimatedCredits}
             placeholder="Describe what you want in the image..."
-            supportsImagePrompts={selectedModel.canUseImagePrompt}
-            maxImagePromptCount={selectedModel.maxImagePromptCount}
+            supportsImagePrompts={!!selectedModel?.image_refs_supported}
+            maxImagePromptCount={selectedModel?.image_refs_max ?? 1}
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
@@ -343,25 +338,28 @@ export default function CreateImage() {
             onClearSession={useCreateImageStore.getState().reset}
             leftToolbar={
               <>
-                {hasAspectRatios && (
+                {hasAspectRatios && selectedModel && (
                   <AspectRatioPicker
-                    model={selectedModel}
+                    aspectRatioOptions={selectedModel.aspect_ratio_options ?? []}
+                    defaultAspectRatio={selectedModel.aspect_ratio_default ?? undefined}
                     currentAspectRatio={aspectRatio}
-                    handleCommonAspectRatioSelect={setAspectRatio}
+                    handleAspectRatioSelect={setAspectRatio}
                   />
                 )}
-                {hasResolutions && (
+                {hasResolutions && selectedModel && (
                   <ResolutionPicker
-                    model={selectedModel}
+                    resolutionOptions={selectedModel.resolution_options ?? []}
+                    defaultResolution={selectedModel.resolution_default ?? undefined}
                     currentResolution={resolution}
-                    handleCommonResolutionSelect={setResolution}
+                    handleResolutionSelect={setResolution}
                   />
                 )}
               </>
             }
             rightToolbar={
               <GenerationCountPicker
-                currentModel={selectedModel}
+                batchSizeMax={selectedModel?.batch_size_max ?? 4}
+                batchSizeOptions={selectedModel?.batch_size_options}
                 currentCount={numImages}
                 handleCountChange={setNumImages}
               />
@@ -377,7 +375,7 @@ export default function CreateImage() {
             onSelect={handleLibraryImageSelect}
             maxSelect={Math.max(
               1,
-              (selectedModel.maxImagePromptCount ?? 1) - referenceImages.length,
+              (selectedModel?.image_refs_max ?? 1) - referenceImages.length,
             )}
           />
           <Lightbox

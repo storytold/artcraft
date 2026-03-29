@@ -17,8 +17,8 @@ import { TaskQueue } from "./task-queue";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
-  { name: "Image", href: "/create-image" },
-  { name: "Video", href: "/create-video" },
+  // { name: "Image", href: "/create-image" },
+  // { name: "Video", href: "/create-video" },
   { name: "Tutorials", href: "/tutorials" },
   { name: "News", href: "/news" },
   { name: "FAQ", href: "/faq" },

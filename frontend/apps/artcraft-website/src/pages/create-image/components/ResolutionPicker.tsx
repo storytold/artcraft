@@ -5,60 +5,67 @@ import {
   faStandardDefinition,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { CommonResolution, ImageModel } from "@storyteller/model-list";
 import { PopoverItem, PopoverMenu } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
 
 interface ResolutionPickerProps {
-  model: ImageModel;
-  currentResolution?: CommonResolution;
-  handleCommonResolutionSelect: (selected: CommonResolution) => void;
+  resolutionOptions: string[];
+  defaultResolution?: string;
+  currentResolution?: string;
+  handleResolutionSelect: (selected: string) => void;
 }
 
-const RESOLUTION_ICONS: Record<CommonResolution, IconDefinition> = {
-  [CommonResolution.OneK]: faStandardDefinition,
-  [CommonResolution.TwoK]: faHighDefinition,
-  [CommonResolution.FourK]: faHighDefinition,
+const RESOLUTION_ICONS: Record<string, IconDefinition> = {
+  half_k: faStandardDefinition,
+  four_eighty_p: faStandardDefinition,
+  seven_twenty_p: faStandardDefinition,
+  one_k: faStandardDefinition,
+  ten_eighty_p: faHighDefinition,
+  two_k: faHighDefinition,
+  three_k: faHighDefinition,
+  four_k: faHighDefinition,
 };
 
-const RESOLUTION_LABELS: Record<CommonResolution, string> = {
-  [CommonResolution.OneK]: "1K",
-  [CommonResolution.TwoK]: "2K",
-  [CommonResolution.FourK]: "4K",
+const RESOLUTION_LABELS: Record<string, string> = {
+  half_k: "0.5K",
+  four_eighty_p: "480p",
+  seven_twenty_p: "720p",
+  one_k: "1K",
+  ten_eighty_p: "1080p",
+  two_k: "2K",
+  three_k: "3K",
+  four_k: "4K",
 };
 
-const LABEL_TO_RESOLUTION: Record<string, CommonResolution> = {
-  "1K": CommonResolution.OneK,
-  "2K": CommonResolution.TwoK,
-  "4K": CommonResolution.FourK,
-};
+const LABEL_TO_RESOLUTION: Record<string, string> = Object.fromEntries(
+  Object.entries(RESOLUTION_LABELS).map(([k, v]) => [v, k]),
+);
 
 export const ResolutionPicker = ({
-  model,
+  resolutionOptions,
+  defaultResolution,
   currentResolution,
-  handleCommonResolutionSelect,
+  handleResolutionSelect,
 }: ResolutionPickerProps) => {
-  const activeResolution =
-    currentResolution ?? model.defaultResolution ?? undefined;
+  const activeResolution = currentResolution ?? defaultResolution ?? undefined;
 
   const handleSelectAdapter = (item: PopoverItem) => {
     const resolution = LABEL_TO_RESOLUTION[item.label];
     if (resolution) {
-      handleCommonResolutionSelect(resolution);
+      handleResolutionSelect(resolution);
     }
   };
 
-  const resolutionList: PopoverItem[] =
-    model.resolutions?.map((resolution) => ({
-      label: RESOLUTION_LABELS[resolution] ?? "1K",
-      selected: activeResolution === resolution,
-      icon: (
-        <FontAwesomeIcon
-          icon={RESOLUTION_ICONS[resolution] ?? faStandardDefinition}
-          className="h-4 w-4"
-        />
-      ),
-    })) ?? [];
+  const resolutionList: PopoverItem[] = resolutionOptions.map((resolution) => ({
+    label: RESOLUTION_LABELS[resolution] ?? resolution,
+    selected: activeResolution === resolution,
+    icon: (
+      <FontAwesomeIcon
+        icon={RESOLUTION_ICONS[resolution] ?? faStandardDefinition}
+        className="h-4 w-4"
+      />
+    ),
+  }));
 
   return (
     <Tooltip
