@@ -199,12 +199,15 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
       .collect();
 
     // Derive our status from the raw Kinovi API fields.
-    // A "COMPLETED" task with assetStatus "Failed" is still a failure on our end.
+    // Kinovi reports "COMPLETED" even when the character actually failed:
+    //   - assetStatus "Failed" => the asset generation failed
+    //   - assetStatus null (no assetId) => the task completed but produced no asset
+    // Only taskStatus "COMPLETED" + assetStatus "Active" is a true success.
     let status = match item.task_status.as_str() {
       "FAILED" => CharacterCreationStatus::Failed,
       "COMPLETED" => match item.asset_status.as_deref() {
         Some("Active") => CharacterCreationStatus::Success,
-        _ => CharacterCreationStatus::Failed,
+        _ => CharacterCreationStatus::Failed, // "Failed", null, or any other value
       },
       _ => CharacterCreationStatus::Pending,
     };
