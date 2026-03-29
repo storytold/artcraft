@@ -44,29 +44,6 @@ pub enum CharacterCreationStatus {
 }
 
 impl CharacterCreationStatus {
-  /// Derive our status from the raw Kinovi API fields.
-  ///
-  /// Logic:
-  /// - taskStatus "FAILED" => Failed
-  /// - taskStatus "COMPLETED" + assetStatus "Active" => Success
-  /// - taskStatus "COMPLETED" + assetStatus "Failed" => Failed
-  /// - taskStatus "COMPLETED" + assetStatus is null/other => Failed (defensive)
-  /// - taskStatus "PENDING" or "PROCESSING" => Pending
-  /// - anything else => Pending (defensive)
-  fn from_api(task_status: &str, asset_status: Option<&str>) -> Self {
-    match task_status {
-      "FAILED" => Self::Failed,
-      "COMPLETED" => {
-        match asset_status {
-          Some("Active") => Self::Success,
-          _ => Self::Failed,
-        }
-      }
-      "PENDING" | "PROCESSING" => Self::Pending,
-      _ => Self::Pending,
-    }
-  }
-
   pub fn is_terminal(&self) -> bool {
     matches!(self, Self::Success | Self::Failed)
   }
@@ -205,10 +182,16 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
       })
       .collect();
 
-    let status = CharacterCreationStatus::from_api(
-      &item.task_status,
-      item.asset_status.as_deref(),
-    );
+    // Derive our status from the raw Kinovi API fields.
+    // A "COMPLETED" task with assetStatus "Failed" is still a failure on our end.
+    let status = match item.task_status.as_str() {
+      "FAILED" => CharacterCreationStatus::Failed,
+      "COMPLETED" => match item.asset_status.as_deref() {
+        Some("Active") => CharacterCreationStatus::Success,
+        _ => CharacterCreationStatus::Failed,
+      },
+      _ => CharacterCreationStatus::Pending,
+    };
 
     CharacterStatus {
       id: item.id,
