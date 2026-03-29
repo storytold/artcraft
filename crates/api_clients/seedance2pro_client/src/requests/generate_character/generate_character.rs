@@ -20,8 +20,10 @@ pub struct GenerateCharacterArgs<'a> {
   /// A description of the character.
   pub description: String,
 
-  /// URLs of uploaded reference images (from `upload_file`).
-  pub reference_image_urls: Vec<String>,
+  /// URL of the uploaded reference image (from `upload_file`).
+  /// NB: The Kinovi API accepts multiple images, but the UI only supports one for now.
+  /// We may expand this to Vec<String> in the future.
+  pub reference_image_url: String,
 
   /// Whether the character should be publicly visible.
   pub is_public: bool,
@@ -54,14 +56,14 @@ pub async fn generate_character(args: GenerateCharacterArgs<'_>) -> Result<Gener
   let base_url = host.api_base_url();
   let url = format!("{}/api/trpc/character.createCharacter?batch=1", base_url);
 
-  info!("Creating character '{}' with {} reference image(s)", args.name, args.reference_image_urls.len());
+  info!("Creating character '{}'", args.name);
 
   let request_body = BatchRequest {
     zero: BatchRequestInner {
       json: BatchRequestJson {
         name: args.name,
         description: args.description,
-        reference_image_urls: args.reference_image_urls,
+        reference_image_urls: vec![args.reference_image_url],
         mode: "upload",
         is_public: args.is_public,
       },
@@ -184,7 +186,7 @@ mod tests {
       session: &session,
       name: "Juno".to_string(),
       description: "Juno the shiba inu at the lake".to_string(),
-      reference_image_urls: vec![public_url],
+      reference_image_url: public_url,
       is_public: false,
       host_override: None,
     }).await?;
@@ -215,8 +217,8 @@ mod tests {
     let result = generate_character(GenerateCharacterArgs {
       session: &session,
       name: "Ernest".to_string(),
-      description: "Ernest P. Worrell from Ernest Scared Stupid".to_string(),
-      reference_image_urls: vec![public_url],
+      description: "Ernest".to_string(),
+      reference_image_url: public_url,
       is_public: false,
       host_override: None,
     }).await?;
