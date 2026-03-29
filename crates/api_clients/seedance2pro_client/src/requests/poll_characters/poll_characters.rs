@@ -14,8 +14,12 @@ use wreq_util::Emulation;
 pub struct PollCharactersArgs<'a> {
   pub session: &'a Seedance2ProSession,
 
-  /// Maximum number of characters to return.
+  /// Maximum number of characters to return per page.
   pub limit: u32,
+
+  /// Optional cursor from a previous `PollCharactersResponse::next_cursor`.
+  /// When `None`, the most recent characters are returned.
+  pub cursor: Option<u64>,
 
   /// Override the default host (kinovi.ai).
   pub host_override: Option<KinoviHost>,
@@ -25,6 +29,10 @@ pub struct PollCharactersArgs<'a> {
 
 pub struct PollCharactersResponse {
   pub characters: Vec<CharacterStatus>,
+
+  /// Present when there are more characters to fetch.
+  /// Pass this value as `PollCharactersArgs::cursor` in the next call.
+  pub next_cursor: Option<u64>,
 }
 
 // --- Public types ---
@@ -102,11 +110,17 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
   let host = resolve_host(args.host_override.as_ref());
   let base_url = host.api_base_url();
 
-  // The query param is URL-encoded JSON: {"0":{"json":{"limit":50}}}
-  let input = format!(
-    r#"{{"0":{{"json":{{"limit":{}}}}}}}"#,
-    args.limit
-  );
+  // The query param is URL-encoded JSON: {"0":{"json":{"limit":N}}} or {"0":{"json":{"limit":N,"cursor":C}}}
+  let input = match args.cursor {
+    Some(cursor) => format!(
+      r#"{{"0":{{"json":{{"limit":{},"cursor":{}}}}}}}"#,
+      args.limit, cursor
+    ),
+    None => format!(
+      r#"{{"0":{{"json":{{"limit":{}}}}}}}"#,
+      args.limit
+    ),
+  };
 
   let encoded_input: String = url::form_urlencoded::byte_serialize(input.as_bytes()).collect();
 
@@ -116,7 +130,7 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
     encoded_input,
   );
 
-  info!("Polling characters (limit={})...", args.limit);
+  info!("Polling characters (limit={}, cursor={:?})...", args.limit, args.cursor);
 
   let cookie = args.session.cookies.as_str();
   let referer = format!("{}/app/characters", base_url);
@@ -209,9 +223,13 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
     }
   }).collect();
 
-  info!("Polled {} character(s)", characters.len());
+  // Parse next_cursor: it's either a JSON number or null.
+  let next_cursor = data.next_cursor
+    .and_then(|v| v.as_u64());
 
-  Ok(PollCharactersResponse { characters })
+  info!("Polled {} character(s), next_cursor={:?}", characters.len(), next_cursor);
+
+  Ok(PollCharactersResponse { characters, next_cursor })
 }
 
 #[cfg(test)]
@@ -236,10 +254,12 @@ mod tests {
     let result = poll_characters(PollCharactersArgs {
       session: &session,
       limit: 50,
+      cursor: None,
       host_override: None,
     }).await?;
 
     println!("Characters returned: {}", result.characters.len());
+    println!("Next cursor: {:?}", result.next_cursor);
     for ch in &result.characters {
       println!(
         "  {} | {} | {:?} | asset_id={:?} | avatar={:?}",
@@ -258,16 +278,56 @@ mod tests {
     let result = poll_characters(PollCharactersArgs {
       session: &session,
       limit: 2,
+      cursor: None,
       host_override: None,
     }).await?;
 
     println!("Characters returned (limit=2): {}", result.characters.len());
+    println!("Next cursor: {:?}", result.next_cursor);
     for ch in &result.characters {
       println!(
         "  {} | {} | {:?} | asset_id={:?}",
         ch.character_id, ch.name, ch.status, ch.asset_id,
       );
     }
+    assert_eq!(1, 2); // NB: Intentional failure to inspect output.
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually test — requires real cookies; exhausts all pages
+  async fn test_poll_all_pages() -> AnyhowResult<()> {
+    setup_test_logging(LevelFilter::Trace);
+    let session = test_session()?;
+
+    let mut cursor: Option<u64> = None;
+    let mut page = 0usize;
+    let mut total_characters = 0usize;
+
+    loop {
+      page += 1;
+      let result = poll_characters(PollCharactersArgs {
+        session: &session,
+        limit: 2,
+        cursor,
+        host_override: None,
+      }).await?;
+
+      let page_count = result.characters.len();
+      total_characters += page_count;
+
+      println!("Page {}: {} characters, next_cursor: {:?}", page, page_count, result.next_cursor);
+      for ch in &result.characters {
+        println!("  {} | {} | {:?} | asset_id={:?}", ch.character_id, ch.name, ch.status, ch.asset_id);
+      }
+
+      cursor = result.next_cursor;
+      if cursor.is_none() {
+        break;
+      }
+    }
+
+    println!("Total characters across {} pages: {}", page, total_characters);
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
     Ok(())
   }
@@ -280,6 +340,7 @@ mod tests {
     let result = poll_characters(PollCharactersArgs {
       session: &session,
       limit: 50,
+      cursor: None,
       host_override: None,
     }).await?;
 
