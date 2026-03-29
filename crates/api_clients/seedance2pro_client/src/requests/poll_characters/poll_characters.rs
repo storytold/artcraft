@@ -14,12 +14,12 @@ use wreq_util::Emulation;
 pub struct PollCharactersArgs<'a> {
   pub session: &'a Seedance2ProSession,
 
-  /// Maximum number of characters to return per page.
-  pub limit: u32,
-
-  /// Optional cursor from a previous `PollCharactersResponse::next_cursor`.
+  /// Cursor from a previous `PollCharactersResponse::next_cursor`.
   /// When `None`, the most recent characters are returned.
   pub cursor: Option<u64>,
+
+  /// Maximum number of characters to return per page. Defaults to 50.
+  pub limit: Option<u32>,
 
   /// Override the default host (kinovi.ai).
   pub host_override: Option<KinoviHost>,
@@ -110,15 +110,17 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
   let host = resolve_host(args.host_override.as_ref());
   let base_url = host.api_base_url();
 
+  let limit = args.limit.unwrap_or(50);
+
   // The query param is URL-encoded JSON: {"0":{"json":{"limit":N}}} or {"0":{"json":{"limit":N,"cursor":C}}}
   let input = match args.cursor {
     Some(cursor) => format!(
       r#"{{"0":{{"json":{{"limit":{},"cursor":{}}}}}}}"#,
-      args.limit, cursor
+      limit, cursor
     ),
     None => format!(
       r#"{{"0":{{"json":{{"limit":{}}}}}}}"#,
-      args.limit
+      limit
     ),
   };
 
@@ -130,7 +132,7 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
     encoded_input,
   );
 
-  info!("Polling characters (limit={}, cursor={:?})...", args.limit, args.cursor);
+  info!("Polling characters (limit={}, cursor={:?})...", limit, args.cursor);
 
   let cookie = args.session.cookies.as_str();
   let referer = format!("{}/app/characters", base_url);
@@ -253,7 +255,7 @@ mod tests {
     let session = test_session()?;
     let result = poll_characters(PollCharactersArgs {
       session: &session,
-      limit: 50,
+      limit: None,
       cursor: None,
       host_override: None,
     }).await?;
@@ -277,7 +279,7 @@ mod tests {
     let session = test_session()?;
     let result = poll_characters(PollCharactersArgs {
       session: &session,
-      limit: 2,
+      limit: Some(2),
       cursor: None,
       host_override: None,
     }).await?;
@@ -308,7 +310,7 @@ mod tests {
       page += 1;
       let result = poll_characters(PollCharactersArgs {
         session: &session,
-        limit: 2,
+        limit: Some(2),
         cursor,
         host_override: None,
       }).await?;
@@ -339,7 +341,7 @@ mod tests {
     let session = test_session()?;
     let result = poll_characters(PollCharactersArgs {
       session: &session,
-      limit: 50,
+      limit: None,
       cursor: None,
       host_override: None,
     }).await?;
