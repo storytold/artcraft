@@ -29,29 +29,46 @@ pub struct PollCharactersResponse {
 
 // --- Public types ---
 
-/// The lifecycle status of a character creation task.
+/// Our resolved status for a character creation job.
+///
+/// This is NOT 1:1 with Kinovi's API. A character can have `taskStatus: "COMPLETED"`
+/// but `assetStatus: "Failed"`, which we treat as `Failed` on our end.
 #[derive(Debug, Clone, PartialEq)]
-pub enum CharacterTaskStatus {
-  Pending,
-  Processing,
-  Completed,
+pub enum CharacterCreationStatus {
+  /// The character was successfully created and the asset is active.
+  Success,
+  /// The character creation failed (either the task failed or the asset failed).
   Failed,
-  Unknown(String),
+  /// The character is still being created (pending or processing).
+  Pending,
 }
 
-impl CharacterTaskStatus {
-  fn from_str(s: &str) -> Self {
-    match s {
-      "PENDING" => Self::Pending,
-      "PROCESSING" => Self::Processing,
-      "COMPLETED" => Self::Completed,
+impl CharacterCreationStatus {
+  /// Derive our status from the raw Kinovi API fields.
+  ///
+  /// Logic:
+  /// - taskStatus "FAILED" => Failed
+  /// - taskStatus "COMPLETED" + assetStatus "Active" => Success
+  /// - taskStatus "COMPLETED" + assetStatus "Failed" => Failed
+  /// - taskStatus "COMPLETED" + assetStatus is null/other => Failed (defensive)
+  /// - taskStatus "PENDING" or "PROCESSING" => Pending
+  /// - anything else => Pending (defensive)
+  fn from_api(task_status: &str, asset_status: Option<&str>) -> Self {
+    match task_status {
       "FAILED" => Self::Failed,
-      other => Self::Unknown(other.to_string()),
+      "COMPLETED" => {
+        match asset_status {
+          Some("Active") => Self::Success,
+          _ => Self::Failed,
+        }
+      }
+      "PENDING" | "PROCESSING" => Self::Pending,
+      _ => Self::Pending,
     }
   }
 
   pub fn is_terminal(&self) -> bool {
-    matches!(self, Self::Completed | Self::Failed)
+    matches!(self, Self::Success | Self::Failed)
   }
 }
 
@@ -83,17 +100,20 @@ pub struct CharacterStatus {
   /// Result images generated during character creation.
   pub result_images: Vec<CharacterResultImage>,
 
-  /// The task status.
-  pub task_status: CharacterTaskStatus,
+  /// Our resolved status (Success, Failed, or Pending).
+  pub status: CharacterCreationStatus,
 
-  /// If the task failed, the reason.
+  /// If the task failed, the reason from the API.
   pub fail_reason: Option<String>,
 
-  /// The asset ID, present when the character is completed.
+  /// The asset ID, present when the character completed successfully.
   pub asset_id: Option<String>,
 
-  /// The asset status (e.g. "Active"), present when the character is completed.
-  pub asset_status: Option<String>,
+  /// Raw task status from the Kinovi API (for debugging).
+  pub raw_task_status: String,
+
+  /// Raw asset status from the Kinovi API (for debugging).
+  pub raw_asset_status: Option<String>,
 
   /// ISO 8601 timestamp of creation.
   pub created_at: String,
@@ -185,6 +205,11 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
       })
       .collect();
 
+    let status = CharacterCreationStatus::from_api(
+      &item.task_status,
+      item.asset_status.as_deref(),
+    );
+
     CharacterStatus {
       id: item.id,
       character_id: item.character_id,
@@ -192,10 +217,11 @@ pub async fn poll_characters(args: PollCharactersArgs<'_>) -> Result<PollCharact
       description: item.description,
       avatar_url: item.avatar_url,
       result_images,
-      task_status: CharacterTaskStatus::from_str(&item.task_status),
+      status,
       fail_reason: item.fail_reason,
       asset_id: item.asset_id,
-      asset_status: item.asset_status,
+      raw_task_status: item.task_status,
+      raw_asset_status: item.asset_status,
       created_at: item.created_at,
     }
   }).collect();
@@ -234,7 +260,7 @@ mod tests {
     for ch in &result.characters {
       println!(
         "  {} | {} | {:?} | asset_id={:?} | avatar={:?}",
-        ch.character_id, ch.name, ch.task_status, ch.asset_id, ch.avatar_url,
+        ch.character_id, ch.name, ch.status, ch.asset_id, ch.avatar_url,
       );
     }
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
@@ -256,7 +282,7 @@ mod tests {
     for ch in &result.characters {
       println!(
         "  {} | {} | {:?} | asset_id={:?}",
-        ch.character_id, ch.name, ch.task_status, ch.asset_id,
+        ch.character_id, ch.name, ch.status, ch.asset_id,
       );
     }
     assert_eq!(1, 2); // NB: Intentional failure to inspect output.
@@ -278,10 +304,11 @@ mod tests {
     for ch in &result.characters {
       println!("Character: {} ({})", ch.name, ch.character_id);
       println!("  Description: {:?}", ch.description);
-      println!("  Status: {:?}", ch.task_status);
+      println!("  Status: {:?}", ch.status);
       println!("  Avatar URL: {:?}", ch.avatar_url);
       println!("  Asset ID: {:?}", ch.asset_id);
-      println!("  Asset Status: {:?}", ch.asset_status);
+      println!("  Raw Task Status: {}", ch.raw_task_status);
+      println!("  Raw Asset Status: {:?}", ch.raw_asset_status);
       println!("  Fail Reason: {:?}", ch.fail_reason);
       println!("  Created At: {}", ch.created_at);
       println!("  Result Images:");
