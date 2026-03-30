@@ -1,9 +1,10 @@
 use actix_http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
-use log::error;
+use log::{error, warn};
 use mysql_queries::errors::mysql_error::{MysqlCrateErrorSubtype, MysqlError};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
 
 #[derive(Debug, utoipa::ToSchema)]
 pub enum CommonWebError {
@@ -96,6 +97,15 @@ impl <T: MysqlCrateErrorSubtype> From<MysqlError<T>> for CommonWebError {
   fn from(value: MysqlError<T>) -> Self {
     error!("MysqlError being coerced to CommonWebError : {:?}", value);
     CommonWebError::ServerError
+  }
+}
+
+impl From<RequireUserSessionError> for CommonWebError {
+  fn from(value: RequireUserSessionError) -> Self {
+    match value {
+      RequireUserSessionError::NotAuthorized => Self::NotAuthorized,
+      RequireUserSessionError::ServerError => Self::ServerError,
+    }
   }
 }
 
