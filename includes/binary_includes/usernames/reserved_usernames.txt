@@ -10,6 +10,27 @@ art_craft
 artcraft
 hanashi
 
+# Models
+chatgpt
+flux
+gemini
+gpt
+grok
+grokimagine
+ltx
+midjourney
+nanobanana
+nanobanana2
+nanobananapro
+seedance
+seedance2
+seedream
+sora
+veo
+veo2
+veo3
+wan
+
 # Possible uses
 # See https://www.wired.com/story/by-seizing-music-elon-musk-shows-he-doesnt-know-what-made-twitter-good/
 3d
@@ -282,6 +303,7 @@ category
 channel
 channels
 character
+characters
 checkout_cancel
 checkout_success
 clone
@@ -319,6 +341,7 @@ search
 signup
 stream
 studio
+studios
 terms
 testing
 text_to_image
@@ -621,6 +644,7 @@ upvote
 amazon
 anthropic
 apple
+bytedance
 cash
 cashapp
 epic
