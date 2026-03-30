@@ -46,6 +46,7 @@ CREATE TABLE generic_inference_jobs (
   --  * background_removal
   inference_category VARCHAR(32) NOT NULL,
 
+  -- Enum: InferenceJobExternalThirdParty
   -- If the job is externally enqueued, this is the third-party service
   -- responsible for the job. Typically, we won't run an inference job for
   -- jobs being run on a third party.
