@@ -6,6 +6,7 @@ pub mod audit_logs;
 pub mod batch_generations;
 pub mod beta_keys;
 pub mod browser_session_logs;
+pub mod characters;
 pub mod comments;
 pub mod email_sender_job_token;
 pub mod firehose_entries;

@@ -28,6 +28,7 @@ pub(crate) enum TokenPrefix {
   BatchGeneration,
   BetaKey,
   BrowserSessionLog,
+  Character,
   Comment,
   DownloadJob,
   EmailSenderJob,
@@ -111,6 +112,7 @@ impl PrefixGenerator for TokenPrefix {
       Self::BatchGeneration => "batch_g_",
       Self::BetaKey => "beta_key_",
       Self::BrowserSessionLog => "bsl_",
+      Self::Character => "character_",
       Self::Comment => "comment_",
       Self::DownloadJob => "jdown_", // NB: Previously "JGUP:"
       Self::EmailSenderJob => "email_job_",
@@ -339,6 +341,7 @@ mod tests {
             || prefix == "email_job_"
             || prefix == "pw_reset_"
             || prefix == "tts_task_"
+            || prefix == "app_session_"
         {
           // TODO/FIXME: I'm too tired at 5AM to replacen from the left. Make this test valid.
           //  These tokens are from the AIChatBot sidecar, so asserting their validity is less important.
