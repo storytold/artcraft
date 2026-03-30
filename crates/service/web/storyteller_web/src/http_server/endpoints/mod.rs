@@ -1,6 +1,7 @@
 pub mod analytics;
 pub mod app_state;
 pub mod beta_keys;
+pub mod characters;
 pub mod comments;
 pub mod credits;
 pub mod download_job;

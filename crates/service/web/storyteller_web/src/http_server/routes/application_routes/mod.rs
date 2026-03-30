@@ -1,4 +1,5 @@
 mod analytics_routes;
+mod character_routes;
 mod comments_routes;
 mod credits_routes;
 mod featured_item_routes;

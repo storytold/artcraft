@@ -1,4 +1,5 @@
 use crate::http_server::routes::application_routes::analytics_routes::add_analytics_routes;
+use crate::http_server::routes::application_routes::character_routes::add_character_routes;
 use crate::http_server::routes::application_routes::comments_routes::add_comments_routes;
 use crate::http_server::routes::application_routes::credits_routes::add_credits_routes;
 use crate::http_server::routes::application_routes::featured_item_routes::add_featured_item_routes;
@@ -42,6 +43,7 @@ where
   // Artcraft surface area
   app = add_generate_routes(app); // /v1/generate/...
   app = add_omni_gen_routes(app); // /v1/omni_gen/...
+  app = add_character_routes(app); // /v1/character/... and /v1/characters/...
   app = add_webhook_routes(app); // /v1/webhooks/... (fal)
   
   // Legacy FakeYou surface area that might be useful again one day
