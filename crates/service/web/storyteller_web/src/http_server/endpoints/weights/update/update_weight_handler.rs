@@ -11,7 +11,7 @@ use utoipa::ToSchema;
 
 use crate::configs::supported_languages_for_models::{get_canonicalized_language_tag_for_model, get_primary_language_subtag};
 use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
 use crate::state::server_state::ServerState;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_types::WeightsType;
@@ -124,7 +124,7 @@ pub async fn update_weight_handler(
             UpdateWeightError::ServerError
         })?;
 
-    let user_session = require_user_session_using_connection(
+    let user_session = require_user_session_extended_using_connection(
         &http_request,
         &server_state.session_checker,
         &mut mysql_connection)

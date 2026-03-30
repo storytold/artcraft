@@ -10,7 +10,7 @@ use crate::http_server::session::lookup::user_session_extended::UserSessionExten
 use crate::http_server::session::session_checker::SessionChecker;
 use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
 
-pub async fn require_user_session_using_connection(
+pub async fn require_user_session_extended_using_connection(
   http_request: &HttpRequest,
   session_checker: &SessionChecker,
   mysql_connection: &mut PoolConnection<MySql>,

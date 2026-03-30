@@ -15,7 +15,7 @@ use utoipa::ToSchema;
 use artcraft_api_defs::users::change_password::{ChangePasswordRequest, ChangePasswordResponse};
 use crate::http_server::validations::validate_passwords::validate_passwords;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
 use crate::state::server_state::ServerState;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::users::user::update::update_password::{update_password, UpdatePasswordArgs};
@@ -93,7 +93,7 @@ pub async fn change_password_handler(
         ChangePasswordError::ServerError
       })?;
 
-  let user_session = require_user_session_using_connection(
+  let user_session = require_user_session_extended_using_connection(
     &http_request,
     &server_state.session_checker,
     &mut mysql_connection)

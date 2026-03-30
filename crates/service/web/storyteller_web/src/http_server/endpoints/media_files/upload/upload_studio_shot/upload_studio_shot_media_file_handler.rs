@@ -25,7 +25,7 @@ use crate::http_server::endpoints::media_files::upload::upload_studio_shot::extr
 use crate::http_server::endpoints::media_files::upload::upload_studio_shot::ffmpeg_frames_to_mp4::ffmpeg_frames_to_mp4;
 use crate::http_server::requests::request_headers::has_debug_header::has_debug_header;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
+use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::require_user_session_extended_using_connection;
 use crate::state::server_state::ServerState;
 
 const DEFAULT_FPS : u8 = 12;
@@ -111,7 +111,7 @@ pub async fn upload_studio_shot_media_file_handler(
   // ==================== READ SESSION ==================== //
 
   // NB: We require a moderator to upload PMX files.
-  let user_session = require_user_session_using_connection(&http_request, &server_state.session_checker, &mut mysql_connection)
+  let user_session = require_user_session_extended_using_connection(&http_request, &server_state.session_checker, &mut mysql_connection)
       .await
       .map_err(|e| {
         error!("User session error: {:?}", e);
