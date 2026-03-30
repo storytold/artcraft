@@ -1,0 +1,6 @@
+$kind: http-request
+url: http://localhost:12345/v1/jobs/job/jinf_avdrxxv3dv04dfxh3jej57vbby2
+method: DELETE
+headers:
+  Accept: application/json
+order: 6000

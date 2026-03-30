@@ -1,0 +1,6 @@
+name: Local Development
+values:
+  - key: api_host
+    value: http://localhost:12345
+    enabled: true
+color: null

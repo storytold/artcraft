@@ -1,0 +1,11 @@
+$kind: http-request
+name: Get Prompt
+url: "{{api_host}}/v1/prompts/prompt_8q8fwcmh93nn8pjb2szeqbxgz"
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+order: 2000

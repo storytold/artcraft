@@ -1,0 +1,21 @@
+$kind: http-request
+name: Generate Hunyuan 3D v3 Text to Object
+url: "{{api_host}}/v1/generate/object/multi_function/hunyuan3d_v3"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: ""
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "prompt": "a large blue dragon with a smile"
+    }
+order: 2000

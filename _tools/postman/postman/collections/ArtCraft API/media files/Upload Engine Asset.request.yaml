@@ -1,0 +1,33 @@
+$kind: http-request
+name: Upload Engine Asset
+url: "{{api_host}}/v1/media_files/upload/engine_asset"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Cookie
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: text
+      key: maybe_title
+      value: Walls and Floors
+      disabled: false
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+      disabled: false
+    - type: file
+      key: file
+      src: []
+      disabled: false
+    - type: text
+      key: source
+      value: file
+      disabled: false
+order: 9000

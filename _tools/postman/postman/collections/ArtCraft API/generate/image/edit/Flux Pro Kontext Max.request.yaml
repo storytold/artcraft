@@ -1,0 +1,25 @@
+$kind: http-request
+name: Flux Pro Kontext Max
+url: "{{api_host}}/v1/generate/image/edit/flux_pro_kontext_max"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev)
+        // m_z8v3nrjssha8rj5ayk51g85wef2cz9 (prod - godzilla stacks)
+        // m_4n0p3ve9qew899774pg6w03vgzb6af (dev - beach)
+        // m_9y8hy50582mwxpm8hxmh4n4wjeh5cr (dev - stars)
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev - cube)
+        // m_w7cpyqr45d11fw9ca1wbkxp1q3kxs1 (dev - studio alley screenshot)
+        "image_media_token": "m_z8v3nrjssha8rj5ayk51g85wef2cz9",
+        "prompt": "Make this scene photorealistic. Change it to an overcast sky. Make the bricks look more aged and worn."
+    }
+order: 2000

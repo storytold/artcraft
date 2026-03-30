@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{api_host}}/v1/jobs/session"
+method: GET
+headers:
+  Accept: application/json
+order: 2000

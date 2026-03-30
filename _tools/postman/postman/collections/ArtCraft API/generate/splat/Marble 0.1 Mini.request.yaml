@@ -1,0 +1,21 @@
+$kind: http-request
+name: Marble 0.1 Mini
+url: "{{api_host}}/v1/generate/splat/worldlabs_marble_0p1_mini"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "prompt": "A hidden forest grotto, fireflies, lush green"
+    }
+order: 1000

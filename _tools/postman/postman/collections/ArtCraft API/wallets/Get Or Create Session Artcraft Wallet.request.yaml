@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{api_host}}/v1/wallets/session_artcraft_wallet"
+method: GET
+headers:
+  Accept: application/json
+order: 1000

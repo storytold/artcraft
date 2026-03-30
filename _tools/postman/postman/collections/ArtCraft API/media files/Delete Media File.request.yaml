@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{api_host}}/v1/media_files/file/m_6hjpa9q8269h7n7rg5vk8zr82cxhx9"
+method: DELETE
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "as_mod": true,
+        "set_delete": true
+    }
+order: 1000

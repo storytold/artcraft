@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{api_host}}/v1/create_account"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "username": "newuser",
+        "password": "password",
+        "password_confirmation": "password",
+        "email_address": "echelon+testing@gmail.com"
+    }
+order: 3000

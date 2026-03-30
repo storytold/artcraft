@@ -1,0 +1,29 @@
+$kind: http-request
+name: Upload Spz
+url: "{{api_host}}/v1/media_files/upload/spz"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Cookie
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: text
+      key: maybe_title
+      value: Splat File
+      disabled: false
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+      disabled: false
+    - type: file
+      key: file
+      src: []
+      disabled: false
+order: 10000

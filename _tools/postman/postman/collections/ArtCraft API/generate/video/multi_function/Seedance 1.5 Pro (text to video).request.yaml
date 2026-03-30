@@ -1,0 +1,22 @@
+$kind: http-request
+name: Seedance 1.5 Pro (text to video)
+url: "{{api_host}}/v1/generate/video/multi_function/seedance_1p5_pro"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "prompt": "A giant is walking around in a forest",
+        "duration_seconds": 4
+    }
+order: 1000

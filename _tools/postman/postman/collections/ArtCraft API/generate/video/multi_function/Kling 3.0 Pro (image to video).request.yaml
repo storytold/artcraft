@@ -1,0 +1,28 @@
+$kind: http-request
+name: Kling 3.0 Pro (image to video)
+url: "{{api_host}}/v1/generate/video/multi_function/kling_3p0_pro"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev)
+        // m_z8v3nrjssha8rj5ayk51g85wef2cz9 (prod - godzilla stacks)
+        // m_4n0p3ve9qew899774pg6w03vgzb6af (dev - beach)
+        // m_9y8hy50582mwxpm8hxmh4n4wjeh5cr (dev - stars)
+        // m_p4chw32084te7dv8t4jc3bjfmafmjh (dev halide - water shader)
+        "start_frame_image_media_token": "m_8q0hx7g06dfrf28xxhjkgjhwcnqtbz",
+        "end_frame_image_media_token": "m_8q0hx7g06dfrf28xxhjkgjhwcnqtbz",
+        "prompt": "The corgi dances in a loop and then returns back to where it started"
+    }
+order: 7000

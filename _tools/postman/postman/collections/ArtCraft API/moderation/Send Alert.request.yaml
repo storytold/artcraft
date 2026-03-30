@@ -1,0 +1,21 @@
+$kind: http-request
+name: Send Alert
+url: "{{api_host}}/v1/moderation/alerts/send"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "title": "test alert from thread 2",
+        "description": "testing testing test"
+    }
+order: 1000

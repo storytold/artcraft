@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{api_host}}/v1/jobs/job/jinf_avdrxxv3dv04dfxh3jej57vbby2"
+method: GET
+headers:
+  Accept: application/json
+order: 4000

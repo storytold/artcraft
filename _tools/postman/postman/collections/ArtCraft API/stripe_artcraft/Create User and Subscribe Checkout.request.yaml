@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{api_host}}/v1/stripe_artcraft/user_signup_subscription_checkout"
+method: POST
+headers:
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+        //"uuid_idempotency_token": "{{$randomUUID}}",
+        "plan": "artcraft_pro",
+        "cadence": "monthly"
+    }
+order: 2000

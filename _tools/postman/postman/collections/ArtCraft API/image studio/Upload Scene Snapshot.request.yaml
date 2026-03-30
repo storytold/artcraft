@@ -1,0 +1,22 @@
+$kind: http-request
+name: Upload Scene Snapshot
+url: "{{api_host}}/v1/image_studio/scene_snapshot"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+      disabled: false
+    - type: file
+      key: snapshot
+      src: []
+      disabled: false
+order: 1000

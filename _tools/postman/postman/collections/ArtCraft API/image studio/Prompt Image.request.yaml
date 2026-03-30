@@ -1,0 +1,28 @@
+$kind: http-request
+name: Prompt Image
+url: "{{api_host}}/v1/image_studio/prompt"
+method: POST
+headers:
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Accept
+    value: application/json
+  - key: sora-bearer
+    value: ""
+    disabled: true
+  - key: sora-cookie
+    value: ""
+    disabled: true
+  - key: sora-sentinel
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "snapshot_media_token": "m_kaghwk8vsn5yw1qp6q7yzbx9szfgwe",
+        "prompt": "Match the provided image's composition and pose exactly as a reference. The characters should have the exact body poses, and the layouts of buildings and props should be close to exact. A girl standing in the middle of a clock town. N64 aesthetic."
+    }
+order: 2000

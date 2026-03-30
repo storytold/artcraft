@@ -1,0 +1,26 @@
+$kind: http-request
+name: Upload New Engine Asset
+url: "{{api_host}}/v1/media_files/upload/new_engine_asset"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: session
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: text
+      key: maybe_title
+      value: Foo Bar Baz
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+    - type: file
+      key: file
+      src: /Users/bt/dev/storyteller/assets/engineer_test_files/pikachu.glb
+    - type: text
+      key: engine_category
+      value: expression
+order: 2000

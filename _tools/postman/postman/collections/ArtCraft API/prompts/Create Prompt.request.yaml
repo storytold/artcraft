@@ -1,0 +1,18 @@
+$kind: http-request
+name: Create Prompt
+url: "{{api_host}}/v1/prompts/create"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "positive_prompt": "This is a prompt"
+    }
+order: 1000

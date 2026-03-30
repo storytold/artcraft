@@ -1,0 +1,20 @@
+$kind: http-request
+name: List Video Models
+url: "{{api_host}}/v1/omni_gen/models/video"
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: text
+  content: |
+    {
+        "title": "test alert"
+    }
+order: 2000

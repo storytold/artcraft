@@ -1,0 +1,24 @@
+$kind: http-request
+name: Upload Media File (Generic - don't use unless necessary)
+url: "{{api_host}}/v1/media_files/upload"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Cookie
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: text
+      key: maybe_title
+      value: Foo Bar Baz
+      disabled: true
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+    - type: file
+      key: file
+      src: []
+order: 5000

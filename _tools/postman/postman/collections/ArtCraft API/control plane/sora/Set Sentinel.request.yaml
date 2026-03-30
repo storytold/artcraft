@@ -1,0 +1,10 @@
+$kind: http-request
+name: Set Sentinel
+url: "{{api_host}}/v1/control_plane/sora_secret"
+method: POST
+body:
+  type: urlencoded
+  content:
+    key: sentinel
+    value: ""
+order: 3000

@@ -1,0 +1,25 @@
+$kind: http-request
+name: Enqueue Studio Gen2 (Dev)
+url: "{{api_host}}/v1/studio_gen2/enqueue"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Cookie
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "image_file": "m_btkn9vng12j2bw9tm7dcbg8vp5bd3a",
+        "video_file": "m_12h6ymaj4szk7ffhdj01n7c8x0d7ds",
+
+        "debug_sleep_millis": 600000,
+        "debug_kill_old_jobs": true,
+        "skip_image_resize": true,
+        "tensor_image_width": 512,
+        "tensor_image_height": 768
+    }
+order: 2000

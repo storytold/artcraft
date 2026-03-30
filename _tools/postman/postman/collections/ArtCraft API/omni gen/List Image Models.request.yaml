@@ -1,0 +1,20 @@
+$kind: http-request
+name: List Image Models
+url: "{{api_host}}/v1/omni_gen/models/image"
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: text
+  content: |
+    {
+        "title": "test alert"
+    }
+order: 1000

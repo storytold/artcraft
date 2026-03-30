@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{api_host}}/v1/tts/inference"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+  User-Agent: brandon
+body:
+  type: json
+  content: |-
+    {
+        "uuid_idempotency_token": "asdf",
+        "tts_model_token": "weight_dmmthavhawqc2hj7yqyemcbf8",
+        "inference_text": "hello world"
+    }
+order: 1000

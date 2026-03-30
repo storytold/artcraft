@@ -1,0 +1,11 @@
+$kind: http-request
+name: List Session Jobs (localhost)
+url: http://localhost:12345/v1/jobs/session
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+  - key: Cookie
+    value: ""
+    disabled: true
+order: 3000

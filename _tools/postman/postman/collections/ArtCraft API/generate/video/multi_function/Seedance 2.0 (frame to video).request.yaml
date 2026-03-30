@@ -1,0 +1,31 @@
+$kind: http-request
+name: Seedance 2.0 (frame to video)
+url: "{{api_host}}/v1/generate/video/multi_function/seedance_2p0"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        // m_z8v3nrjssha8rj5ayk51g85wef2cz9 (prod - godzilla stacks)
+        // m_gn0yvdvd8mw71m5n8whxsa6ywgsdb2 (dev halide - link)
+        // m_7jjskg45d8b00tsp5nxee0xjsr2fqw (dev halide - link again)
+        // m_5hhwgx47tzc68ms2ydkkwrdjakwtxk (dev halide - asian girl in rain)
+        // m_zm0xjkxrjh7vqxm3nd70qva49bnngn (dev halide - skeletal pose)
+        // m_p4chw32084te7dv8t4jc3bjfmafmjh (dev halide - water shader)
+        // m_wfyggg046gp7tqvexd9xar4t6zr5yj (artcraft mac - trains)
+        // m_qty2g150r6ppkbapnryc4fx4ayf8rh (artcraft mac - trains wide)
+        "prompt": "A subway and a passenger train are moving along outside the window. The camera pans out to show a wider view of the city and trains.",
+        "start_frame_media_token": "m_wfyggg046gp7tqvexd9xar4t6zr5yj",
+        "end_frame_media_token": "m_qty2g150r6ppkbapnryc4fx4ayf8rh"
+    }
+order: 4000

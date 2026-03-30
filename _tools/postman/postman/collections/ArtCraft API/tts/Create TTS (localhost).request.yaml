@@ -1,0 +1,24 @@
+$kind: http-request
+url: http://localhost:12345/v1/tts/inference
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+  User-Agent: brandon
+body:
+  type: json
+  content: |-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "tts_model_token": "weight_dmmthavhawqc2hj7yqyemcbf8",
+        "inference_text": "hello world"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      let uuid = require('uuid'); 
+      let value = uuid.v4(); 
+
+      pm.environment.set("uuid", value);
+    language: text/javascript
+order: 3000

@@ -1,0 +1,46 @@
+$kind: http-request
+name: Edit Gpt-Image-1
+url: "{{api_host}}/v1/generate/image/edit/gpt_image_1"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev)
+        // m_z8v3nrjssha8rj5ayk51g85wef2cz9 (prod)
+        // m_4n0p3ve9qew899774pg6w03vgzb6af (dev - beach)
+        // m_9y8hy50582mwxpm8hxmh4n4wjeh5cr (dev - stars)
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev - cube)
+        // m_w7cpyqr45d11fw9ca1wbkxp1q3kxs1 (dev - studio alley screenshot)
+        "image_media_tokens": ["m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb", "m_4n0p3ve9qew899774pg6w03vgzb6af", "m_9y8hy50582mwxpm8hxmh4n4wjeh5cr"],
+        "prompt": "Put the cube from the image on the beach. Use the night sky."
+    }
+
+    /*pub struct GptImage1EditImageRequest {
+      /// Idempotency token to prevent duplicate requests.
+      pub uuid_idempotency_token: String,
+
+      /// Text prompt to generate the image from.
+      pub prompt: Option<String>,
+
+      // TODO: OneOf for image_urls or image_media_tokens
+      /// Image media tokens to include in the editing context.
+      pub image_media_tokens: Option<Vec<MediaFileToken>>,
+
+      /// Size of the image to generate. Default is Square.
+      pub image_size: Option<GptImage1EditImageImageSize>,
+
+      /// Number of images to generate. Default is one.
+      pub num_images: Option<GptImage1EditImageNumImages>,
+
+      /// Quality of the image to generate. Default is High.
+      pub image_quality: Option<GptImage1EditImageImageQuality>,
+    }*/
+order: 1000

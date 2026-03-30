@@ -1,0 +1,42 @@
+$kind: http-request
+name: Upload New Engine Asset
+url: "{{api_host}}/v1/media_files/upload/new_engine_asset"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Cookie
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: []
+      disabled: false
+    - type: text
+      key: maybe_title
+      value: |
+        Courtyard
+      disabled: false
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+      disabled: false
+    - type: text
+      key: source
+      value: file
+      disabled: false
+    - type: text
+      key: file
+      value: asdf
+      disabled: true
+    - type: text
+      key: engine_category
+      value: object
+      disabled: false
+order: 11000

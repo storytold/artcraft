@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{api_host}}/v1/login"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        // hanashi : password (dev)
+        //"username_or_email": "hanashi",
+        //"password": "hanashi"
+        "username_or_email": "newuser2",
+        "password": "newuser2"
+    }
+order: 1000

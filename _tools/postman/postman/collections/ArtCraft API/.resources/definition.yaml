@@ -1,0 +1,6 @@
+$kind: collection
+variables:
+  - key: api_host
+    value: https://api.fakeyou.com
+    disabled: true
+    secret: false

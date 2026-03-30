@@ -1,0 +1,19 @@
+$kind: http-request
+name: Create Stripe Artcraft Checkout Session
+url: "{{api_host}}/v1/stripe_artcraft/checkout/create_subscription"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |-
+    {
+        //"uuid_idempotency_token": "{{$randomUUID}}",
+        "plan": "artcraft_pro",
+        "cadence": "yearly"
+    }
+order: 1000

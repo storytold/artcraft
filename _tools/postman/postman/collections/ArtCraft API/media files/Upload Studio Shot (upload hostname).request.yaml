@@ -1,0 +1,23 @@
+$kind: http-request
+name: Upload Studio Shot (upload hostname)
+url: https://upload.storyteller.ai/v1/media_files/upload/studio_shot
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: text
+      key: maybe_title
+      value: Foo Bar Baz
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+    - type: file
+      key: file
+      src: /Users/bt/dev/storyteller/temp/frames.zip
+order: 8000

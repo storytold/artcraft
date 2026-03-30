@@ -1,0 +1,22 @@
+$kind: http-request
+name: Flux 1 Dev (text to image)
+url: "{{api_host}}/v1/generate/image/multi_function/gpt_image_1p5"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "prompt": "A large dinosaur looks inside a house from outside. It's looking for food. Big t-rex. Scary. Photorealistic. Face in the window.",
+        "number_images": 2
+    }
+order: 6000

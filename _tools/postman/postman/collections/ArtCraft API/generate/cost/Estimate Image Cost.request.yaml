@@ -1,0 +1,25 @@
+$kind: http-request
+name: Estimate Image Cost
+url: "{{api_host}}/v1/generate/cost_estimate/image"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "model": "seedream_5_lite",
+        "provider": "artcraft",
+        "generation_mode": {"type": "text_to_image" },
+        "aspect_ratio": "wide_sixteen_by_nine",
+        "resolution": "two_k",
+        "image_batch_count": 1
+    }
+order: 2000

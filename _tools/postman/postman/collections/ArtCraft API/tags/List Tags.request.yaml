@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{api_host}}/v1/tags/list/model_weight/weight_84t9zeafn72wkje1x59f9rm81"
+method: GET
+headers:
+  Accept: application/json
+order: 2000

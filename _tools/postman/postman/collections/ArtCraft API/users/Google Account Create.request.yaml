@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{api_host}}/v1/accounts/google_create"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+        "google_credential": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyN...[redacted]"
+    }
+order: 4000

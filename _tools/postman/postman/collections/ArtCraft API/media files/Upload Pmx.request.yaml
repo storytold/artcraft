@@ -1,0 +1,30 @@
+$kind: http-request
+name: Upload Pmx
+url: "{{api_host}}/v1/media_files/upload/pmx"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Cookie
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: text
+      key: maybe_title
+      value: Foo Bar Baz
+      disabled: false
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+      disabled: false
+    - type: file
+      key: file
+      src: []
+      disabled: false
+    - type: text
+      key: engine_category
+      value: character
+      disabled: false
+order: 3000

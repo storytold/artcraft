@@ -1,0 +1,20 @@
+$kind: http-request
+name: Nano Banana 2
+url: "{{api_host}}/v1/generate/image/multi_function/nano_banana_2"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        // m_p4chw32084te7dv8t4jc3bjfmafmjh (these tokens are invalid)
+        //"image_media_tokens": [],
+        "prompt": "A t-rex jumping rope, photorealistic. The t-rex is nervous."
+    }
+order: 2000

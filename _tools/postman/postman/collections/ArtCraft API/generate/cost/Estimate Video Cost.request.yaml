@@ -1,0 +1,26 @@
+$kind: http-request
+name: Estimate Video Cost
+url: "{{api_host}}/v1/generate/cost_estimate/video"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "model": "seedance_2p0",
+        "provider": "artcraft",
+        "generation_mode": {"type": "text_to_video" },
+        "aspect_ratio": "wide_sixteen_by_nine",
+        "resolution": "four_k",
+        "duration_seconds": 8,
+        "video_batch_count": 4
+    }
+order: 1000

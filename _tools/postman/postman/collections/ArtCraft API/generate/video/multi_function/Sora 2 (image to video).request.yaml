@@ -1,0 +1,33 @@
+$kind: http-request
+name: Sora 2 (image to video)
+url: "{{api_host}}/v1/generate/video/multi_function/sora_2"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev)
+        // m_z8v3nrjssha8rj5ayk51g85wef2cz9 (prod - godzilla stacks)
+        // m_4n0p3ve9qew899774pg6w03vgzb6af (dev - beach)
+        // m_9y8hy50582mwxpm8hxmh4n4wjeh5cr (dev - stars)
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev - cube)
+        // m_w7cpyqr45d11fw9ca1wbkxp1q3kxs1 (dev - studio alley screenshot)
+        // m_gn0yvdvd8mw71m5n8whxsa6ywgsdb2 (dev halide - link)
+        // m_7jjskg45d8b00tsp5nxee0xjsr2fqw (dev halide - link again)
+        // m_5hhwgx47tzc68ms2ydkkwrdjakwtxk (dev halide - asian girl in rain)
+        // m_zm0xjkxrjh7vqxm3nd70qva49bnngn (dev halide - skeletal pose)
+        // m_p4chw32084te7dv8t4jc3bjfmafmjh (dev halide - water shader)
+        "image_media_token": "m_9y8hy50582mwxpm8hxmh4n4wjeh5cr",
+        "prompt": "The stars twinkle. There's a shooting star. The camera lowers to show the night sky above the forest"
+    }
+order: 10000

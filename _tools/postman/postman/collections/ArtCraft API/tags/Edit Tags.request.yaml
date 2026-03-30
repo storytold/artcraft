@@ -1,0 +1,15 @@
+$kind: http-request
+name: Edit Tags
+url: "{{api_host}}/v1/tags/edit/model_weight/weight_84t9zeafn72wkje1x59f9rm81"
+method: POST
+headers:
+  Accept: application/json
+  Content-Type: application/json
+  Cookie: ""
+body:
+  type: json
+  content: |-
+    {
+        "tags": "video games, legend of zelda"
+    }
+order: 1000

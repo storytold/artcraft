@@ -1,0 +1,24 @@
+$kind: http-request
+name: Generate Kling 1.6 Video
+url: "{{api_host}}/v1/generate/video/kling_1.6_pro_image_to_video"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev)
+        // m_mxr5s0qpbj0w321pqcw7s2pj93c962 (dev - container ship)
+        // m_f249t2nb8nggqd7ynpsjps5qmym5h3 (dev - oil tanker)
+        // m_z8v3nrjssha8rj5ayk51g85wef2cz9 (prod)
+        "media_file_token": "m_mxr5s0qpbj0w321pqcw7s2pj93c962",
+        "end_frame_image_media_token": "m_f249t2nb8nggqd7ynpsjps5qmym5h3", 
+        "prompt": "A large ship in a lake, the camera pulls back and shows the oil tanker from overhead"
+    }
+order: 2000

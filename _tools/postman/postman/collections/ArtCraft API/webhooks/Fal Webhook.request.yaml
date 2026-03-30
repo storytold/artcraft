@@ -1,0 +1,18 @@
+$kind: http-request
+name: Fal Webhook
+url: "{{api_host}}/v1/webhooks/fal"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "media_file_token": "m_v0n7g8k6saeg3t117kxf227xprtdcc"
+    }
+order: 1000

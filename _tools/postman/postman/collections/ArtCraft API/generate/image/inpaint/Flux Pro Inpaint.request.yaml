@@ -1,0 +1,28 @@
+$kind: http-request
+name: Flux Pro Inpaint
+url: "{{api_host}}/v1/generate/image/inpaint/flux_pro_1"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev)
+        // m_z8v3nrjssha8rj5ayk51g85wef2cz9 (prod)
+        // m_4n0p3ve9qew899774pg6w03vgzb6af (dev - beach)
+        // m_9y8hy50582mwxpm8hxmh4n4wjeh5cr (dev - stars)
+        // m_p2hvrt9zd0mmexy7x5r7n8bx9ma3zb (dev - cube)
+        // m_w7cpyqr45d11fw9ca1wbkxp1q3kxs1 (dev - studio alley screenshot)
+        // m_cznbn2a1p9mcqeghbjedp12p5d60tn (dev - mochi glasses)
+        // m_v6ppx1jq7rbhyxpj8mg1hkryqbc9h6 (dev - mochi glasses MASK)
+        "image_media_token": "m_cznbn2a1p9mcqeghbjedp12p5d60tn",
+        "mask_media_token": "m_v6ppx1jq7rbhyxpj8mg1hkryqbc9h6",
+        "prompt": "Remove the glasses"
+    }
+order: 1000

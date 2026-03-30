@@ -1,0 +1,38 @@
+$kind: http-request
+name: Upload New Video
+url: "{{api_host}}/v1/media_files/upload/new_video"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: formdata
+  content:
+    - type: text
+      key: maybe_title
+      value: Foo Bar Baz
+      disabled: false
+    - type: text
+      key: uuid_idempotency_token
+      value: "{{$randomUUID}}"
+      disabled: false
+    - type: file
+      key: file
+      src: []
+      disabled: false
+    - type: text
+      key: maybe_resample_fps
+      value: "8"
+      disabled: true
+    - type: text
+      key: maybe_trim_start_millis
+      value: "3000"
+      disabled: false
+    - type: text
+      key: maybe_trim_end_millis
+      value: "2000"
+      disabled: true
+order: 7000
