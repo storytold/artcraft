@@ -3,8 +3,7 @@ use std::sync::Arc;
 use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
 
-use artcraft_api_defs::characters::list_characters::{ListCharactersQuery, ListCharactersResponse};
-use artcraft_api_defs::characters::shared::CharacterDetails;
+use artcraft_api_defs::characters::list_characters::{ListCharactersEntry, ListCharactersQuery, ListCharactersResponse};
 use enums::common::generation::common_model_type::CommonModelType;
 use tokens::tokens::characters::CharacterToken;
 
@@ -30,7 +29,7 @@ pub async fn list_characters_handler(
 ) -> Result<Json<ListCharactersResponse>, CommonWebError> {
   // TODO: Replace with real implementation.
   let mock_characters = vec![
-    CharacterDetails {
+    ListCharactersEntry {
       token: CharacterToken::new_from_str("character_mock_abc123"),
       models: vec![CommonModelType::Seedance2p0],
       name: "Juno".to_string(),
@@ -38,7 +37,7 @@ pub async fn list_characters_handler(
       maybe_avatar: None,
       maybe_full_image: None,
     },
-    CharacterDetails {
+    ListCharactersEntry {
       token: CharacterToken::new_from_str("character_mock_def456"),
       models: vec![CommonModelType::Seedance2p0],
       name: "Ernest".to_string(),

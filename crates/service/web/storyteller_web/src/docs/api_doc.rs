@@ -279,6 +279,11 @@ use artcraft_api_defs::subscriptions::get_session_subscription::*;
 use artcraft_api_defs::media_file::list_batch_generated_media_files::*;
 // Handler modules with locally-defined types
 use crate::http_server::endpoints::moderation::info::moderator_token_info_handler::*;
+use artcraft_api_defs::characters::create_character::*;
+use artcraft_api_defs::characters::delete_character::*;
+use artcraft_api_defs::characters::edit_character::*;
+use artcraft_api_defs::characters::get_character::*;
+use artcraft_api_defs::characters::list_characters::*;
 use artcraft_api_defs::moderation::alerts::moderation_send_alert::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::*;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::*;
@@ -476,6 +481,12 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::voice_conversion::enqueue_seed_vc_inference_handler::enqueue_infer_seed_vc_handler,
     // TTS
     crate::http_server::endpoints::tts::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler::enqueue_infer_f5_tts_handler,
+    // Characters
+    crate::http_server::endpoints::characters::list_characters_handler::list_characters_handler,
+    crate::http_server::endpoints::characters::create_character_handler::create_character_handler,
+    crate::http_server::endpoints::characters::get_character_handler::get_character_handler,
+    crate::http_server::endpoints::characters::edit_character_handler::edit_character_handler,
+    crate::http_server::endpoints::characters::delete_character_handler::delete_character_handler,
     // Omni Gen
     crate::http_server::endpoints::omni_gen::cost::image::omni_gen_image_cost_handler::omni_gen_image_cost_handler,
     crate::http_server::endpoints::omni_gen::cost::video::omni_gen_video_cost_handler::omni_gen_video_cost_handler,
@@ -693,6 +704,17 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ModeratorUserLookupRequest,
     ModeratorUserLookupSuccessResponse,
     ModeratorUserLookupUserDetails,
+    CreateCharacterRequest,
+    CreateCharacterResponse,
+    DeleteCharacterPathInfo,
+    DeleteCharacterResponse,
+    EditCharacterRequest,
+    EditCharacterResponse,
+    GetCharacterDetails,
+    GetCharacterPathInfo,
+    GetCharacterResponse,
+    ListCharactersEntry,
+    ListCharactersResponse,
     OmniGenImageCostAndGenerateRequest,
     OmniGenImageCostResponse,
     OmniGenImageGenerateResponse,

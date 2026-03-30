@@ -3,8 +3,7 @@ use std::sync::Arc;
 use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest};
 
-use artcraft_api_defs::characters::get_character::{GetCharacterPathInfo, GetCharacterResponse};
-use artcraft_api_defs::characters::shared::CharacterDetails;
+use artcraft_api_defs::characters::get_character::{GetCharacterDetails, GetCharacterPathInfo, GetCharacterResponse};
 use enums::common::generation::common_model_type::CommonModelType;
 use tokens::tokens::characters::CharacterToken;
 
@@ -31,7 +30,7 @@ pub async fn get_character_handler(
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<GetCharacterResponse>, CommonWebError> {
   // TODO: Replace with real implementation.
-  let mock_character = CharacterDetails {
+  let mock_character = GetCharacterDetails {
     token: path.character_token.clone(),
     models: vec![CommonModelType::Seedance2p0],
     name: "Mock Character".to_string(),
