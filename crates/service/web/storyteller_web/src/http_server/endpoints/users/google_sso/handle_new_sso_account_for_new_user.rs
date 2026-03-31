@@ -47,7 +47,7 @@ pub async fn handle_new_sso_account_for_new_user(
   let mut maybe_user_token = None;
   let mut maybe_user_display_name = None;
 
-  for _ in 0..3 {
+  for _ in 0..5 {
     // NB: We try a few times to make sure we don't hit a username collision.
     let display_name = generate_random_username();
     let username = display_name.trim().to_lowercase();

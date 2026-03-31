@@ -76,63 +76,88 @@ fn generate_candidate_username() -> Option<String> {
     UsernameFormat::ScreamingSnakeCase => format!("{}_{}", adjective.to_uppercase(), noun.to_uppercase()),
   };
 
-  if let Some(digit) = maybe_random_safe_digit() {
-    candidate_username = match format {
-      UsernameFormat::CamelCase => format!("{}{}", candidate_username, digit),
-      UsernameFormat::KebabCase
-      | UsernameFormat::CamelKebabCase => format!("{}-{}", candidate_username, digit),
-      UsernameFormat::SnakeCase
-      | UsernameFormat::CamelSnakeCase
-      | UsernameFormat::ScreamingSnakeCase => format!("{}_{}", candidate_username, digit),
-    };
-  }
+  let digit = random_digit_probably_safe();
+
+  candidate_username = match format {
+    UsernameFormat::CamelCase => format!("{}{}", candidate_username, digit),
+    UsernameFormat::KebabCase
+    | UsernameFormat::CamelKebabCase => format!("{}-{}", candidate_username, digit),
+    UsernameFormat::SnakeCase
+    | UsernameFormat::CamelSnakeCase
+    | UsernameFormat::ScreamingSnakeCase => format!("{}_{}", candidate_username, digit),
+  };
 
   Some(candidate_username)
 }
 
-fn maybe_random_safe_digit() -> Option<u32> {
-  fn maybe_random_digit() -> Option<u32> {
-    // Give uniform probability for the number of digits
-    let num_digits = rand::thread_rng().gen_range(0..5u8);
-    match num_digits {
-      0 => None,
-      1 => Some(rand::thread_rng().gen_range(0..10)),
-      2 => Some(rand::thread_rng().gen_range(10..100)),
-      3 => Some(rand::thread_rng().gen_range(100..1000)),
-      4 => Some(rand::thread_rng().gen_range(1000..10000)),
-      _ => Some(rand::thread_rng().gen_range(10000..100000)),
+fn random_digit_probably_safe() -> u32 {
+  for _ in 0..100 {
+    if let Some(digit) = maybe_safe_random_digit() {
+      return digit;
     }
   }
+  random_digit()
+}
 
-  // Don't return potentially offensive numbers
-  match maybe_random_digit() {
-    None => None,
-    Some(69) => None,
-    Some(420) => None,
-    Some(666) => None,
-    Some(8008) => None,
-    Some(80085) => None,
-    Some(8008135) => None,
-    Some(digit) => Some(digit),
+/// Don't return potentially offensive numbers
+fn maybe_safe_random_digit() -> Option<u32> {
+  match random_digit() {
+    69 => None,
+    420 => None,
+    666 => None,
+    8008 => None,
+    80085 => None,
+    8008135 => None,
+    digit => Some(digit),
+  }
+}
+
+fn random_digit() -> u32 {
+  // Non-uniform probability for the number of digits
+  let num_digits = rand::thread_rng().gen_range(0..100);
+  match num_digits {
+    0..5 => rand::thread_rng().gen_range(0..10), // 5%
+    5..25 => rand::thread_rng().gen_range(10..100), // 20%
+    25..60 => rand::thread_rng().gen_range(100..1000), // 35%
+    60..90 => rand::thread_rng().gen_range(1000..10000), // 30%
+    _ => rand::thread_rng().gen_range(10000..100000), // 10%
   }
 }
 
 #[cfg(test)]
 mod tests {
   use std::collections::HashSet;
+  use crate::username::generate_random_username::maybe_safe_random_digit;
   use crate::username::generate_random_username::generate_random_username;
 
-  #[test]
-  fn test_base_case_success() {
-    assert!(generate_random_username().len() > 0);
+  mod usernames {
+    use super::*;
+
+    #[test]
+    fn test_base_case_success() {
+      assert!(generate_random_username().len() > 0);
+    }
+
+    #[test]
+    fn generate_lots() {
+      let mut collection = HashSet::new();
+      for _ in 0..100 {
+        collection.insert(generate_random_username());
+      }
+      assert!(collection.len() > 95); // NB: Should be an easy bar to hit
+    }
   }
 
-  #[test]
-  fn generate_lots() {
-    let mut collection = HashSet::new();
-    for _ in 0..100 {
-      collection.insert(generate_random_username());
+  mod random_numbers {
+    use super::*;
+
+    #[test]
+    fn generate_lots_of_numbers() {
+      let mut collection = HashSet::new();
+      for _ in 0..10000 {
+        collection.insert(maybe_safe_random_digit());
+      }
+      assert!(collection.len() > 1000);
     }
-    assert!(collection.len() > 50); // NB: Should be an easy bar to hit
   }
 }
