@@ -108,6 +108,14 @@ impl PagerClient {
 
     let mut labels: Vec<(String, String)> = Vec::new();
 
+    if let Some(name) = &self.application_name {
+      labels.push(("application_name".to_string(), name.clone()));
+    }
+
+    if let Some(id) = &self.service_id {
+      labels.push(("service_id".to_string(), id.clone()));
+    }
+
     if let Some(env) = &self.environment {
       labels.push(("environment".to_string(), env.clone()));
     }
@@ -130,10 +138,23 @@ impl PagerClient {
 
     let labels = if labels.is_empty() { None } else { Some(labels) };
 
-    // Enrich the description with HTTP context and hostname if present.
+    // Enrich the description with context and hostname if present.
     let description = match &notification.description {
       Some(desc) => {
         let mut parts = vec![desc.clone()];
+
+        match (&self.application_name, &self.service_id) {
+          (Some(name), Some(id)) => {
+            parts.push(format!("Application: {} (service_id: {})", name, id));
+          }
+          (Some(name), None) => {
+            parts.push(format!("Application: {}", name));
+          }
+          (None, Some(id)) => {
+            parts.push(format!("Service ID: {}", id));
+          }
+          (None, None) => {}
+        }
 
         if let Some(method) = &notification.http_method {
           parts.push(format!("HTTP Method: {}", method));
