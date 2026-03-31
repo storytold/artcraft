@@ -83,6 +83,11 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
   let mut pages_in_current_batch: u32 = 0;
 
   loop {
+    if deps.application_shutdown.get() {
+      info!("Shutdown requested during pagination. Stopping early.");
+      break;
+    }
+
     total_page_number += 1;
     pages_in_current_batch += 1;
 

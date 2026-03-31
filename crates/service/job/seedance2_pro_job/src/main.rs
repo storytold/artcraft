@@ -43,7 +43,7 @@ const ENV_PUBLIC_BUCKET_NAME: &str = "PUBLIC_BUCKET_NAME";
 const ENV_S3_ENDPOINT: &str = "S3_COMPATIBLE_ENDPOINT_URL";
 const ENV_SEEDANCE2PRO_COOKIES : &str = "SEEDANCE2PRO_COOKIES";
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> AnyhowResult<()> {
 
   let container_environment = bootstrap(BootstrapArgs {
@@ -117,14 +117,20 @@ async fn main() -> AnyhowResult<()> {
 
   let (pager, pager_worker) = build_pager(server_environment, &container_environment.hostname);
 
-  info!("Spawning pager worker thread.");
+  info!("Spawning pager worker.");
 
-  tokio::spawn(async move {
-    pager_worker.run().await;
+  // NB: The pager worker uses Condvar::wait() which is a blocking syscall.
+  // It must run on a dedicated OS thread, not a tokio task, to avoid blocking
+  // the tokio runtime.
+  std::thread::spawn(move || {
+    let rt = tokio::runtime::Runtime::new().expect("pager worker tokio runtime");
+    rt.block_on(pager_worker.run());
   });
 
   let application_shutdown = RelaxedAtomicBool::new(false);
   let job_stats = JobStats::new();
+
+  let pager_for_shutdown = pager.clone();
 
   let create_server_args = CreateServerArgs {
     container_environment: container_environment.clone(),
@@ -144,6 +150,7 @@ async fn main() -> AnyhowResult<()> {
     pager,
   };
 
+  // HTTP server runs on a separate OS thread with its own actix System.
   std::thread::spawn(move || {
     let actix_runtime = actix_web::rt::System::new();
     let http_server_handle = launch_http_server(create_server_args);
@@ -151,11 +158,30 @@ async fn main() -> AnyhowResult<()> {
     actix_runtime.block_on(http_server_handle)
       .expect("HTTP server should not exit.");
 
-    warn!("Server thread is shut down.");
-    application_shutdown.set(true);
+    warn!("HTTP server thread is shut down.");
+  });
+
+  // Listen for SIGTERM / Ctrl-C to trigger graceful shutdown.
+  let application_shutdown_for_signal = application_shutdown.clone();
+
+  tokio::spawn(async move {
+    match tokio::signal::ctrl_c().await {
+      Ok(()) => {
+        info!("Received shutdown signal. Shutting down...");
+        application_shutdown_for_signal.set(true);
+      }
+      Err(err) => {
+        warn!("Error listening for shutdown signal: {:?}", err);
+      }
+    }
   });
 
   main_loop(job_dependencies).await;
+
+  info!("Shutting down pager worker...");
+  pager_for_shutdown.shutdown_worker();
+
+  info!("Seedance2Pro job exiting.");
 
   Ok(())
 }
