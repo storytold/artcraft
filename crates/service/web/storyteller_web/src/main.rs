@@ -307,15 +307,34 @@ async fn main() -> AnyhowResult<()> {
   let mysql_pool4 = pool.clone();
   let mysql_pool5 = pool.clone();
 
+  let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
+      .ok_or(anyhow!("invalid server environment"))?;
+
+  let server_environment_typed = match server_environment {
+    ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
+    ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
+  };
+
+  let (pager, pager_worker, paging_flags) = build_pager(server_environment_typed, &server_hostname);
+
   let tokio_runtime = Runtime::new()?;
 
+  info!("Spawning pager worker thread.");
+
+  tokio_runtime.spawn(async move {
+    pager_worker.run().await;
+  });
+
   info!("Spawning DB health checker thread.");
+
+  let health_checker_pager = pager.clone();
 
   tokio_runtime.spawn(async move {
     db_health_checker_thread(
       health_check_status2,
       mysql_pool3,
       health_check_interval,
+      health_checker_pager,
     ).await;
   });
 
@@ -329,22 +348,6 @@ async fn main() -> AnyhowResult<()> {
 
   tokio_runtime.spawn(async {
     poll_model_token_info_thread(model_token_info_cache2, mysql_pool5).await;
-  });
-
-  let server_environment = ServerEnvironment::from_str(&easyenv::get_env_string_required("SERVER_ENVIRONMENT")?)
-      .ok_or(anyhow!("invalid server environment"))?;
-
-  let server_environment_typed = match server_environment {
-    ServerEnvironment::Production => server_environment::ServerEnvironment::Production,
-    ServerEnvironment::Development => server_environment::ServerEnvironment::Development,
-  };
-
-  let (pager, pager_worker, paging_flags) = build_pager(server_environment_typed, &server_hostname);
-
-  info!("Spawning pager worker thread.");
-
-  tokio_runtime.spawn(async move {
-    pager_worker.run().await;
   });
 
   let stripe_configs = StripeConfig {
