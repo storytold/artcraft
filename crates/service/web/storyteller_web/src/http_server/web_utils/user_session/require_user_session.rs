@@ -6,6 +6,7 @@ use log::warn;
 
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 
+use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 
 #[derive(Debug)]
@@ -39,27 +40,7 @@ pub async fn require_user_session(
         RequireUserSessionError::ServerError
       })?;
 
-  let maybe_user_session = server_state
-      .session_checker
-      .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
+  require_user_session_using_connection(
+      http_request, &server_state.session_checker, &mut mysql_connection)
       .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        RequireUserSessionError::ServerError
-      })?;
-
-  let user_session = match maybe_user_session {
-    Some(session) => session,
-    None => {
-      warn!("not logged in");
-      return Err(RequireUserSessionError::NotAuthorized);
-    }
-  };
-
-  if user_session.is_banned {
-    warn!("user is banned: {:?}", user_session.user_token.as_str());
-    return Err(RequireUserSessionError::NotAuthorized);
-  }
-
-  Ok(user_session)
 }
