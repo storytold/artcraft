@@ -8,6 +8,7 @@ use log::info;
 use bootstrap::bootstrap::ContainerEnvironment;
 use errors::AnyhowResult;
 use jobs_common::job_stats::JobStats;
+use pager::client::pager::Pager;
 
 use crate::http_server::endpoints::health_check_handler::get_health_check_handler;
 use crate::http_server::http_server_shared_state::HttpServerSharedState;
@@ -18,12 +19,13 @@ const DEFAULT_NUM_WORKERS: usize = 2;
 pub struct CreateServerArgs {
   pub container_environment: ContainerEnvironment,
   pub job_stats: JobStats,
+  pub pager: Pager,
 }
 
 pub fn run_http_server(args: CreateServerArgs) -> AnyhowResult<Server> {
   let bind_address = easyenv::get_env_string_or_default("HTTP_BIND_ADDRESS", DEFAULT_BIND_ADDRESS);
   let num_workers = easyenv::get_env_num("HTTP_NUM_WORKERS", DEFAULT_NUM_WORKERS)?;
-  let _hostname = args.container_environment.hostname.clone();
+  let hostname = args.container_environment.hostname.clone();
 
   let server_state = HttpServerSharedState {
     job_stats: args.job_stats.clone(),
@@ -31,6 +33,8 @@ pub fn run_http_server(args: CreateServerArgs) -> AnyhowResult<Server> {
       "CONSECUTIVE_FAILURE_UNHEALTHY_THRESHOLD",
       3,
     )?,
+    pager: args.pager,
+    hostname,
   };
 
   let server_state_arc = web::Data::new(Arc::new(server_state));

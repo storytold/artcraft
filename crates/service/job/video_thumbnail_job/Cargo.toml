@@ -31,6 +31,8 @@ easyenv.workspace = true
 errors.workspace = true
 jobs_common.workspace = true
 mysql_queries.workspace = true
+pager = { path = "../../../lib/pager" }
+rootly_client.workspace = true
 server_environment = { path = "../../../lib/server_environment" }
 
 # External

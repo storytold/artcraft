@@ -28,10 +28,12 @@ use server_environment::ServerEnvironment;
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
 use crate::job::main_loop::main_loop;
 use crate::job_dependencies::{JobDependencies, ShardInfo};
+use crate::startup::build_pager::build_pager;
 
 pub mod http_server;
 pub mod job;
 pub mod job_dependencies;
+pub mod startup;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
@@ -147,12 +149,21 @@ async fn main() -> AnyhowResult<()> {
     }
   };
 
+  let (pager, pager_worker) = build_pager(server_environment, &container_environment.hostname);
+
+  info!("Spawning pager worker thread.");
+
+  tokio::spawn(async move {
+    pager_worker.run().await;
+  });
+
   let application_shutdown = RelaxedAtomicBool::new(false);
   let job_stats = JobStats::new();
 
   let create_server_args = CreateServerArgs {
     container_environment: container_environment.clone(),
     job_stats: job_stats.clone(),
+    pager: pager.clone(),
   };
 
   let job_dependencies = JobDependencies {
@@ -168,6 +179,7 @@ async fn main() -> AnyhowResult<()> {
     temp_dir,
     shard_info,
     application_shutdown: application_shutdown.clone(),
+    pager,
   };
 
   std::thread::spawn(move || {

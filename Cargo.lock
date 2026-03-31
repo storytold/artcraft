@@ -13360,6 +13360,8 @@ dependencies = [
  "jobs_common",
  "log",
  "mysql_queries",
+ "pager",
+ "rootly_client",
  "serde",
  "serde_derive",
  "serde_json",
