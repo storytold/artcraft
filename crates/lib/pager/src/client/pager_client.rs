@@ -135,7 +135,7 @@ impl PagerClient {
       notification_target_type: notification_target_type.clone(),
       notification_target_id: notification_target_id.clone(),
       labels,
-      deduplication_key: None,
+      deduplication_key: Some(notification.to_deduplication_key()),
     }).await;
 
     match result {
