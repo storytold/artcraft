@@ -76,6 +76,7 @@ pub struct CreateAlertSuccess {
 
 // ======================== Implementation ========================
 
+/// https://docs.rootly.com/api-reference/alerts/creates-an-alert
 pub async fn create_alert(args: CreateAlertArgs) -> Result<CreateAlertSuccess, RootlyError> {
   let url = format!("{}/alerts", ROOTLY_API_BASE_URL);
 

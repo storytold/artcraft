@@ -23,6 +23,9 @@ pub struct PagerClient {
 
   /// Hostname of the machine sending alerts. Inserted as a label on alerts.
   pub hostname: Option<String>,
+
+  /// Rootly service ID to associate alerts with.
+  pub service_id: Option<String>,
 }
 
 /// Configuration for the pager client backend.
@@ -62,8 +65,9 @@ impl PagerClient {
     application_name: Option<String>,
     environment: Option<String>,
     hostname: Option<String>,
+    service_id: Option<String>,
   ) -> Self {
-    Self { client_config, application_name, environment, hostname }
+    Self { client_config, application_name, environment, hostname, service_id }
   }
 
   pub fn is_noop(&self) -> bool {
@@ -152,13 +156,16 @@ impl PagerClient {
       None => None,
     };
 
+    // https://docs.rootly.com/api-reference/alerts/creates-an-alert
     let result = create_alert(CreateAlertArgs {
       api_key: api_key.clone(),
-      source,
+      source: "api".to_string(),
       summary: notification.summary.clone(),
       description,
       status: Some("triggered".to_string()),
-      service_ids: None,
+      service_ids: self.service_id
+          .as_ref()
+          .map(|id| vec![id.clone()]),
       group_ids: None,
       environment_ids: None,
       external_id: None,

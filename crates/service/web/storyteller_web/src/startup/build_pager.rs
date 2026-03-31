@@ -6,6 +6,9 @@ use rootly_client::creds::rootly_api_key::RootlyApiKey;
 
 use crate::state::flags::paging_flags::PagingFlags;
 
+/// `storyteller-web` rootly service ID
+const ROOTLY_SERVICE_ID: &str = "9ebebb09-0c56-4c8a-8f57-d5f0f85f3f16";
+
 pub fn build_pager(
   server_environment: server_environment::ServerEnvironment,
   hostname: &str,
@@ -23,7 +26,8 @@ pub fn build_pager(
   let builder = PagerBuilder::new()
       .application_name("storyteller-web".to_string())
       .environment(environment.to_string())
-      .hostname(hostname.to_string());
+      .hostname(hostname.to_string())
+      .service_id(ROOTLY_SERVICE_ID.to_string());
   
   // If paging is globally disabled, use a NoOp pager regardless of API key.
   if !paging_flags.is_paging_enabled {

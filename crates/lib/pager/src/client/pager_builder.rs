@@ -14,6 +14,7 @@ pub struct PagerBuilder {
   application_name: Option<String>,
   environment: Option<String>,
   hostname: Option<String>,
+  service_id: Option<String>,
   queue_capacity: Option<usize>,
 }
 
@@ -24,6 +25,7 @@ impl PagerBuilder {
       application_name: None,
       environment: None,
       hostname: None,
+      service_id: None,
       queue_capacity: None,
     }
   }
@@ -43,6 +45,12 @@ impl PagerBuilder {
   /// Set the hostname of the machine sending alerts.
   pub fn hostname(mut self, hostname: String) -> Self {
     self.hostname = Some(hostname);
+    self
+  }
+
+  /// Set the service ID to associate alerts with.
+  pub fn service_id(mut self, service_id: String) -> Self {
+    self.service_id = Some(service_id);
     self
   }
 
@@ -113,7 +121,7 @@ impl PagerBuilder {
       }
     };
 
-    PagerClient::new(client_config, self.application_name.clone(), self.environment.clone(), self.hostname.clone())
+    PagerClient::new(client_config, self.application_name.clone(), self.environment.clone(), self.hostname.clone(), self.service_id.clone())
   }
 }
 
