@@ -2,6 +2,7 @@ use log::{debug, warn};
 
 use pager::client::pager::Pager;
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 
@@ -30,6 +31,7 @@ pub(super) fn check_common_web_error(
           .set_http_method(Some(method.to_string()))
           .set_http_path(Some(path.to_string()))
           .set_http_status_code(Some(500))
+          .set_urgency(Some(NotificationUrgency::Medium))
           .build();
 
       if let Err(err) = pager.enqueue_page(notification) {

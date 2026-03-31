@@ -48,6 +48,11 @@ impl NotificationDetailsBuilder {
       urgency: None,
     }
   }
+  
+  pub fn set_summary(mut self, summary: String) -> Self {
+    self.summary = summary;
+    self
+  }
 
   pub fn set_description(mut self, description: Option<String>) -> Self {
     self.description = description;

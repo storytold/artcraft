@@ -2,6 +2,7 @@ use log::{debug, warn};
 
 use pager::client::pager::Pager;
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 
 /// Fallback alerting based on HTTP status code when no typed error matched.
 pub(super) fn check_status_code_fallback(
@@ -26,6 +27,7 @@ pub(super) fn check_status_code_fallback(
           .set_http_method(Some(method.to_string()))
           .set_http_path(Some(path.to_string()))
           .set_http_status_code(Some(status_code))
+          .set_urgency(Some(NotificationUrgency::Medium))
           .build();
 
       if let Err(err) = pager.enqueue_page(notification) {

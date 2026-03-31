@@ -46,7 +46,8 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
-use pager::notification::notification_details::NotificationDetails;
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 
 // ======================== Result of a successful generation ========================
@@ -221,7 +222,10 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           Err(err) => {
             warn!("Regular session fallback also failed for user {:?}: {:?}", user_token, err);
             if let Err(page_err) = server_state.pager.enqueue_page(
-              NotificationDetails::from_error_with_context("Seedance 2.0 generation failed (whitelist + fallback)", &err)
+              NotificationDetailsBuilder::from_error(&err)
+                  .set_summary("Seedance 2.0 generation failed (whitelist + fallback)".to_string())
+                  .set_urgency(Some(NotificationUrgency::High))
+                  .build()
             ) {
               warn!("Failed to enqueue pager alert: {:?}", page_err);
             }
@@ -252,7 +256,10 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       Err(err) => {
         warn!("Error calling seedance2pro generate_video: {:?}", err);
         if let Err(page_err) = server_state.pager.enqueue_page(
-          NotificationDetails::from_error_with_context("Seedance 2.0 generation failed", &err)
+          NotificationDetailsBuilder::from_error(&err)
+              .set_summary("Seedance 2.0 generation failed".to_string())
+              .set_urgency(Some(NotificationUrgency::High))
+              .build()
         ) {
           warn!("Failed to enqueue pager alert: {:?}", page_err);
         }
