@@ -7,6 +7,8 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use log::error;
 
 use actix_helpers::response_serializers::error_to_json_http_response::error_to_json_http_response;
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 
 use crate::http_server::http_server_shared_state::HttpServerSharedState;
 
@@ -46,7 +48,7 @@ impl std::fmt::Display for HealthCheckError {
 }
 
 pub async fn get_health_check_handler(
-  _http_request: HttpRequest,
+  http_request: HttpRequest,
   server_state: web::Data<Arc<HttpServerSharedState>>,
 ) -> Result<HttpResponse, HealthCheckError> {
   let job_stats = server_state
@@ -75,6 +77,30 @@ pub async fn get_health_check_handler(
 
   let is_healthy =
     job_stats.consecutive_failure_count < server_state.consecutive_failure_unhealthy_threshold;
+
+  if !is_healthy {
+    let notification = NotificationDetailsBuilder::from_title(
+          format!("Health check unhealthy on {}", server_state.hostname))
+        .set_description(Some(format!(
+          "Health check returned unhealthy.\n\n\
+             Hostname: {}\n\
+             Consecutive failure count: {}\n\
+             Total failure count: {}\n\
+             Total success count: {}",
+          server_state.hostname,
+          job_stats.consecutive_failure_count,
+          job_stats.total_failure_count,
+          job_stats.total_success_count,
+        )))
+        .set_urgency(Some(NotificationUrgency::High))
+        .set_http_method(Some(http_request.method().to_string()))
+        .set_http_path(Some(http_request.path().to_string()))
+        .build();
+
+    if let Err(err) = server_state.pager.enqueue_page(notification) {
+      error!("Failed to enqueue health check alert: {:?}", err);
+    }
+  }
 
   let response = HealthCheckResponse {
     success: true,

@@ -1,6 +1,7 @@
 use cloud_storage::bucket_client::BucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_stats::JobStats;
+use pager::client::pager::Pager;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
@@ -28,4 +29,7 @@ pub struct JobDependencies {
 
   /// Set to `true` from another thread to trigger graceful shutdown.
   pub application_shutdown: RelaxedAtomicBool,
+
+  /// Pager client for sending alerts.
+  pub pager: Pager,
 }
