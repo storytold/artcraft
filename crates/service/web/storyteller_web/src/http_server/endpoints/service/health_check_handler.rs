@@ -10,6 +10,9 @@ use log::error;
 
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
+
 use crate::state::server_state::ServerState;
 
 // =============== Success Response ===============
@@ -87,6 +90,32 @@ pub async fn get_health_check_handler(
 
   let body = serde_json::to_string(&response)
       .map_err(|e| HealthCheckError::ServerError)?;
+
+  if !is_healthy {
+    let notification = NotificationDetailsBuilder::from_title(
+          format!("Health check unhealthy on {}", server_state.hostname))
+        .set_description(Some(format!(
+          "Health check returned unhealthy.\n\n\
+             Hostname: {}\n\
+             Build SHA: {}\n\
+             Seconds since startup: {}\n\
+             Unhealthy consecutive count: {:?}\n\
+             Last DB time: {:?}",
+          server_state.hostname,
+          server_state.server_info.build_sha,
+          seconds_since_startup,
+          health_check_status.unhealthy_check_consecutive_count,
+          health_check_status.last_db_time,
+        )))
+        .set_urgency(Some(NotificationUrgency::High))
+        .set_http_method(Some(http_request.method().to_string()))
+        .set_http_path(Some(http_request.path().to_string()))
+        .build();
+
+    if let Err(err) = server_state.pager.enqueue_page(notification) {
+      error!("Failed to enqueue health check alert: {:?}", err);
+    }
+  }
 
   if is_healthy {
     Ok(HttpResponse::Ok()

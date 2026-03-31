@@ -691,6 +691,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     EditUserFeatureFlagsRequest,
     ModerationSendAlertRequest,
     ModerationSendAlertResponse,
+    ModerationSendAlertUrgency,
     ModeratorListSubscribingUsersBySignupDateEntry,
     ModeratorListSubscribingUsersBySignupDateRequest,
     ModeratorListSubscribingUsersBySignupDateResponse,
