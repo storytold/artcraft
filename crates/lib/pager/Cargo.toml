@@ -21,6 +21,7 @@ rootly_client.workspace = true
 
 # External
 chrono.workspace = true
+sha2.workspace = true
 log.workspace = true
 tokio.workspace = true
 

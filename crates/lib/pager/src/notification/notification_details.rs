@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use std::fmt::{Debug, Display};
 
+use crate::notification::generate_deduplication_key::generate_deduplication_key;
+
 /// Details for a pager notification.
 #[derive(Clone, Debug)]
 pub struct NotificationDetails {
@@ -24,6 +26,10 @@ pub struct NotificationDetails {
 }
 
 impl NotificationDetails {
+  pub fn to_deduplication_key(&self) -> String {
+    generate_deduplication_key(self)
+  }
+
   /// Create a notification with a summary and description.
   pub fn with_summary_and_description(summary: String, description: String) -> Self {
     Self {

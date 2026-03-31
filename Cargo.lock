@@ -8038,6 +8038,7 @@ dependencies = [
  "errors",
  "log",
  "rootly_client",
+ "sha2 0.11.0-rc.5",
  "tokio",
  "workspace-build-acceleration",
 ]
