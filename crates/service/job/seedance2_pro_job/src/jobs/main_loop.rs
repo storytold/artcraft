@@ -1,7 +1,9 @@
 use std::collections::HashMap;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use log::{error, info, warn};
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::list_pending_seedance2pro_jobs;
 use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, TaskStatus};
 
@@ -9,14 +11,35 @@ use crate::jobs::alert_on_error::alert_pager_and_return_err;
 use crate::jobs::process_page_batch::process_page_batch;
 use crate::job_dependencies::JobDependencies;
 
+const POLL_ALERT_THRESHOLD: Duration = Duration::from_secs(600);
+
 pub async fn main_loop(job_dependencies: JobDependencies) {
   while !job_dependencies.application_shutdown.get() {
+    let start = Instant::now();
     let result = run_poll_iteration(&job_dependencies).await;
+    let elapsed = start.elapsed();
 
     if let Err(err) = result {
       error!("Error in poll iteration: {:?}", err);
       let _ = alert_pager_and_return_err::<()>(&job_dependencies.pager, "Seedance2Pro poll iteration error", err);
       let _ = job_dependencies.job_stats.increment_failure_count();
+    }
+
+    if elapsed > POLL_ALERT_THRESHOLD {
+      warn!("Poll iteration took {:.1}s (threshold: {}s)", elapsed.as_secs_f64(), POLL_ALERT_THRESHOLD.as_secs());
+
+      let notification = NotificationDetailsBuilder::from_title(
+            "Seedance2Pro poll iteration slow".to_string())
+          .set_description(Some(format!(
+            "Poll iteration took {:.1} seconds, exceeding the 10-minute threshold.",
+            elapsed.as_secs_f64(),
+          )))
+          .set_urgency(Some(NotificationUrgency::Medium))
+          .build();
+
+      if let Err(pager_err) = job_dependencies.pager.enqueue_page(notification) {
+        error!("Failed to enqueue slow iteration alert: {:?}", pager_err);
+      }
     }
 
     tokio::time::sleep(Duration::from_millis(job_dependencies.poll_interval_millis)).await;
