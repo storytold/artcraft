@@ -63,7 +63,7 @@ pub struct FalMediaPayload {
   pub url: Option<String>,
 }
 
-pub async fn handle_model_glb_payload(
+pub async fn process_model_glb_payload(
   payload: &Map<String, Value>,
   job: &FalJobDetails,
   server_state: &ServerState,

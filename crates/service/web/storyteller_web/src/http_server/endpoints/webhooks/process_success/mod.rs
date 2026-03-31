@@ -1,6 +1,6 @@
-pub mod process_success_case;
-mod handle_image_payload;
-mod handle_images_payload;
-mod handle_model_glb_payload;
-mod handle_model_mesh_payload;
-mod handle_video_payload;
+pub mod handle_successful_fal_webhook;
+mod process_image_payload;
+mod process_images_payload;
+mod process_model_glb_payload;
+mod process_model_mesh_payload;
+mod process_video_payload;

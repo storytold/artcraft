@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use crate::http_server::endpoints::webhooks::process_success::process_success_case::process_fal_webhook;
+use crate::http_server::endpoints::webhooks::process_success::handle_successful_fal_webhook::handle_sucessful_fal_webhook;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
@@ -126,7 +126,7 @@ pub async fn fal_webhook_handler(
         FalWebhookError::BadInput("Missing payload".to_string())
       })?;
 
-  let result = process_fal_webhook(&server_state, request_id, payload).await;
+  let result = handle_sucessful_fal_webhook(&server_state, request_id, payload).await;
 
   if let Err(ref err) = result {
     error!("FAL webhook error for request_id {}: {:?}", request_id, err);

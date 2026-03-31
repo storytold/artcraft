@@ -8,13 +8,13 @@ use serde_json::Value;
 use crate::http_server::endpoints::webhooks::fal_webhook_handler::FalWebhookError;
 use crate::state::server_state::ServerState;
 
-use super::handle_image_payload::handle_image_payload;
-use super::handle_images_payload::handle_images_payload;
-use super::handle_model_glb_payload::handle_model_glb_payload;
-use super::handle_model_mesh_payload::handle_model_mesh_payload;
-use super::handle_video_payload::handle_video_payload;
+use super::process_image_payload::process_image_payload;
+use super::process_images_payload::process_images_payload;
+use super::process_model_glb_payload::process_model_glb_payload;
+use super::process_model_mesh_payload::process_model_mesh_payload;
+use super::process_video_payload::process_video_payload;
 
-pub async fn process_fal_webhook(
+pub async fn handle_sucessful_fal_webhook(
   server_state: &ServerState,
   request_id: &str,
   payload: &Value,
@@ -45,21 +45,21 @@ pub async fn process_fal_webhook(
   if let Some(payload_obj) = payload.as_object() {
     if payload_obj.contains_key("image") {
       info!("Handling image payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = handle_image_payload(payload_obj, &job, server_state).await?;
+      let token = process_image_payload(payload_obj, &job, server_state).await?;
       maybe_media_token = Some(token);
     } else if payload_obj.contains_key("images") {
-      (maybe_media_token, maybe_batch_token) = handle_images_payload(payload_obj, &job, server_state).await?;
+      (maybe_media_token, maybe_batch_token) = process_images_payload(payload_obj, &job, server_state).await?;
     } else if payload_obj.contains_key("video") {
       info!("Handling video payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = handle_video_payload(payload_obj, &job, server_state).await?;
+      let token = process_video_payload(payload_obj, &job, server_state).await?;
       maybe_media_token = Some(token);
     } else if payload_obj.contains_key("model_glb") {
       info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = handle_model_glb_payload(payload_obj, &job, server_state).await?;
+      let token = process_model_glb_payload(payload_obj, &job, server_state).await?;
       maybe_media_token = Some(token);
     } else if payload_obj.contains_key("model_mesh") {
       info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = handle_model_mesh_payload(payload_obj, &job, server_state).await?;
+      let token = process_model_mesh_payload(payload_obj, &job, server_state).await?;
       maybe_media_token = Some(token);
     }
   }

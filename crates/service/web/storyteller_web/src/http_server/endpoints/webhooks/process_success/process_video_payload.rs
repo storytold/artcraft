@@ -31,7 +31,7 @@ pub struct FalWebhookVideo {
   pub url: Option<String>,
 }
 
-pub async fn handle_video_payload(
+pub async fn process_video_payload(
   payload: &Map<String, Value>,
   job: &FalJobDetails,
   server_state: &ServerState,
