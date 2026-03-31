@@ -22,7 +22,7 @@ pub(super) fn check_status_code_fallback(
         chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
       );
 
-      let notification = NotificationDetailsBuilder::from_summary(summary)
+      let notification = NotificationDetailsBuilder::from_title(summary)
           .set_description(Some(description))
           .set_http_method(Some(method.to_string()))
           .set_http_path(Some(path.to_string()))

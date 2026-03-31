@@ -5,7 +5,7 @@ use crate::notification::notification_details::NotificationDetails;
 use crate::notification::notification_urgency::NotificationUrgency;
 
 pub struct NotificationDetailsBuilder {
-  summary: String,
+  title: String,
   description: Option<String>,
   event_time: DateTime<Utc>,
   http_method: Option<String>,
@@ -17,9 +17,9 @@ pub struct NotificationDetailsBuilder {
 
 impl NotificationDetailsBuilder {
   /// Create a builder from a summary string.
-  pub fn from_summary(summary: String) -> Self {
+  pub fn from_title(title: String) -> Self {
     Self {
-      summary,
+      title,
       description: None,
       event_time: Utc::now(),
       http_method: None,
@@ -38,7 +38,7 @@ impl NotificationDetailsBuilder {
     // TODO(bt,2026-03-30): Clean this up
     let details = NotificationDetails::from_error(error);
     Self {
-      summary: details.summary,
+      title: details.title,
       description: details.description,
       event_time: details.event_time,
       http_method: None,
@@ -49,8 +49,8 @@ impl NotificationDetailsBuilder {
     }
   }
   
-  pub fn set_summary(mut self, summary: String) -> Self {
-    self.summary = summary;
+  pub fn set_title(mut self, title: String) -> Self {
+    self.title = title;
     self
   }
 
@@ -81,7 +81,7 @@ impl NotificationDetailsBuilder {
 
   pub fn build(self) -> NotificationDetails {
     NotificationDetails {
-      summary: self.summary,
+      title: self.title,
       description: self.description,
       event_time: self.event_time,
       http_method: self.http_method,

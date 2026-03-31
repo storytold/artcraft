@@ -8,7 +8,7 @@ use crate::notification::notification_urgency::NotificationUrgency;
 #[derive(Clone, Debug)]
 pub struct NotificationDetails {
   /// Title or summary of the alert.
-  pub summary: String,
+  pub title: String,
 
   /// Full details for the alert.
   pub description: Option<String>,
@@ -37,10 +37,10 @@ impl NotificationDetails {
     generate_deduplication_key(self)
   }
 
-  /// Create a notification with a summary and description.
-  pub fn with_summary_and_description(summary: String, description: String) -> Self {
+  /// Create a notification with a title and description.
+  pub fn with_title_and_description(title: String, description: String) -> Self {
     Self {
-      summary,
+      title,
       description: Some(description),
       event_time: Utc::now(),
       http_method: None,
@@ -51,10 +51,10 @@ impl NotificationDetails {
     }
   }
 
-  /// Create a notification with just a summary.
-  pub fn with_summary(summary: String) -> Self {
+  /// Create a notification with just a title.
+  pub fn with_title(title: String) -> Self {
     Self {
-      summary,
+      title,
       description: None,
       event_time: Utc::now(),
       http_method: None,
@@ -73,13 +73,13 @@ impl NotificationDetails {
   /// - A backtrace (if available via `std::backtrace`)
   /// - The timestamp of the event
   pub fn from_error<E: Debug + Display>(error: &E) -> Self {
-    let summary = format!("{}", error);
+    let title = format!("{}", error);
 
-    // Truncate summary to a reasonable length for alert titles.
-    let summary = if summary.len() > 200 {
-      format!("{}...", &summary[..197])
+    // Truncate the title to a reasonable length for alert titles.
+    let title = if title.len() > 200 {
+      format!("{}...", &title[..197])
     } else {
-      summary
+      title
     };
 
     let event_time = Utc::now();
@@ -115,7 +115,7 @@ impl NotificationDetails {
     let description = description_parts.join("\n");
 
     Self {
-      summary,
+      title,
       description: Some(description),
       event_time,
       http_method: None,
@@ -126,12 +126,12 @@ impl NotificationDetails {
     }
   }
 
-  /// Create a notification from an error, with a custom summary prefix.
+  /// Create a notification from an error, with a custom title prefix.
   pub fn from_error_with_context<E: Debug + Display>(context: &str, error: &E) -> Self {
     let mut notification = Self::from_error(error);
-    notification.summary = format!("{}: {}", context, notification.summary);
-    if notification.summary.len() > 200 {
-      notification.summary = format!("{}...", &notification.summary[..197]);
+    notification.title = format!("{}: {}", context, notification.title);
+    if notification.title.len() > 200 {
+      notification.title = format!("{}...", &notification.title[..197]);
     }
     notification
   }

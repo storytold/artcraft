@@ -78,8 +78,8 @@ impl PagerWorker {
         match self.client.send_page(notification).await {
           Ok(Some(success)) => {
             debug!(
-              "Pager worker sent page: id={:?}, summary={}",
-              success.id, notification.summary
+              "Pager worker sent page: id={:?}, title={}",
+              success.id, notification.title
             );
           }
           Ok(None) => {
@@ -88,7 +88,7 @@ impl PagerWorker {
           Err(err) => {
             error!(
               "Pager worker failed to send page for '{}': {}",
-              notification.summary, err
+              notification.title, err
             );
             // Don't kill the thread on errors — keep processing.
           }

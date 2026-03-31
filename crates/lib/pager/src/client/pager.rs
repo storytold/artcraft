@@ -77,7 +77,7 @@ impl Pager {
     notification: NotificationDetails,
   ) -> Result<(), PagerError> {
     if self.client.is_noop() {
-      debug!("Pager no-op: would have enqueued page: {}", notification.summary);
+      debug!("Pager no-op: would have enqueued page: {}", notification.title);
       return Ok(());
     }
 
@@ -87,7 +87,7 @@ impl Pager {
     let dropped = queue.push(notification)?;
 
     if let Some(dropped) = dropped {
-      log::warn!("Pager queue overflow: dropped '{}'", dropped.summary);
+      log::warn!("Pager queue overflow: dropped '{}'", dropped.title);
     }
 
     Ok(())

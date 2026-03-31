@@ -85,7 +85,7 @@ impl PagerClient {
   pub async fn send_page(&self, notification: &NotificationDetails) -> Result<Option<PageSentResult>, PagerError> {
     match &self.client_config {
       PagerClientConfig::NoOp => {
-        debug!("Pager no-op: would have sent page: {}", notification.summary);
+        debug!("Pager no-op: would have sent page: {}", notification.title);
         Ok(None)
       }
       PagerClientConfig::Rootly { .. } => {
@@ -113,7 +113,7 @@ impl PagerClient {
         .clone()
         .unwrap_or_else(|| "unknown".to_string());
 
-    debug!("Sending page via Rootly (source={}): {}", source, notification.summary);
+    debug!("Sending page via Rootly (source={}): {}", source, notification.title);
 
     let mut labels: Vec<(String, String)> = Vec::new();
 
@@ -190,7 +190,7 @@ impl PagerClient {
     let result = create_alert(CreateAlertArgs {
       api_key: api_key.clone(),
       source: "api".to_string(),
-      summary: notification.summary.clone(),
+      summary: notification.title.clone(),
       description,
       status: Some("triggered".to_string()),
       service_ids: self.service_id

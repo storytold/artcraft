@@ -57,7 +57,7 @@ pub async fn moderation_send_alert_handler(
         ModerationSendAlertUrgency::Low => NotificationUrgency::Low,
       });
 
-  let notification = NotificationDetailsBuilder::from_summary(title)
+  let notification = NotificationDetailsBuilder::from_title(title)
       .set_description(Some(description))
       .set_http_method(Some(http_request.method().to_string()))
       .set_http_path(Some(http_request.path().to_string()))

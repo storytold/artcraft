@@ -14,13 +14,13 @@ fn hours_since_epoch(time: DateTime<Utc>) -> i64 {
 /// The key is a hex-encoded SHA-256 hash of the notification's identifying fields.
 ///
 /// When both `http_method` and `endpoint_path` are present, they are included in the
-/// hash so that different endpoints with the same summary produce distinct keys.
+/// hash so that different endpoints with the same title produce distinct keys.
 /// The `hours_since_epoch` of the event time is included so that the same notification
 /// firing in different hours produces a different key (allowing re-alerting).
 pub(crate) fn generate_deduplication_key(details: &NotificationDetails) -> String {
   let mut hasher = Sha256::new();
 
-  hasher.update(details.summary.as_bytes());
+  hasher.update(details.title.as_bytes());
   hasher.update(if details.is_from_error { b"1" } else { b"0" });
 
   if let (Some(method), Some(path)) = (&details.http_method, &details.http_path) {
@@ -44,14 +44,14 @@ mod tests {
   use chrono::TimeZone;
 
   fn make_details(
-    summary: &str,
+    title: &str,
     is_from_error: bool,
     http_method: Option<&str>,
     http_path: Option<&str>,
     event_time: DateTime<Utc>,
   ) -> NotificationDetails {
     NotificationDetails {
-      summary: summary.to_string(),
+      title: title.to_string(),
       description: None,
       event_time,
       http_method: http_method.map(|s| s.to_string()),
@@ -154,7 +154,7 @@ mod tests {
     }
 
     #[test]
-    fn different_summary_different_key() {
+    fn different_title_different_key() {
       let time = Utc.with_ymd_and_hms(2026, 3, 30, 14, 0, 0).unwrap();
 
       let a = make_details("error A", true, None, None, time);
@@ -198,7 +198,7 @@ mod tests {
     use super::*;
 
     fn make_details_with_status(
-      summary: &str,
+      title: &str,
       is_from_error: bool,
       http_method: Option<&str>,
       http_path: Option<&str>,
@@ -206,7 +206,7 @@ mod tests {
       event_time: DateTime<Utc>,
     ) -> NotificationDetails {
       NotificationDetails {
-        summary: summary.to_string(),
+        title: title.to_string(),
         description: None,
         event_time,
         http_method: http_method.map(|s| s.to_string()),
