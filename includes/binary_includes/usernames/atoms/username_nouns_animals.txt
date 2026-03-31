@@ -2,35 +2,202 @@
 # https://github.com/jneidel/animal-names/blob/master/animals-common.txt
 # This has been trimmed to remove potentially negative, offensive, uncool, or otherwise bad choices
 
+albatross
 alligator
 alpaca
+antelope
+armadillo
+axolotl
 badger
+barracuda
+bobcat
+cardinal
+caribou
 cat
+chameleon
 cheetah
 cobra
+condor
+corgi
 coyote
+crane
 crocodile
+dingo
+dolphin
 dragon
+dragonfly
 eagle
+elk
 falcon
+finch
 fox
+gazelle
 gecko
 giraffe
 hawk
 hedgehog
+heron
+hyena
+iguana
+impala
 jaguar
 kangaroo
+kiwi
+kleekai
 koala
+komodo
+lemur
 leopard
 lion
 llama
+lynx
+mako
+marlin
+marmot
+meerkat
+narwhal
+nighthawk
+orca
+osprey
+owl
+panda
+parrot
 penguin
+phoenix
 puma
+python
 rabbit
 raccoon
+raptor
+raven
+reindeer
+roadrunner
 shark
+shiba
+sparrow
+sphinx
+squirrel
+taipan
 tiger
+toucan
+unicorn
+viper
 wallaby
+wildcat
 wolf
+wolverine
 wombat
 zebra
+
+# Probably not good animals to use, for one reason or another:
+# baboon
+# bat
+# bear
+# beaver
+# bison
+# buffalo
+# bunny
+# butterfly
+# camel
+# chinchilla
+# chipmunk
+# cockatoo
+# cougar
+# crow
+# cuttlefish
+# deer
+# dove
+# duck
+# eel
+# elephant
+# emu
+# ermine
+# ferret
+# firefly
+# flamingo
+# frog
+# goose
+# gorilla
+# grasshopper
+# grizzly
+# grouse
+# hamster
+# hare
+# hippo
+# hornet
+# hound
+# hummingbird
+# husky
+# ibex
+# ibis
+# jackal
+# jackrabbit
+# jay
+# jellyfish
+# kestrel
+# kingfisher
+# kookaburra
+# lizard
+# lobster
+# macaw
+# mammoth
+# manatee
+# mandrill
+# mantis
+# mockingbird
+# mongoose
+# moose
+# mustang
+# newt
+# ocelot
+# octopus
+# okapi
+# oriole
+# otter
+# ox
+# panther
+# peacock
+# pelican
+# peregrine
+# pheasant
+# piranha
+# platypus
+# porcupine
+# porpoise
+# quail
+# quetzal
+# ram
+# rhino
+# robin
+# rooster
+# sailfish
+# salamander
+# salmon
+# seahorse
+# seal
+# squid
+# stallion
+# starfish
+# starling
+# stingray
+# stork
+# sturgeon
+# swan
+# swordfish
+# tamarin
+# tapir
+# tarpon
+# terrapin
+# thrush
+# trout
+# tuna
+# turtle
+# vulture
+# walrus
+# warthog
+# wasp
+# weasel
+# whale
+# woodpecker
+# wren
+# yak
