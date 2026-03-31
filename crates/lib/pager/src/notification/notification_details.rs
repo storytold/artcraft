@@ -12,6 +12,15 @@ pub struct NotificationDetails {
 
   /// When the event occurred.
   pub event_time: DateTime<Utc>,
+
+  /// HTTP method associated with the event, if any.
+  pub http_method: Option<String>,
+
+  /// Endpoint path associated with the event, if any.
+  pub endpoint_path: Option<String>,
+
+  /// Whether this notification originated from an error.
+  pub is_from_error: bool,
 }
 
 impl NotificationDetails {
@@ -21,6 +30,9 @@ impl NotificationDetails {
       summary,
       description: Some(description),
       event_time: Utc::now(),
+      http_method: None,
+      endpoint_path: None,
+      is_from_error: false,
     }
   }
 
@@ -30,6 +42,9 @@ impl NotificationDetails {
       summary,
       description: None,
       event_time: Utc::now(),
+      http_method: None,
+      endpoint_path: None,
+      is_from_error: false,
     }
   }
 
@@ -86,6 +101,9 @@ impl NotificationDetails {
       summary,
       description: Some(description),
       event_time,
+      http_method: None,
+      endpoint_path: None,
+      is_from_error: true,
     }
   }
 

@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crate::http_server::endpoints::webhooks::handle_image_payload::handle_image_payload;
 use crate::http_server::endpoints::webhooks::handle_images_payload::handle_images_payload;
+use crate::http_server::endpoints::webhooks::handle_model_glb_payload::handle_model_glb_payload;
 use crate::http_server::endpoints::webhooks::handle_model_mesh_payload::handle_model_mesh_payload;
 use crate::http_server::endpoints::webhooks::handle_video_payload::handle_video_payload;
 use crate::state::server_state::ServerState;
@@ -18,7 +19,7 @@ use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id:
 use mysql_queries::queries::generic_inference::fal::mark_fal_generic_inference_job_successfully_done::{mark_fal_generic_inference_job_successfully_done, MarkJobArgs};
 use serde_json::Value;
 use utoipa::ToSchema;
-use crate::http_server::endpoints::webhooks::handle_model_glb_payload::handle_model_glb_payload;
+
 // 1. tauri --> hit endpoint to enqueue
 //
 // 2. webhook 
