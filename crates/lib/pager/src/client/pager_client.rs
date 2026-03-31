@@ -116,8 +116,12 @@ impl PagerClient {
       labels.push(("http_method".to_string(), method.clone()));
     }
 
-    if let Some(path) = &notification.endpoint_path {
+    if let Some(path) = &notification.http_path {
       labels.push(("http_path".to_string(), path.clone()));
+    }
+
+    if let Some(status_code) = notification.http_status_code {
+      labels.push(("http_status_code".to_string(), status_code.to_string()));
     }
 
     let labels = if labels.is_empty() { None } else { Some(labels) };
@@ -131,8 +135,12 @@ impl PagerClient {
           parts.push(format!("HTTP Method: {}", method));
         }
 
-        if let Some(path) = &notification.endpoint_path {
+        if let Some(path) = &notification.http_path {
           parts.push(format!("HTTP Path: {}", path));
+        }
+
+        if let Some(status_code) = notification.http_status_code {
+          parts.push(format!("HTTP Status Code: {}", status_code));
         }
 
         if let Some(h) = &self.hostname {

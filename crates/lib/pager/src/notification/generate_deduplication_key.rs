@@ -23,9 +23,13 @@ pub(crate) fn generate_deduplication_key(details: &NotificationDetails) -> Strin
   hasher.update(details.summary.as_bytes());
   hasher.update(if details.is_from_error { b"1" } else { b"0" });
 
-  if let (Some(method), Some(path)) = (&details.http_method, &details.endpoint_path) {
+  if let (Some(method), Some(path)) = (&details.http_method, &details.http_path) {
     hasher.update(method.as_bytes());
     hasher.update(path.as_bytes());
+  }
+
+  if let Some(status_code) = details.http_status_code {
+    hasher.update(status_code.to_le_bytes());
   }
 
   hasher.update(hours_since_epoch(details.event_time).to_le_bytes());
@@ -43,7 +47,7 @@ mod tests {
     summary: &str,
     is_from_error: bool,
     http_method: Option<&str>,
-    endpoint_path: Option<&str>,
+    http_path: Option<&str>,
     event_time: DateTime<Utc>,
   ) -> NotificationDetails {
     NotificationDetails {
@@ -51,7 +55,8 @@ mod tests {
       description: None,
       event_time,
       http_method: http_method.map(|s| s.to_string()),
-      endpoint_path: endpoint_path.map(|s| s.to_string()),
+      http_path: http_path.map(|s| s.to_string()),
+      http_status_code: None,
       is_from_error,
     }
   }
@@ -183,6 +188,70 @@ mod tests {
 
       let a = make_details("db error", true, Some("GET"), Some("/v1/jobs"), time);
       let b = make_details("db error", true, Some("POST"), Some("/v1/jobs"), time);
+
+      assert_ne!(generate_deduplication_key(&a), generate_deduplication_key(&b));
+    }
+  }
+
+  mod http_status_code_tests {
+    use super::*;
+
+    fn make_details_with_status(
+      summary: &str,
+      is_from_error: bool,
+      http_method: Option<&str>,
+      http_path: Option<&str>,
+      http_status_code: Option<u16>,
+      event_time: DateTime<Utc>,
+    ) -> NotificationDetails {
+      NotificationDetails {
+        summary: summary.to_string(),
+        description: None,
+        event_time,
+        http_method: http_method.map(|s| s.to_string()),
+        http_path: http_path.map(|s| s.to_string()),
+        http_status_code,
+        is_from_error,
+      }
+    }
+
+    #[test]
+    fn different_status_code_different_key() {
+      let time = Utc.with_ymd_and_hms(2026, 3, 30, 14, 0, 0).unwrap();
+
+      let a = make_details_with_status("db error", true, Some("POST"), Some("/v1/jobs"), Some(500), time);
+      let b = make_details_with_status("db error", true, Some("POST"), Some("/v1/jobs"), Some(503), time);
+
+      assert_ne!(generate_deduplication_key(&a), generate_deduplication_key(&b));
+    }
+
+    #[test]
+    fn status_code_vs_none_different_key() {
+      let time = Utc.with_ymd_and_hms(2026, 3, 30, 14, 0, 0).unwrap();
+
+      let a = make_details_with_status("db error", true, Some("POST"), Some("/v1/jobs"), Some(500), time);
+      let b = make_details_with_status("db error", true, Some("POST"), Some("/v1/jobs"), None, time);
+
+      assert_ne!(generate_deduplication_key(&a), generate_deduplication_key(&b));
+    }
+
+    #[test]
+    fn same_status_code_same_key() {
+      let t1 = Utc.with_ymd_and_hms(2026, 3, 30, 14, 0, 0).unwrap();
+      let t2 = Utc.with_ymd_and_hms(2026, 3, 30, 14, 30, 0).unwrap();
+
+      let a = make_details_with_status("timeout", true, Some("GET"), Some("/v1/users"), Some(504), t1);
+      let b = make_details_with_status("timeout", true, Some("GET"), Some("/v1/users"), Some(504), t2);
+
+      assert_eq!(generate_deduplication_key(&a), generate_deduplication_key(&b));
+    }
+
+    #[test]
+    fn status_code_without_http_fields_still_differentiates() {
+      let time = Utc.with_ymd_and_hms(2026, 3, 30, 14, 0, 0).unwrap();
+
+      let a = make_details_with_status("error", true, None, None, Some(500), time);
+      let b = make_details_with_status("error", true, None, None, Some(502), time);
 
       assert_ne!(generate_deduplication_key(&a), generate_deduplication_key(&b));
     }

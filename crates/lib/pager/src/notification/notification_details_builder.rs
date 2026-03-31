@@ -8,7 +8,8 @@ pub struct NotificationDetailsBuilder {
   description: Option<String>,
   event_time: DateTime<Utc>,
   http_method: Option<String>,
-  endpoint_path: Option<String>,
+  http_path: Option<String>,
+  http_status_code: Option<u16>,
   is_from_error: bool,
 }
 
@@ -20,7 +21,8 @@ impl NotificationDetailsBuilder {
       description: None,
       event_time: Utc::now(),
       http_method: None,
-      endpoint_path: None,
+      http_path: None,
+      http_status_code: None,
       is_from_error: false,
     }
   }
@@ -37,7 +39,8 @@ impl NotificationDetailsBuilder {
       description: details.description,
       event_time: details.event_time,
       http_method: None,
-      endpoint_path: None,
+      http_path: None,
+      http_status_code: None,
       is_from_error: true,
     }
   }
@@ -52,8 +55,13 @@ impl NotificationDetailsBuilder {
     self
   }
 
-  pub fn set_endpoint_path(mut self, endpoint_path: Option<String>) -> Self {
-    self.endpoint_path = endpoint_path;
+  pub fn set_http_path(mut self, http_path: Option<String>) -> Self {
+    self.http_path = http_path;
+    self
+  }
+
+  pub fn set_http_status_code(mut self, http_status_code: Option<u16>) -> Self {
+    self.http_status_code = http_status_code;
     self
   }
 
@@ -63,7 +71,8 @@ impl NotificationDetailsBuilder {
       description: self.description,
       event_time: self.event_time,
       http_method: self.http_method,
-      endpoint_path: self.endpoint_path,
+      http_path: self.http_path,
+      http_status_code: self.http_status_code,
       is_from_error: self.is_from_error,
     }
   }
