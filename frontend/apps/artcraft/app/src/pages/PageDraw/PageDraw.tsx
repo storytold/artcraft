@@ -126,11 +126,10 @@ const useTauriAdapter = (): PageDrawAdapter => {
 
       onEnqueueMeta: (meta) => (window as any).__storeTaskEnqueueMeta?.(meta),
 
-      renderBaseImageSelector: ({ onImageSelect, showLoading, onBlankCanvasClick }) => (
+      renderBaseImageSelector: ({ onImageSelect, showLoading }) => (
         <BaseImageSelector
           onImageSelect={onImageSelect}
           showLoading={showLoading}
-          onBlankCanvasClick={onBlankCanvasClick}
         />
       ),
     }),

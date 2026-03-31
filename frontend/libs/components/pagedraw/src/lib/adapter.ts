@@ -48,8 +48,6 @@ export interface PageDrawAdapter {
   renderBaseImageSelector(props: {
     onImageSelect: (image: BaseSelectorImage) => void;
     showLoading: boolean;
-    /** Called when the user clicks "Blank Canvas" — the lib manages the modal. */
-    onBlankCanvasClick: () => void;
   }): ReactNode;
 
   /** Optional telemetry hook called just before an enqueue. */

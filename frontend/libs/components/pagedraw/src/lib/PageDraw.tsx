@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
-import { BlankCanvasModal } from "./BlankCanvasModal";
 import { useShallow } from "zustand/react/shallow";
 import { DRAW_LAYER_ID, INPAINT_LAYER_ID, PaintSurface } from "./PaintSurface";
 import "./pagedraw.css";
@@ -258,7 +257,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   const canvasHeight = useRef<number>(1024);
   const [isSelecting, setIsSelecting] = useState<boolean>(false);
   const [editing3DNodeId, setEditing3DNodeId] = useState<string | null>(null);
-  const [isBlankCanvasModalOpen, setIsBlankCanvasModalOpen] = useState(false);
   const overlayHandleRef = useRef<Model3DOverlayHandle>(null);
   const stageRef = useRef<Konva.Stage>({} as Konva.Stage);
   const transformerRefs = useRef<{ [key: string]: Konva.Transformer }>({});
@@ -953,27 +951,10 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
                 setBaseImageInfo(image);
               },
               showLoading: baseImageInfo !== null && baseImageBitmap === null && !baseImageInfo.isBlankCanvas,
-              onBlankCanvasClick: () => setIsBlankCanvasModalOpen(true),
             })}
           </div>
         </div>
       </div>
-      <BlankCanvasModal
-        isOpen={isBlankCanvasModalOpen}
-        onClose={() => setIsBlankCanvasModalOpen(false)}
-        onConfirm={(width, height) => {
-          setIsBlankCanvasModalOpen(false);
-          const blankImage: BaseSelectorImage = {
-            url: "",
-            mediaToken: `blank_canvas_${width}x${height}_${Math.random().toString(36).substring(2, 8)}`,
-            isBlankCanvas: true,
-            blankCanvasWidth: width,
-            blankCanvasHeight: height,
-          };
-          addHistoryImageBundle({ images: [blankImage] });
-          setBaseImageInfo(blankImage);
-        }}
-      />
     );
   }
 

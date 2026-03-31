@@ -10,24 +10,23 @@ import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { ModelPage } from "@storyteller/ui-model-selector";
 import { UploadEntryCard } from "~/components/media/UploadEntryCard";
-import type { BaseSelectorImage } from "@storyteller/ui-pagedraw";
+import { BlankCanvasModal, type BaseSelectorImage } from "@storyteller/ui-pagedraw";
 
 const MAX_GALLERY_SELECTIONS = 1;
 
 type BaseImageSelectorProps = {
   onImageSelect: (image: BaseSelectorImage) => void;
   showLoading?: boolean;
-  onBlankCanvasClick: () => void;
 };
 
 export const BaseImageSelector = ({
   onImageSelect,
   showLoading = false,
-  onBlankCanvasClick,
 }: BaseImageSelectorProps) => {
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBlankCanvasModalOpen, setIsBlankCanvasModalOpen] = useState(false);
 
   const handleGalleryClick = () => setIsGalleryModalOpen(true);
 
@@ -59,6 +58,18 @@ export const BaseImageSelector = ({
     };
     handleGalleryClose();
     onImageSelect(referenceImage);
+  };
+
+  const handleBlankCanvasConfirm = (width: number, height: number) => {
+    setIsBlankCanvasModalOpen(false);
+    const blankImage: BaseSelectorImage = {
+      url: "",
+      mediaToken: `blank_canvas_${width}x${height}_${Math.random().toString(36).substring(2, 8)}`,
+      isBlankCanvas: true,
+      blankCanvasWidth: width,
+      blankCanvasHeight: height,
+    };
+    onImageSelect(blankImage);
   };
 
   const handleFileUpload = (files: FileList) => {
@@ -136,7 +147,7 @@ export const BaseImageSelector = ({
             onSecondaryClick={handleGalleryClick}
             tertiaryLabel="Blank Canvas"
             tertiaryIcon={faExpand}
-            onTertiaryClick={onBlankCanvasClick}
+            onTertiaryClick={() => setIsBlankCanvasModalOpen(true)}
             disabled={isLoading || showLoading}
           />
         </div>
@@ -155,6 +166,11 @@ export const BaseImageSelector = ({
         onUseSelected={handleUseGalleryImages}
         onDownloadClicked={downloadFileFromUrl}
         forceFilter="image"
+      />
+      <BlankCanvasModal
+        isOpen={isBlankCanvasModalOpen}
+        onClose={() => setIsBlankCanvasModalOpen(false)}
+        onConfirm={handleBlankCanvasConfirm}
       />
     </>
   );
