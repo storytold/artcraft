@@ -33,15 +33,24 @@ pub async fn moderation_send_alert_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModerationSendAlertResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
+  let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
     .map_err(|_| CommonWebError::NotAuthorized)?;
 
   let title = request.title.clone()
-    .unwrap_or_else(|| "Test Moderation Alert".to_string());
+    .unwrap_or_else(|| "Moderation Alert".to_string());
 
-  let description = request.description.clone()
-    .unwrap_or_else(|| "This is a test moderation alert.".to_string());
+  let description = {
+    let description = request.description.clone()
+        .unwrap_or_else(|| "This moderation alert does not have a description.".to_string());
+
+    let description = vec![
+      description,
+      format!("Sent by: {}", user_session.username),
+    ];
+
+    description.join("\n\n")
+  };
 
   let notification = NotificationDetails::with_summary_and_description(title, description);
 
