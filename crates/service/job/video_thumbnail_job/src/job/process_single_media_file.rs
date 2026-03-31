@@ -37,7 +37,7 @@ pub async fn process_single_media_file(
     Ok(d) => d,
     Err(err) => {
       error!("Failed to download video for {}: {:?}", media_file.token.as_str(), err);
-      return alert_pager_and_return_err(&deps.pager, err);
+      return alert_pager_and_return_err(&deps.pager, "Video download failed", err);
     }
   };
 
@@ -60,7 +60,7 @@ pub async fn process_single_media_file(
     },
   ) {
     error!("Failed to generate JPG thumbnail for {}: {:?}", media_file.token.as_str(), err);
-    return alert_pager_and_return_err(&deps.pager, err.into());
+    return alert_pager_and_return_err(&deps.pager, "JPG thumbnail generation failed", err.into());
   }
 
   info!("Generated JPG thumbnail for {}", media_file.token.as_str());
@@ -69,7 +69,7 @@ pub async fn process_single_media_file(
 
   if let Err(err) = deps.public_bucket_client.upload_filename(&jpg_object_path, &jpg_path).await {
     error!("Failed to upload JPG thumbnail for {}: {:?}", media_file.token.as_str(), err);
-    return alert_pager_and_return_err(&deps.pager, err);
+    return alert_pager_and_return_err(&deps.pager, "JPG thumbnail upload failed", err);
   }
 
   info!("Uploaded JPG thumbnail to {}", jpg_object_path);
@@ -84,7 +84,7 @@ pub async fn process_single_media_file(
     },
   ) {
     error!("Failed to generate GIF preview for {}: {:?}", media_file.token.as_str(), err);
-    return alert_pager_and_return_err(&deps.pager, err.into());
+    return alert_pager_and_return_err(&deps.pager, "GIF preview generation failed", err.into());
   }
 
   info!("Generated GIF preview for {}", media_file.token.as_str());
@@ -93,7 +93,7 @@ pub async fn process_single_media_file(
 
   if let Err(err) = deps.public_bucket_client.upload_filename(&gif_object_path, &gif_path).await {
     error!("Failed to upload GIF preview for {}: {:?}", media_file.token.as_str(), err);
-    return alert_pager_and_return_err(&deps.pager, err);
+    return alert_pager_and_return_err(&deps.pager, "GIF preview upload failed", err);
   }
 
   info!("Uploaded GIF preview to {}", gif_object_path);
@@ -107,7 +107,7 @@ pub async fn process_single_media_file(
     &deps.mysql_pool,
   ).await {
     error!("Failed to update thumbnail version for {}: {:?}", media_file.token.as_str(), err);
-    return alert_pager_and_return_err(&deps.pager, err.into());
+    return alert_pager_and_return_err(&deps.pager, "Thumbnail DB update failed", err.into());
   }
 
   info!(

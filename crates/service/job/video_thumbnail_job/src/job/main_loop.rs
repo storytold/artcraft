@@ -22,7 +22,7 @@ pub async fn main_loop(deps: JobDependencies) {
       }
       Err(err) => {
         error!("Error in video thumbnail batch cycle: {:?}", err);
-        let _ = alert_pager_and_return_err::<()>(&deps.pager, err);
+        let _ = alert_pager_and_return_err::<()>(&deps.pager, "Video thumbnail batch cycle error", err);
         let _ = deps.job_stats.increment_failure_count();
 
         // Wait before retrying after a failure.

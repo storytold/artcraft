@@ -6,9 +6,11 @@ use pager::notification::notification_urgency::NotificationUrgency;
 /// Enqueue a pager alert for the error, then return it as `Err`.
 pub fn alert_pager_and_return_err<T>(
   pager: &Pager,
+  title: &str,
   err: anyhow::Error,
 ) -> anyhow::Result<T> {
   let notification = NotificationDetailsBuilder::from_error(&err)
+      .set_title(title.to_string())
       .set_urgency(Some(NotificationUrgency::Medium))
       .build();
 
