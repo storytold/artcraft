@@ -19,6 +19,9 @@ pub struct LoginSuccessResponse {
 
 #[derive(Copy, Clone, Debug, Serialize, ToSchema)]
 pub enum LoginErrorType {
+  /// Account was created without a password and the user needs to create one
+  AccountNeedsPassword,
+  /// Invalid login credentials were supplied
   InvalidCredentials,
   ServerError,
 }

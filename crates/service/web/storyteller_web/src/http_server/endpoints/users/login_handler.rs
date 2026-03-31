@@ -17,7 +17,7 @@ use tokens::tokens::user_sessions::UserSessionToken;
 use utoipa::ToSchema;
 
 use artcraft_api_defs::users::login::{LoginErrorType, LoginRequest, LoginSuccessResponse};
-
+use password::errors::password_confirm_error::PasswordConfirmError;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::util::enroll_in_studio::enroll_in_studio;
 
@@ -39,6 +39,7 @@ impl ResponseError for LoginErrorResponse {
   fn status_code(&self) -> StatusCode {
     match self.error_type {
       LoginErrorType::InvalidCredentials => StatusCode::UNAUTHORIZED,
+      LoginErrorType::AccountNeedsPassword => StatusCode::UNAUTHORIZED,
       LoginErrorType::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
     }
   }
@@ -56,11 +57,20 @@ impl LoginErrorResponse {
       error_message: "invalid credentials".to_string()
     }
   }
+  
   fn server_error() -> Self {
     Self {
       success: false,
       error_type: LoginErrorType::ServerError,
       error_message: "server error".to_string()
+    }
+  }
+
+  fn account_without_password() -> Self {
+    Self {
+      success: false,
+      error_type: LoginErrorType::AccountNeedsPassword,
+      error_message: "account was created without a password; please try password reset".to_string()
     }
   }
 }
@@ -121,10 +131,9 @@ pub async fn login_handler(
   };
 
   match bcrypt_confirm_password(request.password.clone(), &actual_hash) {
-    Err(password::errors::password_confirm_error::PasswordConfirmError::HashNotProvided) |
-    Err(password::errors::password_confirm_error::PasswordConfirmError::HashIsSentinelValue) => {
-      warn!("Login attempt with unset password for user");
-      return Err(LoginErrorResponse::invalid_credentials());
+    Err(PasswordConfirmError::HashIsSentinelValue) => {
+      warn!("Attempting to log in with a passwordless account");
+      return Err(LoginErrorResponse::account_without_password());
     }
     Err(e) => {
       warn!("Login hash comparison error: {:?}", e);
