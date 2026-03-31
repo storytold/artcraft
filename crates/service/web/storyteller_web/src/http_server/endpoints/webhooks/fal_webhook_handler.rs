@@ -1,6 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
+use crate::http_server::endpoints::webhooks::process_failure::handle_failed_fal_webhook::handle_failed_fal_webhook;
 use crate::http_server::endpoints::webhooks::process_success::handle_successful_fal_webhook::handle_sucessful_fal_webhook;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
@@ -15,17 +16,6 @@ use pager::notification::notification_details_builder::NotificationDetailsBuilde
 use pager::notification::notification_urgency::NotificationUrgency;
 use serde_json::Value;
 use utoipa::ToSchema;
-
-// 1. tauri --> hit endpoint to enqueue
-//
-// 2. webhook
-//  - upload media file
-//  - update job record with media token + status
-//
-// 3. tauri --> storyteller jobs endpoint polls
-//  - alert frontend of completion
-//
-// 4. javascript polls tauri  (backend removal)
 
 // TODO(bt, 2025-06-03): Handle webhook crypto authentication
 #[derive(Debug, Deserialize, ToSchema)]
@@ -117,8 +107,10 @@ pub async fn fal_webhook_handler(
       .as_deref()
       .ok_or_else(|| FalWebhookError::BadInput("Missing request_id".to_string()))?;
 
-  info!("FAL webhook request_id: {}", request_id);
+  info!("FAL webhook request_id: {} (status: {:?})", request_id, request.status);
 
+  // TODO(bt): Longer term, we should just use `fal_client` to parse webhooks and add lots of integration tests
+  //  across dozens of real messages.
   let payload = request.payload
       .as_ref()
       .ok_or_else(|| {
@@ -126,7 +118,19 @@ pub async fn fal_webhook_handler(
         FalWebhookError::BadInput("Missing payload".to_string())
       })?;
 
-  let result = handle_sucessful_fal_webhook(&server_state, request_id, payload).await;
+  let result = match request.status {
+    FalWebhookStatus::Ok => {
+      handle_sucessful_fal_webhook(&server_state, request_id, payload).await
+    }
+    FalWebhookStatus::Error => {
+      handle_failed_fal_webhook(
+        &server_state,
+        request_id,
+        payload,
+        request.error.as_deref(),
+      ).await
+    }
+  };
 
   if let Err(ref err) = result {
     error!("FAL webhook error for request_id {}: {:?}", request_id, err);
