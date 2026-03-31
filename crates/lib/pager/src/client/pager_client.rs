@@ -177,6 +177,22 @@ impl PagerClient {
           parts.push(format!("HTTP Status Code: {}", status_code));
         }
 
+        if let Some(user_token) = &notification.user_token {
+          parts.push(format!("User Token: {}", user_token));
+        }
+
+        if let Some(media_file_token) = &notification.media_file_token {
+          parts.push(format!("Media File Token: {}", media_file_token));
+        }
+
+        if let Some(inference_job_token) = &notification.inference_job_token {
+          parts.push(format!("Inference Job Token: {}", inference_job_token));
+        }
+
+        if let Some(third_party_id) = &notification.third_party_id {
+          parts.push(format!("Third Party ID: {}", third_party_id));
+        }
+
         if let Some(h) = &self.hostname {
           parts.push(format!("Hostname: {}", h));
         }

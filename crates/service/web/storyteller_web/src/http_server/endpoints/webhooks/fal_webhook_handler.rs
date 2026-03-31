@@ -143,6 +143,7 @@ pub async fn fal_webhook_handler(
           "FAL webhook failed for request_id: {}\n\nError: {:?}",
           request_id, err,
         )))
+        .set_third_party_id(Some(request_id.to_string()))
         .set_urgency(Some(NotificationUrgency::High))
         .set_http_method(Some(http_request.method().to_string()))
         .set_http_path(Some(http_request.path().to_string()))
