@@ -38,8 +38,14 @@ pub enum PagerClientConfig {
   Rootly {
     api_key: RootlyApiKey,
 
-    /// Alert urgency ID (e.g. "62fde143-..." maps to "High" in our org).
-    alert_urgency_id: Option<String>,
+    /// Alert urgency ID for high-urgency alerts.
+    urgency_id_high: Option<String>,
+
+    /// Alert urgency ID for medium-urgency alerts.
+    urgency_id_medium: Option<String>,
+
+    /// Alert urgency ID for low-urgency alerts.
+    urgency_id_low: Option<String>,
 
     /// Notification target type (e.g. "User", "EscalationPolicy").
     notification_target_type: Option<String>,
@@ -93,7 +99,9 @@ impl PagerClient {
   ) -> Result<PageSentResult, PagerError> {
     let PagerClientConfig::Rootly {
       api_key,
-      alert_urgency_id,
+      urgency_id_high,
+      urgency_id_medium: _,
+      urgency_id_low: _,
       notification_target_type,
       notification_target_id,
     } = &self.client_config else {
@@ -191,7 +199,7 @@ impl PagerClient {
       environment_ids: None,
       external_id: None,
       external_url: None,
-      alert_urgency_id: alert_urgency_id.clone(),
+      alert_urgency_id: urgency_id_high.clone(),
       notification_target_type: notification_target_type.clone(),
       notification_target_id: notification_target_id.clone(),
       labels,

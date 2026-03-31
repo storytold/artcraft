@@ -58,11 +58,10 @@ pub fn build_pager(
 
 fn build_rootly_pager(builder: PagerBuilder, api_key: String) -> (Pager, PagerWorker) {
   let mut rootly_builder = builder
-      .rootly(RootlyApiKey::new(api_key));
-
-  if let Some(urgency_id) = easyenv::get_env_string_optional("ROOTLY_ALERT_URGENCY_ID") {
-    rootly_builder = rootly_builder.alert_urgency_id(urgency_id);
-  }
+      .rootly(RootlyApiKey::new(api_key))
+      .urgency_id_high(ROOTLY_URGENCY_ID_HIGH.to_string())
+      .urgency_id_medium(ROOTLY_URGENCY_ID_MEDIUM.to_string())
+      .urgency_id_low(ROOTLY_URGENCY_ID_LOW.to_string());
 
   let target_type = easyenv::get_env_string_optional("ROOTLY_NOTIFICATION_TARGET_TYPE");
   let target_id = easyenv::get_env_string_optional("ROOTLY_NOTIFICATION_TARGET_ID");
