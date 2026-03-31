@@ -1,13 +1,23 @@
-use errors::AnyhowResult;
+use crate::constants::PASSWORD_HASH_SENTINEL_VALUE;
+use crate::errors::password_confirm_error::PasswordConfirmError;
 
-pub fn bcrypt_confirm_password(password: String, bcrypt_hash: &str) -> AnyhowResult<bool> {
-  let verified = bcrypt::verify(&password, &bcrypt_hash)?;
+pub fn bcrypt_confirm_password(password: String, bcrypt_hash: &str) -> Result<bool, PasswordConfirmError> {
+  if bcrypt_hash.is_empty() {
+    return Err(PasswordConfirmError::HashNotProvided);
+  }
+
+  if bcrypt_hash == PASSWORD_HASH_SENTINEL_VALUE {
+    return Err(PasswordConfirmError::HashIsSentinelValue);
+  }
+
+  let verified = bcrypt::verify(&password, bcrypt_hash)?;
   Ok(verified)
 }
 
 #[cfg(test)]
 mod tests {
   use crate::bcrypt_confirm_password::bcrypt_confirm_password;
+  use crate::errors::password_confirm_error::PasswordConfirmError;
 
   #[test]
   fn test_confirmation() {
@@ -24,5 +34,17 @@ mod tests {
       let valid = bcrypt_confirm_password(password.to_string(), hash).unwrap();
       assert!(valid);
     }
+  }
+
+  #[test]
+  fn test_empty_hash_returns_error() {
+    let result = bcrypt_confirm_password("password".to_string(), "");
+    assert!(matches!(result, Err(PasswordConfirmError::HashNotProvided)));
+  }
+
+  #[test]
+  fn test_sentinel_value_returns_error() {
+    let result = bcrypt_confirm_password("password".to_string(), "*");
+    assert!(matches!(result, Err(PasswordConfirmError::HashIsSentinelValue)));
   }
 }

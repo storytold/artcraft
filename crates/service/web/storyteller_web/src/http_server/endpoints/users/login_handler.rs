@@ -121,6 +121,11 @@ pub async fn login_handler(
   };
 
   match bcrypt_confirm_password(request.password.clone(), &actual_hash) {
+    Err(password::errors::password_confirm_error::PasswordConfirmError::HashNotProvided) |
+    Err(password::errors::password_confirm_error::PasswordConfirmError::HashIsSentinelValue) => {
+      warn!("Login attempt with unset password for user");
+      return Err(LoginErrorResponse::invalid_credentials());
+    }
     Err(e) => {
       warn!("Login hash comparison error: {:?}", e);
       return Err(LoginErrorResponse::server_error());

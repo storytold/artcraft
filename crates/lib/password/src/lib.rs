@@ -23,3 +23,5 @@
 //  https://stytch.com/blog/argon2-vs-bcrypt-vs-scrypt/
 pub mod bcrypt_hash_password;
 pub mod bcrypt_confirm_password;
+pub mod constants;
+pub mod errors;

@@ -1,6 +1,6 @@
-use errors::AnyhowResult;
+use crate::errors::password_hash_error::PasswordHashError;
 
-pub fn bcrypt_hash_password(password: String) -> AnyhowResult<String> {
+pub fn bcrypt_hash_password(password: String) -> Result<String, PasswordHashError> {
   let hash = bcrypt::hash(&password, bcrypt::DEFAULT_COST)?;
   Ok(hash)
 }
