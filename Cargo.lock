@@ -10706,6 +10706,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "shared_env_var_config"
+version = "0.0.1"
+dependencies = [
+ "easyenv",
+]
+
+[[package]]
 name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11290,6 +11297,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "server_environment",
+ "shared_env_var_config",
  "speculoos",
  "sqlx",
  "strum",
@@ -13372,6 +13380,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "server_environment",
+ "shared_env_var_config",
  "sqlx",
  "tempdir",
  "tokio",

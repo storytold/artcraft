@@ -10,7 +10,7 @@ pub fn build_pager(
   server_environment: server_environment::ServerEnvironment,
   hostname: &str,
 ) -> (Pager, PagerWorker) {
-  let is_paging_enabled = easyenv::get_env_bool_or_default("ENABLE_PAGING", false);
+  let is_paging_enabled = shared_env_var_config::paging::env_enable_paging_default_false();
 
   info!("Paging enabled: {}", is_paging_enabled);
 
@@ -32,7 +32,7 @@ pub fn build_pager(
     return builder.build_with_worker();
   }
 
-  let maybe_api_key = easyenv::get_env_string_optional("ROOTLY_API_KEY");
+  let maybe_api_key = shared_env_var_config::paging::env_optional_rootly_api_key();
 
   match maybe_api_key {
     Some(api_key) => {
@@ -53,8 +53,8 @@ fn build_rootly_pager(builder: PagerBuilder, api_key: String) -> (Pager, PagerWo
       .urgency_id_medium(ROOTLY_URGENCY_ID_MEDIUM.to_string())
       .urgency_id_low(ROOTLY_URGENCY_ID_LOW.to_string());
 
-  let target_type = easyenv::get_env_string_optional("ROOTLY_NOTIFICATION_TARGET_TYPE");
-  let target_id = easyenv::get_env_string_optional("ROOTLY_NOTIFICATION_TARGET_ID");
+  let target_type = shared_env_var_config::paging::env_optional_rootly_notification_target_type();
+  let target_id = shared_env_var_config::paging::env_optional_rootly_notification_target_id();
 
   if let (Some(t_type), Some(t_id)) = (target_type, target_id) {
     rootly_builder = rootly_builder.notification_target(t_type, t_id);

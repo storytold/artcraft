@@ -1,0 +1,12 @@
+[package]
+name = "shared_env_var_config"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "shared_env_var_config"
+path = "src/lib.rs"
+
+[dependencies]
+easyenv.workspace = true

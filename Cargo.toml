@@ -103,6 +103,7 @@ members = [
 
   # Schema (config): configuration constants for external services
   "crates/schema/config/rootly_config",
+  "crates/schema/config/shared_env_var_config",
 
   # Schema (database): queries, database layouts, Redis keys, etc.
   "crates/schema/database/elasticsearch_schema",
@@ -246,6 +247,7 @@ filesys = { path = "crates/lib/files/filesys" }
 grok_client = { path = "crates/api_clients/grok_client" }
 rootly_client = { path = "crates/api_clients/rootly_client" }
 rootly_config = { path = "crates/schema/config/rootly_config" }
+shared_env_var_config = { path = "crates/schema/config/shared_env_var_config" }
 http_headers = { path = "crates/lib/http_headers" }
 images = { path = "crates/lib/files/images" }
 jobs_common = { path = "crates/lib/jobs_common" }

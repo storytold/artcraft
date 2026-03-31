@@ -69,6 +69,7 @@ pager.workspace = true
 password = { path = "../../../lib/password" }
 rootly_client.workspace = true
 rootly_config.workspace = true
+shared_env_var_config.workspace = true
 primitives = { path = "../../../lib/data/primitives" }
 prompt_engineering = { path = "../../../lib/deprecated/machine_learning/prompt_engineering" }
 redis_caching = { path = "../../../lib/caching/redis_caching" }
