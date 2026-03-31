@@ -47,4 +47,16 @@ mod tests {
     let result = bcrypt_confirm_password("password".to_string(), "*");
     assert!(matches!(result, Err(PasswordConfirmError::HashIsSentinelValue)));
   }
+
+  #[test]
+  fn test_sentinel_value_with_null_bytes_returns_bcrypt_error() {
+    // The database stores the sentinel "*" in a BINARY(60) column, which pads with null bytes.
+    // This reproduces the real-world value: "*" followed by 59 null bytes.
+    let mut hash_with_nulls = String::from("*");
+    for _ in 0..59 {
+      hash_with_nulls.push('\0');
+    }
+    let result = bcrypt_confirm_password("password".to_string(), &hash_with_nulls);
+    assert!(matches!(result, Err(PasswordConfirmError::BcryptVerifyError(_))));
+  }
 }
