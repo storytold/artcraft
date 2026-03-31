@@ -1,7 +1,9 @@
+use log::{debug, warn};
+
 use pager::client::pager::Pager;
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use super::enqueue_alert::enqueue_alert;
 
 /// Check `CommonWebError` and alert on server errors.
 /// Returns `true` if the error was handled (alerted or intentionally skipped).
@@ -22,11 +24,20 @@ pub(super) fn check_common_web_error(
         method, path, error,
         chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
       );
-      enqueue_alert(
-        pager,
-        summary,
-        description,
-      );
+
+      let notification = NotificationDetailsBuilder::from_summary(summary)
+          .set_description(Some(description))
+          .set_http_method(Some(method.to_string()))
+          .set_http_path(Some(path.to_string()))
+          .set_http_status_code(Some(500))
+          .build();
+
+      if let Err(err) = pager.enqueue_page(notification) {
+        warn!("Error alerting middleware: failed to enqueue page: {:?}", err);
+      } else {
+        debug!("Error alerting middleware: enqueued alert for CommonWebError::ServerError");
+      }
+
       true
     }
     // Don't alert on client errors (400, 401, 404, 402).
