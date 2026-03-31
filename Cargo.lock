@@ -9621,6 +9621,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "rootly_config"
+version = "0.0.1"
+
+[[package]]
 name = "rsa"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11278,6 +11282,7 @@ dependencies = [
  "resend-rs",
  "reusable_types",
  "rootly_client",
+ "rootly_config",
  "rust-s3",
  "rustls 0.23.36",
  "seedance2pro_client",
@@ -13362,6 +13367,7 @@ dependencies = [
  "mysql_queries",
  "pager",
  "rootly_client",
+ "rootly_config",
  "serde",
  "serde_derive",
  "serde_json",

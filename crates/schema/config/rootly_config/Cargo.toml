@@ -1,0 +1,9 @@
+[package]
+name = "rootly_config"
+edition = "2024"
+version = "0.0.1"
+publish = false
+
+[lib]
+name = "rootly_config"
+path = "src/lib.rs"

@@ -3,13 +3,8 @@ use pager::client::pager::Pager;
 use pager::client::pager_builder::PagerBuilder;
 use pager::worker::pager_worker::PagerWorker;
 use rootly_client::creds::rootly_api_key::RootlyApiKey;
-
-/// `video-thumbnail-job` rootly service ID
-const ROOTLY_SERVICE_ID: &str = "9d22997c-4474-47cb-af7b-53119eed1a88";
-
-const ROOTLY_URGENCY_ID_HIGH: &str = "62fde143-1258-4639-9ee6-1400ebf7308d";
-const ROOTLY_URGENCY_ID_MEDIUM: &str = "7366ba5e-f6ea-4a4e-a1b4-ae43d512e1e2";
-const ROOTLY_URGENCY_ID_LOW: &str = "4db3d3ed-f4ed-4818-82f5-7746da404bd2";
+use rootly_config::services::ROOTLY_SERVICE_ID_VIDEO_THUMBNAIL_JOB;
+use rootly_config::urgencies::{ROOTLY_URGENCY_ID_HIGH, ROOTLY_URGENCY_ID_MEDIUM, ROOTLY_URGENCY_ID_LOW};
 
 pub fn build_pager(
   server_environment: server_environment::ServerEnvironment,
@@ -29,7 +24,7 @@ pub fn build_pager(
       .application_name("video-thumbnail-job".to_string())
       .environment(environment.to_string())
       .hostname(hostname.to_string())
-      .service_id(ROOTLY_SERVICE_ID.to_string());
+      .service_id(ROOTLY_SERVICE_ID_VIDEO_THUMBNAIL_JOB.to_string());
 
   // If paging is globally disabled, use a NoOp pager regardless of API key.
   if !is_paging_enabled {
