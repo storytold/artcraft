@@ -5,6 +5,7 @@ use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::list_pending_seedance2pro_jobs;
 use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, TaskStatus};
 
+use crate::jobs::alert_on_error::alert_pager_and_return_err;
 use crate::jobs::process_page_batch::process_page_batch;
 use crate::job_dependencies::JobDependencies;
 
@@ -14,6 +15,7 @@ pub async fn main_loop(job_dependencies: JobDependencies) {
 
     if let Err(err) = result {
       error!("Error in poll iteration: {:?}", err);
+      let _ = alert_pager_and_return_err::<()>(&job_dependencies.pager, "Seedance2Pro poll iteration error", err);
       let _ = job_dependencies.job_stats.increment_failure_count();
     }
 
@@ -25,7 +27,13 @@ pub async fn main_loop(job_dependencies: JobDependencies) {
 
 async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
   // 1. Query all non-terminal Seedance2Pro jobs from DB.
-  let pending_jobs = list_pending_seedance2pro_jobs(&deps.mysql_pool).await?;
+  let pending_jobs = match list_pending_seedance2pro_jobs(&deps.mysql_pool).await {
+    Ok(jobs) => jobs,
+    Err(err) => {
+      error!("Failed to list pending seedance2pro jobs: {:?}", err);
+      return alert_pager_and_return_err(&deps.pager, "Seedance2Pro DB query failed", err.into());
+    }
+  };
 
   if pending_jobs.is_empty() {
     info!("No pending Seedance2Pro jobs.");
@@ -60,16 +68,21 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
       total_page_number, cursor, total_orders_seen
     );
 
-    let response = poll_orders(PollOrdersArgs {
+    let response = match poll_orders(PollOrdersArgs {
       session: &deps.seedance2pro_session,
       cursor,
       host_override: None,
-    })
-      .await
-      .map_err(|err| {
+    }).await {
+      Ok(r) => r,
+      Err(err) => {
         warn!("Error polling seedance2pro orders: {:?}", err);
-        anyhow::anyhow!("poll_orders failed: {:?}", err)
-      })?;
+        return alert_pager_and_return_err(
+          &deps.pager,
+          "Seedance2Pro API poll failed",
+          anyhow::anyhow!("poll_orders failed: {:?}", err),
+        );
+      }
+    };
 
     let page_count = response.orders.len() as u32;
     info!("Done polling page {}. Got {} orders on this page.", total_page_number, page_count);

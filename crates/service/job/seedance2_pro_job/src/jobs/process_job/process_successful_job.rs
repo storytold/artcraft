@@ -13,6 +13,8 @@ use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedan
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
+
+use crate::jobs::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
 
 const PREFIX: &str = "artcraft_";
@@ -47,13 +49,27 @@ pub async fn process_successful_job(
   );
 
   // Download the video bytes.
-  let video_bytes: Vec<u8> = reqwest::get(video_url)
-    .await
-    .map_err(|err| anyhow!("reqwest error downloading video: {:?}", err))?
-    .bytes()
-    .await
-    .map_err(|err| anyhow!("error reading video bytes: {:?}", err))?
-    .to_vec();
+  let video_bytes: Vec<u8> = match reqwest::get(video_url).await {
+    Ok(resp) => match resp.bytes().await {
+      Ok(bytes) => bytes.to_vec(),
+      Err(err) => {
+        error!("Error reading video bytes for order {}: {:?}", order.order_id, err);
+        return alert_pager_and_return_err(
+          &deps.pager,
+          "Seedance2Pro video download failed",
+          anyhow!("error reading video bytes: {:?}", err),
+        );
+      }
+    },
+    Err(err) => {
+      error!("Error downloading video for order {}: {:?}", order.order_id, err);
+      return alert_pager_and_return_err(
+        &deps.pager,
+        "Seedance2Pro video download failed",
+        anyhow!("reqwest error downloading video: {:?}", err),
+      );
+    }
+  };
 
   info!(
     "Downloaded {} bytes for order {}",
@@ -76,11 +92,18 @@ pub async fn process_successful_job(
   );
 
   // Upload to public bucket.
-  deps
+  if let Err(err) = deps
     .public_bucket_client
     .upload_file_with_content_type_process(object_path, &video_bytes, "video/mp4")
     .await
-    .map_err(|err| anyhow!("error uploading video to bucket: {:?}", err))?;
+  {
+    error!("Error uploading video for order {}: {:?}", order.order_id, err);
+    return alert_pager_and_return_err(
+      &deps.pager,
+      "Seedance2Pro bucket upload failed",
+      anyhow!("error uploading video to bucket: {:?}", err),
+    );
+  }
 
   info!(
     "Uploaded video for order {}. Creating media file record.",
@@ -92,7 +115,7 @@ pub async fn process_successful_job(
   let maybe_frame_height = order.results.first().map(|r| r.height);
 
   // Insert media file record.
-  let media_file_token = MediaFileInsertBuilder::new()
+  let media_file_token = match MediaFileInsertBuilder::new()
     .maybe_creator_user(job.maybe_creator_user_token.as_ref())
     .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
     .creator_ip_address(&job.creator_ip_address)
@@ -110,7 +133,17 @@ pub async fn process_successful_job(
     .public_bucket_directory_hash(&bucket_path)
     .insert_pool(&deps.mysql_pool)
     .await
-    .map_err(|err| anyhow!("error inserting media file record: {:?}", err))?;
+  {
+    Ok(token) => token,
+    Err(err) => {
+      error!("Error inserting media file record for order {}: {:?}", order.order_id, err);
+      return alert_pager_and_return_err(
+        &deps.pager,
+        "Seedance2Pro media file insert failed",
+        anyhow!("error inserting media file record: {:?}", err),
+      );
+    }
+  };
 
   info!(
     "Created media file {} for order {}. Marking job {} complete.",
@@ -120,23 +153,21 @@ pub async fn process_successful_job(
   );
 
   // Mark inference job as successfully completed.
-  mark_generic_inference_job_successfully_done_by_token(
+  if let Err(err) = mark_generic_inference_job_successfully_done_by_token(
     &deps.mysql_pool,
     &job.job_token,
     Some(InferenceResultType::MediaFile),
     Some(media_file_token.as_str()),
     None,
     None,
-  )
-    .await
-    .map_err(|err| {
-      error!(
-        "Error marking job {} done: {:?}",
-        job.job_token.as_str(),
-        err
-      );
-      anyhow!("error marking job done: {:?}", err)
-    })?;
+  ).await {
+    error!("Error marking job {} done: {:?}", job.job_token.as_str(), err);
+    return alert_pager_and_return_err(
+      &deps.pager,
+      "Seedance2Pro job completion update failed",
+      anyhow!("error marking job done: {:?}", err),
+    );
+  }
 
   info!("Job {} completed successfully.", job.job_token.as_str());
 

@@ -4,6 +4,8 @@ use enums::by_table::generic_inference_jobs::frontend_failure_category::Frontend
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::PendingSeedance2ProJob;
 use mysql_queries::queries::wallets::refund::try_to_refund_ledger_entry::{try_to_refund_ledger_entry, WalletRefundOutcome};
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 use seedance2pro_client::requests::poll_orders::failure_type::FailureType;
 use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
 
@@ -82,6 +84,16 @@ pub async fn process_failed_job(
             job.job_token.as_str(),
             err,
           );
+
+          let notification = NotificationDetailsBuilder::from_error(&err)
+              .set_title("Seedance2Pro refund failed".to_string())
+              .set_urgency(Some(NotificationUrgency::Medium))
+              .build();
+
+          if let Err(pager_err) = deps.pager.enqueue_page(notification) {
+            error!("Failed to enqueue pager alert: {:?}", pager_err);
+          }
+
           let _ = transaction.rollback().await;
           return;
         }
@@ -124,5 +136,14 @@ pub async fn process_failed_job(
       job.job_token.as_str(),
       err
     );
+
+    let notification = NotificationDetailsBuilder::from_error(&err)
+        .set_title("Seedance2Pro mark job failed error".to_string())
+        .set_urgency(Some(NotificationUrgency::Medium))
+        .build();
+
+    if let Err(pager_err) = deps.pager.enqueue_page(notification) {
+      error!("Failed to enqueue pager alert: {:?}", pager_err);
+    }
   }
 }
