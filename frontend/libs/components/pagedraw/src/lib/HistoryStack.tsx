@@ -193,11 +193,15 @@ export const HistoryStack = ({
                     )}
                     onClick={() => handleSelectWithPreload(image)}
                   >
-                    <img
-                      src={getImageThumbnailSource(image)}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
+                    {image.isBlankCanvas ? (
+                      <div className="absolute inset-0 h-full w-full bg-white" />
+                    ) : (
+                      <img
+                        src={getImageThumbnailSource(image)}
+                        alt=""
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    )}
                     <div
                       className="absolute -right-0 -top-0 flex h-5 w-5 items-center justify-center rounded-bl-lg bg-red/50 opacity-0 transition-opacity hover:bg-red/80 group-hover:opacity-100"
                       onClick={(e) => {

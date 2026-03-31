@@ -19,6 +19,9 @@ interface UploadEntryCardProps {
   secondaryLabel?: string;
   secondaryIcon?: IconDefinition;
   onSecondaryClick?: () => void;
+  tertiaryLabel?: string;
+  tertiaryIcon?: IconDefinition;
+  onTertiaryClick?: () => void;
   disabled?: boolean;
 }
 
@@ -36,6 +39,9 @@ export const UploadEntryCard = ({
   secondaryLabel,
   secondaryIcon,
   onSecondaryClick,
+  tertiaryLabel,
+  tertiaryIcon,
+  onTertiaryClick,
   disabled,
 }: UploadEntryCardProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -160,6 +166,17 @@ export const UploadEntryCard = ({
               disabled={disabled}
             >
               {secondaryLabel}
+            </Button>
+          )}
+          {tertiaryLabel && onTertiaryClick && (
+            <Button
+              variant="action"
+              icon={tertiaryIcon}
+              onClick={onTertiaryClick}
+              className="border-2 px-8 py-3 text-base font-semibold"
+              disabled={disabled}
+            >
+              {tertiaryLabel}
             </Button>
           )}
         </div>

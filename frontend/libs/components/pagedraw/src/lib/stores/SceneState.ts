@@ -1343,10 +1343,15 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   getAspectRatioDimensions: () => {
-    const baseImageInfo = get().baseImageBitmap;
+    const bitmap = get().baseImageBitmap;
 
-    if (baseImageInfo) {
-      return { width: baseImageInfo.width, height: baseImageInfo.height };
+    if (bitmap) {
+      return { width: bitmap.width, height: bitmap.height };
+    }
+
+    const info = get().baseImageInfo;
+    if (info?.isBlankCanvas && info.blankCanvasWidth && info.blankCanvasHeight) {
+      return { width: info.blankCanvasWidth, height: info.blankCanvasHeight };
     }
 
     const { aspectRatioType } = get();
@@ -1403,13 +1408,9 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
       });
     }
 
-    set({ baseImageInfo: image });
-
-    const imgBitmap = new Image();
-    imgBitmap.onload = () => {
+    const applyImageNodes = (bitmap: HTMLImageElement | null) => {
       const previousNodeData = get().historyImageNodeMap.get(image);
       if (previousNodeData) {
-        // Restore draw nodes, re-instantiating Node objects
         const restoredDrawNodes = previousNodeData.drawNodes.map((nodeData) => {
           if (nodeData.type === "line") return nodeData as LineNode;
           const node = new Node(nodeData as SerializedNodeData);
@@ -1421,16 +1422,23 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
           }
           return node;
         });
-
-        set({
-          drawNodes: restoredDrawNodes,
-          inpaintLineNodes: previousNodeData.inpaintLineNodes,
-        });
+        set({ drawNodes: restoredDrawNodes, inpaintLineNodes: previousNodeData.inpaintLineNodes, baseImageBitmap: bitmap });
       } else {
-        set({ drawNodes: [], inpaintLineNodes: [] });
+        set({ drawNodes: [], inpaintLineNodes: [], baseImageBitmap: bitmap });
       }
+    };
 
-      set({ baseImageBitmap: imgBitmap });
+    if (image.isBlankCanvas) {
+      set({ baseImageInfo: image });
+      applyImageNodes(null);
+      return;
+    }
+
+    set({ baseImageInfo: image });
+
+    const imgBitmap = new Image();
+    imgBitmap.onload = () => {
+      applyImageNodes(imgBitmap);
     };
     imgBitmap.onerror = (event) => {
       console.error("Failed to load base image, discarding", event);

@@ -5,6 +5,9 @@ export interface BaseSelectorImage {
   mediaToken: string;
   thumbnailUrlTemplate?: string;
   fullImageUrl?: string;
+  isBlankCanvas?: boolean;
+  blankCanvasWidth?: number;
+  blankCanvasHeight?: number;
 }
 
 export interface ImageBundle {

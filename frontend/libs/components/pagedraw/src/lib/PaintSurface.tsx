@@ -1684,6 +1684,16 @@ export const PaintSurface = ({
                 zIndex={-1}
               />
 
+              {!baseImageBitmap && (
+                <Rect
+                  x={0}
+                  y={0}
+                  width={getAspectRatioDimensions().width}
+                  height={getAspectRatioDimensions().height}
+                  fill="white"
+                  listening={false}
+                />
+              )}
               <Image
                 ref={baseImageRef}
                 x={0}

@@ -18,9 +18,7 @@ import {
 } from "@storyteller/tauri-api";
 import { useImageEditCompleteEvent } from "@storyteller/tauri-events";
 import { UploadImageMedia } from "@storyteller/api";
-import {
-  BaseImageSelector,
-} from "../PageEdit/BaseImageSelector";
+import { BaseImageSelector } from "./BaseImageSelector";
 
 // ─── Aspect ratio / resolution mappers ────────────────────────────────────────
 const mapAspectRatio = (ratio?: string): EnqueueEditImageSize | undefined => {
@@ -128,10 +126,11 @@ const useTauriAdapter = (): PageDrawAdapter => {
 
       onEnqueueMeta: (meta) => (window as any).__storeTaskEnqueueMeta?.(meta),
 
-      renderBaseImageSelector: ({ onImageSelect, showLoading }) => (
+      renderBaseImageSelector: ({ onImageSelect, showLoading, onBlankCanvasClick }) => (
         <BaseImageSelector
           onImageSelect={onImageSelect}
           showLoading={showLoading}
+          onBlankCanvasClick={onBlankCanvasClick}
         />
       ),
     }),
