@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use std::fmt::{Debug, Display};
 
 use crate::notification::generate_deduplication_key::generate_deduplication_key;
+use crate::notification::notification_urgency::NotificationUrgency;
 
 /// Details for a pager notification.
 #[derive(Clone, Debug)]
@@ -26,6 +27,9 @@ pub struct NotificationDetails {
 
   /// Whether this notification originated from an error.
   pub is_from_error: bool,
+
+  /// Urgency level for the notification.
+  pub urgency: Option<NotificationUrgency>,
 }
 
 impl NotificationDetails {
@@ -43,6 +47,7 @@ impl NotificationDetails {
       http_path: None,
       http_status_code: None,
       is_from_error: false,
+      urgency: None,
     }
   }
 
@@ -56,6 +61,7 @@ impl NotificationDetails {
       http_path: None,
       http_status_code: None,
       is_from_error: false,
+      urgency: None,
     }
   }
 
@@ -116,6 +122,7 @@ impl NotificationDetails {
       http_path: None,
       http_status_code: None,
       is_from_error: true,
+      urgency: None,
     }
   }
 

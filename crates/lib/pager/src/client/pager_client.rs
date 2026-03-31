@@ -8,6 +8,7 @@ use rootly_client::requests::create_alert::create_alert::{
 use crate::error::pager_error::PagerError;
 use crate::error::pager_service_error::PagerServiceError;
 use crate::notification::notification_details::NotificationDetails;
+use crate::notification::notification_urgency::NotificationUrgency;
 
 /// The actual client that sends pages.
 #[derive(Clone)]
@@ -100,8 +101,8 @@ impl PagerClient {
     let PagerClientConfig::Rootly {
       api_key,
       urgency_id_high,
-      urgency_id_medium: _,
-      urgency_id_low: _,
+      urgency_id_medium,
+      urgency_id_low,
       notification_target_type,
       notification_target_id,
     } = &self.client_config else {
@@ -199,7 +200,11 @@ impl PagerClient {
       environment_ids: None,
       external_id: None,
       external_url: None,
-      alert_urgency_id: urgency_id_high.clone(),
+      alert_urgency_id: match notification.urgency.unwrap_or(NotificationUrgency::Medium) {
+        NotificationUrgency::High => urgency_id_high.clone(),
+        NotificationUrgency::Medium => urgency_id_medium.clone(),
+        NotificationUrgency::Low => urgency_id_low.clone(),
+      },
       notification_target_type: notification_target_type.clone(),
       notification_target_id: notification_target_id.clone(),
       labels,

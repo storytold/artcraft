@@ -58,6 +58,7 @@ mod tests {
       http_path: http_path.map(|s| s.to_string()),
       http_status_code: None,
       is_from_error,
+      urgency: None,
     }
   }
 
@@ -212,6 +213,7 @@ mod tests {
         http_path: http_path.map(|s| s.to_string()),
         http_status_code,
         is_from_error,
+        urgency: None,
       }
     }
 
