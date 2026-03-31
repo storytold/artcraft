@@ -7,6 +7,7 @@ use mysql_queries::queries::media_files::thumbnails::list_video_media_files_with
   ListVideoMediaFilesWithoutThumbnailsArgs,
 };
 
+use crate::job::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
 use crate::job::process_single_media_file::process_single_media_file;
 
@@ -21,6 +22,7 @@ pub async fn main_loop(deps: JobDependencies) {
       }
       Err(err) => {
         error!("Error in video thumbnail batch cycle: {:?}", err);
+        let _ = alert_pager_and_return_err::<()>(&deps.pager, err);
         let _ = deps.job_stats.increment_failure_count();
 
         // Wait before retrying after a failure.

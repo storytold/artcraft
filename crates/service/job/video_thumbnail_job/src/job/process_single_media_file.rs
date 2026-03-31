@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use log::info;
+use log::{error, info};
 use tempdir::TempDir;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
@@ -10,6 +10,7 @@ use ffmpeg_utils::ffmpeg::ffmpeg_video_gif_preview::{ffmpeg_video_gif_preview, F
 use mysql_queries::queries::media_files::thumbnails::list_video_media_files_without_thumbnails_for_job::VideoMediaFileWithoutThumbnail;
 use mysql_queries::queries::media_files::thumbnails::update_video_media_file_with_thumbnail::update_video_media_file_with_thumbnail;
 
+use crate::job::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
 
 /// A downloaded video file alongside its owning temp directory.
@@ -32,7 +33,13 @@ pub async fn process_single_media_file(
     media_file.created_at,
   );
 
-  let downloaded = download_video(deps, media_file).await?;
+  let downloaded = match download_video(deps, media_file).await {
+    Ok(d) => d,
+    Err(err) => {
+      error!("Failed to download video for {}: {:?}", media_file.token.as_str(), err);
+      return alert_pager_and_return_err(&deps.pager, err);
+    }
+  };
 
   info!(
     "Downloaded video to {:?}. Generating thumbnails for {:?}.",
@@ -46,53 +53,62 @@ pub async fn process_single_media_file(
   // Generate jpg thumbnail
   let jpg_path = downloaded.temp_dir.path().join("thumbnail.jpg");
 
-  ffmpeg_video_first_frame_to_jpg_thumbnail(
+  if let Err(err) = ffmpeg_video_first_frame_to_jpg_thumbnail(
     FfmpegVideoFirstFrameToJpgThumbnailArgs {
       input_video_path: &downloaded.file_path,
       output_jpg_path: &jpg_path,
     },
-  )?;
+  ) {
+    error!("Failed to generate JPG thumbnail for {}: {:?}", media_file.token.as_str(), err);
+    return alert_pager_and_return_err(&deps.pager, err.into());
+  }
 
   info!("Generated JPG thumbnail for {}", media_file.token.as_str());
 
   let jpg_object_path = format!("{video_object_path}{VIDEO_STATIC_JPG_THUMBNAIL_SUFFIX}");
-  
-  deps
-      .public_bucket_client
-      .upload_filename(&jpg_object_path, &jpg_path)
-      .await?;
+
+  if let Err(err) = deps.public_bucket_client.upload_filename(&jpg_object_path, &jpg_path).await {
+    error!("Failed to upload JPG thumbnail for {}: {:?}", media_file.token.as_str(), err);
+    return alert_pager_and_return_err(&deps.pager, err);
+  }
 
   info!("Uploaded JPG thumbnail to {}", jpg_object_path);
 
   // Generate gif thumbnail
   let gif_path = downloaded.temp_dir.path().join("thumbnail.gif");
 
-  ffmpeg_video_gif_preview(
+  if let Err(err) = ffmpeg_video_gif_preview(
     FfmpegVideoGifPreviewArgs {
       input_video_path: &downloaded.file_path,
       output_gif_path: &gif_path,
     },
-  )?;
+  ) {
+    error!("Failed to generate GIF preview for {}: {:?}", media_file.token.as_str(), err);
+    return alert_pager_and_return_err(&deps.pager, err.into());
+  }
 
   info!("Generated GIF preview for {}", media_file.token.as_str());
 
   let gif_object_path = format!("{video_object_path}{VIDEO_ANIMATED_GIF_THUMBNAIL_SUFFIX}");
 
-  deps
-    .public_bucket_client
-    .upload_filename(&gif_object_path, &gif_path)
-    .await?;
+  if let Err(err) = deps.public_bucket_client.upload_filename(&gif_object_path, &gif_path).await {
+    error!("Failed to upload GIF preview for {}: {:?}", media_file.token.as_str(), err);
+    return alert_pager_and_return_err(&deps.pager, err);
+  }
 
   info!("Uploaded GIF preview to {}", gif_object_path);
 
   info!("Marking thumbnail job for {:?} done", media_file.token);
 
   // Mark the media file as having a thumbnail in the database.
-  update_video_media_file_with_thumbnail(
+  if let Err(err) = update_video_media_file_with_thumbnail(
     &media_file.token,
     CURRENT_VIDEO_THUMBNAIL_VERSION,
     &deps.mysql_pool,
-  ).await?;
+  ).await {
+    error!("Failed to update thumbnail version for {}: {:?}", media_file.token.as_str(), err);
+    return alert_pager_and_return_err(&deps.pager, err.into());
+  }
 
   info!(
     "Updated thumbnail version for media file {:?} (id: {}, created at: {})",
