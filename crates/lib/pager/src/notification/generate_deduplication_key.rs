@@ -59,6 +59,10 @@ mod tests {
       http_status_code: None,
       is_from_error,
       urgency: None,
+      user_token: None,
+      media_file_token: None,
+      inference_job_token: None,
+      third_party_id: None,
     }
   }
 
@@ -214,6 +218,10 @@ mod tests {
         http_status_code,
         is_from_error,
         urgency: None,
+        user_token: None,
+        media_file_token: None,
+        inference_job_token: None,
+        third_party_id: None,
       }
     }
 

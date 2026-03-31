@@ -30,6 +30,18 @@ pub struct NotificationDetails {
 
   /// Urgency level for the notification.
   pub urgency: Option<NotificationUrgency>,
+
+  /// User token associated with the event, if any.
+  pub user_token: Option<String>,
+
+  /// Media file token associated with the event, if any.
+  pub media_file_token: Option<String>,
+
+  /// Inference job token associated with the event, if any.
+  pub inference_job_token: Option<String>,
+
+  /// Third-party identifier associated with the event, if any.
+  pub third_party_id: Option<String>,
 }
 
 impl NotificationDetails {
@@ -48,6 +60,10 @@ impl NotificationDetails {
       http_status_code: None,
       is_from_error: false,
       urgency: None,
+      user_token: None,
+      media_file_token: None,
+      inference_job_token: None,
+      third_party_id: None,
     }
   }
 
@@ -62,6 +78,10 @@ impl NotificationDetails {
       http_status_code: None,
       is_from_error: false,
       urgency: None,
+      user_token: None,
+      media_file_token: None,
+      inference_job_token: None,
+      third_party_id: None,
     }
   }
 
@@ -123,6 +143,10 @@ impl NotificationDetails {
       http_status_code: None,
       is_from_error: true,
       urgency: None,
+      user_token: None,
+      media_file_token: None,
+      inference_job_token: None,
+      third_party_id: None,
     }
   }
 
