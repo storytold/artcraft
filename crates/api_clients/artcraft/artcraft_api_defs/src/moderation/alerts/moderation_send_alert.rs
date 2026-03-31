@@ -10,6 +10,17 @@ pub struct ModerationSendAlertRequest {
 
   /// Optional description for the alert. Defaults to "This is a test moderation alert."
   pub description: Option<String>,
+
+  /// Optional urgency of the page.
+  pub urgency: Option<ModerationSendAlertUrgency>,
+}
+
+#[derive(Deserialize, ToSchema, Copy, Clone, Debug)]
+#[serde(rename_all = "snake_case")]
+pub enum ModerationSendAlertUrgency {
+  High,
+  Medium,
+  Low,
 }
 
 #[derive(Serialize, ToSchema)]

@@ -4,13 +4,11 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 
-use artcraft_api_defs::moderation::alerts::moderation_send_alert::{
-  ModerationSendAlertRequest,
-  ModerationSendAlertResponse,
-};
+use artcraft_api_defs::moderation::alerts::moderation_send_alert::{ModerationSendAlertRequest, ModerationSendAlertResponse, ModerationSendAlertUrgency};
 use pager::client::pager::Pager;
 use pager::notification::notification_details::NotificationDetails;
-
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
@@ -52,7 +50,19 @@ pub async fn moderation_send_alert_handler(
     description.join("\n\n")
   };
 
-  let notification = NotificationDetails::with_summary_and_description(title, description);
+  let urgency = request.urgency
+      .map(|urgency| match urgency {
+        ModerationSendAlertUrgency::High => NotificationUrgency::High,
+        ModerationSendAlertUrgency::Medium => NotificationUrgency::Medium,
+        ModerationSendAlertUrgency::Low => NotificationUrgency::Low,
+      });
+
+  let notification = NotificationDetailsBuilder::from_summary(title)
+      .set_description(Some(description))
+      .set_http_method(Some(http_request.method().to_string()))
+      .set_http_path(Some(http_request.path().to_string()))
+      .set_urgency(urgency)
+      .build();
 
   server_state.pager
     .enqueue_page(notification)
