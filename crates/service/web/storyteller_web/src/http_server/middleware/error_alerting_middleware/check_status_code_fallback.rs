@@ -1,6 +1,7 @@
-use pager::client::pager::Pager;
+use log::{debug, warn};
 
-use super::enqueue_alert::enqueue_alert;
+use pager::client::pager::Pager;
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 
 /// Fallback alerting based on HTTP status code when no typed error matched.
 pub(super) fn check_status_code_fallback(
@@ -19,14 +20,22 @@ pub(super) fn check_status_code_fallback(
         method, path,
         chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
       );
-      enqueue_alert(
-        pager,
-        summary,
-        description,
-      );
+
+      let notification = NotificationDetailsBuilder::from_summary(summary)
+          .set_description(Some(description))
+          .set_http_method(Some(method.to_string()))
+          .set_http_path(Some(path.to_string()))
+          .set_http_status_code(Some(status_code))
+          .build();
+
+      if let Err(err) = pager.enqueue_page(notification) {
+        warn!("Error alerting middleware: failed to enqueue page: {:?}", err);
+      } else {
+        debug!("Error alerting middleware: enqueued alert for HTTP {}", status_code);
+      }
     }
     // Add more status-based rules here:
-    // 503 => { enqueue_alert(...); }
+    // 503 => { ... }
     _ => {}
   }
 }
