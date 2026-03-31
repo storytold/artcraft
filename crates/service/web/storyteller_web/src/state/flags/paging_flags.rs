@@ -1,3 +1,5 @@
+use shared_env_var_config::paging::{env_enable_paging_default_false, env_enable_paging_for_500s_default_false};
+
 /// Flags controlling the pager system.
 #[derive(Clone, Debug)]
 pub struct PagingFlags {
@@ -14,8 +16,8 @@ pub struct PagingFlags {
 impl PagingFlags {
   pub fn from_env() -> Self {
     Self {
-      is_paging_enabled: easyenv::get_env_bool_or_default("ENABLE_PAGING", false),
-      is_paging_for_500s_enabled: easyenv::get_env_bool_or_default("ENABLE_PAGING_FOR_500S", false),
+      is_paging_enabled: env_enable_paging_default_false(),
+      is_paging_for_500s_enabled: env_enable_paging_for_500s_default_false(),
     }
   }
 }

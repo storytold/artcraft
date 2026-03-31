@@ -4,13 +4,14 @@ use pager::client::pager_builder::PagerBuilder;
 use pager::worker::pager_worker::PagerWorker;
 use rootly_client::creds::rootly_api_key::RootlyApiKey;
 use rootly_config::services::ROOTLY_SERVICE_ID_VIDEO_THUMBNAIL_JOB;
-use rootly_config::urgencies::{ROOTLY_URGENCY_ID_HIGH, ROOTLY_URGENCY_ID_MEDIUM, ROOTLY_URGENCY_ID_LOW};
+use rootly_config::urgencies::{ROOTLY_URGENCY_ID_HIGH, ROOTLY_URGENCY_ID_LOW, ROOTLY_URGENCY_ID_MEDIUM};
+use shared_env_var_config::paging::{env_enable_paging_default_false, env_optional_rootly_api_key, env_optional_rootly_notification_target_id, env_optional_rootly_notification_target_type};
 
 pub fn build_pager(
   server_environment: server_environment::ServerEnvironment,
   hostname: &str,
 ) -> (Pager, PagerWorker) {
-  let is_paging_enabled = shared_env_var_config::paging::env_enable_paging_default_false();
+  let is_paging_enabled = env_enable_paging_default_false();
 
   info!("Paging enabled: {}", is_paging_enabled);
 
@@ -32,7 +33,7 @@ pub fn build_pager(
     return builder.build_with_worker();
   }
 
-  let maybe_api_key = shared_env_var_config::paging::env_optional_rootly_api_key();
+  let maybe_api_key = env_optional_rootly_api_key();
 
   match maybe_api_key {
     Some(api_key) => {
@@ -53,8 +54,8 @@ fn build_rootly_pager(builder: PagerBuilder, api_key: String) -> (Pager, PagerWo
       .urgency_id_medium(ROOTLY_URGENCY_ID_MEDIUM.to_string())
       .urgency_id_low(ROOTLY_URGENCY_ID_LOW.to_string());
 
-  let target_type = shared_env_var_config::paging::env_optional_rootly_notification_target_type();
-  let target_id = shared_env_var_config::paging::env_optional_rootly_notification_target_id();
+  let target_type = env_optional_rootly_notification_target_type();
+  let target_id = env_optional_rootly_notification_target_id();
 
   if let (Some(t_type), Some(t_id)) = (target_type, target_id) {
     rootly_builder = rootly_builder.notification_target(t_type, t_id);
