@@ -21,7 +21,7 @@ pub async fn main_loop(job_dependencies: JobDependencies) {
 
     if let Err(err) = result {
       error!("Error in poll iteration: {:?}", err);
-      let _ = alert_pager_and_return_err::<()>(&job_dependencies.pager, "Seedance2Pro poll iteration error", err);
+      let _ = alert_pager_and_return_err::<()>(&job_dependencies.pager, "Seedance2Pro poll iteration error", err, None);
       let _ = job_dependencies.job_stats.increment_failure_count();
     }
 
@@ -54,7 +54,7 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
     Ok(jobs) => jobs,
     Err(err) => {
       error!("Failed to list pending seedance2pro jobs: {:?}", err);
-      return alert_pager_and_return_err(&deps.pager, "Seedance2Pro DB query failed", err.into());
+      return alert_pager_and_return_err(&deps.pager, "Seedance2Pro DB query failed", err.into(), None);
     }
   };
 
@@ -108,6 +108,7 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
           &deps.pager,
           "Seedance2Pro API poll failed",
           anyhow::anyhow!("poll_orders failed: {:?}", err),
+          None,
         );
       }
     };

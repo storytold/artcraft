@@ -58,6 +58,7 @@ pub async fn process_successful_job(
           &deps.pager,
           "Seedance2Pro video download failed",
           anyhow!("error reading video bytes: {:?}", err),
+          Some(job),
         );
       }
     },
@@ -67,6 +68,7 @@ pub async fn process_successful_job(
         &deps.pager,
         "Seedance2Pro video download failed",
         anyhow!("reqwest error downloading video: {:?}", err),
+        Some(job),
       );
     }
   };
@@ -102,6 +104,7 @@ pub async fn process_successful_job(
       &deps.pager,
       "Seedance2Pro bucket upload failed",
       anyhow!("error uploading video to bucket: {:?}", err),
+      Some(job),
     );
   }
 
@@ -141,6 +144,7 @@ pub async fn process_successful_job(
         &deps.pager,
         "Seedance2Pro media file insert failed",
         anyhow!("error inserting media file record: {:?}", err),
+        Some(job),
       );
     }
   };
@@ -166,6 +170,7 @@ pub async fn process_successful_job(
       &deps.pager,
       "Seedance2Pro job completion update failed",
       anyhow!("error marking job done: {:?}", err),
+      Some(job),
     );
   }
 
