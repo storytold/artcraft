@@ -25,6 +25,7 @@ impl Display for RequireUserSessionError {
 
 impl Error for RequireUserSessionError {}
 
+#[deprecated(note = "Use require_user_session_using_connection instead, which reuses an existing connection")]
 pub async fn require_user_session(
   http_request: &HttpRequest,
   server_state: &ServerState,

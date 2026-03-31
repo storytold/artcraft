@@ -8,7 +8,7 @@ use utoipa::ToSchema;
 use mysql_queries::queries::generic_inference::web::dismiss_finished_jobs_for_user::dismiss_finished_jobs_for_user;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::web_utils::user_session::require_user_session_using_connection::require_user_session_using_connection;
 use crate::state::server_state::ServerState;
 
 #[derive(Serialize, ToSchema)]
@@ -33,16 +33,16 @@ pub async fn dismiss_finished_session_jobs_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>) -> Result<Json<DismissFinishedSessionJobsSuccessResponse>, CommonWebError>
 {
-  let user_session = require_user_session(&http_request, &server_state)
-      .await?;
-
-  // TODO(bt,2024-06-16): Reuse connection
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
       .map_err(|e| {
         error!("Could not acquire DB pool: {:?}", e);
         CommonWebError::ServerError
       })?;
+
+  let user_session = require_user_session_using_connection(
+      &http_request, &server_state.session_checker, &mut mysql_connection)
+      .await?;
 
   dismiss_finished_jobs_for_user(&mut mysql_connection, &user_session.user_token)
       .await
