@@ -11,16 +11,18 @@ pub(super) fn check_status_code_fallback(
 ) {
   match status_code {
     500 => {
-      enqueue_alert(
-        pager,
-        format!("HTTP 500: {} {}", method, path),
-        format!(
-          "An untyped HTTP 500 response was returned (no typed error matched).\n\n\
+      let summary = format!("HTTP 500: {} {}", method, path);
+      let description = format!(
+        "An untyped HTTP 500 response was returned (no typed error matched).\n\n\
            Endpoint: {} {}\n\
            Time: {}",
-          method, path,
-          chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
-        ),
+        method, path,
+        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
+      );
+      enqueue_alert(
+        pager,
+        summary,
+        description,
       );
     }
     // Add more status-based rules here:
