@@ -13,17 +13,19 @@ pub(super) fn check_common_web_error(
 ) -> bool {
   match error {
     CommonWebError::ServerError => {
-      enqueue_alert(
-        pager,
-        format!("CommonWebError::ServerError on {} {}", method, path),
-        format!(
-          "A CommonWebError::ServerError was returned.\n\n\
+      let summary = format!("CommonWebError::ServerError on {} {}", method, path);
+      let description = format!(
+        "A CommonWebError::ServerError was returned.\n\n\
            Endpoint: {} {}\n\
            Error: {:?}\n\
            Time: {}",
-          method, path, error,
-          chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
-        ),
+        method, path, error,
+        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
+      );
+      enqueue_alert(
+        pager,
+        summary,
+        description,
       );
       true
     }
