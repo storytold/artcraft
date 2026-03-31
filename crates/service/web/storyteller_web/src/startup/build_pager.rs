@@ -9,6 +9,10 @@ use crate::state::flags::paging_flags::PagingFlags;
 /// `storyteller-web` rootly service ID
 const ROOTLY_SERVICE_ID: &str = "9ebebb09-0c56-4c8a-8f57-d5f0f85f3f16";
 
+const ROOTLY_URGENCY_ID_HIGH: &str = "62fde143-1258-4639-9ee6-1400ebf7308d";
+const ROOTLY_URGENCY_ID_MEDIUM: &str = "7366ba5e-f6ea-4a4e-a1b4-ae43d512e1e2";
+const ROOTLY_URGENCY_ID_LOW: &str = "4db3d3ed-f4ed-4818-82f5-7746da404bd2";
+
 pub fn build_pager(
   server_environment: server_environment::ServerEnvironment,
   hostname: &str,
