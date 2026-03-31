@@ -1,7 +1,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use crate::http_server::endpoints::webhooks::handle_success::handle_success::process_fal_webhook;
+use crate::http_server::endpoints::webhooks::process_success::process_success_case::process_fal_webhook;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
