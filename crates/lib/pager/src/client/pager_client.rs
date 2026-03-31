@@ -112,12 +112,36 @@ impl PagerClient {
       labels.push(("hostname".to_string(), h.clone()));
     }
 
+    if let Some(method) = &notification.http_method {
+      labels.push(("http_method".to_string(), method.clone()));
+    }
+
+    if let Some(path) = &notification.endpoint_path {
+      labels.push(("http_path".to_string(), path.clone()));
+    }
+
     let labels = if labels.is_empty() { None } else { Some(labels) };
 
-    // Enrich the description with hostname if both are present.
-    let description = match (&notification.description, &self.hostname) {
-      (Some(desc), Some(h)) => Some(format!("{}\n\nHostname: {}", desc, h)),
-      (desc, _) => desc.clone(),
+    // Enrich the description with HTTP context and hostname if present.
+    let description = match &notification.description {
+      Some(desc) => {
+        let mut parts = vec![desc.clone()];
+
+        if let Some(method) = &notification.http_method {
+          parts.push(format!("HTTP Method: {}", method));
+        }
+
+        if let Some(path) = &notification.endpoint_path {
+          parts.push(format!("HTTP Path: {}", path));
+        }
+
+        if let Some(h) = &self.hostname {
+          parts.push(format!("Hostname: {}", h));
+        }
+
+        Some(parts.join("\n\n"))
+      }
+      None => None,
     };
 
     let result = create_alert(CreateAlertArgs {
