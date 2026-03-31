@@ -76,21 +76,6 @@ pub async fn get_health_check_handler(
       .num_seconds()
       .unsigned_abs();
 
-  let response = HealthCheckResponse {
-    success: true,
-    is_healthy: health_check_status.is_healthy,
-    last_db_time: health_check_status.last_db_time,
-    healthy_check_consecutive_count: health_check_status.healthy_check_consecutive_count,
-    unhealthy_check_consecutive_count: health_check_status.unhealthy_check_consecutive_count,
-    server_build_sha: server_state.server_info.build_sha.clone(),
-    server_hostname: server_state.hostname.clone(),
-    startup_time: server_state.startup_time,
-    seconds_since_startup,
-  };
-
-  let body = serde_json::to_string(&response)
-      .map_err(|e| HealthCheckError::ServerError)?;
-
   if !is_healthy {
     let notification = NotificationDetailsBuilder::from_title(
           format!("Health check unhealthy on {}", server_state.hostname))
@@ -116,6 +101,21 @@ pub async fn get_health_check_handler(
       error!("Failed to enqueue health check alert: {:?}", err);
     }
   }
+
+  let response = HealthCheckResponse {
+    success: true,
+    is_healthy: health_check_status.is_healthy,
+    last_db_time: health_check_status.last_db_time,
+    healthy_check_consecutive_count: health_check_status.healthy_check_consecutive_count,
+    unhealthy_check_consecutive_count: health_check_status.unhealthy_check_consecutive_count,
+    server_build_sha: server_state.server_info.build_sha.clone(),
+    server_hostname: server_state.hostname.clone(),
+    startup_time: server_state.startup_time,
+    seconds_since_startup,
+  };
+
+  let body = serde_json::to_string(&response)
+      .map_err(|e| HealthCheckError::ServerError)?;
 
   if is_healthy {
     Ok(HttpResponse::Ok()
