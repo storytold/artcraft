@@ -87,6 +87,9 @@ pub async fn process_failed_job(
 
           let notification = NotificationDetailsBuilder::from_error(&err)
               .set_title("Seedance2Pro refund failed".to_string())
+              .set_inference_job_token(Some(job.job_token.to_string()))
+              .set_third_party_id(Some(job.order_id.to_string()))
+              .set_user_token(job.maybe_creator_user_token.as_ref().map(|t| t.to_string()))
               .set_urgency(Some(NotificationUrgency::Medium))
               .build();
 
