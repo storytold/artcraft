@@ -2,7 +2,7 @@ use serde_json::Value;
 
 use crate::webhook_api::payload::webhook_inner_payload::{WebhookInnerPayload, SuccessData, ErrorData, PayloadErrorData};
 use crate::webhook_api::payload::webhook_payload::{WebhookPayload, WebhookStatus};
-use crate::webhook_api::webhook_error_type::WebhookErrorType;
+use crate::webhook_api::payload::webhook_error_type::WebhookErrorType;
 
 /// Parse the inner payload of a FAL webhook into one of three cases.
 ///
