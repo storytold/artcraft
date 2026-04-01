@@ -16,7 +16,7 @@ fn guess_failure_category(error_type: Option<&WebhookErrorType>) -> FrontendFail
   match error_type {
     Some(WebhookErrorType::ContentPolicyViolation) => FrontendFailureCategory::RuleBansUserContent,
     Some(WebhookErrorType::FaceDetectionError) => FrontendFailureCategory::FaceNotDetected,
-    // These all map to GenerationFailed for now, but are listed explicitly
+    // These all map to GenerationFailed for now, but are listed explicitly,
     // so we can refine them later.
     Some(WebhookErrorType::NoMediaGenerated)
     | Some(WebhookErrorType::ImageTooSmall)
