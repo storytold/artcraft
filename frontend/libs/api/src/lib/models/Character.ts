@@ -1,10 +1,17 @@
+export interface MediaFileLinks {
+  cdn_url: string;
+  maybe_thumbnail_template?: string | null;
+  maybe_video_previews?: {
+    cdn_url: string;
+    maybe_thumbnail_template?: string | null;
+  } | null;
+}
+
 export interface Character {
-  character_token: string;
+  token: string;
   name: string;
-  description?: string;
-  avatar_image_url?: string;
-  full_image_url?: string;
-  image_media_file_token?: string;
-  created_at: string;
-  updated_at: string;
+  maybe_description?: string | null;
+  maybe_avatar?: MediaFileLinks | null;
+  maybe_full_image?: MediaFileLinks | null;
+  models: string[];
 }

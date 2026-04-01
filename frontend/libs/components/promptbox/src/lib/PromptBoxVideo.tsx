@@ -153,14 +153,14 @@ export const PromptBoxVideo = ({
     if (charactersLoaded) return;
     const api = new CharactersApi();
     api
-      .ListCharacters({ pageSize: 100 })
+      .ListCharacters()
       .then((res) => {
         if (res.success && res.data) {
           storeSetCharacters(
             res.data.map((c) => ({
-              character_token: c.character_token,
+              character_token: c.token,
               name: c.name,
-              avatar_image_url: c.avatar_image_url,
+              avatar_image_url: c.maybe_avatar?.cdn_url,
             })),
           );
         }
@@ -688,6 +688,14 @@ export const PromptBoxVideo = ({
         request.reference_audio_media_tokens = referenceAudios.map(
           (a) => a.mediaToken,
         );
+      }
+
+      // Extract character token from @-mention in prompt
+      const mentionedChar = storedCharacters.find((c) =>
+        prompt.includes(`@${c.name}`),
+      );
+      if (mentionedChar) {
+        request.character_token = mentionedChar.character_token;
       }
 
       // Pass duration if model supports it

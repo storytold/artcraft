@@ -12,9 +12,13 @@ import {
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
-import { CharactersApi, Character, downloadFileFromUrl } from "@storyteller/api";
+import {
+  CharactersApi,
+  Character,
+  MediaUploadApi,
+  downloadFileFromUrl,
+} from "@storyteller/api";
 import { toast } from "@storyteller/ui-toaster";
-import { MediaUploadApi } from "@storyteller/api";
 import { v4 as uuidv4 } from "uuid";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { useCharactersStore } from "./promptStore";
@@ -50,20 +54,22 @@ export const CharactersModal = ({
       isOpen={isOpen}
       onClose={handleClose}
       title={view === "list" ? "Characters" : undefined}
-      width={520}
-      className="max-h-[80vh]"
+      width={680}
+      className="max-h-[80vh] flex flex-col overflow-hidden"
     >
-      {view === "list" ? (
-        <CharacterListView
-          onCreateClick={() => setView("create")}
-          onSelectCharacter={onSelectCharacter}
-        />
-      ) : (
-        <NewCharacterView
-          onBack={() => setView("list")}
-          onCreated={() => setView("list")}
-        />
-      )}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {view === "list" ? (
+          <CharacterListView
+            onCreateClick={() => setView("create")}
+            onSelectCharacter={onSelectCharacter}
+          />
+        ) : (
+          <NewCharacterView
+            onBack={() => setView("list")}
+            onCreated={() => setView("list")}
+          />
+        )}
+      </div>
     </Modal>
   );
 };
@@ -82,22 +88,20 @@ const CharacterListView = ({
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [cursor, setCursor] = useState<number | undefined>(undefined);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
 
   const fetchCharacters = useCallback(
-    async (nextCursor?: string) => {
+    async (nextCursor?: number) => {
       if (loadingMoreRef.current) return;
       loadingMoreRef.current = true;
 
       try {
         const api = new CharactersApi();
         const res = await api.ListCharacters({
-          pageSize: 20,
           cursor: nextCursor,
         });
 
@@ -107,16 +111,16 @@ const CharacterListView = ({
             // Sync to global store for @-mention system
             storeSetCharacters(
               updated.map((c) => ({
-                character_token: c.character_token,
+                character_token: c.token,
                 name: c.name,
-                avatar_image_url: c.avatar_image_url,
+                avatar_image_url: c.maybe_avatar?.cdn_url,
               })),
             );
             storeSetLoaded(true);
             return updated;
           });
-          const nextPage = res.pagination?.maybe_next;
-          setCursor(nextPage);
+          const nextPage = res.pagination?.next_cursor;
+          setCursor(nextPage ?? undefined);
           setHasMore(!!nextPage);
         }
       } catch {
@@ -143,27 +147,14 @@ const CharacterListView = ({
           fetchCharacters(cursor);
         }
       },
-      { root: scrollContainerRef.current, threshold: 0.1 },
+      { threshold: 0.1 },
     );
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, [hasMore, cursor, fetchCharacters]);
 
   return (
-    <div className="flex flex-col">
-      <div
-        ref={scrollContainerRef}
-        className="max-h-[60vh] overflow-y-auto px-1"
-      >
-        {/* Create New button */}
-        <button
-          onClick={onCreateClick}
-          className="mb-3 flex h-28 w-40 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-white/20 text-white/60 transition-colors hover:border-white/40 hover:text-white/80"
-        >
-          <FontAwesomeIcon icon={faPlus} className="text-lg" />
-          <span className="text-sm font-medium">Create New</span>
-        </button>
-
+    <div className="flex flex-col px-1">
         {loading && characters.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-white/40">
             <FontAwesomeIcon
@@ -172,26 +163,29 @@ const CharacterListView = ({
             />
             <p className="text-sm">Loading characters...</p>
           </div>
-        ) : characters.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-white/40">
-            <FontAwesomeIcon
-              icon={faUserGroup}
-              className="mb-3 text-3xl"
-            />
-            <p className="text-sm">No characters yet</p>
-          </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
+            {/* Create New card */}
+            <button
+              onClick={onCreateClick}
+              className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/20 text-white/60 transition-colors hover:border-white/40 hover:text-white/80"
+            >
+              <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
+                <FontAwesomeIcon icon={faPlus} className="text-lg" />
+                <span className="text-sm font-medium">Create New</span>
+              </div>
+            </button>
+
             {characters.map((character) => (
               <button
-                key={character.character_token}
+                key={character.token}
                 onClick={() => onSelectCharacter?.(character)}
                 className="group relative flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/5 transition-colors hover:border-white/25 hover:bg-white/10"
               >
                 <div className="aspect-square w-full overflow-hidden bg-white/5">
-                  {character.avatar_image_url ? (
+                  {character.maybe_avatar?.cdn_url ? (
                     <img
-                      src={character.avatar_image_url}
+                      src={character.maybe_avatar.cdn_url}
                       alt={character.name}
                       className="h-full w-full object-cover"
                       loading="lazy"
@@ -224,7 +218,6 @@ const CharacterListView = ({
             />
           </div>
         )}
-      </div>
     </div>
   );
 };
@@ -377,16 +370,16 @@ const NewCharacterView = ({
     try {
       const api = new CharactersApi();
       const res = await api.CreateCharacter({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        image_media_file_token: uploadedImages[0]!.mediaToken!,
+        image_media_token: uploadedImages[0]!.mediaToken!,
+        model: "seedance_2p0",
+        uuid_idempotency_token: uuidv4(),
       });
 
-      if (res.success) {
+      if (res.success && res.data) {
         toast.success(`Character "${name.trim()}" created!`);
         // Add to global store so it appears in @-mentions immediately
         addCharacterToStore({
-          character_token: res.data?.character_token ?? "",
+          character_token: res.data.inference_job_token,
           name: name.trim(),
           avatar_image_url: uploadedImages[0]!.url,
         });
