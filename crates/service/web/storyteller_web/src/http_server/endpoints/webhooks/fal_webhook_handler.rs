@@ -6,9 +6,11 @@ use crate::http_server::endpoints::webhooks::process_success::handle_successful_
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
+use actix_web::web::Bytes;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest, HttpResponse};
 use anyhow::Error;
+use fal_client::webhook_api::raw_webhook_payload::{RawWebhookPayload, WebhookStatus};
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::{error, info, warn};
@@ -80,54 +82,66 @@ impl From<anyhow::Error> for FalWebhookError {
 
 // =============== Handler ===============
 
-/// Fal webhook
-#[utoipa::path(
-  post,
-  tag = "Webhooks",
-  path = "/v1/webhooks/fal",
-  responses(
-    (status = 200, description = "Success", body = SimpleGenericJsonSuccess),
-    (status = 400, description = "Bad input", body = FalWebhookError),
-    (status = 401, description = "Not authorized", body = FalWebhookError),
-    (status = 500, description = "Server error", body = FalWebhookError),
-  ),
-  params(
-    ("request" = FalWebhookRequest, description = "Payload for Request"),
-  )
-)]
+// /// Fal webhook
+// #[utoipa::path(
+//   post,
+//   tag = "Webhooks",
+//   path = "/v1/webhooks/fal",
+//   responses(
+//     (status = 200, description = "Success", body = SimpleGenericJsonSuccess),
+//     (status = 400, description = "Bad input", body = FalWebhookError),
+//     (status = 401, description = "Not authorized", body = FalWebhookError),
+//     (status = 500, description = "Server error", body = FalWebhookError),
+//   ),
+//   params(
+//     ("request" = FalWebhookRequest, description = "Payload for Request"),
+//   )
+// )]
 pub async fn fal_webhook_handler(
   http_request: HttpRequest,
+  request_body_bytes: Bytes,
   server_state: web::Data<Arc<ServerState>>,
-  request: Json<FalWebhookRequest>,
+  //request: Json<FalWebhookRequest>,
 ) -> Result<Json<SimpleGenericJsonSuccess>, FalWebhookError> {
 
-  info!("Received FAL webhook body: {:?}", request);
+  let webhook_payload = String::from_utf8(request_body_bytes.to_vec())
+      .map_err(|err| {
+        error!("Fal Webhook: could not decode request body to UTF-8: {:?}", err);
+        FalWebhookError::BadInput("Could not decode request body to UTF-8".to_string())
+      })?;
 
-  let request_id = request.request_id
-      .as_deref()
-      .ok_or_else(|| FalWebhookError::BadInput("Missing request_id".to_string()))?;
+  info!("Received FAL webhook body: {:?}", webhook_payload);
+  
+  let webhook_payload = RawWebhookPayload::try_from_json(&webhook_payload)
+      .map_err(|err| {
+        error!("Fal Webhook: could not parse webhook payload as JSON: {:?}", err);
+        FalWebhookError::BadInput("Could not parse webhook payload as JSON".to_string())
+      })?;
 
-  info!("FAL webhook request_id: {} (status: {:?})", request_id, request.status);
+  let request_id = webhook_payload.request_id.as_str();
+  let status = webhook_payload.status;
+
+  info!("FAL webhook request_id: {} (status: {:?})", request_id, status);
 
   // TODO(bt): Longer term, we should just use `fal_client` to parse webhooks and add lots of integration tests
   //  across dozens of real messages.
-  let payload = request.payload
+  let payload = webhook_payload.payload
       .as_ref()
       .ok_or_else(|| {
         warn!("FAL webhook missing payload for request_id: {}", request_id);
         FalWebhookError::BadInput("Missing payload".to_string())
       })?;
 
-  let result = match request.status {
-    FalWebhookStatus::Ok => {
+  let result = match status {
+    WebhookStatus::Ok => {
       handle_sucessful_fal_webhook(&server_state, request_id, payload).await
     }
-    FalWebhookStatus::Error => {
+    WebhookStatus::Error => {
       handle_failed_fal_webhook(
         &server_state,
         request_id,
         payload,
-        request.error.as_deref(),
+        webhook_payload.error.as_deref(),
       ).await
     }
   };
