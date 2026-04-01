@@ -690,12 +690,14 @@ export const PromptBoxVideo = ({
         );
       }
 
-      // Extract character token from @-mention in prompt
-      const mentionedChar = storedCharacters.find((c) =>
+      // Extract character tokens from @-mentions in prompt
+      const mentionedCharacters = storedCharacters.filter((c) =>
         prompt.includes(`@${c.name}`),
       );
-      if (mentionedChar) {
-        request.character_token = mentionedChar.character_token;
+      if (mentionedCharacters.length > 0) {
+        request.character_references = mentionedCharacters.map(
+          (c) => c.character_token,
+        );
       }
 
       // Pass duration if model supports it
