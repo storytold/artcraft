@@ -63,6 +63,7 @@ mod tests {
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
+      maybe_error: None,
     }
   }
 
@@ -222,6 +223,7 @@ mod tests {
         media_file_token: None,
         inference_job_token: None,
         third_party_id: None,
+        maybe_error: None,
       }
     }
 

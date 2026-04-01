@@ -11,7 +11,7 @@ pub fn alert_pager_and_return_err<T>(
   err: anyhow::Error,
   job: Option<&PendingSeedance2ProJob>,
 ) -> anyhow::Result<T> {
-  let mut builder = NotificationDetailsBuilder::from_error(&err)
+  let mut builder = NotificationDetailsBuilder::from_error_info(&err)
       .set_title(title.to_string())
       .set_urgency(Some(NotificationUrgency::Medium));
 

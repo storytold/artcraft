@@ -9,7 +9,7 @@ pub fn alert_pager_and_return_err<T>(
   title: &str,
   err: anyhow::Error,
 ) -> anyhow::Result<T> {
-  let notification = NotificationDetailsBuilder::from_error(&err)
+  let notification = NotificationDetailsBuilder::from_error_info(&err)
       .set_title(title.to_string())
       .set_urgency(Some(NotificationUrgency::Medium))
       .build();

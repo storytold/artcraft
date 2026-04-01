@@ -120,7 +120,7 @@ pub async fn fal_webhook_handler(
   if let Err(ref err) = result {
     error!("FAL webhook error for request_id {}: {:?}", request_id, err);
 
-    let notification = NotificationDetailsBuilder::from_error(err)
+    let notification = NotificationDetailsBuilder::from_error_info(err)
         .set_title("FAL webhook processing failed".to_string())
         .set_description(Some(format!(
           "FAL webhook failed for request_id: {}\n\nError: {:?}\n\nWebhook JSON Payload: {}",

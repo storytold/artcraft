@@ -5,7 +5,7 @@ use crate::notification::generate_deduplication_key::generate_deduplication_key;
 use crate::notification::notification_urgency::NotificationUrgency;
 
 /// Details for a pager notification.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct NotificationDetails {
   /// Title or summary of the alert.
   pub title: String,
@@ -42,6 +42,9 @@ pub struct NotificationDetails {
 
   /// Third-party identifier associated with the event, if any.
   pub third_party_id: Option<String>,
+
+  /// The error that triggered this notification, if any.
+  pub maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
 }
 
 impl NotificationDetails {
@@ -50,6 +53,7 @@ impl NotificationDetails {
   }
 
   /// Create a notification with a title and description.
+  #[deprecated(note = "Use NotificationDetailsBuilder::from_title() instead")]
   pub fn with_title_and_description(title: String, description: String) -> Self {
     Self {
       title,
@@ -64,10 +68,12 @@ impl NotificationDetails {
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
+      maybe_error: None,
     }
   }
 
   /// Create a notification with just a title.
+  #[deprecated(note = "Use NotificationDetailsBuilder::from_title() instead")]
   pub fn with_title(title: String) -> Self {
     Self {
       title,
@@ -82,6 +88,7 @@ impl NotificationDetails {
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
+      maybe_error: None,
     }
   }
 
@@ -92,7 +99,11 @@ impl NotificationDetails {
   /// - The error's source chain (if any)
   /// - A backtrace (if available via `std::backtrace`)
   /// - The timestamp of the event
-  pub fn from_error<E: Debug + Display>(error: &E) -> Self {
+  ///
+  /// Note: this does not retain the error object itself. Use
+  /// `NotificationDetailsBuilder::from_title().set_error()` to attach an error.
+  #[deprecated(note = "Use NotificationDetailsBuilder::from_title().set_error() instead")]
+  pub fn from_error_info<E: Debug + Display>(error: &E) -> Self {
     let title = format!("{}", error);
 
     // Truncate the title to a reasonable length for alert titles.
@@ -147,12 +158,15 @@ impl NotificationDetails {
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
+      maybe_error: None,
     }
   }
 
   /// Create a notification from an error, with a custom title prefix.
-  pub fn from_error_with_context<E: Debug + Display>(context: &str, error: &E) -> Self {
-    let mut notification = Self::from_error(error);
+  #[deprecated(note = "Use NotificationDetailsBuilder::from_title().set_error() instead")]
+  pub fn from_error_info_with_context<E: Debug + Display>(context: &str, error: &E) -> Self {
+    #[allow(deprecated)]
+    let mut notification = Self::from_error_info(error);
     notification.title = format!("{}: {}", context, notification.title);
     if notification.title.len() > 200 {
       notification.title = format!("{}...", &notification.title[..197]);

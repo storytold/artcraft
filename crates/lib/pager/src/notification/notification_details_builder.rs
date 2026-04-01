@@ -17,6 +17,7 @@ pub struct NotificationDetailsBuilder {
   media_file_token: Option<String>,
   inference_job_token: Option<String>,
   third_party_id: Option<String>,
+  maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
 }
 
 impl NotificationDetailsBuilder {
@@ -35,16 +36,20 @@ impl NotificationDetailsBuilder {
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
+      maybe_error: None,
     }
   }
 
-  /// Create a builder from an error.
+  /// Create a builder from an error's Display/Debug info.
   ///
-  /// Sets `is_from_error` to true and derives the summary and description
-  /// from the error, matching the behavior of `NotificationDetails::from_error`.
-  pub fn from_error<E: Debug + Display>(error: &E) -> Self {
-    // TODO(bt,2026-03-30): Clean this up
-    let details = NotificationDetails::from_error(error);
+  /// Sets `is_from_error` to true and derives the title and description
+  /// from the error. Does NOT retain the error object itself.
+  ///
+  /// Use `from_title().set_error()` to attach the actual error.
+  #[deprecated(note = "Use from_title().set_error() instead")]
+  pub fn from_error_info<E: Debug + Display>(error: &E) -> Self {
+    #[allow(deprecated)]
+    let details = NotificationDetails::from_error_info(error);
     Self {
       title: details.title,
       description: details.description,
@@ -58,9 +63,10 @@ impl NotificationDetailsBuilder {
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
+      maybe_error: None,
     }
   }
-  
+
   pub fn set_title(mut self, title: String) -> Self {
     self.title = title;
     self
@@ -111,6 +117,11 @@ impl NotificationDetailsBuilder {
     self
   }
 
+  pub fn set_error(mut self, error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>) -> Self {
+    self.maybe_error = error;
+    self
+  }
+
   pub fn build(self) -> NotificationDetails {
     NotificationDetails {
       title: self.title,
@@ -125,6 +136,7 @@ impl NotificationDetailsBuilder {
       media_file_token: self.media_file_token,
       inference_job_token: self.inference_job_token,
       third_party_id: self.third_party_id,
+      maybe_error: self.maybe_error,
     }
   }
 }
