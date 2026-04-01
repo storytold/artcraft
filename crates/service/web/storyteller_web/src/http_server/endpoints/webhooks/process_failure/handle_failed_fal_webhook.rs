@@ -3,55 +3,47 @@ use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
-use serde_json::Value;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
+use fal_client::webhook_api::payload::webhook_error_type::WebhookErrorType;
+use fal_client::webhook_api::payload::webhook_inner_payload::ErrorData;
 use crate::http_server::endpoints::webhooks::fal_webhook_handler::FalWebhookError;
-use crate::http_server::endpoints::webhooks::process_failure::fal_error_detail::{FalErrorDetail, parse_fal_error_details, summarize_fal_error_details};
 use crate::state::server_state::ServerState;
 
-/// Map FAL error type strings to frontend failure categories.
+/// Map a FAL WebhookErrorType to a frontend failure category.
 ///
-/// Returns `GenerationFailed` as the default if no error details match a known type.
-fn guess_failure_category(details: &[FalErrorDetail]) -> FrontendFailureCategory {
-  for detail in details {
-    if let Some(error_type) = &detail.error_type {
-      match error_type.as_str() {
-        "content_policy_violation" => return FrontendFailureCategory::RuleBansUserContent,
-        "face_detection_error" => return FrontendFailureCategory::FaceNotDetected,
-        // These all map to GenerationFailed for now, but are listed explicitly
-        // so we can refine them later.
-        "no_media_generated"
-        | "image_too_small"
-        | "image_too_large"
-        | "image_load_error"
-        | "file_download_error"
-        | "file_too_large" => return FrontendFailureCategory::GenerationFailed,
-        _ => {}
-      }
-    }
+/// Returns `GenerationFailed` as the default if the error type is None or unrecognized.
+fn guess_failure_category(error_type: Option<&WebhookErrorType>) -> FrontendFailureCategory {
+  match error_type {
+    Some(WebhookErrorType::ContentPolicyViolation) => FrontendFailureCategory::RuleBansUserContent,
+    Some(WebhookErrorType::FaceDetectionError) => FrontendFailureCategory::FaceNotDetected,
+    // These all map to GenerationFailed for now, but are listed explicitly
+    // so we can refine them later.
+    Some(WebhookErrorType::NoMediaGenerated)
+    | Some(WebhookErrorType::ImageTooSmall)
+    | Some(WebhookErrorType::ImageTooLarge)
+    | Some(WebhookErrorType::ImageLoadError)
+    | Some(WebhookErrorType::FileDownloadError)
+    | Some(WebhookErrorType::FileTooLarge) => FrontendFailureCategory::GenerationFailed,
+    _ => FrontendFailureCategory::GenerationFailed,
   }
-  FrontendFailureCategory::GenerationFailed
 }
 
 /// Handle a FAL webhook with status ERROR.
 ///
-/// Parses the error details from the payload, looks up the job, and marks it as failed.
+/// Looks up the job by request_id and marks it as failed using the parsed error data.
 pub async fn handle_failed_fal_webhook(
   server_state: &ServerState,
   request_id: &str,
-  payload: &Value,
+  error_data: &ErrorData,
   maybe_top_level_error: Option<&str>,
 ) -> Result<Json<SimpleGenericJsonSuccess>, FalWebhookError> {
 
-  // Parse the "detail" array from the payload.
-  let error_details = parse_fal_error_details(payload);
-  let error_summary = summarize_fal_error_details(&error_details);
-
   info!(
-    "FAL webhook ERROR for request_id {}: top_level_error={:?}, details=[{}]",
+    "FAL webhook ERROR for request_id {}: top_level_error={:?}, error_type={:?}, message={:?}",
     request_id,
     maybe_top_level_error,
-    error_summary,
+    error_data.error_type,
+    error_data.message,
   );
 
   // Look up the job record.
@@ -67,12 +59,9 @@ pub async fn handle_failed_fal_webhook(
     }
   };
 
-  // Build a failure reason from the error details or the top-level error string.
-  let public_failure_reason = if !error_details.is_empty() {
-    error_details.iter()
-        .filter_map(|d| d.msg.as_deref())
-        .collect::<Vec<_>>()
-        .join("; ")
+  // Build a failure reason from the error data or the top-level error string.
+  let public_failure_reason = if let Some(msg) = &error_data.message {
+    msg.clone()
   } else if let Some(top_level) = maybe_top_level_error {
     top_level.to_string()
   } else {
@@ -80,13 +69,14 @@ pub async fn handle_failed_fal_webhook(
   };
 
   let internal_failure_reason = format!(
-    "FAL request_id={}, top_level_error={:?}, details=[{}]",
+    "FAL request_id={}, top_level_error={:?}, error_type={:?}, message={:?}",
     request_id,
     maybe_top_level_error,
-    error_summary,
+    error_data.error_type,
+    error_data.message,
   );
 
-  let failure_category = guess_failure_category(&error_details);
+  let failure_category = guess_failure_category(error_data.error_type.as_ref());
 
   info!(
     "Marking job {} as failed for request_id {}. Category: {:?}, Reason: {}",
