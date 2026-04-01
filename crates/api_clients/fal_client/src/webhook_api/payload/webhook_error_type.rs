@@ -31,6 +31,7 @@ pub enum WebhookErrorType {
   InvalidArchive,
   ArchiveFileCountBelowMinimum,
   ArchiveFileCountExceedsMaximum,
+  InvalidApiKey,
 
   /// Catch-all for unrecognized error types from FAL.
   #[serde(untagged)]
@@ -75,6 +76,7 @@ mod tests {
       ("\"invalid_archive\"", WebhookErrorType::InvalidArchive),
       ("\"archive_file_count_below_minimum\"", WebhookErrorType::ArchiveFileCountBelowMinimum),
       ("\"archive_file_count_exceeds_maximum\"", WebhookErrorType::ArchiveFileCountExceedsMaximum),
+      ("\"invalid_api_key\"", WebhookErrorType::InvalidApiKey),
     ];
 
     for (json, expected) in cases {

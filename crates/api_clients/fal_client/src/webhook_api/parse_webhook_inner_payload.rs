@@ -1,8 +1,8 @@
 use serde_json::Value;
 
-use crate::webhook_api::payload::webhook_inner_payload::{WebhookInnerPayload, SuccessData, ErrorData, PayloadErrorData};
-use crate::webhook_api::payload::webhook_payload::{WebhookPayload, WebhookStatus};
 use crate::webhook_api::payload::webhook_error_type::WebhookErrorType;
+use crate::webhook_api::payload::webhook_inner_payload::{ErrorData, PayloadErrorData, SuccessData, WebhookInnerPayload};
+use crate::webhook_api::payload::webhook_payload::{WebhookPayload, WebhookStatus};
 
 /// Parse the inner payload of a FAL webhook into one of three cases.
 ///
@@ -12,7 +12,7 @@ use crate::webhook_api::payload::webhook_error_type::WebhookErrorType;
 pub fn parse_webhook_inner_payload(webhook: &WebhookPayload) -> WebhookInnerPayload {
   match webhook.status {
     WebhookStatus::Error => {
-      let (message, error_type) = extract_first_detail(&webhook.payload);
+      let (message, error_type) = extract_error_first_detail(&webhook.payload);
 
       WebhookInnerPayload::Error(ErrorData {
         message,
@@ -37,7 +37,7 @@ pub fn parse_webhook_inner_payload(webhook: &WebhookPayload) -> WebhookInnerPayl
 }
 
 /// Extract the first `msg` and `type` from `payload.detail[]`.
-fn extract_first_detail(payload: &Option<Value>) -> (Option<String>, Option<WebhookErrorType>) {
+fn extract_error_first_detail(payload: &Option<Value>) -> (Option<String>, Option<WebhookErrorType>) {
   let payload = match payload {
     Some(p) => p,
     None => return (None, None),
@@ -104,7 +104,7 @@ mod tests {
       WebhookInnerPayload::Error(data) => {
         assert_eq!(
           data.error_type,
-          Some(WebhookErrorType::Unknown("invalid_api_key".to_string())),
+          Some(WebhookErrorType::InvalidApiKey),
         );
         assert_eq!(
           data.message.as_deref(),
