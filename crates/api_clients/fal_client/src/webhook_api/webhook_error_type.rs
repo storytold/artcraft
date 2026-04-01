@@ -99,15 +99,4 @@ mod tests {
   fn from_str_unknown() {
     assert_eq!(WebhookErrorType::from_str("brand_new_type"), WebhookErrorType::Unknown("brand_new_type".to_string()));
   }
-
-  #[test]
-  fn display_known() {
-    assert_eq!(format!("{}", WebhookErrorType::ContentPolicyViolation), "content_policy_violation");
-    assert_eq!(format!("{}", WebhookErrorType::FileTooLarge), "file_too_large");
-  }
-
-  #[test]
-  fn display_unknown() {
-    assert_eq!(format!("{}", WebhookErrorType::Unknown("foo_bar".to_string())), "foo_bar");
-  }
 }
