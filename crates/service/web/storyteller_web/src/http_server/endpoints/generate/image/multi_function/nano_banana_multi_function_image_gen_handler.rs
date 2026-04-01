@@ -19,8 +19,6 @@ use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptC
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
-use enums::common::payments_namespace::PaymentsNamespace;
-use enums::common::stripe_subscription_status::StripeSubscriptionStatus;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
@@ -40,7 +38,6 @@ use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_
 use mysql_queries::queries::media_files::get::batch_get_media_files_by_tokens::{batch_get_media_files_by_tokens, batch_get_media_files_by_tokens_with_connection};
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem};
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
-use mysql_queries::queries::users::user_subscriptions::find_subscription_for_owner_user::find_subscription_for_owner_user_using_connection;
 use server_environment::ServerEnvironment;
 use sqlx::pool::PoolConnection;
 use sqlx::{Acquire, MySql};
@@ -96,29 +93,6 @@ pub async fn nano_banana_multi_function_image_gen_handler(
     }
   };
 
-  let mut downgrade_for_free_user = true;
-
-  let result = find_subscription_for_owner_user_using_connection(
-    user_token,
-    PaymentsNamespace::Artcraft,
-    &mut mysql_connection,
-  ).await;
-
-  if let Ok(Some(subscription)) = result {
-    info!("User {:?} has subscription: {:?} (stripe customer: {:?}, status: {:?})",
-      user_token,
-      subscription.token,
-      subscription.stripe_customer_id,
-      subscription.stripe_subscription_status);
-
-    // NB: Failing open means subscribers might get fewer results, but they're free right now.
-    if subscription.stripe_subscription_status == StripeSubscriptionStatus::Active {
-      downgrade_for_free_user = false;
-    }
-  }
-
-  info!("downgrade_for_free_user: {}", downgrade_for_free_user);
-  
   let image_urls = match request.image_media_tokens.as_ref() {
     Some(media_tokens) => {
       info!("Looking up image media tokens: {:?}", media_tokens);
@@ -173,10 +147,6 @@ pub async fn nano_banana_multi_function_image_gen_handler(
       None => Gemini25FlashEditAspectRatio::OneByOne,
     };
 
-    if downgrade_for_free_user {
-      num_images = Gemini25FlashEditNumImages::One;
-    }
-
     let args = Gemini25FlashEditArgs {
       prompt: request.prompt.as_deref().unwrap_or(""),
       image_urls: input_image_urls.to_owned(),
@@ -230,10 +200,6 @@ pub async fn nano_banana_multi_function_image_gen_handler(
       Some(NanoBananaMultiFunctionImageGenAspectRatio::NineBySixteen) => Gemini25FlashTextToImageAspectRatio::NineBySixteen,
       None => Gemini25FlashTextToImageAspectRatio::OneByOne,
     };
-
-    if downgrade_for_free_user {
-      num_images = Gemini25FlashTextToImageNumImages::One;
-    }
 
     let args = Gemini25FlashTextToImageArgs {
       prompt: request.prompt.as_deref().unwrap_or(""),
