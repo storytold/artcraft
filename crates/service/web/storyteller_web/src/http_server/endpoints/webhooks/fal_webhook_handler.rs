@@ -2,7 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use crate::http_server::endpoints::webhooks::process_failure::handle_failed_fal_webhook::handle_failed_fal_webhook;
-use crate::http_server::endpoints::webhooks::process_success::handle_successful_fal_webhook::handle_sucessful_fal_webhook;
+use crate::http_server::endpoints::webhooks::process_success::handle_successful_fal_webhook::handle_successful_fal_webhook;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
@@ -72,7 +72,7 @@ pub async fn fal_webhook_handler(
   let raw_body = String::from_utf8(request_body_bytes.to_vec())
       .map_err(|err| {
         error!("FAL webhook: could not decode request body to UTF-8: {:?}", err);
-        enqueue_parse_error_alert(&server_state, &http_request, "UTF-8 decode failed", &err);
+        enqueue_parse_error_alert(&server_state, &http_request, "UTF-8 decode failed", &err, None);
         FalWebhookError::BadInput("Could not decode request body to UTF-8".to_string())
       })?;
 
@@ -82,7 +82,7 @@ pub async fn fal_webhook_handler(
   let webhook_payload = parse_webhook_payload(&raw_body)
       .map_err(|err| {
         error!("FAL webhook: could not parse webhook payload: {:?}", err);
-        enqueue_parse_error_alert(&server_state, &http_request, "JSON parse failed", &err);
+        enqueue_parse_error_alert(&server_state, &http_request, "JSON parse failed", &err, Some(&raw_body));
         FalWebhookError::BadInput("Could not parse webhook payload".to_string())
       })?;
 
@@ -96,7 +96,7 @@ pub async fn fal_webhook_handler(
   // Step 4 & 5: Branch on the inner payload type.
   let result = match inner_payload {
     WebhookInnerPayload::Success(success_data) => {
-      handle_sucessful_fal_webhook(&server_state, request_id, &success_data.payload).await
+      handle_successful_fal_webhook(&server_state, request_id, &success_data.payload).await
     }
     WebhookInnerPayload::Error(error_data) => {
       handle_failed_fal_webhook(
@@ -123,8 +123,8 @@ pub async fn fal_webhook_handler(
     let notification = NotificationDetailsBuilder::from_error(err)
         .set_title("FAL webhook processing failed".to_string())
         .set_description(Some(format!(
-          "FAL webhook failed for request_id: {}\n\nError: {:?}",
-          request_id, err,
+          "FAL webhook failed for request_id: {}\n\nError: {:?}\n\nWebhook JSON Payload: {}",
+          request_id, err, raw_body,
         )))
         .set_third_party_id(Some(request_id.to_string()))
         .set_urgency(Some(NotificationUrgency::High))
@@ -146,10 +146,16 @@ fn enqueue_parse_error_alert<E: std::fmt::Debug>(
   http_request: &HttpRequest,
   context: &str,
   err: &E,
+  maybe_raw_body: Option<&str>,
 ) {
+  let description = match maybe_raw_body {
+    Some(body) => format!("Error: {:?}\n\nWebhook JSON Payload: {}", err, body),
+    None => format!("Error: {:?}", err),
+  };
+
   let notification = NotificationDetailsBuilder::from_title(
         format!("FAL webhook parse failure: {}", context))
-      .set_description(Some(format!("Error: {:?}", err)))
+      .set_description(Some(description))
       .set_urgency(Some(NotificationUrgency::High))
       .set_http_method(Some(http_request.method().to_string()))
       .set_http_path(Some(http_request.path().to_string()))

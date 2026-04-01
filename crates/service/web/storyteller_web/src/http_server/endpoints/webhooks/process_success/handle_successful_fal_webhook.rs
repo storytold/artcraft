@@ -14,7 +14,7 @@ use super::process_model_glb_payload::process_model_glb_payload;
 use super::process_model_mesh_payload::process_model_mesh_payload;
 use super::process_video_payload::process_video_payload;
 
-pub async fn handle_sucessful_fal_webhook(
+pub async fn handle_successful_fal_webhook(
   server_state: &ServerState,
   request_id: &str,
   payload: &Value,
