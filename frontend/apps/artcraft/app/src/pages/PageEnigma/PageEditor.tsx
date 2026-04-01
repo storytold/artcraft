@@ -86,7 +86,6 @@ import {
 import { LoginModal, useLoginModalStore } from "@storyteller/ui-login-modal";
 import PageDraw from "../PageDraw/PageDraw";
 import { useTabStore } from "../Stores/TabState";
-import PageEdit from "../PageEdit/PageEdit";
 import { ImageModel } from "@storyteller/model-list";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
 import {

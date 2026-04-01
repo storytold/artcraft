@@ -43,8 +43,7 @@ import {
   useCostBreakdownModalStore,
 } from "@storyteller/ui-pricing-modal";
 import { HelpMenuButton } from "@storyteller/ui-help-menu";
-import { HistoryStack, ImageBundle } from "../PageEdit/HistoryStack";
-import type { BaseSelectorImage } from "../PageEdit/BaseImageSelector";
+import { HistoryStack, type ImageBundle, type BaseSelectorImage } from "@storyteller/ui-pagedraw";
 
 const ANGLES_MODEL_PAGE = ModelPage.Angles;
 
@@ -562,12 +561,6 @@ export const Angles = () => {
                 selectedImageToken={selectedImageToken}
                 onImageSelect={handleHistoryImageSelect}
                 onImageRemove={handleHistoryImageRemove}
-                onNewImageBundle={() => {
-                  /* handled by our own event listener */
-                }}
-                onResolvePending={() => {
-                  /* handled by our own event listener */
-                }}
               />
             </div>
 

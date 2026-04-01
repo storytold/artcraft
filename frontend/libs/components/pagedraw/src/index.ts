@@ -3,6 +3,7 @@
 // Main component
 export { default as PageDraw } from "./lib/PageDraw";
 export { BlankCanvasModal } from "./lib/BlankCanvasModal";
+export { HistoryStack } from "./lib/HistoryStack";
 
 // Store
 export { useSceneStore, generateId } from "./lib/stores/SceneState";

@@ -71,7 +71,7 @@ import { useRemoveBackgroundStore } from "~/pages/PageRemoveBackground/RemoveBac
 import { TabId, useTabStore } from "~/pages/Stores/TabState";
 import { authentication } from "~/signals";
 import { setLogoutStates } from "~/signals/authentication/utilities";
-import { BaseSelectorImage } from "../../../pages/PageEdit/BaseImageSelector";
+import type { BaseSelectorImage } from "@storyteller/ui-pagedraw";
 import { AppsQuickMenu } from "./AppsQuickMenu";
 import { SceneTitleInput } from "./SceneTitleInput";
 import { TaskQueue } from "./TaskQueue";
