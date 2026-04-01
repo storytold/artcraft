@@ -1,0 +1,23 @@
+{
+  "error": "Unexpected status code: 422",
+  "gateway_request_id": "019d477e-c123-7120-81c7-30d6b58a6720",
+  "payload": {
+    "detail": [
+      {
+        "ctx": {
+          "max_size": 10485760
+        },
+        "input": "[redacted]",
+        "loc": [
+          "body",
+          "image_url"
+        ],
+        "msg": "File size exceeds the maximum allowed size of 10485760 bytes. Please upload a smaller file.",
+        "type": "file_too_large",
+        "url": "https://docs.fal.ai/errors#file_too_large"
+      }
+    ]
+  },
+  "request_id": "019d477e-c123-7120-81c7-30d6b58a6720",
+  "status": "ERROR"
+}

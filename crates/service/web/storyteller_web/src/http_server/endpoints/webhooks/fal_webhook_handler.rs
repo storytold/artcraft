@@ -110,8 +110,8 @@ pub async fn fal_webhook_handler(
         FalWebhookError::BadInput("Could not decode request body to UTF-8".to_string())
       })?;
 
-  info!("Received FAL webhook body: {:?}", webhook_payload);
-  
+  info!("Received FAL webhook body: {}", webhook_payload);
+
   let webhook_payload = RawWebhookPayload::try_from_json(&webhook_payload)
       .map_err(|err| {
         error!("Fal Webhook: could not parse webhook payload as JSON: {:?}", err);
