@@ -10,7 +10,7 @@ use actix_web::web::Bytes;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest, HttpResponse};
 use anyhow::Error;
-use fal_client::webhook_api::raw_webhook_payload::{RawWebhookPayload, WebhookStatus};
+use fal_client::webhook_api::payload::webhook_payload::{WebhookPayload, WebhookStatus};
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use http_server_common::response::serialize_as_json_error::serialize_as_json_error;
 use log::{error, info, warn};
@@ -112,7 +112,7 @@ pub async fn fal_webhook_handler(
 
   info!("Received FAL webhook body: {}", webhook_payload);
 
-  let webhook_payload = RawWebhookPayload::try_from_json(&webhook_payload)
+  let webhook_payload = WebhookPayload::try_from_json(&webhook_payload)
       .map_err(|err| {
         error!("Fal Webhook: could not parse webhook payload as JSON: {:?}", err);
         FalWebhookError::BadInput("Could not parse webhook payload as JSON".to_string())

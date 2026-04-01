@@ -1,48 +1,20 @@
 use serde_json::Value;
 
-use crate::webhook_api::raw_webhook_payload::{RawWebhookPayload, WebhookStatus};
+use crate::webhook_api::payload::webhook_inner_payload::{WebhookInnerPayload, SuccessData, ErrorData, PayloadErrorData};
+use crate::webhook_api::payload::webhook_payload::{WebhookPayload, WebhookStatus};
 use crate::webhook_api::webhook_error_type::WebhookErrorType;
-
-/// The parsed inner payload of a FAL webhook.
-#[derive(Debug)]
-pub enum PayloadCase {
-  /// The webhook reported success and has a payload.
-  Success(SuccessData),
-  /// The webhook reported an error (status=ERROR) with optional detail info.
-  Error(ErrorData),
-  /// The webhook reported success but had no payload and instead had a payload_error.
-  PayloadError(PayloadErrorData),
-}
-
-#[derive(Debug)]
-pub struct SuccessData {
-  pub payload: Value,
-}
-
-#[derive(Debug)]
-pub struct ErrorData {
-  /// The first human-readable message from `payload.detail[].msg`, if any.
-  pub message: Option<String>,
-  /// The first machine-readable error type from `payload.detail[].type`, if any.
-  pub error_type: Option<WebhookErrorType>,
-}
-
-#[derive(Debug)]
-pub struct PayloadErrorData {
-  pub payload_error: String,
-}
 
 /// Parse the inner payload of a FAL webhook into one of three cases.
 ///
 /// 1. If status is ERROR, parse out the first `detail` entry's `msg` and `type`.
 /// 2. If status is OK but there's no payload and there is a `payload_error`, return PayloadError.
 /// 3. Otherwise, return Success with the payload.
-pub fn parse_webhook_inner_payload(webhook: &RawWebhookPayload) -> PayloadCase {
+pub fn parse_webhook_inner_payload(webhook: &WebhookPayload) -> WebhookInnerPayload {
   match webhook.status {
     WebhookStatus::Error => {
       let (message, error_type) = extract_first_detail(&webhook.payload);
 
-      PayloadCase::Error(ErrorData {
+      WebhookInnerPayload::Error(ErrorData {
         message,
         error_type,
       })
@@ -51,13 +23,13 @@ pub fn parse_webhook_inner_payload(webhook: &RawWebhookPayload) -> PayloadCase {
       // Check for payload_error case: status=OK but no payload, has payload_error.
       if webhook.payload.is_none() {
         if let Some(ref payload_error) = webhook.payload_error {
-          return PayloadCase::PayloadError(PayloadErrorData {
+          return WebhookInnerPayload::PayloadError(PayloadErrorData {
             payload_error: payload_error.clone(),
           });
         }
       }
 
-      PayloadCase::Success(SuccessData {
+      WebhookInnerPayload::Success(SuccessData {
         payload: webhook.payload.clone().unwrap_or(Value::Null),
       })
     }
@@ -95,7 +67,7 @@ fn extract_first_detail(payload: &Option<Value>) -> (Option<String>, Option<Webh
 mod tests {
   use super::*;
 
-  fn load_test_webhook(filename: &str) -> RawWebhookPayload {
+  fn load_test_webhook(filename: &str) -> WebhookPayload {
     let path = format!("test_data/webhooks/{}", filename);
     let json = std::fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("Failed to read {}: {}", path, e));
@@ -109,7 +81,7 @@ mod tests {
     let result = parse_webhook_inner_payload(&webhook);
 
     match result {
-      PayloadCase::Error(data) => {
+      WebhookInnerPayload::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::ContentPolicyViolation),
@@ -119,7 +91,7 @@ mod tests {
           Some("The content could not be processed because it contained material flagged by a content checker."),
         );
       }
-      other => panic!("Expected PayloadCase::Error, got {:?}", other),
+      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
     }
   }
 
@@ -129,7 +101,7 @@ mod tests {
     let result = parse_webhook_inner_payload(&webhook);
 
     match result {
-      PayloadCase::Error(data) => {
+      WebhookInnerPayload::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::Unknown("invalid_api_key".to_string())),
@@ -139,7 +111,7 @@ mod tests {
           Some("Invalid API key"),
         );
       }
-      other => panic!("Expected PayloadCase::Error, got {:?}", other),
+      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
     }
   }
 
@@ -149,7 +121,7 @@ mod tests {
     let result = parse_webhook_inner_payload(&webhook);
 
     match result {
-      PayloadCase::Error(data) => {
+      WebhookInnerPayload::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::FileTooLarge),
@@ -159,7 +131,7 @@ mod tests {
           Some("File size exceeds the maximum allowed size of 10485760 bytes. Please upload a smaller file."),
         );
       }
-      other => panic!("Expected PayloadCase::Error, got {:?}", other),
+      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
     }
   }
 
@@ -169,7 +141,7 @@ mod tests {
     let result = parse_webhook_inner_payload(&webhook);
 
     match result {
-      PayloadCase::Error(data) => {
+      WebhookInnerPayload::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::ContentPolicyViolation),
@@ -179,7 +151,7 @@ mod tests {
           Some("The content could not be processed because it contained material flagged by a content checker."),
         );
       }
-      other => panic!("Expected PayloadCase::Error, got {:?}", other),
+      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
     }
   }
 
@@ -189,7 +161,7 @@ mod tests {
     let result = parse_webhook_inner_payload(&webhook);
 
     match result {
-      PayloadCase::Error(data) => {
+      WebhookInnerPayload::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::NoMediaGenerated),
@@ -198,13 +170,13 @@ mod tests {
           data.message.as_deref().unwrap().starts_with("The model did not generate"),
         );
       }
-      other => panic!("Expected PayloadCase::Error, got {:?}", other),
+      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
     }
   }
 
   #[test]
   fn payload_error_case() {
-    let webhook = RawWebhookPayload {
+    let webhook = WebhookPayload {
       request_id: "test-123".to_string(),
       gateway_request_id: "test-123".to_string(),
       status: WebhookStatus::Ok,
@@ -216,16 +188,16 @@ mod tests {
     let result = parse_webhook_inner_payload(&webhook);
 
     match result {
-      PayloadCase::PayloadError(data) => {
+      WebhookInnerPayload::PayloadError(data) => {
         assert_eq!(data.payload_error, "encoding error occurred");
       }
-      other => panic!("Expected PayloadCase::PayloadError, got {:?}", other),
+      other => panic!("Expected WebhookInnerPayload::PayloadError, got {:?}", other),
     }
   }
 
   #[test]
   fn success_case() {
-    let webhook = RawWebhookPayload {
+    let webhook = WebhookPayload {
       request_id: "test-456".to_string(),
       gateway_request_id: "test-456".to_string(),
       status: WebhookStatus::Ok,
@@ -237,16 +209,16 @@ mod tests {
     let result = parse_webhook_inner_payload(&webhook);
 
     match result {
-      PayloadCase::Success(data) => {
+      WebhookInnerPayload::Success(data) => {
         assert!(data.payload.get("images").is_some());
       }
-      other => panic!("Expected PayloadCase::Success, got {:?}", other),
+      other => panic!("Expected WebhookInnerPayload::Success, got {:?}", other),
     }
   }
 
   #[test]
   fn error_with_no_payload() {
-    let webhook = RawWebhookPayload {
+    let webhook = WebhookPayload {
       request_id: "test-789".to_string(),
       gateway_request_id: "test-789".to_string(),
       status: WebhookStatus::Error,
@@ -258,11 +230,11 @@ mod tests {
     let result = parse_webhook_inner_payload(&webhook);
 
     match result {
-      PayloadCase::Error(data) => {
+      WebhookInnerPayload::Error(data) => {
         assert_eq!(data.message, None);
         assert_eq!(data.error_type, None);
       }
-      other => panic!("Expected PayloadCase::Error, got {:?}", other),
+      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
     }
   }
 }

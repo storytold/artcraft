@@ -3,7 +3,7 @@ use serde_json::Value;
 
 /// The value FAL sends to webhook endpoints.
 #[derive(Deserialize, Debug, Clone)]
-pub struct RawWebhookPayload {
+pub struct WebhookPayload {
   /// Value originally used in the queue API
   pub request_id: String,
 
@@ -40,10 +40,4 @@ pub enum WebhookStatus {
   /// Failure case
   #[serde(alias = "ERROR")]
   Error
-}
-
-impl RawWebhookPayload {
-  pub fn try_from_json(json: &str) -> Result<Self, serde_json::Error> {
-    serde_json::from_str(json)
-  }
 }
