@@ -51,13 +51,45 @@ impl NotificationDetailsBuilder {
   /// Use `from_title().set_error()` to attach the actual error.
   #[deprecated(note = "Use from_title().set_error() instead")]
   pub fn from_error_info<E: Debug + Display>(error: &E) -> Self {
-    #[allow(deprecated)]
-    let details = NotificationDetails::from_error_info(error);
+    let title = format!("{}", error);
+
+    let title = if title.len() > 200 {
+      format!("{}...", &title[..197])
+    } else {
+      title
+    };
+
+    let event_time = Utc::now();
+
+    let mut description_parts: Vec<String> = Vec::new();
+
+    description_parts.push(format!("Event time: {}", event_time.format("%Y-%m-%d %H:%M:%S UTC")));
+    description_parts.push(String::new());
+    description_parts.push(format!("Error: {}", error));
+
+    let debug_repr = format!("{:?}", error);
+    let display_repr = format!("{}", error);
+    if debug_repr != display_repr {
+      description_parts.push(String::new());
+      description_parts.push(format!("Debug: {}", debug_repr));
+    }
+
+    #[cfg(feature = "backtrace")]
+    {
+      let bt = std::backtrace::Backtrace::capture();
+      if bt.status() == std::backtrace::BacktraceStatus::Captured {
+        description_parts.push(String::new());
+        description_parts.push(format!("Backtrace:\n{}", bt));
+      }
+    }
+
+    let description = description_parts.join("\n");
+
     Self {
-      title: details.title,
-      description: details.description,
+      title,
+      description: Some(description),
       urgency: None,
-      event_time: details.event_time,
+      event_time,
       maybe_error: None,
       is_from_error: true,
       http_method: None,
