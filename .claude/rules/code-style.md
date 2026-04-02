@@ -20,10 +20,13 @@ then the story, then the fine print.
 ### Ordering within a file
 
 1. **Constants** at the top, right after imports.
-2. **Structs, enums, and type definitions** next. If a struct contains another struct, place
-   the outer/larger struct above the inner/smaller one.
-3. **Type ordering for API types**: Request, then Response (success), then Error.
-4. **`impl` blocks** after their type definitions.
+2. **The primary public type** (the main struct/enum the file is about) comes next.
+   A reader opening this file should immediately see what it defines.
+3. **Supporting/subordinate types** (sub-structs, helper enums, serialization DTOs) go
+   below the primary type, not above it. Ask: "Would a reader need to know this type
+   exists before seeing the main type?" — if no, push it down.
+4. **Type ordering for API types**: Request, then Response (success), then Error.
+5. **`impl` blocks** after their type definitions.
 
 ### Ordering within an `impl` block
 
