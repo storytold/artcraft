@@ -2,11 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { PopoverMenu, PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
+import { Button, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import {
-  faMessageXmark,
-  faMessageCheck,
   faFrame,
   faExpand,
   faChevronDown,
@@ -73,22 +71,24 @@ export const PromptBox2D = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // CSS viewport units handle resize reactivity automatically
+  const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
+
   const toggleExpand = () => {
     setIsExpanded((prev) => {
       const next = !prev;
       if (textareaRef.current) {
-        textareaRef.current.style.height = next ? "300px" : "auto";
+        textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
       }
       return next;
     });
   };
+
   const [content, setContent] = useState<React.ReactNode>("");
 
   //const { lastRenderedBitmap } = useCanvasSignal();
   const prompt = usePrompt2DStore((s) => s.prompt);
   const setPrompt = usePrompt2DStore((s) => s.setPrompt);
-  const useSystemPrompt = usePrompt2DStore((s) => s.useSystemPrompt);
-  const setUseSystemPrompt = usePrompt2DStore((s) => s.setUseSystemPrompt);
   const aspectRatio = usePrompt2DStore((s) => s.aspectRatio);
   const setAspectRatio = usePrompt2DStore((s) => s.setAspectRatio);
   const resolution = usePrompt2DStore((s) => s.resolution);
@@ -158,6 +158,7 @@ export const PromptBox2D = ({
     false;
 
   useEffect(() => {
+    if (isExpanded) return;
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
@@ -267,7 +268,9 @@ export const PromptBox2D = ({
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
     if (prompt.length > maxLen) {
-      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
+      toast.error(
+        `Prompt exceeds the ${maxLen} character limit for this model`,
+      );
       return;
     }
     setInternalEnqueueing(true);
@@ -372,8 +375,8 @@ export const PromptBox2D = ({
           className={twMerge(
             "glass relative w-[860px] rounded-xl p-4",
             selectedImageModel?.canUseImagePrompt &&
-            isImageRowVisible &&
-            "rounded-t-none",
+              isImageRowVisible &&
+              "rounded-t-none",
           )}
         >
           <div className="flex justify-center gap-2">
@@ -415,15 +418,17 @@ export const PromptBox2D = ({
                 ref={textareaRef}
                 rows={1}
                 placeholder="Describe your image..."
-                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
+                className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                 value={prompt}
                 onChange={handleChange}
                 onPaste={handlePaste}
                 onKeyDown={handleKeyDown}
-                onFocus={() => { }}
-                onBlur={() => { }}
+                onFocus={() => {}}
+                onBlur={() => {}}
               />
-              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
+              <span
+                className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
+              >
                 {prompt.length} / {maxLen}
               </span>
             </div>
@@ -509,13 +514,20 @@ export const PromptBox2D = ({
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
+            <Tooltip
+              content={isExpanded ? "Collapse" : "Expand"}
+              position="top"
+              className="-mb-2"
+            >
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="text-xs" />
+                <FontAwesomeIcon
+                  icon={isExpanded ? faChevronUp : faChevronDown}
+                  className="text-xs"
+                />
               </button>
             </Tooltip>
           </div>

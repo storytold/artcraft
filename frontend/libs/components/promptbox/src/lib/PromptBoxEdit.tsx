@@ -87,15 +87,19 @@ export const PromptBoxEdit = ({
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // CSS viewport units handle resize reactivity automatically
+  const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
+
   const toggleExpand = () => {
     setIsExpanded((prev) => {
       const next = !prev;
       if (textareaRef.current) {
-        textareaRef.current.style.height = next ? "300px" : "auto";
+        textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
       }
       return next;
     });
   };
+
   const [internalEnqueueing, setInternalEnqueueing] = useState(false);
   const referenceImages = usePromptEditStore((s) => s.referenceImages);
   const setReferenceImages = usePromptEditStore((s) => s.setReferenceImages);
@@ -195,6 +199,7 @@ export const PromptBoxEdit = ({
     false;
 
   useEffect(() => {
+    if (isExpanded) return;
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
@@ -258,7 +263,9 @@ export const PromptBoxEdit = ({
     const busy = Boolean(isEnqueueing ?? internalEnqueueing);
     if (busy || isDisabled || !prompt.trim()) return;
     if (prompt.length > maxLen) {
-      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
+      toast.error(
+        `Prompt exceeds the ${maxLen} character limit for this model`,
+      );
       return;
     }
     setInternalEnqueueing(true);
@@ -282,23 +289,10 @@ export const PromptBoxEdit = ({
 
   const modes = isNanoBananaModel
     ? [
-      {
-        value: "marker",
-        icon: faPen,
-        text: "Marker",
-      },
-      {
-        value: "eraser",
-        icon: faEraser,
-        text: "Eraser",
-      },
-    ]
-    : supportsMaskedInpainting
-      ? [
         {
-          value: "edit",
-          icon: faEdit,
-          text: "Edit Region",
+          value: "marker",
+          icon: faPen,
+          text: "Marker",
         },
         {
           value: "eraser",
@@ -306,18 +300,31 @@ export const PromptBoxEdit = ({
           text: "Eraser",
         },
       ]
+    : supportsMaskedInpainting
+      ? [
+          {
+            value: "edit",
+            icon: faEdit,
+            text: "Edit Region",
+          },
+          {
+            value: "eraser",
+            icon: faEraser,
+            text: "Eraser",
+          },
+        ]
       : [
-        {
-          value: "edit",
-          icon: faEdit,
-          text: "Edit Region",
-        },
-        {
-          value: "select",
-          icon: faMousePointer,
-          text: "Select",
-        },
-      ];
+          {
+            value: "edit",
+            icon: faEdit,
+            text: "Edit Region",
+          },
+          {
+            value: "select",
+            icon: faMousePointer,
+            text: "Select",
+          },
+        ];
 
   return (
     <>
@@ -327,8 +334,8 @@ export const PromptBoxEdit = ({
             className={twMerge(
               "glass w-fit mx-auto rounded-xl px-2 py-2 flex items-center gap-3",
               selectedImageModel?.canUseImagePrompt &&
-              isImageRowVisible &&
-              "mb-[72px]",
+                isImageRowVisible &&
+                "mb-[72px]",
             )}
           >
             <ButtonIconSelect
@@ -372,7 +379,7 @@ export const PromptBoxEdit = ({
               referenceImages={referenceImages}
               setReferenceImages={setReferenceImages}
               uploadImage={uploadImage}
-              onImageClick={() => { }}
+              onImageClick={() => {}}
               className=""
             />
           )}
@@ -381,8 +388,8 @@ export const PromptBoxEdit = ({
               "glass relative w-[860px] rounded-xl p-4",
               isFocused && "ring-1 ring-primary border-primary",
               selectedImageModel?.canUseImagePrompt &&
-              isImageRowVisible &&
-              "rounded-t-none",
+                isImageRowVisible &&
+                "rounded-t-none",
             )}
           >
             <div className="flex justify-center gap-2">
@@ -423,7 +430,7 @@ export const PromptBoxEdit = ({
                   ref={textareaRef}
                   rows={1}
                   placeholder="Write what you want to change in your image and click generate..."
-                  className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[300px]" : "max-h-[5.5em]"}`}
+                  className={`promptbox-scrollbar text-md mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-white placeholder-white placeholder:text-white/60 focus:outline-none ${isExpanded ? "max-h-[500px]" : "max-h-[5.5em]"}`}
                   value={prompt}
                   onChange={handleChange}
                   onPaste={handlePaste}
@@ -431,7 +438,9 @@ export const PromptBoxEdit = ({
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                 />
-                <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}>
+                <span
+                  className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-white/40"}`}
+                >
                   {prompt.length} / {maxLen}
                 </span>
               </div>
@@ -527,13 +536,20 @@ export const PromptBoxEdit = ({
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
+            <Tooltip
+              content={isExpanded ? "Collapse" : "Expand"}
+              position="top"
+              className="-mb-2"
+            >
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-white/30 hover:text-white/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="text-xs" />
+                <FontAwesomeIcon
+                  icon={isExpanded ? faChevronUp : faChevronDown}
+                  className="text-xs"
+                />
               </button>
             </Tooltip>
           </div>

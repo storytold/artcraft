@@ -133,19 +133,19 @@ export const PromptBoxVideo = ({
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // CSS viewport units handle resize reactivity automatically
+  const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
+
   const toggleExpand = () => {
     setIsExpanded((prev) => {
       const next = !prev;
       if (textareaRef.current) {
-        if (next) {
-          textareaRef.current.style.height = `${window.innerHeight - 300}px`;
-        } else {
-          textareaRef.current.style.height = "auto";
-        }
+        textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
       }
       return next;
     });
   };
+
   const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
     [],
   );
@@ -197,11 +197,14 @@ export const PromptBoxVideo = ({
   useEffect(() => {
     if (textareaRef.current) {
       // Hard pixel limit so the resize handle can never exceed viewport
-      textareaRef.current.style.maxHeight = `${window.innerHeight - 700}px`;
+      const maxH = isExpanded ? 500 : Math.min(window.innerHeight - 700, 500);
+      textareaRef.current.style.maxHeight = `${Math.max(maxH, 88)}px`;
       textareaRef.current.style.minHeight = "0";
-      // Cap auto-grow at ~5.5em so it doesn't fight with manual resize
-      const capped = Math.min(textareaRef.current.scrollHeight, 88);
-      textareaRef.current.style.minHeight = `${capped}px`;
+      if (!isExpanded) {
+        // Cap auto-grow at ~5.5em so it doesn't fight with manual resize
+        const capped = Math.min(textareaRef.current.scrollHeight, 88);
+        textareaRef.current.style.minHeight = `${capped}px`;
+      }
     }
   });
 

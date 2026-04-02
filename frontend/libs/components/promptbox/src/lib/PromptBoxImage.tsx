@@ -100,19 +100,19 @@ export const PromptBoxImage = ({
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // CSS viewport units handle resize reactivity automatically
+  const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
+
   const toggleExpand = () => {
     setIsExpanded((prev) => {
       const next = !prev;
       if (textareaRef.current) {
-        if (next) {
-          textareaRef.current.style.height = `${window.innerHeight - 300}px`;
-        } else {
-          textareaRef.current.style.height = "auto";
-        }
+        textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
       }
       return next;
     });
   };
+
   const referenceImages = usePromptImageStore((s) => s.referenceImages);
   const setReferenceImages = usePromptImageStore((s) => s.setReferenceImages);
   const [uploadingImages, _setUploadingImages] = useState<
@@ -126,7 +126,9 @@ export const PromptBoxImage = ({
 
   // New aspect ratio and resolution — stored globally so cost estimates can observe them
   const commonAspectRatio = usePromptImageStore((s) => s.commonAspectRatio);
-  const setCommonAspectRatio = usePromptImageStore((s) => s.setCommonAspectRatio);
+  const setCommonAspectRatio = usePromptImageStore(
+    (s) => s.setCommonAspectRatio,
+  );
   const commonResolution = usePromptImageStore((s) => s.commonResolution);
   const setCommonResolution = usePromptImageStore((s) => s.setCommonResolution);
 
@@ -173,11 +175,14 @@ export const PromptBoxImage = ({
   useEffect(() => {
     if (textareaRef.current) {
       // Hard pixel limit so the resize handle can never exceed viewport
-      textareaRef.current.style.maxHeight = `${window.innerHeight - 700}px`;
+      const maxH = isExpanded ? 500 : Math.min(window.innerHeight - 700, 500);
+      textareaRef.current.style.maxHeight = `${Math.max(maxH, 88)}px`;
       textareaRef.current.style.minHeight = "0";
-      // Cap auto-grow at ~5.5em so it doesn't fight with manual resize
-      const capped = Math.min(textareaRef.current.scrollHeight, 88);
-      textareaRef.current.style.minHeight = `${capped}px`;
+      if (!isExpanded) {
+        // Cap auto-grow at ~5.5em so it doesn't fight with manual resize
+        const capped = Math.min(textareaRef.current.scrollHeight, 88);
+        textareaRef.current.style.minHeight = `${capped}px`;
+      }
     }
   });
 
@@ -259,7 +264,9 @@ export const PromptBoxImage = ({
       return;
     }
     if (prompt.length > maxLen) {
-      toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
+      toast.error(
+        `Prompt exceeds the ${maxLen} character limit for this model`,
+      );
       return;
     }
 
@@ -322,9 +329,7 @@ export const PromptBoxImage = ({
 
       window.__storeTaskEnqueueMeta?.({
         prompt,
-        refImageUrls: referenceImages
-          ?.map((img) => img.url)
-          .filter(Boolean),
+        refImageUrls: referenceImages?.map((img) => img.url).filter(Boolean),
         modelType: (selectedModel as any)?.tauriId || String(selectedModel),
         timestamp: Date.now(),
       });
@@ -433,8 +438,8 @@ export const PromptBoxImage = ({
           className={twMerge(
             "glass relative w-[860px] rounded-xl p-4",
             isImageRowVisible &&
-            selectedModel?.canUseImagePrompt &&
-            "rounded-t-none",
+              selectedModel?.canUseImagePrompt &&
+              "rounded-t-none",
             isFocused
               ? "ring-1 ring-primary border-primary"
               : "ring-1 ring-transparent",
@@ -487,7 +492,9 @@ export const PromptBoxImage = ({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
               />
-              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
+              <span
+                className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
+              >
                 {prompt.length} / {maxLen}
               </span>
             </div>
@@ -568,13 +575,20 @@ export const PromptBoxImage = ({
             </div>
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-            <Tooltip content={isExpanded ? "Collapse" : "Expand"} position="top" className="-mb-2">
+            <Tooltip
+              content={isExpanded ? "Collapse" : "Expand"}
+              position="top"
+              className="-mb-2"
+            >
               <button
                 type="button"
                 onClick={toggleExpand}
                 className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
               >
-                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="text-xs" />
+                <FontAwesomeIcon
+                  icon={isExpanded ? faChevronUp : faChevronDown}
+                  className="text-xs"
+                />
               </button>
             </Tooltip>
           </div>
