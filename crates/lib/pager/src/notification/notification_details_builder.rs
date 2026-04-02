@@ -1,4 +1,3 @@
-use std::fmt::{Debug, Display};
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
@@ -7,7 +6,7 @@ use crate::notification::notification_details::NotificationDetails;
 use crate::notification::notification_urgency::NotificationUrgency;
 
 pub struct NotificationDetailsBuilder {
-  title: String,
+  pub(crate) title: Option<String>,
   pub(crate) description: Option<String>,
   pub(crate) urgency: Option<NotificationUrgency>,
   pub(crate) event_time: DateTime<Utc>,
@@ -26,10 +25,12 @@ pub struct NotificationDetailsBuilder {
 }
 
 impl NotificationDetailsBuilder {
-  /// Create a builder from a summary string.
+  // --- Constructors ---
+
+  /// Create a builder with an explicit title.
   pub fn from_title(title: String) -> Self {
     Self {
-      title,
+      title: Some(title),
       description: None,
       urgency: None,
       event_time: Utc::now(),
@@ -45,15 +46,16 @@ impl NotificationDetailsBuilder {
     }
   }
 
-  /// Create a builder from a boxed error. Converts to `Arc` internally for shareability.
+  /// Create a builder from a boxed error. Converts to `Arc` internally.
   pub fn from_boxed_error(error: Box<dyn std::error::Error + Send + Sync + 'static>) -> Self {
     Self::from_error(Arc::from(error))
   }
 
   /// Create a builder from an `Arc`'d error.
+  /// Title will be auto-generated from the error if not explicitly set.
   pub fn from_error(error: Arc<dyn std::error::Error + Send + Sync + 'static>) -> Self {
     Self {
-      title: "Notification from Error".to_string(),
+      title: None,
       description: None,
       urgency: None,
       event_time: Utc::now(),
@@ -69,8 +71,10 @@ impl NotificationDetailsBuilder {
     }
   }
 
+  // --- Setters ---
+
   pub fn set_title(mut self, title: String) -> Self {
-    self.title = title;
+    self.title = Some(title);
     self
   }
 
@@ -124,9 +128,16 @@ impl NotificationDetailsBuilder {
     self
   }
 
+  // --- Build ---
+
   pub fn build(self) -> NotificationDetails {
+    let title = match self.title {
+      Some(t) => t,
+      None => Self::generate_title(&self.maybe_error, &self.http_method, &self.http_path),
+    };
+
     NotificationDetails {
-      title: self.title,
+      title,
       description: self.description,
       urgency: self.urgency,
       event_time: self.event_time,
@@ -139,6 +150,43 @@ impl NotificationDetailsBuilder {
       media_file_token: self.media_file_token,
       inference_job_token: self.inference_job_token,
       third_party_id: self.third_party_id,
+    }
+  }
+
+  // --- Private helpers ---
+
+  /// Generate a reasonable title from available context.
+  ///
+  /// Priority:
+  /// 1. Error + HTTP info: "POST /v1/foo - SomeError: details"
+  /// 2. Error alone: "SomeError: details"
+  /// 3. HTTP info alone: "POST /v1/foo - Unknown Error"
+  /// 4. Nothing: "Unknown Error"
+  fn generate_title(
+    maybe_error: &Option<Arc<dyn std::error::Error + Send + Sync + 'static>>,
+    http_method: &Option<String>,
+    http_path: &Option<String>,
+  ) -> String {
+    let http_prefix = match (http_method, http_path) {
+      (Some(method), Some(path)) => Some(format!("{} {}", method, path)),
+      (None, Some(path)) => Some(path.clone()),
+      _ => None,
+    };
+
+    let error_summary = maybe_error.as_ref().map(|err| {
+      let msg = format!("{}", err);
+      if msg.len() > 150 {
+        format!("{}...", &msg[..147])
+      } else {
+        msg
+      }
+    });
+
+    match (http_prefix, error_summary) {
+      (Some(prefix), Some(summary)) => format!("{} - {}", prefix, summary),
+      (None, Some(summary)) => summary,
+      (Some(prefix), None) => format!("{} - Unknown Error", prefix),
+      (None, None) => "Unknown Error".to_string(),
     }
   }
 }
