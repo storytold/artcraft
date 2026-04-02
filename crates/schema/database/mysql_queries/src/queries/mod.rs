@@ -6,6 +6,7 @@ pub mod batch_generations;
 pub mod beta_keys;
 pub mod billing;
 pub mod browser_session_logs;
+pub mod characters;
 pub mod comments;
 pub mod database_time;
 pub mod email_sender_jobs;

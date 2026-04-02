@@ -1,2 +1,3 @@
+pub mod insert_generic_inference_job_for_seedance2pro_character_with_apriori_job_token;
 pub mod insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token;
 pub mod list_pending_seedance2pro_jobs;

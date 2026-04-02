@@ -105,6 +105,10 @@ pub enum PublicInferenceJobType {
   #[serde(rename = "seedance2pro_queue")]
   Seedance2ProQueue,
 
+  /// Seedance 2 Pro character generation jobs. We poll for results.
+  #[serde(rename = "seedance2pro_character")]
+  Seedance2ProCharacter,
+
   /// World Labs splat generation jobs. We poll for results.
   #[serde(rename = "worldlabs_queue")]
   WorldlabsQueue,
@@ -139,6 +143,7 @@ impl PublicInferenceJobType {
       InferenceJobType::RerenderAVideo => Self::RerenderAVideo,
       InferenceJobType::ImageGenApi => Self::ImageGenApi,
       InferenceJobType::Seedance2ProQueue => Self::Seedance2ProQueue,
+      InferenceJobType::Seedance2ProCharacter => Self::Seedance2ProCharacter,
       InferenceJobType::WorldlabsQueue => Self::WorldlabsQueue,
     }
   }
@@ -164,6 +169,7 @@ impl PublicInferenceJobType {
       Self::StableDiffusion => InferenceJobType::StableDiffusion,
       Self::ImageGenApi => InferenceJobType::ImageGenApi,
       Self::Seedance2ProQueue => InferenceJobType::Seedance2ProQueue,
+      Self::Seedance2ProCharacter => InferenceJobType::Seedance2ProCharacter,
       Self::WorldlabsQueue => InferenceJobType::WorldlabsQueue,
       Self::StyleTTS2 => InferenceJobType::StyleTTS2,
       Self::Tacotron2 => InferenceJobType::Tacotron2,
