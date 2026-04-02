@@ -551,7 +551,7 @@ const NewCharacterView = ({
 
       {/* Action buttons */}
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" onClick={onBack}>
+        <Button variant="secondary" className="border-none" onClick={onBack}>
           Cancel
         </Button>
         <Button
