@@ -49,70 +49,11 @@ impl NotificationDetailsBuilder {
   /// Callers should chain `.set_title()` to provide a meaningful title.
   pub fn from_error(error: Box<dyn std::error::Error + Send + Sync + 'static>) -> Self {
     Self {
-      title: "Untitled Error".to_string(),
+      title: "Notification from Error".to_string(),
       description: None,
       urgency: None,
       event_time: Utc::now(),
       maybe_error: Some(error),
-      is_from_error: true,
-      http_method: None,
-      http_path: None,
-      http_status_code: None,
-      user_token: None,
-      media_file_token: None,
-      inference_job_token: None,
-      third_party_id: None,
-    }
-  }
-
-  /// Create a builder from an error's Display/Debug info.
-  ///
-  /// Sets `is_from_error` to true and derives the title and description
-  /// from the error. Does NOT retain the error object itself.
-  ///
-  /// Use `from_title().set_error()` to attach the actual error.
-  #[deprecated(note = "Use from_title().set_error() instead")]
-  pub fn from_error_info<E: Debug + Display>(error: &E) -> Self {
-    let title = format!("{}", error);
-
-    let title = if title.len() > 200 {
-      format!("{}...", &title[..197])
-    } else {
-      title
-    };
-
-    let event_time = Utc::now();
-
-    let mut description_parts: Vec<String> = Vec::new();
-
-    description_parts.push(format!("Event time: {}", event_time.format("%Y-%m-%d %H:%M:%S UTC")));
-    description_parts.push(String::new());
-    description_parts.push(format!("Error: {}", error));
-
-    let debug_repr = format!("{:?}", error);
-    let display_repr = format!("{}", error);
-    if debug_repr != display_repr {
-      description_parts.push(String::new());
-      description_parts.push(format!("Debug: {}", debug_repr));
-    }
-
-    #[cfg(feature = "backtrace")]
-    {
-      let bt = std::backtrace::Backtrace::capture();
-      if bt.status() == std::backtrace::BacktraceStatus::Captured {
-        description_parts.push(String::new());
-        description_parts.push(format!("Backtrace:\n{}", bt));
-      }
-    }
-
-    let description = description_parts.join("\n");
-
-    Self {
-      title,
-      description: Some(description),
-      urgency: None,
-      event_time,
-      maybe_error: None,
       is_from_error: true,
       http_method: None,
       http_path: None,
