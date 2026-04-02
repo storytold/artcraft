@@ -911,7 +911,7 @@ export const PromptBoxVideo = ({
           <div className="relative flex justify-center gap-2">
             {/* @-mention autocomplete dropdown */}
             {mentionOpen && mentionItems.length > 0 && (
-              <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl">
+              <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl">
                 <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
                   References
                 </div>

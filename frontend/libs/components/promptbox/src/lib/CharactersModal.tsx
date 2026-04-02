@@ -21,6 +21,9 @@ import { toast } from "@storyteller/ui-toaster";
 import { v4 as uuidv4 } from "uuid";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import { useCharactersStore } from "./promptStore";
+import { Input } from "@storyteller/ui-input";
+import { Button } from "@storyteller/ui-button";
+import { Label } from "@storyteller/ui-label";
 
 interface CharactersModalProps {
   isOpen: boolean;
@@ -152,21 +155,42 @@ const CharacterListView = ({
   }, [hasMore, cursor, fetchCharacters]);
 
   return (
-    <div className="flex flex-col px-1">
+    <div className="flex flex-col">
       {loading && characters.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-white/40">
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="mb-3 text-2xl animate-spin"
-          />
-          <p className="text-sm">Loading characters...</p>
+        <div className="grid grid-cols-4 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-white/10">
+              <div className="aspect-square w-full overflow-hidden">
+                <div
+                  className="h-full w-full bg-white/[0.06]"
+                  style={{
+                    animation: `charPulse 1.8s ease-in-out ${i * 0.07}s infinite`,
+                  }}
+                />
+              </div>
+              <div className="px-2 py-1.5">
+                <div
+                  className="h-3 w-2/3 rounded bg-white/[0.06]"
+                  style={{
+                    animation: `charPulse 1.8s ease-in-out ${i * 0.07 + 0.1}s infinite`,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+          <style>{`
+            @keyframes charPulse {
+              0%, 100% { opacity: 0.4; }
+              50% { opacity: 0.8; }
+            }
+          `}</style>
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-3">
           {/* Create New card */}
           <button
             onClick={onCreateClick}
-            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/20 text-white/60 transition-colors hover:border-white/40 hover:text-white/80"
+            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/10 bg-white/5 text-white/60 transition-colors hover:border-white/25 hover:text-white/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
               <FontAwesomeIcon icon={faPlus} className="text-lg" />
@@ -405,13 +429,15 @@ const NewCharacterView = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Header with back button */}
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white/90 -mt-1"
-      >
-        <FontAwesomeIcon icon={faArrowLeft} className="text-xs" />
-        New Character
-      </button>
+      <div className="flex items-center gap-3 pb-0">
+        <button
+          onClick={onBack}
+          className="flex items-center justify-center text-base-fg/60 transition-colors hover:text-base-fg"
+        >
+          <FontAwesomeIcon icon={faArrowLeft} />
+        </button>
+        <h2 className="text-xl font-bold text-base-fg">New Character</h2>
+      </div>
 
       {/* Image upload area */}
       <div
@@ -496,58 +522,51 @@ const NewCharacterView = ({
       />
 
       {/* Name input */}
-      <div>
-        <label className="mb-1 block text-sm font-medium text-white/80">
-          Name
-        </label>
-        <input
-          type="text"
+      <div className="flex flex-col">
+        <Label htmlFor="character-name">Name</Label>
+        <Input
+          id="character-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Character name"
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/25"
+          inputClassName="bg-white/[0.07] hover:border-ui-panel-border"
         />
       </div>
 
       {/* Description input */}
-      <div>
-        <label className="mb-1 block text-sm font-medium text-white/80">
+      <div className="flex flex-col">
+        <Label htmlFor="character-description">
           Description{" "}
-          <span className="font-normal text-white/40">(optional)</span>
-        </label>
+          <span className="font-normal text-base-fg/40">(optional)</span>
+        </Label>
         <textarea
+          id="character-description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe this character..."
           rows={3}
-          className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/25"
+          className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-white/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
         />
       </div>
 
       {/* Action buttons */}
       <div className="flex justify-end gap-2">
-        <button
-          onClick={onBack}
-          className="rounded-lg px-4 py-2 text-sm text-white/60 transition-colors hover:text-white/90"
-        >
+        <Button variant="ghost" onClick={onBack}>
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="primary"
           onClick={handleCreate}
+          loading={creating}
           disabled={
             creating ||
             uploading ||
             !name.trim() ||
             images.filter((i) => i.mediaToken).length < 1
           }
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {creating ? (
-            <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
-          ) : (
-            "Create"
-          )}
-        </button>
+          Create
+        </Button>
       </div>
 
       <GalleryModal
