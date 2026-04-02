@@ -159,7 +159,7 @@ const CharacterListView = ({
       {loading && characters.length === 0 ? (
         <div className="grid grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-white/10">
+            <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-transparent">
               <div className="aspect-square w-full overflow-hidden">
                 <div
                   className="h-full w-full bg-white/[0.06]"
@@ -168,7 +168,7 @@ const CharacterListView = ({
                   }}
                 />
               </div>
-              <div className="px-2 py-1.5">
+              <div className="px-2 py-1.5 flex justify-center">
                 <div
                   className="h-3 w-2/3 rounded bg-white/[0.06]"
                   style={{
@@ -202,7 +202,7 @@ const CharacterListView = ({
             <button
               key={character.token}
               onClick={() => onSelectCharacter?.(character)}
-              className="group relative flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/5 transition-colors hover:border-white/25 hover:bg-white/10"
+              className="group relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-white/5 transition-colors hover:border-white/25 hover:bg-white/10"
             >
               <div className="aspect-square w-full overflow-hidden bg-white/5">
                 {character.maybe_avatar?.cdn_url ? (
