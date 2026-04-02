@@ -159,18 +159,18 @@ const CharacterListView = ({
       {loading && characters.length === 0 ? (
         <div className="grid grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-transparent">
+            <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05]">
               <div className="aspect-square w-full overflow-hidden">
                 <div
-                  className="h-full w-full bg-white/[0.06]"
+                  className="h-full w-full bg-base-fg/[0.06]"
                   style={{
                     animation: `charPulse 1.8s ease-in-out ${i * 0.07}s infinite`,
                   }}
                 />
               </div>
-              <div className="px-2 py-1.5 flex justify-center">
+              <div className="px-2 py-1.5 flex justify-center bg-base-fg/[0.04]">
                 <div
-                  className="h-3 w-2/3 rounded bg-white/[0.06]"
+                  className="h-3 w-2/3 rounded bg-base-fg/[0.08]"
                   style={{
                     animation: `charPulse 1.8s ease-in-out ${i * 0.07 + 0.1}s infinite`,
                   }}
@@ -190,7 +190,7 @@ const CharacterListView = ({
           {/* Create New card */}
           <button
             onClick={onCreateClick}
-            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/10 bg-white/5 text-white/60 transition-colors hover:border-white/25 hover:text-white/80"
+            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-base-fg/10 bg-base-fg/[0.05] text-base-fg/60 transition-colors hover:border-base-fg/25 hover:text-base-fg/80"
           >
             <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
               <FontAwesomeIcon icon={faPlus} className="text-lg" />
@@ -202,9 +202,9 @@ const CharacterListView = ({
             <button
               key={character.token}
               onClick={() => onSelectCharacter?.(character)}
-              className="group relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-white/5 transition-colors hover:border-white/25 hover:bg-white/10"
+              className="group relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05] transition-colors hover:border-base-fg/25 hover:bg-base-fg/10"
             >
-              <div className="aspect-square w-full overflow-hidden bg-white/5">
+              <div className="aspect-square w-full overflow-hidden bg-base-fg/[0.05]">
                 {character.maybe_avatar?.cdn_url ? (
                   <img
                     src={character.maybe_avatar.cdn_url}
@@ -213,13 +213,13 @@ const CharacterListView = ({
                     loading="lazy"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-white/20">
+                  <div className="flex h-full w-full items-center justify-center text-base-fg/20">
                     <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
                   </div>
                 )}
               </div>
               <div className="px-2 py-1.5">
-                <p className="truncate text-xs font-medium text-white/80">
+                <p className="truncate text-xs font-medium text-base-fg/80">
                   {character.name}
                 </p>
               </div>
@@ -233,7 +233,7 @@ const CharacterListView = ({
         <div ref={sentinelRef} className="flex justify-center py-4">
           <FontAwesomeIcon
             icon={faSpinnerThird}
-            className="text-white/30 animate-spin"
+            className="text-base-fg/30 animate-spin"
           />
         </div>
       )}
@@ -443,7 +443,7 @@ const NewCharacterView = ({
       <div
         ref={dropZoneRef}
         className={twMerge(
-          "flex h-56 max-h-56 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 bg-white/5 transition-colors overflow-hidden",
+          "flex h-56 max-h-56 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-base-fg/20 bg-base-fg/[0.05] transition-colors overflow-hidden",
           isDragging && "border-blue-400 bg-blue-500/10",
         )}
         onDragEnter={handleDragEnter}
@@ -481,13 +481,13 @@ const NewCharacterView = ({
             </button>
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center text-white/60">
+          <div className="flex h-full w-full flex-col items-center justify-center text-base-fg/60">
             <FontAwesomeIcon
               icon={faUpload}
-              className="mb-2 text-xl text-white/40"
+              className="mb-2 text-xl text-base-fg/40"
             />
             <p className="text-sm">Upload reference image</p>
-            <p className="mb-3 text-xs text-white/40">
+            <p className="mb-3 text-xs text-base-fg/40">
               Click or drag an image here
             </p>
             <div
@@ -496,14 +496,14 @@ const NewCharacterView = ({
             >
               <button
                 onClick={() => setIsGalleryOpen(true)}
-                className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/20"
+                className="flex items-center gap-2 rounded-lg bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
               >
                 <FontAwesomeIcon icon={faImages} className="text-xs" />
                 Choose from Library
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/20"
+                className="flex items-center gap-2 rounded-lg bg-base-fg/10 px-3 py-1.5 text-sm text-base-fg/80 transition-colors hover:bg-base-fg/20"
               >
                 <FontAwesomeIcon icon={faUpload} className="text-xs" />
                 Upload Image
@@ -529,7 +529,7 @@ const NewCharacterView = ({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Character name"
-          inputClassName="bg-white/[0.07] hover:border-ui-panel-border"
+          inputClassName="bg-base-fg/[0.07] hover:border-ui-panel-border"
         />
       </div>
 
@@ -545,7 +545,7 @@ const NewCharacterView = ({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe this character..."
           rows={3}
-          className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-white/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
+          className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
         />
       </div>
 

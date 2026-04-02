@@ -1140,20 +1140,13 @@ export const PromptBoxVideo = ({
               )}
 
               {selectedModel?.id === "seedance_2p0" && (
-                <Tooltip
-                  content="Characters"
-                  position="top"
-                  className="z-50"
-                  delay={200}
-                >
-                  <button
+                <button
                     type="button"
                     onClick={() => setIsCharactersModalOpen(true)}
                     className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
                   >
                     @Characters
                   </button>
-                </Tooltip>
               )}
             </div>
             <div className="flex items-center gap-2">
