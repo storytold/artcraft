@@ -62,7 +62,7 @@ impl AdvancedCommonWebError {
     let boxed: Box<dyn std::error::Error + Send + Sync> = error.into();
     Self::UncaughtServerError(Arc::from(boxed))
   }
-  
+
   pub fn server_error_with_message(msg: &str) -> Self {
     Self::from_anyhow_error(anyhow!("ServerErrorWithMessage: {:?}", msg))
   }
@@ -222,6 +222,47 @@ struct JsonErrorWithMessage<'a> {
   error_code: u16,
   error_code_str: Option<&'static str>,
   message: &'a str,
+}
+
+// =============== OpenAPI schema ===============
+
+impl utoipa::PartialSchema for AdvancedCommonWebError {
+  fn schema() -> utoipa::openapi::RefOr<utoipa::openapi::Schema> {
+    utoipa::openapi::ObjectBuilder::new()
+        .property(
+          "success",
+          utoipa::openapi::ObjectBuilder::new()
+              .schema_type(utoipa::openapi::schema::Type::Boolean),
+        )
+        .required("success")
+        .property(
+          "error_code",
+          utoipa::openapi::ObjectBuilder::new()
+              .schema_type(utoipa::openapi::schema::Type::Integer)
+              .format(Some(utoipa::openapi::SchemaFormat::KnownFormat(
+                utoipa::openapi::KnownFormat::Int32,
+              ))),
+        )
+        .required("error_code")
+        .property(
+          "error_code_str",
+          utoipa::openapi::ObjectBuilder::new()
+              .schema_type(utoipa::openapi::schema::Type::String),
+        )
+        .property(
+          "message",
+          utoipa::openapi::ObjectBuilder::new()
+              .schema_type(utoipa::openapi::schema::Type::String)
+              .description(Some("User-facing error message (present only for bad input errors)")),
+        )
+        .into()
+  }
+}
+
+impl utoipa::ToSchema for AdvancedCommonWebError {
+  fn name() -> std::borrow::Cow<'static, str> {
+    std::borrow::Cow::Borrowed("AdvancedCommonWebError")
+  }
 }
 
 // =============== Tests ===============
