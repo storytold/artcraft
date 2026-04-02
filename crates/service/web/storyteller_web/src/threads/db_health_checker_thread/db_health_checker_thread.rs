@@ -35,7 +35,7 @@ pub async fn db_health_checker_thread(
           Ok(_) => {},
         }
 
-        let notification = NotificationDetailsBuilder::from_error_info(&database_error)
+        let notification = NotificationDetailsBuilder::from_error(database_error.into())
             .set_title("DB health check thread failed check".to_string())
             .set_urgency(Some(NotificationUrgency::High))
             .build();

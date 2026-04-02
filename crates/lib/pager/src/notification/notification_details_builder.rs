@@ -43,6 +43,28 @@ impl NotificationDetailsBuilder {
     }
   }
 
+  /// Create a builder from a boxed error.
+  ///
+  /// Sets the title to a placeholder and attaches the error object.
+  /// Callers should chain `.set_title()` to provide a meaningful title.
+  pub fn from_error(error: Box<dyn std::error::Error + Send + Sync + 'static>) -> Self {
+    Self {
+      title: "Untitled Error".to_string(),
+      description: None,
+      urgency: None,
+      event_time: Utc::now(),
+      maybe_error: Some(error),
+      is_from_error: true,
+      http_method: None,
+      http_path: None,
+      http_status_code: None,
+      user_token: None,
+      media_file_token: None,
+      inference_job_token: None,
+      third_party_id: None,
+    }
+  }
+
   /// Create a builder from an error's Display/Debug info.
   ///
   /// Sets `is_from_error` to true and derives the title and description
