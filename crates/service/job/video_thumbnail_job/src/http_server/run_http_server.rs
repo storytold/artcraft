@@ -58,7 +58,12 @@ pub fn run_http_server(args: CreateServerArgs) -> AnyhowResult<Server> {
           .route(web::head().to(|| HttpResponse::Ok())),
       )
   })
-    .bind(bind_address)?
+    .bind(&bind_address)
+    .unwrap_or_else(|err| {
+      eprintln!("FATAL: Failed to bind to address '{}': {}", bind_address, err);
+      eprintln!("The address is likely already in use by another process.");
+      std::process::exit(1);
+    })
     .workers(num_workers)
     .run();
 

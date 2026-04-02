@@ -48,6 +48,11 @@ async fn main() -> Result<(), impl Error> {
                   .url("/api-docs/openapi.json", ApiDoc::openapi()),
           )
   })
-  .bind(("localhost", 8989)).unwrap()
+  .bind(("localhost", 8989))
+  .unwrap_or_else(|err| {
+    eprintln!("FATAL: Failed to bind docs server to localhost:8989: {}", err);
+    eprintln!("The address is likely already in use by another process.");
+    std::process::exit(1);
+  })
   .run().await
 }
