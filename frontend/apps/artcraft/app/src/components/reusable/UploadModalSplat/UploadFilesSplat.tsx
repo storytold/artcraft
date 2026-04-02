@@ -1,20 +1,38 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ListDropdown } from "@storyteller/ui-list-dropdown";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
-import { UploaderState } from "../../../models";
-import { FilterEngineCategories, MediaFileAnimationType, UploaderStates } from "../../../enums";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCube } from "@fortawesome/pro-solid-svg-icons";
-import { loadPreviewOnCanvas, snapshotCanvasAsThumbnail } from "../UploadModal3D/utilities";
+import {
+  faCube,
+  faXmark,
+  faCheck,
+  faCircleExclamation,
+  faChevronLeft,
+  faChevronRight,
+  faRotateRight,
+  faSpinner,
+} from "@fortawesome/pro-solid-svg-icons";
 import { WebGLRenderer } from "three";
+import { loadPreviewOnCanvas, snapshotCanvasAsThumbnail } from "../UploadModal3D/utilities";
 import { upload3DObjects } from "../UploadModal3D/utilities/upload3DObjects";
+import { upload3DObjectsBatch } from "../UploadModal3D/utilities/upload3DObjectsBatch";
+import { FileEntryStatus } from "../UploadModalImage/utilities/uploadImagesBatch";
+import type { UploaderState } from "../../../models";
+import { FilterEngineCategories, MediaFileAnimationType, UploaderStates } from "../../../enums";
+
+interface FileEntry {
+  file: File;
+  status: FileEntryStatus;
+  errorMessage?: string;
+}
 
 interface Props {
   title: string;
   fileTypes: string[];
   engineCategory: FilterEngineCategories;
   initialFile?: File;
+  initialFiles?: File[];
   options?: {
     fileSubtypes?: { [key: string]: string }[];
     hasLength?: boolean;
@@ -22,17 +40,17 @@ interface Props {
   };
   onClose: () => void;
   onUploadProgress: (newState: UploaderState) => void;
-  onLocalBytes: (bytes: ArrayBuffer, shouldFlip) => void;
+  onLocalBytes: (bytes: ArrayBuffer, shouldFlip: boolean) => void;
 }
 
 export const UploadFilesSplat = ({
   fileTypes,
   engineCategory,
   initialFile,
+  initialFiles,
   options,
   onClose,
   onUploadProgress,
-  onLocalBytes,
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | undefined>(undefined);
   const canvasCallbackRef = useCallback((node: HTMLCanvasElement) => {
@@ -40,167 +58,430 @@ export const UploadFilesSplat = ({
       canvasRef.current = node;
     }
   }, []);
+  const rendererRef = useRef<WebGLRenderer | null>(null);
 
   const fileSubtypes = options?.fileSubtypes;
-  // const hasLength = options?.hasLength;
-  // const hasThumbnailUpload = options?.hasThumbnailUpload;
 
   const [subtype, setSubtype] = useState<MediaFileAnimationType | undefined>(
     fileSubtypes
       ? (Object.values(fileSubtypes[0])[0] as MediaFileAnimationType)
-      : undefined,
+      : undefined
   );
 
-  const [assetFile, setAssetFile] = useState<{
-    value: File | null;
-    error?: string;
-  }>({ value: initialFile ?? null });
+  const seedFiles = initialFiles ?? (initialFile ? [initialFile] : []);
 
-  const [previewStatus, setPreviewStatus] = useState<{
-    type: string;
-    message?: string;
-  }>({ type: "init" });
-
-  const [thumbnailFile, setThumbnailFile] = useState<Blob | undefined>(
-    undefined,
+  const [fileEntries, setFileEntries] = useState<FileEntry[]>(
+    seedFiles.map((f) => ({ file: f, status: "idle" }))
   );
+  const [previewIndex, setPreviewIndex] = useState(0);
+  // Incremented on every handleFilesChange so useEffect re-runs even when count stays the same
+  const [filesVersion, setFilesVersion] = useState(0);
+  const [previewStatus, setPreviewStatus] = useState<{ type: string; message?: string }>({ type: "init" });
+  const [thumbnails, setThumbnails] = useState<Map<File, Blob>>(new Map());
+  const [isUploading, setIsUploading] = useState(false);
+  const [overallProgress, setOverallProgress] = useState<{ current: number; total: number } | null>(null);
+  const [selectionError, setSelectionError] = useState<string | undefined>();
 
-  const handleSubmit = () => {
-    if (!assetFile.value) {
-      setAssetFile((curr) => ({
-        ...curr,
-        error: "Please select a file to upload.",
-      }));
-      return;
+  const disposeRenderer = () => {
+    if (rendererRef.current) {
+      rendererRef.current.setAnimationLoop(null);
+      rendererRef.current.dispose();
+      rendererRef.current = null;
     }
-
-    // Use the filename as the title
-    const title = assetFile.value.name.split(".")[0];
-
-    // const shouldFlip = title.search("ceramic") != -1;
-    //
-    // assetFile.value.arrayBuffer().then((arrayBuffer) => {
-    //   onLocalBytes(arrayBuffer, shouldFlip);
-    // }).catch((error) => {
-    //   console.error("Error reading file as ArrayBuffer:", error);
-    // });
-
-    upload3DObjects({
-      title: title,
-      assetFile: assetFile.value,
-      thumbnailSnapshot: thumbnailFile,
-      engineCategory: engineCategory,
-      animationType: subtype,
-      progressCallback: onUploadProgress,
-    });
   };
 
+  // Reload canvas preview whenever the current file or index changes.
+  // filesVersion ensures this re-runs when the same-count file set is replaced.
   useEffect(() => {
-    // Reset subtype when fileSubtypes set changes (e.g., toggling character)
-    if (!fileSubtypes || fileSubtypes.length === 0) {
-      setSubtype(undefined);
-      return;
-    }
-    const nextDefault = Object.values(fileSubtypes[0])[0] as
-      | MediaFileAnimationType
-      | undefined;
-    setSubtype(nextDefault);
-  }, [fileSubtypes]);
+    const currentFile = fileEntries[previewIndex]?.file;
+    if (!canvasRef.current || !currentFile) return;
 
-  useEffect(() => {
-    let renderer: WebGLRenderer | null = null;
+    disposeRenderer();
+    setPreviewStatus({ type: "init" });
 
-    if (canvasRef.current && assetFile.value) {
-      renderer = loadPreviewOnCanvas({
-        file: assetFile.value,
-        canvas: canvasRef.current,
-        statusCallback: (statusObject: { type: string; message?: string }) => {
-          setPreviewStatus(statusObject);
-        },
-      }).renderer;
-    }
+    const { renderer } = loadPreviewOnCanvas({
+      file: currentFile,
+      canvas: canvasRef.current,
+      statusCallback: setPreviewStatus,
+    });
+    rendererRef.current = renderer;
 
-    return () => {
-      renderer?.setAnimationLoop(null);
-      renderer?.dispose();
-    }
-  }, [assetFile.value]);
+    return disposeRenderer;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewIndex, filesVersion]);
 
+  // Snapshot thumbnail when preview finishes loading
+  // Defer one animation frame so the splat renderer has produced a visible frame
   useEffect(() => {
     if (previewStatus.type === "OK" && canvasRef.current) {
       const canvas = canvasRef.current;
-      // Defer one animation frame so the splat renderer has produced a visible frame
+      const currentFile = fileEntries[previewIndex]?.file;
       const rafId = requestAnimationFrame(() => {
         snapshotCanvasAsThumbnail({
           targetNode: canvas,
-          resultCallback: (snapshotBlob) => {
-            if (snapshotBlob) {
-              setThumbnailFile(snapshotBlob);
+          resultCallback: (blob) => {
+            if (blob && currentFile) {
+              setThumbnails((prev) => new Map(prev).set(currentFile, blob));
             }
           },
         });
       });
       return () => cancelAnimationFrame(rafId);
     }
-  }, [previewStatus]);
+  }, [previewStatus, previewIndex]);
+
+  // Reset subtype when fileSubtypes set changes
+  useEffect(() => {
+    if (!fileSubtypes || fileSubtypes.length === 0) {
+      setSubtype(undefined);
+      return;
+    }
+    setSubtype(Object.values(fileSubtypes[0])[0] as MediaFileAnimationType | undefined);
+  }, [fileSubtypes]);
+
+  const updateFileStatus = (
+    index: number,
+    status: FileEntryStatus,
+    errorMessage?: string
+  ) => {
+    setFileEntries((prev) =>
+      prev.map((entry, i) =>
+        i === index ? { ...entry, status, errorMessage } : entry
+      )
+    );
+  };
+
+  const removeFile = (index: number) => {
+    setFileEntries((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      setPreviewIndex((prevIdx) => Math.min(prevIdx, Math.max(0, next.length - 1)));
+      return next;
+    });
+  };
+
+  const retrySingleFile = async (index: number) => {
+    const entry = fileEntries[index];
+    if (!entry || entry.status === "uploading") return;
+    updateFileStatus(index, "uploading");
+    await upload3DObjects({
+      title: entry.file.name.slice(0, entry.file.name.lastIndexOf(".")),
+      assetFile: entry.file,
+      engineCategory,
+      animationType: subtype,
+      thumbnailSnapshot: thumbnails.get(entry.file),
+      progressCallback: (state) => {
+        if (state.status === UploaderStates.success) {
+          updateFileStatus(index, "success");
+        } else if (
+          state.status === UploaderStates.assetError ||
+          state.status === UploaderStates.coverCreateError ||
+          state.status === UploaderStates.coverSetError
+        ) {
+          updateFileStatus(index, "error", state.errorMessage);
+        }
+      },
+    });
+  };
+
+  const handleFilesChange = (files: File[]) => {
+    setFileEntries(files.map((f) => ({ file: f, status: "idle" })));
+    setPreviewIndex(0);
+    setFilesVersion((v) => v + 1);
+    setThumbnails(new Map());
+    setSelectionError(undefined);
+    setOverallProgress(null);
+    setIsUploading(false);
+  };
+
+  const handleSubmit = () => {
+    if (fileEntries.length === 0) {
+      setSelectionError("Please select a file to upload.");
+      return;
+    }
+
+    // Only upload files that haven't already succeeded
+    const pendingEntries = fileEntries
+      .map((e, i) => ({ entry: e, originalIndex: i }))
+      .filter(({ entry }) => entry.status !== "success");
+    const files = pendingEntries.map(({ entry }) => entry.file);
+    const originalIndices = pendingEntries.map(({ originalIndex }) => originalIndex);
+    const pendingThumbnails = new Map<File, Blob>(
+      files
+        .map((file): [File, Blob | undefined] => [file, thumbnails.get(file)])
+        .filter((pair): pair is [File, Blob] => pair[1] !== undefined)
+    );
+
+    if (files.length === 1 && fileEntries.length === 1) {
+      // Single file: use parent modal state machine (shows loading spinner)
+      upload3DObjects({
+        title: files[0].name.slice(0, files[0].name.lastIndexOf(".")),
+        assetFile: files[0],
+        engineCategory,
+        animationType: subtype,
+        thumbnailSnapshot: thumbnails.get(files[0]),
+        progressCallback: onUploadProgress,
+      });
+      return;
+    }
+
+    // Multi-file: stay on form, show inline progress
+    setIsUploading(true);
+    setOverallProgress({ current: 0, total: files.length });
+
+    upload3DObjectsBatch({
+      files,
+      thumbnails: pendingThumbnails,
+      engineCategory,
+      animationType: subtype,
+      onFileStatusChange: (batchIndex, status, errorMessage) =>
+        updateFileStatus(originalIndices[batchIndex], status, errorMessage),
+      onOverallProgress: (completed, total) =>
+        setOverallProgress({ current: completed, total }),
+      onComplete: (allSucceeded, anySucceeded) => {
+        setIsUploading(false);
+        if (allSucceeded) {
+          onUploadProgress({ status: UploaderStates.success });
+        } else if (!anySucceeded) {
+          onUploadProgress({
+            status: UploaderStates.assetError,
+            errorMessage: "All uploads failed.",
+          });
+        }
+      },
+    });
+  };
+
+  const retryAllFailed = () => {
+    const failedIndices = fileEntries
+      .map((e, i) => (e.status === "error" ? i : -1))
+      .filter((i) => i !== -1);
+    if (failedIndices.length === 0) return;
+
+    const failedFiles = failedIndices
+      .map((i) => fileEntries[i].file)
+      .filter((file) => file !== undefined);
+    const failedThumbnails = new Map<File, Blob>(
+      failedFiles
+        .map((file): [File, Blob | undefined] => [file, thumbnails.get(file) ?? undefined])
+        .filter((pair): pair is [File, Blob] => pair[1] !== undefined)
+    );
+
+    setIsUploading(true);
+    setOverallProgress({ current: 0, total: failedFiles.length });
+
+    upload3DObjectsBatch({
+      files: failedFiles,
+      thumbnails: failedThumbnails,
+      engineCategory,
+      animationType: subtype,
+      onFileStatusChange: (batchIndex, status, errorMessage) =>
+        updateFileStatus(failedIndices[batchIndex], status, errorMessage),
+      onOverallProgress: (completed, total) =>
+        setOverallProgress({ current: completed, total }),
+      onComplete: (allSucceeded, anySucceeded) => {
+        setIsUploading(false);
+        if (allSucceeded) {
+          onUploadProgress({ status: UploaderStates.success });
+        } else if (!anySucceeded) {
+          onUploadProgress({
+            status: UploaderStates.assetError,
+            errorMessage: "All uploads failed.",
+          });
+        }
+      },
+    });
+  };
+
+  const isMulti = fileEntries.length > 1;
+  const anyFailed = fileEntries.some((e) => e.status === "error");
+  const anyUploading = fileEntries.some((e) => e.status === "uploading");
+  const hasUploadStarted = fileEntries.some((e) => e.status !== "idle");
+  const allDone =
+    fileEntries.length > 0 &&
+    fileEntries.every((e) => e.status === "success" || e.status === "error");
+  const currentFile = fileEntries[previewIndex]?.file;
 
   return (
-    <>
-      <div className="flex flex-col gap-3">
-        <FileUploader
-          fileTypes={fileTypes}
-          file={assetFile.value ?? undefined}
-          handleChange={(file: File) => {
-            setAssetFile({
-              value: file,
-            });
-          }}
+    <div className="flex flex-col gap-3">
+      {fileSubtypes && fileSubtypes.length > 1 && (
+        <ListDropdown
+          list={fileSubtypes}
+          onSelect={(value) => setSubtype(value as MediaFileAnimationType)}
         />
-        {fileSubtypes && fileSubtypes.length > 1 && (
-          <ListDropdown
-            list={fileSubtypes}
-            onSelect={(value) => setSubtype(value as MediaFileAnimationType)}
-          />
-        )}
-        {assetFile.error && (
-          <h6 className="z-10 text-red">{assetFile.error}</h6>
-        )}
+      )}
 
+      <FileUploader
+        fileTypes={fileTypes}
+        files={fileEntries.map((e) => e.file)}
+        handleChange={handleFilesChange}
+        multiple={true}
+      />
+
+      {selectionError && (
+        <h6 className="z-10 text-red">{selectionError}</h6>
+      )}
+
+      {isMulti ? (
+        <div className="flex gap-3">
+          {/* File list sidebar */}
+          <ul className="flex w-1/3 flex-col gap-1 overflow-y-auto max-h-64 rounded-lg bg-brand-secondary p-2">
+            {fileEntries.map((entry, i) => (
+              <li
+                key={i}
+                className={`group flex items-center justify-between gap-1.5 rounded px-2 py-1 cursor-pointer text-sm transition-colors ${
+                  i === previewIndex ? "bg-white/10" : "hover:bg-white/5"
+                }`}
+                onClick={() => setPreviewIndex(i)}
+              >
+                <span className="truncate flex-1" title={entry.file.name}>
+                  {entry.file.name.slice(0, entry.file.name.lastIndexOf("."))}
+                </span>
+                <span className="shrink-0">
+                  {entry.status === "idle" && (
+                    <button
+                      className="opacity-40 hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile(i);
+                      }}
+                      title="Remove"
+                    >
+                      <FontAwesomeIcon icon={faXmark} />
+                    </button>
+                  )}
+                  {entry.status === "uploading" && (
+                    <FontAwesomeIcon
+                      icon={faSpinner}
+                      className="animate-spin opacity-60"
+                    />
+                  )}
+                  {entry.status === "success" && (
+                    <FontAwesomeIcon icon={faCheck} className="text-green-400" />
+                  )}
+                  {entry.status === "error" && (
+                    <span className="flex items-center gap-1">
+                      <FontAwesomeIcon
+                        icon={faCircleExclamation}
+                        className="text-red-400"
+                      />
+                      <button
+                        className="hidden group-hover:inline-flex items-center text-xs text-white/60 hover:text-white transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          retrySingleFile(i);
+                        }}
+                        title="Retry"
+                      >
+                        <FontAwesomeIcon icon={faRotateRight} />
+                      </button>
+                    </span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Canvas preview + carousel */}
+          <div className="flex w-2/3 flex-col gap-2">
+            <div className="relative w-full overflow-hidden rounded-lg bg-brand-secondary">
+              <canvas
+                className="pointer-events-none h-full !w-full"
+                ref={canvasCallbackRef}
+              />
+              {!currentFile && (
+                <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
+                  <FontAwesomeIcon icon={faCube} />
+                  Your model preview will appear here
+                </h6>
+              )}
+              {previewStatus.type.includes("Error") && (
+                <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
+                  {previewStatus.type}
+                  {previewStatus.message && <br />}
+                  {previewStatus.message}
+                </h6>
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => setPreviewIndex((p) => Math.max(0, p - 1))}
+                disabled={previewIndex === 0}
+              >
+                <FontAwesomeIcon icon={faChevronLeft} />
+              </Button>
+              <span className="text-sm opacity-60">
+                {previewIndex + 1} / {fileEntries.length}
+              </span>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  setPreviewIndex((p) =>
+                    Math.min(fileEntries.length - 1, p + 1)
+                  )
+                }
+                disabled={previewIndex === fileEntries.length - 1}
+              >
+                <FontAwesomeIcon icon={faChevronRight} />
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Single-file layout: canvas takes full width (original behaviour) */
         <div className="relative m-auto w-full overflow-hidden rounded-lg bg-brand-secondary">
           <canvas
             className="pointer-events-none h-full !w-full"
             ref={canvasCallbackRef}
           />
-          {!assetFile.value && (
+          {!currentFile && (
             <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 flex w-full items-center justify-center gap-2.5 text-center opacity-50">
               <FontAwesomeIcon icon={faCube} />
               Your model preview will appear here
             </h6>
           )}
           {previewStatus.type.includes("Error") && (
-            <>
-              <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
-                {previewStatus.type}
-                {previewStatus.message && <br />}
-                {previewStatus.message}
-              </h6>
-            </>
+            <h6 className="pointer-events-auto absolute left-0 top-1/2 -mt-5 w-full text-center">
+              {previewStatus.type}
+              {previewStatus.message && <br />}
+              {previewStatus.message}
+            </h6>
           )}
         </div>
+      )}
 
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
+      {(isUploading || anyUploading) && overallProgress && isMulti && (
+        <p className="text-center text-sm opacity-60">
+          Uploading {overallProgress.current} / {overallProgress.total}...
+        </p>
+      )}
+
+      {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
+        <p className="text-center text-sm text-red-400">
+          {fileEntries.filter((e) => e.status === "error").length} file(s) failed to upload.
+        </p>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
+          <Button variant="secondary" onClick={retryAllFailed}>
+            Retry Failed
           </Button>
+        )}
+        {/* Hide Upload once any upload has started; only Retry Failed or Close remains */}
+        {!hasUploadStarted && (
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={!assetFile.value}
+            disabled={fileEntries.length === 0}
           >
             Upload
           </Button>
-        </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };

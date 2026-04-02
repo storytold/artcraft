@@ -114,13 +114,19 @@ export function UploadModal3D(props: Props) {
         );
       case UploaderStates.uploadingAsset:
       case UploaderStates.uploadingCover:
-      case UploaderStates.settingCover:
+      case UploaderStates.settingCover: {
+        const p = uploaderState.uploadProgress;
         return (
           <>
             <LoadingDots className="mb-1 bg-transparent" />
-            <div className="w-100 text-center opacity-50">Uploading...</div>
+            <div className="w-100 text-center opacity-50">
+              {p && p.total > 1
+                ? `Uploading ${p.current} / ${p.total}...`
+                : "Uploading..."}
+            </div>
           </>
         );
+      }
       case UploaderStates.success: {
         return (
           <UploadSuccess

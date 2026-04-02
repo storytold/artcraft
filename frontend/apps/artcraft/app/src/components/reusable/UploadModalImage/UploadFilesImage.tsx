@@ -1,13 +1,35 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faXmark,
+  faCheck,
+  faCircleExclamation,
+  faChevronLeft,
+  faChevronRight,
+  faRotateRight,
+  faSpinner,
+} from "@fortawesome/pro-solid-svg-icons";
 import { uploadImage } from "./utilities/uploadImage";
-import { UploaderState } from "../../../models";
+import {
+  uploadImagesBatch,
+  FileEntryStatus,
+} from "./utilities/uploadImagesBatch";
+import type { UploaderState } from "../../../models";
+import { UploaderStates } from "../../../enums";
+
+interface FileEntry {
+  file: File;
+  status: FileEntryStatus;
+  errorMessage?: string;
+}
 
 interface Props {
   title: string;
   fileTypes: string[];
   initialFile?: File;
+  initialFiles?: File[];
   onClose: () => void;
   onUploadProgress: (newState: UploaderState) => void;
 }
@@ -15,69 +37,332 @@ interface Props {
 export const UploadFilesImage = ({
   fileTypes,
   initialFile,
+  initialFiles,
   onClose,
   onUploadProgress,
 }: Props) => {
-  const [assetFile, setAssetFile] = useState<{
-    value: File | null;
-    error?: string;
-  }>({ value: initialFile ?? null });
+  const seedFiles = initialFiles ?? (initialFile ? [initialFile] : []);
 
-  const handleSubmit = () => {
-    if (!assetFile.value) {
-      setAssetFile((curr) => ({
-        ...curr,
-        error: "Please select an image to upload.",
-      }));
+  const [fileEntries, setFileEntries] = useState<FileEntry[]>(
+    seedFiles.map((f) => ({ file: f, status: "idle" }))
+  );
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Incremented on every handleFilesChange so useEffect re-runs even when count stays the same
+  const [filesVersion, setFilesVersion] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [overallProgress, setOverallProgress] = useState<{ current: number; total: number } | null>(null);
+  const [selectionError, setSelectionError] = useState<string | undefined>();
+
+  // Create and clean up the object URL for the current preview.
+  // filesVersion ensures this re-runs when the same-count file set is replaced.
+  useEffect(() => {
+    const currentFile = fileEntries[previewIndex]?.file;
+    if (!currentFile) {
+      setPreviewUrl(null);
       return;
     }
+    const url = URL.createObjectURL(currentFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewIndex, filesVersion]);
 
-    // Use the filename as the title
-    const title = assetFile.value.name.split(".")[0];
+  const updateFileStatus = (
+    index: number,
+    status: FileEntryStatus,
+    errorMessage?: string
+  ) => {
+    setFileEntries((prev) =>
+      prev.map((entry, i) =>
+        i === index ? { ...entry, status, errorMessage } : entry
+      )
+    );
+  };
 
-    uploadImage({
-      title: title,
-      assetFile: assetFile.value,
-      progressCallback: onUploadProgress,
+  const removeFile = (index: number) => {
+    setFileEntries((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      // Compute new index inside the updater so it's always based on the post-remove length
+      setPreviewIndex((prevIdx) => Math.min(prevIdx, Math.max(0, next.length - 1)));
+      return next;
     });
   };
 
+  const retrySingleFile = async (index: number) => {
+    const entry = fileEntries[index];
+    if (!entry || entry.status === "uploading") return;
+    updateFileStatus(index, "uploading");
+    await uploadImage({
+      title: entry.file.name.slice(0, entry.file.name.lastIndexOf(".")),
+      assetFile: entry.file,
+      progressCallback: (state) => {
+        if (state.status === UploaderStates.success) {
+          updateFileStatus(index, "success");
+        } else if (state.status === UploaderStates.assetError) {
+          updateFileStatus(index, "error", state.errorMessage);
+        }
+      },
+    });
+  };
+
+  const handleFilesChange = (files: File[]) => {
+    setFileEntries(files.map((f) => ({ file: f, status: "idle" })));
+    setPreviewIndex(0);
+    setFilesVersion((v) => v + 1);
+    setSelectionError(undefined);
+    setOverallProgress(null);
+    setIsUploading(false);
+  };
+
+  const handleSubmit = () => {
+    if (fileEntries.length === 0) {
+      setSelectionError("Please select an image to upload.");
+      return;
+    }
+
+    // Only upload files that haven't already succeeded
+    const files = fileEntries
+      .filter((e) => e.status !== "success")
+      .map((e) => e.file);
+    const originalIndices = fileEntries
+      .map((e, i) => (e.status !== "success" ? i : -1))
+      .filter((i) => i !== -1);
+
+    if (files.length === 1 && fileEntries.length === 1) {
+      // Single file: use parent modal state machine (shows loading spinner)
+      uploadImage({
+        title: files[0].name.slice(0, files[0].name.lastIndexOf(".")),
+        assetFile: files[0],
+        progressCallback: onUploadProgress,
+      });
+      return;
+    }
+
+    // Multi-file: stay on form, show inline progress
+    setIsUploading(true);
+    setOverallProgress({ current: 0, total: files.length });
+
+    uploadImagesBatch({
+      files,
+      onFileStatusChange: (batchIndex, status, errorMessage) =>
+        updateFileStatus(originalIndices[batchIndex], status, errorMessage),
+      onOverallProgress: (completed, total) =>
+        setOverallProgress({ current: completed, total }),
+      onComplete: (allSucceeded, anySucceeded) => {
+        setIsUploading(false);
+        if (allSucceeded) {
+          onUploadProgress({ status: UploaderStates.success });
+        } else if (!anySucceeded) {
+          onUploadProgress({
+            status: UploaderStates.assetError,
+            errorMessage: "All uploads failed.",
+          });
+        }
+        // Partial failure: stay on form, sidebar shows which files are red
+      },
+    });
+  };
+
+  const retryAllFailed = () => {
+    const failedIndices = fileEntries
+      .map((e, i) => (e.status === "error" ? i : -1))
+      .filter((i) => i !== -1);
+    if (failedIndices.length === 0) return;
+
+    const failedFiles = failedIndices.map((i) => fileEntries[i].file);
+
+    setIsUploading(true);
+    setOverallProgress({ current: 0, total: failedFiles.length });
+
+    uploadImagesBatch({
+      files: failedFiles,
+      onFileStatusChange: (batchIndex, status, errorMessage) =>
+        updateFileStatus(failedIndices[batchIndex], status, errorMessage),
+      onOverallProgress: (completed, total) =>
+        setOverallProgress({ current: completed, total }),
+      onComplete: (allSucceeded, anySucceeded) => {
+        setIsUploading(false);
+        if (allSucceeded) {
+          onUploadProgress({ status: UploaderStates.success });
+        } else if (!anySucceeded) {
+          onUploadProgress({
+            status: UploaderStates.assetError,
+            errorMessage: "All uploads failed.",
+          });
+        }
+      },
+    });
+  };
+
+  const isMulti = fileEntries.length > 1;
+  const anyFailed = fileEntries.some((e) => e.status === "error");
+  const anyUploading = fileEntries.some((e) => e.status === "uploading");
+  // Upload has started if any file has left the idle state
+  const hasUploadStarted = fileEntries.some((e) => e.status !== "idle");
+  const allDone =
+    fileEntries.length > 0 &&
+    fileEntries.every((e) => e.status === "success" || e.status === "error");
+
   return (
-    <>
-      <div className="flex flex-col gap-3">
-        <FileUploader
-          fileTypes={fileTypes}
-          file={assetFile.value ?? undefined}
-          handleChange={(file: File) => {
-            setAssetFile({
-              value: file,
-            });
-          }}
-        />
+    <div className="flex flex-col gap-3">
+      <FileUploader
+        fileTypes={fileTypes}
+        files={fileEntries.map((e) => e.file)}
+        handleChange={handleFilesChange}
+        multiple={true}
+      />
 
-        {assetFile.error && (
-          <h6 className="z-10 text-red">{assetFile.error}</h6>
-        )}
+      {selectionError && (
+        <h6 className="z-10 text-red">{selectionError}</h6>
+      )}
 
-        {assetFile.value && (
-          <div className="relative m-auto flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg bg-brand-secondary">
-            <img
-              alt="Preview"
-              className="m-auto max-h-full max-w-full object-contain"
-              src={URL.createObjectURL(assetFile.value)}
-            />
+      {fileEntries.length > 0 && (
+        isMulti ? (
+          <div className="flex gap-3">
+            {/* File list sidebar */}
+            <ul className="flex w-1/3 flex-col gap-1 overflow-y-auto max-h-64 rounded-lg bg-brand-secondary p-2">
+              {fileEntries.map((entry, i) => (
+                <li
+                  key={i}
+                  className={`group flex items-center justify-between gap-1.5 rounded px-2 py-1 cursor-pointer text-sm transition-colors ${
+                    i === previewIndex ? "bg-white/10" : "hover:bg-white/5"
+                  }`}
+                  onClick={() => setPreviewIndex(i)}
+                >
+                  <span className="truncate flex-1" title={entry.file.name}>
+                    {entry.file.name.slice(0, entry.file.name.lastIndexOf("."))}
+                  </span>
+                  <span className="shrink-0">
+                    {entry.status === "idle" && (
+                      <button
+                        className="opacity-40 hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(i);
+                        }}
+                        title="Remove"
+                      >
+                        <FontAwesomeIcon icon={faXmark} />
+                      </button>
+                    )}
+                    {entry.status === "uploading" && (
+                      <FontAwesomeIcon
+                        icon={faSpinner}
+                        className="animate-spin opacity-60"
+                      />
+                    )}
+                    {entry.status === "success" && (
+                      <FontAwesomeIcon
+                        icon={faCheck}
+                        className="text-green-400"
+                      />
+                    )}
+                    {entry.status === "error" && (
+                      <span className="flex items-center gap-1">
+                        <FontAwesomeIcon
+                          icon={faCircleExclamation}
+                          className="text-red-400"
+                        />
+                        <button
+                          className="hidden group-hover:inline-flex items-center text-xs text-white/60 hover:text-white transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            retrySingleFile(i);
+                          }}
+                          title="Retry"
+                        >
+                          <FontAwesomeIcon icon={faRotateRight} />
+                        </button>
+                      </span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Preview + carousel navigation */}
+            <div className="flex w-2/3 flex-col gap-2">
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-brand-secondary flex items-center justify-center">
+                {previewUrl && (
+                  <img
+                    key={previewIndex}
+                    alt="Preview"
+                    className="m-auto max-h-full max-w-full object-contain"
+                    src={previewUrl}
+                  />
+                )}
+              </div>
+              <div className="flex items-center justify-center gap-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => setPreviewIndex((p) => Math.max(0, p - 1))}
+                  disabled={previewIndex === 0}
+                >
+                  <FontAwesomeIcon icon={faChevronLeft} />
+                </Button>
+                <span className="text-sm opacity-60">
+                  {previewIndex + 1} / {fileEntries.length}
+                </span>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    setPreviewIndex((p) =>
+                      Math.min(fileEntries.length - 1, p + 1)
+                    )
+                  }
+                  disabled={previewIndex === fileEntries.length - 1}
+                >
+                  <FontAwesomeIcon icon={faChevronRight} />
+                </Button>
+              </div>
+            </div>
           </div>
-        )}
+        ) : (
+          previewUrl && (
+            <div className="relative m-auto flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg bg-brand-secondary">
+              <img
+                alt="Preview"
+                className="m-auto max-h-full max-w-full object-contain"
+                src={previewUrl}
+              />
+            </div>
+          )
+        )
+      )}
 
-        <div className="flex justify-end gap-4">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
+      {(isUploading || anyUploading) && overallProgress && isMulti && (
+        <p className="text-center text-sm opacity-60">
+          Uploading {overallProgress.current} / {overallProgress.total}...
+        </p>
+      )}
+
+      {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
+        <p className="text-center text-sm text-red-400">
+          {fileEntries.filter((e) => e.status === "error").length} file(s) failed to upload.
+        </p>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        {!isUploading && !anyUploading && allDone && anyFailed && isMulti && (
+          <Button variant="secondary" onClick={retryAllFailed}>
+            Retry Failed
           </Button>
-          <Button variant="primary" onClick={handleSubmit}>
+        )}
+        {/* Hide Upload once any upload has started; only Retry Failed or Close remains */}
+        {!hasUploadStarted && (
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={fileEntries.length === 0}
+          >
             Upload
           </Button>
-        </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
