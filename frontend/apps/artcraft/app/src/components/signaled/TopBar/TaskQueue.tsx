@@ -144,7 +144,7 @@ const PromptLine = ({
           style={
             marqueePlaying
               ? {
-                  animation: "marquee 8s linear infinite",
+                  animation: "marquee 6.5s linear infinite",
                   animationDelay: "0.5s",
                   animationFillMode: "both",
                 }
