@@ -129,7 +129,7 @@ pub async fn fal_webhook_handler(
         request_id, err, raw_body,
       );
 
-      let notification = NotificationDetailsBuilder::from_error(err.into())
+      let notification = NotificationDetailsBuilder::from_boxed_error(err.into())
           .set_title("FAL webhook processing failed".to_string())
           .set_description(Some(description))
           .set_third_party_id(Some(request_id.to_string()))

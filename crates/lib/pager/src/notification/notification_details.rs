@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 
 use crate::notification::generate_deduplication_key::generate_deduplication_key;
-use crate::notification::notification_details_builder::NotificationDetailsBuilder;
 use crate::notification::notification_urgency::NotificationUrgency;
 
 /// Details for a pager notification.
@@ -20,7 +19,7 @@ pub struct NotificationDetails {
   pub(crate) event_time: DateTime<Utc>,
 
   /// The error that triggered this notification, if any.
-  pub(crate) maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+  pub(crate) maybe_error: Option<std::sync::Arc<dyn std::error::Error + Send + Sync + 'static>>,
 
   /// Whether this notification originated from an error.
   pub(crate) is_from_error: bool,

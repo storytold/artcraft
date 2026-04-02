@@ -1,6 +1,8 @@
+use std::fmt::{Display, Formatter};
+use std::sync::Arc;
+
 use actix_http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
-use std::fmt::{Display, Formatter};
 
 use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
 
@@ -39,16 +41,33 @@ pub enum AdvancedCommonWebError {
   /// Uncaught errors are always 500 Internal Server Error.
   /// The user will never see the error cause or message, but our
   /// middleware will handle alerting, logging, etc.
-  UncaughtServerError(Box<dyn std::error::Error + Send + Sync + 'static>),
+  ///
+  /// Stored in `Arc` so the error alerting middleware can clone it for paging
+  /// without consuming the original.
+  UncaughtServerError(Arc<dyn std::error::Error + Send + Sync + 'static>),
 }
 
 // =============== Public accessors ===============
 
 impl AdvancedCommonWebError {
+  /// Wrap any error as an `UncaughtServerError`.
+  pub fn from_error(error: impl std::error::Error + Send + Sync + 'static) -> Self {
+    Self::UncaughtServerError(Arc::new(error))
+  }
+
   /// Extract the wrapped causal error (only present for `UncaughtServerError`).
   pub fn cause(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
     match self {
       Self::UncaughtServerError(err) => Some(err.as_ref()),
+      _ => None,
+    }
+  }
+
+  /// Clone the wrapped causal error as an `Arc` (only present for `UncaughtServerError`).
+  /// Useful for passing the error to the pager system without consuming the original.
+  pub fn clone_cause_arc(&self) -> Option<Arc<dyn std::error::Error + Send + Sync + 'static>> {
+    match self {
+      Self::UncaughtServerError(err) => Some(Arc::clone(err)),
       _ => None,
     }
   }
@@ -136,19 +155,21 @@ impl ResponseError for AdvancedCommonWebError {
 
 impl From<sqlx::Error> for AdvancedCommonWebError {
   fn from(err: sqlx::Error) -> Self {
-    Self::UncaughtServerError(Box::new(err))
+    Self::from_error(err)
   }
 }
 
 impl From<anyhow::Error> for AdvancedCommonWebError {
   fn from(err: anyhow::Error) -> Self {
-    Self::UncaughtServerError(err.into())
+    // anyhow::Error doesn't impl std::error::Error, so we go through Box -> Arc.
+    let boxed: Box<dyn std::error::Error + Send + Sync> = err.into();
+    Self::UncaughtServerError(Arc::from(boxed))
   }
 }
 
 impl From<serde_json::Error> for AdvancedCommonWebError {
   fn from(err: serde_json::Error) -> Self {
-    Self::UncaughtServerError(Box::new(err))
+    Self::from_error(err)
   }
 }
 
@@ -156,9 +177,7 @@ impl From<RequireUserSessionError> for AdvancedCommonWebError {
   fn from(value: RequireUserSessionError) -> Self {
     match value {
       RequireUserSessionError::NotAuthorized => Self::NotAuthorized,
-      RequireUserSessionError::ServerError => {
-        Self::UncaughtServerError(Box::new(value))
-      }
+      RequireUserSessionError::ServerError => Self::from_error(value),
     }
   }
 }
@@ -223,7 +242,7 @@ mod tests {
   #[test]
   fn uncaught_io_error_returns_500_and_hides_cause() {
     let io_err = std::io::Error::new(std::io::ErrorKind::Other, "disk exploded");
-    let error = AdvancedCommonWebError::UncaughtServerError(Box::new(io_err));
+    let error = AdvancedCommonWebError::from_error(io_err);
 
     assert_eq!(error.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
     assert!(error.is_server_error());
@@ -297,7 +316,7 @@ mod tests {
   #[test]
   fn error_source_returns_wrapped_error() {
     let io_err = std::io::Error::new(std::io::ErrorKind::Other, "root cause");
-    let error = AdvancedCommonWebError::UncaughtServerError(Box::new(io_err));
+    let error = AdvancedCommonWebError::from_error(io_err);
 
     let source = std::error::Error::source(&error);
     assert!(source.is_some());

@@ -222,7 +222,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           Err(err) => {
             warn!("Regular session fallback also failed for user {:?}: {:?}", user_token, err);
             if let Err(page_err) = server_state.pager.enqueue_page(
-              NotificationDetailsBuilder::from_error(err.into())
+              NotificationDetailsBuilder::from_boxed_error(err.into())
                   .set_title("Seedance 2.0 generation failed (whitelist + fallback)".to_string())
                   .set_urgency(Some(NotificationUrgency::High))
                   .build()
@@ -256,7 +256,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       Err(err) => {
         warn!("Error calling seedance2pro generate_video: {:?}", err);
         if let Err(page_err) = server_state.pager.enqueue_page(
-          NotificationDetailsBuilder::from_error(err.into())
+          NotificationDetailsBuilder::from_boxed_error(err.into())
               .set_title("Seedance 2.0 generation failed".to_string())
               .set_urgency(Some(NotificationUrgency::High))
               .build()

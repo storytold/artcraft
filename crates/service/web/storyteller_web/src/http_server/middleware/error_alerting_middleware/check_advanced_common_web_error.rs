@@ -21,29 +21,23 @@ pub(super) fn check_advanced_common_web_error(
 
   let title = format!("UncaughtServerError on {} {}", method, path);
 
-  let description = if let Some(cause) = error.cause() {
-    format!(
-      "An UncaughtServerError was returned with a wrapped cause.\n\n\
-         Endpoint: {} {}\n\
-         Cause: {}\n\
-         Cause (debug): {:?}",
-      method, path, cause, cause,
-    )
+  // Clone the Arc'd causal error so the notification owns a reference to it.
+  let cause_arc = error.clone_cause_arc();
+
+  let mut builder = if let Some(arc_err) = cause_arc {
+    NotificationDetailsBuilder::from_error(arc_err)
+        .set_title(title)
   } else {
-    format!(
-      "An UncaughtServerError was returned (no wrapped cause).\n\n\
-         Endpoint: {} {}",
-      method, path,
-    )
+    NotificationDetailsBuilder::from_title(title)
   };
 
-  let notification = NotificationDetailsBuilder::from_title(title)
-      .set_description(Some(description))
+  builder = builder
       .set_http_method(Some(method.to_string()))
       .set_http_path(Some(path.to_string()))
       .set_http_status_code(Some(500))
-      .set_urgency(Some(NotificationUrgency::Medium))
-      .build();
+      .set_urgency(Some(NotificationUrgency::Medium));
+
+  let notification = builder.build();
 
   if let Err(err) = pager.enqueue_page(notification) {
     warn!("Error alerting middleware: failed to enqueue page: {:?}", err);

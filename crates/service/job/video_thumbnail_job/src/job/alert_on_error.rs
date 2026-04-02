@@ -11,7 +11,7 @@ pub fn alert_pager_and_return_err<T>(
 ) -> anyhow::Result<T> {
   let err_message = format!("{:#}", err);
 
-  let notification = NotificationDetailsBuilder::from_error(err.into())
+  let notification = NotificationDetailsBuilder::from_boxed_error(err.into())
       .set_title(title.to_string())
       .set_urgency(Some(NotificationUrgency::Medium))
       .build();

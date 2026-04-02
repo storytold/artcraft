@@ -85,7 +85,7 @@ pub async fn process_failed_job(
             err,
           );
 
-          let notification = NotificationDetailsBuilder::from_error(err.into())
+          let notification = NotificationDetailsBuilder::from_boxed_error(err.into())
               .set_title("Seedance2Pro refund failed".to_string())
               .set_inference_job_token(Some(job.job_token.to_string()))
               .set_third_party_id(Some(job.order_id.to_string()))
@@ -140,7 +140,7 @@ pub async fn process_failed_job(
       err
     );
 
-    let notification = NotificationDetailsBuilder::from_error(err.into())
+    let notification = NotificationDetailsBuilder::from_boxed_error(err.into())
         .set_title("Seedance2Pro mark job failed error".to_string())
         .set_urgency(Some(NotificationUrgency::Medium))
         .build();

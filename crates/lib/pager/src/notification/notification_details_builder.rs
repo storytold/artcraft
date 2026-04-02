@@ -1,5 +1,7 @@
-use chrono::{DateTime, Utc};
 use std::fmt::{Debug, Display};
+use std::sync::Arc;
+
+use chrono::{DateTime, Utc};
 
 use crate::notification::notification_details::NotificationDetails;
 use crate::notification::notification_urgency::NotificationUrgency;
@@ -10,7 +12,7 @@ pub struct NotificationDetailsBuilder {
   pub(crate) urgency: Option<NotificationUrgency>,
   pub(crate) event_time: DateTime<Utc>,
 
-  pub(crate) maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+  pub(crate) maybe_error: Option<Arc<dyn std::error::Error + Send + Sync + 'static>>,
   pub(crate) is_from_error: bool,
 
   pub(crate) http_method: Option<String>,
@@ -47,7 +49,13 @@ impl NotificationDetailsBuilder {
   ///
   /// Sets the title to a placeholder and attaches the error object.
   /// Callers should chain `.set_title()` to provide a meaningful title.
-  pub fn from_error(error: Box<dyn std::error::Error + Send + Sync + 'static>) -> Self {
+  /// Create a builder from a boxed error. Converts to `Arc` internally for shareability.
+  pub fn from_boxed_error(error: Box<dyn std::error::Error + Send + Sync + 'static>) -> Self {
+    Self::from_error(Arc::from(error))
+  }
+
+  /// Create a builder from an `Arc`'d error.
+  pub fn from_error(error: Arc<dyn std::error::Error + Send + Sync + 'static>) -> Self {
     Self {
       title: "Notification from Error".to_string(),
       description: None,
@@ -80,7 +88,7 @@ impl NotificationDetailsBuilder {
     self
   }
 
-  pub fn set_error(mut self, error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>) -> Self {
+  pub fn set_error(mut self, error: Option<Arc<dyn std::error::Error + Send + Sync + 'static>>) -> Self {
     self.maybe_error = error;
     self
   }
