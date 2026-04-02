@@ -5,22 +5,22 @@ use crate::notification::notification_details::NotificationDetails;
 use crate::notification::notification_urgency::NotificationUrgency;
 
 pub struct NotificationDetailsBuilder {
-  title: String,
-  description: Option<String>,
-  urgency: Option<NotificationUrgency>,
-  event_time: DateTime<Utc>,
+  pub(crate) title: String,
+  pub(crate) description: Option<String>,
+  pub(crate) urgency: Option<NotificationUrgency>,
+  pub(crate) event_time: DateTime<Utc>,
 
-  maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
-  is_from_error: bool,
+  pub(crate) maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+  pub(crate) is_from_error: bool,
 
-  http_method: Option<String>,
-  http_path: Option<String>,
-  http_status_code: Option<u16>,
+  pub(crate) http_method: Option<String>,
+  pub(crate) http_path: Option<String>,
+  pub(crate) http_status_code: Option<u16>,
 
-  user_token: Option<String>,
-  media_file_token: Option<String>,
-  inference_job_token: Option<String>,
-  third_party_id: Option<String>,
+  pub(crate) user_token: Option<String>,
+  pub(crate) media_file_token: Option<String>,
+  pub(crate) inference_job_token: Option<String>,
+  pub(crate) third_party_id: Option<String>,
 }
 
 impl NotificationDetailsBuilder {
