@@ -1,32 +1,13 @@
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::state::server_state::ServerState;
 use actix_web::web::Json;
-use log::{error, info, warn};
-use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;
-use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
-use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use fal_client::webhook_api::payload::webhook_error_type::WebhookErrorType;
 use fal_client::webhook_api::payload::webhook_inner_payload::ErrorData;
-use crate::http_server::endpoints::webhooks::fal_webhook_handler::FalWebhookError;
-use crate::state::server_state::ServerState;
-
-/// Map a FAL WebhookErrorType to a frontend failure category.
-///
-/// Returns `GenerationFailed` as the default if the error type is None or unrecognized.
-fn guess_failure_category(error_type: Option<&WebhookErrorType>) -> FrontendFailureCategory {
-  match error_type {
-    Some(WebhookErrorType::ContentPolicyViolation) => FrontendFailureCategory::RuleBansUserContent,
-    Some(WebhookErrorType::FaceDetectionError) => FrontendFailureCategory::FaceNotDetected,
-    // These all map to GenerationFailed for now, but are listed explicitly,
-    // so we can refine them later.
-    Some(WebhookErrorType::NoMediaGenerated)
-    | Some(WebhookErrorType::ImageTooSmall)
-    | Some(WebhookErrorType::ImageTooLarge)
-    | Some(WebhookErrorType::ImageLoadError)
-    | Some(WebhookErrorType::FileDownloadError)
-    | Some(WebhookErrorType::FileTooLarge) => FrontendFailureCategory::GenerationFailed,
-    _ => FrontendFailureCategory::GenerationFailed,
-  }
-}
+use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
+use log::{error, info, warn};
+use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;
+use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
 
 /// Handle a FAL webhook with status ERROR.
 ///
@@ -36,7 +17,7 @@ pub async fn handle_failed_fal_webhook(
   request_id: &str,
   error_data: &ErrorData,
   maybe_top_level_error: Option<&str>,
-) -> Result<Json<SimpleGenericJsonSuccess>, FalWebhookError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
 
   info!(
     "FAL webhook ERROR for request_id {}: top_level_error={:?}, error_type={:?}, message={:?}",
@@ -51,11 +32,11 @@ pub async fn handle_failed_fal_webhook(
     Ok(Some(record)) => record,
     Ok(None) => {
       warn!("Could not find job record by fal request_id: {}", request_id);
-      return Err(FalWebhookError::NotFound);
+      return Err(AdvancedCommonWebError::NotFound);
     }
     Err(err) => {
       error!("Error querying job record for request_id {}: {:?}", request_id, err);
-      return Err(FalWebhookError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -99,7 +80,7 @@ pub async fn handle_failed_fal_webhook(
       request_id,
       err,
     );
-    return Err(FalWebhookError::ServerError);
+    return Err(AdvancedCommonWebError::from_anyhow_error(err));
   }
 
   info!(
@@ -109,4 +90,23 @@ pub async fn handle_failed_fal_webhook(
   );
 
   Ok(SimpleGenericJsonSuccess::wrapped(true))
+}
+
+// =============== Private helpers ===============
+
+/// Map a FAL WebhookErrorType to a frontend failure category.
+///
+/// Returns `GenerationFailed` as the default if the error type is None or unrecognized.
+fn guess_failure_category(error_type: Option<&WebhookErrorType>) -> FrontendFailureCategory {
+  match error_type {
+    Some(WebhookErrorType::ContentPolicyViolation) => FrontendFailureCategory::RuleBansUserContent,
+    Some(WebhookErrorType::FaceDetectionError) => FrontendFailureCategory::FaceNotDetected,
+    Some(WebhookErrorType::NoMediaGenerated)
+    | Some(WebhookErrorType::ImageTooSmall)
+    | Some(WebhookErrorType::ImageTooLarge)
+    | Some(WebhookErrorType::ImageLoadError)
+    | Some(WebhookErrorType::FileDownloadError)
+    | Some(WebhookErrorType::FileTooLarge) => FrontendFailureCategory::GenerationFailed,
+    _ => FrontendFailureCategory::GenerationFailed,
+  }
 }

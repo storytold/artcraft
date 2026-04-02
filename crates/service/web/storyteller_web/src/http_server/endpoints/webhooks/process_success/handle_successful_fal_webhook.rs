@@ -1,11 +1,11 @@
 use actix_web::web::Json;
+use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{info, warn};
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;
 use mysql_queries::queries::generic_inference::fal::mark_fal_generic_inference_job_successfully_done::{mark_fal_generic_inference_job_successfully_done, MarkJobArgs};
-use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use serde_json::Value;
 
-use crate::http_server::endpoints::webhooks::fal_webhook_handler::FalWebhookError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::state::server_state::ServerState;
 
 use super::process_image_payload::process_image_payload;
@@ -18,7 +18,7 @@ pub async fn handle_successful_fal_webhook(
   server_state: &ServerState,
   request_id: &str,
   payload: &Value,
-) -> Result<Json<SimpleGenericJsonSuccess>, FalWebhookError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
 
   let db_result = get_inference_job_by_fal_id(
     request_id,
@@ -29,11 +29,11 @@ pub async fn handle_successful_fal_webhook(
     Ok(Some(record)) => record,
     Ok(None) => {
       warn!("Could not find job record by fal request_id: {}", request_id);
-      return Err(FalWebhookError::NotFound)
+      return Err(AdvancedCommonWebError::NotFound)
     },
     Err(err) => {
       warn!("Error querying job record for request_id {}: {:?}", request_id, err);
-      return Err(FalWebhookError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
 
@@ -74,7 +74,7 @@ pub async fn handle_successful_fal_webhook(
       phantom: Default::default(),
     }).await.map_err(|err| {
       warn!("Error marking job as successfully done for request_id {}: {:?}", request_id, err);
-      FalWebhookError::ServerError
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
   } else {
     warn!("No media token found in payload for request_id {} / job {:?}", request_id, job.job_token);
