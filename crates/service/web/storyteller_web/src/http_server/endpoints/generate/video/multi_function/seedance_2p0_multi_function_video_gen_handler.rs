@@ -2,9 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
+use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
@@ -17,11 +18,11 @@ use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_funct
 };
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::generation::common_model_type::CommonModelType;
-use enums::common::visibility::Visibility;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation_provider::GenerationProvider;
+use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
@@ -33,6 +34,8 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
 };
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
   generate_video, BatchCount, GenerateVideoArgs, GenerateVideoResponse, ModelType, Resolution,
@@ -46,9 +49,6 @@ use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use url::Url;
 use url_utils::extension::extract_extension_from_url::{extract_extension_from_url, ExtractExtensions};
-use pager::notification::notification_details_builder::NotificationDetailsBuilder;
-use pager::notification::notification_urgency::NotificationUrgency;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 
 // ======================== Result of a successful generation ========================
 
@@ -76,7 +76,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   http_request: HttpRequest,
   request: Json<Seedance2p0MultiFunctionVideoGenRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<Seedance2p0MultiFunctionVideoGenResponse>, CommonWebError> {
+) -> Result<Json<Seedance2p0MultiFunctionVideoGenResponse>, AdvancedCommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
@@ -94,20 +94,20 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::from_anyhow_error(e)
       })?;
 
   let user_session = match maybe_user_session {
     Some(session) => session,
     None => {
-      return Err(CommonWebError::NotAuthorized);
+      return Err(AdvancedCommonWebError::NotAuthorized);
     }
   };
 
   let user_token = &user_session.user_token;
 
   if let Err(reason) = validate_idempotency_token_format(&request.uuid_idempotency_token) {
-    return Err(CommonWebError::BadInputWithSimpleMessage(reason));
+    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(reason));
   }
 
   // --- Collect all media tokens to look up ---
@@ -148,7 +148,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       .await
       .map_err(|err| {
         error!("Error inserting idempotency token: {:?}", err);
-        CommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
+        AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
       })?;
 
   // --- Calculate cost and charge wallet upfront (before uploads) ---
@@ -221,16 +221,15 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           }
           Err(err) => {
             warn!("Regular session fallback also failed for user {:?}: {:?}", user_token, err);
-            if let Err(page_err) = server_state.pager.enqueue_page(
-              NotificationDetailsBuilder::from_boxed_error(err.into())
-                  .set_title("Seedance 2.0 generation failed (whitelist + fallback)".to_string())
-                  .set_urgency(Some(NotificationUrgency::High))
-                  .build()
-            ) {
+            let notification = NotificationDetailsBuilder::from_boxed_error(err.clone().into())
+                .set_title("Seedance 2.0 generation failed (whitelist + fallback)".to_string())
+                .set_urgency(Some(NotificationUrgency::High))
+                .build();
+            if let Err(page_err) = server_state.pager.enqueue_page(notification) {
               warn!("Failed to enqueue pager alert: {:?}", page_err);
             }
             refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
-            return Err(CommonWebError::ServerError);
+            return Err(err);
           }
         }
       }
@@ -255,16 +254,15 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       Ok(result) => result,
       Err(err) => {
         warn!("Error calling seedance2pro generate_video: {:?}", err);
-        if let Err(page_err) = server_state.pager.enqueue_page(
-          NotificationDetailsBuilder::from_boxed_error(err.into())
-              .set_title("Seedance 2.0 generation failed".to_string())
-              .set_urgency(Some(NotificationUrgency::High))
-              .build()
-        ) {
+        let notification = NotificationDetailsBuilder::from_boxed_error(err.clone().into())
+            .set_title("Seedance 2.0 generation failed".to_string())
+            .set_urgency(Some(NotificationUrgency::High))
+            .build();
+        if let Err(page_err) = server_state.pager.enqueue_page(notification) {
           warn!("Failed to enqueue pager alert: {:?}", page_err);
         }
         refund_wallet_after_api_failure(&deduction_result.ledger_entry_token, &mut mysql_connection).await?;
-        return Err(CommonWebError::ServerError);
+        return Err(err);
       }
     }
   };
@@ -286,7 +284,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       .await
       .map_err(|err| {
         error!("Error starting MySQL transaction: {:?}", err);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   // NB: Don't fail the job if the prompt insert fails.
@@ -419,7 +417,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       Err(err) => {
         warn!("Error inserting seedance2pro inference job (order_id={}): {:?}", order_id, err);
         if i == 0 {
-          return Err(CommonWebError::ServerError);
+          return Err(AdvancedCommonWebError::from_error(err));
         }
       }
     }
@@ -427,7 +425,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
   let first_job_token = all_job_tokens.first().cloned().ok_or_else(|| {
     error!("No inference job token was created");
-    CommonWebError::ServerError
+    AdvancedCommonWebError::server_error_with_message("No inference job token was created")
   })?;
 
   transaction
@@ -435,7 +433,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       .await
       .map_err(|err| {
         error!("Error committing MySQL transaction: {:?}", err);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   Ok(Json(Seedance2p0MultiFunctionVideoGenResponse {
@@ -497,14 +495,14 @@ async fn upload_and_generate(
   resolution: Resolution,
   batch_count: BatchCount,
   duration_seconds: u8,
-) -> Result<SeedanceGenerationResult, CommonWebError> {
+) -> Result<SeedanceGenerationResult, AdvancedCommonWebError> {
 
   // --- Upload files to seedance2pro CDN ---
 
   let start_frame_url = match request.start_frame_media_token.as_ref() {
     None => None,
     Some(token) => match file_urls_by_token.get(token) {
-      None => return Err(CommonWebError::BadInputWithSimpleMessage("Start frame media not found.".to_string())),
+      None => return Err(AdvancedCommonWebError::BadInputWithSimpleMessage("Start frame media not found.".to_string())),
       Some(url) => Some(upload_to_seedance2pro(session, url).await?),
     }
   };
@@ -512,7 +510,7 @@ async fn upload_and_generate(
   let end_frame_url = match request.end_frame_media_token.as_ref() {
     None => None,
     Some(token) => match file_urls_by_token.get(token) {
-      None => return Err(CommonWebError::BadInputWithSimpleMessage("End frame media not found.".to_string())),
+      None => return Err(AdvancedCommonWebError::BadInputWithSimpleMessage("End frame media not found.".to_string())),
       Some(url) => Some(upload_to_seedance2pro(session, url).await?),
     }
   };
@@ -578,7 +576,7 @@ async fn upload_and_generate(
   let gen_response = generate_video(video_gen_args).await
     .map_err(|err| {
       warn!("Error calling seedance2pro generate_video: {:?}", err);
-      CommonWebError::ServerError
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   Ok(SeedanceGenerationResult {
@@ -594,7 +592,7 @@ async fn upload_reference_tokens_to_seedance2pro(
   file_urls_by_token: &HashMap<MediaFileToken, Url>,
   maybe_tokens: Option<&[MediaFileToken]>,
   label: &str,
-) -> Result<Option<Vec<String>>, CommonWebError> {
+) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
   let tokens = match maybe_tokens {
     None => return Ok(None),
     Some(tokens) if tokens.is_empty() => return Ok(None),
@@ -605,7 +603,7 @@ async fn upload_reference_tokens_to_seedance2pro(
 
   for token in tokens {
     match file_urls_by_token.get(token) {
-      None => return Err(CommonWebError::BadInputWithSimpleMessage(
+      None => return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
         format!("{} media not found: {:?}", label, token),
       )),
       Some(url) => {
@@ -620,7 +618,7 @@ async fn upload_reference_tokens_to_seedance2pro(
 async fn upload_to_seedance2pro(
   session: &Seedance2ProSession,
   our_cdn_url: &Url,
-) -> Result<String, CommonWebError> {
+) -> Result<String, AdvancedCommonWebError> {
   let extension = extract_extension_from_url(our_cdn_url, &ExtractExtensions::All)
       .map(|ext| ext.without_period().to_string())
       .unwrap_or_else(|| "png".to_string());
@@ -631,7 +629,7 @@ async fn upload_to_seedance2pro(
       .await
       .map_err(|err| {
         warn!("Error downloading media file from CDN: {:?}", err);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::from_anyhow_error(err)
       })?
       .to_vec();
 
@@ -643,7 +641,7 @@ async fn upload_to_seedance2pro(
       .await
       .map_err(|err| {
         warn!("Error preparing seedance2pro file upload: {:?}", err);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   let upload_result = upload_file(UploadFileArgs {
@@ -654,7 +652,7 @@ async fn upload_to_seedance2pro(
       .await
       .map_err(|err| {
         warn!("Error uploading file to seedance2pro: {:?}", err);
-        CommonWebError::ServerError
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   Ok(upload_result.public_url)

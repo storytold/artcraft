@@ -19,6 +19,18 @@ pub enum DatabaseQueryError {
   AnyhowError(anyhow::Error),
 }
 
+impl std::error::Error for DatabaseQueryError {}
+
+impl std::fmt::Display for DatabaseQueryError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      DatabaseQueryError::IdempotencyDuplicateKeyError => write!(f, "Idempotency duplicate key error"),
+      DatabaseQueryError::SqlxError(err) => write!(f, "SQLX error: {}", err),
+      DatabaseQueryError::AnyhowError(err) => write!(f, "Anyhow error: {}", err),
+    }
+  }
+}
+
 impl From<anyhow::Error> for DatabaseQueryError {
   fn from(err: anyhow::Error) -> Self {
     DatabaseQueryError::AnyhowError(err)
