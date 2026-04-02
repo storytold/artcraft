@@ -5,7 +5,7 @@ use crate::notification::notification_details::NotificationDetails;
 use crate::notification::notification_urgency::NotificationUrgency;
 
 pub struct NotificationDetailsBuilder {
-  pub(crate) title: String,
+  title: String,
   pub(crate) description: Option<String>,
   pub(crate) urgency: Option<NotificationUrgency>,
   pub(crate) event_time: DateTime<Utc>,

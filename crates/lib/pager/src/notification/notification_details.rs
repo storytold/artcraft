@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use std::fmt::{Debug, Display};
 
 use crate::notification::generate_deduplication_key::generate_deduplication_key;
-use crate::notification::untitled_notification_details_builder::UntitledNotificationDetailsBuilder;
+use crate::notification::notification_details_builder::NotificationDetailsBuilder;
 use crate::notification::notification_urgency::NotificationUrgency;
 
 /// Details for a pager notification.
@@ -49,8 +49,8 @@ pub struct NotificationDetails {
 }
 
 impl NotificationDetails {
-  pub fn builder() -> UntitledNotificationDetailsBuilder {
-    UntitledNotificationDetailsBuilder::new()
+  pub fn builder(title: String) -> NotificationDetailsBuilder {
+    NotificationDetailsBuilder::from_title(title)
   }
 
   pub fn to_deduplication_key(&self) -> String {
