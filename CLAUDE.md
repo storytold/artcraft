@@ -62,3 +62,14 @@ artcraft/
 - A mix of wreq and reqwest for Rust HTTP clients
 - TypeScript with Nx, React, Vite, Zustand, and Three.js
 - Use two spaces for indentation
+
+### File Layout
+
+Organize for top-to-bottom reading. Important things first, details later.
+
+- **Constants** at the top (after imports)
+- **Structs/enums** next; outer structs above inner sub-structs
+- **API types** in order: Request, Response, Error
+- **In impl blocks**: constructors first, then public methods, then private helpers
+- Private helpers go *below* the methods that call them
+- Among helpers: meatier logic above leaf-level formatters

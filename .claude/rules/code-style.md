@@ -11,6 +11,30 @@
 - Fields that are optional use the `maybe_` prefix: `maybe_creator_user_token`, `maybe_prompt_token`
 - When implementing `fmt::Display` for error types, use the pattern: `write!(f, "{:?}", self)`
 
+## File Layout (Top-to-Bottom Reading Order)
+
+Organize code so a human reading top-to-bottom encounters the most important things first and
+can drill down into details only when curious. Think of it like a newspaper: headline first,
+then the story, then the fine print.
+
+### Ordering within a file
+
+1. **Constants** at the top, right after imports.
+2. **Structs, enums, and type definitions** next. If a struct contains another struct, place
+   the outer/larger struct above the inner/smaller one.
+3. **Type ordering for API types**: Request, then Response (success), then Error.
+4. **`impl` blocks** after their type definitions.
+
+### Ordering within an `impl` block
+
+1. **Constructors** (`new`, `from_*`, `builder`) at the top.
+2. **Public methods** next — these are the main entry points a reader cares about.
+3. **Private helper methods** below public methods.
+   - Among helpers: place "meaty" helpers (substantial logic, direct continuations of the
+     public entry point) above "leaf" helpers (small formatters, simple lookups).
+   - A method that calls another method in the same file should appear *above* the method
+     it calls. This lets readers follow the call chain downward.
+
 ## Naming
 
 - Handler functions: `{verb}_{noun}_handler` (e.g. `get_health_check_handler`, `login_handler`)
