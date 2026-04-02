@@ -2,12 +2,18 @@
 -- noinspection SqlNoDataSourceInspectionForFile
 -- noinspection SqlResolveForFile
 
+-- Characters are reusable entities that can be referenced in video/image generations.
+-- A character is created from one or more reference images and registered with third-party
+-- systems (e.g. Kinovi/Seedance) that support character-based generation.
 CREATE TABLE characters (
   -- Not used for anything except replication (private, not even used in queries)
   id BIGINT(20) NOT NULL AUTO_INCREMENT,
 
   -- Public-facing "primary key" (PUBLIC)
   token VARCHAR(32) NOT NULL,
+
+  -- The type or "features" of the character.
+  character_type VARCHAR(32) DEFAULT NULL,
 
   -- Whether the character has been fully created and is available for use.
   -- A character may exist in the database before its creation job completes.
@@ -83,6 +89,7 @@ CREATE TABLE characters (
 
   PRIMARY KEY (id),
   UNIQUE KEY (token),
+  KEY index_character_type (character_type),
   KEY index_maybe_creator_user_token (maybe_creator_user_token),
   KEY index_is_active (is_active),
   KEY index_kinovi_character_id (kinovi_character_id),
