@@ -67,10 +67,11 @@ CREATE TABLE characters (
   -- Our job system token (if the character was created via a job).
   maybe_generic_inference_job_token VARCHAR(32) DEFAULT NULL,
 
-  -- TEMPORARY FOR GOING FAST :
-  -- IDEALLY WE MOVE THIS TO A SEPARATE TABLE.
-  -- Third party's job system token (if any).
-  maybe_kinovi_job_id VARCHAR(64) DEFAULT NULL,
+  -- Maybe this doesn't exist
+  -- -- TEMPORARY FOR GOING FAST :
+  -- -- IDEALLY WE MOVE THIS TO A SEPARATE TABLE.
+  -- -- Third party's job system token (if any).
+  -- maybe_kinovi_job_id VARCHAR(64) DEFAULT NULL,
 
   -- ========== TIMESTAMPS ==========
 
