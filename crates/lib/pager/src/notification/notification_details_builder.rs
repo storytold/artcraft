@@ -45,10 +45,6 @@ impl NotificationDetailsBuilder {
     }
   }
 
-  /// Create a builder from a boxed error.
-  ///
-  /// Sets the title to a placeholder and attaches the error object.
-  /// Callers should chain `.set_title()` to provide a meaningful title.
   /// Create a builder from a boxed error. Converts to `Arc` internally for shareability.
   pub fn from_boxed_error(error: Box<dyn std::error::Error + Send + Sync + 'static>) -> Self {
     Self::from_error(Arc::from(error))
