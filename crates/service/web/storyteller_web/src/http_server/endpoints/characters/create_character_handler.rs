@@ -127,7 +127,7 @@ pub async fn create_character_handler(
   let gen_result = generate_character(GenerateCharacterArgs {
     session: &session,
     name: name.clone(),
-    description: description.clone(),
+    description: description.clone().unwrap_or_else(|| "".to_string()),
     reference_image_url: seedance_image_url,
     is_public: false,
     host_override: None,
@@ -159,7 +159,7 @@ pub async fn create_character_handler(
 
   let character_token = create_pending_character(CreatePendingCharacterArgs {
     name: &name,
-    maybe_description: Some(&description),
+    maybe_description: description.as_deref(),
     maybe_original_upload_media_token: Some(&request.image_media_token),
     maybe_creator_user_token: Some(user_token),
     creator_ip_address: &ip_address,
@@ -185,7 +185,7 @@ pub async fn create_character_handler(
       maybe_creator_user_token: Some(user_token),
       maybe_avt_token: None,
       creator_ip_address: &ip_address,
-      creator_set_visibility: Visibility::Public,
+      creator_set_visibility: Visibility::Hidden,
       mysql_executor: &mut *transaction,
       phantom: PhantomData,
     }
