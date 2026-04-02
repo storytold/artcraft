@@ -9,7 +9,9 @@ pub fn alert_pager_and_return_err<T>(
   title: &str,
   err: anyhow::Error,
 ) -> anyhow::Result<T> {
-  let notification = NotificationDetailsBuilder::from_error_info(&err)
+  let err_message = format!("{:#}", err);
+
+  let notification = NotificationDetailsBuilder::from_error(err.into())
       .set_title(title.to_string())
       .set_urgency(Some(NotificationUrgency::Medium))
       .build();
@@ -18,5 +20,5 @@ pub fn alert_pager_and_return_err<T>(
     error!("Failed to enqueue pager alert: {:?}", pager_err);
   }
 
-  Err(err)
+  Err(anyhow::anyhow!(err_message))
 }

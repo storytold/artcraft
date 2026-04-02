@@ -45,6 +45,8 @@ impl ResponseError for FalWebhookError {
   }
 }
 
+impl std::error::Error for FalWebhookError {}
+
 // NB: Not using derive_more::Display since Clion doesn't understand it.
 impl fmt::Display for FalWebhookError {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -117,27 +119,32 @@ pub async fn fal_webhook_handler(
     }
   };
 
-  if let Err(ref err) = result {
-    error!("FAL webhook error for request_id {}: {:?}", request_id, err);
+  match result {
+    Ok(success) => Ok(success),
+    Err(err) => {
+      error!("FAL webhook error for request_id {}: {:?}", request_id, err);
 
-    let notification = NotificationDetailsBuilder::from_error_info(err)
-        .set_title("FAL webhook processing failed".to_string())
-        .set_description(Some(format!(
-          "FAL webhook failed for request_id: {}\n\nError: {:?}\n\nWebhook JSON Payload: {}",
-          request_id, err, raw_body,
-        )))
-        .set_third_party_id(Some(request_id.to_string()))
-        .set_urgency(Some(NotificationUrgency::High))
-        .set_http_method(Some(http_request.method().to_string()))
-        .set_http_path(Some(http_request.path().to_string()))
-        .build();
+      let description = format!(
+        "FAL webhook failed for request_id: {}\n\nError: {:?}\n\nWebhook JSON Payload: {}",
+        request_id, err, raw_body,
+      );
 
-    if let Err(pager_err) = server_state.pager.enqueue_page(notification) {
-      error!("Failed to enqueue FAL webhook pager alert: {:?}", pager_err);
+      let notification = NotificationDetailsBuilder::from_error(err.into())
+          .set_title("FAL webhook processing failed".to_string())
+          .set_description(Some(description))
+          .set_third_party_id(Some(request_id.to_string()))
+          .set_urgency(Some(NotificationUrgency::High))
+          .set_http_method(Some(http_request.method().to_string()))
+          .set_http_path(Some(http_request.path().to_string()))
+          .build();
+
+      if let Err(pager_err) = server_state.pager.enqueue_page(notification) {
+        error!("Failed to enqueue FAL webhook pager alert: {:?}", pager_err);
+      }
+
+      Err(FalWebhookError::ServerError)
     }
   }
-
-  result
 }
 
 /// Send a pager alert for early parse failures (before we have a request_id).

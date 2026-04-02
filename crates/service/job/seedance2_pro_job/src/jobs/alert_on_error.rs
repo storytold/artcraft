@@ -11,7 +11,9 @@ pub fn alert_pager_and_return_err<T>(
   err: anyhow::Error,
   job: Option<&PendingSeedance2ProJob>,
 ) -> anyhow::Result<T> {
-  let mut builder = NotificationDetailsBuilder::from_error_info(&err)
+  let err_message = format!("{:#}", err);
+
+  let mut builder = NotificationDetailsBuilder::from_error(err.into())
       .set_title(title.to_string())
       .set_urgency(Some(NotificationUrgency::Medium));
 
@@ -28,5 +30,5 @@ pub fn alert_pager_and_return_err<T>(
     error!("Failed to enqueue pager alert: {:?}", pager_err);
   }
 
-  Err(err)
+  Err(anyhow::anyhow!(err_message))
 }
