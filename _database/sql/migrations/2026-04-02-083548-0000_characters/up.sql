@@ -13,7 +13,7 @@ CREATE TABLE characters (
   token VARCHAR(32) NOT NULL,
 
   -- The type or "features" of the character.
-  character_type VARCHAR(32) DEFAULT NULL,
+  character_type VARCHAR(24) DEFAULT NULL,
 
   -- Whether the character has been fully created and is available for use.
   -- A character may exist in the database before its creation job completes.
@@ -91,10 +91,10 @@ CREATE TABLE characters (
   UNIQUE KEY (token),
   KEY index_character_type (character_type),
   KEY index_maybe_creator_user_token (maybe_creator_user_token),
+  KEY index_maybe_creator_user_token_active (maybe_creator_user_token, is_active),
   KEY index_is_active (is_active),
   KEY index_kinovi_character_id (kinovi_character_id),
   KEY index_maybe_generic_inference_job_token (maybe_generic_inference_job_token),
-  KEY index_maybe_kinovi_job_id (maybe_kinovi_job_id),
   KEY index_created_at (created_at),
   KEY index_deleted_at (deleted_at)
 
