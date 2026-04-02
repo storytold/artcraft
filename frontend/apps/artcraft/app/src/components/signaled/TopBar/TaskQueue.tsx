@@ -51,6 +51,7 @@ import {
 import { coverImageCache } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useCreditsState } from "@storyteller/credits";
 import { getMetaForTask, cleanupOldEntries } from "./taskEnqueueMeta";
+import { twMerge } from "tailwind-merge";
 
 type InProgressTask = {
   id: string;
@@ -103,6 +104,90 @@ const formatTimeLeft = (ms: number): string => {
   return `~ ${seconds}s left`;
 };
 
+const PromptLine = ({
+  prompt,
+  className,
+}: {
+  prompt: string;
+  className?: string;
+}) => {
+  const [marqueePlaying, setMarqueePlaying] = useState(false);
+  const [promptOverflows, setPromptOverflows] = useState(false);
+  const promptRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = promptRef.current;
+    if (el) setPromptOverflows(el.scrollWidth > el.clientWidth);
+  }, [prompt]);
+
+  return (
+    <Tooltip
+      content={prompt.length > 300 ? prompt.slice(0, 300) + "\u2026" : prompt}
+      position="bottom"
+      strategy="fixed"
+      className="max-w-[280px] text-wrap text-xs"
+      zIndex={50}
+      delay={400}
+    >
+      <div
+        className={twMerge("mt-1 overflow-hidden", className)}
+        onMouseEnter={
+          promptOverflows ? () => setMarqueePlaying(true) : undefined
+        }
+        onMouseLeave={
+          promptOverflows ? () => setMarqueePlaying(false) : undefined
+        }
+      >
+        <div
+          ref={promptRef}
+          key={marqueePlaying ? "playing" : "idle"}
+          className="whitespace-nowrap text-[11px] italic text-base-fg/40"
+          style={
+            marqueePlaying
+              ? {
+                  animation: "marquee 8s linear infinite",
+                  animationDelay: "0.5s",
+                  animationFillMode: "both",
+                }
+              : undefined
+          }
+        >
+          {prompt}
+        </div>
+      </div>
+    </Tooltip>
+  );
+};
+
+const CopyPromptButton = ({ prompt }: { prompt: string }) => {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Tooltip
+      content={copied ? "Copied!" : "Copy prompt"}
+      position="bottom"
+      strategy="fixed"
+      className="text-xs"
+      zIndex={50}
+      delay={300}
+    >
+      <button
+        className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+        aria-label="Copy prompt"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(prompt);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
+        }}
+      >
+        <FontAwesomeIcon
+          icon={copied ? faCheck : faCopy}
+          className={copied ? "text-green-400" : ""}
+        />
+      </button>
+    </Tooltip>
+  );
+};
+
 const InProgressCard = ({
   task,
   onDismiss,
@@ -118,61 +203,40 @@ const InProgressCard = ({
       ? formatTimeLeft(task.estimatedTimeLeftMs)
       : null;
   const isSeedance2 = task.modelType === "seedance_2p0";
-  const hasRefImages =
-    task.refImageUrls && task.refImageUrls.length > 0;
+  const hasRefImages = task.refImageUrls && task.refImageUrls.length > 0;
 
   const thumbnailContent = hasRefImages ? (
-    <Tooltip
-      content={task.prompt || ""}
-      position="bottom"
-      strategy="fixed"
-      className="max-w-[320px] text-wrap text-xs"
-      zIndex={50}
-      delay={200}
-      disabled={!task.prompt}
-    >
-      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded">
-        <img
-          src={task.refImageUrls![0]}
-          alt="Reference"
-          className="h-full w-full object-cover opacity-50"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-        <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <FontAwesomeIcon
-            icon={faSpinnerThird}
-            className="animate-spin text-white/80"
-            size="lg"
-          />
-        </div>
-        {task.refImageUrls!.length > 1 && (
-          <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
-            +{task.refImageUrls!.length - 1}
-          </div>
-        )}
-      </div>
-    </Tooltip>
-  ) : (
-    <Tooltip
-      content={task.prompt || ""}
-      position="bottom"
-      strategy="fixed"
-      className="max-w-[320px] text-wrap text-xs"
-      zIndex={50}
-      delay={200}
-      disabled={!task.prompt}
-    >
-      <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+    <div className="relative h-[86px] w-[86px] shrink-0 overflow-hidden rounded">
+      <img
+        src={task.refImageUrls![0]}
+        alt="Reference"
+        className="h-full w-full object-cover opacity-50"
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+        }}
+      />
+      <div className="absolute inset-0 bg-black/30" />
+      <div className="absolute inset-0 flex items-center justify-center">
         <FontAwesomeIcon
           icon={faSpinnerThird}
-          className="animate-spin text-base-fg/60"
+          className="animate-spin text-white/80"
           size="lg"
         />
       </div>
-    </Tooltip>
+      {task.refImageUrls!.length > 1 && (
+        <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
+          +{task.refImageUrls!.length - 1}
+        </div>
+      )}
+    </div>
+  ) : (
+    <div className="flex h-[86px] w-[86px] shrink-0 items-center justify-center overflow-hidden rounded bg-ui-controls">
+      <FontAwesomeIcon
+        icon={faSpinnerThird}
+        className="animate-spin text-base-fg/60"
+        size="lg"
+      />
+    </div>
   );
 
   return (
@@ -199,7 +263,7 @@ const InProgressCard = ({
                 </Tooltip>
               )}
             </div>
-            <div className="ml-2 shrink-0 text-xs tabular-nums text-base-fg/60">
+            <div className="ml-2 shrink-0 text-[11px] tabular-nums text-base-fg/60">
               {progressPercent}%
             </div>
           </div>
@@ -219,21 +283,25 @@ const InProgressCard = ({
             </div>
           </div>
           {timeLabel && (
-            <div className="mt-1 text-xs text-base-fg/50">{timeLabel}</div>
+            <div className="mt-1 text-[11px] text-base-fg/50">{timeLabel}</div>
+          )}
+          {task.prompt && <PromptLine prompt={task.prompt} className="mt-0" />}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {task.prompt && <CopyPromptButton prompt={task.prompt} />}
+          {onDismiss && (
+            <button
+              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              aria-label="Dismiss"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss();
+              }}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
           )}
         </div>
-        {onDismiss && (
-          <button
-            className="ml-auto flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
-            aria-label="Dismiss"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDismiss();
-            }}
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
-        )}
       </div>
     </div>
   );
@@ -255,39 +323,29 @@ const CompletedCard = ({
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : -1}
     >
-      <Tooltip
-        content={task.prompt || ""}
-        position="bottom"
-        strategy="fixed"
-        className="max-w-[320px] text-wrap text-xs"
-        zIndex={50}
-        delay={200}
-        disabled={!task.prompt}
-      >
-        <div className="h-[72px] w-[72px] shrink-0 overflow-hidden rounded bg-ui-controls">
-          {task.thumbnailUrl ? (
-            <img
-              src={task.thumbnailUrl}
-              alt={task.title}
-              onError={(e) => {
-                e.currentTarget.src = getPlaceholderForMediaClass(
-                  task.mediaFileClass,
-                );
-                e.currentTarget.style.opacity = "0.3";
-                // Set the `data-brokenurl` property for debugging the broken images:
-                (e.currentTarget as HTMLImageElement).dataset.brokenurl =
-                  task.thumbnailUrl;
-              }}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">
-              Done
-            </div>
-          )}
-        </div>
-      </Tooltip>
-      <div className="min-w-0">
+      <div className="h-[86px] w-[86px] shrink-0 overflow-hidden rounded bg-ui-controls">
+        {task.thumbnailUrl ? (
+          <img
+            src={task.thumbnailUrl}
+            alt={task.title}
+            onError={(e) => {
+              e.currentTarget.src = getPlaceholderForMediaClass(
+                task.mediaFileClass,
+              );
+              e.currentTarget.style.opacity = "0.3";
+              // Set the `data-brokenurl` property for debugging the broken images:
+              (e.currentTarget as HTMLImageElement).dataset.brokenurl =
+                task.thumbnailUrl;
+            }}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-[10px] text-base-fg/40">
+            Done
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-base-fg/90">
           {task.title}
         </div>
@@ -301,19 +359,23 @@ const CompletedCard = ({
             {task.completedAt.toISOString()}
           </div>
         )}
+        {task.prompt && <PromptLine prompt={task.prompt} />}
       </div>
-      {onDismiss && (
-        <button
-          className="ml-auto flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
-          aria-label="Dismiss"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDismiss();
-          }}
-        >
-          <FontAwesomeIcon icon={faXmark} />
-        </button>
-      )}
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        {task.prompt && <CopyPromptButton prompt={task.prompt} />}
+        {onDismiss && (
+          <button
+            className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+            aria-label="Dismiss"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -346,70 +408,41 @@ const FailedCard = ({
   task: FailedTask;
   onDismiss?: () => void;
 }) => {
-  const [copied, setCopied] = useState(false);
-  const [marqueePlaying, setMarqueePlaying] = useState(false);
-  const [promptOverflows, setPromptOverflows] = useState(false);
-  const promptRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = promptRef.current;
-    if (el) setPromptOverflows(el.scrollWidth > el.clientWidth);
-  }, [task.prompt]);
   const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
-  const hasRefImages =
-    task.refImageUrls && task.refImageUrls.length > 0;
+  const hasRefImages = task.refImageUrls && task.refImageUrls.length > 0;
 
   const thumbnailContent = hasRefImages ? (
-    <Tooltip
-      content={task.prompt || ""}
-      position="bottom"
-      strategy="fixed"
-      className="max-w-[320px] text-wrap text-xs"
-      zIndex={50}
-      delay={200}
-      disabled={!task.prompt}
-    >
-      <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded">
-        <img
-          src={task.refImageUrls![0]}
-          alt="Reference"
-          className="h-full w-full object-cover opacity-50"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-        <div className="absolute inset-0 bg-red-900/40" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <FontAwesomeIcon
-            icon={faCircleExclamation}
-            className="text-red-400"
-            size="lg"
-          />
-        </div>
-        {task.refImageUrls!.length > 1 && (
-          <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
-            +{task.refImageUrls!.length - 1}
-          </div>
-        )}
-      </div>
-    </Tooltip>
-  ) : (
-    <Tooltip
-      content={task.prompt || ""}
-      position="bottom"
-      strategy="fixed"
-      className="max-w-[320px] text-wrap text-xs"
-      zIndex={50}
-      delay={200}
-      disabled={!task.prompt}
-    >
-      <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
+    <div className="relative h-[86px] w-[86px] shrink-0 overflow-hidden rounded">
+      <img
+        src={task.refImageUrls![0]}
+        alt="Reference"
+        className="h-full w-full object-cover opacity-50"
+        onError={(e) => {
+          e.currentTarget.style.display = "none";
+        }}
+      />
+      <div className="absolute inset-0 bg-red-900/40" />
+      <div className="absolute inset-0 flex items-center justify-center">
         <FontAwesomeIcon
           icon={faCircleExclamation}
           className="text-red-400"
           size="lg"
         />
       </div>
-    </Tooltip>
+      {task.refImageUrls!.length > 1 && (
+        <div className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] text-white/80">
+          +{task.refImageUrls!.length - 1}
+        </div>
+      )}
+    </div>
+  ) : (
+    <div className="flex h-[86px] w-[86px] shrink-0 items-center justify-center overflow-hidden rounded bg-red-500/10">
+      <FontAwesomeIcon
+        icon={faCircleExclamation}
+        className="text-red-400"
+        size="lg"
+      />
+    </div>
   );
 
   return (
@@ -434,90 +467,37 @@ const FailedCard = ({
             {task.failureReason && (
               <div className="min-w-0 overflow-hidden">
                 <Tooltip
-                  content={task.failureReason}
+                  content={
+                    task.failureMessage ? (
+                      <div>
+                        <div className="font-semibold">
+                          {task.failureReason}
+                        </div>
+                        <div className="mt-0.5 font-normal opacity-80">
+                          {task.failureMessage}
+                        </div>
+                      </div>
+                    ) : (
+                      task.failureReason
+                    )
+                  }
                   position="bottom"
                   strategy="fixed"
                   className="max-w-[280px] text-wrap bg-danger text-xs"
                   zIndex={50}
                   delay={300}
                 >
-                  <div className="truncate text-[11px] text-red-400/60">
+                  <div className="cursor-default truncate text-[11px] text-red-400/80 underline decoration-red-400/30 decoration-dashed underline-offset-2">
                     {task.failureReason}
                   </div>
                 </Tooltip>
               </div>
             )}
           </div>
-          {task.failureMessage && (
-            <div className="overflow-hidden">
-              <Tooltip
-                content={task.failureMessage}
-                position="bottom"
-                strategy="fixed"
-                className="max-w-[280px] text-wrap text-xs"
-                zIndex={50}
-                delay={200}
-              >
-                <div className="mt-0.5 cursor-default truncate text-[11px] text-base-fg/40">
-                  {task.failureMessage}
-                </div>
-              </Tooltip>
-            </div>
-          )}
-          {task.prompt && (
-            <Tooltip
-              content={task.prompt.length > 300 ? task.prompt.slice(0, 300) + "…" : task.prompt}
-              position="bottom"
-              strategy="fixed"
-              className="max-w-[280px] text-wrap text-xs"
-              zIndex={50}
-              delay={400}
-            >
-              <div
-                className="mt-1 overflow-hidden"
-                onMouseEnter={promptOverflows ? () => setMarqueePlaying(true) : undefined}
-                onMouseLeave={promptOverflows ? () => setMarqueePlaying(false) : undefined}
-              >
-                <div
-                  ref={promptRef}
-                  key={marqueePlaying ? "playing" : "idle"}
-                  className="whitespace-nowrap text-[11px] italic text-base-fg/40"
-                  style={marqueePlaying ? {
-                    animation: "marquee 8s linear infinite",
-                    animationDelay: "0.5s",
-                    animationFillMode: "both",
-                  } : undefined}
-                >
-                  {task.prompt}
-                </div>
-              </div>
-            </Tooltip>
-          )}
+          {task.prompt && <PromptLine prompt={task.prompt} />}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {task.prompt && (
-            <Tooltip
-              content={copied ? "Copied!" : "Copy prompt"}
-              position="bottom"
-              strategy="fixed"
-              className="text-xs"
-              zIndex={50}
-              delay={300}
-            >
-              <button
-                className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
-                aria-label="Copy prompt"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.clipboard.writeText(task.prompt!);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 3000);
-                }}
-              >
-                <FontAwesomeIcon icon={copied ? faCheck : faCopy} className={copied ? "text-green-400" : ""} />
-              </button>
-            </Tooltip>
-          )}
+          {task.prompt && <CopyPromptButton prompt={task.prompt} />}
           {onDismiss && (
             <button
               className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
@@ -566,7 +546,7 @@ export const TaskQueue = () => {
     primaryActionText: "",
     primaryActionIcon: faTrashAlt,
     primaryActionBtnClassName: "",
-    onConfirm: async () => { },
+    onConfirm: async () => {},
   });
 
   const handleClearCompleted = (onSuccess?: () => void) => {
@@ -724,8 +704,8 @@ export const TaskQueue = () => {
             if (!duration) {
               const actualModel = t.model_type
                 ? ALL_MODELS_LIST.find(
-                  (m) => m.tauriId === t.model_type || m.id === t.model_type,
-                )
+                    (m) => m.tauriId === t.model_type || m.id === t.model_type,
+                  )
                 : undefined;
               duration =
                 actualModel?.progressBarTime ??
@@ -1024,7 +1004,7 @@ export const TaskQueue = () => {
           <PopoverMenu
             mode="default"
             buttonClassName="h-[38px] w-[38px] !p-0 relative"
-            panelClassName="w-[360px] p-2 bg-ui-panel mt-2.5"
+            panelClassName="w-[400px] p-2 bg-ui-panel mt-2.5"
             position="bottom"
             align="end"
             triggerIcon={
