@@ -11,6 +11,8 @@ import {
   faBomb,
   faCircleExclamation,
   faTriangleExclamation,
+  faCopy,
+  faCheck,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Modal } from "@storyteller/ui-modal";
 import {
@@ -222,7 +224,7 @@ const InProgressCard = ({
         </div>
         {onDismiss && (
           <button
-            className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
+            className="ml-auto flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
             aria-label="Dismiss"
             onClick={(e) => {
               e.stopPropagation();
@@ -302,7 +304,7 @@ const CompletedCard = ({
       </div>
       {onDismiss && (
         <button
-          className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
+          className="ml-auto flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
           aria-label="Dismiss"
           onClick={(e) => {
             e.stopPropagation();
@@ -344,6 +346,14 @@ const FailedCard = ({
   task: FailedTask;
   onDismiss?: () => void;
 }) => {
+  const [copied, setCopied] = useState(false);
+  const [marqueePlaying, setMarqueePlaying] = useState(false);
+  const [promptOverflows, setPromptOverflows] = useState(false);
+  const promptRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = promptRef.current;
+    if (el) setPromptOverflows(el.scrollWidth > el.clientWidth);
+  }, [task.prompt]);
   const statusLabel = FAILED_STATUS_LABEL[task.status] || "Failed";
   const hasRefImages =
     task.refImageUrls && task.refImageUrls.length > 0;
@@ -454,19 +464,73 @@ const FailedCard = ({
               </Tooltip>
             </div>
           )}
+          {task.prompt && (
+            <Tooltip
+              content={task.prompt.length > 300 ? task.prompt.slice(0, 300) + "…" : task.prompt}
+              position="bottom"
+              strategy="fixed"
+              className="max-w-[280px] text-wrap text-xs"
+              zIndex={50}
+              delay={400}
+            >
+              <div
+                className="mt-1 overflow-hidden"
+                onMouseEnter={promptOverflows ? () => setMarqueePlaying(true) : undefined}
+                onMouseLeave={promptOverflows ? () => setMarqueePlaying(false) : undefined}
+              >
+                <div
+                  ref={promptRef}
+                  key={marqueePlaying ? "playing" : "idle"}
+                  className="whitespace-nowrap text-[11px] italic text-base-fg/40"
+                  style={marqueePlaying ? {
+                    animation: "marquee 8s linear infinite",
+                    animationDelay: "0.5s",
+                    animationFillMode: "both",
+                  } : undefined}
+                >
+                  {task.prompt}
+                </div>
+              </div>
+            </Tooltip>
+          )}
         </div>
-        {onDismiss && (
-          <button
-            className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
-            aria-label="Dismiss"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDismiss();
-            }}
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
-        )}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {task.prompt && (
+            <Tooltip
+              content={copied ? "Copied!" : "Copy prompt"}
+              position="bottom"
+              strategy="fixed"
+              className="text-xs"
+              zIndex={50}
+              delay={300}
+            >
+              <button
+                className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+                aria-label="Copy prompt"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(task.prompt!);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 3000);
+                }}
+              >
+                <FontAwesomeIcon icon={copied ? faCheck : faCopy} className={copied ? "text-green-400" : ""} />
+              </button>
+            </Tooltip>
+          )}
+          {onDismiss && (
+            <button
+              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              aria-label="Dismiss"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss();
+              }}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

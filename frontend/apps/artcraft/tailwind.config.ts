@@ -22,10 +22,15 @@ export default {
           "0%": { backgroundPosition: "200% 0" },
           "100%": { backgroundPosition: "-200% 0" },
         },
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-100%)" },
+        },
       },
       animation: {
         fadeIn: "fadeIn 0.2s ease-in-out",
         shimmer: "shimmer 2s ease-in-out infinite",
+        marquee: "marquee 8s linear infinite paused",
       },
     },
     colors: {
