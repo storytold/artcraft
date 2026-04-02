@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use std::fmt::{Debug, Display};
 
 use crate::notification::generate_deduplication_key::generate_deduplication_key;
+use crate::notification::notification_details_builder::NotificationDetailsBuilder;
 use crate::notification::notification_urgency::NotificationUrgency;
 
 /// Details for a pager notification.
@@ -48,48 +49,12 @@ pub struct NotificationDetails {
 }
 
 impl NotificationDetails {
+  pub fn builder() -> NotificationDetailsBuilder {
+    NotificationDetailsBuilder::from_title("untitled notification".to_string())
+  }
+
   pub fn to_deduplication_key(&self) -> String {
     generate_deduplication_key(self)
-  }
-
-  /// Create a notification with a title and description.
-  #[deprecated(note = "Use NotificationDetailsBuilder::from_title() instead")]
-  pub fn with_title_and_description(title: String, description: String) -> Self {
-    Self {
-      title,
-      description: Some(description),
-      urgency: None,
-      event_time: Utc::now(),
-      maybe_error: None,
-      is_from_error: false,
-      http_method: None,
-      http_path: None,
-      http_status_code: None,
-      user_token: None,
-      media_file_token: None,
-      inference_job_token: None,
-      third_party_id: None,
-    }
-  }
-
-  /// Create a notification with just a title.
-  #[deprecated(note = "Use NotificationDetailsBuilder::from_title() instead")]
-  pub fn with_title(title: String) -> Self {
-    Self {
-      title,
-      description: None,
-      urgency: None,
-      event_time: Utc::now(),
-      maybe_error: None,
-      is_from_error: false,
-      http_method: None,
-      http_path: None,
-      http_status_code: None,
-      user_token: None,
-      media_file_token: None,
-      inference_job_token: None,
-      third_party_id: None,
-    }
   }
 
   /// Create a notification from any error type.
