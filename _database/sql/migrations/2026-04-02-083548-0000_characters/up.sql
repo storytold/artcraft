@@ -48,13 +48,13 @@ CREATE TABLE characters (
   -- IDEALLY WE MOVE THIS TO A SEPARATE TABLE.
   -- The identifier in the third-party system.
   -- e.g. Kinovi's "char_1774752056469_2wlxoq"
-  kinovi_character_id VARCHAR(64) NOT NULL,
+  kinovi_character_id VARCHAR(64) DEFAULT NULL,
 
   -- TEMPORARY FOR GOING FAST :
   -- IDEALLY WE MOVE THIS TO A SEPARATE TABLE.
   -- The name used by the third party.
   -- Important for Kinovi since characters are referenced by name in prompts.
-  kinovi_name VARCHAR(255) NOT NULL,
+  kinovi_name VARCHAR(255) DEFAULT NULL,
 
   -- TEMPORARY FOR GOING FAST :
   -- IDEALLY WE MOVE THIS TO A SEPARATE TABLE.
