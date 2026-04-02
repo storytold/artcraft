@@ -7,17 +7,20 @@ use crate::notification::notification_urgency::NotificationUrgency;
 pub struct NotificationDetailsBuilder {
   title: String,
   description: Option<String>,
+  urgency: Option<NotificationUrgency>,
   event_time: DateTime<Utc>,
+
+  maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+  is_from_error: bool,
+
   http_method: Option<String>,
   http_path: Option<String>,
   http_status_code: Option<u16>,
-  is_from_error: bool,
-  urgency: Option<NotificationUrgency>,
+
   user_token: Option<String>,
   media_file_token: Option<String>,
   inference_job_token: Option<String>,
   third_party_id: Option<String>,
-  maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
 }
 
 impl NotificationDetailsBuilder {
@@ -26,17 +29,17 @@ impl NotificationDetailsBuilder {
     Self {
       title,
       description: None,
+      urgency: None,
       event_time: Utc::now(),
+      maybe_error: None,
+      is_from_error: false,
       http_method: None,
       http_path: None,
       http_status_code: None,
-      is_from_error: false,
-      urgency: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
-      maybe_error: None,
     }
   }
 
@@ -53,17 +56,17 @@ impl NotificationDetailsBuilder {
     Self {
       title: details.title,
       description: details.description,
+      urgency: None,
       event_time: details.event_time,
+      maybe_error: None,
+      is_from_error: true,
       http_method: None,
       http_path: None,
       http_status_code: None,
-      is_from_error: true,
-      urgency: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
-      maybe_error: None,
     }
   }
 
@@ -74,6 +77,16 @@ impl NotificationDetailsBuilder {
 
   pub fn set_description(mut self, description: Option<String>) -> Self {
     self.description = description;
+    self
+  }
+
+  pub fn set_urgency(mut self, urgency: Option<NotificationUrgency>) -> Self {
+    self.urgency = urgency;
+    self
+  }
+
+  pub fn set_error(mut self, error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>) -> Self {
+    self.maybe_error = error;
     self
   }
 
@@ -89,11 +102,6 @@ impl NotificationDetailsBuilder {
 
   pub fn set_http_status_code(mut self, http_status_code: Option<u16>) -> Self {
     self.http_status_code = http_status_code;
-    self
-  }
-
-  pub fn set_urgency(mut self, urgency: Option<NotificationUrgency>) -> Self {
-    self.urgency = urgency;
     self
   }
 
@@ -117,26 +125,21 @@ impl NotificationDetailsBuilder {
     self
   }
 
-  pub fn set_error(mut self, error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>) -> Self {
-    self.maybe_error = error;
-    self
-  }
-
   pub fn build(self) -> NotificationDetails {
     NotificationDetails {
       title: self.title,
       description: self.description,
+      urgency: self.urgency,
       event_time: self.event_time,
+      maybe_error: self.maybe_error,
+      is_from_error: self.is_from_error,
       http_method: self.http_method,
       http_path: self.http_path,
       http_status_code: self.http_status_code,
-      is_from_error: self.is_from_error,
-      urgency: self.urgency,
       user_token: self.user_token,
       media_file_token: self.media_file_token,
       inference_job_token: self.inference_job_token,
       third_party_id: self.third_party_id,
-      maybe_error: self.maybe_error,
     }
   }
 }

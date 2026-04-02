@@ -13,8 +13,17 @@ pub struct NotificationDetails {
   /// Full details for the alert.
   pub description: Option<String>,
 
+  /// Urgency level for the notification.
+  pub urgency: Option<NotificationUrgency>,
+
   /// When the event occurred.
   pub event_time: DateTime<Utc>,
+
+  /// The error that triggered this notification, if any.
+  pub maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
+
+  /// Whether this notification originated from an error.
+  pub is_from_error: bool,
 
   /// HTTP method associated with the event, if any.
   pub http_method: Option<String>,
@@ -24,12 +33,6 @@ pub struct NotificationDetails {
 
   /// HTTP status code associated with the event, if any.
   pub http_status_code: Option<u16>,
-
-  /// Whether this notification originated from an error.
-  pub is_from_error: bool,
-
-  /// Urgency level for the notification.
-  pub urgency: Option<NotificationUrgency>,
 
   /// User token associated with the event, if any.
   pub user_token: Option<String>,
@@ -42,9 +45,6 @@ pub struct NotificationDetails {
 
   /// Third-party identifier associated with the event, if any.
   pub third_party_id: Option<String>,
-
-  /// The error that triggered this notification, if any.
-  pub maybe_error: Option<Box<dyn std::error::Error + Send + Sync + 'static>>,
 }
 
 impl NotificationDetails {
@@ -58,17 +58,17 @@ impl NotificationDetails {
     Self {
       title,
       description: Some(description),
+      urgency: None,
       event_time: Utc::now(),
+      maybe_error: None,
+      is_from_error: false,
       http_method: None,
       http_path: None,
       http_status_code: None,
-      is_from_error: false,
-      urgency: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
-      maybe_error: None,
     }
   }
 
@@ -78,17 +78,17 @@ impl NotificationDetails {
     Self {
       title,
       description: None,
+      urgency: None,
       event_time: Utc::now(),
+      maybe_error: None,
+      is_from_error: false,
       http_method: None,
       http_path: None,
       http_status_code: None,
-      is_from_error: false,
-      urgency: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
-      maybe_error: None,
     }
   }
 
@@ -148,17 +148,17 @@ impl NotificationDetails {
     Self {
       title,
       description: Some(description),
+      urgency: None,
       event_time,
+      maybe_error: None,
+      is_from_error: true,
       http_method: None,
       http_path: None,
       http_status_code: None,
-      is_from_error: true,
-      urgency: None,
       user_token: None,
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
-      maybe_error: None,
     }
   }
 
