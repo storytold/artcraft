@@ -5,6 +5,7 @@ use crate::error::seedance2pro_generic_api_error::Seedance2ProGenericApiError;
 use crate::error::seedance2pro_specific_api_error::Seedance2ProSpecificApiError;
 use crate::requests::generate_video::request_types::*;
 use crate::requests::kinovi_host::{KinoviHost, resolve_host};
+use crate::utils::categorize_seedance2pro_error::categorize_seedance2pro_error;
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
 use log::info;
 use wreq::Client;
@@ -308,10 +309,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
   info!("Response status: {}, body: {}", status, response_body);
 
   if !status.is_success() {
-    return Err(Seedance2ProGenericApiError::UncategorizedBadResponseWithStatusAndBody {
-      status_code: status,
-      body: response_body,
-    }.into());
+    return Err(categorize_seedance2pro_error(status, response_body));
   }
 
   let batch_response: Vec<BatchResponseItem> = serde_json::from_str(&response_body)
