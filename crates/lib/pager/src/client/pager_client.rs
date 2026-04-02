@@ -81,6 +81,41 @@ impl PagerClient {
     matches!(self.client_config, PagerClientConfig::NoOp)
   }
 
+  /// Build structured labels from the client config and notification fields.
+  fn build_labels(&self, notification: &NotificationDetails) -> Option<Vec<(String, String)>> {
+    let mut labels: Vec<(String, String)> = Vec::new();
+
+    if let Some(name) = &self.application_name {
+      labels.push(("application_name".to_string(), name.clone()));
+    }
+
+    if let Some(id) = &self.service_id {
+      labels.push(("service_id".to_string(), id.clone()));
+    }
+
+    if let Some(env) = &self.environment {
+      labels.push(("environment".to_string(), env.clone()));
+    }
+
+    if let Some(h) = &self.hostname {
+      labels.push(("hostname".to_string(), h.clone()));
+    }
+
+    if let Some(method) = &notification.http_method {
+      labels.push(("http_method".to_string(), method.clone()));
+    }
+
+    if let Some(path) = &notification.http_path {
+      labels.push(("http_path".to_string(), path.clone()));
+    }
+
+    if let Some(status_code) = notification.http_status_code {
+      labels.push(("http_status_code".to_string(), status_code.to_string()));
+    }
+
+    if labels.is_empty() { None } else { Some(labels) }
+  }
+
   /// Send a page immediately. Returns `Ok(None)` for NoOp.
   pub async fn send_page(&self, notification: &NotificationDetails) -> Result<Option<PageSentResult>, PagerError> {
     match &self.client_config {
@@ -115,92 +150,15 @@ impl PagerClient {
 
     debug!("Sending page via Rootly (source={}): {}", source, notification.title);
 
-    let mut labels: Vec<(String, String)> = Vec::new();
+    // Build labels for Rootly's structured metadata.
+    let labels = self.build_labels(notification);
 
-    if let Some(name) = &self.application_name {
-      labels.push(("application_name".to_string(), name.clone()));
-    }
-
-    if let Some(id) = &self.service_id {
-      labels.push(("service_id".to_string(), id.clone()));
-    }
-
-    if let Some(env) = &self.environment {
-      labels.push(("environment".to_string(), env.clone()));
-    }
-
-    if let Some(h) = &self.hostname {
-      labels.push(("hostname".to_string(), h.clone()));
-    }
-
-    if let Some(method) = &notification.http_method {
-      labels.push(("http_method".to_string(), method.clone()));
-    }
-
-    if let Some(path) = &notification.http_path {
-      labels.push(("http_path".to_string(), path.clone()));
-    }
-
-    if let Some(status_code) = notification.http_status_code {
-      labels.push(("http_status_code".to_string(), status_code.to_string()));
-    }
-
-    let labels = if labels.is_empty() { None } else { Some(labels) };
-
-    // Enrich the description with context and hostname if present.
-    let description = match &notification.description {
-      Some(desc) => {
-        let mut parts = vec![desc.clone()];
-
-        match (&self.application_name, &self.service_id) {
-          (Some(name), Some(id)) => {
-            parts.push(format!("Application: {} (service_id: {})", name, id));
-          }
-          (Some(name), None) => {
-            parts.push(format!("Application: {}", name));
-          }
-          (None, Some(id)) => {
-            parts.push(format!("Service ID: {}", id));
-          }
-          (None, None) => {}
-        }
-
-        if let Some(method) = &notification.http_method {
-          parts.push(format!("HTTP Method: {}", method));
-        }
-
-        if let Some(path) = &notification.http_path {
-          parts.push(format!("HTTP Path: {}", path));
-        }
-
-        if let Some(status_code) = notification.http_status_code {
-          parts.push(format!("HTTP Status Code: {}", status_code));
-        }
-
-        if let Some(user_token) = &notification.user_token {
-          parts.push(format!("User Token: {}", user_token));
-        }
-
-        if let Some(media_file_token) = &notification.media_file_token {
-          parts.push(format!("Media File Token: {}", media_file_token));
-        }
-
-        if let Some(inference_job_token) = &notification.inference_job_token {
-          parts.push(format!("Inference Job Token: {}", inference_job_token));
-        }
-
-        if let Some(third_party_id) = &notification.third_party_id {
-          parts.push(format!("Third Party ID: {}", third_party_id));
-        }
-
-        if let Some(h) = &self.hostname {
-          parts.push(format!("Hostname: {}", h));
-        }
-
-        Some(parts.join("\n\n"))
-      }
-      None => None,
-    };
+    // Build the enriched description from the notification's atomic sections.
+    let description = notification.build_enriched_description(
+      self.application_name.as_deref(),
+      self.service_id.as_deref(),
+      self.hostname.as_deref(),
+    );
 
     // https://docs.rootly.com/api-reference/alerts/creates-an-alert
     let result = create_alert(CreateAlertArgs {
