@@ -3,6 +3,7 @@ use log::info;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
 
+use enums::by_table::characters::character_type::CharacterType;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -12,6 +13,9 @@ use tokens::tokens::users::UserToken;
 pub struct CreatePendingCharacterArgs<'e, 'c, E>
   where E: 'e + Executor<'c, Database = MySql>
 {
+  /// The type of character (e.g. KinoviSeedance).
+  pub character_type: CharacterType,
+
   /// User's display name for the character (truncated to 255 chars by caller).
   pub name: &'e str,
 
@@ -56,6 +60,7 @@ pub async fn create_pending_character<'e, 'c: 'e, E>(
 INSERT INTO characters
 SET
   token = ?,
+  character_type = ?,
   is_active = false,
   name = ?,
   maybe_description = ?,
@@ -70,6 +75,7 @@ SET
   maybe_generic_inference_job_token = ?
     "#,
     token.as_str(),
+    args.character_type.to_str(),
     args.name,
     args.maybe_description,
     args.maybe_original_upload_media_token.map(|t| t.as_str()),

@@ -1,6 +1,7 @@
 // ===== MySql =====
 pub mod audit_logs;
 pub mod batch_generations;
+pub mod characters;
 pub mod beta_keys;
 pub mod comments;
 pub mod email_sender_jobs;

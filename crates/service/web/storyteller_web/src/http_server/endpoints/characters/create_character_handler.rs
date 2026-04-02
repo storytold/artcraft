@@ -7,6 +7,7 @@ use log::{error, info, warn};
 use sqlx::Acquire;
 
 use artcraft_api_defs::characters::create_character::{CreateCharacterRequest, CreateCharacterResponse};
+use enums::by_table::characters::character_type::CharacterType;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::characters::create_pending_character::{create_pending_character, CreatePendingCharacterArgs};
@@ -158,6 +159,7 @@ pub async fn create_character_handler(
       })?;
 
   let character_token = create_pending_character(CreatePendingCharacterArgs {
+    character_type: CharacterType::KinoviSeedance,
     name: &name,
     maybe_description: description.as_deref(),
     maybe_original_upload_media_token: Some(&request.image_media_token),
