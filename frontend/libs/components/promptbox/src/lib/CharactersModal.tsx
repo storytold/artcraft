@@ -5,7 +5,6 @@ import {
   faPlus,
   faArrowLeft,
   faUpload,
-  faTrash,
   faUserGroup,
   faSpinnerThird,
   faImages,
@@ -54,8 +53,7 @@ export const CharactersModal = ({
       isOpen={isOpen}
       onClose={handleClose}
       title={view === "list" ? "Characters" : undefined}
-      width={680}
-      className="max-h-[80vh] flex flex-col overflow-hidden"
+      className="max-w-[800px] min-h-[600px] max-h-[60vh] flex flex-col overflow-hidden"
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         {view === "list" ? (
@@ -155,69 +153,66 @@ const CharacterListView = ({
 
   return (
     <div className="flex flex-col px-1">
-        {loading && characters.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-white/40">
-            <FontAwesomeIcon
-              icon={faSpinnerThird}
-              className="mb-3 text-2xl animate-spin"
-            />
-            <p className="text-sm">Loading characters...</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-4 gap-2">
-            {/* Create New card */}
+      {loading && characters.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-white/40">
+          <FontAwesomeIcon
+            icon={faSpinnerThird}
+            className="mb-3 text-2xl animate-spin"
+          />
+          <p className="text-sm">Loading characters...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 gap-2">
+          {/* Create New card */}
+          <button
+            onClick={onCreateClick}
+            className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/20 text-white/60 transition-colors hover:border-white/40 hover:text-white/80"
+          >
+            <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
+              <FontAwesomeIcon icon={faPlus} className="text-lg" />
+              <span className="text-sm font-medium">Create New</span>
+            </div>
+          </button>
+
+          {characters.map((character) => (
             <button
-              onClick={onCreateClick}
-              className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border-2 border-dashed border-white/20 text-white/60 transition-colors hover:border-white/40 hover:text-white/80"
+              key={character.token}
+              onClick={() => onSelectCharacter?.(character)}
+              className="group relative flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/5 transition-colors hover:border-white/25 hover:bg-white/10"
             >
-              <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
-                <FontAwesomeIcon icon={faPlus} className="text-lg" />
-                <span className="text-sm font-medium">Create New</span>
+              <div className="aspect-square w-full overflow-hidden bg-white/5">
+                {character.maybe_avatar?.cdn_url ? (
+                  <img
+                    src={character.maybe_avatar.cdn_url}
+                    alt={character.name}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-white/20">
+                    <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
+                  </div>
+                )}
+              </div>
+              <div className="px-2 py-1.5">
+                <p className="truncate text-xs font-medium text-white/80">
+                  {character.name}
+                </p>
               </div>
             </button>
+          ))}
+        </div>
+      )}
 
-            {characters.map((character) => (
-              <button
-                key={character.token}
-                onClick={() => onSelectCharacter?.(character)}
-                className="group relative flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/5 transition-colors hover:border-white/25 hover:bg-white/10"
-              >
-                <div className="aspect-square w-full overflow-hidden bg-white/5">
-                  {character.maybe_avatar?.cdn_url ? (
-                    <img
-                      src={character.maybe_avatar.cdn_url}
-                      alt={character.name}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-white/20">
-                      <FontAwesomeIcon
-                        icon={faUserGroup}
-                        className="text-2xl"
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="px-2 py-1.5">
-                  <p className="truncate text-xs font-medium text-white/80">
-                    {character.name}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Sentinel for infinite scroll */}
-        {hasMore && (
-          <div ref={sentinelRef} className="flex justify-center py-4">
-            <FontAwesomeIcon
-              icon={faSpinnerThird}
-              className="text-white/30 animate-spin"
-            />
-          </div>
-        )}
+      {/* Sentinel for infinite scroll */}
+      {hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-4">
+          <FontAwesomeIcon
+            icon={faSpinnerThird}
+            className="text-white/30 animate-spin"
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -243,7 +238,9 @@ const NewCharacterView = ({
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>([]);
+  const [selectedGalleryImages, setSelectedGalleryImages] = useState<string[]>(
+    [],
+  );
 
   const processFiles = useCallback(
     async (files: FileList | File[]) => {
@@ -257,7 +254,9 @@ const NewCharacterView = ({
 
       // Only keep the first file (single image)
       const file = imageFiles[0]!;
-      const newImages: UploadedImage[] = [{ file, url: URL.createObjectURL(file) }];
+      const newImages: UploadedImage[] = [
+        { file, url: URL.createObjectURL(file) },
+      ];
 
       // Replace any existing image
       setImages((prev) => {
@@ -428,7 +427,10 @@ const NewCharacterView = ({
         onClick={() => fileInputRef.current?.click()}
       >
         {images.length > 0 ? (
-          <div className="group relative flex h-full w-full items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="group relative flex h-full w-full items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <img
               src={images[0]!.url}
               alt="Reference"
@@ -462,7 +464,10 @@ const NewCharacterView = ({
             <p className="mb-3 text-xs text-white/40">
               Click or drag an image here
             </p>
-            <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="flex items-center gap-3"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={() => setIsGalleryOpen(true)}
                 className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-white/80 transition-colors hover:bg-white/20"
