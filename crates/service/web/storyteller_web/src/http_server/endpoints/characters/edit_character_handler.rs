@@ -82,10 +82,12 @@ pub async fn edit_character_handler(
 
   // --- Compute final values ---
 
-  let final_name = new_name.unwrap_or_else(|| character.character_name.clone());
+  let final_name = new_name.unwrap_or_else(|| character.character_name.clone().unwrap_or_default());
 
   let final_kinovi_name = if has_name_change { final_name.clone() } else {
-    character.kinovi_character_name.clone().unwrap_or_else(|| character.character_name.clone())
+    character.kinovi_character_name.clone()
+        .or_else(|| character.character_name.clone())
+        .unwrap_or_default()
   };
 
   let final_description = match &description_update {

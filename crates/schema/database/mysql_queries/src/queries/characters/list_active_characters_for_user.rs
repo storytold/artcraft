@@ -12,9 +12,9 @@ const DEFAULT_PAGE_SIZE: u32 = 50;
 pub struct CharacterListRow {
   pub id: u64,
   pub token: CharacterToken,
-  pub character_type: Option<CharacterType>,
+  pub character_type: CharacterType,
   pub is_active: bool,
-  pub character_name: String,
+  pub character_name: Option<String>,
   pub maybe_description: Option<String>,
   pub maybe_avatar_media_token: Option<MediaFileToken>,
   pub maybe_full_image_media_token: Option<MediaFileToken>,

@@ -76,7 +76,7 @@ pub async fn get_character_handler(
     character: GetCharacterDetails {
       token: character.token,
       models: vec![CommonModelType::Seedance2p0],
-      name: character.character_name,
+      name: character.character_name.unwrap_or_default(),
       maybe_description: character.maybe_description,
       maybe_avatar,
       maybe_full_image,

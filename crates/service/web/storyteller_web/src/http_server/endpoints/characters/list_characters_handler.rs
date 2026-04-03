@@ -91,7 +91,7 @@ pub async fn list_characters_handler(
     ListCharactersEntry {
       token: c.token.clone(),
       models: vec![CommonModelType::Seedance2p0],
-      name: c.character_name.clone(),
+      name: c.character_name.clone().unwrap_or_default(),
       maybe_description: c.maybe_description.clone(),
       maybe_avatar,
       maybe_full_image,
