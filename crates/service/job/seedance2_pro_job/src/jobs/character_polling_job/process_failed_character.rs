@@ -1,5 +1,5 @@
 use log::{error, info, warn};
-
+use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
 use mysql_queries::queries::generic_inference::job::mark_job_failed_by_token::{mark_job_failed_by_token, MarkJobFailedByTokenArgs};
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_character_jobs::PendingSeedance2ProCharacterJob;
 use seedance2pro_client::requests::poll_characters::poll_characters::CharacterStatus;
@@ -13,7 +13,9 @@ pub async fn process_failed_character(
 ) {
   let reason = character.fail_reason
       .as_deref()
-      .unwrap_or("unknown failure reason");
+      .unwrap_or("Failure may be content related; you might be able to try again.");
+
+  let failure_category = FrontendFailureCategory::RuleBansUserContent;
 
   warn!(
     "Character {} (job {}) failed: {}",
@@ -33,7 +35,7 @@ pub async fn process_failed_character(
     job_token: &job.job_token,
     maybe_public_failure_reason: Some(reason),
     internal_debugging_failure_reason: &internal_reason,
-    maybe_frontend_failure_category: None,
+    maybe_frontend_failure_category: Some(failure_category),
   }).await {
     error!(
       "Error marking character job {} as failed: {:?}",
