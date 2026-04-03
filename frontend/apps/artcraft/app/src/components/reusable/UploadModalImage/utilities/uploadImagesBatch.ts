@@ -40,9 +40,11 @@ export const uploadImagesBatch = async ({
               state.status === UploaderStates.success ||
               state.status === UploaderStates.assetError
             ) {
-              completedIndices.add(i);
-              completedCount++;
-              onOverallProgress(completedCount, files.length);
+              if (!completedIndices.has(i)) {
+                completedIndices.add(i);
+                completedCount++;
+                onOverallProgress(completedCount, files.length);
+              }
             }
           },
         })

@@ -62,9 +62,11 @@ export const upload3DObjectsBatch = async ({
               state.status === UploaderStates.coverCreateError ||
               state.status === UploaderStates.coverSetError
             ) {
-              completedIndices.add(i);
-              completedCount++;
-              onOverallProgress(completedCount, files.length);
+              if (!completedIndices.has(i)) {
+                completedIndices.add(i);
+                completedCount++;
+                onOverallProgress(completedCount, files.length);
+              }
             }
           },
         }),
