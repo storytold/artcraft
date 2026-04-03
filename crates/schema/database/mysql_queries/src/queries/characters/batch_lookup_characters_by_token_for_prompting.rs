@@ -1,7 +1,7 @@
-use anyhow::anyhow;
-use log::warn;
+use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
-use sqlx::MySql;
+use sqlx::{MySql, QueryBuilder, Row};
+use sqlx::mysql::MySqlRow;
 
 use tokens::tokens::characters::CharacterToken;
 
@@ -17,21 +17,16 @@ pub struct CharacterPromptData {
 
 /// Look up multiple characters by their tokens, returning the data needed for prompting.
 ///
-/// Characters that are not found are silently omitted from the results.
+/// Characters that are not found (or soft-deleted) are silently omitted from the results.
 pub async fn batch_lookup_characters_by_token_for_prompting(
   tokens: &[CharacterToken],
   connection: &mut PoolConnection<MySql>,
-) -> anyhow::Result<Vec<CharacterPromptData>> {
+) -> AnyhowResult<Vec<CharacterPromptData>> {
   if tokens.is_empty() {
     return Ok(Vec::new());
   }
 
-  // SQLx doesn't support IN-clause with dynamic lists in query! macro,
-  // so we build the query manually with placeholders.
-  let placeholders: Vec<&str> = tokens.iter().map(|_| "?").collect();
-  let in_clause = placeholders.join(", ");
-
-  let sql = format!(
+  let mut query_builder: QueryBuilder<MySql> = QueryBuilder::new(
     r#"
 SELECT
   token,
@@ -40,30 +35,29 @@ SELECT
   kinovi_character_id,
   kinovi_character_name
 FROM characters
-WHERE token IN ({})
-  AND deleted_at IS NULL
+WHERE deleted_at IS NULL
+  AND token IN (
     "#,
-    in_clause,
   );
 
-  let mut query = sqlx::query_as::<_, RawRow>(&sql);
+  // NB: SQLx does not support WHERE IN(?) for Vec<T>.
+  // Issue: https://github.com/launchbadge/sqlx/issues/875
+  // We follow the same pattern as batch_get_media_files_by_tokens.
+  query_builder.push(token_predicate(tokens));
+  query_builder.push(")");
 
-  for token in tokens {
-    query = query.bind(token.as_str());
-  }
-
-  let rows = query
+  let rows: Vec<MySqlRow> = query_builder
+      .build()
       .fetch_all(&mut **connection)
-      .await
-      .map_err(|err| anyhow!("Error looking up characters by token: {:?}", err))?;
+      .await?;
 
-  let results = rows.into_iter().map(|row| {
+  let results = rows.iter().map(|row| {
     CharacterPromptData {
-      character_token: row.token,
-      is_active: row.is_active,
-      character_name: row.character_name,
-      kinovi_character_id: row.kinovi_character_id,
-      kinovi_character_name: row.kinovi_character_name,
+      character_token: CharacterToken::new(row.get("token")),
+      is_active: row.get("is_active"),
+      character_name: row.get("character_name"),
+      kinovi_character_id: row.get("kinovi_character_id"),
+      kinovi_character_name: row.get("kinovi_character_name"),
     }
   }).collect();
 
@@ -72,11 +66,11 @@ WHERE token IN ({})
 
 // =============== Private helpers ===============
 
-#[derive(sqlx::FromRow)]
-struct RawRow {
-  token: CharacterToken,
-  is_active: bool,
-  character_name: Option<String>,
-  kinovi_character_id: Option<String>,
-  kinovi_character_name: Option<String>,
+/// Build a comma-separated predicate for the IN clause.
+fn token_predicate(tokens: &[CharacterToken]) -> String {
+  tokens.iter()
+      .map(|t| t.as_str())
+      .map(|t| format!("\"{}\"", t))
+      .collect::<Vec<String>>()
+      .join(", ")
 }

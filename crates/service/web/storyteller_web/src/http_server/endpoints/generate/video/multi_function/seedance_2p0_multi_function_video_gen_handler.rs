@@ -46,6 +46,8 @@ use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
 };
 use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use sqlx::Acquire;
+use sqlx::MySql;
+use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use url::Url;
@@ -145,53 +147,10 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
   // --- Look up character tokens (if any) ---
 
-  let kinovi_character_ids: Option<Vec<String>> = if let Some(character_tokens) = request.reference_character_tokens.as_ref() {
-    if !character_tokens.is_empty() {
-      let characters = batch_lookup_characters_by_token_for_prompting(
-        character_tokens,
-        &mut mysql_connection,
-      )
-          .await
-          .map_err(|err| {
-            error!("Error looking up characters: {:?}", err);
-            AdvancedCommonWebError::from_anyhow_error(err)
-          })?;
-
-      // Verify all requested characters were found.
-      if characters.len() != character_tokens.len() {
-        warn!("Not all character tokens were found: requested {}, found {}", character_tokens.len(), characters.len());
-        return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
-          "One or more character tokens were not found.".to_string()
-        ));
-      }
-
-      // Verify all characters are active.
-      for character in &characters {
-        if !character.is_active {
-          warn!("Character {} is not active", character.character_token);
-          return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
-            format!("Character {} is not yet ready for use.", character.character_token)
-          ));
-        }
-      }
-
-      // Extract the kinovi character IDs.
-      let ids: Vec<String> = characters.iter()
-          .filter_map(|c| c.kinovi_character_id.clone())
-          .collect();
-
-      if ids.is_empty() {
-        warn!("Characters found but none have kinovi_character_id");
-        None
-      } else {
-        Some(ids)
-      }
-    } else {
-      None
-    }
-  } else {
-    None
-  };
+  let kinovi_character_ids = resolve_kinovi_character_ids(
+    request.reference_character_tokens.as_deref(),
+    &mut mysql_connection,
+  ).await?;
 
   // --- Insert idempotency token ---
 
@@ -640,6 +599,48 @@ async fn upload_and_generate(
     gen_response,
     generation_mode,
   })
+}
+
+/// Resolve character tokens to Kinovi character IDs for prompting.
+///
+/// Looks up the characters, filters to active ones with kinovi IDs, and warns about
+/// any that are missing or inactive (but doesn't fail the request).
+async fn resolve_kinovi_character_ids(
+  maybe_tokens: Option<&[CharacterToken]>,
+  connection: &mut sqlx::pool::PoolConnection<MySql>,
+) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
+  let tokens = match maybe_tokens {
+    None => return Ok(None),
+    Some(tokens) if tokens.is_empty() => return Ok(None),
+    Some(tokens) => tokens,
+  };
+
+  let characters = batch_lookup_characters_by_token_for_prompting(tokens, connection)
+      .await
+      .map_err(|err| {
+        error!("Error looking up characters: {:?}", err);
+        AdvancedCommonWebError::from_anyhow_error(err)
+      })?;
+
+  if characters.len() != tokens.len() {
+    warn!(
+      "Not all character tokens were found: requested {}, found {}",
+      tokens.len(), characters.len(),
+    );
+  }
+
+  for character in &characters {
+    if !character.is_active {
+      warn!("Character {} is not yet active, skipping", character.character_token);
+    }
+  }
+
+  let ids: Vec<String> = characters.iter()
+      .filter(|c| c.is_active)
+      .filter_map(|c| c.kinovi_character_id.clone())
+      .collect();
+
+  if ids.is_empty() { Ok(None) } else { Ok(Some(ids)) }
 }
 
 /// Uploads a list of reference media tokens to seedance2pro, returning the resulting URLs.
