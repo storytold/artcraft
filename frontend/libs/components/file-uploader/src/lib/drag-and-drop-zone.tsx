@@ -1,12 +1,15 @@
-import { faFileArrowUp, faFileAudio } from "@fortawesome/pro-solid-svg-icons";
+import { faFileArrowUp, faFileImage } from "@fortawesome/pro-solid-svg-icons";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export const DragAndDropZone = ({
   files,
   fileTypes,
+  fileIcon = faFileImage,
 }: {
   files: File[];
   fileTypes: string[];
+  fileIcon?: IconDefinition;
 }) => {
   if (files.length === 0) {
     return (
@@ -35,7 +38,7 @@ export const DragAndDropZone = ({
 
     return (
       <div className="flex cursor-pointer items-center justify-between gap-3.5 rounded-lg border border-dashed border-[#363636] bg-brand-secondary p-3">
-        <FontAwesomeIcon icon={faFileAudio} className="text-4xl" />
+        <FontAwesomeIcon icon={fileIcon} className="text-4xl" />
         <div className="flex grow flex-col gap-0">
           <p className="font-medium">
             {file.name.slice(0, file.name.lastIndexOf("."))}
@@ -53,7 +56,7 @@ export const DragAndDropZone = ({
 
   return (
     <div className="flex cursor-pointer items-center justify-between gap-3.5 rounded-lg border border-dashed border-[#363636] bg-brand-secondary p-3">
-      <FontAwesomeIcon icon={faFileAudio} className="text-4xl" />
+      <FontAwesomeIcon icon={fileIcon} className="text-4xl" />
       <div className="flex grow flex-col gap-0">
         <p className="font-medium">{files.length} files selected</p>
         <p className="flex items-center gap-2 text-sm font-normal">

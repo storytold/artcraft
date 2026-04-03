@@ -1,6 +1,7 @@
 import { FileUploader as DragDropFileUploader } from "react-drag-drop-files";
 // Usage refer to https://github.com/KarimMokhtar/react-drag-drop-files
 
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { DragAndDropZone } from "./drag-and-drop-zone";
 
 export const FileUploader = ({
@@ -8,11 +9,13 @@ export const FileUploader = ({
   fileTypes,
   handleChange,
   multiple = false,
+  fileIcon,
 }: {
   files: File[];
   handleChange: (files: File[]) => void;
   fileTypes: string[];
   multiple?: boolean;
+  fileIcon?: IconDefinition;
 }) => (
   <DragDropFileUploader
     handleChange={(result: File | File[]) => {
@@ -30,7 +33,8 @@ export const FileUploader = ({
     maxSize={50}
     types={fileTypes}
     multiple={multiple}
+    classes="!outline-none"
   >
-    <DragAndDropZone files={files} fileTypes={fileTypes} />
+    <DragAndDropZone files={files} fileTypes={fileTypes} fileIcon={fileIcon} />
   </DragDropFileUploader>
 );

@@ -335,6 +335,7 @@ export const UploadFilesSplat = ({
         files={fileEntries.map((e) => e.file)}
         handleChange={handleFilesChange}
         multiple={true}
+        fileIcon={faCube}
       />
 
       {selectionError && (

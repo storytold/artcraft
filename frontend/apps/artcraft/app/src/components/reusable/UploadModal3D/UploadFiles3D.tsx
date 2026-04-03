@@ -350,6 +350,7 @@ export const UploadFiles3D = ({
         files={fileEntries.map((e) => e.file)}
         handleChange={handleFilesChange}
         multiple={true}
+        fileIcon={faCube}
       />
 
       {selectionError && <h6 className="z-10 text-red">{selectionError}</h6>}
