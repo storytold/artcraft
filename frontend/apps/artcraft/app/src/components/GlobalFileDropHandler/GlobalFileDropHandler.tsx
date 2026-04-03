@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "react-hot-toast";
 import { faCube, faImages, faUpRightAndDownLeftFromCenter } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { UploadModal3D } from "../reusable/UploadModal3D/UploadModal3D";
@@ -26,11 +27,11 @@ export function GlobalFileDropHandler() {
   const dragCounter = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
   const [modalType, setModalType] = useState<ModalType>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const closeModal = () => {
     setModalType(null);
-    setPendingFile(null);
+    setPendingFiles([]);
   };
 
   useEffect(() => {
@@ -54,22 +55,44 @@ export function GlobalFileDropHandler() {
               setIsDragging(false);
               if (isAnyModalOpen()) return;
 
-              const path = payload.paths[0];
-              if (!path) return;
+              if (payload.paths.length === 0) return;
 
-              const fileName = path.split(/[/\\]/).pop() ?? "file";
-              const type = getModalTypeForFileName(fileName);
-              if (type === null) return;
+              // Find first path with a recognised extension
+              let modalKind: ModalType = null;
+              for (const p of payload.paths) {
+                modalKind = getModalTypeForFileName(p.split(/[/\\]/).pop() ?? "");
+                if (modalKind) break;
+              }
+              if (!modalKind) return;
+
+              // Keep only paths matching the detected modal type
+              const matchingPaths = payload.paths.filter((p) => {
+                const name = p.split(/[/\\]/).pop() ?? "";
+                return getModalTypeForFileName(name) === modalKind;
+              });
+
+              const skippedCount = payload.paths.length - matchingPaths.length;
+              if (skippedCount > 0) {
+                toast(
+                  `${skippedCount} file${skippedCount > 1 ? "s" : ""} skipped — unsupported or mixed types`,
+                  { icon: "⚠️" }
+                );
+              }
 
               try {
-                const assetUrl = convertFileSrc(path);
-                const response = await fetch(assetUrl);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const blob = await response.blob();
-                const file = new File([blob], fileName);
+                const files = await Promise.all(
+                  matchingPaths.map(async (path) => {
+                    const fileName = path.split(/[/\\]/).pop() ?? "file";
+                    const assetUrl = convertFileSrc(path);
+                    const response = await fetch(assetUrl);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const blob = await response.blob();
+                    return new File([blob], fileName);
+                  })
+                );
                 await appWindow.setFocus();
-                setModalType(type);
-                setPendingFile(file);
+                setModalType(modalKind);
+                setPendingFiles(files);
               } catch (err) {
                 console.error("[DragDrop] file read failed:", err);
               }
@@ -111,12 +134,33 @@ export function GlobalFileDropHandler() {
         setIsDragging(false);
         dragCounter.current = 0;
         if (isAnyModalOpen()) return;
-        const file = e.dataTransfer?.files[0];
-        if (!file) return;
-        const type = getModalTypeForFileName(file.name);
-        if (type === null) return;
-        setModalType(type);
-        setPendingFile(file);
+
+        const allFiles = Array.from(e.dataTransfer.files);
+        if (allFiles.length === 0) return;
+
+        // Find first file with a recognised extension
+        let modalKind: ModalType = null;
+        for (const f of allFiles) {
+          modalKind = getModalTypeForFileName(f.name);
+          if (modalKind) break;
+        }
+        if (!modalKind) return;
+
+        // Keep only files matching the detected modal type
+        const matchingFiles = allFiles.filter(
+          (f) => getModalTypeForFileName(f.name) === modalKind
+        );
+
+        const skippedCount = allFiles.length - matchingFiles.length;
+        if (skippedCount > 0) {
+          toast(
+            `${skippedCount} file${skippedCount > 1 ? "s" : ""} skipped — unsupported or mixed types`,
+            { icon: "⚠️" }
+          );
+        }
+
+        setModalType(modalKind);
+        setPendingFiles(matchingFiles);
       };
       window.addEventListener("dragenter", handleDragEnter);
       window.addEventListener("dragleave", handleDragLeave);
@@ -144,7 +188,7 @@ export function GlobalFileDropHandler() {
       )}
       <UploadModal3D
         isOpen={modalType === "3d"}
-        initialFile={pendingFile ?? undefined}
+        initialFiles={pendingFiles.length > 0 ? pendingFiles : undefined}
         onClose={closeModal}
         onSuccess={(_category: FilterEngineCategories) => closeModal()}
         title="Upload a 3D Model"
@@ -152,7 +196,7 @@ export function GlobalFileDropHandler() {
       />
       <UploadModalImage
         isOpen={modalType === "image"}
-        initialFile={pendingFile ?? undefined}
+        initialFiles={pendingFiles.length > 0 ? pendingFiles : undefined}
         onClose={closeModal}
         onSuccess={() => closeModal()}
         title="Upload an Image"
@@ -160,7 +204,7 @@ export function GlobalFileDropHandler() {
       />
       <UploadModalSplat
         isOpen={modalType === "splat"}
-        initialFile={pendingFile ?? undefined}
+        initialFiles={pendingFiles.length > 0 ? pendingFiles : undefined}
         onClose={closeModal}
         onSuccess={() => {}}
         title="Upload a Splat"

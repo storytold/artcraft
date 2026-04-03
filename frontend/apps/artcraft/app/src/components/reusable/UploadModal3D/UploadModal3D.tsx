@@ -22,7 +22,7 @@ interface Props {
   isOpen: boolean;
   title: string;
   titleIcon: IconDefinition;
-  initialFile?: File;
+  initialFiles?: File[];
   options?: {
     fileSubtypes?: { [key: string]: string }[];
     hasLength?: boolean;
@@ -33,7 +33,7 @@ interface Props {
 const objectFileTypes = Object.values(OBJECT_FILE_TYPE);
 
 export function UploadModal3D(props: Props) {
-  const { isOpen, onClose, onSuccess, title, titleIcon, initialFile, options } = props;
+  const { isOpen, onClose, onSuccess, title, titleIcon, initialFiles, options } = props;
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
   const [isCharacter, setIsCharacter] = useState(false);
@@ -102,7 +102,7 @@ export function UploadModal3D(props: Props) {
               title={title}
               engineCategory={selectedCategory}
               fileTypes={objectFileTypes}
-              initialFile={initialFile}
+              initialFiles={initialFiles}
               options={{
                 ...(options ?? {}),
                 fileSubtypes: characterAnimationOptions,

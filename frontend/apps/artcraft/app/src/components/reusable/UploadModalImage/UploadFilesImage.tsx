@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -28,7 +29,6 @@ interface FileEntry {
 interface Props {
   title: string;
   fileTypes: string[];
-  initialFile?: File;
   initialFiles?: File[];
   onClose: () => void;
   onUploadProgress: (newState: UploaderState) => void;
@@ -36,12 +36,11 @@ interface Props {
 
 export const UploadFilesImage = ({
   fileTypes,
-  initialFile,
   initialFiles,
   onClose,
   onUploadProgress,
 }: Props) => {
-  const seedFiles = initialFiles ?? (initialFile ? [initialFile] : []);
+  const seedFiles = initialFiles ?? [];
 
   const [fileEntries, setFileEntries] = useState<FileEntry[]>(
     seedFiles.map((f) => ({ file: f, status: "idle" }))
@@ -87,6 +86,7 @@ export const UploadFilesImage = ({
       setPreviewIndex((prevIdx) => Math.min(prevIdx, Math.max(0, next.length - 1)));
       return next;
     });
+    setFilesVersion((v) => v + 1);
   };
 
   const retrySingleFile = async (index: number) => {
@@ -219,9 +219,10 @@ export const UploadFilesImage = ({
 
       {fileEntries.length > 0 && (
         isMulti ? (
-          <div className="flex gap-3">
+          <PanelGroup orientation="horizontal">
             {/* File list sidebar */}
-            <ul className="flex w-1/3 flex-col gap-1 overflow-y-auto max-h-64 rounded-lg bg-brand-secondary p-2">
+            <Panel defaultSize="33%" minSize="20%">
+            <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-lg bg-brand-secondary p-2">
               {fileEntries.map((entry, i) => (
                 <li
                   key={i}
@@ -280,9 +281,15 @@ export const UploadFilesImage = ({
                 </li>
               ))}
             </ul>
+            </Panel>
+
+            <PanelResizeHandle className="flex w-4 items-center justify-center" onPointerDown={(e) => e.stopPropagation()}>
+              <div className="h-8 w-1 rounded-full bg-white/20 transition-colors hover:bg-white/40" />
+            </PanelResizeHandle>
 
             {/* Preview + carousel navigation */}
-            <div className="flex w-2/3 flex-col gap-2">
+            <Panel defaultSize="67%" minSize="25%">
+            <div className="flex h-full flex-col gap-2">
               <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-brand-secondary flex items-center justify-center">
                 {previewUrl && (
                   <img
@@ -317,7 +324,8 @@ export const UploadFilesImage = ({
                 </Button>
               </div>
             </div>
-          </div>
+            </Panel>
+          </PanelGroup>
         ) : (
           previewUrl && (
             <div className="relative m-auto flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg bg-brand-secondary">

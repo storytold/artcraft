@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Group as PanelGroup, Panel, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { ListDropdown } from "@storyteller/ui-list-dropdown";
 import { Button } from "@storyteller/ui-button";
 import { FileUploader } from "@storyteller/ui-file-uploader";
@@ -35,7 +36,6 @@ interface Props {
   title: string;
   fileTypes: string[];
   engineCategory: FilterEngineCategories;
-  initialFile?: File;
   initialFiles?: File[];
   options?: {
     fileSubtypes?: { [key: string]: string }[];
@@ -49,19 +49,37 @@ interface Props {
 export const UploadFiles3D = ({
   fileTypes,
   engineCategory,
-  initialFile,
   initialFiles,
   options,
   onClose,
   onUploadProgress,
 }: Props) => {
   const canvasRef = useRef<HTMLCanvasElement | undefined>(undefined);
-  const canvasCallbackRef = useCallback((node: HTMLCanvasElement) => {
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const canvasCallbackRef = useCallback((node: HTMLCanvasElement | null) => {
+    if (resizeObserverRef.current) {
+      resizeObserverRef.current.disconnect();
+      resizeObserverRef.current = null;
+    }
     if (node !== null) {
       canvasRef.current = node;
+      const observer = new ResizeObserver(() => {
+        const renderer = rendererRef.current;
+        const camera = cameraRef.current;
+        if (!renderer || !camera) return;
+        const w = node.clientWidth;
+        const h = node.clientHeight;
+        if (w === 0 || h === 0) return;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      });
+      observer.observe(node);
+      resizeObserverRef.current = observer;
     }
   }, []);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 
   const fileSubtypes = options?.fileSubtypes;
 
@@ -71,7 +89,7 @@ export const UploadFiles3D = ({
       : undefined,
   );
 
-  const seedFiles = initialFiles ?? (initialFile ? [initialFile] : []);
+  const seedFiles = initialFiles ?? [];
 
   const [fileEntries, setFileEntries] = useState<FileEntry[]>(
     seedFiles.map((f) => ({ file: f, status: "idle" })),
@@ -108,12 +126,13 @@ export const UploadFiles3D = ({
     disposeRenderer();
     setPreviewStatus({ type: "init" });
 
-    const { renderer } = loadPreviewOnCanvas({
+    const { renderer, camera } = loadPreviewOnCanvas({
       file: currentFile,
       canvas: canvasRef.current,
       statusCallback: setPreviewStatus,
     });
     rendererRef.current = renderer;
+    cameraRef.current = camera;
 
     return disposeRenderer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,6 +184,7 @@ export const UploadFiles3D = ({
       );
       return next;
     });
+    setFilesVersion((v) => v + 1);
   };
 
   const retrySingleFile = async (index: number) => {
@@ -335,9 +355,10 @@ export const UploadFiles3D = ({
       {selectionError && <h6 className="z-10 text-red">{selectionError}</h6>}
 
       {isMulti ? (
-        <div className="flex gap-3">
+        <PanelGroup orientation="horizontal">
           {/* File list sidebar */}
-          <ul className="flex max-h-64 w-1/3 flex-col gap-1 overflow-y-auto rounded-lg bg-brand-secondary p-2">
+          <Panel defaultSize="33%" minSize="20%">
+          <ul className="flex h-full flex-col gap-1 overflow-y-auto rounded-lg bg-brand-secondary p-2">
             {fileEntries.map((entry, i) => (
               <li
                 key={i}
@@ -396,12 +417,18 @@ export const UploadFiles3D = ({
               </li>
             ))}
           </ul>
+          </Panel>
+
+          <PanelResizeHandle className="flex w-4 items-center justify-center" onPointerDown={(e) => e.stopPropagation()}>
+            <div className="h-8 w-1 rounded-full bg-white/20 transition-colors hover:bg-white/40" />
+          </PanelResizeHandle>
 
           {/* Canvas preview + carousel */}
-          <div className="flex w-2/3 flex-col gap-2">
-            <div className="relative w-full overflow-hidden rounded-lg bg-brand-secondary">
+          <Panel defaultSize="67%" minSize="25%">
+          <div className="flex h-full flex-col gap-2">
+            <div className="relative w-full min-h-48 overflow-hidden rounded-lg bg-brand-secondary">
               <canvas
-                className="pointer-events-none h-full !w-full"
+                className="pointer-events-none h-full min-h-48 !w-full"
                 ref={canvasCallbackRef}
               />
               {!currentFile && (
@@ -442,12 +469,13 @@ export const UploadFiles3D = ({
               </Button>
             </div>
           </div>
-        </div>
+          </Panel>
+        </PanelGroup>
       ) : (
         /* Single-file layout: canvas takes full width (original behaviour) */
-        <div className="relative m-auto w-full overflow-hidden rounded-lg bg-brand-secondary">
+        <div className="relative m-auto w-full min-h-48 overflow-hidden rounded-lg bg-brand-secondary">
           <canvas
-            className="pointer-events-none h-full !w-full"
+            className="pointer-events-none h-full min-h-48 !w-full"
             ref={canvasCallbackRef}
           />
           {!currentFile && (

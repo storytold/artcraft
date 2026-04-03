@@ -64,6 +64,7 @@
     "react-copy-to-clipboard": "^5.1.0",
     "react-dom": "^18.2.0",
     "react-drag-drop-files": "^2.3.10",
+    "react-resizable-panels": "*",
     "react-helmet": "^6.1.0",
     "react-hot-toast": "^2.5.2",
     "react-image-crop": "^11.0.5",

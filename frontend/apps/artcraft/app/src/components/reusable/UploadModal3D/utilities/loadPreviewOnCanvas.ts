@@ -15,6 +15,7 @@ interface LoaderInterface {
 
 interface PreviewReturn {
   renderer: THREE.WebGLRenderer;
+  camera: THREE.PerspectiveCamera;
 }
 
 export const loadPreviewOnCanvas = ({
@@ -115,7 +116,7 @@ export const loadPreviewOnCanvas = ({
   };
   renderer.setAnimationLoop(animate);
 
-  return { renderer };
+  return { renderer, camera };
 };
 
 const glbLoader = ({

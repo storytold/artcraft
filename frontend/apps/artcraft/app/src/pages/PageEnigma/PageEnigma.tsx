@@ -150,7 +150,7 @@ export const PageEnigma = ({ sceneToken }: { sceneToken?: string }) => {
       <ErrorDialog />
 
       <EditorLoadingBar />
-      <Toaster offsetTop={70} offsetRight={12} />
+      <Toaster offsetTop={70} offsetRight={12} zIndex={9999} />
 
       {currentReminderModalProps && (
         <ActionReminderModal
