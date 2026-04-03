@@ -94,7 +94,7 @@ export const CharactersModal = ({
       isOpen={isOpen}
       onClose={handleClose}
       title={view === "list" ? "Characters" : undefined}
-      className="max-w-[800px] min-h-[600px] max-h-[65vh] flex flex-col overflow-hidden"
+      className="max-w-[800px] h-[60vh] max-h-[600px] flex flex-col overflow-hidden"
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         {view === "list" ? (
