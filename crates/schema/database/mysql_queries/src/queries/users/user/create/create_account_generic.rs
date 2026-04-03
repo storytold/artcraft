@@ -90,6 +90,9 @@ pub async fn create_account_generic(
   const INITIAL_PROFILE_RENDERED_HTML : &str = "";
   const INITIAL_USER_ROLE: &str = "user";
 
+  let maybe_referral_url = sanitize_optional_url(args.maybe_referral_url);
+  let maybe_landing_url = sanitize_optional_url(args.maybe_landing_url);
+
   let user_token = match args.maybe_user_token {
     None => UserToken::generate(),
     Some(user_token) => user_token.clone(),
@@ -172,8 +175,8 @@ SET
       args.maybe_source.map(|s| s.to_str()),
       args.maybe_signup_method.map(|m| m.to_str()),
 
-      args.maybe_referral_url,
-      args.maybe_landing_url,
+      maybe_referral_url,
+      maybe_landing_url,
     );
 
 
@@ -212,4 +215,12 @@ SET
     user_token,
     user_id: record_id,
   })
+}
+
+/// Trim, reject empty strings, and truncate to 255 characters.
+fn sanitize_optional_url(value: Option<String>) -> Option<String> {
+  value
+    .map(|s| s.trim().to_string())
+    .filter(|s| !s.is_empty())
+    .map(|s| s.chars().take(255).collect())
 }

@@ -88,13 +88,9 @@ pub async fn stripe_artcraft_create_subscription_checkout_with_user_signup_handl
       http_request.headers().get("referer")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string())
-    })
-    .filter(|s| !s.is_empty())
-    .map(|s| s.chars().take(255).collect::<String>());
+    });
 
-  let maybe_landing_url = request.maybe_landing_url.clone()
-    .filter(|s| !s.is_empty())
-    .map(|s| s.chars().take(255).collect::<String>());
+  let maybe_landing_url = request.maybe_landing_url.clone();
 
   let maybe_user_metadata = internal_user_lookup
       .lookup_user_from_http_request_and_mysql_connection(&http_request, &mut mysql_connection)
