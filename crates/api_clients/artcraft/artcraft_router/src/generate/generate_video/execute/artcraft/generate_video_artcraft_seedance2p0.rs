@@ -20,10 +20,10 @@ pub async fn execute_artcraft_seedance2p0(
     reference_image_media_tokens: plan.reference_images.map(|tokens| tokens.to_owned()),
     reference_video_media_tokens: plan.reference_videos.map(|tokens| tokens.to_owned()),
     reference_audio_media_tokens: plan.reference_audio.map(|tokens| tokens.to_owned()),
+    reference_character_tokens: plan.reference_characters.map(|tokens| tokens.to_owned()),
     aspect_ratio: plan.aspect_ratio,
     duration_seconds: plan.duration_seconds,
     batch_count: Some(plan.batch_count),
-    reference_character_tokens: plan.reference_characters.map(|tokens| tokens.to_owned()),
   };
 
   let response = seedance_2p0_multi_function_video_gen(
