@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE characters\nSET\n  character_name = ?,\n  kinovi_character_name = ?,\n  maybe_description = ?\nWHERE token = ?\n  AND deleted_at IS NULL\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "eae0b979383989f7a9af8ddd678ab0c0403952b8b98d9fcb078ae401ae7fa4e3"
+}

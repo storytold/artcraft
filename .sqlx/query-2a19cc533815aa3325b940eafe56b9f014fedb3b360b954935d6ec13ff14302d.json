@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO characters\nSET\n  token = ?,\n  character_type = ?,\n  is_active = false,\n  character_name = ?,\n  maybe_description = ?,\n  maybe_avatar_media_token = NULL,\n  maybe_full_image_media_token = NULL,\n  maybe_original_upload_media_token = ?,\n  maybe_creator_user_token = ?,\n  creator_ip_address = ?,\n  kinovi_character_id = ?,\n  kinovi_character_name = ?,\n  maybe_kinovi_asset_id = NULL,\n  maybe_generic_inference_job_token = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 10
+    },
+    "nullable": []
+  },
+  "hash": "2a19cc533815aa3325b940eafe56b9f014fedb3b360b954935d6ec13ff14302d"
+}

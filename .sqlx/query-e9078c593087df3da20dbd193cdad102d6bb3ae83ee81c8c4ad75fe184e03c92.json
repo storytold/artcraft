@@ -1,0 +1,146 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  token as `token: tokens::tokens::characters::CharacterToken`,\n  character_type as `character_type: enums::by_table::characters::character_type::CharacterType`,\n  is_active as `is_active: bool`,\n  character_name,\n  maybe_description,\n  maybe_avatar_media_token as `maybe_avatar_media_token: tokens::tokens::media_files::MediaFileToken`,\n  maybe_full_image_media_token as `maybe_full_image_media_token: tokens::tokens::media_files::MediaFileToken`,\n  maybe_original_upload_media_token as `maybe_original_upload_media_token: tokens::tokens::media_files::MediaFileToken`,\n  maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n  kinovi_character_id,\n  kinovi_character_name,\n  maybe_kinovi_asset_id\nFROM characters\nWHERE token = ?\n  AND deleted_at IS NULL\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token: tokens::tokens::characters::CharacterToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "character_type: enums::by_table::characters::character_type::CharacterType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "is_active: bool",
+        "type_info": {
+          "type": "Tiny",
+          "flags": "NOT_NULL | MULTIPLE_KEY",
+          "char_set": 63,
+          "max_size": 1
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "character_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "maybe_description",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 2048
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "maybe_avatar_media_token: tokens::tokens::media_files::MediaFileToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "maybe_full_image_media_token: tokens::tokens::media_files::MediaFileToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "maybe_original_upload_media_token: tokens::tokens::media_files::MediaFileToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "maybe_creator_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "kinovi_character_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "kinovi_character_name",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 1020
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "maybe_kinovi_asset_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 256
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "e9078c593087df3da20dbd193cdad102d6bb3ae83ee81c8c4ad75fe184e03c92"
+}
