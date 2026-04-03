@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE characters\nSET\n  is_active = true,\n  maybe_avatar_media_token = ?,\n  maybe_full_image_media_token = ?,\n  maybe_kinovi_asset_id = ?\nWHERE token = ?\n  AND deleted_at IS NULL\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "abbd24f51fae54ba3cd54ec7e3caf1ed7121b244796331d56b2d7f20eb7d4b9b"
+}

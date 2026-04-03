@@ -1,0 +1,47 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n    jobs.token as `job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken`,\n    jobs.maybe_external_third_party_id as `kinovi_character_id`,\n    jobs.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`\n\nFROM generic_inference_jobs as jobs\n\nWHERE jobs.maybe_external_third_party = ?\n  AND jobs.job_type = ?\n  AND jobs.status NOT IN ('complete_success', 'complete_failure')\n  AND jobs.maybe_external_third_party_id IS NOT NULL\n\nLIMIT 25000\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "job_token: tokens::tokens::generic_inference_jobs::InferenceJobToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | UNIQUE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "kinovi_character_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "maybe_creator_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "9bd472515a1ec55a4b3eed9b37baea3a9740484172086b1797889a5f88b5750f"
+}
