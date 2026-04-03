@@ -1,0 +1,13 @@
+$kind: http-request
+name: Create Character
+url: "{{api_host}}/v1/character/create"
+method: POST
+body:
+  type: json
+  content: >-
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "model": "seedance_2p0",
+        "image_media_token": "m_v2hjh936k72knmggmqqa2xfs9sge8k" // steampunk clown
+    }
+order: 1775175681198
