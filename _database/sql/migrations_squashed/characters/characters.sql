@@ -16,7 +16,7 @@ CREATE TABLE characters (
   token VARCHAR(32) NOT NULL,
 
   -- The type or "features" of the character.
-  character_type VARCHAR(24) DEFAULT NULL,
+  character_type VARCHAR(24) NOT NULL,
 
   -- Whether the character has been fully created and is available for use.
   -- A character may exist in the database before its creation job completes.
@@ -25,7 +25,7 @@ CREATE TABLE characters (
   -- ========== CHARACTER DETAILS ==========
 
   -- Display name for the character.
-  character_name VARCHAR(255) NOT NULL,
+  character_name VARCHAR(255) DEFAULT NULL,
 
   -- Optional description of the character.
   maybe_description VARCHAR(512) DEFAULT NULL,
