@@ -74,6 +74,9 @@ impl TaskFailureType {
       FrontendFailureCategoryForApiClients::KeepAliveElapsed => Self::Unknown,
       FrontendFailureCategoryForApiClients::NotYetImplemented => Self::Unknown,
       FrontendFailureCategoryForApiClients::RetryableWorkerError => Self::Unknown,
+      FrontendFailureCategoryForApiClients::FilesizeTooLarge => Self::Unknown,
+      FrontendFailureCategoryForApiClients::ImageDimensionsTooSmall => Self::Unknown,
+      FrontendFailureCategoryForApiClients::ImageDimensionsTooLarge => Self::Unknown,
 
       // Unknown (future-proof) variant
       FrontendFailureCategoryForApiClients::Unknown(ref value) => {

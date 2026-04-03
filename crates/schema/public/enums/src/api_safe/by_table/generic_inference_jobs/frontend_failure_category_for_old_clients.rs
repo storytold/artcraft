@@ -69,6 +69,9 @@ mod tests {
     assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::RuleBansGeneratedAudio), None);
     assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::RuleBansGeneratedContent), None);
     assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::GenerationFailed), None);
+    assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::FilesizeTooLarge), None);
+    assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::ImageDimensionsTooSmall), None);
+    assert_eq!(FrontendFailureCategoryForOldClients::try_from_db_enum(FrontendFailureCategory::ImageDimensionsTooLarge), None);
   }
 
   #[test]

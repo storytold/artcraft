@@ -20,6 +20,9 @@ pub enum FrontendFailureCategoryForApiClients {
   RuleBansGeneratedVideo,
   RuleBansGeneratedAudio,
   RuleBansGeneratedContent,
+  FilesizeTooLarge,
+  ImageDimensionsTooSmall,
+  ImageDimensionsTooLarge,
   GenerationFailed,
 
   /// Catch-all for values the client doesn't yet know about.
@@ -43,6 +46,9 @@ impl FrontendFailureCategoryForApiClients {
       FrontendFailureCategory::RuleBansGeneratedVideo => Self::RuleBansGeneratedVideo,
       FrontendFailureCategory::RuleBansGeneratedAudio => Self::RuleBansGeneratedAudio,
       FrontendFailureCategory::RuleBansGeneratedContent => Self::RuleBansGeneratedContent,
+      FrontendFailureCategory::FilesizeTooLarge => Self::FilesizeTooLarge,
+      FrontendFailureCategory::ImageDimensionsTooSmall => Self::ImageDimensionsTooSmall,
+      FrontendFailureCategory::ImageDimensionsTooLarge => Self::ImageDimensionsTooLarge,
       FrontendFailureCategory::GenerationFailed => Self::GenerationFailed,
     }
   }
@@ -67,6 +73,9 @@ mod tests {
       ("\"rule_bans_generated_video\"", FrontendFailureCategoryForApiClients::RuleBansGeneratedVideo),
       ("\"rule_bans_generated_audio\"", FrontendFailureCategoryForApiClients::RuleBansGeneratedAudio),
       ("\"rule_bans_generated_content\"", FrontendFailureCategoryForApiClients::RuleBansGeneratedContent),
+      ("\"filesize_too_large\"", FrontendFailureCategoryForApiClients::FilesizeTooLarge),
+      ("\"image_dimensions_too_small\"", FrontendFailureCategoryForApiClients::ImageDimensionsTooSmall),
+      ("\"image_dimensions_too_large\"", FrontendFailureCategoryForApiClients::ImageDimensionsTooLarge),
       ("\"generation_failed\"", FrontendFailureCategoryForApiClients::GenerationFailed),
     ];
 

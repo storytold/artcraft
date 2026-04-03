@@ -69,6 +69,7 @@ pub enum FrontendFailureCategory {
   /// Model content violation
   /// Model content rules prohibit user content. (I think this check happens early.)
   /// e.g. "Content violates platform rules. Please modify and try again." (seedance2pro)
+  /// We also map fal WebhookErrorType::ContentPolicyViolation to this.
   #[serde(rename = "rule_bans_user_content")]
   RuleBansUserContent,
 
@@ -89,6 +90,18 @@ pub enum FrontendFailureCategory {
   /// e.g. "The generated content violates platform rules. Please adjust your prompt or images and try again." (seedance2pro)
   #[serde(rename = "rule_bans_generated_content")]
   RuleBansGeneratedContent,
+
+  /// The uploaded file exceeds the maximum allowed size for this model.
+  #[serde(rename = "filesize_too_large")]
+  FilesizeTooLarge,
+
+  /// The uploaded image dimensions are below the minimum required by the model.
+  #[serde(rename = "image_dimensions_too_small")]
+  ImageDimensionsTooSmall,
+
+  /// The uploaded image dimensions exceed the maximum allowed by the model.
+  #[serde(rename = "image_dimensions_too_large")]
+  ImageDimensionsTooLarge,
 
   /// Generation failed (no reason)
   /// Unspecified failure reason
@@ -119,6 +132,9 @@ impl FrontendFailureCategory {
       Self::RuleBansGeneratedVideo => "rule_bans_generated_video",
       Self::RuleBansGeneratedAudio => "rule_bans_generated_audio",
       Self::RuleBansGeneratedContent => "rule_bans_generated_content",
+      Self::FilesizeTooLarge => "filesize_too_large",
+      Self::ImageDimensionsTooSmall => "image_dimensions_too_small",
+      Self::ImageDimensionsTooLarge => "image_dimensions_too_large",
       Self::GenerationFailed => "generation_failed",
     }
   }
@@ -137,6 +153,9 @@ impl FrontendFailureCategory {
       "rule_bans_generated_video" => Ok(Self::RuleBansGeneratedVideo),
       "rule_bans_generated_audio" => Ok(Self::RuleBansGeneratedAudio),
       "rule_bans_generated_content" => Ok(Self::RuleBansGeneratedContent),
+      "filesize_too_large" => Ok(Self::FilesizeTooLarge),
+      "image_dimensions_too_small" => Ok(Self::ImageDimensionsTooSmall),
+      "image_dimensions_too_large" => Ok(Self::ImageDimensionsTooLarge),
       "generation_failed" => Ok(Self::GenerationFailed),
       _ => Err(format!("invalid value: {:?}", value)),
     }
@@ -158,6 +177,9 @@ impl FrontendFailureCategory {
       Self::RuleBansGeneratedVideo,
       Self::RuleBansGeneratedAudio,
       Self::RuleBansGeneratedContent,
+      Self::FilesizeTooLarge,
+      Self::ImageDimensionsTooSmall,
+      Self::ImageDimensionsTooLarge,
       Self::GenerationFailed,
     ])
   }
@@ -185,6 +207,9 @@ mod tests {
       assert_serialization(FrontendFailureCategory::RuleBansGeneratedVideo, "rule_bans_generated_video");
       assert_serialization(FrontendFailureCategory::RuleBansGeneratedAudio, "rule_bans_generated_audio");
       assert_serialization(FrontendFailureCategory::RuleBansGeneratedContent, "rule_bans_generated_content");
+      assert_serialization(FrontendFailureCategory::FilesizeTooLarge, "filesize_too_large");
+      assert_serialization(FrontendFailureCategory::ImageDimensionsTooSmall, "image_dimensions_too_small");
+      assert_serialization(FrontendFailureCategory::ImageDimensionsTooLarge, "image_dimensions_too_large");
       assert_serialization(FrontendFailureCategory::GenerationFailed, "generation_failed");
     }
 
@@ -202,6 +227,9 @@ mod tests {
       assert_eq!(FrontendFailureCategory::RuleBansGeneratedVideo.to_str(), "rule_bans_generated_video");
       assert_eq!(FrontendFailureCategory::RuleBansGeneratedAudio.to_str(), "rule_bans_generated_audio");
       assert_eq!(FrontendFailureCategory::RuleBansGeneratedContent.to_str(), "rule_bans_generated_content");
+      assert_eq!(FrontendFailureCategory::FilesizeTooLarge.to_str(), "filesize_too_large");
+      assert_eq!(FrontendFailureCategory::ImageDimensionsTooSmall.to_str(), "image_dimensions_too_small");
+      assert_eq!(FrontendFailureCategory::ImageDimensionsTooLarge.to_str(), "image_dimensions_too_large");
       assert_eq!(FrontendFailureCategory::GenerationFailed.to_str(), "generation_failed");
     }
 
@@ -219,6 +247,9 @@ mod tests {
       assert_eq!(FrontendFailureCategory::from_str("rule_bans_generated_video").unwrap(), FrontendFailureCategory::RuleBansGeneratedVideo);
       assert_eq!(FrontendFailureCategory::from_str("rule_bans_generated_audio").unwrap(), FrontendFailureCategory::RuleBansGeneratedAudio);
       assert_eq!(FrontendFailureCategory::from_str("rule_bans_generated_content").unwrap(), FrontendFailureCategory::RuleBansGeneratedContent);
+      assert_eq!(FrontendFailureCategory::from_str("filesize_too_large").unwrap(), FrontendFailureCategory::FilesizeTooLarge);
+      assert_eq!(FrontendFailureCategory::from_str("image_dimensions_too_small").unwrap(), FrontendFailureCategory::ImageDimensionsTooSmall);
+      assert_eq!(FrontendFailureCategory::from_str("image_dimensions_too_large").unwrap(), FrontendFailureCategory::ImageDimensionsTooLarge);
       assert_eq!(FrontendFailureCategory::from_str("generation_failed").unwrap(), FrontendFailureCategory::GenerationFailed);
       assert_eq!(FrontendFailureCategory::from_str("invalid_value").is_err(), true);
     }
@@ -226,7 +257,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = FrontendFailureCategory::all_variants();
-      assert_eq!(variants.len(), 13);
+      assert_eq!(variants.len(), 16);
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::FaceNotDetected));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::KeepAliveElapsed));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::NotYetImplemented));
@@ -239,6 +270,9 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansGeneratedVideo));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansGeneratedAudio));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::RuleBansGeneratedContent));
+      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::FilesizeTooLarge));
+      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::ImageDimensionsTooSmall));
+      assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::ImageDimensionsTooLarge));
       assert_eq!(variants.pop_first(), Some(FrontendFailureCategory::GenerationFailed));
       assert_eq!(variants.pop_first(), None);
     }
