@@ -101,12 +101,12 @@ fn guess_failure_category(error_type: Option<&WebhookErrorType>) -> FrontendFail
   match error_type {
     Some(WebhookErrorType::ContentPolicyViolation) => FrontendFailureCategory::RuleBansUserContent,
     Some(WebhookErrorType::FaceDetectionError) => FrontendFailureCategory::FaceNotDetected,
+    Some(WebhookErrorType::FileTooLarge) => FrontendFailureCategory::FilesizeTooLarge,
+    Some(WebhookErrorType::ImageTooLarge) => FrontendFailureCategory::ImageDimensionsTooLarge,
+    Some(WebhookErrorType::ImageTooSmall) => FrontendFailureCategory::ImageDimensionsTooSmall,
     Some(WebhookErrorType::NoMediaGenerated)
-    | Some(WebhookErrorType::ImageTooSmall)
-    | Some(WebhookErrorType::ImageTooLarge)
     | Some(WebhookErrorType::ImageLoadError)
-    | Some(WebhookErrorType::FileDownloadError)
-    | Some(WebhookErrorType::FileTooLarge) => FrontendFailureCategory::GenerationFailed,
+    | Some(WebhookErrorType::FileDownloadError) => FrontendFailureCategory::GenerationFailed,
     _ => FrontendFailureCategory::GenerationFailed,
   }
 }
