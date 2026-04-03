@@ -174,11 +174,7 @@ pub async fn create_character_handler(
     mysql_executor: &mut *transaction,
     phantom: PhantomData,
   })
-      .await
-      .map_err(|err| {
-        error!("Error inserting character record: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
-      })?;
+      .await?;
 
   info!("Created pending character: {}", character_token);
 
@@ -198,7 +194,7 @@ pub async fn create_character_handler(
       .await
       .map_err(|err| {
         error!("Error inserting inference job: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err.into())
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   info!("Created inference job: {}", apriori_job_token);

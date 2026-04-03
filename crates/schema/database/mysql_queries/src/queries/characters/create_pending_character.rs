@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use log::info;
 use sqlx::{Executor, MySql};
 use std::marker::PhantomData;
@@ -50,7 +49,7 @@ pub struct CreatePendingCharacterArgs<'e, 'c, E>
 /// once the async creation job completes.
 pub async fn create_pending_character<'e, 'c: 'e, E>(
   args: CreatePendingCharacterArgs<'e, 'c, E>,
-) -> anyhow::Result<CharacterToken>
+) -> Result<CharacterToken, sqlx::Error>
   where E: 'e + Executor<'c, Database = MySql>
 {
   let token = CharacterToken::generate();
@@ -87,8 +86,7 @@ SET
   );
 
   let result = query.execute(args.mysql_executor)
-      .await
-      .map_err(|err| anyhow!("Error inserting character: {:?}", err))?;
+      .await?;
 
   info!("Created pending character {} (record ID {})", token, result.last_insert_id());
 

@@ -1,4 +1,3 @@
-use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
 use sqlx::{FromRow, MySql, QueryBuilder};
 
@@ -20,7 +19,7 @@ pub struct CharacterPromptData {
 pub async fn batch_lookup_characters_by_token_for_prompting(
   tokens: &[CharacterToken],
   connection: &mut PoolConnection<MySql>,
-) -> AnyhowResult<Vec<CharacterPromptData>> {
+) -> Result<Vec<CharacterPromptData>, sqlx::Error> {
   if tokens.is_empty() {
     return Ok(Vec::new());
   }

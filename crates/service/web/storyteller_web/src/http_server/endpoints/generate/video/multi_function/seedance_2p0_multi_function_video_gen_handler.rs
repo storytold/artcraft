@@ -616,11 +616,7 @@ async fn resolve_kinovi_character_ids(
   };
 
   let characters = batch_lookup_characters_by_token_for_prompting(tokens, connection)
-      .await
-      .map_err(|err| {
-        error!("Error looking up characters: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
-      })?;
+      .await?;
 
   if characters.len() != tokens.len() {
     warn!(
