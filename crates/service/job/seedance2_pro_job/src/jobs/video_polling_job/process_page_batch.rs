@@ -5,8 +5,8 @@ use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedan
 use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, TaskStatus};
 
 use crate::job_dependencies::JobDependencies;
-use crate::jobs::process_job::process_failed_job::process_failed_job;
-use crate::jobs::process_job::process_successful_job::process_successful_job;
+use crate::jobs::video_polling_job::process_job::process_failed_job::process_failed_job;
+use crate::jobs::video_polling_job::process_job::process_successful_job::process_successful_job;
 
 /// Process a batch of polled orders against the pending jobs map.
 ///

@@ -14,7 +14,7 @@ use mysql_queries::queries::media_files::create::insert_builder::media_file_inse
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token::mark_generic_inference_job_successfully_done_by_token;
 use seedance2pro_client::requests::poll_orders::poll_orders::OrderStatus;
 
-use crate::jobs::alert_on_error::alert_pager_and_return_err;
+use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;
 use crate::job_dependencies::JobDependencies;
 
 const PREFIX: &str = "artcraft_";

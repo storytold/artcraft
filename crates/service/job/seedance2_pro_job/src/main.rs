@@ -26,7 +26,7 @@ use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use server_environment::ServerEnvironment;
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
-use crate::jobs::main_loop::main_loop;
+use crate::jobs::video_polling_job::video_polling_main_loop::video_polling_main_loop;
 use crate::job_dependencies::JobDependencies;
 use crate::startup::build_pager::build_pager;
 
@@ -176,7 +176,7 @@ async fn main() -> AnyhowResult<()> {
     }
   });
 
-  main_loop(job_dependencies).await;
+  video_polling_main_loop(job_dependencies).await;
 
   info!("Shutting down pager worker...");
   pager_for_shutdown.shutdown_worker();
