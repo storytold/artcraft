@@ -23,6 +23,7 @@ SET
   maybe_description = ?
 WHERE token = ?
   AND deleted_at IS NULL
+LIMIT 1
     "#,
     character_name,
     kinovi_character_name,

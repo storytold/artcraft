@@ -16,6 +16,7 @@ UPDATE characters
 SET deleted_at = NOW()
 WHERE token = ?
   AND deleted_at IS NULL
+LIMIT 1
     "#,
   )
       .bind(character_token.as_str())
