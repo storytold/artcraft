@@ -1,14 +1,13 @@
 use errors::AnyhowResult;
 use sqlx::pool::PoolConnection;
-use sqlx::{MySql, QueryBuilder, Row};
-use sqlx::mysql::MySqlRow;
+use sqlx::{FromRow, MySql, QueryBuilder};
 
 use tokens::tokens::characters::CharacterToken;
 
 /// Character data needed for constructing prompts with character references.
-#[derive(Debug)]
+#[derive(Debug, FromRow)]
 pub struct CharacterPromptData {
-  pub character_token: CharacterToken,
+  pub token: CharacterToken,
   pub is_active: bool,
   pub character_name: Option<String>,
   pub kinovi_character_id: Option<String>,
@@ -40,37 +39,17 @@ WHERE deleted_at IS NULL
     "#,
   );
 
-  // NB: SQLx does not support WHERE IN(?) for Vec<T>.
-  // Issue: https://github.com/launchbadge/sqlx/issues/875
-  // We follow the same pattern as batch_get_media_files_by_tokens.
-  query_builder.push(token_predicate(tokens));
+  let mut separated = query_builder.separated(", ");
+  for token in tokens {
+    separated.push_bind(token.as_str().to_string());
+  }
+
   query_builder.push(")");
 
-  let rows: Vec<MySqlRow> = query_builder
-      .build()
+  let results: Vec<CharacterPromptData> = query_builder
+      .build_query_as::<CharacterPromptData>()
       .fetch_all(&mut **connection)
       .await?;
 
-  let results = rows.iter().map(|row| {
-    CharacterPromptData {
-      character_token: CharacterToken::new(row.get("token")),
-      is_active: row.get("is_active"),
-      character_name: row.get("character_name"),
-      kinovi_character_id: row.get("kinovi_character_id"),
-      kinovi_character_name: row.get("kinovi_character_name"),
-    }
-  }).collect();
-
   Ok(results)
-}
-
-// =============== Private helpers ===============
-
-/// Build a comma-separated predicate for the IN clause.
-fn token_predicate(tokens: &[CharacterToken]) -> String {
-  tokens.iter()
-      .map(|t| t.as_str())
-      .map(|t| format!("\"{}\"", t))
-      .collect::<Vec<String>>()
-      .join(", ")
 }
