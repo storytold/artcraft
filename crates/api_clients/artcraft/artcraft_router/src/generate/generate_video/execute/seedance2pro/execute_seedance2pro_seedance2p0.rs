@@ -44,6 +44,7 @@ pub async fn execute_seedance2pro_seedance2p0(
     reference_image_urls,
     reference_video_urls,
     reference_audio_urls,
+    character_ids: None,
     use_face_blur_hack: None,
     host_override: None,
   };

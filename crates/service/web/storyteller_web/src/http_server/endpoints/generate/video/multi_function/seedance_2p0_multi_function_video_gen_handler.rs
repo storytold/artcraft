@@ -480,6 +480,7 @@ fn estimate_cost_upfront(resolution: Resolution, batch_count: BatchCount, durati
     reference_image_urls: None,
     reference_video_urls: None,
     reference_audio_urls: None,
+    character_ids: None,
     use_face_blur_hack: None,
     host_override: None,
   };
@@ -569,6 +570,7 @@ async fn upload_and_generate(
     reference_image_urls,
     reference_video_urls,
     reference_audio_urls,
+    character_ids: None,
     use_face_blur_hack: None,
     host_override: None,
   };

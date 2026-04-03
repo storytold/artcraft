@@ -8,6 +8,6 @@ body:
   type: json
   content: |-
     {
-        "google_credential": "eyJhbGciOiJSUzI1NiIsImtpZCI6ImIyN...[redacted]"
+        "google_credential": "...[redacted]"
     }
 order: 4000

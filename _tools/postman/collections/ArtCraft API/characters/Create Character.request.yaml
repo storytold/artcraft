@@ -8,6 +8,8 @@ body:
     {
         "uuid_idempotency_token": "{{$randomUUID}}",
         "model": "seedance_2p0",
-        "image_media_token": "m_v2hjh936k72knmggmqqa2xfs9sge8k" // steampunk clown
+        //"image_media_token": "m_v2hjh936k72knmggmqqa2xfs9sge8k", // steampunk clown
+        "image_media_token": "m_13m13fm33bw3cxvfrncyc6873z0dyy", // mochi on couch
+        "character_name": "Mochi"
     }
 order: 1775175681198

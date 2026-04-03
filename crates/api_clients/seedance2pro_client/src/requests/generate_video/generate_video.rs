@@ -49,6 +49,10 @@ pub struct GenerateVideoArgs<'a> {
   /// Sent in a separate `audioUrls` field (not in `uploadedUrls`).
   pub reference_audio_urls: Option<Vec<String>>,
 
+  /// Optional Kinovi character IDs to reference in the prompt.
+  /// Characters are referenced in prompts as @CharacterName.
+  pub character_ids: Option<Vec<String>>,
+
   /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
   pub use_face_blur_hack: Option<bool>,
 
@@ -69,6 +73,7 @@ impl std::fmt::Debug for GenerateVideoArgs<'_> {
       .field("reference_image_urls", &self.reference_image_urls)
       .field("reference_video_urls", &self.reference_video_urls)
       .field("reference_audio_urls", &self.reference_audio_urls)
+      .field("character_ids", &self.character_ids)
       .field("use_face_blur_hack", &self.use_face_blur_hack)
       .field("host_override", &self.host_override)
       .finish()
@@ -261,6 +266,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
           duration,
           mode: video_input_mode,
           face_blur_mode,
+          character_ids: args.character_ids,
           uploaded_urls,
           audio_urls,
           batch_count,
@@ -371,6 +377,7 @@ mod tests {
         reference_image_urls: None,
         reference_video_urls: None,
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       }
@@ -495,6 +502,7 @@ mod tests {
         reference_image_urls: None,
         reference_video_urls: None,
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -524,6 +532,7 @@ mod tests {
         reference_image_urls: None,
         reference_video_urls: None,
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -555,6 +564,7 @@ mod tests {
         ]),
         reference_video_urls: None,
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -585,6 +595,7 @@ mod tests {
           "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
         ]),
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -617,6 +628,7 @@ mod tests {
           "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
         ]),
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -671,6 +683,7 @@ mod tests {
           result.public_url,
         ]),
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -720,6 +733,7 @@ mod tests {
         reference_image_urls: None,
         reference_video_urls: None,
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -771,6 +785,7 @@ mod tests {
         reference_image_urls: None,
         reference_video_urls: None,
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -829,6 +844,7 @@ mod tests {
         reference_image_urls: Some(uploaded_urls),
         reference_video_urls: None,
         reference_audio_urls: None,
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
@@ -880,6 +896,7 @@ mod tests {
         reference_image_urls: None,
         reference_video_urls: None,
         reference_audio_urls: Some(vec![upload_result.public_url]),
+        character_ids: None,
         use_face_blur_hack: None,
         host_override: None,
       };
