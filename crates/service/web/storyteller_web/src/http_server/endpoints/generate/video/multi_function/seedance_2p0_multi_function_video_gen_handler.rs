@@ -25,6 +25,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
+use mysql_queries::queries::characters::batch_lookup_characters_by_token_for_prompting::batch_lookup_characters_by_token_for_prompting;
 use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token,
   InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs,
@@ -142,6 +143,56 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
     ).await?
   };
 
+  // --- Look up character tokens (if any) ---
+
+  let kinovi_character_ids: Option<Vec<String>> = if let Some(character_tokens) = request.reference_character_tokens.as_ref() {
+    if !character_tokens.is_empty() {
+      let characters = batch_lookup_characters_by_token_for_prompting(
+        character_tokens,
+        &mut mysql_connection,
+      )
+          .await
+          .map_err(|err| {
+            error!("Error looking up characters: {:?}", err);
+            AdvancedCommonWebError::from_anyhow_error(err)
+          })?;
+
+      // Verify all requested characters were found.
+      if characters.len() != character_tokens.len() {
+        warn!("Not all character tokens were found: requested {}, found {}", character_tokens.len(), characters.len());
+        return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+          "One or more character tokens were not found.".to_string()
+        ));
+      }
+
+      // Verify all characters are active.
+      for character in &characters {
+        if !character.is_active {
+          warn!("Character {} is not active", character.character_token);
+          return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+            format!("Character {} is not yet ready for use.", character.character_token)
+          ));
+        }
+      }
+
+      // Extract the kinovi character IDs.
+      let ids: Vec<String> = characters.iter()
+          .filter_map(|c| c.kinovi_character_id.clone())
+          .collect();
+
+      if ids.is_empty() {
+        warn!("Characters found but none have kinovi_character_id");
+        None
+      } else {
+        Some(ids)
+      }
+    } else {
+      None
+    }
+  } else {
+    None
+  };
+
   // --- Insert idempotency token ---
 
   insert_idempotency_token(&request.uuid_idempotency_token, &mut *mysql_connection)
@@ -191,6 +242,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       resolution,
       batch_count,
       duration_seconds,
+      kinovi_character_ids.clone(),
     ).await;
 
     match result {
@@ -212,6 +264,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           resolution,
           batch_count,
           duration_seconds,
+          kinovi_character_ids.clone(),
         ).await;
 
         match result {
@@ -248,6 +301,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       resolution,
       batch_count,
       duration_seconds,
+      kinovi_character_ids,
     ).await;
 
     match result {
@@ -496,6 +550,7 @@ async fn upload_and_generate(
   resolution: Resolution,
   batch_count: BatchCount,
   duration_seconds: u8,
+  kinovi_character_ids: Option<Vec<String>>,
 ) -> Result<SeedanceGenerationResult, AdvancedCommonWebError> {
 
   // --- Upload files to seedance2pro CDN ---
@@ -570,7 +625,7 @@ async fn upload_and_generate(
     reference_image_urls,
     reference_video_urls,
     reference_audio_urls,
-    character_ids: None,
+    character_ids: kinovi_character_ids,
     use_face_blur_hack: None,
     host_override: None,
   };

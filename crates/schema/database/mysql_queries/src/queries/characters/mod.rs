@@ -1,1 +1,2 @@
+pub mod batch_lookup_characters_by_token_for_prompting;
 pub mod create_pending_character;

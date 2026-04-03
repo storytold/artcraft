@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
@@ -28,6 +29,10 @@ pub struct Seedance2p0MultiFunctionVideoGenRequest {
 
   /// Optional reference audio files.
   pub reference_audio_media_tokens: Option<Vec<MediaFileToken>>,
+
+  /// Optional character tokens to reference in the prompt.
+  /// Characters are referenced in prompts as @CharacterName.
+  pub reference_character_tokens: Option<Vec<CharacterToken>>,
 
   /// Video aspect ratio / resolution.
   pub aspect_ratio: Option<Seedance2p0AspectRatio>,

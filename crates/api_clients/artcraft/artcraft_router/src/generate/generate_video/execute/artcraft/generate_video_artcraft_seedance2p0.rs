@@ -23,6 +23,7 @@ pub async fn execute_artcraft_seedance2p0(
     aspect_ratio: plan.aspect_ratio,
     duration_seconds: plan.duration_seconds,
     batch_count: Some(plan.batch_count),
+    reference_character_tokens: None,
   };
 
   let response = seedance_2p0_multi_function_video_gen(
