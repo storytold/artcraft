@@ -172,8 +172,9 @@ export const PromptBoxVideo = ({
   const toggleExpand = () => {
     setIsExpanded((prev) => {
       const next = !prev;
-      if (textareaRef.current) {
-        textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
+      const el = (mentionEditorRef.current ?? textareaRef.current) as HTMLElement | null;
+      if (el) {
+        el.style.height = next ? EXPANDED_HEIGHT : "auto";
       }
       return next;
     });
@@ -226,17 +227,18 @@ export const PromptBoxVideo = ({
     useState<PopoverItem[]>(aspectRatioOptions);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mentionEditorRef = useRef<HTMLDivElement>(null);
 
+  // Apply height constraints to whichever editor element is active
   useEffect(() => {
-    if (textareaRef.current) {
-      // Hard pixel limit so the resize handle can never exceed viewport
+    const el = (mentionEditorRef.current ?? textareaRef.current) as HTMLElement | null;
+    if (el) {
       const maxH = isExpanded ? 500 : Math.min(window.innerHeight - 700, 500);
-      textareaRef.current.style.maxHeight = `${Math.max(maxH, 88)}px`;
-      textareaRef.current.style.minHeight = "0";
+      el.style.maxHeight = `${Math.max(maxH, 88)}px`;
+      el.style.minHeight = "0";
       if (!isExpanded) {
-        // Cap auto-grow at ~5.5em so it doesn't fight with manual resize
-        const capped = Math.min(textareaRef.current.scrollHeight, 88);
-        textareaRef.current.style.minHeight = `${capped}px`;
+        const capped = Math.min(el.scrollHeight, 88);
+        el.style.minHeight = `${capped}px`;
       }
     }
   });
@@ -894,11 +896,11 @@ export const PromptBoxVideo = ({
             <div className="promptbox-resize-wrap relative flex-1">
               {hasAnyMentionables ? (
                 <MentionTextarea
+                  ref={mentionEditorRef}
                   value={prompt}
                   onChange={setPrompt}
                   mentionItems={allMentionItems}
                   colorMap={mentionColorMap}
-                  maxHeight={isExpanded ? 500 : Math.max(Math.min(window.innerHeight - 700, 500), 88)}
                   placeholder={
                     isReferenceMode
                       ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."

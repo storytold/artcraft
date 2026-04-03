@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser } from "@fortawesome/pro-solid-svg-icons";
@@ -24,7 +24,6 @@ interface MentionTextareaProps {
   onBlur?: () => void;
   disabled?: boolean;
   colorMap: Record<string, string>;
-  maxHeight?: number;
 }
 
 interface MentionState {
@@ -241,7 +240,7 @@ function MentionDropdown({
 // MentionTextarea Component
 // ---------------------------------------------------------------------------
 
-export function MentionTextarea({
+export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(function MentionTextarea({
   value,
   onChange,
   mentionItems,
@@ -252,9 +251,9 @@ export function MentionTextarea({
   onBlur,
   disabled,
   colorMap,
-  maxHeight,
-}: MentionTextareaProps) {
+}, ref) {
   const editorRef = useRef<HTMLDivElement>(null);
+  useImperativeHandle(ref, () => editorRef.current!, []);
   const isInternalUpdate = useRef(false);
   const isComposing = useRef(false);
   const pendingCaret = useRef<number | null>(null);
@@ -498,6 +497,17 @@ export function MentionTextarea({
           return;
         }
       }
+
+      // Shift+Enter (or Cmd+Enter on Mac): insert a newline instead of
+      // letting the contentEditable create a <div>
+      if (e.key === "Enter" && (e.shiftKey || e.metaKey)) {
+        e.preventDefault();
+        document.execCommand("insertLineBreak");
+        // Trigger input handler so the parent value stays in sync
+        handleInput();
+        return;
+      }
+
       externalOnKeyDown?.(e);
     },
     [
@@ -506,6 +516,7 @@ export function MentionTextarea({
       filteredItems,
       handleSelect,
       externalOnKeyDown,
+      handleInput,
     ],
   );
 
@@ -553,7 +564,6 @@ export function MentionTextarea({
           className,
           "outline-none whitespace-pre-wrap break-words overflow-y-auto",
         )}
-        style={maxHeight ? { maxHeight } : undefined}
       />
 
       {mentionState.isOpen && filteredItems.length > 0 && (
@@ -569,4 +579,4 @@ export function MentionTextarea({
       )}
     </div>
   );
-}
+});
