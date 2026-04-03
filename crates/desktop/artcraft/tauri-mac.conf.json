@@ -37,6 +37,7 @@
           "'unsafe-eval'",
           "'unsafe-inline'",
           "asset:",
+          "https://asset.localhost",
           "blob:",
           "data:",
           "http://ipc.localhost",
