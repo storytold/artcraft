@@ -427,10 +427,14 @@ export const PromptBoxVideo = ({
     referenceVideos.length > 0 ||
     referenceAudios.length > 0;
 
-  // Build a set of character names for highlight matching
-  const characterNames = storedCharacters.map((c) => c.name);
+  // Characters are only supported for seedance_2p0
+  const isSeedance2p0 = selectedModel?.id === "seedance_2p0";
+  const activeCharacters = isSeedance2p0 ? storedCharacters : [];
 
-  const hasAnyMentionables = hasAnyRefs || storedCharacters.length > 0;
+  // Build a set of character names for highlight matching
+  const characterNames = activeCharacters.map((c) => c.name);
+
+  const hasAnyMentionables = hasAnyRefs || activeCharacters.length > 0;
 
   const renderHighlightedPrompt = () => {
     if (!hasAnyMentionables) return null;
@@ -529,7 +533,7 @@ export const PromptBoxVideo = ({
           })),
         ]
       : []),
-    ...storedCharacters.map((char) => ({
+    ...activeCharacters.map((char) => ({
       label: `@${char.name}`,
       type: "character" as const,
       preview: char.avatar_image_url,
@@ -577,7 +581,7 @@ export const PromptBoxVideo = ({
     setPrompt(value);
 
     // Trigger @-mention for reference files (in reference mode) or characters (always)
-    if ((isReferenceMode && hasAnyRefs) || storedCharacters.length > 0) {
+    if ((isReferenceMode && hasAnyRefs) || activeCharacters.length > 0) {
       const textBeforeCursor = value.slice(0, cursorPos);
       const lastAtIndex = textBeforeCursor.lastIndexOf("@");
 
@@ -691,7 +695,7 @@ export const PromptBoxVideo = ({
       }
 
       // Extract character tokens from @-mentions in prompt
-      const mentionedCharacters = storedCharacters.filter((c) =>
+      const mentionedCharacters = activeCharacters.filter((c) =>
         prompt.includes(`@${c.name}`),
       );
       if (mentionedCharacters.length > 0) {

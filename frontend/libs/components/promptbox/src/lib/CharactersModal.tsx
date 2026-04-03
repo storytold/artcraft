@@ -41,6 +41,13 @@ interface UploadedImage {
   mediaToken?: string;
 }
 
+interface PendingCharacter {
+  name: string;
+  previewUrl?: string;
+}
+
+const POLL_INTERVAL_MS = 5000;
+
 export const CharactersModal = ({
   isOpen,
   onClose,
@@ -50,6 +57,9 @@ export const CharactersModal = ({
   const [editingCharacter, setEditingCharacter] = useState<Character | null>(
     null,
   );
+  const [pendingCharacters, setPendingCharacters] = useState<
+    PendingCharacter[]
+  >([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleClose = () => {
@@ -69,12 +79,22 @@ export const CharactersModal = ({
     setRefreshKey((k) => k + 1);
   };
 
+  const handleCreated = (pending: PendingCharacter) => {
+    setPendingCharacters((prev) => [pending, ...prev]);
+    setView("list");
+    setRefreshKey((k) => k + 1);
+  };
+
+  const removePending = useCallback((name: string) => {
+    setPendingCharacters((prev) => prev.filter((p) => p.name !== name));
+  }, []);
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
       title={view === "list" ? "Characters" : undefined}
-      className="max-w-[800px] min-h-[600px] max-h-[60vh] flex flex-col overflow-hidden"
+      className="max-w-[800px] min-h-[600px] max-h-[65vh] flex flex-col overflow-hidden"
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         {view === "list" ? (
@@ -83,14 +103,13 @@ export const CharactersModal = ({
             onCreateClick={() => setView("create")}
             onSelectCharacter={onSelectCharacter}
             onEditCharacter={handleEdit}
+            pendingCharacters={pendingCharacters}
+            onPendingResolved={removePending}
           />
         ) : view === "create" ? (
           <NewCharacterView
             onBack={() => setView("list")}
-            onCreated={() => {
-              setView("list");
-              setRefreshKey((k) => k + 1);
-            }}
+            onCreated={handleCreated}
           />
         ) : editingCharacter ? (
           <EditCharacterView
@@ -115,10 +134,14 @@ const CharacterListView = ({
   onCreateClick,
   onSelectCharacter,
   onEditCharacter,
+  pendingCharacters,
+  onPendingResolved,
 }: {
   onCreateClick: () => void;
   onSelectCharacter?: (character: Character) => void;
   onEditCharacter: (character: Character) => void;
+  pendingCharacters: PendingCharacter[];
+  onPendingResolved: (name: string) => void;
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +153,20 @@ const CharacterListView = ({
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
   const storeRemoveCharacter = useCharactersStore((s) => s.removeCharacter);
+
+  const syncToStore = useCallback(
+    (chars: Character[]) => {
+      storeSetCharacters(
+        chars.map((c) => ({
+          character_token: c.token,
+          name: c.name,
+          avatar_image_url: c.maybe_avatar?.cdn_url,
+        })),
+      );
+      storeSetLoaded(true);
+    },
+    [storeSetCharacters, storeSetLoaded],
+  );
 
   const fetchCharacters = useCallback(
     async (nextCursor?: number) => {
@@ -145,15 +182,7 @@ const CharacterListView = ({
         if (res.success && res.data) {
           setCharacters((prev) => {
             const updated = nextCursor ? [...prev, ...res.data!] : res.data!;
-            // Sync to global store for @-mention system
-            storeSetCharacters(
-              updated.map((c) => ({
-                character_token: c.token,
-                name: c.name,
-                avatar_image_url: c.maybe_avatar?.cdn_url,
-              })),
-            );
-            storeSetLoaded(true);
+            syncToStore(updated);
             return updated;
           });
           const nextPage = res.pagination?.next_cursor;
@@ -161,19 +190,46 @@ const CharacterListView = ({
           setHasMore(!!nextPage);
         }
       } catch {
-        // API not available yet - expected during development
         storeSetLoaded(true);
       } finally {
         setLoading(false);
         loadingMoreRef.current = false;
       }
     },
-    [storeSetCharacters, storeSetLoaded],
+    [syncToStore, storeSetLoaded],
   );
 
   useEffect(() => {
     fetchCharacters();
   }, [fetchCharacters]);
+
+  // Poll for pending characters becoming active
+  useEffect(() => {
+    if (pendingCharacters.length === 0) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const api = new CharactersApi();
+        const res = await api.ListCharacters({});
+        if (res.success && res.data) {
+          const serverNames = new Set(res.data.map((c) => c.name));
+          // Resolve any pending characters that now appear in the server list
+          for (const pending of pendingCharacters) {
+            if (serverNames.has(pending.name)) {
+              onPendingResolved(pending.name);
+            }
+          }
+          // Update the list with fresh server data
+          setCharacters(res.data);
+          syncToStore(res.data);
+        }
+      } catch {
+        // Silently retry on next interval
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [pendingCharacters, onPendingResolved, syncToStore]);
 
   // Infinite scroll via IntersectionObserver
   useEffect(() => {
@@ -199,7 +255,9 @@ const CharacterListView = ({
       });
 
       if (res.success) {
-        setCharacters((prev) => prev.filter((c) => c.token !== character.token));
+        setCharacters((prev) =>
+          prev.filter((c) => c.token !== character.token),
+        );
         storeRemoveCharacter(character.token);
         toast.success(`Character "${character.name}" deleted`);
       } else {
@@ -213,11 +271,14 @@ const CharacterListView = ({
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex max-h-[50vh] flex-col overflow-y-auto">
       {loading && characters.length === 0 ? (
         <div className="grid grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05]">
+            <div
+              key={i}
+              className="flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05]"
+            >
               <div className="aspect-square w-full overflow-hidden">
                 <div
                   className="h-full w-full bg-base-fg/[0.06]"
@@ -256,6 +317,42 @@ const CharacterListView = ({
             </div>
           </button>
 
+          {/* Pending (creating) characters */}
+          {pendingCharacters.map((pending) => (
+            <div
+              key={`pending-${pending.name}`}
+              className="relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05]"
+            >
+              <div className="aspect-square w-full overflow-hidden bg-base-fg/[0.05]">
+                {pending.previewUrl ? (
+                  <img
+                    src={pending.previewUrl}
+                    alt={pending.name}
+                    className="h-full w-full object-cover object-top opacity-50"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-base-fg/20">
+                    <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
+                  </div>
+                )}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40">
+                  <FontAwesomeIcon
+                    icon={faSpinnerThird}
+                    className="text-lg text-white/80 animate-spin"
+                  />
+                  <span className="text-xs font-medium text-white/80">
+                    Creating...
+                  </span>
+                </div>
+              </div>
+              <div className="px-2 py-1.5 text-center">
+                <p className="truncate text-xs font-medium text-base-fg/50">
+                  {pending.name}
+                </p>
+              </div>
+            </div>
+          ))}
+
           {characters.map((character) => {
             const isUserCreated = character.is_user_created !== false;
             const isDeleting = deletingToken === character.token;
@@ -274,12 +371,15 @@ const CharacterListView = ({
                       <img
                         src={character.maybe_avatar.cdn_url}
                         alt={character.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover object-top"
                         loading="lazy"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-base-fg/20">
-                        <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
+                        <FontAwesomeIcon
+                          icon={faUserGroup}
+                          className="text-2xl"
+                        />
                       </div>
                     )}
                   </div>
@@ -311,9 +411,15 @@ const CharacterListView = ({
                       className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
                     >
                       {isDeleting ? (
-                        <FontAwesomeIcon icon={faSpinnerThird} className="text-[10px] animate-spin" />
+                        <FontAwesomeIcon
+                          icon={faSpinnerThird}
+                          className="text-[10px] animate-spin"
+                        />
                       ) : (
-                        <FontAwesomeIcon icon={faTrashAlt} className="text-[10px]" />
+                        <FontAwesomeIcon
+                          icon={faTrashAlt}
+                          className="text-[10px]"
+                        />
                       )}
                     </button>
                   </div>
@@ -372,8 +478,7 @@ const EditCharacterView = ({
       const api = new CharactersApi();
       const res = await api.EditCharacter({
         token: character.token,
-        updated_name:
-          name.trim() !== character.name ? name.trim() : undefined,
+        updated_name: name.trim() !== character.name ? name.trim() : undefined,
         updated_description:
           (description.trim() || "") !== (character.maybe_description ?? "")
             ? description.trim() || null
@@ -475,7 +580,7 @@ const NewCharacterView = ({
   onCreated,
 }: {
   onBack: () => void;
-  onCreated: () => void;
+  onCreated: (pending: PendingCharacter) => void;
 }) => {
   const addCharacterToStore = useCharactersStore((s) => s.addCharacter);
   const [name, setName] = useState("");
@@ -626,16 +731,18 @@ const NewCharacterView = ({
       });
 
       if (res.success && res.data) {
-        toast.success(`Character "${name.trim()}" created!`);
+        toast.success(`Character "${name.trim()}" is being created`);
         // Add to global store so it appears in @-mentions immediately
         addCharacterToStore({
           character_token: res.data.inference_job_token,
           name: name.trim(),
           avatar_image_url: uploadedImages[0]!.url,
         });
-        // Cleanup object URLs
-        images.forEach((img) => URL.revokeObjectURL(img.url));
-        onCreated();
+        // Pass pending info up so the list shows an optimistic card
+        onCreated({
+          name: name.trim(),
+          previewUrl: uploadedImages[0]!.url,
+        });
       } else {
         toast.error(res.errorMessage || "Failed to create character");
       }
