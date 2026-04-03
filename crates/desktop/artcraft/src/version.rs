@@ -1,4 +1,4 @@
 
 /// The version of the ArtCraft desktop app reported in the UI and via Analytics.
 /// This should match the CI builds.
-pub const ARTCRAFT_VERSION: &str = "0.20.0";
+pub const ARTCRAFT_VERSION: &str = "0.21.0";
