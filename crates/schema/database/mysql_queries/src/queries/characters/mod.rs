@@ -1,2 +1,4 @@
 pub mod batch_lookup_characters_by_token_for_prompting;
 pub mod create_pending_character;
+pub mod delete_character;
+pub mod get_character_by_token_including_deleted;
