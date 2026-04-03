@@ -627,7 +627,7 @@ async fn resolve_kinovi_character_ids(
 
   for character in &characters {
     if !character.is_active {
-      warn!("Character {} is not yet active, skipping", character.character_token);
+      warn!("Character {} is not yet active, skipping", character.token);
     }
   }
 
