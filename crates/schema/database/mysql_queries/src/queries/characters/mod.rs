@@ -4,3 +4,4 @@ pub mod delete_character;
 pub mod get_character_by_token;
 pub mod get_character_by_token_including_deleted;
 pub mod list_active_characters_for_user;
+pub mod update_character_name_and_description;
