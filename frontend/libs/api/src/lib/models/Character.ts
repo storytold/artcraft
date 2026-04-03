@@ -14,4 +14,5 @@ export interface Character {
   maybe_avatar?: MediaFileLinks | null;
   maybe_full_image?: MediaFileLinks | null;
   models: string[];
+  is_user_created?: boolean;
 }

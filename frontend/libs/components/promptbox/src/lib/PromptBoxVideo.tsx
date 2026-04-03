@@ -695,7 +695,7 @@ export const PromptBoxVideo = ({
         prompt.includes(`@${c.name}`),
       );
       if (mentionedCharacters.length > 0) {
-        request.character_references = mentionedCharacters.map(
+        request.reference_character_tokens = mentionedCharacters.map(
           (c) => c.character_token,
         );
       }

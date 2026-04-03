@@ -5,6 +5,8 @@ export interface CreateCharacterRequest {
   image_media_token: string;
   model: string;
   uuid_idempotency_token: string;
+  character_name: string;
+  character_description?: string | null;
 }
 
 export interface EditCharacterRequest {

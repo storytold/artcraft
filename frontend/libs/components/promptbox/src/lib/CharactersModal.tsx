@@ -9,6 +9,8 @@ import {
   faSpinnerThird,
   faImages,
   faXmark,
+  faPen,
+  faTrashAlt,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import {
@@ -31,7 +33,7 @@ interface CharactersModalProps {
   onSelectCharacter?: (character: Character) => void;
 }
 
-type ModalView = "list" | "create";
+type ModalView = "list" | "create" | "edit";
 
 interface UploadedImage {
   file: File;
@@ -45,10 +47,26 @@ export const CharactersModal = ({
   onSelectCharacter,
 }: CharactersModalProps) => {
   const [view, setView] = useState<ModalView>("list");
+  const [editingCharacter, setEditingCharacter] = useState<Character | null>(
+    null,
+  );
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleClose = () => {
     setView("list");
+    setEditingCharacter(null);
     onClose();
+  };
+
+  const handleEdit = (character: Character) => {
+    setEditingCharacter(character);
+    setView("edit");
+  };
+
+  const handleEditDone = () => {
+    setEditingCharacter(null);
+    setView("list");
+    setRefreshKey((k) => k + 1);
   };
 
   return (
@@ -61,15 +79,29 @@ export const CharactersModal = ({
       <div className="min-h-0 flex-1 overflow-y-auto">
         {view === "list" ? (
           <CharacterListView
+            key={refreshKey}
             onCreateClick={() => setView("create")}
             onSelectCharacter={onSelectCharacter}
+            onEditCharacter={handleEdit}
           />
-        ) : (
+        ) : view === "create" ? (
           <NewCharacterView
             onBack={() => setView("list")}
-            onCreated={() => setView("list")}
+            onCreated={() => {
+              setView("list");
+              setRefreshKey((k) => k + 1);
+            }}
           />
-        )}
+        ) : editingCharacter ? (
+          <EditCharacterView
+            character={editingCharacter}
+            onBack={() => {
+              setEditingCharacter(null);
+              setView("list");
+            }}
+            onSaved={handleEditDone}
+          />
+        ) : null}
       </div>
     </Modal>
   );
@@ -82,18 +114,22 @@ export const CharactersModal = ({
 const CharacterListView = ({
   onCreateClick,
   onSelectCharacter,
+  onEditCharacter,
 }: {
   onCreateClick: () => void;
   onSelectCharacter?: (character: Character) => void;
+  onEditCharacter: (character: Character) => void;
 }) => {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [cursor, setCursor] = useState<number | undefined>(undefined);
+  const [deletingToken, setDeletingToken] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
   const storeSetCharacters = useCharactersStore((s) => s.setCharacters);
   const storeSetLoaded = useCharactersStore((s) => s.setLoaded);
+  const storeRemoveCharacter = useCharactersStore((s) => s.removeCharacter);
 
   const fetchCharacters = useCallback(
     async (nextCursor?: number) => {
@@ -154,6 +190,28 @@ const CharacterListView = ({
     return () => observer.disconnect();
   }, [hasMore, cursor, fetchCharacters]);
 
+  const handleDelete = async (character: Character) => {
+    setDeletingToken(character.token);
+    try {
+      const api = new CharactersApi();
+      const res = await api.DeleteCharacter({
+        characterToken: character.token,
+      });
+
+      if (res.success) {
+        setCharacters((prev) => prev.filter((c) => c.token !== character.token));
+        storeRemoveCharacter(character.token);
+        toast.success(`Character "${character.name}" deleted`);
+      } else {
+        toast.error(res.errorMessage || "Failed to delete character");
+      }
+    } catch {
+      toast.error("Failed to delete character");
+    } finally {
+      setDeletingToken(null);
+    }
+  };
+
   return (
     <div className="flex flex-col">
       {loading && characters.length === 0 ? (
@@ -198,33 +256,71 @@ const CharacterListView = ({
             </div>
           </button>
 
-          {characters.map((character) => (
-            <button
-              key={character.token}
-              onClick={() => onSelectCharacter?.(character)}
-              className="group relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05] transition-colors hover:border-base-fg/25 hover:bg-base-fg/10"
-            >
-              <div className="aspect-square w-full overflow-hidden bg-base-fg/[0.05]">
-                {character.maybe_avatar?.cdn_url ? (
-                  <img
-                    src={character.maybe_avatar.cdn_url}
-                    alt={character.name}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-base-fg/20">
-                    <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
+          {characters.map((character) => {
+            const isUserCreated = character.is_user_created !== false;
+            const isDeleting = deletingToken === character.token;
+
+            return (
+              <div
+                key={character.token}
+                className="group relative flex flex-col overflow-hidden rounded-lg border border-transparent bg-base-fg/[0.05] transition-colors hover:border-base-fg/25 hover:bg-base-fg/10"
+              >
+                <button
+                  onClick={() => onSelectCharacter?.(character)}
+                  className="flex flex-1 flex-col"
+                >
+                  <div className="aspect-square w-full overflow-hidden bg-base-fg/[0.05]">
+                    {character.maybe_avatar?.cdn_url ? (
+                      <img
+                        src={character.maybe_avatar.cdn_url}
+                        alt={character.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-base-fg/20">
+                        <FontAwesomeIcon icon={faUserGroup} className="text-2xl" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="px-2 py-1.5">
+                    <p className="truncate text-xs font-medium text-base-fg/80">
+                      {character.name}
+                    </p>
+                  </div>
+                </button>
+
+                {/* Edit / Delete overlay buttons (user-created only) */}
+                {isUserCreated && (
+                  <div className="absolute right-1.5 top-1.5 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditCharacter(character);
+                      }}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-black/80"
+                    >
+                      <FontAwesomeIcon icon={faPen} className="text-[10px]" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(character);
+                      }}
+                      disabled={isDeleting}
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white/80 transition-colors hover:bg-red-500"
+                    >
+                      {isDeleting ? (
+                        <FontAwesomeIcon icon={faSpinnerThird} className="text-[10px] animate-spin" />
+                      ) : (
+                        <FontAwesomeIcon icon={faTrashAlt} className="text-[10px]" />
+                      )}
+                    </button>
                   </div>
                 )}
               </div>
-              <div className="px-2 py-1.5">
-                <p className="truncate text-xs font-medium text-base-fg/80">
-                  {character.name}
-                </p>
-              </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -237,6 +333,135 @@ const CharacterListView = ({
           />
         </div>
       )}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Edit Character View
+// ---------------------------------------------------------------------------
+
+const EditCharacterView = ({
+  character,
+  onBack,
+  onSaved,
+}: {
+  character: Character;
+  onBack: () => void;
+  onSaved: () => void;
+}) => {
+  const updateCharacterInStore = useCharactersStore((s) => s.updateCharacter);
+  const [name, setName] = useState(character.name);
+  const [description, setDescription] = useState(
+    character.maybe_description ?? "",
+  );
+  const [saving, setSaving] = useState(false);
+
+  const hasChanges =
+    name.trim() !== character.name ||
+    (description.trim() || "") !== (character.maybe_description ?? "");
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const api = new CharactersApi();
+      const res = await api.EditCharacter({
+        token: character.token,
+        updated_name:
+          name.trim() !== character.name ? name.trim() : undefined,
+        updated_description:
+          (description.trim() || "") !== (character.maybe_description ?? "")
+            ? description.trim() || null
+            : undefined,
+      });
+
+      if (res.success) {
+        toast.success("Character updated");
+        updateCharacterInStore(character.token, { name: name.trim() });
+        onSaved();
+      } else {
+        toast.error(res.errorMessage || "Failed to update character");
+      }
+    } catch {
+      toast.error("Failed to update character");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 pb-0">
+        <button
+          onClick={onBack}
+          className="flex items-center justify-center text-base-fg/60 transition-colors hover:text-base-fg"
+        >
+          <FontAwesomeIcon icon={faArrowLeft} />
+        </button>
+        <h2 className="text-xl font-bold text-base-fg">Edit Character</h2>
+      </div>
+
+      {/* Avatar preview */}
+      {character.maybe_avatar?.cdn_url && (
+        <div className="flex h-56 max-h-56 items-center justify-center overflow-hidden rounded-lg bg-base-fg/[0.05]">
+          <img
+            src={character.maybe_avatar.cdn_url}
+            alt={character.name}
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
+      )}
+
+      {/* Name input */}
+      <div className="flex flex-col">
+        <Label htmlFor="edit-character-name">Name</Label>
+        <Input
+          id="edit-character-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Character name"
+          autoComplete="off"
+          inputClassName="bg-base-fg/[0.07] hover:border-ui-panel-border"
+        />
+      </div>
+
+      {/* Description input */}
+      <div className="flex flex-col">
+        <Label htmlFor="edit-character-description">
+          Description{" "}
+          <span className="font-normal text-base-fg/40">(optional)</span>
+        </Label>
+        <textarea
+          id="edit-character-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Describe this character..."
+          rows={3}
+          autoComplete="off"
+          className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
+        />
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" className="border-none" onClick={onBack}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleSave}
+          loading={saving}
+          disabled={saving || !name.trim() || !hasChanges}
+        >
+          Save
+        </Button>
+      </div>
     </div>
   );
 };
@@ -396,6 +621,8 @@ const NewCharacterView = ({
         image_media_token: uploadedImages[0]!.mediaToken!,
         model: "seedance_2p0",
         uuid_idempotency_token: uuidv4(),
+        character_name: name.trim(),
+        character_description: description.trim() || null,
       });
 
       if (res.success && res.data) {
@@ -529,6 +756,7 @@ const NewCharacterView = ({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Character name"
+          autoComplete="off"
           inputClassName="bg-base-fg/[0.07] hover:border-ui-panel-border"
         />
       </div>
@@ -545,6 +773,7 @@ const NewCharacterView = ({
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Describe this character..."
           rows={3}
+          autoComplete="off"
           className="w-full resize-none rounded-lg px-3 py-2 outline-none bg-base-fg/[0.07] text-base-fg placeholder-base-fg/50 border border-ui-panel-border transition-all duration-150 ease-in-out focus:border-primary focus:!outline-none"
         />
       </div>

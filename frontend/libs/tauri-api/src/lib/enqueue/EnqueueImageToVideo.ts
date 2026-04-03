@@ -62,7 +62,7 @@ export interface EnqueueImageToVideoRequest {
   reference_audio_media_tokens?: string[];
 
   // Optional. Character tokens for character consistency (from @-mentions).
-  character_references?: string[];
+  reference_character_tokens?: string[];
 }
 
 interface RawEnqueueImageToVideoRequest {
@@ -81,7 +81,7 @@ interface RawEnqueueImageToVideoRequest {
   reference_image_media_tokens?: string[];
   reference_video_media_tokens?: string[];
   reference_audio_media_tokens?: string[];
-  character_references?: string[];
+  reference_character_tokens?: string[];
 }
 
 export interface EnqueueImageToVideoError extends CommandResult {
@@ -173,10 +173,10 @@ export const EnqueueImageToVideo = async (
   }
 
   if (
-    request.character_references &&
-    request.character_references.length > 0
+    request.reference_character_tokens &&
+    request.reference_character_tokens.length > 0
   ) {
-    mutableRequest.character_references = request.character_references;
+    mutableRequest.reference_character_tokens = request.reference_character_tokens;
   }
 
   const result = await invoke("enqueue_image_to_video_command", {
