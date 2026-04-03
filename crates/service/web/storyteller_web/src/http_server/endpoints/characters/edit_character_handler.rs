@@ -71,26 +71,30 @@ pub async fn edit_character_handler(
   // --- Determine what to update ---
 
   let new_name = resolve_name_update(&request.updated_name);
-  let new_description = resolve_description_update(&request.updated_description);
+  let description_update = resolve_description_update(&request.updated_description);
 
   let has_name_change = new_name.is_some();
-  let has_description_change = new_description.is_some();
+  let has_description_change = !matches!(description_update, DescriptionUpdateType::NoUpdate);
 
   if !has_name_change && !has_description_change {
     return Ok(Json(EditCharacterResponse { success: true }));
   }
 
-  // --- If renaming, update Kinovi first ---
+  // --- Compute final values ---
 
   let final_name = new_name.unwrap_or_else(|| character.character_name.clone());
+
   let final_kinovi_name = if has_name_change { final_name.clone() } else {
     character.kinovi_character_name.clone().unwrap_or_else(|| character.character_name.clone())
   };
 
-  let final_description = match new_description {
-    Some(desc) => desc,
-    None => character.maybe_description.clone(),
+  let final_description = match &description_update {
+    DescriptionUpdateType::NoUpdate => character.maybe_description.clone(),
+    DescriptionUpdateType::Nullify => None,
+    DescriptionUpdateType::Update(text) => Some(text.clone()),
   };
+
+  // --- If renaming, update Kinovi first ---
 
   if has_name_change {
     if let Some(ref kinovi_id) = character.kinovi_character_id {
@@ -132,25 +136,42 @@ pub async fn edit_character_handler(
 
 // =============== Private helpers ===============
 
+const MAX_NAME_LENGTH: usize = 50;
+const MAX_DESCRIPTION_LENGTH: usize = 500;
+
+enum DescriptionUpdateType {
+  NoUpdate,
+  Nullify,
+  Update(String),
+}
+
 /// Determine the new name, if any.
 /// Returns None if the name should not be updated.
 fn resolve_name_update(updated_name: &Option<String>) -> Option<String> {
   let name = updated_name.as_ref()?;
   let trimmed = name.trim();
-  if trimmed.is_empty() { None } else { Some(trimmed.to_string()) }
+  if trimmed.is_empty() {
+    None
+  } else {
+    Some(truncate(trimmed, MAX_NAME_LENGTH))
+  }
 }
 
-/// Determine the new description, if any.
-/// Returns:
-/// - None if the description should not be updated
-/// - Some(None) if the description should be cleared
-/// - Some(Some(text)) if the description should be set
-fn resolve_description_update(updated_description: &Option<String>) -> Option<Option<String>> {
-  let desc = updated_description.as_ref()?;
+/// Determine the description update type.
+fn resolve_description_update(updated_description: &Option<String>) -> DescriptionUpdateType {
+  let desc = match updated_description.as_ref() {
+    None => return DescriptionUpdateType::NoUpdate,
+    Some(d) => d,
+  };
+
   let trimmed = desc.trim();
   if trimmed.is_empty() {
-    Some(None) // clear the description
+    DescriptionUpdateType::Nullify
   } else {
-    Some(Some(trimmed.to_string())) // set the description
+    DescriptionUpdateType::Update(truncate(trimmed, MAX_DESCRIPTION_LENGTH))
   }
+}
+
+fn truncate(s: &str, max_len: usize) -> String {
+  if s.len() <= max_len { s.to_string() } else { s[..max_len].to_string() }
 }
