@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { JobContextType } from "@storyteller/common";
 import { downloadFileFromUrl } from "@storyteller/api";
@@ -18,11 +18,7 @@ import {
   faChevronDown,
   faChevronUp,
 } from "@fortawesome/pro-solid-svg-icons";
-import {
-  faCircleInfo,
-  faVideo,
-  faMusic,
-} from "@fortawesome/pro-regular-svg-icons";
+import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { GalleryItem, GalleryModal } from "@storyteller/ui-gallery-modal";
 import {
@@ -46,7 +42,8 @@ import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { CharactersModal } from "./CharactersModal";
 import { CharactersApi } from "@storyteller/api";
-import { faUser } from "@fortawesome/pro-solid-svg-icons";
+import { MentionTextarea } from "./MentionTextarea";
+import type { MentionItem } from "./MentionTextarea";
 
 declare global {
   interface Window {
@@ -391,15 +388,6 @@ export const PromptBoxVideo = ({
     ? (selectedModel?.maxReferenceImages ?? 3)
     : 1;
 
-  const highlightRef = useRef<HTMLDivElement>(null);
-
-  // Sync scroll between textarea and highlight overlay
-  const handleScroll = () => {
-    if (highlightRef.current && textareaRef.current) {
-      highlightRef.current.scrollTop = textareaRef.current.scrollTop;
-    }
-  };
-
   // Color palettes for @-mention highlights
   const IMAGE_COLORS = [
     "rgb(96, 165, 250)", // blue
@@ -436,78 +424,7 @@ export const PromptBoxVideo = ({
 
   const hasAnyMentionables = hasAnyRefs || activeCharacters.length > 0;
 
-  const renderHighlightedPrompt = () => {
-    if (!hasAnyMentionables) return null;
-    // Build regex that matches @Image1, @Video1, @Audio1 and @CharacterName
-    const charPattern = characterNames
-      .map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-      .join("|");
-    const refPattern = "@(?:Image|Video|Audio)\\d+";
-    const fullPattern = charPattern
-      ? `(${refPattern}|@(?:${charPattern}))`
-      : `(${refPattern})`;
-    const regex = new RegExp(fullPattern, "g");
-    const parts = prompt.split(regex);
-
-    return parts.map((part, i) => {
-      const imgMatch = part.match(/^@Image(\d+)$/);
-      if (imgMatch) {
-        const idx = parseInt(imgMatch[1]) - 1;
-        return (
-          <span
-            key={i}
-            style={{ color: IMAGE_COLORS[idx % IMAGE_COLORS.length] }}
-          >
-            {part}
-          </span>
-        );
-      }
-      const vidMatch = part.match(/^@Video(\d+)$/);
-      if (vidMatch) {
-        const idx = parseInt(vidMatch[1]) - 1;
-        return (
-          <span
-            key={i}
-            style={{ color: VIDEO_COLORS[idx % VIDEO_COLORS.length] }}
-          >
-            {part}
-          </span>
-        );
-      }
-      const audMatch = part.match(/^@Audio(\d+)$/);
-      if (audMatch) {
-        const idx = parseInt(audMatch[1]) - 1;
-        return (
-          <span
-            key={i}
-            style={{ color: AUDIO_COLORS[idx % AUDIO_COLORS.length] }}
-          >
-            {part}
-          </span>
-        );
-      }
-      // Check character match
-      if (part.startsWith("@")) {
-        const charName = part.slice(1);
-        const charIdx = characterNames.indexOf(charName);
-        if (charIdx !== -1) {
-          return (
-            <span
-              key={i}
-              style={{
-                color: CHARACTER_COLORS[charIdx % CHARACTER_COLORS.length],
-              }}
-            >
-              {part}
-            </span>
-          );
-        }
-      }
-      return <span key={i}>{part}</span>;
-    });
-  };
-
-  // @-mention autocomplete state
+  // @-mention autocomplete state (for fallback textarea path)
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionFilter, setMentionFilter] = useState("");
   const [mentionIndex, setMentionIndex] = useState(0);
@@ -543,6 +460,67 @@ export const PromptBoxVideo = ({
       ? item.label.toLowerCase().includes(mentionFilter.toLowerCase())
       : true,
   );
+
+  // All mention items (unfiltered) for the contentEditable MentionTextarea
+  const allMentionItems: MentionItem[] = useMemo(() => [
+    ...(isReferenceMode
+      ? [
+          ...referenceImages.map((img, i) => ({
+            label: `@Image${i + 1}`,
+            type: "image" as const,
+            preview: img.url,
+          })),
+          ...referenceVideos.map((vid, i) => ({
+            label: `@Video${i + 1}`,
+            type: "video" as const,
+            preview: vid.url,
+          })),
+          ...referenceAudios.map((_aud, i) => ({
+            label: `@Audio${i + 1}`,
+            type: "audio" as const,
+            preview: undefined as string | undefined,
+          })),
+        ]
+      : []),
+    ...activeCharacters.map((char) => ({
+      label: `@${char.name}`,
+      type: "character" as const,
+      preview: char.avatar_image_url,
+    })),
+  ], [isReferenceMode, referenceImages, referenceVideos, referenceAudios, activeCharacters]);
+
+  // Build label → color map for inline mention highlighting
+  const mentionColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const item of allMentionItems) {
+      const imgMatch = item.label.match(/^@Image(\d+)$/);
+      if (imgMatch) {
+        const idx = parseInt(imgMatch[1]) - 1;
+        map[item.label] = IMAGE_COLORS[idx % IMAGE_COLORS.length];
+        continue;
+      }
+      const vidMatch = item.label.match(/^@Video(\d+)$/);
+      if (vidMatch) {
+        const idx = parseInt(vidMatch[1]) - 1;
+        map[item.label] = VIDEO_COLORS[idx % VIDEO_COLORS.length];
+        continue;
+      }
+      const audMatch = item.label.match(/^@Audio(\d+)$/);
+      if (audMatch) {
+        const idx = parseInt(audMatch[1]) - 1;
+        map[item.label] = AUDIO_COLORS[idx % AUDIO_COLORS.length];
+        continue;
+      }
+      if (item.type === "character") {
+        const charName = item.label.slice(1);
+        const charIdx = characterNames.indexOf(charName);
+        if (charIdx !== -1) {
+          map[item.label] = CHARACTER_COLORS[charIdx % CHARACTER_COLORS.length];
+        }
+      }
+    }
+    return map;
+  }, [allMentionItems, characterNames]);
 
   const insertMention = (label: string) => {
     const textarea = textareaRef.current;
@@ -913,125 +891,45 @@ export const PromptBoxVideo = ({
           )}
         >
           <div className="relative flex justify-center gap-2">
-            {/* @-mention autocomplete dropdown */}
-            {mentionOpen && mentionItems.length > 0 && (
-              <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-h-72 overflow-y-auto rounded-lg border border-white/10 bg-ui-controls shadow-lg backdrop-blur-xl">
-                <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
-                  References
-                </div>
-                {mentionItems.map((item, i) => (
-                  <button
-                    key={item.label}
-                    className={twMerge(
-                      "flex w-full items-center gap-2.5 px-3 py-2 text-sm text-base-fg transition-colors cursor-pointer",
-                      i === mentionIndex ? "bg-white/10" : "hover:bg-white/5",
-                    )}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      insertMention(item.label);
-                    }}
-                    onMouseEnter={() => setMentionIndex(i)}
-                  >
-                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md border border-white/20 flex items-center justify-center bg-black/20">
-                      {item.type === "character" && item.preview ? (
-                        <img
-                          src={item.preview}
-                          alt={item.label}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : item.type === "character" ? (
-                        <FontAwesomeIcon
-                          icon={faUser}
-                          className="h-3.5 w-3.5 text-base-fg/60"
-                        />
-                      ) : item.type === "image" && item.preview ? (
-                        <img
-                          src={item.preview}
-                          alt={item.label}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : item.type === "video" && item.preview ? (
-                        <video
-                          src={item.preview}
-                          muted
-                          preload="metadata"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <FontAwesomeIcon
-                          icon={item.type === "video" ? faVideo : faMusic}
-                          className="h-3.5 w-3.5 text-base-fg/60"
-                        />
-                      )}
-                    </div>
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* Hide the Add image button for video for now */}
-            {/* <Tooltip
-              content="Add Image"
-              position="top"
-              closeOnClick={true}
-              className={isImageRowVisible ? "hidden opacity-0" : undefined}
-            >
-              <Button
-                variant="action"
-                className={`h-8 w-8 p-0 bg-transparent hover:bg-transparent group transition-all ${
-                  isImageRowVisible ? "text-primary" : ""
-                }`}
-                onClick={() => setShowImagePrompts((prev) => !prev)}
-              >
-                <svg
-                  width="24"
-                  height="20"
-                  viewBox="0 0 24 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="group-hover:opacity-100 opacity-80 transition-all"
-                >
-                  <path
-                    opacity="1"
-                    d="M2.66667 2H16C16.3667 2 16.6667 2.3 16.6667 2.66667V6.1125C17.1 6.04167 17.5458 6 18 6C18.225 6 18.4458 6.00833 18.6667 6.02917V2.66667C18.6667 1.19583 17.4708 0 16 0H2.66667C1.19583 0 0 1.19583 0 2.66667V16C0 17.4708 1.19583 18.6667 2.66667 18.6667H11.5C11.0625 18.0583 10.7083 17.3875 10.4542 16.6667H2.66667C2.3 16.6667 2 16.3667 2 16V2.66667C2 2.3 2.3 2 2.66667 2ZM11.8625 7.49167C11.6833 7.1875 11.3542 7 11 7C10.6458 7 10.3167 7.1875 10.1375 7.49167L8.2 10.7833L7.48333 9.75833C7.29583 9.49167 6.99167 9.33333 6.6625 9.33333C6.33333 9.33333 6.02917 9.49167 5.84167 9.75833L3.50833 13.0917C3.29583 13.3958 3.26667 13.7958 3.44167 14.125C3.61667 14.4542 3.9625 14.6667 4.33333 14.6667H10.0292C10.0125 14.4458 10 14.225 10 14C10 11.7833 10.9 9.77917 12.3542 8.33333L11.8625 7.49583V7.49167ZM5.33333 6.66667C6.07083 6.66667 6.66667 6.07083 6.66667 5.33333C6.66667 4.59583 6.07083 4 5.33333 4C4.59583 4 4 4.59583 4 5.33333C4 6.07083 4.59583 6.66667 5.33333 6.66667ZM18 20C21.3125 20 24 17.3125 24 14C24 10.6875 21.3125 8 18 8C14.6875 8 12 10.6875 12 14C12 17.3125 14.6875 20 18 20ZM18.6667 11.3333V13.3333H20.6667C21.0333 13.3333 21.3333 13.6333 21.3333 14C21.3333 14.3667 21.0333 14.6667 20.6667 14.6667H18.6667V16.6667C18.6667 17.0333 18.3667 17.3333 18 17.3333C17.6333 17.3333 17.3333 17.0333 17.3333 16.6667V14.6667H15.3333C14.9667 14.6667 14.6667 14.3667 14.6667 14C14.6667 13.6333 14.9667 13.3333 15.3333 13.3333H17.3333V11.3333C17.3333 10.9667 17.6333 10.6667 18 10.6667C18.3667 10.6667 18.6667 10.9667 18.6667 11.3333Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </Button>
-            </Tooltip> */}
-
             <div className="promptbox-resize-wrap relative flex-1">
-              {hasAnyMentionables && (
-                <div
-                  ref={highlightRef}
-                  aria-hidden
-                  className="text-md pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words rounded pb-2 pr-2 pt-1 text-base-fg"
-                >
-                  {renderHighlightedPrompt()}
-                </div>
+              {hasAnyMentionables ? (
+                <MentionTextarea
+                  value={prompt}
+                  onChange={setPrompt}
+                  mentionItems={allMentionItems}
+                  colorMap={mentionColorMap}
+                  maxHeight={isExpanded ? 500 : Math.max(Math.min(window.innerHeight - 700, 500), 88)}
+                  placeholder={
+                    isReferenceMode
+                      ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
+                      : "Describe what you want to happen in the video..."
+                  }
+                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (selectedModel?.requiresImage && referenceImages.length === 0) return;
+                      if (!prompt.trim()) return;
+                      handleEnqueue();
+                    }
+                  }}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                />
+              ) : (
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  placeholder="Describe what you want to happen in the video..."
+                  className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg placeholder-base-fg/60 focus:outline-none"
+                  value={prompt}
+                  onChange={handleChange}
+                  onPaste={handlePaste}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                />
               )}
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                placeholder={
-                  isReferenceMode
-                    ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
-                    : "Describe what you want to happen in the video..."
-                }
-                className={twMerge(
-                  "promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 placeholder-base-fg/60 focus:outline-none",
-                  hasAnyMentionables
-                    ? "text-transparent caret-base-fg"
-                    : "text-base-fg",
-                )}
-                value={prompt}
-                onChange={handleChange}
-                onPaste={handlePaste}
-                onKeyDown={handleKeyDown}
-                onScroll={handleScroll}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-              />
               <span
                 className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
@@ -1229,22 +1127,8 @@ export const PromptBoxVideo = ({
         onClose={() => setIsCharactersModalOpen(false)}
         onSelectCharacter={(character) => {
           const mention = `@${character.name}`;
-          const textarea = textareaRef.current;
-          if (textarea) {
-            const pos = textarea.selectionStart ?? prompt.length;
-            const before = prompt.slice(0, pos);
-            const after = prompt.slice(pos);
-            const spaceBefore =
-              before.length > 0 && !before.endsWith(" ") ? " " : "";
-            setPrompt(before + spaceBefore + mention + " " + after);
-            requestAnimationFrame(() => {
-              const newPos = pos + spaceBefore.length + mention.length + 1;
-              textarea.setSelectionRange(newPos, newPos);
-              textarea.focus();
-            });
-          } else {
-            setPrompt(prompt ? prompt + " " + mention + " " : mention + " ");
-          }
+          const spaceBefore = prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
+          setPrompt(prompt + spaceBefore + mention + " ");
           setIsCharactersModalOpen(false);
         }}
       />
