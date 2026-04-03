@@ -65,6 +65,10 @@ pub struct GenericCreateAccountArgs<'a> {
   /// If the browser doesn't send this parameter, we'll try the `referer` header.
   pub maybe_referral_url: Option<String>,
 
+  /// The URL where the user landed when they first arrived, prior to navigation and signing up.
+  /// The browser can send `window.location.href` to the backend so we know how people are finding us.
+  pub maybe_landing_url: Option<String>,
+
   /// In production code, send this as `None`.
   /// Only provide an external user token for db integration tests and db seeding tools.
   /// This allows for knowing the user token a priori.
@@ -131,7 +135,8 @@ SET
 
   maybe_signup_method = ?,
 
-  maybe_referral_url = ?
+  maybe_referral_url = ?,
+  maybe_landing_url = ?
         "#,
       user_token.as_str(),
     
@@ -168,6 +173,7 @@ SET
       args.maybe_signup_method.map(|m| m.to_str()),
 
       args.maybe_referral_url,
+      args.maybe_landing_url,
     );
 
 

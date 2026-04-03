@@ -27,6 +27,7 @@ pub struct CreateAccountFromStripeCheckoutArgs<'a> {
   pub ip_address: &'a str,
   pub maybe_source: Option<UserSignupSource>,
   pub maybe_referral_url: Option<String>,
+  pub maybe_landing_url: Option<String>,
 
   /// Comma separated string of feature flags.
   pub maybe_feature_flags: Option<&'a str>,
@@ -70,6 +71,7 @@ pub async fn create_account_from_stripe_checkout(
       is_without_password: true,
 
       maybe_referral_url: args.maybe_referral_url,
+      maybe_landing_url: args.maybe_landing_url,
 
       // NB: This is just for testing.
       maybe_user_token: None,

@@ -59,6 +59,7 @@ pub async fn create_account_from_google_sso(
 
       // TODO: Necessary? We're not doing SSO for now.
       maybe_referral_url: None,
+      maybe_landing_url: None,
 
       // NB: This is just for testing.
       maybe_user_token: None,
