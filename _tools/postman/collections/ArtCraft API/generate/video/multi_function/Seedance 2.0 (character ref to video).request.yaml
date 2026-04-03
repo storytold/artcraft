@@ -1,0 +1,23 @@
+$kind: http-request
+name: Seedance 2.0 (character ref to video)
+url: "{{api_host}}/v1/generate/video/multi_function/seedance_2p0"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: >
+    {
+        "uuid_idempotency_token": "{{$randomUUID}}",
+        "prompt": "@Mochi is riding on the shoulder of @Steampunk Clown while they're walking through a crowded shopping mall in the sci-fi future. Retro 80's aesthetics while simultaneously futuristic and steam punk. @Mochi licks her lips and barks.",
+        "duration_seconds": 5,
+        "reference_character_tokens": ["character_beph3xd1z2m4kkbedra24f", "character_4aj66rcqsbjmv3jp5ek4fc"]
+    }
+order: 3802

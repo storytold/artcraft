@@ -1,0 +1,18 @@
+$kind: http-request
+name: Edit Character
+url: "{{api_host}}/v1/character/edit"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      /// The character to edit.
+      "token": "character_4aj66rcqsbjmv3jp5ek4fc",
+
+      /// Updated name (if changing).
+      "updated_name": "Mochi",
+
+      /// Updated description (if changing).
+      "updated_description": "New Description"
+    }
+order: 487436956121943
