@@ -81,9 +81,10 @@ pub async fn create_character_handler(
   }
 
   // For now we use the model name as the character name and description.
-  let name = request.name.clone().unwrap_or_else(|| format!("{:?} Character", request.model));
-  let name = truncate_string(&name, MAX_NAME_LENGTH);
-  let description = request.description;
+  let character_name = request.character_name.clone();
+  let character_name = truncate_string(&character_name, MAX_NAME_LENGTH);
+  let character_description = request.character_description.as_deref()
+      .map(|desc| desc.trim());
 
   // --- Look up the image media file ---
 
@@ -127,8 +128,10 @@ pub async fn create_character_handler(
 
   let gen_result = generate_character(GenerateCharacterArgs {
     session: &session,
-    name: name.clone(),
-    description: description.clone().unwrap_or_else(|| "".to_string()),
+    name: character_name.clone(),
+    description: character_description
+        .map(|d| d.to_string())
+        .unwrap_or_else(|| "".to_string()),
     reference_image_url: seedance_image_url,
     is_public: false,
     host_override: None,
@@ -160,13 +163,13 @@ pub async fn create_character_handler(
 
   let character_token = create_pending_character(CreatePendingCharacterArgs {
     character_type: CharacterType::KinoviSeedance,
-    name: &name,
-    maybe_description: description.as_deref(),
+    character_name: &character_name,
+    maybe_description: character_description,
     maybe_original_upload_media_token: Some(&request.image_media_token),
     maybe_creator_user_token: Some(user_token),
     creator_ip_address: &ip_address,
     kinovi_character_id: &gen_result.character_id,
-    kinovi_name: &gen_result.name,
+    kinovi_character_name: &gen_result.name,
     maybe_generic_inference_job_token: Some(&apriori_job_token),
     mysql_executor: &mut *transaction,
     phantom: PhantomData,

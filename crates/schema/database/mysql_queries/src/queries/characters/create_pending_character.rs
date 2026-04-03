@@ -17,7 +17,7 @@ pub struct CreatePendingCharacterArgs<'e, 'c, E>
   pub character_type: CharacterType,
 
   /// User's display name for the character (truncated to 255 chars by caller).
-  pub name: &'e str,
+  pub character_name: &'e str,
 
   /// Optional user description (truncated to 512 chars by caller).
   pub maybe_description: Option<&'e str>,
@@ -35,7 +35,7 @@ pub struct CreatePendingCharacterArgs<'e, 'c, E>
   pub kinovi_character_id: &'e str,
 
   /// The name Kinovi assigned to the character.
-  pub kinovi_name: &'e str,
+  pub kinovi_character_name: &'e str,
 
   /// Our inference job token for tracking the character creation.
   pub maybe_generic_inference_job_token: Option<&'e InferenceJobToken>,
@@ -62,7 +62,7 @@ SET
   token = ?,
   character_type = ?,
   is_active = false,
-  name = ?,
+  character_name = ?,
   maybe_description = ?,
   maybe_avatar_media_token = NULL,
   maybe_full_image_media_token = NULL,
@@ -70,19 +70,19 @@ SET
   maybe_creator_user_token = ?,
   creator_ip_address = ?,
   kinovi_character_id = ?,
-  kinovi_name = ?,
+  kinovi_character_name = ?,
   maybe_kinovi_asset_id = NULL,
   maybe_generic_inference_job_token = ?
     "#,
     token.as_str(),
     args.character_type.to_str(),
-    args.name,
+    args.character_name,
     args.maybe_description,
     args.maybe_original_upload_media_token.map(|t| t.as_str()),
     args.maybe_creator_user_token.map(|t| t.as_str()),
     args.creator_ip_address,
     args.kinovi_character_id,
-    args.kinovi_name,
+    args.kinovi_character_name,
     args.maybe_generic_inference_job_token.map(|t| t.as_str()),
   );
 

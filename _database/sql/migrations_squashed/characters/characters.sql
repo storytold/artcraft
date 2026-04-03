@@ -25,7 +25,7 @@ CREATE TABLE characters (
   -- ========== CHARACTER DETAILS ==========
 
   -- Display name for the character.
-  name VARCHAR(255) NOT NULL,
+  character_name VARCHAR(255) NOT NULL,
 
   -- Optional description of the character.
   maybe_description VARCHAR(512) DEFAULT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE characters (
   -- IDEALLY WE MOVE THIS TO A SEPARATE TABLE.
   -- The name used by the third party.
   -- Important for Kinovi since characters are referenced by name in prompts.
-  kinovi_name VARCHAR(255) DEFAULT NULL,
+  kinovi_character_name VARCHAR(255) DEFAULT NULL,
 
   -- TEMPORARY FOR GOING FAST :
   -- IDEALLY WE MOVE THIS TO A SEPARATE TABLE.

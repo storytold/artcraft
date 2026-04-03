@@ -18,10 +18,10 @@ pub struct CreateCharacterRequest {
   pub image_media_token: MediaFileToken,
 
   /// Name of the character.
-  pub name: Option<String>,
+  pub character_name: String,
 
   /// Description of the character.
-  pub description: Option<String>,
+  pub character_description: Option<String>,
 }
 
 /// Response body for creating a character.
