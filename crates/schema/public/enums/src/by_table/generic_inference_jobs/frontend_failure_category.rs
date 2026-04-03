@@ -92,14 +92,17 @@ pub enum FrontendFailureCategory {
   RuleBansGeneratedContent,
 
   /// The uploaded file exceeds the maximum allowed size for this model.
+  /// We map fal WebhookErrorType::FileTooLarge to this.
   #[serde(rename = "filesize_too_large")]
   FilesizeTooLarge,
 
   /// The uploaded image dimensions are below the minimum required by the model.
+  /// We map fal WebhookErrorType::ImageTooSmall to this.
   #[serde(rename = "image_dimensions_too_small")]
   ImageDimensionsTooSmall,
 
   /// The uploaded image dimensions exceed the maximum allowed by the model.
+  /// We map fal WebhookErrorType::ImageTooLarge to this.
   #[serde(rename = "image_dimensions_too_large")]
   ImageDimensionsTooLarge,
 
