@@ -7,12 +7,11 @@
     "frontendDist": "../../../frontend/apps/artcraft/dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "nx run artcraft:dev",
-    "beforeBuildCommand": "nx run artcraft:build"
+    "beforeBuildCommand": "npx run artcraft:build"
   },
   "app": {
     "withGlobalTauri": true,
-    "windows": [
-    ],
+    "windows": [],
     "security": {
       "assetProtocol": {
         "enable": true,
@@ -37,6 +36,7 @@
           "'unsafe-eval'",
           "'unsafe-inline'",
           "asset:",
+          "https://asset.localhost",
           "blob:",
           "data:",
           "http://ipc.localhost",
