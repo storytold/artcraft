@@ -1,11 +1,9 @@
-use anyhow::anyhow;
 use log::warn;
 use sqlx::MySqlPool;
 
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
 use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::common::visibility::Visibility;
-use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::prompts::PromptToken;
@@ -43,7 +41,7 @@ struct RawRecord {
 }
 
 /// Returns all non-terminal Seedance2Pro video jobs that have an associated order_id.
-pub async fn list_pending_seedance2pro_video_jobs(pool: &MySqlPool) -> AnyhowResult<Vec<PendingSeedance2ProJob>> {
+pub async fn list_pending_seedance2pro_video_jobs(pool: &MySqlPool) -> Result<Vec<PendingSeedance2ProJob>, sqlx::Error> {
   let records = sqlx::query_as!(
     RawRecord,
     r#"
@@ -70,8 +68,7 @@ LIMIT 25000
     InferenceJobType::Seedance2ProQueue.to_str(),
   )
     .fetch_all(pool)
-    .await
-    .map_err(|err| anyhow!("error querying pending seedance2pro jobs: {:?}", err))?;
+    .await?;
 
   let jobs = records
     .into_iter()
