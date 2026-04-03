@@ -222,7 +222,12 @@ CREATE TABLE users (
   was_eagerly_provisioned BOOLEAN NOT NULL DEFAULT false,
 
   -- The referral URL the user arrived from when signing up.
+  -- This helps us know what marketing is effective.
   maybe_referral_url VARCHAR(255) DEFAULT NULL,
+
+  -- The actual URL the user first arrived at when signing up, including query params.
+  -- This helps us know what marketing is effective.
+  maybe_landing_url VARCHAR(255) DEFAULT NULL,
 
   -- ========== MODERATION DETAILS ==========
 

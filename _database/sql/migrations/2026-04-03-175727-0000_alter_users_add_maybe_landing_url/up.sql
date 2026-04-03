@@ -1,0 +1,6 @@
+-- noinspection SqlDialectInspectionForFile
+-- noinspection SqlNoDataSourceInspectionForFile
+-- noinspection SqlResolveForFile
+
+ALTER TABLE users
+    ADD COLUMN maybe_landing_url VARCHAR(255) DEFAULT NULL;
