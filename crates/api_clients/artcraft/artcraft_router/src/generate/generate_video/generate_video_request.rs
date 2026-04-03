@@ -1,7 +1,9 @@
+use tokens::tokens::characters::CharacterToken;
 use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::common_resolution::CommonResolution;
 use crate::api::common_video_model::CommonVideoModel;
 use crate::api::audio_list_ref::AudioListRef;
+use crate::api::character_list_ref::CharacterListRef;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
 use crate::api::provider::Provider;
@@ -46,6 +48,9 @@ pub struct GenerateVideoRequest<'a> {
 
   /// Reference audio (optional).
   pub reference_audio: Option<AudioListRef<'a>>,
+
+  /// Reference characters (optional).
+  pub reference_character_tokens: Option<CharacterListRef<'a>>,
 
   /// The resolution to use
   pub resolution: Option<CommonResolution>,

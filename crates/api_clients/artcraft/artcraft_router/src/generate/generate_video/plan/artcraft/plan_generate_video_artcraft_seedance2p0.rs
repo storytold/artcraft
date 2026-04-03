@@ -11,6 +11,7 @@ use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
   Seedance2p0AspectRatio, Seedance2p0BatchCount,
 };
+use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
@@ -21,6 +22,7 @@ pub struct PlanArtcraftSeedance2p0<'a> {
   pub reference_images: Option<&'a Vec<MediaFileToken>>,
   pub reference_videos: Option<&'a Vec<MediaFileToken>>,
   pub reference_audio: Option<&'a Vec<MediaFileToken>>,
+  pub reference_characters: Option<&'a Vec<CharacterToken>>,
   pub aspect_ratio: Option<Seedance2p0AspectRatio>,
   pub duration_seconds: Option<u8>,
   pub batch_count: Seedance2p0BatchCount,
@@ -49,11 +51,21 @@ pub fn plan_generate_video_artcraft_seedance2p0<'a>(
     reference_images,
     reference_videos,
     reference_audio,
+    reference_characters: resolve_character_list_ref(request.reference_character_tokens),
     aspect_ratio,
     duration_seconds,
     batch_count,
     idempotency_token: request.get_or_generate_idempotency_token(),
   }))
+}
+
+fn resolve_character_list_ref<'a>(
+  character_list_ref: Option<crate::api::character_list_ref::CharacterListRef<'a>>,
+) -> Option<&'a Vec<CharacterToken>> {
+  match character_list_ref {
+    None => None,
+    Some(crate::api::character_list_ref::CharacterListRef::CharacterTokens(tokens)) => Some(tokens),
+  }
 }
 
 fn resolve_image_ref<'a>(

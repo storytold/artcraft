@@ -48,6 +48,7 @@ pub async fn estimate_video_cost_handler(
     reference_images: None,
     reference_videos: None,
     reference_audio: None,
+    reference_character_tokens: None,
     resolution: router_resolution,
     aspect_ratio: router_aspect_ratio,
     duration_seconds: request.duration_seconds,

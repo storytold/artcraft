@@ -3,6 +3,7 @@ use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_comma
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use artcraft_router::api::character_list_ref::CharacterListRef;
 use artcraft_router::api::common_video_model::CommonVideoModel;
 use artcraft_router::api::image_ref::ImageRef;
 use artcraft_router::api::provider::Provider;
@@ -40,6 +41,7 @@ pub(super) async fn handle_artcraft_video_via_router(
     reference_images: None,
     reference_videos: None,
     reference_audio: None,
+    reference_character_tokens: request.reference_character_tokens.as_ref().map(CharacterListRef::CharacterTokens),
     resolution: None,
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,

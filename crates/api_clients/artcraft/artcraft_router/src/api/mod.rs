@@ -1,4 +1,5 @@
 pub mod audio_list_ref;
+pub mod character_list_ref;
 pub mod common_aspect_ratio;
 pub mod common_image_model;
 pub mod common_resolution;

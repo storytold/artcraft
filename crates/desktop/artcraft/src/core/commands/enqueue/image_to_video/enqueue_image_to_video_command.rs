@@ -29,6 +29,7 @@ use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use log::{error, info, warn};
 use serde_derive::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
+use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 /// This is used in the Tauri command bridge.
@@ -122,6 +123,10 @@ pub struct EnqueueImageToVideoRequest {
   /// OPTIONAL.
   /// Reference audio for the video generation (e.g. voices, lip sync, music, etc.)
   pub reference_audio_media_tokens: Option<Vec<MediaFileToken>>,
+
+  /// Optional character tokens to reference in the prompt.
+  /// Characters are referenced in prompts as @CharacterName.
+  pub reference_character_tokens: Option<Vec<CharacterToken>>,
 
   /// Optional.
   /// Text prompt used to direct the video.
