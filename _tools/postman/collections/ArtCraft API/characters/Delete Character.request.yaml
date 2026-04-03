@@ -1,0 +1,5 @@
+$kind: http-request
+name: Delete Character
+url: "{{api_host}}/v1/character/character_c40dzeq9pa1qtfy19q9f1w"
+method: DELETE
+order: 76446840865701
