@@ -3,6 +3,7 @@ use log::warn;
 use sqlx::MySqlPool;
 
 use enums::by_table::generic_inference_jobs::inference_job_external_third_party::InferenceJobExternalThirdParty;
+use enums::by_table::generic_inference_jobs::inference_job_type::InferenceJobType;
 use enums::common::visibility::Visibility;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
@@ -41,8 +42,8 @@ struct RawRecord {
   maybe_wallet_ledger_entry_token: Option<WalletLedgerEntryToken>,
 }
 
-/// Returns all non-terminal Seedance2Pro jobs that have an associated order_id.
-pub async fn list_pending_seedance2pro_jobs(pool: &MySqlPool) -> AnyhowResult<Vec<PendingSeedance2ProJob>> {
+/// Returns all non-terminal Seedance2Pro video jobs that have an associated order_id.
+pub async fn list_pending_seedance2pro_video_jobs(pool: &MySqlPool) -> AnyhowResult<Vec<PendingSeedance2ProJob>> {
   let records = sqlx::query_as!(
     RawRecord,
     r#"
@@ -59,12 +60,14 @@ SELECT
 FROM generic_inference_jobs as jobs
 
 WHERE jobs.maybe_external_third_party = ?
+  AND jobs.job_type = ?
   AND jobs.status NOT IN ('complete_success', 'complete_failure')
   AND jobs.maybe_external_third_party_id IS NOT NULL
 
 LIMIT 25000
     "#,
     InferenceJobExternalThirdParty::Seedance2Pro.to_str(),
+    InferenceJobType::Seedance2ProQueue.to_str(),
   )
     .fetch_all(pool)
     .await

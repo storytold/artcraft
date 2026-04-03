@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use log::{error, info, warn};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::list_pending_seedance2pro_jobs;
+use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_video_jobs::list_pending_seedance2pro_video_jobs;
 use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, TaskStatus};
 
 use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;
@@ -50,7 +50,7 @@ pub async fn video_polling_main_loop(job_dependencies: JobDependencies) {
 
 async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
   // 1. Query all non-terminal Seedance2Pro jobs from DB.
-  let pending_jobs = match list_pending_seedance2pro_jobs(&deps.mysql_pool).await {
+  let pending_jobs = match list_pending_seedance2pro_video_jobs(&deps.mysql_pool).await {
     Ok(jobs) => jobs,
     Err(err) => {
       error!("Failed to list pending seedance2pro jobs: {:?}", err);

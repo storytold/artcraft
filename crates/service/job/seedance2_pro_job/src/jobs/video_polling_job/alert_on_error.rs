@@ -1,5 +1,5 @@
 use log::error;
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_jobs::PendingSeedance2ProJob;
+use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_video_jobs::PendingSeedance2ProJob;
 use pager::client::pager::Pager;
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
