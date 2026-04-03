@@ -298,5 +298,19 @@ mod tests {
         assert_eq!(variant, FrontendFailureCategory::from_str(&format!("{:?}", variant)).unwrap());
       }
     }
+
+    /// The database column is VARCHAR(32). Every serialized variant must fit.
+    #[test]
+    fn max_serialization_length() {
+      const MAX_LENGTH: usize = 32;
+      for variant in FrontendFailureCategory::all_variants() {
+        let serialized = variant.to_str();
+        assert!(
+          serialized.len() <= MAX_LENGTH,
+          "{:?} serializes to {:?} ({} chars), exceeds VARCHAR({}) limit",
+          variant, serialized, serialized.len(), MAX_LENGTH,
+        );
+      }
+    }
   }
 }
