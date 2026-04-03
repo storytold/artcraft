@@ -146,6 +146,46 @@ function setCaretOffset(el: HTMLElement, offset: number) {
   }
 }
 
+/**
+ * Scroll the contentEditable so the caret is visible.
+ * Uses a zero-width space span to get a measurable rect on empty lines.
+ */
+function scrollCaretIntoView(el: HTMLElement) {
+  const sel = window.getSelection();
+  if (!sel?.rangeCount || !el.contains(sel.anchorNode)) return;
+
+  const range = sel.getRangeAt(0).cloneRange();
+  range.collapse(false);
+
+  const span = document.createElement("span");
+  span.textContent = "\u200B";
+  range.insertNode(span);
+
+  const spanRect = span.getBoundingClientRect();
+  const elRect = el.getBoundingClientRect();
+
+  if (spanRect.bottom > elRect.bottom) {
+    el.scrollTop += spanRect.bottom - elRect.bottom;
+  } else if (spanRect.top < elRect.top) {
+    el.scrollTop -= elRect.top - spanRect.top;
+  }
+
+  // Remove temp node and restore caret after it
+  const parent = span.parentNode!;
+  const next = span.nextSibling;
+  parent.removeChild(span);
+
+  const restored = document.createRange();
+  if (next) {
+    restored.setStartBefore(next);
+  } else {
+    restored.setStartAfter(parent.lastChild ?? parent);
+  }
+  restored.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(restored);
+}
+
 // ---------------------------------------------------------------------------
 // Mention Dropdown
 // ---------------------------------------------------------------------------
@@ -426,6 +466,11 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     isInternalUpdate.current = true;
     onChange(text);
     detectMention(text, caret);
+
+    // Keep caret visible when content overflows (contentEditable doesn't auto-scroll)
+    requestAnimationFrame(() => {
+      scrollCaretIntoView(el);
+    });
   }, [onChange, buildHTML, detectMention]);
 
   const handleCompositionStart = useCallback(() => {
@@ -503,8 +548,9 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       if (e.key === "Enter" && (e.shiftKey || e.metaKey)) {
         e.preventDefault();
         document.execCommand("insertLineBreak");
-        // Trigger input handler so the parent value stays in sync
         handleInput();
+        // Scroll caret into view (textarea does this automatically, contentEditable does not)
+        scrollCaretIntoView(editorRef.current!);
         return;
       }
 
