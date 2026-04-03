@@ -6,6 +6,7 @@ use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 
+#[derive(Clone)]
 pub struct JobDependencies {
   pub mysql_pool: MySqlPool,
 
