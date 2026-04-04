@@ -138,8 +138,9 @@ pub async fn edit_character_handler(
 
 // =============== Private helpers ===============
 
+use super::common::CHARACTER_MAX_DESCRIPTION_LENGTH;
+
 const MAX_NAME_LENGTH: usize = 50;
-const MAX_DESCRIPTION_LENGTH: usize = 500;
 
 enum DescriptionUpdateType {
   NoUpdate,
@@ -171,9 +172,9 @@ fn resolve_description_update(
   let trimmed = desc.trim();
   if trimmed.is_empty() {
     Ok(DescriptionUpdateType::Nullify)
-  } else if trimmed.len() > MAX_DESCRIPTION_LENGTH {
+  } else if trimmed.len() > CHARACTER_MAX_DESCRIPTION_LENGTH {
     Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
-      format!("Description exceeds maximum length of {} characters.", MAX_DESCRIPTION_LENGTH),
+      format!("Description exceeds maximum length of {} characters.", CHARACTER_MAX_DESCRIPTION_LENGTH),
     ))
   } else {
     Ok(DescriptionUpdateType::Update(trimmed.to_string()))

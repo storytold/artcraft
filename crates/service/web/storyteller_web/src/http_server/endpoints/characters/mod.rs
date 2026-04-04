@@ -1,3 +1,4 @@
+pub mod common;
 pub mod create_character_handler;
 pub mod delete_character_handler;
 pub mod edit_character_handler;
