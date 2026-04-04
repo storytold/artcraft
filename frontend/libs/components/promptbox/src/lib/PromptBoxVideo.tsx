@@ -591,7 +591,7 @@ export const PromptBoxVideo = ({
       toast.error("Please enter a prompt to generate video");
       return;
     }
-    if (prompt.length > maxLen) {
+    if (isFinite(maxLen) && prompt.length > maxLen) {
       toast.error(
         `Prompt exceeds the ${maxLen} character limit for this model`,
       );
@@ -933,9 +933,9 @@ export const PromptBoxVideo = ({
                 />
               )}
               <span
-                className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
+                className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
               >
-                {prompt.length} / {maxLen}
+                {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
               </span>
             </div>
           </div>

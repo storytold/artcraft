@@ -309,7 +309,7 @@ export const VIDEO_MODELS: VideoModel[] = [
     defaultResolution: "720p",
     supportsSystemPrompt: false,
     progressBarTime: 900000, // ~15 minutes
-    maxPromptLength: 3000,
+    maxPromptLength: Infinity,
   }),
   new VideoModel({
     id: "sora_2",

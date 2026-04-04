@@ -269,7 +269,7 @@ export const PromptBox3D = ({
   const maxLen = selectedImageModel?.maxPromptLength ?? 1000;
 
   const handleEnqueue = async () => {
-    if (prompt.length > maxLen) {
+    if (isFinite(maxLen) && prompt.length > maxLen) {
       toast.error(`Prompt exceeds the ${maxLen} character limit for this model`);
       return;
     }
@@ -632,8 +632,8 @@ export const PromptBox3D = ({
                   isPromptBoxFocused.value = false;
                 }}
               />
-              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
-                {prompt.length} / {maxLen}
+              <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
+                {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
               </span>
             </div>
           </div>
