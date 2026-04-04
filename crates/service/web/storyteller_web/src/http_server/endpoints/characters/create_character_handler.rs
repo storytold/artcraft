@@ -30,7 +30,7 @@ use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use crate::util::lookup::lookup_media_file_urls_as_map::lookup_media_file_urls_as_map;
 
 const MAX_NAME_LENGTH: usize = 255;
-const MAX_DESCRIPTION_LENGTH: usize = 512;
+const MAX_DESCRIPTION_LENGTH: usize = 500;
 
 /// Create a new character.
 #[utoipa::path(
@@ -85,6 +85,14 @@ pub async fn create_character_handler(
   let character_name = truncate_string(&character_name, MAX_NAME_LENGTH);
   let character_description = request.character_description.as_deref()
       .map(|desc| desc.trim());
+
+  if let Some(desc) = character_description {
+    if desc.len() > MAX_DESCRIPTION_LENGTH {
+      return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+        format!("Description exceeds maximum length of {} characters.", MAX_DESCRIPTION_LENGTH),
+      ));
+    }
+  }
 
   // --- Look up the image media file ---
 
