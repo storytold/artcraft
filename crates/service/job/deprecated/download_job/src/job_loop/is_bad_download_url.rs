@@ -1,5 +1,4 @@
-//! Probably should be in its own "static_config" crate.
-
+use log::debug;
 use url::{Host, Url};
 
 /// Reports if the URL is inappropriate for downloading as a TTS model, vocoder, etc.
@@ -31,7 +30,7 @@ pub fn is_bad_download_url(url: &str) -> anyhow::Result<bool> {
           || domain.contains("youtu.be")
           || domain.contains("youtube.com");
 
-      println!("domain: {:?}", domain);
+      debug!("domain: {:?}", domain);
 
       if bad_host {
         return Ok(true)
@@ -45,7 +44,7 @@ pub fn is_bad_download_url(url: &str) -> anyhow::Result<bool> {
 
 #[cfg(test)]
 mod tests {
-  use crate::is_bad_download_url::is_bad_download_url;
+  use super::*;
 
   #[test]
   fn bad_download_url() {

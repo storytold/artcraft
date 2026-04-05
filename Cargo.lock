@@ -3671,6 +3671,7 @@ dependencies = [
  "tempdir",
  "tokens",
  "tokio",
+ "url",
  "workspace-build-acceleration",
  "zip 0.6.6",
 ]

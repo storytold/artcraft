@@ -4,7 +4,7 @@ use anyhow::anyhow;
 use log::{info, warn};
 use tempdir::TempDir;
 
-use config::is_bad_download_url::is_bad_download_url;
+use crate::job_loop::is_bad_download_url::is_bad_download_url;
 use errors::AnyhowResult;
 use filesys::file_deletion::safe_delete_directory::safe_delete_directory;
 use jobs_common::redis_job_status_logger::RedisJobStatusLogger;

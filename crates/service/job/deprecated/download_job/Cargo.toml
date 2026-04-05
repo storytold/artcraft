@@ -43,6 +43,7 @@ tokens.workspace = true
 
 # External
 anyhow.workspace = true
+url.workspace = true
 chrono.workspace = true
 dotenv.workspace = true
 hostname.workspace = true
