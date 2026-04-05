@@ -28,7 +28,6 @@ pub enum WeightsType {
   #[serde(rename = "comfy_ui")]
   ComfyUi,
 
-  /// NB: IN production these are filtered to `PublicWeightsType::Tacotron25`.
   #[serde(rename = "gpt_so_vits")]
   GptSoVits,
 }

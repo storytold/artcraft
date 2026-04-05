@@ -20,7 +20,6 @@ use artcraft_api_defs::common::responses::simple_entity_stats::SimpleEntityStats
 use artcraft_api_defs::media_file::list_batch_generated_media_files::{BatchGeneratedReduxMediaFileInfo, ListBatchGeneratedReduxMediaFilesPathInfo, ListBatchGeneratedReduxMediaFilesSuccessResponse};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use log::warn;
 use mysql_queries::queries::media_files::get::batch_get_media_files::batch_get_media_files;
 use mysql_queries::queries::media_files::list::list_batch_generated_redux_media_files::list_batch_generated_redux_media_files_with_connection;

@@ -7,7 +7,6 @@ use crate::utils::constants::{APPLICATION_JSON, USER_AGENT};
 use crate::utils::filter_bad_response::filter_bad_response;
 use crate::utils::http_get_anonymous::http_get_anonymous;
 use chrono::{DateTime, Utc};
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::debug;
 use reqwest::multipart::{Form, Part};

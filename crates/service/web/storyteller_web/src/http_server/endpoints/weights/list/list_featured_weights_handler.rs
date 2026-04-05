@@ -11,7 +11,7 @@ use utoipa::{IntoParams, ToSchema};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums::common::view_as::ViewAs;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
+use enums::by_table::model_weights::weights_types::WeightsType;
 use mysql_queries::queries::model_weights::list::list_featured_weights::{list_featured_weights, ListFeaturedWeightsArgs};
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -42,7 +42,7 @@ pub struct ListFeaturedWeightsQueryParams {
   ///   - etc.
   pub filter_weights_categories: Option<String>,
 
-  /// NB: This can be one (or more comma-separated values) from `PublicWeightsType`,
+  /// NB: This can be one (or more comma-separated values) from `WeightsType`,
   /// which are the types of models.
   ///
   /// Usage:
@@ -62,7 +62,7 @@ pub struct ListFeaturedWeightsSuccessResponse {
 pub struct FeaturedModelWeightForList {
   pub weight_token: ModelWeightToken,
 
-  pub weight_type: PublicWeightsType,
+  pub weight_type: WeightsType,
   pub weight_category: WeightsCategory,
 
   pub title: String,
@@ -259,7 +259,7 @@ pub async fn list_featured_weights_handler(
             title: w.title,
             maybe_ietf_language_tag: w.maybe_ietf_language_tag,
             maybe_ietf_primary_language_subtag: w.maybe_ietf_primary_language_subtag,
-            weight_type: PublicWeightsType::from_enum(w.weights_type),
+            weight_type: w.weights_type,
             weight_category: w.weights_category,
             cover_image: cover_image_details,
             maybe_cover_image_public_bucket_path: maybe_cover_image,

@@ -222,7 +222,6 @@ use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
 use tokens::tokens::batch_generations::*;
 use tokens::tokens::beta_keys::*;
 use tokens::tokens::browser_session_logs::*;
@@ -553,7 +552,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     PromptContextSemanticType,
     PromptType,
     MediaFileOriginModelType,
-    PublicWeightsType,
     StyleTransferName,
     UserFeatureFlag,
     WeightsCategory,

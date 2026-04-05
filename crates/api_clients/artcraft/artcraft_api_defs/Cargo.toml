@@ -21,7 +21,6 @@ workspace-build-acceleration.workspace = true
 
 # Internal
 enums.workspace = true
-enums_public.workspace = true
 tokens.workspace = true
 
 # External

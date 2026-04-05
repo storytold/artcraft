@@ -15,7 +15,7 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
+use enums::by_table::model_weights::weights_types::WeightsType;
 use log::debug;
 use serde_derive::Deserialize;
 use tokens::tokens::batch_generations::BatchGenerationToken;
@@ -193,7 +193,7 @@ pub struct GetMediaFileModeratorFields {
 #[derive(Deserialize, Debug)]
 pub struct GetMediaFileModelInfo {
   pub weight_token: ModelWeightToken,
-  pub weight_type: PublicWeightsType,
+  pub weight_type: WeightsType,
   pub weight_category: WeightsCategory,
   pub title: String,
 

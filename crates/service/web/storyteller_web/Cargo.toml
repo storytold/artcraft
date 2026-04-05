@@ -50,7 +50,6 @@ datetimes = { path = "../../../lib/data/datetimes" }
 easyenv.workspace = true
 elasticsearch_schema = { path = "../../../schema/database/elasticsearch_schema" }
 enums.workspace = true
-enums_public.workspace = true
 errors.workspace = true
 fal_client.workspace = true
 filesys.workspace = true

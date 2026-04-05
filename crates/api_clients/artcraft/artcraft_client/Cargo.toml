@@ -26,7 +26,6 @@ workspace-build-acceleration.workspace = true
 artcraft_api_defs.workspace = true
 cloudflare_errors.workspace = true
 enums.workspace = true
-enums_public.workspace = true
 errors.workspace = true
 uuid_utils.workspace = true
 mimetypes.workspace = true

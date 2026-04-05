@@ -13,7 +13,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use enums::by_table::model_weights::weights_category::WeightsCategory;
 use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
-use enums_public::by_table::model_weights::public_weights_types::PublicWeightsType;
+use enums::by_table::model_weights::weights_types::WeightsType;
 use mysql_queries::queries::model_weights::list::list_weights_by_user::{list_weights_by_creator_username, ListWeightsForUserArgs};
 use primitives::numerics::u64_to_u32_saturating::u64_to_u32_saturating;
 use tokens::tokens::model_weights::ModelWeightToken;
@@ -92,7 +92,7 @@ pub struct ListWeightsForUserQueryParams {
 
   /// Optional. Scope to only the exact weight type.
   /// Shouldn't be used with weight category scoping
-  pub maybe_scoped_weight_type: Option<PublicWeightsType>,
+  pub maybe_scoped_weight_type: Option<WeightsType>,
 
   /// Optional. Scope to only the exact weight category, which may include
   /// multiple types of model (eg voice_conversion includes RVC, SVC, etc.)
@@ -190,7 +190,7 @@ pub async fn list_weights_by_user_handler(
         sort_ascending,
         view_as,
         maybe_scoped_weight_category: query.maybe_scoped_weight_category,
-        maybe_scoped_weight_type: query.maybe_scoped_weight_type.map(|w| w.to_enum()),
+        maybe_scoped_weight_type: query.maybe_scoped_weight_type,
         mysql_pool: &server_state.mysql_pool,
     }
   ).await.map_err(|e| {
