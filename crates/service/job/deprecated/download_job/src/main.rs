@@ -18,7 +18,6 @@
 
 #[macro_use] extern crate serde_derive;
 
-use std::ops::Deref;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -34,6 +33,7 @@ use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnif
 use config::common_env::CommonEnv;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
+use shared_env_var_config::redis::env_get_redis_0_connection_string_or_default;
 use errors::AnyhowResult;
 use filesys::check_directory_exists::check_directory_exists;
 use google_drive_downloader::google_drive_download_command::GoogleDriveDownloadCommand;
@@ -325,8 +325,8 @@ async fn main() -> AnyhowResult<()> {
 
   info!("Connecting to redis...");
 
-  let redis_manager =
-      RedisConnectionManager::new(common_env.redis_0_connection_string.deref())?;
+  let redis_connection_string = env_get_redis_0_connection_string_or_default();
+  let redis_manager = RedisConnectionManager::new(redis_connection_string.as_str())?;
 
   let redis_pool = r2d2::Pool::builder()
       .build(redis_manager)?;

@@ -2,26 +2,26 @@ use std::time::Duration;
 
 use log::info;
 
-use config::common_env::CommonEnv;
 use errors::AnyhowResult;
 use limitation::Limiter;
+use shared_env_var_config::redis::env_get_redis_0_connection_string_or_default;
 
 use crate::configs::app_startup::username_set::UsernameSet;
 use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
 use crate::state::server_state::RedisRateLimiters;
 
 /// Build the various rate limiters
-pub fn configure_redis_rate_limiters(common_env: &CommonEnv) -> AnyhowResult<RedisRateLimiters> {
-  // TODO(bt,2023-12-13): Kill CommonEnv.
-
+pub fn configure_redis_rate_limiters() -> AnyhowResult<RedisRateLimiters> {
   info!("Setting up Redis rate limiters...");
+
+  let redis_connection_string = env_get_redis_0_connection_string_or_default();
 
   let logged_out_redis_rate_limiter = {
     let limiter_enabled = easyenv::get_env_bool_or_default("LIMITER_LOGGED_OUT_ENABLED", true);
     let limiter_max_requests = easyenv::get_env_num("LIMITER_LOGGED_OUT_MAX_REQUESTS", 3)?;
     let limiter_window_seconds = easyenv::get_env_num("LIMITER_LOGGED_OUT_WINDOW_SECONDS", 10)?;
 
-    let limiter = Limiter::build(&common_env.redis_0_connection_string)
+    let limiter = Limiter::build(&redis_connection_string)
         .limit(limiter_max_requests)
         .period(Duration::from_secs(limiter_window_seconds))
         .finish()?;
@@ -34,7 +34,7 @@ pub fn configure_redis_rate_limiters(common_env: &CommonEnv) -> AnyhowResult<Red
     let limiter_max_requests = easyenv::get_env_num("LIMITER_LOGGED_IN_MAX_REQUESTS", 3)?;
     let limiter_window_seconds = easyenv::get_env_num("LIMITER_LOGGED_IN_WINDOW_SECONDS", 10)?;
 
-    let limiter = Limiter::build(&common_env.redis_0_connection_string)
+    let limiter = Limiter::build(&redis_connection_string)
         .limit(limiter_max_requests)
         .period(Duration::from_secs(limiter_window_seconds))
         .finish()?;
@@ -47,7 +47,7 @@ pub fn configure_redis_rate_limiters(common_env: &CommonEnv) -> AnyhowResult<Red
     let limiter_max_requests = easyenv::get_env_num("LIMITER_API_HIGH_PRIORITY_MAX_REQUESTS", 30)?;
     let limiter_window_seconds = easyenv::get_env_num("LIMITER_API_HIGH_PRIORITY_WINDOW_SECONDS", 30)?;
 
-    let limiter = Limiter::build(&common_env.redis_0_connection_string)
+    let limiter = Limiter::build(&redis_connection_string)
         .limit(limiter_max_requests)
         .period(Duration::from_secs(limiter_window_seconds))
         .finish()?;
@@ -62,7 +62,7 @@ pub fn configure_redis_rate_limiters(common_env: &CommonEnv) -> AnyhowResult<Red
     let limiter_max_requests = easyenv::get_env_num("LIMITER_API_AI_STREAMERS_MAX_REQUESTS", 30)?;
     let limiter_window_seconds = easyenv::get_env_num("LIMITER_API_AI_STREAMERS_WINDOW_SECONDS", 30)?;
 
-    let limiter = Limiter::build(&common_env.redis_0_connection_string)
+    let limiter = Limiter::build(&redis_connection_string)
         .limit(limiter_max_requests)
         .period(Duration::from_secs(limiter_window_seconds))
         .finish()?;
@@ -82,7 +82,7 @@ pub fn configure_redis_rate_limiters(common_env: &CommonEnv) -> AnyhowResult<Red
     let limiter_max_requests = easyenv::get_env_num("LIMITER_MODEL_UPLOAD_MAX_REQUESTS", 3)?;
     let limiter_window_seconds = easyenv::get_env_num("LIMITER_MODEL_UPLOAD_WINDOW_SECONDS", 10)?;
 
-    let limiter = Limiter::build(&common_env.redis_0_connection_string)
+    let limiter = Limiter::build(&redis_connection_string)
         .limit(limiter_max_requests)
         .period(Duration::from_secs(limiter_window_seconds))
         .finish()?;
@@ -95,7 +95,7 @@ pub fn configure_redis_rate_limiters(common_env: &CommonEnv) -> AnyhowResult<Red
     let limiter_max_requests = easyenv::get_env_num("LIMITER_FILE_UPLOAD_LOGGED_OUT_MAX_REQUESTS", 4)?;
     let limiter_window_seconds = easyenv::get_env_num("LIMITER_FILE_UPLOAD_LOGGED_OUT_WINDOW_SECONDS", 30)?;
 
-    let limiter = Limiter::build(&common_env.redis_0_connection_string)
+    let limiter = Limiter::build(&redis_connection_string)
         .limit(limiter_max_requests)
         .period(Duration::from_secs(limiter_window_seconds))
         .finish()?;
@@ -108,7 +108,7 @@ pub fn configure_redis_rate_limiters(common_env: &CommonEnv) -> AnyhowResult<Red
     let limiter_max_requests = easyenv::get_env_num("LIMITER_FILE_UPLOAD_LOGGED_IN_MAX_REQUESTS", 6)?;
     let limiter_window_seconds = easyenv::get_env_num("LIMITER_FILE_UPLOAD_LOGGED_IN_WINDOW_SECONDS", 30)?;
 
-    let limiter = Limiter::build(&common_env.redis_0_connection_string)
+    let limiter = Limiter::build(&redis_connection_string)
         .limit(limiter_max_requests)
         .period(Duration::from_secs(limiter_window_seconds))
         .finish()?;

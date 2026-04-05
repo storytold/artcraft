@@ -15,7 +15,6 @@
 use std::fs;
 use std::fs::File;
 use std::io::{BufReader, Error, Read};
-use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
@@ -35,6 +34,7 @@ use config::bad_urls::is_bad_tts_model_download_url;
 use config::common_env::CommonEnv;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
+use shared_env_var_config::redis::env_get_redis_0_connection_string_or_default;
 use enums::by_table::tts_models::tts_model_type::TtsModelType;
 use errors::AnyhowResult;
 use filesys::check_directory_exists::check_directory_exists;
@@ -166,8 +166,8 @@ async fn main() -> AnyhowResult<()> {
 
   info!("Connecting to redis...");
 
-  let redis_manager =
-      RedisConnectionManager::new(common_env.redis_0_connection_string.deref())?;
+  let redis_connection_string = env_get_redis_0_connection_string_or_default();
+  let redis_manager = RedisConnectionManager::new(redis_connection_string.as_str())?;
 
   let redis_pool = r2d2::Pool::builder()
       .build(redis_manager)?;

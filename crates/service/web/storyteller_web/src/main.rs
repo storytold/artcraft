@@ -46,8 +46,8 @@ use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use chrono::Utc;
 use cloud_storage::bucket_client::BucketClient;
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use config::common_env::CommonEnv;
 use shared_env_var_config::logging::DEFAULT_RUST_LOG;
+use shared_env_var_config::redis::env_get_redis_0_connection_string_or_default;
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
 use errors::AnyhowResult;
@@ -140,7 +140,7 @@ async fn main() -> AnyhowResult<()> {
     ignore_legacy_dot_env_file: true,
   })?;
 
-  let common_env = CommonEnv::read_from_env()?;
+
 
   info!("Obtaining hostname...");
 
@@ -169,7 +169,7 @@ async fn main() -> AnyhowResult<()> {
   info!("Connected to redis...");
 
   let redis_manager = Client::open(
-    common_env.redis_0_connection_string.clone())?;
+    env_get_redis_0_connection_string_or_default())?;
 
   let redis_pool = r2d2::Pool::builder()
       .build(redis_manager)?;
@@ -460,7 +460,7 @@ async fn main() -> AnyhowResult<()> {
     elasticsearch,
     redis_pool,
     redis_ttl_cache,
-    redis_rate_limiters: configure_redis_rate_limiters(&common_env)?,
+    redis_rate_limiters: configure_redis_rate_limiters()?,
     firehose_publisher,
     badge_granter,
     avt_cookie_manager,
