@@ -31,6 +31,7 @@ hashing = { path = "../../../../lib/files/hashing" }
 jobs_common = { path = "../../../../lib/jobs_common" }
 memory_caching = { path = "../../../../lib/caching/memory_caching" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+shared_env_var_config.workspace = true
 tts_common = { path = "../../../../lib/deprecated/tts_common" }
 
 # External

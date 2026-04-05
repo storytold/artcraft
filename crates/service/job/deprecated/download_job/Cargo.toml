@@ -35,6 +35,7 @@ hashing = { path = "../../../../lib/files/hashing" }
 jobs_common = { path = "../../../../lib/jobs_common" }
 mimetypes.workspace = true
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+shared_env_var_config.workspace = true
 reusable_types = { path = "../../../../schema/public/reusable_types" }
 storyteller_root = { path = "../../../../lib/storyteller_root" }
 subprocess_common = { path = "../../../../lib/deprecated/subprocess_common" }

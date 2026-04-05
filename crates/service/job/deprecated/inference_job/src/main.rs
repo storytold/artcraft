@@ -31,8 +31,8 @@ use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnif
 use cloud_storage::bucket_client::BucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use config::common_env::CommonEnv;
-use config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
 use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use errors::AnyhowResult;
 use filesys::check_directory_exists::check_directory_exists;
 use filesys::create_dir_all_if_missing::create_dir_all_if_missing;
@@ -153,10 +153,7 @@ async fn main() -> AnyhowResult<()> {
     easyenv::get_env_pathbuf_or_default("SEMI_PERSISTENT_DIR_ROOT",
                                         PathBuf::from("/tmp/persistent")));
 
-  let db_connection_string =
-      easyenv::get_env_string_or_default(
-        "MYSQL_URL",
-        DEFAULT_MYSQL_CONNECTION_STRING);
+  let db_connection_string = env_get_mysql_connection_string_or_default();
 
   info!("Connecting to MySQL database...");
 

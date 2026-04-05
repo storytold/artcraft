@@ -30,6 +30,7 @@ google_drive_downloader = { path = "../../../../api_clients/google_drive_downloa
 hashing = { path = "../../../../lib/files/hashing" }
 jobs_common = { path = "../../../../lib/jobs_common" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+shared_env_var_config.workspace = true
 
 # External
 anyhow.workspace = true

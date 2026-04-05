@@ -29,6 +29,7 @@ errors.workspace = true
 filesys.workspace = true
 mimetypes.workspace = true
 mysql_queries = { path = "../../../schema/database/mysql_queries" }
+shared_env_var_config.workspace = true
 tokens.workspace = true
 
 # External

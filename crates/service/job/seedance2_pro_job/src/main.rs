@@ -18,12 +18,12 @@ use sqlx::mysql::MySqlPoolOptions;
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use cloud_storage::bucket_client::BucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
-use config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
 use config::shared_constants::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 use jobs_common::job_stats::JobStats;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use server_environment::ServerEnvironment;
+use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
 use crate::jobs::character_polling_job::character_polling_main_loop::character_polling_main_loop;
@@ -59,10 +59,7 @@ async fn main() -> AnyhowResult<()> {
   let _k8s_node_name = easyenv::get_env_string_optional("K8S_NODE_NAME");
   let _k8s_pod_name = easyenv::get_env_string_optional("K8S_POD_NAME");
 
-  let db_connection_string = easyenv::get_env_string_or_default(
-    "MYSQL_URL",
-    DEFAULT_MYSQL_CONNECTION_STRING,
-  );
+  let db_connection_string = env_get_mysql_connection_string_or_default();
 
   info!("Connecting to database...");
 

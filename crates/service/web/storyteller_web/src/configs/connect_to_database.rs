@@ -1,13 +1,10 @@
 use errors::AnyhowResult;
-use mysql_queries::config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
+use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use sqlx::mysql::MySqlPoolOptions;
 use sqlx::MySqlPool;
 
 pub async fn connect_to_database() -> AnyhowResult<MySqlPool>{
-  let db_connection_string =
-      easyenv::get_env_string_or_default(
-        "MYSQL_URL",
-        DEFAULT_MYSQL_CONNECTION_STRING);
+  let db_connection_string = env_get_mysql_connection_string_or_default();
 
   let pool_options = MySqlPoolOptions::new()
       .max_connections(easyenv::get_env_num("MYSQL_MAX_CONNECTIONS", 5)?);

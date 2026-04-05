@@ -24,6 +24,7 @@ easyenv = { path = "../../../../lib/easyenv" }
 enums = { workspace = true, default-features = false, features = [] }
 errors = { path = "../../../../lib/errors" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+shared_env_var_config.workspace = true
 reusable_types = { path = "../../../../schema/public/reusable_types" }
 tokens = { workspace = true, default-features = false, features = [] }
 

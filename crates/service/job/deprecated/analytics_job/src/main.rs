@@ -20,8 +20,8 @@ use log::info;
 use sqlx::{MySql, Pool};
 use sqlx::mysql::MySqlPoolOptions;
 
-use config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
 use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use errors::AnyhowResult;
 
 use crate::job_state::{JobState, SleepConfigs};
@@ -82,10 +82,7 @@ async fn main() -> AnyhowResult<()> {
 async fn get_mysql_pool() -> AnyhowResult<Pool<MySql>> {
   info!("Connecting to MySQL database...");
 
-  let db_connection_string =
-      easyenv::get_env_string_or_default(
-        "MYSQL_URL",
-        DEFAULT_MYSQL_CONNECTION_STRING);
+  let db_connection_string = env_get_mysql_connection_string_or_default();
 
   let mysql_pool = MySqlPoolOptions::new()
       .max_connections(5)

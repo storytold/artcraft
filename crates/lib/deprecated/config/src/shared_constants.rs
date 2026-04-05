@@ -18,6 +18,3 @@ pub const DEFAULT_REDIS_DATABASE_0_CONNECTION_STRING: &str = "redis://localhost/
 /// The default Redis connection string for use in development
 /// Database 1
 pub const DEFAULT_REDIS_DATABASE_1_CONNECTION_STRING: &str = "redis://localhost/1";
-
-/// The default MySql connection string for use in development
-pub const DEFAULT_MYSQL_CONNECTION_STRING: &str = "mysql://storyteller:password@localhost/storyteller";

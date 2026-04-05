@@ -42,6 +42,7 @@ memory_caching = { path = "../../../../lib/caching/memory_caching" }
 migration = { path = "../../../../schema/database/migration" }
 mimetypes = { path = "../../../../lib/files/mimetypes" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+shared_env_var_config.workspace = true
 primitives.workspace = true
 redis_common = { path = "../../../../schema/database/redis_common" }
 redis_schema = { path = "../../../../schema/database/redis_schema" }

@@ -31,6 +31,7 @@ errors = { workspace = true }
 filesys = { path = "../../../../lib/files/filesys" }
 jobs_common = { path = "../../../../lib/jobs_common" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+shared_env_var_config.workspace = true
 server_environment = { path = "../../../../lib/server_environment" }
 
 # External

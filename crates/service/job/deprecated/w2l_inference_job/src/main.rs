@@ -34,8 +34,8 @@ use tempdir::TempDir;
 use cloud_storage::bucket_client::BucketClient;
 use bucket_paths::legacy::old_bespoke_paths::bucket_path_unifier::BucketPathUnifier;
 use config::common_env::CommonEnv;
-use config::shared_constants::DEFAULT_MYSQL_CONNECTION_STRING;
 use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use errors::AnyhowResult;
 use filesys::check_directory_exists::check_directory_exists;
 use filesys::check_file_exists::check_file_exists;
@@ -195,10 +195,7 @@ async fn main() -> AnyhowResult<()> {
 
   check_directory_exists(&temp_directory)?;
 
-  let db_connection_string =
-    easyenv::get_env_string_or_default(
-      "MYSQL_URL",
-      DEFAULT_MYSQL_CONNECTION_STRING);
+  let db_connection_string = env_get_mysql_connection_string_or_default();
 
   info!("Connecting to database...");
 

@@ -3,7 +3,8 @@ use log::info;
 use sqlx::{MySql, Pool};
 use sqlx::mysql::MySqlPoolOptions;
 
-use config::shared_constants::{DEFAULT_MYSQL_CONNECTION_STRING, DEFAULT_RUST_LOG};
+use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use errors::AnyhowResult;
 
 use crate::cli_args::parse_cli_args;
@@ -25,10 +26,7 @@ pub async fn main() -> AnyhowResult<()> {
   // NB: Read secrets (eg. ACCESS_KEY)
   easyenv::from_filename(".env-secrets")?;
 
-  let db_connection_string =
-      easyenv::get_env_string_or_default(
-        "MYSQL_URL",
-        DEFAULT_MYSQL_CONNECTION_STRING);
+  let db_connection_string = env_get_mysql_connection_string_or_default();
 
   let pool = MySqlPoolOptions::new()
       .max_connections(easyenv::get_env_num("MYSQL_MAX_CONNECTIONS", 3)?)

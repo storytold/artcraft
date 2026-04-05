@@ -25,6 +25,7 @@ elasticsearch_schema = { path = "../../../../schema/database/elasticsearch_schem
 enums = { path = "../../../../schema/public/enums" }
 errors = { path = "../../../../lib/errors" }
 mysql_queries = { path = "../../../../schema/database/mysql_queries" }
+shared_env_var_config.workspace = true
 primitives = { path = "../../../../lib/data/primitives" }
 reusable_types = { path = "../../../../schema/public/reusable_types" }
 server_environment = { path = "../../../../lib/server_environment" }
