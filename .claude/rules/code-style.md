@@ -5,7 +5,7 @@
 - Two spaces for indentation (not four)
 - No minimum supported Rust version; use latest stable features freely
 - `#[macro_use] extern crate serde_derive;` is used in binary crates; library crates use `use serde_derive::{Serialize, Deserialize};`
-- Prefer `log` crate macros (`info!`, `warn!`, `error!`) over `println!`
+- Never use `println!` or `eprintln!` outside of tests; use `log` crate macros (`info!`, `warn!`, `error!`, `debug!`, `trace!`) instead
 - Use `anyhow::Result` / `AnyhowResult` for fallible functions in application code
 - Enum Display/Debug: use `impl_enum_display_and_debug_using_to_str!` macro, not `derive_more::Display` (CLion doesn't understand it)
 - Fields that are optional use the `maybe_` prefix: `maybe_creator_user_token`, `maybe_prompt_token`

@@ -8,7 +8,7 @@ use std::sync::Arc;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
-use log::warn;
+use log::{info, warn};
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -159,7 +159,7 @@ pub async fn create_voice_handler(
         return Err(EnqueueCreateVoiceRequestError::RateLimited);
     }
 
-    println!("Received payload for voice creation.");
+    info!("Received payload for voice creation.");
 
     // Get up IP address
     let ip_address = get_request_ip(&http_request);

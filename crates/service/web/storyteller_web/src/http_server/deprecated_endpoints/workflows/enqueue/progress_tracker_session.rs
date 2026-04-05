@@ -2,6 +2,7 @@ use std::time::{Duration, Instant};
 
 use actix::prelude::*;
 use actix_web_actors::ws;
+use log::{debug, info, warn};
 
 use crate::http_server::deprecated_endpoints::workflows::enqueue::progress_tracker_server;
 use crate::http_server::deprecated_endpoints::workflows::enqueue::progress_tracker_server::ChatServer;
@@ -40,7 +41,7 @@ impl WsChatSession {
       // check client heartbeats
       if Instant::now().duration_since(act.hb) > CLIENT_TIMEOUT {
         // heartbeat timed out
-        println!("Websocket Client heartbeat failed, disconnecting!");
+        warn!("Websocket Client heartbeat failed, disconnecting!");
 
         // notify chat server
         act.addr.do_send(progress_tracker_server::Disconnect { id: act.id });
@@ -134,7 +135,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
             "/list" => {
               // Send ListRooms message to chat server and wait for
               // response
-              println!("List rooms");
+              debug!("List rooms");
               self.addr
                 .send(progress_tracker_server::ListRooms)
                 .into_actor(self)
@@ -145,7 +146,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
                         ctx.text(room);
                       }
                     }
-                    _ => println!("Something is wrong"),
+                    _ => warn!("Something is wrong"),
                   }
                   fut::ready(())
                 })
@@ -190,7 +191,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsChatSession {
           })
         }
       }
-      ws::Message::Binary(_) => println!("Unexpected binary"),
+      ws::Message::Binary(_) => warn!("Unexpected binary"),
       ws::Message::Close(reason) => {
         ctx.close(reason);
         ctx.stop();

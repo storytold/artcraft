@@ -60,6 +60,7 @@ artcraft/
 - Actix-web for HTTP services
 - SQLx for MySQL and SQLite
 - A mix of wreq and reqwest for Rust HTTP clients
+- Never use `println!` or `eprintln!` outside of tests; use `log` crate macros instead
 - TypeScript with Nx, React, Vite, Zustand, and Three.js
 - Use two spaces for indentation
 
