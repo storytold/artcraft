@@ -26,7 +26,6 @@ bucket_paths.workspace = true
 cloud_storage.workspace = true
 ffmpeg_utils.workspace = true
 concurrency.workspace = true
-config = { path = "../../../lib/deprecated/config" }
 easyenv.workspace = true
 errors.workspace = true
 jobs_common.workspace = true

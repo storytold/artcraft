@@ -14,7 +14,7 @@ use sqlx::{MySql, Pool};
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
-use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use elasticsearch_schema::searches::search_tts_models::search_tts_models;
 use errors::AnyhowResult;
 

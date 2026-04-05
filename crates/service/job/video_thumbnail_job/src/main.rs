@@ -19,7 +19,7 @@ use sqlx::mysql::MySqlPoolOptions;
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use cloud_storage::bucket_client::BucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
-use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 use jobs_common::job_stats::JobStats;
 use server_environment::ServerEnvironment;

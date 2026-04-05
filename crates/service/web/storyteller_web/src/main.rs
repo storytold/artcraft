@@ -47,7 +47,7 @@ use chrono::Utc;
 use cloud_storage::bucket_client::BucketClient;
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
 use config::common_env::CommonEnv;
-use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
 use errors::AnyhowResult;

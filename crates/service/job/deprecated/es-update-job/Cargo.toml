@@ -19,7 +19,6 @@ normal = ["workspace-build-acceleration"]
 
 # Internal
 bootstrap = { path = "../../../../lib/bootstrap" }
-config = { path = "../../../../lib/deprecated/config" }
 easyenv = { path = "../../../../lib/easyenv" }
 elasticsearch_schema = { path = "../../../../schema/database/elasticsearch_schema" }
 enums = { path = "../../../../schema/public/enums" }

@@ -5,7 +5,7 @@ use sqlx::mysql::MySqlPoolOptions;
 
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use cloud_storage::bucket_client::BucketClient;
-use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;

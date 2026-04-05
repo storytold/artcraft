@@ -20,7 +20,7 @@ normal = ["workspace-build-acceleration"]
 workspace-build-acceleration = { workspace = true }
 
 # Internal
-config = { path = "../../../lib/deprecated/config" }
+shared_env_var_config.workspace = true
 easyenv = { path = "../../../lib/easyenv" }
 errors = { path = "../../../lib/errors" }
 

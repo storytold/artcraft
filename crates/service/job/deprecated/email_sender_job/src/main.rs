@@ -27,7 +27,7 @@ use sqlx::mysql::MySqlPoolOptions;
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use config::common_env::CommonEnv;
-use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use email_sender::smtp_email_sender::SmtpEmailSender;
 use errors::AnyhowResult;

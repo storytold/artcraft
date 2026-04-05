@@ -10,7 +10,7 @@ use sqlx::{MySql, Pool};
 use sqlx::mysql::MySqlPoolOptions;
 
 use cloud_storage::bucket_client::BucketClient;
-use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 
 use crate::cli_args::{Action, parse_cli_args};

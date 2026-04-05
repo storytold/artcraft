@@ -20,7 +20,7 @@ use std::time::Duration;
 
 use log::info;
 
-use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use errors::AnyhowResult;
 
 use crate::delete_pods_threaded::delete_pods_threaded;

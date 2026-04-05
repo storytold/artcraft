@@ -22,7 +22,7 @@ workspace-build-acceleration.workspace = true
 # Internal
 bucket_paths.workspace = true
 cloud_storage.workspace = true
-config = { path = "../../../lib/deprecated/config" }
+shared_env_var_config.workspace = true
 easyenv = { path = "../../../lib/easyenv" }
 enums.workspace = true
 errors.workspace = true

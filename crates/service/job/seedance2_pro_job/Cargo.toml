@@ -25,7 +25,6 @@ bootstrap.workspace = true
 bucket_paths.workspace = true
 cloud_storage.workspace = true
 concurrency.workspace = true
-config = { path = "../../../lib/deprecated/config" }
 easyenv.workspace = true
 enums.workspace = true
 errors.workspace = true

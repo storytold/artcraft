@@ -3,7 +3,7 @@ use log::info;
 use sqlx::{MySql, Pool};
 use sqlx::mysql::MySqlPoolOptions;
 
-use config::shared_constants::DEFAULT_RUST_LOG;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
 use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use errors::AnyhowResult;
 

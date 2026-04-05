@@ -21,7 +21,7 @@ workspace-build-acceleration = { workspace = true }
 
 # Internal
 bucket_paths.workspace = true
-config = { path = "../../../lib/deprecated/config" }
+shared_env_var_config.workspace = true
 easyenv = { path = "../../../lib/easyenv" }
 elasticsearch_schema = { path = "../../../schema/database/elasticsearch_schema" }
 enums = { path = "../../../schema/public/enums" }

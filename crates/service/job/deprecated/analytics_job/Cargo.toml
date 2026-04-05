@@ -18,7 +18,6 @@ normal = ["workspace-build-acceleration"]
 [dependencies]
 
 # Internal
-config = { path = "../../../../lib/deprecated/config" }
 datetimes = { path = "../../../../lib/data/datetimes" }
 easyenv = { path = "../../../../lib/easyenv" }
 enums = { workspace = true, default-features = false, features = [] }
