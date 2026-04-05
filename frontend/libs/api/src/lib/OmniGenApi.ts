@@ -176,8 +176,10 @@ export class OmniGenApi extends ApiManager {
     provider?: string,
   ): Promise<OmniGenImageModelsResponse> {
     const query = provider ? { provider } : undefined;
+    const host = this.getApiSchemeAndHost();
+    console.log('getImageModels() - host', host);
     return this.get<OmniGenImageModelsResponse>({
-      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/models/image`,
+      endpoint: `${host}/v1/omni_gen/models/image`,
       query,
     });
   }
@@ -217,8 +219,10 @@ export class OmniGenApi extends ApiManager {
   public async generateImage(
     body: OmniGenImageRequest,
   ): Promise<OmniGenImageGenerateResponse> {
+    const host = this.getApiSchemeAndHost();
+    console.log('generateImage() - host', host);
     return this.post<Record<string, unknown>, OmniGenImageGenerateResponse>({
-      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/image`,
+      endpoint: `${host}/v1/omni_gen/generate/image`,
       body: stripNulls(body),
     });
   }
@@ -226,8 +230,10 @@ export class OmniGenApi extends ApiManager {
   public async generateVideo(
     body: OmniGenVideoRequest,
   ): Promise<OmniGenVideoGenerateResponse> {
+    const host = this.getApiSchemeAndHost();
+    console.log('generateVideo() - host', host);
     return this.post<Record<string, unknown>, OmniGenVideoGenerateResponse>({
-      endpoint: `${this.getApiSchemeAndHost()}/v1/omni_gen/generate/video`,
+      endpoint: `${host}/v1/omni_gen/generate/video`,
       body: stripNulls(body),
     });
   }

@@ -26,7 +26,9 @@ export class ApiManager {
   }
 
   protected getApiSchemeAndHost(): string {
-    return StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
+    const host = StorytellerApiHostStore.getInstance().getApiSchemeAndHost();
+    console.log('getSchemaAndHost()', host);
+    return host;
   }
 
   public async fetch<B, T>(
