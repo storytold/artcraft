@@ -16,7 +16,7 @@ use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
-use enums_public::by_table::media_files::public_media_file_model_type::PublicMediaFileModelType;
+use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use log::{info, warn};
 use mysql_queries::queries::media_files::list::list_media_files_for_user::{list_media_files_for_user, ListMediaFileForUserArgs};
 use tokens::tokens::media_files::MediaFileToken;
@@ -123,7 +123,7 @@ pub struct MediaFileForUserListItem {
   pub origin_product_category: MediaFileOriginProductCategory,
 
   #[deprecated(note="Use MediaFileOriginDetails instead")]
-  pub maybe_origin_model_type: Option<PublicMediaFileModelType>,
+  pub maybe_origin_model_type: Option<MediaFileOriginModelType>,
 
   #[deprecated(note="Use MediaFileOriginDetails instead")]
   pub maybe_origin_model_token: Option<String>,
@@ -336,8 +336,7 @@ pub async fn list_media_files_for_user_handler(
             record.maybe_origin_model_title.as_deref()),
           origin_category: record.origin_category,
           origin_product_category: record.origin_product_category,
-          maybe_origin_model_type: record.maybe_origin_model_type
-              .map(|t| PublicMediaFileModelType::from_enum(t)),
+          maybe_origin_model_type: record.maybe_origin_model_type,
           maybe_origin_model_token: record.maybe_origin_model_token,
           media_links: MediaLinksBuilder::from_media_path_and_env(
             media_domain, server_state.server_environment, &public_bucket_path),
