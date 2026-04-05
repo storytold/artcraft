@@ -30,7 +30,6 @@ use crate::http_server::endpoints::moderation::jobs::get_tts_inference_queue_cou
 use crate::http_server::endpoints::moderation::jobs::get_w2l_inference_queue_count::get_w2l_inference_queue_count_handler;
 use crate::http_server::endpoints::moderation::jobs::kill_tts_inference_jobs::kill_tts_inference_jobs_handler;
 use crate::http_server::endpoints::moderation::user_bans::ban_user::ban_user_handler;
-use crate::http_server::endpoints::moderation::user_bans::list_banned_users::list_banned_users_handler;
 use crate::http_server::endpoints::moderation::user::moderator_list_subscribing_users_by_signup_date::moderator_list_subscribing_users_by_signup_date_handler;
 use crate::http_server::endpoints::moderation::user::moderator_list_users_by_signup_date::moderator_list_users_by_signup_date_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler;
@@ -158,11 +157,6 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
         )
         .service(
           web::scope("/user_bans")
-              .service(
-                web::resource("/list")
-                    .route(web::get().to(list_banned_users_handler))
-                    .route(web::head().to(|| HttpResponse::Ok()))
-              )
               .service(
                 web::resource("/manage_ban")
                     .route(web::post().to(ban_user_handler))
