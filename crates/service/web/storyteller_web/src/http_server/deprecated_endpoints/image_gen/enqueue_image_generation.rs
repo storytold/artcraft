@@ -37,7 +37,6 @@ use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::users::UserToken;
 
 use crate::configs::plans::get_correct_plan_for_session::get_correct_plan_for_session;
-use crate::http_server::deprecated_endpoints::image_gen::prompt_enrichment::enrich_prompt;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
@@ -382,13 +381,11 @@ pub async fn enqueue_image_generation_request(
         version = s;
     }
 
-    let maybe_enriched_prompts = enrich_prompt(&request);
-
     let inference_args = StableDiffusionArgs {
         maybe_sd_model_token: Some(sd_weight_token),
         maybe_lora_model_token: Some(lora_token),
-        maybe_prompt: maybe_enriched_prompts.as_ref().map(|p| p.positive_prompt.clone()),
-        maybe_n_prompt: maybe_enriched_prompts.as_ref().and_then(|p| p.maybe_negative_prompt.clone()),
+        maybe_prompt: request.maybe_prompt.clone(),
+        maybe_n_prompt: request.maybe_n_prompt.clone(),
         maybe_seed: Some(seed),
         maybe_upload_path: maybe_sd_upload_url,
         maybe_lora_upload_path: maybe_lora_upload_url,

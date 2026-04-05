@@ -94,7 +94,6 @@ members = [
   "crates/lib/deprecated/http_server_common", # TODO(bt, 2023-03-20): Move useful pieces to actix_helpers
   "crates/lib/deprecated/image_algorithms",
   "crates/lib/deprecated/machine_learning/ml_weights_registry",
-  "crates/lib/deprecated/machine_learning/prompt_engineering",
   "crates/lib/deprecated/subprocess_common",
   "crates/lib/deprecated/tts_common",
 

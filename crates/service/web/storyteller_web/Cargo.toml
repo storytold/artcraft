@@ -70,7 +70,6 @@ rootly_client.workspace = true
 rootly_config.workspace = true
 shared_env_var_config.workspace = true
 primitives = { path = "../../../lib/data/primitives" }
-prompt_engineering = { path = "../../../lib/deprecated/machine_learning/prompt_engineering" }
 redis_caching = { path = "../../../lib/caching/redis_caching" }
 redis_common = { path = "../../../schema/database/redis_common" }
 redis_schema = { path = "../../../schema/database/redis_schema" }
