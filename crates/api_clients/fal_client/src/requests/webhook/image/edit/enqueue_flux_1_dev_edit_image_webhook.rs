@@ -49,3 +49,52 @@ pub async fn enqueue_flux_1_dev_edit_image_webhook<U: IntoUrl>(
 
   result.map_err(|err| classify_fal_error(err))
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::creds::fal_api_key::FalApiKey;
+  use crate::requests::webhook::image::edit::enqueue_flux_1_dev_edit_image_webhook::{
+    enqueue_flux_1_dev_edit_image_webhook, Flux1DevEditImageArgs, Flux1DevEditImageNumImages,
+  };
+  use errors::AnyhowResult;
+  use std::fs::read_to_string;
+  use test_data::web::image_urls::GHOST_IMAGE_URL;
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real Fal API request
+  async fn test_single_image() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    let args = Flux1DevEditImageArgs {
+      prompt: "make this image look like a watercolor painting",
+      image_url: GHOST_IMAGE_URL.to_string(),
+      num_images: Flux1DevEditImageNumImages::One,
+      api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let result = enqueue_flux_1_dev_edit_image_webhook(args).await?;
+    assert!(result.request_id.is_some());
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real Fal API request
+  async fn test_batch_two() -> AnyhowResult<()> {
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    let args = Flux1DevEditImageArgs {
+      prompt: "turn this into a cyberpunk scene with neon lights",
+      image_url: GHOST_IMAGE_URL.to_string(),
+      num_images: Flux1DevEditImageNumImages::Two,
+      api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let result = enqueue_flux_1_dev_edit_image_webhook(args).await?;
+    assert!(result.request_id.is_some());
+    Ok(())
+  }
+}
