@@ -10,6 +10,7 @@ use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_resp
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -60,6 +61,11 @@ pub async fn omni_gen_image_generate_handler(
   // ==================== TRANSFORM REQUEST + PLAN ==================== //
 
   let mut generate_request = transform_request(&request)?;
+
+  let maybe_prompt_model_type: Option<CommonModelType> =
+    serde_json::to_string(&generate_request.model)
+      .ok()
+      .and_then(|json| serde_json::from_str(&json).ok());
 
   // ==================== COST ==================== //
 
@@ -174,7 +180,7 @@ pub async fn omni_gen_image_generate_handler(
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),
-    maybe_model_type: None,
+    maybe_model_type: maybe_prompt_model_type,
     maybe_generation_provider: Some(GenerationProvider::Artcraft),
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: None,
