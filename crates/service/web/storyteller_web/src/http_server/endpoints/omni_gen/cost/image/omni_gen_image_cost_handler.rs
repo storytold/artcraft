@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_image_cost_response::OmniGenImageCostResponse;
 use artcraft_router::api::provider::Provider;
+use log::warn;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::image::transform_request::transform_request;
@@ -32,9 +32,10 @@ pub async fn omni_gen_image_cost_handler(
   generate_request.provider = Provider::Artcraft;
 
   let plan = generate_request.build()
-    .map_err(|e| AdvancedCommonWebError::BadInputWithSimpleMessage(
-      format!("Failed to build cost plan: {}", e),
-    ))?;
+    .map_err(|e| {
+      warn!("Failed to build cost plan: {}", e);
+      AdvancedCommonWebError::from_error(e)
+    })?;
 
   let estimate = plan.estimate_costs();
 
