@@ -28,3 +28,48 @@ pub enum CommonImageModel {
   #[serde(rename = "seedream_5_lite")]
   Seedream5Lite,
 }
+
+impl CommonImageModel {
+  pub fn to_common_model_type(&self) -> crate::common::generation::common_model_type::CommonModelType {
+    use crate::common::generation::common_model_type::CommonModelType;
+    match self {
+      Self::Flux1Dev => CommonModelType::Flux1Dev,
+      Self::Flux1Schnell => CommonModelType::Flux1Schnell,
+      Self::FluxPro11 => CommonModelType::FluxPro11,
+      Self::FluxPro11Ultra => CommonModelType::FluxPro11Ultra,
+      Self::GptImage1p5 => CommonModelType::GptImage1p5,
+      Self::NanaBanana => CommonModelType::NanoBanana,
+      Self::NanaBanana2 => CommonModelType::NanoBanana2,
+      Self::NanaBananaPro => CommonModelType::NanoBananaPro,
+      Self::Seedream4 => CommonModelType::Seedream4,
+      Self::Seedream4p5 => CommonModelType::Seedream4p5,
+      Self::Seedream5Lite => CommonModelType::Seedream5Lite,
+    }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::common::generation::common_model_type::CommonModelType;
+
+  #[test]
+  fn all_image_models_convert_to_common_model_type() {
+    let models = [
+      (CommonImageModel::Flux1Dev, CommonModelType::Flux1Dev),
+      (CommonImageModel::Flux1Schnell, CommonModelType::Flux1Schnell),
+      (CommonImageModel::FluxPro11, CommonModelType::FluxPro11),
+      (CommonImageModel::FluxPro11Ultra, CommonModelType::FluxPro11Ultra),
+      (CommonImageModel::GptImage1p5, CommonModelType::GptImage1p5),
+      (CommonImageModel::NanaBanana, CommonModelType::NanoBanana),
+      (CommonImageModel::NanaBanana2, CommonModelType::NanoBanana2),
+      (CommonImageModel::NanaBananaPro, CommonModelType::NanoBananaPro),
+      (CommonImageModel::Seedream4, CommonModelType::Seedream4),
+      (CommonImageModel::Seedream4p5, CommonModelType::Seedream4p5),
+      (CommonImageModel::Seedream5Lite, CommonModelType::Seedream5Lite),
+    ];
+    for (image_model, expected) in models {
+      assert_eq!(image_model.to_common_model_type(), expected);
+    }
+  }
+}

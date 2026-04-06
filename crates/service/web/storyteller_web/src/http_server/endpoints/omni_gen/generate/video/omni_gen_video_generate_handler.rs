@@ -62,10 +62,9 @@ pub async fn omni_gen_video_generate_handler(
 
   let mut generate_request = transform_request(&request)?;
 
-  let maybe_prompt_model_type: Option<CommonModelType> =
-    serde_json::to_string(&generate_request.model)
-      .ok()
-      .and_then(|json| serde_json::from_str(&json).ok());
+  let maybe_prompt_model_type: Option<CommonModelType> = request.model
+    .as_ref()
+    .map(|m| m.to_common_model_type());
 
   // ==================== COST ==================== //
 
