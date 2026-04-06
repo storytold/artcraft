@@ -15,8 +15,6 @@ pub fn request_to_plan<'a>(
   request.build()
     .map_err(|e| {
       warn!("Failed to build image generation plan: {}", e);
-      AdvancedCommonWebError::BadInputWithSimpleMessage(
-        format!("Failed to build generation plan: {}", e),
-      )
+      AdvancedCommonWebError::from_error(e)
     })
 }
