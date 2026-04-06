@@ -61,6 +61,7 @@ artcraft/
 - SQLx for MySQL and SQLite
 - A mix of wreq and reqwest for Rust HTTP clients
 - Never use `println!` or `eprintln!` outside of tests; use `log` crate macros instead
+- When two crates export the same type name, alias imports with a suffix: `use foo::Bar as BarFoo;`
 - TypeScript with Nx, React, Vite, Zustand, and Three.js
 - Use two spaces for indentation
 

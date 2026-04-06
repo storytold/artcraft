@@ -1,14 +1,20 @@
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
+use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioRouter;
+use artcraft_router::api::common_image_model::CommonImageModel as CommonImageModelRouter;
+use artcraft_router::api::common_resolution::CommonResolution as CommonResolutionRouter;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
+use enums::common::generation::common_image_model::CommonImageModel as CommonImageModelEnum;
+use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 
 fn convert_model(
-  model: &enums::common::generation::common_image_model::CommonImageModel,
-) -> Result<artcraft_router::api::common_image_model::CommonImageModel, AdvancedCommonWebError> {
+  model: &CommonImageModelEnum,
+) -> Result<CommonImageModelRouter, AdvancedCommonWebError> {
   let json = serde_json::to_string(model)?;
   serde_json::from_str(&json).map_err(|e| {
     AdvancedCommonWebError::BadInputWithSimpleMessage(
@@ -18,8 +24,8 @@ fn convert_model(
 }
 
 fn convert_aspect_ratio(
-  ar: &enums::common::generation::common_aspect_ratio::CommonAspectRatio,
-) -> Result<artcraft_router::api::common_aspect_ratio::CommonAspectRatio, AdvancedCommonWebError> {
+  ar: &CommonAspectRatioEnum,
+) -> Result<CommonAspectRatioRouter, AdvancedCommonWebError> {
   let json = serde_json::to_string(ar)?;
   serde_json::from_str(&json).map_err(|e| {
     AdvancedCommonWebError::BadInputWithSimpleMessage(
@@ -29,8 +35,8 @@ fn convert_aspect_ratio(
 }
 
 fn convert_resolution(
-  res: &enums::common::generation::common_resolution::CommonResolution,
-) -> Result<artcraft_router::api::common_resolution::CommonResolution, AdvancedCommonWebError> {
+  res: &CommonResolutionEnum,
+) -> Result<CommonResolutionRouter, AdvancedCommonWebError> {
   let json = serde_json::to_string(res)?;
   serde_json::from_str(&json).map_err(|e| {
     AdvancedCommonWebError::BadInputWithSimpleMessage(
@@ -63,8 +69,8 @@ pub fn transform_request(
     prompt: request.prompt.as_deref(),
     image_inputs: request.image_media_tokens.as_ref()
       .map(ImageListRef::MediaFileTokens),
-    resolution: resolution,
-    aspect_ratio: aspect_ratio,
+    resolution,
+    aspect_ratio,
     image_batch_count: request.image_batch_count,
     horizontal_angle: request.horizontal_angle,
     vertical_angle: request.vertical_angle,

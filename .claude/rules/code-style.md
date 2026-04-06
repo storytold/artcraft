@@ -51,6 +51,10 @@ then the story, then the fine print.
 - Group imports: std, external crates, internal workspace crates, `crate::` imports
 - Use fully qualified paths for one-off references; `use` for repeated references
 - Prefer specific imports over wildcards, except in `api_doc.rs` and test modules
+- When two crates export a type with the same name, alias with a suffix describing the source crate:
+  `use enums::...::CommonResolution as CommonResolutionEnum;`
+  `use artcraft_router::...::CommonResolution as CommonResolutionRouter;`
+  This avoids long fully-qualified paths in function signatures and bodies.
 
 ## TypeScript / Frontend
 
