@@ -31,7 +31,8 @@ use crate::http_server::endpoints::generate::common::payments_error_test::paymen
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 
-use super::request_to_costs::request_to_costs;
+use super::plan_to_costs::plan_to_costs;
+use super::request_to_plan::request_to_plan;
 use super::transform_request::transform_request;
 
 /// Generate an image using the omni-gen unified endpoint.
@@ -56,13 +57,14 @@ pub async fn omni_gen_image_generate_handler(
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
-  // ==================== TRANSFORM REQUEST ==================== //
+  // ==================== TRANSFORM REQUEST + PLAN ==================== //
 
-  let mut generate_request = transform_request(&request)?;
+  let generate_request = transform_request(&request)?;
+  let plan = request_to_plan(&generate_request)?;
 
   // ==================== COST ==================== //
 
-  let cost_estimate = request_to_costs(&mut generate_request)?;
+  let cost_estimate = plan_to_costs(&plan);
 
   // ==================== SESSION ==================== //
 
@@ -122,8 +124,8 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== EXECUTE GENERATION ==================== //
 
-  // TODO: Execute the generation plan via the router client.
-  // For now, we record the job as pending without dispatching externally.
+  // TODO(bt): Execute the plan via the router client once RouterClient is available on ServerState.
+  // let response = plan.generate_image(&server_state.router_client).await?;
   let external_job_id = "";
 
   // ==================== DB TRANSACTION ==================== //
