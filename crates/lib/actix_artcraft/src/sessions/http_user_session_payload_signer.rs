@@ -62,7 +62,7 @@ impl HttpUserSessionPayloadSigner {
 
 #[cfg(test)]
 mod tests {
-  use crate::sessions::payload_signer::HttpUserSessionPayloadSigner;
+  use crate::sessions::http_user_session_payload_signer::HttpUserSessionPayloadSigner;
   use tokens::tokens::user_sessions::UserSessionToken;
   use tokens::tokens::users::UserToken;
 

@@ -9,7 +9,7 @@ use actix_web::HttpRequest;
 use log::warn;
 
 use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
-use crate::sessions::payload_signer::HttpUserSessionPayloadSigner;
+use crate::sessions::http_user_session_payload_signer::HttpUserSessionPayloadSigner;
 use crate::sessions::session_error::SessionError;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;
