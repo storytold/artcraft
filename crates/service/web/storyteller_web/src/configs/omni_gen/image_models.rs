@@ -22,8 +22,6 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
     model: CommonImageModel::Flux1Dev,
     full_name: None,
     text_prompt_supported: Some(true),
-    image_refs_supported: Some(true),
-    image_refs_max: Some(1),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::SquareHd,
       CommonAspectRatio::Square,
@@ -43,8 +41,6 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
     model: CommonImageModel::Flux1Schnell,
     full_name: None,
     text_prompt_supported: Some(true),
-    image_refs_supported: Some(true),
-    image_refs_max: Some(1),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::SquareHd,
       CommonAspectRatio::Square,
