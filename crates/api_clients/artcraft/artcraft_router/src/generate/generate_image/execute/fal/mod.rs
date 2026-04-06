@@ -1,1 +1,2 @@
+pub mod generate_image_fal_nano_banana_2;
 pub mod generate_image_fal_nano_banana_pro;

@@ -21,6 +21,7 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4::plan_generate_image_artcraft_seedream_4;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::plan_generate_image_artcraft_seedream_4p5;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::plan_generate_image_artcraft_seedream_5_lite;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_2::plan_generate_image_fal_nano_banana_2;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
 #[derive(Debug)]
@@ -100,6 +101,7 @@ impl<'a> GenerateImageRequest<'a> {
 
   fn build_fal(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
+      CommonImageModel::NanaBanana2 => plan_generate_image_fal_nano_banana_2(self),
       CommonImageModel::NanaBananaPro => plan_generate_image_fal_nano_banana_pro(self),
       _ => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
