@@ -19,3 +19,4 @@
 #![allow(non_snake_case)]
 
 pub mod jwt_signer;
+pub mod jwt_signer_error;

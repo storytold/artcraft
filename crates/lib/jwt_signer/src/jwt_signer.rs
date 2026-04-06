@@ -6,7 +6,7 @@ use jwt::SignWithKey;
 use jwt::VerifyWithKey;
 use sha2::Sha256;
 
-use errors::{anyhow, AnyhowResult};
+use crate::jwt_signer_error::JwtSignerError;
 
 #[derive(Clone)]
 pub struct JwtSigner {
@@ -15,9 +15,9 @@ pub struct JwtSigner {
 
 impl JwtSigner {
 
-  pub fn new(hmac_secret: &str) -> AnyhowResult<Self> {
+  pub fn new(hmac_secret: &str) -> Result<Self, JwtSignerError> {
     let hmac_key = Hmac::new_varkey(hmac_secret.as_bytes())
-        .map_err(|e| anyhow!("invalid hmac: {:?}", e))?;
+        .map_err(|_| JwtSignerError::JwtInvalidKeyLength)?;
 
     Ok(Self {
       hmac_key,
@@ -25,33 +25,32 @@ impl JwtSigner {
   }
 
   /// Turn a map of claims into a signed JWT cookie payload (string)
-  pub fn claims_to_jwt(&self, claims: &impl Claimable) -> AnyhowResult<String> {
-    let jwt_string = claims.sign(&self.hmac_key)?;
-    Ok(jwt_string)
+  pub fn claims_to_jwt(&self, claims: &impl Claimable) -> Result<String, JwtSignerError> {
+    claims.sign(&self.hmac_key)
   }
 
   /// Turn a JWT cookie payload (string) into a map of (key, value) claims
-  pub fn jwt_to_claims(&self, jwt: &str) -> AnyhowResult<BTreeMap<String, String>> {
-    let claims = jwt.verify_with_key(&self.hmac_key)?;
-    Ok(claims)
+  pub fn jwt_to_claims(&self, jwt: &str) -> Result<BTreeMap<String, String>, JwtSignerError> {
+    jwt.verify_with_key(&self.hmac_key)
+      .map_err(JwtSignerError::JwtVerifyError)
   }
 }
 
 pub trait Claimable {
-  fn sign(&self, hmac_key: &Hmac<Sha256>) -> AnyhowResult<String>;
+  fn sign(&self, hmac_key: &Hmac<Sha256>) -> Result<String, JwtSignerError>;
 }
 
 impl Claimable for BTreeMap<String, String> {
-  fn sign(&self, hmac_key: &Hmac<Sha256>) -> AnyhowResult<String> {
-    let claims = self.sign_with_key(hmac_key)?;
-    Ok(claims)
+  fn sign(&self, hmac_key: &Hmac<Sha256>) -> Result<String, JwtSignerError> {
+    self.sign_with_key(hmac_key)
+      .map_err(JwtSignerError::JwtSignError)
   }
 }
 
 impl Claimable for BTreeMap<&str, &str> {
-  fn sign(&self, hmac_key: &Hmac<Sha256>) -> AnyhowResult<String> {
-    let claims = self.sign_with_key(hmac_key)?;
-    Ok(claims)
+  fn sign(&self, hmac_key: &Hmac<Sha256>) -> Result<String, JwtSignerError> {
+    self.sign_with_key(hmac_key)
+      .map_err(JwtSignerError::JwtSignError)
   }
 }
 

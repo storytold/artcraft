@@ -341,12 +341,9 @@ dependencies = [
  "anyhow",
  "enums",
  "errors",
- "hmac 0.10.1",
  "http_headers",
- "jwt",
  "jwt_signer",
  "log",
- "sha2 0.9.9",
  "tokens",
  "workspace-build-acceleration",
 ]
@@ -6092,7 +6089,6 @@ dependencies = [
 name = "jwt_signer"
 version = "0.0.1"
 dependencies = [
- "errors",
  "hmac 0.10.1",
  "jwt",
  "sha2 0.9.9",

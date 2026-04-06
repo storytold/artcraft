@@ -1,14 +1,8 @@
 use std::collections::BTreeMap;
 
-use hmac::Hmac;
-use hmac::NewMac;
-use jwt::SignWithKey;
-use jwt::VerifyWithKey;
-use log::error;
-use sha2::Sha256;
-
 use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
 use crate::sessions::session_error::SessionError;
+use jwt_signer::jwt_signer::JwtSigner;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;
 
@@ -23,19 +17,13 @@ const PAYLOAD_VERSION : u32 = 3;
 
 #[derive(Clone)]
 pub struct HttpUserSessionPayloadSigner {
-  hmac_key: Hmac<Sha256>,
+  jwt_signer: JwtSigner,
 }
 
 impl HttpUserSessionPayloadSigner {
   pub fn new(hmac_secret: &str) -> Result<Self, SessionError> {
-    let hmac_key = Hmac::<Sha256>::new_varkey(hmac_secret.as_bytes())
-      .map_err(|err| {
-        error!("Failed to construct Hmac signer: {:?}", err);
-        SessionError::JwtInvalidKeyLength
-      })?;
-
     Ok(Self {
-      hmac_key,
+      jwt_signer: JwtSigner::new(hmac_secret)?,
     })
   }
 
@@ -51,17 +39,15 @@ impl HttpUserSessionPayloadSigner {
     claims.insert("user_token", user_token.as_str());
     claims.insert("version", &payload_version);
 
-    claims.sign_with_key(&self.hmac_key)
-      .map_err(SessionError::JwtSignError)
+    let jwt_string = self.jwt_signer.claims_to_jwt(&claims)?;
+    Ok(jwt_string)
   }
 
   pub fn decode(
     &self,
     session_payload_contents: &str,
   ) -> Result<HttpUserSessionPayload, SessionError> {
-    let claims: BTreeMap<String, String> = session_payload_contents
-      .verify_with_key(&self.hmac_key)
-      .map_err(SessionError::JwtVerifyError)?;
+    let claims = self.jwt_signer.jwt_to_claims(session_payload_contents)?;
 
     let session_token = claims["session_token"].clone();
     let maybe_user_token = claims.get("user_token")

@@ -19,9 +19,6 @@ normal = ["workspace-build-acceleration"]
 # Workspace hack (faster compile times)
 workspace-build-acceleration = { version = "0.1", path = "../../workspace-build-acceleration" }
 
-# Internal
-errors.workspace = true
-
 # External
 hmac = "0.10.1" # jwt signing
 jwt = "0.13.0"

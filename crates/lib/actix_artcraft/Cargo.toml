@@ -32,11 +32,8 @@ tokens.workspace = true
 actix-http.workspace = true
 actix-service.workspace = true
 actix-web.workspace = true
-hmac = "0.10.1"
-jwt = "0.13.0"
 log.workspace = true
 anyhow.workspace = true
-sha2 = "0.9.9"
 
 
 [dev-dependencies]
