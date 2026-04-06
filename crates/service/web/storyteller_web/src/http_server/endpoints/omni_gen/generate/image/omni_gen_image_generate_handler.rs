@@ -127,9 +127,28 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== EXECUTE GENERATION ==================== //
 
-  // TODO(bt): Execute the plan via the router client once RouterClient is available on ServerState.
-  // let response = plan.generate_image(&server_state.router_client).await?;
-  let external_job_id = "";
+  let fal_client = artcraft_router::client::router_fal_client::RouterFalClient::new(
+    server_state.fal.api_key.clone(),
+    server_state.fal.webhook_url.clone(),
+  );
+
+  let router_client = artcraft_router::client::router_client::RouterClient::Fal(fal_client);
+
+  let generation_response = plan.generate_image(&router_client)
+    .await
+    .map_err(|e| {
+      warn!("Image generation failed: {:?}", e);
+      AdvancedCommonWebError::from_error(e)
+    })?;
+
+  let external_job_id = match &generation_response {
+    artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse::Artcraft(p) => {
+      p.inference_job_token.as_str().to_string()
+    }
+    artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse::Fal(p) => {
+      p.request_id.clone().unwrap_or_default()
+    }
+  };
 
   // ==================== DB TRANSACTION ==================== //
 
@@ -210,7 +229,7 @@ pub async fn omni_gen_image_generate_handler(
     InsertGenericInferenceForFalWithAprioriJobTokenArgs {
       apriori_job_token: &apriori_job_token,
       uuid_idempotency_token: &idempotency_token,
-      maybe_external_third_party_id: external_job_id,
+      maybe_external_third_party_id: &external_job_id,
       fal_category: FalCategory::ImageGeneration,
       maybe_inference_args: None,
       maybe_prompt_token: prompt_token.as_ref(),
