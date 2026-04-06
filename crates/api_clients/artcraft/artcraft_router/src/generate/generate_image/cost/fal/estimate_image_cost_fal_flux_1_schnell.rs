@@ -1,6 +1,5 @@
 use crate::generate::generate_image::image_generation_cost_estimate::ImageGenerationCostEstimate;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_schnell::PlanFalFlux1Schnell;
-use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::Flux1SchnellNumImages;
 
 pub(crate) fn estimate_image_cost_fal_flux_1_schnell(
   plan: &PlanFalFlux1Schnell<'_>,
@@ -13,14 +12,7 @@ pub(crate) fn estimate_image_cost_fal_flux_1_schnell(
   //   to the nearest megapixel.
   //
   let cost_per_image: u64 = 1;
-
-  let num_images: u64 = match plan.num_images {
-    Flux1SchnellNumImages::One => 1,
-    Flux1SchnellNumImages::Two => 2,
-    Flux1SchnellNumImages::Three => 3,
-    Flux1SchnellNumImages::Four => 4,
-  };
-
+  let num_images = plan.num_images.as_u64();
   let cost_in_usd_cents = cost_per_image * num_images;
 
   ImageGenerationCostEstimate {

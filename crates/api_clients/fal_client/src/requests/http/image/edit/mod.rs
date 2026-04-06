@@ -1,3 +1,5 @@
+pub mod http_flux_1_dev_edit_image;
+pub mod http_flux_1_schnell_edit_image;
 pub mod http_flux_pro_kontext_max_edit;
 pub mod http_gemini_25_flash_edit;
 pub mod http_gpt_image_1_edit_image;

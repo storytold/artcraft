@@ -1,3 +1,5 @@
+pub mod enqueue_flux_1_dev_edit_image_webhook;
+pub mod enqueue_flux_1_schnell_edit_image_webhook;
 pub mod enqueue_bytedance_seedream_v4_edit_image_webhook;
 pub mod enqueue_bytedance_seedream_v4p5_edit_image_webhook;
 pub mod enqueue_bytedance_seedream_v5_lite_edit_image_webhook;
