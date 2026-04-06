@@ -109,6 +109,25 @@ impl From<RequireUserSessionError> for CommonWebError {
   }
 }
 
+impl From<crate::http_server::session::session_checker_error::SessionCheckerError> for CommonWebError {
+  fn from(value: crate::http_server::session::session_checker_error::SessionCheckerError) -> Self {
+    use crate::http_server::session::session_checker_error::SessionCheckerError;
+    match value {
+      // Bad / forged session cookie → 401
+      SessionCheckerError::Session(_) => Self::NotAuthorized,
+      // Underlying DB / cache errors → 500
+      SessionCheckerError::Sqlx(err) => {
+        error!("SessionChecker sqlx error: {:?}", err);
+        Self::ServerError
+      },
+      SessionCheckerError::OtherError(err) => {
+        error!("SessionChecker other error: {:?}", err);
+        Self::ServerError
+      },
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;

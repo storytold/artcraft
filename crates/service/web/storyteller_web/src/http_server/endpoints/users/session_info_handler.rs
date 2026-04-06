@@ -3,52 +3,18 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use std::fmt;
-
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
 use log::warn;
 use sqlx::MySqlPool;
-use utoipa::ToSchema;
 
 use artcraft_api_defs::users::session_info::{FakeYouPlan, SessionInfoSuccessResponse, SessionOnboardingState, SessionUserInfo, StorytellerStreamPlan};
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
-use http_server_common::response::response_error_helpers::to_simple_json_error;
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::user_details_lite_builder::UserDetailsLightBuilder;
 use crate::http_server::cookies::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::session::session_checker::SessionChecker;
-
-
-#[derive(Debug, ToSchema)]
-pub enum SessionInfoError {
-  ServerError,
-}
-
-impl ResponseError for SessionInfoError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      SessionInfoError::ServerError=> StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      SessionInfoError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-// NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for SessionInfoError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
 
 #[utoipa::path(
   get,
@@ -56,7 +22,7 @@ impl fmt::Display for SessionInfoError {
   path = "/v1/session",
   responses(
     (status = 200, description = "Get profile", body = SessionInfoSuccessResponse),
-    (status = 500, description = "Server error", body = SessionInfoError),
+    (status = 500, description = "Server error"),
   ),
 )]
 pub async fn session_info_handler(
@@ -64,100 +30,85 @@ pub async fn session_info_handler(
   mysql_pool: web::Data<MySqlPool>,
   session_checker: web::Data<SessionChecker>,
   avt_manager: web::Data<AvtCookieManager>,
-) -> Result<HttpResponse, SessionInfoError>
+) -> Result<HttpResponse, AdvancedCommonWebError>
 {
-  let mut mysql_connection = mysql_pool.acquire()
-      .await
-      .map_err(|e| {
-        warn!("Could not acquire DB pool: {:?}", e);
-        SessionInfoError::ServerError
-      })?;
+  let mut mysql_connection = mysql_pool.acquire().await?;
 
   let maybe_user_session = session_checker
     .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
     .await
-    .map_err(|e| {
-      warn!("Session checker error: {:?}", e);
-      SessionInfoError::ServerError
+    .map_err(|err| {
+      warn!("Error grabbing session: {:?}", err);
+      err
     })?;
 
   let mut logged_in = false;
   let mut user_info = None;
 
-  match maybe_user_session {
-    None => {}
-    Some(session_data) => {
-      let feature_flags =
-          UserSessionFeatureFlags::new(session_data.maybe_feature_flags.as_deref());
+  if let Some(session_data) = maybe_user_session {
+    let feature_flags =
+        UserSessionFeatureFlags::new(session_data.maybe_feature_flags.as_deref());
 
-      if !session_data.is_banned {
-        // NB: Banned users can't be logged in
-        logged_in = true;
-        user_info = Some(SessionUserInfo {
-          core_info: UserDetailsLightBuilder::from_db_fields(
-            &session_data.user_token,
-            &session_data.username,
-            &session_data.display_name,
-            &session_data.email_gravatar_hash,
-          ),
-          onboarding: SessionOnboardingState {
-            email_not_set: session_data.email_is_synthetic,
-            email_not_confirmed: !(session_data.email_confirmed || session_data.email_confirmed_by_google),
-            password_not_set: session_data.is_without_password,
-            username_not_customized: session_data.username_is_not_customized,
-          },
-          user_token: session_data.user_token,
-          username: session_data.username.to_string(),
-          display_name: session_data.display_name.to_string(),
-          email_gravatar_hash: session_data.email_gravatar_hash.to_string(),
+    if !session_data.is_banned {
+      // NB: Banned users can't be logged in
+      logged_in = true;
+      user_info = Some(SessionUserInfo {
+        core_info: UserDetailsLightBuilder::from_db_fields(
+          &session_data.user_token,
+          &session_data.username,
+          &session_data.display_name,
+          &session_data.email_gravatar_hash,
+        ),
+        onboarding: SessionOnboardingState {
+          email_not_set: session_data.email_is_synthetic,
+          email_not_confirmed: !(session_data.email_confirmed || session_data.email_confirmed_by_google),
+          password_not_set: session_data.is_without_password,
+          username_not_customized: session_data.username_is_not_customized,
+        },
+        user_token: session_data.user_token,
+        username: session_data.username.to_string(),
+        display_name: session_data.display_name.to_string(),
+        email_gravatar_hash: session_data.email_gravatar_hash.to_string(),
 
-          // Rollout / feature flags:
-          can_access_studio: feature_flags.has_flag(UserFeatureFlag::Studio),
-          maybe_feature_flags: feature_flags.clone_flags(),
+        // Rollout / feature flags:
+        can_access_studio: feature_flags.has_flag(UserFeatureFlag::Studio),
+        maybe_feature_flags: feature_flags.clone_flags(),
 
-          // Premium plans:
-          fakeyou_plan: FakeYouPlan::Free,
-          storyteller_stream_plan: StorytellerStreamPlan::Free,
+        // Premium plans:
+        fakeyou_plan: FakeYouPlan::Free,
+        storyteller_stream_plan: StorytellerStreamPlan::Free,
 
-          // Usage permissions:
-          can_use_tts: session_data.can_use_tts,
-          can_use_w2l: session_data.can_use_w2l,
-          can_delete_own_tts_results: session_data.can_delete_own_tts_results,
-          can_delete_own_w2l_results: session_data.can_delete_own_w2l_results,
-          can_delete_own_account: session_data.can_delete_own_account,
+        // Usage permissions:
+        can_use_tts: session_data.can_use_tts,
+        can_use_w2l: session_data.can_use_w2l,
+        can_delete_own_tts_results: session_data.can_delete_own_tts_results,
+        can_delete_own_w2l_results: session_data.can_delete_own_w2l_results,
+        can_delete_own_account: session_data.can_delete_own_account,
 
-          // Contribution permissions:
-          can_upload_tts_models: session_data.can_upload_tts_models,
-          can_upload_w2l_templates: session_data.can_upload_w2l_templates,
-          can_delete_own_tts_models: session_data.can_delete_own_tts_models,
-          can_delete_own_w2l_templates: session_data.can_delete_own_w2l_templates,
+        // Contribution permissions:
+        can_upload_tts_models: session_data.can_upload_tts_models,
+        can_upload_w2l_templates: session_data.can_upload_w2l_templates,
+        can_delete_own_tts_models: session_data.can_delete_own_tts_models,
+        can_delete_own_w2l_templates: session_data.can_delete_own_w2l_templates,
 
-          // Moderation permissions:
-          can_approve_w2l_templates: session_data.can_approve_w2l_templates,
-          can_edit_other_users_profiles: session_data.can_edit_other_users_profiles,
-          can_edit_other_users_tts_models: session_data.can_edit_other_users_tts_models,
-          can_edit_other_users_w2l_templates: session_data.can_edit_other_users_w2l_templates,
-          can_delete_other_users_tts_models: session_data.can_delete_other_users_tts_models,
-          can_delete_other_users_tts_results: session_data.can_delete_other_users_tts_results,
-          can_delete_other_users_w2l_templates: session_data.can_delete_other_users_w2l_templates,
-          can_delete_other_users_w2l_results: session_data.can_delete_other_users_w2l_results,
-          can_ban_users: session_data.can_ban_users,
-          can_delete_users: session_data.can_delete_users,
-        });
-      }
+        // Moderation permissions:
+        can_approve_w2l_templates: session_data.can_approve_w2l_templates,
+        can_edit_other_users_profiles: session_data.can_edit_other_users_profiles,
+        can_edit_other_users_tts_models: session_data.can_edit_other_users_tts_models,
+        can_edit_other_users_w2l_templates: session_data.can_edit_other_users_w2l_templates,
+        can_delete_other_users_tts_models: session_data.can_delete_other_users_tts_models,
+        can_delete_other_users_tts_results: session_data.can_delete_other_users_tts_results,
+        can_delete_other_users_w2l_templates: session_data.can_delete_other_users_w2l_templates,
+        can_delete_other_users_w2l_results: session_data.can_delete_other_users_w2l_results,
+        can_ban_users: session_data.can_ban_users,
+        can_delete_users: session_data.can_delete_users,
+      });
     }
   }
 
   let maybe_avt_cookie = match avt_manager.decode_cookie_payload_from_request(&http_request) {
     Ok(Some(_avt_cookie)) => None,
-    _ => {
-      let cookie = avt_manager.make_new_cookie()
-          .map_err(|e| {
-            warn!("avt cookie creation error: {:?}", e);
-            SessionInfoError::ServerError
-          })?;
-      Some(cookie)
-    }
+    _ => Some(avt_manager.make_new_cookie()?),
   };
 
   let response = SessionInfoSuccessResponse {
@@ -166,8 +117,7 @@ pub async fn session_info_handler(
     user: user_info,
   };
 
-  let body = serde_json::to_string(&response)
-    .map_err(|_e| SessionInfoError::ServerError)?;
+  let body = serde_json::to_string(&response)?;
 
   let mut response_builder = HttpResponse::Ok();
 

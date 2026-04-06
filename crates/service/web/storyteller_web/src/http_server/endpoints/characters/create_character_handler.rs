@@ -64,7 +64,7 @@ pub async fn create_character_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        AdvancedCommonWebError::from(e)
       })?;
 
   let user_session = match maybe_user_session {

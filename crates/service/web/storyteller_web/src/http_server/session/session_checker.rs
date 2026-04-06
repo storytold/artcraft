@@ -5,7 +5,6 @@
 
 use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::HttpRequest;
-use errors::AnyhowResult;
 use log::warn;
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::{get_user_session_by_token, get_user_session_by_token_pooled_connection, SessionUserRecord};
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token_light::{get_user_session_by_token_light, SessionRecord};
@@ -17,6 +16,7 @@ use sqlx::{Executor, MySql, MySqlPool};
 
 use crate::http_server::session::lookup::user_session_extended::{UserSessionExtended, UserSessionPreferences, UserSessionPremiumPlanInfo, UserSessionRoleAndPermissions, UserSessionSubscriptionPlan, UserSessionUserDetails};
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::session::session_checker_error::SessionCheckerError;
 
 #[derive(Clone)]
 pub struct SessionChecker {
@@ -40,7 +40,7 @@ impl SessionChecker {
     }
   }
 
-  pub fn get_session_token(&self, request: &HttpRequest) -> AnyhowResult<Option<String>> {
+  pub fn get_session_token(&self, request: &HttpRequest) -> Result<Option<String>, SessionCheckerError> {
     Ok(self.cookie_manager.decode_session_payload_from_request(request)?
         .map(|payload| payload.session_token))
   }
@@ -56,7 +56,7 @@ impl SessionChecker {
     &self,
     request: &HttpRequest,
     pool: &MySqlPool
-  ) -> AnyhowResult<Option<SessionRecord>>
+  ) -> Result<Option<SessionRecord>, SessionCheckerError>
   {
     self.do_session_light_lookup_and_cookie_decode(request, pool).await
   }
@@ -66,7 +66,7 @@ impl SessionChecker {
     &self,
     request: &HttpRequest,
     mysql_connection: &mut PoolConnection<MySql>,
-  ) -> AnyhowResult<Option<SessionRecord>>
+  ) -> Result<Option<SessionRecord>, SessionCheckerError>
   {
     self.do_session_light_lookup_and_cookie_decode(request, &mut **mysql_connection).await
   }
@@ -76,7 +76,7 @@ impl SessionChecker {
     &self,
     request: &HttpRequest,
     mysql_executor: E,
-  ) -> AnyhowResult<Option<SessionRecord>>
+  ) -> Result<Option<SessionRecord>, SessionCheckerError>
     where E: 'e + Executor<'c, Database = MySql>
   {
     let maybe_session_token = self.cookie_manager.decode_session_payload_from_request(request)?
@@ -95,18 +95,23 @@ impl SessionChecker {
     &self,
     mysql_executor: E,
     session_token: &str,
-  ) -> AnyhowResult<Option<SessionRecord>>
+  ) -> Result<Option<SessionRecord>, SessionCheckerError>
     where E: 'e + Executor<'c, Database = MySql>
   {
     match self.maybe_get_redis_cache_connection() {
       None => {
-        get_user_session_by_token_light(mysql_executor, session_token).await
+        Ok(get_user_session_by_token_light(mysql_executor, session_token).await?)
       }
       Some(mut redis_ttl_cache) => {
         let cache_key = RedisCacheKeys::session_record_light(session_token);
-        redis_ttl_cache.lazy_load_if_not_cached(&cache_key, move || {
+        // NB: Redis cache requires AnyhowResult; convert sqlx::Error to anyhow inside the closure,
+        //     then map any error from the cache layer back to SessionCheckerError::OtherError.
+        let result = redis_ttl_cache.lazy_load_if_not_cached(&cache_key, move || async move {
           get_user_session_by_token_light(mysql_executor, session_token)
-        }).await
+              .await
+              .map_err(anyhow::Error::from)
+        }).await;
+        result.map_err(SessionCheckerError::OtherError)
       }
     }
   }
@@ -119,7 +124,7 @@ impl SessionChecker {
     &self,
     request: &HttpRequest,
     pool: &MySqlPool,
-  ) -> AnyhowResult<Option<SessionUserRecord>>
+  ) -> Result<Option<SessionUserRecord>, SessionCheckerError>
   {
     self.do_user_session_lookup_and_cookie_decode(request, pool).await
   }
@@ -129,7 +134,7 @@ impl SessionChecker {
     &self,
     request: &HttpRequest,
     mysql_connection: &mut PoolConnection<MySql>,
-  ) -> AnyhowResult<Option<SessionUserRecord>>
+  ) -> Result<Option<SessionUserRecord>, SessionCheckerError>
   {
     self.do_user_session_lookup_and_cookie_decode(request, &mut **mysql_connection).await
   }
@@ -139,7 +144,7 @@ impl SessionChecker {
     &self,
     request: &HttpRequest,
     mysql_executor: E,
-  ) -> AnyhowResult<Option<SessionUserRecord>>
+  ) -> Result<Option<SessionUserRecord>, SessionCheckerError>
     where E: 'e + Executor<'c, Database = MySql>
   {
     let session_token = match self.get_session_token(request)? {
@@ -155,18 +160,21 @@ impl SessionChecker {
     &self,
     mysql_executor: E,
     session_token: &str,
-  ) -> AnyhowResult<Option<SessionUserRecord>>
+  ) -> Result<Option<SessionUserRecord>, SessionCheckerError>
     where E: 'e + Executor<'c, Database = MySql>
   {
     match self.maybe_get_redis_cache_connection() {
       None => {
-        get_user_session_by_token(mysql_executor, session_token).await
+        Ok(get_user_session_by_token(mysql_executor, session_token).await?)
       }
       Some(mut redis_ttl_cache) => {
         let cache_key = RedisCacheKeys::session_record_user(session_token);
-        redis_ttl_cache.lazy_load_if_not_cached(&cache_key, move || {
+        let result = redis_ttl_cache.lazy_load_if_not_cached(&cache_key, move || async move {
           get_user_session_by_token(mysql_executor, session_token)
-        }).await
+              .await
+              .map_err(anyhow::Error::from)
+        }).await;
+        result.map_err(SessionCheckerError::OtherError)
       }
     }
   }
@@ -179,7 +187,7 @@ impl SessionChecker {
     &self,
     request: &HttpRequest,
     pool: &MySqlPool,
-  ) -> AnyhowResult<Option<UserSessionExtended>>
+  ) -> Result<Option<UserSessionExtended>, SessionCheckerError>
   {
     let mut connection = pool.acquire().await?;
     self.maybe_get_user_session_extended_from_connection(request, &mut connection).await
@@ -189,7 +197,7 @@ impl SessionChecker {
     &self,
     request: &HttpRequest,
     mysql_connection: &mut PoolConnection<MySql>,
-  ) -> AnyhowResult<Option<UserSessionExtended>>
+  ) -> Result<Option<UserSessionExtended>, SessionCheckerError>
   {
     let session_payload= match self.cookie_manager.decode_session_payload_from_request(request)? {
       None => return Ok(None),
@@ -209,7 +217,8 @@ impl SessionChecker {
         list_active_user_subscriptions(
           mysql_connection,
           user_session.user_token.as_str()
-        ).await?;
+        ).await
+        .map_err(SessionCheckerError::OtherError)?;
 
     Ok(Some(UserSessionExtended {
       user_token: user_session.user_token.as_str().to_string(),
@@ -283,4 +292,3 @@ impl SessionChecker {
     result.flatten()
   }
 }
-

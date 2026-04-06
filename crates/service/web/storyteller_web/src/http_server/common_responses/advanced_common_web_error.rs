@@ -201,6 +201,19 @@ impl From<actix_artcraft::sessions::session_error::SessionError> for AdvancedCom
   }
 }
 
+impl From<crate::http_server::session::session_checker_error::SessionCheckerError> for AdvancedCommonWebError {
+  fn from(value: crate::http_server::session::session_checker_error::SessionCheckerError) -> Self {
+    use crate::http_server::session::session_checker_error::SessionCheckerError;
+    match value {
+      // Bad / forged session cookie → 401 (don't page on this)
+      SessionCheckerError::Session(_) => Self::NotAuthorized,
+      // Underlying DB / cache errors → 500 with paging
+      SessionCheckerError::Sqlx(err) => Self::from_error(err),
+      SessionCheckerError::OtherError(err) => Self::from_anyhow_error(err),
+    }
+  }
+}
+
 impl From<crate::http_server::common_responses::common_web_error::CommonWebError> for AdvancedCommonWebError {
   fn from(value: crate::http_server::common_responses::common_web_error::CommonWebError) -> Self {
     use crate::http_server::common_responses::common_web_error::CommonWebError;
