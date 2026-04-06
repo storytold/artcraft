@@ -2,13 +2,11 @@
 #![forbid(unused_imports)]
 #![forbid(unused_mut)]
 
-use anyhow::anyhow;
 use log::warn;
 use sqlx::{Executor, MySql};
 use sqlx::pool::PoolConnection;
 
 use enums::common::visibility::Visibility;
-use errors::AnyhowResult;
 use tokens::tokens::users::UserToken;
 
 use crate::helpers::boolean_converters::{i8_to_bool, nullable_i8_to_bool_default_false, nullable_i8_to_optional_bool};
@@ -99,7 +97,7 @@ impl SessionUserRecord {
 pub async fn get_user_session_by_token_pooled_connection(
   mysql_connection: &mut PoolConnection<MySql>,
   session_token: &str,
-) -> AnyhowResult<Option<SessionUserRecord>> {
+) -> Result<Option<SessionUserRecord>, sqlx::Error> {
   get_user_session_by_token(&mut **mysql_connection, session_token).await
 }
 
@@ -107,7 +105,7 @@ pub async fn get_user_session_by_token_pooled_connection(
 pub async fn get_user_session_by_token<'e, 'c : 'e, E>(
   mysql_executor: E,
   session_token: &str,
-) -> AnyhowResult<Option<SessionUserRecord>>
+) -> Result<Option<SessionUserRecord>, sqlx::Error>
   where E: 'e + Executor<'c, Database = MySql>
 {
   // NB: Lookup failure is Err(RowNotFound).
@@ -236,17 +234,13 @@ WHERE user_sessions.token = ?
 
       Ok(Some(result_user_record))
     },
+    Err(sqlx::Error::RowNotFound) => {
+      warn!("Valid cookie; invalid session: {}", session_token);
+      Ok(None)
+    },
     Err(err) => {
-      match err {
-        sqlx::Error::RowNotFound => {
-          warn!("Valid cookie; invalid session: {}", session_token);
-          Ok(None)
-        },
-        _ => {
-          warn!("Session query error: {:?}", err);
-          Err(anyhow!("session query error: {:?}", err))
-        }
-      }
+      warn!("Session query error: {:?}", err);
+      Err(err)
     }
   }
 

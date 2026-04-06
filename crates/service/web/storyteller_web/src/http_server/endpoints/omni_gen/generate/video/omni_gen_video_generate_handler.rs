@@ -81,7 +81,7 @@ pub async fn omni_gen_video_generate_handler(
     .await
     .map_err(|e| {
       warn!("Session checker error: {:?}", e);
-      AdvancedCommonWebError::from_anyhow_error(e)
+      AdvancedCommonWebError::from(e)
     })?;
 
   let user_token = match maybe_user_session.as_ref() {

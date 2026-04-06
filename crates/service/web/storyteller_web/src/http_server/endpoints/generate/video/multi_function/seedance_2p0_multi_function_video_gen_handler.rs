@@ -97,7 +97,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
-        AdvancedCommonWebError::from_anyhow_error(e)
+        AdvancedCommonWebError::from(e)
       })?;
 
   let user_session = match maybe_user_session {

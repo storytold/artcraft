@@ -2,11 +2,8 @@
 #![forbid(unused_imports)]
 #![forbid(unused_mut)]
 
-use anyhow::anyhow;
 use log::warn;
 use sqlx::{Executor, MySql};
-
-use errors::AnyhowResult;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct SessionRecord {
@@ -17,7 +14,7 @@ pub struct SessionRecord {
 pub async fn get_user_session_by_token_light<'e, 'c : 'e, E>(
   mysql_executor: E,
   session_token: &str,
-) -> AnyhowResult<Option<SessionRecord>>
+) -> Result<Option<SessionRecord>, sqlx::Error>
   where E: 'e + Executor<'c, Database = MySql>
 {
   let maybe_session_record = sqlx::query_as!(
@@ -37,17 +34,13 @@ AND deleted_at IS NULL
 
   match maybe_session_record {
     Ok(session_record) => Ok(Some(session_record)),
+    Err(sqlx::Error::RowNotFound) => {
+      warn!("Valid cookie; invalid session: {}", session_token);
+      Ok(None)
+    },
     Err(err) => {
-      match err {
-        sqlx::Error::RowNotFound => {
-          warn!("Valid cookie; invalid session: {}", session_token);
-          Ok(None)
-        },
-        _ => {
-          warn!("Session query error: {:?}", err);
-          Err(anyhow!("session query error: {:?}", err))
-        }
-      }
+      warn!("Session query error: {:?}", err);
+      Err(err)
     }
   }
 }

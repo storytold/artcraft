@@ -970,7 +970,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     SearchModelWeightsSortDirection,
     SearchModelWeightsSortField,
     SearchModelWeightsSuccessResponse,
-    SessionInfoError,
     SessionTokenInfoError,
     SessionTokenInfoSuccessResponse,
     SetMediaFileCoverImageError,
