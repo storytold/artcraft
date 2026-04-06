@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-
+use log::warn;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
 
@@ -30,7 +30,13 @@ pub async fn omni_gen_image_generate_handler(
   request: Json<OmniGenImageCostAndGenerateRequest>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageGenerateResponse>, AdvancedCommonWebError> {
-  let _generate_request = transform_request(&request)?;
-
+  let generate_request = transform_request(&request)?;
+  
+  let plan = generate_request.build()
+      .map_err(|err| {
+        warn!("Invalid image generation request. Error: {:?}, Request: {:?}", err, generate_request);
+        AdvancedCommonWebError::from_error(err)
+      })?;
+  
   todo!()
 }

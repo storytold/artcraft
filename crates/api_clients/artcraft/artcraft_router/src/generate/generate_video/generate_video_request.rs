@@ -1,9 +1,8 @@
-use tokens::tokens::characters::CharacterToken;
+use crate::api::audio_list_ref::AudioListRef;
+use crate::api::character_list_ref::CharacterListRef;
 use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::common_resolution::CommonResolution;
 use crate::api::common_video_model::CommonVideoModel;
-use crate::api::audio_list_ref::AudioListRef;
-use crate::api::character_list_ref::CharacterListRef;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
 use crate::api::provider::Provider;
@@ -21,6 +20,7 @@ use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 /// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
 /// This works across multiple providers by shaping a generic "GenerateVideoRequest" into a provider-specific plan.
 /// That plan can then be used to return a cost estimate for that given provider or return a struct that can be used to send a real generation request.
+#[derive(Debug)]
 pub struct GenerateVideoRequest<'a> {
   /// Which model to use.
   pub model: CommonVideoModel,

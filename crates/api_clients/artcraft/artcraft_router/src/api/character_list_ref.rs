@@ -1,7 +1,7 @@
 use tokens::tokens::characters::CharacterToken;
 
 /// Forward-compatible character reference list.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum CharacterListRef<'a> {
   CharacterTokens(&'a Vec<CharacterToken>),
   

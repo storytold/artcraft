@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-
+use log::warn;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
 
@@ -29,7 +29,13 @@ pub async fn omni_gen_video_generate_handler(
   request: Json<OmniGenVideoCostAndGenerateRequest>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenVideoGenerateResponse>, AdvancedCommonWebError> {
-  let _generate_request = transform_request(&request)?;
+  let generate_request = transform_request(&request)?;
+
+  let plan = generate_request.build()
+      .map_err(|err| {
+        warn!("Invalid video generation request. Error: {:?}, Request: {:?}", err, generate_request);
+        AdvancedCommonWebError::from_error(err)
+      })?;
 
   todo!()
 }
