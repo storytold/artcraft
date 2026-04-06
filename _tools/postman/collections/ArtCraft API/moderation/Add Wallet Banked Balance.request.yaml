@@ -1,0 +1,22 @@
+$kind: http-request
+name: Add Wallet Banked Balance
+url: "{{api_host}}/v1/moderation/wallet/wallet_2pz2h3m2bdfvna7m3b92ccwwr/add_ba\
+  nked_balance"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "title": "test alert from thread 2",
+        "description": "testing testing test"
+    }
+order: 3365370184335612

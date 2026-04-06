@@ -1,0 +1,21 @@
+$kind: http-request
+name: Create Wallet for User
+url: "{{api_host}}/v1/moderation/wallet/create_for_user"
+method: POST
+headers:
+  - key: Accept
+    value: application/json
+  - key: Session
+    value: ""
+    disabled: true
+  - key: Session
+    value: ""
+    disabled: true
+body:
+  type: json
+  content: |
+    {
+        "user_token": "user_jg7ng4kdt2x5y", // newuser946
+        "payments_namespace": "artcraft"
+    }
+order: 4100053395280358
