@@ -6,12 +6,11 @@
 use actix_web::cookie::time::OffsetDateTime;
 use actix_web::cookie::{Cookie, SameSite};
 use actix_web::HttpRequest;
-use anyhow::anyhow;
 use log::warn;
 
 use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
 use crate::sessions::payload_signer::HttpUserSessionPayloadSigner;
-use errors::AnyhowResult;
+use crate::sessions::session_error::SessionError;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;
 
@@ -31,19 +30,41 @@ pub struct HttpUserSessionManager {
 }
 
 impl HttpUserSessionManager {
-  pub fn new(cookie_domain: &str, hmac_secret: &str) -> AnyhowResult<Self> {
+  pub fn new(cookie_domain: &str, hmac_secret: &str) -> Result<Self, SessionError> {
+    let payload_signer = HttpUserSessionPayloadSigner::new(hmac_secret)
+      .map_err(|e| {
+        warn!("Failed to construct HttpUserSessionPayloadSigner: {}", e);
+        e
+      })?;
+
     Ok(Self {
       cookie_domain: cookie_domain.to_string(),
-      payload_signer: HttpUserSessionPayloadSigner::new(hmac_secret)?,
+      payload_signer,
     })
   }
 
-  pub fn encode_session_payload(&self, session_token: &UserSessionToken, user_token: &UserToken) -> AnyhowResult<String> {
+  pub fn encode_session_payload(
+    &self,
+    session_token: &UserSessionToken,
+    user_token: &UserToken,
+  ) -> Result<String, SessionError> {
     self.payload_signer.encode(session_token, user_token)
+      .map_err(|e| {
+        warn!("Failed to encode session payload: {}", e);
+        e
+      })
   }
 
-  pub fn create_cookie(&self, session_token: &UserSessionToken, user_token: &UserToken) -> AnyhowResult<Cookie> {
-    let jwt_string = self.payload_signer.encode(session_token, user_token)?;
+  pub fn create_cookie(
+    &self,
+    session_token: &UserSessionToken,
+    user_token: &UserToken,
+  ) -> Result<Cookie, SessionError> {
+    let jwt_string = self.payload_signer.encode(session_token, user_token)
+      .map_err(|e| {
+        warn!("Failed to encode session cookie payload: {}", e);
+        e
+      })?;
 
     let make_secure = !self.cookie_domain.to_lowercase().contains("jungle.horse")
       && !self.cookie_domain.to_lowercase().contains("localhost");
@@ -76,8 +97,8 @@ impl HttpUserSessionManager {
 
   pub fn decode_session_payload_from_request(
     &self,
-    request: &HttpRequest
-  ) -> AnyhowResult<Option<HttpUserSessionPayload>>
+    request: &HttpRequest,
+  ) -> Result<Option<HttpUserSessionPayload>, SessionError>
   {
     let signed_session_payload = self.session_payload_from_request(request)?;
 
@@ -88,8 +109,8 @@ impl HttpUserSessionManager {
 
     match self.payload_signer.decode(&signed_session_payload) {
       Err(e) => {
-        warn!("Session cookie decode error: {:?}", e);
-        Err(anyhow!("Could not decode session cookie: {:?}", e))
+        warn!("Session cookie decode error: {}", e);
+        Err(e)
       },
       Ok(payload) => Ok(Some(payload)),
     }
@@ -97,7 +118,10 @@ impl HttpUserSessionManager {
 
   // NB: THIS IS ONLY FOR A QUICK HACK FOR FREAKING CORS UGH
   // THIS IS A HUGE STUPID SECURITY VULN. DAMNIT GOOGLE DAMNIT CORS.
-  pub fn check_and_return_session_token_decodes(&self, request: &HttpRequest) -> AnyhowResult<Option<String>> {
+  pub fn check_and_return_session_token_decodes(
+    &self,
+    request: &HttpRequest,
+  ) -> Result<Option<String>, SessionError> {
     let signed_session_payload = self.session_payload_from_request(request)?;
 
     let signed_session_payload = match signed_session_payload {
@@ -107,8 +131,8 @@ impl HttpUserSessionManager {
 
     match self.payload_signer.decode(&signed_session_payload) {
       Err(e) => {
-        warn!("Session cookie decode error: {:?}", e);
-        return Err(anyhow!("Could not decode session cookie: {:?}", e));
+        warn!("Session cookie decode error: {}", e);
+        return Err(e);
       },
       Ok(_payload) => {}, // Good! We'll just discard this.
     }
@@ -116,15 +140,23 @@ impl HttpUserSessionManager {
     Ok(Some(signed_session_payload))
   }
 
-  fn session_payload_from_request(&self, request: &HttpRequest) -> AnyhowResult<Option<String>> {
-    let mut signed_session_payload= request.cookie(SESSION_COOKIE_NAME)
+  fn session_payload_from_request(
+    &self,
+    request: &HttpRequest,
+  ) -> Result<Option<String>, SessionError> {
+    let mut signed_session_payload = request.cookie(SESSION_COOKIE_NAME)
         .map(|cookie| cookie.value().to_string());
 
     if signed_session_payload.is_none() {
-      signed_session_payload = request.headers().get(SESSION_HEADER_NAME)
-          .map(|header| header.to_str())
-          .transpose()?
-          .map(|payload| payload.to_string());
+      let maybe_header = request.headers().get(SESSION_HEADER_NAME);
+      if let Some(header) = maybe_header {
+        let header_str = header.to_str()
+          .map_err(|e| {
+            warn!("Failed to read session HTTP header as str: {}", e);
+            SessionError::HttpSessionHeaderError(e.to_string())
+          })?;
+        signed_session_payload = Some(header_str.to_string());
+      }
     }
 
     Ok(signed_session_payload)

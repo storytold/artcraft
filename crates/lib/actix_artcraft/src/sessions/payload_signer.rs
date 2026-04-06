@@ -1,8 +1,14 @@
 use std::collections::BTreeMap;
 
+use hmac::Hmac;
+use hmac::NewMac;
+use jwt::SignWithKey;
+use jwt::VerifyWithKey;
+use log::error;
+use sha2::Sha256;
+
 use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
-use jwt_signer::jwt_signer::JwtSigner;
-use errors::AnyhowResult;
+use crate::sessions::session_error::SessionError;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;
 
@@ -17,31 +23,45 @@ const PAYLOAD_VERSION : u32 = 3;
 
 #[derive(Clone)]
 pub struct HttpUserSessionPayloadSigner {
-  jwt_signer: JwtSigner,
+  hmac_key: Hmac<Sha256>,
 }
 
 impl HttpUserSessionPayloadSigner {
-  pub fn new(hmac_secret: &str) -> AnyhowResult<Self> {
+  pub fn new(hmac_secret: &str) -> Result<Self, SessionError> {
+    let hmac_key = Hmac::<Sha256>::new_varkey(hmac_secret.as_bytes())
+      .map_err(|err| {
+        error!("Failed to construct Hmac signer: {:?}", err);
+        SessionError::JwtInvalidKeyLength
+      })?;
+
     Ok(Self {
-      jwt_signer: JwtSigner::new(hmac_secret)?
+      hmac_key,
     })
   }
 
-  pub fn encode(&self, session_token: &UserSessionToken, user_token: &UserToken) -> AnyhowResult<String> {
-    let mut claims = BTreeMap::new();
+  pub fn encode(
+    &self,
+    session_token: &UserSessionToken,
+    user_token: &UserToken,
+  ) -> Result<String, SessionError> {
+    let mut claims: BTreeMap<&str, &str> = BTreeMap::new();
     let payload_version = PAYLOAD_VERSION.to_string();
 
     claims.insert("session_token", session_token.as_str());
     claims.insert("user_token", user_token.as_str());
     claims.insert("version", &payload_version);
 
-    let jwt_string = self.jwt_signer.claims_to_jwt(&claims)?;
-
-    Ok(jwt_string)
+    claims.sign_with_key(&self.hmac_key)
+      .map_err(SessionError::JwtSignError)
   }
 
-  pub fn decode(&self, session_payload_contents: &str) -> AnyhowResult<HttpUserSessionPayload> {
-    let claims = self.jwt_signer.jwt_to_claims(&session_payload_contents)?;
+  pub fn decode(
+    &self,
+    session_payload_contents: &str,
+  ) -> Result<HttpUserSessionPayload, SessionError> {
+    let claims: BTreeMap<String, String> = session_payload_contents
+      .verify_with_key(&self.hmac_key)
+      .map_err(SessionError::JwtVerifyError)?;
 
     let session_token = claims["session_token"].clone();
     let maybe_user_token = claims.get("user_token")

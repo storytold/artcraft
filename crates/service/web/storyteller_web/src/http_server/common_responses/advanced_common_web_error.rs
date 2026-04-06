@@ -194,6 +194,13 @@ impl From<RequireUserSessionError> for AdvancedCommonWebError {
   }
 }
 
+impl From<actix_artcraft::sessions::session_error::SessionError> for AdvancedCommonWebError {
+  fn from(_value: actix_artcraft::sessions::session_error::SessionError) -> Self {
+    // Any session error (bad header, bad JWT, construction failure) becomes 401.
+    Self::NotAuthorized
+  }
+}
+
 impl From<crate::http_server::common_responses::common_web_error::CommonWebError> for AdvancedCommonWebError {
   fn from(value: crate::http_server::common_responses::common_web_error::CommonWebError) -> Self {
     use crate::http_server::common_responses::common_web_error::CommonWebError;

@@ -341,9 +341,12 @@ dependencies = [
  "anyhow",
  "enums",
  "errors",
+ "hmac 0.10.1",
  "http_headers",
+ "jwt",
  "jwt_signer",
  "log",
+ "sha2 0.9.9",
  "tokens",
  "workspace-build-acceleration",
 ]
