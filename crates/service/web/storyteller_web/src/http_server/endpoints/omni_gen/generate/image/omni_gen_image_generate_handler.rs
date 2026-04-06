@@ -31,7 +31,8 @@ use crate::http_server::endpoints::generate::common::payments_error_test::paymen
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 
-use super::request_to_costs::estimate_costs;
+use super::request_to_costs::request_to_costs;
+use super::transform_request::transform_request;
 
 /// Generate an image using the omni-gen unified endpoint.
 #[utoipa::path(
@@ -54,6 +55,14 @@ pub async fn omni_gen_image_generate_handler(
 ) -> Result<Json<OmniGenImageGenerateResponse>, AdvancedCommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
+
+  // ==================== TRANSFORM REQUEST ==================== //
+
+  let mut generate_request = transform_request(&request)?;
+
+  // ==================== COST ==================== //
+
+  let cost_estimate = request_to_costs(&mut generate_request)?;
 
   // ==================== SESSION ==================== //
 
@@ -94,9 +103,7 @@ pub async fn omni_gen_image_generate_handler(
       AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
 
-  // ==================== COST + BILLING ==================== //
-
-  let cost_estimate = estimate_costs(&request)?;
+  // ==================== BILLING ==================== //
 
   let cost = cost_estimate.cost_in_credits.unwrap_or(0);
 
