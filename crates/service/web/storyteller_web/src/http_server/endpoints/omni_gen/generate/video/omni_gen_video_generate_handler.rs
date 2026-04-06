@@ -59,7 +59,7 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== TRANSFORM REQUEST + PLAN ==================== //
 
-  let generate_request = transform_request(&request)?;
+  let mut generate_request = transform_request(&request)?;
 
   // ==================== COST ==================== //
 
@@ -67,7 +67,7 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== PLAN ==================== //
 
-  let plan = request_to_plan(&generate_request)?;
+  let plan = request_to_plan(&mut generate_request)?;
 
   // ==================== SESSION ==================== //
 
