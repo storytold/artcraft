@@ -89,7 +89,7 @@ mod tests {
   #[test]
   fn test_serialization_text_to_image() {
     let request = EstimateImageCostRequest {
-      model: CommonImageModel::NanaBananaPro,
+      model: CommonImageModel::NanoBananaPro,
       provider: GenerationProvider::Artcraft,
       generation_mode: GenerationMode::TextToImage,
       aspect_ratio: None,
@@ -103,7 +103,7 @@ mod tests {
   #[test]
   fn test_serialization_image_edit() {
     let request = EstimateImageCostRequest {
-      model: CommonImageModel::NanaBananaPro,
+      model: CommonImageModel::NanoBananaPro,
       provider: GenerationProvider::Artcraft,
       generation_mode: GenerationMode::ImageEdit { count: 2 },
       aspect_ratio: None,

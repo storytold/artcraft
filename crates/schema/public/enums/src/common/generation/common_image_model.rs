@@ -16,11 +16,11 @@ pub enum CommonImageModel {
   #[serde(rename = "gpt_image_1p5")]
   GptImage1p5,
   #[serde(rename = "nano_banana")]
-  NanaBanana,
+  NanoBanana,
   #[serde(rename = "nano_banana_2")]
-  NanaBanana2,
+  NanoBanana2,
   #[serde(rename = "nano_banana_pro")]
-  NanaBananaPro,
+  NanoBananaPro,
   #[serde(rename = "seedream_4")]
   Seedream4,
   #[serde(rename = "seedream_4p5")]
@@ -38,9 +38,9 @@ impl CommonImageModel {
       Self::FluxPro11 => CommonModelType::FluxPro11,
       Self::FluxPro11Ultra => CommonModelType::FluxPro11Ultra,
       Self::GptImage1p5 => CommonModelType::GptImage1p5,
-      Self::NanaBanana => CommonModelType::NanoBanana,
-      Self::NanaBanana2 => CommonModelType::NanoBanana2,
-      Self::NanaBananaPro => CommonModelType::NanoBananaPro,
+      Self::NanoBanana => CommonModelType::NanoBanana,
+      Self::NanoBanana2 => CommonModelType::NanoBanana2,
+      Self::NanoBananaPro => CommonModelType::NanoBananaPro,
       Self::Seedream4 => CommonModelType::Seedream4,
       Self::Seedream4p5 => CommonModelType::Seedream4p5,
       Self::Seedream5Lite => CommonModelType::Seedream5Lite,
@@ -61,9 +61,9 @@ mod tests {
       (CommonImageModel::FluxPro11, CommonModelType::FluxPro11),
       (CommonImageModel::FluxPro11Ultra, CommonModelType::FluxPro11Ultra),
       (CommonImageModel::GptImage1p5, CommonModelType::GptImage1p5),
-      (CommonImageModel::NanaBanana, CommonModelType::NanoBanana),
-      (CommonImageModel::NanaBanana2, CommonModelType::NanoBanana2),
-      (CommonImageModel::NanaBananaPro, CommonModelType::NanoBananaPro),
+      (CommonImageModel::NanoBanana, CommonModelType::NanoBanana),
+      (CommonImageModel::NanoBanana2, CommonModelType::NanoBanana2),
+      (CommonImageModel::NanoBananaPro, CommonModelType::NanoBananaPro),
       (CommonImageModel::Seedream4, CommonModelType::Seedream4),
       (CommonImageModel::Seedream4p5, CommonModelType::Seedream4p5),
       (CommonImageModel::Seedream5Lite, CommonModelType::Seedream5Lite),

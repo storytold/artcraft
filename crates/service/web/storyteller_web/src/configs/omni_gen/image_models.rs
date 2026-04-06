@@ -59,7 +59,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
   //  ...
 
   models.push(OmniGenImageModelDetails {
-    model: CommonImageModel::NanaBanana, // NB: currently Gemini25Flash in our system
+    model: CommonImageModel::NanoBanana, // NB: currently Gemini25Flash in our system
     full_name: None,
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
@@ -85,7 +85,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
   });
 
   models.push(OmniGenImageModelDetails {
-    model: CommonImageModel::NanaBanana2,
+    model: CommonImageModel::NanoBanana2,
     full_name: None,
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
@@ -118,7 +118,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
   });
 
   models.push(OmniGenImageModelDetails {
-    model: CommonImageModel::NanaBananaPro,
+    model: CommonImageModel::NanoBananaPro,
     full_name: None,
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
@@ -167,15 +167,15 @@ fn build_omni_gen_image_model_providers() -> Vec<OmniGenImageModelProviderDetail
         overrides: None,
       },
       OmniGenImageProviderModelDetails {
-        model: CommonImageModel::NanaBanana,
+        model: CommonImageModel::NanoBanana,
         overrides: None,
       },
       OmniGenImageProviderModelDetails {
-        model: CommonImageModel::NanaBanana2,
+        model: CommonImageModel::NanoBanana2,
         overrides: None,
       },
       OmniGenImageProviderModelDetails {
-        model: CommonImageModel::NanaBananaPro,
+        model: CommonImageModel::NanoBananaPro,
         overrides: None,
       },
     ],

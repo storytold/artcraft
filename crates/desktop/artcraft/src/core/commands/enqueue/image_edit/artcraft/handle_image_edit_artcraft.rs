@@ -23,10 +23,10 @@ pub async fn handle_image_edit_artcraft(
   match model {
     ImageEditModel::FluxProKontextMax => handle_artcraft_flux_kontext_edit(request, app, app_data_root, app_env_configs, storyteller_creds_manager).await,
     ImageEditModel::Gemini25Flash | ImageEditModel::NanoBanana => {
-      handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBanana, GenerationModel::NanoBanana).await
+      handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanoBanana, GenerationModel::NanoBanana).await
     },
-    ImageEditModel::NanoBanana2 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBanana2, GenerationModel::NanoBanana2).await,
-    ImageEditModel::NanoBananaPro => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBananaPro, GenerationModel::NanoBananaPro).await,
+    ImageEditModel::NanoBanana2 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanoBanana2, GenerationModel::NanoBanana2).await,
+    ImageEditModel::NanoBananaPro => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanoBananaPro, GenerationModel::NanoBananaPro).await,
     ImageEditModel::GptImage1 => handle_artcraft_gpt_image_1_edit(request, app, app_data_root, app_env_configs, storyteller_creds_manager).await,
     ImageEditModel::GptImage1p5 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::GptImage1p5, GenerationModel::GptImage1p5).await,
     ImageEditModel::Seedream4 => handle_image_edit_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4, GenerationModel::Seedream4).await,

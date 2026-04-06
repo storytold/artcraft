@@ -250,7 +250,7 @@ mod tests {
 
   fn base_fal_request() -> GenerateImageRequest<'static> {
     GenerateImageRequest {
-      model: CommonImageModel::NanaBananaPro,
+      model: CommonImageModel::NanoBananaPro,
       provider: Provider::Fal,
       prompt: Some("a cat in space"),
       image_inputs: None,

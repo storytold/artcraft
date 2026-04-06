@@ -45,7 +45,7 @@ mod tests {
 
   fn estimate_usd_cents(resolution: Option<CommonResolution>, image_batch_count: u16) -> u64 {
     let request = GenerateImageRequest {
-      model: CommonImageModel::NanaBanana2,
+      model: CommonImageModel::NanoBanana2,
       provider: Provider::Artcraft,
       prompt: None,
       image_inputs: None,

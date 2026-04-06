@@ -124,7 +124,7 @@ pub struct OmniGenImageModelDetails {
 impl Default for OmniGenImageModelDetails {
   fn default() -> Self {
     Self {
-      model: CommonImageModel::NanaBananaPro,
+      model: CommonImageModel::NanoBananaPro,
       full_name: None,
       text_prompt_supported: None,
       text_prompt_max_length: None,

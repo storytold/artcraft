@@ -16,11 +16,11 @@ pub enum CommonImageModel {
   #[serde(rename = "gpt_image_1p5")]
   GptImage1p5,
   #[serde(rename = "nano_banana")]
-  NanaBanana,
+  NanoBanana,
   #[serde(rename = "nano_banana_2")]
-  NanaBanana2,
+  NanoBanana2,
   #[serde(rename = "nano_banana_pro")]
-  NanaBananaPro,
+  NanoBananaPro,
   #[serde(rename = "seedream_4")]
   Seedream4,
   #[serde(rename = "seedream_4p5")]

@@ -23,7 +23,7 @@ pub fn get_artcraft_client() -> RouterClient {
 
 pub fn base_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
-    model: CommonImageModel::NanaBananaPro,
+    model: CommonImageModel::NanoBananaPro,
     provider: Provider::Artcraft,
     prompt: Some("a cat in space"),
     image_inputs: None,
@@ -49,7 +49,7 @@ pub fn get_fal_client() -> RouterClient {
 
 pub fn base_fal_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
-    model: CommonImageModel::NanaBananaPro,
+    model: CommonImageModel::NanoBananaPro,
     provider: Provider::Fal,
     prompt: Some("a cat in space"),
     image_inputs: None,
@@ -121,7 +121,7 @@ pub fn base_seedream_5_lite_image_request() -> GenerateImageRequest<'static> {
 
 pub fn base_nano_banana_2_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
-    model: CommonImageModel::NanaBanana2,
+    model: CommonImageModel::NanoBanana2,
     provider: Provider::Artcraft,
     prompt: Some("a cat in space"),
     image_inputs: None,
@@ -139,7 +139,7 @@ pub fn base_nano_banana_2_image_request() -> GenerateImageRequest<'static> {
 
 pub fn base_nano_banana_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
-    model: CommonImageModel::NanaBanana,
+    model: CommonImageModel::NanoBanana,
     provider: Provider::Artcraft,
     prompt: Some("a cat in space"),
     image_inputs: None,

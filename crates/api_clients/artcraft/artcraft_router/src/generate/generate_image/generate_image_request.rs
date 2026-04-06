@@ -88,9 +88,9 @@ impl<'a> GenerateImageRequest<'a> {
       CommonImageModel::FluxPro11 => plan_generate_image_artcraft_flux_pro_1p1(self),
       CommonImageModel::FluxPro11Ultra => plan_generate_image_artcraft_flux_pro_1p1_ultra(self),
       CommonImageModel::GptImage1p5 => plan_generate_image_artcraft_gpt_image_1p5(self),
-      CommonImageModel::NanaBanana => plan_generate_image_artcraft_nano_banana(self),
-      CommonImageModel::NanaBanana2 => plan_generate_image_artcraft_nano_banana_2(self),
-      CommonImageModel::NanaBananaPro => plan_generate_image_artcraft_nano_banana_pro(self),
+      CommonImageModel::NanoBanana => plan_generate_image_artcraft_nano_banana(self),
+      CommonImageModel::NanoBanana2 => plan_generate_image_artcraft_nano_banana_2(self),
+      CommonImageModel::NanoBananaPro => plan_generate_image_artcraft_nano_banana_pro(self),
       CommonImageModel::Seedream4 => plan_generate_image_artcraft_seedream_4(self),
       CommonImageModel::Seedream4p5 => plan_generate_image_artcraft_seedream_4p5(self),
       CommonImageModel::Seedream5Lite => plan_generate_image_artcraft_seedream_5_lite(self),
@@ -101,8 +101,8 @@ impl<'a> GenerateImageRequest<'a> {
 
   fn build_fal(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
-      CommonImageModel::NanaBanana2 => plan_generate_image_fal_nano_banana_2(self),
-      CommonImageModel::NanaBananaPro => plan_generate_image_fal_nano_banana_pro(self),
+      CommonImageModel::NanoBanana2 => plan_generate_image_fal_nano_banana_2(self),
+      CommonImageModel::NanoBananaPro => plan_generate_image_fal_nano_banana_pro(self),
       _ => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "provider",

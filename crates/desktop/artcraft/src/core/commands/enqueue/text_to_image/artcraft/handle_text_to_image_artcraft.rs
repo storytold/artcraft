@@ -38,10 +38,10 @@ pub async fn handle_text_to_image_artcraft(
     TextToImageModel::GptImage1 => handle_artcraft_gpt_image_1_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
     TextToImageModel::GptImage1p5 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::GptImage1p5, GenerationModel::GptImage1p5).await,
     TextToImageModel::Gemini25Flash | TextToImageModel::NanoBanana => {
-      handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBanana, GenerationModel::NanoBanana).await
+      handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanoBanana, GenerationModel::NanoBanana).await
     },
-    TextToImageModel::NanoBanana2 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBanana2, GenerationModel::NanoBanana2).await,
-    TextToImageModel::NanoBananaPro => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanaBananaPro, GenerationModel::NanoBananaPro).await,
+    TextToImageModel::NanoBanana2 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanoBanana2, GenerationModel::NanoBanana2).await,
+    TextToImageModel::NanoBananaPro => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanoBananaPro, GenerationModel::NanoBananaPro).await,
     TextToImageModel::Seedream4 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4, GenerationModel::Seedream4).await,
     TextToImageModel::Seedream4p5 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream4p5, GenerationModel::Seedream4p5).await,
     TextToImageModel::Seedream5Lite => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::Seedream5Lite, GenerationModel::Seedream5Lite).await,
