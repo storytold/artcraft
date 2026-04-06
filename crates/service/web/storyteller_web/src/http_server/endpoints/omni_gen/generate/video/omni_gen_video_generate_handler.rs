@@ -31,7 +31,7 @@ use crate::http_server::endpoints::generate::common::payments_error_test::paymen
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 
-use super::plan_to_costs::plan_to_costs;
+use super::request_to_costs::request_to_costs;
 use super::request_to_plan::request_to_plan;
 use super::transform_request::transform_request;
 
@@ -60,11 +60,14 @@ pub async fn omni_gen_video_generate_handler(
   // ==================== TRANSFORM REQUEST + PLAN ==================== //
 
   let generate_request = transform_request(&request)?;
-  let plan = request_to_plan(&generate_request)?;
 
   // ==================== COST ==================== //
 
-  let cost_estimate = plan_to_costs(&plan);
+  let cost_estimate = request_to_costs(&generate_request)?;
+
+  // ==================== PLAN ==================== //
+
+  let plan = request_to_plan(&generate_request)?;
 
   // ==================== SESSION ==================== //
 
