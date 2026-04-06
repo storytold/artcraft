@@ -34,6 +34,7 @@ use crate::state::server_state::ServerState;
 
 use super::request_to_costs::request_to_costs;
 use super::request_to_plan::request_to_plan;
+use super::resolve_media_tokens::{resolve_media_tokens, apply_resolved_media};
 use super::transform_request::transform_request;
 
 /// Generate an image using the omni-gen unified endpoint.
@@ -69,10 +70,6 @@ pub async fn omni_gen_image_generate_handler(
   // ==================== COST ==================== //
 
   let cost_estimate = request_to_costs(&generate_request)?;
-
-  // ==================== PLAN ==================== //
-
-  let plan = request_to_plan(&mut generate_request)?;
 
   // ==================== SESSION ==================== //
 
@@ -112,6 +109,21 @@ pub async fn omni_gen_image_generate_handler(
       error!("Error inserting idempotency token: {:?}", err);
       AdvancedCommonWebError::BadInputWithSimpleMessage("repeated idempotency token".to_string())
     })?;
+
+  // ==================== RESOLVE MEDIA TOKENS ==================== //
+
+  let resolved_media = resolve_media_tokens(
+    &request,
+    &http_request,
+    &mut mysql_connection,
+    server_state.server_environment,
+  ).await?;
+
+  apply_resolved_media(&mut generate_request, &resolved_media);
+
+  // ==================== PLAN ==================== //
+
+  let plan = request_to_plan(&mut generate_request)?;
 
   // ==================== BILLING ==================== //
 
