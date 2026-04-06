@@ -18,9 +18,7 @@ pub fn request_to_costs(
   let plan = cost_request.build()
     .map_err(|e| {
       warn!("Failed to build cost plan: {}", e);
-      AdvancedCommonWebError::BadInputWithSimpleMessage(
-        format!("Failed to build cost plan: {}", e),
-      )
+      AdvancedCommonWebError::from_error(e)
     })?;
 
   Ok(plan.estimate_costs())
