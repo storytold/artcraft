@@ -1,2 +1,3 @@
+pub mod plan_generate_image_fal_nano_banana;
 pub mod plan_generate_image_fal_nano_banana_2;
 pub mod plan_generate_image_fal_nano_banana_pro;

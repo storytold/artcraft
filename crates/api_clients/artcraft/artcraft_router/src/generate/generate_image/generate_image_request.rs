@@ -21,6 +21,7 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4::plan_generate_image_artcraft_seedream_4;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_4p5::plan_generate_image_artcraft_seedream_4p5;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::plan_generate_image_artcraft_seedream_5_lite;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana::plan_generate_image_fal_nano_banana;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_2::plan_generate_image_fal_nano_banana_2;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
@@ -101,6 +102,7 @@ impl<'a> GenerateImageRequest<'a> {
 
   fn build_fal(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
+      CommonImageModel::NanoBanana => plan_generate_image_fal_nano_banana(self),
       CommonImageModel::NanoBanana2 => plan_generate_image_fal_nano_banana_2(self),
       CommonImageModel::NanoBananaPro => plan_generate_image_fal_nano_banana_pro(self),
       _ => {
