@@ -20,6 +20,7 @@ import { RemoveBackground } from "../PageRemoveBackground";
 import { Angles } from "../PageAngles";
 import { Storyboard } from "../PageStoryboard";
 import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
+import MotionControl from "../PageMotionControl/MotionControl";
 
 import {
   timelineHeight,
@@ -649,6 +650,11 @@ export const PageEditor = () => {
       {tabStore.activeTabId == "STORYBOARD" && storyboardPageEnabled && (
         <div>
           <Storyboard />
+        </div>
+      )}
+      {tabStore.activeTabId == "MOTION_CONTROL" && (
+        <div>
+          <MotionControl />
         </div>
       )}
     </div>

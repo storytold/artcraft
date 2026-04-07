@@ -6,4 +6,5 @@ export enum ModelPage {
   ImageEditor = "image-editor",
   ImageTo3DWorld = "image-to-3d-world",
   Angles = "angles",
+  MotionControl = "motion-control",
 }

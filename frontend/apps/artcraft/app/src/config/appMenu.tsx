@@ -10,6 +10,7 @@ import {
   faWandMagicSparkles,
   faPenNib,
   faCrosshairs,
+  faPersonRunning,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useMemo } from "react";
 import {
@@ -32,7 +33,8 @@ export type AppId =
   | "IMAGE_TO_3D_WORLD"
   | "REMOVE_BACKGROUND"
   | "ANGLES"
-  | "STORYBOARD";
+  | "STORYBOARD"
+  | "MOTION_CONTROL";
 
 export interface AppDescriptor {
   id: AppId;
@@ -53,6 +55,11 @@ export const APP_DESCRIPTORS: AppDescriptor[] = [
     id: "VIDEO",
     label: "Generate Video",
     icon: faFilm,
+  },
+  {
+    id: "MOTION_CONTROL",
+    label: "Motion Control",
+    icon: faPersonRunning,
   },
   {
     id: "2D",
@@ -101,6 +108,16 @@ export const ALL_APPS: FullAppItem[] = [
     category: "generate",
     action: "VIDEO",
     color: "bg-amber-500/40",
+  },
+  {
+    id: "motion-control",
+    label: "Motion Control",
+    description: "Transfer movements from video to character",
+    icon: faPersonRunning,
+    category: "generate",
+    action: "MOTION_CONTROL",
+    color: "bg-orange-500/40",
+    badge: "NEW",
   },
   {
     id: "image-to-3d-object",
@@ -267,6 +284,7 @@ export const goToApp = (action?: string) => {
       "REMOVE_BACKGROUND",
       "ANGLES",
       "STORYBOARD",
+      "MOTION_CONTROL",
     ].includes(action)
   ) {
     if (action === "STORYBOARD") {
