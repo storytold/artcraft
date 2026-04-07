@@ -17,6 +17,10 @@ use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_flux_1_d
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_flux_1_schnell::estimate_image_cost_fal_flux_1_schnell;
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_flux_pro_1p1::estimate_image_cost_fal_flux_pro_1p1;
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_flux_pro_1p1_ultra::estimate_image_cost_fal_flux_pro_1p1_ultra;
+use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_gpt_image_1p5::estimate_image_cost_fal_gpt_image_1p5;
+use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_seedream_4::estimate_image_cost_fal_seedream_4;
+use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_seedream_4p5::estimate_image_cost_fal_seedream_4p5;
+use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_seedream_5_lite::estimate_image_cost_fal_seedream_5_lite;
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_nano_banana::estimate_image_cost_fal_nano_banana;
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_nano_banana_2::estimate_image_cost_fal_nano_banana_2;
 use crate::generate::generate_image::cost::fal::estimate_image_cost_fal_nano_banana_pro::estimate_image_cost_fal_nano_banana_pro;
@@ -37,6 +41,10 @@ use crate::generate::generate_image::execute::fal::generate_image_fal_flux_1_dev
 use crate::generate::generate_image::execute::fal::generate_image_fal_flux_1_schnell::execute_fal_flux_1_schnell;
 use crate::generate::generate_image::execute::fal::generate_image_fal_flux_pro_1p1::execute_fal_flux_pro_1p1;
 use crate::generate::generate_image::execute::fal::generate_image_fal_flux_pro_1p1_ultra::execute_fal_flux_pro_1p1_ultra;
+use crate::generate::generate_image::execute::fal::generate_image_fal_gpt_image_1p5::execute_fal_gpt_image_1p5;
+use crate::generate::generate_image::execute::fal::generate_image_fal_seedream_4::execute_fal_seedream_4;
+use crate::generate::generate_image::execute::fal::generate_image_fal_seedream_4p5::execute_fal_seedream_4p5;
+use crate::generate::generate_image::execute::fal::generate_image_fal_seedream_5_lite::execute_fal_seedream_5_lite;
 use crate::generate::generate_image::execute::fal::generate_image_fal_nano_banana::execute_fal_nano_banana;
 use crate::generate::generate_image::execute::fal::generate_image_fal_nano_banana_2::execute_fal_nano_banana_2;
 use crate::generate::generate_image::execute::fal::generate_image_fal_nano_banana_pro::execute_fal_nano_banana_pro;
@@ -59,6 +67,10 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_d
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_schnell::PlanFalFlux1Schnell;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1::PlanFalFluxPro11;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1_ultra::PlanFalFluxPro11Ultra;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1p5::PlanFalGptImage1p5;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4::PlanFalSeedream4;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4p5::PlanFalSeedream4p5;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_5_lite::PlanFalSeedream5Lite;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana::PlanFalNanoBanana;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_2::PlanFalNanaBanana2;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::PlanFalNanaBananaPro;
@@ -82,6 +94,10 @@ pub enum ImageGenerationPlan<'a> {
   FalFlux1Schnell(PlanFalFlux1Schnell<'a>),
   FalFluxPro11(PlanFalFluxPro11<'a>),
   FalFluxPro11Ultra(PlanFalFluxPro11Ultra<'a>),
+  FalGptImage1p5(PlanFalGptImage1p5<'a>),
+  FalSeedream4(PlanFalSeedream4<'a>),
+  FalSeedream4p5(PlanFalSeedream4p5<'a>),
+  FalSeedream5Lite(PlanFalSeedream5Lite<'a>),
   FalNanoBanana(PlanFalNanoBanana<'a>),
   FalNanaBanana2(PlanFalNanaBanana2<'a>),
   FalNanaBananaPro(PlanFalNanaBananaPro<'a>),
@@ -161,6 +177,22 @@ impl<'a> ImageGenerationPlan<'a> {
         let fal_client = client.get_fal_client_ref()?;
         execute_fal_flux_pro_1p1_ultra(plan, fal_client).await
       }
+      ImageGenerationPlan::FalGptImage1p5(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_gpt_image_1p5(plan, fal_client).await
+      }
+      ImageGenerationPlan::FalSeedream4(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_seedream_4(plan, fal_client).await
+      }
+      ImageGenerationPlan::FalSeedream4p5(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_seedream_4p5(plan, fal_client).await
+      }
+      ImageGenerationPlan::FalSeedream5Lite(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_seedream_5_lite(plan, fal_client).await
+      }
       ImageGenerationPlan::FalNanoBanana(plan) => {
         let fal_client = client.get_fal_client_ref()?;
         execute_fal_nano_banana(plan, fal_client).await
@@ -228,6 +260,18 @@ impl<'a> ImageGenerationPlan<'a> {
       }
       ImageGenerationPlan::FalFluxPro11Ultra(plan) => {
         estimate_image_cost_fal_flux_pro_1p1_ultra(plan)
+      }
+      ImageGenerationPlan::FalGptImage1p5(plan) => {
+        estimate_image_cost_fal_gpt_image_1p5(plan)
+      }
+      ImageGenerationPlan::FalSeedream4(plan) => {
+        estimate_image_cost_fal_seedream_4(plan)
+      }
+      ImageGenerationPlan::FalSeedream4p5(plan) => {
+        estimate_image_cost_fal_seedream_4p5(plan)
+      }
+      ImageGenerationPlan::FalSeedream5Lite(plan) => {
+        estimate_image_cost_fal_seedream_5_lite(plan)
       }
       ImageGenerationPlan::FalNanoBanana(plan) => {
         estimate_image_cost_fal_nano_banana(plan)

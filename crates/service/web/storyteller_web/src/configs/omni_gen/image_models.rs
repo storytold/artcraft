@@ -188,6 +188,92 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
     ..Default::default()
   });
 
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::GptImage1p5,
+    full_name: Some("GPT Image 1.5".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::TallTwoByThree,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::Seedream4,
+    full_name: Some("Seedream 4".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::Auto2k,
+      CommonAspectRatio::Auto4k,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::SquareHd,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::Seedream4p5,
+    full_name: Some("Seedream 4.5".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto2k,
+      CommonAspectRatio::Auto4k,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::SquareHd,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto2k),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::Seedream5Lite,
+    full_name: Some("Seedream 5 Lite".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto2k,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::SquareHd,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto2k),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
   models
 }
 
@@ -211,6 +297,22 @@ fn build_omni_gen_image_model_providers() -> Vec<OmniGenImageModelProviderDetail
       },
       OmniGenImageProviderModelDetails {
         model: CommonImageModel::FluxPro11Ultra,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::GptImage1p5,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::Seedream4,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::Seedream4p5,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::Seedream5Lite,
         overrides: None,
       },
       OmniGenImageProviderModelDetails {

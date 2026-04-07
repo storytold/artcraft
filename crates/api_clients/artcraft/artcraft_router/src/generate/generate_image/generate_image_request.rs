@@ -25,6 +25,10 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_d
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_schnell::plan_generate_image_fal_flux_1_schnell;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1::plan_generate_image_fal_flux_pro_1p1;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1_ultra::plan_generate_image_fal_flux_pro_1p1_ultra;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1p5::plan_generate_image_fal_gpt_image_1p5;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4::plan_generate_image_fal_seedream_4;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4p5::plan_generate_image_fal_seedream_4p5;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_5_lite::plan_generate_image_fal_seedream_5_lite;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana::plan_generate_image_fal_nano_banana;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_2::plan_generate_image_fal_nano_banana_2;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
@@ -110,6 +114,10 @@ impl<'a> GenerateImageRequest<'a> {
       CommonImageModel::Flux1Schnell => plan_generate_image_fal_flux_1_schnell(self),
       CommonImageModel::FluxPro11 => plan_generate_image_fal_flux_pro_1p1(self),
       CommonImageModel::FluxPro11Ultra => plan_generate_image_fal_flux_pro_1p1_ultra(self),
+      CommonImageModel::GptImage1p5 => plan_generate_image_fal_gpt_image_1p5(self),
+      CommonImageModel::Seedream4 => plan_generate_image_fal_seedream_4(self),
+      CommonImageModel::Seedream4p5 => plan_generate_image_fal_seedream_4p5(self),
+      CommonImageModel::Seedream5Lite => plan_generate_image_fal_seedream_5_lite(self),
       CommonImageModel::NanoBanana => plan_generate_image_fal_nano_banana(self),
       CommonImageModel::NanoBanana2 => plan_generate_image_fal_nano_banana_2(self),
       CommonImageModel::NanoBananaPro => plan_generate_image_fal_nano_banana_pro(self),
