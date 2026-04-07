@@ -1,0 +1,151 @@
+use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::common_resolution::CommonResolution;
+use crate::api::image_ref::ImageRef;
+use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
+use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
+use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
+use artcraft_api_defs::generate::video::multi_function::sora_2_pro_multi_function_video_gen::{
+  Sora2ProMultiFunctionVideoGenAspectRatio, Sora2ProMultiFunctionVideoGenDuration,
+  Sora2ProMultiFunctionVideoGenResolution,
+};
+use tokens::tokens::media_files::MediaFileToken;
+
+#[derive(Debug, Clone)]
+pub struct PlanArtcraftSora2Pro<'a> {
+  pub prompt: Option<&'a str>,
+  pub start_frame: Option<&'a MediaFileToken>,
+  pub aspect_ratio: Option<Sora2ProMultiFunctionVideoGenAspectRatio>,
+  pub resolution: Option<Sora2ProMultiFunctionVideoGenResolution>,
+  pub duration: Option<Sora2ProMultiFunctionVideoGenDuration>,
+  pub idempotency_token: String,
+}
+
+pub fn plan_generate_video_artcraft_sora_2_pro<'a>(
+  request: &'a GenerateVideoRequest<'a>,
+) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+  let strategy = request.request_mismatch_mitigation_strategy;
+
+  let start_frame = match request.start_frame {
+    None => None,
+    Some(ImageRef::MediaFileToken(t)) => Some(t),
+    Some(ImageRef::Url(_)) => {
+      return Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
+    }
+  };
+
+  if request.end_frame.is_some() {
+    return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+      field: "end_frame",
+      value: "Sora 2 Pro does not support an ending frame".to_string(),
+    }));
+  }
+
+  let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
+  let resolution = plan_resolution(request.resolution, strategy)?;
+  let duration = plan_duration(request.duration_seconds, strategy)?;
+
+  Ok(VideoGenerationPlan::ArtcraftSora2Pro(PlanArtcraftSora2Pro {
+    prompt: request.prompt,
+    start_frame,
+    aspect_ratio,
+    resolution,
+    duration,
+    idempotency_token: request.get_or_generate_idempotency_token(),
+  }))
+}
+
+fn plan_aspect_ratio(
+  aspect_ratio: Option<CommonAspectRatio>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Option<Sora2ProMultiFunctionVideoGenAspectRatio>, ArtcraftRouterError> {
+  use Sora2ProMultiFunctionVideoGenAspectRatio as Ar;
+  match aspect_ratio {
+    None => Ok(None),
+
+    Some(CommonAspectRatio::Auto)
+    | Some(CommonAspectRatio::Auto2k)
+    | Some(CommonAspectRatio::Auto4k) => Ok(Some(Ar::Auto)),
+
+    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Some(Ar::SixteenByNine)),
+    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Some(Ar::NineBySixteen)),
+
+    Some(unsupported) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "aspect_ratio",
+          value: format!("{:?}", unsupported),
+        }))
+      }
+      _ => Ok(Some(Ar::Auto)),
+    },
+  }
+}
+
+fn plan_resolution(
+  resolution: Option<CommonResolution>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Option<Sora2ProMultiFunctionVideoGenResolution>, ArtcraftRouterError> {
+  use Sora2ProMultiFunctionVideoGenResolution as R;
+  match resolution {
+    None => Ok(None),
+    Some(CommonResolution::SevenTwentyP) => Ok(Some(R::SevenTwentyP)),
+    Some(CommonResolution::TenEightyP) => Ok(Some(R::TenEightyP)),
+    Some(other) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "resolution",
+          value: format!("{:?}", other),
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(Some(R::TenEightyP)),
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(Some(R::SevenTwentyP)),
+    },
+  }
+}
+
+fn plan_duration(
+  duration_seconds: Option<u16>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Option<Sora2ProMultiFunctionVideoGenDuration>, ArtcraftRouterError> {
+  use Sora2ProMultiFunctionVideoGenDuration as D;
+  match duration_seconds {
+    None => Ok(None),
+    Some(4) => Ok(Some(D::FourSeconds)),
+    Some(8) => Ok(Some(D::EightSeconds)),
+    Some(12) => Ok(Some(D::TwelveSeconds)),
+    Some(other) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "duration_seconds",
+          value: format!("{}", other),
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(Some(D::TwelveSeconds)),
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(Some(D::FourSeconds)),
+    },
+  }
+}
+
+impl PlanArtcraftSora2Pro<'_> {
+  /// Fal client default: 4 seconds when None.
+  pub fn duration_seconds_for_cost(&self) -> u64 {
+    use Sora2ProMultiFunctionVideoGenDuration as D;
+    match self.duration {
+      None | Some(D::FourSeconds) => 4,
+      Some(D::EightSeconds) => 8,
+      Some(D::TwelveSeconds) => 12,
+    }
+  }
+
+  /// Fal client defaults: text-to-video → 1080p; image-to-video → Auto (priced as 720p).
+  pub fn is_ten_eighty_p_for_cost(&self) -> bool {
+    use Sora2ProMultiFunctionVideoGenResolution as R;
+    match self.resolution {
+      Some(R::TenEightyP) => true,
+      Some(R::SevenTwentyP) | Some(R::Auto) => false,
+      None => self.start_frame.is_none(),
+    }
+  }
+}

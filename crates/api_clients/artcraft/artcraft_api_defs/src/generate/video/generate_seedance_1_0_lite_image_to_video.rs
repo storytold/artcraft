@@ -31,14 +31,14 @@ pub struct GenerateSeedance10LiteImageToVideoRequest {
   pub aspect_ratio: Option<GenerateSeedance10LiteAspectRatio>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateSeedance10LiteResolution {
   FourEightyP,
   SevenTwentyP,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateSeedance10LiteDuration {
   FiveSeconds,
@@ -46,7 +46,7 @@ pub enum GenerateSeedance10LiteDuration {
 }
 
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateSeedance10LiteAspectRatio {
   Auto,

@@ -35,7 +35,7 @@ pub struct Sora2ProMultiFunctionVideoGenRequest {
   pub aspect_ratio: Option<Sora2ProMultiFunctionVideoGenAspectRatio>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Sora2ProMultiFunctionVideoGenResolution {
   Auto,
@@ -43,7 +43,7 @@ pub enum Sora2ProMultiFunctionVideoGenResolution {
   TenEightyP,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Sora2ProMultiFunctionVideoGenDuration {
   FourSeconds,
@@ -51,7 +51,7 @@ pub enum Sora2ProMultiFunctionVideoGenDuration {
   TwelveSeconds,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Sora2ProMultiFunctionVideoGenAspectRatio {
   Auto,
