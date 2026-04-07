@@ -48,15 +48,7 @@ impl HttpUserSessionPayloadSigner {
     session_payload_contents: &str,
   ) -> Result<HttpUserSessionPayload, HttpUserSessionPayloadError> {
     let claims = self.jwt_signer.jwt_to_claims(session_payload_contents)?;
-
-    let session_token = claims["session_token"].clone();
-    let maybe_user_token = claims.get("user_token")
-        .map(|t| t.to_string());
-
-    Ok(HttpUserSessionPayload {
-      session_token,
-      maybe_user_token,
-    })
+    HttpUserSessionPayload::from_map(claims)
   }
 }
 

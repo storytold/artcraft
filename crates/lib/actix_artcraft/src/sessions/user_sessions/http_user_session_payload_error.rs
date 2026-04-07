@@ -8,6 +8,9 @@ pub enum HttpUserSessionPayloadError {
   /// Error reading HTTP header
   HttpSessionHeaderError(String),
 
+  /// Session payload is missing a required field.
+  MissingField(&'static str),
+
   /// Error encoding, decoding, or constructing the JWT signer.
   JwtSigner(JwtSignerError),
 }
@@ -29,6 +32,10 @@ impl HttpUserSessionPayloadError {
       ) => {
         true
       },
+      // Missing field in a verified JWT — how did this make it into the wild!? → 500
+      HttpUserSessionPayloadError::MissingField(_) => {
+        true
+      }
     }
   }
 }
@@ -37,6 +44,7 @@ impl Display for HttpUserSessionPayloadError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::HttpSessionHeaderError(msg) => write!(f, "HTTP session header error: {}", msg),
+      Self::MissingField(field) => write!(f, "HTTP session payload missing field: {}", field),
       Self::JwtSigner(e) => write!(f, "JWT signer error: {}", e),
     }
   }
