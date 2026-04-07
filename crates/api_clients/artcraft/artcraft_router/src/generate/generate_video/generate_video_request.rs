@@ -23,6 +23,13 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3_fast::plan_generate_video_artcraft_veo_3_fast;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3p1::plan_generate_video_artcraft_veo_3p1;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3p1_fast::plan_generate_video_artcraft_veo_3p1_fast;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_1_6_pro::plan_generate_video_fal_kling_1_6_pro;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_1_master::plan_generate_video_fal_kling_2_1_master;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_1_pro::plan_generate_video_fal_kling_2_1_pro;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_5_turbo_pro::plan_generate_video_fal_kling_2_5_turbo_pro;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_6_pro::plan_generate_video_fal_kling_2_6_pro;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_pro::plan_generate_video_fal_kling_3p0_pro;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_standard::plan_generate_video_fal_kling_3p0_standard;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_2::plan_generate_video_fal_veo_2;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3::plan_generate_video_fal_veo_3;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3_fast::plan_generate_video_fal_veo_3_fast;
@@ -132,6 +139,13 @@ impl<'a> GenerateVideoRequest<'a> {
       CommonVideoModel::Veo3Fast => plan_generate_video_fal_veo_3_fast(self),
       CommonVideoModel::Veo3p1 => plan_generate_video_fal_veo_3p1(self),
       CommonVideoModel::Veo3p1Fast => plan_generate_video_fal_veo_3p1_fast(self),
+      CommonVideoModel::Kling16Pro => plan_generate_video_fal_kling_1_6_pro(self),
+      CommonVideoModel::Kling21Pro => plan_generate_video_fal_kling_2_1_pro(self),
+      CommonVideoModel::Kling21Master => plan_generate_video_fal_kling_2_1_master(self),
+      CommonVideoModel::Kling2p5TurboPro => plan_generate_video_fal_kling_2_5_turbo_pro(self),
+      CommonVideoModel::Kling2p6Pro => plan_generate_video_fal_kling_2_6_pro(self),
+      CommonVideoModel::Kling3p0Pro => plan_generate_video_fal_kling_3p0_pro(self),
+      CommonVideoModel::Kling3p0Standard => plan_generate_video_fal_kling_3p0_standard(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }

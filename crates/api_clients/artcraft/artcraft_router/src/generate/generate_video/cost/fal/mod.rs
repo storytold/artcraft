@@ -1,3 +1,10 @@
+pub(crate) mod estimate_video_cost_fal_kling_1_6_pro;
+pub(crate) mod estimate_video_cost_fal_kling_2_1_master;
+pub(crate) mod estimate_video_cost_fal_kling_2_1_pro;
+pub(crate) mod estimate_video_cost_fal_kling_2_5_turbo_pro;
+pub(crate) mod estimate_video_cost_fal_kling_2_6_pro;
+pub(crate) mod estimate_video_cost_fal_kling_3p0_pro;
+pub(crate) mod estimate_video_cost_fal_kling_3p0_standard;
 pub(crate) mod estimate_video_cost_fal_veo_2;
 pub(crate) mod estimate_video_cost_fal_veo_3;
 pub(crate) mod estimate_video_cost_fal_veo_3_fast;

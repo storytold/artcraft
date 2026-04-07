@@ -185,6 +185,125 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     ..Default::default()
   });
 
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Kling16Pro,
+    full_name: Some("Kling 1.6 Pro".to_string()),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    duration_seconds_options: Some(vec![5, 10]),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Kling21Pro,
+    full_name: Some("Kling 2.1 Pro".to_string()),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    duration_seconds_options: Some(vec![5, 10]),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Kling21Master,
+    full_name: Some("Kling 2.1 Master".to_string()),
+    starting_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    duration_seconds_options: Some(vec![5, 10]),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Kling2p5TurboPro,
+    full_name: Some("Kling 2.5 Turbo Pro".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    duration_seconds_options: Some(vec![5, 10]),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Kling2p6Pro,
+    full_name: Some("Kling 2.6 Pro".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    show_generate_with_sound_toggle: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    duration_seconds_options: Some(vec![5, 10]),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Kling3p0Pro,
+    full_name: Some("Kling 3.0 Pro".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    show_generate_with_sound_toggle: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    duration_seconds_min: Some(3),
+    duration_seconds_max: Some(15),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Kling3p0Standard,
+    full_name: Some("Kling 3.0 Standard".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    show_generate_with_sound_toggle: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    duration_seconds_min: Some(3),
+    duration_seconds_max: Some(15),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
   models
 }
 
@@ -220,6 +339,34 @@ fn build_omni_gen_video_model_providers() -> Vec<OmniGenVideoModelProviderDetail
       },
       OmniGenVideoProviderModelDetails {
         model: CommonVideoModel::Veo3p1Fast,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Kling16Pro,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Kling21Pro,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Kling21Master,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Kling2p5TurboPro,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Kling2p6Pro,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Kling3p0Pro,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Kling3p0Standard,
         overrides: None,
       },
     ],

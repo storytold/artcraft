@@ -1,3 +1,10 @@
+pub mod generate_video_fal_kling_1_6_pro;
+pub mod generate_video_fal_kling_2_1_master;
+pub mod generate_video_fal_kling_2_1_pro;
+pub mod generate_video_fal_kling_2_5_turbo_pro;
+pub mod generate_video_fal_kling_2_6_pro;
+pub mod generate_video_fal_kling_3p0_pro;
+pub mod generate_video_fal_kling_3p0_standard;
 pub mod generate_video_fal_veo_2;
 pub mod generate_video_fal_veo_3;
 pub mod generate_video_fal_veo_3_fast;
