@@ -54,7 +54,7 @@ impl AvtCookiePayload {
     let avt_token = AnonymousVisitorTrackingToken::new_from_str(avt_token);
 
     let cookie_version = u32::from_str(cookie_version)
-        .map_err(|e| AvtCookiePayloadError::DecodeError(
+        .map_err(|e| AvtCookiePayloadError::PayloadDecodeError(
           format!("invalid integer for cookie_version: {:?}, version: {}", e, cookie_version)))?;
 
     Ok(AvtCookiePayload {
