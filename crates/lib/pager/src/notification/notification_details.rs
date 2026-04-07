@@ -44,6 +44,18 @@ pub struct NotificationDetails {
 
   /// Third-party identifier associated with the event, if any.
   pub(crate) third_party_id: Option<String>,
+
+  /// IP address of the request that triggered this notification, if any.
+  pub(crate) request_ip_address: Option<String>,
+
+  /// Anonymous visitor tracking token extracted from the request, if any.
+  pub(crate) avt_cookie_token: Option<String>,
+
+  /// Raw (signed) user session token extracted from the request, if any.
+  pub(crate) session_token: Option<String>,
+
+  /// User token decoded from the request's user session cookie, if any.
+  pub(crate) session_user_token: Option<String>,
 }
 
 impl NotificationDetails {
@@ -185,6 +197,22 @@ impl NotificationDetails {
 
     if let Some(third_party_id) = &self.third_party_id {
       parts.push(format!("Third Party ID: {}", third_party_id));
+    }
+
+    if let Some(ip) = &self.request_ip_address {
+      parts.push(format!("Request IP: {}", ip));
+    }
+
+    if let Some(avt) = &self.avt_cookie_token {
+      parts.push(format!("AVT Cookie Token: {}", avt));
+    }
+
+    if let Some(session) = &self.session_token {
+      parts.push(format!("Session Token: {}", session));
+    }
+
+    if let Some(user) = &self.session_user_token {
+      parts.push(format!("Session User Token: {}", user));
     }
 
     if parts.is_empty() { None } else { Some(parts.join("\n")) }

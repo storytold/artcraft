@@ -22,6 +22,11 @@ pub struct NotificationDetailsBuilder {
   pub(crate) media_file_token: Option<String>,
   pub(crate) inference_job_token: Option<String>,
   pub(crate) third_party_id: Option<String>,
+
+  pub(crate) request_ip_address: Option<String>,
+  pub(crate) avt_cookie_token: Option<String>,
+  pub(crate) session_token: Option<String>,
+  pub(crate) session_user_token: Option<String>,
 }
 
 impl NotificationDetailsBuilder {
@@ -43,6 +48,10 @@ impl NotificationDetailsBuilder {
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
+      request_ip_address: None,
+      avt_cookie_token: None,
+      session_token: None,
+      session_user_token: None,
     }
   }
 
@@ -68,6 +77,10 @@ impl NotificationDetailsBuilder {
       media_file_token: None,
       inference_job_token: None,
       third_party_id: None,
+      request_ip_address: None,
+      avt_cookie_token: None,
+      session_token: None,
+      session_user_token: None,
     }
   }
 
@@ -128,6 +141,26 @@ impl NotificationDetailsBuilder {
     self
   }
 
+  pub fn set_request_ip_address(mut self, request_ip_address: Option<String>) -> Self {
+    self.request_ip_address = request_ip_address;
+    self
+  }
+
+  pub fn set_avt_cookie_token(mut self, avt_cookie_token: Option<String>) -> Self {
+    self.avt_cookie_token = avt_cookie_token;
+    self
+  }
+
+  pub fn set_session_token(mut self, session_token: Option<String>) -> Self {
+    self.session_token = session_token;
+    self
+  }
+
+  pub fn set_session_user_token(mut self, session_user_token: Option<String>) -> Self {
+    self.session_user_token = session_user_token;
+    self
+  }
+
   // --- Build ---
 
   pub fn build(self) -> NotificationDetails {
@@ -150,6 +183,10 @@ impl NotificationDetailsBuilder {
       media_file_token: self.media_file_token,
       inference_job_token: self.inference_job_token,
       third_party_id: self.third_party_id,
+      request_ip_address: self.request_ip_address,
+      avt_cookie_token: self.avt_cookie_token,
+      session_token: self.session_token,
+      session_user_token: self.session_user_token,
     }
   }
 

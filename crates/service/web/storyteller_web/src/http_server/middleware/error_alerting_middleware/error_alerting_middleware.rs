@@ -1,4 +1,4 @@
-use std::future::{Future, Ready, ready};
+use std::future::{ready, Future, Ready};
 use std::pin::Pin;
 
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
@@ -6,12 +6,13 @@ use actix_web::Error;
 
 use pager::client::pager::Pager;
 
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::state::flags::paging_flags::PagingFlags;
 use super::handlers::check_advanced_common_web_error::check_advanced_common_web_error;
 use super::handlers::check_common_web_error::check_common_web_error;
 use super::handlers::check_status_code_fallback::check_status_code_fallback;
+use super::request_debugging_metadata::RequestDebuggingMetadata;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::state::flags::paging_flags::PagingFlags;
 
 // ======================== Transform (factory) ========================
 
@@ -85,19 +86,21 @@ impl<S, B> Service<ServiceRequest> for ErrorAlertingService<S>
       return Box::pin(self.service.call(req));
     }
 
+    let pager = self.pager.clone();
     let method = req.method().to_string();
     let path = req.path().to_string();
-    let pager = self.pager.clone();
+    let metadata = RequestDebuggingMetadata::from_service_request(&req);
+
     let fut = self.service.call(req);
 
     Box::pin(async move {
       match fut.await {
         Ok(res) => {
-          check_ok_response_for_alerts(&pager, &method, &path, &res);
+          check_ok_response_for_alerts(&pager, &method, &path, &metadata, &res);
           Ok(res)
         }
         Err(err) => {
-          check_err_for_alerts(&pager, &method, &path, &err);
+          check_err_for_alerts(&pager, &method, &path, &metadata, &err);
           Err(err)
         }
       }
@@ -115,6 +118,7 @@ fn check_ok_response_for_alerts<B>(
   pager: &Pager,
   method: &str,
   path: &str,
+  metadata: &RequestDebuggingMetadata,
   response: &ServiceResponse<B>,
 ) {
   let status = response.status();
@@ -124,20 +128,20 @@ fn check_ok_response_for_alerts<B>(
     // --- Typed matchers (add new check_*.rs modules and downcast branches here) ---
 
     if let Some(advanced_err) = err.as_error::<AdvancedCommonWebError>() {
-      if check_advanced_common_web_error(pager, method, path, advanced_err) {
+      if check_advanced_common_web_error(pager, method, path, metadata, advanced_err) {
         return;
       }
     }
 
     if let Some(common_err) = err.as_error::<CommonWebError>() {
-      if check_common_web_error(pager, method, path, common_err) {
+      if check_common_web_error(pager, method, path, metadata, common_err) {
         return;
       }
     }
   }
 
   // --- Status code fallback ---
-  check_status_code_fallback(pager, method, path, status.as_u16());
+  check_status_code_fallback(pager, method, path, metadata, status.as_u16());
 }
 
 /// Inspect an `actix_web::Error` returned from the handler or inner middleware.
@@ -145,23 +149,24 @@ fn check_err_for_alerts(
   pager: &Pager,
   method: &str,
   path: &str,
+  metadata: &RequestDebuggingMetadata,
   err: &Error,
 ) {
   // --- Typed matchers (add new check_*.rs modules and downcast branches here) ---
 
   if let Some(advanced_err) = err.as_error::<AdvancedCommonWebError>() {
-    if check_advanced_common_web_error(pager, method, path, advanced_err) {
+    if check_advanced_common_web_error(pager, method, path, metadata, advanced_err) {
       return;
     }
   }
 
   if let Some(common_err) = err.as_error::<CommonWebError>() {
-    if check_common_web_error(pager, method, path, common_err) {
+    if check_common_web_error(pager, method, path, metadata, common_err) {
       return;
     }
   }
 
   // --- Status code fallback ---
   let status = err.as_response_error().status_code();
-  check_status_code_fallback(pager, method, path, status.as_u16());
+  check_status_code_fallback(pager, method, path, metadata, status.as_u16());
 }
