@@ -8,7 +8,7 @@ use crate::http_server::common_responses::common_web_error::CommonWebError;
 
 /// Check `CommonWebError` and alert on server errors.
 /// Returns `true` if the error was handled (alerted or intentionally skipped).
-pub(super) fn check_common_web_error(
+pub(crate) fn check_common_web_error(
   pager: &Pager,
   method: &str,
   path: &str,

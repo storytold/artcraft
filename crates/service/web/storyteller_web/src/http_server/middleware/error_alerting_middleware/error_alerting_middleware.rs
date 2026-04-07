@@ -9,9 +9,9 @@ use pager::client::pager::Pager;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::state::flags::paging_flags::PagingFlags;
-use super::check_advanced_common_web_error::check_advanced_common_web_error;
-use super::check_common_web_error::check_common_web_error;
-use super::check_status_code_fallback::check_status_code_fallback;
+use super::handlers::check_advanced_common_web_error::check_advanced_common_web_error;
+use super::handlers::check_common_web_error::check_common_web_error;
+use super::handlers::check_status_code_fallback::check_status_code_fallback;
 
 // ======================== Transform (factory) ========================
 

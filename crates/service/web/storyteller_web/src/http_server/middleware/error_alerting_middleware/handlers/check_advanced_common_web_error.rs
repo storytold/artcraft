@@ -8,7 +8,7 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 
 /// Check `AdvancedCommonWebError` and alert on uncaught server errors.
 /// Returns `true` if the error was handled (alerted or intentionally skipped).
-pub(super) fn check_advanced_common_web_error(
+pub(crate) fn check_advanced_common_web_error(
   pager: &Pager,
   method: &str,
   path: &str,

@@ -5,7 +5,7 @@ use pager::notification::notification_details_builder::NotificationDetailsBuilde
 use pager::notification::notification_urgency::NotificationUrgency;
 
 /// Fallback alerting based on HTTP status code when no typed error matched.
-pub(super) fn check_status_code_fallback(
+pub(crate) fn check_status_code_fallback(
   pager: &Pager,
   method: &str,
   path: &str,
