@@ -1,5 +1,7 @@
 pub mod generate_image_fal_flux_1_dev;
 pub mod generate_image_fal_flux_1_schnell;
+pub mod generate_image_fal_flux_pro_1p1;
+pub mod generate_image_fal_flux_pro_1p1_ultra;
 pub mod generate_image_fal_nano_banana;
 pub mod generate_image_fal_nano_banana_2;
 pub mod generate_image_fal_nano_banana_pro;

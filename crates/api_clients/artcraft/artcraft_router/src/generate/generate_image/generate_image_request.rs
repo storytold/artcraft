@@ -23,6 +23,8 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::plan_generate_image_artcraft_seedream_5_lite;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_dev::plan_generate_image_fal_flux_1_dev;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_schnell::plan_generate_image_fal_flux_1_schnell;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1::plan_generate_image_fal_flux_pro_1p1;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1_ultra::plan_generate_image_fal_flux_pro_1p1_ultra;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana::plan_generate_image_fal_nano_banana;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_2::plan_generate_image_fal_nano_banana_2;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
@@ -106,6 +108,8 @@ impl<'a> GenerateImageRequest<'a> {
     match self.model {
       CommonImageModel::Flux1Dev => plan_generate_image_fal_flux_1_dev(self),
       CommonImageModel::Flux1Schnell => plan_generate_image_fal_flux_1_schnell(self),
+      CommonImageModel::FluxPro11 => plan_generate_image_fal_flux_pro_1p1(self),
+      CommonImageModel::FluxPro11Ultra => plan_generate_image_fal_flux_pro_1p1_ultra(self),
       CommonImageModel::NanoBanana => plan_generate_image_fal_nano_banana(self),
       CommonImageModel::NanoBanana2 => plan_generate_image_fal_nano_banana_2(self),
       CommonImageModel::NanoBananaPro => plan_generate_image_fal_nano_banana_pro(self),

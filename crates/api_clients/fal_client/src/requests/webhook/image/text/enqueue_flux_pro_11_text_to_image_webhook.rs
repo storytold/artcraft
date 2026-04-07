@@ -37,8 +37,9 @@ pub enum FluxPro11NumImages {
 
 impl <U: IntoUrl> FalRequestCostCalculator for FluxPro11Args<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
-    // Your request will cost $0.04 per megapixel. -- NB: What? Not going to calculate that.
-    let base_cost = 6;
+    // Your request will cost $0.04 per megapixel, billed by rounding up to the nearest
+    // megapixel. Default image_size values are ~1MP, so 4 cents per image.
+    let base_cost = 4;
     let cost = match self.num_images {
       FluxPro11NumImages::One => base_cost,
       FluxPro11NumImages::Two => base_cost * 2,

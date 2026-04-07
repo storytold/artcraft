@@ -56,7 +56,46 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
     ..Default::default()
   });
 
-  //  ...
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::FluxPro11,
+    full_name: Some("FLUX 1.1 [pro]".to_string()),
+    text_prompt_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::SquareHd,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideSixteenByNine,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::FluxPro11Ultra,
+    full_name: Some("FLUX 1.1 [pro] ultra".to_string()),
+    text_prompt_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideTwentyOneByNine,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallTwoByThree,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::TallNineByTwentyOne,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::NanoBanana, // NB: currently Gemini25Flash in our system
@@ -164,6 +203,14 @@ fn build_omni_gen_image_model_providers() -> Vec<OmniGenImageModelProviderDetail
       },
       OmniGenImageProviderModelDetails {
         model: CommonImageModel::Flux1Schnell,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::FluxPro11,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::FluxPro11Ultra,
         overrides: None,
       },
       OmniGenImageProviderModelDetails {
