@@ -55,99 +55,108 @@ function escapeHTML(text: string): string {
 // ---------------------------------------------------------------------------
 
 function getCaretOffset(el: HTMLElement): number {
-  const sel = window.getSelection();
-  if (!sel?.rangeCount || !sel.anchorNode || !el.contains(sel.anchorNode)) {
+  try {
+    const sel = window.getSelection();
+    if (!sel?.rangeCount || !sel.anchorNode || !el.contains(sel.anchorNode)) {
+      return 0;
+    }
+
+    const anchorNode = sel.anchorNode;
+    const anchorOffset = sel.anchorOffset;
+    let offset = 0;
+
+    if (anchorNode === el) {
+      for (let i = 0; i < anchorOffset; i++) {
+        const child = el.childNodes[i];
+        if (!child) break;
+        if (child.nodeType === Node.TEXT_NODE) {
+          offset += child.textContent?.length ?? 0;
+        } else if (child.nodeName === "BR") {
+          offset += 1;
+        } else {
+          offset += child.textContent?.length ?? 0;
+        }
+      }
+      return offset;
+    }
+
+    function countBefore(parent: Node): boolean {
+      for (const child of Array.from(parent.childNodes)) {
+        if (child === anchorNode) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            offset += anchorOffset;
+          }
+          return true;
+        }
+        if (child.contains(anchorNode)) {
+          return countBefore(child);
+        }
+        if (child.nodeType === Node.TEXT_NODE) {
+          offset += child.textContent?.length ?? 0;
+        } else if (child.nodeName === "BR") {
+          offset += 1;
+        } else {
+          offset += child.textContent?.length ?? 0;
+        }
+      }
+      return false;
+    }
+
+    countBefore(el);
+    return offset;
+  } catch {
     return 0;
   }
-
-  const anchorNode = sel.anchorNode;
-  const anchorOffset = sel.anchorOffset;
-  let offset = 0;
-
-  if (anchorNode === el) {
-    for (let i = 0; i < anchorOffset; i++) {
-      const child = el.childNodes[i];
-      if (child.nodeType === Node.TEXT_NODE) {
-        offset += child.textContent?.length ?? 0;
-      } else if (child.nodeName === "BR") {
-        offset += 1;
-      } else {
-        offset += child.textContent?.length ?? 0;
-      }
-    }
-    return offset;
-  }
-
-  function countBefore(parent: Node): boolean {
-    for (const child of Array.from(parent.childNodes)) {
-      if (child === anchorNode) {
-        if (child.nodeType === Node.TEXT_NODE) {
-          offset += anchorOffset;
-        }
-        return true;
-      }
-      if (child.contains(anchorNode)) {
-        return countBefore(child);
-      }
-      if (child.nodeType === Node.TEXT_NODE) {
-        offset += child.textContent?.length ?? 0;
-      } else if (child.nodeName === "BR") {
-        offset += 1;
-      } else {
-        offset += child.textContent?.length ?? 0;
-      }
-    }
-    return false;
-  }
-
-  countBefore(el);
-  return offset;
 }
 
 function setCaretOffset(el: HTMLElement, offset: number) {
-  let remaining = offset;
+  try {
+    let remaining = offset;
 
-  function findPosition(parent: Node): boolean {
-    for (let i = 0; i < parent.childNodes.length; i++) {
-      const child = parent.childNodes[i];
-      if (child.nodeType === Node.TEXT_NODE) {
-        const len = child.textContent?.length ?? 0;
-        if (remaining <= len) {
-          const sel = window.getSelection();
-          const range = document.createRange();
-          range.setStart(child, remaining);
-          range.collapse(true);
-          sel?.removeAllRanges();
-          sel?.addRange(range);
-          return true;
-        }
-        remaining -= len;
-      } else if (child.nodeName === "BR") {
-        if (remaining === 0) {
-          const sel = window.getSelection();
-          const range = document.createRange();
-          range.setStart(parent, i);
-          range.collapse(true);
-          sel?.removeAllRanges();
-          sel?.addRange(range);
-          return true;
-        }
-        remaining -= 1;
-      } else if (child.nodeType === Node.ELEMENT_NODE) {
-        if (findPosition(child)) {
-          return true;
+    function findPosition(parent: Node): boolean {
+      for (let i = 0; i < parent.childNodes.length; i++) {
+        const child = parent.childNodes[i];
+        if (child.nodeType === Node.TEXT_NODE) {
+          const len = child.textContent?.length ?? 0;
+          if (remaining <= len) {
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.setStart(child, remaining);
+            range.collapse(true);
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+            return true;
+          }
+          remaining -= len;
+        } else if (child.nodeName === "BR") {
+          if (remaining === 0) {
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.setStart(parent, i);
+            range.collapse(true);
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+            return true;
+          }
+          remaining -= 1;
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          if (findPosition(child)) {
+            return true;
+          }
         }
       }
+      return false;
     }
-    return false;
-  }
 
-  if (!findPosition(el)) {
-    const sel = window.getSelection();
-    if (sel) {
-      sel.selectAllChildren(el);
-      sel.collapseToEnd();
+    if (!findPosition(el)) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.selectAllChildren(el);
+        sel.collapseToEnd();
+      }
     }
+  } catch {
+    // DOM may have changed between innerHTML rewrite and caret restore
   }
 }
 
@@ -156,39 +165,45 @@ function setCaretOffset(el: HTMLElement, offset: number) {
  * Uses a zero-width space span to get a measurable rect on empty lines.
  */
 function scrollCaretIntoView(el: HTMLElement) {
-  const sel = window.getSelection();
-  if (!sel?.rangeCount || !el.contains(sel.anchorNode)) return;
+  try {
+    const sel = window.getSelection();
+    if (!sel?.rangeCount || !el.contains(sel.anchorNode)) return;
 
-  const range = sel.getRangeAt(0).cloneRange();
-  range.collapse(false);
+    const range = sel.getRangeAt(0).cloneRange();
+    range.collapse(false);
 
-  const span = document.createElement("span");
-  span.textContent = "\u200B";
-  range.insertNode(span);
+    const span = document.createElement("span");
+    span.textContent = "\u200B";
+    range.insertNode(span);
 
-  const spanRect = span.getBoundingClientRect();
-  const elRect = el.getBoundingClientRect();
+    const spanRect = span.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
 
-  if (spanRect.bottom > elRect.bottom) {
-    el.scrollTop += spanRect.bottom - elRect.bottom;
-  } else if (spanRect.top < elRect.top) {
-    el.scrollTop -= elRect.top - spanRect.top;
+    if (spanRect.bottom > elRect.bottom) {
+      el.scrollTop += spanRect.bottom - elRect.bottom;
+    } else if (spanRect.top < elRect.top) {
+      el.scrollTop -= elRect.top - spanRect.top;
+    }
+
+    // Remove temp node and restore caret after it
+    const parent = span.parentNode;
+    if (parent) {
+      const next = span.nextSibling;
+      parent.removeChild(span);
+
+      const restored = document.createRange();
+      if (next) {
+        restored.setStartBefore(next);
+      } else if (parent.lastChild) {
+        restored.setStartAfter(parent.lastChild);
+      }
+      restored.collapse(true);
+      sel.removeAllRanges();
+      sel.addRange(restored);
+    }
+  } catch {
+    // DOM may have changed during scroll measurement
   }
-
-  // Remove temp node and restore caret after it
-  const parent = span.parentNode!;
-  const next = span.nextSibling;
-  parent.removeChild(span);
-
-  const restored = document.createRange();
-  if (next) {
-    restored.setStartBefore(next);
-  } else {
-    restored.setStartAfter(parent.lastChild ?? parent);
-  }
-  restored.collapse(true);
-  sel.removeAllRanges();
-  sel.addRange(restored);
 }
 
 // ---------------------------------------------------------------------------
@@ -397,38 +412,47 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       const el = editorRef.current;
       if (!el) return;
 
-      const caret = pendingCaret.current ?? getCaretOffset(el);
-      el.innerHTML = buildHTML(value);
-      if (pendingCaret.current !== null) {
-        setCaretOffset(el, pendingCaret.current);
-        pendingCaret.current = null;
-      } else if (document.activeElement === el) {
-        setCaretOffset(el, caret);
+      try {
+        const caret = pendingCaret.current ?? getCaretOffset(el);
+        el.innerHTML = buildHTML(value);
+        if (pendingCaret.current !== null) {
+          setCaretOffset(el, pendingCaret.current);
+          pendingCaret.current = null;
+        } else if (document.activeElement === el) {
+          setCaretOffset(el, caret);
+        }
+      } catch {
+        // Fallback: just set innerHTML without caret restore
+        el.innerHTML = buildHTML(value);
       }
     }, [value, buildHTML]);
 
     // Get pixel coordinates of a text offset relative to the wrapper
     const getOffsetRect = useCallback((charOffset: number) => {
-      const el = editorRef.current;
-      if (!el) return null;
+      try {
+        const el = editorRef.current;
+        if (!el) return null;
 
-      // Temporarily place caret at charOffset to measure position
-      const saved = getCaretOffset(el);
-      setCaretOffset(el, charOffset);
-      const sel = window.getSelection();
-      if (!sel?.rangeCount) {
+        // Temporarily place caret at charOffset to measure position
+        const saved = getCaretOffset(el);
+        setCaretOffset(el, charOffset);
+        const sel = window.getSelection();
+        if (!sel?.rangeCount) {
+          setCaretOffset(el, saved);
+          return null;
+        }
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const wrapperRect = el.parentElement!.getBoundingClientRect();
         setCaretOffset(el, saved);
+
+        return {
+          left: rect.left - wrapperRect.left,
+          bottom: wrapperRect.bottom - rect.top,
+        };
+      } catch {
         return null;
       }
-      const range = sel.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const wrapperRect = el.parentElement!.getBoundingClientRect();
-      setCaretOffset(el, saved);
-
-      return {
-        left: rect.left - wrapperRect.left,
-        bottom: wrapperRect.bottom - rect.top,
-      };
     }, []);
 
     // Detect @mention trigger from cursor position
@@ -466,26 +490,33 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       const el = editorRef.current;
       if (!el) return;
 
-      let text = el.innerText;
-      if (text.endsWith("\n")) {
-        text = text.slice(0, -1);
+      try {
+        let text = el.innerText;
+        if (text.endsWith("\n")) {
+          text = text.slice(0, -1);
+        }
+
+        const caret = getCaretOffset(el);
+        const html = buildHTML(text);
+        if (el.innerHTML !== html) {
+          el.innerHTML = html;
+          setCaretOffset(el, caret);
+        }
+
+        isInternalUpdate.current = true;
+        onChange(text);
+        detectMention(text, caret);
+
+        // Keep caret visible when content overflows (contentEditable doesn't auto-scroll)
+        requestAnimationFrame(() => {
+          scrollCaretIntoView(el);
+        });
+      } catch {
+        // Fallback: extract text and notify parent without caret management
+        const text = el.innerText?.replace(/\n$/, "") ?? "";
+        isInternalUpdate.current = true;
+        onChange(text);
       }
-
-      const caret = getCaretOffset(el);
-      const html = buildHTML(text);
-      if (el.innerHTML !== html) {
-        el.innerHTML = html;
-        setCaretOffset(el, caret);
-      }
-
-      isInternalUpdate.current = true;
-      onChange(text);
-      detectMention(text, caret);
-
-      // Keep caret visible when content overflows (contentEditable doesn't auto-scroll)
-      requestAnimationFrame(() => {
-        scrollCaretIntoView(el);
-      });
     }, [onChange, buildHTML, detectMention]);
 
     const handleCompositionStart = useCallback(() => {

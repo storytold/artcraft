@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { JobContextType } from "@storyteller/common";
-import { PromptBoxVideo, usePromptVideoStore } from "@storyteller/ui-promptbox";
+import { PromptBoxVideo, usePromptVideoStore, PromptBoxErrorBoundary } from "@storyteller/ui-promptbox";
 import { UploadImageMedia, UploadVideoMedia, UploadAudioMedia } from "@storyteller/api";
 import BackgroundGallery from "./BackgroundGallery";
 import {
@@ -199,24 +199,26 @@ const ImageToVideo = ({ imageMediaId, imageUrl }: ImageToVideoProps) => {
               </div>
             )} */}
             <div ref={promptContentRef}>
-              <PromptBoxVideo
-                useJobContext={() => jobContext}
-                selectedModel={selectedVideoModel}
-                selectedProvider={selectedProvider}
-                imageMediaId={imageMediaId}
-                url={imageUrl ?? undefined}
-                onImageRowVisibilityChange={setImageRowVisible}
-                uploadImage={UploadImageMedia}
-                uploadVideo={UploadVideoMedia}
-                uploadAudio={UploadAudioMedia}
-                credits={videoCredits}
-                onEnqueuePressed={async (prompt, subscriberIds) => {
-                  const modelLabel = selectedVideoModel?.fullName ?? "";
-                  for (const subscriberId of subscriberIds) {
-                    startBatch(prompt, modelLabel, subscriberId);
-                  }
-                }}
-              />
+              <PromptBoxErrorBoundary>
+                <PromptBoxVideo
+                  useJobContext={() => jobContext}
+                  selectedModel={selectedVideoModel}
+                  selectedProvider={selectedProvider}
+                  imageMediaId={imageMediaId}
+                  url={imageUrl ?? undefined}
+                  onImageRowVisibilityChange={setImageRowVisible}
+                  uploadImage={UploadImageMedia}
+                  uploadVideo={UploadVideoMedia}
+                  uploadAudio={UploadAudioMedia}
+                  credits={videoCredits}
+                  onEnqueuePressed={async (prompt, subscriberIds) => {
+                    const modelLabel = selectedVideoModel?.fullName ?? "";
+                    for (const subscriberId of subscriberIds) {
+                      startBatch(prompt, modelLabel, subscriberId);
+                    }
+                  }}
+                />
+              </PromptBoxErrorBoundary>
             </div>
           </animated.div>
 

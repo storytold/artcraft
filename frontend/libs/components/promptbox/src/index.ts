@@ -4,3 +4,4 @@ export * from "./lib/PromptBoxEdit";
 export * from "./lib/PromptBoxVideo";
 export * from "./lib/PromptBoxImage";
 export * from "./lib/promptStore";
+export * from "./lib/PromptBoxErrorBoundary";

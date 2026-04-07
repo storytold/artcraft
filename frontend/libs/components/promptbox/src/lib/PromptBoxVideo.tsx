@@ -58,6 +58,8 @@ declare global {
 
 type GROK_ASPECT_RATIO = "landscape" | "portrait" | "square";
 
+const EMPTY_CHARACTERS: never[] = [];
+
 const DEFAULT_RESOLUTIONS: SizeOption[] = [
   {
     tauriValue: "720p",
@@ -337,6 +339,9 @@ export const PromptBoxVideo = ({
   useEffect(() => {
     setLocalDuration(effectiveDuration);
   }, [effectiveDuration]);
+  useEffect(() => {
+    return () => clearTimeout(durationTimerRef.current);
+  }, []);
   const handleDurationSlide = (v: number) => {
     setLocalDuration(v);
     clearTimeout(durationTimerRef.current);
@@ -419,10 +424,13 @@ export const PromptBoxVideo = ({
 
   // Characters are only supported for seedance_2p0
   const isSeedance2p0 = selectedModel?.id === "seedance_2p0";
-  const activeCharacters = isSeedance2p0 ? storedCharacters : [];
+  const activeCharacters = isSeedance2p0 ? storedCharacters : EMPTY_CHARACTERS;
 
   // Build a set of character names for highlight matching
-  const characterNames = activeCharacters.map((c) => c.name);
+  const characterNames = useMemo(
+    () => activeCharacters.map((c) => c.name),
+    [activeCharacters],
+  );
 
   const hasAnyMentionables = hasAnyRefs || activeCharacters.length > 0;
 
