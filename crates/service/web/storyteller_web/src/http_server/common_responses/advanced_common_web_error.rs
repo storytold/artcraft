@@ -204,6 +204,13 @@ impl From<HttpUserSessionPayloadError> for AdvancedCommonWebError {
   }
 }
 
+impl From<actix_artcraft::anonymous_visitor_tracking::avt_cookie_error::AvtCookieError> for AdvancedCommonWebError {
+  fn from(err: actix_artcraft::anonymous_visitor_tracking::avt_cookie_error::AvtCookieError) -> Self {
+    // AVT cookie errors are non-critical: log and treat as a server error.
+    Self::from_error(err)
+  }
+}
+
 impl From<SessionCheckerError> for AdvancedCommonWebError {
   fn from(value: SessionCheckerError) -> Self {
     match value {

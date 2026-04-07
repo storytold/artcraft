@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
-use crate::error::internal_error::InternalError;
+use crate::anonymous_visitor_tracking::avt_cookie_error::AvtCookieError;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
 /**
@@ -43,18 +43,18 @@ impl AvtCookiePayload {
     }
   }
 
-  pub fn from_map(map: BTreeMap<String, String>) -> Result<Self, InternalError> {
+  pub fn from_map(map: BTreeMap<String, String>) -> Result<Self, AvtCookieError> {
     let avt_token = map.get("avt_token")
-        .ok_or_else(|| InternalError::VisitorCookieMissingField("avt_token"))?;
+        .ok_or(AvtCookieError::MissingField("avt_token"))?;
 
     let cookie_version = map
         .get("cookie_version")
-        .ok_or_else(|| InternalError::VisitorCookieMissingField("cookie_version"))?;
+        .ok_or(AvtCookieError::MissingField("cookie_version"))?;
 
     let avt_token = AnonymousVisitorTrackingToken::new_from_str(avt_token);
 
     let cookie_version = u32::from_str(cookie_version)
-        .map_err(|e| InternalError::VisitorCookieError(
+        .map_err(|e| AvtCookieError::DecodeError(
           format!("invalid integer for cookie_version: {:?}, version: {}", e, cookie_version)))?;
 
     Ok(AvtCookiePayload {
@@ -75,7 +75,7 @@ impl AvtCookiePayload {
 mod tests {
   use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
-  use crate::http_server::cookies::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
+  use crate::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
 
   #[test]
   fn test_new() {

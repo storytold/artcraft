@@ -12,7 +12,7 @@ use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::user_details_lite_builder::UserDetailsLightBuilder;
-use crate::http_server::cookies::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
+use actix_artcraft::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::session::session_checker::SessionChecker;
 

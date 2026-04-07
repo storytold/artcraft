@@ -1,4 +1,4 @@
-use crate::http_server::cookies::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
+use actix_artcraft::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use crate::http_server::endpoints::app_state::components::get_permissions::{get_permissions, AppStatePermissions};
 use crate::http_server::endpoints::app_state::components::get_premium_info::{get_premium_info, AppStatePremiumInfo};
 use crate::http_server::endpoints::app_state::components::get_server_info::{get_server_info, AppStateServerInfo};

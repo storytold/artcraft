@@ -1,13 +1,11 @@
 use actix_web::cookie::time::OffsetDateTime;
 use actix_web::cookie::{Cookie, SameSite};
 use actix_web::HttpRequest;
-use anyhow::anyhow;
 use log::warn;
 
-use crate::error::internal_error::InternalError;
-use crate::http_server::cookies::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
+use crate::anonymous_visitor_tracking::avt_cookie_error::AvtCookieError;
+use crate::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
 use jwt_signer::jwt_signer::JwtSigner;
-use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
 const VISITOR_COOKIE_NAME : &str = "visitor";
@@ -23,19 +21,19 @@ pub struct AvtCookieManager {
 
 impl AvtCookieManager {
 
-  pub fn new(cookie_domain: &str, hmac_secret: &str) -> AnyhowResult<Self> {
+  pub fn new(cookie_domain: &str, hmac_secret: &str) -> Result<Self, AvtCookieError> {
     Ok(Self {
       cookie_domain: cookie_domain.to_string(),
       jwt_signer: JwtSigner::new(hmac_secret)?,
     })
   }
 
-  pub fn make_new_cookie(&self) -> AnyhowResult<Cookie> {
+  pub fn make_new_cookie(&self) -> Result<Cookie, AvtCookieError> {
     let token = AnonymousVisitorTrackingToken::generate();
     self.make_new_cookie_with_apriori_token(&token)
   }
 
-  pub fn make_new_cookie_with_apriori_token(&self, token: &AnonymousVisitorTrackingToken) -> AnyhowResult<Cookie> {
+  pub fn make_new_cookie_with_apriori_token(&self, token: &AnonymousVisitorTrackingToken) -> Result<Cookie, AvtCookieError> {
     let payload = AvtCookiePayload::from_token(token.clone());
     let claims = payload.to_map();
     let jwt_string = self.jwt_signer.claims_to_jwt(&claims)?;
@@ -68,14 +66,14 @@ impl AvtCookieManager {
     cookie
   }
 
-  pub fn decode_cookie_payload(&self, visitor_cookie: &Cookie) -> AnyhowResult<AvtCookiePayload> {
+  pub fn decode_cookie_payload(&self, visitor_cookie: &Cookie) -> Result<AvtCookiePayload, AvtCookieError> {
     let cookie_contents = visitor_cookie.value().to_string();
     let claims = self.jwt_signer.jwt_to_claims(&cookie_contents)?;
     let payload = AvtCookiePayload::from_map(claims)?;
     Ok(payload)
   }
 
-  pub fn decode_cookie_payload_from_request(&self, request: &HttpRequest) -> Result<Option<AvtCookiePayload>, InternalError> {
+  pub fn decode_cookie_payload_from_request(&self, request: &HttpRequest) -> Result<Option<AvtCookiePayload>, AvtCookieError> {
     let cookie = match request.cookie(VISITOR_COOKIE_NAME) {
       None => return Ok(None),
       Some(cookie) => cookie,
@@ -84,7 +82,7 @@ impl AvtCookieManager {
     match self.decode_cookie_payload(&cookie) {
       Err(e) => {
         warn!("Visitor cookie decode error: {:?}", e);
-        Err(InternalError::VisitorCookieError(e.to_string()))
+        Err(e)
       },
       Ok(payload) => Ok(Some(payload)),
     }
