@@ -80,6 +80,111 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     ..Default::default()
   });
 
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Veo2,
+    full_name: Some("Google Veo 2".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    duration_seconds_min: Some(5),
+    duration_seconds_max: Some(8),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Veo3,
+    full_name: Some("Google Veo 3".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    show_generate_with_sound_toggle: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::Square,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
+    ]),
+    resolution_default: Some(CommonResolution::TenEightyP),
+    duration_seconds_min: Some(4),
+    duration_seconds_max: Some(8),
+    duration_seconds_default: Some(8),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Veo3Fast,
+    full_name: Some("Google Veo 3 Fast".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    show_generate_with_sound_toggle: Some(true),
+    resolution_options: Some(vec![
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
+    ]),
+    resolution_default: Some(CommonResolution::TenEightyP),
+    duration_seconds_min: Some(4),
+    duration_seconds_max: Some(8),
+    duration_seconds_default: Some(8),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Veo3p1,
+    full_name: Some("Google Veo 3.1".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    show_generate_with_sound_toggle: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
+    ]),
+    resolution_default: Some(CommonResolution::TenEightyP),
+    duration_seconds_min: Some(4),
+    duration_seconds_max: Some(8),
+    duration_seconds_default: Some(8),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Veo3p1Fast,
+    full_name: Some("Google Veo 3.1 Fast".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    show_generate_with_sound_toggle: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
+    ]),
+    resolution_default: Some(CommonResolution::TenEightyP),
+    duration_seconds_min: Some(4),
+    duration_seconds_max: Some(8),
+    duration_seconds_default: Some(8),
+    ..Default::default()
+  });
+
   models
 }
 
@@ -95,6 +200,26 @@ fn build_omni_gen_video_model_providers() -> Vec<OmniGenVideoModelProviderDetail
       },
       OmniGenVideoProviderModelDetails {
         model: CommonVideoModel::Seedance2p0,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Veo2,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Veo3,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Veo3Fast,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Veo3p1,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Veo3p1Fast,
         overrides: None,
       },
     ],

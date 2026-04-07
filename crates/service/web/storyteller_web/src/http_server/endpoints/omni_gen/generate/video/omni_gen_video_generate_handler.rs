@@ -167,6 +167,9 @@ pub async fn omni_gen_video_generate_handler(
     artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse::Seedance2Pro(p) => {
       p.order_id.clone()
     }
+    artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse::Fal(p) => {
+      p.request_id.clone().unwrap_or_default()
+    }
   };
 
   // ==================== DB TRANSACTION ==================== //

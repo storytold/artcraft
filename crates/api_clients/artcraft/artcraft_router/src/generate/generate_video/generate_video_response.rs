@@ -19,10 +19,17 @@ pub struct Seedance2proVideoResponsePayload {
 }
 
 #[derive(Clone, Debug)]
+pub struct FalVideoResponsePayload {
+  pub request_id: Option<String>,
+  pub gateway_request_id: Option<String>,
+}
+
+#[derive(Clone, Debug)]
 pub enum GenerateVideoResponse {
   Artcraft(ArtcraftVideoResponsePayload),
   Muapi(MuapiVideoResponsePayload),
   Seedance2Pro(Seedance2proVideoResponsePayload),
+  Fal(FalVideoResponsePayload),
 }
 
 impl GenerateVideoResponse {
@@ -43,6 +50,13 @@ impl GenerateVideoResponse {
   pub fn get_seedance2pro_payload(&self) -> Option<Seedance2proVideoResponsePayload> {
     match self {
       Self::Seedance2Pro(p) => Some(p.clone()),
+      _ => None,
+    }
+  }
+
+  pub fn get_fal_payload(&self) -> Option<FalVideoResponsePayload> {
+    match self {
+      Self::Fal(p) => Some(p.clone()),
       _ => None,
     }
   }

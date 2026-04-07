@@ -4,12 +4,22 @@ use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraf
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling3p0_standard::estimate_video_cost_artcraft_kling3p0_standard;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance1p5_pro::estimate_video_cost_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance2p0::estimate_video_cost_artcraft_seedance2p0;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_2::estimate_video_cost_fal_veo_2;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_3::estimate_video_cost_fal_veo_3;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_3_fast::estimate_video_cost_fal_veo_3_fast;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_3p1::estimate_video_cost_fal_veo_3p1;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_3p1_fast::estimate_video_cost_fal_veo_3p1_fast;
 use crate::generate::generate_video::cost::muapi::estimate_video_cost_muapi_seedance2p0::estimate_video_cost_muapi_seedance2p0;
 use crate::generate::generate_video::cost::seedance2pro::estimate_video_cost_seedance2pro_seedance2p0::estimate_video_cost_seedance2pro_seedance2p0;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling3p0_pro::execute_artcraft_kling3p0_pro;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling3p0_standard::execute_artcraft_kling3p0_standard;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance1p5_pro::execute_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance2p0::execute_artcraft_seedance2p0;
+use crate::generate::generate_video::execute::fal::generate_video_fal_veo_2::execute_fal_veo_2;
+use crate::generate::generate_video::execute::fal::generate_video_fal_veo_3::execute_fal_veo_3;
+use crate::generate::generate_video::execute::fal::generate_video_fal_veo_3_fast::execute_fal_veo_3_fast;
+use crate::generate::generate_video::execute::fal::generate_video_fal_veo_3p1::execute_fal_veo_3p1;
+use crate::generate::generate_video::execute::fal::generate_video_fal_veo_3p1_fast::execute_fal_veo_3p1_fast;
 use crate::generate::generate_video::execute::muapi::execute_muapi_seedance2p0::execute_muapi_seedance2p0;
 use crate::generate::generate_video::execute::seedance2pro::execute_seedance2pro_seedance2p0::execute_seedance2pro_seedance2p0;
 use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
@@ -17,6 +27,11 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::PlanArtcraftKling3p0Standard;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::PlanArtcraftSeedance1p5Pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_2::PlanFalVeo2;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3::PlanFalVeo3;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3_fast::PlanFalVeo3Fast;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1::PlanFalVeo3p1;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1_fast::PlanFalVeo3p1Fast;
 use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seedance2p0::PlanMuapiSeedance2p0;
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
@@ -29,6 +44,11 @@ pub enum VideoGenerationPlan<'a> {
   ArtcraftSeedance2p0(PlanArtcraftSeedance2p0<'a>),
   MuapiSeedance2p0(PlanMuapiSeedance2p0),
   Seedance2proSeedance2p0(PlanSeedance2proSeedance2p0),
+  FalVeo2(PlanFalVeo2),
+  FalVeo3(PlanFalVeo3),
+  FalVeo3Fast(PlanFalVeo3Fast),
+  FalVeo3p1(PlanFalVeo3p1),
+  FalVeo3p1Fast(PlanFalVeo3p1Fast),
 }
 
 impl<'a> VideoGenerationPlan<'a> {
@@ -61,6 +81,26 @@ impl<'a> VideoGenerationPlan<'a> {
         let seedance2pro_client = client.get_seedance2pro_client_ref()?;
         execute_seedance2pro_seedance2p0(plan, seedance2pro_client).await
       }
+      VideoGenerationPlan::FalVeo2(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_veo_2(plan, fal_client).await
+      }
+      VideoGenerationPlan::FalVeo3(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_veo_3(plan, fal_client).await
+      }
+      VideoGenerationPlan::FalVeo3Fast(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_veo_3_fast(plan, fal_client).await
+      }
+      VideoGenerationPlan::FalVeo3p1(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_veo_3p1(plan, fal_client).await
+      }
+      VideoGenerationPlan::FalVeo3p1Fast(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_veo_3p1_fast(plan, fal_client).await
+      }
     }
   }
 
@@ -84,6 +124,11 @@ impl<'a> VideoGenerationPlan<'a> {
       VideoGenerationPlan::Seedance2proSeedance2p0(plan) => {
         estimate_video_cost_seedance2pro_seedance2p0(plan)
       }
+      VideoGenerationPlan::FalVeo2(plan) => estimate_video_cost_fal_veo_2(plan),
+      VideoGenerationPlan::FalVeo3(plan) => estimate_video_cost_fal_veo_3(plan),
+      VideoGenerationPlan::FalVeo3Fast(plan) => estimate_video_cost_fal_veo_3_fast(plan),
+      VideoGenerationPlan::FalVeo3p1(plan) => estimate_video_cost_fal_veo_3p1(plan),
+      VideoGenerationPlan::FalVeo3p1Fast(plan) => estimate_video_cost_fal_veo_3p1_fast(plan),
     }
   }
 }

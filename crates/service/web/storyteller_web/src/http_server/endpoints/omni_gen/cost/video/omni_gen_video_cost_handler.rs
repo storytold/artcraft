@@ -5,6 +5,7 @@ use actix_web::{web, HttpRequest};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::cost_response::omni_gen_video_cost_response::OmniGenVideoCostResponse;
 use artcraft_router::api::provider::Provider;
+use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use log::warn;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
@@ -31,11 +32,21 @@ pub async fn omni_gen_video_cost_handler(
   let mut generate_request = transform_request(&request)?;
   generate_request.provider = Provider::Artcraft;
 
-  let plan = generate_request.build()
-    .map_err(|e| {
+  let plan = match generate_request.build() {
+    Ok(plan) => plan,
+    Err(ArtcraftRouterError::UnsupportedModel(_)) => {
+      generate_request.provider = Provider::Fal;
+      generate_request.build()
+        .map_err(|e| {
+          warn!("Failed to build Fal cost plan: {}", e);
+          AdvancedCommonWebError::from_error(e)
+        })?
+    }
+    Err(e) => {
       warn!("Failed to build cost plan: {}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?;
+      return Err(AdvancedCommonWebError::from_error(e));
+    }
+  };
 
   let estimate = plan.estimate_costs();
 
