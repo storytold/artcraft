@@ -60,7 +60,7 @@ pub struct Veo3p1MultiFunctionVideoGenRequest {
   pub auto_fix: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Veo3p1MultiFunctionVideoGenDuration {
   FourSeconds,
@@ -68,7 +68,7 @@ pub enum Veo3p1MultiFunctionVideoGenDuration {
   EightSeconds,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Veo3p1MultiFunctionVideoGenAspectRatio {
   Auto,
@@ -76,7 +76,7 @@ pub enum Veo3p1MultiFunctionVideoGenAspectRatio {
   NineBySixteen,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Veo3p1MultiFunctionVideoGenResolution {
   SevenTwentyP,

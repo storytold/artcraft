@@ -7,6 +7,7 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 
 /// Estimate costs for an image generation request.
 /// Always uses the Artcraft provider for costing regardless of the execution provider.
+/// (Because we're the ones doing the billing.)
 pub fn request_to_costs(
   request: &GenerateImageRequest<'_>,
 ) -> Result<ImageGenerationCostEstimate, AdvancedCommonWebError> {

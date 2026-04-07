@@ -24,7 +24,7 @@ pub struct GenerateVeo2ImageToVideoRequest {
   pub duration: Option<GenerateVeo2Duration>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateVeo2AspectRatio {
   Auto,
@@ -33,7 +33,7 @@ pub enum GenerateVeo2AspectRatio {
   TallNineSixteen, // 9:16
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateVeo2Duration {
   FiveSeconds,

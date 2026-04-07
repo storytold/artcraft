@@ -27,14 +27,14 @@ pub struct GenerateVeo3FastImageToVideoRequest {
   pub generate_audio: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateVeo3FastResolution {
   SevenTwentyP, // 720p
   TenEightyP, // 1080p
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateVeo3FastDuration {
   EightSeconds,

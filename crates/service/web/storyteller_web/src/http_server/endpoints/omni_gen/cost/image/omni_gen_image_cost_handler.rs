@@ -8,7 +8,7 @@ use artcraft_router::api::provider::Provider;
 use log::warn;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::endpoints::omni_gen::generate::image::transform_request::transform_request;
+use crate::http_server::endpoints::omni_gen::generate::image::transform_request::hydrate_to_router_request;
 use crate::state::server_state::ServerState;
 
 /// Estimate the cost of an image generation.
@@ -28,7 +28,7 @@ pub async fn omni_gen_image_cost_handler(
   request: Json<OmniGenImageCostAndGenerateRequest>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenImageCostResponse>, AdvancedCommonWebError> {
-  let mut generate_request = transform_request(&request)?;
+  let mut generate_request = hydrate_to_router_request(&request)?;
   generate_request.provider = Provider::Artcraft;
 
   let plan = generate_request.build()

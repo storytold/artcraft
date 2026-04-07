@@ -45,7 +45,7 @@ fn convert_resolution(
   })
 }
 
-pub fn transform_request(
+pub fn hydrate_to_router_request(
   request: &OmniGenImageCostAndGenerateRequest,
 ) -> Result<GenerateImageRequest<'_>, AdvancedCommonWebError> {
   let api_model = request.model.as_ref()

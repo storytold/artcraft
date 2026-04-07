@@ -13,6 +13,11 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::plan_generate_video_artcraft_kling3p0_standard;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_2::plan_generate_video_artcraft_veo_2;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3::plan_generate_video_artcraft_veo_3;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3_fast::plan_generate_video_artcraft_veo_3_fast;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3p1::plan_generate_video_artcraft_veo_3p1;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_3p1_fast::plan_generate_video_artcraft_veo_3p1_fast;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_2::plan_generate_video_fal_veo_2;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3::plan_generate_video_fal_veo_3;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3_fast::plan_generate_video_fal_veo_3_fast;
@@ -101,6 +106,11 @@ impl<'a> GenerateVideoRequest<'a> {
       CommonVideoModel::Kling3p0Standard => plan_generate_video_artcraft_kling3p0_standard(self),
       CommonVideoModel::Seedance1p5Pro => plan_generate_video_artcraft_seedance1p5_pro(self),
       CommonVideoModel::Seedance2p0 => plan_generate_video_artcraft_seedance2p0(self),
+      CommonVideoModel::Veo2 => plan_generate_video_artcraft_veo_2(self),
+      CommonVideoModel::Veo3 => plan_generate_video_artcraft_veo_3(self),
+      CommonVideoModel::Veo3Fast => plan_generate_video_artcraft_veo_3_fast(self),
+      CommonVideoModel::Veo3p1 => plan_generate_video_artcraft_veo_3p1(self),
+      CommonVideoModel::Veo3p1Fast => plan_generate_video_artcraft_veo_3p1_fast(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }

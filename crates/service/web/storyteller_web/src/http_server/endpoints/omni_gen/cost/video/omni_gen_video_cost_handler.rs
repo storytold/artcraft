@@ -9,7 +9,7 @@ use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use log::warn;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::endpoints::omni_gen::generate::video::transform_request::transform_request;
+use crate::http_server::endpoints::omni_gen::generate::video::transform_request::hydrate_to_router_request;
 use crate::state::server_state::ServerState;
 
 /// Estimate the cost of a video generation.
@@ -29,7 +29,7 @@ pub async fn omni_gen_video_cost_handler(
   request: Json<OmniGenVideoCostAndGenerateRequest>,
   _server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenVideoCostResponse>, AdvancedCommonWebError> {
-  let mut generate_request = transform_request(&request)?;
+  let mut generate_request = hydrate_to_router_request(&request)?;
   generate_request.provider = Provider::Artcraft;
 
   let plan = match generate_request.build() {

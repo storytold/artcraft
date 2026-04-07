@@ -37,7 +37,7 @@ pub struct GenerateVeo3ImageToVideoRequest {
   // pub auto_fix: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateVeo3AspectRatio {
   WideSixteenNine, // 16:9
@@ -45,14 +45,14 @@ pub enum GenerateVeo3AspectRatio {
   Square, // 1:1
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateVeo3Resolution {
   SevenTwentyP, // 720p
   TenEightyP, // 1080p
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateVeo3Duration {
   EightSeconds,
