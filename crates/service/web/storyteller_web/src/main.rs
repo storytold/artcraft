@@ -93,7 +93,6 @@ use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
 pub mod billing;
 pub mod configs;
 pub mod email;
-pub mod error;
 pub mod http_server;
 pub mod startup;
 pub mod state;
