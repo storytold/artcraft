@@ -12,6 +12,27 @@ pub enum HttpUserSessionPayloadError {
   JwtSigner(JwtSignerError),
 }
 
+impl HttpUserSessionPayloadError {
+  pub fn is_server_error(&self) -> bool {
+    match self {
+      // Client HTTP header errors → 400 bad input.
+      HttpUserSessionPayloadError::HttpSessionHeaderError(_) => {
+        false
+      }
+      // JWT verify errors (eg. forged cookies) → 400 bad input.
+      HttpUserSessionPayloadError::JwtSigner(JwtSignerError::JwtVerifyError(_)) => {
+        false
+      }
+      // Server-side JWT signer failures (bad HMAC config, signing failure) → 500.
+      HttpUserSessionPayloadError::JwtSigner(
+        JwtSignerError::JwtInvalidKeyLength | JwtSignerError::JwtSignError(_)
+      ) => {
+        true
+      },
+    }
+  }
+}
+
 impl Display for HttpUserSessionPayloadError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
