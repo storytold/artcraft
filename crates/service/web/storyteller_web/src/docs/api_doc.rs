@@ -905,7 +905,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     ListPinnedMediaFilesSuccessResponse,
     ListPinnedWeightsError,
     ListPinnedWeightsSuccessResponse,
-    ListSessionJobsError,
     ListSessionJobsItem,
     ListSessionJobsQueryParams,
     ListSessionJobsSuccessResponse,

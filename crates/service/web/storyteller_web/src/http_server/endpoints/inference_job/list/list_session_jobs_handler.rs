@@ -1,7 +1,7 @@
 use std::collections::HashSet;
-use std::fmt;
 use std::sync::Arc;
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
@@ -10,12 +10,9 @@ use crate::http_server::endpoints::inference_job::utils::extractors::extract_liv
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_polymorphic_inference_args::extract_polymorphic_inference_args;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use actix_web_lab::extract::Query;
 use artcraft_api_defs::jobs::list_session_jobs::{ListSessionJobsItem, ListSessionJobsQueryParams, ListSessionJobsSuccessResponse, ListSessionRequestDetailsResponse, ListSessionResultDetailsResponse, ListSessionStatusDetailsResponse};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
@@ -34,47 +31,13 @@ use redis_common::redis_keys::RedisKeys;
 use server_environment::ServerEnvironment;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
-use utoipa::{IntoParams, ToSchema};
+use utoipa::IntoParams;
 
 /// For certain jobs or job classes (eg. non-premium), we kill the jobs if the user hasn't
 /// maintained a keepalive. This prevents wasted work when users who are unlikely to return
 /// navigate away. Premium users have accounts and can always return to the site, so they
 /// typically do not require keepalive.
 const JOB_KEEPALIVE_TTL_SECONDS : u64 = 60 * 3;
-
-#[derive(Debug, ToSchema)]
-pub enum ListSessionJobsError {
-  ServerError,
-  NotFound,
-  NotAuthorized,
-}
-
-impl ResponseError for ListSessionJobsError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListSessionJobsError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      ListSessionJobsError::NotFound => StatusCode::NOT_FOUND,
-      ListSessionJobsError::NotAuthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      Self::ServerError => "server error".to_string(),
-      Self::NotFound => "not found".to_string(),
-      Self::NotAuthorized => "not authorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-// NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for ListSessionJobsError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
 
 /// List job statuses for jobs that are associated with the user's session.
 ///
@@ -89,7 +52,8 @@ impl fmt::Display for ListSessionJobsError {
   path = "/v1/jobs/session",
   responses(
     (status = 200, body = ListSessionJobsSuccessResponse),
-    (status = 500, body = ListSessionJobsError),
+    (status = 401, description = "Not authorized"),
+    (status = 500, description = "Server error"),
   ),
   params(
     ListSessionJobsQueryParams
@@ -99,29 +63,21 @@ pub async fn list_session_jobs_handler(
   http_request: HttpRequest,
   query: Query<ListSessionJobsQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<ListSessionJobsSuccessResponse>, ListSessionJobsError> {
+) -> Result<Json<ListSessionJobsSuccessResponse>, AdvancedCommonWebError> {
 
-  let mut mysql_connection = server_state.mysql_pool
-      .acquire()
-      .await
-      .map_err(|err| {
-        warn!("MySql pool error: {:?}", err);
-        ListSessionJobsError::ServerError
-      })?;
+  let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
   let maybe_avt_token = server_state.avt_cookie_manager
       .get_avt_token_from_request(&http_request);
 
   // ==================== USER SESSION ==================== //
 
+  // NB: SessionCheckerError → AdvancedCommonWebError maps payload errors (bad cookie) to 401
+  //     and DB / cache errors to 500.
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session_extended_from_connection(&http_request, &mut mysql_connection)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        ListSessionJobsError::ServerError
-      })?;
+      .await?;
 
   let include_states = query.include_states
       .as_deref()
@@ -135,20 +91,14 @@ pub async fn list_session_jobs_handler(
           .filter_map(|status| JobStatusPlus::from_str(status).ok())
           .collect::<HashSet<_>>());
 
-  let user;
-
-  match (maybe_user_session.as_ref(), maybe_avt_token.as_ref()) {
-    (Some(session), _) => {
-      user = SessionUser::User(&session.user_token_typed);
-    }
-    (None, Some(avt_token)) => {
-      user = SessionUser::Anonymous(avt_token);
-    }
+  let user = match (maybe_user_session.as_ref(), maybe_avt_token.as_ref()) {
+    (Some(session), _) => SessionUser::User(&session.user_token_typed),
+    (None, Some(avt_token)) => SessionUser::Anonymous(avt_token),
     (None, None) => {
       // TODO(bt,2025-04-15): We should install an AVT cookie.
-      return Err(ListSessionJobsError::NotAuthorized);
+      return Err(AdvancedCommonWebError::NotAuthorized);
     }
-  }
+  };
 
   let args = ListSessionJobsForUserArgs {
     user,
@@ -157,23 +107,11 @@ pub async fn list_session_jobs_handler(
   };
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
-  let maybe_records = list_session_jobs_from_connection(
-    args, &mut mysql_connection).await;
-
-  let records = match maybe_records {
-    Ok(records) => records,
-    Err(err) => {
-      error!("tts job query error: {:?}", err);
-      return Err(ListSessionJobsError::ServerError);
-    }
-  };
+  let records = list_session_jobs_from_connection(args, &mut mysql_connection).await?;
 
   let mut redis = server_state.redis_pool
       .get()
-      .map_err(|e| {
-        error!("redis error: {:?}", e);
-        ListSessionJobsError::ServerError
-      })?;
+      .map_err(AdvancedCommonWebError::from_error)?;
 
   // TODO(bt,2024-04-22): Look up the extra redis statuses per item.
 
@@ -204,7 +142,7 @@ fn records_to_response(
   records: Vec<GenericInferenceJobStatus>,
   server_environment: ServerEnvironment,
   media_domain: MediaDomain,
-) -> Result<Json<ListSessionJobsSuccessResponse>, ListSessionJobsError> {
+) -> Result<Json<ListSessionJobsSuccessResponse>, AdvancedCommonWebError> {
   let mut records = records.into_iter()
       .map(|record| {
         db_record_to_response_payload(record, None, server_environment, media_domain)
