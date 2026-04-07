@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter};
 use jwt_signer::jwt_signer_error::JwtSignerError;
 
 #[derive(Debug)]
-pub enum AvtCookieError {
+pub enum AvtCookiePayloadError {
   /// AVT cookie payload is missing a required field.
   MissingField(&'static str),
 
@@ -15,7 +15,7 @@ pub enum AvtCookieError {
   JwtSigner(JwtSignerError),
 }
 
-impl Display for AvtCookieError {
+impl Display for AvtCookiePayloadError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::MissingField(field) => write!(f, "AVT cookie missing field: {}", field),
@@ -25,9 +25,9 @@ impl Display for AvtCookieError {
   }
 }
 
-impl Error for AvtCookieError {}
+impl Error for AvtCookiePayloadError {}
 
-impl From<JwtSignerError> for AvtCookieError {
+impl From<JwtSignerError> for AvtCookiePayloadError {
   fn from(err: JwtSignerError) -> Self {
     Self::JwtSigner(err)
   }

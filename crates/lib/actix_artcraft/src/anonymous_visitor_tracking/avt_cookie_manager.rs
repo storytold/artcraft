@@ -3,9 +3,9 @@ use actix_web::cookie::{Cookie, SameSite};
 use actix_web::HttpRequest;
 use log::warn;
 
-use crate::anonymous_visitor_tracking::avt_cookie_error::AvtCookieError;
 use crate::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
-use jwt_signer::jwt_signer::JwtSigner;
+use crate::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
+use crate::anonymous_visitor_tracking::avt_payload_signer::AvtPayloadSigner;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
 const VISITOR_COOKIE_NAME : &str = "visitor";
@@ -16,27 +16,29 @@ const VISITOR_COOKIE_NAME : &str = "visitor";
 #[derive(Clone)]
 pub struct AvtCookieManager {
   cookie_domain: String,
-  jwt_signer: JwtSigner,
+  payload_signer: AvtPayloadSigner,
 }
 
 impl AvtCookieManager {
 
-  pub fn new(cookie_domain: &str, hmac_secret: &str) -> Result<Self, AvtCookieError> {
+  pub fn new(cookie_domain: &str, hmac_secret: &str) -> Result<Self, AvtCookiePayloadError> {
     Ok(Self {
       cookie_domain: cookie_domain.to_string(),
-      jwt_signer: JwtSigner::new(hmac_secret)?,
+      payload_signer: AvtPayloadSigner::new(hmac_secret)?,
     })
   }
 
-  pub fn make_new_cookie(&self) -> Result<Cookie, AvtCookieError> {
+  pub fn make_new_cookie(&self) -> Result<Cookie, AvtCookiePayloadError> {
     let token = AnonymousVisitorTrackingToken::generate();
     self.make_new_cookie_with_apriori_token(&token)
   }
 
-  pub fn make_new_cookie_with_apriori_token(&self, token: &AnonymousVisitorTrackingToken) -> Result<Cookie, AvtCookieError> {
+  pub fn make_new_cookie_with_apriori_token(
+    &self,
+    token: &AnonymousVisitorTrackingToken,
+  ) -> Result<Cookie, AvtCookiePayloadError> {
     let payload = AvtCookiePayload::from_token(token.clone());
-    let claims = payload.to_map();
-    let jwt_string = self.jwt_signer.claims_to_jwt(&claims)?;
+    let jwt_string = self.payload_signer.encode(&payload)?;
 
     let make_secure = !self.cookie_domain.to_lowercase().contains("jungle.horse")
         && !self.cookie_domain.to_lowercase().contains("localhost");
@@ -66,14 +68,17 @@ impl AvtCookieManager {
     cookie
   }
 
-  pub fn decode_cookie_payload(&self, visitor_cookie: &Cookie) -> Result<AvtCookiePayload, AvtCookieError> {
-    let cookie_contents = visitor_cookie.value().to_string();
-    let claims = self.jwt_signer.jwt_to_claims(&cookie_contents)?;
-    let payload = AvtCookiePayload::from_map(claims)?;
-    Ok(payload)
+  pub fn decode_cookie_payload(
+    &self,
+    visitor_cookie: &Cookie,
+  ) -> Result<AvtCookiePayload, AvtCookiePayloadError> {
+    self.payload_signer.decode(visitor_cookie.value())
   }
 
-  pub fn decode_cookie_payload_from_request(&self, request: &HttpRequest) -> Result<Option<AvtCookiePayload>, AvtCookieError> {
+  pub fn decode_cookie_payload_from_request(
+    &self,
+    request: &HttpRequest,
+  ) -> Result<Option<AvtCookiePayload>, AvtCookiePayloadError> {
     let cookie = match request.cookie(VISITOR_COOKIE_NAME) {
       None => return Ok(None),
       Some(cookie) => cookie,
@@ -88,7 +93,10 @@ impl AvtCookieManager {
     }
   }
 
-  pub fn get_avt_token_from_request(&self, request: &HttpRequest) -> Option<AnonymousVisitorTrackingToken> {
+  pub fn get_avt_token_from_request(
+    &self,
+    request: &HttpRequest,
+  ) -> Option<AnonymousVisitorTrackingToken> {
     self.decode_cookie_payload_from_request(request)
         .ok()
         .flatten()
@@ -101,13 +109,12 @@ mod tests {
   use actix_web::test::TestRequest;
 
   use crate::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
-  use crate::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
   use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
   #[test]
   fn test_create_cookie() {
-    // NB: Let's make extra sure this always works when migrating cookies, else we'll accidentally invalidate visitor tracking.
-    // (These are version 1 cookies.)
+    // NB: Stable encoding test. If this changes we should bump the cookie version
+    //     so we don't accidentally invalidate visitor tracking on existing cookies.
     let manager = AvtCookieManager::new("fakeyou.com", "secret").unwrap();
     let token = AnonymousVisitorTrackingToken::new_from_str("avt_ex_anonymous_visitor_tracking_token");
     let cookie = manager.make_new_cookie_with_apriori_token(&token).unwrap();
@@ -131,52 +138,5 @@ mod tests {
 
     assert_eq!(decoded.avt_token.as_str(), "avt_ex_anonymous_visitor_tracking_token");
     assert_eq!(decoded.cookie_version, 1);
-  }
-
-  #[test]
-  fn test_encode() {
-    // NB: Stable encoding test. If this changes we should bump the cookie version.
-    let manager = AvtCookieManager::new("fakeyou.com", "fake_secret").unwrap();
-    let token = AnonymousVisitorTrackingToken::new_from_str("avt_ex_anonymous_visitor_tracking_token");
-    let payload = AvtCookiePayload::from_token(token);
-    let claims = payload.to_map();
-    let jwt_string = manager.jwt_signer.claims_to_jwt(&claims).unwrap();
-
-    assert_eq!(
-      jwt_string,
-      "eyJhbGciOiJIUzI1NiJ9.eyJhdnRfdG9rZW4iOiJhdnRfZXhfYW5vbnltb3VzX3Zpc2l0b3JfdHJhY2tpbmdfdG9rZW4iLCJjb29raWVfdmVyc2lvbiI6IjEifQ.5jgQfSXue684okKBzW3847jEhL7eLQKzelyAkgnwe_I"
-    );
-  }
-
-  #[test]
-  fn test_decode_version_1() {
-    // NB: Version 1 payload. The expected encoded value below was generated by `test_encode`.
-    let payload =
-        "eyJhbGciOiJIUzI1NiJ9.eyJhdnRfdG9rZW4iOiJhdnRfZXhfYW5vbnltb3VzX3Zpc2l0b3JfdHJhY2tpbmdfdG9rZW4iLCJjb29raWVfdmVyc2lvbiI6IjEifQ.5jgQfSXue684okKBzW3847jEhL7eLQKzelyAkgnwe_I";
-
-    let manager = AvtCookieManager::new("fakeyou.com", "fake_secret").unwrap();
-    let claims = manager.jwt_signer.jwt_to_claims(payload).unwrap();
-    let decoded_payload = AvtCookiePayload::from_map(claims).unwrap();
-
-    assert_eq!(decoded_payload.avt_token.as_str(), "avt_ex_anonymous_visitor_tracking_token");
-    assert_eq!(decoded_payload.cookie_version, 1);
-  }
-
-  #[test]
-  fn test_round_trip() {
-    let manager = AvtCookieManager::new("fakeyou.com", "fake_secret").unwrap();
-    let token = AnonymousVisitorTrackingToken::new_from_str("avt_ex_anonymous_visitor_tracking_token");
-
-    // Encode
-    let payload = AvtCookiePayload::from_token(token);
-    let claims = payload.to_map();
-    let jwt_string = manager.jwt_signer.claims_to_jwt(&claims).unwrap();
-
-    // Decode
-    let claims = manager.jwt_signer.jwt_to_claims(&jwt_string).unwrap();
-    let decoded_payload = AvtCookiePayload::from_map(claims).unwrap();
-
-    assert_eq!(decoded_payload.avt_token.as_str(), "avt_ex_anonymous_visitor_tracking_token");
-    assert_eq!(decoded_payload.cookie_version, 1);
   }
 }
