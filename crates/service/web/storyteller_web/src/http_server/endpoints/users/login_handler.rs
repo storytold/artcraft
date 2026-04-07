@@ -1,7 +1,7 @@
 use std::fmt;
 use std::fmt::Formatter;
 
-use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
+use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};

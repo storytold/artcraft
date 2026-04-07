@@ -8,9 +8,9 @@ use actix_web::cookie::{Cookie, SameSite};
 use actix_web::HttpRequest;
 use log::warn;
 
-use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
-use crate::sessions::http_user_session_payload_signer::HttpUserSessionPayloadSigner;
-use crate::sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
+use crate::sessions::user_sessions::http_user_session_payload::HttpUserSessionPayload;
+use crate::sessions::user_sessions::http_user_session_payload_signer::HttpUserSessionPayloadSigner;
+use crate::sessions::user_sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;
 
@@ -170,7 +170,7 @@ mod tests {
   use tokens::tokens::user_sessions::UserSessionToken;
   use tokens::tokens::users::UserToken;
 
-  use crate::sessions::http_user_session_manager::HttpUserSessionManager;
+  use crate::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 
   #[test]
   fn test_create_cookie_payload() {

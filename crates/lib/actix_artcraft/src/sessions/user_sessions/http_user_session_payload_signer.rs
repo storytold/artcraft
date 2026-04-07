@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
-use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
-use crate::sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
+use crate::sessions::user_sessions::http_user_session_payload::HttpUserSessionPayload;
+use crate::sessions::user_sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 use jwt_signer::jwt_signer::JwtSigner;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;
@@ -62,7 +62,7 @@ impl HttpUserSessionPayloadSigner {
 
 #[cfg(test)]
 mod tests {
-  use crate::sessions::http_user_session_payload_signer::HttpUserSessionPayloadSigner;
+  use crate::sessions::user_sessions::http_user_session_payload_signer::HttpUserSessionPayloadSigner;
   use tokens::tokens::user_sessions::UserSessionToken;
   use tokens::tokens::users::UserToken;
 

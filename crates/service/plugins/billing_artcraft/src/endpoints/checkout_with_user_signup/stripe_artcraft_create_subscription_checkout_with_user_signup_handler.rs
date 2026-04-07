@@ -5,7 +5,7 @@ use crate::endpoints::checkout_with_user_signup::user_creation_case::user_creati
 use crate::endpoints::checkout_with_user_signup::user_exists_case::user_exists_case;
 use crate::utils::artcraft_stripe_config::ArtcraftStripeConfigWithClient;
 use crate::utils::common_web_error::CommonWebError;
-use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
+use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::web::{Data, Json};
 use actix_web::{web, HttpRequest, HttpResponse};
 use artcraft_api_defs::stripe_artcraft::create_create_new_user_account_and_subscription_checkout::{PlanBillingCadence, SessionDetails, StripeArtcraftCreateSubscriptionCheckoutWithUserSignupRequest, StripeArtcraftCreateSubscriptionCheckoutWithUserSignupResponse, UserDetails};

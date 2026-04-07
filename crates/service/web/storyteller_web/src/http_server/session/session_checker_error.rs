@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-use actix_artcraft::sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
+use actix_artcraft::sessions::user_sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 
 #[derive(Debug)]
 pub enum SessionCheckerError {

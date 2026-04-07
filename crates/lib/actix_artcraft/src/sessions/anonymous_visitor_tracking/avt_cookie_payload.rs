@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
-use crate::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
+use crate::sessions::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
 /**
@@ -75,7 +75,7 @@ impl AvtCookiePayload {
 mod tests {
   use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
-  use crate::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
+  use crate::sessions::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
 
   #[test]
   fn test_new() {

@@ -10,7 +10,7 @@ use crate::http_server::endpoints::users::google_sso::check_claims::check_claims
 use crate::http_server::endpoints::users::google_sso::handle_existing_sso_account::{handle_existing_sso_account, ExistingAccountArgs};
 use crate::http_server::endpoints::users::google_sso::handle_new_sso_account::{handle_new_sso_account, NewSsoArgs};
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
-use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
+use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json};

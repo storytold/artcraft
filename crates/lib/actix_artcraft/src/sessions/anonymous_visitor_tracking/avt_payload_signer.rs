@@ -1,5 +1,5 @@
-use crate::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
-use crate::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
+use crate::sessions::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
+use crate::sessions::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
 use jwt_signer::jwt_signer::JwtSigner;
 
 /// Signs and verifies the AVT cookie payload using HMAC-signed JWTs.
@@ -30,8 +30,8 @@ impl AvtPayloadSigner {
 
 #[cfg(test)]
 mod tests {
-  use crate::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
-  use crate::anonymous_visitor_tracking::avt_payload_signer::AvtPayloadSigner;
+  use crate::sessions::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
+  use crate::sessions::anonymous_visitor_tracking::avt_payload_signer::AvtPayloadSigner;
   use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
   #[test]

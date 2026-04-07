@@ -3,9 +3,9 @@ use actix_web::cookie::{Cookie, SameSite};
 use actix_web::HttpRequest;
 use log::warn;
 
-use crate::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
-use crate::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
-use crate::anonymous_visitor_tracking::avt_payload_signer::AvtPayloadSigner;
+use crate::sessions::anonymous_visitor_tracking::avt_cookie_payload::AvtCookiePayload;
+use crate::sessions::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
+use crate::sessions::anonymous_visitor_tracking::avt_payload_signer::AvtPayloadSigner;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
 const VISITOR_COOKIE_NAME : &str = "visitor";
@@ -108,7 +108,7 @@ impl AvtCookieManager {
 mod tests {
   use actix_web::test::TestRequest;
 
-  use crate::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
+  use crate::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
   use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 
   #[test]

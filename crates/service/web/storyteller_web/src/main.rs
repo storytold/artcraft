@@ -21,7 +21,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use actix::Actor;
-use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
+use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_cors_configs::cors::build_cors_config;
 use actix_cors_configs::shared_array_buffer_cors::shared_array_buffer_cors;
 use actix_helpers::middleware::banned_cidr_filter::banned_cidr_filter::BannedCidrFilter;
@@ -71,7 +71,7 @@ use crate::billing::stripe_internal_user_lookup_impl::StripeInternalUserLookupIm
 use crate::configs::app_startup::redis_rate_limiters::configure_redis_rate_limiters;
 use crate::configs::connect_to_database::connect_to_database;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
-use actix_artcraft::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
+use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use crate::http_server::middleware::error_alerting_middleware::error_alerting_middleware::ErrorAlertingMiddleware;
 use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
 use crate::http_server::routes::add_routes::add_routes;

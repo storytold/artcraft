@@ -12,7 +12,7 @@ use crate::http_server::validations::validate_passwords::validate_passwords;
 use crate::http_server::validations::validate_username::validate_username;
 use crate::util::enroll_in_studio::enroll_in_studio;
 use actix_artcraft::requests::get_request_signup_source_enum::get_request_signup_source_enum;
-use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
+use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};

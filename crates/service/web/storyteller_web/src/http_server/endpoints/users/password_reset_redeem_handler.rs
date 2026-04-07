@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
+use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, ResponseError};
 use http_server_common::request::get_request_ip::get_request_ip;

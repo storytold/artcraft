@@ -17,6 +17,5 @@
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
-pub mod anonymous_visitor_tracking;
 pub mod requests;
 pub mod sessions;

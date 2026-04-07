@@ -3,7 +3,7 @@
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
 
-use actix_artcraft::sessions::http_user_session_manager::HttpUserSessionManager;
+use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_web::HttpRequest;
 use log::warn;
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::{get_user_session_by_token, get_user_session_by_token_pooled_connection, SessionUserRecord};
