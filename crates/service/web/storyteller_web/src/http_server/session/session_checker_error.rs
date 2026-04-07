@@ -9,7 +9,7 @@ pub enum SessionCheckerError {
   /// Rate of failures can point to the cause:
   /// - One-off errors: probably session forgeries
   /// - Lots of errors: maybe the wrong hmac secret
-  Session(HttpUserSessionPayloadError),
+  SessionPayload(HttpUserSessionPayloadError),
 
   /// Error looking up the session from the database.
   Sqlx(sqlx::Error),
@@ -21,7 +21,7 @@ pub enum SessionCheckerError {
 impl Display for SessionCheckerError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
-      Self::Session(e) => write!(f, "session error: {}", e),
+      Self::SessionPayload(e) => write!(f, "session payload error: {}", e),
       Self::Sqlx(e) => write!(f, "sqlx error: {}", e),
       Self::OtherError(e) => write!(f, "other error: {}", e),
     }
@@ -32,7 +32,7 @@ impl Error for SessionCheckerError {}
 
 impl From<HttpUserSessionPayloadError> for SessionCheckerError {
   fn from(err: HttpUserSessionPayloadError) -> Self {
-    Self::Session(err)
+    Self::SessionPayload(err)
   }
 }
 

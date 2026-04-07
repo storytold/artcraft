@@ -114,7 +114,7 @@ impl From<crate::http_server::session::session_checker_error::SessionCheckerErro
     use crate::http_server::session::session_checker_error::SessionCheckerError;
     match value {
       // Bad / forged session cookie → 401
-      SessionCheckerError::Session(_) => Self::NotAuthorized,
+      SessionCheckerError::SessionPayload(_) => Self::NotAuthorized,
       // Underlying DB / cache errors → 500
       SessionCheckerError::Sqlx(err) => {
         error!("SessionChecker sqlx error: {:?}", err);
