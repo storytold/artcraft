@@ -202,12 +202,12 @@ impl From<RequireUserSessionError> for AdvancedCommonWebError {
 impl From<HttpUserSessionPayloadError> for AdvancedCommonWebError {
   fn from(value: HttpUserSessionPayloadError) -> Self {
     match &value {
-      // Other JWT errors (verify failure, etc.) → 400 bad input.
-      HttpUserSessionPayloadError::JwtSigner(JwtSignerError::JwtVerifyError(_)) => {
-        Self::BadInputWithSimpleMessage("invalid session".to_string())
-      }
       // Client HTTP header errors → 400 bad input.
       HttpUserSessionPayloadError::HttpSessionHeaderError(_) => {
+        Self::BadInputWithSimpleMessage("invalid session".to_string())
+      }
+      // JWT verify errors (eg. forged cookies) → 400 bad input.
+      HttpUserSessionPayloadError::JwtSigner(JwtSignerError::JwtVerifyError(_)) => {
         Self::BadInputWithSimpleMessage("invalid session".to_string())
       }
       // Server-side JWT signer failures (bad HMAC config, signing failure) → 500.
@@ -224,11 +224,11 @@ impl From<HttpUserSessionPayloadError> for AdvancedCommonWebError {
 impl From<AvtCookiePayloadError> for AdvancedCommonWebError {
   fn from(err: AvtCookiePayloadError) -> Self {
     match &err {
-      // JWT verify errors → 400 bad input.
+      // JWT verify errors (eg. forged cookies) → 400 bad input.
       AvtCookiePayloadError::JwtSigner(JwtSignerError::JwtVerifyError(_)) => {
         Self::BadInputWithSimpleMessage("invalid AVT cookie".to_string())
       }
-      // Server-side JWT signer failures → 500.
+      // Server-side JWT signer failures (bad HMAC config, signing failure) → 500.
       AvtCookiePayloadError::JwtSigner(
         JwtSignerError::JwtInvalidKeyLength
         | JwtSignerError::JwtSignError(_),
