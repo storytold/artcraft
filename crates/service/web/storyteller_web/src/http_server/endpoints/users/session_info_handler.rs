@@ -38,7 +38,7 @@ pub async fn session_info_handler(
     .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
     .await
     .map_err(|err| {
-      warn!("Error grabbing session: {:?}", err);
+      warn!("Error checking session: {:?}", err);
       err
     })?;
 

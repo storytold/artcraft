@@ -1,10 +1,13 @@
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 
+use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::session::session_checker_error::SessionCheckerError;
+use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
+use actix_artcraft::sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 use actix_http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use anyhow::anyhow;
-use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
 
 /// An error type for actix-web handlers that wraps causal errors for debugging
 /// and paging while presenting safe, generic HTTP responses to users.
@@ -194,29 +197,30 @@ impl From<RequireUserSessionError> for AdvancedCommonWebError {
   }
 }
 
-impl From<actix_artcraft::sessions::http_user_session_payload_error::HttpUserSessionPayloadError> for AdvancedCommonWebError {
-  fn from(_value: actix_artcraft::sessions::http_user_session_payload_error::HttpUserSessionPayloadError) -> Self {
+impl From<HttpUserSessionPayloadError> for AdvancedCommonWebError {
+  fn from(_value: HttpUserSessionPayloadError) -> Self {
     // Any session error (bad header, bad JWT, construction failure) becomes 401.
     Self::NotAuthorized
   }
 }
 
-impl From<crate::http_server::session::session_checker_error::SessionCheckerError> for AdvancedCommonWebError {
-  fn from(value: crate::http_server::session::session_checker_error::SessionCheckerError) -> Self {
-    use crate::http_server::session::session_checker_error::SessionCheckerError;
+impl From<SessionCheckerError> for AdvancedCommonWebError {
+  fn from(value: SessionCheckerError) -> Self {
     match value {
       // Bad / forged session cookie → 401 (don't page on this)
+      // NOTE: If there's an elevated rate of across-the-board 401s,
+      // then we probably misconfigured the HMAC secret
       SessionCheckerError::SessionPayload(_) => Self::NotAuthorized,
       // Underlying DB / cache errors → 500 with paging
       SessionCheckerError::Sqlx(err) => Self::from_error(err),
+      // Likely Redis caching middleware
       SessionCheckerError::OtherError(err) => Self::from_anyhow_error(err),
     }
   }
 }
 
-impl From<crate::http_server::common_responses::common_web_error::CommonWebError> for AdvancedCommonWebError {
-  fn from(value: crate::http_server::common_responses::common_web_error::CommonWebError) -> Self {
-    use crate::http_server::common_responses::common_web_error::CommonWebError;
+impl From<CommonWebError> for AdvancedCommonWebError {
+  fn from(value: CommonWebError) -> Self {
     match value {
       CommonWebError::BadInputWithSimpleMessage(msg) => Self::BadInputWithSimpleMessage(msg),
       CommonWebError::NotAuthorized => Self::NotAuthorized,
