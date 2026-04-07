@@ -412,6 +412,10 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       const el = editorRef.current;
       if (!el) return;
 
+      // Don't rewrite innerHTML while the user has text selected
+      const sel = window.getSelection();
+      if (document.activeElement === el && sel && !sel.isCollapsed) return;
+
       try {
         const caret = pendingCaret.current ?? getCaretOffset(el);
         el.innerHTML = buildHTML(value);
@@ -617,9 +621,10 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
     const handleClick = useCallback(() => {
       const el = editorRef.current;
-      if (el) {
-        detectMention(value, getCaretOffset(el));
-      }
+      if (!el) return;
+      const sel = window.getSelection();
+      if (sel && !sel.isCollapsed) return; // preserve text selection
+      detectMention(value, getCaretOffset(el));
     }, [value, detectMention]);
 
     const handlePaste = useCallback(
