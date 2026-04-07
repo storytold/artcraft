@@ -176,6 +176,10 @@ impl NotificationDetails {
       parts.push(format!("HTTP Status Code: {}", status_code));
     }
 
+    if let Some(ip) = &self.request_ip_address {
+      parts.push(format!("Request IP: {}", ip));
+    }
+
     if parts.is_empty() { None } else { Some(parts.join("\n")) }
   }
 
@@ -197,10 +201,6 @@ impl NotificationDetails {
 
     if let Some(third_party_id) = &self.third_party_id {
       parts.push(format!("Third Party ID: {}", third_party_id));
-    }
-
-    if let Some(ip) = &self.request_ip_address {
-      parts.push(format!("Request IP: {}", ip));
     }
 
     if let Some(avt) = &self.avt_cookie_token {
