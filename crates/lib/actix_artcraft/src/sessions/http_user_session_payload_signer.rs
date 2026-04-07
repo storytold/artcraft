@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
-use crate::sessions::session_error::SessionError;
+use crate::sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 use jwt_signer::jwt_signer::JwtSigner;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;
@@ -21,7 +21,7 @@ pub struct HttpUserSessionPayloadSigner {
 }
 
 impl HttpUserSessionPayloadSigner {
-  pub fn new(hmac_secret: &str) -> Result<Self, SessionError> {
+  pub fn new(hmac_secret: &str) -> Result<Self, HttpUserSessionPayloadError> {
     Ok(Self {
       jwt_signer: JwtSigner::new(hmac_secret)?,
     })
@@ -31,7 +31,7 @@ impl HttpUserSessionPayloadSigner {
     &self,
     session_token: &UserSessionToken,
     user_token: &UserToken,
-  ) -> Result<String, SessionError> {
+  ) -> Result<String, HttpUserSessionPayloadError> {
     let mut claims: BTreeMap<&str, &str> = BTreeMap::new();
     let payload_version = PAYLOAD_VERSION.to_string();
 
@@ -46,7 +46,7 @@ impl HttpUserSessionPayloadSigner {
   pub fn decode(
     &self,
     session_payload_contents: &str,
-  ) -> Result<HttpUserSessionPayload, SessionError> {
+  ) -> Result<HttpUserSessionPayload, HttpUserSessionPayloadError> {
     let claims = self.jwt_signer.jwt_to_claims(session_payload_contents)?;
 
     let session_token = claims["session_token"].clone();

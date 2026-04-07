@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-use actix_artcraft::sessions::session_error::SessionError;
+use actix_artcraft::sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 
 #[derive(Debug)]
 pub enum SessionCheckerError {
@@ -9,7 +9,7 @@ pub enum SessionCheckerError {
   /// Rate of failures can point to the cause:
   /// - One-off errors: probably session forgeries
   /// - Lots of errors: maybe the wrong hmac secret
-  Session(SessionError),
+  Session(HttpUserSessionPayloadError),
 
   /// Error looking up the session from the database.
   Sqlx(sqlx::Error),
@@ -30,8 +30,8 @@ impl Display for SessionCheckerError {
 
 impl Error for SessionCheckerError {}
 
-impl From<SessionError> for SessionCheckerError {
-  fn from(err: SessionError) -> Self {
+impl From<HttpUserSessionPayloadError> for SessionCheckerError {
+  fn from(err: HttpUserSessionPayloadError) -> Self {
     Self::Session(err)
   }
 }

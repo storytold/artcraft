@@ -194,8 +194,8 @@ impl From<RequireUserSessionError> for AdvancedCommonWebError {
   }
 }
 
-impl From<actix_artcraft::sessions::session_error::SessionError> for AdvancedCommonWebError {
-  fn from(_value: actix_artcraft::sessions::session_error::SessionError) -> Self {
+impl From<actix_artcraft::sessions::http_user_session_payload_error::HttpUserSessionPayloadError> for AdvancedCommonWebError {
+  fn from(_value: actix_artcraft::sessions::http_user_session_payload_error::HttpUserSessionPayloadError) -> Self {
     // Any session error (bad header, bad JWT, construction failure) becomes 401.
     Self::NotAuthorized
   }

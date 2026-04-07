@@ -10,7 +10,7 @@ use log::warn;
 
 use crate::sessions::http_user_session_payload::HttpUserSessionPayload;
 use crate::sessions::http_user_session_payload_signer::HttpUserSessionPayloadSigner;
-use crate::sessions::session_error::SessionError;
+use crate::sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 use tokens::tokens::user_sessions::UserSessionToken;
 use tokens::tokens::users::UserToken;
 
@@ -30,7 +30,7 @@ pub struct HttpUserSessionManager {
 }
 
 impl HttpUserSessionManager {
-  pub fn new(cookie_domain: &str, hmac_secret: &str) -> Result<Self, SessionError> {
+  pub fn new(cookie_domain: &str, hmac_secret: &str) -> Result<Self, HttpUserSessionPayloadError> {
     let payload_signer = HttpUserSessionPayloadSigner::new(hmac_secret)
       .map_err(|e| {
         warn!("Failed to construct HttpUserSessionPayloadSigner: {}", e);
@@ -47,7 +47,7 @@ impl HttpUserSessionManager {
     &self,
     session_token: &UserSessionToken,
     user_token: &UserToken,
-  ) -> Result<String, SessionError> {
+  ) -> Result<String, HttpUserSessionPayloadError> {
     self.payload_signer.encode(session_token, user_token)
       .map_err(|e| {
         warn!("Failed to encode session payload: {}", e);
@@ -59,7 +59,7 @@ impl HttpUserSessionManager {
     &self,
     session_token: &UserSessionToken,
     user_token: &UserToken,
-  ) -> Result<Cookie, SessionError> {
+  ) -> Result<Cookie, HttpUserSessionPayloadError> {
     let jwt_string = self.payload_signer.encode(session_token, user_token)
       .map_err(|e| {
         warn!("Failed to encode session cookie payload: {}", e);
@@ -98,7 +98,7 @@ impl HttpUserSessionManager {
   pub fn decode_session_payload_from_request(
     &self,
     request: &HttpRequest,
-  ) -> Result<Option<HttpUserSessionPayload>, SessionError>
+  ) -> Result<Option<HttpUserSessionPayload>, HttpUserSessionPayloadError>
   {
     let signed_session_payload = self.session_payload_from_request(request)?;
 
@@ -121,7 +121,7 @@ impl HttpUserSessionManager {
   pub fn check_and_return_session_token_decodes(
     &self,
     request: &HttpRequest,
-  ) -> Result<Option<String>, SessionError> {
+  ) -> Result<Option<String>, HttpUserSessionPayloadError> {
     let signed_session_payload = self.session_payload_from_request(request)?;
 
     let signed_session_payload = match signed_session_payload {
@@ -143,7 +143,7 @@ impl HttpUserSessionManager {
   fn session_payload_from_request(
     &self,
     request: &HttpRequest,
-  ) -> Result<Option<String>, SessionError> {
+  ) -> Result<Option<String>, HttpUserSessionPayloadError> {
     let mut signed_session_payload = request.cookie(SESSION_COOKIE_NAME)
         .map(|cookie| cookie.value().to_string());
 
@@ -153,7 +153,7 @@ impl HttpUserSessionManager {
         let header_str = header.to_str()
           .map_err(|e| {
             warn!("Failed to read session HTTP header as str: {}", e);
-            SessionError::HttpSessionHeaderError(e.to_string())
+            HttpUserSessionPayloadError::HttpSessionHeaderError(e.to_string())
           })?;
         signed_session_payload = Some(header_str.to_string());
       }
