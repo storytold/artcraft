@@ -6,34 +6,22 @@ use log::warn;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 
-/// Estimate costs for a video generation request.
-/// Prefers the Artcraft provider for costing, but falls back to Fal for models
-/// that are only available via Fal (e.g. Veo).
+/// Estimate costs for an image generation request.
+/// Always uses the Artcraft provider for costing regardless of the execution provider.
+/// (Because we're the ones doing the billing.)
 pub fn request_to_costs(
   request: &GenerateVideoRequest<'_>,
 ) -> Result<VideoGenerationCostEstimate, AdvancedCommonWebError> {
-  let artcraft_request = GenerateVideoRequest {
+  let mut cost_request = GenerateVideoRequest {
     provider: Provider::Artcraft,
     ..*request
   };
 
-  match artcraft_request.build() {
-    Ok(plan) => Ok(plan.estimate_costs()),
-    Err(ArtcraftRouterError::UnsupportedModel(_)) => {
-      let fal_request = GenerateVideoRequest {
-        provider: Provider::Fal,
-        ..*request
-      };
-      let plan = fal_request.build()
-        .map_err(|e| {
-          warn!("Failed to build Fal cost plan: {}", e);
-          AdvancedCommonWebError::from_error(e)
-        })?;
-      Ok(plan.estimate_costs())
-    }
-    Err(e) => {
-      warn!("Failed to build cost plan: {}", e);
-      Err(AdvancedCommonWebError::from_error(e))
-    }
-  }
+  let plan = cost_request.build()
+      .map_err(|e| {
+        warn!("Failed to build cost plan: {}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?;
+
+  Ok(plan.estimate_costs())
 }
