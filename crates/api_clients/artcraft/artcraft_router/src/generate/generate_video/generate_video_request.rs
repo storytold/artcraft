@@ -30,6 +30,10 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_6_pro::plan_generate_video_fal_kling_2_6_pro;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_pro::plan_generate_video_fal_kling_3p0_pro;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_standard::plan_generate_video_fal_kling_3p0_standard;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_seedance_1_0_lite::plan_generate_video_fal_seedance_1_0_lite;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_seedance_1p5_pro::plan_generate_video_fal_seedance_1p5_pro;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_sora_2::plan_generate_video_fal_sora_2;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_sora_2_pro::plan_generate_video_fal_sora_2_pro;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_2::plan_generate_video_fal_veo_2;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3::plan_generate_video_fal_veo_3;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3_fast::plan_generate_video_fal_veo_3_fast;
@@ -146,6 +150,10 @@ impl<'a> GenerateVideoRequest<'a> {
       CommonVideoModel::Kling2p6Pro => plan_generate_video_fal_kling_2_6_pro(self),
       CommonVideoModel::Kling3p0Pro => plan_generate_video_fal_kling_3p0_pro(self),
       CommonVideoModel::Kling3p0Standard => plan_generate_video_fal_kling_3p0_standard(self),
+      CommonVideoModel::Seedance10Lite => plan_generate_video_fal_seedance_1_0_lite(self),
+      CommonVideoModel::Seedance1p5Pro => plan_generate_video_fal_seedance_1p5_pro(self),
+      CommonVideoModel::Sora2 => plan_generate_video_fal_sora_2(self),
+      CommonVideoModel::Sora2Pro => plan_generate_video_fal_sora_2_pro(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }

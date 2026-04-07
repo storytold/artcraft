@@ -304,6 +304,69 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     ..Default::default()
   });
 
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Seedance10Lite,
+    full_name: Some("Seedance 1.0 Lite".to_string()),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::WideTwentyOneByNine,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![
+      CommonResolution::FourEightyP,
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
+    ]),
+    resolution_default: Some(CommonResolution::SevenTwentyP),
+    duration_seconds_options: Some(vec![5, 10]),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Sora2,
+    full_name: Some("Sora 2".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![CommonResolution::SevenTwentyP]),
+    resolution_default: Some(CommonResolution::SevenTwentyP),
+    duration_seconds_options: Some(vec![4, 8, 12]),
+    duration_seconds_default: Some(4),
+    ..Default::default()
+  });
+
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Sora2Pro,
+    full_name: Some("Sora 2 Pro".to_string()),
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    resolution_options: Some(vec![
+      CommonResolution::SevenTwentyP,
+      CommonResolution::TenEightyP,
+    ]),
+    resolution_default: Some(CommonResolution::TenEightyP),
+    duration_seconds_options: Some(vec![4, 8, 12]),
+    duration_seconds_default: Some(4),
+    ..Default::default()
+  });
+
   models
 }
 
@@ -319,6 +382,18 @@ fn build_omni_gen_video_model_providers() -> Vec<OmniGenVideoModelProviderDetail
       },
       OmniGenVideoProviderModelDetails {
         model: CommonVideoModel::Seedance2p0,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Seedance10Lite,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Sora2,
+        overrides: None,
+      },
+      OmniGenVideoProviderModelDetails {
+        model: CommonVideoModel::Sora2Pro,
         overrides: None,
       },
       OmniGenVideoProviderModelDetails {

@@ -21,6 +21,10 @@ use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_kling_2_
 use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_kling_2_6_pro::estimate_video_cost_fal_kling_2_6_pro;
 use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_kling_3p0_pro::estimate_video_cost_fal_kling_3p0_pro;
 use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_kling_3p0_standard::estimate_video_cost_fal_kling_3p0_standard;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_seedance_1_0_lite::estimate_video_cost_fal_seedance_1_0_lite;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_seedance_1p5_pro::estimate_video_cost_fal_seedance_1p5_pro;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_sora_2::estimate_video_cost_fal_sora_2;
+use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_sora_2_pro::estimate_video_cost_fal_sora_2_pro;
 use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_2::estimate_video_cost_fal_veo_2;
 use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_3::estimate_video_cost_fal_veo_3;
 use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_3_fast::estimate_video_cost_fal_veo_3_fast;
@@ -49,6 +53,10 @@ use crate::generate::generate_video::execute::fal::generate_video_fal_kling_2_5_
 use crate::generate::generate_video::execute::fal::generate_video_fal_kling_2_6_pro::execute_fal_kling_2_6_pro;
 use crate::generate::generate_video::execute::fal::generate_video_fal_kling_3p0_pro::execute_fal_kling_3p0_pro;
 use crate::generate::generate_video::execute::fal::generate_video_fal_kling_3p0_standard::execute_fal_kling_3p0_standard;
+use crate::generate::generate_video::execute::fal::generate_video_fal_seedance_1_0_lite::execute_fal_seedance_1_0_lite;
+use crate::generate::generate_video::execute::fal::generate_video_fal_seedance_1p5_pro::execute_fal_seedance_1p5_pro;
+use crate::generate::generate_video::execute::fal::generate_video_fal_sora_2::execute_fal_sora_2;
+use crate::generate::generate_video::execute::fal::generate_video_fal_sora_2_pro::execute_fal_sora_2_pro;
 use crate::generate::generate_video::execute::fal::generate_video_fal_veo_2::execute_fal_veo_2;
 use crate::generate::generate_video::execute::fal::generate_video_fal_veo_3::execute_fal_veo_3;
 use crate::generate::generate_video::execute::fal::generate_video_fal_veo_3_fast::execute_fal_veo_3_fast;
@@ -78,6 +86,10 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_6_pro::PlanFalKling2p6Pro;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_pro::PlanFalKling3p0Pro;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_standard::PlanFalKling3p0Standard;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_seedance_1_0_lite::PlanFalSeedance10Lite;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_seedance_1p5_pro::PlanFalSeedance1p5Pro;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_sora_2::PlanFalSora2;
+use crate::generate::generate_video::plan::fal::plan_generate_video_fal_sora_2_pro::PlanFalSora2Pro;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_2::PlanFalVeo2;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3::PlanFalVeo3;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3_fast::PlanFalVeo3Fast;
@@ -117,6 +129,10 @@ pub enum VideoGenerationPlan<'a> {
   FalKling2p6Pro(PlanFalKling2p6Pro),
   FalKling3p0Pro(PlanFalKling3p0Pro),
   FalKling3p0Standard(PlanFalKling3p0Standard),
+  FalSeedance10Lite(PlanFalSeedance10Lite),
+  FalSeedance1p5Pro(PlanFalSeedance1p5Pro),
+  FalSora2(PlanFalSora2),
+  FalSora2Pro(PlanFalSora2Pro),
 }
 
 impl<'a> VideoGenerationPlan<'a> {
@@ -237,6 +253,22 @@ impl<'a> VideoGenerationPlan<'a> {
         let fal_client = client.get_fal_client_ref()?;
         execute_fal_kling_3p0_standard(plan, fal_client).await
       }
+      VideoGenerationPlan::FalSeedance10Lite(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_seedance_1_0_lite(plan, fal_client).await
+      }
+      VideoGenerationPlan::FalSeedance1p5Pro(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_seedance_1p5_pro(plan, fal_client).await
+      }
+      VideoGenerationPlan::FalSora2(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_sora_2(plan, fal_client).await
+      }
+      VideoGenerationPlan::FalSora2Pro(plan) => {
+        let fal_client = client.get_fal_client_ref()?;
+        execute_fal_sora_2_pro(plan, fal_client).await
+      }
     }
   }
 
@@ -282,6 +314,10 @@ impl<'a> VideoGenerationPlan<'a> {
       VideoGenerationPlan::FalKling2p6Pro(plan) => estimate_video_cost_fal_kling_2_6_pro(plan),
       VideoGenerationPlan::FalKling3p0Pro(plan) => estimate_video_cost_fal_kling_3p0_pro(plan),
       VideoGenerationPlan::FalKling3p0Standard(plan) => estimate_video_cost_fal_kling_3p0_standard(plan),
+      VideoGenerationPlan::FalSeedance10Lite(plan) => estimate_video_cost_fal_seedance_1_0_lite(plan),
+      VideoGenerationPlan::FalSeedance1p5Pro(plan) => estimate_video_cost_fal_seedance_1p5_pro(plan),
+      VideoGenerationPlan::FalSora2(plan) => estimate_video_cost_fal_sora_2(plan),
+      VideoGenerationPlan::FalSora2Pro(plan) => estimate_video_cost_fal_sora_2_pro(plan),
     }
   }
 }
