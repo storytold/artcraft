@@ -9,6 +9,7 @@ use actix_artcraft::sessions::user_sessions::http_user_session_payload_error::Ht
 use actix_http::StatusCode;
 use actix_web::{HttpResponse, HttpResponseBuilder, ResponseError};
 use anyhow::anyhow;
+use jwt_signer::jwt_signer_error::JwtSignerError;
 
 /// An error type for actix-web handlers that wraps causal errors for debugging
 /// and paging while presenting safe, generic HTTP responses to users.
@@ -199,16 +200,46 @@ impl From<RequireUserSessionError> for AdvancedCommonWebError {
 }
 
 impl From<HttpUserSessionPayloadError> for AdvancedCommonWebError {
-  fn from(_value: HttpUserSessionPayloadError) -> Self {
-    // Any session error (bad header, bad JWT, construction failure) becomes 401.
-    Self::NotAuthorized
+  fn from(value: HttpUserSessionPayloadError) -> Self {
+    match &value {
+      // Other JWT errors (verify failure, etc.) → 400 bad input.
+      HttpUserSessionPayloadError::JwtSigner(JwtSignerError::JwtVerifyError(_)) => {
+        Self::BadInputWithSimpleMessage("invalid session".to_string())
+      }
+      // Client HTTP header errors → 400 bad input.
+      HttpUserSessionPayloadError::HttpSessionHeaderError(_) => {
+        Self::BadInputWithSimpleMessage("invalid session".to_string())
+      }
+      // Server-side JWT signer failures (bad HMAC config, signing failure) → 500.
+      HttpUserSessionPayloadError::JwtSigner(
+        JwtSignerError::JwtInvalidKeyLength
+        | JwtSignerError::JwtSignError(_)
+      ) => {
+        Self::from_error(value)
+      },
+    }
   }
 }
 
 impl From<AvtCookiePayloadError> for AdvancedCommonWebError {
   fn from(err: AvtCookiePayloadError) -> Self {
-    // AVT cookie errors are non-critical: log and treat as a server error.
-    Self::from_error(err)
+    match &err {
+      // JWT verify errors → 400 bad input.
+      AvtCookiePayloadError::JwtSigner(JwtSignerError::JwtVerifyError(_)) => {
+        Self::BadInputWithSimpleMessage("invalid AVT cookie".to_string())
+      }
+      // Server-side JWT signer failures → 500.
+      AvtCookiePayloadError::JwtSigner(
+        JwtSignerError::JwtInvalidKeyLength
+        | JwtSignerError::JwtSignError(_),
+      ) => {
+        Self::from_error(err)
+      },
+      // Other payload decode failures (how did these make it into the wild!?) → 500
+      AvtCookiePayloadError::MissingField(_) | AvtCookiePayloadError::PayloadDecodeError(_) => {
+        Self::from_error(err)
+      }
+    }
   }
 }
 
