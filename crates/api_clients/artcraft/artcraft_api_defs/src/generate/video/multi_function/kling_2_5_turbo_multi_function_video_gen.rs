@@ -41,14 +41,14 @@ pub struct Kling2p5TurboProMultiFunctionVideoGenRequest {
   pub aspect_ratio: Option<Kling2p5TurboProMultiFunctionVideoGenAspectRatio>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Kling2p5TurboProMultiFunctionVideoGenDuration {
   FiveSeconds,
   TenSeconds,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Kling2p5TurboProMultiFunctionVideoGenAspectRatio {
   Square,

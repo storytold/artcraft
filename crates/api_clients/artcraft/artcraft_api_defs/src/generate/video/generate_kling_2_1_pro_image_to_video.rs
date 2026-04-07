@@ -28,7 +28,7 @@ pub struct GenerateKling21ProImageToVideoRequest {
   pub duration: Option<GenerateKling21ProDuration>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateKling21ProAspectRatio {
   /// 16:9 aspect ratio
@@ -39,7 +39,7 @@ pub enum GenerateKling21ProAspectRatio {
   Square,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateKling21ProDuration {
   FiveSeconds,

@@ -1,3 +1,8 @@
+pub mod estimate_video_cost_artcraft_kling_1_6_pro;
+pub mod estimate_video_cost_artcraft_kling_2_1_master;
+pub mod estimate_video_cost_artcraft_kling_2_1_pro;
+pub mod estimate_video_cost_artcraft_kling_2_5_turbo_pro;
+pub mod estimate_video_cost_artcraft_kling_2_6_pro;
 pub mod estimate_video_cost_artcraft_kling3p0_pro;
 pub mod estimate_video_cost_artcraft_kling3p0_standard;
 pub mod estimate_video_cost_artcraft_seedance1p5_pro;

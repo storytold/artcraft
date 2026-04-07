@@ -1,3 +1,8 @@
+pub mod plan_generate_video_artcraft_kling_1_6_pro;
+pub mod plan_generate_video_artcraft_kling_2_1_master;
+pub mod plan_generate_video_artcraft_kling_2_1_pro;
+pub mod plan_generate_video_artcraft_kling_2_5_turbo_pro;
+pub mod plan_generate_video_artcraft_kling_2_6_pro;
 pub mod plan_generate_video_artcraft_kling3p0_pro;
 pub mod plan_generate_video_artcraft_kling3p0_standard;
 pub mod plan_generate_video_artcraft_seedance1p5_pro;

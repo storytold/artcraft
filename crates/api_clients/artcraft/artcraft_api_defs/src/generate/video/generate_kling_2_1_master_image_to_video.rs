@@ -24,7 +24,7 @@ pub struct GenerateKling21MasterImageToVideoRequest {
   pub duration: Option<GenerateKling21MasterDuration>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateKling21MasterAspectRatio {
   /// 16:9 aspect ratio
@@ -35,7 +35,7 @@ pub enum GenerateKling21MasterAspectRatio {
   Square,
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerateKling21MasterDuration {
   FiveSeconds,

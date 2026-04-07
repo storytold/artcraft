@@ -1,5 +1,10 @@
 use crate::client::router_client::RouterClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling_1_6_pro::estimate_video_cost_artcraft_kling_1_6_pro;
+use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling_2_1_master::estimate_video_cost_artcraft_kling_2_1_master;
+use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling_2_1_pro::estimate_video_cost_artcraft_kling_2_1_pro;
+use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling_2_5_turbo_pro::estimate_video_cost_artcraft_kling_2_5_turbo_pro;
+use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling_2_6_pro::estimate_video_cost_artcraft_kling_2_6_pro;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling3p0_pro::estimate_video_cost_artcraft_kling3p0_pro;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_kling3p0_standard::estimate_video_cost_artcraft_kling3p0_standard;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance1p5_pro::estimate_video_cost_artcraft_seedance1p5_pro;
@@ -16,6 +21,11 @@ use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_3p1:
 use crate::generate::generate_video::cost::fal::estimate_video_cost_fal_veo_3p1_fast::estimate_video_cost_fal_veo_3p1_fast;
 use crate::generate::generate_video::cost::muapi::estimate_video_cost_muapi_seedance2p0::estimate_video_cost_muapi_seedance2p0;
 use crate::generate::generate_video::cost::seedance2pro::estimate_video_cost_seedance2pro_seedance2p0::estimate_video_cost_seedance2pro_seedance2p0;
+use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling_1_6_pro::execute_artcraft_kling_1_6_pro;
+use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling_2_1_master::execute_artcraft_kling_2_1_master;
+use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling_2_1_pro::execute_artcraft_kling_2_1_pro;
+use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling_2_5_turbo_pro::execute_artcraft_kling_2_5_turbo_pro;
+use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling_2_6_pro::execute_artcraft_kling_2_6_pro;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling3p0_pro::execute_artcraft_kling3p0_pro;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_kling3p0_standard::execute_artcraft_kling3p0_standard;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance1p5_pro::execute_artcraft_seedance1p5_pro;
@@ -33,6 +43,11 @@ use crate::generate::generate_video::execute::fal::generate_video_fal_veo_3p1_fa
 use crate::generate::generate_video::execute::muapi::execute_muapi_seedance2p0::execute_muapi_seedance2p0;
 use crate::generate::generate_video::execute::seedance2pro::execute_seedance2pro_seedance2p0::execute_seedance2pro_seedance2p0;
 use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_1_6_pro::PlanArtcraftKling16Pro;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_1_master::PlanArtcraftKling21Master;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_1_pro::PlanArtcraftKling21Pro;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_5_turbo_pro::PlanArtcraftKling2p5TurboPro;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_6_pro::PlanArtcraftKling2p6Pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_pro::PlanArtcraftKling3p0Pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::PlanArtcraftKling3p0Standard;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::PlanArtcraftSeedance1p5Pro;
@@ -53,6 +68,11 @@ use crate::generate::generate_video::video_generation_cost_estimate::VideoGenera
 
 #[derive(Debug)]
 pub enum VideoGenerationPlan<'a> {
+  ArtcraftKling16Pro(PlanArtcraftKling16Pro<'a>),
+  ArtcraftKling21Master(PlanArtcraftKling21Master<'a>),
+  ArtcraftKling21Pro(PlanArtcraftKling21Pro<'a>),
+  ArtcraftKling2p5TurboPro(PlanArtcraftKling2p5TurboPro<'a>),
+  ArtcraftKling2p6Pro(PlanArtcraftKling2p6Pro<'a>),
   ArtcraftKling3p0Pro(PlanArtcraftKling3p0Pro<'a>),
   ArtcraftKling3p0Standard(PlanArtcraftKling3p0Standard<'a>),
   ArtcraftSeedance1p5Pro(PlanArtcraftSeedance1p5Pro<'a>),
@@ -77,6 +97,26 @@ impl<'a> VideoGenerationPlan<'a> {
     client: &RouterClient,
   ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     match self {
+      VideoGenerationPlan::ArtcraftKling16Pro(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_kling_1_6_pro(plan, artcraft_client).await
+      }
+      VideoGenerationPlan::ArtcraftKling21Master(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_kling_2_1_master(plan, artcraft_client).await
+      }
+      VideoGenerationPlan::ArtcraftKling21Pro(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_kling_2_1_pro(plan, artcraft_client).await
+      }
+      VideoGenerationPlan::ArtcraftKling2p5TurboPro(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_kling_2_5_turbo_pro(plan, artcraft_client).await
+      }
+      VideoGenerationPlan::ArtcraftKling2p6Pro(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_kling_2_6_pro(plan, artcraft_client).await
+      }
       VideoGenerationPlan::ArtcraftKling3p0Pro(plan) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
         execute_artcraft_kling3p0_pro(plan, artcraft_client).await
@@ -146,6 +186,11 @@ impl<'a> VideoGenerationPlan<'a> {
 
   pub fn estimate_costs(&self) -> VideoGenerationCostEstimate {
     match self {
+      VideoGenerationPlan::ArtcraftKling16Pro(plan) => estimate_video_cost_artcraft_kling_1_6_pro(plan),
+      VideoGenerationPlan::ArtcraftKling21Master(plan) => estimate_video_cost_artcraft_kling_2_1_master(plan),
+      VideoGenerationPlan::ArtcraftKling21Pro(plan) => estimate_video_cost_artcraft_kling_2_1_pro(plan),
+      VideoGenerationPlan::ArtcraftKling2p5TurboPro(plan) => estimate_video_cost_artcraft_kling_2_5_turbo_pro(plan),
+      VideoGenerationPlan::ArtcraftKling2p6Pro(plan) => estimate_video_cost_artcraft_kling_2_6_pro(plan),
       VideoGenerationPlan::ArtcraftKling3p0Pro(plan) => {
         estimate_video_cost_artcraft_kling3p0_pro(plan)
       }

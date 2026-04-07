@@ -9,6 +9,11 @@ use crate::api::provider::Provider;
 use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_1_6_pro::plan_generate_video_artcraft_kling_1_6_pro;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_1_master::plan_generate_video_artcraft_kling_2_1_master;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_1_pro::plan_generate_video_artcraft_kling_2_1_pro;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_5_turbo_pro::plan_generate_video_artcraft_kling_2_5_turbo_pro;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_6_pro::plan_generate_video_artcraft_kling_2_6_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_pro::plan_generate_video_artcraft_kling3p0_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::plan_generate_video_artcraft_kling3p0_standard;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
@@ -102,6 +107,11 @@ impl<'a> GenerateVideoRequest<'a> {
 
   fn build_artcraft(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
+      CommonVideoModel::Kling16Pro => plan_generate_video_artcraft_kling_1_6_pro(self),
+      CommonVideoModel::Kling21Master => plan_generate_video_artcraft_kling_2_1_master(self),
+      CommonVideoModel::Kling21Pro => plan_generate_video_artcraft_kling_2_1_pro(self),
+      CommonVideoModel::Kling2p5TurboPro => plan_generate_video_artcraft_kling_2_5_turbo_pro(self),
+      CommonVideoModel::Kling2p6Pro => plan_generate_video_artcraft_kling_2_6_pro(self),
       CommonVideoModel::Kling3p0Pro => plan_generate_video_artcraft_kling3p0_pro(self),
       CommonVideoModel::Kling3p0Standard => plan_generate_video_artcraft_kling3p0_standard(self),
       CommonVideoModel::Seedance1p5Pro => plan_generate_video_artcraft_seedance1p5_pro(self),
