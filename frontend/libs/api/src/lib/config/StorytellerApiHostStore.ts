@@ -1,5 +1,8 @@
 // Artcraft / Storyteller API backend
-const DEFAULT_API_HOST = "https://api.storyteller.ai";
+// Set VITE_API_HOST=http://localhost:12345 for local dev, or leave unset for production.
+//const DEFAULT_API_HOST = (import.meta as any).env?.VITE_API_HOST || "https://api.storyteller.ai";
+
+const DEFAULT_API_HOST = "http://localhost:12345";
 
 // NB(bt,2025-09-25): 'nx' is creating multiple copies of the library with name 
 //   mangling, so the singleton pattern fails to resolve to a single instance.

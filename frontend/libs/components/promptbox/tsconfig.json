@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../slider-v2"
+    },
+    {
       "path": "../button-icon-select"
     },
     {
@@ -15,9 +18,6 @@
       "path": "../camera-settings-modal"
     },
     {
-      "path": "../toaster"
-    },
-    {
       "path": "../../tauri-utils"
     },
     {
@@ -27,28 +27,37 @@
       "path": "../../model-list"
     },
     {
-      "path": "../modal"
-    },
-    {
       "path": "../popover"
-    },
-    {
-      "path": "../slider-v2"
     },
     {
       "path": "../../common"
     },
     {
-      "path": "../../api"
+      "path": "../tooltip"
+    },
+    {
+      "path": "../action-reminder-modal"
+    },
+    {
+      "path": "../label"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../input"
     },
     {
       "path": "../gallery-modal"
     },
     {
-      "path": "../tooltip"
+      "path": "../toaster"
     },
     {
-      "path": "../button"
+      "path": "../../api"
+    },
+    {
+      "path": "../modal"
     },
     {
       "path": "./tsconfig.lib.json"
