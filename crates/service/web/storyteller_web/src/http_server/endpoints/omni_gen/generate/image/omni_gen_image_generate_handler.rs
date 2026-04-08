@@ -1,9 +1,11 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::{error, info, warn};
 use sqlx::Acquire;
+use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
@@ -25,17 +27,16 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 };
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::media_files::MediaFileToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
+use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
 
-use super::request_to_costs::request_to_costs;
-use super::request_to_plan::request_to_plan;
-use super::resolve_media_tokens::{resolve_media_tokens, apply_resolved_media};
-use super::hydrate_to_router_request::hydrate_to_router_request;
+use super::distill_image_request::distill_image_request;
 
 /// Generate an image using the omni-gen unified endpoint.
 #[utoipa::path(
@@ -59,21 +60,9 @@ pub async fn omni_gen_image_generate_handler(
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
-  // ==================== TRANSFORM REQUEST + PLAN ==================== //
-
-  let mut generate_request = hydrate_to_router_request(&request)?;
-
   let maybe_prompt_model_type: Option<CommonModelType> = request.model
     .as_ref()
     .map(|m| m.to_common_model_type());
-
-  // ==================== COST ==================== //
-
-  info!("\n\n Generate request: {:?}\n\n", generate_request);
-
-  info!(">>> Building cost estimate...");
-
-  let cost_estimate = request_to_costs(&generate_request)?;
 
   // ==================== SESSION ==================== //
 
@@ -115,27 +104,42 @@ pub async fn omni_gen_image_generate_handler(
     })?;
 
   // ==================== RESOLVE MEDIA TOKENS ==================== //
+  // Look up media file tokens BEFORE distilling. distill_image_request takes
+  // a pre-computed `MediaFileToken -> Url` map and does no I/O of its own.
 
-  let resolved_media = resolve_media_tokens(
-    &request,
-    &http_request,
-    &mut mysql_connection,
-    server_state.server_environment,
-  ).await?;
+  let media_file_hydration_map: Option<HashMap<MediaFileToken, Url>> = match request.image_media_tokens.as_ref() {
+    Some(tokens) if !tokens.is_empty() => {
+      info!("Resolving {} image media tokens to CDN URLs", tokens.len());
+      let raw = lookup_image_urls_as_map(
+        &http_request,
+        &mut mysql_connection,
+        server_state.server_environment,
+        tokens,
+      ).await?;
+      let parsed: HashMap<MediaFileToken, Url> = raw.into_iter()
+        .filter_map(|(token, url_str)| match Url::parse(&url_str) {
+          Ok(url) => Some((token, url)),
+          Err(err) => {
+            warn!("Failed to parse media file URL {:?}: {:?}", url_str, err);
+            None
+          }
+        })
+        .collect();
+      Some(parsed)
+    }
+    _ => None,
+  };
 
-  apply_resolved_media(&mut generate_request, &resolved_media);
+  // ==================== DISTILL ==================== //
 
-  info!("\n\n Updated request: {:?}\n\n", generate_request);
+  let distilled = distill_image_request(&request, media_file_hydration_map.as_ref())?;
 
-  // ==================== PLAN ==================== //
-
-  let plan = request_to_plan(&mut generate_request)?;
-
-  info!("\n\n Plan: {:?}\n\n", plan);
+  info!(">>> Distilled cost: {:?}", distilled.cost);
+  info!(">>> Distilled plan: {:?}", distilled.plan);
 
   // ==================== BILLING ==================== //
 
-  let cost = cost_estimate.cost_in_credits.unwrap_or(0);
+  let cost = distilled.cost.cost_in_credits.unwrap_or(0);
 
   info!("Charging wallet: {} credits", cost);
 
@@ -159,7 +163,7 @@ pub async fn omni_gen_image_generate_handler(
 
   let router_client = artcraft_router::client::router_client::RouterClient::Fal(fal_client);
 
-  let generation_response = plan.generate_image(&router_client)
+  let generation_response = distilled.plan.generate_image(&router_client)
     .await
     .map_err(|e| {
       warn!("Image generation failed: {:?}", e);

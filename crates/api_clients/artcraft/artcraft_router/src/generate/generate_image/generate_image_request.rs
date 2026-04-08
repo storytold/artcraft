@@ -33,7 +33,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_ban
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_2::plan_generate_image_fal_nano_banana_2;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct GenerateImageRequest<'a> {
   /// Which model to use.
   pub model: CommonImageModel,

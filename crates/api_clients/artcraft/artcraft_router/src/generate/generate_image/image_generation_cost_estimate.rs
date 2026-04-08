@@ -1,4 +1,5 @@
 /// The result of estimating the cost of an image generation plan.
+#[derive(Clone, Debug)]
 pub struct ImageGenerationCostEstimate {
   pub cost_in_credits: Option<u64>,
   pub cost_in_usd_cents: Option<u64>,
