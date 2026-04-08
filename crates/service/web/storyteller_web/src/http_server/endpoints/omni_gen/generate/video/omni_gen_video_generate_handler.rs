@@ -35,7 +35,7 @@ use crate::state::server_state::ServerState;
 use super::request_to_costs::request_to_costs;
 use super::request_to_plan::request_to_plan;
 use super::resolve_media_tokens::{resolve_media_tokens, apply_resolved_media};
-use super::transform_request::hydrate_to_router_request;
+use super::hydrate_to_router_request::hydrate_to_router_request;
 
 /// Generate a video using the omni-gen unified endpoint.
 #[utoipa::path(
