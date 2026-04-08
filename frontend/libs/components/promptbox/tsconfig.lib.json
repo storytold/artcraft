@@ -44,6 +44,9 @@
   ],
   "references": [
     {
+      "path": "../slider-v2/tsconfig.lib.json"
+    },
+    {
       "path": "../button-icon-select/tsconfig.lib.json"
     },
     {
@@ -56,9 +59,6 @@
       "path": "../camera-settings-modal/tsconfig.lib.json"
     },
     {
-      "path": "../toaster/tsconfig.lib.json"
-    },
-    {
       "path": "../../tauri-utils/tsconfig.lib.json"
     },
     {
@@ -68,28 +68,37 @@
       "path": "../../model-list/tsconfig.lib.json"
     },
     {
-      "path": "../modal/tsconfig.lib.json"
-    },
-    {
       "path": "../popover/tsconfig.lib.json"
-    },
-    {
-      "path": "../slider-v2/tsconfig.lib.json"
     },
     {
       "path": "../../common/tsconfig.lib.json"
     },
     {
-      "path": "../../api/tsconfig.lib.json"
+      "path": "../tooltip/tsconfig.lib.json"
+    },
+    {
+      "path": "../action-reminder-modal/tsconfig.lib.json"
+    },
+    {
+      "path": "../label/tsconfig.lib.json"
+    },
+    {
+      "path": "../button/tsconfig.lib.json"
+    },
+    {
+      "path": "../input/tsconfig.lib.json"
     },
     {
       "path": "../gallery-modal/tsconfig.lib.json"
     },
     {
-      "path": "../tooltip/tsconfig.lib.json"
+      "path": "../toaster/tsconfig.lib.json"
     },
     {
-      "path": "../button/tsconfig.lib.json"
+      "path": "../../api/tsconfig.lib.json"
+    },
+    {
+      "path": "../modal/tsconfig.lib.json"
     }
   ]
 }
