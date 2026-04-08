@@ -239,16 +239,12 @@ pub async fn upload_new_video_media_file_handler(
         MediaFileUploadError::ServerError
       })?;
 
-  println!("\n\nFile bytes len: {}", file_bytes.len());
-
   let mut mimetype = get_mimetype_for_bytes(file_bytes.as_ref())
       .map(|mimetype| mimetype.to_string())
       .ok_or_else(|| {
         warn!("Could not determine mimetype for file");
         MediaFileUploadError::BadInput("Could not determine mimetype for file".to_string())
       })?;
-
-  println!("\n\nFile bytes len: {}", mimetype);
 
   let needs_transcode = TRANSCODE_MIME_TYPES.contains(mimetype.as_str());
 
