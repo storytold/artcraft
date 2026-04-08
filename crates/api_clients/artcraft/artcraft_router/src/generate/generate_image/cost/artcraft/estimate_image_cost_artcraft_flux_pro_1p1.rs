@@ -6,8 +6,11 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 pub(crate) fn estimate_image_cost_artcraft_flux_pro_1p1(
   plan: &PlanArtcraftFluxPro11<'_>,
 ) -> ImageGenerationCostEstimate {
-  // NB(bt): Slightly more than 3 cents, weird megapixel maths. We can eat that cost for now.
-  let cost_per_image: u64 = 3;
+  // Fal pricing: $0.04 per megapixel, billed by rounding up to the nearest
+  // megapixel. The default image_size values are ~1MP, so 4 cents per image.
+  // (The legacy `generate_flux_pro_11_text_to_image_handler` charges this same
+  // amount via `FluxPro11Args::calculate_cost_in_cents`.)
+  let cost_per_image: u64 = 4;
 
   let num_images: u64 = match plan.num_images {
     GenerateFluxPro11TextToImageNumImages::One => 1,
@@ -60,10 +63,10 @@ mod tests {
 
   #[test]
   fn test_estimate_cost_usd_cents() {
-    // ~$0.03/image = 3 cents each (slightly more than 3¢ actual, rounded up)
-    assert_eq!(estimate_usd_cents(1), 3);
-    assert_eq!(estimate_usd_cents(2), 6);
-    assert_eq!(estimate_usd_cents(3), 9);
-    assert_eq!(estimate_usd_cents(4), 12);
+    // $0.04/image = 4 cents each (Fal's $0.04/MP at the default ~1MP).
+    assert_eq!(estimate_usd_cents(1), 4);
+    assert_eq!(estimate_usd_cents(2), 8);
+    assert_eq!(estimate_usd_cents(3), 12);
+    assert_eq!(estimate_usd_cents(4), 16);
   }
 }
