@@ -3,3 +3,6 @@ mod request_to_costs;
 mod request_to_plan;
 mod resolve_media_tokens;
 pub(crate) mod transform_request;
+
+#[cfg(test)]
+mod tests;
