@@ -596,9 +596,9 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           }
         }
 
-        // Shift+Enter (or Cmd+Enter on Mac): insert a newline instead of
+        // Plain Enter: insert a newline instead of
         // letting the contentEditable create a <div>
-        if (e.key === "Enter" && (e.shiftKey || e.metaKey)) {
+        if (e.key === "Enter" && !e.shiftKey && !e.metaKey) {
           e.preventDefault();
           document.execCommand("insertLineBreak");
           handleInput();
