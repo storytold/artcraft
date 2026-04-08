@@ -17,6 +17,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::visibility::Visibility;
+use ffmpeg_utils::ffmpeg::ffmpeg_transcode_to_mp4::{ffmpeg_transcode_to_mp4, FfmpegTranscodeToMp4Args};
 use ffmpeg_utils::ffmpeg::ffmpeg_trim_and_resample::{ffmpeg_trim_and_resample, Args};
 use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 use filesys::file_read_bytes::file_read_bytes;
@@ -111,6 +112,13 @@ static ALLOWED_MIME_TYPES : Lazy<HashSet<&'static str>> = Lazy::new(|| {
   HashSet::from([
     // Video
     "video/mp4", // NB: Only mp4 for now.
+  ])
+});
+
+static TRANSCODE_MIME_TYPES : Lazy<HashSet<&'static str>> = Lazy::new(|| {
+  HashSet::from([
+    // Video
+    "video/quicktime", // .qt quicktime files
   ])
 });
 
@@ -231,6 +239,8 @@ pub async fn upload_new_video_media_file_handler(
         MediaFileUploadError::ServerError
       })?;
 
+  println!("\n\nFile bytes len: {}", file_bytes.len());
+
   let mut mimetype = get_mimetype_for_bytes(file_bytes.as_ref())
       .map(|mimetype| mimetype.to_string())
       .ok_or_else(|| {
@@ -238,7 +248,11 @@ pub async fn upload_new_video_media_file_handler(
         MediaFileUploadError::BadInput("Could not determine mimetype for file".to_string())
       })?;
 
-  if !ALLOWED_MIME_TYPES.contains(mimetype.as_str()) {
+  println!("\n\nFile bytes len: {}", mimetype);
+
+  let needs_transcode = TRANSCODE_MIME_TYPES.contains(mimetype.as_str());
+
+  if !ALLOWED_MIME_TYPES.contains(mimetype.as_str()) && !needs_transcode {
     // NB: Don't let our error message inject malicious strings
     let filtered_mimetype = mimetype
         .chars()
@@ -248,15 +262,73 @@ pub async fn upload_new_video_media_file_handler(
     return Err(MediaFileUploadError::BadInput(format!("unpermitted mime type: {}", &filtered_mimetype)));
   }
 
+  // ==================== ORIGINAL FILE BOOKKEEPING ==================== //
+  // Hold on to the user's original file (path + mimetype + extension) so we
+  // can upload it as a `_original.{ext}` sibling later if we end up
+  // transcoding and/or resampling it.
+
+  let original_file_path: PathBuf = form.file.file.path().to_path_buf();
+  let original_mimetype: String = mimetype.clone();
+  let original_filename_extension: Option<String> = form.file.file_name.as_deref()
+      .and_then(|filename| std::path::Path::new(filename).extension())
+      .and_then(|ext| ext.to_str())
+      .map(|ext| ext.to_string());
+  let original_extension: String = mimetype_to_extension(&original_mimetype)
+      .map(|ext| ext.to_string())
+      .or(original_filename_extension)
+      .ok_or_else(|| {
+        warn!("Could not determine file extension for original mimetype: {}", &original_mimetype);
+        MediaFileUploadError::ServerError
+      })?;
+
+  // ==================== OPTIONAL TRANSCODE TO MP4 ==================== //
+  // Some accepted source mime types (e.g. QuickTime .mov) are not the canonical
+  // distribution format we want for the media file record. Transcode them to
+  // mp4 in a tempdir so we can resample / upload mp4 instead.
+
+  // Tempdirs we need to keep alive across the upload step. They get dropped at
+  // function exit which cleans up the on-disk files.
+  let mut transcode_tempdir_ref = None;
+  let mut resample_tempdir_ref = None;
+
+  let mut final_upload_file_path = form.file.file.path().to_path_buf();
+
+  if needs_transcode {
+    let transcode_tempdir = server_state.temp_dir_creator.new_tempdir("ffmpeg_transcode")
+        .map_err(|err| {
+          error!("Problem creating transcode temp dir: {:?}", err);
+          MediaFileUploadError::ServerError
+        })?;
+
+    let transcoded_path = transcode_tempdir.path().join("transcoded.mp4");
+
+    info!("Transcoding {} → mp4", &original_mimetype);
+    ffmpeg_transcode_to_mp4(FfmpegTranscodeToMp4Args {
+      video_input_path: form.file.file.path(),
+      video_output_path: &transcoded_path,
+    }).map_err(|err| {
+      error!("Problem transcoding video to mp4: {:?}", err);
+      MediaFileUploadError::ServerError
+    })?;
+
+    // The canonical file is now the transcoded mp4. Read its bytes and pin
+    // its mimetype to mp4 so all the downstream metadata reflects the
+    // transcoded file rather than the user's original upload.
+    file_bytes = file_read_bytes(&transcoded_path)
+        .map_err(|e| {
+          error!("Problem reading transcoded mp4: {:?}", e);
+          MediaFileUploadError::ServerError
+        })?;
+    mimetype = "video/mp4".to_string();
+    final_upload_file_path = transcoded_path;
+    transcode_tempdir_ref = Some(transcode_tempdir);
+  }
+
   // ==================== OPTIONAL VIDEO RESAMPLE ==================== //
 
   let should_resample = form.maybe_resample_fps.is_some()
       || form.maybe_trim_start_millis.is_some()
       || form.maybe_trim_end_millis.is_some();
-
-  let mut save_tempdir_ref = None; // NB: Save from Drop
-
-  let mut final_upload_file_path = form.file.file.path().to_path_buf();
 
   if should_resample {
     // TODO(bt,2024-09-11): Should include entropy so concurrent requests don't overwrite
@@ -272,8 +344,10 @@ pub async fn upload_new_video_media_file_handler(
     let maybe_start_offset = form.maybe_trim_start_millis.map(|millis| Duration::from_millis(millis.0));
     let maybe_end_offset = form.maybe_trim_end_millis.map(|millis| Duration::from_millis(millis.0));
 
+    // NB: Resample reads from `final_upload_file_path` (which is the transcoded
+    // mp4 if we transcoded above, or the user's original upload otherwise).
     ffmpeg_trim_and_resample(Args {
-      video_input_path: form.file.file.path(),
+      video_input_path: &final_upload_file_path,
       video_output_path: &video_output_path,
       maybe_new_frame_rate,
       maybe_start_offset,
@@ -297,8 +371,12 @@ pub async fn upload_new_video_media_file_handler(
         })?;
 
     final_upload_file_path = video_output_path;
-    save_tempdir_ref = Some(frame_temp_dir); // NB: Keep from going out of scope
+    resample_tempdir_ref = Some(frame_temp_dir); // NB: Keep from going out of scope
   }
+
+  // True if we touched the user's file in any way (transcoded, resampled, or both).
+  // We'll upload their unmodified original alongside the canonical file when so.
+  let should_upload_original = needs_transcode || should_resample;
 
   // ==================== OTHER FILE METADATA ==================== //
 
@@ -357,6 +435,47 @@ pub async fn upload_new_video_media_file_handler(
         warn!("Upload media bytes to bucket error: {:?}", e);
         MediaFileUploadError::ServerError
       })?;
+
+  // ==================== UPLOAD ORIGINAL SIBLING ==================== //
+  // If we transcoded and/or resampled the user's upload, also upload the
+  // unmodified original alongside the canonical file as `_original.{ext}`
+  // (sharing the same object hash / directory). The media file record points
+  // at the canonical file, not this sibling.
+
+  if should_upload_original {
+    // Build a sibling path that lives in the same directory as the canonical
+    // file (same hash) but with `_original.{ext}` baked into the suffix.
+    let original_suffix = format!("_original.{}", original_extension);
+    let original_bucket_path = MediaFileBucketPath::from_object_hash(
+      public_upload_path.get_object_hash(),
+      PREFIX,
+      Some(&original_suffix),
+    );
+
+    info!(
+      "Uploading original sibling to bucket path: {}",
+      original_bucket_path.get_full_object_path_str(),
+    );
+
+    let original_bytes = file_read_bytes(&original_file_path)
+        .map_err(|e| {
+          error!("Problem reading original file for sibling upload: {:?}", e);
+          MediaFileUploadError::ServerError
+        })?;
+
+    server_state.public_bucket_client.upload_file_with_content_type(
+      original_bucket_path.get_full_object_path_str(),
+      original_bytes.as_ref(),
+      &original_mimetype,
+    )
+        .await
+        .map_err(|e| {
+          // NB: Sibling failure is non-fatal — the canonical upload already
+          // succeeded and the user can still use the media. Log loudly.
+          warn!("Upload original sibling to bucket error: {:?}", e);
+        })
+        .ok();
+  }
 
   let maybe_scene_source_media_file_token = form.maybe_scene_source_media_file_token
       .as_ref()
