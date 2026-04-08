@@ -135,7 +135,7 @@ pub async fn omni_gen_image_generate_handler(
   let distilled = distill_image_request(&request, media_file_hydration_map.as_ref())?;
 
   info!(">>> Distilled cost: {:?}", distilled.cost);
-  info!(">>> Distilled plan: {:?}", distilled.plan);
+  info!(">>> Distilled plan: {:?}", distilled.plan());
 
   // ==================== BILLING ==================== //
 
@@ -163,7 +163,7 @@ pub async fn omni_gen_image_generate_handler(
 
   let router_client = artcraft_router::client::router_client::RouterClient::Fal(fal_client);
 
-  let generation_response = distilled.plan.generate_image(&router_client)
+  let generation_response = distilled.plan().generate_image(&router_client)
     .await
     .map_err(|e| {
       warn!("Image generation failed: {:?}", e);
