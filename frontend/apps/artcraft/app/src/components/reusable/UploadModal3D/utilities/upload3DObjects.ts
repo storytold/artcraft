@@ -42,7 +42,7 @@ export const upload3DObjects = async ({
   const assetToken = assetReponse.data;
 
   if (!thumbnailSnapshot) {
-    progressCallback({ status: UploaderStates.success });
+    progressCallback({ status: UploaderStates.success, data: assetToken });
     return;
   }
 
@@ -72,5 +72,5 @@ export const upload3DObjects = async ({
     });
     return;
   }
-  progressCallback({ status: UploaderStates.success });
+  progressCallback({ status: UploaderStates.success, data: assetToken });
 };
