@@ -1,4 +1,5 @@
 pub mod ffmpeg_timestamp_from_duration;
+pub mod ffmpeg_transcode_to_mp4;
 pub mod ffmpeg_trim_and_resample;
 pub mod ffmpeg_video_first_frame_to_jpg_thumbnail;
 pub mod ffmpeg_video_gif_preview;
