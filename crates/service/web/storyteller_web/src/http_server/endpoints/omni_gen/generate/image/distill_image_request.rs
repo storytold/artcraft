@@ -48,8 +48,10 @@ pub struct DistilledImageRequest {
   /// The fully-built router request, with `provider = Fal` so it matches the
   /// plan we actually execute. Private — useful for tests / debugging only.
   ///
-  /// Borrows inside this request point into the `_owned_*` boxes above.
-  #[allow(dead_code)]
+  /// Borrows inside this request point into the `_owned_*` boxes above. Access
+  /// only via [`DistilledImageRequest::request`] (an accessor that ties the
+  /// returned reference to `&self`) — never moved out, otherwise the borrows
+  /// would dangle once the boxes are dropped with `Self`.
   request: GenerateImageRequest<'static>,
 
   /// Cost estimate as computed by the Artcraft provider — this is what we bill on.
@@ -58,8 +60,28 @@ pub struct DistilledImageRequest {
   /// Execution plan as computed by the Fal provider — what we hand to the router.
   ///
   /// Borrows inside this plan point into the `_owned_*` boxes above (and into
-  /// `request`, which itself points into them).
-  pub plan: ImageGenerationPlan<'static>,
+  /// `request`, which itself points into them). Access only via
+  /// [`DistilledImageRequest::plan`] — moving the plan out of `Self` would
+  /// dangle the borrows once the boxes are dropped.
+  plan: ImageGenerationPlan<'static>,
+}
+
+impl DistilledImageRequest {
+  /// Borrow the execution plan. The returned reference's lifetime is tied to
+  /// `&self`, so the plan can never outlive the boxes that back its borrows.
+  pub fn plan(&self) -> &ImageGenerationPlan<'_> {
+    // SAFETY: the plan was constructed with `'static` borrows that actually
+    // point into `self._owned_*`. Re-binding the lifetime to `&self` exposes
+    // the true invariant to callers.
+    &self.plan
+  }
+
+  /// Borrow the underlying router request. Useful for tests / debugging.
+  /// (Same lifetime invariant as [`Self::plan`].)
+  #[allow(dead_code)]
+  pub(crate) fn request(&self) -> &GenerateImageRequest<'_> {
+    &self.request
+  }
 }
 
 /// Build a [`DistilledImageRequest`] from a raw API request and a pre-computed

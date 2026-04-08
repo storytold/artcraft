@@ -36,7 +36,9 @@ pub enum CommonAspectRatio {
 
   // Auto values that bake in resolution
   // These are from the Seedream models
+  #[serde(rename = "auto_2k")]
   Auto2k,
+  #[serde(rename = "auto_4k")]
   Auto4k,
 
   // Defined aspect ratios that bake in resolution
