@@ -50,9 +50,12 @@ fn resolve_image_list_ref<'a>(
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
-    Some(ImageListRef::Urls(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    // The omni-gen distillation hydrates media tokens to URLs before running
+    // cost estimation against the Artcraft provider. Cost only depends on
+    // num_images + resolution + is_edit_mode (derived before this resolver
+    // runs), so URL-form inputs are accepted and dropped — there's no Artcraft
+    // execution path for Nano Banana 2 that would need to read them back.
+    Some(ImageListRef::Urls(_)) => Ok(None),
   }
 }
 
@@ -135,8 +138,10 @@ fn plan_resolution(
       // No 3K option; default to 2K
       Ok(Some(Nb2Res::TwoK))
     }
-    // HalfK, FourEightyP, SevenTwentyP, TenEightyP — nearest supported is OneK
-    Some(R::HalfK | R::FourEightyP | R::SevenTwentyP | R::TenEightyP) => Ok(Some(Nb2Res::OneK)),
+    // HalfK is natively supported (and billed at the cheaper 0.5K rate).
+    Some(R::HalfK) => Ok(Some(Nb2Res::HalfK)),
+    // FourEightyP, SevenTwentyP, TenEightyP — nearest supported is OneK
+    Some(R::FourEightyP | R::SevenTwentyP | R::TenEightyP) => Ok(Some(Nb2Res::OneK)),
   }
 }
 
