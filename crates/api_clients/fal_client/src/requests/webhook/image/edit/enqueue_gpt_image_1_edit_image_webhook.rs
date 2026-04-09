@@ -186,3 +186,48 @@ pub async fn enqueue_gpt_image_1_edit_image_webhook<R: IntoUrl>(
 
   result.map_err(|err| classify_fal_error(err))
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::creds::fal_api_key::FalApiKey;
+  use crate::requests::webhook::image::edit::enqueue_gpt_image_1_edit_image_webhook::{
+    enqueue_gpt_image_1_edit_image_webhook, EnqueueGptImage1EditImageArgs,
+    EnqueueGptImage1EditImageNumImages, EnqueueGptImage1EditImageQuality,
+    EnqueueGptImage1EditImageSize,
+  };
+  use errors::AnyhowResult;
+  use std::fs::read_to_string;
+  use test_data::web::image_urls::{
+    ERNEST_SCARED_STUPID_IMAGE_URL, GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL,
+  };
+
+  #[tokio::test]
+  #[ignore]
+  async fn test() -> AnyhowResult<()> {
+    // XXX: Don't commit secrets!
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    let args = EnqueueGptImage1EditImageArgs {
+      prompt: "add the ghost and scared man to the image of the t-rex skeleton, make it look spooky but friendly",
+      image_urls: vec![
+        GHOST_IMAGE_URL.to_string(),
+        TREX_SKELETON_IMAGE_URL.to_string(),
+        ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
+      ],
+      num_images: EnqueueGptImage1EditImageNumImages::One,
+      mask_image_url: None,
+      image_size: Some(EnqueueGptImage1EditImageSize::Horizontal),
+      quality: Some(EnqueueGptImage1EditImageQuality::Medium),
+      input_fidelity: None,
+      background: None,
+      output_format: None,
+      api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let _result = enqueue_gpt_image_1_edit_image_webhook(args).await?;
+
+    Ok(())
+  }
+}

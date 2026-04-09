@@ -115,3 +115,40 @@ pub async fn enqueue_gpt_image_1_byok_text_to_image_webhook<V: IntoUrl>(
 
   result.map_err(|err| classify_fal_error(err))
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::creds::fal_api_key::FalApiKey;
+  use crate::creds::open_ai_api_key::OpenAiApiKey;
+  use crate::requests::webhook::image::text::enqueue_gpt_image_1_byok_text_to_image_webhook::{
+    enqueue_gpt_image_1_byok_text_to_image_webhook, GptTextToImageByokArgs,
+    GptTextToImageNumImages, GptTextToImageQuality, GptTextToImageSize,
+  };
+  use errors::AnyhowResult;
+  use std::fs::read_to_string;
+
+  #[tokio::test]
+  #[ignore]
+  async fn test() -> AnyhowResult<()> {
+    // XXX: Don't commit secrets!
+    let fal_secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let fal_api_key = FalApiKey::from_str(&fal_secret);
+
+    let openai_secret = read_to_string("/Users/bt/Artcraft/credentials/openai_api_key.txt")?;
+    let openai_api_key = OpenAiApiKey::from_str(&openai_secret);
+
+    let args = GptTextToImageByokArgs {
+      prompt: "an anime girl riding on the back of a t-rex",
+      image_size: GptTextToImageSize::Horizontal,
+      num_images: GptTextToImageNumImages::One,
+      quality: GptTextToImageQuality::High,
+      api_key: &fal_api_key,
+      openai_api_key: &openai_api_key,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let _result = enqueue_gpt_image_1_byok_text_to_image_webhook(args).await?;
+
+    Ok(())
+  }
+}

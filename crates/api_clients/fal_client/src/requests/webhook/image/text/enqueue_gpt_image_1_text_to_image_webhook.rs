@@ -165,3 +165,38 @@ pub async fn enqueue_gpt_image_1_text_to_image_webhook<R: IntoUrl>(
 
   result.map_err(|err| classify_fal_error(err))
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::creds::fal_api_key::FalApiKey;
+  use crate::requests::webhook::image::text::enqueue_gpt_image_1_text_to_image_webhook::{
+    enqueue_gpt_image_1_text_to_image_webhook, EnqueueGptImage1TextToImageArgs,
+    EnqueueGptImage1TextToImageNumImages, EnqueueGptImage1TextToImageQuality,
+    EnqueueGptImage1TextToImageSize,
+  };
+  use errors::AnyhowResult;
+  use std::fs::read_to_string;
+
+  #[tokio::test]
+  #[ignore]
+  async fn test() -> AnyhowResult<()> {
+    // XXX: Don't commit secrets!
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+    let api_key = FalApiKey::from_str(&secret);
+
+    let args = EnqueueGptImage1TextToImageArgs {
+      prompt: "an anime girl riding on the back of a t-rex",
+      num_images: EnqueueGptImage1TextToImageNumImages::One,
+      image_size: Some(EnqueueGptImage1TextToImageSize::Horizontal),
+      quality: Some(EnqueueGptImage1TextToImageQuality::Medium),
+      background: None,
+      output_format: None,
+      api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let _result = enqueue_gpt_image_1_text_to_image_webhook(args).await?;
+
+    Ok(())
+  }
+}
