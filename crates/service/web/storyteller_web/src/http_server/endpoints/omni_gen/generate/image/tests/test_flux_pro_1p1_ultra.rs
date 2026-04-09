@@ -1,4 +1,4 @@
-//! Tests for omni-gen image distillation against the Flux Pro 1.1 Ultra model.
+//! Tests for omni-gen against the Flux Pro 1.1 Ultra model.
 //!
 //! These exercise [`distill_image_request`] end-to-end without firing any
 //! provider calls — both the cost estimate (Artcraft provider, what we bill

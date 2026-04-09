@@ -1,4 +1,4 @@
-//! Tests for omni-gen image distillation against the Nano Banana 2 model.
+//! Tests for omni-gen against the Nano Banana 2 model.
 //!
 //! Like Nano Banana, this model is multi-function: text-to-image and
 //! image-to-image (edit). It additionally supports a `resolution` parameter
