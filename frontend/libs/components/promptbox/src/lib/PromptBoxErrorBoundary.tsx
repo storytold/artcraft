@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { Component, Fragment } from "react";
 import type { ReactNode, ErrorInfo } from "react";
 
 interface Props {
@@ -7,12 +7,13 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  resetKey: number;
 }
 
 export class PromptBoxErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  state: State = { hasError: false, resetKey: 0 };
 
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): Partial<State> {
     return { hasError: true };
   }
 
@@ -27,13 +28,20 @@ export class PromptBoxErrorBoundary extends Component<Props, State> {
           <span>Something went wrong with the prompt box.&nbsp;</span>
           <button
             className="underline hover:text-red-200"
-            onClick={() => this.setState({ hasError: false })}
+            onClick={() =>
+              this.setState((prev) => ({
+                hasError: false,
+                resetKey: prev.resetKey + 1,
+              }))
+            }
           >
             Try again
           </button>
         </div>
       );
     }
-    return this.props.children;
+    return (
+      <Fragment key={this.state.resetKey}>{this.props.children}</Fragment>
+    );
   }
 }

@@ -31,6 +31,7 @@ import {
   RefImage,
   VideoInputMode,
   useCharactersStore,
+  StoredCharacter,
 } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -58,7 +59,7 @@ declare global {
 
 type GROK_ASPECT_RATIO = "landscape" | "portrait" | "square";
 
-const EMPTY_CHARACTERS: never[] = [];
+const EMPTY_CHARACTERS: StoredCharacter[] = [];
 
 const DEFAULT_RESOLUTIONS: SizeOption[] = [
   {
@@ -337,11 +338,10 @@ export const PromptBoxVideo = ({
   const [localDuration, setLocalDuration] = useState(effectiveDuration);
   const durationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
+    clearTimeout(durationTimerRef.current);
     setLocalDuration(effectiveDuration);
-  }, [effectiveDuration]);
-  useEffect(() => {
     return () => clearTimeout(durationTimerRef.current);
-  }, []);
+  }, [effectiveDuration]);
   const handleDurationSlide = (v: number) => {
     setLocalDuration(v);
     clearTimeout(durationTimerRef.current);
@@ -792,7 +792,7 @@ export const PromptBoxVideo = ({
       }
     }
 
-    if (e.key === "Enter" && e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
 
       if (selectedModel?.requiresImage && referenceImages.length === 0) {
@@ -916,7 +916,7 @@ export const PromptBoxVideo = ({
                   }
                   className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && e.shiftKey) {
+                    if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       if (selectedModel?.requiresImage && referenceImages.length === 0) return;
                       if (!prompt.trim()) return;

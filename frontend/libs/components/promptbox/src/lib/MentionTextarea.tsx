@@ -104,7 +104,8 @@ function getCaretOffset(el: HTMLElement): number {
 
     countBefore(el);
     return offset;
-  } catch {
+  } catch (e) {
+    console.debug("getCaretOffset: DOM/selection changed during read", e);
     return 0;
   }
 }
@@ -155,8 +156,8 @@ function setCaretOffset(el: HTMLElement, offset: number) {
         sel.collapseToEnd();
       }
     }
-  } catch {
-    // DOM may have changed between innerHTML rewrite and caret restore
+  } catch (e) {
+    console.debug("setCaretOffset: DOM changed during caret restore", e);
   }
 }
 
@@ -196,13 +197,15 @@ function scrollCaretIntoView(el: HTMLElement) {
         restored.setStartBefore(next);
       } else if (parent.lastChild) {
         restored.setStartAfter(parent.lastChild);
+      } else {
+        restored.selectNodeContents(parent);
       }
       restored.collapse(true);
       sel.removeAllRanges();
       sel.addRange(restored);
     }
-  } catch {
-    // DOM may have changed during scroll measurement
+  } catch (e) {
+    console.debug("scrollCaretIntoView: DOM changed during measurement", e);
   }
 }
 
@@ -425,8 +428,8 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         } else if (document.activeElement === el) {
           setCaretOffset(el, caret);
         }
-      } catch {
-        // Fallback: just set innerHTML without caret restore
+      } catch (e) {
+        console.debug("MentionTextarea sync: DOM changed during caret restore", e);
         el.innerHTML = buildHTML(value);
       }
     }, [value, buildHTML]);
@@ -454,7 +457,8 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           left: rect.left - wrapperRect.left,
           bottom: wrapperRect.bottom - rect.top,
         };
-      } catch {
+      } catch (e) {
+        console.debug("getOffsetRect: DOM changed during measurement", e);
         return null;
       }
     }, []);
@@ -515,8 +519,8 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         requestAnimationFrame(() => {
           scrollCaretIntoView(el);
         });
-      } catch {
-        // Fallback: extract text and notify parent without caret management
+      } catch (e) {
+        console.debug("handleInput: DOM changed during input processing", e);
         const text = el.innerText?.replace(/\n$/, "") ?? "";
         isInternalUpdate.current = true;
         onChange(text);
@@ -596,9 +600,9 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           }
         }
 
-        // Plain Enter: insert a newline instead of
+        // Shift+Enter (or Cmd+Enter on Mac): insert a newline instead of
         // letting the contentEditable create a <div>
-        if (e.key === "Enter" && !e.shiftKey && !e.metaKey) {
+        if (e.key === "Enter" && (e.shiftKey || e.metaKey)) {
           e.preventDefault();
           document.execCommand("insertLineBreak");
           handleInput();
