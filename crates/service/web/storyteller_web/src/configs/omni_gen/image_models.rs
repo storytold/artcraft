@@ -223,6 +223,12 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
       CommonAspectRatio::TallTwoByThree,
     ]),
     aspect_ratio_default: Some(CommonAspectRatio::Square),
+    quality_options: Some(vec![
+      CommonQuality::High,
+      CommonQuality::Medium,
+      CommonQuality::Low,
+    ]),
+    default_quality: Some(CommonQuality::High),
     batch_size_min: Some(1),
     batch_size_max: Some(4),
     batch_size_default: Some(1),

@@ -1,4 +1,5 @@
 use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::common_quality::CommonQuality;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -30,13 +31,14 @@ pub fn plan_generate_image_artcraft_gpt_image_1p5<'a>(
 
   let image_inputs = resolve_image_list_ref(request.image_inputs)?;
   let image_size = plan_image_size(request.aspect_ratio, strategy)?;
+  let quality = plan_quality(request.quality);
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::ArtcraftGptImage1p5(PlanArtcraftGptImage1p5 {
     prompt: request.prompt,
     image_inputs,
     image_size,
-    quality: GptImage1p5MultiFunctionImageGenQuality::Medium,
+    quality,
     num_images,
     idempotency_token: request.get_or_generate_idempotency_token(),
   }))
@@ -48,9 +50,19 @@ fn resolve_image_list_ref<'a>(
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
-    Some(ImageListRef::Urls(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    // Omni-gen distillation hydrates media tokens to URLs before running the
+    // Artcraft cost path. Cost only depends on quality + size + num_images, so
+    // URL-form inputs are accepted and dropped.
+    Some(ImageListRef::Urls(_)) => Ok(None),
+  }
+}
+
+fn plan_quality(quality: Option<CommonQuality>) -> GptImage1p5MultiFunctionImageGenQuality {
+  match quality {
+    Some(CommonQuality::Low) => GptImage1p5MultiFunctionImageGenQuality::Low,
+    Some(CommonQuality::Medium) => GptImage1p5MultiFunctionImageGenQuality::Medium,
+    Some(CommonQuality::High) => GptImage1p5MultiFunctionImageGenQuality::High,
+    None => GptImage1p5MultiFunctionImageGenQuality::High,
   }
 }
 
@@ -195,10 +207,10 @@ mod tests {
   // ── Quality ──────────────────────────────────────────────────────────────
 
   #[test]
-  fn quality_defaults_to_medium() {
+  fn quality_defaults_to_high() {
     let request = base_gpt_image_1p5_image_request();
     let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else { panic!("expected ArtcraftGptImage1p5") };
-    assert!(matches!(plan.quality, GptImage1p5MultiFunctionImageGenQuality::Medium));
+    assert!(matches!(plan.quality, GptImage1p5MultiFunctionImageGenQuality::High));
   }
 
   // ── Num images ──────────────────────────────────────────────────────────────
@@ -277,17 +289,16 @@ mod tests {
   // ── Image inputs ─────────────────────────────────────────────────────────
 
   #[test]
-  fn url_image_inputs_returns_error() {
+  fn url_image_inputs_are_accepted_for_cost_path() {
     let urls = vec!["https://example.com/image.jpg".to_string()];
     let request = GenerateImageRequest {
       image_inputs: Some(ImageListRef::Urls(&urls)),
       ..base_gpt_image_1p5_image_request()
     };
-    let result = request.build();
-    assert!(matches!(
-      result,
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    ));
+    let ImageGenerationPlan::ArtcraftGptImage1p5(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1p5")
+    };
+    assert!(plan.image_inputs.is_none());
   }
 
   #[test]

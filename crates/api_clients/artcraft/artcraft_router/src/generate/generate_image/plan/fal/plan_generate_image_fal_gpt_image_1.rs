@@ -86,7 +86,7 @@ fn plan_quality(quality: Option<CommonQuality>) -> FalGptImage1Quality {
     Some(CommonQuality::Low) => FalGptImage1Quality::Low,
     Some(CommonQuality::Medium) => FalGptImage1Quality::Medium,
     Some(CommonQuality::High) => FalGptImage1Quality::High,
-    None => FalGptImage1Quality::Medium, // Fal API default
+    None => FalGptImage1Quality::High,
   }
 }
 
@@ -286,10 +286,10 @@ mod tests {
   // ── Quality default ──────────────────────────────────────────────────────
 
   #[test]
-  fn quality_defaults_to_medium() {
+  fn quality_defaults_to_high() {
     let request = base_fal_request();
     let plan = build_plan(&request);
-    assert!(matches!(plan.quality, FalGptImage1Quality::Medium));
+    assert!(matches!(plan.quality, FalGptImage1Quality::High));
   }
 
   // ── Image size mapping ───────────────────────────────────────────────────

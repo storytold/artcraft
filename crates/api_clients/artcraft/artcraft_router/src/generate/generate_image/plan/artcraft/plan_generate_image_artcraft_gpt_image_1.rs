@@ -108,7 +108,7 @@ fn plan_quality(quality: Option<CommonQuality>) -> ArtcraftGptImage1Quality {
     Some(CommonQuality::Low) => ArtcraftGptImage1Quality::Low,
     Some(CommonQuality::Medium) => ArtcraftGptImage1Quality::Medium,
     Some(CommonQuality::High) => ArtcraftGptImage1Quality::High,
-    None => ArtcraftGptImage1Quality::High, // Legacy handler default
+    None => ArtcraftGptImage1Quality::High,
   }
 }
 

@@ -1,4 +1,5 @@
 use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::common_quality::CommonQuality;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -53,13 +54,14 @@ pub fn plan_generate_image_fal_gpt_image_1p5<'a>(
   let strategy = request.request_mismatch_mitigation_strategy;
   let image_urls = resolve_image_list_ref(request.image_inputs)?;
   let image_size = plan_image_size(request.aspect_ratio);
+  let quality = plan_quality(request.quality);
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalGptImage1p5(PlanFalGptImage1p5 {
     prompt: request.prompt,
     image_urls,
     image_size,
-    quality: FalGptImage1p5Quality::Medium,
+    quality,
     num_images,
   }))
 }
@@ -73,6 +75,15 @@ fn resolve_image_list_ref(
     Some(ImageListRef::MediaFileTokens(_)) => {
       Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
     }
+  }
+}
+
+fn plan_quality(quality: Option<CommonQuality>) -> FalGptImage1p5Quality {
+  match quality {
+    Some(CommonQuality::Low) => FalGptImage1p5Quality::Low,
+    Some(CommonQuality::Medium) => FalGptImage1p5Quality::Medium,
+    Some(CommonQuality::High) => FalGptImage1p5Quality::High,
+    None => FalGptImage1p5Quality::High,
   }
 }
 
