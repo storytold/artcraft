@@ -155,6 +155,24 @@ pub fn base_nano_banana_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
+pub fn base_gpt_image_1_image_request() -> GenerateImageRequest<'static> {
+  GenerateImageRequest {
+    model: CommonImageModel::GptImage1,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space"),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
+  }
+}
+
 pub fn base_gpt_image_1p5_image_request() -> GenerateImageRequest<'static> {
   GenerateImageRequest {
     model: CommonImageModel::GptImage1p5,

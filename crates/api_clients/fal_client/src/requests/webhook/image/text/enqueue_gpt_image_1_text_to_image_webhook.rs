@@ -1,149 +1,167 @@
 use crate::creds::fal_api_key::FalApiKey;
-use crate::creds::open_ai_api_key::OpenAiApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use crate::requests::http::image::text::http_gpt_image_1_text_to_image::{gpt_image_1_text_to_image, GptImage1TextToImageInput};
 use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::http::image::text::http_gpt_image_1_non_byok_text_to_image::{
+  gpt_image_1_non_byok_text_to_image, GptImage1NonByokTextToImageInput,
+};
+use crate::requests::traits::fal_request_cost_calculator_trait::{
+  FalRequestCostCalculator, UsdCents,
+};
 use reqwest::IntoUrl;
 
-pub struct GptTextToImageByokArgs<'a, V: IntoUrl> {
-  // Request
+/// Typed args for the non-BYOK `fal-ai/gpt-image-1/text-to-image` endpoint.
+///
+/// (The BYOK variant lives in `enqueue_gpt_image_1_byok_text_to_image_webhook.rs`
+/// and is deprecated.)
+pub struct EnqueueGptImage1TextToImageArgs<'a, R: IntoUrl> {
+  // Required
   pub prompt: &'a str,
-  pub image_size: GptTextToImageSize,
-  pub num_images: GptTextToImageNumImages,
-  pub quality: GptTextToImageQuality,
+  pub num_images: EnqueueGptImage1TextToImageNumImages,
+
+  // Optional
+  pub image_size: Option<EnqueueGptImage1TextToImageSize>,
+  pub quality: Option<EnqueueGptImage1TextToImageQuality>,
+  pub background: Option<EnqueueGptImage1TextToImageBackground>,
+  pub output_format: Option<EnqueueGptImage1TextToImageOutputFormat>,
 
   // Fulfillment
+  pub webhook_url: R,
   pub api_key: &'a FalApiKey,
-  pub openai_api_key: &'a OpenAiApiKey,
-  pub webhook_url: V,
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum GptTextToImageSize{
-  Auto,
-  Square,
-  Horizontal,
-  Vertical,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum GptTextToImageQuality {
-  Auto,
-  Low,
-  Medium,
-  High,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum GptTextToImageNumImages{
+pub enum EnqueueGptImage1TextToImageNumImages {
   One,
   Two,
   Three,
   Four,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1TextToImageSize {
+  Auto,
+  /// 1024x1024
+  Square,
+  /// 1536x1024
+  Horizontal,
+  /// 1024x1536
+  Vertical,
+}
 
-// NB: These are BYOK, so they're not Fal's prices
-impl <U: IntoUrl> FalRequestCostCalculator for GptTextToImageByokArgs<'_, U> {
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1TextToImageQuality {
+  Low,
+  Medium,
+  High,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1TextToImageBackground {
+  Auto,
+  Transparent,
+  Opaque,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1TextToImageOutputFormat {
+  Jpeg,
+  Png,
+  Webp,
+}
+
+impl<U: IntoUrl> FalRequestCostCalculator for EnqueueGptImage1TextToImageArgs<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
-    // Can't find details, so using this: https://www.reddit.com/r/OpenAI/comments/1krfwa1/pricing_gpt_image_1_model/
-    // Prompts are billed similarly to other GPT models. Image outputs cost approximately $0.01 (low), $0.04 (medium),
-    // and $0.17 (high) for square images.
-    // We're likely losing money on this, but that's okay. Will adjust in the future to be fair to users and us.
-    let base_cost = match self.quality {
-      GptTextToImageQuality::Auto => 17,
-      GptTextToImageQuality::Low => 1,
-      GptTextToImageQuality::Medium => 4,
-      GptTextToImageQuality::High => 17,
+    // Per fal docs (fal-ai/gpt-image-1/text-to-image):
+    //   Low:    $0.011 (1024x1024) / $0.016 (other) per image
+    //   Medium: $0.042 (1024x1024) / $0.063 (other) per image
+    //   High:   $0.167 (1024x1024) / $0.25  (other) per image
+    // Default quality is Medium when unspecified, square when size unspecified.
+    let use_quality = self
+      .quality
+      .unwrap_or(EnqueueGptImage1TextToImageQuality::Medium);
+    let is_square = matches!(
+      self.image_size,
+      None | Some(EnqueueGptImage1TextToImageSize::Square) | Some(EnqueueGptImage1TextToImageSize::Auto)
+    );
+    let base_cost: u64 = match (use_quality, is_square) {
+      (EnqueueGptImage1TextToImageQuality::Low, true) => 2,
+      (EnqueueGptImage1TextToImageQuality::Low, false) => 2,
+      (EnqueueGptImage1TextToImageQuality::Medium, true) => 5,
+      (EnqueueGptImage1TextToImageQuality::Medium, false) => 7,
+      (EnqueueGptImage1TextToImageQuality::High, true) => 17,
+      (EnqueueGptImage1TextToImageQuality::High, false) => 25,
     };
-    let cost = match self.num_images {
-      GptTextToImageNumImages::One => base_cost,
-      GptTextToImageNumImages::Two => base_cost * 2,
-      GptTextToImageNumImages::Three => base_cost * 3,
-      GptTextToImageNumImages::Four => base_cost * 4,
+    let n: u64 = match self.num_images {
+      EnqueueGptImage1TextToImageNumImages::One => 1,
+      EnqueueGptImage1TextToImageNumImages::Two => 2,
+      EnqueueGptImage1TextToImageNumImages::Three => 3,
+      EnqueueGptImage1TextToImageNumImages::Four => 4,
     };
-    cost as UsdCents
+    base_cost * n
   }
 }
 
-
-pub async fn enqueue_gpt_image_1_text_to_image_webhook<V: IntoUrl>(
-  args: GptTextToImageByokArgs<'_, V>
+pub async fn enqueue_gpt_image_1_text_to_image_webhook<R: IntoUrl>(
+  args: EnqueueGptImage1TextToImageArgs<'_, R>,
 ) -> Result<WebhookResponse, FalErrorPlus> {
-
-  // auto, 1024x1024, 1536x1024, 1024x1536
-  let image_size = match args.image_size {
-    GptTextToImageSize::Auto => "auto",
-    GptTextToImageSize::Square => "1024x1024",
-    GptTextToImageSize::Horizontal => "1536x1024",
-    GptTextToImageSize::Vertical => "1024x1536",
+  let num_images: u8 = match args.num_images {
+    EnqueueGptImage1TextToImageNumImages::One => 1,
+    EnqueueGptImage1TextToImageNumImages::Two => 2,
+    EnqueueGptImage1TextToImageNumImages::Three => 3,
+    EnqueueGptImage1TextToImageNumImages::Four => 4,
   };
 
-  let quality = match args.quality {
-    GptTextToImageQuality::Auto => "auto",
-    GptTextToImageQuality::Low => "low",
-    GptTextToImageQuality::Medium => "medium",
-    GptTextToImageQuality::High => "high",
-  };
+  let image_size = args.image_size.map(|s| {
+    match s {
+      EnqueueGptImage1TextToImageSize::Auto => "auto",
+      EnqueueGptImage1TextToImageSize::Square => "1024x1024",
+      EnqueueGptImage1TextToImageSize::Horizontal => "1536x1024",
+      EnqueueGptImage1TextToImageSize::Vertical => "1024x1536",
+    }
+    .to_string()
+  });
 
-  let num_images = match args.num_images {
-    GptTextToImageNumImages::One => 1,
-    GptTextToImageNumImages::Two => 2,
-    GptTextToImageNumImages::Three => 3,
-    GptTextToImageNumImages::Four => 4,
-  };
+  let quality = args.quality.map(|q| {
+    match q {
+      EnqueueGptImage1TextToImageQuality::Low => "low",
+      EnqueueGptImage1TextToImageQuality::Medium => "medium",
+      EnqueueGptImage1TextToImageQuality::High => "high",
+    }
+    .to_string()
+  });
 
-  let request = GptImage1TextToImageInput {
+  let background = args.background.map(|b| {
+    match b {
+      EnqueueGptImage1TextToImageBackground::Auto => "auto",
+      EnqueueGptImage1TextToImageBackground::Transparent => "transparent",
+      EnqueueGptImage1TextToImageBackground::Opaque => "opaque",
+    }
+    .to_string()
+  });
+
+  let output_format = args.output_format.map(|f| {
+    match f {
+      EnqueueGptImage1TextToImageOutputFormat::Jpeg => "jpeg",
+      EnqueueGptImage1TextToImageOutputFormat::Png => "png",
+      EnqueueGptImage1TextToImageOutputFormat::Webp => "webp",
+    }
+    .to_string()
+  });
+
+  let request = GptImage1NonByokTextToImageInput {
     prompt: args.prompt.to_string(),
-    image_size: image_size.to_string(),
-    num_images,
-    quality: quality.to_string(),
-    openai_api_key: args.openai_api_key.0.to_string(),
+    num_images: Some(num_images),
+    image_size,
+    quality,
+    background,
+    output_format,
   };
 
-  let result = gpt_image_1_text_to_image(request)
-      .with_api_key(&args.api_key.0)
-      .queue_webhook(args.webhook_url)
-      .await;
+  let result = gpt_image_1_non_byok_text_to_image(request)
+    .with_api_key(&args.api_key.0)
+    .queue_webhook(args.webhook_url)
+    .await;
 
   result.map_err(|err| classify_fal_error(err))
-}
-
-
-#[cfg(test)]
-mod tests {
-  use crate::creds::fal_api_key::FalApiKey;
-  use crate::creds::open_ai_api_key::OpenAiApiKey;
-  use crate::requests::webhook::image::text::enqueue_gpt_image_1_text_to_image_webhook::{enqueue_gpt_image_1_text_to_image_webhook, GptTextToImageByokArgs, GptTextToImageNumImages, GptTextToImageQuality, GptTextToImageSize};
-  use errors::AnyhowResult;
-  use std::fs::read_to_string;
-
-  #[tokio::test]
-  #[ignore]
-  async fn test() -> AnyhowResult<()> {
-    // XXX: Don't commit secrets!
-    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
-
-    let fal_api_key = FalApiKey::from_str(&secret);
-
-    let secret = read_to_string("/Users/bt/Artcraft/credentials/openai_api_key.txt")?;
-
-    let open_ai_api_key = OpenAiApiKey::from_str(&secret);
-
-    let args = GptTextToImageByokArgs {
-      prompt: "put the man and the ghost on the grassy hill. the man is scared of the friendly ghost.",
-      api_key: &fal_api_key,
-      openai_api_key: &open_ai_api_key,
-      webhook_url: "https://example.com/webhook",
-      image_size: GptTextToImageSize::Horizontal,
-      num_images: GptTextToImageNumImages::One,
-      quality: GptTextToImageQuality::High,
-    };
-
-    let result = enqueue_gpt_image_1_text_to_image_webhook(args).await?;
-
-    Ok(())
-  }
 }

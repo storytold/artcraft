@@ -13,21 +13,22 @@ use artcraft_api_defs::generate::image::edit::gpt_image_1_edit_image::{GptImage1
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::generation::common_model_type::CommonModelType;
-use enums::common::visibility::Visibility;
-use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation_provider::GenerationProvider;
+use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_edit_image_webhook::enqueue_gpt_image_1_edit_image_webhook;
-use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_edit_image_webhook::GptEditImageNumImages;
-use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_edit_image_webhook::{GptEditImageByokArgs, GptEditImageQuality, GptEditImageSize};
+use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::enqueue_gpt_image_1_byok_edit_image_webhook;
+use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::GptEditImageNumImages;
+use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1_byok_edit_image_webhook::{GptEditImageByokArgs, GptEditImageQuality, GptEditImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::InsertGenericInferenceForFalArgs;
+use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::media_files::get::batch_get_media_files_by_tokens::{batch_get_media_files_by_tokens, batch_get_media_files_by_tokens_with_connection};
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem};
@@ -35,7 +36,6 @@ use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPrompt
 use sqlx::Acquire;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use utoipa::ToSchema;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{insert_generic_inference_job_for_fal_queue_with_apriori_job_token, InsertGenericInferenceForFalWithAprioriJobTokenArgs};
 
 /// Gpt Image 1 Image Editing
 #[utoipa::path(
@@ -195,7 +195,7 @@ pub async fn gpt_image_1_edit_image_handler(
     &mut mysql_connection,
   ).await?;
 
-  let fal_result = enqueue_gpt_image_1_edit_image_webhook(args)
+  let fal_result = enqueue_gpt_image_1_byok_edit_image_webhook(args)
       .await
       .map_err(|err| {
         warn!("Error calling enqueue_gpt_image_1_edit_image_webhook: {:?}", err);

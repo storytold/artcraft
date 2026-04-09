@@ -13,6 +13,8 @@ pub enum CommonImageModel {
   FluxPro11,
   #[serde(rename = "flux_pro_1p1_ultra")]
   FluxPro11Ultra,
+  #[serde(rename = "gpt_image_1")]
+  GptImage1,
   #[serde(rename = "gpt_image_1p5")]
   GptImage1p5,
   #[serde(rename = "nano_banana")]

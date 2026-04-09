@@ -129,6 +129,7 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::Flux1Schnell => RouterImageModel::Flux1Schnell,
     CommonImageModel::FluxPro11 => RouterImageModel::FluxPro11,
     CommonImageModel::FluxPro11Ultra => RouterImageModel::FluxPro11Ultra,
+    CommonImageModel::GptImage1 => RouterImageModel::GptImage1,
     CommonImageModel::GptImage1p5 => RouterImageModel::GptImage1p5,
     CommonImageModel::NanoBanana => RouterImageModel::NanoBanana,
     CommonImageModel::NanoBanana2 => RouterImageModel::NanoBanana2,

@@ -2,6 +2,7 @@ pub mod plan_generate_image_fal_flux_1_dev;
 pub mod plan_generate_image_fal_flux_1_schnell;
 pub mod plan_generate_image_fal_flux_pro_1p1;
 pub mod plan_generate_image_fal_flux_pro_1p1_ultra;
+pub mod plan_generate_image_fal_gpt_image_1;
 pub mod plan_generate_image_fal_gpt_image_1p5;
 pub mod plan_generate_image_fal_seedream_4;
 pub mod plan_generate_image_fal_seedream_4p5;

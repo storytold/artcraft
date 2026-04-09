@@ -1,159 +1,188 @@
 use crate::creds::fal_api_key::FalApiKey;
-use crate::creds::open_ai_api_key::OpenAiApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use crate::requests::http::image::edit::http_gpt_image_1_edit_image::{gpt_image_1_edit_image, GptImage1EditImageInput};
 use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::http::image::edit::http_gpt_image_1_non_byok_edit_image::{
+  gpt_image_1_non_byok_edit_image, GptImage1NonByokEditImageInput,
+};
+use crate::requests::traits::fal_request_cost_calculator_trait::{
+  FalRequestCostCalculator, UsdCents,
+};
 use reqwest::IntoUrl;
 
-pub struct GptEditImageByokArgs<'a, V: IntoUrl> {
-  // Request
-  pub image_urls: Vec<String>,
+/// Typed args for the non-BYOK `fal-ai/gpt-image-1/edit-image` endpoint.
+///
+/// (The BYOK variant lives in `enqueue_gpt_image_1_byok_edit_image_webhook.rs`
+/// and is deprecated.)
+pub struct EnqueueGptImage1EditImageArgs<'a, R: IntoUrl> {
+  // Required
   pub prompt: &'a str,
-  pub image_size: GptEditImageSize,
-  pub num_images: GptEditImageNumImages,
-  pub quality: GptEditImageQuality,
-  
+  pub image_urls: Vec<String>,
+  pub num_images: EnqueueGptImage1EditImageNumImages,
+
+  // Optional
+  pub mask_image_url: Option<String>,
+  pub image_size: Option<EnqueueGptImage1EditImageSize>,
+  pub quality: Option<EnqueueGptImage1EditImageQuality>,
+  pub input_fidelity: Option<EnqueueGptImage1EditImageInputFidelity>,
+  pub background: Option<EnqueueGptImage1EditImageBackground>,
+  pub output_format: Option<EnqueueGptImage1EditImageOutputFormat>,
+
   // Fulfillment
+  pub webhook_url: R,
   pub api_key: &'a FalApiKey,
-  pub openai_api_key: &'a OpenAiApiKey,
-  pub webhook_url: V,
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum GptEditImageSize {
-  Auto,
-  Square,
-  Horizontal,
-  Vertical,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum GptEditImageQuality {
-  Auto,
-  Low,
-  Medium,
-  High,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum GptEditImageNumImages{
+pub enum EnqueueGptImage1EditImageNumImages {
   One,
   Two,
   Three,
   Four,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1EditImageSize {
+  Auto,
+  /// 1024x1024
+  Square,
+  /// 1536x1024
+  Horizontal,
+  /// 1024x1536
+  Vertical,
+}
 
-// NB: These are BYOK, so they're not Fal's prices
-impl <U: IntoUrl> FalRequestCostCalculator for GptEditImageByokArgs<'_, U> {
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1EditImageQuality {
+  Low,
+  Medium,
+  High,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1EditImageInputFidelity {
+  Low,
+  High,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1EditImageBackground {
+  Auto,
+  Transparent,
+  Opaque,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum EnqueueGptImage1EditImageOutputFormat {
+  Jpeg,
+  Png,
+  Webp,
+}
+
+impl<U: IntoUrl> FalRequestCostCalculator for EnqueueGptImage1EditImageArgs<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
-    // Can't find details, so using this: https://www.reddit.com/r/OpenAI/comments/1krfwa1/pricing_gpt_image_1_model/
-    // Prompts are billed similarly to other GPT models. Image outputs cost approximately $0.01 (low), $0.04 (medium),
-    // and $0.17 (high) for square images.
-    // We're likely losing money on this, but that's okay. Will adjust in the future to be fair to users and us.
-    let base_cost = match self.quality {
-      GptEditImageQuality::Auto => 17,
-      GptEditImageQuality::Low => 1,
-      GptEditImageQuality::Medium => 4,
-      GptEditImageQuality::High => 17,
+    // Per fal docs (fal-ai/gpt-image-1/edit-image), pricing matches
+    // text-to-image (input image tokens are billed separately and not included
+    // in this base estimate):
+    //   Low:    $0.011 (1024x1024) / $0.016 (other) per image
+    //   Medium: $0.042 (1024x1024) / $0.063 (other) per image
+    //   High:   $0.167 (1024x1024) / $0.25  (other) per image
+    let use_quality = self
+      .quality
+      .unwrap_or(EnqueueGptImage1EditImageQuality::Medium);
+    let is_square = matches!(
+      self.image_size,
+      None | Some(EnqueueGptImage1EditImageSize::Square) | Some(EnqueueGptImage1EditImageSize::Auto)
+    );
+    let base_cost: u64 = match (use_quality, is_square) {
+      (EnqueueGptImage1EditImageQuality::Low, true) => 2,
+      (EnqueueGptImage1EditImageQuality::Low, false) => 2,
+      (EnqueueGptImage1EditImageQuality::Medium, true) => 5,
+      (EnqueueGptImage1EditImageQuality::Medium, false) => 7,
+      (EnqueueGptImage1EditImageQuality::High, true) => 17,
+      (EnqueueGptImage1EditImageQuality::High, false) => 25,
     };
-    let cost = match self.num_images {
-      GptEditImageNumImages::One => base_cost,
-      GptEditImageNumImages::Two => base_cost * 2,
-      GptEditImageNumImages::Three => base_cost * 3,
-      GptEditImageNumImages::Four => base_cost * 4,
+    let n: u64 = match self.num_images {
+      EnqueueGptImage1EditImageNumImages::One => 1,
+      EnqueueGptImage1EditImageNumImages::Two => 2,
+      EnqueueGptImage1EditImageNumImages::Three => 3,
+      EnqueueGptImage1EditImageNumImages::Four => 4,
     };
-    cost as UsdCents
+    base_cost * n
   }
 }
 
-
-pub async fn enqueue_gpt_image_1_edit_image_webhook<V: IntoUrl>(
-  args: GptEditImageByokArgs<'_, V>
+pub async fn enqueue_gpt_image_1_edit_image_webhook<R: IntoUrl>(
+  args: EnqueueGptImage1EditImageArgs<'_, R>,
 ) -> Result<WebhookResponse, FalErrorPlus> {
-
-  // auto, 1024x1024, 1536x1024, 1024x1536
-  let image_size = match args.image_size {
-    GptEditImageSize::Auto => "auto",
-    GptEditImageSize::Square => "1024x1024",
-    GptEditImageSize::Horizontal => "1536x1024",
-    GptEditImageSize::Vertical => "1024x1536",
-  };
-  
-  let quality = match args.quality {
-    GptEditImageQuality::Auto => "auto",
-    GptEditImageQuality::Low => "low",
-    GptEditImageQuality::Medium => "medium",
-    GptEditImageQuality::High => "high",
+  let num_images: u8 = match args.num_images {
+    EnqueueGptImage1EditImageNumImages::One => 1,
+    EnqueueGptImage1EditImageNumImages::Two => 2,
+    EnqueueGptImage1EditImageNumImages::Three => 3,
+    EnqueueGptImage1EditImageNumImages::Four => 4,
   };
 
-  let num_images = match args.num_images {
-    GptEditImageNumImages::One => 1,
-    GptEditImageNumImages::Two => 2,
-    GptEditImageNumImages::Three => 3,
-    GptEditImageNumImages::Four => 4,
-  };
+  let image_size = args.image_size.map(|s| {
+    match s {
+      EnqueueGptImage1EditImageSize::Auto => "auto",
+      EnqueueGptImage1EditImageSize::Square => "1024x1024",
+      EnqueueGptImage1EditImageSize::Horizontal => "1536x1024",
+      EnqueueGptImage1EditImageSize::Vertical => "1024x1536",
+    }
+    .to_string()
+  });
 
-  let request = GptImage1EditImageInput {
-    image_urls: args.image_urls,
+  let quality = args.quality.map(|q| {
+    match q {
+      EnqueueGptImage1EditImageQuality::Low => "low",
+      EnqueueGptImage1EditImageQuality::Medium => "medium",
+      EnqueueGptImage1EditImageQuality::High => "high",
+    }
+    .to_string()
+  });
+
+  let input_fidelity = args.input_fidelity.map(|f| {
+    match f {
+      EnqueueGptImage1EditImageInputFidelity::Low => "low",
+      EnqueueGptImage1EditImageInputFidelity::High => "high",
+    }
+    .to_string()
+  });
+
+  let background = args.background.map(|b| {
+    match b {
+      EnqueueGptImage1EditImageBackground::Auto => "auto",
+      EnqueueGptImage1EditImageBackground::Transparent => "transparent",
+      EnqueueGptImage1EditImageBackground::Opaque => "opaque",
+    }
+    .to_string()
+  });
+
+  let output_format = args.output_format.map(|f| {
+    match f {
+      EnqueueGptImage1EditImageOutputFormat::Jpeg => "jpeg",
+      EnqueueGptImage1EditImageOutputFormat::Png => "png",
+      EnqueueGptImage1EditImageOutputFormat::Webp => "webp",
+    }
+    .to_string()
+  });
+
+  let request = GptImage1NonByokEditImageInput {
     prompt: args.prompt.to_string(),
-    image_size: image_size.to_string(),
-    num_images,
-    quality: quality.to_string(),
-    openai_api_key: args.openai_api_key.0.to_string(),
+    image_urls: args.image_urls,
+    mask_image_url: args.mask_image_url,
+    num_images: Some(num_images),
+    image_size,
+    quality,
+    input_fidelity,
+    background,
+    output_format,
   };
 
-  let result = gpt_image_1_edit_image(request)
-      .with_api_key(&args.api_key.0)
-      .queue_webhook(args.webhook_url)
-      .await;
+  let result = gpt_image_1_non_byok_edit_image(request)
+    .with_api_key(&args.api_key.0)
+    .queue_webhook(args.webhook_url)
+    .await;
 
   result.map_err(|err| classify_fal_error(err))
-}
-
-
-#[cfg(test)]
-mod tests {
-  use crate::creds::fal_api_key::FalApiKey;
-  use crate::creds::open_ai_api_key::OpenAiApiKey;
-  use crate::requests::webhook::image::edit::enqueue_gpt_image_1_edit_image_webhook::{enqueue_gpt_image_1_edit_image_webhook, GptEditImageByokArgs, GptEditImageNumImages, GptEditImageQuality, GptEditImageSize};
-  use errors::AnyhowResult;
-  use std::fs::read_to_string;
-  use test_data::web::image_urls::{ERNEST_SCARED_STUPID_IMAGE_URL, GHOST_IMAGE_URL, GRASSY_HILL_TRANSPARENT_IMAGE_URL};
-
-  #[tokio::test]
-  #[ignore]
-  async fn test() -> AnyhowResult<()> {
-    let image_url = "https://cdn-2.fakeyou.com/media/3/4/h/f/s/34hfsmt8e38rvne6mwa4pwbxr6292sgy/image_34hfsmt8e38rvne6mwa4pwbxr6292sgy.png";
-
-    // XXX: Don't commit secrets!
-    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
-
-    let fal_api_key = FalApiKey::from_str(&secret);
-
-    let secret = read_to_string("/Users/bt/Artcraft/credentials/openai_api_key.txt")?;
-
-    let open_ai_api_key = OpenAiApiKey::from_str(&secret);
-
-    let args = GptEditImageByokArgs {
-      image_urls: vec![
-        ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
-        GHOST_IMAGE_URL.to_string(),
-        GRASSY_HILL_TRANSPARENT_IMAGE_URL.to_string(),
-      ],
-      prompt: "put the man and the ghost on the grassy hill. the man is scared of the friendly ghost.",
-      api_key: &fal_api_key,
-      openai_api_key: &open_ai_api_key,
-      webhook_url: "https://example.com/webhook",
-      image_size: GptEditImageSize::Horizontal,
-      num_images: GptEditImageNumImages::One,
-      quality: GptEditImageQuality::High,
-    };
-
-    let result = enqueue_gpt_image_1_edit_image_webhook(args).await?;
-
-    Ok(())
-  }
 }

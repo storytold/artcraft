@@ -13,6 +13,7 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_2_lora_angles::plan_generate_image_artcraft_flux_2_lora_angles;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1::plan_generate_image_artcraft_flux_pro_1p1;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1_ultra::plan_generate_image_artcraft_flux_pro_1p1_ultra;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1::plan_generate_image_artcraft_gpt_image_1;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1p5::plan_generate_image_artcraft_gpt_image_1p5;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana::plan_generate_image_artcraft_nano_banana;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_2::plan_generate_image_artcraft_nano_banana_2;
@@ -25,6 +26,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_d
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_schnell::plan_generate_image_fal_flux_1_schnell;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1::plan_generate_image_fal_flux_pro_1p1;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1_ultra::plan_generate_image_fal_flux_pro_1p1_ultra;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1::plan_generate_image_fal_gpt_image_1;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1p5::plan_generate_image_fal_gpt_image_1p5;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4::plan_generate_image_fal_seedream_4;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4p5::plan_generate_image_fal_seedream_4p5;
@@ -96,6 +98,7 @@ impl<'a> GenerateImageRequest<'a> {
       CommonImageModel::Flux1Schnell => plan_generate_image_artcraft_flux_1_schnell(self),
       CommonImageModel::FluxPro11 => plan_generate_image_artcraft_flux_pro_1p1(self),
       CommonImageModel::FluxPro11Ultra => plan_generate_image_artcraft_flux_pro_1p1_ultra(self),
+      CommonImageModel::GptImage1 => plan_generate_image_artcraft_gpt_image_1(self),
       CommonImageModel::GptImage1p5 => plan_generate_image_artcraft_gpt_image_1p5(self),
       CommonImageModel::NanoBanana => plan_generate_image_artcraft_nano_banana(self),
       CommonImageModel::NanoBanana2 => plan_generate_image_artcraft_nano_banana_2(self),
@@ -114,6 +117,7 @@ impl<'a> GenerateImageRequest<'a> {
       CommonImageModel::Flux1Schnell => plan_generate_image_fal_flux_1_schnell(self),
       CommonImageModel::FluxPro11 => plan_generate_image_fal_flux_pro_1p1(self),
       CommonImageModel::FluxPro11Ultra => plan_generate_image_fal_flux_pro_1p1_ultra(self),
+      CommonImageModel::GptImage1 => plan_generate_image_fal_gpt_image_1(self),
       CommonImageModel::GptImage1p5 => plan_generate_image_fal_gpt_image_1p5(self),
       CommonImageModel::Seedream4 => plan_generate_image_fal_seedream_4(self),
       CommonImageModel::Seedream4p5 => plan_generate_image_fal_seedream_4p5(self),
