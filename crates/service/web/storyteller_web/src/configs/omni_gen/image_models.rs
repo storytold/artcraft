@@ -189,6 +189,23 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
   });
 
   models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::GptImage1,
+    full_name: Some("GPT Image 1".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::TallTwoByThree,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+  
+  models.push(OmniGenImageModelDetails {
     model: CommonImageModel::GptImage1p5,
     full_name: Some("GPT Image 1.5".to_string()),
     text_prompt_supported: Some(true),
