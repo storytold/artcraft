@@ -45,9 +45,13 @@ fn resolve_image_list_ref<'a>(
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
-    Some(ImageListRef::Urls(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    // The omni-gen distillation path hydrates media tokens into URLs before
+    // running cost estimation against the Artcraft provider. The cost only
+    // depends on `num_images` and `is_edit_mode` (which is derived from
+    // `request.image_inputs.is_some()` before this resolver runs), so URL-form
+    // inputs are accepted here and dropped — there's no Artcraft execution
+    // path for Nano Banana that would need to read them back.
+    Some(ImageListRef::Urls(_)) => Ok(None),
   }
 }
 
@@ -356,17 +360,21 @@ mod tests {
   // ── Image inputs ─────────────────────────────────────────────────────────
 
   #[test]
-  fn url_image_inputs_returns_error() {
+  fn url_image_inputs_are_accepted_for_cost_path() {
+    // The omni-gen distillation hydrates media tokens to URLs before running
+    // cost estimation against Artcraft. URLs are accepted (and dropped) since
+    // cost only depends on num_images + is_edit_mode.
     let urls = vec!["https://example.com/image.jpg".to_string()];
     let request = GenerateImageRequest {
       image_inputs: Some(ImageListRef::Urls(&urls)),
       ..base_nano_banana_image_request()
     };
-    let result = request.build();
-    assert!(matches!(
-      result,
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    ));
+    let ImageGenerationPlan::ArtcraftNanaBanana(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftNanaBanana")
+    };
+    // image_inputs is dropped (None), but edit-mode aspect-ratio handling
+    // still kicks in because is_edit_mode is derived from request.image_inputs.
+    assert!(plan.image_inputs.is_none());
   }
 
   #[test]
