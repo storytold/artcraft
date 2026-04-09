@@ -31,6 +31,7 @@ mod tests {
       image_inputs: None,
       resolution: None,
       aspect_ratio: None,
+      quality: None,
       image_batch_count: Some(1),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       generation_mode_mismatch_strategy: None,

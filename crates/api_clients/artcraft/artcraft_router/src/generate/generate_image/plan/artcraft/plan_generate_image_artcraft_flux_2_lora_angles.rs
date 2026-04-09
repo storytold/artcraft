@@ -224,6 +224,7 @@ mod tests {
     let cases = [(1, N::One), (2, N::Two), (3, N::Three), (4, N::Four)];
     for (count, expected) in cases {
       let request = GenerateImageRequest {
+        quality: None,
         image_batch_count: Some(count),
         image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
         ..base_flux_2_lora_angles_image_request()

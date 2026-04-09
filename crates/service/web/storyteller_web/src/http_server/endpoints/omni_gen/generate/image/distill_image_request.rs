@@ -144,6 +144,7 @@ pub fn distill_image_request(
     image_inputs: image_inputs_static,
     resolution: initial.resolution,
     aspect_ratio: initial.aspect_ratio,
+    quality: initial.quality,
     image_batch_count: initial.image_batch_count,
     horizontal_angle: initial.horizontal_angle,
     vertical_angle: initial.vertical_angle,

@@ -4,14 +4,21 @@
 //! The omni-gen distillation routes through Fal for the execution plan and
 //! Artcraft for billing.
 //!
-//! Artcraft-tier pricing (the rate the user is billed) matches the legacy
-//! BYOK handlers (`generate_gpt_image_1_text_to_image_handler` /
-//! `gpt_image_1_edit_image_handler`). The artcraft plan defaults quality =
-//! High, which is 17¢/image regardless of image size.
+//! Artcraft-tier pricing (the rate the user is billed):
 //!
-//! The Fal execution plan defaults quality = Medium and maps aspect ratios to
-//! three image sizes: Square (1024×1024), Horizontal (1536×1024), Vertical
-//! (1024×1536). Auto/unset maps to None (API default).
+//!   Output image cost (per output image):
+//!     Low    – 2¢ (square/unset) / 2¢ (wide or tall)
+//!     Medium – 5¢ (square/unset) / 7¢ (wide or tall)
+//!     High   – 17¢ (square/unset) / 25¢ (wide or tall)
+//!     None   → defaults to High
+//!
+//!   Input image cost (edit mode only, per input image):
+//!     2¢ per input image (high-fidelity token estimate)
+//!
+//! The Fal execution plan maps quality from the omni request (defaulting to
+//! Medium when unspecified) and maps aspect ratios to three image sizes:
+//! Square (1024×1024), Horizontal (1536×1024), Vertical (1024×1536).
+//! Auto/unset maps to None (API default).
 
 #[cfg(test)]
 mod tests {
@@ -20,6 +27,7 @@ mod tests {
   use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
   use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
   use enums::common::generation::common_image_model::CommonImageModel;
+  use enums::common::generation::common_quality::CommonQuality;
   use tokens::tokens::media_files::MediaFileToken;
   use url::Url;
 
@@ -32,6 +40,7 @@ mod tests {
   fn make_request(
     prompt: Option<&str>,
     aspect_ratio: Option<CommonAspectRatio>,
+    quality: Option<CommonQuality>,
     image_batch_count: Option<u16>,
     image_media_tokens: Option<Vec<MediaFileToken>>,
   ) -> OmniGenImageCostAndGenerateRequest {
@@ -42,7 +51,7 @@ mod tests {
       image_media_tokens,
       resolution: None,
       aspect_ratio,
-      quality: None,
+      quality,
       image_batch_count,
       horizontal_angle: None,
       vertical_angle: None,
@@ -79,223 +88,344 @@ mod tests {
   // ────────────────────────────────────────────────────────────────────────────
   //   COST
   // ────────────────────────────────────────────────────────────────────────────
-  //
-  // Pricing comes from `estimate_image_cost_artcraft_gpt_image_1`:
-  //   quality = High (hardcoded default) → 17¢/image, independent of size.
-  //
-  // Same rate applies to both text-to-image and edit modes.
   mod cost {
     use super::*;
 
     mod text {
       use super::*;
 
-      fn cost_for_batch(image_batch_count: Option<u16>) -> (Option<u64>, Option<u64>) {
-        let request = make_request(Some("a happy puppy"), None, image_batch_count, None);
-        let distilled = distill_text(&request);
-        (
-          distilled.cost.cost_in_credits,
-          distilled.cost.cost_in_usd_cents,
-        )
+      fn cost(
+        quality: Option<CommonQuality>,
+        aspect_ratio: Option<CommonAspectRatio>,
+        batch: Option<u16>,
+      ) -> u64 {
+        let request = make_request(Some("p"), aspect_ratio, quality, batch, None);
+        distill_text(&request).cost.cost_in_usd_cents.unwrap()
+      }
+
+      // ── Default quality (None → High) ────────────────────────────────────
+
+      #[test]
+      fn default_quality_square_costs_17() {
+        assert_eq!(cost(None, Some(CommonAspectRatio::Square), Some(1)), 17);
       }
 
       #[test]
-      fn default_batch_costs_17_cents() {
-        let (credits, cents) = cost_for_batch(None);
-        assert_eq!(credits, Some(17));
-        assert_eq!(cents, Some(17));
+      fn default_quality_wide_costs_25() {
+        assert_eq!(cost(None, Some(CommonAspectRatio::WideSixteenByNine), Some(1)), 25);
       }
 
       #[test]
-      fn batch_of_one_costs_17_cents() {
-        let (_c, cents) = cost_for_batch(Some(1));
-        assert_eq!(cents, Some(17));
+      fn default_quality_tall_costs_25() {
+        assert_eq!(cost(None, Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 25);
       }
 
       #[test]
-      fn batch_of_two_costs_34_cents() {
-        let (_c, cents) = cost_for_batch(Some(2));
-        assert_eq!(cents, Some(34));
+      fn default_quality_unset_size_costs_17() {
+        // Unset aspect_ratio → None image_size → treated as square = 17¢
+        assert_eq!(cost(None, None, Some(1)), 17);
       }
 
       #[test]
-      fn batch_of_three_costs_51_cents() {
-        let (_c, cents) = cost_for_batch(Some(3));
-        assert_eq!(cents, Some(51));
+      fn default_quality_auto_costs_17() {
+        assert_eq!(cost(None, Some(CommonAspectRatio::Auto), Some(1)), 17);
+      }
+
+      // ── Low quality (2¢/image regardless of size) ────────────────────────
+
+      #[test]
+      fn low_square_costs_2() {
+        assert_eq!(cost(Some(CommonQuality::Low), Some(CommonAspectRatio::Square), Some(1)), 2);
       }
 
       #[test]
-      fn batch_of_four_costs_68_cents() {
-        let (_c, cents) = cost_for_batch(Some(4));
-        assert_eq!(cents, Some(68));
+      fn low_wide_costs_2() {
+        assert_eq!(cost(Some(CommonQuality::Low), Some(CommonAspectRatio::WideSixteenByNine), Some(1)), 2);
       }
 
       #[test]
-      fn batch_above_max_clamps_and_costs_68_cents() {
-        // PayMoreUpgrade clamps over-large batches to 4.
-        let (_c, cents) = cost_for_batch(Some(7));
-        assert_eq!(cents, Some(68));
+      fn low_tall_costs_2() {
+        assert_eq!(cost(Some(CommonQuality::Low), Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 2);
       }
 
       #[test]
-      fn cost_is_independent_of_aspect_ratio() {
-        let aspect_ratios = [
-          None,
-          Some(CommonAspectRatio::Square),
-          Some(CommonAspectRatio::SquareHd),
-          Some(CommonAspectRatio::WideSixteenByNine),
-          Some(CommonAspectRatio::WideTwentyOneByNine),
-          Some(CommonAspectRatio::TallNineBySixteen),
-          Some(CommonAspectRatio::TallNineByTwentyOne),
-          Some(CommonAspectRatio::Auto),
-          Some(CommonAspectRatio::Auto2k),
-        ];
-        for ar in aspect_ratios {
-          let request = make_request(Some("p"), ar, Some(2), None);
-          let distilled = distill_text(&request);
-          assert_eq!(
-            distilled.cost.cost_in_usd_cents,
-            Some(34),
-            "expected 34¢ regardless of aspect ratio (got {:?})",
-            ar,
-          );
-        }
+      fn low_unset_costs_2() {
+        assert_eq!(cost(Some(CommonQuality::Low), None, Some(1)), 2);
       }
 
       #[test]
-      fn cost_is_independent_of_prompt() {
-        let with_prompt = distill_text(&make_request(Some("a cat"), None, Some(3), None));
-        let without_prompt = distill_text(&make_request(None, None, Some(3), None));
-        assert_eq!(with_prompt.cost.cost_in_usd_cents, Some(51));
-        assert_eq!(without_prompt.cost.cost_in_usd_cents, Some(51));
+      fn low_four_images_costs_8() {
+        assert_eq!(cost(Some(CommonQuality::Low), None, Some(4)), 8);
       }
+
+      #[test]
+      fn low_batch_above_max_clamps_to_8() {
+        assert_eq!(cost(Some(CommonQuality::Low), None, Some(7)), 8);
+      }
+
+      // ── Medium quality (5¢ square, 7¢ wide/tall) ─────────────────────────
+
+      #[test]
+      fn medium_square_costs_5() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(1)), 5);
+      }
+
+      #[test]
+      fn medium_wide_costs_7() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideSixteenByNine), Some(1)), 7);
+      }
+
+      #[test]
+      fn medium_tall_costs_7() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 7);
+      }
+
+      #[test]
+      fn medium_unset_costs_5() {
+        assert_eq!(cost(Some(CommonQuality::Medium), None, Some(1)), 5);
+      }
+
+      #[test]
+      fn medium_square_four_images_costs_20() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(4)), 20);
+      }
+
+      #[test]
+      fn medium_wide_four_images_costs_28() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideSixteenByNine), Some(4)), 28);
+      }
+
+      // ── High quality (17¢ square, 25¢ wide/tall) ─────────────────────────
+
+      #[test]
+      fn high_square_costs_17() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1)), 17);
+      }
+
+      #[test]
+      fn high_wide_costs_25() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::WideSixteenByNine), Some(1)), 25);
+      }
+
+      #[test]
+      fn high_tall_costs_25() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 25);
+      }
+
+      #[test]
+      fn high_unset_costs_17() {
+        assert_eq!(cost(Some(CommonQuality::High), None, Some(1)), 17);
+      }
+
+      #[test]
+      fn high_square_four_images_costs_68() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(4)), 68);
+      }
+
+      #[test]
+      fn high_wide_four_images_costs_100() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::WideSixteenByNine), Some(4)), 100);
+      }
+
+      #[test]
+      fn high_batch_above_max_clamps_to_four() {
+        assert_eq!(cost(Some(CommonQuality::High), None, Some(9)), 68);
+      }
+
+      // ── Batch scaling ────────────────────────────────────────────────────
+
+      #[test]
+      fn high_square_batch_scaling() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1)), 17);
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(2)), 34);
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(3)), 51);
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(4)), 68);
+      }
+
+      // ── Metadata flags ───────────────────────────────────────────────────
 
       #[test]
       fn cost_metadata_flags_are_default() {
-        let request = make_request(Some("p"), None, Some(1), None);
+        let request = make_request(Some("p"), None, None, Some(1), None);
         let distilled = distill_text(&request);
         assert!(!distilled.cost.is_free);
         assert!(!distilled.cost.is_unlimited);
         assert!(!distilled.cost.is_rate_limited);
         assert!(!distilled.cost.has_watermark);
+      }
+
+      // ── Cost is independent of prompt ─────────────────────────────────────
+
+      #[test]
+      fn cost_is_independent_of_prompt() {
+        let with_prompt = distill_text(&make_request(Some("a cat"), None, None, Some(1), None));
+        let without_prompt = distill_text(&make_request(None, None, None, Some(1), None));
+        assert_eq!(with_prompt.cost.cost_in_usd_cents, without_prompt.cost.cost_in_usd_cents);
       }
     }
 
     mod edit {
       use super::*;
 
-      fn cost_for_batch_with_refs(
-        image_batch_count: Option<u16>,
-        num_image_refs: usize,
-      ) -> (Option<u64>, Option<u64>) {
-        let (tokens, hydration) = fake_image_refs(num_image_refs);
-        let request = make_request(Some("make it pop"), None, image_batch_count, Some(tokens));
-        let distilled = distill_edit(&request, &hydration);
-        (
-          distilled.cost.cost_in_credits,
-          distilled.cost.cost_in_usd_cents,
-        )
+      fn cost_edit(
+        quality: Option<CommonQuality>,
+        aspect_ratio: Option<CommonAspectRatio>,
+        batch: Option<u16>,
+        num_input_images: usize,
+      ) -> u64 {
+        let (tokens, hydration) = fake_image_refs(num_input_images);
+        let request = make_request(Some("p"), aspect_ratio, quality, batch, Some(tokens));
+        distill_edit(&request, &hydration).cost.cost_in_usd_cents.unwrap()
+      }
+
+      // ── Input image cost adds 2¢ per input ──────────────────────────────
+
+      #[test]
+      fn edit_high_square_one_output_one_input() {
+        // 17¢ output + 1×2¢ input = 19¢
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1), 1), 19);
       }
 
       #[test]
-      fn default_batch_costs_17_cents() {
-        let (credits, cents) = cost_for_batch_with_refs(None, 1);
-        assert_eq!(credits, Some(17));
-        assert_eq!(cents, Some(17));
+      fn edit_high_square_one_output_three_inputs() {
+        // 17¢ output + 3×2¢ input = 23¢
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1), 3), 23);
       }
 
       #[test]
-      fn batch_of_one_costs_17_cents() {
-        let (_c, cents) = cost_for_batch_with_refs(Some(1), 1);
-        assert_eq!(cents, Some(17));
+      fn edit_high_square_one_output_five_inputs() {
+        // 17¢ output + 5×2¢ input = 27¢
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1), 5), 27);
       }
 
       #[test]
-      fn batch_of_two_costs_34_cents() {
-        let (_c, cents) = cost_for_batch_with_refs(Some(2), 1);
-        assert_eq!(cents, Some(34));
+      fn edit_high_wide_two_outputs_one_input() {
+        // 2×25¢ output + 1×2¢ input = 52¢
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::WideSixteenByNine), Some(2), 1), 52);
       }
 
       #[test]
-      fn batch_of_three_costs_51_cents() {
-        let (_c, cents) = cost_for_batch_with_refs(Some(3), 1);
-        assert_eq!(cents, Some(51));
+      fn edit_medium_wide_two_outputs_five_inputs() {
+        // 2×7¢ output + 5×2¢ input = 24¢
+        assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideSixteenByNine), Some(2), 5), 24);
       }
 
       #[test]
-      fn batch_of_four_costs_68_cents() {
-        let (_c, cents) = cost_for_batch_with_refs(Some(4), 1);
-        assert_eq!(cents, Some(68));
+      fn edit_low_square_one_output_two_inputs() {
+        // 2¢ output + 2×2¢ input = 6¢
+        assert_eq!(cost_edit(Some(CommonQuality::Low), Some(CommonAspectRatio::Square), Some(1), 2), 6);
       }
 
       #[test]
-      fn batch_above_max_clamps_and_costs_68_cents() {
-        let (_c, cents) = cost_for_batch_with_refs(Some(9), 1);
-        assert_eq!(cents, Some(68));
+      fn edit_low_tall_four_outputs_one_input() {
+        // 4×2¢ output + 1×2¢ input = 10¢
+        assert_eq!(cost_edit(Some(CommonQuality::Low), Some(CommonAspectRatio::TallNineBySixteen), Some(4), 1), 10);
+      }
+
+      // ── Default quality in edit mode (None → High) ──────────────────────
+
+      #[test]
+      fn edit_default_quality_square_one_output_one_input() {
+        // 17¢ output + 2¢ input = 19¢
+        assert_eq!(cost_edit(None, Some(CommonAspectRatio::Square), Some(1), 1), 19);
       }
 
       #[test]
-      fn cost_is_independent_of_image_ref_count() {
-        for num_refs in [1usize, 2, 3, 5] {
-          let (_c, cents) = cost_for_batch_with_refs(Some(2), num_refs);
+      fn edit_default_quality_wide_one_output_one_input() {
+        // 25¢ output + 2¢ input = 27¢
+        assert_eq!(cost_edit(None, Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 27);
+      }
+
+      // ── Quality × size matrix in edit mode (1 output, 1 input) ──────────
+
+      #[test]
+      fn edit_low_square() {
+        // 2¢ + 2¢ = 4¢
+        assert_eq!(cost_edit(Some(CommonQuality::Low), Some(CommonAspectRatio::Square), Some(1), 1), 4);
+      }
+
+      #[test]
+      fn edit_low_wide() {
+        // 2¢ + 2¢ = 4¢
+        assert_eq!(cost_edit(Some(CommonQuality::Low), Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 4);
+      }
+
+      #[test]
+      fn edit_medium_square() {
+        // 5¢ + 2¢ = 7¢
+        assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(1), 1), 7);
+      }
+
+      #[test]
+      fn edit_medium_wide() {
+        // 7¢ + 2¢ = 9¢
+        assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 9);
+      }
+
+      #[test]
+      fn edit_medium_tall() {
+        // 7¢ + 2¢ = 9¢
+        assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallNineBySixteen), Some(1), 1), 9);
+      }
+
+      #[test]
+      fn edit_high_square() {
+        // 17¢ + 2¢ = 19¢
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1), 1), 19);
+      }
+
+      #[test]
+      fn edit_high_wide() {
+        // 25¢ + 2¢ = 27¢
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 27);
+      }
+
+      #[test]
+      fn edit_high_tall() {
+        // 25¢ + 2¢ = 27¢
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::TallNineBySixteen), Some(1), 1), 27);
+      }
+
+      // ── Batch above max clamps ──────────────────────────────────────────
+
+      #[test]
+      fn edit_batch_above_max_clamps() {
+        // High square 4×17 + 1×2 = 70¢ (clamped from 9 to 4)
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(9), 1), 70);
+      }
+
+      // ── Cost matches text + 2¢ per input image ─────────────────────────
+
+      #[test]
+      fn edit_and_text_cost_differ_by_input_image_cost() {
+        for q in [CommonQuality::Low, CommonQuality::Medium, CommonQuality::High] {
+          let text = distill_text(&make_request(Some("p"), None, Some(q), Some(1), None))
+            .cost.cost_in_usd_cents.unwrap();
+          let (tokens, hydration) = fake_image_refs(1);
+          let edit = distill_edit(
+            &make_request(Some("p"), None, Some(q), Some(1), Some(tokens)),
+            &hydration,
+          ).cost.cost_in_usd_cents.unwrap();
           assert_eq!(
-            cents,
-            Some(34),
-            "expected 34¢ regardless of {} image refs",
-            num_refs,
+            edit - text,
+            2,
+            "expected edit to cost 2¢ more than text for quality {:?}",
+            q,
           );
         }
       }
 
-      #[test]
-      fn cost_is_independent_of_aspect_ratio() {
-        let aspect_ratios = [
-          None,
-          Some(CommonAspectRatio::Square),
-          Some(CommonAspectRatio::Auto),
-          Some(CommonAspectRatio::WideSixteenByNine),
-          Some(CommonAspectRatio::TallNineBySixteen),
-        ];
-        for ar in aspect_ratios {
-          let (tokens, hydration) = fake_image_refs(2);
-          let request = make_request(Some("p"), ar, Some(2), Some(tokens));
-          let distilled = distill_edit(&request, &hydration);
-          assert_eq!(
-            distilled.cost.cost_in_usd_cents,
-            Some(34),
-            "expected 34¢ regardless of aspect ratio (got {:?})",
-            ar,
-          );
-        }
-      }
+      // ── Metadata flags ───────────────────────────────────────────────────
 
       #[test]
       fn cost_metadata_flags_are_default() {
         let (tokens, hydration) = fake_image_refs(1);
-        let request = make_request(Some("p"), None, Some(1), Some(tokens));
+        let request = make_request(Some("p"), None, None, Some(1), Some(tokens));
         let distilled = distill_edit(&request, &hydration);
         assert!(!distilled.cost.is_free);
         assert!(!distilled.cost.is_unlimited);
         assert!(!distilled.cost.is_rate_limited);
         assert!(!distilled.cost.has_watermark);
-      }
-
-      #[test]
-      fn edit_and_text_cost_match_for_same_batch() {
-        for batch in [1u16, 2, 3, 4] {
-          let text = distill_text(&make_request(Some("p"), None, Some(batch), None));
-          let (tokens, hydration) = fake_image_refs(1);
-          let edit = distill_edit(
-            &make_request(Some("p"), None, Some(batch), Some(tokens)),
-            &hydration,
-          );
-          assert_eq!(
-            text.cost.cost_in_usd_cents,
-            edit.cost.cost_in_usd_cents,
-            "text/edit cost diverged at batch={}",
-            batch,
-          );
-        }
       }
     }
   }
@@ -303,16 +433,6 @@ mod tests {
   // ────────────────────────────────────────────────────────────────────────────
   //   PLAN
   // ────────────────────────────────────────────────────────────────────────────
-  //
-  // The distilled plan is `ImageGenerationPlan::FalGptImage1(PlanFalGptImage1)`.
-  // It carries:
-  //   - prompt: passthrough
-  //   - image_urls: empty in text mode, populated in edit mode
-  //   - image_size: None / Square / Horizontal / Vertical
-  //   - quality: always Medium (fal plan default)
-  //   - num_images: 1..=4 (clamped under PayMoreUpgrade)
-  //
-  // The handler picks t2i vs edit based on whether image_urls is empty.
   mod plan {
     use super::*;
 
@@ -347,212 +467,136 @@ mod tests {
     mod text {
       use super::*;
 
-      fn assert_t2i_for_aspect_ratio<F: FnOnce(&PlanFalGptImage1<'_>)>(
-        ar: Option<CommonAspectRatio>,
-        assertion: F,
-      ) {
-        with_text_plan(&make_request(Some("p"), ar, Some(1), None), assertion);
+      // ── Quality mapping ───────────────────────────────────────────────────
+
+      #[test]
+      fn default_quality_is_medium() {
+        with_text_plan(&make_request(Some("p"), None, None, Some(1), None), |plan| {
+          assert!(matches!(plan.quality, FalGptImage1Quality::Medium));
+        });
       }
 
-      fn assert_t2i_for_batch<F: FnOnce(&PlanFalGptImage1<'_>)>(
-        batch: Option<u16>,
-        assertion: F,
-      ) {
-        with_text_plan(&make_request(Some("p"), None, batch, None), assertion);
+      #[test]
+      fn low_quality_passes_through() {
+        with_text_plan(&make_request(Some("p"), None, Some(CommonQuality::Low), Some(1), None), |plan| {
+          assert!(matches!(plan.quality, FalGptImage1Quality::Low));
+        });
+      }
+
+      #[test]
+      fn medium_quality_passes_through() {
+        with_text_plan(&make_request(Some("p"), None, Some(CommonQuality::Medium), Some(1), None), |plan| {
+          assert!(matches!(plan.quality, FalGptImage1Quality::Medium));
+        });
+      }
+
+      #[test]
+      fn high_quality_passes_through() {
+        with_text_plan(&make_request(Some("p"), None, Some(CommonQuality::High), Some(1), None), |plan| {
+          assert!(matches!(plan.quality, FalGptImage1Quality::High));
+        });
       }
 
       // ── Mode detection ────────────────────────────────────────────────────
 
       #[test]
       fn text_mode_has_empty_image_urls() {
-        with_text_plan(&make_request(Some("p"), None, Some(1), None), |plan| {
-          assert!(plan.image_urls.is_empty(), "text mode must have no image_urls");
-        });
-      }
-
-      // ── Quality default ───────────────────────────────────────────────────
-
-      #[test]
-      fn quality_defaults_to_medium() {
-        with_text_plan(&make_request(Some("p"), None, Some(1), None), |plan| {
-          assert!(matches!(plan.quality, FalGptImage1Quality::Medium));
+        with_text_plan(&make_request(Some("p"), None, None, Some(1), None), |plan| {
+          assert!(plan.image_urls.is_empty());
         });
       }
 
       // ── Image size mappings ───────────────────────────────────────────────
-      //
-      // GPT Image 1 has three sizes. Aspect ratios collapse into them:
-      //   None / Auto* → None (API default)
-      //   Square / SquareHd → Square
-      //   All wide → Horizontal
-      //   All tall → Vertical
 
       #[test]
       fn default_image_size_is_none() {
-        assert_t2i_for_aspect_ratio(None, |plan| {
+        with_text_plan(&make_request(Some("p"), None, None, Some(1), None), |plan| {
           assert!(plan.image_size.is_none());
         });
       }
 
       #[test]
-      fn auto_yields_none() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::Auto), |plan| {
-          assert!(plan.image_size.is_none());
-        });
-      }
-
-      #[test]
-      fn auto_2k_yields_none() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::Auto2k), |plan| {
-          assert!(plan.image_size.is_none());
-        });
-      }
-
-      #[test]
-      fn auto_4k_yields_none() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::Auto4k), |plan| {
-          assert!(plan.image_size.is_none());
-        });
+      fn auto_variants_yield_none() {
+        for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
+          with_text_plan(&make_request(Some("p"), Some(ar), None, Some(1), None), |plan| {
+            assert!(plan.image_size.is_none(), "expected None for {:?}", ar);
+          });
+        }
       }
 
       #[test]
       fn square_yields_square() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::Square), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Square)));
-        });
+        for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
+          with_text_plan(&make_request(Some("p"), Some(ar), None, Some(1), None), |plan| {
+            assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Square)), "expected Square for {:?}", ar);
+          });
+        }
       }
 
       #[test]
-      fn square_hd_yields_square() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::SquareHd), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Square)));
-        });
+      fn wide_variants_yield_horizontal() {
+        let wide_ars = [
+          CommonAspectRatio::WideFiveByFour,
+          CommonAspectRatio::WideFourByThree,
+          CommonAspectRatio::WideThreeByTwo,
+          CommonAspectRatio::WideSixteenByNine,
+          CommonAspectRatio::WideTwentyOneByNine,
+          CommonAspectRatio::Wide,
+        ];
+        for ar in wide_ars {
+          with_text_plan(&make_request(Some("p"), Some(ar), None, Some(1), None), |plan| {
+            assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)), "expected Horizontal for {:?}", ar);
+          });
+        }
       }
 
       #[test]
-      fn wide_5x4_yields_horizontal() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::WideFiveByFour), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_4x3_yields_horizontal() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::WideFourByThree), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_3x2_yields_horizontal() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::WideThreeByTwo), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_16x9_yields_horizontal() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::WideSixteenByNine), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_alias_yields_horizontal() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::Wide), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_21x9_yields_horizontal() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::WideTwentyOneByNine), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn tall_4x5_yields_vertical() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::TallFourByFive), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_3x4_yields_vertical() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::TallThreeByFour), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_2x3_yields_vertical() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::TallTwoByThree), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_9x16_yields_vertical() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::TallNineBySixteen), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_alias_yields_vertical() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::Tall), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_9x21_yields_vertical() {
-        assert_t2i_for_aspect_ratio(Some(CommonAspectRatio::TallNineByTwentyOne), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
+      fn tall_variants_yield_vertical() {
+        let tall_ars = [
+          CommonAspectRatio::TallFourByFive,
+          CommonAspectRatio::TallThreeByFour,
+          CommonAspectRatio::TallTwoByThree,
+          CommonAspectRatio::TallNineBySixteen,
+          CommonAspectRatio::TallNineByTwentyOne,
+          CommonAspectRatio::Tall,
+        ];
+        for ar in tall_ars {
+          with_text_plan(&make_request(Some("p"), Some(ar), None, Some(1), None), |plan| {
+            assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)), "expected Vertical for {:?}", ar);
+          });
+        }
       }
 
       // ── Num images mapping ────────────────────────────────────────────────
 
       #[test]
       fn default_batch_count_is_one() {
-        assert_t2i_for_batch(None, |plan| {
+        with_text_plan(&make_request(Some("p"), None, None, None, None), |plan| {
           assert!(matches!(plan.num_images, FalGptImage1NumImages::One));
         });
       }
 
       #[test]
-      fn batch_of_one_yields_one() {
-        assert_t2i_for_batch(Some(1), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::One));
-        });
-      }
-
-      #[test]
-      fn batch_of_two_yields_two() {
-        assert_t2i_for_batch(Some(2), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::Two));
-        });
-      }
-
-      #[test]
-      fn batch_of_three_yields_three() {
-        assert_t2i_for_batch(Some(3), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::Three));
-        });
-      }
-
-      #[test]
-      fn batch_of_four_yields_four() {
-        assert_t2i_for_batch(Some(4), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::Four));
-        });
+      fn batch_direct_mapping() {
+        let cases = [
+          (1u16, FalGptImage1NumImages::One),
+          (2, FalGptImage1NumImages::Two),
+          (3, FalGptImage1NumImages::Three),
+          (4, FalGptImage1NumImages::Four),
+        ];
+        for (count, expected) in cases {
+          with_text_plan(&make_request(Some("p"), None, None, Some(count), None), |plan| {
+            assert!(
+              std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
+              "expected {:?} for count {}", expected, count,
+            );
+          });
+        }
       }
 
       #[test]
       fn batch_above_four_clamps_to_four() {
-        assert_t2i_for_batch(Some(9), |plan| {
+        with_text_plan(&make_request(Some("p"), None, None, Some(9), None), |plan| {
           assert!(matches!(plan.num_images, FalGptImage1NumImages::Four));
         });
       }
@@ -561,14 +605,14 @@ mod tests {
 
       #[test]
       fn prompt_is_passed_through() {
-        with_text_plan(&make_request(Some("a corgi in a hat"), None, Some(1), None), |plan| {
+        with_text_plan(&make_request(Some("a corgi in a hat"), None, None, Some(1), None), |plan| {
           assert_eq!(plan.prompt, Some("a corgi in a hat"));
         });
       }
 
       #[test]
       fn missing_prompt_is_none() {
-        with_text_plan(&make_request(None, None, Some(1), None), |plan| {
+        with_text_plan(&make_request(None, None, None, Some(1), None), |plan| {
           assert_eq!(plan.prompt, None);
         });
       }
@@ -577,37 +621,13 @@ mod tests {
     mod edit {
       use super::*;
 
-      fn assert_edit_for_aspect_ratio<F: FnOnce(&PlanFalGptImage1<'_>)>(
-        ar: Option<CommonAspectRatio>,
-        assertion: F,
-      ) {
-        let (tokens, hydration) = fake_image_refs(1);
-        with_edit_plan(
-          &make_request(Some("p"), ar, Some(1), Some(tokens)),
-          &hydration,
-          assertion,
-        );
-      }
-
-      fn assert_edit_for_batch<F: FnOnce(&PlanFalGptImage1<'_>)>(
-        batch: Option<u16>,
-        assertion: F,
-      ) {
-        let (tokens, hydration) = fake_image_refs(1);
-        with_edit_plan(
-          &make_request(Some("p"), None, batch, Some(tokens)),
-          &hydration,
-          assertion,
-        );
-      }
-
       // ── Mode detection / image-url passthrough ────────────────────────────
 
       #[test]
       fn edit_mode_populates_image_urls() {
         let (tokens, hydration) = fake_image_refs(1);
         with_edit_plan(
-          &make_request(Some("p"), None, Some(1), Some(tokens)),
+          &make_request(Some("p"), None, None, Some(1), Some(tokens)),
           &hydration,
           |plan| {
             assert_eq!(plan.image_urls.len(), 1);
@@ -620,7 +640,7 @@ mod tests {
       fn edit_mode_with_two_image_refs() {
         let (tokens, hydration) = fake_image_refs(2);
         with_edit_plan(
-          &make_request(Some("p"), None, Some(1), Some(tokens)),
+          &make_request(Some("p"), None, None, Some(1), Some(tokens)),
           &hydration,
           |plan| {
             assert_eq!(plan.image_urls.len(), 2);
@@ -632,7 +652,7 @@ mod tests {
       fn edit_mode_with_five_image_refs() {
         let (tokens, hydration) = fake_image_refs(5);
         with_edit_plan(
-          &make_request(Some("p"), None, Some(1), Some(tokens)),
+          &make_request(Some("p"), None, None, Some(1), Some(tokens)),
           &hydration,
           |plan| {
             assert_eq!(plan.image_urls.len(), 5);
@@ -643,12 +663,11 @@ mod tests {
       #[test]
       fn edit_image_urls_are_hydrated_from_map() {
         let (tokens, hydration) = fake_image_refs(3);
-        let expected: Vec<String> = tokens
-          .iter()
+        let expected: Vec<String> = tokens.iter()
           .map(|t| hydration.get(t).unwrap().to_string())
           .collect();
         with_edit_plan(
-          &make_request(Some("p"), None, Some(1), Some(tokens.clone())),
+          &make_request(Some("p"), None, None, Some(1), Some(tokens.clone())),
           &hydration,
           |plan| {
             assert_eq!(plan.image_urls, expected);
@@ -656,13 +675,13 @@ mod tests {
         );
       }
 
-      // ── Quality default ───────────────────────────────────────────────────
+      // ── Quality mapping in edit mode ──────────────────────────────────────
 
       #[test]
-      fn quality_defaults_to_medium() {
+      fn default_quality_is_medium_in_edit_mode() {
         let (tokens, hydration) = fake_image_refs(1);
         with_edit_plan(
-          &make_request(Some("p"), None, Some(1), Some(tokens)),
+          &make_request(Some("p"), None, None, Some(1), Some(tokens)),
           &hydration,
           |plan| {
             assert!(matches!(plan.quality, FalGptImage1Quality::Medium));
@@ -670,201 +689,133 @@ mod tests {
         );
       }
 
-      // ── Image size mappings ───────────────────────────────────────────────
-
       #[test]
-      fn default_image_size_is_none() {
-        assert_edit_for_aspect_ratio(None, |plan| {
-          assert!(plan.image_size.is_none());
-        });
-      }
-
-      #[test]
-      fn auto_yields_none() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::Auto), |plan| {
-          assert!(plan.image_size.is_none());
-        });
-      }
-
-      #[test]
-      fn auto_2k_yields_none() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::Auto2k), |plan| {
-          assert!(plan.image_size.is_none());
-        });
-      }
-
-      #[test]
-      fn auto_4k_yields_none() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::Auto4k), |plan| {
-          assert!(plan.image_size.is_none());
-        });
-      }
-
-      #[test]
-      fn square_yields_square() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::Square), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Square)));
-        });
-      }
-
-      #[test]
-      fn square_hd_yields_square() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::SquareHd), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Square)));
-        });
-      }
-
-      #[test]
-      fn wide_5x4_yields_horizontal() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::WideFiveByFour), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_4x3_yields_horizontal() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::WideFourByThree), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_3x2_yields_horizontal() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::WideThreeByTwo), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_16x9_yields_horizontal() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::WideSixteenByNine), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_alias_yields_horizontal() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::Wide), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn wide_21x9_yields_horizontal() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::WideTwentyOneByNine), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal)));
-        });
-      }
-
-      #[test]
-      fn tall_4x5_yields_vertical() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::TallFourByFive), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_3x4_yields_vertical() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::TallThreeByFour), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_2x3_yields_vertical() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::TallTwoByThree), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_9x16_yields_vertical() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::TallNineBySixteen), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_alias_yields_vertical() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::Tall), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      #[test]
-      fn tall_9x21_yields_vertical() {
-        assert_edit_for_aspect_ratio(Some(CommonAspectRatio::TallNineByTwentyOne), |plan| {
-          assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical)));
-        });
-      }
-
-      // ── Num images mapping ────────────────────────────────────────────────
-
-      #[test]
-      fn default_batch_count_is_one() {
-        assert_edit_for_batch(None, |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::One));
-        });
-      }
-
-      #[test]
-      fn batch_of_one_yields_one() {
-        assert_edit_for_batch(Some(1), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::One));
-        });
-      }
-
-      #[test]
-      fn batch_of_two_yields_two() {
-        assert_edit_for_batch(Some(2), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::Two));
-        });
-      }
-
-      #[test]
-      fn batch_of_three_yields_three() {
-        assert_edit_for_batch(Some(3), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::Three));
-        });
-      }
-
-      #[test]
-      fn batch_of_four_yields_four() {
-        assert_edit_for_batch(Some(4), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::Four));
-        });
-      }
-
-      #[test]
-      fn batch_above_four_clamps_to_four() {
-        assert_edit_for_batch(Some(9), |plan| {
-          assert!(matches!(plan.num_images, FalGptImage1NumImages::Four));
-        });
-      }
-
-      // ── Prompt passthrough ────────────────────────────────────────────────
-
-      #[test]
-      fn prompt_is_passed_through() {
+      fn low_quality_passes_through_in_edit_mode() {
         let (tokens, hydration) = fake_image_refs(1);
         with_edit_plan(
-          &make_request(Some("make it shiny"), None, Some(1), Some(tokens)),
+          &make_request(Some("p"), None, Some(CommonQuality::Low), Some(1), Some(tokens)),
           &hydration,
           |plan| {
-            assert_eq!(plan.prompt, Some("make it shiny"));
+            assert!(matches!(plan.quality, FalGptImage1Quality::Low));
           },
         );
       }
 
       #[test]
-      fn missing_prompt_is_none() {
+      fn high_quality_passes_through_in_edit_mode() {
         let (tokens, hydration) = fake_image_refs(1);
         with_edit_plan(
-          &make_request(None, None, Some(1), Some(tokens)),
+          &make_request(Some("p"), None, Some(CommonQuality::High), Some(1), Some(tokens)),
           &hydration,
           |plan| {
-            assert_eq!(plan.prompt, None);
+            assert!(matches!(plan.quality, FalGptImage1Quality::High));
           },
+        );
+      }
+
+      // ── Image size in edit mode ──────────────────────────────────────────
+
+      #[test]
+      fn edit_default_image_size_is_none() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("p"), None, None, Some(1), Some(tokens)),
+          &hydration,
+          |plan| { assert!(plan.image_size.is_none()); },
+        );
+      }
+
+      #[test]
+      fn edit_square_yields_square() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("p"), Some(CommonAspectRatio::Square), None, Some(1), Some(tokens)),
+          &hydration,
+          |plan| { assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Square))); },
+        );
+      }
+
+      #[test]
+      fn edit_wide_yields_horizontal() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("p"), Some(CommonAspectRatio::WideSixteenByNine), None, Some(1), Some(tokens)),
+          &hydration,
+          |plan| { assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Horizontal))); },
+        );
+      }
+
+      #[test]
+      fn edit_tall_yields_vertical() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("p"), Some(CommonAspectRatio::TallNineBySixteen), None, Some(1), Some(tokens)),
+          &hydration,
+          |plan| { assert!(matches!(plan.image_size, Some(FalGptImage1ImageSize::Vertical))); },
+        );
+      }
+
+      #[test]
+      fn edit_auto_yields_none() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("p"), Some(CommonAspectRatio::Auto), None, Some(1), Some(tokens)),
+          &hydration,
+          |plan| { assert!(plan.image_size.is_none()); },
+        );
+      }
+
+      // ── Num images in edit mode ──────────────────────────────────────────
+
+      #[test]
+      fn edit_default_batch_count_is_one() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("p"), None, None, None, Some(tokens)),
+          &hydration,
+          |plan| { assert!(matches!(plan.num_images, FalGptImage1NumImages::One)); },
+        );
+      }
+
+      #[test]
+      fn edit_batch_of_four_yields_four() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("p"), None, None, Some(4), Some(tokens)),
+          &hydration,
+          |plan| { assert!(matches!(plan.num_images, FalGptImage1NumImages::Four)); },
+        );
+      }
+
+      #[test]
+      fn edit_batch_above_four_clamps_to_four() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("p"), None, None, Some(9), Some(tokens)),
+          &hydration,
+          |plan| { assert!(matches!(plan.num_images, FalGptImage1NumImages::Four)); },
+        );
+      }
+
+      // ── Prompt passthrough in edit mode ────────────────────────────────────
+
+      #[test]
+      fn edit_prompt_is_passed_through() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(Some("make it shiny"), None, None, Some(1), Some(tokens)),
+          &hydration,
+          |plan| { assert_eq!(plan.prompt, Some("make it shiny")); },
+        );
+      }
+
+      #[test]
+      fn edit_missing_prompt_is_none() {
+        let (tokens, hydration) = fake_image_refs(1);
+        with_edit_plan(
+          &make_request(None, None, None, Some(1), Some(tokens)),
+          &hydration,
+          |plan| { assert_eq!(plan.prompt, None); },
         );
       }
     }

@@ -47,6 +47,7 @@ mod tests {
     let client = get_artcraft_client();
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      quality: None,
       image_batch_count: Some(1),
       prompt: Some("a cat walking through a cyberpunk city at night"),
       ..base_flux_pro_1p1_ultra_image_request()
@@ -69,6 +70,7 @@ mod tests {
     let client = get_artcraft_client();
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Square),
+      quality: None,
       image_batch_count: Some(4),
       prompt: Some("a dog surfing a wave, cinematic"),
       ..base_flux_pro_1p1_ultra_image_request()
@@ -94,7 +96,8 @@ mod tests {
       println!("--- text-to-image aspect ratio: {:?} ---", ar);
       let request = GenerateImageRequest {
         aspect_ratio: Some(ar),
-        image_batch_count: Some(1),
+        quality: None,
+      image_batch_count: Some(1),
         prompt: Some("a t-rex walking through an abandoned desert city at night"),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..base_flux_pro_1p1_ultra_image_request()

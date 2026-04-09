@@ -105,6 +105,7 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       resolution: Some(CommonResolution::TwoK),
+      quality: None,
       image_batch_count: Some(1),
       prompt: Some("a cyberpunk city skyline at dusk, neon lights reflecting on rain-soaked streets"),
       ..base_fal_image_request()
@@ -129,6 +130,7 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Square),
       resolution: Some(CommonResolution::OneK),
+      quality: None,
       image_batch_count: Some(4),
       prompt: Some("a golden retriever surfing a wave, cinematic, 4K"),
       ..base_fal_image_request()
@@ -161,6 +163,7 @@ mod tests {
       image_inputs: Some(ImageListRef::Urls(&image_urls)),
       aspect_ratio: Some(CommonAspectRatio::Auto), // edit mode: preserve source dimensions
       resolution: Some(CommonResolution::TwoK),
+      quality: None,
       image_batch_count: Some(1),
       ..base_fal_image_request()
     };

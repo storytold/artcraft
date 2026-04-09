@@ -296,6 +296,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
       let request = GenerateImageRequest {
+        quality: None,
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
         ..base_seedream_4p5_image_request()
@@ -323,6 +324,7 @@ mod tests {
   #[test]
   fn num_images_out_of_range_error_out() {
     let request = GenerateImageRequest {
+      quality: None,
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_seedream_4p5_image_request()
@@ -337,6 +339,7 @@ mod tests {
   fn num_images_out_of_range_clamps_to_four() {
     for strategy in [RequestMismatchMitigationStrategy::PayMoreUpgrade, RequestMismatchMitigationStrategy::PayLessDowngrade] {
       let request = GenerateImageRequest {
+        quality: None,
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,
         ..base_seedream_4p5_image_request()

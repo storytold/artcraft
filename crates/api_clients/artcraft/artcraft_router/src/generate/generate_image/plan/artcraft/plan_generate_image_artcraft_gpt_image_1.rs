@@ -1,4 +1,5 @@
 use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::common_quality::CommonQuality;
 use crate::api::image_list_ref::ImageListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -46,6 +47,10 @@ pub struct PlanArtcraftGptImage1<'a> {
   pub prompt: Option<&'a str>,
   /// Input images for image editing. None means text-to-image mode.
   pub image_inputs: Option<&'a Vec<MediaFileToken>>,
+  /// Number of input images (0 for text-to-image). This is counted from either
+  /// media tokens or hydrated URLs, so the cost estimator can use it without
+  /// needing to inspect image_inputs (which is None for URL-form inputs).
+  pub num_input_images: u64,
   pub image_size: Option<ArtcraftGptImage1Size>,
   /// Quality defaults to High when the request leaves it unspecified, matching
   /// the legacy storyteller-web handler defaults.
@@ -60,15 +65,17 @@ pub fn plan_generate_image_artcraft_gpt_image_1<'a>(
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let image_inputs = resolve_image_list_ref(request.image_inputs)?;
+  let num_input_images = count_input_images(request.image_inputs);
   let image_size = plan_image_size(request.aspect_ratio);
+  let quality = plan_quality(request.quality);
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::ArtcraftGptImage1(PlanArtcraftGptImage1 {
     prompt: request.prompt,
     image_inputs,
+    num_input_images,
     image_size,
-    // Match the legacy handler default of High for both modes.
-    quality: ArtcraftGptImage1Quality::High,
+    quality,
     num_images,
     idempotency_token: request.get_or_generate_idempotency_token(),
   }))
@@ -85,6 +92,23 @@ fn resolve_image_list_ref<'a>(
     // is_edit_mode (derived before this resolver runs), so URL-form inputs are
     // accepted and dropped.
     Some(ImageListRef::Urls(_)) => Ok(None),
+  }
+}
+
+fn count_input_images(image_inputs: Option<ImageListRef<'_>>) -> u64 {
+  match image_inputs {
+    None => 0,
+    Some(ImageListRef::MediaFileTokens(tokens)) => tokens.len() as u64,
+    Some(ImageListRef::Urls(urls)) => urls.len() as u64,
+  }
+}
+
+fn plan_quality(quality: Option<CommonQuality>) -> ArtcraftGptImage1Quality {
+  match quality {
+    Some(CommonQuality::Low) => ArtcraftGptImage1Quality::Low,
+    Some(CommonQuality::Medium) => ArtcraftGptImage1Quality::Medium,
+    Some(CommonQuality::High) => ArtcraftGptImage1Quality::High,
+    None => ArtcraftGptImage1Quality::High, // Legacy handler default
   }
 }
 

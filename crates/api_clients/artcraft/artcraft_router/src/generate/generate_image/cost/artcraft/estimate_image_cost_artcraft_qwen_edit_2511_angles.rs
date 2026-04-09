@@ -46,6 +46,7 @@ mod tests {
       image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
       resolution: None,
       aspect_ratio: None,
+      quality: None,
       image_batch_count: Some(image_batch_count),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       generation_mode_mismatch_strategy: None,

@@ -1,5 +1,6 @@
 use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::common_image_model::CommonImageModel;
+use crate::api::common_quality::CommonQuality;
 use crate::api::common_resolution::CommonResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::provider::Provider;
@@ -56,6 +57,9 @@ pub struct GenerateImageRequest<'a> {
 
   /// The aspect ratio to use.
   pub aspect_ratio: Option<CommonAspectRatio>,
+
+  /// The quality level for generation. Not all models use this.
+  pub quality: Option<CommonQuality>,
 
   /// How many images to generate.
   pub image_batch_count: Option<u16>,

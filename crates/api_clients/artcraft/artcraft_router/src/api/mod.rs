@@ -2,6 +2,7 @@ pub mod audio_list_ref;
 pub mod character_list_ref;
 pub mod common_aspect_ratio;
 pub mod common_image_model;
+pub mod common_quality;
 pub mod common_resolution;
 pub mod common_splat_model;
 pub mod common_video_model;

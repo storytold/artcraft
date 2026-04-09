@@ -47,6 +47,7 @@ mod tests {
     let client = get_artcraft_client();
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      quality: None,
       image_batch_count: Some(1),
       prompt: Some("a corgi walking through a cyberpunk city at night"),
       ..base_seedream_5_lite_image_request()

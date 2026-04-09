@@ -52,6 +52,7 @@ mod tests {
     let tokens = vec![MediaFileToken::new_from_str("m_r45apt2swza6wp8j2z10237t92kkr8")];
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::SquareHd),
+      quality: None,
       image_batch_count: Some(1),
       prompt: None,
       image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),

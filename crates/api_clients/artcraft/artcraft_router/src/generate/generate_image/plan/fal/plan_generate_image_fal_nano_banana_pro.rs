@@ -256,6 +256,7 @@ mod tests {
       image_inputs: None,
       resolution: None,
       aspect_ratio: None,
+      quality: None,
       image_batch_count: None,
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       generation_mode_mismatch_strategy: None,
@@ -478,7 +479,8 @@ mod tests {
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
       let request = GenerateImageRequest {
-        image_batch_count: Some(0),
+        quality: None,
+      image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
         ..base_fal_request()
       };
@@ -511,6 +513,7 @@ mod tests {
   #[test]
   fn num_images_out_of_range_error_out() {
     let request = GenerateImageRequest {
+      quality: None,
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_fal_request()
@@ -529,7 +532,8 @@ mod tests {
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
       let request = GenerateImageRequest {
-        image_batch_count: Some(5),
+        quality: None,
+      image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,
         ..base_fal_request()
       };

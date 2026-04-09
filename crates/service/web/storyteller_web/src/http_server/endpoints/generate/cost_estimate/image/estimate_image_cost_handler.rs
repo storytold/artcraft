@@ -45,6 +45,7 @@ pub async fn estimate_image_cost_handler(
     image_inputs: None, // TODO: Only some models charge for this - we'll need to add later.
     resolution: router_resolution,
     aspect_ratio: router_aspect_ratio,
+    quality: None,
     image_batch_count: request.image_batch_count,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),

@@ -50,6 +50,7 @@ mod tests {
     let client = get_artcraft_client();
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      quality: None,
       image_batch_count: Some(1),
       prompt: Some("a cat walking through a cyberpunk city at night"),
       ..base_nano_banana_image_request()
@@ -79,6 +80,7 @@ mod tests {
       prompt: Some("Change the background to a sunny beach"),
       image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
       aspect_ratio: Some(CommonAspectRatio::Auto),
+      quality: None,
       image_batch_count: Some(1),
       ..base_nano_banana_image_request()
     };
@@ -103,7 +105,8 @@ mod tests {
       println!("--- text-to-image aspect ratio: {:?} ---", ar);
       let request = GenerateImageRequest {
         aspect_ratio: Some(ar),
-        image_batch_count: Some(1),
+        quality: None,
+      image_batch_count: Some(1),
         prompt: Some("a shiba walking through a cyberpunk city at night"),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..base_nano_banana_image_request()
@@ -138,7 +141,8 @@ mod tests {
         prompt: Some("Change the background to a sunny beach"),
         image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
         aspect_ratio: Some(ar),
-        image_batch_count: Some(1),
+        quality: None,
+      image_batch_count: Some(1),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..base_nano_banana_image_request()
       };

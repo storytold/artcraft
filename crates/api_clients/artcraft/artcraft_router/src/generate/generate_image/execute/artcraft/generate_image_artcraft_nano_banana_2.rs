@@ -49,6 +49,7 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       resolution: Some(CommonResolution::OneK),
+      quality: None,
       image_batch_count: Some(1),
       prompt: Some("a cat walking through a cyberpunk city at night"),
       ..base_nano_banana_2_image_request()

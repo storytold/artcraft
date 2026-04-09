@@ -1,6 +1,7 @@
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioRouter;
 use artcraft_router::api::common_image_model::CommonImageModel as CommonImageModelRouter;
+use artcraft_router::api::common_quality::CommonQuality as CommonQualityRouter;
 use artcraft_router::api::common_resolution::CommonResolution as CommonResolutionRouter;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
@@ -8,6 +9,7 @@ use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismat
 use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
 use enums::common::generation::common_image_model::CommonImageModel as CommonImageModelEnum;
+use enums::common::generation::common_quality::CommonQuality as CommonQualityEnum;
 use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
@@ -45,6 +47,17 @@ fn convert_resolution(
   })
 }
 
+fn convert_quality(
+  quality: &CommonQualityEnum,
+) -> Result<CommonQualityRouter, AdvancedCommonWebError> {
+  let json = serde_json::to_string(quality)?;
+  serde_json::from_str(&json).map_err(|e| {
+    AdvancedCommonWebError::BadInputWithSimpleMessage(
+      format!("Unsupported quality: {}", e),
+    )
+  })
+}
+
 pub fn hydrate_to_router_request(
   request: &OmniGenImageCostAndGenerateRequest,
 ) -> Result<GenerateImageRequest<'_>, AdvancedCommonWebError> {
@@ -63,6 +76,10 @@ pub fn hydrate_to_router_request(
     .map(convert_resolution)
     .transpose()?;
 
+  let quality = request.quality.as_ref()
+    .map(convert_quality)
+    .transpose()?;
+
   Ok(GenerateImageRequest {
     model,
     provider: Provider::Artcraft,
@@ -71,6 +88,7 @@ pub fn hydrate_to_router_request(
       .map(ImageListRef::MediaFileTokens),
     resolution,
     aspect_ratio,
+    quality,
     image_batch_count: request.image_batch_count,
     horizontal_angle: request.horizontal_angle,
     vertical_angle: request.vertical_angle,

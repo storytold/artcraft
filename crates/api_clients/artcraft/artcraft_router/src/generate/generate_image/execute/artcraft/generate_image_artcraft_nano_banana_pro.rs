@@ -51,6 +51,7 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       resolution: Some(CommonResolution::OneK),
+      quality: None,
       image_batch_count: Some(1),
       prompt: Some("a cat walking through a cyberpunk city at night"),
       ..base_image_request()
@@ -74,6 +75,7 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Square),
       resolution: Some(CommonResolution::OneK),
+      quality: None,
       image_batch_count: Some(4),
       prompt: Some("a dog surfing a wave, cinematic"),
       ..base_image_request()
@@ -106,6 +108,7 @@ mod tests {
       image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
       aspect_ratio: Some(CommonAspectRatio::Auto), // edit mode: preserve source dimensions
       resolution: Some(CommonResolution::OneK),
+      quality: None,
       image_batch_count: Some(1),
       ..base_image_request()
     };
