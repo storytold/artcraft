@@ -8,12 +8,17 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 pub(crate) fn estimate_image_cost_artcraft_nano_banana_2(
   plan: &PlanArtcraftNanaBanana2<'_>,
 ) -> ImageGenerationCostEstimate {
-  // Pricing: $0.08/image at 0.5K, $0.15/image at 1K or 2K, $0.30/image at 4K.
-  // (Stored as USD cents.)
+  // Pricing (USD cents per image), scaled off the 1K base cost of $0.08:
+  //   0.5K → $0.06 (0.75×)
+  //   1K   → $0.08 (1×, default)
+  //   2K   → $0.12 (1.5×)
+  //   4K   → $0.16 (2×)
   let cost_per_image: u64 = match plan.resolution {
-    Some(NanaBanana2MultiFunctionImageGenImageResolution::HalfK) => 8,
-    Some(NanaBanana2MultiFunctionImageGenImageResolution::FourK) => 30,
-    _ => 15, // OneK, TwoK, or None (default 1K)
+    Some(NanaBanana2MultiFunctionImageGenImageResolution::HalfK) => 6,
+    Some(NanaBanana2MultiFunctionImageGenImageResolution::OneK) => 8,
+    Some(NanaBanana2MultiFunctionImageGenImageResolution::TwoK) => 12,
+    Some(NanaBanana2MultiFunctionImageGenImageResolution::FourK) => 16,
+    None => 8, // default 1K
   };
 
   let num_images: u64 = match plan.num_images {
@@ -66,17 +71,125 @@ mod tests {
       .expect("cost_in_usd_cents should be present")
   }
 
-  #[test]
-  fn test_estimate_cost_usd_cents() {
-    // 1K/2K: $0.15/image = 15 cents
-    assert_eq!(estimate_usd_cents(None, 1), 15);
-    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 1), 15);
-    assert_eq!(estimate_usd_cents(Some(CommonResolution::TwoK), 1), 15);
-    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 2), 30);
-    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 4), 60);
+  // ── Default (None → 1K → 8¢/image) ─────────────────────────────────────────
 
-    // 4K: $0.30/image = 30 cents
-    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 1), 30);
-    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 2), 60);
+  #[test]
+  fn default_resolution_one_image_costs_8_cents() {
+    assert_eq!(estimate_usd_cents(None, 1), 8);
+  }
+
+  #[test]
+  fn default_resolution_two_images_costs_16_cents() {
+    assert_eq!(estimate_usd_cents(None, 2), 16);
+  }
+
+  #[test]
+  fn default_resolution_three_images_costs_24_cents() {
+    assert_eq!(estimate_usd_cents(None, 3), 24);
+  }
+
+  #[test]
+  fn default_resolution_four_images_costs_32_cents() {
+    assert_eq!(estimate_usd_cents(None, 4), 32);
+  }
+
+  // ── 0.5K → 6¢/image (0.75× base) ───────────────────────────────────────────
+
+  #[test]
+  fn half_k_one_image_costs_6_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::HalfK), 1), 6);
+  }
+
+  #[test]
+  fn half_k_two_images_costs_12_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::HalfK), 2), 12);
+  }
+
+  #[test]
+  fn half_k_three_images_costs_18_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::HalfK), 3), 18);
+  }
+
+  #[test]
+  fn half_k_four_images_costs_24_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::HalfK), 4), 24);
+  }
+
+  // ── 1K → 8¢/image (base) ───────────────────────────────────────────────────
+
+  #[test]
+  fn one_k_one_image_costs_8_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 1), 8);
+  }
+
+  #[test]
+  fn one_k_two_images_costs_16_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 2), 16);
+  }
+
+  #[test]
+  fn one_k_three_images_costs_24_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 3), 24);
+  }
+
+  #[test]
+  fn one_k_four_images_costs_32_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::OneK), 4), 32);
+  }
+
+  // ── 2K → 12¢/image (1.5× base) ─────────────────────────────────────────────
+
+  #[test]
+  fn two_k_one_image_costs_12_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::TwoK), 1), 12);
+  }
+
+  #[test]
+  fn two_k_two_images_costs_24_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::TwoK), 2), 24);
+  }
+
+  #[test]
+  fn two_k_three_images_costs_36_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::TwoK), 3), 36);
+  }
+
+  #[test]
+  fn two_k_four_images_costs_48_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::TwoK), 4), 48);
+  }
+
+  // ── 4K → 16¢/image (2× base) ───────────────────────────────────────────────
+
+  #[test]
+  fn four_k_one_image_costs_16_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 1), 16);
+  }
+
+  #[test]
+  fn four_k_two_images_costs_32_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 2), 32);
+  }
+
+  #[test]
+  fn four_k_three_images_costs_48_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 3), 48);
+  }
+
+  #[test]
+  fn four_k_four_images_costs_64_cents() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::FourK), 4), 64);
+  }
+
+  // ── 3K (unsupported) falls back to 2K pricing ──────────────────────────────
+
+  #[test]
+  fn three_k_one_image_falls_back_to_two_k_pricing() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::ThreeK), 1), 12);
+  }
+
+  #[test]
+  fn three_k_four_images_falls_back_to_two_k_pricing() {
+    assert_eq!(estimate_usd_cents(Some(CommonResolution::ThreeK), 4), 48);
   }
 }

@@ -5,11 +5,13 @@
 //! (0.5K / 1K / 2K / 4K) that affects pricing — 4K outputs cost roughly 2×
 //! the 1K/2K rate, and 0.5K is the discount tier.
 //!
-//! Pricing matches the legacy `nano_banana_2_multi_function_image_gen_handler`:
-//!   $0.08 / image @ 0.5K
-//!   $0.15 / image @ 1K (default) and 2K
-//!   $0.30 / image @ 4K
-//! for both text-to-image and image-edit modes.
+//! Artcraft-tier pricing (the rate the user is billed) is scaled off the 1K
+//! base cost of $0.08:
+//!   0.5K → $0.06 / image (0.75×)
+//!   1K   → $0.08 / image (1×, default)
+//!   2K   → $0.12 / image (1.5×)
+//!   4K   → $0.16 / image (2×)
+//! Same rates apply to both text-to-image and image-edit modes.
 
 #[cfg(test)]
 mod tests {
@@ -85,8 +87,7 @@ mod tests {
   // ────────────────────────────────────────────────────────────────────────────
   //
   // Pricing comes from `estimate_image_cost_artcraft_nano_banana_2`:
-  //   0.5K → $0.08/image, 1K/2K → $0.15/image, 4K → $0.30/image.
-  //   None defaults to 1K (= $0.15/image), matching the legacy handler.
+  //   0.5K → 6¢/image, 1K → 8¢/image (default), 2K → 12¢/image, 4K → 16¢/image.
   //
   // Same rates apply to both text-to-image and edit modes.
   mod cost {
@@ -107,119 +108,185 @@ mod tests {
         )
       }
 
-      // ── Default resolution (None → 1K → 15¢/image) ─────────────────────────
+      // ── Default resolution (None → 1K → 8¢/image) ──────────────────────────
 
       #[test]
-      fn default_resolution_default_batch_costs_15_cents() {
+      fn default_resolution_default_batch_costs_8_cents() {
         let (credits, cents) = cost_for(None, None);
-        assert_eq!(credits, Some(15));
-        assert_eq!(cents, Some(15));
-      }
-
-      #[test]
-      fn default_resolution_batch_of_one_costs_15_cents() {
-        let (_c, cents) = cost_for(None, Some(1));
-        assert_eq!(cents, Some(15));
-      }
-
-      #[test]
-      fn default_resolution_batch_of_two_costs_30_cents() {
-        let (_c, cents) = cost_for(None, Some(2));
-        assert_eq!(cents, Some(30));
-      }
-
-      #[test]
-      fn default_resolution_batch_of_three_costs_45_cents() {
-        let (_c, cents) = cost_for(None, Some(3));
-        assert_eq!(cents, Some(45));
-      }
-
-      #[test]
-      fn default_resolution_batch_of_four_costs_60_cents() {
-        let (_c, cents) = cost_for(None, Some(4));
-        assert_eq!(cents, Some(60));
-      }
-
-      #[test]
-      fn default_resolution_batch_above_max_clamps_to_60_cents() {
-        let (_c, cents) = cost_for(None, Some(7));
-        assert_eq!(cents, Some(60));
-      }
-
-      // ── Half-K resolution ($0.08/image) ────────────────────────────────────
-
-      #[test]
-      fn half_k_batch_of_one_costs_8_cents() {
-        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(1));
+        assert_eq!(credits, Some(8));
         assert_eq!(cents, Some(8));
       }
 
       #[test]
-      fn half_k_batch_of_two_costs_16_cents() {
-        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(2));
+      fn default_resolution_batch_of_one_costs_8_cents() {
+        let (_c, cents) = cost_for(None, Some(1));
+        assert_eq!(cents, Some(8));
+      }
+
+      #[test]
+      fn default_resolution_batch_of_two_costs_16_cents() {
+        let (_c, cents) = cost_for(None, Some(2));
         assert_eq!(cents, Some(16));
       }
 
       #[test]
-      fn half_k_batch_of_four_costs_32_cents() {
-        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(4));
+      fn default_resolution_batch_of_three_costs_24_cents() {
+        let (_c, cents) = cost_for(None, Some(3));
+        assert_eq!(cents, Some(24));
+      }
+
+      #[test]
+      fn default_resolution_batch_of_four_costs_32_cents() {
+        let (_c, cents) = cost_for(None, Some(4));
         assert_eq!(cents, Some(32));
       }
 
-      // ── 1K resolution ($0.15/image) ────────────────────────────────────────
+      #[test]
+      fn default_resolution_batch_above_max_clamps_to_32_cents() {
+        let (_c, cents) = cost_for(None, Some(7));
+        assert_eq!(cents, Some(32));
+      }
+
+      // ── 0.5K resolution (6¢/image, 0.75× base) ─────────────────────────────
 
       #[test]
-      fn one_k_batch_of_one_costs_15_cents() {
+      fn half_k_batch_of_one_costs_6_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(1));
+        assert_eq!(cents, Some(6));
+      }
+
+      #[test]
+      fn half_k_batch_of_two_costs_12_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(2));
+        assert_eq!(cents, Some(12));
+      }
+
+      #[test]
+      fn half_k_batch_of_three_costs_18_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(3));
+        assert_eq!(cents, Some(18));
+      }
+
+      #[test]
+      fn half_k_batch_of_four_costs_24_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(4));
+        assert_eq!(cents, Some(24));
+      }
+
+      #[test]
+      fn half_k_batch_above_max_clamps_to_24_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(9));
+        assert_eq!(cents, Some(24));
+      }
+
+      // ── 1K resolution (8¢/image, base) ─────────────────────────────────────
+
+      #[test]
+      fn one_k_batch_of_one_costs_8_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::OneK), Some(1));
-        assert_eq!(cents, Some(15));
+        assert_eq!(cents, Some(8));
       }
 
       #[test]
-      fn one_k_batch_of_four_costs_60_cents() {
+      fn one_k_batch_of_two_costs_16_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::OneK), Some(2));
+        assert_eq!(cents, Some(16));
+      }
+
+      #[test]
+      fn one_k_batch_of_three_costs_24_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::OneK), Some(3));
+        assert_eq!(cents, Some(24));
+      }
+
+      #[test]
+      fn one_k_batch_of_four_costs_32_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::OneK), Some(4));
-        assert_eq!(cents, Some(60));
+        assert_eq!(cents, Some(32));
       }
 
-      // ── 2K resolution ($0.15/image) ────────────────────────────────────────
+      #[test]
+      fn one_k_batch_above_max_clamps_to_32_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::OneK), Some(9));
+        assert_eq!(cents, Some(32));
+      }
+
+      // ── 2K resolution (12¢/image, 1.5× base) ───────────────────────────────
 
       #[test]
-      fn two_k_batch_of_one_costs_15_cents() {
+      fn two_k_batch_of_one_costs_12_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(1));
-        assert_eq!(cents, Some(15));
+        assert_eq!(cents, Some(12));
       }
 
       #[test]
-      fn two_k_batch_of_four_costs_60_cents() {
+      fn two_k_batch_of_two_costs_24_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(2));
+        assert_eq!(cents, Some(24));
+      }
+
+      #[test]
+      fn two_k_batch_of_three_costs_36_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(3));
+        assert_eq!(cents, Some(36));
+      }
+
+      #[test]
+      fn two_k_batch_of_four_costs_48_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(4));
-        assert_eq!(cents, Some(60));
+        assert_eq!(cents, Some(48));
       }
 
-      // ── 4K resolution ($0.30/image — double the standard rate) ─────────────
+      #[test]
+      fn two_k_batch_above_max_clamps_to_48_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(9));
+        assert_eq!(cents, Some(48));
+      }
+
+      // ── 4K resolution (16¢/image, 2× base) ─────────────────────────────────
 
       #[test]
-      fn four_k_batch_of_one_costs_30_cents() {
+      fn four_k_batch_of_one_costs_16_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(1));
-        assert_eq!(cents, Some(30));
+        assert_eq!(cents, Some(16));
       }
 
       #[test]
-      fn four_k_batch_of_two_costs_60_cents() {
+      fn four_k_batch_of_two_costs_32_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(2));
-        assert_eq!(cents, Some(60));
+        assert_eq!(cents, Some(32));
       }
 
       #[test]
-      fn four_k_batch_of_four_costs_120_cents() {
+      fn four_k_batch_of_three_costs_48_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(3));
+        assert_eq!(cents, Some(48));
+      }
+
+      #[test]
+      fn four_k_batch_of_four_costs_64_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(4));
-        assert_eq!(cents, Some(120));
+        assert_eq!(cents, Some(64));
       }
 
-      // ── 3K falls back to 2K (= 15¢/image) ──────────────────────────────────
+      #[test]
+      fn four_k_batch_above_max_clamps_to_64_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(9));
+        assert_eq!(cents, Some(64));
+      }
+
+      // ── 3K (unsupported) falls back to 2K pricing (= 12¢/image) ────────────
 
       #[test]
-      fn three_k_falls_back_to_two_k_pricing() {
+      fn three_k_one_image_falls_back_to_two_k_pricing() {
         let (_c, cents) = cost_for(Some(CommonResolution::ThreeK), Some(1));
-        assert_eq!(cents, Some(15));
+        assert_eq!(cents, Some(12));
+      }
+
+      #[test]
+      fn three_k_four_images_falls_back_to_two_k_pricing() {
+        let (_c, cents) = cost_for(Some(CommonResolution::ThreeK), Some(4));
+        assert_eq!(cents, Some(48));
       }
 
       // ── Misc independence checks ───────────────────────────────────────────
@@ -239,8 +306,8 @@ mod tests {
           let distilled = distill_text(&request);
           assert_eq!(
             distilled.cost.cost_in_usd_cents,
-            Some(30),
-            "expected 30¢ regardless of aspect ratio (got {:?})",
+            Some(16),
+            "expected 16¢ regardless of aspect ratio (got {:?})",
             ar,
           );
         }
@@ -250,8 +317,8 @@ mod tests {
       fn cost_is_independent_of_prompt() {
         let with_prompt = distill_text(&make_request(Some("a cat"), None, None, Some(3), None));
         let without_prompt = distill_text(&make_request(None, None, None, Some(3), None));
-        assert_eq!(with_prompt.cost.cost_in_usd_cents, Some(45));
-        assert_eq!(without_prompt.cost.cost_in_usd_cents, Some(45));
+        assert_eq!(with_prompt.cost.cost_in_usd_cents, Some(24));
+        assert_eq!(without_prompt.cost.cost_in_usd_cents, Some(24));
       }
 
       #[test]
@@ -288,77 +355,155 @@ mod tests {
         )
       }
 
+      // ── Default resolution (None → 1K → 8¢/image) ──────────────────────────
+
       #[test]
-      fn default_resolution_default_batch_costs_15_cents() {
+      fn default_resolution_default_batch_costs_8_cents() {
         let (credits, cents) = cost_for(None, None, 1);
-        assert_eq!(credits, Some(15));
-        assert_eq!(cents, Some(15));
-      }
-
-      #[test]
-      fn default_resolution_batch_of_one_costs_15_cents() {
-        let (_c, cents) = cost_for(None, Some(1), 1);
-        assert_eq!(cents, Some(15));
-      }
-
-      #[test]
-      fn default_resolution_batch_of_two_costs_30_cents() {
-        let (_c, cents) = cost_for(None, Some(2), 1);
-        assert_eq!(cents, Some(30));
-      }
-
-      #[test]
-      fn default_resolution_batch_of_three_costs_45_cents() {
-        let (_c, cents) = cost_for(None, Some(3), 1);
-        assert_eq!(cents, Some(45));
-      }
-
-      #[test]
-      fn default_resolution_batch_of_four_costs_60_cents() {
-        let (_c, cents) = cost_for(None, Some(4), 1);
-        assert_eq!(cents, Some(60));
-      }
-
-      #[test]
-      fn default_resolution_batch_above_max_clamps_to_60_cents() {
-        let (_c, cents) = cost_for(None, Some(9), 1);
-        assert_eq!(cents, Some(60));
-      }
-
-      #[test]
-      fn half_k_batch_of_one_costs_8_cents() {
-        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(1), 1);
+        assert_eq!(credits, Some(8));
         assert_eq!(cents, Some(8));
       }
 
       #[test]
-      fn half_k_batch_of_four_costs_32_cents() {
-        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(4), 1);
+      fn default_resolution_batch_of_one_costs_8_cents() {
+        let (_c, cents) = cost_for(None, Some(1), 1);
+        assert_eq!(cents, Some(8));
+      }
+
+      #[test]
+      fn default_resolution_batch_of_two_costs_16_cents() {
+        let (_c, cents) = cost_for(None, Some(2), 1);
+        assert_eq!(cents, Some(16));
+      }
+
+      #[test]
+      fn default_resolution_batch_of_three_costs_24_cents() {
+        let (_c, cents) = cost_for(None, Some(3), 1);
+        assert_eq!(cents, Some(24));
+      }
+
+      #[test]
+      fn default_resolution_batch_of_four_costs_32_cents() {
+        let (_c, cents) = cost_for(None, Some(4), 1);
         assert_eq!(cents, Some(32));
       }
 
       #[test]
-      fn one_k_batch_of_one_costs_15_cents() {
+      fn default_resolution_batch_above_max_clamps_to_32_cents() {
+        let (_c, cents) = cost_for(None, Some(9), 1);
+        assert_eq!(cents, Some(32));
+      }
+
+      // ── 0.5K (6¢/image) ────────────────────────────────────────────────────
+
+      #[test]
+      fn half_k_batch_of_one_costs_6_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(1), 1);
+        assert_eq!(cents, Some(6));
+      }
+
+      #[test]
+      fn half_k_batch_of_two_costs_12_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(2), 1);
+        assert_eq!(cents, Some(12));
+      }
+
+      #[test]
+      fn half_k_batch_of_three_costs_18_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(3), 1);
+        assert_eq!(cents, Some(18));
+      }
+
+      #[test]
+      fn half_k_batch_of_four_costs_24_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::HalfK), Some(4), 1);
+        assert_eq!(cents, Some(24));
+      }
+
+      // ── 1K (8¢/image, base) ────────────────────────────────────────────────
+
+      #[test]
+      fn one_k_batch_of_one_costs_8_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::OneK), Some(1), 1);
-        assert_eq!(cents, Some(15));
+        assert_eq!(cents, Some(8));
       }
 
       #[test]
-      fn two_k_batch_of_one_costs_15_cents() {
+      fn one_k_batch_of_two_costs_16_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::OneK), Some(2), 1);
+        assert_eq!(cents, Some(16));
+      }
+
+      #[test]
+      fn one_k_batch_of_four_costs_32_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::OneK), Some(4), 1);
+        assert_eq!(cents, Some(32));
+      }
+
+      // ── 2K (12¢/image, 1.5× base) ──────────────────────────────────────────
+
+      #[test]
+      fn two_k_batch_of_one_costs_12_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(1), 1);
-        assert_eq!(cents, Some(15));
+        assert_eq!(cents, Some(12));
       }
 
       #[test]
-      fn four_k_batch_of_one_costs_30_cents() {
+      fn two_k_batch_of_two_costs_24_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(2), 1);
+        assert_eq!(cents, Some(24));
+      }
+
+      #[test]
+      fn two_k_batch_of_three_costs_36_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(3), 1);
+        assert_eq!(cents, Some(36));
+      }
+
+      #[test]
+      fn two_k_batch_of_four_costs_48_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::TwoK), Some(4), 1);
+        assert_eq!(cents, Some(48));
+      }
+
+      // ── 4K (16¢/image, 2× base) ────────────────────────────────────────────
+
+      #[test]
+      fn four_k_batch_of_one_costs_16_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(1), 1);
-        assert_eq!(cents, Some(30));
+        assert_eq!(cents, Some(16));
       }
 
       #[test]
-      fn four_k_batch_of_four_costs_120_cents() {
+      fn four_k_batch_of_two_costs_32_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(2), 1);
+        assert_eq!(cents, Some(32));
+      }
+
+      #[test]
+      fn four_k_batch_of_three_costs_48_cents() {
+        let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(3), 1);
+        assert_eq!(cents, Some(48));
+      }
+
+      #[test]
+      fn four_k_batch_of_four_costs_64_cents() {
         let (_c, cents) = cost_for(Some(CommonResolution::FourK), Some(4), 1);
-        assert_eq!(cents, Some(120));
+        assert_eq!(cents, Some(64));
+      }
+
+      // ── 3K (unsupported) falls back to 2K pricing ──────────────────────────
+
+      #[test]
+      fn three_k_one_image_falls_back_to_two_k_pricing() {
+        let (_c, cents) = cost_for(Some(CommonResolution::ThreeK), Some(1), 1);
+        assert_eq!(cents, Some(12));
+      }
+
+      #[test]
+      fn three_k_four_images_falls_back_to_two_k_pricing() {
+        let (_c, cents) = cost_for(Some(CommonResolution::ThreeK), Some(4), 1);
+        assert_eq!(cents, Some(48));
       }
 
       #[test]
@@ -367,8 +512,8 @@ mod tests {
           let (_c, cents) = cost_for(None, Some(2), num_refs);
           assert_eq!(
             cents,
-            Some(30),
-            "expected 30¢ regardless of {} image refs",
+            Some(16),
+            "expected 16¢ regardless of {} image refs",
             num_refs,
           );
         }
@@ -389,8 +534,8 @@ mod tests {
           let distilled = distill_edit(&request, &hydration);
           assert_eq!(
             distilled.cost.cost_in_usd_cents,
-            Some(30),
-            "expected 30¢ regardless of aspect ratio (got {:?})",
+            Some(16),
+            "expected 16¢ regardless of aspect ratio (got {:?})",
             ar,
           );
         }
