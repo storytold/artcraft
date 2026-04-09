@@ -334,7 +334,7 @@ export function LightboxModal({
   }, [batchImages, imageUrls, imageUrl]);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const carouselOptions: EmblaOptionsType = useMemo(() => ({ loop: true }), []);
+  const carouselOptions: EmblaOptionsType = useMemo(() => ({ loop: false }), []);
   const [emblaMainRef, emblaMainApi] = useEmblaCarousel(carouselOptions);
   const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
     containScroll: "keepSnaps",
@@ -446,7 +446,7 @@ export function LightboxModal({
   );
 
   // Keyboard navigation:
-  //   Left / Right  →  carousel slide (loop wraps automatically)
+  //   Left / Right  →  carousel slide; at boundary, moves to prev/next bundle
   //   Up / Down     →  previous / next bundle
   useEffect(() => {
     if (!isOpen) return;
@@ -456,14 +456,14 @@ export function LightboxModal({
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        if (emblaMainApi && effectiveImageUrls.length > 1) {
+        if (emblaMainApi && effectiveImageUrls.length > 1 && emblaMainApi.canScrollPrev()) {
           emblaMainApi.scrollPrev(true);
         } else {
           onNavigatePrev?.();
         }
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        if (emblaMainApi && effectiveImageUrls.length > 1) {
+        if (emblaMainApi && effectiveImageUrls.length > 1 && emblaMainApi.canScrollNext()) {
           emblaMainApi.scrollNext(true);
         } else {
           onNavigateNext?.();
