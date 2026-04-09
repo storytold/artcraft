@@ -393,9 +393,9 @@ mod tests {
       // ── Quality mapping ───────────────────────────────────────────────────
 
       #[test]
-      fn default_quality_is_medium() {
+      fn default_quality_is_high() {
         with_text_plan(&make_request(Some("p"), None, None, Some(1), None), |plan| {
-          assert!(matches!(plan.quality, FalGptImage1p5Quality::Medium));
+          assert!(matches!(plan.quality, FalGptImage1p5Quality::High));
         });
       }
 
@@ -600,7 +600,7 @@ mod tests {
         with_edit_plan(
           &make_request(Some("p"), None, None, Some(1), Some(tokens)),
           &hydration,
-          |plan| { assert!(matches!(plan.quality, FalGptImage1p5Quality::Medium)); },
+          |plan| { assert!(matches!(plan.quality, FalGptImage1p5Quality::High)); },
         );
       }
 
