@@ -54,3 +54,106 @@ pub async fn execute_fal_gpt_image_1(
     gateway_request_id: webhook_response.gateway_request_id,
   }))
 }
+
+#[cfg(test)]
+mod tests {
+  use test_data::web::image_urls::TREX_SKELETON_IMAGE_URL;
+  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::image_list_ref::ImageListRef;
+  use crate::api::provider::Provider;
+  use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
+  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
+  use crate::test_helpers::get_fal_client;
+
+  fn base_fal_request() -> GenerateImageRequest<'static> {
+    GenerateImageRequest {
+      model: CommonImageModel::GptImage1,
+      provider: Provider::Fal,
+      prompt: Some("a cat in space"),
+      image_inputs: None,
+      resolution: None,
+      aspect_ratio: None,
+      image_batch_count: None,
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      generation_mode_mismatch_strategy: None,
+      idempotency_token: None,
+      horizontal_angle: None,
+      vertical_angle: None,
+      zoom: None,
+    }
+  }
+
+  // Build-only smoke test (no network I/O).
+  #[test]
+  fn build_text_to_image_plan_smoke() {
+    let request = GenerateImageRequest {
+      aspect_ratio: Some(CommonAspectRatio::Square),
+      image_batch_count: Some(1),
+      ..base_fal_request()
+    };
+    let plan = request.build().expect("plan should build");
+    let ImageGenerationPlan::FalGptImage1(plan) = plan else {
+      panic!("expected FalGptImage1")
+    };
+    assert!(plan.image_urls.is_empty(), "text mode must have no image_urls");
+  }
+
+  // Build-only smoke test for edit mode.
+  #[test]
+  fn build_edit_image_plan_smoke() {
+    let urls = vec!["https://example.com/img.jpg".to_string()];
+    let request = GenerateImageRequest {
+      image_inputs: Some(ImageListRef::Urls(&urls)),
+      ..base_fal_request()
+    };
+    let plan = request.build().expect("plan should build");
+    let ImageGenerationPlan::FalGptImage1(plan) = plan else {
+      panic!("expected FalGptImage1")
+    };
+    assert_eq!(plan.image_urls, urls);
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real fal API request and incurs cost
+  async fn test_text_to_image_gpt_image_1_fal() {
+    let client = get_fal_client();
+    let request = GenerateImageRequest {
+      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      image_batch_count: Some(1),
+      prompt: Some("a horse walking through a cyberpunk city at night"),
+      ..base_fal_request()
+    };
+
+    let plan = request.build().unwrap();
+    let result = plan.generate_image(&client).await;
+    println!("Result: {:?}", result);
+    let response = result.expect("generate_image request failed");
+    let payload = response.get_fal_payload().expect("expected Fal payload");
+    println!("Request id: {:?}", payload.request_id);
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real fal API request and incurs cost
+  async fn test_edit_image_gpt_image_1_fal() {
+    let client = get_fal_client();
+    let urls = vec![
+      TREX_SKELETON_IMAGE_URL.to_string(),
+    ];
+    let request = GenerateImageRequest {
+      image_inputs: Some(ImageListRef::Urls(&urls)),
+      aspect_ratio: Some(CommonAspectRatio::Square),
+      image_batch_count: Some(1),
+      prompt: Some("change the background to a desert"),
+      ..base_fal_request()
+    };
+
+    let plan = request.build().unwrap();
+    let result = plan.generate_image(&client).await;
+    println!("Result: {:?}", result);
+    let response = result.expect("generate_image request failed");
+    let payload = response.get_fal_payload().expect("expected Fal payload");
+    println!("Request id: {:?}", payload.request_id);
+  }
+}

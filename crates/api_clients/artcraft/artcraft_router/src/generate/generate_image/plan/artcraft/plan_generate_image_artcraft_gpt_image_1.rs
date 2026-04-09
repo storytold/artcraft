@@ -217,3 +217,296 @@ impl ArtcraftGptImage1Size {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::api::image_list_ref::ImageListRef;
+  use crate::errors::artcraft_router_error::ArtcraftRouterError;
+  use crate::errors::client_error::ClientError;
+  use crate::test_helpers::base_gpt_image_1_image_request;
+
+  // ── Image size (aspect ratio mapping) ────────────────────────────────────
+
+  #[test]
+  fn image_size_none_is_none() {
+    let request = GenerateImageRequest { aspect_ratio: None, ..base_gpt_image_1_image_request() };
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert!(plan.image_size.is_none());
+  }
+
+  #[test]
+  fn image_size_auto_variants_yield_none() {
+    for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
+      let request = GenerateImageRequest { aspect_ratio: Some(auto_ar), ..base_gpt_image_1_image_request() };
+      let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+        panic!("expected ArtcraftGptImage1")
+      };
+      assert!(plan.image_size.is_none(), "expected None for {:?}", auto_ar);
+    }
+  }
+
+  #[test]
+  fn image_size_square_variants() {
+    for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
+      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
+      let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+        panic!("expected ArtcraftGptImage1")
+      };
+      assert!(matches!(plan.image_size, Some(ArtcraftGptImage1Size::Square)), "expected Square for {:?}", ar);
+    }
+  }
+
+  #[test]
+  fn image_size_wide_variants_yield_horizontal() {
+    let wide_ars = [
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideFiveByFour,
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideTwentyOneByNine,
+      CommonAspectRatio::Wide,
+    ];
+    for ar in wide_ars {
+      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
+      let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+        panic!("expected ArtcraftGptImage1")
+      };
+      assert!(matches!(plan.image_size, Some(ArtcraftGptImage1Size::Horizontal)), "expected Horizontal for {:?}", ar);
+    }
+  }
+
+  #[test]
+  fn image_size_tall_variants_yield_vertical() {
+    let tall_ars = [
+      CommonAspectRatio::TallTwoByThree,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallFourByFive,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::TallNineByTwentyOne,
+      CommonAspectRatio::Tall,
+    ];
+    for ar in tall_ars {
+      let request = GenerateImageRequest { aspect_ratio: Some(ar), ..base_gpt_image_1_image_request() };
+      let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+        panic!("expected ArtcraftGptImage1")
+      };
+      assert!(matches!(plan.image_size, Some(ArtcraftGptImage1Size::Vertical)), "expected Vertical for {:?}", ar);
+    }
+  }
+
+  // ── Quality default ──────────────────────────────────────────────────────
+
+  #[test]
+  fn quality_defaults_to_high() {
+    let request = base_gpt_image_1_image_request();
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert!(matches!(plan.quality, ArtcraftGptImage1Quality::High));
+  }
+
+  // ── Num images ───────────────────────────────────────────────────────────
+
+  #[test]
+  fn num_images_zero_is_always_error() {
+    for strategy in [
+      RequestMismatchMitigationStrategy::ErrorOut,
+      RequestMismatchMitigationStrategy::PayMoreUpgrade,
+      RequestMismatchMitigationStrategy::PayLessDowngrade,
+    ] {
+      let request = GenerateImageRequest {
+        image_batch_count: Some(0),
+        request_mismatch_mitigation_strategy: strategy,
+        ..base_gpt_image_1_image_request()
+      };
+      let result = request.build();
+      assert!(
+        matches!(result, Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations))),
+        "expected UserRequestedZeroGenerations with {:?}", strategy,
+      );
+    }
+  }
+
+  #[test]
+  fn num_images_default_is_one() {
+    let request = GenerateImageRequest { image_batch_count: None, ..base_gpt_image_1_image_request() };
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert!(matches!(plan.num_images, ArtcraftGptImage1NumImages::One));
+  }
+
+  #[test]
+  fn num_images_direct_mapping() {
+    let cases = [
+      (1, ArtcraftGptImage1NumImages::One),
+      (2, ArtcraftGptImage1NumImages::Two),
+      (3, ArtcraftGptImage1NumImages::Three),
+      (4, ArtcraftGptImage1NumImages::Four),
+    ];
+    for (count, expected) in cases {
+      let request = GenerateImageRequest { image_batch_count: Some(count), ..base_gpt_image_1_image_request() };
+      let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+        panic!("expected ArtcraftGptImage1")
+      };
+      assert!(
+        std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
+        "expected {:?} for count {}", expected, count,
+      );
+    }
+  }
+
+  #[test]
+  fn num_images_out_of_range_error_out() {
+    let request = GenerateImageRequest {
+      image_batch_count: Some(5),
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      ..base_gpt_image_1_image_request()
+    };
+    let result = request.build();
+    assert!(matches!(
+      result,
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { .. }))
+    ));
+  }
+
+  #[test]
+  fn num_images_out_of_range_clamps_to_four() {
+    for strategy in [
+      RequestMismatchMitigationStrategy::PayMoreUpgrade,
+      RequestMismatchMitigationStrategy::PayLessDowngrade,
+    ] {
+      let request = GenerateImageRequest {
+        image_batch_count: Some(9),
+        request_mismatch_mitigation_strategy: strategy,
+        ..base_gpt_image_1_image_request()
+      };
+      let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+        panic!("expected ArtcraftGptImage1")
+      };
+      assert!(
+        matches!(plan.num_images, ArtcraftGptImage1NumImages::Four),
+        "expected Four for count 9 with {:?}", strategy,
+      );
+    }
+  }
+
+  // ── Image inputs (mode detection) ────────────────────────────────────────
+
+  #[test]
+  fn no_image_inputs_is_text_to_image_mode() {
+    let request = GenerateImageRequest { image_inputs: None, ..base_gpt_image_1_image_request() };
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert!(plan.image_inputs.is_none());
+  }
+
+  #[test]
+  fn media_token_image_inputs_is_edit_mode() {
+    let tokens = vec![];
+    let request = GenerateImageRequest {
+      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      ..base_gpt_image_1_image_request()
+    };
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert!(plan.image_inputs.is_some());
+  }
+
+  #[test]
+  fn url_image_inputs_are_accepted_for_cost_path() {
+    // The omni-gen distillation hydrates media tokens to URLs before running
+    // cost estimation against Artcraft. URLs are accepted (and dropped) since
+    // cost only depends on quality + size + num_images.
+    let urls = vec!["https://example.com/image.jpg".to_string()];
+    let request = GenerateImageRequest {
+      image_inputs: Some(ImageListRef::Urls(&urls)),
+      ..base_gpt_image_1_image_request()
+    };
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert!(plan.image_inputs.is_none());
+  }
+
+  // ── Idempotency token ────────────────────────────────────────────────────
+
+  #[test]
+  fn idempotency_token_is_generated_when_unset() {
+    let request = base_gpt_image_1_image_request();
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert!(!plan.idempotency_token.is_empty());
+  }
+
+  #[test]
+  fn idempotency_token_passthrough() {
+    let token = "11111111-1111-1111-1111-111111111111";
+    let request = GenerateImageRequest { idempotency_token: Some(token), ..base_gpt_image_1_image_request() };
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert_eq!(plan.idempotency_token, token);
+  }
+
+  // ── Conversions to legacy storyteller-web request enums ─────────────────
+
+  #[test]
+  fn num_images_to_t2i_round_trip() {
+    use GenerateGptImage1TextToImageNumImages as T;
+    assert!(matches!(ArtcraftGptImage1NumImages::One.to_t2i(), T::One));
+    assert!(matches!(ArtcraftGptImage1NumImages::Two.to_t2i(), T::Two));
+    assert!(matches!(ArtcraftGptImage1NumImages::Three.to_t2i(), T::Three));
+    assert!(matches!(ArtcraftGptImage1NumImages::Four.to_t2i(), T::Four));
+  }
+
+  #[test]
+  fn num_images_to_edit_round_trip() {
+    use GptImage1EditImageNumImages as E;
+    assert!(matches!(ArtcraftGptImage1NumImages::One.to_edit(), E::One));
+    assert!(matches!(ArtcraftGptImage1NumImages::Two.to_edit(), E::Two));
+    assert!(matches!(ArtcraftGptImage1NumImages::Three.to_edit(), E::Three));
+    assert!(matches!(ArtcraftGptImage1NumImages::Four.to_edit(), E::Four));
+  }
+
+  #[test]
+  fn quality_to_t2i_round_trip() {
+    use GenerateGptImage1TextToImageImageQuality as T;
+    assert!(matches!(ArtcraftGptImage1Quality::Auto.to_t2i(), T::Auto));
+    assert!(matches!(ArtcraftGptImage1Quality::Low.to_t2i(), T::Low));
+    assert!(matches!(ArtcraftGptImage1Quality::Medium.to_t2i(), T::Medium));
+    assert!(matches!(ArtcraftGptImage1Quality::High.to_t2i(), T::High));
+  }
+
+  #[test]
+  fn quality_to_edit_round_trip() {
+    use GptImage1EditImageImageQuality as E;
+    assert!(matches!(ArtcraftGptImage1Quality::Auto.to_edit(), E::Auto));
+    assert!(matches!(ArtcraftGptImage1Quality::Low.to_edit(), E::Low));
+    assert!(matches!(ArtcraftGptImage1Quality::Medium.to_edit(), E::Medium));
+    assert!(matches!(ArtcraftGptImage1Quality::High.to_edit(), E::High));
+  }
+
+  #[test]
+  fn size_to_t2i_round_trip() {
+    use GenerateGptImage1TextToImageImageSize as T;
+    assert!(matches!(ArtcraftGptImage1Size::Square.to_t2i(), T::Square));
+    assert!(matches!(ArtcraftGptImage1Size::Horizontal.to_t2i(), T::Horizontal));
+    assert!(matches!(ArtcraftGptImage1Size::Vertical.to_t2i(), T::Vertical));
+  }
+
+  #[test]
+  fn size_to_edit_round_trip() {
+    use GptImage1EditImageImageSize as E;
+    assert!(matches!(ArtcraftGptImage1Size::Square.to_edit(), E::Square));
+    assert!(matches!(ArtcraftGptImage1Size::Horizontal.to_edit(), E::Horizontal));
+    assert!(matches!(ArtcraftGptImage1Size::Vertical.to_edit(), E::Vertical));
+  }
+}

@@ -59,3 +59,89 @@ pub async fn execute_artcraft_gpt_image_1(
     inference_job_token,
   }))
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::api::common_aspect_ratio::CommonAspectRatio;
+  use crate::api::image_list_ref::ImageListRef;
+  use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
+  use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
+  use crate::test_helpers::{base_gpt_image_1_image_request, get_artcraft_client};
+  use tokens::tokens::media_files::MediaFileToken;
+
+  // Build-only smoke test that exercises the full text-to-image plan path
+  // (no network I/O — we never call generate_image).
+  #[test]
+  fn build_text_to_image_plan_smoke() {
+    let request = GenerateImageRequest {
+      aspect_ratio: Some(CommonAspectRatio::Square),
+      image_batch_count: Some(1),
+      ..base_gpt_image_1_image_request()
+    };
+    let plan = request.build().expect("plan should build");
+    assert!(matches!(plan, ImageGenerationPlan::ArtcraftGptImage1(_)));
+  }
+
+  // Build-only smoke test for the edit path. We can't actually fire the
+  // request without an authenticated client, but we want to make sure the
+  // dispatcher recognizes media-token inputs as edit-mode.
+  #[test]
+  fn build_edit_image_plan_smoke() {
+    let tokens = vec![MediaFileToken::new_from_str("mf_test00000000000000000000000000")];
+    let request = GenerateImageRequest {
+      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      ..base_gpt_image_1_image_request()
+    };
+    let plan = request.build().expect("plan should build");
+    let ImageGenerationPlan::ArtcraftGptImage1(plan) = plan else {
+      panic!("expected ArtcraftGptImage1")
+    };
+    assert!(plan.image_inputs.is_some(), "edit mode must carry image_inputs");
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request and incurs cost
+  async fn test_text_to_image_gpt_image_1() {
+    let client = get_artcraft_client();
+    let request = GenerateImageRequest {
+      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+      image_batch_count: Some(1),
+      prompt: Some("a horse walking through a cyberpunk city at night"),
+      ..base_gpt_image_1_image_request()
+    };
+
+    let plan = request.build().unwrap();
+    let result = plan.generate_image(&client).await;
+
+    println!("Result: {:?}", result);
+    let response = result.expect("generate_image request failed");
+    let payload = response.get_artcraft_payload().expect("expected Artcraft payload");
+    println!("Job token: {:?}", payload.inference_job_token);
+  }
+
+  #[tokio::test]
+  #[ignore] // manually run — fires a real API request and incurs cost
+  async fn test_edit_image_gpt_image_1() {
+    let client = get_artcraft_client();
+
+    let image_tokens = vec![
+      MediaFileToken::new_from_str("m_r45apt2swza6wp8j2z10237t92kkr8"),
+    ];
+
+    let request = GenerateImageRequest {
+      prompt: Some("Change the background to a desert with cacti"),
+      image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
+      aspect_ratio: Some(CommonAspectRatio::Square),
+      image_batch_count: Some(1),
+      ..base_gpt_image_1_image_request()
+    };
+
+    let plan = request.build().unwrap();
+    let result = plan.generate_image(&client).await;
+
+    println!("Result: {:?}", result);
+    let response = result.expect("generate_image request failed");
+    let payload = response.get_artcraft_payload().expect("expected Artcraft payload");
+    println!("Job token: {:?}", payload.inference_job_token);
+  }
+}
