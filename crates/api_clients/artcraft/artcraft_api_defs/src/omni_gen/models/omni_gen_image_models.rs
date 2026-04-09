@@ -103,6 +103,7 @@ pub struct OmniGenImageModelDetails {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution_default: Option<CommonResolution>,
 
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub quality_options: Option<Vec<CommonQuality>>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
