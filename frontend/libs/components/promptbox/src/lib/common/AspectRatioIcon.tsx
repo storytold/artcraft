@@ -125,6 +125,7 @@ function commonAspectRatioToProportions(
     // Auto
     case CommonAspectRatio.Auto:
     case CommonAspectRatio.Auto2k:
+    case CommonAspectRatio.Auto3k:
     case CommonAspectRatio.Auto4k:
       return [1, 1]; // fallback, Auto uses the sparkle icon instead
 

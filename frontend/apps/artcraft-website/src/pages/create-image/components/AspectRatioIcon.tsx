@@ -85,6 +85,7 @@ const ASPECT_RATIO_PROPORTIONS: Record<string, [number, number]> = {
   tall_nine_by_twenty_one: [9, 21],
   auto: [1, 1],
   auto_2k: [1, 1],
+  auto_3k: [1, 1],
   auto_4k: [1, 1],
 };
 

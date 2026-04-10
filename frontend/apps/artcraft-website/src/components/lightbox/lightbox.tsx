@@ -147,6 +147,8 @@ interface LightboxProps {
   onNavigatePrev?: () => void;
   onNavigateNext?: () => void;
   onDeleted?: (id: string) => void;
+  /** When false, suppress batch carousel (batch siblings shown as separate gallery cards instead). Default true. */
+  showBatchCarousel?: boolean;
 }
 
 export function Lightbox({
@@ -161,6 +163,7 @@ export function Lightbox({
   onNavigatePrev,
   onNavigateNext,
   onDeleted,
+  showBatchCarousel = true,
 }: LightboxProps) {
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [promptData, setPromptData] = useState<PromptData>(EMPTY_PROMPT);
@@ -248,7 +251,9 @@ export function Lightbox({
   }, [mediaToken, isOpen, mediaFilesApi, promptsApi]);
 
   // Fetch batch images (from prop or auto-discovered batch token)
-  const effectiveBatchToken = propBatchImageToken || discoveredBatchToken;
+  const effectiveBatchToken = showBatchCarousel
+    ? (propBatchImageToken || discoveredBatchToken)
+    : undefined;
 
   useEffect(() => {
     if (!effectiveBatchToken || !isOpen) {

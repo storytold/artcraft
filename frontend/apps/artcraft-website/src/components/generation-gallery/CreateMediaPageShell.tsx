@@ -134,10 +134,10 @@ export function CreateMediaPageShell({
 
           {hasContent && (
             <div
-              className="h-full w-full overflow-y-auto pt-20"
+              className="h-full w-full overflow-y-auto pt-[74px]"
               style={{ paddingBottom: bottomOffset }}
             >
-              <div className="px-2 md:px-3 lg:px-4">
+              <div className="px-2">
                 {gridContent}
               </div>
             </div>

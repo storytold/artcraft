@@ -33,6 +33,7 @@ export const AspectRatioPicker = ({
   const isAutoRatio =
     useAspectRatio === CommonAspectRatio.Auto ||
     useAspectRatio === CommonAspectRatio.Auto2k ||
+    useAspectRatio === CommonAspectRatio.Auto3k ||
     useAspectRatio === CommonAspectRatio.Auto4k;
 
   const handleSelectAdapter = (item: PopoverItem) => {
@@ -44,6 +45,7 @@ export const AspectRatioPicker = ({
     return (
       ratio === CommonAspectRatio.Auto ||
       ratio === CommonAspectRatio.Auto2k ||
+      ratio === CommonAspectRatio.Auto3k ||
       ratio === CommonAspectRatio.Auto4k
     );
   };
@@ -123,6 +125,8 @@ const getAspectRatioTextLabel = (aspectRatio: CommonAspectRatio): string => {
     // With resolution baked in
     case CommonAspectRatio.Auto2k:
       return "Auto (2K)";
+    case CommonAspectRatio.Auto3k:
+      return "Auto (3K)";
     case CommonAspectRatio.Auto4k:
       return "Auto (4K)";
     case CommonAspectRatio.SquareHd:
@@ -176,6 +180,8 @@ const popOverLabelToAspectRatio = (
       return CommonAspectRatio.TallNineByTwentyOne;
     case "Auto (2K)":
       return CommonAspectRatio.Auto2k;
+    case "Auto (3K)":
+      return CommonAspectRatio.Auto3k;
     case "Auto (4K)":
       return CommonAspectRatio.Auto4k;
     case "Square (HD)":

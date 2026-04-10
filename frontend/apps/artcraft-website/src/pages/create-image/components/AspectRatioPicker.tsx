@@ -9,7 +9,7 @@ interface AspectRatioPickerProps {
   handleAspectRatioSelect: (selected: string) => void;
 }
 
-const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_4k"]);
+const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_3k", "auto_4k"]);
 
 export const AspectRatioPicker = ({
   aspectRatioOptions,
@@ -74,6 +74,7 @@ const ASPECT_RATIO_LABELS: Record<string, string> = {
   tall_nine_by_sixteen: "9:16 (Tall)",
   tall_nine_by_twenty_one: "9:21 (Tall)",
   auto_2k: "Auto (2K)",
+  auto_3k: "Auto (3K)",
   auto_4k: "Auto (4K)",
   square_hd: "Square (HD)",
   wide: "Wide",

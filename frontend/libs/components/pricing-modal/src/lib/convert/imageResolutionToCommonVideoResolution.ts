@@ -14,12 +14,25 @@ export function imageResolutionToCommonVideoResolution(
   resolution: string | undefined,
 ): CommonVideoResolution | null {
   switch (resolution) {
+    case "half_k":
+      return CommonVideoResolution.HalfK;
+    case "four_eighty_p":
+    case "480p":
+      return CommonVideoResolution.FourEightyP;
+    case "seven_twenty_p":
+    case "720p":
+      return CommonVideoResolution.SevenTwentyP;
     case "one_k":
     case "1k":
       return CommonVideoResolution.OneK;
+    case "ten_eighty_p":
+    case "1080p":
+      return CommonVideoResolution.TenEightyP;
     case "two_k":
     case "2k":
       return CommonVideoResolution.TwoK;
+    case "three_k":
+      return CommonVideoResolution.ThreeK;
     case "four_k":
     case "4k":
       return CommonVideoResolution.FourK;

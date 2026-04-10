@@ -32,6 +32,7 @@ export enum CommonAspectRatio {
   
   // Auto values that bake in resolution
   Auto2k = "auto_2k",
+  Auto3k = "auto_3k",
   Auto4k = "auto_4k",
 
   // Defined aspect ratios that bake in resolution

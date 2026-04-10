@@ -7,6 +7,7 @@ import type { GeneratedVideo } from "./create-video-store";
 export interface GenerateVideoParams {
   prompt: string;
   model: string;
+  numVideos?: number;
   aspectRatio?: string;
   duration?: number;
   resolution?: string;
@@ -31,6 +32,7 @@ export async function enqueueVideoGeneration(
     resolution: params.resolution ?? null,
     duration_seconds: params.duration ?? null,
     generate_audio: params.generateAudio ?? null,
+    video_batch_count: params.numVideos ?? 1,
     start_frame_image_media_token: params.startFrameImageMediaToken ?? null,
     end_frame_image_media_token: params.endFrameImageMediaToken ?? null,
     reference_image_media_tokens: params.referenceImageMediaTokens?.length

@@ -18,6 +18,7 @@ export enum CommonAspectRatio {
   Wide = "wide",
   Tall = "tall",
   Auto2k = "auto_2k",
+  Auto3k = "auto_3k",
   Auto4k = "auto_4k",
   SquareHd = "square_hd",
 }

@@ -36,6 +36,7 @@ import {
   startVideoPolling,
 } from "./generate-video-api";
 import { AspectRatioIcon, AutoIcon } from "../create-image/components/AspectRatioIcon";
+import { GenerationCountPicker } from "../create-image/components/GenerationCountPicker";
 import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 import {
   useOmniGenVideoModels,
@@ -49,7 +50,7 @@ const DEFAULT_MODEL_ID = "seedance_2p0";
 
 const VIDEO_FILTER = [FilterMediaClasses.VIDEO];
 
-const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_4k"]);
+const AUTO_RATIOS = new Set(["auto", "auto_2k", "auto_3k", "auto_4k"]);
 
 // ── Aspect ratio labels (shared with image page) ─────────────────────────
 
@@ -67,11 +68,27 @@ const AR_LABELS: Record<string, string> = {
   tall_nine_by_sixteen: "9:16 (Tall)",
   tall_nine_by_twenty_one: "9:21 (Tall)",
   auto_2k: "Auto (2K)",
+  auto_3k: "Auto (3K)",
   auto_4k: "Auto (4K)",
   square_hd: "Square (HD)",
   wide: "Wide",
   tall: "Tall",
 };
+
+const RES_LABELS: Record<string, string> = {
+  half_k: "0.5K",
+  four_eighty_p: "480p",
+  seven_twenty_p: "720p",
+  one_k: "1K",
+  ten_eighty_p: "1080p",
+  two_k: "2K",
+  three_k: "3K",
+  four_k: "4K",
+};
+
+const LABEL_TO_RES: Record<string, string> = Object.fromEntries(
+  Object.entries(RES_LABELS).map(([k, v]) => [v, k]),
+);
 
 // ── Model lookup ─────────────────────────────────────────────────────────
 
@@ -153,6 +170,8 @@ export default function CreateVideo() {
     [setUi],
   );
   const generateWithSound = ui.generateWithSound;
+  const numVideos = ui.numVideos;
+  const setNumVideos = useCallback((v: number) => setUi({ numVideos: v }), [setUi]);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Reference media
@@ -213,6 +232,7 @@ export default function CreateVideo() {
     aspectRatio: selectedSize,
     resolution,
     duration: duration ?? selectedModel?.duration_seconds_default ?? null,
+    numVideos,
     hasStartFrame: !isReferenceMode && referenceImages.length > 0,
     hasEndFrame: !isReferenceMode && hasEndFrame && !!endFrameImage,
     isReferenceMode,
@@ -264,7 +284,7 @@ export default function CreateVideo() {
     (): PopoverItem[] | null =>
       selectedModel?.resolution_options
         ? selectedModel.resolution_options.map((r) => ({
-            label: r,
+            label: RES_LABELS[r] ?? r,
             selected: r === (resolution ?? selectedModel.resolution_default),
           }))
         : null,
@@ -341,11 +361,27 @@ export default function CreateVideo() {
         resolution: model.resolution_default ?? null,
         generateWithSound: false,
         inputMode: "keyframe",
+        numVideos: Math.min(model.batch_size_max ?? 4, model.batch_size_default ?? 1),
       });
-      setReferenceImages([]);
-      setEndFrameImage(undefined);
-      setReferenceVideos([]);
-      setReferenceAudios([]);
+
+      // Only clear media that the new model doesn't support
+      const newSupportsKeyframe =
+        !!model.starting_keyframe_supported || !!model.starting_keyframe_required;
+      if (!newSupportsKeyframe) {
+        setReferenceImages([]);
+      }
+      if (!model.ending_keyframe_supported) {
+        setEndFrameImage(undefined);
+      }
+
+      const newSupportsRefs =
+        !!model.image_references_supported ||
+        !!model.video_references_supported ||
+        !!model.audio_references_supported;
+      if (!newSupportsRefs) {
+        setReferenceVideos([]);
+        setReferenceAudios([]);
+      }
     },
     [setUi],
   );
@@ -366,7 +402,7 @@ export default function CreateVideo() {
   );
 
   const handleResolutionChange = useCallback(
-    (item: PopoverItem) => setResolution(item.label),
+    (item: PopoverItem) => setResolution(LABEL_TO_RES[item.label] ?? item.label),
     [setResolution],
   );
 
@@ -430,6 +466,7 @@ export default function CreateVideo() {
       const result = await enqueueVideoGeneration({
         prompt: prompt.trim(),
         model: selectedModel.model,
+        numVideos,
         aspectRatio: selectedSize,
         duration: duration ?? selectedModel.duration_seconds_default ?? undefined,
         resolution: hasResolutionOptions
@@ -474,7 +511,7 @@ export default function CreateVideo() {
     }
   }, [
     prompt, isGenerating, needsImage, isReferenceMode, selectedModel, selectedSize,
-    duration, resolution, generateWithSound, hasResolutionOptions, hasSound,
+    numVideos, duration, resolution, generateWithSound, hasResolutionOptions, hasSound,
     supportsImagePrompts, hasEndFrame, referenceImages, endFrameImage,
     referenceVideos, referenceAudios, startBatch, setBatchJobToken, completeBatch, failBatch,
   ]);
@@ -574,6 +611,15 @@ export default function CreateVideo() {
                 />
               ) : undefined
             }
+            rightToolbar={
+              <GenerationCountPicker
+                batchSizeMax={selectedModel?.batch_size_max ?? 4}
+                batchSizeOptions={selectedModel?.batch_size_options}
+                currentCount={numVideos}
+                handleCountChange={setNumVideos}
+                panelTitle="No. of videos"
+              />
+            }
             leftToolbar={
               <>
                 {hasSizeOptions && (
@@ -649,6 +695,7 @@ export default function CreateVideo() {
             cdnUrl={lightbox.lightboxItem?.fullImage}
             mediaClass={lightbox.lightboxItem?.mediaClass}
             batchImageToken={lightbox.lightboxItem?.batchImageToken}
+            showBatchCarousel={false}
             onNavigatePrev={lightbox.navigatePrev}
             onNavigateNext={lightbox.navigateNext}
             onDeleted={gallery.removeItem}

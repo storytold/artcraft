@@ -385,6 +385,7 @@ export default function CreateImage() {
             cdnUrl={lightbox.lightboxItem?.fullImage}
             mediaClass={lightbox.lightboxItem?.mediaClass}
             batchImageToken={lightbox.lightboxItem?.batchImageToken}
+            showBatchCarousel={false}
             onNavigatePrev={lightbox.navigatePrev}
             onNavigateNext={lightbox.navigateNext}
             onDeleted={gallery.removeItem}

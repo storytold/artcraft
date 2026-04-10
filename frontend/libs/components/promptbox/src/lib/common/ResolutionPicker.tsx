@@ -93,12 +93,16 @@ export const ResolutionPicker = ({
 
 const getResolutionIcon = (resolution: CommonResolution): IconDefinition => {
   switch (resolution) {
+    case CommonResolution.HalfK:
+    case CommonResolution.FourEightyP:
+    case CommonResolution.SevenTwentyP:
     case CommonResolution.OneK:
+    case CommonResolution.TenEightyP:
       return faStandardDefinition;
     case CommonResolution.TwoK:
-      return faHighDefinition;
+    case CommonResolution.ThreeK:
     case CommonResolution.FourK:
-      return faHighDefinition; // TODO: Upgrade Font Awesome to include 4K icon
+      return faHighDefinition;
     default:
       console.error("Unknown resolution in icon mapping:", resolution);
       return faStandardDefinition; // Fail open-ish
@@ -107,10 +111,20 @@ const getResolutionIcon = (resolution: CommonResolution): IconDefinition => {
 
 const getResolutionTextLabel = (resolution: CommonResolution): string => {
   switch (resolution) {
+    case CommonResolution.HalfK:
+      return "0.5K";
+    case CommonResolution.FourEightyP:
+      return "480p";
+    case CommonResolution.SevenTwentyP:
+      return "720p";
     case CommonResolution.OneK:
       return "1K";
+    case CommonResolution.TenEightyP:
+      return "1080p";
     case CommonResolution.TwoK:
       return "2K";
+    case CommonResolution.ThreeK:
+      return "3K";
     case CommonResolution.FourK:
       return "4K";
     default:
@@ -125,10 +139,20 @@ const popOverLabelToResolution = (
   model: ImageModel,
 ): CommonResolution => {
   switch (label) {
+    case "0.5K":
+      return CommonResolution.HalfK;
+    case "480p":
+      return CommonResolution.FourEightyP;
+    case "720p":
+      return CommonResolution.SevenTwentyP;
     case "1K":
       return CommonResolution.OneK;
+    case "1080p":
+      return CommonResolution.TenEightyP;
     case "2K":
       return CommonResolution.TwoK;
+    case "3K":
+      return CommonResolution.ThreeK;
     case "4K":
       return CommonResolution.FourK;
   }

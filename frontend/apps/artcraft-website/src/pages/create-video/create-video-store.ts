@@ -27,6 +27,7 @@ export type VideoUiState = {
   resolution: string | null;
   generateWithSound: boolean;
   inputMode: VideoInputMode;
+  numVideos: number;
 };
 
 type CreateVideoState = {
@@ -50,6 +51,7 @@ const DEFAULT_UI: VideoUiState = {
   resolution: null,
   generateWithSound: false,
   inputMode: "keyframe",
+  numVideos: 1,
 };
 
 export const useCreateVideoStore = create<CreateVideoState>((set) => ({

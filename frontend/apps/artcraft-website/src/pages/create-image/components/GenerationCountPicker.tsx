@@ -10,6 +10,7 @@ interface GenerationCountPickerProps {
   batchSizeOptions?: number[] | null;
   currentCount: number;
   handleCountChange: (count: number) => void;
+  panelTitle?: string;
 }
 
 export const GenerationCountPicker = ({
@@ -17,6 +18,7 @@ export const GenerationCountPicker = ({
   batchSizeOptions,
   currentCount,
   handleCountChange,
+  panelTitle = "No. of images",
 }: GenerationCountPickerProps) => {
   const maxCount = batchSizeMax ?? DEFAULT_GENERATION_COUNT;
   const hasPredefinedOptions = !!batchSizeOptions?.length;
@@ -59,7 +61,7 @@ export const GenerationCountPicker = ({
         items={generationCountOptions}
         onSelect={onSelect}
         mode="toggle"
-        panelTitle="No. of images"
+        panelTitle={panelTitle}
         triggerIcon={<FontAwesomeIcon icon={faCopy} className="h-4 w-4" />}
         buttonClassName="h-9"
       />

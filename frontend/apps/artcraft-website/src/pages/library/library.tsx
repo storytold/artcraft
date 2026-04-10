@@ -139,8 +139,8 @@ export default function Library() {
     const thumbnail = isDimensional
       ? null
       : getMediaThumbnail(item.media_links, item.media_class, {
-          size: THUMBNAIL_SIZES.MEDIUM,
-        });
+        size: THUMBNAIL_SIZES.MEDIUM,
+      });
 
     return {
       id: item.token,
@@ -256,17 +256,17 @@ export default function Library() {
   const navigatePrev =
     currentIndex > 0
       ? () => {
-          const prev = flatItems[currentIndex - 1];
-          setLightboxItem(prev);
-        }
+        const prev = flatItems[currentIndex - 1];
+        setLightboxItem(prev);
+      }
       : undefined;
 
   const navigateNext =
     currentIndex >= 0 && currentIndex < flatItems.length - 1
       ? () => {
-          const next = flatItems[currentIndex + 1];
-          setLightboxItem(next);
-        }
+        const next = flatItems[currentIndex + 1];
+        setLightboxItem(next);
+      }
       : undefined;
 
   const handleItemDeleted = useCallback((id: string) => {
@@ -347,11 +347,10 @@ export default function Library() {
                 <button
                   key={filter.id}
                   onClick={() => navigate(filter.route)}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    activeFilter === filter.id
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeFilter === filter.id
                       ? "bg-ui-controls text-white"
                       : "text-white/60 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <FontAwesomeIcon icon={filter.icon} className="text-xs" />
                   {filter.label}
@@ -394,7 +393,7 @@ export default function Library() {
           ) : allItems.length === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <p className="text-white/40 text-sm mb-4">No items yet.</p>
-              {/* <div className="flex gap-3">
+              <div className="flex gap-3">
                 <Link to="/create-image">
                   <Button variant="primary" className="text-sm px-4 py-2">
                     Create Image
@@ -408,7 +407,7 @@ export default function Library() {
                     Create Video
                   </Button>
                 </Link>
-              </div> */}
+              </div>
             </div>
           ) : (
             <div className="space-y-6">

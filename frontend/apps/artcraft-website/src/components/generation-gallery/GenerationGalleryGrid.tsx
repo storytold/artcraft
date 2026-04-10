@@ -16,10 +16,10 @@ const BREAKPOINT_COLS = {
   640: 2,
 };
 
-// 4px gap on both axes — use Tailwind arbitrary values for exact pixels.
-// ml-[-4px] on container offsets the first column's pl-[4px].
-const MASONRY_CLASS = "flex w-auto ml-[-4px]";
-const COLUMN_CLASS = "pl-[4px]";
+// 8px gap on both axes — use Tailwind arbitrary values for exact pixels.
+// ml-[-8px] on container offsets the first column's pl-[8px].
+const MASONRY_CLASS = "flex w-auto ml-[-8px]";
+const COLUMN_CLASS = "pl-[8px]";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -82,7 +82,7 @@ export function GenerationGalleryGrid({
         columnClassName={COLUMN_CLASS}
       >
         {inProgressJobs.map((job) => (
-          <div key={job.id} className="mb-[4px]">
+          <div key={job.id} className="mb-[8px]">
             <PendingCard
               id={job.id}
               prompt={job.prompt}
@@ -93,7 +93,7 @@ export function GenerationGalleryGrid({
           </div>
         ))}
         {failedJobs.map((job) => (
-          <div key={job.id} className="mb-[4px]">
+          <div key={job.id} className="mb-[8px]">
             <FailedCard
               id={job.id}
               prompt={job.prompt}
@@ -105,12 +105,12 @@ export function GenerationGalleryGrid({
           </div>
         ))}
         {newlyCompletedItems.map((item) => (
-          <div key={`new-${item.id}`} className="mb-[4px]">
+          <div key={`new-${item.id}`} className="mb-[8px]">
             <GalleryCard item={item} onClick={onGalleryItemClick} />
           </div>
         ))}
         {filteredGalleryItems.map((item) => (
-          <div key={item.id} className="mb-[4px]">
+          <div key={item.id} className="mb-[8px]">
             <GalleryCard item={item} onClick={onGalleryItemClick} />
           </div>
         ))}
