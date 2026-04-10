@@ -79,6 +79,7 @@ fn plan_image_size(
     None
     | Some(CommonAspectRatio::Auto)
     | Some(CommonAspectRatio::Auto2k)
+    | Some(CommonAspectRatio::Auto3k)
     | Some(CommonAspectRatio::Auto4k) => Ok(None),
 
     // Square

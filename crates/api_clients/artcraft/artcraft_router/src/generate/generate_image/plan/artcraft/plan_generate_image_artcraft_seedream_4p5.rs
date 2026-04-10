@@ -72,7 +72,7 @@ fn plan_image_size(
       if is_edit_mode { Ok(Some(S::Auto2k)) } else { Ok(Some(S::Square)) }
     }
 
-    Some(CommonAspectRatio::Auto2k) => Ok(Some(S::Auto2k)),
+    Some(CommonAspectRatio::Auto2k) | Some(CommonAspectRatio::Auto3k) => Ok(Some(S::Auto2k)),
     Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto4k)),
 
     // Square

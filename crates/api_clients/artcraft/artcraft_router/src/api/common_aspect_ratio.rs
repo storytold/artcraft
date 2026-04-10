@@ -38,6 +38,8 @@ pub enum CommonAspectRatio {
   // These are from the Seedream models
   #[serde(rename = "auto_2k")]
   Auto2k,
+  #[serde(rename = "auto_3k")]
+  Auto3k,
   #[serde(rename = "auto_4k")]
   Auto4k,
 

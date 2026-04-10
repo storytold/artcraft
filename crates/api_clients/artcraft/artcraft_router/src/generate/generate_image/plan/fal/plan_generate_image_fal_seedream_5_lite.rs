@@ -87,6 +87,7 @@ fn plan_image_size(
     },
 
     Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k) => Ok(Some(S::Auto2k)),
+    Some(CommonAspectRatio::Auto3k) => Ok(Some(S::Auto3k)),
     // No 4K — fall back to 3K.
     Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto3k)),
 

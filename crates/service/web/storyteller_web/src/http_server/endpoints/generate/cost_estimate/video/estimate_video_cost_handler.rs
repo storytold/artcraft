@@ -168,6 +168,7 @@ fn map_aspect_ratio(ar: CommonAspectRatio) -> RouterAspectRatio {
     CommonAspectRatio::Wide => RouterAspectRatio::Wide,
     CommonAspectRatio::Tall => RouterAspectRatio::Tall,
     CommonAspectRatio::Auto2k => RouterAspectRatio::Auto2k,
+    CommonAspectRatio::Auto3k => RouterAspectRatio::Auto3k,
     CommonAspectRatio::Auto4k => RouterAspectRatio::Auto4k,
     CommonAspectRatio::SquareHd => RouterAspectRatio::SquareHd,
   }

@@ -289,6 +289,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
     image_refs_supported: Some(true),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::Auto2k,
+      CommonAspectRatio::Auto3k,
       CommonAspectRatio::Square,
       CommonAspectRatio::SquareHd,
       CommonAspectRatio::WideFourByThree,
@@ -297,7 +298,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
       CommonAspectRatio::TallNineBySixteen,
     ]),
     aspect_ratio_default: Some(CommonAspectRatio::Square),
-    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto2k),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto3k),
     batch_size_min: Some(1),
     batch_size_max: Some(4),
     batch_size_default: Some(1),

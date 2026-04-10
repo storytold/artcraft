@@ -121,6 +121,7 @@ fn plan_image_size(aspect_ratio: Option<CommonAspectRatio>) -> Option<ArtcraftGp
     None
     | Some(CommonAspectRatio::Auto)
     | Some(CommonAspectRatio::Auto2k)
+    | Some(CommonAspectRatio::Auto3k)
     | Some(CommonAspectRatio::Auto4k) => None,
 
     Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Some(S::Square),

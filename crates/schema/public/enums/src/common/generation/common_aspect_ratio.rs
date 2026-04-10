@@ -34,6 +34,8 @@ pub enum CommonAspectRatio {
   Tall,
   #[serde(rename = "auto_2k")]
   Auto2k,
+  #[serde(rename = "auto_3k")]
+  Auto3k,
   #[serde(rename = "auto_4k")]
   Auto4k,
   SquareHd,
@@ -61,6 +63,7 @@ impl CommonAspectRatio {
       Self::Wide => "wide",
       Self::Tall => "tall",
       Self::Auto2k => "auto_2k",
+      Self::Auto3k => "auto_3k",
       Self::Auto4k => "auto_4k",
       Self::SquareHd => "square_hd",
     }
@@ -83,6 +86,7 @@ impl CommonAspectRatio {
       "wide" => Ok(Self::Wide),
       "tall" => Ok(Self::Tall),
       "auto_2k" => Ok(Self::Auto2k),
+      "auto_3k" => Ok(Self::Auto3k),
       "auto_4k" => Ok(Self::Auto4k),
       "square_hd" => Ok(Self::SquareHd),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
@@ -106,6 +110,7 @@ impl CommonAspectRatio {
       Self::Wide,
       Self::Tall,
       Self::Auto2k,
+      Self::Auto3k,
       Self::Auto4k,
       Self::SquareHd,
     ])
@@ -139,6 +144,7 @@ mod tests {
       assert_serialization(CommonAspectRatio::Wide, "wide");
       assert_serialization(CommonAspectRatio::Tall, "tall");
       assert_serialization(CommonAspectRatio::Auto2k, "auto_2k");
+      assert_serialization(CommonAspectRatio::Auto3k, "auto_3k");
       assert_serialization(CommonAspectRatio::Auto4k, "auto_4k");
       assert_serialization(CommonAspectRatio::SquareHd, "square_hd");
     }
@@ -160,6 +166,7 @@ mod tests {
       assert_eq!(CommonAspectRatio::Wide.to_str(), "wide");
       assert_eq!(CommonAspectRatio::Tall.to_str(), "tall");
       assert_eq!(CommonAspectRatio::Auto2k.to_str(), "auto_2k");
+      assert_eq!(CommonAspectRatio::Auto3k.to_str(), "auto_3k");
       assert_eq!(CommonAspectRatio::Auto4k.to_str(), "auto_4k");
       assert_eq!(CommonAspectRatio::SquareHd.to_str(), "square_hd");
     }
@@ -181,6 +188,7 @@ mod tests {
       assert_eq!(CommonAspectRatio::from_str("wide").unwrap(), CommonAspectRatio::Wide);
       assert_eq!(CommonAspectRatio::from_str("tall").unwrap(), CommonAspectRatio::Tall);
       assert_eq!(CommonAspectRatio::from_str("auto_2k").unwrap(), CommonAspectRatio::Auto2k);
+      assert_eq!(CommonAspectRatio::from_str("auto_3k").unwrap(), CommonAspectRatio::Auto3k);
       assert_eq!(CommonAspectRatio::from_str("auto_4k").unwrap(), CommonAspectRatio::Auto4k);
       assert_eq!(CommonAspectRatio::from_str("square_hd").unwrap(), CommonAspectRatio::SquareHd);
     }
@@ -199,7 +207,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let variants = CommonAspectRatio::all_variants();
-      assert_eq!(variants.len(), 17);
+      assert_eq!(variants.len(), 18);
     }
   }
 

@@ -82,7 +82,7 @@ fn plan_image_size(
   match aspect_ratio {
     None => Ok(None),
 
-    Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k) | Some(CommonAspectRatio::Auto4k) => {
+    Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k) | Some(CommonAspectRatio::Auto3k) | Some(CommonAspectRatio::Auto4k) => {
       Ok(Some(S::SquareHd))
     }
 

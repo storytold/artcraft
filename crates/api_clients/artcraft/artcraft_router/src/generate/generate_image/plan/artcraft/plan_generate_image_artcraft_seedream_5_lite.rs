@@ -73,6 +73,7 @@ fn plan_image_size(
     }
 
     Some(CommonAspectRatio::Auto2k) => Ok(Some(S::Auto2k)),
+    Some(CommonAspectRatio::Auto3k) => Ok(Some(S::Auto3k)),
     // 5 Lite max is auto_3K; map Auto4k down to Auto3k
     Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto3k)),
 
@@ -148,8 +149,6 @@ mod tests {
   use super::*;
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::image_list_ref::ImageListRef;
-  use crate::errors::artcraft_router_error::ArtcraftRouterError;
-  use crate::errors::client_error::ClientError;
   use crate::test_helpers::base_seedream_5_lite_image_request;
   use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen::{
     BytedanceSeedream5LiteMultiFunctionImageGenImageSize as S,

@@ -78,7 +78,7 @@ fn plan_image_size(
     None => Ok(None),
 
     // No bare Auto for v4.5 — fall back to Auto2k.
-    Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k) => Ok(Some(S::Auto2k)),
+    Some(CommonAspectRatio::Auto) | Some(CommonAspectRatio::Auto2k) | Some(CommonAspectRatio::Auto3k) => Ok(Some(S::Auto2k)),
     Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto4k)),
 
     Some(CommonAspectRatio::Square) => Ok(Some(S::Square)),
