@@ -382,15 +382,9 @@ export const GalleryModal = React.memo(
     const failedImageUrls = useRef<Set<string>>(new Set());
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [username, setUsername] = useState<string>("");
-    const forceFilterRef = useRef(forceFilter);
+    const [usernameError, setUsernameError] = useState(false);
+    const [usernameRetryCount, setUsernameRetryCount] = useState(0);
     const [activeFilter, setActiveFilter] = useState(forceFilter || "all");
-
-    // If forceFilter is provided, always use it
-    useEffect(() => {
-      if (forceFilterRef.current) {
-        setActiveFilter(forceFilterRef.current);
-      }
-    }, [forceFilterRef]);
     const minColumns = 3;
     const maxColumns = 12;
     // Default gridColumns to 5
@@ -469,13 +463,20 @@ export const GalleryModal = React.memo(
     // Fetch & cache username — uses module-level cache so subsequent opens are instant
     useEffect(() => {
       const getUsername = async () => {
+        if (username) return; // already have it
+        setUsernameError(false);
         const name = await getCachedUsername();
-        if (name) setUsername(name);
+        if (name) {
+          setUsername(name);
+          // refreshGallery (triggered by username state change) handles initialLoading
+        } else {
+          setUsernameError(true);
+        }
       };
       if (isOpen || (mode === "view" && galleryModalVisibleViewMode.value)) {
         getUsername();
       }
-    }, [mode, galleryModalVisibleViewMode.value, isOpen]);
+    }, [mode, galleryModalVisibleViewMode.value, isOpen, username, usernameRetryCount]);
 
     // Helper to build the cache key for the current filter
     const getCacheKey = useCallback(
@@ -1064,7 +1065,7 @@ export const GalleryModal = React.memo(
                   <Tooltip
                     position="top"
                     content={
-                      forceFilterRef.current ? "Filter locked" : "Filter"
+                      forceFilter ? "Filter locked" : "Filter"
                     }
                     closeOnClick={true}
                   >
@@ -1073,7 +1074,7 @@ export const GalleryModal = React.memo(
                       position="bottom"
                       align="end"
                       buttonClassName={`relative z-[51] mr-3 ${
-                        forceFilterRef.current
+                        forceFilter
                           ? "opacity-70 pointer-events-none"
                           : ""
                       }`}
@@ -1084,12 +1085,12 @@ export const GalleryModal = React.memo(
                         icon: f.icon,
                         // Use a custom property that will be passed through but not cause type errors
                         customProps: {
-                          disabled: forceFilterRef.current !== undefined,
+                          disabled: forceFilter !== undefined,
                         },
                       }))}
                       onSelect={(item) => {
                         // Only allow filter changes if no forceFilter was provided
-                        if (!forceFilterRef.current) {
+                        if (!forceFilter) {
                           const filter = FILTERS.find(
                             (f) => f.label === item.label,
                           );
@@ -1125,7 +1126,19 @@ export const GalleryModal = React.memo(
               className="flex-1 overflow-y-auto bg-ui-panel"
               onScroll={handleScroll}
             >
-              {initialLoading && allItems.length === 0 ? (
+              {usernameError && allItems.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                  <div className="flex flex-col items-center gap-3 text-sm">
+                    <div className="text-base-fg/60">Unable to load gallery. Please ensure you are logged in.</div>
+                    <button
+                      className="text-xs text-blue-400 hover:text-blue-300 underline"
+                      onClick={() => { setUsernameError(false); setUsernameRetryCount(c => c + 1); }}
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              ) : (initialLoading || !username) && allItems.length === 0 ? (
                 <SkeletonGrid columns={gridColumns} />
               ) : allItems.length === 0 && !loading ? (
                 <div className="flex h-full items-center justify-center">
