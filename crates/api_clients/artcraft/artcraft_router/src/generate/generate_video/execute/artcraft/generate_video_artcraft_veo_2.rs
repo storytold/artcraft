@@ -14,7 +14,7 @@ pub async fn execute_artcraft_veo_2(
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = GenerateVeo2ImageToVideoRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    media_file_token: Some(plan.start_frame.to_owned()),
+    media_file_token: plan.start_frame.map(|t| t.to_owned()),
     prompt: plan.prompt.map(|p| p.to_string()),
     aspect_ratio: plan.aspect_ratio.clone(),
     duration: plan.duration.clone(),

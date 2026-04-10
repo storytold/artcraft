@@ -1,9 +1,9 @@
 use crate::creds::fal_api_key::FalApiKey;
 use crate::error::classify_fal_error::classify_fal_error;
 use crate::error::fal_error_plus::FalErrorPlus;
-use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
-use crate::requests::http::video::image::http_veo_2_image_to_video::{veo_2_image_to_video, Veo2ImageToVideoInput};
 use crate::requests::api::webhook_response::WebhookResponse;
+use crate::requests::http::video::image::http_veo_2_image_to_video::{veo_2_image_to_video, Veo2ImageToVideoInput};
+use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use reqwest::IntoUrl;
 
 pub struct Veo2Args<'a, U: IntoUrl, V: IntoUrl> {
@@ -92,23 +92,44 @@ mod tests {
   use crate::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{enqueue_veo_2_image_to_video_webhook, Veo2Args, Veo2AspectRatio, Veo2Duration};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
+  use test_data::web::image_urls::MOUNTAIN_TREE_IMAGE_URL;
 
   #[tokio::test]
   #[ignore]
-  async fn test_kling21_pro_video() -> AnyhowResult<()> {
-    let image_url = "https://cdn-2.fakeyou.com/media/3/4/h/f/s/34hfsmt8e38rvne6mwa4pwbxr6292sgy/image_34hfsmt8e38rvne6mwa4pwbxr6292sgy.png";
-
+  async fn test_veo_2_video_wide() -> AnyhowResult<()> {
     // XXX: Don't commit secrets!
     let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
 
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Veo2Args {
-      image_url: image_url,
+      image_url: MOUNTAIN_TREE_IMAGE_URL,
       prompt: "a shot of the mountains as the sun sets and reveals the moon and stars",
       api_key: &api_key,
       duration: Veo2Duration::Default,
       aspect_ratio: Veo2AspectRatio::WideSixteenNine,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let result = enqueue_veo_2_image_to_video_webhook(args).await?;
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  #[ignore]
+  async fn test_veo_2_video_tall() -> AnyhowResult<()> {
+    // XXX: Don't commit secrets!
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+
+    let api_key = FalApiKey::from_str(&secret);
+
+    let args = Veo2Args {
+      image_url: MOUNTAIN_TREE_IMAGE_URL,
+      prompt: "a shot of the mountains as the sun sets and reveals the moon and stars",
+      api_key: &api_key,
+      duration: Veo2Duration::Default,
+      aspect_ratio: Veo2AspectRatio::TallNineSixteen,
       webhook_url: "https://example.com/webhook",
     };
 

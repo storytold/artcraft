@@ -1,4 +1,4 @@
-//! Tests for omni-gen video distillation against the Seedance 1.5 Pro model.
+//! Tests for omni-gen video against the Seedance 1.5 Pro model.
 //!
 //! Seedance 1.5 Pro supports both text-to-video and image-to-video (via
 //! start_frame / end_frame). Pricing is based on resolution × duration ×

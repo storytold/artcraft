@@ -13,7 +13,10 @@ use tokens::tokens::media_files::MediaFileToken;
 #[derive(Debug, Clone)]
 pub struct PlanArtcraftVeo2<'a> {
   pub prompt: Option<&'a str>,
-  pub start_frame: &'a MediaFileToken,
+  /// Required for execution. May be None on the cost path when the omni-gen
+  /// distillation hydrated the media token to a URL (which the Artcraft
+  /// provider can't use but cost estimation doesn't need).
+  pub start_frame: Option<&'a MediaFileToken>,
   pub aspect_ratio: Option<GenerateVeo2AspectRatio>,
   pub duration: Option<GenerateVeo2Duration>,
   pub idempotency_token: String,
@@ -25,10 +28,11 @@ pub fn plan_generate_video_artcraft_veo_2<'a>(
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let start_frame = match request.start_frame {
-    Some(ImageRef::MediaFileToken(t)) => t,
-    Some(ImageRef::Url(_)) => {
-      return Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    Some(ImageRef::MediaFileToken(t)) => Some(t),
+    // Omni-gen distillation hydrates media tokens to URLs before running the
+    // Artcraft cost path. Cost only depends on duration, so URL-form refs are
+    // accepted and dropped.
+    Some(ImageRef::Url(_)) => None,
     None => {
       return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
         field: "start_frame",
