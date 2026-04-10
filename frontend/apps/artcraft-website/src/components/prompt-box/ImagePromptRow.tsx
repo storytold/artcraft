@@ -229,7 +229,7 @@ export const ImagePromptRow = ({
         />
       )}
       <div
-        className={twMerge("glass flex rounded-t-xl", className)}
+        className={twMerge("glass flex flex-col sm:flex-row rounded-t-xl", className)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
@@ -351,9 +351,9 @@ export const ImagePromptRow = ({
 
         {/* End frame section */}
         {isVideo && showEndFrameSection && (
-          <div className="flex min-w-0 flex-1 items-stretch gap-3 pe-3">
+          <div className="flex min-w-0 flex-1 items-stretch gap-3 px-3 sm:pe-3 sm:ps-0 border-t sm:border-t-0 border-white/10">
             <div className="flex grow gap-1">
-              <div className="w-[1px] bg-white/10" />
+              <div className="hidden sm:block w-[1px] bg-white/10" />
               <div className="flex grow flex-col gap-1 p-2">
                 <div className="flex items-center gap-2 text-white/90">
                   <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />

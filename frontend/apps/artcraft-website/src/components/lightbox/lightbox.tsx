@@ -414,12 +414,13 @@ export function Lightbox({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        className="rounded-xl h-[680px] w-[1100px] max-w-[95vw] max-h-[90vh] p-0"
+        className="rounded-xl h-[90vh] sm:h-[680px] w-full sm:w-[1100px] max-w-[95vw] max-h-[90vh] p-0 border-white/5 shadow-2xl"
+        backdropClassName="!bg-black/80"
         showClose={false}
       >
-        <div className="flex h-full">
+        <div className="flex flex-col sm:flex-row h-full">
           {/* Media preview panel */}
-          <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black">
+          <div className="group/nav relative flex h-[45vh] sm:h-full flex-1 items-center justify-center overflow-hidden rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none bg-black">
             {/* Close button */}
             <button
               onClick={onClose}
@@ -448,8 +449,16 @@ export function Lightbox({
                 autoPlay
                 muted
                 playsInline
+                disablePictureInPicture
+                controlsList="nodownload noplaybackrate nofullscreen"
                 className="h-full w-full object-contain"
                 onLoadedData={() => setMediaLoaded(true)}
+                ref={(el) => {
+                  if (el) {
+                    el.setAttribute("webkit-playsinline", "true");
+                    el.setAttribute("x-webkit-airplay", "deny");
+                  }
+                }}
               >
                 <source src={selectedImageUrl} type="video/mp4" />
               </video>
@@ -540,7 +549,7 @@ export function Lightbox({
                   e.stopPropagation();
                   onNavigatePrev();
                 }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100"
+                className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Previous item"
               >
                 <FontAwesomeIcon icon={faChevronLeft} className="text-lg" />
@@ -552,7 +561,7 @@ export function Lightbox({
                   e.stopPropagation();
                   onNavigateNext();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100"
+                className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Next item"
               >
                 <FontAwesomeIcon icon={faChevronRight} className="text-lg" />
@@ -561,7 +570,7 @@ export function Lightbox({
           </div>
 
           {/* Info sidebar */}
-          <div className="flex h-full w-[300px] shrink-0 flex-col bg-ui-panel rounded-r-xl">
+          <div className="flex w-full sm:w-[300px] shrink-0 flex-col bg-ui-panel rounded-b-xl sm:rounded-b-none sm:rounded-r-xl min-h-0 flex-1 sm:flex-none sm:h-full overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 min-h-0">
               {promptData.loading ? (
                 <div className="space-y-6 animate-pulse">

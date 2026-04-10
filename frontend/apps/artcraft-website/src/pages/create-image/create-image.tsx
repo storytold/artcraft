@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { faImage } from "@fortawesome/pro-solid-svg-icons";
 import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
-import { type PopoverItem } from "@storyteller/ui-popover";
+import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   PromptBox,
   ImagePickerModal,
@@ -361,6 +362,24 @@ export default function CreateImage() {
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
+            modelSelector={
+              <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+                <PopoverMenu
+                  items={modelItems}
+                  onSelect={handleModelChange}
+                  mode="toggle"
+                  panelTitle="Select Model"
+                  showIconsInList
+                  triggerIcon={
+                    <img
+                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      alt=""
+                      className="h-4 w-4 icon-auto-contrast"
+                    />
+                  }
+                />
+              </Tooltip>
+            }
             leftToolbar={
               <>
                 {hasAspectRatios && selectedModel && (

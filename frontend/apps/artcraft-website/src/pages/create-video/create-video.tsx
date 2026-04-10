@@ -735,6 +735,24 @@ export default function CreateVideo() {
             onPickEndFrameFromLibrary={
               hasEndFrame ? () => setIsEndFramePickerOpen(true) : undefined
             }
+            modelSelector={
+              <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+                <PopoverMenu
+                  items={modelItems}
+                  onSelect={handleModelChange}
+                  mode="toggle"
+                  panelTitle="Select Model"
+                  showIconsInList
+                  triggerIcon={
+                    <img
+                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      alt=""
+                      className="h-4 w-4 icon-auto-contrast"
+                    />
+                  }
+                />
+              </Tooltip>
+            }
             onClearAllRefs={() => {
               setReferenceImages([]);
               setEndFrameImage(undefined);

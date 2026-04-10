@@ -941,7 +941,7 @@ export const Modal = ({
 
           <ModalExpandContext.Provider value={{ expanded, toggleExpanded }}>
             <div
-              className="flex min-h-full items-center justify-center p-4 text-center"
+              className="flex min-h-full items-center justify-center p-0 sm:p-4 text-center"
               style={
                 allowBackgroundInteraction
                   ? { pointerEvents: "none" }

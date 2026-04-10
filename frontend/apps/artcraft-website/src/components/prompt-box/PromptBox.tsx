@@ -101,6 +101,9 @@ interface PromptBoxProps {
   // Media reference row (video/audio refs, rendered between image row and prompt)
   mediaReferenceRow?: ReactNode;
 
+  // Model selector (rendered above the toolbar, typically hidden on desktop via lg:hidden)
+  modelSelector?: ReactNode;
+
   // @-mention support (enables colored prompt overlay + autocomplete)
   mentionItems?: MentionItem[];
 }
@@ -131,6 +134,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       onPickEndFrameFromLibrary,
       onClearAllRefs,
       mediaReferenceRow,
+      modelSelector,
       mentionItems,
     },
     ref,
@@ -508,9 +512,12 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               </div>
             </div>
 
-            {/* Toolbar: horizontal scroll on mobile, normal flex on desktop */}
+            {/* Toolbar */}
             <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                {modelSelector && (
+                  <div className="lg:hidden">{modelSelector}</div>
+                )}
                 {leftToolbar}
               </div>
               <div className="flex items-center gap-2 sm:shrink-0">
