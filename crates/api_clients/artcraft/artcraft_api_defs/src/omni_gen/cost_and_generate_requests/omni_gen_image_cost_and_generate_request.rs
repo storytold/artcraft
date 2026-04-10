@@ -40,11 +40,11 @@ pub struct OmniGenImageCostAndGenerateRequest {
   pub image_batch_count: Option<u16>,
 
   /// Only for angle manipulation models.
-  pub horizontal_angle: Option<f64>,
+  pub adjust_horizontal_angle: Option<f64>,
 
   /// Only for angle manipulation models.
-  pub vertical_angle: Option<f64>,
+  pub adjust_vertical_angle: Option<f64>,
 
   /// Only for angle manipulation models.
-  pub zoom: Option<f64>,
+  pub adjust_zoom: Option<f64>,
 }

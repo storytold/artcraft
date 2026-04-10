@@ -53,9 +53,9 @@ mod tests {
       aspect_ratio,
       quality,
       image_batch_count,
-      horizontal_angle: None,
-      vertical_angle: None,
-      zoom: None,
+      adjust_horizontal_angle: None,
+      adjust_vertical_angle: None,
+      adjust_zoom: None,
     }
   }
 
