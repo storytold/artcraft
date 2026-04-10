@@ -46,9 +46,10 @@ fn resolve_image_list_ref<'a>(
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
-    Some(ImageListRef::Urls(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    // Omni-gen distillation hydrates media tokens to URLs before running the
+    // Artcraft cost path. Cost only depends on num_images, so URL-form inputs
+    // are accepted and dropped.
+    Some(ImageListRef::Urls(_)) => Ok(None),
   }
 }
 
@@ -352,16 +353,16 @@ mod tests {
   // ── Image inputs ──────────────────────────────────────────────────────────
 
   #[test]
-  fn url_image_inputs_returns_error() {
+  fn url_image_inputs_are_accepted_for_cost_path() {
     let urls = vec!["https://example.com/image.jpg".to_string()];
     let request = GenerateImageRequest {
       image_inputs: Some(ImageListRef::Urls(&urls)),
       ..base_seedream_4p5_image_request()
     };
-    assert!(matches!(
-      request.build(),
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    ));
+    let ImageGenerationPlan::ArtcraftSeedream4p5(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftSeedream4p5")
+    };
+    assert!(plan.image_inputs.is_none());
   }
 
   #[test]
