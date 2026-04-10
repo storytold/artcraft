@@ -1,14 +1,13 @@
 use crate::core::api_adapters::aspect_ratio::common_aspect_ratio::CommonAspectRatio as DesktopCommonAspectRatio;
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason};
-use crate::core::commands::enqueue::image_edit::enqueue_edit_image_command::{
-  EditImageResolution, EditImageSize, EnqueueEditImageCommand,
-};
+use crate::core::commands::enqueue::image_edit::enqueue_edit_image_command::{EditImageQuality, EditImageResolution, EditImageSize, EnqueueEditImageCommand};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterCommonAspectRatio;
 use artcraft_router::api::common_image_model::CommonImageModel;
+use artcraft_router::api::common_quality::CommonQuality as RouterCommonQuality;
 use artcraft_router::api::common_resolution::CommonResolution as RouterCommonResolution;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
@@ -64,6 +63,7 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
 
   let aspect_ratio = get_aspect_ratio_edit(request);
   let resolution = get_resolution_edit(request);
+  let quality = get_quality_edit(request);
 
   let router_request = GenerateImageRequest {
     model,
@@ -72,6 +72,7 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
     image_inputs,
     resolution,
     aspect_ratio,
+    quality,
     image_batch_count: request.image_count.map(|n| n as u16),
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     generation_mode_mismatch_strategy: None,
@@ -131,6 +132,15 @@ fn get_resolution_edit(request: &EnqueueEditImageCommand) -> Option<RouterCommon
     EditImageResolution::OneK => RouterCommonResolution::OneK,
     EditImageResolution::TwoK => RouterCommonResolution::TwoK,
     EditImageResolution::FourK => RouterCommonResolution::FourK,
+  })
+}
+
+fn get_quality_edit(request: &EnqueueEditImageCommand) -> Option<RouterCommonQuality> {
+  request.image_quality.map(|res| match res {
+    EditImageQuality::High => RouterCommonQuality::High,
+    EditImageQuality::Medium => RouterCommonQuality::Medium,
+    EditImageQuality::Low => RouterCommonQuality::Low,
+    EditImageQuality::Auto => RouterCommonQuality::High,
   })
 }
 

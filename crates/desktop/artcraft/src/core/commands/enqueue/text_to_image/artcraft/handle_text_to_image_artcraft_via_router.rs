@@ -10,6 +10,7 @@ use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterCommonAspectRatio;
 use artcraft_router::api::common_image_model::CommonImageModel;
+use artcraft_router::api::common_quality::CommonQuality as RouterCommonQuality;
 use artcraft_router::api::common_resolution::CommonResolution as RouterCommonResolution;
 use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::provider::Provider;
@@ -42,6 +43,7 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
 
   let aspect_ratio = get_aspect_ratio_t2i(request);
   let resolution = get_resolution_t2i(request);
+  let quality = get_quality_t2i(request);
 
   let router_request = GenerateImageRequest {
     model,
@@ -50,6 +52,7 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
     image_inputs,
     resolution,
     aspect_ratio,
+    quality,
     image_batch_count: request.number_images.map(|n| n as u16),
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     generation_mode_mismatch_strategy: None,
@@ -114,6 +117,10 @@ fn get_resolution_t2i(request: &EnqueueTextToImageRequest) -> Option<RouterCommo
     });
   }
   None
+}
+
+fn get_quality_t2i(request: &EnqueueTextToImageRequest) -> Option<RouterCommonQuality> {
+  None // TODO
 }
 
 fn convert_desktop_aspect_ratio(ar: CommonAspectRatio2) -> RouterCommonAspectRatio {
