@@ -7,3 +7,4 @@ mod test_gpt_image_1p5;
 mod test_nano_banana;
 mod test_nano_banana_2;
 mod test_nano_banana_pro;
+mod test_seedream_4;
