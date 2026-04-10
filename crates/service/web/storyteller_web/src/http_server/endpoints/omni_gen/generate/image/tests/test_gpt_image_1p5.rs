@@ -3,14 +3,14 @@
 //! GPT Image 1.5 is multi-function: text-to-image and image-to-image (edit).
 //!
 //! Artcraft-tier pricing (what the user is billed):
-//!   Low    – 1¢ (any size)
-//!   Medium – 3¢ (square/unset) / 5¢ (wide or tall)  ← default when quality unset
-//!   High   – 13¢ (square/unset) / 20¢ (wide or tall)
+//!   Low    – 1¢ (square/unset) / 2¢ (wide or tall)
+//!   Medium – 4¢ (square/unset) / 5¢ (wide) / 6¢ (tall)
+//!   High   – 14¢ (square/unset) / 20¢ (wide or tall)  ← default when quality unset
 //!
 //! The Fal execution plan maps quality from the omni request (defaulting to
-//! Medium when unspecified) and maps aspect ratios to three image sizes:
+//! High when unspecified) and maps aspect ratios to three image sizes:
 //! Square (1024×1024), Wide (1536×1024), Tall (1024×1536).
-//! Auto/unset maps to None (API default).
+//! Auto/unset maps to None (API default, treated as square for pricing).
 
 #[cfg(test)]
 mod tests {
@@ -95,48 +95,38 @@ mod tests {
         distill_text(&request).cost.cost_in_usd_cents.unwrap()
       }
 
-      // ── Default quality (None → Medium) ──────────────────────────────────
+      // ── Default quality (None → High) ────────────────────────────────────
 
       #[test]
-      fn default_quality_square_costs_3() {
-        assert_eq!(cost(None, Some(CommonAspectRatio::Square), Some(1)), 3);
+      fn default_quality_square_costs_14() {
+        assert_eq!(cost(None, Some(CommonAspectRatio::Square), Some(1)), 14);
       }
 
       #[test]
-      fn default_quality_wide_costs_5() {
-        assert_eq!(cost(None, Some(CommonAspectRatio::WideSixteenByNine), Some(1)), 5);
+      fn default_quality_unset_costs_14() {
+        assert_eq!(cost(None, None, Some(1)), 14);
       }
 
       #[test]
-      fn default_quality_tall_costs_5() {
-        assert_eq!(cost(None, Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 5);
+      fn default_quality_auto_costs_14() {
+        assert_eq!(cost(None, Some(CommonAspectRatio::Auto), Some(1)), 14);
       }
 
       #[test]
-      fn default_quality_unset_size_costs_3() {
-        assert_eq!(cost(None, None, Some(1)), 3);
+      fn default_quality_wide_costs_20() {
+        assert_eq!(cost(None, Some(CommonAspectRatio::WideSixteenByNine), Some(1)), 20);
       }
 
       #[test]
-      fn default_quality_auto_costs_3() {
-        assert_eq!(cost(None, Some(CommonAspectRatio::Auto), Some(1)), 3);
+      fn default_quality_tall_costs_20() {
+        assert_eq!(cost(None, Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 20);
       }
 
-      // ── Low quality (1¢/image regardless of size) ────────────────────────
+      // ── Low quality (1¢ square, 2¢ wide/tall) ────────────────────────────
 
       #[test]
       fn low_square_costs_1() {
         assert_eq!(cost(Some(CommonQuality::Low), Some(CommonAspectRatio::Square), Some(1)), 1);
-      }
-
-      #[test]
-      fn low_wide_costs_1() {
-        assert_eq!(cost(Some(CommonQuality::Low), Some(CommonAspectRatio::WideSixteenByNine), Some(1)), 1);
-      }
-
-      #[test]
-      fn low_tall_costs_1() {
-        assert_eq!(cost(Some(CommonQuality::Low), Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 1);
       }
 
       #[test]
@@ -145,7 +135,17 @@ mod tests {
       }
 
       #[test]
-      fn low_four_images_costs_4() {
+      fn low_wide_costs_2() {
+        assert_eq!(cost(Some(CommonQuality::Low), Some(CommonAspectRatio::WideSixteenByNine), Some(1)), 2);
+      }
+
+      #[test]
+      fn low_tall_costs_2() {
+        assert_eq!(cost(Some(CommonQuality::Low), Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 2);
+      }
+
+      #[test]
+      fn low_four_images() {
         assert_eq!(cost(Some(CommonQuality::Low), None, Some(4)), 4);
       }
 
@@ -154,11 +154,16 @@ mod tests {
         assert_eq!(cost(Some(CommonQuality::Low), None, Some(7)), 4);
       }
 
-      // ── Medium quality (3¢ square, 5¢ wide/tall) ─────────────────────────
+      // ── Medium quality (4¢ square, 5¢ wide, 6¢ tall) ─────────────────────
 
       #[test]
-      fn medium_square_costs_3() {
-        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(1)), 3);
+      fn medium_square_costs_4() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(1)), 4);
+      }
+
+      #[test]
+      fn medium_unset_costs_4() {
+        assert_eq!(cost(Some(CommonQuality::Medium), None, Some(1)), 4);
       }
 
       #[test]
@@ -167,25 +172,35 @@ mod tests {
       }
 
       #[test]
-      fn medium_tall_costs_5() {
-        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 5);
+      fn medium_tall_costs_6() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallNineBySixteen), Some(1)), 6);
       }
 
       #[test]
-      fn medium_square_four_images_costs_12() {
-        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(4)), 12);
+      fn medium_square_four_images() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(4)), 16);
       }
 
       #[test]
-      fn medium_wide_four_images_costs_20() {
+      fn medium_wide_four_images() {
         assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideSixteenByNine), Some(4)), 20);
       }
 
-      // ── High quality (13¢ square, 20¢ wide/tall) ─────────────────────────
+      #[test]
+      fn medium_tall_four_images() {
+        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallNineBySixteen), Some(4)), 24);
+      }
+
+      // ── High quality (14¢ square, 20¢ wide/tall) ─────────────────────────
 
       #[test]
-      fn high_square_costs_13() {
-        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1)), 13);
+      fn high_square_costs_14() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1)), 14);
+      }
+
+      #[test]
+      fn high_unset_costs_14() {
+        assert_eq!(cost(Some(CommonQuality::High), None, Some(1)), 14);
       }
 
       #[test]
@@ -199,36 +214,35 @@ mod tests {
       }
 
       #[test]
-      fn high_unset_costs_13() {
-        assert_eq!(cost(Some(CommonQuality::High), None, Some(1)), 13);
+      fn high_square_four_images() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(4)), 56);
       }
 
       #[test]
-      fn high_square_four_images_costs_52() {
-        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(4)), 52);
-      }
-
-      #[test]
-      fn high_wide_four_images_costs_80() {
+      fn high_wide_four_images() {
         assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::WideSixteenByNine), Some(4)), 80);
+      }
+
+      #[test]
+      fn high_tall_four_images() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::TallNineBySixteen), Some(4)), 80);
       }
 
       // ── Batch scaling ────────────────────────────────────────────────────
 
       #[test]
-      fn medium_square_batch_scaling() {
-        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(1)), 3);
-        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(2)), 6);
-        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(3)), 9);
-        assert_eq!(cost(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(4)), 12);
+      fn high_square_batch_scaling() {
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1)), 14);
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(2)), 28);
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(3)), 42);
+        assert_eq!(cost(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(4)), 56);
       }
 
       // ── Metadata flags ───────────────────────────────────────────────────
 
       #[test]
       fn cost_metadata_flags_are_default() {
-        let request = make_request(Some("p"), None, None, Some(1), None);
-        let distilled = distill_text(&request);
+        let distilled = distill_text(&make_request(Some("p"), None, None, Some(1), None));
         assert!(!distilled.cost.is_free);
         assert!(!distilled.cost.is_unlimited);
         assert!(!distilled.cost.is_rate_limited);
@@ -237,9 +251,9 @@ mod tests {
 
       #[test]
       fn cost_is_independent_of_prompt() {
-        let with_prompt = distill_text(&make_request(Some("a cat"), None, None, Some(1), None));
-        let without_prompt = distill_text(&make_request(None, None, None, Some(1), None));
-        assert_eq!(with_prompt.cost.cost_in_usd_cents, without_prompt.cost.cost_in_usd_cents);
+        let a = distill_text(&make_request(Some("a cat"), None, None, Some(1), None));
+        let b = distill_text(&make_request(None, None, None, Some(1), None));
+        assert_eq!(a.cost.cost_in_usd_cents, b.cost.cost_in_usd_cents);
       }
     }
 
@@ -257,71 +271,70 @@ mod tests {
         distill_edit(&request, &hydration).cost.cost_in_usd_cents.unwrap()
       }
 
-      // ── Edit mode costs match text mode (no per-input-image surcharge for
-      //    1.5 — the artcraft cost estimator for 1.5 does not add input
-      //    image token costs like 1.0 does) ──────────────────────────────────
+      // ── Full quality × size matrix (1 output, 1 input) ─────────────────
 
       #[test]
-      fn edit_default_quality_square_one_output_one_input() {
-        assert_eq!(cost_edit(None, Some(CommonAspectRatio::Square), Some(1), 1), 3);
-      }
+      fn edit_low_square() { assert_eq!(cost_edit(Some(CommonQuality::Low), Some(CommonAspectRatio::Square), Some(1), 1), 1); }
 
       #[test]
-      fn edit_default_quality_wide_one_output_one_input() {
-        assert_eq!(cost_edit(None, Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 5);
-      }
+      fn edit_low_wide() { assert_eq!(cost_edit(Some(CommonQuality::Low), Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 2); }
 
       #[test]
-      fn edit_low_square_one_output_one_input() {
-        assert_eq!(cost_edit(Some(CommonQuality::Low), Some(CommonAspectRatio::Square), Some(1), 1), 1);
-      }
+      fn edit_low_tall() { assert_eq!(cost_edit(Some(CommonQuality::Low), Some(CommonAspectRatio::TallNineBySixteen), Some(1), 1), 2); }
 
       #[test]
-      fn edit_medium_square_one_output_one_input() {
-        assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(1), 1), 3);
-      }
+      fn edit_medium_square() { assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::Square), Some(1), 1), 4); }
 
       #[test]
-      fn edit_medium_wide_one_output_one_input() {
-        assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 5);
-      }
+      fn edit_medium_wide() { assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 5); }
 
       #[test]
-      fn edit_medium_tall_one_output_one_input() {
-        assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallNineBySixteen), Some(1), 1), 5);
-      }
+      fn edit_medium_tall() { assert_eq!(cost_edit(Some(CommonQuality::Medium), Some(CommonAspectRatio::TallNineBySixteen), Some(1), 1), 6); }
 
       #[test]
-      fn edit_high_square_one_output_one_input() {
-        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1), 1), 13);
-      }
+      fn edit_high_square() { assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(1), 1), 14); }
 
       #[test]
-      fn edit_high_wide_one_output_one_input() {
-        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 20);
-      }
+      fn edit_high_wide() { assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 20); }
 
       #[test]
-      fn edit_high_square_four_outputs_one_input() {
-        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(4), 1), 52);
-      }
+      fn edit_high_tall() { assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::TallNineBySixteen), Some(1), 1), 20); }
+
+      // ── Default quality in edit mode ────────────────────────────────────
+
+      #[test]
+      fn edit_default_quality_square() { assert_eq!(cost_edit(None, Some(CommonAspectRatio::Square), Some(1), 1), 14); }
+
+      #[test]
+      fn edit_default_quality_wide() { assert_eq!(cost_edit(None, Some(CommonAspectRatio::WideSixteenByNine), Some(1), 1), 20); }
+
+      // ── Cost is independent of input image count (no per-input surcharge)
 
       #[test]
       fn edit_cost_independent_of_input_image_count() {
         for num_refs in [1usize, 2, 3, 5] {
           assert_eq!(
             cost_edit(Some(CommonQuality::Medium), None, Some(2), num_refs),
-            6,
-            "expected 6¢ regardless of {} input images",
+            8,
+            "expected 8¢ regardless of {} input images",
             num_refs,
           );
         }
       }
 
+      // ── Batch scaling in edit mode ──────────────────────────────────────
+
+      #[test]
+      fn edit_high_square_four_outputs() {
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(4), 1), 56);
+      }
+
       #[test]
       fn edit_batch_above_max_clamps() {
-        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(9), 1), 52);
+        assert_eq!(cost_edit(Some(CommonQuality::High), Some(CommonAspectRatio::Square), Some(9), 1), 56);
       }
+
+      // ── Edit and text costs match ───────────────────────────────────────
 
       #[test]
       fn edit_and_text_cost_match() {
@@ -333,18 +346,16 @@ mod tests {
             &make_request(Some("p"), None, Some(q), Some(2), Some(tokens)),
             &hydration,
           ).cost.cost_in_usd_cents.unwrap();
-          assert_eq!(
-            text, edit,
-            "expected text/edit cost to match for quality {:?}", q,
-          );
+          assert_eq!(text, edit, "text/edit cost should match for quality {:?}", q);
         }
       }
+
+      // ── Metadata flags ──────────────────────────────────────────────────
 
       #[test]
       fn cost_metadata_flags_are_default() {
         let (tokens, hydration) = fake_image_refs(1);
-        let request = make_request(Some("p"), None, None, Some(1), Some(tokens));
-        let distilled = distill_edit(&request, &hydration);
+        let distilled = distill_edit(&make_request(Some("p"), None, None, Some(1), Some(tokens)), &hydration);
         assert!(!distilled.cost.is_free);
         assert!(!distilled.cost.is_unlimited);
         assert!(!distilled.cost.is_rate_limited);
@@ -371,7 +382,7 @@ mod tests {
       let distilled = distill_text(request);
       match distilled.plan() {
         ImageGenerationPlan::FalGptImage1p5(plan) => assertion(plan),
-        other => panic!("expected ImageGenerationPlan::FalGptImage1p5, got {:?}", other),
+        other => panic!("expected FalGptImage1p5, got {:?}", other),
       }
     }
 
@@ -383,7 +394,7 @@ mod tests {
       let distilled = distill_edit(request, hydration);
       match distilled.plan() {
         ImageGenerationPlan::FalGptImage1p5(plan) => assertion(plan),
-        other => panic!("expected ImageGenerationPlan::FalGptImage1p5, got {:?}", other),
+        other => panic!("expected FalGptImage1p5, got {:?}", other),
       }
     }
 
@@ -451,22 +462,18 @@ mod tests {
       fn square_yields_square() {
         for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, Some(1), None), |plan| {
-            assert!(matches!(plan.image_size, Some(FalGptImage1p5ImageSize::Square)), "expected Square for {:?}", ar);
+            assert!(matches!(plan.image_size, Some(FalGptImage1p5ImageSize::Square)));
           });
         }
       }
 
       #[test]
       fn wide_variants_yield_wide() {
-        let wide_ars = [
-          CommonAspectRatio::WideFiveByFour,
-          CommonAspectRatio::WideFourByThree,
-          CommonAspectRatio::WideThreeByTwo,
-          CommonAspectRatio::WideSixteenByNine,
-          CommonAspectRatio::WideTwentyOneByNine,
-          CommonAspectRatio::Wide,
-        ];
-        for ar in wide_ars {
+        for ar in [
+          CommonAspectRatio::WideFiveByFour, CommonAspectRatio::WideFourByThree,
+          CommonAspectRatio::WideThreeByTwo, CommonAspectRatio::WideSixteenByNine,
+          CommonAspectRatio::WideTwentyOneByNine, CommonAspectRatio::Wide,
+        ] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, Some(1), None), |plan| {
             assert!(matches!(plan.image_size, Some(FalGptImage1p5ImageSize::Wide)), "expected Wide for {:?}", ar);
           });
@@ -475,15 +482,11 @@ mod tests {
 
       #[test]
       fn tall_variants_yield_tall() {
-        let tall_ars = [
-          CommonAspectRatio::TallFourByFive,
-          CommonAspectRatio::TallThreeByFour,
-          CommonAspectRatio::TallTwoByThree,
-          CommonAspectRatio::TallNineBySixteen,
-          CommonAspectRatio::TallNineByTwentyOne,
-          CommonAspectRatio::Tall,
-        ];
-        for ar in tall_ars {
+        for ar in [
+          CommonAspectRatio::TallFourByFive, CommonAspectRatio::TallThreeByFour,
+          CommonAspectRatio::TallTwoByThree, CommonAspectRatio::TallNineBySixteen,
+          CommonAspectRatio::TallNineByTwentyOne, CommonAspectRatio::Tall,
+        ] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, Some(1), None), |plan| {
             assert!(matches!(plan.image_size, Some(FalGptImage1p5ImageSize::Tall)), "expected Tall for {:?}", ar);
           });
@@ -501,18 +504,12 @@ mod tests {
 
       #[test]
       fn batch_direct_mapping() {
-        let cases = [
-          (1u16, FalGptImage1p5NumImages::One),
-          (2, FalGptImage1p5NumImages::Two),
-          (3, FalGptImage1p5NumImages::Three),
-          (4, FalGptImage1p5NumImages::Four),
-        ];
-        for (count, expected) in cases {
+        for (count, expected) in [
+          (1u16, FalGptImage1p5NumImages::One), (2, FalGptImage1p5NumImages::Two),
+          (3, FalGptImage1p5NumImages::Three), (4, FalGptImage1p5NumImages::Four),
+        ] {
           with_text_plan(&make_request(Some("p"), None, None, Some(count), None), |plan| {
-            assert!(
-              std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected),
-              "expected {:?} for count {}", expected, count,
-            );
+            assert!(std::mem::discriminant(&plan.num_images) == std::mem::discriminant(&expected));
           });
         }
       }
@@ -560,12 +557,12 @@ mod tests {
       }
 
       #[test]
-      fn edit_mode_with_two_image_refs() {
-        let (tokens, hydration) = fake_image_refs(2);
+      fn edit_mode_with_three_image_refs() {
+        let (tokens, hydration) = fake_image_refs(3);
         with_edit_plan(
           &make_request(Some("p"), None, None, Some(1), Some(tokens)),
           &hydration,
-          |plan| { assert_eq!(plan.image_urls.len(), 2); },
+          |plan| { assert_eq!(plan.image_urls.len(), 3); },
         );
       }
 
@@ -595,7 +592,7 @@ mod tests {
       // ── Quality mapping in edit mode ──────────────────────────────────────
 
       #[test]
-      fn default_quality_is_medium_in_edit_mode() {
+      fn default_quality_is_high_in_edit_mode() {
         let (tokens, hydration) = fake_image_refs(1);
         with_edit_plan(
           &make_request(Some("p"), None, None, Some(1), Some(tokens)),
@@ -666,16 +663,6 @@ mod tests {
         );
       }
 
-      #[test]
-      fn edit_auto_yields_none() {
-        let (tokens, hydration) = fake_image_refs(1);
-        with_edit_plan(
-          &make_request(Some("p"), Some(CommonAspectRatio::Auto), None, Some(1), Some(tokens)),
-          &hydration,
-          |plan| { assert!(plan.image_size.is_none()); },
-        );
-      }
-
       // ── Num images in edit mode ──────────────────────────────────────────
 
       #[test]
@@ -708,7 +695,7 @@ mod tests {
         );
       }
 
-      // ── Prompt passthrough in edit mode ────────────────────────────────────
+      // ── Prompt passthrough ────────────────────────────────────────────────
 
       #[test]
       fn edit_prompt_is_passed_through() {

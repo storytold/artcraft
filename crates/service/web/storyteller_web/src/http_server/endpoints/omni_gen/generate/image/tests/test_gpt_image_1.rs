@@ -470,9 +470,9 @@ mod tests {
       // ── Quality mapping ───────────────────────────────────────────────────
 
       #[test]
-      fn default_quality_is_medium() {
+      fn default_quality_is_high() {
         with_text_plan(&make_request(Some("p"), None, None, Some(1), None), |plan| {
-          assert!(matches!(plan.quality, FalGptImage1Quality::Medium));
+          assert!(matches!(plan.quality, FalGptImage1Quality::High));
         });
       }
 
@@ -678,13 +678,13 @@ mod tests {
       // ── Quality mapping in edit mode ──────────────────────────────────────
 
       #[test]
-      fn default_quality_is_medium_in_edit_mode() {
+      fn default_quality_is_high_in_edit_mode() {
         let (tokens, hydration) = fake_image_refs(1);
         with_edit_plan(
           &make_request(Some("p"), None, None, Some(1), Some(tokens)),
           &hydration,
           |plan| {
-            assert!(matches!(plan.quality, FalGptImage1Quality::Medium));
+            assert!(matches!(plan.quality, FalGptImage1Quality::High));
           },
         );
       }
