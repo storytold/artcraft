@@ -54,9 +54,10 @@ fn resolve_image_ref<'a>(
   match image_ref {
     None => Ok(None),
     Some(ImageRef::MediaFileToken(t)) => Ok(Some(t)),
-    Some(ImageRef::Url(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    // Omni-gen distillation hydrates media tokens to URLs before running the
+    // Artcraft cost path. Cost doesn't depend on image content, so URL-form
+    // refs are accepted and dropped.
+    Some(ImageRef::Url(_)) => Ok(None),
   }
 }
 
@@ -279,15 +280,15 @@ mod tests {
   }
 
   #[test]
-  fn url_image_ref_returns_error() {
+  fn url_image_ref_accepted_for_cost_path() {
     let request = GenerateVideoRequest {
       start_frame: Some(ImageRef::Url("https://example.com/image.jpg")),
       ..base_seedance_1p5_pro_request()
     };
-    let result = request.build();
-    assert!(matches!(
-      result,
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    ));
+    let VideoGenerationPlan::ArtcraftSeedance1p5Pro(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftSeedance1p5Pro")
+    };
+    // URL is dropped; start_frame resolves to None on the artcraft plan.
+    assert!(plan.start_frame.is_none());
   }
 }
