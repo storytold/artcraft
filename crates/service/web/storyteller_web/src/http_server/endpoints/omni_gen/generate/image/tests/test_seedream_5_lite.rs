@@ -118,6 +118,7 @@ mod tests {
           Some(CommonAspectRatio::TallThreeByFour),
           Some(CommonAspectRatio::Auto),
           Some(CommonAspectRatio::Auto2k),
+          Some(CommonAspectRatio::Auto3k),
           Some(CommonAspectRatio::Auto4k),
         ];
         for ar in ars {
