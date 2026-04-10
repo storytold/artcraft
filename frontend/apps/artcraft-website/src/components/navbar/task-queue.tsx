@@ -596,8 +596,7 @@ function jobsToFailed(jobs: Job[]): FailedTask[] {
           undefined
         : j.status.maybe_extra_status_description || undefined;
       const failureMessage =
-        j.status.maybe_extra_status_description &&
-        failureCategory !== "unknown"
+        j.status.maybe_extra_status_description && failureCategory !== "unknown"
           ? j.status.maybe_extra_status_description
           : undefined;
 
@@ -626,7 +625,9 @@ export const TaskQueue = () => {
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxMediaToken, setLightboxMediaToken] = useState<string | undefined>();
+  const [lightboxMediaToken, setLightboxMediaToken] = useState<
+    string | undefined
+  >();
   const [lightboxCdnUrl, setLightboxCdnUrl] = useState<string | undefined>();
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
   const prevFailedIdsRef = useRef<Set<string>>(new Set());
@@ -919,9 +920,7 @@ export const TaskQueue = () => {
                 <InProgressCard
                   key={t.id}
                   task={t}
-                  onDismiss={
-                    t.canDismiss ? () => dismissTask(t.id) : undefined
-                  }
+                  onDismiss={t.canDismiss ? () => dismissTask(t.id) : undefined}
                 />
               ))}
             </div>
@@ -992,7 +991,7 @@ export const TaskQueue = () => {
   return (
     <>
       <Tooltip content="Task Queue" position="bottom" closeOnClick={true}>
-        <div className="relative">
+        <div className="relative task-queue-trigger">
           {badgeCount > 0 && (
             <div className="absolute -right-1 -top-1 z-20 flex h-[17px] w-[17px] items-center justify-center rounded-full bg-primary-400 text-[13px] font-medium text-white">
               {badgeCount}
@@ -1001,7 +1000,7 @@ export const TaskQueue = () => {
           <PopoverMenu
             mode="default"
             buttonClassName="h-[38px] w-[38px] !p-0 relative"
-            panelClassName="w-[400px] p-2 bg-ui-panel mt-2.5"
+            panelClassName="w-[calc(100vw-5rem)] sm:w-[400px] p-2 bg-ui-panel mt-2.5"
             position="bottom"
             align="end"
             triggerIcon={
@@ -1118,6 +1117,17 @@ export const TaskQueue = () => {
         mediaToken={lightboxMediaToken}
         cdnUrl={lightboxCdnUrl}
       />
+
+      {/* On mobile, make the PopoverMenu's wrapper static so the absolute
+          panel positions against the fixed navbar (full width), then pin
+          the panel to viewport edges with left/right insets. */}
+      <style>{`
+        @media (max-width: 639px) {
+          .task-queue-trigger .relative.inline-block {
+            position: static !important;
+          }
+        }
+      `}</style>
     </>
   );
 };

@@ -114,15 +114,16 @@ export default function Navbar() {
   }, []);
 
   return (
-    <Disclosure
-      as="nav"
-      className={twMerge(
-        "z-20 fixed top-0 left-0 w-full transition-all duration-200 bg-transparent",
-        scrolled || alwaysSolid ? "bg-[#1b1b1f]" : "bg-transparent",
-      )}
-    >
+    <Disclosure as="nav" className="z-20 fixed top-0 left-0 w-full">
       {({ open }) => (
-        <>
+        <div
+          className={twMerge(
+            "transition-all duration-200",
+            scrolled || alwaysSolid || open
+              ? "bg-[#1b1b1f]"
+              : "bg-transparent",
+          )}
+        >
           <div className="mx-auto max-w-screen px-4">
             <div className="flex h-12 sm:h-16 justify-between">
               <div className="flex">
@@ -423,7 +424,7 @@ export default function Navbar() {
               opacity: 1;
             }
           `}</style>
-        </>
+        </div>
       )}
     </Disclosure>
   );
