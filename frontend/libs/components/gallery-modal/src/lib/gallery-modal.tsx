@@ -467,6 +467,7 @@ export const GalleryModal = React.memo(
         setUsernameError(false);
         const name = await getCachedUsername();
         if (name) {
+          setInitialLoading(true); // keep skeleton alive until refreshGallery takes over
           setUsername(name);
           // refreshGallery (triggered by username state change) handles initialLoading
         } else {
