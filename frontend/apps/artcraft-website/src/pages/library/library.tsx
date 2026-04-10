@@ -370,7 +370,7 @@ export default function Library() {
             <div className="space-y-6">
               <div>
                 <div className="h-4 w-24 rounded bg-white/[0.06] mb-3" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
                   {Array.from({ length: 18 }).map((_, i) => (
                     <div
                       key={i}
@@ -419,7 +419,7 @@ export default function Library() {
                   <h3 className="text-sm font-medium text-white/50 mb-2">
                     {date}
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
                     {dateItems.map((item) => (
                       <button
                         key={item.id}
