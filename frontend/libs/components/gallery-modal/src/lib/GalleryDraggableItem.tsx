@@ -137,7 +137,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       tabIndex={-1}
       className={twMerge(
         "w-full group relative overflow-visible rounded-md border-[3px] transition-all focus:outline-none",
-        "aspect-square",
+        item.mediaClass === "video" ? "aspect-video" : "aspect-square",
         selected || bulkSelected
           ? "border-primary"
           : disableTooltipAndBadge
@@ -171,7 +171,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             alt={item.label}
             className={twMerge(
               "h-full w-full bg-black/30",
-              imageFit === "contain" ? "object-contain" : "object-cover",
+              item.mediaClass === "video" || imageFit === "contain" ? "object-contain" : "object-cover",
             )}
             draggable={false}
             onError={onImageError}
@@ -187,7 +187,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   );
 
   return (
-    <div className={twMerge("group relative w-full", "aspect-square")}>
+    <div className={twMerge("group relative w-full", item.mediaClass === "video" ? "aspect-video" : "aspect-square")}>
       {/* dropdown menu */}
       {mode !== "select" && (
         <div
