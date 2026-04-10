@@ -19,10 +19,7 @@ import {
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { useCreateImageStore } from "./create-image-store";
-import {
-  enqueueImageGeneration,
-  startPolling,
-} from "./generate-image-api";
+import { enqueueImageGeneration, startPolling } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
 import { GenerationCountPicker } from "./components/GenerationCountPicker";
 import { ResolutionPicker } from "./components/ResolutionPicker";
@@ -77,9 +74,11 @@ export default function CreateImage() {
   const selectedModel = useMemo((): OmniGenImageModelInfo | undefined => {
     if (!apiModels.length) return undefined;
     if (ui.selectedModelId) {
-      return apiModels.find((m) => m.model === ui.selectedModelId) ??
+      return (
+        apiModels.find((m) => m.model === ui.selectedModelId) ??
         apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ??
-        apiModels[0];
+        apiModels[0]
+      );
     }
     return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
   }, [apiModels, ui.selectedModelId]);
@@ -107,7 +106,6 @@ export default function CreateImage() {
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
 
   // Batch store (enqueue flow only)
-  const batches = useCreateImageStore((s) => s.batches);
   const startBatch = useCreateImageStore((s) => s.startBatch);
   const setBatchJobToken = useCreateImageStore((s) => s.setBatchJobToken);
   const completeBatch = useCreateImageStore((s) => s.completeBatch);
@@ -128,14 +126,17 @@ export default function CreateImage() {
 
   // Lightbox
   const flatItems = useMemo(() => {
-    const filtered = gallery.items.filter((i) => !newlyCompletedTokens.has(i.id));
+    const filtered = gallery.items.filter(
+      (i) => !newlyCompletedTokens.has(i.id),
+    );
     return [...jobs.newlyCompleted, ...filtered];
   }, [jobs.newlyCompleted, gallery.items, newlyCompletedTokens]);
 
   const lightbox = useLightboxNav(flatItems);
 
   // Derived
-  const hasAspectRatios = (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
+  const hasAspectRatios =
+    (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
   const hasResolutions = (selectedModel?.resolution_options?.length ?? 0) > 0;
 
   const estimatedCredits = useImageCostEstimate({
@@ -214,12 +215,14 @@ export default function CreateImage() {
     (images: { token: string; url: string; thumbnailUrl: string }[]) => {
       const maxImages = selectedModel?.image_refs_max ?? 1;
       const availableSlots = Math.max(0, maxImages - referenceImages.length);
-      const newImages: RefImage[] = images.slice(0, availableSlots).map((img) => ({
-        id: Math.random().toString(36).substring(7),
-        url: img.thumbnailUrl || img.url,
-        file: new File([], "library-image"),
-        mediaToken: img.token,
-      }));
+      const newImages: RefImage[] = images
+        .slice(0, availableSlots)
+        .map((img) => ({
+          id: Math.random().toString(36).substring(7),
+          url: img.thumbnailUrl || img.url,
+          file: new File([], "library-image"),
+          mediaToken: img.token,
+        }));
       setReferenceImages([...referenceImages, ...newImages]);
     },
     [referenceImages, selectedModel],
@@ -248,7 +251,9 @@ export default function CreateImage() {
         numImages,
         aspectRatio: aspectRatio,
         resolution: hasResolutions ? resolution : undefined,
-        imageMediaTokens: imageMediaTokens?.length ? imageMediaTokens : undefined,
+        imageMediaTokens: imageMediaTokens?.length
+          ? imageMediaTokens
+          : undefined,
       });
 
       if (!result.success || !result.jobToken) {
@@ -281,8 +286,18 @@ export default function CreateImage() {
       setIsGenerating(false);
     }
   }, [
-    prompt, isGenerating, selectedModel, numImages, aspectRatio, resolution,
-    hasResolutions, referenceImages, startBatch, setBatchJobToken, completeBatch, failBatch,
+    prompt,
+    isGenerating,
+    selectedModel,
+    numImages,
+    aspectRatio,
+    resolution,
+    hasResolutions,
+    referenceImages,
+    startBatch,
+    setBatchJobToken,
+    completeBatch,
+    failBatch,
   ]);
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -318,7 +333,7 @@ export default function CreateImage() {
       }
       promptBox={
         <div
-          className="animate-fade-in-up fixed bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
+          className="animate-fade-in-up fixed bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-3 sm:px-4"
           style={{ animationDelay: "150ms" }}
         >
           <PromptBox
@@ -330,18 +345,20 @@ export default function CreateImage() {
             credits={estimatedCredits}
             placeholder="Describe what you want in the image..."
             supportsImagePrompts={!!selectedModel?.image_refs_supported}
-            maxImagePromptCount={selectedModel?.image_refs_max ?? 1}
+            maxImagePromptCount={selectedModel?.image_refs_max ?? 6}
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
-            showClearSession={batches.length > 0}
-            onClearSession={useCreateImageStore.getState().reset}
             leftToolbar={
               <>
                 {hasAspectRatios && selectedModel && (
                   <AspectRatioPicker
-                    aspectRatioOptions={selectedModel.aspect_ratio_options ?? []}
-                    defaultAspectRatio={selectedModel.aspect_ratio_default ?? undefined}
+                    aspectRatioOptions={
+                      selectedModel.aspect_ratio_options ?? []
+                    }
+                    defaultAspectRatio={
+                      selectedModel.aspect_ratio_default ?? undefined
+                    }
                     currentAspectRatio={aspectRatio}
                     handleAspectRatioSelect={setAspectRatio}
                   />
@@ -349,7 +366,9 @@ export default function CreateImage() {
                 {hasResolutions && selectedModel && (
                   <ResolutionPicker
                     resolutionOptions={selectedModel.resolution_options ?? []}
-                    defaultResolution={selectedModel.resolution_default ?? undefined}
+                    defaultResolution={
+                      selectedModel.resolution_default ?? undefined
+                    }
                     currentResolution={resolution}
                     handleResolutionSelect={setResolution}
                   />

@@ -53,6 +53,7 @@ export interface OmniGenVideoRequest {
   reference_image_media_tokens?: string[] | null;
   reference_video_media_tokens?: string[] | null;
   reference_audio_media_tokens?: string[] | null;
+  reference_character_tokens?: string[] | null;
   negative_prompt?: string | null;
 }
 

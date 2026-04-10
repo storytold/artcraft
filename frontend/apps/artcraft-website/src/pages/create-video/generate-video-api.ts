@@ -17,6 +17,7 @@ export interface GenerateVideoParams {
   referenceImageMediaTokens?: string[];
   referenceVideoMediaTokens?: string[];
   referenceAudioMediaTokens?: string[];
+  referenceCharacterTokens?: string[];
 }
 
 // ── Enqueue generation ───────────────────────────────────────────────────
@@ -43,6 +44,9 @@ export async function enqueueVideoGeneration(
       : null,
     reference_audio_media_tokens: params.referenceAudioMediaTokens?.length
       ? params.referenceAudioMediaTokens
+      : null,
+    reference_character_tokens: params.referenceCharacterTokens?.length
+      ? params.referenceCharacterTokens
       : null,
   };
 

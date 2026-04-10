@@ -1,11 +1,15 @@
-import { faEye, faEyeSlash, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faEye,
+  faEyeSlash,
+  faSpinnerThird,
+} from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
+import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
 import Seo from "../../components/seo";
-import { GoogleLoginButton } from "../../components/auth";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -58,7 +62,7 @@ const Login = () => {
       <div className="dotted-pattern absolute inset-0 z-[0] opacity-30" />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-3xl p-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
             <p className="text-white/60 text-sm">Log in to your account</p>
@@ -81,7 +85,13 @@ const Login = () => {
             </div>
             */}
 
-            <div className="space-y-4">
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleLogin();
+              }}
+            >
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
                   {error}
@@ -92,12 +102,12 @@ const Login = () => {
                 <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
                   Email or Username
                 </label>
-                <input
+                <Input
                   type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com or username"
-                  className="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                  inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                 />
               </div>
               <div className="space-y-2">
@@ -113,12 +123,12 @@ const Login = () => {
                   </Link>
                 </div>
                 <div className="relative">
-                  <input
+                  <Input
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min. 8 characters"
-                    className="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                   />
                   <button
                     type="button"
@@ -130,18 +140,23 @@ const Login = () => {
                 </div>
               </div>
 
-              <Button
-                className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-12 mt-2"
-                onClick={handleLogin}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
-                ) : (
-                  "Log in"
-                )}
-              </Button>
-            </div>
+              <div className="pt-2">
+                <Button
+                  className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <FontAwesomeIcon
+                      icon={faSpinnerThird}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    "Log in"
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
 
           <div className="mt-8 text-center text-sm text-white/60">

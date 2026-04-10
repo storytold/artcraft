@@ -14,7 +14,7 @@ const Signup = () => {
       <div className="dotted-pattern absolute inset-0 z-[0] opacity-30" />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-3xl p-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold mb-2">Create an Account</h1>
             <p className="text-white/60 text-sm">Join thousands of creators</p>

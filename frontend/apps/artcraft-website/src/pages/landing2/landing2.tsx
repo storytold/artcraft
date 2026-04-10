@@ -219,7 +219,6 @@ const Landing = () => {
     }
   }, [activeFeature]);
 
-
   return (
     <div
       ref={mainRef}
@@ -230,7 +229,7 @@ const Landing = () => {
         description="ArtCraft is an Open Desktop app for generating AI Video and Images. You own ArtCraft!"
       />
       {/* Hero Section */}
-      <main className="relative mb-8 md:mb-16 pt-24 sm:pt-24 min-h-[400px] sm:min-h-[600px] md:min-h-[700px] flex items-center justify-center px-2 sm:px-4 md:px-0">
+      <main className="relative mb-8 md:mb-16 pt-20 sm:pt-24 min-h-[400px] sm:min-h-[600px] md:min-h-[700px] flex items-center justify-center px-2 sm:px-4 md:px-0">
         {/* Glowing Gradient Orb Background */}
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden"
@@ -293,10 +292,11 @@ const Landing = () => {
               className="relative mx-auto mt-4 w-full max-w-[1200px]"
               data-animate
             >
-              <div
-                className="relative rounded-[20px] sm:rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-md md:backdrop-blur-xl shadow-2xl p-2 sm:p-4 w-full mx-auto transition-transform duration-300 transform-gpu"
-              >
-                <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingTop: "56.25%" }}>
+              <div className="relative rounded-[20px] sm:rounded-[32px] overflow-hidden bg-white/10 backdrop-blur-md md:backdrop-blur-xl shadow-2xl p-2 sm:p-4 w-full mx-auto transition-transform duration-300 transform-gpu">
+                <div
+                  className="relative w-full rounded-2xl overflow-hidden"
+                  style={{ paddingTop: "56.25%" }}
+                >
                   <iframe
                     src="https://player.vimeo.com/video/1179924350?h=8b9b3f0f35&autoplay=1&muted=1&loop=1&background=0&byline=0&portrait=0&title=0"
                     className="absolute inset-0 w-full h-full rounded-2xl"

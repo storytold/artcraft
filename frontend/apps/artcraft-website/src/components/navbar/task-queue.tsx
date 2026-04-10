@@ -11,6 +11,8 @@ import {
   faBomb,
   faCircleExclamation,
   faTriangleExclamation,
+  faCopy,
+  faCheck,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -27,6 +29,8 @@ import dayjs from "dayjs";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Lightbox } from "../lightbox/lightbox";
 import { showToast } from "../toast/toast";
+import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { twMerge } from "tailwind-merge";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -39,6 +43,7 @@ type InProgressTask = {
   canDismiss?: boolean;
   estimatedTimeLeftMs?: number;
   modelType?: string;
+  prompt?: string;
 };
 
 type CompletedTask = {
@@ -50,6 +55,7 @@ type CompletedTask = {
   updatedAt?: Date;
   imageUrls?: string[];
   mediaTokens?: string[];
+  prompt?: string;
 };
 
 type FailedTask = {
@@ -60,6 +66,7 @@ type FailedTask = {
   status: string;
   failureReason?: string;
   failureMessage?: string;
+  prompt?: string;
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -106,6 +113,92 @@ const FAILED_STATUSES = new Set([
   JobStatus.CANCELLED_BY_SYSTEM,
 ]);
 
+// ── Shared sub-components ─────────────────────────────────────────────────
+
+const PromptLine = ({
+  prompt,
+  className,
+}: {
+  prompt: string;
+  className?: string;
+}) => {
+  const [marqueePlaying, setMarqueePlaying] = useState(false);
+  const [promptOverflows, setPromptOverflows] = useState(false);
+  const promptRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = promptRef.current;
+    if (el) setPromptOverflows(el.scrollWidth > el.clientWidth);
+  }, [prompt]);
+
+  return (
+    <Tooltip
+      content={prompt.length > 300 ? prompt.slice(0, 300) + "\u2026" : prompt}
+      position="bottom"
+      strategy="fixed"
+      className="max-w-[280px] text-wrap text-xs"
+      zIndex={50}
+      delay={400}
+    >
+      <div
+        className={twMerge("mt-1 overflow-hidden", className)}
+        onMouseEnter={
+          promptOverflows ? () => setMarqueePlaying(true) : undefined
+        }
+        onMouseLeave={
+          promptOverflows ? () => setMarqueePlaying(false) : undefined
+        }
+      >
+        <div
+          ref={promptRef}
+          key={marqueePlaying ? "playing" : "idle"}
+          className="whitespace-nowrap text-[11px] italic text-base-fg/40"
+          style={
+            marqueePlaying
+              ? {
+                  animation: "marquee 6.5s linear infinite",
+                  animationDelay: "0.5s",
+                  animationFillMode: "both",
+                }
+              : undefined
+          }
+        >
+          {prompt}
+        </div>
+      </div>
+    </Tooltip>
+  );
+};
+
+const CopyPromptButton = ({ prompt }: { prompt: string }) => {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Tooltip
+      content={copied ? "Copied!" : "Copy prompt"}
+      position="bottom"
+      strategy="fixed"
+      className="text-xs"
+      zIndex={50}
+      delay={300}
+    >
+      <button
+        className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+        aria-label="Copy prompt"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(prompt);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
+        }}
+      >
+        <FontAwesomeIcon
+          icon={copied ? faCheck : faCopy}
+          className={copied ? "text-green-400" : ""}
+        />
+      </button>
+    </Tooltip>
+  );
+};
+
 // ── Card Components ────────────────────────────────────────────────────────
 
 const InProgressCard = ({
@@ -123,6 +216,10 @@ const InProgressCard = ({
       ? formatTimeLeft(task.estimatedTimeLeftMs)
       : null;
   const isSeedance2 = task.modelType === "seedance_2p0";
+  const modelIconPath = task.modelType
+    ? getModelCreatorIconPath(task.modelType)
+    : null;
+
   return (
     <div className="rounded-md p-2 transition-colors hover:bg-ui-controls/40">
       <div className="flex items-center gap-2.5">
@@ -136,6 +233,13 @@ const InProgressCard = ({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-1.5 truncate font-medium text-base-fg/90">
+              {modelIconPath && (
+                <img
+                  src={modelIconPath}
+                  alt=""
+                  className="h-3.5 w-3.5 flex-shrink-0 icon-auto-contrast"
+                />
+              )}
               {task.title}
               {isSeedance2 && (
                 <Tooltip
@@ -175,19 +279,23 @@ const InProgressCard = ({
           {timeLabel && (
             <div className="mt-1 text-xs text-base-fg/50">{timeLabel}</div>
           )}
+          {task.prompt && <PromptLine prompt={task.prompt} className="mt-0" />}
         </div>
-        {onDismiss && (
-          <button
-            className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
-            aria-label="Dismiss"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDismiss();
-            }}
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
-        )}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {task.prompt && <CopyPromptButton prompt={task.prompt} />}
+          {onDismiss && (
+            <button
+              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              aria-label="Dismiss"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss();
+              }}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -225,7 +333,7 @@ const CompletedCard = ({
           </div>
         )}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-base-fg/90">
           {task.title}
         </div>
@@ -239,19 +347,23 @@ const CompletedCard = ({
             {dayjs(task.completedAt).format("MMM D, h:mm A")}
           </div>
         )}
+        {task.prompt && <PromptLine prompt={task.prompt} />}
       </div>
-      {onDismiss && (
-        <button
-          className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
-          aria-label="Dismiss"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDismiss();
-          }}
-        >
-          <FontAwesomeIcon icon={faXmark} />
-        </button>
-      )}
+      <div className="ml-auto flex shrink-0 items-center gap-1">
+        {task.prompt && <CopyPromptButton prompt={task.prompt} />}
+        {onDismiss && (
+          <button
+            className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+            aria-label="Dismiss"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDismiss();
+            }}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -285,63 +397,72 @@ const FailedCard = ({
               {task.subtitle}
             </div>
           )}
-          <div className="mt-1 flex items-center gap-1.5">
-            <span className="rounded bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden">
+            <span className="shrink-0 rounded bg-red-500/15 px-1.5 py-0 text-[11px] font-medium text-red-400">
               {statusLabel}
             </span>
             {task.failureReason && (
-              <Tooltip
-                content={task.failureReason}
-                position="bottom"
-                strategy="fixed"
-                className="max-w-[280px] text-wrap bg-red-500/90 text-xs"
-                zIndex={50}
-                delay={300}
-              >
-                <span className="truncate text-[11px] text-red-400/60">
-                  {task.failureReason}
-                </span>
-              </Tooltip>
+              <div className="min-w-0 overflow-hidden">
+                <Tooltip
+                  content={
+                    task.failureMessage ? (
+                      <div>
+                        <div className="font-semibold">
+                          {task.failureReason}
+                        </div>
+                        <div className="mt-0.5 font-normal opacity-80">
+                          {task.failureMessage}
+                        </div>
+                      </div>
+                    ) : (
+                      task.failureReason
+                    )
+                  }
+                  position="bottom"
+                  strategy="fixed"
+                  className="max-w-[280px] text-wrap bg-danger text-xs"
+                  zIndex={50}
+                  delay={300}
+                >
+                  <div className="cursor-default truncate text-[11px] text-red-400/80 underline decoration-red-400/30 decoration-dashed underline-offset-2">
+                    {task.failureReason}
+                  </div>
+                </Tooltip>
+              </div>
             )}
           </div>
-          {task.failureMessage && (
-            <Tooltip
-              content={task.failureMessage}
-              position="bottom"
-              strategy="fixed"
-              className="max-w-[280px] text-wrap text-xs"
-              zIndex={50}
-              delay={200}
-            >
-              <div className="mt-0.5 cursor-default truncate text-[11px] text-base-fg/40">
-                {task.failureMessage}
-              </div>
-            </Tooltip>
-          )}
+          {task.prompt && <PromptLine prompt={task.prompt} />}
           {task.failedAt && (
             <div className="mt-0.5 text-[11px] text-base-fg/40">
               {dayjs(task.failedAt).format("MMM D, h:mm A")}
             </div>
           )}
         </div>
-        {onDismiss && (
-          <button
-            className="ml-auto h-6 w-6 rounded-full p-1 text-base-fg/60 hover:bg-ui-controls"
-            aria-label="Dismiss"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDismiss();
-            }}
-          >
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
-        )}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {task.prompt && <CopyPromptButton prompt={task.prompt} />}
+          {onDismiss && (
+            <button
+              className="flex h-6 w-6 items-center justify-center rounded-full text-base-fg/60 hover:bg-ui-controls"
+              aria-label="Dismiss"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss();
+              }}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 // ── Job → Task transformers ────────────────────────────────────────────────
+
+function getPrompt(job: Job): string {
+  return job.request.maybe_raw_inference_text || "";
+}
 
 function formatTitleParts(job: Job) {
   const taskTypeStr = job.request.inference_category?.toLowerCase() ?? "";
@@ -418,6 +539,7 @@ function jobsToInProgress(jobs: Job[]): InProgressTask[] {
         canDismiss,
         estimatedTimeLeftMs,
         modelType: modelType ?? undefined,
+        prompt: getPrompt(j) || undefined,
       };
     });
 
@@ -453,6 +575,7 @@ function jobsToCompleted(jobs: Job[]): CompletedTask[] {
         mediaTokens: j.maybe_result?.entity_token
           ? [j.maybe_result.entity_token]
           : [],
+        prompt: getPrompt(j) || undefined,
       };
     });
 }
@@ -486,6 +609,7 @@ function jobsToFailed(jobs: Job[]): FailedTask[] {
         status: j.status.status,
         failureReason,
         failureMessage,
+        prompt: getPrompt(j) || undefined,
       };
     });
 }
@@ -877,7 +1001,7 @@ export const TaskQueue = () => {
           <PopoverMenu
             mode="default"
             buttonClassName="h-[38px] w-[38px] !p-0 relative"
-            panelClassName="w-[360px] p-2 bg-ui-panel mt-2.5"
+            panelClassName="w-[400px] p-2 bg-ui-panel mt-2.5"
             position="bottom"
             align="end"
             triggerIcon={

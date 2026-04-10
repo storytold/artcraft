@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
+import { Input } from "@storyteller/ui-input";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faUser,
-  faEnvelope,
-  faLock,
   faCheckCircle,
-  faExclamationCircle,
   faInfoCircle,
+  faSpinnerThird,
 } from "@fortawesome/pro-solid-svg-icons";
 import Seo from "../../components/seo";
 import { UsersApi, BillingApi } from "@storyteller/api";
@@ -360,9 +358,9 @@ const Onboarding = () => {
             </div>
           )}
 
-          <div className="bg-[#1A1A1E] border border-white/10 rounded-3xl p-8 md:p-12">
+          <div className="bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
             <div className="text-center mb-8">
-              <h1 className="text-3xl md:text-3xl font-bold mb-4 text-white">
+              <h1 className="text-2xl font-bold mb-2">
                 {currentStep === "password" &&
                   (isNewAccount ? "Secure Your Account" : "Set Your Password")}
                 {currentStep === "email" &&
@@ -371,7 +369,7 @@ const Onboarding = () => {
                     : "Verify Your Email")}
                 {currentStep === "username" && "Choose A Username"}
               </h1>
-              <p className="text-white/70">
+              <p className="text-white/60 text-sm">
                 {currentStep === "password" &&
                   "Create a password to access your account across devices."}
                 {currentStep === "email" &&
@@ -383,43 +381,41 @@ const Onboarding = () => {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
+                  {error}
+                </div>
+              )}
+
               {currentStep === "password" && (
                 <>
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium text-white/80 mb-2"
-                    >
-                      <FontAwesomeIcon icon={faLock} className="mr-2" />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
                       Password
                     </label>
-                    <input
+                    <Input
                       type="password"
                       id="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="w-full px-4 py-3 bg-[#252529] border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary transition-colors"
+                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                       placeholder="Enter your password"
                       minLength={8}
                     />
                   </div>
-                  <div>
-                    <label
-                      htmlFor="passwordConfirmation"
-                      className="block text-sm font-medium text-white/80 mb-2"
-                    >
-                      <FontAwesomeIcon icon={faLock} className="mr-2" />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
                       Confirm Password
                     </label>
-                    <input
+                    <Input
                       type="password"
                       id="passwordConfirmation"
                       value={passwordConfirmation}
                       onChange={(e) => setPasswordConfirmation(e.target.value)}
                       required
-                      className="w-full px-4 py-3 bg-[#252529] border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary transition-colors"
+                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                       placeholder="Confirm your password"
                       minLength={8}
                     />
@@ -428,85 +424,49 @@ const Onboarding = () => {
               )}
 
               {currentStep === "email" && (
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium text-white/80 mb-2"
-                  >
-                    <FontAwesomeIcon icon={faEnvelope} className="mr-2" />
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
                     Email Address
                   </label>
-                  <input
+                  <Input
                     type="email"
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-4 py-3 bg-[#252529] border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary transition-colors"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                     placeholder="your@email.com"
                   />
                 </div>
               )}
 
               {currentStep === "username" && (
-                <div>
-                  <label
-                    htmlFor="username"
-                    className="block text-sm font-medium text-white/80 mb-2"
-                  >
-                    <FontAwesomeIcon icon={faUser} className="mr-2" />
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
                     Username
                   </label>
-                  <input
+                  <Input
                     type="text"
                     id="username"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#252529] border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-primary transition-colors"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                     placeholder="Your display name"
                   />
                 </div>
               )}
 
-              {error && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-400 text-sm flex items-start gap-3">
-                  <FontAwesomeIcon
-                    icon={faExclamationCircle}
-                    className="text-red-400 mt-0.5 flex-shrink-0"
-                  />
-                  <span className="flex-1">{error}</span>
-                </div>
-              )}
-
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-2">
                 <Button
                   type="submit"
-                  className="flex-1 bg-primary hover:bg-primary-600 px-6 py-3 text-sm font-bold rounded-xl justify-center"
+                  className="flex-1 bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <span className="flex items-center gap-2">
-                      <svg
-                        className="animate-spin h-4 w-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        />
-                      </svg>
-                      Saving...
-                    </span>
+                    <FontAwesomeIcon
+                      icon={faSpinnerThird}
+                      className="animate-spin"
+                    />
                   ) : (
                     "Continue"
                   )}
@@ -515,7 +475,7 @@ const Onboarding = () => {
                   <Button
                     type="button"
                     onClick={handleSkip}
-                    className="bg-white/10 hover:bg-white/20 px-6 py-3 text-sm font-bold rounded-xl justify-center"
+                    className="bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-10 px-6"
                   >
                     Skip
                   </Button>

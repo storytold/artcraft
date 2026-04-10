@@ -158,7 +158,7 @@ export const ImagePickerModal = ({
       className="max-w-7xl"
     >
       <div className="flex flex-col" style={{ height: "min(80vh, 800px)" }}>
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {images.length === 0 && loading ? (
             <div className="flex h-full items-center justify-center">
               <FontAwesomeIcon
@@ -171,7 +171,7 @@ export const ImagePickerModal = ({
               No images found
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 pt-1">
               {images.map((img) => {
                 const isSelected = selected.has(img.token);
                 return (
@@ -213,7 +213,7 @@ export const ImagePickerModal = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
+        <div className="flex items-center justify-between pt-3">
           <span className="text-sm text-white/50">
             {selected.size} of {maxSelect} selected
           </span>

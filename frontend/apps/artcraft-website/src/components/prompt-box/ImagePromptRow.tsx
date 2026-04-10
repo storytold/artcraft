@@ -53,6 +53,7 @@ interface ImagePromptRowProps {
   endFrameImage?: RefImage;
   setEndFrameImage?: (image?: RefImage) => void;
   showEndFrameSection?: boolean;
+  onPickEndFrameFromLibrary?: () => void;
 }
 
 export const ImagePromptRow = ({
@@ -67,6 +68,7 @@ export const ImagePromptRow = ({
   endFrameImage,
   setEndFrameImage,
   showEndFrameSection,
+  onPickEndFrameFromLibrary,
 }: ImagePromptRowProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endFrameInputRef = useRef<HTMLInputElement>(null);
@@ -388,6 +390,44 @@ export const ImagePromptRow = ({
                     className="h-6 w-6 text-white"
                   />
                 </div>
+              ) : onPickEndFrameFromLibrary ? (
+                <Tooltip
+                  interactive
+                  position="top"
+                  delay={100}
+                  className="bg-ui-controls text-base-fg border border-ui-panel-border p-2 -mb-0.5"
+                  closeOnClick
+                  content={
+                    <div className="flex flex-col gap-1.5">
+                      <Button
+                        variant="primary"
+                        onClick={() => endFrameInputRef.current?.click()}
+                        icon={faPlus}
+                        className="w-full"
+                      >
+                        Upload
+                      </Button>
+                      <Button
+                        variant="action"
+                        onClick={onPickEndFrameFromLibrary}
+                        icon={faImages}
+                        className="w-full bg-white/15 hover:bg-white/20"
+                      >
+                        Pick from library
+                      </Button>
+                    </div>
+                  }
+                >
+                  <button
+                    onClick={() => endFrameInputRef.current?.click()}
+                    className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                  >
+                    <FontAwesomeIcon
+                      icon={faPlus}
+                      className="text-2xl text-white/80"
+                    />
+                  </button>
+                </Tooltip>
               ) : (
                 <button
                   onClick={() => endFrameInputRef.current?.click()}

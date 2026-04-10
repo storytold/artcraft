@@ -2,14 +2,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { toast } from "@storyteller/ui-toaster";
-import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  useEffect,
-  useState,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -39,7 +32,6 @@ import {
 } from "@storyteller/model-list";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
-import dayjs from "dayjs";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
 
@@ -58,7 +50,7 @@ export interface LightboxItem {
 }
 
 interface ContextImage {
-  media_links: { cdn_url: string; maybe_thumbnail_template: string };
+  media_links: { cdn_url: string; maybe_thumbnail_template: string | null };
   media_token: string;
   semantic: string;
 }
@@ -174,7 +166,9 @@ export function Lightbox({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   const [isPromptClamped, setIsPromptClamped] = useState(false);
-  const [discoveredBatchToken, setDiscoveredBatchToken] = useState<string | null>(null);
+  const [discoveredBatchToken, setDiscoveredBatchToken] = useState<
+    string | null
+  >(null);
   const promptRef = useRef<HTMLDivElement>(null);
 
   const promptCopy = useCopyFeedback();
@@ -218,10 +212,7 @@ export function Lightbox({
           if (batchToken) setDiscoveredBatchToken(batchToken);
         }
 
-        if (
-          mediaResponse.success &&
-          mediaResponse.data?.maybe_prompt_token
-        ) {
+        if (mediaResponse.success && mediaResponse.data?.maybe_prompt_token) {
           const promptResponse = await promptsApi.GetPromptsByToken({
             token: mediaResponse.data.maybe_prompt_token,
           });
@@ -252,7 +243,7 @@ export function Lightbox({
 
   // Fetch batch images (from prop or auto-discovered batch token)
   const effectiveBatchToken = showBatchCarousel
-    ? (propBatchImageToken || discoveredBatchToken)
+    ? propBatchImageToken || discoveredBatchToken
     : undefined;
 
   useEffect(() => {
@@ -368,11 +359,19 @@ export function Lightbox({
 
   const selectedImageUrl = effectiveImageUrls[selectedIndex] ?? null;
   const selectedMediaToken = useMemo(() => {
-    return batchTokens?.[selectedIndex] ?? propMediaTokens?.[selectedIndex] ?? mediaToken;
+    return (
+      batchTokens?.[selectedIndex] ??
+      propMediaTokens?.[selectedIndex] ??
+      mediaToken
+    );
   }, [batchTokens, propMediaTokens, selectedIndex, mediaToken]);
 
-  const isVideo = selectedImageUrl ? isVideoUrl(selectedImageUrl) : (propMediaClass === "video");
-  const is3D = selectedImageUrl ? is3DModelUrl(selectedImageUrl) : (propMediaClass === "dimensional");
+  const isVideo = selectedImageUrl
+    ? isVideoUrl(selectedImageUrl)
+    : propMediaClass === "video";
+  const is3D = selectedImageUrl
+    ? is3DModelUrl(selectedImageUrl)
+    : propMediaClass === "dimensional";
 
   // Keyboard navigation
   useEffect(() => {
@@ -498,7 +497,10 @@ export function Lightbox({
 
                 {effectiveImageUrls.length > 1 && (
                   <div className="mt-3 px-2 pb-2">
-                    <div className="embla-thumbs overflow-hidden" ref={emblaThumbsRef}>
+                    <div
+                      className="embla-thumbs overflow-hidden"
+                      ref={emblaThumbsRef}
+                    >
                       <div className="embla-thumbs__container flex gap-2 justify-center">
                         {effectiveImageUrls.map((url, idx) => (
                           <button
@@ -526,7 +528,7 @@ export function Lightbox({
             )}
 
             {!mediaLoaded && selectedImageUrl && !isVideo && !is3D && (
-              <div className="absolute inset-0 flex items-center justify-center bg-ui-panel">
+              <div className="absolute inset-0 flex items-center justify-center bg-black">
                 <LoadingSpinner className="h-12 w-12 text-base-fg" />
               </div>
             )}
@@ -560,7 +562,7 @@ export function Lightbox({
 
           {/* Info sidebar */}
           <div className="flex h-full w-[300px] shrink-0 flex-col bg-ui-panel rounded-r-xl">
-            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5 min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 min-h-0">
               {promptData.loading ? (
                 <div className="space-y-6 animate-pulse">
                   <div className="space-y-2">
@@ -599,9 +601,7 @@ export function Lightbox({
                               icon={promptCopy.copied ? faCheck : faCopy}
                               className="h-3 w-3"
                             />
-                            <span>
-                              {promptCopy.copied ? "Copied" : "Copy"}
-                            </span>
+                            <span>{promptCopy.copied ? "Copied" : "Copy"}</span>
                           </button>
                         )}
                       </div>
@@ -621,9 +621,7 @@ export function Lightbox({
                         (isPromptClamped || isPromptExpanded) && (
                           <button
                             className="flex w-full items-center justify-center gap-1 text-xs text-white/70 hover:text-white transition-colors py-1"
-                            onClick={() =>
-                              setIsPromptExpanded((prev) => !prev)
-                            }
+                            onClick={() => setIsPromptExpanded((prev) => !prev)}
                           >
                             <span>
                               {isPromptExpanded ? "Show less" : "Show more"}
@@ -644,10 +642,12 @@ export function Lightbox({
                         <div className="grid grid-cols-5 gap-2">
                           {promptData.contextImages.map(
                             (contextImage, index) => {
-                              const { thumbnail } =
-                                getContextImageThumbnail(contextImage, {
+                              const { thumbnail } = getContextImageThumbnail(
+                                contextImage,
+                                {
                                   size: THUMBNAIL_SIZES.SMALL,
-                                });
+                                },
+                              );
                               return (
                                 <a
                                   key={contextImage.media_token}
@@ -721,7 +721,7 @@ export function Lightbox({
             </div>
 
             {/* Action buttons */}
-            <div className="p-4 pt-2 space-y-2 border-t border-white/5">
+            <div className="p-4 space-y-2 border-t border-white/5">
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"

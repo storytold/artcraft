@@ -1,14 +1,13 @@
 import {
   faArrowLeft,
-  faLock,
   faEye,
   faEyeSlash,
   faSpinnerThird,
-  faKey,
   faCheckCircle,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
+import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PasswordResetApi, BillingApi } from "@storyteller/api";
@@ -102,12 +101,6 @@ const VerifyReset = () => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleRedeemReset();
-    }
-  };
-
   return (
     <div className="relative min-h-screen bg-[#101014] text-white bg-dots flex flex-col">
       <Seo
@@ -117,7 +110,7 @@ const VerifyReset = () => {
       <div className="dotted-pattern absolute inset-0 z-[0] opacity-30" />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-3xl p-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
           {!success ? (
             <>
               <div className="text-center mb-8">
@@ -129,7 +122,13 @@ const VerifyReset = () => {
                 </p>
               </div>
 
-              <div className="space-y-5">
+              <form
+                className="space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleRedeemReset();
+                }}
+              >
                 {error && (
                   <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
                     {error}
@@ -141,26 +140,17 @@ const VerifyReset = () => {
                   <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
                     Verification Code
                   </label>
-                  <div className="relative">
-                    <FontAwesomeIcon
-                      icon={faKey}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20"
-                    />
-                    <input
-                      id="verification-code"
-                      type="text"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      placeholder="Enter verification code"
-                      className={`w-full bg-black/20 border ${
-                        fieldErrors.verificationCode
-                          ? "border-red-500/50"
-                          : "border-white/10"
-                      } focus:border-primary/50 rounded-xl pl-11 pr-4 py-3 text-white placeholder-white/20 outline-none transition-colors`}
-                    />
-                  </div>
+                  <Input
+                    id="verification-code"
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    placeholder="Enter verification code"
+                    isError={!!fieldErrors.verificationCode}
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                  />
                   {fieldErrors.verificationCode && (
-                    <p className="text-red-400 text-xs ml-1 mt-1">
+                    <p className="text-red-400 text-xs ml-1">
                       {fieldErrors.verificationCode}
                     </p>
                   )}
@@ -172,21 +162,14 @@ const VerifyReset = () => {
                     New Password
                   </label>
                   <div className="relative">
-                    <FontAwesomeIcon
-                      icon={faLock}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20"
-                    />
-                    <input
+                    <Input
                       id="new-password"
                       type={showNewPassword ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
-                      className={`w-full bg-black/20 border ${
-                        fieldErrors.newPassword
-                          ? "border-red-500/50"
-                          : "border-white/10"
-                      } focus:border-primary/50 rounded-xl pl-11 pr-12 py-3 text-white placeholder-white/20 outline-none transition-colors`}
+                      isError={!!fieldErrors.newPassword}
+                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                     />
                     <button
                       type="button"
@@ -199,7 +182,7 @@ const VerifyReset = () => {
                     </button>
                   </div>
                   {fieldErrors.newPassword && (
-                    <p className="text-red-400 text-xs ml-1 mt-1">
+                    <p className="text-red-400 text-xs ml-1">
                       {fieldErrors.newPassword}
                     </p>
                   )}
@@ -211,22 +194,14 @@ const VerifyReset = () => {
                     Verify New Password
                   </label>
                   <div className="relative">
-                    <FontAwesomeIcon
-                      icon={faLock}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20"
-                    />
-                    <input
+                    <Input
                       id="confirm-password"
                       type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      onKeyDown={handleKeyDown}
                       placeholder="Enter new password again"
-                      className={`w-full bg-black/20 border ${
-                        fieldErrors.confirmPassword
-                          ? "border-red-500/50"
-                          : "border-white/10"
-                      } focus:border-primary/50 rounded-xl pl-11 pr-12 py-3 text-white placeholder-white/20 outline-none transition-colors`}
+                      isError={!!fieldErrors.confirmPassword}
+                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                     />
                     <button
                       type="button"
@@ -241,25 +216,30 @@ const VerifyReset = () => {
                     </button>
                   </div>
                   {fieldErrors.confirmPassword && (
-                    <p className="text-red-400 text-xs ml-1 mt-1">
+                    <p className="text-red-400 text-xs ml-1">
                       {fieldErrors.confirmPassword}
                     </p>
                   )}
                 </div>
 
-                <Button
-                  id="change-password-btn"
-                  className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-12 mt-2"
-                  onClick={handleRedeemReset}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
-                  ) : (
-                    "Change Password"
-                  )}
-                </Button>
-              </div>
+                <div className="pt-2">
+                  <Button
+                    id="change-password-btn"
+                    className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                    type="submit"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <FontAwesomeIcon
+                        icon={faSpinnerThird}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      "Change Password"
+                    )}
+                  </Button>
+                </div>
+              </form>
 
               <div className="mt-8 text-center text-sm">
                 <Link
@@ -285,7 +265,7 @@ const VerifyReset = () => {
                 </p>
                 <Button
                   id="back-to-homepage-btn"
-                  className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-12"
+                  className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                   onClick={() => navigate(redirectTo)}
                 >
                   {redirectLabel}
@@ -295,6 +275,10 @@ const VerifyReset = () => {
           )}
         </div>
       </main>
+
+      <div className="relative z-10 py-6 text-center text-white/20 text-xs">
+        &copy; {new Date().getFullYear()} ArtCraft. All rights reserved.
+      </div>
     </div>
   );
 };

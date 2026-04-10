@@ -5,6 +5,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
+import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PasswordResetApi } from "@storyteller/api";
@@ -44,12 +45,6 @@ const ForgotPassword = () => {
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleRequestReset();
-    }
-  };
-
   return (
     <div className="relative min-h-screen bg-[#101014] text-white bg-dots flex flex-col">
       <Seo
@@ -59,7 +54,7 @@ const ForgotPassword = () => {
       <div className="dotted-pattern absolute inset-0 z-[0] opacity-30" />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-3xl p-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
           {!submitted ? (
             <>
               <div className="text-center mb-8">
@@ -69,7 +64,13 @@ const ForgotPassword = () => {
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <form
+                className="space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleRequestReset();
+                }}
+              >
                 {error && (
                   <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-3 rounded-xl text-sm text-center">
                     {error}
@@ -80,30 +81,34 @@ const ForgotPassword = () => {
                   <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
                     Email or Username
                   </label>
-                  <input
+                  <Input
                     id="reset-email"
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={handleKeyDown}
                     placeholder="you@example.com"
-                    className="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                   />
                 </div>
 
-                <Button
-                  id="send-reset-btn"
-                  className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-12 mt-2"
-                  onClick={handleRequestReset}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
-                  ) : (
-                    "Send Reset Code"
-                  )}
-                </Button>
-              </div>
+                <div className="pt-2">
+                  <Button
+                    id="send-reset-btn"
+                    className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                    type="submit"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <FontAwesomeIcon
+                        icon={faSpinnerThird}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      "Send Reset Code"
+                    )}
+                  </Button>
+                </div>
+              </form>
             </>
           ) : (
             <div className="text-center py-8">
@@ -116,12 +121,12 @@ const ForgotPassword = () => {
                 <span className="text-white font-medium">{email}</span>
               </p>
               <Link to="/forgot-password/verify">
-                <Button className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-12 mb-3">
+                <Button className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10 mb-3">
                   Enter Verification Code
                 </Button>
               </Link>
               <Button
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-12"
+                className="w-full bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-10"
                 onClick={() => setSubmitted(false)}
               >
                 Try another email
@@ -139,6 +144,10 @@ const ForgotPassword = () => {
           </div>
         </div>
       </main>
+
+      <div className="relative z-10 py-6 text-center text-white/20 text-xs">
+        &copy; {new Date().getFullYear()} ArtCraft. All rights reserved.
+      </div>
     </div>
   );
 };

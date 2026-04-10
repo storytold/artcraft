@@ -139,8 +139,8 @@ export default function Library() {
     const thumbnail = isDimensional
       ? null
       : getMediaThumbnail(item.media_links, item.media_class, {
-        size: THUMBNAIL_SIZES.MEDIUM,
-      });
+          size: THUMBNAIL_SIZES.LARGE,
+        });
 
     return {
       id: item.token,
@@ -256,17 +256,17 @@ export default function Library() {
   const navigatePrev =
     currentIndex > 0
       ? () => {
-        const prev = flatItems[currentIndex - 1];
-        setLightboxItem(prev);
-      }
+          const prev = flatItems[currentIndex - 1];
+          setLightboxItem(prev);
+        }
       : undefined;
 
   const navigateNext =
     currentIndex >= 0 && currentIndex < flatItems.length - 1
       ? () => {
-        const next = flatItems[currentIndex + 1];
-        setLightboxItem(next);
-      }
+          const next = flatItems[currentIndex + 1];
+          setLightboxItem(next);
+        }
       : undefined;
 
   const handleItemDeleted = useCallback((id: string) => {
@@ -315,13 +315,15 @@ export default function Library() {
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-dots pt-20 pb-8 px-4 md:px-8 lg:px-12">
+    <div className="relative min-h-screen w-full bg-dots pt-14 sm:pt-20 pb-8 px-3 sm:px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-[1600px]">
         {/* Header — sticky below navbar */}
-        <div className="sticky top-16 z-10 -mx-4 md:-mx-8 lg:-mx-12 px-4 md:px-8 lg:px-12 pb-4 pt-4 bg-[#101014]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-white">My Library</h1>
+        <div className="sticky top-12 sm:top-16 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 shrink-0">
+              <h1 className="text-lg sm:text-2xl font-bold text-white">
+                My Library
+              </h1>
               <button
                 onClick={() => {
                   setAllItems([]);
@@ -331,29 +333,30 @@ export default function Library() {
                   isLoadingRef.current = false;
                   loadItems(true);
                 }}
-                className="h-8 w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
+                className="h-7 w-7 sm:h-8 sm:w-8 flex items-center justify-center rounded-lg text-white/50 hover:text-white hover:bg-ui-controls/40 transition-colors"
                 title="Refresh library"
               >
                 <FontAwesomeIcon
                   icon={faArrowsRotate}
-                  className={`text-sm ${initialLoading ? "animate-spin" : ""}`}
+                  className={`text-xs sm:text-sm ${initialLoading ? "animate-spin" : ""}`}
                 />
               </button>
             </div>
 
             {/* Filter tabs */}
-            <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-ui-controls/40 rounded-lg p-1 overflow-x-auto">
               {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
                   onClick={() => navigate(filter.route)}
-                  className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${activeFilter === filter.id
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                    activeFilter === filter.id
                       ? "bg-ui-controls text-white"
                       : "text-white/60 hover:text-white"
-                    }`}
+                  }`}
                 >
                   <FontAwesomeIcon icon={filter.icon} className="text-xs" />
-                  {filter.label}
+                  <span className="hidden sm:inline">{filter.label}</span>
                 </button>
               ))}
             </div>
@@ -367,7 +370,7 @@ export default function Library() {
             <div className="space-y-6">
               <div>
                 <div className="h-4 w-24 rounded bg-white/[0.06] mb-3" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-2">
                   {Array.from({ length: 18 }).map((_, i) => (
                     <div
                       key={i}
@@ -416,7 +419,7 @@ export default function Library() {
                   <h3 className="text-sm font-medium text-white/50 mb-2">
                     {date}
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-1.5 sm:gap-2">
                     {dateItems.map((item) => (
                       <button
                         key={item.id}
@@ -506,6 +509,7 @@ export default function Library() {
         cdnUrl={lightboxItem?.fullImage}
         mediaClass={lightboxItem?.mediaClass}
         batchImageToken={lightboxItem?.batchImageToken}
+        showBatchCarousel={false}
         onNavigatePrev={navigatePrev}
         onNavigateNext={navigateNext}
         onDeleted={handleItemDeleted}

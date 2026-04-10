@@ -14,6 +14,7 @@ import type { GalleryItem } from "./useGalleryData";
 export interface InProgressJob {
   id: string;
   prompt: string;
+  modelId: string;
   modelLabel: string;
   progress: number;
   estimatedTimeLeftMs?: number;
@@ -22,6 +23,7 @@ export interface InProgressJob {
 export interface FailedJob {
   id: string;
   prompt: string;
+  modelId: string;
   modelLabel: string;
   failureReason?: string;
   failureMessage?: string;
@@ -103,6 +105,7 @@ function jobToInProgress(job: Job): InProgressJob {
   return {
     id: job.job_token,
     prompt: getPrompt(job),
+    modelId: job.request.maybe_model_type ?? "",
     modelLabel: getModelLabel(job),
     progress,
     estimatedTimeLeftMs,
@@ -125,6 +128,7 @@ function jobToFailed(job: Job): FailedJob {
   return {
     id: job.job_token,
     prompt: getPrompt(job),
+    modelId: job.request.maybe_model_type ?? "",
     modelLabel: getModelLabel(job),
     failureReason,
     failureMessage,
@@ -146,6 +150,7 @@ function jobToGalleryItem(job: Job): GalleryItem | null {
     createdAt:
       result.maybe_successfully_completed_at || job.updated_at,
     mediaClass: mediaType === "video" ? "video" : "image",
+    modelId: job.request.maybe_model_type ?? undefined,
   };
 }
 
@@ -171,7 +176,7 @@ async function expandBatchItems(
         const cdnUrl = file.media_links?.cdn_url;
         if (!cdnUrl) return null;
         const thumbnail = getMediaThumbnail(file.media_links, item.mediaClass, {
-          size: THUMBNAIL_SIZES.MEDIUM,
+          size: THUMBNAIL_SIZES.LARGE,
         });
         return {
           id: file.token,
@@ -180,6 +185,7 @@ async function expandBatchItems(
           fullImage: cdnUrl,
           createdAt: item.createdAt,
           mediaClass: item.mediaClass,
+          modelId: item.modelId,
           batchImageToken: batchToken,
         };
       })

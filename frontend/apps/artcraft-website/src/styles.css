@@ -104,6 +104,15 @@
   animation: toast-in 0.2s ease-out both;
 }
 
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;

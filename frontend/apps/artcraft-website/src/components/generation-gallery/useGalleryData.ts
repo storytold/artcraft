@@ -15,6 +15,7 @@ export interface GalleryItem {
   fullImage: string | null;
   createdAt: string;
   mediaClass: string;
+  modelId?: string;
   batchImageToken?: string;
 }
 
@@ -56,7 +57,7 @@ export function useGalleryData(options: {
     const thumbnail = isDimensional
       ? null
       : getMediaThumbnail(item.media_links, item.media_class, {
-          size: THUMBNAIL_SIZES.MEDIUM,
+          size: THUMBNAIL_SIZES.LARGE,
         });
 
     return {
@@ -66,6 +67,7 @@ export function useGalleryData(options: {
       fullImage: item.media_links?.cdn_url || null,
       createdAt: item.created_at,
       mediaClass: item.media_class || "image",
+      modelId: item.maybe_model_type || undefined,
       batchImageToken: item.maybe_batch_token,
     };
   }, []);

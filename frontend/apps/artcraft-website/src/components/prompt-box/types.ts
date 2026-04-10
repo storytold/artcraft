@@ -23,6 +23,6 @@ export interface RefAudio {
 
 export interface MentionItem {
   label: string;
-  type: "image" | "video" | "audio";
+  type: "image" | "video" | "audio" | "character";
   preview?: string;
 }

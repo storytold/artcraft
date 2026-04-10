@@ -2,6 +2,10 @@ import { memo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCube, faImage, faVideo } from "@fortawesome/pro-solid-svg-icons";
 import { PLACEHOLDER_IMAGES } from "@storyteller/common";
+import {
+  getModelCreatorIconPath,
+  getModelDisplayName,
+} from "../../lib/omni-gen-hooks";
 import type { GalleryItem } from "./useGalleryData";
 
 // ── Persistent aspect ratio cache ─────────────────────────────────────────
@@ -71,6 +75,26 @@ export const GalleryCard = memo(function GalleryCard({
     containIntrinsicSize: "auto 200px",
   };
 
+  const modelDisplayName = item.modelId
+    ? getModelDisplayName(item.modelId)
+    : null;
+  const modelIconPath = item.modelId
+    ? getModelCreatorIconPath(item.modelId)
+    : null;
+
+  const mediaIcon =
+    item.mediaClass === "video"
+      ? faVideo
+      : item.mediaClass === "dimensional"
+        ? faCube
+        : faImage;
+  const mediaLabel =
+    item.mediaClass === "video"
+      ? "Video"
+      : item.mediaClass === "dimensional"
+        ? "3D"
+        : "Image";
+
   return (
     <button
       className="group relative block w-full overflow-hidden rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400"
@@ -105,29 +129,29 @@ export const GalleryCard = memo(function GalleryCard({
       ) : (
         <div className="flex h-full w-full items-center justify-center">
           <FontAwesomeIcon
-            icon={
-              item.mediaClass === "video"
-                ? faVideo
-                : item.mediaClass === "dimensional"
-                  ? faCube
-                  : faImage
-            }
+            icon={mediaIcon}
             className="text-xl text-white/20"
           />
         </div>
       )}
-      {item.mediaClass === "video" && (
-        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
-          <FontAwesomeIcon icon={faVideo} className="text-[8px]" />
-          Video
+
+      {/* Hover overlay with media type + model badges */}
+      <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
+          <FontAwesomeIcon icon={mediaIcon} className="text-[8px]" />
+          {mediaLabel}
         </div>
-      )}
-      {item.mediaClass === "dimensional" && (
-        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
-          <FontAwesomeIcon icon={faCube} className="text-[8px]" />
-          3D
-        </div>
-      )}
+        {modelDisplayName && modelIconPath && (
+          <div className="flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
+            <img
+              src={modelIconPath}
+              alt=""
+              className="h-3 w-3 icon-auto-contrast"
+            />
+            <span className="max-w-[100px] truncate">{modelDisplayName}</span>
+          </div>
+        )}
+      </div>
     </button>
   );
 });
