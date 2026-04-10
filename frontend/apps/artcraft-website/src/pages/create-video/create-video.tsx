@@ -891,7 +891,7 @@ export default function CreateVideo() {
                   <button
                     type="button"
                     onClick={() => setIsCharactersModalOpen(true)}
-                    className="flex h-9 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/[0.08] px-3 text-sm font-medium text-white transition-all duration-150 hover:bg-white/[0.12] active:scale-95"
+                    className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg shadow-sm transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
                   >
                     @Characters
                   </button>

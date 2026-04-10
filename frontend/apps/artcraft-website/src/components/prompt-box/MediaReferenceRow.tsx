@@ -179,7 +179,7 @@ export const MediaReferenceRow = ({
         onChange={handleAudioUpload}
       />
       <div
-        className={twMerge("glass flex", className)}
+        className={twMerge("glass flex flex-col sm:flex-row", className)}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
@@ -200,7 +200,7 @@ export const MediaReferenceRow = ({
               {totalVideoDuration}/{maxVideoRefDuration}s
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {referenceVideos.map((video) => (
               <VideoRefTile
                 key={video.id}
@@ -209,7 +209,7 @@ export const MediaReferenceRow = ({
               />
             ))}
             {uploadingVideo && (
-              <div className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
+              <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
                 <FontAwesomeIcon
                   icon={faSpinnerThird}
                   spin
@@ -220,7 +220,7 @@ export const MediaReferenceRow = ({
             {canAddVideo && (
               <button
                 onClick={() => videoInputRef.current?.click()}
-                className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
               >
                 <FontAwesomeIcon
                   icon={faPlus}
@@ -231,7 +231,7 @@ export const MediaReferenceRow = ({
           </div>
         </div>
 
-        <div className="w-[1px] self-stretch bg-white/10" />
+        <div className="h-[1px] sm:h-auto sm:w-[1px] self-stretch bg-white/10 mx-3 sm:mx-0" />
 
         {/* Audio section */}
         <div className="flex grow gap-2 px-3 py-2">
@@ -249,7 +249,7 @@ export const MediaReferenceRow = ({
               {totalAudioDuration}/{maxAudioRefDuration}s
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {referenceAudios.map((audio, i) => (
               <AudioRefTile
                 key={audio.id}
@@ -259,7 +259,7 @@ export const MediaReferenceRow = ({
               />
             ))}
             {uploadingAudio && (
-              <div className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
+              <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
                 <FontAwesomeIcon
                   icon={faSpinnerThird}
                   spin
@@ -270,7 +270,7 @@ export const MediaReferenceRow = ({
             {canAddAudio && (
               <button
                 onClick={() => audioInputRef.current?.click()}
-                className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
               >
                 <FontAwesomeIcon
                   icon={faPlus}
@@ -294,7 +294,7 @@ const VideoRefTile = ({
   video: RefVideo;
   onRemove: (id: string) => void;
 }) => (
-  <div className="group relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
+  <div className="group relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
     <video
       src={video.url}
       muted
@@ -309,7 +309,7 @@ const VideoRefTile = ({
         e.stopPropagation();
         onRemove(video.id);
       }}
-      className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-black group-hover:opacity-100"
+      className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
     >
       <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
     </button>
@@ -348,7 +348,7 @@ const AudioRefTile = ({
   );
 
   return (
-    <div className="group relative flex aspect-square w-14 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
+    <div className="group relative flex aspect-square w-10 sm:w-14 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
       <button
         onClick={handleTogglePlay}
         className="flex h-full w-full items-center justify-center"
@@ -369,7 +369,7 @@ const AudioRefTile = ({
           e.stopPropagation();
           onRemove(audio.id);
         }}
-        className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-black group-hover:opacity-100"
+        className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
       >
         <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
       </button>
