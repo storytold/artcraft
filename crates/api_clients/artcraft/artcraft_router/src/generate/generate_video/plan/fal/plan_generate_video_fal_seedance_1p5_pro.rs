@@ -118,8 +118,24 @@ fn plan_aspect_ratio(
           value: format!("{:?}", unsupported),
         }))
       }
-      _ => Ok(Some(Ar::Auto)),
+      _ => Ok(Some(nearest_aspect_ratio(unsupported))),
     },
+  }
+}
+
+/// Pick the nearest supported aspect ratio for unsupported inputs.
+fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> FalSeedance1p5ProAspectRatio {
+  use FalSeedance1p5ProAspectRatio as Ar;
+  match aspect_ratio {
+    // Wide unsupported → nearest wide
+    CommonAspectRatio::WideFiveByFour => Ar::FourByThree,     // 1.25 → 1.33
+    CommonAspectRatio::WideThreeByTwo => Ar::FourByThree,      // 1.50 → 1.33
+    // Tall unsupported → nearest tall
+    CommonAspectRatio::TallFourByFive => Ar::ThreeByFour,     // 0.80 → 0.75
+    CommonAspectRatio::TallTwoByThree => Ar::ThreeByFour,     // 0.67 → 0.75
+    CommonAspectRatio::TallNineByTwentyOne => Ar::NineBySixteen, // 0.43 → 0.56
+    // Anything else → Square
+    _ => Ar::Square,
   }
 }
 

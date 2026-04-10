@@ -359,26 +359,40 @@ mod tests {
         });
       }
 
-      // ── Unsupported aspect ratios fall back under PayMoreUpgrade ──────────
+      // ── Unsupported aspect ratios fall back to nearest under PayMoreUpgrade
 
       #[test]
-      fn wide_5x4_falls_back_to_auto() {
+      fn wide_5x4_falls_back_to_four_by_three() {
         with_text_plan(&make_request(Some("p"), Some(CommonAspectRatio::WideFiveByFour), None, None, None, None, None), |plan| {
-          assert!(matches!(plan.aspect_ratio, Some(FalSeedance1p5ProAspectRatio::Auto)));
+          assert!(matches!(plan.aspect_ratio, Some(FalSeedance1p5ProAspectRatio::FourByThree)));
         });
       }
 
       #[test]
-      fn wide_3x2_falls_back_to_auto() {
+      fn wide_3x2_falls_back_to_four_by_three() {
         with_text_plan(&make_request(Some("p"), Some(CommonAspectRatio::WideThreeByTwo), None, None, None, None, None), |plan| {
-          assert!(matches!(plan.aspect_ratio, Some(FalSeedance1p5ProAspectRatio::Auto)));
+          assert!(matches!(plan.aspect_ratio, Some(FalSeedance1p5ProAspectRatio::FourByThree)));
         });
       }
 
       #[test]
-      fn tall_4x5_falls_back_to_auto() {
+      fn tall_4x5_falls_back_to_three_by_four() {
         with_text_plan(&make_request(Some("p"), Some(CommonAspectRatio::TallFourByFive), None, None, None, None, None), |plan| {
-          assert!(matches!(plan.aspect_ratio, Some(FalSeedance1p5ProAspectRatio::Auto)));
+          assert!(matches!(plan.aspect_ratio, Some(FalSeedance1p5ProAspectRatio::ThreeByFour)));
+        });
+      }
+
+      #[test]
+      fn tall_2x3_falls_back_to_three_by_four() {
+        with_text_plan(&make_request(Some("p"), Some(CommonAspectRatio::TallTwoByThree), None, None, None, None, None), |plan| {
+          assert!(matches!(plan.aspect_ratio, Some(FalSeedance1p5ProAspectRatio::ThreeByFour)));
+        });
+      }
+
+      #[test]
+      fn tall_9x21_falls_back_to_nine_by_sixteen() {
+        with_text_plan(&make_request(Some("p"), Some(CommonAspectRatio::TallNineByTwentyOne), None, None, None, None, None), |plan| {
+          assert!(matches!(plan.aspect_ratio, Some(FalSeedance1p5ProAspectRatio::NineBySixteen)));
         });
       }
 
