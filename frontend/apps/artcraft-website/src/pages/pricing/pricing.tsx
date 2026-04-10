@@ -92,7 +92,7 @@ const Pricing = () => {
           </div>
         </main>
       ) : (
-        <main className="relative z-10 pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <main className="relative z-10 pt-28 sm:pt-32 pb-20 px-4 sm:px-6 lg:px-8">
           <PricingTable
             title="Invest in Yourself"
             subtitle="You'll get a ton of generations and you'll be investing in a tool that you'll always own."

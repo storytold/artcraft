@@ -23,6 +23,7 @@ import { enqueueImageGeneration, startPolling } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
 import { GenerationCountPicker } from "./components/GenerationCountPicker";
 import { ResolutionPicker } from "./components/ResolutionPicker";
+import { QualityPicker } from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
   useOmniGenImageModels,
@@ -100,6 +101,11 @@ export default function CreateImage() {
     (v: string | undefined) => setUi({ resolution: v }),
     [setUi],
   );
+  const quality = ui.quality;
+  const setQuality = useCallback(
+    (v: string | undefined) => setUi({ quality: v }),
+    [setUi],
+  );
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [referenceImages, setReferenceImages] = useState<RefImage[]>([]);
@@ -138,11 +144,13 @@ export default function CreateImage() {
   const hasAspectRatios =
     (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
   const hasResolutions = (selectedModel?.resolution_options?.length ?? 0) > 0;
+  const hasQualityOptions = (selectedModel?.quality_options?.length ?? 0) > 0;
 
   const estimatedCredits = useImageCostEstimate({
     model: selectedModel?.model ?? "",
     aspectRatio: aspectRatio,
     resolution: hasResolutions ? resolution : undefined,
+    quality: hasQualityOptions ? quality : undefined,
     numImages,
     hasReferenceImages: referenceImages.length > 0,
   });
@@ -206,6 +214,7 @@ export default function CreateImage() {
           model.batch_size_default ?? 1,
         ),
         resolution: model.resolution_default ?? undefined,
+        quality: model.default_quality ?? undefined,
       });
     },
     [setUi],
@@ -251,6 +260,7 @@ export default function CreateImage() {
         numImages,
         aspectRatio: aspectRatio,
         resolution: hasResolutions ? resolution : undefined,
+        quality: hasQualityOptions ? quality : undefined,
         imageMediaTokens: imageMediaTokens?.length
           ? imageMediaTokens
           : undefined,
@@ -293,6 +303,8 @@ export default function CreateImage() {
     aspectRatio,
     resolution,
     hasResolutions,
+    quality,
+    hasQualityOptions,
     referenceImages,
     startBatch,
     setBatchJobToken,
@@ -371,6 +383,16 @@ export default function CreateImage() {
                     }
                     currentResolution={resolution}
                     handleResolutionSelect={setResolution}
+                  />
+                )}
+                {hasQualityOptions && selectedModel && (
+                  <QualityPicker
+                    qualityOptions={selectedModel.quality_options ?? []}
+                    defaultQuality={
+                      selectedModel.default_quality ?? undefined
+                    }
+                    currentQuality={quality}
+                    handleQualitySelect={setQuality}
                   />
                 )}
               </>

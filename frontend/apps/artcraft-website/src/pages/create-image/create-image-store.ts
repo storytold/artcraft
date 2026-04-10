@@ -24,6 +24,7 @@ export type ImageUiState = {
   aspectRatio: string;
   numImages: number;
   resolution: string | undefined;
+  quality: string | undefined;
 };
 
 type CreateImageState = {
@@ -49,6 +50,7 @@ const DEFAULT_UI: ImageUiState = {
   aspectRatio: "square",
   numImages: 1,
   resolution: undefined,
+  quality: undefined,
 };
 
 export const useCreateImageStore = create<CreateImageState>((set) => ({

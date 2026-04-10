@@ -8,6 +8,7 @@ export interface ImageCostParams {
   model: string;
   aspectRatio?: string;
   resolution?: string;
+  quality?: string;
   numImages: number;
   hasReferenceImages: boolean;
   imageMediaTokenCount?: number;
@@ -29,6 +30,7 @@ export function useImageCostEstimate(params: ImageCostParams): number | null {
       model: params.model,
       aspect_ratio: params.aspectRatio ?? null,
       resolution: params.resolution ?? null,
+      quality: params.quality ?? null,
       image_batch_count: params.numImages,
       image_media_tokens: params.hasReferenceImages
         ? new Array(params.imageMediaTokenCount ?? 1).fill("placeholder")

@@ -10,6 +10,7 @@ export interface GenerateImageParams {
   numImages?: number;
   aspectRatio?: string;
   resolution?: string;
+  quality?: string;
   imageMediaTokens?: string[];
 }
 
@@ -24,6 +25,7 @@ export async function enqueueImageGeneration(
     idempotency_token: crypto.randomUUID(),
     aspect_ratio: params.aspectRatio ?? null,
     resolution: params.resolution ?? null,
+    quality: params.quality ?? null,
     image_batch_count: params.numImages ?? 1,
     image_media_tokens: params.imageMediaTokens?.length
       ? params.imageMediaTokens
