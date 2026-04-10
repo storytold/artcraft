@@ -398,7 +398,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     onChange={onPromptChange}
                     mentionItems={mentionItems}
                     placeholder={placeholder}
-                    className="max-h-[5.5em] w-full text-sm sm:text-md text-white"
+                    className="max-h-[5.5em] w-full text-white"
                     colorMap={mentionColorMap}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey && !e.metaKey) {

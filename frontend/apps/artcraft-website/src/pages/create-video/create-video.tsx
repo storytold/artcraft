@@ -527,102 +527,107 @@ export default function CreateVideo() {
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim() || isGenerating || needsImage || !selectedModel) return;
     setIsGenerating(true);
-    const batchId = startBatch(
-      prompt,
-      selectedModel.full_name ?? selectedModel.model,
+
+    const startFrameToken =
+      !isReferenceMode && supportsImagePrompts && referenceImages.length > 0
+        ? referenceImages[0].mediaToken
+        : undefined;
+    const endFrameToken =
+      !isReferenceMode && hasEndFrame && endFrameImage?.mediaToken
+        ? endFrameImage.mediaToken
+        : undefined;
+    const referenceImageTokens =
+      isReferenceMode && referenceImages.length > 0
+        ? referenceImages
+            .map((img) => img.mediaToken)
+            .filter((t) => t.length > 0)
+        : undefined;
+    const referenceVideoTokens =
+      isReferenceMode && referenceVideos.length > 0
+        ? referenceVideos.map((v) => v.mediaToken).filter((t) => t.length > 0)
+        : undefined;
+    const referenceAudioTokens =
+      isReferenceMode && referenceAudios.length > 0
+        ? referenceAudios.map((a) => a.mediaToken).filter((t) => t.length > 0)
+        : undefined;
+
+    // Extract character tokens from @-mentions in prompt
+    const mentionedCharacters = activeCharacters.filter((c) =>
+      prompt.includes(`@${c.name}`),
     );
+    const referenceCharacterTokens =
+      mentionedCharacters.length > 0
+        ? mentionedCharacters.map((c) => c.character_token)
+        : undefined;
 
-    try {
-      const startFrameToken =
-        !isReferenceMode && supportsImagePrompts && referenceImages.length > 0
-          ? referenceImages[0].mediaToken
-          : undefined;
-      const endFrameToken =
-        !isReferenceMode && hasEndFrame && endFrameImage?.mediaToken
-          ? endFrameImage.mediaToken
-          : undefined;
-      const referenceImageTokens =
-        isReferenceMode && referenceImages.length > 0
-          ? referenceImages
-              .map((img) => img.mediaToken)
-              .filter((t) => t.length > 0)
-          : undefined;
-      const referenceVideoTokens =
-        isReferenceMode && referenceVideos.length > 0
-          ? referenceVideos.map((v) => v.mediaToken).filter((t) => t.length > 0)
-          : undefined;
-      const referenceAudioTokens =
-        isReferenceMode && referenceAudios.length > 0
-          ? referenceAudios.map((a) => a.mediaToken).filter((t) => t.length > 0)
-          : undefined;
+    const baseParams = {
+      prompt: prompt.trim(),
+      model: selectedModel.model,
+      numVideos: 1,
+      aspectRatio: selectedSize,
+      duration:
+        duration ?? selectedModel.duration_seconds_default ?? undefined,
+      resolution: hasResolutionOptions
+        ? (resolution ?? selectedModel.resolution_default ?? undefined)
+        : undefined,
+      generateAudio: hasSound ? generateWithSound : undefined,
+      startFrameImageMediaToken: startFrameToken?.length
+        ? startFrameToken
+        : undefined,
+      endFrameImageMediaToken: endFrameToken?.length
+        ? endFrameToken
+        : undefined,
+      referenceImageMediaTokens: referenceImageTokens?.length
+        ? referenceImageTokens
+        : undefined,
+      referenceVideoMediaTokens: referenceVideoTokens?.length
+        ? referenceVideoTokens
+        : undefined,
+      referenceAudioMediaTokens: referenceAudioTokens?.length
+        ? referenceAudioTokens
+        : undefined,
+      referenceCharacterTokens,
+    };
 
-      // Extract character tokens from @-mentions in prompt
-      const mentionedCharacters = activeCharacters.filter((c) =>
-        prompt.includes(`@${c.name}`),
-      );
-      const referenceCharacterTokens =
-        mentionedCharacters.length > 0
-          ? mentionedCharacters.map((c) => c.character_token)
-          : undefined;
+    // Enqueue each video as a separate job so they complete independently
+    const modelLabel = selectedModel.full_name ?? selectedModel.model;
+    const count = Math.max(1, numVideos);
 
-      const result = await enqueueVideoGeneration({
-        prompt: prompt.trim(),
-        model: selectedModel.model,
-        numVideos,
-        aspectRatio: selectedSize,
-        duration:
-          duration ?? selectedModel.duration_seconds_default ?? undefined,
-        resolution: hasResolutionOptions
-          ? (resolution ?? selectedModel.resolution_default ?? undefined)
-          : undefined,
-        generateAudio: hasSound ? generateWithSound : undefined,
-        startFrameImageMediaToken: startFrameToken?.length
-          ? startFrameToken
-          : undefined,
-        endFrameImageMediaToken: endFrameToken?.length
-          ? endFrameToken
-          : undefined,
-        referenceImageMediaTokens: referenceImageTokens?.length
-          ? referenceImageTokens
-          : undefined,
-        referenceVideoMediaTokens: referenceVideoTokens?.length
-          ? referenceVideoTokens
-          : undefined,
-        referenceAudioMediaTokens: referenceAudioTokens?.length
-          ? referenceAudioTokens
-          : undefined,
-        referenceCharacterTokens,
-      });
+    for (let i = 0; i < count; i++) {
+      const batchId = startBatch(prompt, modelLabel);
 
-      if (!result.success || !result.jobToken) {
-        failBatch(batchId, result.error ?? "Failed to start generation");
-        setIsGenerating(false);
-        return;
+      try {
+        const result = await enqueueVideoGeneration(baseParams);
+
+        if (!result.success || !result.jobToken) {
+          failBatch(batchId, result.error ?? "Failed to start generation");
+          continue;
+        }
+
+        setBatchJobToken(batchId, result.jobToken);
+
+        const stopPolling = startVideoPolling(
+          result.jobToken,
+          (video) => {
+            completeBatch(batchId, video);
+            pollingCleanupsRef.current.delete(batchId);
+            window.dispatchEvent(new Event("task-queue-update"));
+          },
+          (reason) => {
+            failBatch(batchId, reason);
+            pollingCleanupsRef.current.delete(batchId);
+            window.dispatchEvent(new Event("task-queue-update"));
+          },
+        );
+        pollingCleanupsRef.current.set(batchId, stopPolling);
+      } catch {
+        failBatch(batchId, "Network error - please try again");
       }
-
-      setBatchJobToken(batchId, result.jobToken);
-      window.dispatchEvent(new Event("credits-change"));
-      window.dispatchEvent(new Event("task-queue-update"));
-
-      const stopPolling = startVideoPolling(
-        result.jobToken,
-        (video) => {
-          completeBatch(batchId, video);
-          pollingCleanupsRef.current.delete(batchId);
-          window.dispatchEvent(new Event("task-queue-update"));
-        },
-        (reason) => {
-          failBatch(batchId, reason);
-          pollingCleanupsRef.current.delete(batchId);
-          window.dispatchEvent(new Event("task-queue-update"));
-        },
-      );
-      pollingCleanupsRef.current.set(batchId, stopPolling);
-    } catch {
-      failBatch(batchId, "Network error - please try again");
-    } finally {
-      setIsGenerating(false);
     }
+
+    window.dispatchEvent(new Event("credits-change"));
+    window.dispatchEvent(new Event("task-queue-update"));
+    setIsGenerating(false);
   }, [
     prompt,
     isGenerating,
