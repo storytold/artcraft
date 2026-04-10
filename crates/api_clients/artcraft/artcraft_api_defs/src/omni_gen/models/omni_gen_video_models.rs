@@ -1,10 +1,13 @@
-use serde_derive::{Deserialize, Serialize};
-use utoipa::{IntoParams, ToSchema};
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
+use serde_derive::{Deserialize, Serialize};
+use utoipa::{IntoParams, ToSchema};
+
+/// Video model to default to if none is specified
+const DEFAULT_VIDEO_MODEL : CommonVideoModel = CommonVideoModel::Seedance2p0;
 
 /// Query string parameters for the video models endpoint.
 #[derive(Deserialize, IntoParams, ToSchema)]
@@ -111,6 +114,12 @@ pub struct OmniGenVideoModelDetails {
   pub audio_references_max_total_duration_seconds: Option<u16>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
+  pub character_references_supported: Option<bool>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub character_references_max: Option<u16>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
   pub show_generate_with_sound_toggle: Option<bool>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -159,7 +168,7 @@ pub struct OmniGenVideoModelDetails {
 impl Default for OmniGenVideoModelDetails {
   fn default() -> Self {
     Self {
-      model: CommonVideoModel::Seedance2p0,
+      model: DEFAULT_VIDEO_MODEL,
       full_name: None,
       text_prompt_supported: None,
       text_prompt_max_length: None,
@@ -176,6 +185,8 @@ impl Default for OmniGenVideoModelDetails {
       audio_references_supported: None,
       audio_references_max: None,
       audio_references_max_total_duration_seconds: None,
+      character_references_supported: None,
+      character_references_max: None,
       show_generate_with_sound_toggle: None,
       aspect_ratio_options: None,
       aspect_ratio_default: None,

@@ -5,6 +5,7 @@ use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
+use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 /// Shared request body for both the video cost estimate and video generation endpoints.
@@ -38,6 +39,10 @@ pub struct OmniGenVideoCostAndGenerateRequest {
 
   /// Reference audio (optional).
   pub reference_audio_media_tokens: Option<Vec<MediaFileToken>>,
+
+  /// Optional character tokens to reference in the prompt.
+  /// Characters are referenced in prompts as @CharacterName.
+  pub reference_character_tokens: Option<Vec<CharacterToken>>,
 
   /// The resolution to use.
   pub resolution: Option<CommonResolution>,
