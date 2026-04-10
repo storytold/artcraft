@@ -9,3 +9,4 @@ mod test_nano_banana_2;
 mod test_nano_banana_pro;
 mod test_seedream_4;
 mod test_seedream_4p5;
+mod test_seedream_5_lite;

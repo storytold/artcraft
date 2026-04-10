@@ -46,9 +46,10 @@ fn resolve_image_list_ref<'a>(
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
-    Some(ImageListRef::Urls(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    // Omni-gen distillation hydrates media tokens to URLs before running the
+    // Artcraft cost path. Cost only depends on num_images, so URL-form inputs
+    // are accepted and dropped.
+    Some(ImageListRef::Urls(_)) => Ok(None),
   }
 }
 
