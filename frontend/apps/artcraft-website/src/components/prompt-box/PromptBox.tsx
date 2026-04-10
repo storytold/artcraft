@@ -9,7 +9,11 @@ import {
 } from "react";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMusic, faUserGroup, faVideo } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faMusic,
+  faUserGroup,
+  faVideo,
+} from "@fortawesome/pro-solid-svg-icons";
 import { GenerateButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -312,7 +316,10 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           return (
             <span
               key={i}
-              style={{ color: getMentionColor(part, mentionItems), fontWeight: 600 }}
+              style={{
+                color: getMentionColor(part, mentionItems),
+                fontWeight: 600,
+              }}
             >
               {part}
             </span>
@@ -345,7 +352,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
 
           <div
             className={twMerge(
-              "glass rounded-xl p-4 !transition-all duration-200",
+              "glass rounded-xl p-3 sm:p-4 !transition-all duration-200",
               hasAnyRowAbove && "rounded-t-none",
               isFocused && "ring-1 ring-primary",
             )}
@@ -391,7 +398,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     onChange={onPromptChange}
                     mentionItems={mentionItems}
                     placeholder={placeholder}
-                    className="max-h-[5.5em] w-full text-md text-white"
+                    className="max-h-[5.5em] w-full text-sm sm:text-md text-white"
                     colorMap={mentionColorMap}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey && !e.metaKey) {
@@ -404,7 +411,6 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                   />
                 ) : (
                   <>
-                    {/* Highlighted prompt overlay for @-mentions */}
                     {hasMentionItems && (
                       <div
                         ref={highlightRef}
@@ -432,9 +438,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                       onScroll={handleScroll}
                     />
 
-                    {/* @-mention autocomplete dropdown */}
                     {mentionOpen && filteredMentionItems.length > 0 && (
-                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-white/10 bg-[#2a2a2e] shadow-lg backdrop-blur-xl">
+                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden rounded-lg border border-white/10 bg-[#2a2a2e] shadow-lg backdrop-blur-xl">
                         <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/50">
                           Mentions
                         </div>
@@ -454,7 +459,9 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                             onMouseEnter={() => setMentionIndex(i)}
                           >
                             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-black/20">
-                              {(item.type === "image" || item.type === "character") && item.preview ? (
+                              {(item.type === "image" ||
+                                item.type === "character") &&
+                              item.preview ? (
                                 <img
                                   src={item.preview}
                                   alt={item.label}
@@ -474,14 +481,21 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                                 />
                               ) : (
                                 <FontAwesomeIcon
-                                  icon={item.type === "video" ? faVideo : faMusic}
+                                  icon={
+                                    item.type === "video" ? faVideo : faMusic
+                                  }
                                   className="h-3.5 w-3.5 text-white/60"
                                 />
                               )}
                             </div>
                             <span
                               className="font-medium"
-                              style={{ color: getMentionColor(item.label, mentionItems) }}
+                              style={{
+                                color: getMentionColor(
+                                  item.label,
+                                  mentionItems,
+                                ),
+                              }}
                             >
                               {item.label}
                             </span>
@@ -494,12 +508,15 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               </div>
             </div>
 
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">{leftToolbar}</div>
-              <div className="flex items-center gap-2">
+            {/* Toolbar: horizontal scroll on mobile, normal flex on desktop */}
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                {leftToolbar}
+              </div>
+              <div className="flex items-center gap-2 sm:shrink-0">
                 {rightToolbar}
                 <GenerateButton
-                  className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex flex-1 sm:flex-none items-center justify-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={onSubmit}
                   disabled={disabled ?? (!prompt.trim() || isSubmitting)}
                   loading={isSubmitting}
