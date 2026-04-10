@@ -9,7 +9,7 @@ use artcraft_router::errors::artcraft_router_error::ArtcraftRouterError;
 use log::warn;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::endpoints::omni_gen::generate::video::hydrate_to_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::video::distill_helper::hydrate_to_router_request::hydrate_to_router_request;
 use crate::state::server_state::ServerState;
 
 /// Estimate the cost of a video generation.

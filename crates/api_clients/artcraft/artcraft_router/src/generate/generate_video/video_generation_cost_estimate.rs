@@ -1,4 +1,5 @@
 /// The result of estimating the cost of a video generation plan.
+#[derive(Debug)]
 pub struct VideoGenerationCostEstimate {
   pub cost_in_credits: Option<u64>,
   pub cost_in_usd_cents: Option<u64>,
