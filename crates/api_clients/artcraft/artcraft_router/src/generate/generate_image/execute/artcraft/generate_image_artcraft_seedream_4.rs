@@ -107,7 +107,7 @@ mod tests {
       let request = GenerateImageRequest {
         aspect_ratio: Some(ar),
         quality: None,
-      image_batch_count: Some(1),
+        image_batch_count: Some(1),
         prompt: Some("a shiba walking through a cyberpunk city at night"),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..base_seedream_4_image_request()
@@ -143,7 +143,7 @@ mod tests {
         image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
         aspect_ratio: Some(ar),
         quality: None,
-      image_batch_count: Some(1),
+        image_batch_count: Some(1),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..base_seedream_4_image_request()
       };

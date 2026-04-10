@@ -37,7 +37,6 @@ mod tests {
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
-  use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::{base_flux_1_schnell_image_request, get_artcraft_client};
   use strum::IntoEnumIterator;
 
@@ -97,7 +96,7 @@ mod tests {
       let request = GenerateImageRequest {
         aspect_ratio: Some(ar),
         quality: None,
-      image_batch_count: Some(1),
+        image_batch_count: Some(1),
         prompt: Some("a man and woman walking through a futuristic city at evening"),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..base_flux_1_schnell_image_request()

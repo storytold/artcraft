@@ -97,7 +97,7 @@ mod tests {
       let request = GenerateImageRequest {
         aspect_ratio: Some(ar),
         quality: None,
-      image_batch_count: Some(1),
+        image_batch_count: Some(1),
         prompt: Some("a bear walking through an abandoned desert city at night"),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..base_flux_pro_1p1_image_request()
