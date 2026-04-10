@@ -406,6 +406,13 @@ mod tests {
       }
 
       #[test]
+      fn duration_4_yields_four() {
+        with_text_plan(&make_request(Some("p"), None, None, Some(4), None, None, None), |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Four)));
+        });
+      }
+
+      #[test]
       fn duration_5_yields_five() {
         with_text_plan(&make_request(Some("p"), None, None, Some(5), None, None, None), |plan| {
           assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Five)));
@@ -413,9 +420,44 @@ mod tests {
       }
 
       #[test]
+      fn duration_6_yields_six() {
+        with_text_plan(&make_request(Some("p"), None, None, Some(6), None, None, None), |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Six)));
+        });
+      }
+
+      #[test]
+      fn duration_7_yields_seven() {
+        with_text_plan(&make_request(Some("p"), None, None, Some(7), None, None, None), |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Seven)));
+        });
+      }
+
+      #[test]
+      fn duration_8_yields_eight() {
+        with_text_plan(&make_request(Some("p"), None, None, Some(8), None, None, None), |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Eight)));
+        });
+      }
+
+      #[test]
+      fn duration_9_yields_nine() {
+        with_text_plan(&make_request(Some("p"), None, None, Some(9), None, None, None), |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Nine)));
+        });
+      }
+
+      #[test]
       fn duration_10_yields_ten() {
         with_text_plan(&make_request(Some("p"), None, None, Some(10), None, None, None), |plan| {
           assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Ten)));
+        });
+      }
+
+      #[test]
+      fn duration_11_yields_eleven() {
+        with_text_plan(&make_request(Some("p"), None, None, Some(11), None, None, None), |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Eleven)));
         });
       }
 
@@ -547,14 +589,59 @@ mod tests {
         });
       }
 
-      // ── Duration in image mode ────────────────────────────────────────────
+      // ── Duration pass-throughs in image mode ────────────────────────────────
 
       #[test]
-      fn duration_passes_through_in_image_mode() {
+      fn duration_4_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, None, Some(4), None, Some(start), None);
+        with_plan(&request, &map, |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Four)));
+        });
+      }
+
+      #[test]
+      fn duration_5_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, None, Some(5), None, Some(start), None);
+        with_plan(&request, &map, |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Five)));
+        });
+      }
+
+      #[test]
+      fn duration_8_in_image_mode() {
         let (start, map) = fake_token("mf_start0000000000000000000000");
         let request = make_request(Some("p"), None, None, Some(8), None, Some(start), None);
         with_plan(&request, &map, |plan| {
           assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Eight)));
+        });
+      }
+
+      #[test]
+      fn duration_12_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, None, Some(12), None, Some(start), None);
+        with_plan(&request, &map, |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Twelve)));
+        });
+      }
+
+      #[test]
+      fn duration_above_12_clamps_to_twelve_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, None, Some(30), None, Some(start), None);
+        with_plan(&request, &map, |plan| {
+          assert!(matches!(plan.duration, Some(FalSeedance1p5ProDuration::Twelve)));
+        });
+      }
+
+      #[test]
+      fn default_duration_is_none_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, None, None, None, Some(start), None);
+        with_plan(&request, &map, |plan| {
+          assert!(plan.duration.is_none());
         });
       }
 
@@ -577,6 +664,105 @@ mod tests {
         let request = make_request(Some("p"), None, None, None, Some(false), Some(start), None);
         with_plan(&request, &map, |plan| {
           assert_eq!(plan.generate_audio, Some(false));
+        });
+      }
+
+      // ── Media file mapping: exact 1:1 token→URL verification ──────────────
+
+      #[test]
+      fn start_frame_url_matches_hydration_map_exactly() {
+        let token = MediaFileToken::new_from_str("mf_abc00000000000000000000000000");
+        let expected_url = "https://cdn.example.com/images/abc123.png";
+        let mut map = HashMap::new();
+        map.insert(token.clone(), Url::parse(expected_url).unwrap());
+
+        let request = make_request(Some("p"), None, None, None, None, Some(token), None);
+        with_plan(&request, &map, |plan| {
+          match &plan.mode {
+            FalSeedance1p5ProMode::ImageToVideo { image_url, .. } => {
+              assert_eq!(image_url, expected_url);
+            }
+            other => panic!("expected ImageToVideo, got {:?}", other),
+          }
+        });
+      }
+
+      #[test]
+      fn start_and_end_frame_urls_match_hydration_map_exactly() {
+        let start_token = MediaFileToken::new_from_str("mf_start0000000000000000000000");
+        let end_token = MediaFileToken::new_from_str("mf_end00000000000000000000000000");
+        let start_url = "https://cdn.example.com/images/start_frame.png";
+        let end_url = "https://cdn.example.com/images/end_frame.png";
+
+        let mut map = HashMap::new();
+        map.insert(start_token.clone(), Url::parse(start_url).unwrap());
+        map.insert(end_token.clone(), Url::parse(end_url).unwrap());
+
+        let request = make_request(Some("p"), None, None, None, None, Some(start_token), Some(end_token));
+        with_plan(&request, &map, |plan| {
+          match &plan.mode {
+            FalSeedance1p5ProMode::ImageToVideo { image_url, end_image_url } => {
+              assert_eq!(image_url, start_url);
+              assert_eq!(end_image_url.as_deref().unwrap(), end_url);
+            }
+            other => panic!("expected ImageToVideo, got {:?}", other),
+          }
+        });
+      }
+
+      #[test]
+      fn hydration_map_with_extra_tokens_still_resolves_correctly() {
+        // Map has 4 tokens but only start_frame + end_frame are used by
+        // the request. The extras are ignored.
+        let start_token = MediaFileToken::new_from_str("mf_start0000000000000000000000");
+        let end_token = MediaFileToken::new_from_str("mf_end00000000000000000000000000");
+        let extra1 = MediaFileToken::new_from_str("mf_extra1000000000000000000000000");
+        let extra2 = MediaFileToken::new_from_str("mf_extra2000000000000000000000000");
+
+        let start_url = "https://cdn.example.com/start.png";
+        let end_url = "https://cdn.example.com/end.png";
+
+        let mut map = HashMap::new();
+        map.insert(start_token.clone(), Url::parse(start_url).unwrap());
+        map.insert(end_token.clone(), Url::parse(end_url).unwrap());
+        map.insert(extra1, Url::parse("https://cdn.example.com/extra1.png").unwrap());
+        map.insert(extra2, Url::parse("https://cdn.example.com/extra2.png").unwrap());
+
+        let request = make_request(Some("p"), None, None, None, None, Some(start_token), Some(end_token));
+        with_plan(&request, &map, |plan| {
+          match &plan.mode {
+            FalSeedance1p5ProMode::ImageToVideo { image_url, end_image_url } => {
+              assert_eq!(image_url, start_url);
+              assert_eq!(end_image_url.as_deref().unwrap(), end_url);
+            }
+            other => panic!("expected ImageToVideo, got {:?}", other),
+          }
+        });
+      }
+
+      #[test]
+      fn start_frame_only_with_larger_hydration_map() {
+        // Map has 3 tokens, request only uses start_frame.
+        let start_token = MediaFileToken::new_from_str("mf_start0000000000000000000000");
+        let other1 = MediaFileToken::new_from_str("mf_other1000000000000000000000000");
+        let other2 = MediaFileToken::new_from_str("mf_other2000000000000000000000000");
+
+        let start_url = "https://cdn.example.com/keyframe.jpg";
+
+        let mut map = HashMap::new();
+        map.insert(start_token.clone(), Url::parse(start_url).unwrap());
+        map.insert(other1, Url::parse("https://cdn.example.com/other1.jpg").unwrap());
+        map.insert(other2, Url::parse("https://cdn.example.com/other2.jpg").unwrap());
+
+        let request = make_request(Some("p"), None, None, None, None, Some(start_token), None);
+        with_plan(&request, &map, |plan| {
+          match &plan.mode {
+            FalSeedance1p5ProMode::ImageToVideo { image_url, end_image_url } => {
+              assert_eq!(image_url, start_url);
+              assert!(end_image_url.is_none());
+            }
+            other => panic!("expected ImageToVideo, got {:?}", other),
+          }
         });
       }
     }
