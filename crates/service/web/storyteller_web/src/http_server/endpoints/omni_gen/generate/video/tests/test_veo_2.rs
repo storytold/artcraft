@@ -1,7 +1,6 @@
 //! Tests for omni-gen video against the Veo 2 model.
 //!
-//! Veo 2 is image-to-video only — a start_frame is always required.
-//! There is no text-to-video mode.
+//! Veo 2 supports both text-to-video and image-to-video (via start_frame).
 //!
 //! Pricing: $2.50 for the first 5 seconds, +$0.50 per additional second.
 //!   5s → 250¢, 6s → 300¢, 7s → 350¢, 8s → 400¢
@@ -61,66 +60,51 @@ mod tests {
     (token, map)
   }
 
-  fn distill(
+  fn distill_text(request: &OmniGenVideoCostAndGenerateRequest) -> DistilledVideoRequest {
+    let empty: HashMap<MediaFileToken, Url> = HashMap::new();
+    distill_video_request(request, Some(&empty))
+      .expect("distill_video_request should succeed for Veo 2 (text)")
+  }
+
+  fn distill_image(
     request: &OmniGenVideoCostAndGenerateRequest,
     hydration: &HashMap<MediaFileToken, Url>,
   ) -> DistilledVideoRequest {
     distill_video_request(request, Some(hydration))
-      .expect("distill_video_request should succeed for Veo 2")
+      .expect("distill_video_request should succeed for Veo 2 (image)")
   }
 
   // ────────────────────────────────────────────────────────────────────────────
   //   COST
   // ────────────────────────────────────────────────────────────────────────────
-  //
-  // Pricing: 5s = 250¢, +50¢ per additional second above 5.
-  // Default duration = 5s = 250¢.
   mod cost {
     use super::*;
 
-    mod image {
+    mod text {
       use super::*;
 
       fn cost(duration: Option<u16>) -> u64 {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("p"), None, duration, Some(start));
-        distill(&request, &map).cost.cost_in_usd_cents.unwrap()
-      }
-
-      // ── Duration-based pricing ────────────────────────────────────────────
-
-      #[test]
-      fn default_duration_costs_250_cents() {
-        assert_eq!(cost(None), 250);
+        let request = make_request(Some("p"), None, duration, None);
+        distill_text(&request).cost.cost_in_usd_cents.unwrap()
       }
 
       #[test]
-      fn five_seconds_costs_250_cents() {
-        assert_eq!(cost(Some(5)), 250);
-      }
+      fn default_duration_costs_250() { assert_eq!(cost(None), 250); }
 
       #[test]
-      fn six_seconds_costs_300_cents() {
-        assert_eq!(cost(Some(6)), 300);
-      }
+      fn five_seconds_costs_250() { assert_eq!(cost(Some(5)), 250); }
 
       #[test]
-      fn seven_seconds_costs_350_cents() {
-        assert_eq!(cost(Some(7)), 350);
-      }
+      fn six_seconds_costs_300() { assert_eq!(cost(Some(6)), 300); }
 
       #[test]
-      fn eight_seconds_costs_400_cents() {
-        assert_eq!(cost(Some(8)), 400);
-      }
+      fn seven_seconds_costs_350() { assert_eq!(cost(Some(7)), 350); }
 
       #[test]
-      fn duration_above_8_clamps_to_400_cents() {
-        // PayMoreUpgrade clamps over-max to 8s.
-        assert_eq!(cost(Some(15)), 400);
-      }
+      fn eight_seconds_costs_400() { assert_eq!(cost(Some(8)), 400); }
 
-      // ── Cost is independent of aspect ratio ───────────────────────────────
+      #[test]
+      fn duration_above_8_clamps_to_400() { assert_eq!(cost(Some(15)), 400); }
 
       #[test]
       fn cost_independent_of_aspect_ratio() {
@@ -132,32 +116,14 @@ mod tests {
           Some(CommonAspectRatio::Square),
         ];
         for ar in ars {
-          let (start, map) = fake_token("mf_start0000000000000000000000");
-          let request = make_request(Some("p"), ar, None, Some(start));
-          assert_eq!(
-            distill(&request, &map).cost.cost_in_usd_cents.unwrap(), 250,
-            "expected 250¢ regardless of aspect ratio {:?}", ar,
-          );
+          let request = make_request(Some("p"), ar, None, None);
+          assert_eq!(distill_text(&request).cost.cost_in_usd_cents.unwrap(), 250);
         }
       }
 
-      // ── Cost is independent of prompt ─────────────────────────────────────
-
-      #[test]
-      fn cost_independent_of_prompt() {
-        let (s1, m1) = fake_token("mf_start0000000000000000000000");
-        let (s2, m2) = fake_token("mf_start0000000000000000000000");
-        let a = distill(&make_request(Some("a cat"), None, None, Some(s1)), &m1);
-        let b = distill(&make_request(None, None, None, Some(s2)), &m2);
-        assert_eq!(a.cost.cost_in_usd_cents, b.cost.cost_in_usd_cents);
-      }
-
-      // ── Metadata flags ────────────────────────────────────────────────────
-
       #[test]
       fn cost_metadata_flags_are_default() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let d = distill(&make_request(Some("p"), None, None, Some(start)), &map);
+        let d = distill_text(&make_request(Some("p"), None, None, None));
         assert!(!d.cost.is_free);
         assert!(!d.cost.is_unlimited);
         assert!(!d.cost.is_rate_limited);
@@ -165,9 +131,46 @@ mod tests {
       }
     }
 
-    mod text {
-      // Veo 2 is image-to-video only; there is no text-to-video mode.
-      // (start_frame is required and the plan errors without it.)
+    mod image {
+      use super::*;
+
+      fn cost(duration: Option<u16>) -> u64 {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, duration, Some(start));
+        distill_image(&request, &map).cost.cost_in_usd_cents.unwrap()
+      }
+
+      #[test]
+      fn default_duration_costs_250() { assert_eq!(cost(None), 250); }
+
+      #[test]
+      fn five_seconds_costs_250() { assert_eq!(cost(Some(5)), 250); }
+
+      #[test]
+      fn six_seconds_costs_300() { assert_eq!(cost(Some(6)), 300); }
+
+      #[test]
+      fn seven_seconds_costs_350() { assert_eq!(cost(Some(7)), 350); }
+
+      #[test]
+      fn eight_seconds_costs_400() { assert_eq!(cost(Some(8)), 400); }
+
+      #[test]
+      fn duration_above_8_clamps_to_400() { assert_eq!(cost(Some(15)), 400); }
+
+      #[test]
+      fn image_and_text_cost_match() {
+        for dur in [5u16, 6, 7, 8] {
+          let text = distill_text(&make_request(Some("p"), None, Some(dur), None))
+            .cost.cost_in_usd_cents.unwrap();
+          let (start, map) = fake_token("mf_start0000000000000000000000");
+          let img = distill_image(
+            &make_request(Some("p"), None, Some(dur), Some(start)),
+            &map,
+          ).cost.cost_in_usd_cents.unwrap();
+          assert_eq!(text, img, "text/image cost diverged at dur={}", dur);
+        }
+      }
     }
   }
 
@@ -178,57 +181,45 @@ mod tests {
     use super::*;
 
     use artcraft_router::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-    use artcraft_router::generate::generate_video::plan::fal::plan_generate_video_fal_veo_2::PlanFalVeo2;
+    use artcraft_router::generate::generate_video::plan::fal::plan_generate_video_fal_veo_2::{
+      FalVeo2Mode, PlanFalVeo2,
+    };
     use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{
       Veo2AspectRatio, Veo2Duration,
     };
 
-    fn with_plan<F: FnOnce(&PlanFalVeo2)>(
+    fn with_text_plan<F: FnOnce(&PlanFalVeo2)>(
       request: &OmniGenVideoCostAndGenerateRequest,
-      hydration: &HashMap<MediaFileToken, Url>,
       assertion: F,
     ) {
-      let distilled = distill(request, hydration);
+      let distilled = distill_text(request);
       match distilled.plan() {
         VideoGenerationPlan::FalVeo2(plan) => assertion(plan),
         other => panic!("expected FalVeo2, got {:?}", other),
       }
     }
 
-    mod image {
+    fn with_image_plan<F: FnOnce(&PlanFalVeo2)>(
+      request: &OmniGenVideoCostAndGenerateRequest,
+      hydration: &HashMap<MediaFileToken, Url>,
+      assertion: F,
+    ) {
+      let distilled = distill_image(request, hydration);
+      match distilled.plan() {
+        VideoGenerationPlan::FalVeo2(plan) => assertion(plan),
+        other => panic!("expected FalVeo2, got {:?}", other),
+      }
+    }
+
+    mod text {
       use super::*;
 
-      // ── Start frame hydration ─────────────────────────────────────────────
+      // ── Mode detection ────────────────────────────────────────────────────
 
       #[test]
-      fn start_frame_url_matches_hydration_map() {
-        let token = MediaFileToken::new_from_str("mf_myframe0000000000000000000000");
-        let expected_url = "https://cdn.example.com/frames/my_frame.png";
-        let mut map = HashMap::new();
-        map.insert(token.clone(), Url::parse(expected_url).unwrap());
-
-        let request = make_request(Some("p"), None, None, Some(token));
-        with_plan(&request, &map, |plan| {
-          assert_eq!(plan.start_frame_url, expected_url);
-        });
-      }
-
-      #[test]
-      fn start_frame_from_larger_hydration_map() {
-        let start = MediaFileToken::new_from_str("mf_start0000000000000000000000");
-        let extra1 = MediaFileToken::new_from_str("mf_extra1000000000000000000000000");
-        let extra2 = MediaFileToken::new_from_str("mf_extra2000000000000000000000000");
-
-        let start_url = "https://cdn.example.com/start.png";
-
-        let mut map = HashMap::new();
-        map.insert(start.clone(), Url::parse(start_url).unwrap());
-        map.insert(extra1, Url::parse("https://cdn.example.com/extra1.png").unwrap());
-        map.insert(extra2, Url::parse("https://cdn.example.com/extra2.png").unwrap());
-
-        let request = make_request(Some("p"), None, None, Some(start));
-        with_plan(&request, &map, |plan| {
-          assert_eq!(plan.start_frame_url, start_url);
+      fn text_mode_is_text_to_video() {
+        with_text_plan(&make_request(Some("p"), None, None, None), |plan| {
+          assert!(matches!(plan.mode, FalVeo2Mode::TextToVideo));
         });
       }
 
@@ -236,18 +227,14 @@ mod tests {
 
       #[test]
       fn prompt_is_passed_through() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("a horse on mars"), None, None, Some(start));
-        with_plan(&request, &map, |plan| {
+        with_text_plan(&make_request(Some("a horse on mars"), None, None, None), |plan| {
           assert_eq!(plan.prompt, "a horse on mars");
         });
       }
 
       #[test]
       fn missing_prompt_is_empty_string() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(None, None, None, Some(start));
-        with_plan(&request, &map, |plan| {
+        with_text_plan(&make_request(None, None, None, None), |plan| {
           assert_eq!(plan.prompt, "");
         });
       }
@@ -256,9 +243,7 @@ mod tests {
 
       #[test]
       fn default_aspect_ratio_is_auto() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("p"), None, None, Some(start));
-        with_plan(&request, &map, |plan| {
+        with_text_plan(&make_request(Some("p"), None, None, None), |plan| {
           assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::Auto));
         });
       }
@@ -266,31 +251,25 @@ mod tests {
       #[test]
       fn auto_yields_auto() {
         for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-          let (start, map) = fake_token("mf_start0000000000000000000000");
-          let request = make_request(Some("p"), Some(ar), None, Some(start));
-          with_plan(&request, &map, |plan| {
-            assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::Auto), "expected Auto for {:?}", ar);
+          with_text_plan(&make_request(Some("p"), Some(ar), None, None), |plan| {
+            assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::Auto));
           });
         }
       }
 
       #[test]
-      fn wide_16x9_yields_wide_sixteen_nine() {
+      fn wide_16x9_yields_wide() {
         for ar in [CommonAspectRatio::WideSixteenByNine, CommonAspectRatio::Wide] {
-          let (start, map) = fake_token("mf_start0000000000000000000000");
-          let request = make_request(Some("p"), Some(ar), None, Some(start));
-          with_plan(&request, &map, |plan| {
+          with_text_plan(&make_request(Some("p"), Some(ar), None, None), |plan| {
             assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::WideSixteenNine));
           });
         }
       }
 
       #[test]
-      fn tall_9x16_yields_tall_nine_sixteen() {
+      fn tall_9x16_yields_tall() {
         for ar in [CommonAspectRatio::TallNineBySixteen, CommonAspectRatio::Tall] {
-          let (start, map) = fake_token("mf_start0000000000000000000000");
-          let request = make_request(Some("p"), Some(ar), None, Some(start));
-          with_plan(&request, &map, |plan| {
+          with_text_plan(&make_request(Some("p"), Some(ar), None, None), |plan| {
             assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::TallNineSixteen));
           });
         }
@@ -298,23 +277,12 @@ mod tests {
 
       #[test]
       fn unsupported_aspect_ratio_falls_back_to_auto() {
-        let unsupported = [
-          CommonAspectRatio::Square,
-          CommonAspectRatio::SquareHd,
-          CommonAspectRatio::WideFourByThree,
-          CommonAspectRatio::WideFiveByFour,
-          CommonAspectRatio::WideThreeByTwo,
-          CommonAspectRatio::WideTwentyOneByNine,
-          CommonAspectRatio::TallThreeByFour,
-          CommonAspectRatio::TallFourByFive,
-          CommonAspectRatio::TallTwoByThree,
-          CommonAspectRatio::TallNineByTwentyOne,
-        ];
-        for ar in unsupported {
-          let (start, map) = fake_token("mf_start0000000000000000000000");
-          let request = make_request(Some("p"), Some(ar), None, Some(start));
-          with_plan(&request, &map, |plan| {
-            assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::Auto), "expected Auto fallback for {:?}", ar);
+        for ar in [
+          CommonAspectRatio::Square, CommonAspectRatio::SquareHd,
+          CommonAspectRatio::WideFourByThree, CommonAspectRatio::TallThreeByFour,
+        ] {
+          with_text_plan(&make_request(Some("p"), Some(ar), None, None), |plan| {
+            assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::Auto));
           });
         }
       }
@@ -323,62 +291,143 @@ mod tests {
 
       #[test]
       fn default_duration_is_default() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("p"), None, None, Some(start));
-        with_plan(&request, &map, |plan| {
+        with_text_plan(&make_request(Some("p"), None, None, None), |plan| {
           assert!(matches!(plan.duration, Veo2Duration::Default));
         });
       }
 
       #[test]
-      fn duration_5_yields_five_seconds() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("p"), None, Some(5), Some(start));
-        with_plan(&request, &map, |plan| {
+      fn duration_5_yields_five() {
+        with_text_plan(&make_request(Some("p"), None, Some(5), None), |plan| {
           assert!(matches!(plan.duration, Veo2Duration::FiveSeconds));
         });
       }
 
       #[test]
-      fn duration_6_yields_six_seconds() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("p"), None, Some(6), Some(start));
-        with_plan(&request, &map, |plan| {
+      fn duration_6_yields_six() {
+        with_text_plan(&make_request(Some("p"), None, Some(6), None), |plan| {
           assert!(matches!(plan.duration, Veo2Duration::SixSeconds));
         });
       }
 
       #[test]
-      fn duration_7_yields_seven_seconds() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("p"), None, Some(7), Some(start));
-        with_plan(&request, &map, |plan| {
+      fn duration_7_yields_seven() {
+        with_text_plan(&make_request(Some("p"), None, Some(7), None), |plan| {
           assert!(matches!(plan.duration, Veo2Duration::SevenSeconds));
         });
       }
 
       #[test]
-      fn duration_8_yields_eight_seconds() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("p"), None, Some(8), Some(start));
-        with_plan(&request, &map, |plan| {
+      fn duration_8_yields_eight() {
+        with_text_plan(&make_request(Some("p"), None, Some(8), None), |plan| {
           assert!(matches!(plan.duration, Veo2Duration::EightSeconds));
         });
       }
 
       #[test]
       fn duration_above_8_clamps_to_eight() {
-        let (start, map) = fake_token("mf_start0000000000000000000000");
-        let request = make_request(Some("p"), None, Some(20), Some(start));
-        with_plan(&request, &map, |plan| {
+        with_text_plan(&make_request(Some("p"), None, Some(20), None), |plan| {
           assert!(matches!(plan.duration, Veo2Duration::EightSeconds));
         });
       }
     }
 
-    mod text {
-      // Veo 2 is image-to-video only; there is no text-to-video mode.
-      // (start_frame is required and the plan errors without it.)
+    mod image {
+      use super::*;
+
+      // ── Mode detection / start frame hydration ────────────────────────────
+
+      #[test]
+      fn start_frame_triggers_image_to_video() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, None, Some(start));
+        with_image_plan(&request, &map, |plan| {
+          match &plan.mode {
+            FalVeo2Mode::ImageToVideo { image_url } => {
+              assert!(image_url.starts_with("https://fake.example.com/"));
+            }
+            other => panic!("expected ImageToVideo, got {:?}", other),
+          }
+        });
+      }
+
+      #[test]
+      fn start_frame_url_matches_hydration_map_exactly() {
+        let token = MediaFileToken::new_from_str("mf_myframe0000000000000000000000");
+        let expected_url = "https://cdn.example.com/frames/my_frame.png";
+        let mut map = HashMap::new();
+        map.insert(token.clone(), Url::parse(expected_url).unwrap());
+
+        let request = make_request(Some("p"), None, None, Some(token));
+        with_image_plan(&request, &map, |plan| {
+          match &plan.mode {
+            FalVeo2Mode::ImageToVideo { image_url } => {
+              assert_eq!(image_url, expected_url);
+            }
+            other => panic!("expected ImageToVideo, got {:?}", other),
+          }
+        });
+      }
+
+      // ── Prompt passthrough in image mode ──────────────────────────────────
+
+      #[test]
+      fn prompt_is_passed_through_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("a horse on mars"), None, None, Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert_eq!(plan.prompt, "a horse on mars");
+        });
+      }
+
+      // ── Aspect ratio in image mode ────────────────────────────────────────
+
+      #[test]
+      fn aspect_ratio_passes_through_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), Some(CommonAspectRatio::WideSixteenByNine), None, Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::WideSixteenNine));
+        });
+      }
+
+      // ── Duration pass-throughs in image mode ──────────────────────────────
+
+      #[test]
+      fn duration_5_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, Some(5), Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(matches!(plan.duration, Veo2Duration::FiveSeconds));
+        });
+      }
+
+      #[test]
+      fn duration_8_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, Some(8), Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(matches!(plan.duration, Veo2Duration::EightSeconds));
+        });
+      }
+
+      #[test]
+      fn duration_above_8_clamps_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, Some(20), Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(matches!(plan.duration, Veo2Duration::EightSeconds));
+        });
+      }
+
+      #[test]
+      fn default_duration_in_image_mode() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, None, Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(matches!(plan.duration, Veo2Duration::Default));
+        });
+      }
     }
   }
 }

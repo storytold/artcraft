@@ -33,12 +33,8 @@ pub fn plan_generate_video_artcraft_veo_2<'a>(
     // Artcraft cost path. Cost only depends on duration, so URL-form refs are
     // accepted and dropped.
     Some(ImageRef::Url(_)) => None,
-    None => {
-      return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-        field: "start_frame",
-        value: "Veo 2 requires a starting frame".to_string(),
-      }))
-    }
+    // No start_frame = text-to-video mode.
+    None => None,
   };
 
   if request.end_frame.is_some() {

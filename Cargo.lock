@@ -770,6 +770,7 @@ dependencies = [
  "anyhow",
  "artcraft_api_defs",
  "artcraft_client",
+ "enums",
  "fal_client",
  "log",
  "muapi_client",

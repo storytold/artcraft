@@ -2,6 +2,7 @@ pub mod analytics;
 pub mod credits;
 pub mod generate;
 pub mod jobs;
+pub mod omni_gen;
 pub mod media_files;
 pub mod prompts;
 pub mod stripe_artcraft;
