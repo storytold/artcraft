@@ -7,14 +7,18 @@ use crate::webhook_api::payload::webhook_error_type::WebhookErrorType;
 pub enum WebhookInnerPayload {
   /// The webhook reported success and has a payload.
   Success(SuccessData),
+
   /// The webhook reported an error (status=ERROR) with optional detail info.
   Error(ErrorData),
+
   /// The webhook reported success but had no payload and instead had a payload_error.
   PayloadError(PayloadErrorData),
 }
 
 #[derive(Debug)]
 pub struct SuccessData {
+  /// The success data is polymorphic, so we're returning a JSON `Value` for now.
+  /// This will allow for downstream handlers to parse the payload as needed.
   pub payload: Value,
 }
 
@@ -22,6 +26,7 @@ pub struct SuccessData {
 pub struct ErrorData {
   /// The first human-readable message from `payload.detail[].msg`, if any.
   pub message: Option<String>,
+
   /// The first machine-readable error type from `payload.detail[].type`, if any.
   pub error_type: Option<WebhookErrorType>,
 }

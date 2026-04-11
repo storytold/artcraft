@@ -74,16 +74,12 @@ async fn upload_image(
       .as_deref()
       .ok_or_else(|| anyhow!("no `url` in image payload"))?;
 
-  //let mime_type = image.content_type
-  //    .as_deref()
-  //    .ok_or_else(|| anyhow!("no `content_type` in image payload"))?;
-
   let file_bytes = http_download_url_to_bytes(image_url)
       .await
       .map_err(|e| anyhow!("Failed to download image: {:?}", e))?;
 
   let mimetype_info = MimetypeInfo::get_for_bytes(&file_bytes)
-      .ok_or_else(|| anyhow!("Failed to get mimetype info"))?;
+      .ok_or_else(|| anyhow!("Failed to get mimetype info (1)"))?;
 
   info!("File type: {}, extension: {:?}",
        mimetype_info.mime_type(),
@@ -96,7 +92,7 @@ async fn upload_image(
       let file_bytes = webp_bytes_to_png_bytes(&file_bytes)?;
 
       let mimetype_info = MimetypeInfo::get_for_bytes(&file_bytes)
-          .ok_or_else(|| anyhow!("Failed to get mimetype info"))?;
+          .ok_or_else(|| anyhow!("Failed to get mimetype info (2)"))?;
 
       info!("Updated file type: {}, extension: {:?}",
         mimetype_info.mime_type(),
