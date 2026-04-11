@@ -6,16 +6,17 @@ use crate::requests::http::video::image::http_veo_2_image_to_video::{veo_2_image
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use reqwest::IntoUrl;
 
+/// Args for Veo 2 image-to-video. Note: image-to-video does NOT support
+/// aspect_ratio — the output inherits the source image's aspect ratio.
 pub struct Veo2Args<'a, U: IntoUrl, V: IntoUrl> {
   pub image_url: U,
   pub webhook_url: V,
   pub prompt: &'a str,
   pub api_key: &'a FalApiKey,
   pub duration: Veo2Duration,
-  pub aspect_ratio: Veo2AspectRatio,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Veo2Duration {
   Default, // NB: Default is 5 seconds
   FiveSeconds,
@@ -24,6 +25,9 @@ pub enum Veo2Duration {
   EightSeconds,
 }
 
+/// Aspect ratio enum — used by the text-to-video endpoint only.
+/// Kept here because it's the canonical location that the text-to-video
+/// webhook and the router plan both re-export from.
 #[derive(Copy, Clone, Debug)]
 pub enum Veo2AspectRatio {
   Auto,
@@ -59,22 +63,13 @@ pub async fn enqueue_veo_2_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
     Veo2Duration::SevenSeconds => Some("7s".to_string()),
     Veo2Duration::EightSeconds => Some("8s".to_string()),
   };
-  
-  let aspect_ratio = match args.aspect_ratio {
-    Veo2AspectRatio::Auto => Some("auto".to_string()),
-    Veo2AspectRatio::AutoPreferPortrait => Some("auto_prefer_portrait".to_string()),
-    Veo2AspectRatio::WideSixteenNine => Some("16:9".to_string()),
-    Veo2AspectRatio::TallNineSixteen => Some("9:16".to_string()),
-  };
 
   let image_url = args.image_url.as_str().to_string();
 
   let request = Veo2ImageToVideoInput {
     image_url,
     prompt: args.prompt.to_string(),
-    aspect_ratio,
     duration,
-    // Maybe expose these later
   };
 
   let result = veo_2_image_to_video(request)
@@ -89,14 +84,14 @@ pub async fn enqueue_veo_2_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{enqueue_veo_2_image_to_video_webhook, Veo2Args, Veo2AspectRatio, Veo2Duration};
+  use crate::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{enqueue_veo_2_image_to_video_webhook, Veo2Args, Veo2Duration};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::MOUNTAIN_TREE_IMAGE_URL;
 
   #[tokio::test]
   #[ignore]
-  async fn test_veo_2_video_wide() -> AnyhowResult<()> {
+  async fn test_veo_2_image_to_video() -> AnyhowResult<()> {
     // XXX: Don't commit secrets!
     let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
 
@@ -107,29 +102,6 @@ mod tests {
       prompt: "a shot of the mountains as the sun sets and reveals the moon and stars",
       api_key: &api_key,
       duration: Veo2Duration::Default,
-      aspect_ratio: Veo2AspectRatio::WideSixteenNine,
-      webhook_url: "https://example.com/webhook",
-    };
-
-    let result = enqueue_veo_2_image_to_video_webhook(args).await?;
-
-    Ok(())
-  }
-
-  #[tokio::test]
-  #[ignore]
-  async fn test_veo_2_video_tall() -> AnyhowResult<()> {
-    // XXX: Don't commit secrets!
-    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
-
-    let api_key = FalApiKey::from_str(&secret);
-
-    let args = Veo2Args {
-      image_url: MOUNTAIN_TREE_IMAGE_URL,
-      prompt: "a shot of the mountains as the sun sets and reveals the moon and stars",
-      api_key: &api_key,
-      duration: Veo2Duration::Default,
-      aspect_ratio: Veo2AspectRatio::TallNineSixteen,
       webhook_url: "https://example.com/webhook",
     };
 

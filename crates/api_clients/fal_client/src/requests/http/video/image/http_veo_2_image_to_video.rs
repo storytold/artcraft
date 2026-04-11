@@ -7,10 +7,6 @@ pub struct Veo2ImageToVideoInput {
 
   pub prompt: String,
 
-  /// Options: "auto", "16:9", "9:16"
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub aspect_ratio: Option<String>,
-
   /// Options: "4s", "6s", "8s"
   #[serde(skip_serializing_if = "Option::is_none")]
   pub duration: Option<String>,

@@ -44,7 +44,14 @@ pub fn plan_generate_video_artcraft_veo_2<'a>(
     }));
   }
 
-  let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
+  // Aspect ratio only applies to text-to-video; image-to-video inherits
+  // the source frame's aspect ratio.
+  let is_image_mode = request.start_frame.is_some();
+  let aspect_ratio = if is_image_mode {
+    None
+  } else {
+    plan_aspect_ratio(request.aspect_ratio, strategy)?
+  };
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftVeo2(PlanArtcraftVeo2 {

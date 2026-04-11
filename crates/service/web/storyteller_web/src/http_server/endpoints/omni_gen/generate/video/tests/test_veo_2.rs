@@ -244,7 +244,7 @@ mod tests {
       #[test]
       fn default_aspect_ratio_is_auto() {
         with_text_plan(&make_request(Some("p"), None, None, None), |plan| {
-          assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::Auto));
+          assert!(matches!(plan.aspect_ratio, Some(Veo2AspectRatio::Auto)));
         });
       }
 
@@ -252,7 +252,7 @@ mod tests {
       fn auto_yields_auto() {
         for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::Auto));
+            assert!(matches!(plan.aspect_ratio, Some(Veo2AspectRatio::Auto)));
           });
         }
       }
@@ -261,7 +261,7 @@ mod tests {
       fn wide_16x9_yields_wide() {
         for ar in [CommonAspectRatio::WideSixteenByNine, CommonAspectRatio::Wide] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::WideSixteenNine));
+            assert!(matches!(plan.aspect_ratio, Some(Veo2AspectRatio::WideSixteenNine)));
           });
         }
       }
@@ -270,7 +270,7 @@ mod tests {
       fn tall_9x16_yields_tall() {
         for ar in [CommonAspectRatio::TallNineBySixteen, CommonAspectRatio::Tall] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::TallNineSixteen));
+            assert!(matches!(plan.aspect_ratio, Some(Veo2AspectRatio::TallNineSixteen)));
           });
         }
       }
@@ -282,7 +282,7 @@ mod tests {
           CommonAspectRatio::WideFourByThree, CommonAspectRatio::TallThreeByFour,
         ] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::Auto));
+            assert!(matches!(plan.aspect_ratio, Some(Veo2AspectRatio::Auto)));
           });
         }
       }
@@ -380,14 +380,23 @@ mod tests {
         });
       }
 
-      // ── Aspect ratio in image mode ────────────────────────────────────────
+      // ── Aspect ratio is None in image mode (i2v inherits source AR) ────────
 
       #[test]
-      fn aspect_ratio_passes_through_in_image_mode() {
+      fn aspect_ratio_is_none_in_image_mode() {
         let (start, map) = fake_token("mf_start0000000000000000000000");
         let request = make_request(Some("p"), Some(CommonAspectRatio::WideSixteenByNine), None, Some(start));
         with_image_plan(&request, &map, |plan| {
-          assert!(matches!(plan.aspect_ratio, Veo2AspectRatio::WideSixteenNine));
+          assert!(plan.aspect_ratio.is_none(), "image-to-video should not have aspect_ratio");
+        });
+      }
+
+      #[test]
+      fn aspect_ratio_is_none_in_image_mode_even_with_tall() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), Some(CommonAspectRatio::TallNineBySixteen), None, Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(plan.aspect_ratio.is_none());
         });
       }
 

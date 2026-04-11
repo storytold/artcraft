@@ -148,13 +148,9 @@ pub async fn generate_veo_2_image_to_video_handler(
       .map(|prompt| prompt.trim())
       .unwrap_or_else(|| "");
   
-  let aspect_ratio = match &request.aspect_ratio {
-    Some(GenerateVeo2AspectRatio::Auto) => Veo2AspectRatio::Auto,
-    Some(GenerateVeo2AspectRatio::AutoPreferPortrait) => Veo2AspectRatio::AutoPreferPortrait,
-    Some(GenerateVeo2AspectRatio::WideSixteenNine) => Veo2AspectRatio::WideSixteenNine,
-    Some(GenerateVeo2AspectRatio::TallNineSixteen) => Veo2AspectRatio::TallNineSixteen,
-    None => Veo2AspectRatio::WideSixteenNine, // Default to 16:9
-  };
+  if let Some(aspect_ratio) = &request.aspect_ratio {
+    warn!("Aspect ratio is not read in Veo 2 image-to-video");
+  }
   
   let duration = match &request.duration {
     Some(GenerateVeo2Duration::FiveSeconds) => Veo2Duration::FiveSeconds,
@@ -169,7 +165,6 @@ pub async fn generate_veo_2_image_to_video_handler(
     webhook_url: &server_state.fal.webhook_url,
     duration,
     prompt,
-    aspect_ratio,
     api_key: &server_state.fal.api_key,
   };
   
@@ -222,12 +217,7 @@ pub async fn generate_veo_2_image_to_video_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Keyframe), // TODO: This endpoint only supports keyframes for now
-    maybe_aspect_ratio: request.aspect_ratio.as_ref().map(|ar| match ar {
-      GenerateVeo2AspectRatio::Auto => CommonAspectRatio::Auto,
-      GenerateVeo2AspectRatio::AutoPreferPortrait => CommonAspectRatio::Auto,
-      GenerateVeo2AspectRatio::WideSixteenNine => CommonAspectRatio::WideSixteenByNine,
-      GenerateVeo2AspectRatio::TallNineSixteen => CommonAspectRatio::TallNineBySixteen,
-    }),
+    maybe_aspect_ratio: None, // NB: The aspect ratio is not read for Veo 2 image-to-video
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: None,

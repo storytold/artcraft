@@ -22,7 +22,9 @@ pub struct PlanFalVeo2 {
   pub prompt: String,
   pub negative_prompt: Option<String>,
   pub mode: FalVeo2Mode,
-  pub aspect_ratio: Veo2AspectRatio,
+  /// Only set for text-to-video. Image-to-video inherits the source frame's
+  /// aspect ratio and doesn't accept this parameter.
+  pub aspect_ratio: Option<Veo2AspectRatio>,
   pub duration: Veo2Duration,
 }
 
@@ -45,7 +47,12 @@ pub fn plan_generate_video_fal_veo_2<'a>(
     None => FalVeo2Mode::TextToVideo,
   };
 
-  let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
+  // Aspect ratio only applies to text-to-video; image-to-video inherits
+  // the source frame's aspect ratio.
+  let aspect_ratio = match &mode {
+    FalVeo2Mode::TextToVideo => Some(plan_aspect_ratio(request.aspect_ratio, strategy)?),
+    FalVeo2Mode::ImageToVideo { .. } => None,
+  };
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalVeo2(PlanFalVeo2 {

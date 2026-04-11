@@ -16,7 +16,8 @@ pub struct GenerateVeo2ImageToVideoRequest {
   
   /// Optional text prompt.
   pub prompt: Option<String>,
-  
+
+  /// **NB(bt): ASPECT RATIO IS ACTUALLY NOT USED IN VEO 2 IMAGE-TO-VIDEO**
   /// Optional: aspect ratio of the generated video.
   pub aspect_ratio: Option<GenerateVeo2AspectRatio>,
 
