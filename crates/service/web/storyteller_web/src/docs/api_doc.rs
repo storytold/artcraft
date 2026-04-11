@@ -154,7 +154,7 @@ use artcraft_api_defs::users::edit_email::{EditEmailRequest, EditEmailResponse};
 use artcraft_api_defs::users::edit_username::{EditUsernameRequest, EditUsernameResponse};
 use billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_error::CreateCheckoutSessionError;
 use billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_json_handler::*;
-use billing_component::users::http_endpoints::list_active_user_subscriptions_handler::*;
+use crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::*;
 use crate::http_server::endpoints::service::status_alert_handler::*;
 use crate::http_server::endpoints::stats::get_unified_queue_stats_handler::*;
 use crate::http_server::endpoints::studio_gen2::enqueue_studio_gen2_handler::*;
@@ -318,7 +318,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
 #[openapi(
   paths(
     billing_component::stripe::http_endpoints::checkout::create::stripe_create_checkout_session_json_handler::stripe_create_checkout_session_json_handler,
-    billing_component::users::http_endpoints::list_active_user_subscriptions_handler::list_active_user_subscriptions_handler,
+    crate::http_server::endpoints::billing_fakeyou::list_active_user_subscriptions_handler::list_active_user_subscriptions_handler,
     crate::http_server::deprecated_endpoints::conversion::enqueue_fbx_to_gltf_handler::enqueue_fbx_to_gltf_handler,
     crate::http_server::deprecated_endpoints::engine::create_scene_handler::create_scene_handler,
     crate::http_server::deprecated_endpoints::workflows::enqueue::enqueue_face_fusion_workflow_handler::enqueue_face_fusion_workflow_handler,
@@ -871,7 +871,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     InferenceJobStatusResponsePayload,
     InferenceJobTokenType,
     LegacyQueueDetails,
-    ListActiveUserSubscriptionsError,
     ListActiveUserSubscriptionsResponse,
     ListAvailableWeightsQuery,
     ListAvailableWeightsSuccessResponse,
