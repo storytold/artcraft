@@ -1,4 +1,5 @@
 use crate::http_server::routes::application_routes::analytics_routes::add_analytics_routes;
+use crate::http_server::routes::application_routes::billing_fakeyou_routes::add_billing_fakeyou_routes;
 use crate::http_server::routes::application_routes::character_routes::add_character_routes;
 use crate::http_server::routes::application_routes::comments_routes::add_comments_routes;
 use crate::http_server::routes::application_routes::credits_routes::add_credits_routes;
@@ -74,8 +75,9 @@ where
   app = add_stripe_artcraft_routes(app); // /v1/stripe_artcraft/...
   app = add_subscription_routes(app); // /v1/subscriptions/...
 
-  // FakeYou Billing component - still necessary for FakeYou monetization
-  app = add_suggested_stripe_billing_routes(app); // /stripe, billing, webhooks, etc.
+  // FakeYou Billing
+  app = add_billing_fakeyou_routes(app); // /v1/billing/active_subscriptions
+  app = add_suggested_stripe_billing_routes(app); // /stripe, webhooks, etc.
 
   app
 }

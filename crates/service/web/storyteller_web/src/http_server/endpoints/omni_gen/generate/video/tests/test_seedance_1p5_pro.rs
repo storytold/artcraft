@@ -44,6 +44,7 @@ mod tests {
       reference_image_media_tokens: None,
       reference_video_media_tokens: None,
       reference_audio_media_tokens: None,
+      reference_character_tokens: None,
       resolution,
       aspect_ratio,
       quality: None,

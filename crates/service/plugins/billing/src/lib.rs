@@ -19,4 +19,3 @@
 pub mod default_routes;
 pub mod paypal;
 pub mod stripe;
-pub mod users;
