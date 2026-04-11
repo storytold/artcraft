@@ -208,10 +208,8 @@ mod tests {
 
     use artcraft_router::generate::generate_video::video_generation_plan::VideoGenerationPlan;
     use artcraft_router::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3::{
-      FalVeo3Mode, PlanFalVeo3,
-    };
-    use fal_client::requests::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{
-      Veo3AspectRatio, Veo3Duration, Veo3Resolution,
+      FalVeo3Duration, FalVeo3I2vAspectRatio, FalVeo3Mode, FalVeo3Resolution,
+      FalVeo3T2vAspectRatio, PlanFalVeo3,
     };
 
     fn with_text_plan<F: FnOnce(&PlanFalVeo3)>(
@@ -270,24 +268,15 @@ mod tests {
       #[test]
       fn default_aspect_ratio_is_default() {
         with_text_plan(&make_request(Some("p"), None, None, None, None, None), |plan| {
-          assert!(matches!(plan.aspect_ratio, Some(Veo3AspectRatio::Default)));
+          assert!(matches!(plan.t2v_aspect_ratio, Some(FalVeo3T2vAspectRatio::Default)));
         });
-      }
-
-      #[test]
-      fn auto_yields_default() {
-        for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
-          with_text_plan(&make_request(Some("p"), Some(ar), None, None, None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Some(Veo3AspectRatio::Default)));
-          });
-        }
       }
 
       #[test]
       fn wide_16x9_yields_wide() {
         for ar in [CommonAspectRatio::WideSixteenByNine, CommonAspectRatio::Wide] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, None, None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Some(Veo3AspectRatio::WideSixteenNine)));
+            assert!(matches!(plan.t2v_aspect_ratio, Some(FalVeo3T2vAspectRatio::WideSixteenNine)));
           });
         }
       }
@@ -296,16 +285,27 @@ mod tests {
       fn tall_9x16_yields_tall() {
         for ar in [CommonAspectRatio::TallNineBySixteen, CommonAspectRatio::Tall] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, None, None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Some(Veo3AspectRatio::TallNineSixteen)));
+            assert!(matches!(plan.t2v_aspect_ratio, Some(FalVeo3T2vAspectRatio::TallNineSixteen)));
           });
         }
       }
 
       #[test]
-      fn square_yields_square() {
+      fn square_falls_back_to_default() {
+        // Veo 3 t2v has no Square — falls back to Default (16:9).
         for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, None, None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Some(Veo3AspectRatio::Square)));
+            assert!(matches!(plan.t2v_aspect_ratio, Some(FalVeo3T2vAspectRatio::Default)));
+          });
+        }
+      }
+
+      #[test]
+      fn auto_falls_back_to_default() {
+        // Veo 3 t2v has no Auto — falls back to Default (16:9).
+        for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
+          with_text_plan(&make_request(Some("p"), Some(ar), None, None, None, None), |plan| {
+            assert!(matches!(plan.t2v_aspect_ratio, Some(FalVeo3T2vAspectRatio::Default)));
           });
         }
       }
@@ -314,7 +314,7 @@ mod tests {
       fn unsupported_aspect_ratio_falls_back_to_default() {
         for ar in [CommonAspectRatio::WideFourByThree, CommonAspectRatio::TallThreeByFour, CommonAspectRatio::WideFiveByFour] {
           with_text_plan(&make_request(Some("p"), Some(ar), None, None, None, None), |plan| {
-            assert!(matches!(plan.aspect_ratio, Some(Veo3AspectRatio::Default)));
+            assert!(matches!(plan.t2v_aspect_ratio, Some(FalVeo3T2vAspectRatio::Default)));
           });
         }
       }
@@ -324,35 +324,35 @@ mod tests {
       #[test]
       fn default_duration_is_default() {
         with_text_plan(&make_request(Some("p"), None, None, None, None, None), |plan| {
-          assert!(matches!(plan.duration, Veo3Duration::Default));
+          assert!(matches!(plan.duration, FalVeo3Duration::Default));
         });
       }
 
       #[test]
       fn duration_4_yields_four() {
         with_text_plan(&make_request(Some("p"), None, None, Some(4), None, None), |plan| {
-          assert!(matches!(plan.duration, Veo3Duration::FourSeconds));
+          assert!(matches!(plan.duration, FalVeo3Duration::FourSeconds));
         });
       }
 
       #[test]
       fn duration_6_yields_six() {
         with_text_plan(&make_request(Some("p"), None, None, Some(6), None, None), |plan| {
-          assert!(matches!(plan.duration, Veo3Duration::SixSeconds));
+          assert!(matches!(plan.duration, FalVeo3Duration::SixSeconds));
         });
       }
 
       #[test]
       fn duration_8_yields_eight() {
         with_text_plan(&make_request(Some("p"), None, None, Some(8), None, None), |plan| {
-          assert!(matches!(plan.duration, Veo3Duration::EightSeconds));
+          assert!(matches!(plan.duration, FalVeo3Duration::EightSeconds));
         });
       }
 
       #[test]
       fn duration_above_8_clamps_to_eight() {
         with_text_plan(&make_request(Some("p"), None, None, Some(20), None, None), |plan| {
-          assert!(matches!(plan.duration, Veo3Duration::EightSeconds));
+          assert!(matches!(plan.duration, FalVeo3Duration::EightSeconds));
         });
       }
 
@@ -361,21 +361,21 @@ mod tests {
       #[test]
       fn default_resolution_is_default() {
         with_text_plan(&make_request(Some("p"), None, None, None, None, None), |plan| {
-          assert!(matches!(plan.resolution, Veo3Resolution::Default));
+          assert!(matches!(plan.resolution, FalVeo3Resolution::Default));
         });
       }
 
       #[test]
       fn seven_twenty_p_yields_seven_twenty_p() {
         with_text_plan(&make_request(Some("p"), None, Some(CommonResolution::SevenTwentyP), None, None, None), |plan| {
-          assert!(matches!(plan.resolution, Veo3Resolution::SevenTwentyP));
+          assert!(matches!(plan.resolution, FalVeo3Resolution::SevenTwentyP));
         });
       }
 
       #[test]
       fn ten_eighty_p_yields_ten_eighty_p() {
         with_text_plan(&make_request(Some("p"), None, Some(CommonResolution::TenEightyP), None, None, None), |plan| {
-          assert!(matches!(plan.resolution, Veo3Resolution::TenEightyP));
+          assert!(matches!(plan.resolution, FalVeo3Resolution::TenEightyP));
         });
       }
 
@@ -443,13 +443,75 @@ mod tests {
 
       // ── Aspect ratio is None in image mode ────────────────────────────────
 
+      // ── Aspect ratio in image mode: uses i2v (has Auto, no Square) ─────────
+
       #[test]
-      fn aspect_ratio_is_none_in_image_mode() {
+      fn t2v_aspect_ratio_is_none_in_image_mode() {
         let (start, map) = fake_token("mf_start0000000000000000000000");
         let request = make_request(Some("p"), Some(CommonAspectRatio::WideSixteenByNine), None, None, None, Some(start));
         with_image_plan(&request, &map, |plan| {
-          assert!(plan.aspect_ratio.is_none());
+          assert!(plan.t2v_aspect_ratio.is_none());
         });
+      }
+
+      #[test]
+      fn i2v_default_aspect_ratio_is_auto() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), None, None, None, None, Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(matches!(plan.i2v_aspect_ratio, Some(FalVeo3I2vAspectRatio::Auto)));
+        });
+      }
+
+      #[test]
+      fn i2v_wide_16x9_yields_wide() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), Some(CommonAspectRatio::WideSixteenByNine), None, None, None, Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(matches!(plan.i2v_aspect_ratio, Some(FalVeo3I2vAspectRatio::WideSixteenNine)));
+        });
+      }
+
+      #[test]
+      fn i2v_tall_9x16_yields_tall() {
+        let (start, map) = fake_token("mf_start0000000000000000000000");
+        let request = make_request(Some("p"), Some(CommonAspectRatio::TallNineBySixteen), None, None, None, Some(start));
+        with_image_plan(&request, &map, |plan| {
+          assert!(matches!(plan.i2v_aspect_ratio, Some(FalVeo3I2vAspectRatio::TallNineSixteen)));
+        });
+      }
+
+      #[test]
+      fn i2v_auto_yields_auto() {
+        for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
+          let (start, map) = fake_token("mf_start0000000000000000000000");
+          let request = make_request(Some("p"), Some(ar), None, None, None, Some(start));
+          with_image_plan(&request, &map, |plan| {
+            assert!(matches!(plan.i2v_aspect_ratio, Some(FalVeo3I2vAspectRatio::Auto)));
+          });
+        }
+      }
+
+      #[test]
+      fn i2v_square_falls_back_to_auto() {
+        for ar in [CommonAspectRatio::Square, CommonAspectRatio::SquareHd] {
+          let (start, map) = fake_token("mf_start0000000000000000000000");
+          let request = make_request(Some("p"), Some(ar), None, None, None, Some(start));
+          with_image_plan(&request, &map, |plan| {
+            assert!(matches!(plan.i2v_aspect_ratio, Some(FalVeo3I2vAspectRatio::Auto)));
+          });
+        }
+      }
+
+      #[test]
+      fn i2v_unsupported_falls_back_to_auto() {
+        for ar in [CommonAspectRatio::WideFourByThree, CommonAspectRatio::TallThreeByFour] {
+          let (start, map) = fake_token("mf_start0000000000000000000000");
+          let request = make_request(Some("p"), Some(ar), None, None, None, Some(start));
+          with_image_plan(&request, &map, |plan| {
+            assert!(matches!(plan.i2v_aspect_ratio, Some(FalVeo3I2vAspectRatio::Auto)));
+          });
+        }
       }
 
       // ── Prompt passthrough in image mode ──────────────────────────────────
@@ -470,7 +532,7 @@ mod tests {
         let (start, map) = fake_token("mf_start0000000000000000000000");
         let request = make_request(Some("p"), None, None, Some(4), None, Some(start));
         with_image_plan(&request, &map, |plan| {
-          assert!(matches!(plan.duration, Veo3Duration::FourSeconds));
+          assert!(matches!(plan.duration, FalVeo3Duration::FourSeconds));
         });
       }
 
@@ -479,7 +541,7 @@ mod tests {
         let (start, map) = fake_token("mf_start0000000000000000000000");
         let request = make_request(Some("p"), None, None, Some(8), None, Some(start));
         with_image_plan(&request, &map, |plan| {
-          assert!(matches!(plan.duration, Veo3Duration::EightSeconds));
+          assert!(matches!(plan.duration, FalVeo3Duration::EightSeconds));
         });
       }
 
@@ -488,7 +550,7 @@ mod tests {
         let (start, map) = fake_token("mf_start0000000000000000000000");
         let request = make_request(Some("p"), None, None, None, None, Some(start));
         with_image_plan(&request, &map, |plan| {
-          assert!(matches!(plan.duration, Veo3Duration::Default));
+          assert!(matches!(plan.duration, FalVeo3Duration::Default));
         });
       }
 
@@ -499,7 +561,7 @@ mod tests {
         let (start, map) = fake_token("mf_start0000000000000000000000");
         let request = make_request(Some("p"), None, Some(CommonResolution::TenEightyP), None, None, Some(start));
         with_image_plan(&request, &map, |plan| {
-          assert!(matches!(plan.resolution, Veo3Resolution::TenEightyP));
+          assert!(matches!(plan.resolution, FalVeo3Resolution::TenEightyP));
         });
       }
 

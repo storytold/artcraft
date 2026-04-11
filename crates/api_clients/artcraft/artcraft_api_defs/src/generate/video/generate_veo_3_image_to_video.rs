@@ -42,6 +42,10 @@ pub struct GenerateVeo3ImageToVideoRequest {
 pub enum GenerateVeo3AspectRatio {
   WideSixteenNine, // 16:9
   TallNineSixteen, // 9:16
+  
+  /// NB: DO NOT REMOVE. This is an unsupported resolution for Veo 3, but we can't 
+  /// impact existing callers by removing it. The handler will convert this to a 
+  /// supported resolution or 400 the request instead.
   Square, // 1:1
 }
 

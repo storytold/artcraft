@@ -14,13 +14,13 @@ use anyhow::anyhow;
 use artcraft_api_defs::generate::video::generate_veo_3_image_to_video::{GenerateVeo3AspectRatio, GenerateVeo3Duration, GenerateVeo3ImageToVideoRequest, GenerateVeo3ImageToVideoResponse, GenerateVeo3Resolution};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompts::prompt_type::PromptType;
-use enums::common::generation_provider::GenerationProvider;
-use enums::common::generation::common_model_type::CommonModelType;
-use enums::common::visibility::Visibility;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation_provider::GenerationProvider;
+use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{enqueue_veo_3_image_to_video_webhook, Veo3Args, Veo3AspectRatio, Veo3Duration, Veo3Resolution};
+use fal_client::requests::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{enqueue_veo_3_image_to_video_webhook, Veo3Args, Veo3I2vAspectRatio, Veo3I2vDuration, Veo3I2vResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -143,21 +143,22 @@ pub async fn generate_veo_3_image_to_video_handler(
       .unwrap_or_else(|| "");
 
   let aspect_ratio = match &request.aspect_ratio {
-    Some(GenerateVeo3AspectRatio::WideSixteenNine) => Veo3AspectRatio::WideSixteenNine,
-    Some(GenerateVeo3AspectRatio::TallNineSixteen) => Veo3AspectRatio::TallNineSixteen,
-    Some(GenerateVeo3AspectRatio::Square) => Veo3AspectRatio::Square,
-    None => Veo3AspectRatio::WideSixteenNine,
+    Some(GenerateVeo3AspectRatio::WideSixteenNine) => Veo3I2vAspectRatio::WideSixteenNine,
+    Some(GenerateVeo3AspectRatio::TallNineSixteen) => Veo3I2vAspectRatio::TallNineSixteen,
+    // Square is not supported by Veo 3 i2v — fall back to Auto.
+    Some(GenerateVeo3AspectRatio::Square) => Veo3I2vAspectRatio::Auto,
+    None => Veo3I2vAspectRatio::WideSixteenNine,
   };
 
   let resolution = match &request.resolution {
-    Some(GenerateVeo3Resolution::SevenTwentyP) => Veo3Resolution::SevenTwentyP,
-    Some(GenerateVeo3Resolution::TenEightyP) => Veo3Resolution::TenEightyP,
-    None => Veo3Resolution::Default,
+    Some(GenerateVeo3Resolution::SevenTwentyP) => Veo3I2vResolution::SevenTwentyP,
+    Some(GenerateVeo3Resolution::TenEightyP) => Veo3I2vResolution::TenEightyP,
+    None => Veo3I2vResolution::Default,
   };
 
   let duration = match &request.duration {
-    Some(GenerateVeo3Duration::EightSeconds) => Veo3Duration::EightSeconds,
-    None => Veo3Duration::EightSeconds,
+    Some(GenerateVeo3Duration::EightSeconds) => Veo3I2vDuration::EightSeconds,
+    None => Veo3I2vDuration::EightSeconds,
   };
 
   let generate_audio = request.generate_audio
