@@ -20,6 +20,10 @@ pub struct PlanArtcraftVeo3<'a> {
   pub aspect_ratio: Option<GenerateVeo3AspectRatio>,
   pub resolution: Option<GenerateVeo3Resolution>,
   pub duration: Option<GenerateVeo3Duration>,
+  /// The raw requested duration in seconds, preserved for cost estimation.
+  /// The `duration` field above maps everything to `EightSeconds` for the
+  /// legacy endpoint, but cost should reflect the actual requested value.
+  pub duration_seconds_raw: Option<u16>,
   pub generate_audio: Option<bool>,
   pub idempotency_token: String,
 }
@@ -63,6 +67,7 @@ pub fn plan_generate_video_artcraft_veo_3<'a>(
     aspect_ratio,
     resolution,
     duration,
+    duration_seconds_raw: request.duration_seconds,
     generate_audio: request.generate_audio,
     idempotency_token: request.get_or_generate_idempotency_token(),
   }))
@@ -118,14 +123,19 @@ fn plan_resolution(
   }
 }
 
-// Legacy storyteller endpoint for Veo 3 only exposes EightSeconds.
+// The legacy storyteller endpoint for Veo 3 only exposes EightSeconds, but
+// the artcraft plan stores the raw duration_seconds from the omni request so
+// that cost estimation works for all supported durations (4/6/8).
 fn plan_duration(
   duration_seconds: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<GenerateVeo3Duration>, ArtcraftRouterError> {
   match duration_seconds {
     None => Ok(None),
-    Some(8) => Ok(Some(GenerateVeo3Duration::EightSeconds)),
+    // The api_defs enum only has EightSeconds; all durations map to it for
+    // the legacy endpoint. The actual seconds are tracked via
+    // `duration_seconds_raw` below for cost estimation.
+    Some(4) | Some(6) | Some(8) => Ok(Some(GenerateVeo3Duration::EightSeconds)),
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -133,18 +143,25 @@ fn plan_duration(
           value: format!("{}", other),
         }))
       }
-      _ => Ok(Some(GenerateVeo3Duration::EightSeconds)),
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(Some(GenerateVeo3Duration::EightSeconds)),
+      RequestMismatchMitigationStrategy::PayLessDowngrade => Ok(Some(GenerateVeo3Duration::EightSeconds)),
     },
   }
 }
 
 impl PlanArtcraftVeo3<'_> {
-  /// Mirrors the Fal client default (8s) used by the legacy generate handler.
+  /// Duration in seconds for cost estimation. Uses the raw requested
+  /// duration, clamped to {4, 6, 8}, defaulting to 8s.
   pub fn duration_seconds_for_cost(&self) -> u64 {
-    8
+    match self.duration_seconds_raw {
+      Some(s) if s <= 4 => 4,
+      Some(s) if s <= 6 => 6,
+      _ => 8, // None, 7, 8, or above → 8s
+    }
   }
 
   /// Legacy Veo 3 generate handler defaults `generate_audio` to false.
+  /// The omni path defaults to true (matching the fal plan builder).
   pub fn generate_audio_for_cost(&self) -> bool {
     self.generate_audio.unwrap_or(false)
   }
