@@ -8,5 +8,6 @@ pub mod enqueue_seedance_1p5_pro_text_to_video_webhook;
 pub mod enqueue_sora_2_pro_text_to_video_webhook;
 pub mod enqueue_sora_2_text_to_video_webhook;
 pub mod enqueue_veo_2_text_to_video_webhook;
+pub mod enqueue_veo_3_text_to_video_webhook;
 pub mod enqueue_veo_3p1_fast_text_to_video_webhook;
 pub mod enqueue_veo_3p1_text_to_video_webhook;

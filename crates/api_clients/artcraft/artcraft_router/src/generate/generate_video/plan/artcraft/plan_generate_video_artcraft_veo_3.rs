@@ -14,7 +14,9 @@ use tokens::tokens::media_files::MediaFileToken;
 #[derive(Debug, Clone)]
 pub struct PlanArtcraftVeo3<'a> {
   pub prompt: Option<&'a str>,
-  pub start_frame: &'a MediaFileToken,
+  /// Required for image-to-video. None for text-to-video or when the
+  /// omni-gen distillation hydrated the token to a URL.
+  pub start_frame: Option<&'a MediaFileToken>,
   pub aspect_ratio: Option<GenerateVeo3AspectRatio>,
   pub resolution: Option<GenerateVeo3Resolution>,
   pub duration: Option<GenerateVeo3Duration>,
@@ -28,16 +30,13 @@ pub fn plan_generate_video_artcraft_veo_3<'a>(
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let start_frame = match request.start_frame {
-    Some(ImageRef::MediaFileToken(t)) => t,
-    Some(ImageRef::Url(_)) => {
-      return Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
-    None => {
-      return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-        field: "start_frame",
-        value: "Veo 3 requires a starting frame".to_string(),
-      }))
-    }
+    Some(ImageRef::MediaFileToken(t)) => Some(t),
+    // Omni-gen distillation hydrates media tokens to URLs before running the
+    // Artcraft cost path. Cost only depends on duration/audio, so URL-form
+    // refs are accepted and dropped.
+    Some(ImageRef::Url(_)) => None,
+    // No start_frame = text-to-video mode.
+    None => None,
   };
 
   if request.end_frame.is_some() {
@@ -47,7 +46,14 @@ pub fn plan_generate_video_artcraft_veo_3<'a>(
     }));
   }
 
-  let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
+  // Aspect ratio only applies to text-to-video; image-to-video inherits
+  // the source frame's aspect ratio.
+  let is_image_mode = request.start_frame.is_some();
+  let aspect_ratio = if is_image_mode {
+    None
+  } else {
+    plan_aspect_ratio(request.aspect_ratio, strategy)?
+  };
   let resolution = plan_resolution(request.resolution, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 

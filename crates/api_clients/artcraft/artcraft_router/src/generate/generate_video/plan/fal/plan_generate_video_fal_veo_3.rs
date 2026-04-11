@@ -11,10 +11,21 @@ use fal_client::requests::webhook::video::image::enqueue_veo_3_image_to_video_we
 };
 
 #[derive(Debug, Clone)]
+pub enum FalVeo3Mode {
+  TextToVideo,
+  ImageToVideo {
+    image_url: String,
+  },
+}
+
+#[derive(Debug, Clone)]
 pub struct PlanFalVeo3 {
   pub prompt: String,
-  pub start_frame_url: String,
-  pub aspect_ratio: Veo3AspectRatio,
+  pub negative_prompt: Option<String>,
+  pub mode: FalVeo3Mode,
+  /// Only set for text-to-video. Image-to-video inherits the source frame's
+  /// aspect ratio.
+  pub aspect_ratio: Option<Veo3AspectRatio>,
   pub resolution: Veo3Resolution,
   pub duration: Veo3Duration,
   pub generate_audio: bool,
@@ -25,36 +36,39 @@ pub fn plan_generate_video_fal_veo_3<'a>(
 ) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame_url = resolve_required_image_url(request.start_frame)?;
   if request.end_frame.is_some() {
     return Err(unsupported("end_frame", "Veo 3 does not support an ending frame"));
   }
 
-  let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
+  let mode = match request.start_frame {
+    Some(ImageRef::Url(url)) => FalVeo3Mode::ImageToVideo {
+      image_url: url.to_string(),
+    },
+    Some(ImageRef::MediaFileToken(_)) => {
+      return Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls));
+    }
+    None => FalVeo3Mode::TextToVideo,
+  };
+
+  // Aspect ratio only applies to text-to-video; image-to-video inherits
+  // the source frame's aspect ratio.
+  let aspect_ratio = match &mode {
+    FalVeo3Mode::TextToVideo => Some(plan_aspect_ratio(request.aspect_ratio, strategy)?),
+    FalVeo3Mode::ImageToVideo { .. } => None,
+  };
   let resolution = plan_resolution(request.resolution, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
   let generate_audio = request.generate_audio.unwrap_or(true);
 
   Ok(VideoGenerationPlan::FalVeo3(PlanFalVeo3 {
     prompt: request.prompt.unwrap_or("").to_string(),
-    start_frame_url,
+    negative_prompt: request.negative_prompt.map(|s| s.to_string()),
+    mode,
     aspect_ratio,
     resolution,
     duration,
     generate_audio,
   }))
-}
-
-fn resolve_required_image_url(
-  image_ref: Option<ImageRef<'_>>,
-) -> Result<String, ArtcraftRouterError> {
-  match image_ref {
-    Some(ImageRef::Url(url)) => Ok(url.to_string()),
-    Some(ImageRef::MediaFileToken(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
-    }
-    None => Err(unsupported("start_frame", "Veo 3 requires a starting frame")),
-  }
 }
 
 fn plan_aspect_ratio(
@@ -66,6 +80,7 @@ fn plan_aspect_ratio(
     None
     | Some(CommonAspectRatio::Auto)
     | Some(CommonAspectRatio::Auto2k)
+    | Some(CommonAspectRatio::Auto3k)
     | Some(CommonAspectRatio::Auto4k) => Ok(Ar::Default),
 
     Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Ok(Ar::Square),

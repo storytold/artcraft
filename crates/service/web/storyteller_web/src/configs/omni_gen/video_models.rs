@@ -79,11 +79,13 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     ..Default::default()
   });
 
+  // TODO(bt,2026-04-10): Veo 2 image-to-video doesn't support aspect ratio
   models.push(OmniGenVideoModelDetails {
     model: CommonVideoModel::Veo2,
     full_name: Some("Google Veo 2".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
+    // TODO(bt,2026-04-10): Veo 2 image-to-video doesn't support aspect ratio
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::Auto,
       CommonAspectRatio::WideSixteenByNine,
@@ -105,8 +107,9 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::WideSixteenByNine,
       CommonAspectRatio::TallNineBySixteen,
-      CommonAspectRatio::Square,
+      CommonAspectRatio::Auto, // TODO: Only for image-to-video
     ]),
+    // TODO: image-to-video aspect ratio options
     aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
     resolution_options: Some(vec![
       CommonResolution::SevenTwentyP,
