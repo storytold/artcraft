@@ -16,6 +16,7 @@ pub async fn execute_fal_veo_3_fast(
   let args = Veo3FastArgs {
     prompt: plan.prompt.as_str(),
     image_url: plan.start_frame_url.as_str(),
+    aspect_ratio: plan.aspect_ratio,
     duration: plan.duration,
     api_key: &fal_client.api_key,
     resolution: plan.resolution,

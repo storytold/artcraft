@@ -5,14 +5,16 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
+use crate::api::common_aspect_ratio::CommonAspectRatio;
 use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{
-  Veo3FastDuration, Veo3FastResolution,
+  Veo3FastAspectRatio, Veo3FastDuration, Veo3FastResolution,
 };
 
 #[derive(Debug, Clone)]
 pub struct PlanFalVeo3Fast {
   pub prompt: String,
   pub start_frame_url: String,
+  pub aspect_ratio: Veo3FastAspectRatio,
   pub resolution: Veo3FastResolution,
   pub duration: Veo3FastDuration,
   pub generate_audio: bool,
@@ -28,6 +30,7 @@ pub fn plan_generate_video_fal_veo_3_fast<'a>(
     return Err(unsupported("end_frame", "Veo 3 Fast does not support an ending frame"));
   }
 
+  let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
   let generate_audio = request.generate_audio.unwrap_or(true);
@@ -35,6 +38,7 @@ pub fn plan_generate_video_fal_veo_3_fast<'a>(
   Ok(VideoGenerationPlan::FalVeo3Fast(PlanFalVeo3Fast {
     prompt: request.prompt.unwrap_or("").to_string(),
     start_frame_url,
+    aspect_ratio,
     resolution,
     duration,
     generate_audio,
@@ -50,6 +54,30 @@ fn resolve_required_image_url(
       Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))
     }
     None => Err(unsupported("start_frame", "Veo 3 Fast requires a starting frame")),
+  }
+}
+
+fn plan_aspect_ratio(
+  aspect_ratio: Option<CommonAspectRatio>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Veo3FastAspectRatio, ArtcraftRouterError> {
+  use Veo3FastAspectRatio as Ar;
+  match aspect_ratio {
+    None
+    | Some(CommonAspectRatio::Auto)
+    | Some(CommonAspectRatio::Auto2k)
+    | Some(CommonAspectRatio::Auto3k)
+    | Some(CommonAspectRatio::Auto4k) => Ok(Ar::Auto),
+
+    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Ar::WideSixteenNine),
+    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Ar::TallNineSixteen),
+
+    Some(unsupported_ar) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(unsupported("aspect_ratio", &format!("{:?}", unsupported_ar)))
+      }
+      _ => Ok(Ar::Auto),
+    },
   }
 }
 

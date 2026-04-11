@@ -1,3 +1,4 @@
+use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::common_resolution::CommonResolution;
 use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
@@ -6,14 +7,15 @@ use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::{
-  GenerateVeo3FastDuration, GenerateVeo3FastResolution,
+  GenerateVeo3FastAspectRatio, GenerateVeo3FastDuration, GenerateVeo3FastResolution,
 };
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
 pub struct PlanArtcraftVeo3Fast<'a> {
   pub prompt: Option<&'a str>,
-  pub start_frame: &'a MediaFileToken,
+  pub start_frame: Option<&'a MediaFileToken>,
+  pub aspect_ratio: Option<GenerateVeo3FastAspectRatio>,
   pub resolution: Option<GenerateVeo3FastResolution>,
   pub duration: Option<GenerateVeo3FastDuration>,
   pub generate_audio: Option<bool>,
@@ -26,16 +28,9 @@ pub fn plan_generate_video_artcraft_veo_3_fast<'a>(
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let start_frame = match request.start_frame {
-    Some(ImageRef::MediaFileToken(t)) => t,
-    Some(ImageRef::Url(_)) => {
-      return Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
-    None => {
-      return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-        field: "start_frame",
-        value: "Veo 3 Fast requires a starting frame".to_string(),
-      }))
-    }
+    Some(ImageRef::MediaFileToken(t)) => Some(t),
+    Some(ImageRef::Url(_)) => None,
+    None => None,
   };
 
   if request.end_frame.is_some() {
@@ -45,17 +40,46 @@ pub fn plan_generate_video_artcraft_veo_3_fast<'a>(
     }));
   }
 
+  let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftVeo3Fast(PlanArtcraftVeo3Fast {
     prompt: request.prompt,
     start_frame,
+    aspect_ratio,
     resolution,
     duration,
     generate_audio: request.generate_audio,
     idempotency_token: request.get_or_generate_idempotency_token(),
   }))
+}
+
+fn plan_aspect_ratio(
+  aspect_ratio: Option<CommonAspectRatio>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Option<GenerateVeo3FastAspectRatio>, ArtcraftRouterError> {
+  use GenerateVeo3FastAspectRatio as Ar;
+  match aspect_ratio {
+    None
+    | Some(CommonAspectRatio::Auto)
+    | Some(CommonAspectRatio::Auto2k)
+    | Some(CommonAspectRatio::Auto3k)
+    | Some(CommonAspectRatio::Auto4k) => Ok(Some(Ar::Auto)),
+
+    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Some(Ar::SixteenByNine)),
+    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Some(Ar::NineBySixteen)),
+
+    Some(unsupported) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "aspect_ratio",
+          value: format!("{:?}", unsupported),
+        }))
+      }
+      _ => Ok(Some(Ar::Auto)),
+    },
+  }
 }
 
 fn plan_resolution(

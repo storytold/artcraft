@@ -7,6 +7,10 @@ pub struct Veo3FastImageToVideoInput {
 
   pub prompt: String,
 
+  /// Options: "auto", "16:9", "9:16"
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub aspect_ratio: Option<String>,
+
   /// Options: "720p", "1080p"
   #[serde(skip_serializing_if = "Option::is_none")]
   pub resolution: Option<String>,

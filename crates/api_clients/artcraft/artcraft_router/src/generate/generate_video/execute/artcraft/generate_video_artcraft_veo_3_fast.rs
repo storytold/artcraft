@@ -14,8 +14,9 @@ pub async fn execute_artcraft_veo_3_fast(
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = GenerateVeo3FastImageToVideoRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    media_file_token: Some(plan.start_frame.to_owned()),
+    media_file_token: plan.start_frame.map(|t| t.to_owned()),
     prompt: plan.prompt.map(|p| p.to_string()),
+    aspect_ratio: plan.aspect_ratio,
     resolution: plan.resolution,
     duration: plan.duration,
     generate_audio: plan.generate_audio,

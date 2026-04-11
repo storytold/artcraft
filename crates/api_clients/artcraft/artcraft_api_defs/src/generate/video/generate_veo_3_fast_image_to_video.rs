@@ -21,6 +21,9 @@ pub struct GenerateVeo3FastImageToVideoRequest {
   pub resolution: Option<GenerateVeo3FastResolution>,
 
   /// Optional: aspect ratio of the generated video.
+  pub aspect_ratio: Option<GenerateVeo3FastAspectRatio>,
+
+  /// Optional: duration of the generated video.
   pub duration: Option<GenerateVeo3FastDuration>,
 
   /// Optional: Generate an audio track along with the video
@@ -32,6 +35,14 @@ pub struct GenerateVeo3FastImageToVideoRequest {
 pub enum GenerateVeo3FastResolution {
   SevenTwentyP, // 720p
   TenEightyP, // 1080p
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum GenerateVeo3FastAspectRatio {
+  Auto,
+  SixteenByNine,
+  NineBySixteen,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]

@@ -9,6 +9,7 @@ use reqwest::IntoUrl;
 pub struct Veo3FastArgs<'a, U: IntoUrl, V: IntoUrl> {
   pub prompt: &'a str,
   pub image_url: U,
+  pub aspect_ratio: Veo3FastAspectRatio,
   pub duration: Veo3FastDuration,
   pub api_key: &'a FalApiKey,
   pub resolution: Veo3FastResolution,
@@ -22,6 +23,13 @@ pub enum Veo3FastDuration {
   FourSeconds,
   SixSeconds,
   EightSeconds,
+}
+
+#[derive(Copy, Clone, Debug)]
+pub enum Veo3FastAspectRatio {
+  Auto,
+  WideSixteenNine, // 16:9
+  TallNineSixteen, // 9:16
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -62,7 +70,13 @@ pub async fn enqueue_veo_3_fast_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
     Veo3FastDuration::EightSeconds => Some("8s".to_string()),
   };
   
-  let resolution= match args.resolution {
+  let aspect_ratio = match args.aspect_ratio {
+    Veo3FastAspectRatio::Auto => Some("auto".to_string()),
+    Veo3FastAspectRatio::WideSixteenNine => Some("16:9".to_string()),
+    Veo3FastAspectRatio::TallNineSixteen => Some("9:16".to_string()),
+  };
+
+  let resolution = match args.resolution {
     Veo3FastResolution::Default => None,
     Veo3FastResolution::SevenTwentyP => Some("720p".to_string()),
     Veo3FastResolution::TenEightyP => Some("1080p".to_string()),
@@ -73,6 +87,7 @@ pub async fn enqueue_veo_3_fast_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
   let request = Veo3FastImageToVideoInput {
     image_url,
     prompt: args.prompt.to_string(),
+    aspect_ratio,
     resolution,
     duration,
     generate_audio: Some(args.generate_audio),
@@ -90,7 +105,7 @@ pub async fn enqueue_veo_3_fast_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastDuration, Veo3FastResolution};
+  use crate::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastAspectRatio, Veo3FastDuration, Veo3FastResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::ERNEST_GHOST_TREX_IMAGE_URL;
@@ -109,6 +124,7 @@ mod tests {
       image_url: image_url,
       prompt: "man is standing next to a ghost and t-rex, they begin to chase him as the camera pulls back to show the wider scene",
       api_key: &api_key,
+      aspect_ratio: Veo3FastAspectRatio::WideSixteenNine,
       duration: Veo3FastDuration::EightSeconds,
       generate_audio: true,
       resolution: Veo3FastResolution::TenEightyP,

@@ -11,7 +11,7 @@ use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use anyhow::anyhow;
-use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::{GenerateVeo3FastDuration, GenerateVeo3FastImageToVideoRequest, GenerateVeo3FastImageToVideoResponse, GenerateVeo3FastResolution};
+use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::{GenerateVeo3FastAspectRatio, GenerateVeo3FastDuration, GenerateVeo3FastImageToVideoRequest, GenerateVeo3FastImageToVideoResponse, GenerateVeo3FastResolution};
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation_provider::GenerationProvider;
@@ -19,7 +19,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastDuration, Veo3FastResolution};
+use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastAspectRatio, Veo3FastDuration, Veo3FastResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -141,6 +141,13 @@ pub async fn generate_veo_3_fast_image_to_video_handler(
       .map(|prompt| prompt.trim())
       .unwrap_or_else(|| "");
 
+  let aspect_ratio = match &request.aspect_ratio {
+    Some(GenerateVeo3FastAspectRatio::Auto) => Veo3FastAspectRatio::Auto,
+    Some(GenerateVeo3FastAspectRatio::SixteenByNine) => Veo3FastAspectRatio::WideSixteenNine,
+    Some(GenerateVeo3FastAspectRatio::NineBySixteen) => Veo3FastAspectRatio::TallNineSixteen,
+    None => Veo3FastAspectRatio::Auto,
+  };
+
   let resolution = match &request.resolution {
     Some(GenerateVeo3FastResolution::SevenTwentyP) => Veo3FastResolution::SevenTwentyP,
     Some(GenerateVeo3FastResolution::TenEightyP) => Veo3FastResolution::TenEightyP,
@@ -158,6 +165,7 @@ pub async fn generate_veo_3_fast_image_to_video_handler(
   let args = Veo3FastArgs {
     image_url: media_links.cdn_url,
     prompt,
+    aspect_ratio,
     duration,
     resolution,
     generate_audio,
@@ -214,7 +222,11 @@ pub async fn generate_veo_3_fast_image_to_video_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(CommonGenerationMode::Keyframe), // TODO: This endpoint only supports keyframes for now
-    maybe_aspect_ratio: None,
+    maybe_aspect_ratio: request.aspect_ratio.as_ref().map(|ar| match ar {
+      GenerateVeo3FastAspectRatio::Auto => enums::common::generation::common_aspect_ratio::CommonAspectRatio::Auto,
+      GenerateVeo3FastAspectRatio::SixteenByNine => enums::common::generation::common_aspect_ratio::CommonAspectRatio::WideSixteenByNine,
+      GenerateVeo3FastAspectRatio::NineBySixteen => enums::common::generation::common_aspect_ratio::CommonAspectRatio::TallNineBySixteen,
+    }),
     maybe_resolution: None,
     maybe_batch_count: None,
     maybe_generate_audio: Some(generate_audio),
