@@ -2,8 +2,8 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::state::server_state::ServerState;
 use actix_web::web::Json;
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use fal_client::webhook_api::payload::webhook_error_type::WebhookErrorType;
-use fal_client::webhook_api::payload::webhook_inner_payload::ErrorData;
+use fal_client::webhook_api::raw::webhook_error_type::WebhookErrorType;
+use fal_client::webhook_api::hydrated::hydrated_webhook_contents::ErrorData;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;

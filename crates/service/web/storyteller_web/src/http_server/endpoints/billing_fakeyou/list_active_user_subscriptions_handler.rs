@@ -44,7 +44,7 @@ pub async fn list_active_user_subscriptions_handler(
     .await
     .map_err(|err| {
       warn!("Error looking up user: {:?}", err);
-      AdvancedCommonWebError::from_error
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   let user_metadata = match maybe_user_metadata {

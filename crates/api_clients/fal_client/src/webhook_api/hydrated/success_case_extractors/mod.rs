@@ -6,7 +6,7 @@ pub mod extract_model_mesh_payload;
 
 use serde_json::Value;
 
-use crate::webhook_api::payload::webhook_inner_payload::ExtractedContents;
+use crate::webhook_api::hydrated::hydrated_webhook_contents::ExtractedContents;
 
 /// Try to extract known content keys from a success payload.
 ///

@@ -1,30 +1,30 @@
 use serde_json::Value;
 
-use crate::webhook_api::payload::webhook_error_type::WebhookErrorType;
-use crate::webhook_api::payload::webhook_inner_payload::{ErrorData, PayloadErrorData, SuccessData, WebhookInnerPayload};
-use crate::webhook_api::payload::webhook_payload::{WebhookPayload, WebhookStatus};
-use crate::webhook_api::success_case_extractors::extract_contents_from_payload;
+use crate::webhook_api::raw::webhook_error_type::WebhookErrorType;
+use crate::webhook_api::hydrated::hydrated_webhook_contents::{ErrorData, PayloadErrorData, SuccessData, HydratedWebhookContents};
+use crate::webhook_api::raw::raw_webhook_payload::{RawWebhookPayload, RawWebhookStatus};
+use crate::webhook_api::hydrated::success_case_extractors::extract_contents_from_payload;
 
 /// Parse the inner payload of a FAL webhook into one of three cases.
 ///
 /// 1. If status is ERROR, parse out the first `detail` entry's `msg` and `type`.
 /// 2. If status is OK but there's no payload and there is a `payload_error`, return PayloadError.
 /// 3. Otherwise, return Success with the payload.
-pub fn parse_webhook_inner_payload(webhook: &WebhookPayload) -> WebhookInnerPayload {
+pub fn hydrate_webhook_contents(webhook: &RawWebhookPayload) -> HydratedWebhookContents {
   match webhook.status {
-    WebhookStatus::Error => {
+    RawWebhookStatus::Error => {
       let (message, error_type) = extract_error_first_detail(&webhook.payload);
 
-      WebhookInnerPayload::Error(ErrorData {
+      HydratedWebhookContents::Error(ErrorData {
         message,
         error_type,
       })
     }
-    WebhookStatus::Ok => {
+    RawWebhookStatus::Ok => {
       // Check for `payload_error` case: status=OK but no payload, has payload_error.
       if webhook.payload.is_none() {
         if let Some(ref payload_error) = webhook.payload_error {
-          return WebhookInnerPayload::PayloadError(PayloadErrorData {
+          return HydratedWebhookContents::PayloadError(PayloadErrorData {
             payload_error: payload_error.clone(),
           });
         }
@@ -36,7 +36,7 @@ pub fn parse_webhook_inner_payload(webhook: &WebhookPayload) -> WebhookInnerPayl
 
       let extracted_contents = extract_contents_from_payload(&value);
 
-      WebhookInnerPayload::Success(SuccessData {
+      HydratedWebhookContents::Success(SuccessData {
         payload: value,
         extracted_contents,
       })
@@ -75,7 +75,7 @@ fn extract_error_first_detail(payload: &Option<Value>) -> (Option<String>, Optio
 mod tests {
   use super::*;
 
-  fn load_test_webhook(filename: &str) -> WebhookPayload {
+  fn load_test_webhook(filename: &str) -> RawWebhookPayload {
     let path = format!("test_data/webhooks/{}", filename);
     let json = std::fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("Failed to read {}: {}", path, e));
@@ -86,10 +86,10 @@ mod tests {
   #[test]
   fn gpt_image_1p5_content_policy_violation() {
     let webhook = load_test_webhook("gpt_image_1p5_fail_content_policy.json");
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
     match result {
-      WebhookInnerPayload::Error(data) => {
+      HydratedWebhookContents::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::ContentPolicyViolation),
@@ -99,17 +99,17 @@ mod tests {
           Some("The content could not be processed because it contained material flagged by a content checker."),
         );
       }
-      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
     }
   }
 
   #[test]
   fn gpt_image_invalid_api_key() {
     let webhook = load_test_webhook("gpt_image_fail_invalid_api_key.json");
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
     match result {
-      WebhookInnerPayload::Error(data) => {
+      HydratedWebhookContents::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::InvalidApiKey),
@@ -119,17 +119,17 @@ mod tests {
           Some("Invalid API key"),
         );
       }
-      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
     }
   }
 
   #[test]
   fn kling_1p6_pro_file_too_large() {
     let webhook = load_test_webhook("kling_1p6_pro_file_too_large_error.json");
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
     match result {
-      WebhookInnerPayload::Error(data) => {
+      HydratedWebhookContents::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::FileTooLarge),
@@ -139,17 +139,17 @@ mod tests {
           Some("File size exceeds the maximum allowed size of 10485760 bytes. Please upload a smaller file."),
         );
       }
-      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
     }
   }
 
   #[test]
   fn kling_3p0_pro_content_policy_violation() {
     let webhook = load_test_webhook("kling_3p0_pro_fail_content_policy.json");
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
     match result {
-      WebhookInnerPayload::Error(data) => {
+      HydratedWebhookContents::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::ContentPolicyViolation),
@@ -159,17 +159,17 @@ mod tests {
           Some("The content could not be processed because it contained material flagged by a content checker."),
         );
       }
-      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
     }
   }
 
   #[test]
   fn nano_banana_pro_no_media_generated() {
     let webhook = load_test_webhook("nano_banana_pro_fail_no_media_generated.json");
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
     match result {
-      WebhookInnerPayload::Error(data) => {
+      HydratedWebhookContents::Error(data) => {
         assert_eq!(
           data.error_type,
           Some(WebhookErrorType::NoMediaGenerated),
@@ -178,71 +178,71 @@ mod tests {
           data.message.as_deref().unwrap().starts_with("The model did not generate"),
         );
       }
-      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
     }
   }
 
   #[test]
   fn payload_error_case() {
-    let webhook = WebhookPayload {
+    let webhook = RawWebhookPayload {
       request_id: "test-123".to_string(),
       gateway_request_id: "test-123".to_string(),
-      status: WebhookStatus::Ok,
+      status: RawWebhookStatus::Ok,
       error: None,
       payload: None,
       payload_error: Some("encoding error occurred".to_string()),
     };
 
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
     match result {
-      WebhookInnerPayload::PayloadError(data) => {
+      HydratedWebhookContents::PayloadError(data) => {
         assert_eq!(data.payload_error, "encoding error occurred");
       }
-      other => panic!("Expected WebhookInnerPayload::PayloadError, got {:?}", other),
+      other => panic!("Expected HydratedWebhookContents::PayloadError, got {:?}", other),
     }
   }
 
   #[test]
   fn success_case() {
-    let webhook = WebhookPayload {
+    let webhook = RawWebhookPayload {
       request_id: "test-456".to_string(),
       gateway_request_id: "test-456".to_string(),
-      status: WebhookStatus::Ok,
+      status: RawWebhookStatus::Ok,
       error: None,
       payload: Some(serde_json::json!({"images": [{"url": "https://example.com/img.png"}]})),
       payload_error: None,
     };
 
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
     match result {
-      WebhookInnerPayload::Success(data) => {
+      HydratedWebhookContents::Success(data) => {
         assert!(data.payload.get("images").is_some());
       }
-      other => panic!("Expected WebhookInnerPayload::Success, got {:?}", other),
+      other => panic!("Expected HydratedWebhookContents::Success, got {:?}", other),
     }
   }
 
   #[test]
   fn error_with_no_payload() {
-    let webhook = WebhookPayload {
+    let webhook = RawWebhookPayload {
       request_id: "test-789".to_string(),
       gateway_request_id: "test-789".to_string(),
-      status: WebhookStatus::Error,
+      status: RawWebhookStatus::Error,
       error: Some("Internal server error".to_string()),
       payload: None,
       payload_error: None,
     };
 
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
     match result {
-      WebhookInnerPayload::Error(data) => {
+      HydratedWebhookContents::Error(data) => {
         assert_eq!(data.message, None);
         assert_eq!(data.error_type, None);
       }
-      other => panic!("Expected WebhookInnerPayload::Error, got {:?}", other),
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
     }
   }
 }

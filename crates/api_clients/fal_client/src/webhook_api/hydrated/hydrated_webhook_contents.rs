@@ -1,10 +1,10 @@
 use serde_json::Value;
 
-use crate::webhook_api::payload::webhook_error_type::WebhookErrorType;
+use crate::webhook_api::raw::webhook_error_type::WebhookErrorType;
 
 /// The parsed inner payload of a FAL webhook.
 #[derive(Debug)]
-pub enum WebhookInnerPayload {
+pub enum HydratedWebhookContents {
   /// The webhook reported success and has a payload.
   Success(SuccessData),
 
@@ -24,9 +24,9 @@ pub struct SuccessData {
   /// This will allow for downstream handlers to parse the payload as needed.
   /// This is the entire raw success payload.
   pub payload: Value,
-  
+
   /// If there are any extracted sub-payload contents, such as "images" or "video",
-  /// then they are included here. This may not be fully inclusive of future 
+  /// then they are included here. This may not be fully inclusive of future
   /// payload types.
   pub extracted_contents: Option<ExtractedContents>,
 }

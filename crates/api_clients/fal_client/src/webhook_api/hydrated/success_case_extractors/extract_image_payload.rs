@@ -8,11 +8,11 @@ pub fn extract_image(obj: &Map<String, Value>) -> Option<Value> {
 
 #[cfg(test)]
 mod tests {
-  use crate::webhook_api::parse_webhook_inner_payload::parse_webhook_inner_payload;
-  use crate::webhook_api::payload::webhook_inner_payload::WebhookInnerPayload;
-  use crate::webhook_api::payload::webhook_payload::{WebhookPayload, WebhookStatus};
+  use crate::webhook_api::hydrate_webhook_contents::hydrate_webhook_contents;
+  use crate::webhook_api::hydrated::hydrated_webhook_contents::HydratedWebhookContents;
+  use crate::webhook_api::raw::raw_webhook_payload::{RawWebhookPayload, RawWebhookStatus};
 
-  fn load_test_webhook(filename: &str) -> WebhookPayload {
+  fn load_test_webhook(filename: &str) -> RawWebhookPayload {
     let path = format!("test_data/webhooks/{}", filename);
     let json = std::fs::read_to_string(&path)
       .unwrap_or_else(|e| panic!("Failed to read {}: {}", path, e));
@@ -23,9 +23,9 @@ mod tests {
   #[test]
   fn images_payload_populates_images_field() {
     let webhook = load_test_webhook("success/images_payload_1.json");
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
-    let WebhookInnerPayload::Success(data) = result else {
+    let HydratedWebhookContents::Success(data) = result else {
       panic!("Expected Success, got {:?}", result);
     };
 
@@ -70,18 +70,18 @@ mod tests {
 
   #[test]
   fn payload_without_known_keys_has_none_extracted_contents() {
-    let webhook = WebhookPayload {
+    let webhook = RawWebhookPayload {
       request_id: "test-no-keys".to_string(),
       gateway_request_id: "test-no-keys".to_string(),
-      status: WebhookStatus::Ok,
+      status: RawWebhookStatus::Ok,
       error: None,
       payload: Some(serde_json::json!({"some_other_key": "value"})),
       payload_error: None,
     };
 
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
-    let WebhookInnerPayload::Success(data) = result else {
+    let HydratedWebhookContents::Success(data) = result else {
       panic!("Expected Success, got {:?}", result);
     };
 
@@ -90,18 +90,18 @@ mod tests {
 
   #[test]
   fn null_payload_has_none_extracted_contents() {
-    let webhook = WebhookPayload {
+    let webhook = RawWebhookPayload {
       request_id: "test-null".to_string(),
       gateway_request_id: "test-null".to_string(),
-      status: WebhookStatus::Ok,
+      status: RawWebhookStatus::Ok,
       error: None,
       payload: None,
       payload_error: None,
     };
 
-    let result = parse_webhook_inner_payload(&webhook);
+    let result = hydrate_webhook_contents(&webhook);
 
-    let WebhookInnerPayload::Success(data) = result else {
+    let HydratedWebhookContents::Success(data) = result else {
       panic!("Expected Success, got {:?}", result);
     };
 

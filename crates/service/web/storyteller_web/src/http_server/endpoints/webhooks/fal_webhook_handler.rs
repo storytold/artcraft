@@ -7,9 +7,9 @@ use crate::state::server_state::ServerState;
 use actix_web::web::Bytes;
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
-use fal_client::webhook_api::parse_webhook_inner_payload::parse_webhook_inner_payload;
-use fal_client::webhook_api::parse_webhook_payload::parse_webhook_payload;
-use fal_client::webhook_api::payload::webhook_inner_payload::WebhookInnerPayload;
+use fal_client::webhook_api::hydrate_webhook_contents::hydrate_webhook_contents;
+use fal_client::webhook_api::hydrated::hydrated_webhook_contents::HydratedWebhookContents;
+use fal_client::webhook_api::parse_raw_webhook_payload::parse_raw_webhook_payload;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{error, info, warn};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
@@ -36,8 +36,8 @@ pub async fn fal_webhook_handler(
 
   info!("Received FAL webhook body: {}", raw_body);
 
-  // Step 2: Parse into WebhookPayload.
-  let webhook_payload = parse_webhook_payload(&raw_body)
+  // Step 2: Parse into RawWebhookPayload.
+  let webhook_payload = parse_raw_webhook_payload(&raw_body)
       .map_err(|err| {
         error!("FAL webhook: could not parse webhook payload: {:?}", err);
         enqueue_parse_error_alert(&server_state, &http_request, "JSON parse failed", &err, Some(&raw_body));
@@ -50,15 +50,15 @@ pub async fn fal_webhook_handler(
 
   info!("FAL webhook request_id: {} (status: {:?})", request_id, webhook_payload.status);
 
-  // Step 3: Parse the inner payload.
-  let inner_payload = parse_webhook_inner_payload(&webhook_payload);
+  // Step 3: Hydrate the webhook contents.
+  let inner_payload = hydrate_webhook_contents(&webhook_payload);
 
   // Step 4 & 5: Branch on the inner payload type.
   let result = match inner_payload {
-    WebhookInnerPayload::Success(success_data) => {
+    HydratedWebhookContents::Success(success_data) => {
       handle_successful_fal_webhook(&server_state, request_id, &success_data.payload).await
     }
-    WebhookInnerPayload::Error(error_data) => {
+    HydratedWebhookContents::Error(error_data) => {
       handle_failed_fal_webhook(
         &server_state,
         request_id,
@@ -66,7 +66,7 @@ pub async fn fal_webhook_handler(
         webhook_payload.error.as_deref(),
       ).await
     }
-    WebhookInnerPayload::PayloadError(payload_error_data) => {
+    HydratedWebhookContents::PayloadError(payload_error_data) => {
       warn!(
         "FAL webhook payload_error for request_id {}: {}",
         request_id, payload_error_data.payload_error,
