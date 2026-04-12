@@ -17,6 +17,8 @@ pub async fn process_page_batch(
   orders: &[OrderStatus],
   job_by_order_id: &mut HashMap<String, PendingSeedance2ProJob>,
 ) {
+  let pending_job_count = job_by_order_id.len();
+  
   let mut batch_succeeded = 0u32;
   let mut batch_failed = 0u32;
   let mut batch_in_progress = 0u32;
@@ -64,8 +66,9 @@ pub async fn process_page_batch(
   }
 
   info!(
-    "Batch processing done: {} orders in batch, {} matched pending jobs (succeeded={}, failed={}, in_progress={}), {} pending jobs remaining",
+    "Batch processing done: {} kinovi orders in polled batch, {} pending db jobs in bach at start, {} kinovi orders matched pending jobs (orders succeeded={}, orders failed={}, orders in_progress={}), {} pending db jobs in batch remaining",
     orders.len(),
+    pending_job_count,
     batch_matched,
     batch_succeeded,
     batch_failed,
