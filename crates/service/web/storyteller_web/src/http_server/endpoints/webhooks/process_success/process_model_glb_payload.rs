@@ -1,3 +1,4 @@
+use crate::http_server::endpoints::webhooks::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use anyhow::anyhow;
@@ -10,7 +11,6 @@ use errors::AnyhowResult;
 use fal_client::webhook_api::hydrated::hydrated_webhook_contents::{ModelGlbData, ThumbnailData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
-use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use mysql_queries::queries::media_files::edit::set_media_file_cover_image::{set_media_file_cover_image, UpdateArgs};
@@ -65,23 +65,38 @@ pub async fn process_model_glb_payload(
       .as_deref()
       .ok_or_else(|| anyhow!("no `url` in model glb payload"))?;
 
-  let file_bytes = http_download_url_to_bytes(mesh_url)
+  // Download with a retry if the first attempt returns suspiciously few bytes.
+  let mut file_bytes = http_download_url_to_bytes(mesh_url)
       .await
       .map_err(|e| anyhow!("Failed to download mesh: {:?}", e))?;
-  
-  let mimetype_info = MimetypeInfo::get_for_bytes(&file_bytes)
-      .ok_or_else(|| anyhow!("Failed to get mimetype info"))?;
-  
-  let mime_type = mimetype_info.mime_type();
-  
-  info!("Mime type of mesh: {}", mime_type);
+
+  if file_bytes.len() <= 10 {
+    warn!(
+      "Downloaded only {} bytes from {} — retrying once",
+      file_bytes.len(),
+      mesh_url,
+    );
+    file_bytes = http_download_url_to_bytes(mesh_url)
+        .await
+        .map_err(|e| anyhow!("Failed to download mesh on retry: {:?}", e))?;
+  }
+
+  // Resolve mime type: magic bytes first, fal content_type as fallback.
+  let metadata = resolve_file_metadata(&file_bytes, model_glb_data.content_type.as_deref())
+      .ok_or_else(|| anyhow!(
+        "Could not determine file type for mesh (bytes: {}, fal content_type: {:?})",
+        file_bytes.len(),
+        model_glb_data.content_type,
+      ))?;
+
+  let mime_type = metadata.mime_type.as_str();
+
+  info!("Mime type of mesh: {}, source: {:?}", mime_type, metadata.source);
 
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| anyhow!("Unsupported media file type: {}", mime_type))?;
 
-  let extension_with_period = mimetype_info.file_extension()
-      .map(|ext| ext.extension_with_period())
-      .ok_or_else(|| anyhow!("Failed to get file extension from mimetype info"))?;
+  let extension_with_period = metadata.file_extension.extension_with_period();
 
   let file_size_bytes = file_bytes.len();
   let file_hash = sha256_hash_bytes(&file_bytes)?;
@@ -145,23 +160,38 @@ async fn try_to_attach_thumbnail(
       .as_deref()
       .ok_or_else(|| anyhow!("no `url` in thumbnail payload"))?;
 
-  let file_bytes = http_download_url_to_bytes(thumbnail_url)
+  // Download with a retry if the first attempt returns suspiciously few bytes.
+  let mut file_bytes = http_download_url_to_bytes(thumbnail_url)
       .await
       .map_err(|e| anyhow!("Failed to download thumbnail image: {:?}", e))?;
 
-  let mimetype_info = MimetypeInfo::get_for_bytes(&file_bytes)
-      .ok_or_else(|| anyhow!("Failed to get mimetype info"))?;
+  if file_bytes.len() <= 10 {
+    warn!(
+      "Downloaded only {} bytes from {} — retrying once",
+      file_bytes.len(),
+      thumbnail_url,
+    );
+    file_bytes = http_download_url_to_bytes(thumbnail_url)
+        .await
+        .map_err(|e| anyhow!("Failed to download thumbnail on retry: {:?}", e))?;
+  }
 
-  let mime_type = mimetype_info.mime_type();
+  // Resolve mime type: magic bytes first, fal content_type as fallback.
+  let metadata = resolve_file_metadata(&file_bytes, thumbnail_data.content_type.as_deref())
+      .ok_or_else(|| anyhow!(
+        "Could not determine file type for thumbnail (bytes: {}, fal content_type: {:?})",
+        file_bytes.len(),
+        thumbnail_data.content_type,
+      ))?;
 
-  info!("Mime type of thumbnail image: {}", mime_type);
+  let mime_type = metadata.mime_type.as_str();
+
+  info!("Mime type of thumbnail image: {}, source: {:?}", mime_type, metadata.source);
 
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| anyhow!("Unsupported media file type: {}", mime_type))?;
 
-  let extension_with_period = mimetype_info.file_extension()
-      .map(|ext| ext.extension_with_period())
-      .ok_or_else(|| anyhow!("Failed to get file extension from mimetype info"))?;
+  let extension_with_period = metadata.file_extension.extension_with_period();
 
   let file_size_bytes = file_bytes.len();
   let file_hash = sha256_hash_bytes(&file_bytes)?;

@@ -1,3 +1,4 @@
+use crate::http_server::endpoints::webhooks::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 use anyhow::anyhow;
@@ -9,8 +10,7 @@ use errors::AnyhowResult;
 use fal_client::webhook_api::hydrated::hydrated_webhook_contents::VideoData;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
-use log::{error, info};
-use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
+use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
 use std::io::Write;
@@ -30,21 +30,39 @@ pub async fn process_video_payload(
       .as_deref()
       .ok_or_else(|| anyhow!("no `url` in video payload"))?;
 
-  let file_bytes = http_download_url_to_bytes(video_url)
+  // Download with a retry if the first attempt returns suspiciously few bytes.
+  let mut file_bytes = http_download_url_to_bytes(video_url)
       .await
-      .map_err(|e| anyhow!("Failed to download image: {:?}", e))?;
-  
-  let mimetype_info = MimetypeInfo::get_for_bytes(&file_bytes)
-      .ok_or_else(|| anyhow!("Failed to get mimetype info"))?;
-  
-  let mime_type = mimetype_info.mime_type();
+      .map_err(|e| anyhow!("Failed to download video: {:?}", e))?;
+
+  if file_bytes.len() <= 10 {
+    warn!(
+      "Downloaded only {} bytes from {} — retrying once",
+      file_bytes.len(),
+      video_url,
+    );
+    file_bytes = http_download_url_to_bytes(video_url)
+        .await
+        .map_err(|e| anyhow!("Failed to download video on retry: {:?}", e))?;
+  }
+
+  // Resolve mime type: magic bytes first, fal content_type as fallback.
+  let metadata = resolve_file_metadata(&file_bytes, video_data.content_type.as_deref())
+      .ok_or_else(|| anyhow!(
+        "Could not determine file type for video (bytes: {}, fal content_type: {:?})",
+        file_bytes.len(),
+        video_data.content_type,
+      ))?;
+
+  info!("File type: {}, extension: {:?}, source: {:?}",
+    metadata.mime_type, metadata.file_extension, metadata.source);
+
+  let mime_type = metadata.mime_type.as_str();
 
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
       .ok_or_else(|| anyhow!("Unsupported media file type: {}", mime_type))?;
 
-  let extension_with_period = mimetype_info.file_extension()
-      .map(|ext| ext.extension_with_period())
-      .ok_or_else(|| anyhow!("Failed to get file extension from mimetype info"))?;
+  let extension_with_period = metadata.file_extension.extension_with_period();
 
   let file_size_bytes = file_bytes.len();
   let file_hash = sha256_hash_bytes(&file_bytes)?;

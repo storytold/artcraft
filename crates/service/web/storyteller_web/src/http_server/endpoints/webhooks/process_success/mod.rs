@@ -4,3 +4,4 @@ mod process_images_payload;
 mod process_model_glb_payload;
 mod process_model_mesh_payload;
 mod process_video_payload;
+mod resolve_file_metadata;
