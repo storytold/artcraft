@@ -7,13 +7,12 @@ use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCat
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
-use fal_client::webhook_api::hydrated::hydrated_webhook_contents::ModelGlbData;
+use fal_client::webhook_api::hydrated::hydrated_webhook_contents::{ModelGlbData, ThumbnailData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
 use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use serde_json::{Map, Value};
 use mysql_queries::queries::media_files::edit::set_media_file_cover_image::{set_media_file_cover_image, UpdateArgs};
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -58,7 +57,7 @@ const PREFIX : Option<&str> = Some("artcraft_");
 
 pub async fn process_model_glb_payload(
   model_glb_data: &ModelGlbData,
-  payload: &Map<String, Value>,
+  maybe_thumbnail_data: Option<&ThumbnailData>,
   job: &FalJobDetails,
   server_state: &ServerState,
 ) -> AnyhowResult<MediaFileToken> {
@@ -117,7 +116,7 @@ pub async fn process_model_glb_payload(
   info!("Glb media file uploaded with token: {}", media_token);
   
   let result = try_to_attach_thumbnail(
-    payload,
+    maybe_thumbnail_data,
     job,
     server_state,
     &media_token,
@@ -132,25 +131,17 @@ pub async fn process_model_glb_payload(
 }
 
 async fn try_to_attach_thumbnail(
-  payload: &Map<String, Value>,
+  maybe_thumbnail_data: Option<&ThumbnailData>,
   job: &FalJobDetails,
   server_state: &ServerState,
   glb_media_token: &MediaFileToken,
 ) -> AnyhowResult<()> {
+  let thumbnail_data = maybe_thumbnail_data
+      .ok_or_else(|| anyhow!("no thumbnail data in extracted contents"))?;
 
-  let thumbnail_value = payload.get("thumbnail")
-      .ok_or_else(|| anyhow!("no `thumbnail` key in payload"))?;
+  info!("Fal Thumbnail Data: {:?}", thumbnail_data);
 
-  info!("Fal Thumbnail Payload: {:?}", thumbnail_value);
-
-  #[derive(Deserialize)]
-  struct ThumbnailPayload {
-    url: Option<String>,
-  }
-
-  let thumbnail: ThumbnailPayload = serde_json::from_value(thumbnail_value.clone())?;
-
-  let thumbnail_url = thumbnail.url
+  let thumbnail_url = thumbnail_data.url
       .as_deref()
       .ok_or_else(|| anyhow!("no `url` in thumbnail payload"))?;
 

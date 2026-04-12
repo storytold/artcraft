@@ -42,10 +42,6 @@ pub async fn handle_successful_fal_webhook(
   let mut maybe_media_token = None;
   let mut maybe_batch_token = None;
 
-  // The raw payload is still available for processors that need arbitrary JSON
-  // access beyond the typed extracted_contents.
-  let payload = &success_data.payload;
-
   if let Some(ref extracted) = success_data.extracted_contents {
     if let Some(ref image_data) = extracted.image {
       info!("Handling image payload for request_id {} / job {:?}", request_id, job.job_token);
@@ -75,12 +71,10 @@ pub async fn handle_successful_fal_webhook(
     }
 
     if let Some(ref model_glb_data) = extracted.model_glb {
-      if let Some(payload_obj) = payload.as_object() {
-        info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
-        let token = process_model_glb_payload(model_glb_data, payload_obj, &job, server_state).await?;
-        if maybe_media_token.is_none() {
-          maybe_media_token = Some(token);
-        }
+      info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_model_glb_payload(model_glb_data, extracted.thumbnail.as_ref(), &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = Some(token);
       }
     } else if let Some(ref model_mesh_data) = extracted.model_mesh {
       info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
