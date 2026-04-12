@@ -85,7 +85,7 @@ mod tests {
 
   #[test]
   fn gpt_image_1p5_content_policy_violation() {
-    let webhook = load_test_webhook("gpt_image_1p5_fail_content_policy.json");
+    let webhook = load_test_webhook("failure/gpt_image_1p5_fail_content_policy.json");
     let result = hydrate_webhook_contents(&webhook);
 
     match result {
@@ -105,7 +105,7 @@ mod tests {
 
   #[test]
   fn gpt_image_invalid_api_key() {
-    let webhook = load_test_webhook("gpt_image_fail_invalid_api_key.json");
+    let webhook = load_test_webhook("failure/gpt_image_fail_invalid_api_key.json");
     let result = hydrate_webhook_contents(&webhook);
 
     match result {
@@ -125,7 +125,7 @@ mod tests {
 
   #[test]
   fn kling_1p6_pro_file_too_large() {
-    let webhook = load_test_webhook("kling_1p6_pro_file_too_large_error.json");
+    let webhook = load_test_webhook("failure/kling_1p6_pro_file_too_large_error.json");
     let result = hydrate_webhook_contents(&webhook);
 
     match result {
@@ -145,7 +145,7 @@ mod tests {
 
   #[test]
   fn kling_3p0_pro_content_policy_violation() {
-    let webhook = load_test_webhook("kling_3p0_pro_fail_content_policy.json");
+    let webhook = load_test_webhook("failure/kling_3p0_pro_fail_content_policy.json");
     let result = hydrate_webhook_contents(&webhook);
 
     match result {
@@ -165,7 +165,7 @@ mod tests {
 
   #[test]
   fn nano_banana_pro_no_media_generated() {
-    let webhook = load_test_webhook("nano_banana_pro_fail_no_media_generated.json");
+    let webhook = load_test_webhook("failure/nano_banana_pro_fail_no_media_generated.json");
     let result = hydrate_webhook_contents(&webhook);
 
     match result {
