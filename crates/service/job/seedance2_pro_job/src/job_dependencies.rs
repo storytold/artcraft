@@ -1,3 +1,4 @@
+use chrono::Duration;
 use cloud_storage::bucket_client::BucketClient;
 use concurrency::relaxed_atomic_bool::RelaxedAtomicBool;
 use jobs_common::job_stats::JobStats;
@@ -27,6 +28,11 @@ pub struct JobDependencies {
   /// exhausting all pages before processing. This prevents starvation
   /// when the order list is very long.
   pub maybe_pages_per_batch: Option<u32>,
+
+  /// If set, stop paginating backwards through orders once we encounter
+  /// an order older than this duration. This prevents endlessly scanning
+  /// ancient orders that will never match a pending job.
+  pub maybe_max_job_age: Option<Duration>,
 
   /// Set to `true` from another thread to trigger graceful shutdown.
   pub application_shutdown: RelaxedAtomicBool,
