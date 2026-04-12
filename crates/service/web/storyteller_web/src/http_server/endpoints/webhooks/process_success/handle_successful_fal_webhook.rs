@@ -4,7 +4,7 @@ use http_server_common::response::response_success_helpers::SimpleGenericJsonSuc
 use log::{info, warn};
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;
 use mysql_queries::queries::generic_inference::fal::mark_fal_generic_inference_job_successfully_done::{mark_fal_generic_inference_job_successfully_done, MarkJobArgs};
-
+use pager::client::pager::Pager;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::state::server_state::ServerState;
 
@@ -18,6 +18,7 @@ pub async fn handle_successful_fal_webhook(
   server_state: &ServerState,
   request_id: &str,
   success_data: &WebhookSuccessData,
+  pager: &Pager,
 ) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
 
   let db_result = get_inference_job_by_fal_id(
@@ -53,7 +54,7 @@ pub async fn handle_successful_fal_webhook(
 
     if let Some(ref images_data) = extracted.images {
       info!("Handling images payload for request_id {} / job {:?}", request_id, job.job_token);
-      let (media_token, batch_token) = process_images_payload(images_data, &job, server_state).await?;
+      let (media_token, batch_token) = process_images_payload(images_data, &job, server_state, pager).await?;
       if maybe_media_token.is_none() {
         maybe_media_token = media_token;
       }

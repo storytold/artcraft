@@ -10,10 +10,13 @@ use fal_client::webhook_api::hydrated::hydrated_webhook_contents::ImagesData;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use images::encoding::webp_bytes_to_png_bytes::webp_bytes_to_png_bytes;
 use images::image_info::image_info::ImageInfo;
-use log::{info, warn};
+use log::{error, info, warn};
 use mimetypes::mimetype_info::file_extension::FileExtension;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
+use pager::client::pager::Pager;
+use pager::notification::notification_details_builder::NotificationDetailsBuilder;
+use pager::notification::notification_urgency::NotificationUrgency;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -23,6 +26,7 @@ pub async fn process_images_payload(
   images_data: &[ImagesData],
   job: &FalJobDetails,
   server_state: &ServerState,
+  pager: &Pager,
 ) -> Result<(Option<MediaFileToken>, Option<BatchGenerationToken>), AdvancedCommonWebError> {
 
   let mut maybe_media_token = None;
@@ -35,13 +39,56 @@ pub async fn process_images_payload(
     maybe_batch_token = Some(BatchGenerationToken::generate());
   }
 
+  // NB: Fal has been failing for some images in batches of many images.
+  // Rather than fail the entire batch, let's skip the failure(s) and notify ourselves.
+  let mut success_count = 0;
+  let mut maybe_error = None;
+
   for (i, image) in images_data.iter().enumerate() {
     info!("Uploading image {} of {}: {:?}", i + 1, images_data.len(), image.url);
 
-    let media_token = upload_image(job, server_state, image, maybe_batch_token.as_ref()).await?;
+    let result = upload_image(job, server_state, image, maybe_batch_token.as_ref()).await;
+
+    let media_token = match result {
+      Ok(token) => token,
+      Err(err) => {
+        maybe_error = Some(err);
+        continue;
+      }
+    };
 
     if maybe_media_token.is_none() {
       maybe_media_token = Some(media_token); // Set the first media token
+    }
+
+    success_count += 1;
+  }
+
+  if success_count == 0 {
+    if let Some(err) = maybe_error {
+      return Err(AdvancedCommonWebError::from_error(err));
+    } else {
+      // NB: Branch should be unreachable.
+      return Err(AdvancedCommonWebError::server_error_with_message("none of the images could be processed"));
+    }
+  }
+
+  if let Some(err) = maybe_error {
+    // Even if some images were downloaded, let's still page about any failures.
+    let notification = NotificationDetailsBuilder::from_boxed_error(err.into())
+        .set_title(format!("Failure to download all images from FAL webhook: {} out of {} succeeded", success_count, images_data.len()))
+        .set_description(Some(format!(
+          "We uploaded all of the images we could and marked the job as a success, \
+          but the user may need assistance with the remaining images and/or reimbursement.\n\
+          **Internal Job Token**: {}\n\
+          **Fal ID**: {}\n",
+          job.job_token.as_str(),
+          job.external_third_party_id)))
+        .set_urgency(Some(NotificationUrgency::Medium))
+        .build();
+
+    if let Err(pager_err) = pager.enqueue_page(notification) {
+      error!("Failed to enqueue FAL webhook parse error alert: {:?}", pager_err);
     }
   }
 
@@ -84,8 +131,6 @@ async fn upload_image(
             &format!("Failed to download image on retry: {:?}", e))
         })?;
   }
-
-  info!("Resolving metadata...");
 
   // Resolve mime type: magic bytes first, fal content_type as fallback.
   let metadata = resolve_file_metadata(&file_bytes, image.content_type.as_deref())
