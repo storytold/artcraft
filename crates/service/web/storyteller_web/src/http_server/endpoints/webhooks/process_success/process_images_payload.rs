@@ -35,7 +35,9 @@ pub async fn process_images_payload(
     maybe_batch_token = Some(BatchGenerationToken::generate());
   }
 
-  for image in images_data {
+  for (i, image) in images_data.iter().enumerate() {
+    info!("Uploading image {} of {}: {:?}", i + 1, images_data.len(), image.url);
+
     let media_token = upload_image(job, server_state, image, maybe_batch_token.as_ref()).await?;
 
     if maybe_media_token.is_none() {
@@ -82,6 +84,8 @@ async fn upload_image(
             &format!("Failed to download image on retry: {:?}", e))
         })?;
   }
+
+  info!("Resolving metadata...");
 
   // Resolve mime type: magic bytes first, fal content_type as fallback.
   let metadata = resolve_file_metadata(&file_bytes, image.content_type.as_deref())

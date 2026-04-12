@@ -37,7 +37,7 @@ pub async fn process_video_payload(
       .await
       .map_err(|err| {
         warn!("Failed to download video from {}: {:?}", video_url, err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   if file_bytes.len() <= 10 {
@@ -50,7 +50,7 @@ pub async fn process_video_payload(
         .await
         .map_err(|err| {
           warn!("Failed to download video on retry from {}: {:?}", video_url, err);
-          AdvancedCommonWebError::from_anyhow_error(err)
+          AdvancedCommonWebError::from_error(err)
         })?;
   }
 

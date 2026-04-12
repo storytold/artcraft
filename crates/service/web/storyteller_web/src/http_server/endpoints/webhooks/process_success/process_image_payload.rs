@@ -35,7 +35,7 @@ pub async fn process_image_payload(
       .await
       .map_err(|err| {
         warn!("Failed to download image from {}: {:?}", image_url, err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   if file_bytes.len() <= 10 {
@@ -48,7 +48,7 @@ pub async fn process_image_payload(
         .await
         .map_err(|err| {
           warn!("Failed to download image on retry from {}: {:?}", image_url, err);
-          AdvancedCommonWebError::from_anyhow_error(err)
+          AdvancedCommonWebError::from_error(err)
         })?;
   }
 

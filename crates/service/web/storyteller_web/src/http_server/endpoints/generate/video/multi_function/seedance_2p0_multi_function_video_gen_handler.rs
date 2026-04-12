@@ -683,7 +683,7 @@ async fn upload_to_seedance2pro(
       .await
       .map_err(|err| {
         warn!("Error downloading media file from CDN: {:?}", err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        AdvancedCommonWebError::from_error(err)
       })?
       .to_vec();
 

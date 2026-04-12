@@ -33,7 +33,7 @@ pub async fn process_model_mesh_payload(
       .await
       .map_err(|err| {
         warn!("Failed to download mesh from {}: {:?}", mesh_url, err);
-        AdvancedCommonWebError::from_anyhow_error(err)
+        AdvancedCommonWebError::from_error(err)
       })?;
 
   if file_bytes.len() <= 10 {
@@ -46,7 +46,7 @@ pub async fn process_model_mesh_payload(
         .await
         .map_err(|err| {
           warn!("Failed to download mesh on retry from {}: {:?}", mesh_url, err);
-          AdvancedCommonWebError::from_anyhow_error(err)
+          AdvancedCommonWebError::from_error(err)
         })?;
   }
 
