@@ -6,6 +6,7 @@ use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::requests::poll_orders::failure_reason::FailureReason;
 use crate::requests::poll_orders::request_types::*;
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
+use chrono::{DateTime, Utc};
 use log::info;
 use wreq::Client;
 use wreq_util::Emulation;
@@ -94,6 +95,9 @@ pub struct OrderStatus {
 
   /// ISO 8601 creation timestamp (e.g. `"2026-02-19T01:20:50.398Z"`).
   pub created_at: String,
+
+  /// Parsed `created_at` as a `DateTime<Utc>`. `None` if the raw string could not be parsed.
+  pub created_at_utc: Option<DateTime<Utc>>,
 }
 
 // --- Implementation ---
@@ -176,6 +180,10 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         (None, TaskStatus::Failed) => Some(FailureReason::from_reason("(no reason)")),
         _ => None,
       };
+      let created_at_utc = DateTime::parse_from_rfc3339(&o.created_at)
+        .map(|dt| dt.with_timezone(&Utc))
+        .ok();
+
       OrderStatus {
         order_id: o.order_id,
         task_status,
@@ -187,6 +195,7 @@ pub async fn poll_orders(args: PollOrdersArgs<'_>) -> Result<PollOrdersResponse,
         }).collect(),
         fail_reason,
         created_at: o.created_at,
+        created_at_utc,
       }
     })
     .collect();
