@@ -121,23 +121,24 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
 
     // Check if the last (oldest) order in this page exceeds the max age threshold.
     // Orders are returned newest-first, so the last order is the oldest.
-    let exceeded_max_age = if let Some(ref max_age) = deps.maybe_max_job_age {
-      response.orders.last()
-        .and_then(|order| order.created_at_utc)
-        .map(|created_at| {
-          let age = Utc::now() - created_at;
-          let too_old = age > *max_age;
-          if too_old {
-            info!(
-              "Last order on page {} is {} days old (threshold: {} days). Stopping pagination.",
-              total_page_number, age.num_days(), max_age.num_days()
-            );
-          }
-          too_old
-        })
-        .unwrap_or(false)
-    } else {
-      false
+    let mut exceeded_max_age = false;
+
+    if let Some(ref max_age) = deps.maybe_max_job_age {
+      let maybe_last_order_created= response.orders
+          .iter()
+          .filter(|order| order.created_at_utc.is_some())
+          .last()
+          .and_then(|order| order.created_at_utc);
+
+      if let Some(last_order_created) = maybe_last_order_created {
+        let order_age = Utc::now() - last_order_created;
+        let too_old = order_age > *max_age;
+        if too_old {
+          info!("Last order on page {} is {} days old (threshold: {} days). Stopping pagination.",
+            total_page_number, order_age.num_days(), max_age.num_days());
+          exceeded_max_age = true;
+        }
+      }
     };
 
     batch_orders.extend(response.orders);
