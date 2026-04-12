@@ -1,7 +1,7 @@
 use serde_json::Value;
 
 use crate::webhook_api::payload::webhook_error_type::WebhookErrorType;
-use crate::webhook_api::payload::webhook_inner_payload::{ErrorData, PayloadErrorData, SuccessData, WebhookInnerPayload};
+use crate::webhook_api::payload::webhook_inner_payload::{ErrorData, ExtractedContents, PayloadErrorData, SuccessData, WebhookInnerPayload};
 use crate::webhook_api::payload::webhook_payload::{WebhookPayload, WebhookStatus};
 
 /// Parse the inner payload of a FAL webhook into one of three cases.
@@ -20,7 +20,7 @@ pub fn parse_webhook_inner_payload(webhook: &WebhookPayload) -> WebhookInnerPayl
       })
     }
     WebhookStatus::Ok => {
-      // Check for payload_error case: status=OK but no payload, has payload_error.
+      // Check for `payload_error` case: status=OK but no payload, has payload_error.
       if webhook.payload.is_none() {
         if let Some(ref payload_error) = webhook.payload_error {
           return WebhookInnerPayload::PayloadError(PayloadErrorData {
@@ -28,9 +28,22 @@ pub fn parse_webhook_inner_payload(webhook: &WebhookPayload) -> WebhookInnerPayl
           });
         }
       }
+      
+      let value = webhook.payload
+          .clone()
+          .unwrap_or(Value::Null);
+      
+      let mut extracted_contents = ExtractedContents {
+        image: None,
+        images: None,
+        video: None,
+        model_glb: None,
+        model_mesh: None,
+      };
 
       WebhookInnerPayload::Success(SuccessData {
-        payload: webhook.payload.clone().unwrap_or(Value::Null),
+        payload: value,
+        extracted_contents,
       })
     }
   }
