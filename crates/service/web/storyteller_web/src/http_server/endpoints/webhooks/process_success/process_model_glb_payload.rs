@@ -1,13 +1,12 @@
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::webhooks::process_success::resolve_file_metadata::resolve_file_metadata;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
-use anyhow::anyhow;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
-use errors::AnyhowResult;
 use fal_client::webhook_api::hydrated::hydrated_webhook_contents::{ModelGlbData, ThumbnailData};
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{info, warn};
@@ -20,7 +19,7 @@ const PREFIX : Option<&str> = Some("artcraft_");
 
 /*
   Example payload, from Hunyuan 3d 3.0,
-  
+
   {
     "model_glb": {
       "url": "https://v3b.fal.media/files/b/0a8afeff/8uc6VVLTpmVrupLqxxwOg_model.glb",
@@ -52,7 +51,7 @@ const PREFIX : Option<&str> = Some("artcraft_");
     },
     "seed": null
   }
-  
+
 */
 
 pub async fn process_model_glb_payload(
@@ -60,15 +59,21 @@ pub async fn process_model_glb_payload(
   maybe_thumbnail_data: Option<&ThumbnailData>,
   job: &FalJobDetails,
   server_state: &ServerState,
-) -> AnyhowResult<MediaFileToken> {
+) -> Result<MediaFileToken, AdvancedCommonWebError> {
   let mesh_url = model_glb_data.url
       .as_deref()
-      .ok_or_else(|| anyhow!("no `url` in model glb payload"))?;
+      .ok_or_else(|| {
+        warn!("No `url` in model glb payload");
+        AdvancedCommonWebError::server_error_with_message("no `url` in model glb payload")
+      })?;
 
   // Download with a retry if the first attempt returns suspiciously few bytes.
   let mut file_bytes = http_download_url_to_bytes(mesh_url)
       .await
-      .map_err(|e| anyhow!("Failed to download mesh: {:?}", e))?;
+      .map_err(|err| {
+        warn!("Failed to download mesh from {}: {:?}", mesh_url, err);
+        AdvancedCommonWebError::from_anyhow_error(err)
+      })?;
 
   if file_bytes.len() <= 10 {
     warn!(
@@ -78,28 +83,45 @@ pub async fn process_model_glb_payload(
     );
     file_bytes = http_download_url_to_bytes(mesh_url)
         .await
-        .map_err(|e| anyhow!("Failed to download mesh on retry: {:?}", e))?;
+        .map_err(|e| {
+          warn!("Failed to download mesh on retry from {}: {:?}", mesh_url, e);
+          AdvancedCommonWebError::server_error_with_message(
+            &format!("Failed to download mesh on retry: {:?}", e))
+        })?;
   }
 
   // Resolve mime type: magic bytes first, fal content_type as fallback.
   let metadata = resolve_file_metadata(&file_bytes, model_glb_data.content_type.as_deref())
-      .ok_or_else(|| anyhow!(
-        "Could not determine file type for mesh (bytes: {}, fal content_type: {:?})",
-        file_bytes.len(),
-        model_glb_data.content_type,
-      ))?;
+      .ok_or_else(|| {
+        warn!(
+          "Could not determine file type for mesh (bytes: {}, fal content_type: {:?})",
+          file_bytes.len(),
+          model_glb_data.content_type,
+        );
+        AdvancedCommonWebError::server_error_with_message(
+          &format!("Could not determine file type for mesh (bytes: {}, fal content_type: {:?})",
+            file_bytes.len(), model_glb_data.content_type))
+      })?;
 
   let mime_type = metadata.mime_type.as_str();
 
   info!("Mime type of mesh: {}, source: {:?}", mime_type, metadata.source);
 
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
-      .ok_or_else(|| anyhow!("Unsupported media file type: {}", mime_type))?;
+      .ok_or_else(|| {
+        warn!("Unsupported media file type: {}", mime_type);
+        AdvancedCommonWebError::server_error_with_message(
+          &format!("Unsupported media file type: {}", mime_type))
+      })?;
 
   let extension_with_period = metadata.file_extension.extension_with_period();
 
   let file_size_bytes = file_bytes.len();
-  let file_hash = sha256_hash_bytes(&file_bytes)?;
+  let file_hash = sha256_hash_bytes(&file_bytes)
+      .map_err(|e| {
+        warn!("Failed to hash mesh bytes: {:?}", e);
+        AdvancedCommonWebError::from_anyhow_error(e)
+      })?;
 
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
 
@@ -109,7 +131,11 @@ pub async fn process_model_glb_payload(
     public_upload_path.get_full_object_path_str(),
     file_bytes.as_ref(),
     &mime_type)
-      .await?;
+      .await
+      .map_err(|e| {
+        warn!("Failed to upload mesh to bucket: {:?}", e);
+        AdvancedCommonWebError::from_anyhow_error(e)
+      })?;
 
   let media_token = MediaFileInsertBuilder::new()
       .maybe_creator_user(job.maybe_creator_user_token.as_ref())
@@ -126,17 +152,21 @@ pub async fn process_model_glb_payload(
       .maybe_prompt_token(job.maybe_prompt_token.as_ref())
       .checksum_sha2(&file_hash)
       .insert_pool(&server_state.mysql_pool)
-      .await?;
-  
+      .await
+      .map_err(|e| {
+        warn!("Failed to insert glb media file record: {:?}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?;
+
   info!("Glb media file uploaded with token: {}", media_token);
-  
+
   let result = try_to_attach_thumbnail(
     maybe_thumbnail_data,
     job,
     server_state,
     &media_token,
   ).await;
-  
+
   // NB: Fail open
   if let Err(err) = result {
     warn!("Could not attach thumbnail as cover image to media file: {:?}", err);
@@ -150,20 +180,31 @@ async fn try_to_attach_thumbnail(
   job: &FalJobDetails,
   server_state: &ServerState,
   glb_media_token: &MediaFileToken,
-) -> AnyhowResult<()> {
+) -> Result<(), AdvancedCommonWebError> {
   let thumbnail_data = maybe_thumbnail_data
-      .ok_or_else(|| anyhow!("no thumbnail data in extracted contents"))?;
+      .ok_or_else(|| {
+        warn!("No thumbnail data in extracted contents");
+        AdvancedCommonWebError::server_error_with_message(
+          "no thumbnail data in extracted contents")
+      })?;
 
   info!("Fal Thumbnail Data: {:?}", thumbnail_data);
 
   let thumbnail_url = thumbnail_data.url
       .as_deref()
-      .ok_or_else(|| anyhow!("no `url` in thumbnail payload"))?;
+      .ok_or_else(|| {
+        warn!("No `url` in thumbnail payload");
+        AdvancedCommonWebError::server_error_with_message("no `url` in thumbnail payload")
+      })?;
 
   // Download with a retry if the first attempt returns suspiciously few bytes.
   let mut file_bytes = http_download_url_to_bytes(thumbnail_url)
       .await
-      .map_err(|e| anyhow!("Failed to download thumbnail image: {:?}", e))?;
+      .map_err(|e| {
+        warn!("Failed to download thumbnail image from {}: {:?}", thumbnail_url, e);
+        AdvancedCommonWebError::server_error_with_message(
+          &format!("Failed to download thumbnail image: {:?}", e))
+      })?;
 
   if file_bytes.len() <= 10 {
     warn!(
@@ -173,28 +214,45 @@ async fn try_to_attach_thumbnail(
     );
     file_bytes = http_download_url_to_bytes(thumbnail_url)
         .await
-        .map_err(|e| anyhow!("Failed to download thumbnail on retry: {:?}", e))?;
+        .map_err(|e| {
+          warn!("Failed to download thumbnail on retry from {}: {:?}", thumbnail_url, e);
+          AdvancedCommonWebError::server_error_with_message(
+            &format!("Failed to download thumbnail on retry: {:?}", e))
+        })?;
   }
 
   // Resolve mime type: magic bytes first, fal content_type as fallback.
   let metadata = resolve_file_metadata(&file_bytes, thumbnail_data.content_type.as_deref())
-      .ok_or_else(|| anyhow!(
-        "Could not determine file type for thumbnail (bytes: {}, fal content_type: {:?})",
-        file_bytes.len(),
-        thumbnail_data.content_type,
-      ))?;
+      .ok_or_else(|| {
+        warn!(
+          "Could not determine file type for thumbnail (bytes: {}, fal content_type: {:?})",
+          file_bytes.len(),
+          thumbnail_data.content_type,
+        );
+        AdvancedCommonWebError::server_error_with_message(
+          &format!("Could not determine file type for thumbnail (bytes: {}, fal content_type: {:?})",
+            file_bytes.len(), thumbnail_data.content_type))
+      })?;
 
   let mime_type = metadata.mime_type.as_str();
 
   info!("Mime type of thumbnail image: {}, source: {:?}", mime_type, metadata.source);
 
   let media_file_type = MediaFileType::try_from_mime_type(mime_type)
-      .ok_or_else(|| anyhow!("Unsupported media file type: {}", mime_type))?;
+      .ok_or_else(|| {
+        warn!("Unsupported thumbnail media file type: {}", mime_type);
+        AdvancedCommonWebError::server_error_with_message(
+          &format!("Unsupported media file type: {}", mime_type))
+      })?;
 
   let extension_with_period = metadata.file_extension.extension_with_period();
 
   let file_size_bytes = file_bytes.len();
-  let file_hash = sha256_hash_bytes(&file_bytes)?;
+  let file_hash = sha256_hash_bytes(&file_bytes)
+      .map_err(|e| {
+        warn!("Failed to hash thumbnail bytes: {:?}", e);
+        AdvancedCommonWebError::from_anyhow_error(e)
+      })?;
 
   let public_upload_path = MediaFileBucketPath::generate_new(PREFIX, Some(&extension_with_period));
 
@@ -204,7 +262,11 @@ async fn try_to_attach_thumbnail(
     public_upload_path.get_full_object_path_str(),
     file_bytes.as_ref(),
     &mime_type)
-      .await?;
+      .await
+      .map_err(|e| {
+        warn!("Failed to upload thumbnail to bucket: {:?}", e);
+        AdvancedCommonWebError::from_anyhow_error(e)
+      })?;
 
   let thumbnail_media_token = MediaFileInsertBuilder::new()
       .maybe_creator_user(job.maybe_creator_user_token.as_ref())
@@ -222,13 +284,21 @@ async fn try_to_attach_thumbnail(
       .is_intermediate_system_file(true)
       .checksum_sha2(&file_hash)
       .insert_pool(&server_state.mysql_pool)
-      .await?;
+      .await
+      .map_err(|e| {
+        warn!("Failed to insert thumbnail media file record: {:?}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?;
 
   let query_result = set_media_file_cover_image(UpdateArgs {
     media_file_token: glb_media_token,
     maybe_cover_image_media_file_token: Some(&thumbnail_media_token),
     mysql_pool: &server_state.mysql_pool,
   }).await;
+
+  if let Err(err) = query_result {
+    warn!("Failed to set cover image on media file {}: {:?}", glb_media_token, err);
+  }
 
   Ok(())
 }
