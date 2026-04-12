@@ -51,12 +51,12 @@ pub async fn fal_webhook_handler(
   info!("FAL webhook request_id: {} (status: {:?})", request_id, webhook_payload.status);
 
   // Step 3: Hydrate the webhook contents.
-  let inner_payload = hydrate_webhook_contents(&webhook_payload);
+  let hydrated_contents = hydrate_webhook_contents(&webhook_payload);
 
   // Step 4 & 5: Branch on the inner payload type.
-  let result = match inner_payload {
+  let result = match hydrated_contents {
     HydratedWebhookContents::Success(success_data) => {
-      handle_successful_fal_webhook(&server_state, request_id, &success_data.payload).await
+      handle_successful_fal_webhook(&server_state, request_id, &success_data).await
     }
     HydratedWebhookContents::Error(error_data) => {
       handle_failed_fal_webhook(

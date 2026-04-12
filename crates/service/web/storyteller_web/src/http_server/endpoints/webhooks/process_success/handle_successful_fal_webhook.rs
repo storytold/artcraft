@@ -1,9 +1,9 @@
 use actix_web::web::Json;
+use fal_client::webhook_api::hydrated::hydrated_webhook_contents::WebhookSuccessData;
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{info, warn};
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;
 use mysql_queries::queries::generic_inference::fal::mark_fal_generic_inference_job_successfully_done::{mark_fal_generic_inference_job_successfully_done, MarkJobArgs};
-use serde_json::Value;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::state::server_state::ServerState;
@@ -17,7 +17,7 @@ use super::process_video_payload::process_video_payload;
 pub async fn handle_successful_fal_webhook(
   server_state: &ServerState,
   request_id: &str,
-  payload: &Value,
+  success_data: &WebhookSuccessData,
 ) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
 
   let db_result = get_inference_job_by_fal_id(
@@ -42,25 +42,62 @@ pub async fn handle_successful_fal_webhook(
   let mut maybe_media_token = None;
   let mut maybe_batch_token = None;
 
-  if let Some(payload_obj) = payload.as_object() {
-    if payload_obj.contains_key("image") {
-      info!("Handling image payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_image_payload(payload_obj, &job, server_state).await?;
-      maybe_media_token = Some(token);
-    } else if payload_obj.contains_key("images") {
-      (maybe_media_token, maybe_batch_token) = process_images_payload(payload_obj, &job, server_state).await?;
-    } else if payload_obj.contains_key("video") {
-      info!("Handling video payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_video_payload(payload_obj, &job, server_state).await?;
-      maybe_media_token = Some(token);
-    } else if payload_obj.contains_key("model_glb") {
-      info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_model_glb_payload(payload_obj, &job, server_state).await?;
-      maybe_media_token = Some(token);
-    } else if payload_obj.contains_key("model_mesh") {
-      info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
-      let token = process_model_mesh_payload(payload_obj, &job, server_state).await?;
-      maybe_media_token = Some(token);
+  // The raw payload is still available for processors that need arbitrary JSON
+  // access beyond the typed extracted_contents.
+  let payload = &success_data.payload;
+
+  if let Some(ref extracted) = success_data.extracted_contents {
+    if let Some(ref _image_data) = extracted.image {
+      if let Some(payload_obj) = payload.as_object() {
+        info!("Handling image payload for request_id {} / job {:?}", request_id, job.job_token);
+        let token = process_image_payload(payload_obj, &job, server_state).await?;
+        if maybe_media_token.is_none() {
+          maybe_media_token = Some(token);
+        }
+      }
+    }
+
+    if let Some(ref _images_data) = extracted.images {
+      if let Some(payload_obj) = payload.as_object() {
+        info!("Handling images payload for request_id {} / job {:?}", request_id, job.job_token);
+        let (media_token, batch_token) = process_images_payload(payload_obj, &job, server_state).await?;
+        if maybe_media_token.is_none() {
+          maybe_media_token = media_token;
+        }
+        if maybe_batch_token.is_none() {
+          maybe_batch_token = batch_token;
+        }
+      }
+    }
+
+    if let Some(ref _video_data) = extracted.video {
+      if let Some(payload_obj) = payload.as_object() {
+        info!("Handling video payload for request_id {} / job {:?}", request_id, job.job_token);
+        let token = process_video_payload(payload_obj, &job, server_state).await?;
+        if maybe_media_token.is_none() {
+          maybe_media_token = Some(token);
+        }
+      }
+    }
+
+    if let Some(ref _model_glb_data) = extracted.model_glb {
+      if let Some(payload_obj) = payload.as_object() {
+        info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
+        let token = process_model_glb_payload(payload_obj, &job, server_state).await?;
+        if maybe_media_token.is_none() {
+          maybe_media_token = Some(token);
+        }
+      }
+    }
+
+    if let Some(ref _model_mesh_data) = extracted.model_mesh {
+      if let Some(payload_obj) = payload.as_object() {
+        info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
+        let token = process_model_mesh_payload(payload_obj, &job, server_state).await?;
+        if maybe_media_token.is_none() {
+          maybe_media_token = Some(token);
+        }
+      }
     }
   }
 

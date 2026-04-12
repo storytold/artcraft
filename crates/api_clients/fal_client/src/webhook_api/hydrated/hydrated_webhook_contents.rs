@@ -7,7 +7,7 @@ use crate::webhook_api::raw::webhook_error_type::WebhookErrorType;
 #[derive(Debug)]
 pub enum HydratedWebhookContents {
   /// The webhook reported success and has a payload.
-  Success(SuccessData),
+  Success(WebhookSuccessData),
 
   /// The webhook reported an error (status=ERROR) with optional detail info.
   Error(ErrorData),
@@ -20,7 +20,7 @@ pub enum HydratedWebhookContents {
 }
 
 #[derive(Debug)]
-pub struct SuccessData {
+pub struct WebhookSuccessData {
   /// The success data is polymorphic, so we're returning a JSON `Value` for now.
   /// This will allow for downstream handlers to parse the payload as needed.
   /// This is the entire raw success payload.

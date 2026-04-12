@@ -1,7 +1,7 @@
 use serde_json::Value;
 
 use crate::webhook_api::raw::webhook_error_type::WebhookErrorType;
-use crate::webhook_api::hydrated::hydrated_webhook_contents::{ErrorData, PayloadErrorData, SuccessData, HydratedWebhookContents};
+use crate::webhook_api::hydrated::hydrated_webhook_contents::{ErrorData, PayloadErrorData, WebhookSuccessData, HydratedWebhookContents};
 use crate::webhook_api::raw::raw_webhook_payload::{RawWebhookPayload, RawWebhookStatus};
 use crate::webhook_api::hydrated::success_case_extractors::extract_contents_from_payload;
 
@@ -36,7 +36,7 @@ pub fn hydrate_webhook_contents(webhook: &RawWebhookPayload) -> HydratedWebhookC
 
       let extracted_contents = extract_contents_from_payload(&value);
 
-      HydratedWebhookContents::Success(SuccessData {
+      HydratedWebhookContents::Success(WebhookSuccessData {
         payload: value,
         extracted_contents,
       })
