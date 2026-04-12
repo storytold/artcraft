@@ -11,7 +11,10 @@ pub enum WebhookInnerPayload {
   /// The webhook reported an error (status=ERROR) with optional detail info.
   Error(ErrorData),
 
-  /// The webhook reported success but had no payload and instead had a payload_error.
+  /// The webhook reported as "success" but (1) had no payload and (2) had a payload_error.
+  /// In rare instances of an "OK" response, there may be an error on Fal's end with encoding
+  /// the payload. If that happens, the "payload_error" field may be set, and this enum variant
+  /// represents that failure case.
   PayloadError(PayloadErrorData),
 }
 
