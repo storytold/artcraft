@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use serde_json::Value;
 
 use crate::webhook_api::raw::webhook_error_type::WebhookErrorType;
@@ -33,25 +34,69 @@ pub struct SuccessData {
 
 #[derive(Debug)]
 pub struct ExtractedContents {
-  /// If the `payload` is a JSON object with the key `image`,
-  /// then the data in `['payload']['image']` is represented here:
-  pub image: Option<Value>,
+  /// Parsed from `payload.image` (single image result).
+  pub image: Option<ImageData>,
 
-  /// If the `payload` is a JSON object with the key `images`,
-  /// then the data in `['payload']['images']` is represented here:
-  pub images: Option<Value>,
+  /// Parsed from `payload.images` (batch image results).
+  pub images: Option<Vec<ImagesData>>,
 
-  /// If the `payload` is a JSON object with the key `video`,
-  /// then the data in `['payload']['video']` is represented here:
-  pub video: Option<Value>,
+  /// Parsed from `payload.video`.
+  pub video: Option<VideoData>,
 
-  /// If the `payload` is a JSON object with the key `model_glb`,
-  /// then the data in `['payload']['model_glb']` is represented here:
-  pub model_glb: Option<Value>,
+  /// Parsed from `payload.model_glb`.
+  pub model_glb: Option<ModelGlbData>,
 
-  /// If the `payload` is a JSON object with the key `model_mesh`,
-  /// then the data in `['payload']['model_mesh']` is represented here:
-  pub model_mesh: Option<Value>,
+  /// Parsed from `payload.model_mesh`.
+  pub model_mesh: Option<ModelMeshData>,
+}
+
+/// Data under `payload.image`:
+#[derive(Debug, Deserialize)]
+pub struct ImageData {
+  pub url: Option<String>,
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<u64>,
+  pub height: Option<u64>,
+  pub width: Option<u64>,
+}
+
+/// Data under `payload.images` (a list of these):
+#[derive(Debug, Deserialize)]
+pub struct ImagesData {
+  pub url: Option<String>,
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<u64>,
+  pub height: Option<u64>,
+  pub width: Option<u64>,
+}
+
+/// Data under `payload.video`:
+#[derive(Debug, Deserialize)]
+pub struct VideoData {
+  pub url: Option<String>,
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<u64>,
+}
+
+/// Data under `payload.model_glb` (there may be other sibling keys too)
+#[derive(Debug, Deserialize)]
+pub struct ModelGlbData {
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<usize>,
+  pub url: Option<String>,
+}
+
+/// Data under `payload.model_mesh` (there may be other sibling keys too)
+#[derive(Debug, Deserialize)]
+pub struct ModelMeshData {
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<usize>,
+  pub url: Option<String>,
 }
 
 #[derive(Debug)]
