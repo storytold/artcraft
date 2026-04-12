@@ -6,6 +6,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
+use fal_client::webhook_api::hydrated::hydrated_webhook_contents::ImageData;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use images::encoding::webp_bytes_to_png_bytes::webp_bytes_to_png_bytes;
 use images::image_info::image_info::ImageInfo;
@@ -14,34 +15,16 @@ use mimetypes::mimetype_info::file_extension::FileExtension;
 use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use serde_json::{Map, Value};
 use tokens::tokens::media_files::MediaFileToken;
 
 const PREFIX : Option<&str> = Some("artcraft_");
 
-#[derive(Deserialize, Debug)]
-pub struct FalWebhookImage {
-  pub content_type: Option<String>,
-  pub file_name: Option<String>,
-  pub file_size: Option<usize>,
-  pub height: Option<usize>,
-  pub width: Option<usize>,
-  pub url: Option<String>,
-}
-
 pub async fn process_image_payload(
-  payload: &Map<String, Value>,
+  image_data: &ImageData,
   job: &FalJobDetails,
   server_state: &ServerState,
 ) -> AnyhowResult<MediaFileToken> {
-  let image_value = payload.get("image")
-      .ok_or_else(|| anyhow!("no `image` key in payload"))?;
-
-  info!("Fal Image Payload: {:?}", image_value);
-
-  let image: FalWebhookImage = serde_json::from_value(image_value.clone())?;
-
-  let image_url = image.url
+  let image_url = image_data.url
       .as_deref()
       .ok_or_else(|| anyhow!("no `url` in image payload"))?;
 
@@ -55,7 +38,6 @@ pub async fn process_image_payload(
 
   let mimetype_info = MimetypeInfo::get_for_bytes(&file_bytes)
       .ok_or_else(|| anyhow!("Failed to get mimetype info"))?;
-
 
   info!("File type: {}, extension: {:?}",
        mimetype_info.mime_type(),

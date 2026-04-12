@@ -7,44 +7,24 @@ use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCat
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
+use fal_client::webhook_api::hydrated::hydrated_webhook_contents::ModelMeshData;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::info;
 use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use serde_json::{Map, Value};
 use tokens::tokens::media_files::MediaFileToken;
 
 const PREFIX : Option<&str> = Some("artcraft_");
 
-#[derive(Deserialize, Debug)]
-pub struct FalWebhookModelMesh {
-  pub content_type: Option<String>,
-  pub file_name: Option<String>,
-  pub file_size: Option<usize>,
-  pub url: Option<String>,
-}
-
 pub async fn process_model_mesh_payload(
-  payload: &Map<String, Value>,
+  model_mesh_data: &ModelMeshData,
   job: &FalJobDetails,
   server_state: &ServerState,
 ) -> AnyhowResult<MediaFileToken> {
-  
-  let model_mesh_value = payload.get("model_mesh")
-      .ok_or_else(|| anyhow!("no `model_mesh` key in payload"))?;
-
-  info!("Fal Model Mesh Payload: {:?}", model_mesh_value);
-  
-  let mesh: FalWebhookModelMesh = serde_json::from_value(model_mesh_value.clone())?;
-
-  let mesh_url = mesh.url
+  let mesh_url = model_mesh_data.url
       .as_deref()
-      .ok_or_else(|| anyhow!("no `url` in image payload"))?;
-  
-  //let mime_type = mesh.content_type
-  //    .as_deref()
-  //    .ok_or_else(|| anyhow!("no `content_type` in mesh payload"))?;
+      .ok_or_else(|| anyhow!("no `url` in model mesh payload"))?;
 
   let file_bytes = http_download_url_to_bytes(mesh_url)
       .await

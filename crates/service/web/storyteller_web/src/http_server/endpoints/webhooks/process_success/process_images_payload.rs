@@ -6,6 +6,7 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
+use fal_client::webhook_api::hydrated::hydrated_webhook_contents::ImagesData;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use images::encoding::webp_bytes_to_png_bytes::webp_bytes_to_png_bytes;
 use images::image_info::image_info::ImageInfo;
@@ -14,60 +15,42 @@ use mimetypes::mimetype_info::file_extension::FileExtension;
 use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use serde_json::{Map, Value};
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 const PREFIX : Option<&str> = Some("artcraft_");
 
-#[derive(Deserialize, Debug)]
-pub struct FalWebhookImage {
-  pub content_type: Option<String>,
-  pub file_name: Option<String>,
-  pub file_size: Option<usize>,
-  pub height: Option<usize>,
-  pub width: Option<usize>,
-  pub url: Option<String>,
-}
-
 pub async fn process_images_payload(
-  payload: &Map<String, Value>,
+  images_data: &[ImagesData],
   job: &FalJobDetails,
   server_state: &ServerState,
 ) -> AnyhowResult<(Option<MediaFileToken>, Option<BatchGenerationToken>)> {
 
-  let images_value = payload.get("images")
-      .ok_or_else(|| anyhow!("no `images` key in payload"))?;
-
-  info!("Fal Images Payload: {:?}", images_value);
-  
-  let images: Vec<FalWebhookImage> = serde_json::from_value(images_value.clone())?;
-  
   let mut maybe_media_token = None;
 
   // NB: We are not going to create `batch_generations` table records. We don't need them.
   // The foreign key in `media_files` is enough to look up the rest of the batch.
   let mut maybe_batch_token = None;
 
-  if images.len() > 1 {
+  if images_data.len() > 1 {
     maybe_batch_token = Some(BatchGenerationToken::generate());
   }
 
-  for image in images {
-    let media_token = upload_image(job, server_state, &image, maybe_batch_token.as_ref()).await?;
-    
+  for image in images_data {
+    let media_token = upload_image(job, server_state, image, maybe_batch_token.as_ref()).await?;
+
     if maybe_media_token.is_none() {
       maybe_media_token = Some(media_token); // Set the first media token
     }
   }
-  
+
   Ok((maybe_media_token, maybe_batch_token))
 }
 
 async fn upload_image(
   job: &FalJobDetails,
   server_state: &ServerState,
-  image: &FalWebhookImage,
+  image: &ImagesData,
   maybe_batch_token: Option<&BatchGenerationToken>,
 ) -> AnyhowResult<MediaFileToken> {
   let image_url = image.url
@@ -123,7 +106,7 @@ async fn upload_image(
 async fn upload_image_bytes(
   job: &FalJobDetails,
   server_state: &ServerState,
-  image: &FalWebhookImage,
+  image: &ImagesData,
   file_bytes: &[u8],
   mimetype_info: MimetypeInfo,
   maybe_batch_token: Option<&BatchGenerationToken>,

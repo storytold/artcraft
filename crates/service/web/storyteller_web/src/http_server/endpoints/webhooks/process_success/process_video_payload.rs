@@ -6,13 +6,13 @@ use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use errors::AnyhowResult;
+use fal_client::webhook_api::hydrated::hydrated_webhook_contents::VideoData;
 use filesys::path_to_string::path_to_string;
 use hashing::sha256::sha256_hash_bytes::sha256_hash_bytes;
 use log::{error, info};
 use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
 use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::FalJobDetails;
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use serde_json::{Map, Value};
 use std::io::Write;
 use tempfile::NamedTempFile;
 use thumbnail_generator::task_client::thumbnail_task::{ThumbnailTaskBuilder, ThumbnailTaskInputMimeType};
@@ -21,36 +21,14 @@ use ffmpeg_utils::ffprobe::ffprobe_get_info::ffprobe_get_info;
 
 const PREFIX : Option<&str> = Some("artcraft_");
 
-#[derive(Deserialize, Debug)]
-pub struct FalWebhookVideo {
-  pub content_type: Option<String>,
-  pub file_name: Option<String>,
-  pub file_size: Option<usize>,
-  pub height: Option<usize>, // NB: Might not be on videos
-  pub width: Option<usize>, // NB: Might not be on videos
-  pub url: Option<String>,
-}
-
 pub async fn process_video_payload(
-  payload: &Map<String, Value>,
+  video_data: &VideoData,
   job: &FalJobDetails,
   server_state: &ServerState,
 ) -> AnyhowResult<MediaFileToken> {
-  
-  let video_value = payload.get("video")
-      .ok_or_else(|| anyhow!("no `image` key in payload"))?;
-
-  info!("Fal Video Payload: {:?}", video_value);
-  
-  let video: FalWebhookVideo = serde_json::from_value(video_value.clone())?;
-  
-  let video_url = video.url
+  let video_url = video_data.url
       .as_deref()
       .ok_or_else(|| anyhow!("no `url` in video payload"))?;
-  
-  //let mime_type = image.content_type
-  //    .as_deref()
-  //    .ok_or_else(|| anyhow!("no `content_type` in image payload"))?;
 
   let file_bytes = http_download_url_to_bytes(video_url)
       .await

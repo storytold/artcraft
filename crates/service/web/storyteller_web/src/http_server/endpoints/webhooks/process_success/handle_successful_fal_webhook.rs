@@ -47,56 +47,46 @@ pub async fn handle_successful_fal_webhook(
   let payload = &success_data.payload;
 
   if let Some(ref extracted) = success_data.extracted_contents {
-    if let Some(ref _image_data) = extracted.image {
-      if let Some(payload_obj) = payload.as_object() {
-        info!("Handling image payload for request_id {} / job {:?}", request_id, job.job_token);
-        let token = process_image_payload(payload_obj, &job, server_state).await?;
-        if maybe_media_token.is_none() {
-          maybe_media_token = Some(token);
-        }
+    if let Some(ref image_data) = extracted.image {
+      info!("Handling image payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_image_payload(image_data, &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = Some(token);
       }
     }
 
-    if let Some(ref _images_data) = extracted.images {
-      if let Some(payload_obj) = payload.as_object() {
-        info!("Handling images payload for request_id {} / job {:?}", request_id, job.job_token);
-        let (media_token, batch_token) = process_images_payload(payload_obj, &job, server_state).await?;
-        if maybe_media_token.is_none() {
-          maybe_media_token = media_token;
-        }
-        if maybe_batch_token.is_none() {
-          maybe_batch_token = batch_token;
-        }
+    if let Some(ref images_data) = extracted.images {
+      info!("Handling images payload for request_id {} / job {:?}", request_id, job.job_token);
+      let (media_token, batch_token) = process_images_payload(images_data, &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = media_token;
+      }
+      if maybe_batch_token.is_none() {
+        maybe_batch_token = batch_token;
       }
     }
 
-    if let Some(ref _video_data) = extracted.video {
-      if let Some(payload_obj) = payload.as_object() {
-        info!("Handling video payload for request_id {} / job {:?}", request_id, job.job_token);
-        let token = process_video_payload(payload_obj, &job, server_state).await?;
-        if maybe_media_token.is_none() {
-          maybe_media_token = Some(token);
-        }
+    if let Some(ref video_data) = extracted.video {
+      info!("Handling video payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_video_payload(video_data, &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = Some(token);
       }
     }
 
-    if let Some(ref _model_glb_data) = extracted.model_glb {
+    if let Some(ref model_glb_data) = extracted.model_glb {
       if let Some(payload_obj) = payload.as_object() {
         info!("Handling model_glb payload for request_id {} / job {:?}", request_id, job.job_token);
-        let token = process_model_glb_payload(payload_obj, &job, server_state).await?;
+        let token = process_model_glb_payload(model_glb_data, payload_obj, &job, server_state).await?;
         if maybe_media_token.is_none() {
           maybe_media_token = Some(token);
         }
       }
-    }
-
-    if let Some(ref _model_mesh_data) = extracted.model_mesh {
-      if let Some(payload_obj) = payload.as_object() {
-        info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
-        let token = process_model_mesh_payload(payload_obj, &job, server_state).await?;
-        if maybe_media_token.is_none() {
-          maybe_media_token = Some(token);
-        }
+    } else if let Some(ref model_mesh_data) = extracted.model_mesh {
+      info!("Handling model_mesh payload for request_id {} / job {:?}", request_id, job.job_token);
+      let token = process_model_mesh_payload(model_mesh_data, &job, server_state).await?;
+      if maybe_media_token.is_none() {
+        maybe_media_token = Some(token);
       }
     }
   }
