@@ -134,8 +134,8 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
         let order_age = Utc::now() - last_order_created;
         let too_old = order_age > *max_age;
         if too_old {
-          info!("Last order on page {} is {} days old (threshold: {} days). Stopping pagination.",
-            total_page_number, order_age.num_days(), max_age.num_days());
+          info!("Last order on page {} is {} hours old (threshold: {} hours). Stopping pagination.",
+            total_page_number, order_age.num_hours(), max_age.num_hours());
           exceeded_max_age = true;
         }
       }
