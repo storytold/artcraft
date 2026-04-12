@@ -48,6 +48,9 @@ pub struct ExtractedContents {
 
   /// Parsed from `payload.model_mesh`.
   pub model_mesh: Option<ModelMeshData>,
+  
+  /// Parsed from `payload.thumbnail`.
+  pub thumbnail: Option<ThumbnailData>,
 }
 
 /// Data under `payload.image`:
@@ -93,6 +96,16 @@ pub struct ModelGlbData {
 /// Data under `payload.model_mesh` (there may be other sibling keys too)
 #[derive(Debug, Deserialize)]
 pub struct ModelMeshData {
+  pub content_type: Option<String>,
+  pub file_name: Option<String>,
+  pub file_size: Option<usize>,
+  pub url: Option<String>,
+}
+
+/// Data under `payload.thumbnail` (there may be other sibling keys too)
+/// Frequently seen together with `model_glb`.
+#[derive(Debug, Deserialize)]
+pub struct ThumbnailData {
   pub content_type: Option<String>,
   pub file_name: Option<String>,
   pub file_size: Option<usize>,

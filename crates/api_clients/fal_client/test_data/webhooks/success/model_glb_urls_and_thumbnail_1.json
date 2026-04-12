@@ -1,0 +1,37 @@
+{
+  "error": null,
+  "gateway_request_id": "019d8031-ede2-7932-a18f-9b2865908c0e",
+  "payload": {
+    "model_glb": {
+      "content_type": "model/gltf-binary",
+      "file_name": "model.glb",
+      "file_size": 66284788,
+      "url": "https://v3b.fal.media/files/b/0a95eb37/f7UaAhyfcx0BAnYy0GpFM_model.glb"
+    },
+    "model_urls": {
+      "fbx": null,
+      "glb": {
+        "content_type": "model/gltf-binary",
+        "file_name": "model.glb",
+        "file_size": 66284788,
+        "url": "https://v3b.fal.media/files/b/0a95eb37/f7UaAhyfcx0BAnYy0GpFM_model.glb"
+      },
+      "obj": {
+        "content_type": "text/plain",
+        "file_name": "model.obj",
+        "file_size": 55806533,
+        "url": "https://v3b.fal.media/files/b/0a95eb38/vfrPPtdTXNEYh_ExY-adN_model.obj"
+      },
+      "usdz": null
+    },
+    "seed": null,
+    "thumbnail": {
+      "content_type": "image/png",
+      "file_name": "preview.png",
+      "file_size": 93436,
+      "url": "https://v3b.fal.media/files/b/0a95eb38/yvwGJWZV9TkWZuZvjxZNj_preview.png"
+    }
+  },
+  "request_id": "019d8031-ede2-7932-a18f-9b2865908c0e",
+  "status": "OK"
+}
