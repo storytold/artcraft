@@ -166,3 +166,77 @@ async fn upload_image_bytes(
 
   Ok(media_token)
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
+  use mimetypes::mimetype_info::mimetype_info::MimetypeInfo;
+
+  /// Diagnostic test: download real fal-hosted images and check if MimetypeInfo
+  /// can detect them. This test is #[ignore]'d because it makes real HTTP
+  /// requests.
+  #[tokio::test]
+  #[ignore]
+  async fn diagnose_fal_image_mimetype_detection() {
+    let urls = [
+      "https://v3b.fal.media/files/b/[REDACT].png",
+      "https://v3b.fal.media/files/b/[REDACT].png",
+      "https://v3b.fal.media/files/b/[REDACT].png",
+      "https://v3b.fal.media/files/b/[REDACT].png",
+    ];
+
+    for url in urls {
+      println!("\n--- Downloading: {} ---", url);
+      let bytes = http_download_url_to_bytes(url).await
+        .unwrap_or_else(|e| panic!("Failed to download {}: {:?}", url, e));
+
+      println!("  Downloaded {} bytes", bytes.len());
+
+      // Print first 32 bytes as hex for magic number inspection.
+      let head: Vec<u8> = bytes.iter().take(32).cloned().collect();
+      println!("  First 32 bytes (hex): {:02x?}", head);
+      println!("  First 16 bytes (ascii): {:?}", String::from_utf8_lossy(&head[..16.min(head.len())]));
+
+      let mimetype = MimetypeInfo::get_for_bytes(&bytes);
+      match mimetype {
+        Some(info) => {
+          println!("  Detected mime type: {}", info.mime_type());
+          println!("  Detected extension: {:?}", info.file_extension());
+        }
+        None => {
+          println!("  ERROR: MimetypeInfo::get_for_bytes returned None!");
+          println!("  This is the bug — infer could not detect the file type.");
+        }
+      }
+    }
+  }
+
+  /// Diagnostic test: download a real fal-hosted video and check mimetype.
+  #[tokio::test]
+  #[ignore]
+  async fn diagnose_fal_video_mimetype_detection() {
+    let url = "https://v3b.fal.media/files/b/[REDACT].mp4";
+
+    println!("\n--- Downloading: {} ---", url);
+    let bytes = http_download_url_to_bytes(url).await
+      .unwrap_or_else(|e| panic!("Failed to download {}: {:?}", url, e));
+
+    println!("  Downloaded {} bytes", bytes.len());
+
+    let head: Vec<u8> = bytes.iter().take(32).cloned().collect();
+    println!("  First 32 bytes (hex): {:02x?}", head);
+    println!("  First 16 bytes (ascii): {:?}", String::from_utf8_lossy(&head[..16.min(head.len())]));
+
+    let mimetype = MimetypeInfo::get_for_bytes(&bytes);
+    match mimetype {
+      Some(info) => {
+        println!("  Detected mime type: {}", info.mime_type());
+        println!("  Detected extension: {:?}", info.file_extension());
+      }
+      None => {
+        println!("  ERROR: MimetypeInfo::get_for_bytes returned None!");
+        println!("  This is the bug — infer could not detect the file type.");
+      }
+    }
+  }
+}
