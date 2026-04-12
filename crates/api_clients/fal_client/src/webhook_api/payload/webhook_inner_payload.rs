@@ -28,7 +28,7 @@ pub struct SuccessData {
   /// If there are any extracted sub-payload contents, such as "images" or "video",
   /// then they are included here. This may not be fully inclusive of future 
   /// payload types.
-  pub extracted_contents: ExtractedContents,
+  pub extracted_contents: Option<ExtractedContents>,
 }
 
 #[derive(Debug)]
