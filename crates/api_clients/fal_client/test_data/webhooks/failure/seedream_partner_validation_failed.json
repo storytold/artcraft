@@ -1,0 +1,35 @@
+{
+  "error": "Unexpected status code: 422",
+  "gateway_request_id": "019d8079-baa1-75c0-a2da-7347ee642909",
+  "payload": {
+    "detail": [
+      {
+        "ctx": {
+          "extra_info": {
+            "reason": "partner_validation_failed"
+          }
+        },
+        "input": {
+          "enable_safety_checker": false,
+          "image_size": "landscape_16_9",
+          "image_urls": [
+            "https://pub-c8a4a5bdbdb048f286b77bdf9f786ff2.r2.dev/media/w/k/5/k/8/wk5k8p47fwsw4hvgyj6gsb7nczcqeh58/snapshot_wk5k8p47fwsw4hvgyj6gsb7nczcqeh58.png"
+          ],
+          "max_images": 1,
+          "num_images": 4,
+          "prompt": "Add a giant monster in the distance",
+          "sync_mode": false
+        },
+        "loc": [
+          "body",
+          "image"
+        ],
+        "msg": "The content could not be processed because it contained material flagged by a content checker.",
+        "type": "content_policy_violation",
+        "url": "https://docs.fal.ai/errors#content_policy_violation"
+      }
+    ]
+  },
+  "request_id": "019d8079-baa1-75c0-a2da-7347ee642909",
+  "status": "ERROR"
+}

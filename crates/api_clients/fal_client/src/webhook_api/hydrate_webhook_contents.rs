@@ -225,6 +225,26 @@ mod tests {
   }
 
   #[test]
+  fn seedream_partner_validation_failed() {
+    let webhook = load_test_webhook("failure/seedream_partner_validation_failed.json");
+    let result = hydrate_webhook_contents(&webhook);
+
+    match result {
+      HydratedWebhookContents::Error(data) => {
+        assert_eq!(
+          data.error_type,
+          Some(WebhookErrorType::ContentPolicyViolation),
+        );
+        assert_eq!(
+          data.message.as_deref(),
+          Some("The content could not be processed because it contained material flagged by a content checker."),
+        );
+      }
+      other => panic!("Expected HydratedWebhookContents::Error, got {:?}", other),
+    }
+  }
+
+  #[test]
   fn error_with_no_payload() {
     let webhook = RawWebhookPayload {
       request_id: "test-789".to_string(),
