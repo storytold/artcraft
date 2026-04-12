@@ -8,6 +8,88 @@
   "app": {
     "withGlobalTauri": true,
     "windows": [
-    ]
+    ],
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      },
+      "csp": {
+        "default-src": [
+          "'self'",
+          "'unsafe-eval'",
+          "'unsafe-inline'",
+          "blob:",
+          "data:",
+          "https://*.fakeyou.com",
+          "https://*.storyteller.ai",
+          "https://www.google-analytics.com",
+          "https://www.googletagmanager.com",
+          "ipc://localhost",
+          "tauri://localhost"
+        ],
+        "connect-src": [
+          "'self'",
+          "'unsafe-eval'",
+          "'unsafe-inline'",
+          "asset:",
+          "blob:",
+          "data:",
+          "http://ipc.localhost",
+          "https://*.clarity.ms",
+          "https://*.fakeyou.com",
+          "https://*.storyteller.ai",
+          "https://asset.localhost",
+          "https://unpkg.com/detect-gpu@5.0.70/",
+          "https://www.google-analytics.com",
+          "https://www.googletagmanager.com",
+          "ipc://localhost",
+          "tauri://localhost"
+        ],
+        "font-src": "*",
+        "img-src": [
+          "",
+          "'self'",
+          "'unsafe-inline'",
+          "*",
+          "blob:",
+          "data:",
+          "https://*.fakeyou.com",
+          "https://*.storyteller.ai",
+          "ipc://localhost",
+          "tauri://localhost"
+        ],
+        "script-src": [
+          "'self'",
+          "'unsafe-eval'",
+          "'unsafe-inline'",
+          "'wasm-unsafe-eval'",
+          "asset:",
+          "blob:",
+          "data:",
+          "https://*.clarity.ms",
+          "https://*.fakeyou.com",
+          "https://*.storyteller.ai",
+          "https://*.unpkg.com",
+          "https://clarity.ms",
+          "https://unpkg.com",
+          "ipc://localhost",
+          "tauri:",
+          "tauri://localhost"
+        ],
+        "style-src": [
+          "'self'",
+          "'unsafe-eval'",
+          "'unsafe-inline'",
+          "blob:",
+          "data:",
+          "https://*.fakeyou.com",
+          "https://*.storyteller.ai",
+          "https://fonts.googleapis.com",
+          "ipc://localhost",
+          "tauri://localhost"
+        ]
+      }
+    }
   }
 }

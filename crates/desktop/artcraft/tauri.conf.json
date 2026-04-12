@@ -50,7 +50,18 @@
           "tauri://localhost"
         ],
         "font-src": "*",
-        "img-src": "* data: blob: 'unsafe-inline'",
+        "img-src": [
+          "",
+          "'self'",
+          "'unsafe-inline'",
+          "*",
+          "blob:",
+          "data:",
+          "https://*.fakeyou.com",
+          "https://*.storyteller.ai",
+          "ipc://localhost",
+          "tauri://localhost"
+        ],
         "script-src": [
           "'self'",
           "'unsafe-eval'",
