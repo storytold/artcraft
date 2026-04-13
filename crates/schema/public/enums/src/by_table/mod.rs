@@ -16,6 +16,7 @@ pub mod model_categories;
 pub mod model_weights;
 pub mod prompt_context_items;
 pub mod prompts;
+pub mod staff_audit_logs;
 pub mod tag_uses;
 pub mod trending_model_analytics;
 pub mod tts_models;
