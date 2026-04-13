@@ -1,7 +1,7 @@
 use std::collections::HashSet;
-use std::fmt;
 use std::sync::Arc;
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
@@ -10,12 +10,9 @@ use crate::http_server::endpoints::inference_job::utils::extractors::extract_liv
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_polymorphic_inference_args::extract_polymorphic_inference_args;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use actix_web_lab::extract::Query;
 use artcraft_api_defs::common::responses::job_details::{JobDetailsLipsyncRequest, JobDetailsLivePortraitRequest};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
@@ -26,7 +23,7 @@ use enums::by_table::generic_inference_jobs::frontend_failure_category::Frontend
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
-use log::error;
+use log::{error, warn};
 use mysql_queries::queries::generic_inference::web::batch_get_inference_job_status::batch_get_inference_job_status;
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use redis::Commands;
@@ -143,37 +140,6 @@ pub struct BatchResultDetailsResponse {
   pub maybe_successfully_completed_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, ToSchema)]
-pub enum BatchGetInferenceJobStatusError {
-  ServerError,
-  NotFound,
-}
-
-impl ResponseError for BatchGetInferenceJobStatusError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      BatchGetInferenceJobStatusError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      BatchGetInferenceJobStatusError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      Self::ServerError => "server error".to_string(),
-      Self::NotFound => "not found".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-// NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for BatchGetInferenceJobStatusError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Get job statuses for a batch of multiple job tokens.
 #[utoipa::path(
   get,
@@ -181,7 +147,7 @@ impl fmt::Display for BatchGetInferenceJobStatusError {
   path = "/v1/jobs/batch",
   responses(
     (status = 200, body = BatchGetInferenceJobStatusSuccessResponse),
-    (status = 500, body = BatchGetInferenceJobStatusError),
+    (status = 500),
   ),
   params(
     BatchGetInferenceJobStatusQueryParams
@@ -190,8 +156,8 @@ impl fmt::Display for BatchGetInferenceJobStatusError {
 pub async fn batch_get_inference_job_status_handler(
   http_request: HttpRequest,
   query: Query<BatchGetInferenceJobStatusQueryParams>,
-  server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<BatchGetInferenceJobStatusSuccessResponse>, BatchGetInferenceJobStatusError> {
+  server_state: web::Data<Arc<ServerState>>,
+) -> Result<Json<BatchGetInferenceJobStatusSuccessResponse>, AdvancedCommonWebError> {
 
   let tokens = query.tokens.iter()
       .map(|token| token.trim())
@@ -205,31 +171,27 @@ pub async fn batch_get_inference_job_status_handler(
   if tokens.is_empty() {
     // NB: MediaDomain doesn't matter since it's an empty list.
     return Ok(records_to_response(
-      Vec::new(), 
-      server_state.server_environment, 
+      Vec::new(),
+      server_state.server_environment,
       MediaDomain::Storyteller
     ));
   }
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
-  let maybe_records = batch_get_inference_job_status(
+  let records = batch_get_inference_job_status(
     &tokens,
     &server_state.mysql_pool
-  ).await;
-
-  let records = match maybe_records {
-    Ok(records) => records,
-    Err(err) => {
-      error!("tts job query error: {:?}", err);
-      return Err(BatchGetInferenceJobStatusError::ServerError);
-    }
-  };
+  ).await
+      .map_err(|err| {
+        warn!("Batch job query error: {:?}", err);
+        AdvancedCommonWebError::from_anyhow_error(err)
+      })?;
 
   let mut redis = server_state.redis_pool
       .get()
       .map_err(|e| {
-        error!("redis error: {:?}", e);
-        BatchGetInferenceJobStatusError::ServerError
+        warn!("Redis pool error: {:?}", e);
+        AdvancedCommonWebError::from_error(e)
       })?;
 
   // TODO(bt,2024-04-22): Look up the extra redis statuses per item.

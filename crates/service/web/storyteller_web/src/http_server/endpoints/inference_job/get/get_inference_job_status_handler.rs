@@ -1,6 +1,6 @@
-use std::fmt;
 use std::sync::Arc;
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::endpoints::inference_job::utils::estimates::estimate_job_progress::estimate_job_progress;
@@ -9,12 +9,9 @@ use crate::http_server::endpoints::inference_job::utils::extractors::extract_liv
 use crate::http_server::endpoints::inference_job::utils::extractors::extract_polymorphic_inference_args::extract_polymorphic_inference_args;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::filter_model_name::maybe_filter_model_name;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::{Json, Path};
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use artcraft_api_defs::common::responses::job_details::{JobDetailsLipsyncRequest, JobDetailsLivePortraitRequest};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
@@ -24,7 +21,7 @@ use enums::by_table::generic_inference_jobs::frontend_failure_category::Frontend
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::common::job_status_plus::JobStatusPlus;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
-use log::error;
+use log::{error, warn};
 use mysql_queries::queries::generic_inference::web::get_inference_job_status::get_inference_job_status;
 use mysql_queries::queries::generic_inference::web::job_status::GenericInferenceJobStatus;
 use redis::{Commands, RedisResult};
@@ -134,37 +131,6 @@ pub struct ResultDetailsResponse {
   pub maybe_successfully_completed_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Debug, ToSchema)]
-pub enum GetInferenceJobStatusError {
-  ServerError,
-  NotFound,
-}
-
-impl ResponseError for GetInferenceJobStatusError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetInferenceJobStatusError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetInferenceJobStatusError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      Self::ServerError => "server error".to_string(),
-      Self::NotFound => "not found".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-// NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetInferenceJobStatusError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Get the status for a single job.
 #[utoipa::path(
   get,
@@ -175,19 +141,20 @@ impl fmt::Display for GetInferenceJobStatusError {
   ),
   responses(
     (status = 200, body = GetInferenceJobStatusSuccessResponse),
-    (status = 500, body = GetInferenceJobStatusError),
+    (status = 404),
+    (status = 500),
   ),
 )]
 pub async fn get_inference_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetInferenceJobStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetInferenceJobStatusSuccessResponse>, GetInferenceJobStatusError>
-{
+  server_state: web::Data<Arc<ServerState>>,
+) -> Result<Json<GetInferenceJobStatusSuccessResponse>, AdvancedCommonWebError> {
   if path.token.as_str().trim() == "None" {
     // NB: A bunch of Python clients use our API and can fail in this manner.
     // This was a large traffic driver during the 2023-03-08 outage.
-    // Presumably it's this client: https://github.com/shards-7/fakeyou.py
-    return Err(GetInferenceJobStatusError::NotFound);
+    // Presumably, it's this client: https://github.com/shards-7/fakeyou.py
+    return Err(AdvancedCommonWebError::NotFound);
   }
 
   // NB: Since this is publicly exposed, we don't query sensitive data.
@@ -198,18 +165,18 @@ pub async fn get_inference_job_status_handler(
 
   let record = match maybe_status {
     Ok(Some(record)) => record,
-    Ok(None) => return Err(GetInferenceJobStatusError::NotFound),
+    Ok(None) => return Err(AdvancedCommonWebError::NotFound),
     Err(err) => {
-      error!("tts job query error: {:?}", err);
-      return Err(GetInferenceJobStatusError::ServerError);
+      warn!("Job query error for token {}: {:?}", path.token.as_str(), err);
+      return Err(AdvancedCommonWebError::from_anyhow_error(err));
     }
   };
 
   let mut redis = server_state.redis_pool
       .get()
       .map_err(|e| {
-        error!("redis error: {:?}", e);
-        GetInferenceJobStatusError::ServerError
+        warn!("Redis pool error: {:?}", e);
+        AdvancedCommonWebError::from_error(e)
       })?;
 
   // TODO(bt,2023-05-21): Make async.
