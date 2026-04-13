@@ -5,11 +5,11 @@ use chrono::Utc;
 use log::{error, info, warn};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_video_jobs::list_pending_seedance2pro_video_jobs;
+use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_video_jobs::{list_pending_seedance2pro_video_jobs, PendingSeedance2ProJob};
 use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, TaskStatus};
 
 use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;
-use crate::jobs::video_polling_job::process_page_batch::process_page_batch;
+use crate::jobs::video_polling_job::process_orders_batch::process_orders_batch;
 use crate::job_dependencies::JobDependencies;
 
 const POLL_ALERT_THRESHOLD: Duration = Duration::from_secs(600);
@@ -17,12 +17,18 @@ const POLL_ALERT_THRESHOLD: Duration = Duration::from_secs(600);
 pub async fn video_polling_main_loop(job_dependencies: JobDependencies) {
   while !job_dependencies.application_shutdown.get() {
     let start = Instant::now();
+
+    //
+    // Run a single polling iteration and alert if it takes too long
+    //
+
     let result = run_poll_iteration(&job_dependencies).await;
+
     let elapsed = start.elapsed();
 
     if let Err(err) = result {
       error!("Error in poll iteration: {:?}", err);
-      let _ = alert_pager_and_return_err::<()>(&job_dependencies.pager, "Seedance2Pro poll iteration error", err, None);
+      let _ = alert_pager_and_return_err::<()>(&job_dependencies.pager, "Kinovi poll iteration error", err, None);
       let _ = job_dependencies.job_stats.increment_failure_count();
     }
 
@@ -30,7 +36,7 @@ pub async fn video_polling_main_loop(job_dependencies: JobDependencies) {
       warn!("Poll iteration took {:.1}s (threshold: {}s)", elapsed.as_secs_f64(), POLL_ALERT_THRESHOLD.as_secs());
 
       let notification = NotificationDetailsBuilder::from_title(
-            "Seedance2Pro poll iteration slow".to_string())
+            "Kinovi poll iteration slow".to_string())
           .set_description(Some(format!(
             "Poll iteration took {:.1} seconds, exceeding the 10-minute threshold.",
             elapsed.as_secs_f64(),
@@ -46,36 +52,64 @@ pub async fn video_polling_main_loop(job_dependencies: JobDependencies) {
     tokio::time::sleep(Duration::from_millis(job_dependencies.poll_interval_millis)).await;
   }
 
-  warn!("Seedance2Pro job runner main loop is shut down.");
+  warn!("Kinovi job runner main loop is shut down.");
 }
 
 async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
-  // 1. Query all non-terminal Seedance2Pro jobs from DB.
+  // 1. Query all (limit 25,000) non-terminal Seedance2Pro jobs from DB.
+  //    This is all non-(complete_success, complete_failure) jobs.
   let pending_jobs = match list_pending_seedance2pro_video_jobs(&deps.mysql_pool).await {
     Ok(jobs) => jobs,
     Err(err) => {
-      error!("Failed to list pending seedance2pro jobs: {:?}", err);
-      return alert_pager_and_return_err(&deps.pager, "Seedance2Pro DB query failed", err.into(), None);
+      error!("Failed to list pending database jobs: {:?}", err);
+      return alert_pager_and_return_err(&deps.pager, "Jobs DB query failed", err.into(), None);
     }
   };
 
+  let total_pending_jobs = pending_jobs.len();
+
   if pending_jobs.is_empty() {
-    info!("No pending Seedance2Pro jobs.");
+    info!("No pending database jobs found in the database.");
     return Ok(());
   }
 
-  info!("Found {} pending Seedance2Pro job(s).", pending_jobs.len());
+  info!("Found {} pending database job(s).", pending_jobs.len());
+
+  let result = website_polling_loop(&deps, pending_jobs).await?;
+
+  info!(
+    "Database + Kinovi poll iteration complete: \
+    {} total database jobs, \
+    {} total Kinovi pages, \
+    {} total Kinovi orders seen.",
+    total_pending_jobs,
+    result.total_pages_seen,
+    result.total_orders_seen
+  );
+
+  Ok(())
+}
+
+struct WebsitePollingResult {
+  total_pages_seen: u32,
+  total_orders_seen: u32,
+}
+
+async fn website_polling_loop(
+  deps: &&JobDependencies,
+  pending_jobs: Vec<PendingSeedance2ProJob>
+) -> anyhow::Result<WebsitePollingResult> {
 
   // Build a lookup: order_id -> job. This is mutated as batches are processed
   // so that each order is handled at most once.
   let mut job_by_order_id: HashMap<String, _> = pending_jobs
-    .into_iter()
-    .map(|job| (job.order_id.clone(), job))
-    .collect();
+      .into_iter()
+      .map(|job| (job.order_id.clone(), job))
+      .collect();
 
-  // 2. Poll orders from seedance2pro API, optionally processing in chunks.
+  // 2. Poll orders from Kinovi API, optionally processing in chunks.
   let mut cursor: Option<u64> = None;
-  let mut total_page_number: u32 = 0;
+  let mut total_pages_seen: u32 = 0;
   let mut total_orders_seen: u32 = 0;
 
   // Accumulates orders for the current batch (when chunking is enabled)
@@ -89,12 +123,9 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
       break;
     }
 
-    total_page_number += 1;
-    pages_in_current_batch += 1;
-
     info!(
-      "Beginning request for page {}... (cursor={:?}, total_orders_so_far={})",
-      total_page_number, cursor, total_orders_seen
+      "Beginning request for Kinovi page {}... (cursor: {:?}, total orders seen thus far: {})",
+      total_pages_seen, cursor, total_orders_seen
     );
 
     let response = match poll_orders(PollOrdersArgs {
@@ -104,27 +135,31 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
     }).await {
       Ok(r) => r,
       Err(err) => {
-        warn!("Error polling seedance2pro orders: {:?}", err);
+        warn!("Error polling Kinovi orders: {:?}", err);
         return alert_pager_and_return_err(
           &deps.pager,
-          "Seedance2Pro API poll failed",
+          "Kinovi API polling failed",
           anyhow::anyhow!("poll_orders failed: {:?}", err),
           None,
         );
       }
     };
 
-    let page_count = response.orders.len() as u32;
-    info!("Done polling page {}. Got {} orders on this page.", total_page_number, page_count);
+    let page_orders_count = response.orders.len() as u32;
 
-    total_orders_seen += page_count;
+    total_pages_seen += 1;
+    total_orders_seen += page_orders_count;
+
+    pages_in_current_batch += 1;
+
+    info!("Done polling page {}. Got {} orders on this page.", total_pages_seen, page_orders_count);
 
     // Check if the last (oldest) order in this page exceeds the max age threshold.
     // Orders are returned newest-first, so the last order is the oldest.
     let mut exceeded_max_age = false;
 
     if let Some(ref max_age) = deps.maybe_max_job_age {
-      let maybe_last_order_created= response.orders
+      let maybe_last_order_created = response.orders
           .iter()
           .filter(|order| order.created_at_utc.is_some())
           .last()
@@ -134,8 +169,13 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
         let order_age = Utc::now() - last_order_created;
         let too_old = order_age > *max_age;
         if too_old {
-          info!("Last order on page {} is {} hours old (threshold: {} hours). Stopping pagination.",
-            total_page_number, order_age.num_hours(), max_age.num_hours());
+          info!(
+            "Last order on Kinovi order page {} is {} hours old \
+            (staleness threshold: {} hours). Stopping Kinovi pagination.",
+            total_pages_seen,
+            order_age.num_hours(),
+            max_age.num_hours()
+          );
           exceeded_max_age = true;
         }
       }
@@ -144,25 +184,27 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
     batch_orders.extend(response.orders);
 
     cursor = response.next_cursor;
+
     let reached_end = cursor.is_none() || exceeded_max_age;
 
-    // Determine if we should process the current batch now.
-    let should_process_batch = reached_end
-      || deps.maybe_pages_per_batch
-        .map(|limit| pages_in_current_batch >= limit)
+    let batch_is_full = deps.maybe_pages_per_batch
+        .map(|batch_page_limit| pages_in_current_batch >= batch_page_limit)
         .unwrap_or(false);
 
-    if should_process_batch && !batch_orders.is_empty() {
+    // Determine if we should process the current batch now.
+    let should_process_batch_now = reached_end || batch_is_full;
+
+    if should_process_batch_now && !batch_orders.is_empty() {
       log_batch_summary(&batch_orders, pages_in_current_batch);
 
-      process_page_batch(deps, &batch_orders, &mut job_by_order_id).await;
+      process_orders_batch(deps, &batch_orders, &mut job_by_order_id).await;
 
       batch_orders.clear();
       pages_in_current_batch = 0;
 
       // If all pending jobs have been matched, no need to keep paging.
       if job_by_order_id.is_empty() {
-        info!("All pending jobs have been matched. Stopping pagination early.");
+        info!("All pending database jobs have been matched to Kinovi orders and processed. Stopping pagination early.");
         break;
       }
     }
@@ -172,12 +214,10 @@ async fn run_poll_iteration(deps: &JobDependencies) -> anyhow::Result<()> {
     }
   }
 
-  info!(
-    "Poll iteration complete: {} total pages, {} total orders seen.",
-    total_page_number, total_orders_seen
-  );
-
-  Ok(())
+  Ok(WebsitePollingResult {
+    total_pages_seen,
+    total_orders_seen
+  })
 }
 
 fn log_batch_summary(orders: &[OrderStatus], pages_in_batch: u32) {
@@ -196,7 +236,7 @@ fn log_batch_summary(orders: &[OrderStatus], pages_in_batch: u32) {
   }
 
   info!(
-    "Processing batch of {} pages, {} orders (succeeded={}, failed={}, in_progress={}, unknown={})",
+    "Processing batch of {} Kinovi order pages, {} total orders (succeeded={}, failed={}, in_progress={}, unknown={})",
     pages_in_batch, orders.len(), succeeded, failed, in_progress, unknown
   );
 }

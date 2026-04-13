@@ -15,7 +15,7 @@ use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 pub struct PendingSeedance2ProJob {
   pub job_token: InferenceJobToken,
 
-  /// The external order_id from seedance2-pro.com.
+  /// Database column `maybe_external_third_party_id` is Kinovi's `order_id`.
   pub order_id: String,
 
   pub maybe_creator_user_token: Option<UserToken>,

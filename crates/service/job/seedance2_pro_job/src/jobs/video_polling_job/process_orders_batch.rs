@@ -12,7 +12,7 @@ use crate::jobs::video_polling_job::process_job::process_successful_job::process
 ///
 /// Removes matched order_ids from `job_by_order_id` so they are not
 /// processed again in subsequent batches.
-pub async fn process_page_batch(
+pub async fn process_orders_batch(
   deps: &JobDependencies,
   orders: &[OrderStatus],
   job_by_order_id: &mut HashMap<String, PendingSeedance2ProJob>,
