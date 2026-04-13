@@ -152,7 +152,7 @@ async fn website_polling_loop(
 
     pages_in_current_batch += 1;
 
-    info!("Done polling page {}. Got {} orders on this page.", total_pages_seen, page_orders_count);
+    info!("Done polling Kinovi orders page {}. Got {} orders on this page.", total_pages_seen, page_orders_count);
 
     // Check if the last (oldest) order in this page exceeds the max age threshold.
     // Orders are returned newest-first, so the last order is the oldest.
@@ -195,9 +195,12 @@ async fn website_polling_loop(
     let should_process_batch_now = reached_end || batch_is_full;
 
     if should_process_batch_now && !batch_orders.is_empty() {
-      log_batch_summary(&batch_orders, pages_in_current_batch);
-
-      process_orders_batch(deps, &batch_orders, &mut job_by_order_id).await;
+      process_orders_batch(
+        deps,
+        &batch_orders,
+        &mut job_by_order_id,
+        pages_in_current_batch
+      ).await;
 
       batch_orders.clear();
       pages_in_current_batch = 0;
@@ -220,23 +223,3 @@ async fn website_polling_loop(
   })
 }
 
-fn log_batch_summary(orders: &[OrderStatus], pages_in_batch: u32) {
-  let mut succeeded = 0u32;
-  let mut failed = 0u32;
-  let mut in_progress = 0u32;
-  let mut unknown = 0u32;
-
-  for order in orders {
-    match &order.task_status {
-      TaskStatus::Completed => succeeded += 1,
-      TaskStatus::Failed => failed += 1,
-      TaskStatus::Pending | TaskStatus::Processing => in_progress += 1,
-      TaskStatus::Unknown(_) => unknown += 1,
-    }
-  }
-
-  info!(
-    "Processing batch of {} Kinovi order pages, {} total orders (succeeded={}, failed={}, in_progress={}, unknown={})",
-    pages_in_batch, orders.len(), succeeded, failed, in_progress, unknown
-  );
-}
