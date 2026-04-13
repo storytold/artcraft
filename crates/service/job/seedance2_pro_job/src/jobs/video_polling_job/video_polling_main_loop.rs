@@ -12,7 +12,7 @@ use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;
 use crate::jobs::video_polling_job::process_orders_batch::process_orders_batch;
 use crate::job_dependencies::JobDependencies;
 
-const POLL_ALERT_THRESHOLD: Duration = Duration::from_secs(600);
+const POLL_ALERT_THRESHOLD: Duration = Duration::from_mins(6);
 
 pub async fn video_polling_main_loop(job_dependencies: JobDependencies) {
   while !job_dependencies.application_shutdown.get() {
