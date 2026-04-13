@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
-use actix_web::web::{Path, Query};
+use actix_web::web::{Json, Path, Query};
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
@@ -22,6 +20,7 @@ use mysql_queries::queries::media_files::list::list_media_files_for_user::{list_
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -32,7 +31,6 @@ use crate::http_server::endpoints::media_files::helpers::get_scoped_engine_categ
 use crate::http_server::endpoints::media_files::helpers::get_scoped_media_classes::get_scoped_media_classes;
 use crate::http_server::endpoints::media_files::helpers::get_scoped_media_types::get_scoped_media_types;
 use crate::http_server::web_utils::bucket_urls::bucket_url_string_from_media_path::bucket_url_string_from_media_path;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 use crate::util::allowed_studio_access::allowed_studio_access;
 
@@ -175,33 +173,6 @@ pub struct MediaFileForUserListItem {
   pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, ToSchema)]
-pub enum ListMediaFilesForUserError {
-  ServerError,
-}
-
-impl ResponseError for ListMediaFilesForUserError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListMediaFilesForUserError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListMediaFilesForUserError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-impl std::fmt::Display for ListMediaFilesForUserError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// List all of a user's media files (paginated).
 ///
 /// This endpoint uses the session to automatically show all files for the given user, but only
@@ -215,7 +186,7 @@ impl std::fmt::Display for ListMediaFilesForUserError {
   ),
   responses(
     (status = 200, description = "List Featured Media Files", body = ListMediaFilesForUserSuccessResponse),
-    (status = 500, description = "Server error", body = ListMediaFilesForUserError),
+    (status = 500, description = "Server error"),
   ),
 )]
 pub async fn list_media_files_for_user_handler(
@@ -223,16 +194,12 @@ pub async fn list_media_files_for_user_handler(
   path: Path<ListMediaFilesForUserPathInfo>,
   query: Query<ListMediaFilesForUserQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListMediaFilesForUserError>
+) -> Result<Json<ListMediaFilesForUserSuccessResponse>, AdvancedCommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        ListMediaFilesForUserError::ServerError
-      })?;
+      .await?;
 
   let mut is_author = false;
   let mut is_mod = false;
@@ -287,7 +254,7 @@ pub async fn list_media_files_for_user_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("Query error: {:?}", e);
-      return Err(ListMediaFilesForUserError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(e));
     }
   };
 
@@ -372,19 +339,12 @@ pub async fn list_media_files_for_user_handler(
       })
       .collect::<Vec<_>>();
 
-  let response = ListMediaFilesForUserSuccessResponse {
+  Ok(Json(ListMediaFilesForUserSuccessResponse {
     success: true,
     results,
-    pagination: PaginationPage{
+    pagination: PaginationPage {
       current: results_page.current_page,
       total_page_count: results_page.total_page_count,
     }
-  };
-
-  let body = serde_json::to_string(&response)
-      .map_err(|e| ListMediaFilesForUserError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  }))
 }

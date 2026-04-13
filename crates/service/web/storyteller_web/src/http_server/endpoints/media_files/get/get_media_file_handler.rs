@@ -1,6 +1,6 @@
-use std::fmt;
 use std::sync::Arc;
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_domain::MediaDomain;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
@@ -10,12 +10,9 @@ use crate::http_server::endpoints::media_files::common_responses::live_portrait:
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::bucket_urls::bucket_url_from_media_path::bucket_url_from_media_path;
 use crate::http_server::web_utils::bucket_urls::bucket_url_from_str_path::bucket_url_from_str_path;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::{Json, Path};
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
@@ -202,37 +199,6 @@ pub struct GetMediaFileModelInfo {
   pub maybe_weight_creator: Option<UserDetailsLight>,
 }
 
-#[derive(Debug, ToSchema)]
-pub enum GetMediaFileError {
-  ServerError,
-  NotFound,
-}
-
-impl ResponseError for GetMediaFileError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      GetMediaFileError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      GetMediaFileError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      GetMediaFileError::ServerError => "server error".to_string(),
-      GetMediaFileError::NotFound => "not found".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-// NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for GetMediaFileError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// Get a single media file by token.
 #[utoipa::path(
   get,
@@ -240,8 +206,8 @@ impl fmt::Display for GetMediaFileError {
   path = "/v1/media_files/file/{token}",
   responses(
     (status = 200, description = "Found", body = GetMediaFileSuccessResponse),
-    (status = 404, description = "Not found", body = GetMediaFileError),
-    (status = 500, description = "Server error", body = GetMediaFileError),
+    (status = 404, description = "Not found"),
+    (status = 500, description = "Server error"),
   ),
   params(
     ("path" = GetMediaFilePathInfo, description = "Path for Request")
@@ -251,17 +217,13 @@ pub async fn get_media_file_handler(
   http_request: HttpRequest,
   path: Path<GetMediaFilePathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<GetMediaFileSuccessResponse>, GetMediaFileError> {
+) -> Result<Json<GetMediaFileSuccessResponse>, AdvancedCommonWebError> {
   let media_file_token = path.into_inner().token;
 
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        GetMediaFileError::ServerError
-      })?;
+      .await?;
 
   let mut show_deleted_results = false;
   let mut is_moderator = false;
@@ -305,7 +267,7 @@ async fn modern_media_file_lookup(
   show_deleted_results: bool,
   server_state: &ServerState,
   media_domain: MediaDomain,
-) -> Result<GetMediaFileSuccessResponse, GetMediaFileError> {
+) -> Result<GetMediaFileSuccessResponse, AdvancedCommonWebError> {
 
   let is_mod = show_deleted_results;
 
@@ -318,9 +280,9 @@ async fn modern_media_file_lookup(
   let result = match result {
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(GetMediaFileError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(GetMediaFileError::NotFound),
+    Ok(None) => return Err(AdvancedCommonWebError::NotFound),
     Ok(Some(result)) => result,
   };
 
@@ -368,7 +330,7 @@ async fn modern_media_file_lookup(
       public_bucket_url: bucket_url_from_media_path(&public_bucket_path, media_domain, server_state.server_environment)
           .map_err(|err| {
             warn!("error creating URL: {:?}", err);
-            GetMediaFileError::ServerError
+            AdvancedCommonWebError::from_anyhow_error(err)
           })?,
       public_bucket_path: public_bucket_path
           .get_full_object_path_str()
@@ -453,7 +415,7 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
   show_deleted_results: bool,
   server_state: &ServerState,
   media_domain: MediaDomain,
-) -> Result<GetMediaFileSuccessResponse, GetMediaFileError> {
+) -> Result<GetMediaFileSuccessResponse, AdvancedCommonWebError> {
 
   let result = select_tts_result_by_token(
     &media_file_token.as_str(),
@@ -464,9 +426,9 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
   let result = match result {
     Err(e) => {
       warn!("query error (legacy TTS): {:?}", e);
-      return Err(GetMediaFileError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(e));
     }
-    Ok(None) => return Err(GetMediaFileError::NotFound),
+    Ok(None) => return Err(AdvancedCommonWebError::NotFound),
     Ok(Some(result)) => result,
   };
 
@@ -506,7 +468,7 @@ async fn emulate_media_file_with_legacy_tts_result_lookup(
       public_bucket_url: bucket_url_from_str_path(&public_bucket_path, media_domain, server_state.server_environment)
           .map_err(|err| {
             warn!("error creating URL: {:?}", err);
-            GetMediaFileError::ServerError
+            AdvancedCommonWebError::from_anyhow_error(err)
           })?,
       public_bucket_path,
       cover_image: MediaFileCoverImageDetails::from_legacy_token_str(&result.tts_result_token),

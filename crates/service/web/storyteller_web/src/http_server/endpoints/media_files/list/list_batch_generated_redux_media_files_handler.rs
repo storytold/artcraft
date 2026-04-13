@@ -1,19 +1,14 @@
-use std::collections::HashSet;
-use std::fmt;
 use std::sync::Arc;
 
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details_builder::MediaFileCoverImageDetailsBuilder;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::user_details_lite_builder::UserDetailsLightBuilder;
 use crate::http_server::endpoints::media_files::get::get_media_file_handler::GetMediaFilePathInfo;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::{Json, Path};
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use actix_web_lab::extract::Query;
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use artcraft_api_defs::common::responses::simple_entity_stats::SimpleEntityStats;
@@ -45,7 +40,7 @@ pub async fn list_batch_generated_redux_media_files_handler(
   http_request: HttpRequest,
   path: Path<ListBatchGeneratedReduxMediaFilesPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<ListBatchGeneratedReduxMediaFilesSuccessResponse>, CommonWebError> {
+) -> Result<Json<ListBatchGeneratedReduxMediaFilesSuccessResponse>, AdvancedCommonWebError> {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await?;
@@ -53,11 +48,7 @@ pub async fn list_batch_generated_redux_media_files_handler(
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session_from_connection(&http_request, &mut mysql_connection)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        CommonWebError::ServerError
-      })?;
+      .await?;
 
   let mut show_deleted_results = false;
   let mut is_moderator = false;
@@ -83,7 +74,7 @@ pub async fn list_batch_generated_redux_media_files_handler(
     Ok(batch) => batch.media_files,
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(CommonWebError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(e));
     }
   };
 

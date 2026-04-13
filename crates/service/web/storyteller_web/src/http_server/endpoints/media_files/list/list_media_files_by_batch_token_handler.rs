@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::{Json, Path, Query};
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
@@ -23,6 +21,7 @@ use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -30,7 +29,6 @@ use crate::http_server::common_responses::pagination_page::PaginationPage;
 use crate::http_server::common_responses::simple_entity_stats::SimpleEntityStats;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::bucket_urls::bucket_url_string_from_media_path::bucket_url_string_from_media_path;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 use crate::util::allowed_studio_access::allowed_studio_access;
 
@@ -140,33 +138,6 @@ pub struct MediaFilesByBatchListItem {
   pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, ToSchema)]
-pub enum ListMediaFilesByBatchError {
-  ServerError,
-}
-
-impl ResponseError for ListMediaFilesByBatchError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListMediaFilesByBatchError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListMediaFilesByBatchError::ServerError => "server error".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-impl std::fmt::Display for ListMediaFilesByBatchError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// List media files that were generated together in a "batch", e.g. stable diffusion outputs.
 ///
 /// This uses a special "batch token" that these jobs return. Media files created together will also
@@ -180,7 +151,7 @@ impl std::fmt::Display for ListMediaFilesByBatchError {
   ),
   responses(
     (status = 200, description = "List Media Files by Batch", body = ListMediaFilesByBatchSuccessResponse),
-    (status = 500, description = "Server error", body = ListMediaFilesByBatchError),
+    (status = 500, description = "Server error"),
   ),
 )]
 pub async fn list_media_files_by_batch_token_handler(
@@ -188,16 +159,12 @@ pub async fn list_media_files_by_batch_token_handler(
   path: Path<ListMediaFilesByBatchPathInfo>,
   query: Query<ListMediaFilesByBatchQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<ListMediaFilesByBatchSuccessResponse>, ListMediaFilesByBatchError>
+) -> Result<Json<ListMediaFilesByBatchSuccessResponse>, AdvancedCommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        ListMediaFilesByBatchError::ServerError
-      })?;
+      .await?;
 
   // NB: Temporary rollout flag for certain file types (BVH, etc).
   let mut is_allowed_studio_access = allowed_studio_access(
@@ -226,7 +193,7 @@ pub async fn list_media_files_by_batch_token_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("Query error: {:?}", e);
-      return Err(ListMediaFilesByBatchError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(e));
     }
   };
 

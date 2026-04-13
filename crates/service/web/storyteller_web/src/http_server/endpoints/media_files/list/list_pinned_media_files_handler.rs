@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::web::Json;
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use chrono::{DateTime, Utc};
@@ -20,6 +19,7 @@ use redis::Commands;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::ToSchema;
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -122,27 +122,6 @@ pub struct PinnedMediaFile {
 /// The key we store pinned media file tokens under
 const REDIS_KEY : &str = "pinned_media_files_list";
 
-#[derive(Debug, ToSchema)]
-pub enum ListPinnedMediaFilesError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl std::fmt::Display for ListPinnedMediaFilesError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
-impl ResponseError for ListPinnedMediaFilesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListPinnedMediaFilesError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      ListPinnedMediaFilesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-}
-
 /// List media files that were pinned by the staff (paginated).
 #[utoipa::path(
   get,
@@ -150,25 +129,25 @@ impl ResponseError for ListPinnedMediaFilesError {
   path = "/v1/media_files/list_pinned",
   responses(
     (status = 200, description = "List Featured Media Files", body = ListPinnedMediaFilesSuccessResponse),
-    (status = 401, description = "Not authorized", body = ListPinnedMediaFilesError),
-    (status = 500, description = "Server error", body = ListPinnedMediaFilesError),
+    (status = 401, description = "Not authorized"),
+    (status = 500, description = "Server error"),
   ),
 )]
 pub async fn list_pinned_media_files_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, impl ResponseError> {
+) -> Result<Json<ListPinnedMediaFilesSuccessResponse>, AdvancedCommonWebError> {
 
   let mut redis = server_state.redis_pool.get()
       .map_err(|err| {
         error!("Could not obtain redis: {err}");
-        ListPinnedMediaFilesError::ServerError
+        AdvancedCommonWebError::server_error_with_message("pinned media files error")
       })?;
 
   let token_list : Option<String> = redis.get(REDIS_KEY)
       .map_err(|err| {
         error!("Could not get redis result: {err}");
-        ListPinnedMediaFilesError::ServerError
+        AdvancedCommonWebError::server_error_with_message("pinned media files error")
       })?;
 
   let media_file_tokens = token_list
@@ -192,14 +171,14 @@ pub async fn list_pinned_media_files_handler(
       Ok(media_files) => media_files,
       Err(e) => {
         warn!("Query error: {:?}", e);
-        return Err(ListPinnedMediaFilesError::ServerError);
+        return Err(AdvancedCommonWebError::from_anyhow_error(e));
       }
     };
   }
 
   let media_domain = get_media_domain(&http_request);
 
-  let response = ListPinnedMediaFilesSuccessResponse {
+  Ok(Json(ListPinnedMediaFilesSuccessResponse {
     success: true,
     results: media_files.into_iter()
         .map(|m| {
@@ -265,12 +244,5 @@ pub async fn list_pinned_media_files_handler(
             updated_at: m.updated_at,
           }
         }).collect::<Vec<_>>(),
-  };
-
-  let body = serde_json::to_string(&response)
-      .map_err(|e| ListPinnedMediaFilesError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  }))
 }

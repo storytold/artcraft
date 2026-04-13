@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
-use actix_web::web::Query;
+use actix_web::web::{Json, Query};
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
@@ -11,17 +9,18 @@ use enums::by_table::media_files::media_file_animation_type::MediaFileAnimationT
 use enums::by_table::media_files::media_file_class::MediaFileClass;
 use enums::by_table::media_files::media_file_engine_category::MediaFileEngineCategory;
 use enums::by_table::media_files::media_file_origin_category::MediaFileOriginCategory;
+use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use enums::by_table::media_files::media_file_origin_product_category::MediaFileOriginProductCategory;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::common::view_as::ViewAs;
 use enums::common::visibility::Visibility;
 use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
-use enums::by_table::media_files::media_file_origin_model_type::MediaFileOriginModelType;
 use log::warn;
 use mysql_queries::queries::media_files::list::list_media_files::{list_media_files, ListMediaFilesArgs};
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -33,7 +32,6 @@ use crate::http_server::endpoints::media_files::helpers::get_scoped_engine_categ
 use crate::http_server::endpoints::media_files::helpers::get_scoped_media_classes::get_scoped_media_classes;
 use crate::http_server::endpoints::media_files::helpers::get_scoped_media_types::get_scoped_media_types;
 use crate::http_server::web_utils::bucket_urls::bucket_url_string_from_media_path::bucket_url_string_from_media_path;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 use crate::util::allowed_explore_media_access::allowed_explore_media_access;
 
@@ -174,36 +172,6 @@ pub struct MediaFileListItem {
   pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, ToSchema)]
-pub enum ListMediaFilesError {
-  ServerError,
-  NotAuthorized,
-}
-
-impl ResponseError for ListMediaFilesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListMediaFilesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      ListMediaFilesError::NotAuthorized => StatusCode::UNAUTHORIZED,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      ListMediaFilesError::ServerError => "server error".to_string(),
-      ListMediaFilesError::NotAuthorized => "not authorized".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-impl std::fmt::Display for ListMediaFilesError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 /// List all media files in the system globally, across all users (paginated).
 ///
 /// This powers "explore files" page.
@@ -214,29 +182,26 @@ impl std::fmt::Display for ListMediaFilesError {
   params(ListMediaFilesQueryParams),
   responses(
     (status = 200, description = "List Featured Media Files", body = ListMediaFilesSuccessResponse),
-    (status = 500, description = "Server error", body = ListMediaFilesError),
+    (status = 401, description = "Not authorized"),
+    (status = 500, description = "Server error"),
   ),
 )]
 pub async fn list_media_files_handler(
     http_request: HttpRequest,
     query: Query<ListMediaFilesQueryParams>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListMediaFilesError>
+) -> Result<Json<ListMediaFilesSuccessResponse>, AdvancedCommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        ListMediaFilesError::ServerError
-      })?;
+      .await?;
 
   // ==================== FEATURE FLAG CHECK ==================== //
 
   if !allowed_explore_media_access(maybe_user_session.as_ref()) {
     warn!("Explore media access is not permitted for user");
-    return Err(ListMediaFilesError::NotAuthorized);
+    return Err(AdvancedCommonWebError::NotAuthorized);
   }
 
   let mut is_mod = false;
@@ -255,11 +220,7 @@ pub async fn list_media_files_handler(
   let cursor_is_reversed = query.cursor_is_reversed.unwrap_or(false);
 
   let cursor = if let Some(cursor) = query.cursor.as_deref() {
-    let cursor = server_state.sort_key_crypto.decrypt_id(cursor)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          ListMediaFilesError::ServerError
-        })?;
+    let cursor = server_state.sort_key_crypto.decrypt_id(cursor)?;
     Some(cursor as usize)
   } else {
     None
@@ -293,27 +254,19 @@ pub async fn list_media_files_handler(
     Ok(results) => results,
     Err(e) => {
       warn!("Query error: {:?}", e);
-      return Err(ListMediaFilesError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(e));
     }
   };
 
   let cursor_next = if let Some(id) = results_page.last_id {
-    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          ListMediaFilesError::ServerError
-        })?;
+    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)?;
     Some(cursor)
   } else {
     None
   };
 
   let cursor_previous = if let Some(id) = results_page.first_id {
-    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          ListMediaFilesError::ServerError
-        })?;
+    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)?;
     Some(cursor)
   } else {
     None
@@ -387,7 +340,7 @@ pub async fn list_media_files_handler(
       })
       .collect::<Vec<_>>();
 
-  let response = ListMediaFilesSuccessResponse {
+  Ok(Json(ListMediaFilesSuccessResponse {
     success: true,
     results,
     pagination: PaginationCursors {
@@ -395,12 +348,5 @@ pub async fn list_media_files_handler(
       maybe_previous: cursor_previous,
       cursor_is_reversed,
     }
-  };
-
-  let body = serde_json::to_string(&response)
-      .map_err(|e| ListMediaFilesError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-      .content_type("application/json")
-      .body(body))
+  }))
 }

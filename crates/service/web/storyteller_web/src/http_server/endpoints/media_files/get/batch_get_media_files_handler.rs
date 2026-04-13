@@ -1,11 +1,8 @@
 use std::collections::HashSet;
-use std::fmt;
 use std::sync::Arc;
 
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Json;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest};
 use actix_web_lab::extract::Query;
 use artcraft_api_defs::common::responses::media_links::MediaLinks;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
@@ -27,6 +24,7 @@ use tokens::tokens::model_weights::ModelWeightToken;
 use tokens::tokens::prompts::PromptToken;
 use utoipa::{IntoParams, ToSchema};
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::simple_entity_stats::SimpleEntityStats;
@@ -34,7 +32,6 @@ use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
 use crate::http_server::endpoints::media_files::common_responses::live_portrait::MediaFileLivePortraitDetails;
 use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
 use crate::http_server::web_utils::bucket_urls::bucket_url_string_from_media_path::bucket_url_string_from_media_path;
-use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 
 // =============== Request ===============
@@ -197,39 +194,6 @@ pub struct BatchGetMediaFilesModelInfo {
   pub maybe_weight_creator: Option<UserDetailsLight>,
 }
 
-// =============== Error Response ===============
-
-#[derive(Debug, ToSchema)]
-pub enum BatchGetMediaFilesError {
-  ServerError,
-  NotFound,
-}
-
-impl ResponseError for BatchGetMediaFilesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      BatchGetMediaFilesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-      BatchGetMediaFilesError::NotFound => StatusCode::NOT_FOUND,
-    }
-  }
-
-  fn error_response(&self) -> HttpResponse {
-    let error_reason = match self {
-      BatchGetMediaFilesError::ServerError => "server error".to_string(),
-      BatchGetMediaFilesError::NotFound => "not found".to_string(),
-    };
-
-    to_simple_json_error(&error_reason, self.status_code())
-  }
-}
-
-// NB: Not using derive_more::Display since Clion doesn't understand it.
-impl fmt::Display for BatchGetMediaFilesError {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
 // =============== Handler ===============
 
 /// List many media files at the same time by supplying their tokens. You'll have to provide the tokens.
@@ -239,8 +203,8 @@ impl fmt::Display for BatchGetMediaFilesError {
   path = "/v1/media_files/batch",
   responses(
     (status = 200, description = "Found", body = BatchGetMediaFilesSuccessResponse),
-    (status = 404, description = "Not found", body = BatchGetMediaFilesError),
-    (status = 500, description = "Server error", body = BatchGetMediaFilesError),
+    (status = 404, description = "Not found"),
+    (status = 500, description = "Server error"),
   ),
   params(
     BatchGetMediaFilesQueryParams,
@@ -250,15 +214,11 @@ pub async fn batch_get_media_files_handler(
   http_request: HttpRequest,
   query: Query<BatchGetMediaFilesQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<Json<BatchGetMediaFilesSuccessResponse>, BatchGetMediaFilesError> {
+) -> Result<Json<BatchGetMediaFilesSuccessResponse>, AdvancedCommonWebError> {
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        BatchGetMediaFilesError::ServerError
-      })?;
+      .await?;
 
   let mut show_deleted_results = false;
   let mut is_moderator = false;
@@ -288,7 +248,7 @@ pub async fn batch_get_media_files_handler(
     Ok(media_files) => media_files,
     Err(e) => {
       warn!("query error: {:?}", e);
-      return Err(BatchGetMediaFilesError::ServerError);
+      return Err(AdvancedCommonWebError::from_anyhow_error(e));
     }
   };
 

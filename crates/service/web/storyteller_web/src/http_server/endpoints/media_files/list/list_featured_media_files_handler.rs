@@ -1,5 +1,3 @@
-use actix_web::error::ResponseError;
-use actix_web::http::StatusCode;
 use actix_web::web::Query;
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_lab::__reexports::tracing::info;
@@ -23,6 +21,7 @@ use time::ext::InstantExt;
 use tokens::tokens::media_files::MediaFileToken;
 use utoipa::{IntoParams, ToSchema};
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::media::media_file_cover_image_details::MediaFileCoverImageDetails;
 use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
 use crate::http_server::common_responses::media_file_origin_details::MediaFileOriginDetails;
@@ -182,27 +181,6 @@ pub struct FeaturedMediaFile {
   pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, ToSchema)]
-pub enum ListFeaturedMediaFilesError {
-  NotAuthorized,
-  ServerError,
-}
-
-impl std::fmt::Display for ListFeaturedMediaFilesError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{:?}", self)
-  }
-}
-
-impl ResponseError for ListFeaturedMediaFilesError {
-  fn status_code(&self) -> StatusCode {
-    match *self {
-      ListFeaturedMediaFilesError::NotAuthorized => StatusCode::UNAUTHORIZED,
-      ListFeaturedMediaFilesError::ServerError => StatusCode::INTERNAL_SERVER_ERROR,
-    }
-  }
-}
-
 /// List media files that were featured or promoted by the staff (paginated). This will power our global asset drawers and highlight reels.
 #[utoipa::path(
   get,
@@ -211,15 +189,15 @@ impl ResponseError for ListFeaturedMediaFilesError {
   params(ListFeaturedMediaFilesQueryParams),
   responses(
     (status = 200, description = "List Featured Media Files", body = ListFeaturedMediaFilesSuccessResponse),
-    (status = 401, description = "Not authorized", body = ListFeaturedMediaFilesError),
-    (status = 500, description = "Server error", body = ListFeaturedMediaFilesError),
+    (status = 401, description = "Not authorized"),
+    (status = 500, description = "Server error"),
   ),
 )]
 pub async fn list_featured_media_files_handler(
   http_request: HttpRequest,
   query: Query<ListFeaturedMediaFilesQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<HttpResponse, ListFeaturedMediaFilesError> {
+) -> Result<HttpResponse, AdvancedCommonWebError> {
 
   let cache_start = Instant::now();
 
@@ -246,22 +224,14 @@ pub async fn list_featured_media_files_handler(
   };
 
   let cursor_next = if let Some(id) = results_page.last_id {
-    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          ListFeaturedMediaFilesError::ServerError
-        })?;
+    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)?;
     Some(cursor)
   } else {
     None
   };
 
   let cursor_previous = if let Some(id) = results_page.first_id {
-    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          ListFeaturedMediaFilesError::ServerError
-        })?;
+    let cursor = server_state.sort_key_crypto.encrypt_id(id as u64)?;
     Some(cursor)
   } else {
     None
@@ -349,8 +319,7 @@ pub async fn list_featured_media_files_handler(
     }
   };
 
-  let body = serde_json::to_string(&response)
-      .map_err(|e| ListFeaturedMediaFilesError::ServerError)?;
+  let body = serde_json::to_string(&response)?;
 
   let mut response_builder = HttpResponse::Ok();
 
@@ -368,7 +337,7 @@ async fn database_lookup(
   query: &ListFeaturedMediaFilesQueryParams,
   server_state: &ServerState,
   maybe_cloudflare_header: Option<&str>,
-) -> Result<FeaturedMediaFileListPage, ListFeaturedMediaFilesError> {
+) -> Result<FeaturedMediaFileListPage, AdvancedCommonWebError> {
 
   // TODO(bt,2023-12-04): Enforce real maximums and defaults
   let limit = query.page_size.unwrap_or(25);
@@ -377,11 +346,7 @@ async fn database_lookup(
   let cursor_is_reversed = query.cursor_is_reversed.unwrap_or(false);
 
   let cursor = if let Some(cursor) = query.cursor.as_deref() {
-    let cursor = server_state.sort_key_crypto.decrypt_id(cursor)
-        .map_err(|e| {
-          warn!("crypto error: {:?}", e);
-          ListFeaturedMediaFilesError::ServerError
-        })?;
+    let cursor = server_state.sort_key_crypto.decrypt_id(cursor)?;
     Some(cursor as usize)
   } else {
     None
@@ -411,7 +376,7 @@ async fn database_lookup(
     mysql_pool: &server_state.mysql_pool,
   }).await.map_err(|err| {
     error!("DB error: {:?}", err);
-    ListFeaturedMediaFilesError::ServerError
+    AdvancedCommonWebError::from_anyhow_error(err)
   })?;
 
   let query_duration = Instant::now().signed_duration_since(query_start);
