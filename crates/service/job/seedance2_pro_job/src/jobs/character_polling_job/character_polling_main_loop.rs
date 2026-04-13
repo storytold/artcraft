@@ -29,7 +29,10 @@ pub async fn character_polling_main_loop(deps: JobDependencies) {
       warn!("Character poll iteration took {:.1}s (threshold: {}s)", elapsed.as_secs_f64(), POLL_ALERT_THRESHOLD.as_secs());
     }
 
-    tokio::time::sleep(Duration::from_millis(deps.poll_interval_millis)).await;
+    tokio::select! {
+      _ = tokio::time::sleep(Duration::from_millis(deps.poll_interval_millis)) => {}
+      _ = deps.shutdown_notify.notified() => {}
+    }
   }
 
   warn!("Character polling main loop is shut down.");

@@ -9,11 +9,13 @@
 
 #[macro_use] extern crate serde_derive;
 
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::anyhow;
 use log::{info, warn};
 use sqlx::mysql::MySqlPoolOptions;
+use tokio::sync::Notify;
 
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use cloud_storage::bucket_client::BucketClient;
@@ -142,6 +144,7 @@ async fn main() -> AnyhowResult<()> {
   });
 
   let application_shutdown = RelaxedAtomicBool::new(false);
+  let shutdown_notify = Arc::new(Notify::new());
   let job_stats = JobStats::new();
 
   let pager_for_shutdown = pager.clone();
@@ -163,6 +166,7 @@ async fn main() -> AnyhowResult<()> {
     maybe_max_job_age,
     credits_alert_threshold,
     application_shutdown: application_shutdown.clone(),
+    shutdown_notify: shutdown_notify.clone(),
     pager,
   };
 
@@ -179,12 +183,14 @@ async fn main() -> AnyhowResult<()> {
 
   // Listen for SIGTERM / Ctrl-C to trigger graceful shutdown.
   let application_shutdown_for_signal = application_shutdown.clone();
+  let shutdown_notify_for_signal = shutdown_notify.clone();
 
   tokio::spawn(async move {
     match tokio::signal::ctrl_c().await {
       Ok(()) => {
         info!("Received shutdown signal. Shutting down...");
         application_shutdown_for_signal.set(true);
+        shutdown_notify_for_signal.notify_waiters();
       }
       Err(err) => {
         warn!("Error listening for shutdown signal: {:?}", err);

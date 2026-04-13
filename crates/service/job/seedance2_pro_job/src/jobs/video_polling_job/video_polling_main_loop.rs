@@ -49,7 +49,10 @@ pub async fn video_polling_main_loop(job_dependencies: JobDependencies) {
       }
     }
 
-    tokio::time::sleep(Duration::from_millis(job_dependencies.poll_interval_millis)).await;
+    tokio::select! {
+      _ = tokio::time::sleep(Duration::from_millis(job_dependencies.poll_interval_millis)) => {}
+      _ = job_dependencies.shutdown_notify.notified() => {}
+    }
   }
 
   warn!("Kinovi job runner main loop is shut down.");

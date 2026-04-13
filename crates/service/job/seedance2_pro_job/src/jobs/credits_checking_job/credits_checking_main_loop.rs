@@ -41,7 +41,10 @@ pub async fn credits_checking_main_loop(deps: JobDependencies) {
       }
     }
 
-    tokio::time::sleep(CREDITS_CHECK_INTERVAL).await;
+    tokio::select! {
+      _ = tokio::time::sleep(CREDITS_CHECK_INTERVAL) => {}
+      _ = deps.shutdown_notify.notified() => {}
+    }
   }
 
   warn!("Credits checking main loop is shut down.");
