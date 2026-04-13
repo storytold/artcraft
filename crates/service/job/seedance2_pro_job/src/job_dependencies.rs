@@ -34,6 +34,9 @@ pub struct JobDependencies {
   /// ancient orders that will never match a pending job.
   pub maybe_max_job_age: Option<Duration>,
 
+  /// Page an alert when available Kinovi credits fall below this threshold.
+  pub credits_alert_threshold: u64,
+
   /// Set to `true` from another thread to trigger graceful shutdown.
   pub application_shutdown: RelaxedAtomicBool,
 
