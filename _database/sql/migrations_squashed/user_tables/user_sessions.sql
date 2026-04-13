@@ -6,10 +6,10 @@ CREATE TABLE user_sessions (
   -- Not used for anything except replication.
   id BIGINT(20) NOT NULL AUTO_INCREMENT,
 
-  -- Session entropy
+  -- Session primary key
   token VARCHAR(32) NOT NULL,
 
-  -- Foreign key to user
+  -- The user that the session belongs to.
   user_token VARCHAR(32) NOT NULL,
 
   -- NEVER IMPERSONATE A USER'S ACCOUNT WITHOUT THEIR CONSENT!
