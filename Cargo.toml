@@ -59,6 +59,7 @@ members = [
   "crates/lib/data/primitives",
   "crates/lib/data/web_base64",
   "crates/lib/easyenv", # NB: Vendored version of https://github.com/echelon/easyenv.rs that we'll improve.
+  "crates/lib/error_utils",
   "crates/lib/errors",
   "crates/lib/ffmpeg_utils",
   "crates/lib/files/file_to_base64_url",
@@ -236,6 +237,7 @@ cookie_store = { path = "crates/lib/cookie_store" }
 crockford = { path = "crates/lib/data/crockford" }
 easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
+error_utils = { path = "crates/lib/error_utils" }
 errors = { path = "crates/lib/errors" }
 fal_client = { path = "crates/api_clients/fal_client" }
 ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }

@@ -1,0 +1,16 @@
+[package]
+name = "error_utils"
+edition = "2021"
+version = "0.0.1"
+authors = [
+    "Brandon Thomas <bt@brand.io>",
+    "Brandon Thomas <echelon@gmail.com>",
+]
+publish = false
+
+[lib]
+name = "error_utils"
+path = "src/lib.rs"
+
+[dependencies]
+regex.workspace = true

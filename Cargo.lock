@@ -3877,6 +3877,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "error_utils"
+version = "0.0.1"
+dependencies = [
+ "regex",
+]
+
+[[package]]
 name = "errors"
 version = "0.0.1"
 dependencies = [
@@ -11234,6 +11241,7 @@ dependencies = [
  "elasticsearch",
  "elasticsearch_schema",
  "enums",
+ "error_utils",
  "errors",
  "fal_client",
  "ffmpeg_utils",
