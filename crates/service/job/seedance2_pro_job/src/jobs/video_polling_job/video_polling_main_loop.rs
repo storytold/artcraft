@@ -152,21 +152,27 @@ async fn website_polling_loop(
 
     pages_in_current_batch += 1;
 
-    info!("Done polling Kinovi orders page {}. Got {} orders on this page.", total_pages_seen, page_orders_count);
+    let maybe_last_order_created_at = response.orders
+        .iter()
+        .filter(|order| order.created_at_utc.is_some())
+        .last()
+        .and_then(|order| order.created_at_utc);
+
+    info!(
+      "Done polling Kinovi orders page {}. \
+      Got {} orders on this page (oldest on page created at {:?}).",
+      total_pages_seen,
+      page_orders_count,
+      maybe_last_order_created_at,
+    );
 
     // Check if the last (oldest) order in this page exceeds the max age threshold.
     // Orders are returned newest-first, so the last order is the oldest.
     let mut exceeded_max_age = false;
 
     if let Some(ref max_age) = deps.maybe_max_job_age {
-      let maybe_last_order_created = response.orders
-          .iter()
-          .filter(|order| order.created_at_utc.is_some())
-          .last()
-          .and_then(|order| order.created_at_utc);
-
-      if let Some(last_order_created) = maybe_last_order_created {
-        let order_age = Utc::now() - last_order_created;
+      if let Some(last_order_created_at) = maybe_last_order_created_at {
+        let order_age = Utc::now() - last_order_created_at;
         let too_old = order_age > *max_age;
         if too_old {
           info!(
