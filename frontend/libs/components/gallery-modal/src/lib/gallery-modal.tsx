@@ -401,6 +401,9 @@ export const GalleryModal = React.memo(
     // Track whether this is the very first load (no cache, no items yet)
     const [initialLoading, setInitialLoading] = useState(false);
 
+    // Error message from failed listUserMediaFiles call (null = no error)
+    const [itemsLoadError, setItemsLoadError] = useState<string | null>(null);
+
     // Bulk selection state (view mode only)
     const [bulkSelectedIds, setBulkSelectedIds] = useState<Set<string>>(
       new Set(),
@@ -545,6 +548,7 @@ export const GalleryModal = React.memo(
           const response = await api.listUserMediaFiles(query);
 
           if (response.success && response.data) {
+            setItemsLoadError(null);
             const newItems = response.data
               .filter(
                 (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
@@ -589,9 +593,13 @@ export const GalleryModal = React.memo(
               });
               return latest;
             });
+          } else {
+            setItemsLoadError(response.errorMessage || "Request failed (unknown error)");
           }
         } catch (error) {
-          console.error("Failed to fetch library items:", error);
+          const msg = error instanceof Error ? error.message : String(error);
+          console.error("Failed to fetch library items:", msg);
+          setItemsLoadError(msg);
         }
         setLoading(false);
         setPaginationLoading(false);
@@ -603,6 +611,7 @@ export const GalleryModal = React.memo(
 
     // refresh logic — shows cached items immediately, then background-refreshes
     const refreshGallery = useCallback(() => {
+      setItemsLoadError(null);
       const cacheKey = `gallery_${activeFilterRef.current}`;
       const cached = galleryCacheMap.get(cacheKey);
 
@@ -1137,6 +1146,27 @@ export const GalleryModal = React.memo(
                     >
                       Retry
                     </button>
+                  </div>
+                </div>
+              ) : itemsLoadError && allItems.length === 0 ? (
+                <div className="flex h-full items-center justify-center">
+                  <div className="flex flex-col items-center gap-3 text-sm max-w-xs text-center">
+                    <div className="text-base-fg/60">Failed to load gallery.</div>
+                    <div className="text-xs text-base-fg/40 font-mono break-all">{itemsLoadError}</div>
+                    <div className="flex gap-3">
+                      <button
+                        className="text-xs text-blue-400 hover:text-blue-300 underline"
+                        onClick={() => navigator.clipboard?.writeText(itemsLoadError!)}
+                      >
+                        Copy error
+                      </button>
+                      <button
+                        className="text-xs text-blue-400 hover:text-blue-300 underline"
+                        onClick={() => refreshGallery()}
+                      >
+                        Retry
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (initialLoading || !username) && allItems.length === 0 ? (
