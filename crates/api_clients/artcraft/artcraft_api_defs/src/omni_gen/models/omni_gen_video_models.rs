@@ -163,6 +163,9 @@ pub struct OmniGenVideoModelDetails {
   
   #[serde(skip_serializing_if = "Option::is_none")]
   pub batch_size_default: Option<u16>,
+
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub is_disabled: Option<bool>,
 }
 
 impl Default for OmniGenVideoModelDetails {
@@ -202,6 +205,7 @@ impl Default for OmniGenVideoModelDetails {
       batch_size_max: None,
       batch_size_options: None,
       batch_size_default: None,
+      is_disabled: None,
     }
   }
 }
