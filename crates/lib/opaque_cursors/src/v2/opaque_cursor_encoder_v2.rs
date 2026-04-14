@@ -33,8 +33,11 @@ impl OpaqueCursorEncoderV2 {
   }
 
   /// Encode a last-id cursor into an opaque string.
-  pub fn encode_last_id_cursor(&self, id: u64) -> Result<String, OpaqueCursorErrorV2> {
-    let cursor = OpaqueCursorV2 { last_id: Some(id) };
+  pub fn encode_last_id_cursor(&self, name: &str, id: u64) -> Result<String, OpaqueCursorErrorV2> {
+    let cursor = OpaqueCursorV2 {
+      name: Some(name.to_string()),
+      last_id: Some(id),
+    };
     self.encode_cursor(&cursor)
   }
 
@@ -50,6 +53,26 @@ impl OpaqueCursorEncoderV2 {
     self.crypt.encrypt_reader_to_writer2::<U256>(&mut reader, &mut writer)?;
 
     Ok(engine.encode(&writer))
+  }
+
+  /// Decode an opaque cursor string and verify the name matches `expected_name`.
+  pub fn decode_cursor_expecting_name(
+    &self,
+    expected_name: &str,
+    cursor: &str,
+  ) -> Result<OpaqueCursorV2, OpaqueCursorErrorV2> {
+    let decoded = self.decode_cursor(cursor)?;
+
+    match &decoded.name {
+      None => Err(OpaqueCursorErrorV2::DecodedNameNotPresent),
+      Some(actual) if actual != expected_name => {
+        Err(OpaqueCursorErrorV2::DecodedNameMismatch {
+          expected: expected_name.to_string(),
+          actual: actual.clone(),
+        })
+      }
+      _ => Ok(decoded),
+    }
   }
 
   /// Decode an opaque cursor string back into a cursor payload.
@@ -75,32 +98,35 @@ mod tests {
   #[test]
   fn roundtrip_last_id() {
     let encoder = OpaqueCursorEncoderV2::new(SECRET);
-    let encoded = encoder.encode_last_id_cursor(42).unwrap();
+    let encoded = encoder.encode_last_id_cursor("test", 42).unwrap();
     let decoded = encoder.decode_cursor(&encoded).unwrap();
+    assert_eq!(decoded.name, Some("test".to_string()));
     assert_eq!(decoded.last_id, Some(42));
   }
 
   #[test]
-  fn roundtrip_none_last_id() {
+  fn roundtrip_none_fields() {
     let encoder = OpaqueCursorEncoderV2::new(SECRET);
-    let cursor = OpaqueCursorV2 { last_id: None };
+    let cursor = OpaqueCursorV2 { name: None, last_id: None };
     let encoded = encoder.encode_cursor(&cursor).unwrap();
     let decoded = encoder.decode_cursor(&encoded).unwrap();
+    assert_eq!(decoded.name, None);
     assert_eq!(decoded.last_id, None);
   }
 
   #[test]
   fn roundtrip_zero() {
     let encoder = OpaqueCursorEncoderV2::new(SECRET);
-    let encoded = encoder.encode_last_id_cursor(0).unwrap();
+    let encoded = encoder.encode_last_id_cursor("zero", 0).unwrap();
     let decoded = encoder.decode_cursor(&encoded).unwrap();
+    assert_eq!(decoded.name, Some("zero".to_string()));
     assert_eq!(decoded.last_id, Some(0));
   }
 
   #[test]
   fn roundtrip_large_id() {
     let encoder = OpaqueCursorEncoderV2::new(SECRET);
-    let encoded = encoder.encode_last_id_cursor(u64::MAX).unwrap();
+    let encoded = encoder.encode_last_id_cursor("big", u64::MAX).unwrap();
     let decoded = encoder.decode_cursor(&encoded).unwrap();
     assert_eq!(decoded.last_id, Some(u64::MAX));
   }
@@ -109,10 +135,20 @@ mod tests {
   fn roundtrip_many_ids() {
     let encoder = OpaqueCursorEncoderV2::new(SECRET);
     for id in [0, 1, 100, 999, 100_000, 1_000_000_000, u64::MAX - 1] {
-      let encoded = encoder.encode_last_id_cursor(id).unwrap();
+      let encoded = encoder.encode_last_id_cursor("batch", id).unwrap();
       let decoded = encoder.decode_cursor(&encoded).unwrap();
+      assert_eq!(decoded.name, Some("batch".to_string()));
       assert_eq!(decoded.last_id, Some(id), "roundtrip failed for id={}", id);
     }
+  }
+
+  #[test]
+  fn name_preserved_in_roundtrip() {
+    let encoder = OpaqueCursorEncoderV2::new(SECRET);
+    let encoded = encoder.encode_last_id_cursor("media_files_list", 999).unwrap();
+    let decoded = encoder.decode_cursor(&encoded).unwrap();
+    assert_eq!(decoded.name, Some("media_files_list".to_string()));
+    assert_eq!(decoded.last_id, Some(999));
   }
 
   #[test]
@@ -120,8 +156,8 @@ mod tests {
     let encoder_a = OpaqueCursorEncoderV2::new("secret_a");
     let encoder_b = OpaqueCursorEncoderV2::new("secret_b");
 
-    let encoded_a = encoder_a.encode_last_id_cursor(42).unwrap();
-    let encoded_b = encoder_b.encode_last_id_cursor(42).unwrap();
+    let encoded_a = encoder_a.encode_last_id_cursor("test", 42).unwrap();
+    let encoded_b = encoder_b.encode_last_id_cursor("test", 42).unwrap();
 
     assert_ne!(encoded_a, encoded_b);
   }
@@ -131,7 +167,7 @@ mod tests {
     let encoder_a = OpaqueCursorEncoderV2::new("secret_a");
     let encoder_b = OpaqueCursorEncoderV2::new("secret_b");
 
-    let encoded = encoder_a.encode_last_id_cursor(42).unwrap();
+    let encoded = encoder_a.encode_last_id_cursor("test", 42).unwrap();
     let result = encoder_b.decode_cursor(&encoded);
 
     assert!(result.is_err());
@@ -155,8 +191,7 @@ mod tests {
   fn encoded_cursor_is_url_safe() {
     let encoder = OpaqueCursorEncoderV2::new(SECRET);
     for id in [0, 1, 42, 999_999_999] {
-      let encoded = encoder.encode_last_id_cursor(id).unwrap();
-      // URL-safe base64 uses only alphanumerics, '-', '_', and no padding '='
+      let encoded = encoder.encode_last_id_cursor("safe", id).unwrap();
       assert!(
         encoded.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'),
         "non-URL-safe character in cursor: {:?}",
@@ -166,11 +201,36 @@ mod tests {
   }
 
   #[test]
+  fn decode_expecting_name_matches() {
+    let encoder = OpaqueCursorEncoderV2::new(SECRET);
+    let encoded = encoder.encode_last_id_cursor("my_list", 100).unwrap();
+    let decoded = encoder.decode_cursor_expecting_name("my_list", &encoded).unwrap();
+    assert_eq!(decoded.name, Some("my_list".to_string()));
+    assert_eq!(decoded.last_id, Some(100));
+  }
+
+  #[test]
+  fn decode_expecting_name_mismatch() {
+    let encoder = OpaqueCursorEncoderV2::new(SECRET);
+    let encoded = encoder.encode_last_id_cursor("wrong_name", 100).unwrap();
+    let result = encoder.decode_cursor_expecting_name("expected_name", &encoded);
+    assert!(matches!(result, Err(OpaqueCursorErrorV2::DecodedNameMismatch { .. })));
+  }
+
+  #[test]
+  fn decode_expecting_name_not_present() {
+    let encoder = OpaqueCursorEncoderV2::new(SECRET);
+    let cursor = OpaqueCursorV2 { name: None, last_id: Some(42) };
+    let encoded = encoder.encode_cursor(&cursor).unwrap();
+    let result = encoder.decode_cursor_expecting_name("anything", &encoded);
+    assert!(matches!(result, Err(OpaqueCursorErrorV2::DecodedNameNotPresent)));
+  }
+
+  #[test]
   fn deterministic_output() {
     let encoder = OpaqueCursorEncoderV2::new(SECRET);
-    let a = encoder.encode_last_id_cursor(42).unwrap();
-    let b = encoder.encode_last_id_cursor(42).unwrap();
-    // No entropy means same input produces same output.
+    let a = encoder.encode_last_id_cursor("det", 42).unwrap();
+    let b = encoder.encode_last_id_cursor("det", 42).unwrap();
     assert_eq!(a, b);
   }
 }

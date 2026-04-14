@@ -9,6 +9,10 @@ pub enum OpaqueCursorErrorV2 {
   MagicCryptError(MagicCryptError),
   Base64DecodeError(base64::DecodeError),
   Utf8Error(FromUtf8Error),
+  /// The decoded cursor did not contain a name at all.
+  DecodedNameNotPresent,
+  /// The decoded cursor's name did not match the expected name.
+  DecodedNameMismatch { expected: String, actual: String },
 }
 
 impl fmt::Display for OpaqueCursorErrorV2 {
