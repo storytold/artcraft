@@ -293,7 +293,7 @@ async fn try_impersonation_login(
 
   // Mark the impersonation token as redeemed.
   mark_impersonation_token_as_redeemed(MarkImpersonationTokenAsRedeemedArgs {
-    public_impersonation_token: password,
+    user_impersonation_token: password,
     ip_address_redemption: ip_address,
     mysql_executor: &mut *transaction,
     phantom: PhantomData,

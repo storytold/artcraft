@@ -143,7 +143,7 @@ pub async fn moderator_user_session_impersonation_request_handler(
     InsertUserImpersonationRequestArgs {
       impersonated_user_token: &target_user.user_token,
       impersonator_user_token: &user_session.user_token,
-      public_impersonation_token: &password_token,
+      user_impersonation_token: &password_token,
       ip_address_creation: &ip_address,
       expires_at,
       mysql_executor: &mut *transaction,

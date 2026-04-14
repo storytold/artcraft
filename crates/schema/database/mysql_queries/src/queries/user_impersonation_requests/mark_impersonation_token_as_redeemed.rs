@@ -5,7 +5,7 @@ use sqlx::{Executor, MySql};
 pub struct MarkImpersonationTokenAsRedeemedArgs<'a, 'c: 'a, E>
   where E: 'a + Executor<'c, Database = MySql>
 {
-  pub public_impersonation_token: &'a str,
+  pub user_impersonation_token: &'a str,
   pub ip_address_redemption: &'a str,
 
   pub mysql_executor: E,
@@ -23,10 +23,10 @@ UPDATE user_impersonation_requests
 SET
   is_redeemed = TRUE,
   ip_address_redemption = ?
-WHERE public_impersonation_token = ?
+WHERE user_impersonation_token = ?
     "#,
     args.ip_address_redemption,
-    args.public_impersonation_token,
+    args.user_impersonation_token,
   )
     .execute(args.mysql_executor)
     .await?;

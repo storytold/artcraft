@@ -17,7 +17,7 @@ CREATE TABLE user_impersonation_requests (
   impersonator_user_token VARCHAR(32) NOT NULL,
 
   -- The actual secret that must be presented to redeem the impersonation.
-  public_impersonation_token VARCHAR(32) NOT NULL,
+  user_impersonation_token VARCHAR(32) NOT NULL,
 
   -- Whether this request has been redeemed (used to create a session).
   is_redeemed BOOLEAN NOT NULL DEFAULT FALSE,
@@ -37,7 +37,7 @@ CREATE TABLE user_impersonation_requests (
   -- INDICES --
   PRIMARY KEY (id),
   UNIQUE KEY (token),
-  UNIQUE KEY (public_impersonation_token),
+  UNIQUE KEY (user_impersonation_token),
   KEY index_impersonated_user_token (impersonated_user_token),
   KEY index_impersonator_user_token (impersonator_user_token)
 

@@ -11,7 +11,7 @@ pub struct InsertUserImpersonationRequestArgs<'a, 'c: 'a, E>
 {
   pub impersonated_user_token: &'a UserToken,
   pub impersonator_user_token: &'a UserToken,
-  pub public_impersonation_token: &'a str,
+  pub user_impersonation_token: &'a str,
   pub ip_address_creation: &'a str,
   pub expires_at: DateTime<Utc>,
 
@@ -33,14 +33,14 @@ SET
   token = ?,
   impersonated_user_token = ?,
   impersonator_user_token = ?,
-  public_impersonation_token = ?,
+  user_impersonation_token = ?,
   ip_address_creation = ?,
   expires_at = ?
     "#,
     token.as_str(),
     args.impersonated_user_token.as_str(),
     args.impersonator_user_token.as_str(),
-    args.public_impersonation_token,
+    args.user_impersonation_token,
     args.ip_address_creation,
     args.expires_at,
   )
