@@ -5,6 +5,7 @@ import {
   faEllipsis,
   faPencil,
   faTrashCan,
+  faUpload,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import galleryDnd from "./galleryDnd";
@@ -16,6 +17,7 @@ import {
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
 import { MediaFileDelete } from "@storyteller/tauri-api";
+import { toast } from "@storyteller/ui-toaster";
 
 type ModalMode = "select" | "view";
 
@@ -70,8 +72,22 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
       onPrimaryAction: async () => {
         try {
-          await MediaFileDelete(item.id);
+          const result = await MediaFileDelete(item.id);
+          console.log("MediaFileDelete result:", result);
+          if (result && "status" in result && result.status !== "success") {
+            const msg =
+              (result as any).error_message || "Failed to delete media.";
+            console.error("MediaFileDelete failed:", result);
+            toast.error(msg);
+            return;
+          }
           onDeleted?.(item.id);
+          toast.success("Deleted.");
+        } catch (err) {
+          console.error("MediaFileDelete threw:", err);
+          toast.error(
+            `Failed to delete media: ${err instanceof Error ? err.message : String(err)}`,
+          );
         } finally {
           isActionReminderOpen.value = false;
         }
@@ -136,8 +152,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       type="button"
       tabIndex={-1}
       className={twMerge(
-        "w-full group relative overflow-visible rounded-md border-[3px] transition-all focus:outline-none",
-        item.mediaClass === "video" ? "aspect-video" : "aspect-square",
+        "w-full group relative overflow-visible rounded-md border-[3px] transition-all focus:outline-none aspect-square",
         selected || bulkSelected
           ? "border-primary"
           : disableTooltipAndBadge
@@ -171,7 +186,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
             alt={item.label}
             className={twMerge(
               "h-full w-full bg-black/30",
-              item.mediaClass === "video" || imageFit === "contain" ? "object-contain" : "object-cover",
+              imageFit === "contain" ? "object-contain" : "object-cover",
             )}
             draggable={false}
             onError={onImageError}
@@ -187,7 +202,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   );
 
   return (
-    <div className={twMerge("group relative w-full", item.mediaClass === "video" ? "aspect-video" : "aspect-square")}>
+    <div className="group relative w-full aspect-square">
       {/* dropdown menu */}
       {mode !== "select" && (
         <div
@@ -276,6 +291,12 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       {!disableTooltipAndBadge && item.mediaClass && (
         <div className="pointer-events-none absolute left-2 bottom-2 z-20 rounded-full bg-black/50 backdrop-blur-lg px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           {item.mediaClass === "dimensional" ? "3D" : item.mediaClass}
+        </div>
+      )}
+      {/* Upload badge — bottom-right (always visible, even in select mode) */}
+      {item.isUpload && (
+        <div className="pointer-events-none absolute right-2 bottom-2 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 backdrop-blur-lg text-white">
+          <FontAwesomeIcon icon={faUpload} className="text-[10px]" />
         </div>
       )}
       {/* Conditionally wrap with Tooltip — hidden when selecting or in bulk mode */}

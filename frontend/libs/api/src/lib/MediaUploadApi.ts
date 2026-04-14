@@ -249,6 +249,7 @@ export class MediaUploadApi extends ApiManager {
     maybe_visibility = Visibility.Public,
     maybe_style_name,
     maybe_scene_source_media_file_token,
+    is_intermediate_system_file = EIntermediateFile.true,
   }: {
     blob: Blob;
     fileName: string;
@@ -257,10 +258,11 @@ export class MediaUploadApi extends ApiManager {
     maybe_visibility?: Visibility;
     maybe_style_name?: string;
     maybe_scene_source_media_file_token?: string;
+    is_intermediate_system_file?: EIntermediateFile;
   }): Promise<ApiResponse<string>> {
     const endpoint = `${this.getApiSchemeAndHost()}/v1/media_files/upload/new_video`;
     const options: Record<string, string | number | undefined> = {
-      is_intermediate_system_file: "true",
+      is_intermediate_system_file: EIntermediateFile[is_intermediate_system_file],
       maybe_title,
       maybe_visibility: maybe_visibility?.toString(),
       maybe_style_name,
@@ -364,6 +366,7 @@ export const UploadImageMedia: UploadMediaFn = async ({
     blob: assetFile,
     fileName: getFileName(assetFile),
     maybe_title: "char_frame_" + title,
+    is_intermediate_system_file: EIntermediateFile.false,
   });
 
   if (!res?.success || !res.data) {
@@ -390,6 +393,7 @@ export const UploadVideoMedia: UploadMediaFn = async ({
     blob: assetFile,
     fileName: getFileName(assetFile),
     maybe_title: "ref_video_" + title,
+    is_intermediate_system_file: EIntermediateFile.false,
   });
 
   if (!res?.success || !res.data) {

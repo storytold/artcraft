@@ -210,6 +210,7 @@ export interface GalleryItem {
   createdAt: string;
   mediaClass?: string;
   assetType?: string;
+  isUpload?: boolean;
   batchImageToken?: string;
   mediaTokens?: string[];
   imageUrls?: string[];
@@ -320,6 +321,8 @@ const formatDate = (date: string) => {
 
 const PAGE_SIZE = 100;
 
+const SHOW_UPLOADS_STORAGE_KEY = "gallery-modal-show-uploads";
+
 /** Small thumbnail used in the bulk-selection footer bar. */
 const BulkThumb = ({
   thumbnail,
@@ -394,6 +397,21 @@ export const GalleryModal = React.memo(
     );
     const gridColumns = maxColumns - (sliderValue - minColumns);
     const [imageFit, setImageFit] = useState<"cover" | "contain">("contain");
+    const [showUploads, setShowUploads] = useState<boolean>(() => {
+      try {
+        const stored = localStorage.getItem(SHOW_UPLOADS_STORAGE_KEY);
+        return stored === null ? false : stored === "true";
+      } catch {
+        return false;
+      }
+    });
+    useEffect(() => {
+      try {
+        localStorage.setItem(SHOW_UPLOADS_STORAGE_KEY, String(showUploads));
+      } catch {
+        // ignore
+      }
+    }, [showUploads]);
     const [allItems, setAllItems] = useState<GalleryItem[]>([]);
     const [pageIndex, setPageIndex] = useState(0);
     const [hasMore, setHasMore] = useState(true);
@@ -507,6 +525,7 @@ export const GalleryModal = React.memo(
         mediaClass:
           item.media_class ||
           (item.filter_media_classes ? item.filter_media_classes[0] : "image"),
+        isUpload: item.origin_category === "upload",
         assetType:
           item.media_class === "dimensional"
             ? item.maybe_animation_type ||
@@ -557,19 +576,20 @@ export const GalleryModal = React.memo(
 
             if (reset) {
               // Smart merge: update existing items in-place (preserves
-              // scroll position), then prepend any genuinely new items.
+              // scroll position), prepend brand-new items, and DROP items
+              // the server no longer returns (e.g. just-deleted).
               setAllItems((prev) => {
                 if (prev.length === 0) return newItems;
                 const existingIds = new Set(prev.map((it) => it.id));
                 const brandNew = newItems.filter(
                   (it: GalleryItem) => !existingIds.has(it.id),
                 );
-                // Build lookup for fresh data so we can update in-place
                 const freshMap = new Map(
-                  newItems.map((it: GalleryItem) => [it.id, it]),
+                  newItems.map((it: GalleryItem) => [it.id, it] as const),
                 );
-                // Update existing items in their current positions
-                const updated = prev.map((it) => freshMap.get(it.id) || it);
+                const updated = prev
+                  .map((it) => freshMap.get(it.id))
+                  .filter((it): it is GalleryItem => it !== undefined);
                 return [...brandNew, ...updated];
               });
             } else {
@@ -675,6 +695,33 @@ export const GalleryModal = React.memo(
       };
     }, [refreshGallery, username]);
 
+    // Drop any item deleted anywhere in the app (lightbox, single, bulk)
+    // so it disappears from the gallery immediately.
+    useEffect(() => {
+      const unlistenPromise = listen<any>("media_file_deleted_event", (event) => {
+        const token: string | undefined =
+          event?.payload?.data?.media_file_token ??
+          event?.payload?.media_file_token;
+        if (!token) return;
+        setAllItems((prev) => prev.filter((it) => it.id !== token));
+        setBulkSelectedIds((prev) => {
+          if (!prev.has(token)) return prev;
+          const next = new Set(prev);
+          next.delete(token);
+          return next;
+        });
+        for (const [key, entry] of galleryCacheMap.entries()) {
+          galleryCacheMap.set(key, {
+            ...entry,
+            items: entry.items.filter((it) => it.id !== token),
+          });
+        }
+      });
+      return () => {
+        unlistenPromise.then((fn) => fn());
+      };
+    }, []);
+
     const toggleBulkSelect = useCallback((id: string) => {
       setBulkSelectedIds((prev) => {
         const next = new Set(prev);
@@ -727,26 +774,23 @@ export const GalleryModal = React.memo(
 
     const handleItemDeleted = useCallback(
       (id: string) => {
-        setAllItems((prev) => {
-          const updated = prev.filter((it) => it.id !== id);
-          // Remove from cache too
-          const cacheKey = getCacheKey();
-          const cached = galleryCacheMap.get(cacheKey);
-          if (cached) {
-            galleryCacheMap.set(cacheKey, {
-              ...cached,
-              items: cached.items.filter((it) => it.id !== id),
-            });
-          }
-          return updated;
-        });
+        // Drop from local state (functional setter — must stay pure).
+        setAllItems((prev) => prev.filter((it) => it.id !== id));
         setBulkSelectedIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
           return next;
         });
+        // Drop from the module-level cache for every filter so reopening
+        // the modal under any filter doesn't resurrect the item.
+        for (const [key, entry] of galleryCacheMap.entries()) {
+          galleryCacheMap.set(key, {
+            ...entry,
+            items: entry.items.filter((it) => it.id !== id),
+          });
+        }
       },
-      [getCacheKey],
+      [],
     );
 
     const clearBulkSelection = useCallback(() => {
@@ -776,28 +820,21 @@ export const GalleryModal = React.memo(
           try {
             const ids = Array.from(bulkSelectedIds);
             await Promise.allSettled(ids.map((id) => MediaFileDelete(id)));
-            setAllItems((prev) => {
-              const updated = prev.filter((it) => !bulkSelectedIds.has(it.id));
-              // Evict from cache too
-              const cacheKey = getCacheKey();
-              const cached = galleryCacheMap.get(cacheKey);
-              if (cached) {
-                galleryCacheMap.set(cacheKey, {
-                  ...cached,
-                  items: cached.items.filter(
-                    (it) => !bulkSelectedIds.has(it.id),
-                  ),
-                });
-              }
-              return updated;
-            });
+            const idSet = new Set(ids);
+            setAllItems((prev) => prev.filter((it) => !idSet.has(it.id)));
+            for (const [key, entry] of galleryCacheMap.entries()) {
+              galleryCacheMap.set(key, {
+                ...entry,
+                items: entry.items.filter((it) => !idSet.has(it.id)),
+              });
+            }
             clearBulkSelection();
           } finally {
             isActionReminderOpen.value = false;
           }
         },
       });
-    }, [bulkSelectedIds, clearBulkSelection, getCacheKey]);
+    }, [bulkSelectedIds, clearBulkSelection]);
 
     useSignals();
 
@@ -822,6 +859,8 @@ export const GalleryModal = React.memo(
     const filterItem = useCallback(
       (item: GalleryItem) => {
         if ((item as any).mediaType === "scene_json") return false;
+        if (!showUploads && activeFilter !== "uploaded" && item.isUpload)
+          return false;
         if (activeFilter === "3d") return item.mediaClass === "dimensional";
         if (activeFilter === "image") return item.mediaClass === "image";
         if (activeFilter === "video") return item.mediaClass === "video";
@@ -833,7 +872,7 @@ export const GalleryModal = React.memo(
         }
         return true;
       },
-      [activeFilter],
+      [activeFilter, showUploads],
     );
 
     const flatFilteredItems = useMemo(() => {
@@ -1011,6 +1050,23 @@ export const GalleryModal = React.memo(
                       </label>
                     </div>
                   )}
+                  {activeFilter !== "uploaded" && (
+                    <div className="flex items-center relative z-[51]">
+                      <input
+                        type="checkbox"
+                        id="gallery-show-uploads"
+                        checked={showUploads}
+                        onChange={(e) => setShowUploads(e.target.checked)}
+                        className="h-4 w-4 cursor-pointer rounded-lg border-gray-300 bg-gray-700 text-primary focus:ring-primary"
+                      />
+                      <label
+                        htmlFor="gallery-show-uploads"
+                        className="ml-2 cursor-pointer select-none text-sm text-base-fg/70"
+                      >
+                        Show uploads
+                      </label>
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end gap-2 items-center">
                   {/* Refresh button */}
@@ -1055,7 +1111,7 @@ export const GalleryModal = React.memo(
                   </Tooltip>
 
                   {/* Slider */}
-                  <div className="w-48 mx-3 relative z-[51] flex items-center gap-2">
+                  <div className="w-32 mx-3 relative z-[51] flex items-center gap-2">
                     <SliderV2
                       min={minColumns}
                       max={maxColumns}
