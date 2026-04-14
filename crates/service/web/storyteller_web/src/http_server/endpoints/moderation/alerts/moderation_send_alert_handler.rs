@@ -77,7 +77,7 @@ pub async fn moderation_send_alert_handler(
     .enqueue_page(notification)
     .map_err(|err| {
       warn!("moderation_send_alert error: {:?}", err);
-      AdvancedCommonWebError::server_error_with_message("Failed to enqueue alert")
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   // Insert staff audit log.
