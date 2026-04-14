@@ -152,6 +152,13 @@ mod tests {
   }
 
   #[test]
+  fn stable_cursor() {
+    let encoder = OpaqueCursorEncoderV2::new("stable_secret");
+    let encoded = encoder.encode_last_id_cursor("media_files_list", 123456).unwrap();
+    assert_eq!(encoded, "0-8bNhoOVA37eZAKwVQ0B8kWq-HLs0x0gQc51TJXjw2hWJ7PNfVqas7WvRnIK80O");
+  }
+
+  #[test]
   fn different_secrets_produce_different_output() {
     let encoder_a = OpaqueCursorEncoderV2::new("secret_a");
     let encoder_b = OpaqueCursorEncoderV2::new("secret_b");
