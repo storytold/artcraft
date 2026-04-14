@@ -50,13 +50,13 @@
       "path": "../../libs/components/close-button/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/tooltip/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/viewer-3d/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/action-reminder-modal/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/components/tooltip/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/toaster/tsconfig.lib.json"
@@ -78,6 +78,9 @@
     },
     {
       "path": "../../libs/markdown-content/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/input/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/button/tsconfig.lib.json"

@@ -76,6 +76,7 @@ export interface OmniGenVideoGenerateResponse {
 
 export interface OmniGenImageModelInfo {
   model: string;
+  is_disabled: boolean | null;
   full_name: string | null;
   aspect_ratio_options: string[] | null;
   aspect_ratio_default: string | null;
@@ -107,6 +108,7 @@ export interface OmniGenImageModelsResponse {
 
 export interface OmniGenVideoModelInfo {
   model: string;
+  is_disabled: boolean | null;
   full_name: string | null;
   aspect_ratio_options: string[] | null;
   aspect_ratio_default: string | null;

@@ -15,13 +15,13 @@
       "path": "../../libs/components/close-button"
     },
     {
+      "path": "../../libs/components/tooltip"
+    },
+    {
       "path": "../../libs/components/viewer-3d"
     },
     {
       "path": "../../libs/components/action-reminder-modal"
-    },
-    {
-      "path": "../../libs/components/tooltip"
     },
     {
       "path": "../../libs/components/toaster"
@@ -43,6 +43,9 @@
     },
     {
       "path": "../../libs/markdown-content"
+    },
+    {
+      "path": "../../libs/components/input"
     },
     {
       "path": "../../libs/components/button"

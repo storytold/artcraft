@@ -36,7 +36,7 @@ function fetchImageModelsOnce() {
     (res) => {
       imageModelsFetching = false;
       if (res.success && res.models?.length) {
-        imageModelsCache = res.models;
+        imageModelsCache = res.models.filter((m) => m.is_disabled !== true);
       } else {
         imageModelsError = "No image models returned from API";
         console.warn("[OmniGen] Image models response:", res);
@@ -61,7 +61,7 @@ function fetchVideoModelsOnce() {
     (res) => {
       videoModelsFetching = false;
       if (res.success && res.models?.length) {
-        videoModelsCache = res.models;
+        videoModelsCache = res.models.filter((m) => m.is_disabled !== true);
       } else {
         videoModelsError = "No video models returned from API";
         console.warn("[OmniGen] Video models response:", res);
