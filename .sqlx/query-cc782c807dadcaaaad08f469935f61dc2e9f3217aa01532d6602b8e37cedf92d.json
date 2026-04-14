@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO user_impersonation_requests\nSET\n  token = ?,\n  impersonated_user_token = ?,\n  impersonator_user_token = ?,\n  user_impersonation_token = ?,\n  ip_address_creation = ?,\n  expires_at = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "cc782c807dadcaaaad08f469935f61dc2e9f3217aa01532d6602b8e37cedf92d"
+}

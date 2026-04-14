@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO user_sessions (\n  token,\n  user_token,\n  maybe_impersonation_user_token,\n  ip_address_creation,\n  expires_at\n)\nVALUES (?, ?, ?, ?, ?)\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 5
+    },
+    "nullable": []
+  },
+  "hash": "ba5b0a542d4b95b781077b8895529d222dd682eb28c9d00031a820ec6f37e095"
+}

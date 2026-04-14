@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO staff_audit_logs\nSET\n  token = ?,\n  audit_action = ?,\n  maybe_entity_type = ?,\n  maybe_entity_token = ?,\n  staff_user_token = ?,\n  staff_ip_address = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "c39800423a5fe0aa324e117e624015f85d039c3ca6833cf6865471345ab0768e"
+}

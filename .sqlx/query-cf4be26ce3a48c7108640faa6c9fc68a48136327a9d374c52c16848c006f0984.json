@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE user_impersonation_requests\nSET\n  is_redeemed = TRUE,\n  ip_address_redemption = ?\nWHERE user_impersonation_token = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "cf4be26ce3a48c7108640faa6c9fc68a48136327a9d374c52c16848c006f0984"
+}
