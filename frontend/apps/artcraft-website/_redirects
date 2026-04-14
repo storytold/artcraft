@@ -17,14 +17,6 @@
 /checkout* /index.html 200
 /checkout/* /index.html 200
 
-/create-image /index.html 200
-/create-image/ /index.html 200
-/create-image/* /index.html 200
-
-/create-video /index.html 200
-/create-video/ /index.html 200
-/create-video/* /index.html 200
-
 /library /index.html 200
 /library/ /index.html 200
 /library/* /index.html 200

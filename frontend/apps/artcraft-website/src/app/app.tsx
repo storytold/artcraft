@@ -4,8 +4,8 @@ import Media from "../pages/media";
 import PressKit from "../pages/press-kit";
 import Navbar from "../components/navbar";
 import { ToastContainer } from "../components/toast/toast";
-import CreateImage from "../pages/create-image";
-import CreateVideo from "../pages/create-video";
+// import CreateImage from "../pages/create-image";
+// import CreateVideo from "../pages/create-video";
 import Landing2 from "../pages/landing2";
 import LandingSD2 from "../pages/landing-sd2";
 import TutorialsPage from "../pages/tutorials";
@@ -30,8 +30,8 @@ export function App() {
 
       <Routes>
         <Route path="/" element={<Landing2 />} />
-        <Route path="/create-image" element={<CreateImage />} />
-        <Route path="/create-video" element={<CreateVideo />} />
+        {/* <Route path="/create-image" element={<CreateImage />} />
+        <Route path="/create-video" element={<CreateVideo />} /> */}
         <Route path="/seedance-2" element={<LandingSD2 />} />
         <Route path="/download" element={<Download />} />
         <Route path="/media" element={<Media />} />

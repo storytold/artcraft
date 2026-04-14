@@ -24,8 +24,8 @@ import { TaskQueue } from "./task-queue";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
-  { name: "Image", href: "/create-image" },
-  { name: "Video", href: "/create-video" },
+  // { name: "Image", href: "/create-image" },
+  // { name: "Video", href: "/create-video" },
   { name: "Tutorials", href: "/tutorials" },
   { name: "News", href: "/news" },
   { name: "FAQ", href: "/faq" },
@@ -119,9 +119,7 @@ export default function Navbar() {
         <div
           className={twMerge(
             "transition-all duration-200",
-            scrolled || alwaysSolid || open
-              ? "bg-[#1b1b1f]"
-              : "bg-transparent",
+            scrolled || alwaysSolid || open ? "bg-[#1b1b1f]" : "bg-transparent",
           )}
         >
           <div className="mx-auto max-w-screen px-4">
