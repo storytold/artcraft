@@ -65,6 +65,7 @@ memory_caching = { path = "../../../lib/caching/memory_caching" }
 migration = { path = "../../../schema/database/migration" }
 mimetypes.workspace = true
 mysql_queries.workspace = true
+opaque_cursors.workspace = true
 pager.workspace = true
 password = { path = "../../../lib/password" }
 rootly_client.workspace = true

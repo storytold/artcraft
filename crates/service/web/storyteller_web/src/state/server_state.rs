@@ -1,3 +1,22 @@
+use crate::configs::app_startup::username_set::UsernameSet;
+use crate::configs::static_api_tokens::StaticApiTokenSet;
+use crate::http_server::deprecated_endpoints::categories::tts::list_fully_computed_assigned_tts_categories::list_fully_computed_assigned_tts_categories::ModelTokensByCategoryToken;
+use crate::http_server::deprecated_endpoints::leaderboard::get_leaderboard::LeaderboardInfo;
+use crate::http_server::endpoints::media_files::list::list_featured_media_files_handler::ListFeaturedMediaFilesQueryParams;
+use crate::http_server::endpoints::stats::result_transformer::CacheableQueueStats;
+use crate::http_server::endpoints::tts::list_tts_models::TtsModelRecordForResponse;
+use crate::http_server::endpoints::voice_conversion::list_voice_conversion_models_handler::VoiceConversionModel;
+use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
+use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
+use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
+use crate::state::flags::paging_flags::PagingFlags;
+use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
+use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
+use crate::util::encrypted_sort_id::SortKeyCrypto;
+use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
+
+use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use actix_artcraft::sessions::user_sessions::http_user_session_manager::HttpUserSessionManager;
 use actix_helpers::middleware::banned_cidr_filter::banned_cidr_set::BannedCidrSet;
 use actix_helpers::middleware::banned_ip_filter::ip_ban_list::ip_ban_list::IpBanList;
@@ -9,7 +28,6 @@ use elasticsearch::Elasticsearch;
 use fal_client::creds::fal_api_key::FalApiKey;
 use memory_caching::arc_ttl_sieve::ArcTtlSieve;
 use memory_caching::single_item_ttl_cache::SingleItemTtlCache;
-use pager::client::pager::Pager;
 use mysql_queries::mediators::badge_granter::BadgeGranter;
 use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use mysql_queries::queries::generic_inference::web::get_pending_inference_job_count::InferenceQueueLengthResult;
@@ -17,30 +35,13 @@ use mysql_queries::queries::media_files::list::list_featured_media_files::Featur
 use mysql_queries::queries::model_categories::list_categories_query_builder::CategoryList;
 use mysql_queries::queries::tts::tts_inference_jobs::get_pending_tts_inference_job_count::TtsQueueLengthResult;
 use mysql_queries::queries::w2l::w2l_templates::list_w2l_templates::W2lTemplateRecordForList;
+use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
+use pager::client::pager::Pager;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
 use reusable_types::server_environment::ServerEnvironment;
 use sqlx::MySqlPool;
 use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
-
-use crate::configs::app_startup::username_set::UsernameSet;
-use crate::configs::static_api_tokens::StaticApiTokenSet;
-use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
-use crate::http_server::deprecated_endpoints::categories::tts::list_fully_computed_assigned_tts_categories::list_fully_computed_assigned_tts_categories::ModelTokensByCategoryToken;
-use crate::http_server::deprecated_endpoints::leaderboard::get_leaderboard::LeaderboardInfo;
-use crate::http_server::endpoints::media_files::list::list_featured_media_files_handler::ListFeaturedMediaFilesQueryParams;
-use crate::http_server::endpoints::stats::result_transformer::CacheableQueueStats;
-use crate::http_server::endpoints::tts::list_tts_models::TtsModelRecordForResponse;
-use crate::http_server::endpoints::voice_conversion::list_voice_conversion_models_handler::VoiceConversionModel;
-use crate::http_server::session::session_checker::SessionChecker;
-use crate::state::flags::paging_flags::PagingFlags;
-use crate::http_server::web_utils::redis_rate_limiter::RedisRateLimiter;
-use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
-use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
-use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
-use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
-use crate::util::encrypted_sort_id::SortKeyCrypto;
-use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
 
 /// State that is injected into every endpoint.
 pub struct ServerState {
@@ -108,6 +109,7 @@ pub struct ServerState {
   pub audio_uploads_bucket_root: String,
 
   pub sort_key_crypto: SortKeyCrypto,
+  pub opaque_cursors: OpaqueCursorEncoderV2,
 
   pub ip_ban_list: IpBanList,
 

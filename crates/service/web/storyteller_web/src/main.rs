@@ -46,8 +46,6 @@ use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use chrono::Utc;
 use cloud_storage::bucket_client::BucketClient;
 use component_traits::traits::internal_user_lookup::InternalUserLookup;
-use shared_env_var_config::logging::DEFAULT_RUST_LOG;
-use shared_env_var_config::redis::env_get_redis_0_connection_string_or_default;
 use elasticsearch::http::transport::Transport;
 use elasticsearch::Elasticsearch;
 use errors::AnyhowResult;
@@ -60,6 +58,8 @@ use mysql_queries::mediators::firehose_publisher::FirehosePublisher;
 use redis::Client;
 use redis_caching::redis_ttl_cache::RedisTtlCache;
 use reusable_types::server_environment::ServerEnvironment;
+use shared_env_var_config::logging::DEFAULT_RUST_LOG;
+use shared_env_var_config::redis::env_get_redis_0_connection_string_or_default;
 use tokio::runtime::Runtime;
 use url_config::third_party_url_redirector::ThirdPartyUrlRedirector;
 use user_traits_component::traits::internal_session_cache_purge::InternalSessionCachePurge;
@@ -71,16 +71,15 @@ use crate::billing::stripe_internal_user_lookup_impl::StripeInternalUserLookupIm
 use crate::configs::app_startup::redis_rate_limiters::configure_redis_rate_limiters;
 use crate::configs::connect_to_database::connect_to_database;
 use crate::configs::static_api_tokens::StaticApiTokenSet;
-use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
 use crate::http_server::middleware::error_alerting_middleware::error_alerting_middleware::ErrorAlertingMiddleware;
 use crate::http_server::middleware::pushback_filter_middleware::PushbackFilter;
 use crate::http_server::routes::add_routes::add_routes;
 use crate::http_server::session::session_checker::SessionChecker;
 use crate::http_server::web_utils::handle_multipart_error::handle_multipart_error;
 use crate::http_server::web_utils::scoped_temp_dir_creator::ScopedTempDirCreator;
+use crate::startup::build_pager::build_pager;
 use crate::state::certs::google_sign_in_cert::GoogleSignInCert;
 use crate::state::memory_cache::model_token_to_info_cache::ModelTokenToInfoCache;
-use crate::startup::build_pager::build_pager;
 use crate::state::server_state::{DurableInMemoryCaches, EnvConfig, EphemeralInMemoryCaches, FalData, InMemoryCaches, OpenAiData, ResendData, Seedance2ProData, ServerInfo, ServerState, StaticFeatureFlags, StripeSettings, TrollBans, WorldLabsData};
 use crate::threads::db_health_checker_thread::db_health_check_status::HealthCheckStatus;
 use crate::threads::db_health_checker_thread::db_health_checker_thread::db_health_checker_thread;
@@ -89,6 +88,8 @@ use crate::threads::poll_model_token_info_thread::poll_model_token_info_thread;
 use crate::util::encrypted_sort_id::SortKeyCrypto;
 use crate::util::troll_user_bans::load_troll_user_ban_list_from_directory::load_user_token_ban_list_from_directory;
 use crate::util::troll_user_bans::troll_user_ban_list::TrollUserBanList;
+use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_manager::AvtCookieManager;
+use opaque_cursors::v2::opaque_cursor_encoder_v2::OpaqueCursorEncoderV2;
 
 pub mod billing;
 pub mod configs;
@@ -280,7 +281,9 @@ async fn main() -> AnyhowResult<()> {
   // We can even rotate it without too much impact to users.
   let sort_key_crypto_secret =
       easyenv::get_env_string_or_default("SORT_KEY_SECRET", "webscale");
+
   let sort_key_crypto = SortKeyCrypto::new(&sort_key_crypto_secret);
+  let opaque_cursor_encoder = OpaqueCursorEncoderV2::new(&sort_key_crypto_secret);
 
   let health_check_interval = easyenv::get_env_duration_seconds_or_default(
     "HEALTH_CHECK_INTERVAL_SECS", Duration::from_secs(3));
@@ -470,6 +473,7 @@ async fn main() -> AnyhowResult<()> {
     auto_gc_bucket_client,
     audio_uploads_bucket_root,
     sort_key_crypto,
+    opaque_cursors: opaque_cursor_encoder,
     static_api_token_set,
     fal: FalData {
       api_key: fal_api_key,

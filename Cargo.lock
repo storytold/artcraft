@@ -11280,6 +11280,7 @@ dependencies = [
  "mimetypes",
  "mysql_queries",
  "once_cell",
+ "opaque_cursors",
  "pager",
  "password",
  "primitives",
