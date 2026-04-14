@@ -892,7 +892,7 @@ export default function CreateVideo() {
                       }
                       triggerLabel={`${effectiveDuration}s`}
                     >
-                      <div className="w-48 pb-0.5">
+                      <div className="w-[min(16rem,calc(100vw-2rem))] pb-0.5">
                         <div className="flex items-center gap-2.5">
                           <div className="flex-1">
                             <SliderV2
@@ -909,7 +909,7 @@ export default function CreateVideo() {
                             {localDuration}s
                           </span>
                         </div>
-                        <div className="text-base-fg/40 mt-1.5 flex justify-between px-0.5 text-[11px]">
+                        <div className="text-base-fg/40 mt-1.5 flex justify-between px-0.5 text-[11px] tabular-nums">
                           <span>{durationRange.min}s</span>
                           <span>{durationRange.max}s</span>
                         </div>

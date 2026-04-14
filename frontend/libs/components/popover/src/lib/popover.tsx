@@ -1,4 +1,11 @@
-import { ReactNode, useRef, useEffect, useState, useCallback } from "react";
+import {
+  ReactNode,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useCallback,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   Popover,
@@ -179,6 +186,48 @@ export interface PopoverItem {
   selectedRight?: ReactNode;
 }
 
+const ViewportClamp = ({
+  targetRef,
+}: {
+  targetRef: React.RefObject<HTMLDivElement | null>;
+}) => {
+  useLayoutEffect(() => {
+    const el = targetRef.current;
+    if (!el) return;
+    el.style.visibility = "hidden";
+    el.style.transform = "";
+    let done = false;
+    const clamp = () => {
+      if (done || !el.isConnected) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0) return;
+      const margin = 8;
+      const vw = window.innerWidth;
+      let dx = 0;
+      if (rect.right > vw - margin) {
+        dx = vw - margin - rect.right;
+      } else if (rect.left < margin) {
+        dx = margin - rect.left;
+      }
+      el.style.transform = dx !== 0 ? `translateX(${dx}px)` : "";
+      el.style.visibility = "";
+      done = true;
+    };
+    clamp();
+    const raf = requestAnimationFrame(clamp);
+    const onResize = () => {
+      done = false;
+      clamp();
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [targetRef]);
+  return null;
+};
+
 interface PopoverMenuProps {
   items?: PopoverItem[];
   onSelect?: (item: PopoverItem) => void;
@@ -230,6 +279,7 @@ export const PopoverMenu = ({
   const [openTooltipIdx, setOpenTooltipIdx] = useState<number | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const panelContentRef = useRef<HTMLDivElement>(null);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const [scrollReady, setScrollReady] = useState(false);
@@ -509,7 +559,9 @@ export const PopoverMenu = ({
                     position === "bottom" ? "origin-top" : "origin-bottom",
                   )}
                 >
+                  {open && <ViewportClamp targetRef={panelContentRef} />}
                   <div
+                    ref={panelContentRef}
                     className={twMerge(
                       "z-10 min-w-48 mt-2 rounded-lg bg-ui-panel p-1.5 shadow-lg border border-ui-panel-border overflow-visible",
                       position === "top" ? "mb-2" : "mt-2",
