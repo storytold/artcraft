@@ -1,10 +1,10 @@
 use chrono::{DateTime, Utc};
-use sqlx::{MySqlPool, Row};
+use sqlx::MySqlPool;
 
 use tokens::tokens::users::UserToken;
 
 pub struct UserImpersonationRequestListItem {
-  pub id: u64,
+  pub id: i64,
   pub impersonator_user_token: UserToken,
   pub impersonator_username: String,
   pub impersonator_display_name: String,
@@ -31,21 +31,22 @@ pub async fn list_user_impersonation_requests_for_user(
 
   let limit = args.limit as i64;
 
-  let rows = match args.maybe_cursor_id {
+  let items = match args.maybe_cursor_id {
     Some(cursor_id) => {
       let cursor_id = cursor_id as i64;
-      sqlx::query(
+      sqlx::query_as!(
+        UserImpersonationRequestListItem,
         r#"
 SELECT
   uir.id,
-  uir.impersonator_user_token,
+  uir.impersonator_user_token as `impersonator_user_token: UserToken`,
   impersonator.username as impersonator_username,
   impersonator.display_name as impersonator_display_name,
-  uir.impersonated_user_token,
+  uir.impersonated_user_token as `impersonated_user_token: UserToken`,
   impersonated.username as impersonated_username,
   impersonated.display_name as impersonated_display_name,
-  uir.is_redeemed,
-  (uir.expires_at < NOW()) as is_expired,
+  uir.is_redeemed as `is_redeemed: bool`,
+  (uir.expires_at < NOW()) as `is_expired: bool`,
   uir.expires_at,
   uir.created_at,
   uir.updated_at
@@ -57,26 +58,27 @@ WHERE uir.impersonated_user_token = ?
 ORDER BY uir.id DESC
 LIMIT ?
         "#,
+        args.user_token,
+        cursor_id,
+        limit,
       )
-        .bind(args.user_token)
-        .bind(cursor_id)
-        .bind(limit)
         .fetch_all(args.mysql_pool)
         .await?
     }
     None => {
-      sqlx::query(
+      sqlx::query_as!(
+        UserImpersonationRequestListItem,
         r#"
 SELECT
   uir.id,
-  uir.impersonator_user_token,
+  uir.impersonator_user_token as `impersonator_user_token: UserToken`,
   impersonator.username as impersonator_username,
   impersonator.display_name as impersonator_display_name,
-  uir.impersonated_user_token,
+  uir.impersonated_user_token as `impersonated_user_token: UserToken`,
   impersonated.username as impersonated_username,
   impersonated.display_name as impersonated_display_name,
-  uir.is_redeemed,
-  (uir.expires_at < NOW()) as is_expired,
+  uir.is_redeemed as `is_redeemed: bool`,
+  (uir.expires_at < NOW()) as `is_expired: bool`,
   uir.expires_at,
   uir.created_at,
   uir.updated_at
@@ -87,30 +89,13 @@ WHERE uir.impersonated_user_token = ?
 ORDER BY uir.id DESC
 LIMIT ?
         "#,
+        args.user_token,
+        limit,
       )
-        .bind(args.user_token)
-        .bind(limit)
         .fetch_all(args.mysql_pool)
         .await?
     }
   };
-
-  let items = rows.into_iter().map(|row| {
-    UserImpersonationRequestListItem {
-      id: row.get::<i64, _>("id") as u64,
-      impersonator_user_token: UserToken::new_from_str(row.get("impersonator_user_token")),
-      impersonator_username: row.get("impersonator_username"),
-      impersonator_display_name: row.get("impersonator_display_name"),
-      impersonated_user_token: UserToken::new_from_str(row.get("impersonated_user_token")),
-      impersonated_username: row.get("impersonated_username"),
-      impersonated_display_name: row.get("impersonated_display_name"),
-      is_redeemed: row.get("is_redeemed"),
-      is_expired: row.get::<i64, _>("is_expired") != 0,
-      expires_at: row.get("expires_at"),
-      created_at: row.get("created_at"),
-      updated_at: row.get("updated_at"),
-    }
-  }).collect();
 
   Ok(items)
 }
