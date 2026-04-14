@@ -73,6 +73,7 @@ members = [
   "crates/lib/http_headers",
   "crates/lib/jobs_common",
   "crates/lib/jwt_light",
+  "crates/lib/opaque_cursors",
   "crates/lib/jwt_signer",
   "crates/lib/logging",
   "crates/lib/markdown",
@@ -252,6 +253,7 @@ images = { path = "crates/lib/files/images" }
 jobs_common = { path = "crates/lib/jobs_common" }
 jwt_light = { path = "crates/lib/jwt_light" }
 jwt_signer = { path = "crates/lib/jwt_signer" }
+opaque_cursors = { path = "crates/lib/opaque_cursors" }
 memory_caching = { path = "crates/lib/caching/memory_caching" }
 memory_store = { path = "crates/lib/caching/memory_store" }
 midjourney_client = { path = "crates/api_clients/midjourney_client" }

@@ -7751,6 +7751,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
+name = "opaque_cursors"
+version = "0.0.1"
+dependencies = [
+ "base64 0.22.1",
+ "magic-crypt",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
 name = "open"
 version = "5.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
