@@ -122,7 +122,7 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
 
   let maybe_cursor = records.last().map(|last| {
     server_state.opaque_cursors
-        .encode_last_id_cursor(CURSOR_NAME, last.id as u64)
+        .encode_last_id_cursor(CURSOR_NAME, last.id)
   }).transpose().map_err(|err| {
     warn!("Failed to encode cursor: {:?}", err);
     AdvancedCommonWebError::server_error_with_message("Failed to encode cursor")

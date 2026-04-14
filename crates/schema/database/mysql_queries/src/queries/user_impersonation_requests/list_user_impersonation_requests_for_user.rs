@@ -4,7 +4,7 @@ use sqlx::MySqlPool;
 use tokens::tokens::users::UserToken;
 
 pub struct UserImpersonationRequestListItem {
-  pub id: i64,
+  pub id: u64,
   pub impersonator_user_token: UserToken,
   pub impersonator_username: String,
   pub impersonator_display_name: String,
@@ -33,7 +33,6 @@ pub async fn list_user_impersonation_requests_for_user(
 
   let items = match args.maybe_cursor_id {
     Some(cursor_id) => {
-      let cursor_id = cursor_id as i64;
       sqlx::query_as!(
         UserImpersonationRequestListItem,
         r#"
@@ -59,7 +58,7 @@ ORDER BY uir.id DESC
 LIMIT ?
         "#,
         args.user_token,
-        cursor_id,
+        cursor_id as u64,
         limit,
       )
         .fetch_all(args.mysql_pool)
