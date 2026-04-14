@@ -54,8 +54,11 @@ pub struct DistilledVideoRequest {
   /// Cost estimate as computed by the Artcraft provider — this is what we bill on.
   pub cost: VideoGenerationCostEstimate,
 
-  /// Execution plan as computed by the Fal provider — what we hand to the router.
+  /// Execution plan as computed by the execution provider — what we hand to the router.
   plan: VideoGenerationPlan<'static>,
+
+  /// The provider used for execution (Fal, Seedance2Pro, etc.).
+  pub execution_provider: Provider,
 }
 
 impl DistilledVideoRequest {
@@ -76,6 +79,7 @@ impl DistilledVideoRequest {
 pub fn distill_video_request(
   request: &OmniGenVideoCostAndGenerateRequest,
   media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
+  execution_provider: Provider,
 ) -> Result<DistilledVideoRequest, AdvancedCommonWebError> {
   // 1. Convert the raw API request into a router request.
   let initial = hydrate_to_router_request(request)?;
@@ -155,7 +159,7 @@ pub fn distill_video_request(
 
   let request_static: GenerateVideoRequest<'static> = GenerateVideoRequest {
     model: initial.model,
-    provider: Provider::Fal,
+    provider: execution_provider,
     prompt: prompt_static,
     negative_prompt: negative_prompt_static,
     start_frame: start_frame_static,
@@ -210,6 +214,7 @@ pub fn distill_video_request(
     request: request_static,
     cost,
     plan,
+    execution_provider,
   })
 }
 
