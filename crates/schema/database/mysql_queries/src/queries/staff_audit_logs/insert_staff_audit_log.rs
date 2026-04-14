@@ -29,7 +29,7 @@ pub async fn insert_staff_audit_log<'a, 'c, E>(
 {
   let token = StaffAuditLogToken::generate();
 
-  sqlx::query(
+  sqlx::query!(
     r#"
 INSERT INTO staff_audit_logs
 SET
@@ -40,13 +40,13 @@ SET
   staff_user_token = ?,
   staff_ip_address = ?
     "#,
+    token.as_str(),
+    args.audit_action.to_str(),
+    args.maybe_entity_type.map(|ty| ty.to_str()),
+    args.maybe_entity_token,
+    args.staff_user_token.as_str(),
+    args.actor_ip_address,
   )
-    .bind(token.as_str())
-    .bind(args.audit_action.to_str())
-    .bind(args.maybe_entity_type.map(|ty| ty.to_str()))
-    .bind(args.maybe_entity_token)
-    .bind(args.staff_user_token.as_str())
-    .bind(args.actor_ip_address)
     .execute(args.mysql_executor)
     .await?;
 

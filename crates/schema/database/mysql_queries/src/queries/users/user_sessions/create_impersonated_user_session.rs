@@ -29,7 +29,7 @@ pub async fn create_impersonated_user_session<'a, 'c, E>(
 {
   let session_token = UserSessionToken::generate();
 
-  sqlx::query(
+  sqlx::query!(
     r#"
 INSERT INTO user_sessions (
   token,
@@ -40,12 +40,12 @@ INSERT INTO user_sessions (
 )
 VALUES (?, ?, ?, ?, ?)
     "#,
+    session_token.as_str(),
+    args.user_token.as_str(),
+    args.impersonator_user_token.as_str(),
+    args.ip_address,
+    args.expires_at,
   )
-    .bind(session_token.as_str())
-    .bind(args.user_token.as_str())
-    .bind(args.impersonator_user_token.as_str())
-    .bind(args.ip_address)
-    .bind(args.expires_at)
     .execute(args.mysql_executor)
     .await?;
 

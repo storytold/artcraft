@@ -32,6 +32,7 @@ use utoipa::ToSchema;
 
 use artcraft_api_defs::users::login::{LoginErrorType, LoginRequest, LoginSuccessResponse};
 use password::errors::password_confirm_error::PasswordConfirmError;
+use tokens::tokens::users::UserToken;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::util::enroll_in_studio::enroll_in_studio;
 
@@ -224,7 +225,7 @@ pub async fn login_handler(
 /// Returns the impersonated user's session token on success, or an error if the
 /// impersonation token is invalid, expired, already redeemed, or doesn't match.
 async fn try_impersonation_login(
-  target_user_token: &tokens::tokens::users::UserToken,
+  target_user_token: &UserToken,
   password: &str,
   ip_address: &str,
   mysql_pool: &MySqlPool,

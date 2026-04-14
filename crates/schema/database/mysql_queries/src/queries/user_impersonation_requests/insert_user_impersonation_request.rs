@@ -26,7 +26,7 @@ pub async fn insert_user_impersonation_request<'a, 'c, E>(
 {
   let token = UserImpersonationRequestToken::generate();
 
-  sqlx::query(
+  sqlx::query!(
     r#"
 INSERT INTO user_impersonation_requests
 SET
@@ -37,13 +37,13 @@ SET
   ip_address_creation = ?,
   expires_at = ?
     "#,
+    token.as_str(),
+    args.impersonated_user_token.as_str(),
+    args.impersonator_user_token.as_str(),
+    args.public_impersonation_token,
+    args.ip_address_creation,
+    args.expires_at,
   )
-    .bind(token.as_str())
-    .bind(args.impersonated_user_token.as_str())
-    .bind(args.impersonator_user_token.as_str())
-    .bind(args.public_impersonation_token)
-    .bind(args.ip_address_creation)
-    .bind(args.expires_at)
     .execute(args.mysql_executor)
     .await?;
 

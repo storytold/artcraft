@@ -58,7 +58,7 @@ artcraft/
 
 - Rust with no minimum supported version
 - Actix-web for HTTP services
-- SQLx for MySQL and SQLite
+- SQLx for MySQL and SQLite; prefer `sqlx::query!` / `sqlx::query_as!` compile-time checked macros over runtime `sqlx::query()` whenever possible
 - A mix of wreq and reqwest for Rust HTTP clients
 - Never use `println!` or `eprintln!` outside of tests; use `log` crate macros instead
 - When two crates export the same type name, alias imports with a suffix: `use foo::Bar as BarFoo;`

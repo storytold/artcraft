@@ -17,7 +17,7 @@ pub async fn mark_impersonation_token_as_redeemed<'a, 'c, E>(
 ) -> Result<(), sqlx::Error>
   where E: 'a + Executor<'c, Database = MySql>
 {
-  sqlx::query(
+  sqlx::query!(
     r#"
 UPDATE user_impersonation_requests
 SET
@@ -25,9 +25,9 @@ SET
   ip_address_redemption = ?
 WHERE public_impersonation_token = ?
     "#,
+    args.ip_address_redemption,
+    args.public_impersonation_token,
   )
-    .bind(args.ip_address_redemption)
-    .bind(args.public_impersonation_token)
     .execute(args.mysql_executor)
     .await?;
 

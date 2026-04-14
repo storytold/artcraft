@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use sqlx::{FromRow, MySqlPool, Row};
+use sqlx::MySqlPool;
 
 use tokens::tokens::users::UserToken;
 
@@ -17,35 +17,24 @@ pub async fn lookup_user_impersonation_request(
   public_impersonation_token: &str,
   mysql_pool: &MySqlPool,
 ) -> Result<Option<UserImpersonationRequestRecord>, sqlx::Error> {
-  let maybe_row = sqlx::query(
+  let maybe_record = sqlx::query_as!(
+    UserImpersonationRequestRecord,
     r#"
 SELECT
   token,
-  impersonated_user_token,
-  impersonator_user_token,
+  impersonated_user_token as `impersonated_user_token: UserToken`,
+  impersonator_user_token as `impersonator_user_token: UserToken`,
   public_impersonation_token,
-  is_redeemed,
+  is_redeemed as `is_redeemed: bool`,
   expires_at
 FROM user_impersonation_requests
 WHERE public_impersonation_token = ?
 LIMIT 1
     "#,
+    public_impersonation_token,
   )
-    .bind(public_impersonation_token)
     .fetch_optional(mysql_pool)
     .await?;
 
-  let row = match maybe_row {
-    Some(row) => row,
-    None => return Ok(None),
-  };
-
-  Ok(Some(UserImpersonationRequestRecord {
-    token: row.get("token"),
-    impersonated_user_token: UserToken::new_from_str(row.get("impersonated_user_token")),
-    impersonator_user_token: UserToken::new_from_str(row.get("impersonator_user_token")),
-    public_impersonation_token: row.get("public_impersonation_token"),
-    is_redeemed: row.get("is_redeemed"),
-    expires_at: row.get("expires_at"),
-  }))
+  Ok(maybe_record)
 }
