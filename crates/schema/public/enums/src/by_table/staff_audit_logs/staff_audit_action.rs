@@ -20,6 +20,14 @@ pub enum StaffAuditAction {
   /// Staff redeemed an impersonation request, creating a session.
   #[serde(rename = "impersonate_user_redeem")]
   ImpersonateUserRedeem,
+
+  /// Staff banned a user.
+  #[serde(rename = "ban_user")]
+  BanUser,
+
+  /// Staff unbanned a user.
+  #[serde(rename = "unban_user")]
+  UnbanUser,
 }
 
 impl_enum_display_and_debug_using_to_str!(StaffAuditAction);
@@ -31,6 +39,8 @@ impl StaffAuditAction {
     match self {
       Self::ImpersonateUserRequest => "impersonate_user_request",
       Self::ImpersonateUserRedeem => "impersonate_user_redeem",
+      Self::BanUser => "ban_user",
+      Self::UnbanUser => "unban_user",
     }
   }
 
@@ -38,6 +48,8 @@ impl StaffAuditAction {
     match value {
       "impersonate_user_request" => Ok(Self::ImpersonateUserRequest),
       "impersonate_user_redeem" => Ok(Self::ImpersonateUserRedeem),
+      "ban_user" => Ok(Self::BanUser),
+      "unban_user" => Ok(Self::UnbanUser),
       _ => Err(format!("invalid StaffAuditAction value: {:?}", value)),
     }
   }
@@ -46,6 +58,8 @@ impl StaffAuditAction {
     BTreeSet::from([
       Self::ImpersonateUserRequest,
       Self::ImpersonateUserRedeem,
+      Self::BanUser,
+      Self::UnbanUser,
     ])
   }
 }
@@ -62,24 +76,30 @@ mod tests {
     fn test_serialization() {
       assert_serialization(StaffAuditAction::ImpersonateUserRequest, "impersonate_user_request");
       assert_serialization(StaffAuditAction::ImpersonateUserRedeem, "impersonate_user_redeem");
+      assert_serialization(StaffAuditAction::BanUser, "ban_user");
+      assert_serialization(StaffAuditAction::UnbanUser, "unban_user");
     }
 
     #[test]
     fn to_str() {
       assert_eq!(StaffAuditAction::ImpersonateUserRequest.to_str(), "impersonate_user_request");
       assert_eq!(StaffAuditAction::ImpersonateUserRedeem.to_str(), "impersonate_user_redeem");
+      assert_eq!(StaffAuditAction::BanUser.to_str(), "ban_user");
+      assert_eq!(StaffAuditAction::UnbanUser.to_str(), "unban_user");
     }
 
     #[test]
     fn from_str() {
       assert_eq!(StaffAuditAction::from_str("impersonate_user_request").unwrap(), StaffAuditAction::ImpersonateUserRequest);
       assert_eq!(StaffAuditAction::from_str("impersonate_user_redeem").unwrap(), StaffAuditAction::ImpersonateUserRedeem);
+      assert_eq!(StaffAuditAction::from_str("ban_user").unwrap(), StaffAuditAction::BanUser);
+      assert_eq!(StaffAuditAction::from_str("unban_user").unwrap(), StaffAuditAction::UnbanUser);
       assert!(StaffAuditAction::from_str("invalid").is_err());
     }
 
     #[test]
     fn all_variants() {
-      const EXPECTED_COUNT: usize = 2;
+      const EXPECTED_COUNT: usize = 4;
       assert_eq!(StaffAuditAction::all_variants().len(), EXPECTED_COUNT);
     }
   }

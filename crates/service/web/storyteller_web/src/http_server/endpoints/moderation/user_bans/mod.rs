@@ -1,1 +1,1 @@
-pub mod ban_user;
+pub mod moderation_ban_user_handler;

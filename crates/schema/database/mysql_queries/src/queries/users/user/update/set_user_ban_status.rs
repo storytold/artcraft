@@ -1,20 +1,27 @@
-use anyhow::anyhow;
-use sqlx::MySqlPool;
+use std::marker::PhantomData;
 
-use errors::AnyhowResult;
+use sqlx::{Executor, MySql};
+
 use tokens::tokens::users::UserToken;
 
-pub struct SetUserBanStatsArgs<'a> {
+pub struct SetUserBanStatusArgs<'a, 'c: 'a, E>
+  where E: 'a + Executor<'c, Database = MySql>
+{
   pub subject_user_token: &'a UserToken,
   pub is_banned: bool,
   pub mod_user_token: &'a UserToken,
   pub maybe_mod_comments: Option<&'a str>,
-  pub mysql_pool: &'a MySqlPool,
+  pub mysql_executor: E,
+  pub phantom: PhantomData<&'c E>,
 }
 
-pub async fn set_user_ban_status(args: SetUserBanStatsArgs<'_>) -> AnyhowResult<()> {
-  let query_result = sqlx::query!(
-        r#"
+pub async fn set_user_ban_status<'a, 'c, E>(
+  args: SetUserBanStatusArgs<'a, 'c, E>,
+) -> Result<(), sqlx::Error>
+  where E: 'a + Executor<'c, Database = MySql>
+{
+  sqlx::query!(
+    r#"
 UPDATE users
 SET
     is_banned = ?,
@@ -24,17 +31,14 @@ SET
 
 WHERE users.token = ?
 LIMIT 1
-        "#,
-      args.is_banned,
-      args.maybe_mod_comments,
-      args.mod_user_token,
-      args.subject_user_token,
-    )
-      .execute(args.mysql_pool)
-      .await;
+    "#,
+    args.is_banned,
+    args.maybe_mod_comments,
+    args.mod_user_token,
+    args.subject_user_token,
+  )
+    .execute(args.mysql_executor)
+    .await?;
 
-  match query_result {
-    Ok(_) => Ok(()),
-    Err(err) => Err(anyhow!("error with query: {:?}", err)),
-  }
+  Ok(())
 }
