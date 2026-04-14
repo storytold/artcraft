@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nUPDATE users\nSET\n    is_banned = ?,\n    maybe_mod_comments = ?,\n    maybe_mod_user_token  = ?,\n    version = version + 1\n\nWHERE users.token = ?\nLIMIT 1\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "3d746dcb479005f1f4ae5e157a5ace7626eda4849d44c6c2d7079fd346eb4edc"
+}
