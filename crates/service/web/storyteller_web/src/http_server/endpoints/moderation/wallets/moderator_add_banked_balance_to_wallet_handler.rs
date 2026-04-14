@@ -20,7 +20,7 @@ use mysql_queries::queries::staff_audit_logs::insert_staff_audit_log::{
 use mysql_queries::queries::wallets::add_durable_banked_balance_to_wallet::add_durable_banked_balance_to_wallet;
 
 use tokens::tokens::wallets::WalletToken;
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -44,11 +44,14 @@ pub async fn moderator_add_banked_balance_to_wallet_handler(
   path: Path<ModeratorAddBankedBalanceToWalletPathInfo>,
   request: Json<ModeratorAddBankedBalanceToWalletRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModeratorAddBankedBalanceToWalletResponse>, CommonWebError> {
+) -> Result<Json<ModeratorAddBankedBalanceToWalletResponse>, AdvancedCommonWebError> {
 
   let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+    .map_err(|err| {
+      warn!("Moderator check failed: {:?}", err);
+      AdvancedCommonWebError::NotAuthorized
+    })?;
 
   let ip_address = get_request_ip(&http_request);
 
@@ -63,7 +66,7 @@ pub async fn moderator_add_banked_balance_to_wallet_handler(
     .await
     .map_err(|err| {
       warn!("moderator_add_banked_balance_to_wallet transaction begin error: {:?}", err);
-      CommonWebError::ServerError
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   let _result = add_durable_banked_balance_to_wallet(
@@ -76,7 +79,7 @@ pub async fn moderator_add_banked_balance_to_wallet_handler(
     .await
     .map_err(|err| {
       warn!("moderator_add_banked_balance_to_wallet error: {:?}", err);
-      CommonWebError::ServerError
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?;
 
   // Insert staff audit log.
@@ -90,14 +93,14 @@ pub async fn moderator_add_banked_balance_to_wallet_handler(
     phantom: PhantomData,
   }).await.map_err(|err| {
     warn!("Failed to insert staff audit log: {:?}", err);
-    CommonWebError::ServerError
+    AdvancedCommonWebError::from_error(err)
   })?;
 
   transaction.commit()
     .await
     .map_err(|err| {
       warn!("moderator_add_banked_balance_to_wallet commit error: {:?}", err);
-      CommonWebError::ServerError
+      AdvancedCommonWebError::from_error(err)
     })?;
 
   Ok(Json(ModeratorAddBankedBalanceToWalletResponse {
