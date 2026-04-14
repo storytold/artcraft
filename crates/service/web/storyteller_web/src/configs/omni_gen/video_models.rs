@@ -48,6 +48,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Seedance2p0,
     full_name: None,
     text_prompt_supported: Some(true),
@@ -81,6 +82,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
 
   // TODO(bt,2026-04-10): Veo 2 image-to-video doesn't support aspect ratio
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo2,
     full_name: Some("Google Veo 2".to_string()),
     text_prompt_supported: Some(true),
@@ -99,6 +101,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo3,
     full_name: Some("Google Veo 3".to_string()),
     text_prompt_supported: Some(true),
@@ -140,6 +143,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo3p1,
     full_name: Some("Google Veo 3.1".to_string()),
     text_prompt_supported: Some(true),
@@ -164,6 +168,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo3p1Fast,
     full_name: Some("Google Veo 3.1 Fast".to_string()),
     text_prompt_supported: Some(true),
@@ -188,6 +193,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling16Pro,
     full_name: Some("Kling 1.6 Pro".to_string()),
     starting_keyframe_supported: Some(true),
@@ -204,6 +210,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling21Pro,
     full_name: Some("Kling 2.1 Pro".to_string()),
     starting_keyframe_supported: Some(true),
@@ -220,6 +227,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling21Master,
     full_name: Some("Kling 2.1 Master".to_string()),
     starting_keyframe_supported: Some(true),
@@ -235,6 +243,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling2p5TurboPro,
     full_name: Some("Kling 2.5 Turbo Pro".to_string()),
     text_prompt_supported: Some(true),
@@ -252,6 +261,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling2p6Pro,
     full_name: Some("Kling 2.6 Pro".to_string()),
     text_prompt_supported: Some(true),
@@ -269,6 +279,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling3p0Pro,
     full_name: Some("Kling 3.0 Pro".to_string()),
     text_prompt_supported: Some(true),
@@ -288,6 +299,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling3p0Standard,
     full_name: Some("Kling 3.0 Standard".to_string()),
     text_prompt_supported: Some(true),
@@ -307,6 +319,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Seedance10Lite,
     full_name: Some("Seedance 1.0 Lite".to_string()),
     starting_keyframe_supported: Some(true),
@@ -333,6 +346,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Sora2,
     full_name: Some("Sora 2".to_string()),
     text_prompt_supported: Some(true),
@@ -350,6 +364,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
+    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Sora2Pro,
     full_name: Some("Sora 2 Pro".to_string()),
     text_prompt_supported: Some(true),
