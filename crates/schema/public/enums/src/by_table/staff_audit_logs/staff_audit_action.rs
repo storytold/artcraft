@@ -28,6 +28,10 @@ pub enum StaffAuditAction {
   /// Staff unbanned a user.
   #[serde(rename = "unban_user")]
   UnbanUser,
+
+  /// Staff added banked balance to a wallet.
+  #[serde(rename = "add_wallet_banked_balance")]
+  AddWalletBankedBalance,
 }
 
 impl_enum_display_and_debug_using_to_str!(StaffAuditAction);
@@ -41,6 +45,7 @@ impl StaffAuditAction {
       Self::ImpersonateUserRedeem => "impersonate_user_redeem",
       Self::BanUser => "ban_user",
       Self::UnbanUser => "unban_user",
+      Self::AddWalletBankedBalance => "add_wallet_banked_balance",
     }
   }
 
@@ -50,6 +55,7 @@ impl StaffAuditAction {
       "impersonate_user_redeem" => Ok(Self::ImpersonateUserRedeem),
       "ban_user" => Ok(Self::BanUser),
       "unban_user" => Ok(Self::UnbanUser),
+      "add_wallet_banked_balance" => Ok(Self::AddWalletBankedBalance),
       _ => Err(format!("invalid StaffAuditAction value: {:?}", value)),
     }
   }
@@ -60,6 +66,7 @@ impl StaffAuditAction {
       Self::ImpersonateUserRedeem,
       Self::BanUser,
       Self::UnbanUser,
+      Self::AddWalletBankedBalance,
     ])
   }
 }
@@ -78,6 +85,7 @@ mod tests {
       assert_serialization(StaffAuditAction::ImpersonateUserRedeem, "impersonate_user_redeem");
       assert_serialization(StaffAuditAction::BanUser, "ban_user");
       assert_serialization(StaffAuditAction::UnbanUser, "unban_user");
+      assert_serialization(StaffAuditAction::AddWalletBankedBalance, "add_wallet_banked_balance");
     }
 
     #[test]
@@ -86,6 +94,7 @@ mod tests {
       assert_eq!(StaffAuditAction::ImpersonateUserRedeem.to_str(), "impersonate_user_redeem");
       assert_eq!(StaffAuditAction::BanUser.to_str(), "ban_user");
       assert_eq!(StaffAuditAction::UnbanUser.to_str(), "unban_user");
+      assert_eq!(StaffAuditAction::AddWalletBankedBalance.to_str(), "add_wallet_banked_balance");
     }
 
     #[test]
@@ -94,12 +103,13 @@ mod tests {
       assert_eq!(StaffAuditAction::from_str("impersonate_user_redeem").unwrap(), StaffAuditAction::ImpersonateUserRedeem);
       assert_eq!(StaffAuditAction::from_str("ban_user").unwrap(), StaffAuditAction::BanUser);
       assert_eq!(StaffAuditAction::from_str("unban_user").unwrap(), StaffAuditAction::UnbanUser);
+      assert_eq!(StaffAuditAction::from_str("add_wallet_banked_balance").unwrap(), StaffAuditAction::AddWalletBankedBalance);
       assert!(StaffAuditAction::from_str("invalid").is_err());
     }
 
     #[test]
     fn all_variants() {
-      const EXPECTED_COUNT: usize = 4;
+      const EXPECTED_COUNT: usize = 5;
       assert_eq!(StaffAuditAction::all_variants().len(), EXPECTED_COUNT);
     }
   }

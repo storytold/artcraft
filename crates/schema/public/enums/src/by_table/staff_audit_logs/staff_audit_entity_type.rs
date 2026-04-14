@@ -16,6 +16,10 @@ pub enum StaffAuditEntityType {
   /// A user account.
   #[serde(rename = "user")]
   User,
+
+  /// A wallet.
+  #[serde(rename = "wallet")]
+  Wallet,
 }
 
 impl_enum_display_and_debug_using_to_str!(StaffAuditEntityType);
@@ -26,12 +30,14 @@ impl StaffAuditEntityType {
   pub fn to_str(&self) -> &'static str {
     match self {
       Self::User => "user",
+      Self::Wallet => "wallet",
     }
   }
 
   pub fn from_str(value: &str) -> Result<Self, String> {
     match value {
       "user" => Ok(Self::User),
+      "wallet" => Ok(Self::Wallet),
       _ => Err(format!("invalid StaffAuditEntityType value: {:?}", value)),
     }
   }
@@ -39,6 +45,7 @@ impl StaffAuditEntityType {
   pub fn all_variants() -> BTreeSet<Self> {
     BTreeSet::from([
       Self::User,
+      Self::Wallet,
     ])
   }
 }
@@ -54,22 +61,25 @@ mod tests {
     #[test]
     fn test_serialization() {
       assert_serialization(StaffAuditEntityType::User, "user");
+      assert_serialization(StaffAuditEntityType::Wallet, "wallet");
     }
 
     #[test]
     fn to_str() {
       assert_eq!(StaffAuditEntityType::User.to_str(), "user");
+      assert_eq!(StaffAuditEntityType::Wallet.to_str(), "wallet");
     }
 
     #[test]
     fn from_str() {
       assert_eq!(StaffAuditEntityType::from_str("user").unwrap(), StaffAuditEntityType::User);
+      assert_eq!(StaffAuditEntityType::from_str("wallet").unwrap(), StaffAuditEntityType::Wallet);
       assert!(StaffAuditEntityType::from_str("invalid").is_err());
     }
 
     #[test]
     fn all_variants() {
-      const EXPECTED_COUNT: usize = 1;
+      const EXPECTED_COUNT: usize = 2;
       assert_eq!(StaffAuditEntityType::all_variants().len(), EXPECTED_COUNT);
     }
   }

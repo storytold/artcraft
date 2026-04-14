@@ -1,15 +1,22 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::{Json, Path};
 use actix_web::{web, HttpRequest};
-use log::warn;
+use log::{info, warn};
 
 use artcraft_api_defs::moderation::wallets::moderator_add_banked_balance_to_wallet::{
   ModeratorAddBankedBalanceToWalletPathInfo,
   ModeratorAddBankedBalanceToWalletRequest,
   ModeratorAddBankedBalanceToWalletResponse,
 };
+use enums::by_table::staff_audit_logs::staff_audit_action::StaffAuditAction;
+use enums::by_table::staff_audit_logs::staff_audit_entity_type::StaffAuditEntityType;
 use enums::by_table::wallet_ledger_entries::wallet_ledger_entry_type::WalletLedgerEntryType;
+use http_server_common::request::get_request_ip::get_request_ip;
+use mysql_queries::queries::staff_audit_logs::insert_staff_audit_log::{
+  insert_staff_audit_log, InsertStaffAuditLogArgs,
+};
 use mysql_queries::queries::wallets::add_durable_banked_balance_to_wallet::add_durable_banked_balance_to_wallet;
 
 use tokens::tokens::wallets::WalletToken;
@@ -39,9 +46,18 @@ pub async fn moderator_add_banked_balance_to_wallet_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorAddBankedBalanceToWalletResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
+  let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
     .map_err(|_| CommonWebError::NotAuthorized)?;
+
+  let ip_address = get_request_ip(&http_request);
+
+  info!(
+    "Moderator {} adding {} banked credits to wallet {}",
+    user_session.user_token.as_str(),
+    request.credits,
+    path.wallet_token.as_str(),
+  );
 
   let mut transaction = server_state.mysql_pool.begin()
     .await
@@ -62,6 +78,20 @@ pub async fn moderator_add_banked_balance_to_wallet_handler(
       warn!("moderator_add_banked_balance_to_wallet error: {:?}", err);
       CommonWebError::ServerError
     })?;
+
+  // Insert staff audit log.
+  let _audit_token = insert_staff_audit_log(InsertStaffAuditLogArgs {
+    audit_action: StaffAuditAction::AddWalletBankedBalance,
+    maybe_entity_type: Some(StaffAuditEntityType::Wallet),
+    maybe_entity_token: Some(path.wallet_token.as_str()),
+    staff_user_token: &user_session.user_token,
+    actor_ip_address: &ip_address,
+    mysql_executor: &mut *transaction,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Failed to insert staff audit log: {:?}", err);
+    CommonWebError::ServerError
+  })?;
 
   transaction.commit()
     .await
