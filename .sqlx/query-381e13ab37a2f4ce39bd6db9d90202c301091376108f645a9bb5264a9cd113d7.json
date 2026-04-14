@@ -8,7 +8,7 @@
         "name": "id",
         "type_info": {
           "type": "LongLong",
-          "flags": "NOT_NULL | UNSIGNED | AUTO_INCREMENT | BINARY",
+          "flags": "NOT_NULL | PRIMARY_KEY | UNSIGNED | AUTO_INCREMENT",
           "char_set": 63,
           "max_size": 20
         }
@@ -78,7 +78,7 @@
         "name": "is_redeemed: bool",
         "type_info": {
           "type": "Tiny",
-          "flags": "NOT_NULL | BINARY",
+          "flags": "NOT_NULL",
           "char_set": 63,
           "max_size": 1
         }
@@ -98,7 +98,7 @@
         "name": "expires_at",
         "type_info": {
           "type": "Timestamp",
-          "flags": "NOT_NULL | BINARY | TIMESTAMP | NO_DEFAULT_VALUE",
+          "flags": "NOT_NULL | BINARY | NO_DEFAULT_VALUE",
           "char_set": 63,
           "max_size": 19
         }
@@ -118,7 +118,7 @@
         "name": "updated_at",
         "type_info": {
           "type": "Timestamp",
-          "flags": "NOT_NULL | BINARY | TIMESTAMP",
+          "flags": "NOT_NULL | BINARY | TIMESTAMP | ON_UPDATE_NOW",
           "char_set": 63,
           "max_size": 19
         }
