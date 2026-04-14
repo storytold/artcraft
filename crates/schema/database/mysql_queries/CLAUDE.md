@@ -52,6 +52,11 @@ schema metadata. For **new tables**, you may need to:
 2. Run `cargo sqlx prepare` to regenerate the cache
 3. Or manually create cache entries for simple INSERT/UPDATE queries (they only need parameter count)
 
+### Table Conventions
+
+- Primary key `id` columns must be `BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT`. Do not use signed IDs.
+- Always create tables with `ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin`.
+
 ### Error Types
 
 New queries should return `Result<T, sqlx::Error>` instead of the legacy `AnyhowResult<T>`.

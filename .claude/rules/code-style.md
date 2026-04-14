@@ -60,8 +60,14 @@ then the story, then the fine print.
   `use artcraft_router::...::CommonResolution as CommonResolutionRouter;`
   This avoids long fully-qualified paths in function signatures and bodies.
 
+## MySQL 
+
+- MySQL tables: primary key `id` columns must be `BIGINT(20) UNSIGNED`. Do not use signed IDs. 
+- Always create tables with `ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin`.
+
 ## TypeScript / Frontend
 
 - TypeScript with React, Vite, Zustand, Three.js
 - Nx monorepo under `crates/frontend/`
 - Two spaces for indentation
+
