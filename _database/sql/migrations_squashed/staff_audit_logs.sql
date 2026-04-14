@@ -13,14 +13,14 @@ CREATE TABLE staff_audit_logs (
   -- The type of action taken
   audit_action VARCHAR(32) NOT NULL,
 
-  -- The staff user who performed the action.
-  staff_user_token VARCHAR(32) DEFAULT NULL,
-
   -- The type of entity acted upon (if any)
   maybe_entity_type VARCHAR(16) DEFAULT NULL,
 
   -- The token of the entity mutated (if any)
   maybe_entity_token VARCHAR(32) NOT NULL,
+
+  -- The staff user who performed the action.
+  staff_user_token VARCHAR(32) DEFAULT NULL,
 
   -- For abuse tracking.
   -- Wide enough for IPv4/6
@@ -31,9 +31,9 @@ CREATE TABLE staff_audit_logs (
   -- INDICES --
   PRIMARY KEY (id),
   UNIQUE KEY (token),
-  KEY index_staff_user_token (staff_user_token),
   KEY index_maybe_entity_type (maybe_entity_type),
   KEY index_maybe_entity_token (maybe_entity_token),
+  KEY index_staff_user_token (staff_user_token),
   KEY index_created_at (created_at)
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
