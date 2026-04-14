@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use actix_web::web::{Json, Path, Query};
+use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
 use utoipa::{IntoParams, ToSchema};
 
-use mysql_queries::queries::user_impersonation_requests::list_user_impersonation_requests_for_user::{
-  list_user_impersonation_requests_for_user, ListUserImpersonationRequestsArgs,
+use mysql_queries::queries::user_impersonation_requests::list_user_impersonation_requests::{
+  list_user_impersonation_requests, ListUserImpersonationRequestsArgs,
 };
 use tokens::tokens::users::UserToken;
 
@@ -17,19 +17,14 @@ use crate::http_server::web_utils::user_session::require_moderator::{
 };
 use crate::state::server_state::ServerState;
 
-const CURSOR_NAME: &str = "moduserimp";
+const CURSOR_NAME: &str = "modallimp";
 const DEFAULT_LIMIT: u32 = 50;
 const MAX_LIMIT: u32 = 1000;
 
 // --- Request ---
 
-#[derive(Deserialize, ToSchema)]
-pub struct ListImpersonationRequestsPathInfo {
-  user_token: UserToken,
-}
-
 #[derive(Deserialize, ToSchema, IntoParams)]
-pub struct ListImpersonationRequestsQueryParams {
+pub struct ListAllImpersonationRequestsQueryParams {
   pub cursor: Option<String>,
   pub limit: Option<u32>,
 }
@@ -37,14 +32,14 @@ pub struct ListImpersonationRequestsQueryParams {
 // --- Response ---
 
 #[derive(Serialize, ToSchema)]
-pub struct ListUserImpersonationRequestsSuccessResponse {
+pub struct ListAllImpersonationRequestsSuccessResponse {
   pub success: bool,
-  pub impersonation_requests: Vec<UserImpersonationRequestResponse>,
+  pub impersonation_requests: Vec<AllImpersonationRequestResponse>,
   pub maybe_cursor: Option<String>,
 }
 
 #[derive(Serialize, ToSchema)]
-pub struct UserImpersonationRequestResponse {
+pub struct AllImpersonationRequestResponse {
   pub impersonator_user_token: UserToken,
   pub impersonator_username: String,
   pub impersonator_display_name: String,
@@ -60,26 +55,25 @@ pub struct UserImpersonationRequestResponse {
 
 // --- Handler ---
 
-/// List impersonation requests for a given user. Moderators only.
+/// List all impersonation requests (not scoped to a user). Moderators only.
 #[utoipa::path(
   get,
   tag = "Moderation",
-  path = "/v1/moderation/user_sessions/impersonation_requests/user/{user_token}",
+  path = "/v1/moderation/user_sessions/impersonation_requests/list",
   params(
-    ListImpersonationRequestsQueryParams,
+    ListAllImpersonationRequestsQueryParams,
   ),
   responses(
-    (status = 200, description = "Success", body = ListUserImpersonationRequestsSuccessResponse),
+    (status = 200, description = "Success", body = ListAllImpersonationRequestsSuccessResponse),
     (status = 401, description = "Unauthorized"),
     (status = 500, description = "Server error"),
   ),
 )]
-pub async fn moderator_list_user_session_impersonation_requests_for_user_handler(
+pub async fn moderator_list_user_session_impersonation_requests_handler(
   http_request: HttpRequest,
-  path: Path<ListImpersonationRequestsPathInfo>,
-  query: Query<ListImpersonationRequestsQueryParams>,
+  query: Query<ListAllImpersonationRequestsQueryParams>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ListUserImpersonationRequestsSuccessResponse>, AdvancedCommonWebError> {
+) -> Result<Json<ListAllImpersonationRequestsSuccessResponse>, AdvancedCommonWebError> {
 
   let _user_session = require_moderator(
     &http_request,
@@ -108,9 +102,8 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
     }
   };
 
-  let records = list_user_impersonation_requests_for_user(
+  let records = list_user_impersonation_requests(
     ListUserImpersonationRequestsArgs {
-      user_token: path.user_token.as_str(),
       maybe_cursor_id,
       limit,
       mysql_pool: &server_state.mysql_pool,
@@ -129,7 +122,7 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
   })?;
 
   let impersonation_requests = records.into_iter().map(|r| {
-    UserImpersonationRequestResponse {
+    AllImpersonationRequestResponse {
       impersonator_user_token: r.impersonator_user_token,
       impersonator_username: r.impersonator_username,
       impersonator_display_name: r.impersonator_display_name,
@@ -144,7 +137,7 @@ pub async fn moderator_list_user_session_impersonation_requests_for_user_handler
     }
   }).collect();
 
-  Ok(Json(ListUserImpersonationRequestsSuccessResponse {
+  Ok(Json(ListAllImpersonationRequestsSuccessResponse {
     success: true,
     impersonation_requests,
     maybe_cursor,

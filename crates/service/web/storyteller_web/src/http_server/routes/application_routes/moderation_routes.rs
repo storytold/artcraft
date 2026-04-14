@@ -37,6 +37,7 @@ use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handl
 use crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::edit_user_feature_flags_handler::edit_user_feature_flags_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler;
+use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler;
 
 pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
@@ -110,7 +111,11 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
                 .route(web::post().to(moderator_user_session_impersonation_request_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
-            .service(web::resource("/impersonation_requests/{user_token}")
+            .service(web::resource("/impersonation_requests/list")
+                .route(web::get().to(moderator_list_user_session_impersonation_requests_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+            .service(web::resource("/impersonation_requests/user/{user_token}")
                 .route(web::get().to(moderator_list_user_session_impersonation_requests_for_user_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )

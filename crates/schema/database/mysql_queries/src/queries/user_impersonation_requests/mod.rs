@@ -1,4 +1,5 @@
 pub mod insert_user_impersonation_request;
+pub mod list_user_impersonation_requests;
 pub mod list_user_impersonation_requests_for_user;
 pub mod lookup_user_impersonation_request;
 pub mod mark_impersonation_token_as_redeemed;
