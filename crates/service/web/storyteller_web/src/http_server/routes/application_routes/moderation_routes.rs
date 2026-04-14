@@ -35,6 +35,7 @@ use crate::http_server::endpoints::moderation::user::moderator_list_users_by_sig
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_by_stripe_customer_id_handler::moderator_user_lookup_by_stripe_customer_id_handler;
 use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handler::moderator_user_lookup_handler;
 use crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler;
+use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::moderator_list_staff_audit_logs_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::edit_user_feature_flags_handler::edit_user_feature_flags_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler;
@@ -103,6 +104,12 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
         .service(web::scope("/wallets")
             .service(web::resource("/user/{user_token}/list")
                 .route(web::get().to(list_user_wallets_handler))
+                .route(web::head().to(|| HttpResponse::Ok()))
+            )
+        )
+        .service(web::scope("/staff_audit_logs")
+            .service(web::resource("/list")
+                .route(web::get().to(moderator_list_staff_audit_logs_handler))
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )
