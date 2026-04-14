@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::web::Json;
@@ -5,11 +6,14 @@ use actix_web::{web, HttpRequest};
 use log::warn;
 
 use artcraft_api_defs::moderation::alerts::moderation_send_alert::{ModerationSendAlertRequest, ModerationSendAlertResponse, ModerationSendAlertUrgency};
-use pager::client::pager::Pager;
-use pager::notification::notification_details::NotificationDetails;
+use enums::by_table::staff_audit_logs::staff_audit_action::StaffAuditAction;
+use http_server_common::request::get_request_ip::get_request_ip;
+use mysql_queries::queries::staff_audit_logs::insert_staff_audit_log::{
+  insert_staff_audit_log, InsertStaffAuditLogArgs,
+};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
-use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
 use crate::state::server_state::ServerState;
 
@@ -29,11 +33,16 @@ pub async fn moderation_send_alert_handler(
   http_request: HttpRequest,
   request: Json<ModerationSendAlertRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<Json<ModerationSendAlertResponse>, CommonWebError> {
+) -> Result<Json<ModerationSendAlertResponse>, AdvancedCommonWebError> {
 
   let user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
     .await
-    .map_err(|_| CommonWebError::NotAuthorized)?;
+    .map_err(|err| {
+      warn!("Moderator check failed: {:?}", err);
+      AdvancedCommonWebError::NotAuthorized
+    })?;
+
+  let ip_address = get_request_ip(&http_request);
 
   let title = request.title.clone()
     .unwrap_or_else(|| "Moderation Alert".to_string());
@@ -68,8 +77,22 @@ pub async fn moderation_send_alert_handler(
     .enqueue_page(notification)
     .map_err(|err| {
       warn!("moderation_send_alert error: {:?}", err);
-      CommonWebError::ServerError
+      AdvancedCommonWebError::server_error_with_message("Failed to enqueue alert")
     })?;
+
+  // Insert staff audit log.
+  let _audit_token = insert_staff_audit_log(InsertStaffAuditLogArgs {
+    audit_action: StaffAuditAction::SendAlert,
+    maybe_entity_type: None,
+    maybe_entity_token: None,
+    staff_user_token: &user_session.user_token,
+    actor_ip_address: &ip_address,
+    mysql_executor: &server_state.mysql_pool,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Failed to insert staff audit log: {:?}", err);
+    AdvancedCommonWebError::from_error(err)
+  })?;
 
   Ok(Json(ModerationSendAlertResponse {
     success: true,
