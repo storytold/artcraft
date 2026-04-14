@@ -19,6 +19,7 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
   use url::Url;
 
+  use artcraft_router::api::provider::Provider;
   use crate::http_server::endpoints::omni_gen::generate::video::distill_video_request::{
     distill_video_request, DistilledVideoRequest,
   };
@@ -75,7 +76,7 @@ mod tests {
 
   fn distill_text(request: &OmniGenVideoCostAndGenerateRequest) -> DistilledVideoRequest {
     let empty: HashMap<MediaFileToken, Url> = HashMap::new();
-    distill_video_request(request, Some(&empty))
+    distill_video_request(request, Some(&empty), Provider::Fal)
       .expect("distill_video_request should succeed for Seedance 1.5 Pro (text)")
   }
 
@@ -83,7 +84,7 @@ mod tests {
     request: &OmniGenVideoCostAndGenerateRequest,
     hydration: &HashMap<MediaFileToken, Url>,
   ) -> DistilledVideoRequest {
-    distill_video_request(request, Some(hydration))
+    distill_video_request(request, Some(hydration), Provider::Fal)
       .expect("distill_video_request should succeed for Seedance 1.5 Pro (image)")
   }
 
