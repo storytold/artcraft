@@ -9,6 +9,7 @@ import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
 import { ToggleButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   PromptBox,
@@ -131,6 +132,32 @@ function buildSizePopoverItems(
     ),
     action: ar,
   }));
+}
+
+function resolveDurationForModel(
+  model: OmniGenVideoModelInfo,
+  current: number | null,
+): number | null {
+  if (current == null) return model.duration_seconds_default ?? null;
+  if (
+    model.duration_seconds_min != null &&
+    model.duration_seconds_max != null
+  ) {
+    if (
+      current >= model.duration_seconds_min &&
+      current <= model.duration_seconds_max
+    ) {
+      return current;
+    }
+    return model.duration_seconds_default ?? model.duration_seconds_min;
+  }
+  if (model.duration_seconds_options?.length) {
+    if (model.duration_seconds_options.includes(current)) return current;
+    return (
+      model.duration_seconds_default ?? model.duration_seconds_options[0]!
+    );
+  }
+  return model.duration_seconds_default ?? null;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -334,16 +361,45 @@ export default function CreateVideo() {
       ),
     [selectedModel?.aspect_ratio_options, selectedSize],
   );
-  const durationItems = useMemo(
-    (): PopoverItem[] | null =>
-      selectedModel?.duration_seconds_options
-        ? selectedModel.duration_seconds_options.map((d) => ({
-            label: `${d}s`,
-            selected:
-              d === (duration ?? selectedModel.duration_seconds_default),
-          }))
-        : null,
-    [selectedModel, duration],
+  const durationRange = useMemo((): { min: number; max: number } | null => {
+    if (!selectedModel) return null;
+    if (
+      selectedModel.duration_seconds_min != null &&
+      selectedModel.duration_seconds_max != null &&
+      selectedModel.duration_seconds_max > selectedModel.duration_seconds_min
+    ) {
+      return {
+        min: selectedModel.duration_seconds_min,
+        max: selectedModel.duration_seconds_max,
+      };
+    }
+    if (
+      selectedModel.duration_seconds_options &&
+      selectedModel.duration_seconds_options.length > 1
+    ) {
+      const opts = [...selectedModel.duration_seconds_options].sort(
+        (a, b) => a - b,
+      );
+      return { min: opts[0]!, max: opts[opts.length - 1]! };
+    }
+    return null;
+  }, [selectedModel]);
+  const effectiveDuration =
+    duration ?? selectedModel?.duration_seconds_default ?? 5;
+  const [localDuration, setLocalDuration] = useState(effectiveDuration);
+  const durationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => {
+    clearTimeout(durationTimerRef.current);
+    setLocalDuration(effectiveDuration);
+    return () => clearTimeout(durationTimerRef.current);
+  }, [effectiveDuration]);
+  const handleDurationSlide = useCallback(
+    (v: number) => {
+      setLocalDuration(v);
+      clearTimeout(durationTimerRef.current);
+      durationTimerRef.current = setTimeout(() => setDuration(v), 300);
+    },
+    [setDuration],
   );
   const resolutionItems = useMemo(
     (): PopoverItem[] | null =>
@@ -419,10 +475,12 @@ export default function CreateVideo() {
     (item: PopoverItem) => {
       const model = item.action ? _modelLookup.get(item.action) : undefined;
       if (!model) return;
+      const currentDuration = useCreateVideoStore.getState().ui.duration;
+      const nextDuration = resolveDurationForModel(model, currentDuration);
       setUi({
         selectedModelId: model.model,
         selectedSize: model.aspect_ratio_default ?? "wide_sixteen_by_nine",
-        duration: model.duration_seconds_default ?? null,
+        duration: nextDuration,
         resolution: model.resolution_default ?? null,
         generateWithSound: false,
         inputMode: "keyframe",
@@ -460,14 +518,6 @@ export default function CreateVideo() {
       if (item.action) setSelectedSize(item.action);
     },
     [setSelectedSize],
-  );
-
-  const handleDurationChange = useCallback(
-    (item: PopoverItem) => {
-      const seconds = parseInt(item.label, 10);
-      if (!isNaN(seconds)) setDuration(seconds);
-    },
-    [setDuration],
   );
 
   const handleResolutionChange = useCallback(
@@ -829,17 +879,10 @@ export default function CreateVideo() {
                     />
                   </Tooltip>
                 )}
-                {durationItems && (
-                  <Tooltip
-                    content="Duration"
-                    position="top"
-                    className="z-50"
-                    closeOnClick
-                  >
+                {durationRange && (
+                  <Tooltip content="Duration" position="top" className="z-50">
                     <PopoverMenu
-                      items={durationItems}
-                      onSelect={handleDurationChange}
-                      mode="toggle"
+                      mode="default"
                       panelTitle="Duration"
                       triggerIcon={
                         <FontAwesomeIcon
@@ -847,7 +890,31 @@ export default function CreateVideo() {
                           className="h-3.5 w-3.5"
                         />
                       }
-                    />
+                      triggerLabel={`${effectiveDuration}s`}
+                    >
+                      <div className="w-48 pb-0.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex-1">
+                            <SliderV2
+                              min={durationRange.min}
+                              max={durationRange.max}
+                              value={localDuration}
+                              onChange={handleDurationSlide}
+                              step={1}
+                              suffix="s"
+                              variant="filled"
+                            />
+                          </div>
+                          <span className="text-base-fg min-w-6 shrink-0 text-sm font-medium tabular-nums">
+                            {localDuration}s
+                          </span>
+                        </div>
+                        <div className="text-base-fg/40 mt-1.5 flex justify-between px-0.5 text-[11px]">
+                          <span>{durationRange.min}s</span>
+                          <span>{durationRange.max}s</span>
+                        </div>
+                      </div>
+                    </PopoverMenu>
                   </Tooltip>
                 )}
                 {hasSound && (

@@ -65,6 +65,7 @@ module.exports = {
         background: "#242424",
         panel: "#1F1F1F",
         "panel-border": "#3F3F3F",
+        border: "#3F3F3F",
         controls: "#3E3E41",
         "controls-button": "#3E3E41",
         "controls-border": "#3f3f3f",

@@ -113,7 +113,7 @@ export const SliderV2 = ({
       {showDecrement && (
         <Button
           icon={faMinus}
-          className="focus-visible:outline-primary my-auto mr-1 size-6 rounded-full bg-transparent text-white/80 hover:bg-white/10 active:bg-brand-primary/30"
+          className="focus-visible:outline-primary my-auto mr-1 size-6 rounded-full bg-transparent text-white/80 hover:bg-white/10 active:bg-primary/30"
           onClick={handleDecrement}
         />
       )}
@@ -130,8 +130,8 @@ export const SliderV2 = ({
         >
           <div
             className={twMerge(
-              "absolute h-full bg-brand-primary/30 transition-colors duration-300 group-hover:bg-brand-primary/50",
-              isDragging && "!bg-brand-primary/50"
+              "absolute h-full bg-primary/30 transition-colors duration-300 group-hover:bg-primary/50",
+              isDragging && "!bg-primary/50"
             )}
             style={{ width: `${percentage}%` }}
           >
@@ -188,7 +188,7 @@ export const SliderV2 = ({
       {showIncrement && (
         <Button
           icon={faPlus}
-          className="focus-visible:outline-primary my-auto ml-1 size-6 rounded-full bg-transparent text-white/80 hover:bg-white/10 active:bg-brand-primary/30"
+          className="focus-visible:outline-primary my-auto ml-1 size-6 rounded-full bg-transparent text-white/80 hover:bg-white/10 active:bg-primary/30"
           onClick={handleIncrement}
         />
       )}
