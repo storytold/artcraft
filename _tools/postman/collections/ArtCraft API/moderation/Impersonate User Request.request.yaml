@@ -1,0 +1,11 @@
+$kind: http-request
+name: Impersonate User Request
+url: "{{api_host}}/v1/moderation/user_sessions/impersonate"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "username": "newuser3"
+    }
+order: 4318829221021218
