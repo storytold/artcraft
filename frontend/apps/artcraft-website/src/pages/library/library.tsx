@@ -396,7 +396,7 @@ export default function Library() {
           ) : allItems.length === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <p className="text-white/40 text-sm mb-4">No items yet.</p>
-              {/* <div className="flex gap-3">
+              <div className="flex gap-3">
                 <Link to="/create-image">
                   <Button variant="primary" className="text-sm px-4 py-2">
                     Create Image
@@ -410,7 +410,7 @@ export default function Library() {
                     Create Video
                   </Button>
                 </Link>
-              </div> */}
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
