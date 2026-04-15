@@ -15,7 +15,7 @@ body:
   type: json
   content: |
     {
-        "user_token": "user_jg7ng4kdt2x5y", // newuser946
+        "user_token": "user_rtdhen9kz73kx", // 
         "payments_namespace": "artcraft"
     }
 order: 4100053395280358

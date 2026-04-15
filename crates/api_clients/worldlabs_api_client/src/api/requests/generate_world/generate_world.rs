@@ -90,8 +90,11 @@ pub async fn generate_world(args: GenerateWorldArgs<'_>) -> Result<GenerateWorld
 mod tests {
   use super::*;
   use crate::api::requests::generate_world::http_request::{ContentReference, WorldPrompt};
+  use crate::api::requests::prepare_upload::prepare_upload::{prepare_upload, PrepareUploadArgs, MediaAssetKind};
+  use crate::api::requests::upload_to_signed_url::upload_to_signed_url::{upload_to_signed_url, UploadToSignedUrlArgs};
   use crate::test_utils::get_test_api_key::get_test_api_key;
   use crate::test_utils::setup_test_logging::setup_test_logging;
+  use filesys::file_read_bytes::file_read_bytes;
   use log::LevelFilter;
 
   #[tokio::test]
@@ -150,5 +153,198 @@ mod tests {
     println!("Done: {}", response.done);
 
     assert_eq!(1, 2);
+  }
+
+  /// End-to-end: upload a safe image step by step (prepare → upload →
+  /// generate_world), printing each step's result for debugging.
+  ///
+  /// Uses a synthetic gradient PNG from test_data/.
+  #[tokio::test]
+  #[ignore]
+  async fn test_generate_world_for_safe_image() {
+    setup_test_logging(LevelFilter::Debug);
+
+    let creds = get_test_api_key().unwrap();
+
+    // --- Read file ---
+    let file_bytes = file_read_bytes("test_data/image/mochi.jpg")
+        .expect("failed to read safe test image");
+    println!("Read {} bytes from safe test image", file_bytes.len());
+
+    // --- Step 1: prepare_upload ---
+    println!("\n=== Step 1: prepare_upload ===");
+    let prepare_result = prepare_upload(PrepareUploadArgs {
+      creds: &creds,
+      file_name: "mochi.jpg",
+      kind: MediaAssetKind::Image,
+      request_timeout: None,
+    }).await;
+
+    println!("prepare_upload result: {:?}", prepare_result.as_ref().map(|r| &r.media_asset_id));
+
+    let prepare_response = match prepare_result {
+      Ok(r) => {
+        println!("  Media Asset ID: {}", r.media_asset_id.as_str());
+        println!("  Upload URL: {}", r.upload_url);
+        println!("  Required headers: {:?}", r.required_headers);
+        r
+      }
+      Err(err) => {
+        println!("  ERROR at prepare_upload: {:?}", err);
+        panic!("prepare_upload failed: {:?}", err);
+      }
+    };
+
+    // --- Step 2: upload_to_signed_url ---
+    println!("\n=== Step 2: upload_to_signed_url ===");
+    let upload_result = upload_to_signed_url(UploadToSignedUrlArgs {
+      upload_url: &prepare_response.upload_url,
+      file_bytes,
+      required_headers: &prepare_response.required_headers,
+      content_type: "image/jpeg",
+      request_timeout: None,
+    }).await;
+
+    match &upload_result {
+      Ok(()) => println!("  Upload succeeded."),
+      Err(err) => {
+        println!("  ERROR at upload_to_signed_url: {:?}", err);
+        panic!("upload_to_signed_url failed: {:?}", err);
+      }
+    }
+
+    // --- Step 3: generate_world ---
+    println!("\n=== Step 3: generate_world ===");
+    let generate_result = generate_world(GenerateWorldArgs {
+      creds: &creds,
+      world_prompt: WorldPrompt::Image {
+        image_prompt: ContentReference::MediaAsset {
+          media_asset_id: prepare_response.media_asset_id.as_str().to_string(),
+        },
+        text_prompt: Some("A colorful gradient landscape".to_string()),
+        is_pano: None,
+        disable_recaption: None,
+      },
+      display_name: None,
+      model: WorldLabsModel::Marble0p1Mini,
+      seed: None,
+      tags: None,
+      permission: None,
+      request_timeout: None,
+    }).await;
+
+    match &generate_result {
+      Ok(r) => {
+        println!("  SUCCESS — safe image");
+        println!("  Operation ID: {}", r.operation_id.as_str());
+        println!("  Done: {}", r.done);
+      }
+      Err(err) => {
+        println!("  ERROR at generate_world: {:?}", err);
+      }
+    }
+
+    assert_eq!(1, 2, "Inspect output above");
+  }
+
+  /// End-to-end: upload an NSFW image step by step (prepare → upload →
+  /// generate_world), printing each step's result for debugging.
+  ///
+  /// We expect the NSFW rejection to happen at one of these steps.
+  /// This test helps us identify *which* step returns the moderation error
+  /// and what the error response body looks like.
+  ///
+  /// NB: Place the NSFW test image at `test_data/images/nsfw_test_image.png`.
+  /// This file is NOT checked into git.
+  #[tokio::test]
+  #[ignore]
+  async fn test_generate_world_for_nsfw_image() {
+    setup_test_logging(LevelFilter::Debug);
+
+    let creds = get_test_api_key().unwrap();
+
+    // --- Read file ---
+    let file_bytes = file_read_bytes("/Users/bt/Pictures/nsfw_test/nsfw_test_1.jpg")
+        .expect("failed to read NSFW test image");
+    println!("Read {} bytes from NSFW test image", file_bytes.len());
+
+    // --- Step 1: prepare_upload ---
+    println!("\n=== Step 1: prepare_upload ===");
+    let prepare_result = prepare_upload(PrepareUploadArgs {
+      creds: &creds,
+      file_name: "nsfw_test_1.jpg",
+      kind: MediaAssetKind::Image,
+      request_timeout: None,
+    }).await;
+
+    let prepare_response = match prepare_result {
+      Ok(r) => {
+        println!("  OK — Media Asset ID: {}", r.media_asset_id.as_str());
+        println!("  Upload URL: {}", r.upload_url);
+        r
+      }
+      Err(err) => {
+        println!("  NSFW CAUGHT AT STEP 1 (prepare_upload)!");
+        println!("  Error (Debug): {:?}", err);
+        println!("  Error (Display): {}", err);
+        assert_eq!(1, 2, "NSFW caught at prepare_upload — inspect output above");
+        unreachable!();
+      }
+    };
+
+    // --- Step 2: upload_to_signed_url ---
+    println!("\n=== Step 2: upload_to_signed_url ===");
+    let upload_result = upload_to_signed_url(UploadToSignedUrlArgs {
+      upload_url: &prepare_response.upload_url,
+      file_bytes,
+      required_headers: &prepare_response.required_headers,
+      content_type: "image/jpeg",
+      request_timeout: None,
+    }).await;
+
+    match &upload_result {
+      Ok(()) => println!("  OK — upload succeeded."),
+      Err(err) => {
+        println!("  NSFW CAUGHT AT STEP 2 (upload_to_signed_url)!");
+        println!("  Error (Debug): {:?}", err);
+        println!("  Error (Display): {}", err);
+        assert_eq!(1, 2, "NSFW caught at upload — inspect output above");
+      }
+    }
+
+    // --- Step 3: generate_world ---
+    println!("\n=== Step 3: generate_world ===");
+    let generate_result = generate_world(GenerateWorldArgs {
+      creds: &creds,
+      world_prompt: WorldPrompt::Image {
+        image_prompt: ContentReference::MediaAsset {
+          media_asset_id: prepare_response.media_asset_id.as_str().to_string(),
+        },
+        text_prompt: None,
+        is_pano: None,
+        disable_recaption: None,
+      },
+      display_name: None,
+      model: WorldLabsModel::Marble0p1Mini,
+      seed: None,
+      tags: None,
+      permission: None,
+      request_timeout: None,
+    }).await;
+
+    match &generate_result {
+      Ok(r) => {
+        println!("  UNEXPECTED SUCCESS — NSFW image was NOT rejected at generate_world!");
+        println!("  Operation ID: {}", r.operation_id.as_str());
+        println!("  Done: {}", r.done);
+      }
+      Err(err) => {
+        println!("  NSFW CAUGHT AT STEP 3 (generate_world)!");
+        println!("  Error (Debug): {:?}", err);
+        println!("  Error (Display): {}", err);
+      }
+    }
+
+    assert_eq!(1, 2, "Inspect output above");
   }
 }
