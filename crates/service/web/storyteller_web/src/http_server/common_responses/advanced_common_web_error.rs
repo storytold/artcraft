@@ -36,12 +36,21 @@ use anyhow::anyhow;
 pub enum AdvancedCommonWebError {
   /// 400 Bad Request with a user-facing message.
   BadInputWithSimpleMessage(String),
+
   /// 401 Unauthorized.
   NotAuthorized,
+
   /// 404 Not Found.
   NotFound,
+
   /// 402 Payment Required.
   PaymentRequired,
+
+  /// 403 Forbidden — content was rejected by a content policy filter (e.g. NSFW).
+  ContentPolicyRejected,
+
+  /// 403 Forbidden — content was rejected, with a user-facing message.
+  ContentPolicyRejectedWithMessage(String),
 
   /// Uncaught errors are always 500 Internal Server Error.
   /// The user will never see the error cause or message, but our
@@ -122,6 +131,8 @@ impl Display for AdvancedCommonWebError {
       Self::NotAuthorized => write!(f, "Not authorized"),
       Self::NotFound => write!(f, "Not found"),
       Self::PaymentRequired => write!(f, "Payment required"),
+      Self::ContentPolicyRejected => write!(f, "Content policy rejected"),
+      Self::ContentPolicyRejectedWithMessage(msg) => write!(f, "Content policy rejected: {}", msg),
       Self::UncaughtServerError(err) => write!(f, "Server error: {}", err),
       Self::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
         write!(f, "Server error: {}: {}", internal_message, error)
@@ -137,6 +148,8 @@ impl std::fmt::Debug for AdvancedCommonWebError {
       Self::NotAuthorized => write!(f, "NotAuthorized"),
       Self::NotFound => write!(f, "NotFound"),
       Self::PaymentRequired => write!(f, "PaymentRequired"),
+      Self::ContentPolicyRejected => write!(f, "ContentPolicyRejected"),
+      Self::ContentPolicyRejectedWithMessage(msg) => write!(f, "ContentPolicyRejectedWithMessage({:?})", msg),
       Self::UncaughtServerError(err) => write!(f, "UncaughtServerError({:?})", err),
       Self::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
         write!(f, "UncaughtServerErrorWithInternalMessage({:?}, {:?})", internal_message, error)
@@ -149,6 +162,7 @@ impl std::error::Error for AdvancedCommonWebError {
   fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
     match self {
       Self::UncaughtServerError(err) => Some(err.as_ref()),
+      Self::UncaughtServerErrorWithInternalMessage { error, .. } => Some(error.as_ref()),
       _ => None,
     }
   }
@@ -163,6 +177,8 @@ impl ResponseError for AdvancedCommonWebError {
       Self::NotAuthorized => StatusCode::UNAUTHORIZED,
       Self::NotFound => StatusCode::NOT_FOUND,
       Self::PaymentRequired => StatusCode::PAYMENT_REQUIRED,
+      Self::ContentPolicyRejected => StatusCode::FORBIDDEN,
+      Self::ContentPolicyRejectedWithMessage(_) => StatusCode::FORBIDDEN,
       Self::UncaughtServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
       Self::UncaughtServerErrorWithInternalMessage { .. } => StatusCode::INTERNAL_SERVER_ERROR,
     }
@@ -174,6 +190,24 @@ impl ResponseError for AdvancedCommonWebError {
     match self {
       Self::BadInputWithSimpleMessage(msg) => {
         HttpResponse::BadRequest()
+            .json(JsonErrorWithMessage {
+              success: false,
+              error_code: status.as_u16(),
+              error_code_str: status.canonical_reason(),
+              message: msg,
+            })
+      }
+      Self::ContentPolicyRejected => {
+        HttpResponseBuilder::new(status)
+            .json(JsonErrorWithMessage {
+              success: false,
+              error_code: status.as_u16(),
+              error_code_str: status.canonical_reason(),
+              message: "Content rejected by policy",
+            })
+      }
+      Self::ContentPolicyRejectedWithMessage(msg) => {
+        HttpResponseBuilder::new(status)
             .json(JsonErrorWithMessage {
               success: false,
               error_code: status.as_u16(),
@@ -458,5 +492,27 @@ mod tests {
     assert!(std::error::Error::source(&AdvancedCommonWebError::NotFound).is_none());
     assert!(std::error::Error::source(&AdvancedCommonWebError::NotAuthorized).is_none());
     assert!(std::error::Error::source(&AdvancedCommonWebError::PaymentRequired).is_none());
+    assert!(std::error::Error::source(&AdvancedCommonWebError::ContentPolicyRejected).is_none());
+    assert!(std::error::Error::source(&AdvancedCommonWebError::ContentPolicyRejectedWithMessage("test".to_string())).is_none());
+  }
+
+  #[test]
+  fn content_policy_rejected_returns_403() {
+    let error = AdvancedCommonWebError::ContentPolicyRejected;
+    assert_eq!(error.status_code(), StatusCode::FORBIDDEN);
+    assert!(!error.is_server_error());
+  }
+
+  #[test]
+  fn content_policy_rejected_with_message_returns_403() {
+    let error = AdvancedCommonWebError::ContentPolicyRejectedWithMessage("NSFW detected".to_string());
+    assert_eq!(error.status_code(), StatusCode::FORBIDDEN);
+    assert!(!error.is_server_error());
+
+    let response = error.error_response();
+    let bytes = response.into_body().try_into_bytes().unwrap();
+    let body = String::from_utf8(bytes.to_vec()).unwrap();
+    assert!(body.contains("\"message\":\"NSFW detected\""));
+    assert!(body.contains("\"error_code\":403"));
   }
 }

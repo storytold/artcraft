@@ -18,7 +18,7 @@ pub(crate) fn check_advanced_common_web_error(
   error: &AdvancedCommonWebError,
 ) -> bool {
   if !error.is_server_error() {
-    // Non-500 errors (400, 401, 404, 402) are intentional — don't alert.
+    // Non-500 errors (400, 401, 403, 403, 404...) are intentional — don't alert.
     return true;
   }
 
