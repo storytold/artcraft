@@ -113,9 +113,8 @@ pub fn distill_video_request(
     media_file_hydration_map,
   )?;
 
-  // 3. Build a `GenerateVideoRequest<'static>` whose borrows point into the
-  //    owned boxes. SAFETY: same invariant as the image version — each box
-  //    lives in `Self` for the full lifetime of `DistilledVideoRequest`.
+  // 3. Build static lifetime references for text fields.
+  //    SAFETY: each box lives in `Self` for the full lifetime of `DistilledVideoRequest`.
   let prompt_static: Option<&'static str> = owned_prompt.as_deref().map(|s: &String| {
     let raw: *const str = s.as_str();
     unsafe { &*raw }
@@ -131,6 +130,23 @@ pub fn distill_video_request(
       unsafe { &*raw }
     });
 
+  // 4. Cost estimate (Artcraft provider).
+  //    `initial` already has media fields in token form (from hydrate_to_router_request),
+  //    which is exactly what the Artcraft cost builder needs. Just swap the provider.
+  let cost: VideoGenerationCostEstimate = {
+    let cost_request = GenerateVideoRequest {
+      provider: Provider::Artcraft,
+      ..initial
+    };
+    let cost_plan = cost_request.build().map_err(|e| {
+      warn!("Failed to build cost plan during video distillation: {}", e);
+      AdvancedCommonWebError::from_error(e)
+    })?;
+    cost_plan.estimate_costs()
+  };
+
+  // 5. Execution plan (execution provider).
+  //    The execution plan uses URL-form media references (resolved from the hydration map).
   let start_frame_static: Option<ImageRef<'static>> =
     owned_start_frame_url.as_deref().map(|s: &String| {
       let raw: *const str = s.as_str();
@@ -177,20 +193,6 @@ pub fn distill_video_request(
     idempotency_token: idempotency_static,
   };
 
-  // 4. Cost estimate (Artcraft provider).
-  let cost_request = GenerateVideoRequest {
-    provider: Provider::Artcraft,
-    ..request_static
-  };
-  let cost_plan = cost_request.build().map_err(|e| {
-    warn!("Failed to build cost plan during video distillation: {}", e);
-    AdvancedCommonWebError::from_error(e)
-  })?;
-  let cost: VideoGenerationCostEstimate = cost_plan.estimate_costs();
-  drop(cost_plan);
-  drop(cost_request);
-
-  // 5. Execution plan (Fal provider).
   let plan: VideoGenerationPlan<'static> = {
     let request_ref: &'static GenerateVideoRequest<'static> = unsafe {
       let raw: *const GenerateVideoRequest<'static> = &request_static;
