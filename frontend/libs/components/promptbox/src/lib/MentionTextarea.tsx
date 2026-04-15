@@ -348,14 +348,25 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     }, [mentionItems, mentionState.isOpen, mentionState.query]);
 
     // Build a regex that matches any known mention label (supports spaces in names)
-    // Sort longest-first so "@Pumpkin Head" matches before "@Pumpkin"
+    // Sort longest-first so "@Pumpkin Head" matches before "@Pumpkin".
+    // Case-insensitive so users can type "@image1" and still get it tagged
+    // when the canonical label is "@Image1".
     const mentionRegex = useMemo(() => {
       const labels = mentionItems.map((item) => item.label);
       if (labels.length === 0) return null;
       const sorted = [...labels].sort((a, b) => b.length - a.length);
       const pattern = sorted.map((l) => escapeRegex(l)).join("|");
-      return new RegExp(`(${pattern})`, "g");
+      return new RegExp(`(${pattern})`, "gi");
     }, [mentionItems]);
+
+    // Case-insensitive lookup table for colorMap so "@image1" finds "@Image1".
+    const lowerColorMap = useMemo(() => {
+      const m: Record<string, string> = {};
+      for (const [k, v] of Object.entries(colorMap)) {
+        m[k.toLowerCase()] = v;
+      }
+      return m;
+    }, [colorMap]);
 
     // Build innerHTML with colored @mentions inline
     const buildHTML = useCallback(
@@ -376,7 +387,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         // biome-ignore lint/suspicious/noAssignInExpressions: --
         while ((match = regex.exec(text)) !== null) {
           const fullMatch = match[0];
-          const color = colorMap[fullMatch];
+          const color = lowerColorMap[fullMatch.toLowerCase()];
 
           if (match.index > lastIndex) {
             html += escapeHTML(text.slice(lastIndex, match.index));
@@ -402,7 +413,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         return html;
       },
-      [colorMap, mentionRegex],
+      [lowerColorMap, mentionRegex],
     );
 
     // Sync DOM when value changes from parent (not from user input)
@@ -464,13 +475,20 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     }, []);
 
     // Detect @mention trigger from cursor position
-    // Supports multi-word names by scanning back to the nearest @
+    // Supports multi-word names by scanning back to the nearest @.
+    // A valid trigger requires the char before @ to not be an ASCII
+    // identifier char (letter/digit/underscore) — this lets CJK characters,
+    // quotes, and punctuation all count as word boundaries, so users can
+    // type "@Image1" directly after Chinese text like 从@Image1.
     const detectMention = useCallback(
       (text: string, cursorPos: number) => {
         // Find the last @ before cursor
         const textBefore = text.slice(0, cursorPos);
         const lastAt = textBefore.lastIndexOf("@");
-        if (lastAt !== -1 && (lastAt === 0 || /\s/.test(text[lastAt - 1]))) {
+        if (
+          lastAt !== -1 &&
+          (lastAt === 0 || !/[A-Za-z0-9_]/.test(text[lastAt - 1]))
+        ) {
           const query = text.slice(lastAt, cursorPos); // includes @
           // Only open if there's no newline in the query
           if (!query.includes("\n")) {
