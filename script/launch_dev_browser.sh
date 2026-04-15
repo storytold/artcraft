@@ -10,16 +10,27 @@ declare -r chrome_dir="/tmp/chrome/${entropy}"
 # https://github.com/GoogleChrome/chrome-launcher/blob/main/docs/chrome-flags-for-tools.md
 # https://peter.sh/experiments/chromium-command-line-switches/
 
-# NB: Creating the directory first seems to block process start.
-# Perhaps this is the wrong chmod ownership flags.
-#mkdir -p $CHROME_DIR
+# Seed the profile with DevTools preferences before Chrome starts.
+# This sets: dock position = bottom, default panel = network.
+# Chrome stores these in <user-data-dir>/Default/Preferences.
+seed_devtools_preferences() {
+  local prefs='{"devtools":{"preferences":{"currentDockState":"\"bottom\"","panel-selected-tab":"\"network\""}}}'
 
-    #--auto-open-devtools-for-tabs="true" \
-    #--devtools-flags="" \
+  # Seed both Default and Guest Profile — Chrome uses Guest Profile when
+  # launched with --guest, and Default otherwise.
+  for profile_name in "Default" "Guest Profile"; do
+    local prefs_dir="${chrome_dir}/${profile_name}"
+    mkdir -p "${prefs_dir}"
+    echo "${prefs}" > "${prefs_dir}/Preferences"
+  done
+}
 
 # TODO(bt): Math to determine better window placement.
 
 # Flags reference:
+#   --auto-open-devtools-for-tabs           Open DevTools automatically for every tab on launch.
+#                                           Dock position and default panel are set via seeded
+#                                           preferences (see seed_devtools_preferences above).
 #   --allow-running-insecure-content        Allow HTTPS pages to load HTTP resources (mixed content).
 #   --disable-features=ChromeLabs,          Disable Chrome Labs experiments UI and the
 #     DefaultBrowserPrompt                  feature-flag-based default browser prompt.
@@ -43,7 +54,9 @@ declare -r chrome_dir="/tmp/chrome/${entropy}"
 #   --window-position / --window-size       Place the dev window predictably on screen.
 
 launch_linux() {
+  seed_devtools_preferences
   chromium \
+    --auto-open-devtools-for-tabs \
     --allow-running-insecure-content \
     --disable-features=ChromeLabs,DefaultBrowserPrompt \
     --disable-site-isolation-trials \
@@ -60,7 +73,9 @@ launch_linux() {
 }
 
 launch_mac() {
+  seed_devtools_preferences
   open -na "Google Chrome" --args \
+    --auto-open-devtools-for-tabs \
     --disable-features=ChromeLabs,DefaultBrowserPrompt \
     --disable-site-isolation-trials \
     --disable-web-security \
