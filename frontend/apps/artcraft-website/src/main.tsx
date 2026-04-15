@@ -11,16 +11,15 @@ const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
 
-// In development, route API through the Vite dev server proxy to avoid CORS,
-// unless VITE_API_HOST is explicitly set (eg. for an unsafe browser that ignores CORS).
-//if (import.meta.env.DEV && !import.meta.env.VITE_API_HOST) {
-//  try {
-//    const origin = window.location.origin;
-//    StorytellerApiHostStore.getInstance().setApiSchemeAndHost(origin);
-//  } catch (e) {
-//    console.warn("Failed to set dev API host override", e);
-//  }
-//}
+// In development, route API through the Vite dev server origin to avoid CORS
+if (import.meta.env.DEV) {
+  try {
+    const origin = window.location.origin;
+    StorytellerApiHostStore.getInstance().setApiSchemeAndHost(origin);
+  } catch (e) {
+    console.warn("Failed to set dev API host override", e);
+  }
+}
 
 // Cache the referrer immediately — it can change or disappear on navigation.
 // Only set once so subsequent in-site navigations don't overwrite the original.

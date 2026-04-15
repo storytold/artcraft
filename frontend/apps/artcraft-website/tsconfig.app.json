@@ -41,9 +41,6 @@
       "path": "../../libs/components/gravatar/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/slider-v2/tsconfig.lib.json"
-    },
-    {
       "path": "../../libs/components/tab-selector/tsconfig.lib.json"
     },
     {
