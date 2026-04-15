@@ -48,7 +48,6 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   });
 
   models.push(OmniGenVideoModelDetails {
-    is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Seedance2p0,
     full_name: None,
     text_prompt_supported: Some(true),
