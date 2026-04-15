@@ -24,6 +24,18 @@ pub enum WorldLabsGenericApiError {
   WreqError(wreq::Error),
 }
 
+impl WorldLabsGenericApiError {
+  pub fn is_403_forbidden(&self) -> bool {
+    match self {
+      Self::UncategorizedBadResponseWithStatusAndBody { status_code, .. }
+      | Self::GoogleUploadFailed { status_code, .. } => {
+        *status_code == StatusCode::FORBIDDEN
+      }
+      _ => false,
+    }
+  }
+}
+
 impl Error for WorldLabsGenericApiError {}
 
 impl Display for WorldLabsGenericApiError {

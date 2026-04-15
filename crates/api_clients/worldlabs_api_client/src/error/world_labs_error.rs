@@ -10,6 +10,16 @@ pub enum WorldLabsError {
   ApiGeneric(WorldLabsGenericApiError),
 }
 
+impl WorldLabsError {
+  pub fn is_403_forbidden(&self) -> bool {
+    match self {
+      Self::ApiSpecific(e) => e.is_403_forbidden(),
+      Self::ApiGeneric(e) => e.is_403_forbidden(),
+      Self::Client(_) => false,
+    }
+  }
+}
+
 impl Error for WorldLabsError {}
 
 impl std::fmt::Display for WorldLabsError {

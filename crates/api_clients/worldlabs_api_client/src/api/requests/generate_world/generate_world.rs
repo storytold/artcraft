@@ -167,7 +167,7 @@ mod tests {
     let creds = get_test_api_key().unwrap();
 
     // --- Read file ---
-    let file_bytes = file_read_bytes("test_data/image/mochi.jpg")
+    let file_bytes = file_read_bytes("/Users/bt/dev/storyteller/artcraft/test_data/image/mochi.jpg")
         .expect("failed to read safe test image");
     println!("Read {} bytes from safe test image", file_bytes.len());
 
