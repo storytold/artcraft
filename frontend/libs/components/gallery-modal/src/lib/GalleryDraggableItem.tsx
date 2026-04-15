@@ -6,6 +6,10 @@ import {
   faPencil,
   faTrashCan,
   faUpload,
+  faFolderPlus,
+  faChevronRight,
+  faFolder,
+  faPlus,
 } from "@fortawesome/pro-solid-svg-icons";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { twMerge } from "tailwind-merge";
@@ -20,6 +24,11 @@ import {
 import { toast } from "@storyteller/ui-toaster";
 
 type ModalMode = "select" | "view";
+
+export interface GalleryFolder {
+  id: string;
+  name: string;
+}
 
 interface GalleryDraggableItemProps {
   item: GalleryItem;
@@ -38,6 +47,10 @@ interface GalleryDraggableItemProps {
   bulkSelected?: boolean;
   onBulkSelectToggle?: () => void;
   bulkSelectionMode?: boolean;
+  getBulkDragItems?: () => GalleryItem[];
+  folders?: GalleryFolder[];
+  onAddToFolder?: (itemIds: string[], folderId: string) => void;
+  onCreateFolderFromMenu?: () => void;
 }
 
 export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
@@ -56,9 +69,14 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   bulkSelected = false,
   onBulkSelectToggle,
   bulkSelectionMode = false,
+  getBulkDragItems,
+  folders = [],
+  onAddToFolder,
+  onCreateFolderFromMenu,
 }) => {
   const imgRef = useRef<HTMLImageElement>(null);
   const dragStarted = useRef(false);
+  const [folderSubmenuOpen, setFolderSubmenuOpen] = useState(false);
 
   // For freshly-completed videos the backend may still be generating the
   // preview GIF, so the thumbnail URL 404s for a while. Show a spinner and
@@ -131,13 +149,6 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
-    // Disable dragging for video items, but allow clicks in select mode
-    if (item.mediaClass === "video" && mode !== "select") return;
-    // In bulk selection mode, skip drag — clicks toggle selection
-    if (bulkSelectionMode) {
-      dragStarted.current = false;
-      return;
-    }
     dragStarted.current = false;
     const moveListener = (moveEvent: PointerEvent) => {
       const dx = moveEvent.pageX - event.pageX;
@@ -145,7 +156,11 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       if (!dragStarted.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
         dragStarted.current = true;
         if (galleryDnd && !disableTooltipAndBadge) {
-          galleryDnd.onPointerDown(event, item);
+          const bulkItems =
+            bulkSelectionMode && bulkSelected && getBulkDragItems
+              ? getBulkDragItems()
+              : undefined;
+          galleryDnd.onPointerDown(event, item, bulkItems);
         }
         window.removeEventListener("pointermove", moveListener);
       }
@@ -162,9 +177,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handlePointerUp = (event: React.PointerEvent) => {
-    // In bulk selection mode, let only handleButtonClick fire onClick
-    // to avoid double-toggling the selection
     if (bulkSelectionMode) return;
+    const globalDrag = galleryDnd.getDragState();
+    if (globalDrag.isDragging) return;
     if (
       !dragStarted.current &&
       (mode === "select" || !disableTooltipAndBadge)
@@ -174,12 +189,14 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handleButtonClick = (event: React.MouseEvent) => {
+    if (dragStarted.current) return;
+    const globalDrag = galleryDnd.getDragState();
+    if (globalDrag.isDragging) return;
     if (mode === "select" || !disableTooltipAndBadge || bulkSelectionMode) {
       onClick();
     }
   };
 
-  // Shared button content — avoids duplicating the image/thumbnail rendering
   const showTooltip = !disableTooltipAndBadge && !bulkSelectionMode;
 
   const itemButton = (
@@ -193,9 +210,9 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           : disableTooltipAndBadge
             ? "border-transparent hover:border-primary/80"
             : "border-transparent hover:border-primary",
-        mode === "select" || item.mediaClass === "video" || bulkSelectionMode
+        mode === "select"
           ? "cursor-pointer"
-          : disableTooltipAndBadge
+          : disableTooltipAndBadge && !bulkSelectionMode
             ? "cursor-pointer"
             : "cursor-grab hover:cursor-grab active:cursor-grabbing",
       )}
@@ -266,7 +283,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
               <FontAwesomeIcon icon={faEllipsis} className="text-base-fg" />
             }
             buttonClassName="h-7 w-7 p-0 rounded-full bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg border border-ui-controls-border"
-            panelClassName="min-w-28 p-1"
+            panelClassName="min-w-36 p-1"
             closeOnUnhover
           >
             {(close) => (
@@ -286,10 +303,69 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                       close();
                     }}
                   >
-                    <FontAwesomeIcon icon={faPencil} className="text-base-fg" />
+                    <FontAwesomeIcon icon={faPencil} className="text-base-fg w-4" />
                     <span>Edit image</span>
                   </button>
                 )}
+                {/* Add to Folder — with submenu */}
+                <div
+                  className="relative"
+                  onMouseEnter={() => setFolderSubmenuOpen(true)}
+                  onMouseLeave={() => setFolderSubmenuOpen(false)}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFolderSubmenuOpen((v) => !v);
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faFolderPlus} className="text-base-fg w-4" />
+                      <span>Add to Folder</span>
+                    </div>
+                    <FontAwesomeIcon icon={faChevronRight} className="text-[10px] text-base-fg/50" />
+                  </button>
+                  {folderSubmenuOpen && (
+                    <div className="absolute left-full top-0 -ml-1 pl-2 z-50">
+                    <div className="min-w-36 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl">
+                      {folders.map((folder) => (
+                        <button
+                          key={folder.id}
+                          type="button"
+                          className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg text-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddToFolder?.([item.id], folder.id);
+                            setFolderSubmenuOpen(false);
+                            close();
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faFolder} className="text-primary text-xs" />
+                          <span className="truncate">{folder.name}</span>
+                        </button>
+                      ))}
+                      {folders.length > 0 && (
+                        <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
+                      )}
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 px-2 py-1.5 rounded-md hover:bg-ui-controls/60 text-base-fg/70 text-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFolderSubmenuOpen(false);
+                          close();
+                          onCreateFolderFromMenu?.();
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faPlus} className="text-xs w-4" />
+                        <span>New Folder</span>
+                      </button>
+                    </div>
+                    </div>
+                  )}
+                </div>
                 {onDelete && (
                   <button
                     type="button"
@@ -300,7 +376,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                       close();
                     }}
                   >
-                    <FontAwesomeIcon icon={faTrashCan} className="text-red" />
+                    <FontAwesomeIcon icon={faTrashCan} className="text-red w-4" />
                     <span className="text-red">Delete</span>
                   </button>
                 )}
@@ -355,16 +431,14 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           className="-mt-3 bg-ui-controls text-base-fg border border-ui-panel-border"
           content={
             <div className="flex flex-col items-center text-xs whitespace-nowrap">
-              {item.mediaClass !== "video" && (
-                <span>
-                  <span className="font-bold">Drag</span>
-                  <span className="opacity-50">
-                    {item.mediaClass === "dimensional"
-                      ? " to add to scene"
-                      : " to add"}
-                  </span>
+              <span>
+                <span className="font-bold">Drag</span>
+                <span className="opacity-50">
+                  {item.mediaClass === "dimensional"
+                    ? " to add to scene"
+                    : " to add"}
                 </span>
-              )}
+              </span>
               <span>
                 <span className="font-bold">Click</span>
                 <span className="opacity-50"> to view</span>

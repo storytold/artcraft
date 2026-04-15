@@ -11,6 +11,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   FilterMediaClasses,
   FilterMediaType,
@@ -36,9 +37,11 @@ import {
   galleryModalLightboxNavPrev,
   galleryModalLightboxNavNext,
 } from "./galleryModalSignals";
+import {
+  FOLDER_DROP_EVENT,
+} from "./galleryDnd";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faFilter,
   faBorderAll,
   faImage,
   faVideo,
@@ -49,8 +52,14 @@ import {
   faArrowsRotate,
   faTrashCan,
   faXmark,
+  faFolder,
+  faChevronDown,
+  faChevronRight,
+  faPlus,
+  faFolderPlus,
+  faEllipsis,
+  faPencil,
 } from "@fortawesome/pro-solid-svg-icons";
-import { PopoverMenu } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import {
@@ -274,16 +283,12 @@ interface GalleryModalProps {
 
 const EMPTY_SELECTED_IDS: string[] = [];
 
-const FILTERS = [
-  { id: "all", label: "All", icon: <FontAwesomeIcon icon={faBorderAll} /> },
-  { id: "image", label: "Image", icon: <FontAwesomeIcon icon={faImage} /> },
-  { id: "video", label: "Video", icon: <FontAwesomeIcon icon={faVideo} /> },
-  { id: "3d", label: "3D Object", icon: <FontAwesomeIcon icon={faCube} /> },
-  {
-    id: "uploaded",
-    label: "Uploaded",
-    icon: <FontAwesomeIcon icon={faUpload} />,
-  },
+const SIDEBAR_FILTERS = [
+  { id: "all", label: "All Assets", icon: faBorderAll },
+  { id: "image", label: "Image", icon: faImage },
+  { id: "video", label: "Video", icon: faVideo },
+  { id: "3d", label: "3D", icon: faCube },
+  { id: "uploaded", label: "Uploaded", icon: faUpload },
 ];
 
 const getFilterMediaClass = (filter: string) => {
@@ -365,6 +370,46 @@ const BulkThumb = ({
     </div>
   );
 };
+
+/** Reusable folder context menu (rename + delete). */
+const FolderContextMenuItems = ({
+  folderId,
+  onRename,
+  onDelete,
+  className,
+  style,
+}: {
+  folderId: string;
+  onRename: (id: string) => void;
+  onDelete: (id: string) => void;
+  className?: string;
+  style?: React.CSSProperties;
+}) => (
+  <div
+    className={twMerge(
+      "min-w-36 rounded-lg border border-ui-panel-border bg-ui-panel p-1 shadow-xl z-[59]",
+      className,
+    )}
+    style={style}
+  >
+    <button
+      type="button"
+      className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-base-fg"
+      onClick={() => onRename(folderId)}
+    >
+      <FontAwesomeIcon icon={faPencil} className="w-4" />
+      <span>Rename</span>
+    </button>
+    <button
+      type="button"
+      className="flex w-full items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm text-red"
+      onClick={() => onDelete(folderId)}
+    >
+      <FontAwesomeIcon icon={faTrashCan} className="w-4" />
+      <span>Delete folder</span>
+    </button>
+  </div>
+);
 
 export const GalleryModal = React.memo(
   ({
@@ -453,6 +498,34 @@ export const GalleryModal = React.memo(
     );
     const bulkSelectionMode = bulkSelectedIds.size > 0;
 
+    // Folders state
+    const [folders, setFolders] = useState<{ id: string; name: string }[]>([]);
+    const [foldersExpanded, setFoldersExpanded] = useState(true);
+    const [newFolderModalOpen, setNewFolderModalOpen] = useState(false);
+    const [newFolderName, setNewFolderName] = useState("New Folder");
+    const newFolderInputRef = useRef<HTMLInputElement>(null);
+
+    // Active folder view
+    const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+    const [folderItemMap, setFolderItemMap] = useState<Record<string, Set<string>>>({});
+    // Rename state — shared by inline (header) and modal (sidebar) flows
+    const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+    const [renameValue, setRenameValue] = useState("");
+    const renameInputRef = useRef<HTMLInputElement>(null);
+    // Whether rename was triggered from sidebar (show modal) vs header (inline)
+    const [renameViaModal, setRenameViaModal] = useState(false);
+    const [folderMenuOpen, setFolderMenuOpen] = useState(false);
+    // Context menu for sidebar folder right-click
+    const [contextMenu, setContextMenu] = useState<{
+      folderId: string;
+      x: number;
+      y: number;
+    } | null>(null);
+
+    const activeFolder = activeFolderId
+      ? folders.find((f) => f.id === activeFolderId) ?? null
+      : null;
+
     // Clear bulk selection when filter changes
     useEffect(() => {
       setBulkSelectedIds(new Set());
@@ -499,6 +572,19 @@ export const GalleryModal = React.memo(
     const groupedItems = useMemo(
       () => groupItemsByDate(allItems),
       [allItems, groupItemsByDate],
+    );
+
+    // Folder view memos
+    const activeFolderItems = useMemo(() => {
+      if (!activeFolderId) return [];
+      const itemIds = folderItemMap[activeFolderId];
+      if (!itemIds || itemIds.size === 0) return [];
+      return allItems.filter((item) => itemIds.has(item.id));
+    }, [activeFolderId, folderItemMap, allItems]);
+
+    const folderGroupedItems = useMemo(
+      () => groupItemsByDate(activeFolderItems),
+      [activeFolderItems, groupItemsByDate],
     );
 
     const handleImageError = useCallback((url: string) => {
@@ -868,6 +954,7 @@ export const GalleryModal = React.memo(
 
     const clearBulkSelection = useCallback(() => {
       setBulkSelectedIds(new Set());
+      setBulkFolderPopoverOpen(false);
     }, []);
 
     const bulkSelectedItems = useMemo(
@@ -909,6 +996,140 @@ export const GalleryModal = React.memo(
         },
       });
     }, [bulkSelectedIds, clearBulkSelection, onDeleteMedia]);
+
+    // Folder creation
+    const handleCreateFolder = useCallback(() => {
+      const name = newFolderName.trim();
+      if (!name) return;
+      const id = `folder_${Date.now()}`;
+      setFolders((prev) => [...prev, { id, name }]);
+      setNewFolderModalOpen(false);
+      setNewFolderName("New Folder");
+    }, [newFolderName]);
+
+    const handleOpenNewFolderModal = useCallback(() => {
+      setNewFolderName("New Folder");
+      setNewFolderModalOpen(true);
+      setTimeout(() => newFolderInputRef.current?.select(), 50);
+    }, []);
+
+    // Navigate into a folder
+    const handleOpenFolder = useCallback((folderId: string) => {
+      setActiveFolderId(folderId);
+      setBulkSelectedIds(new Set());
+      setFolderMenuOpen(false);
+      setContextMenu(null);
+    }, []);
+
+    // Navigate back to main library
+    const handleBackToLibrary = useCallback(() => {
+      setActiveFolderId(null);
+      setRenamingFolderId(null);
+      setFolderMenuOpen(false);
+      setBulkSelectedIds(new Set());
+    }, []);
+
+    // Close any open folder menus
+    const closeFolderMenus = useCallback(() => {
+      setFolderMenuOpen(false);
+      setContextMenu(null);
+    }, []);
+
+    // Rename folder — modal=true for sidebar, false for header inline
+    const handleStartRename = useCallback(
+      (folderId: string, modal = false) => {
+        const folder = folders.find((f) => f.id === folderId);
+        if (!folder) return;
+        setRenameValue(folder.name);
+        setRenamingFolderId(folderId);
+        setRenameViaModal(modal);
+        closeFolderMenus();
+        setTimeout(() => renameInputRef.current?.select(), 50);
+      },
+      [folders, closeFolderMenus],
+    );
+
+    const handleConfirmRename = useCallback(() => {
+      const trimmed = renameValue.trim();
+      if (!trimmed || !renamingFolderId) return;
+      setFolders((prev) =>
+        prev.map((f) =>
+          f.id === renamingFolderId ? { ...f, name: trimmed } : f,
+        ),
+      );
+      setRenamingFolderId(null);
+      setRenameViaModal(false);
+    }, [renameValue, renamingFolderId]);
+
+    // Delete folder (works for any folder)
+    const handleDeleteFolder = useCallback(
+      (folderId: string) => {
+        const folder = folders.find((f) => f.id === folderId);
+        if (!folder) return;
+        closeFolderMenus();
+        showActionReminder({
+          reminderType: "default",
+          title: `Delete "${folder.name}"?`,
+          message: (
+            <p className="text-sm text-white/70">
+              This folder will be deleted. Items inside will not be removed from
+              your library.
+            </p>
+          ),
+          primaryActionText: "Delete",
+          secondaryActionText: "Cancel",
+          primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
+          onPrimaryAction: async () => {
+            setFolders((prev) => prev.filter((f) => f.id !== folderId));
+            setFolderItemMap((prev) => {
+              const next = { ...prev };
+              delete next[folderId];
+              return next;
+            });
+            if (activeFolderId === folderId) setActiveFolderId(null);
+            isActionReminderOpen.value = false;
+          },
+        });
+      },
+      [folders, activeFolderId, closeFolderMenus],
+    );
+
+    // Add to folder handler (mocked — stores locally, will connect to API later)
+    const handleAddToFolder = useCallback(
+      (itemIds: string[], folderId: string) => {
+        setFolderItemMap((prev) => {
+          const existing = prev[folderId] ?? new Set<string>();
+          const updated = new Set(existing);
+          itemIds.forEach((id) => updated.add(id));
+          return { ...prev, [folderId]: updated };
+        });
+        // TODO: call API to add items to folder
+        console.log(`[mock] Added ${itemIds.length} item(s) to folder`, itemIds);
+      },
+      [],
+    );
+
+    // Bulk "Add to folder" popover
+    const [bulkFolderPopoverOpen, setBulkFolderPopoverOpen] = useState(false);
+
+    // Folder drop listener
+    useEffect(() => {
+      const handler = (e: Event) => {
+        const { items, folderId } = (e as CustomEvent).detail;
+        handleAddToFolder(
+          items.map((i: GalleryItem) => i.id),
+          folderId,
+        );
+      };
+      window.addEventListener(FOLDER_DROP_EVENT, handler);
+      return () => window.removeEventListener(FOLDER_DROP_EVENT, handler);
+    }, [handleAddToFolder]);
+
+    // Provide bulk-selected items for drag
+    const getBulkDragItems = useCallback(
+      () => allItems.filter((item) => bulkSelectedIds.has(item.id)),
+      [allItems, bulkSelectedIds],
+    );
 
     useSignals();
 
@@ -1066,7 +1287,7 @@ export const GalleryModal = React.memo(
           className={twMerge(
             "h-[620px] max-h-[90vh] w-full max-w-4xl rounded-xl",
             mode === "view" &&
-            "h-[640px] min-h-[640px] min-w-[56rem] w-[56rem] max-w-none",
+            "h-[640px] min-h-[640px] min-w-[66rem] w-[66rem] max-w-none",
           )}
           childPadding={false}
           showClose={false}
@@ -1079,43 +1300,106 @@ export const GalleryModal = React.memo(
               <div className="absolute left-0 top-0 z-[50] h-[60px] w-full cursor-move" />
             </Modal.DragHandle>
           )}
-          <div className="flex h-full flex-col">
+          <div className="relative flex h-full flex-col">
             <div className="border-b border-ui-panel-border p-4 py-3 bg-ui-panel rounded-t-xl">
               <div className="flex flex-wrap justify-between items-center gap-y-2">
                 <div className="flex items-center gap-3 flex-wrap gap-y-1">
-                  <h2 className="text-xl font-semibold">
-                    {mode === "select"
-                      ? activeFilter === "video"
-                        ? maxSelections === 1
-                          ? "Select Video"
-                          : "Select Videos"
-                        : activeFilter === "3d"
-                          ? maxSelections === 1
-                            ? "Select 3D Object"
-                            : "Select 3D Objects"
-                          : activeFilter === "uploaded"
-                            ? maxSelections === 1
-                              ? "Select Upload"
-                              : "Select Uploads"
-                            : activeFilter === "all"
-                              ? "Select Media"
-                              : maxSelections === 1
-                                ? "Select Image"
-                                : "Select Images"
-                      : "My Library"}
-                  </h2>
-                  {mode === "view" && (
-                    <div className="relative z-[51] flex items-center">
-                      <Checkbox
-                        id="gallery-reopen-after-drag"
-                        checked={galleryReopenAfterDragSignal.value}
-                        onChange={(e) =>
-                        (galleryReopenAfterDragSignal.value =
-                          e.target.checked)
-                        }
-                        label="Reopen after adding"
-                      />
+                  {mode === "view" && activeFolder ? (
+                    /* ── Folder header ── */
+                    <div className="flex items-center gap-2 relative z-[51]">
+                      <button
+                        type="button"
+                        onClick={handleBackToLibrary}
+                        className="text-base-fg/50 hover:text-base-fg text-sm transition-colors"
+                      >
+                        My Library
+                      </button>
+                      <span className="text-base-fg/30">/</span>
+                      {renamingFolderId === activeFolderId && !renameViaModal ? (
+                        <input
+                          ref={renameInputRef}
+                          type="text"
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleConfirmRename();
+                            if (e.key === "Escape") setRenamingFolderId(null);
+                          }}
+                          onBlur={handleConfirmRename}
+                          className="text-xl font-semibold bg-transparent rounded px-1.5 py-0 text-base-fg outline-none min-w-[6rem] caret-primary"
+                          autoFocus
+                        />
+                      ) : (
+                        <h2
+                          className="text-xl font-semibold cursor-pointer hover:bg-ui-controls/30 rounded px-1.5 py-0 transition-colors truncate max-w-[20rem]"
+                          onClick={() => handleStartRename(activeFolderId!)}
+                        >
+                          {activeFolder.name}
+                        </h2>
+                      )}
+                      {/* Folder ... menu */}
+                      <div className={twMerge("relative", renamingFolderId === activeFolderId && !renameViaModal && "hidden")}>
+                        <button
+                          type="button"
+                          onClick={() => setFolderMenuOpen((v) => !v)}
+                          className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-ui-controls/60 text-base-fg/60 hover:text-base-fg transition-colors"
+                        >
+                          <FontAwesomeIcon icon={faEllipsis} className="text-sm" />
+                        </button>
+                        {folderMenuOpen && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-[58]"
+                              onClick={() => setFolderMenuOpen(false)}
+                            />
+                            <FolderContextMenuItems
+                              className="absolute left-0 top-full mt-1"
+                              folderId={activeFolderId!}
+                              onRename={(id) => handleStartRename(id, false)}
+                              onDelete={handleDeleteFolder}
+                            />
+                          </>
+                        )}
+                      </div>
                     </div>
+                  ) : (
+                    /* ── Normal header ── */
+                    <>
+                      <h2 className="text-xl font-semibold">
+                        {mode === "select"
+                          ? activeFilter === "video"
+                            ? maxSelections === 1
+                              ? "Select Video"
+                              : "Select Videos"
+                            : activeFilter === "3d"
+                              ? maxSelections === 1
+                                ? "Select 3D Object"
+                                : "Select 3D Objects"
+                              : activeFilter === "uploaded"
+                                ? maxSelections === 1
+                                  ? "Select Upload"
+                                  : "Select Uploads"
+                                : activeFilter === "all"
+                                  ? "Select Media"
+                                  : maxSelections === 1
+                                    ? "Select Image"
+                                    : "Select Images"
+                          : "My Library"}
+                      </h2>
+                      {mode === "view" && (
+                        <div className="relative z-[51] flex items-center">
+                          <Checkbox
+                            id="gallery-reopen-after-drag"
+                            checked={galleryReopenAfterDragSignal.value}
+                            onChange={(e) =>
+                              (galleryReopenAfterDragSignal.value =
+                                e.target.checked)
+                            }
+                            label="Reopen after adding"
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                   {activeFilter !== "uploaded" && (
                     <div className="relative z-[51] flex items-center">
@@ -1186,51 +1470,6 @@ export const GalleryModal = React.memo(
                         } columns`}
                     />
                   </div>
-                  {/* Filter popover */}
-                  {!hideFilter && (
-                    <Tooltip
-                      position="top"
-                      content={
-                        forceFilter ? "Filter locked" : "Filter"
-                      }
-                      closeOnClick={true}
-                    >
-                      <PopoverMenu
-                        panelTitle="Filter"
-                        position="bottom"
-                        align="end"
-                        buttonClassName={`relative z-[51] mr-3 ${forceFilter
-                          ? "opacity-70 pointer-events-none"
-                          : ""
-                          }`}
-                        panelClassName="min-w-36"
-                        items={FILTERS.map((f) => ({
-                          label: f.label,
-                          selected: activeFilter === f.id,
-                          icon: f.icon,
-                          // Use a custom property that will be passed through but not cause type errors
-                          customProps: {
-                            disabled: forceFilter !== undefined,
-                          },
-                        }))}
-                        onSelect={(item) => {
-                          // Only allow filter changes if no forceFilter was provided
-                          if (!forceFilter) {
-                            const filter = FILTERS.find(
-                              (f) => f.label === item.label,
-                            );
-                            if (filter) setActiveFilter(filter.id);
-                          }
-                        }}
-                        triggerIcon={<FontAwesomeIcon icon={faFilter} />}
-                        triggerLabel={
-                          FILTERS.find((f) => f.id === activeFilter)?.label
-                        }
-                        mode="toggle"
-                        showIconsInList={true}
-                      />
-                    </Tooltip>
-                  )}
                   {mode === "view" && <Modal.ExpandButton />}
                   <CloseButton
                     onClick={() => {
@@ -1247,122 +1486,393 @@ export const GalleryModal = React.memo(
               </div>
             </div>
 
-            <div
-              ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto bg-ui-panel"
-              onScroll={handleScroll}
-            >
-              {usernameError && allItems.length === 0 ? (
-                <div className="flex h-full items-center justify-center">
-                  <div className="flex flex-col items-center gap-3 text-sm">
-                    <div className="text-base-fg/60">Unable to load gallery. Please ensure you are logged in.</div>
+            <div className="flex flex-1 overflow-hidden" data-gallery-modal>
+              {/* ── Sidebar ── */}
+              <div className="w-52 min-w-[13rem] border-r border-ui-panel-border bg-ui-background flex flex-col overflow-y-auto">
+                {/* Filter items — hidden when the gallery is used as a constrained picker */}
+                {!hideFilter && (
+                  <>
+                    <div className="flex flex-col px-1.5 pt-2 pb-1">
+                      {SIDEBAR_FILTERS.map((f) => {
+                        const isActive = activeFilter === f.id;
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => {
+                              if (!forceFilter) {
+                                setActiveFilter(f.id);
+                                setActiveFolderId(null);
+                              }
+                            }}
+                            className={twMerge(
+                              "flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                              isActive && !activeFolderId
+                                ? "bg-ui-controls/60 text-base-fg font-medium"
+                                : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
+                              forceFilter && f.id !== activeFilter && "opacity-50 pointer-events-none",
+                            )}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <FontAwesomeIcon icon={f.icon} className="text-xs w-4" />
+                              <span>{f.label}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="mx-3 my-1.5 border-t border-ui-panel-border" />
+                  </>
+                )}
+
+                {/* Folders section */}
+                <div className="flex flex-col px-1.5">
+                  <div className="flex items-center justify-between px-2.5 py-1.5">
                     <button
-                      className="text-xs text-blue-400 hover:text-blue-300 underline"
-                      onClick={() => { setUsernameError(false); setUsernameRetryCount(c => c + 1); }}
+                      type="button"
+                      onClick={() => setFoldersExpanded((v) => !v)}
+                      className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-base-fg/50 hover:text-base-fg/70 transition-colors"
                     >
-                      Retry
+                      <FontAwesomeIcon
+                        icon={foldersExpanded ? faChevronDown : faChevronRight}
+                        className="text-[9px] w-3"
+                      />
+                      Folders
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleOpenNewFolderModal}
+                      className="flex h-5 w-5 items-center justify-center rounded hover:bg-ui-controls/40 text-base-fg/50 hover:text-base-fg transition-colors"
+                      aria-label="Create new folder"
+                    >
+                      <FontAwesomeIcon icon={faPlus} className="text-xs" />
                     </button>
                   </div>
-                </div>
-              ) : itemsLoadError && allItems.length === 0 ? (
-                <div className="flex h-full items-center justify-center">
-                  <div className="flex flex-col items-center gap-3 text-sm max-w-xs text-center">
-                    <div className="text-base-fg/60">Failed to load gallery.</div>
-                    <div className="text-xs text-base-fg/40 font-mono break-all">{itemsLoadError}</div>
-                    <div className="flex gap-3">
-                      <button
-                        className="text-xs text-blue-400 hover:text-blue-300 underline"
-                        onClick={() => navigator.clipboard?.writeText(itemsLoadError!)}
-                      >
-                        Copy error
-                      </button>
-                      <button
-                        className="text-xs text-blue-400 hover:text-blue-300 underline"
-                        onClick={() => refreshGallery()}
-                      >
-                        Retry
-                      </button>
+
+                  {foldersExpanded && (
+                    <div className="flex flex-col gap-0.5">
+                      {folders.length === 0 ? (
+                        <div className="px-2.5 py-2 text-xs text-base-fg/30 italic">
+                          No folders yet
+                        </div>
+                      ) : (
+                        folders.map((folder) => {
+                          const isActive = activeFolderId === folder.id;
+                          return (
+                            <button
+                              key={folder.id}
+                              type="button"
+                              data-folder-id={folder.id}
+                              onClick={() => handleOpenFolder(folder.id)}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                setContextMenu({ folderId: folder.id, x: e.clientX, y: e.clientY });
+                              }}
+                              className={twMerge(
+                                "flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm transition-all cursor-pointer",
+                                isActive
+                                  ? "bg-ui-controls/60 text-base-fg font-medium"
+                                  : "text-base-fg/70 hover:bg-ui-controls/30 hover:text-base-fg",
+                                "[&.folder-drag-over]:bg-primary/20 [&.folder-drag-over]:ring-1 [&.folder-drag-over]:ring-primary/50 [&.folder-drag-over]:text-base-fg",
+                              )}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <FontAwesomeIcon icon={faFolder} className="text-primary text-xs flex-shrink-0" />
+                                <span className="truncate">{folder.name}</span>
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
                     </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Main content ── */}
+              <div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto bg-ui-panel"
+                onScroll={activeFolderId ? undefined : handleScroll}
+              >
+                {activeFolderId ? (
+                  /* ── Folder view ── */
+                  activeFolderItems.length === 0 ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-3">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+                        <FontAwesomeIcon icon={faFolder} className="text-primary text-2xl" />
+                      </div>
+                      <div className="text-base-fg font-semibold">This folder is empty</div>
+                      <div className="text-base-fg/40 text-sm text-center max-w-[16rem]">
+                        Drag images here or generate new ones to add to this folder.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6 p-4">
+                      {Object.entries(folderGroupedItems).map(
+                        ([date, dateItems], groupIndex) => {
+                          const filteredItems = dateItems.filter(filterItem);
+                          if (filteredItems.length === 0) return null;
+                          return (
+                            <LazyDateGroup
+                              key={date}
+                              eager={groupIndex < 2}
+                              itemCount={filteredItems.length}
+                              gridColumns={gridColumns}
+                              scrollRoot={scrollContainerRef.current}
+                            >
+                              <h3 className="text-md mb-2 font-medium text-base-fg/60">
+                                {date}
+                              </h3>
+                              <div
+                                className={twMerge("grid", gapClass)}
+                                style={{
+                                  gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+                                }}
+                              >
+                                {filteredItems.map((item) => (
+                                  <GalleryDraggableItem
+                                    key={item.id}
+                                    item={item}
+                                    mode={mode}
+                                    activeFilter={activeFilter}
+                                    selected={selectedItemIds.includes(item.id)}
+                                    onClick={() => handleItemClick(item)}
+                                    onImageError={(e) => {
+                                      e.currentTarget.src =
+                                        PLACEHOLDER_IMAGES.DEFAULT;
+                                      e.currentTarget.style.opacity = "0.3";
+                                      (
+                                        e.currentTarget as HTMLImageElement
+                                      ).dataset.brokenurl = item.thumbnail || "";
+                                      handleImageError(item.thumbnail!);
+                                    }}
+                                    disableTooltipAndBadge={mode === "select"}
+                                    imageFit={imageFit}
+                                    onDeleted={handleItemDeleted}
+                                    onDelete={onDeleteMedia}
+                                    onEditClicked={onEditClicked}
+                                    maxSelections={maxSelections}
+                                    bulkSelected={bulkSelectedIds.has(item.id)}
+                                    onBulkSelectToggle={() =>
+                                      toggleBulkSelect(item.id)
+                                    }
+                                    bulkSelectionMode={bulkSelectionMode}
+                                    getBulkDragItems={getBulkDragItems}
+                                    folders={folders}
+                                    onAddToFolder={handleAddToFolder}
+                                    onCreateFolderFromMenu={handleOpenNewFolderModal}
+                                  />
+                                ))}
+                              </div>
+                            </LazyDateGroup>
+                          );
+                        },
+                      )}
+                    </div>
+                  )
+                ) : (
+                  /* ── Library view ── */
+                  <>
+                    {usernameError && allItems.length === 0 ? (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="flex flex-col items-center gap-3 text-sm">
+                          <div className="text-base-fg/60">Unable to load gallery. Please ensure you are logged in.</div>
+                          <button
+                            className="text-xs text-blue-400 hover:text-blue-300 underline"
+                            onClick={() => { setUsernameError(false); setUsernameRetryCount(c => c + 1); }}
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      </div>
+                    ) : itemsLoadError && allItems.length === 0 ? (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="flex flex-col items-center gap-3 text-sm max-w-xs text-center">
+                          <div className="text-base-fg/60">Failed to load gallery.</div>
+                          <div className="text-xs text-base-fg/40 font-mono break-all">{itemsLoadError}</div>
+                          <div className="flex gap-3">
+                            <button
+                              className="text-xs text-blue-400 hover:text-blue-300 underline"
+                              onClick={() => navigator.clipboard?.writeText(itemsLoadError!)}
+                            >
+                              Copy error
+                            </button>
+                            <button
+                              className="text-xs text-blue-400 hover:text-blue-300 underline"
+                              onClick={() => refreshGallery()}
+                            >
+                              Retry
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (initialLoading || !username) && allItems.length === 0 ? (
+                      <SkeletonGrid columns={gridColumns} />
+                    ) : allItems.length === 0 && !loading ? (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="text-base-fg/40 text-sm">No items yet</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-6 p-4">
+                        {Object.entries(groupedItems).map(
+                          ([date, dateItems], groupIndex) => {
+                            const filteredItems = dateItems.filter(filterItem);
+                            if (filteredItems.length === 0) return null;
+                            return (
+                              <LazyDateGroup
+                                key={date}
+                                eager={groupIndex < 2}
+                                itemCount={filteredItems.length}
+                                gridColumns={gridColumns}
+                                scrollRoot={scrollContainerRef.current}
+                              >
+                                <h3 className="text-md mb-2 font-medium text-base-fg/60">
+                                  {date}
+                                </h3>
+                                <div
+                                  className={twMerge("grid", gapClass)}
+                                  style={{
+                                    gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+                                  }}
+                                >
+                                  {filteredItems.map((item) => (
+                                    <GalleryDraggableItem
+                                      key={item.id}
+                                      item={item}
+                                      mode={mode}
+                                      activeFilter={activeFilter}
+                                      selected={selectedItemIds.includes(item.id)}
+                                      onClick={() => handleItemClick(item)}
+                                      onImageError={(e) => {
+                                        e.currentTarget.src =
+                                          PLACEHOLDER_IMAGES.DEFAULT;
+                                        e.currentTarget.style.opacity = "0.3";
+                                        (
+                                          e.currentTarget as HTMLImageElement
+                                        ).dataset.brokenurl = item.thumbnail || "";
+                                        handleImageError(item.thumbnail!);
+                                      }}
+                                      disableTooltipAndBadge={mode === "select"}
+                                      imageFit={imageFit}
+                                      onDeleted={handleItemDeleted}
+                                      onDelete={onDeleteMedia}
+                                      onEditClicked={onEditClicked}
+                                      maxSelections={maxSelections}
+                                      bulkSelected={bulkSelectedIds.has(item.id)}
+                                      onBulkSelectToggle={() =>
+                                        toggleBulkSelect(item.id)
+                                      }
+                                      bulkSelectionMode={bulkSelectionMode}
+                                      getBulkDragItems={getBulkDragItems}
+                                      folders={folders}
+                                      onAddToFolder={handleAddToFolder}
+                                      onCreateFolderFromMenu={handleOpenNewFolderModal}
+                                    />
+                                  ))}
+                                </div>
+                              </LazyDateGroup>
+                            );
+                          },
+                        )}
+                        {paginationLoading && allItems.length > 0 && (
+                          <div className="flex justify-center py-4">
+                            <LoadingSpinner className="h-8 w-8" />
+                          </div>
+                        )}
+                        {!hasMore && allItems.length > 0 && (
+                          <div className="flex justify-center py-4 text-base-fg/40 text-xs">
+                            No more items
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* ── New Folder Modal ── */}
+            {newFolderModalOpen && (
+              <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 rounded-xl">
+                <div className="w-72 rounded-lg bg-ui-panel border border-ui-panel-border p-4 shadow-xl">
+                  <h3 className="text-sm font-semibold text-base-fg mb-3">New Folder</h3>
+                  <input
+                    ref={newFolderInputRef}
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCreateFolder();
+                      if (e.key === "Escape") setNewFolderModalOpen(false);
+                    }}
+                    className="w-full rounded-md bg-ui-controls/40 border border-ui-panel-border px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
+                    autoFocus
+                  />
+                  <div className="flex justify-end gap-2 mt-3">
+                    <Button
+                      variant="action"
+                      onClick={() => setNewFolderModalOpen(false)}
+                      className="px-3 py-1 text-sm"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreateFolder}
+                      disabled={!newFolderName.trim()}
+                      className="px-3 py-1 text-sm"
+                    >
+                      Create
+                    </Button>
                   </div>
                 </div>
-              ) : (initialLoading || !username) && allItems.length === 0 ? (
-                <SkeletonGrid columns={gridColumns} />
-              ) : allItems.length === 0 && !loading ? (
-                <div className="flex h-full items-center justify-center">
-                  <div className="text-base-fg/40 text-sm">No items yet</div>
+              </div>
+            )}
+
+            {/* ── Rename Folder Modal (sidebar context menu) ── */}
+            {renameViaModal && renamingFolderId && (
+              <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/50 rounded-xl">
+                <div className="w-72 rounded-lg bg-ui-panel border border-ui-panel-border p-4 shadow-xl">
+                  <h3 className="text-sm font-semibold text-base-fg mb-3">Rename Folder</h3>
+                  <input
+                    ref={renameInputRef}
+                    type="text"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleConfirmRename();
+                      if (e.key === "Escape") {
+                        setRenamingFolderId(null);
+                        setRenameViaModal(false);
+                      }
+                    }}
+                    className="w-full rounded-md bg-ui-controls/40 border border-ui-panel-border px-3 py-1.5 text-sm text-base-fg outline-none focus:ring-1 focus:ring-primary/50"
+                    autoFocus
+                  />
+                  <div className="flex justify-end gap-2 mt-3">
+                    <Button
+                      variant="action"
+                      onClick={() => {
+                        setRenamingFolderId(null);
+                        setRenameViaModal(false);
+                      }}
+                      className="px-3 py-1 text-sm"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleConfirmRename}
+                      disabled={!renameValue.trim()}
+                      className="px-3 py-1 text-sm"
+                    >
+                      Rename
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-6 p-4">
-                  {Object.entries(groupedItems).map(
-                    ([date, dateItems], groupIndex) => {
-                      const filteredItems = dateItems.filter(filterItem);
-                      if (filteredItems.length === 0) return null;
-                      return (
-                        <LazyDateGroup
-                          key={date}
-                          eager={groupIndex < 2}
-                          itemCount={filteredItems.length}
-                          gridColumns={gridColumns}
-                          scrollRoot={scrollContainerRef.current}
-                        >
-                          <h3 className="text-md mb-2 font-medium text-base-fg/60">
-                            {date}
-                          </h3>
-                          <div
-                            className={twMerge("grid", gapClass)}
-                            style={{
-                              gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
-                            }}
-                          >
-                            {filteredItems.map((item) => (
-                              <GalleryDraggableItem
-                                key={item.id}
-                                item={item}
-                                mode={mode}
-                                activeFilter={activeFilter}
-                                selected={selectedItemIds.includes(item.id)}
-                                onClick={() => handleItemClick(item)}
-                                onImageError={(e) => {
-                                  e.currentTarget.src =
-                                    PLACEHOLDER_IMAGES.DEFAULT;
-                                  e.currentTarget.style.opacity = "0.3";
-                                  // Set the `data-brokenurl` property for debugging the broken images:
-                                  (
-                                    e.currentTarget as HTMLImageElement
-                                  ).dataset.brokenurl = item.thumbnail || "";
-                                  handleImageError(item.thumbnail!);
-                                }}
-                                disableTooltipAndBadge={mode === "select"}
-                                imageFit={imageFit}
-                                onDeleted={handleItemDeleted}
-                                onDelete={onDeleteMedia}
-                                onEditClicked={onEditClicked}
-                                maxSelections={maxSelections}
-                                bulkSelected={bulkSelectedIds.has(item.id)}
-                                onBulkSelectToggle={() =>
-                                  toggleBulkSelect(item.id)
-                                }
-                                bulkSelectionMode={bulkSelectionMode}
-                              />
-                            ))}
-                          </div>
-                        </LazyDateGroup>
-                      );
-                    },
-                  )}
-                  {paginationLoading && allItems.length > 0 && (
-                    <div className="flex justify-center py-4">
-                      <LoadingSpinner className="h-8 w-8" />
-                    </div>
-                  )}
-                  {!hasMore && allItems.length > 0 && (
-                    <div className="flex justify-center py-4 text-base-fg/40 text-xs">
-                      No more items
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {mode === "view" && bulkSelectionMode && (
               <div className="flex items-center justify-between border-t border-ui-panel-border bg-ui-background p-3 py-2 rounded-b-xl">
@@ -1397,6 +1907,65 @@ export const GalleryModal = React.memo(
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Add to folder */}
+                  <div className="relative">
+                    <Button
+                      variant="action"
+                      onClick={() => setBulkFolderPopoverOpen((v) => !v)}
+                      className="px-3 bg-ui-controls/60 hover:bg-ui-controls/90"
+                      icon={faFolderPlus}
+                    >
+                      Add to folder
+                    </Button>
+                    {bulkFolderPopoverOpen && (
+                      <>
+                        {/* Backdrop to close */}
+                        <div
+                          className="fixed inset-0 z-[59]"
+                          onClick={() => setBulkFolderPopoverOpen(false)}
+                        />
+                        <div className="absolute bottom-full mb-2 right-0 w-56 rounded-lg border border-ui-panel-border bg-ui-panel p-2 shadow-xl z-[60]">
+                          {/* Folders */}
+                          <div className="text-[11px] font-semibold uppercase tracking-wider text-base-fg/40 px-2 py-1">
+                            Folders
+                          </div>
+                          {folders.length === 0 ? (
+                            <div className="px-2 py-1.5 text-xs text-base-fg/30 italic">
+                              No folders yet
+                            </div>
+                          ) : (
+                            folders.map((folder) => (
+                              <button
+                                key={folder.id}
+                                type="button"
+                                className="flex w-full items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-ui-controls/50 text-sm text-base-fg transition-colors"
+                                onClick={() => {
+                                  const ids = Array.from(bulkSelectedIds);
+                                  handleAddToFolder(ids, folder.id);
+                                  setBulkFolderPopoverOpen(false);
+                                }}
+                              >
+                                <FontAwesomeIcon icon={faFolder} className="text-primary text-xs" />
+                                <span className="truncate">{folder.name}</span>
+                              </button>
+                            ))
+                          )}
+                          <div className="mx-1.5 my-1 border-t border-ui-panel-border" />
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-ui-controls/50 text-sm text-base-fg/70 transition-colors"
+                            onClick={() => {
+                              setBulkFolderPopoverOpen(false);
+                              handleOpenNewFolderModal();
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faPlus} className="text-xs w-4" />
+                            <span>Create new folder</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                   {onDeleteMedia && (
                     <Button
                       variant="destructive"
@@ -1482,6 +2051,29 @@ export const GalleryModal = React.memo(
             onNavigateToMedia={handleNavigateToMedia}
           />
         )}
+
+        {/* Right-click context menu for sidebar folders — portaled to body to avoid transform issues */}
+        {contextMenu &&
+          createPortal(
+            <>
+              <div
+                className="fixed inset-0 z-[9998]"
+                onClick={() => setContextMenu(null)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu(null);
+                }}
+              />
+              <FolderContextMenuItems
+                className="fixed z-[9999]"
+                style={{ left: contextMenu.x, top: contextMenu.y }}
+                folderId={contextMenu.folderId}
+                onRename={(id) => handleStartRename(id, true)}
+                onDelete={handleDeleteFolder}
+              />
+            </>,
+            document.body,
+          )}
       </>
     );
   },
