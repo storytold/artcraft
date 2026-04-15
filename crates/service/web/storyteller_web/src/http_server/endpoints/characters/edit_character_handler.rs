@@ -114,7 +114,10 @@ pub async fn edit_character_handler(
           .await
           .map_err(|err| {
             error!("Error updating character on Kinovi: {:?}", err);
-            AdvancedCommonWebError::from_error(err)
+            AdvancedCommonWebError::from_error_with_message(
+              "Error Updating Kinovi Character API".to_string(),
+              err,
+            )
           })?;
 
       info!("Updated character {} on Kinovi (name='{}')", kinovi_id, final_name);

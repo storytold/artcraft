@@ -16,7 +16,7 @@ pub(crate) fn check_status_code_fallback(
 ) {
   match status_code {
     500 => {
-      let summary = format!("HTTP 500: {} {}", method, path);
+      let summary = format!("[Legacy] HTTP 500: {} {}", method, path);
       let description = format!(
         "An untyped HTTP 500 response was returned (no typed error matched).\n\n\
            Endpoint: {} {}\n\

@@ -50,6 +50,12 @@ pub enum AdvancedCommonWebError {
   /// Stored in `Arc` so the error alerting middleware can clone it for paging
   /// without consuming the original.
   UncaughtServerError(Arc<dyn std::error::Error + Send + Sync + 'static>),
+
+  /// Same as above, with a specified extra message string
+  UncaughtServerErrorWithInternalMessage {
+    internal_message: String,
+    error: Arc<dyn std::error::Error + Send + Sync + 'static>
+  }
 }
 
 // =============== Public accessors ===============
@@ -58,6 +64,13 @@ impl AdvancedCommonWebError {
   /// Wrap any error as an `UncaughtServerError`.
   pub fn from_error(error: impl std::error::Error + Send + Sync + 'static) -> Self {
     Self::UncaughtServerError(Arc::new(error))
+  }
+
+  pub fn from_error_with_message(message: String, error: impl std::error::Error + Send + Sync + 'static) -> Self {
+    Self::UncaughtServerErrorWithInternalMessage {
+      internal_message: message,
+      error: Arc::new(error)
+    }
   }
 
   /// Wrap an `anyhow::Error` as an `UncaughtServerError`.
@@ -75,6 +88,7 @@ impl AdvancedCommonWebError {
   pub fn cause(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
     match self {
       Self::UncaughtServerError(err) => Some(err.as_ref()),
+      Self::UncaughtServerErrorWithInternalMessage { error, .. } => Some(error.as_ref()),
       _ => None,
     }
   }
@@ -84,13 +98,18 @@ impl AdvancedCommonWebError {
   pub fn clone_cause_arc(&self) -> Option<Arc<dyn std::error::Error + Send + Sync + 'static>> {
     match self {
       Self::UncaughtServerError(err) => Some(Arc::clone(err)),
+      Self::UncaughtServerErrorWithInternalMessage { error, .. } => Some(Arc::clone(error)),
       _ => None,
     }
   }
 
   /// Whether this is a server error (500).
   pub fn is_server_error(&self) -> bool {
-    matches!(self, Self::UncaughtServerError(_))
+    match self {
+      Self::UncaughtServerError(_) => true,
+      Self::UncaughtServerErrorWithInternalMessage { .. } => true,
+      _ => false,
+    }
   }
 }
 
@@ -104,6 +123,9 @@ impl Display for AdvancedCommonWebError {
       Self::NotFound => write!(f, "Not found"),
       Self::PaymentRequired => write!(f, "Payment required"),
       Self::UncaughtServerError(err) => write!(f, "Server error: {}", err),
+      Self::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
+        write!(f, "Server error: {}: {}", internal_message, error)
+      }
     }
   }
 }
@@ -116,6 +138,9 @@ impl std::fmt::Debug for AdvancedCommonWebError {
       Self::NotFound => write!(f, "NotFound"),
       Self::PaymentRequired => write!(f, "PaymentRequired"),
       Self::UncaughtServerError(err) => write!(f, "UncaughtServerError({:?})", err),
+      Self::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
+        write!(f, "UncaughtServerErrorWithInternalMessage({:?}, {:?})", internal_message, error)
+      }
     }
   }
 }
@@ -139,6 +164,7 @@ impl ResponseError for AdvancedCommonWebError {
       Self::NotFound => StatusCode::NOT_FOUND,
       Self::PaymentRequired => StatusCode::PAYMENT_REQUIRED,
       Self::UncaughtServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+      Self::UncaughtServerErrorWithInternalMessage { .. } => StatusCode::INTERNAL_SERVER_ERROR,
     }
   }
 

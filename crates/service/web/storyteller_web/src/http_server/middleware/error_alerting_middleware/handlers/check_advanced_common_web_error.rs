@@ -50,6 +50,13 @@ pub(crate) fn check_advanced_common_web_error(
       .set_session_token(metadata.session_token.clone())
       .set_session_user_token(metadata.session_user_token.clone());
 
+  match error {
+    AdvancedCommonWebError::UncaughtServerErrorWithInternalMessage { internal_message, error } => {
+      builder = builder.set_extra_message(Some(internal_message.to_string()));
+    }
+    _ => {},
+  }
+
   let notification = builder.build();
 
   if let Err(err) = pager.enqueue_page(notification) {

@@ -14,6 +14,10 @@ pub struct NotificationDetailsBuilder {
   pub(crate) maybe_error: Option<Arc<dyn std::error::Error + Send + Sync + 'static>>,
   pub(crate) is_from_error: bool,
 
+  /// Extra side-channel messages, eg. if we know we're sending an error/exception,
+  /// but want to include an additional message. (The "description" field is messy atm.)
+  pub(crate) extra_message: Option<String>,
+
   pub(crate) http_method: Option<String>,
   pub(crate) http_path: Option<String>,
   pub(crate) http_status_code: Option<u16>,
@@ -41,6 +45,7 @@ impl NotificationDetailsBuilder {
       event_time: Utc::now(),
       maybe_error: None,
       is_from_error: false,
+      extra_message: None,
       http_method: None,
       http_path: None,
       http_status_code: None,
@@ -70,6 +75,7 @@ impl NotificationDetailsBuilder {
       event_time: Utc::now(),
       maybe_error: Some(error),
       is_from_error: true,
+      extra_message: None,
       http_method: None,
       http_path: None,
       http_status_code: None,
@@ -103,6 +109,11 @@ impl NotificationDetailsBuilder {
 
   pub fn set_error(mut self, error: Option<Arc<dyn std::error::Error + Send + Sync + 'static>>) -> Self {
     self.maybe_error = error;
+    self
+  }
+
+  pub fn set_extra_message(mut self, extra_message: Option<String>) -> Self {
+    self.extra_message = extra_message;
     self
   }
 
@@ -176,6 +187,7 @@ impl NotificationDetailsBuilder {
       event_time: self.event_time,
       maybe_error: self.maybe_error,
       is_from_error: self.is_from_error,
+      extra_message: self.extra_message,
       http_method: self.http_method,
       http_path: self.http_path,
       http_status_code: self.http_status_code,

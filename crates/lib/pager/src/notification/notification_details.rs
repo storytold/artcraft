@@ -24,6 +24,10 @@ pub struct NotificationDetails {
   /// Whether this notification originated from an error.
   pub(crate) is_from_error: bool,
 
+  /// Extra side-channel messages, eg. if we know we're sending an error/exception,
+  /// but want to include an additional message. (The "description" field is messy atm.)
+  pub(crate) extra_message: Option<String>,
+
   /// HTTP method associated with the event, if any.
   pub(crate) http_method: Option<String>,
 
@@ -90,25 +94,30 @@ impl NotificationDetails {
       sections.push(desc.clone());
     }
 
-    // 2. Error chain
+    // 2. Extra message
+    if let Some(message) = &self.extra_message {
+      sections.push(message.clone());
+    }
+
+    // 3. Error chain
     if let Some(error_section) = self.format_error_chain() {
       sections.push(error_section);
     }
 
-    // 3. Event time
+    // 4. Event time
     sections.push(self.format_event_time());
 
-    // 4. HTTP context
+    // 5. HTTP context
     if let Some(http_section) = self.format_http_context() {
       sections.push(http_section);
     }
 
-    // 5. Service tokens
+    // 6. Service tokens
     if let Some(tokens_section) = self.format_service_tokens() {
       sections.push(tokens_section);
     }
 
-    // 6. Application/service identity and hostname
+    // 7. Application/service identity and hostname
     if let Some(identity_section) = Self::format_app_identity(application_name, service_id, hostname) {
       sections.push(identity_section);
     }
