@@ -9,6 +9,9 @@
       "path": "../../common"
     },
     {
+      "path": "../../api"
+    },
+    {
       "path": "../loading-spinner"
     },
     {
@@ -24,10 +27,10 @@
       "path": "../modal"
     },
     {
-      "path": "../../tauri-api"
+      "path": "../toaster"
     },
     {
-      "path": "../../api"
+      "path": "../../tauri-api"
     },
     {
       "path": "../action-reminder-modal"
