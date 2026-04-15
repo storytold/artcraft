@@ -46,6 +46,9 @@ pub enum AdvancedCommonWebError {
   /// 402 Payment Required.
   PaymentRequired,
 
+  /// 403 Forbidden.
+  Forbidden,
+
   /// 403 Forbidden — content was rejected by a content policy filter (e.g. NSFW).
   ContentPolicyRejected,
 
@@ -131,6 +134,7 @@ impl Display for AdvancedCommonWebError {
       Self::NotAuthorized => write!(f, "Not authorized"),
       Self::NotFound => write!(f, "Not found"),
       Self::PaymentRequired => write!(f, "Payment required"),
+      Self::Forbidden => write!(f, "Forbidden"),
       Self::ContentPolicyRejected => write!(f, "Content policy rejected"),
       Self::ContentPolicyRejectedWithMessage(msg) => write!(f, "Content policy rejected: {}", msg),
       Self::UncaughtServerError(err) => write!(f, "Server error: {}", err),
@@ -148,6 +152,7 @@ impl std::fmt::Debug for AdvancedCommonWebError {
       Self::NotAuthorized => write!(f, "NotAuthorized"),
       Self::NotFound => write!(f, "NotFound"),
       Self::PaymentRequired => write!(f, "PaymentRequired"),
+      Self::Forbidden => write!(f, "Forbidden"),
       Self::ContentPolicyRejected => write!(f, "ContentPolicyRejected"),
       Self::ContentPolicyRejectedWithMessage(msg) => write!(f, "ContentPolicyRejectedWithMessage({:?})", msg),
       Self::UncaughtServerError(err) => write!(f, "UncaughtServerError({:?})", err),
@@ -177,6 +182,7 @@ impl ResponseError for AdvancedCommonWebError {
       Self::NotAuthorized => StatusCode::UNAUTHORIZED,
       Self::NotFound => StatusCode::NOT_FOUND,
       Self::PaymentRequired => StatusCode::PAYMENT_REQUIRED,
+      Self::Forbidden => StatusCode::FORBIDDEN,
       Self::ContentPolicyRejected => StatusCode::FORBIDDEN,
       Self::ContentPolicyRejectedWithMessage(_) => StatusCode::FORBIDDEN,
       Self::UncaughtServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -492,8 +498,16 @@ mod tests {
     assert!(std::error::Error::source(&AdvancedCommonWebError::NotFound).is_none());
     assert!(std::error::Error::source(&AdvancedCommonWebError::NotAuthorized).is_none());
     assert!(std::error::Error::source(&AdvancedCommonWebError::PaymentRequired).is_none());
+    assert!(std::error::Error::source(&AdvancedCommonWebError::Forbidden).is_none());
     assert!(std::error::Error::source(&AdvancedCommonWebError::ContentPolicyRejected).is_none());
     assert!(std::error::Error::source(&AdvancedCommonWebError::ContentPolicyRejectedWithMessage("test".to_string())).is_none());
+  }
+
+  #[test]
+  fn forbidden_returns_403() {
+    let error = AdvancedCommonWebError::Forbidden;
+    assert_eq!(error.status_code(), StatusCode::FORBIDDEN);
+    assert!(!error.is_server_error());
   }
 
   #[test]
