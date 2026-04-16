@@ -497,7 +497,7 @@ const PricingTable = ({
 
       {/* Manage Plan Button - Only shown if user has active subscription */}
       {activePlanSlug && activePlanSlug !== "free" && (
-        <div className="mt-2 text-center">
+        <div className="mt-8 text-center">
           <button
             onClick={handleCancelPlan}
             disabled={isCancelling}

@@ -151,6 +151,41 @@ export class BillingApi extends ApiManager {
       });
   }
 
+  public async CreditsPackCheckout({
+    creditsPack,
+  }: {
+    creditsPack: string;
+  }): Promise<ApiResponse<{ stripeCheckoutRedirectUrl: string }>> {
+    const endpoint = `${this.getApiSchemeAndHost()}/v1/stripe_artcraft/checkout/credits_pack`;
+
+    return await this.post<
+      { credits_pack: string },
+      {
+        success: boolean;
+        stripe_checkout_redirect_url?: string;
+        error_message?: string;
+      }
+    >({
+      endpoint: endpoint,
+      body: {
+        credits_pack: creditsPack,
+      },
+    })
+      .then((response) => ({
+        success: response.success,
+        data: response.stripe_checkout_redirect_url
+          ? { stripeCheckoutRedirectUrl: response.stripe_checkout_redirect_url }
+          : undefined,
+        errorMessage: response.error_message,
+      }))
+      .catch((err) => {
+        return {
+          success: false,
+          errorMessage: err.message,
+        };
+      });
+  }
+
   public async GetPortalUrl(): Promise<
     ApiResponse<{ stripePortalUrl: string }>
   > {

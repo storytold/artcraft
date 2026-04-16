@@ -1,7 +1,13 @@
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { faCoins } from "@fortawesome/pro-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Button } from "@storyteller/ui-button";
+import { UsersApi } from "@storyteller/api";
 import Footer from "../../components/footer";
 import Seo from "../../components/seo";
 import { PricingTable } from "../../components/pricing-table";
-import { useSearchParams } from "react-router-dom";
+import { CreditsModal } from "../../components/credits-modal";
 
 const SeedanceBanner = () => (
   <div className="flex flex-col gap-5">
@@ -64,6 +70,23 @@ const SeedanceBanner = () => (
 const Pricing = () => {
   const [searchParams] = useSearchParams();
   const isSeedanceRef = searchParams.get("ref") === "sd2fakeyou";
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const api = new UsersApi();
+        const res = await api.GetSession();
+        setIsLoggedIn(
+          res.success && !!res.data?.loggedIn && !!res.data?.user,
+        );
+      } catch {
+        // not logged in
+      }
+    };
+    check();
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-[#101014] text-white bg-dots">
@@ -77,7 +100,7 @@ const Pricing = () => {
       </div>
 
       {isSeedanceRef ? (
-        <main className="relative z-10 pt-32 pb-16 px-4 sm:px-6 lg:px-8">
+        <main className="relative z-10 pt-32 pb-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-[1700px] mx-auto grid grid-cols-1 lg:grid-cols-[5fr_7fr] gap-8 xl:gap-12 items-start">
             <SeedanceBanner />
             <div className="w-full">
@@ -92,7 +115,7 @@ const Pricing = () => {
           </div>
         </main>
       ) : (
-        <main className="relative z-10 pt-28 sm:pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <main className="relative z-10 pt-28 sm:pt-32 pb-16 px-4 sm:px-6 lg:px-8">
           <PricingTable
             title="Invest in Yourself"
             subtitle="You'll get a ton of generations and you'll be investing in a tool that you'll always own."
@@ -100,6 +123,27 @@ const Pricing = () => {
             showEnterprise
           />
         </main>
+      )}
+
+      {isLoggedIn && (
+        <div className="relative z-10 flex flex-col items-center px-4 pb-12 sm:px-6 lg:px-8">
+          <div className="inline-flex items-center gap-2 text-white/40">
+            <div className="h-px w-8 bg-white/20" />
+            <span className="text-sm">Or</span>
+            <div className="h-px w-8 bg-white/20" />
+          </div>
+          <p className="mt-3 text-lg text-white/70">
+            Purchase one-time credit packs
+          </p>
+          <Button
+            variant="secondary"
+            className="mt-4 gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-2.5 font-semibold text-white backdrop-blur-sm hover:bg-white/10"
+            onClick={() => setCreditsModalOpen(true)}
+          >
+            <FontAwesomeIcon icon={faCoins} className="text-primary" />
+            Buy Credits
+          </Button>
+        </div>
       )}
 
       {/* Footnotes */}
@@ -110,6 +154,13 @@ const Pricing = () => {
           you'll subscribe, though, as that helps accelerate our development.
         </p>
       </div>
+
+      {isLoggedIn && (
+        <CreditsModal
+          isOpen={creditsModalOpen}
+          onClose={() => setCreditsModalOpen(false)}
+        />
+      )}
 
       <Footer />
     </div>
