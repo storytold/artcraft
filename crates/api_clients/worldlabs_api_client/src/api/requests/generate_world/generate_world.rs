@@ -33,10 +33,15 @@ pub struct GenerateWorldResponse {
 pub async fn generate_world(args: GenerateWorldArgs<'_>) -> Result<GenerateWorldResponse, WorldLabsError> {
   let client = Client::new();
 
+  let model_name = args.model
+      .to_new_value()
+      .get_model_api_name_str()
+      .to_string();
+
   let payload = RawRequest {
     world_prompt: args.world_prompt,
     display_name: args.display_name,
-    model: Some(args.model.get_model_api_name_str().to_string()),
+    model: Some(model_name),
     seed: args.seed,
     tags: args.tags,
     permission: args.permission,
@@ -340,6 +345,100 @@ mod tests {
       }
       Err(err) => {
         println!("  NSFW CAUGHT AT STEP 3 (generate_world)!");
+        println!("  Error (Debug): {:?}", err);
+        println!("  Error (Display): {}", err);
+      }
+    }
+
+    assert_eq!(1, 2, "Inspect output above");
+  }
+
+  /// Marble 1.1: generate world from a mountain/tree image via URI.
+  #[tokio::test]
+  #[ignore]
+  async fn test_generate_world_marble_1p1_image_uri() {
+    setup_test_logging(LevelFilter::Debug);
+
+    let creds = get_test_api_key().unwrap();
+
+    let image_url = test_data::web::image_urls::MOUNTAIN_TREE_IMAGE_URL;
+
+    println!("=== generate_world with Marble 1.1 ===");
+    println!("Image URL: {}", image_url);
+
+    let result = generate_world(GenerateWorldArgs {
+      creds: &creds,
+      world_prompt: WorldPrompt::Image {
+        image_prompt: ContentReference::Uri {
+          uri: image_url.to_string(),
+        },
+        text_prompt: Some("Mountain landscape with a tree".to_string()),
+        is_pano: None,
+        disable_recaption: None,
+      },
+      display_name: None,
+      model: WorldLabsModel::Marble1p1,
+      seed: None,
+      tags: None,
+      permission: None,
+      request_timeout: None,
+    }).await;
+
+    match &result {
+      Ok(r) => {
+        println!("SUCCESS — Marble 1.1");
+        println!("  Operation ID: {}", r.operation_id.as_str());
+        println!("  Done: {}", r.done);
+      }
+      Err(err) => {
+        println!("ERROR — Marble 1.1");
+        println!("  Error (Debug): {:?}", err);
+        println!("  Error (Display): {}", err);
+      }
+    }
+
+    assert_eq!(1, 2, "Inspect output above");
+  }
+
+  /// Marble 1.1-plus: generate world from a wide fall mountains image via URI.
+  #[tokio::test]
+  #[ignore]
+  async fn test_generate_world_marble_1p1_plus_image_uri() {
+    setup_test_logging(LevelFilter::Debug);
+
+    let creds = get_test_api_key().unwrap();
+
+    let image_url = test_data::web::image_urls::SUPER_WIDE_FALL_MOUNTAINS_IMAGE_URL;
+
+    println!("=== generate_world with Marble 1.1-plus ===");
+    println!("Image URL: {}", image_url);
+
+    let result = generate_world(GenerateWorldArgs {
+      creds: &creds,
+      world_prompt: WorldPrompt::Image {
+        image_prompt: ContentReference::Uri {
+          uri: image_url.to_string(),
+        },
+        text_prompt: Some("Autumn mountain panorama".to_string()),
+        is_pano: None,
+        disable_recaption: None,
+      },
+      display_name: None,
+      model: WorldLabsModel::Marble1p1Plus,
+      seed: None,
+      tags: None,
+      permission: None,
+      request_timeout: None,
+    }).await;
+
+    match &result {
+      Ok(r) => {
+        println!("SUCCESS — Marble 1.1-plus");
+        println!("  Operation ID: {}", r.operation_id.as_str());
+        println!("  Done: {}", r.done);
+      }
+      Err(err) => {
+        println!("ERROR — Marble 1.1-plus");
         println!("  Error (Debug): {:?}", err);
         println!("  Error (Display): {}", err);
       }

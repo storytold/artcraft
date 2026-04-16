@@ -195,7 +195,8 @@ mod tests {
 
     let creds = get_test_api_key().unwrap();
 
-    let operation_id = OperationId("1fab3bf1-05a1-4929-907e-c6df07c539e2".to_string());
+    //let operation_id = OperationId("1fab3bf1-05a1-4929-907e-c6df07c539e2".to_string());
+    let operation_id = OperationId("a0894fa6-594d-4680-8f3a-5109f22664b1".to_string());
 
     let response = get_operation(GetOperationArgs {
       creds: &creds,
