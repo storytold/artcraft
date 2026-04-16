@@ -134,9 +134,6 @@ pub async fn omni_gen_image_generate_handler(
 
   let distilled = distill_image_request(&request, media_file_hydration_map.as_ref())?;
 
-  info!(">>> Distilled cost: {:?}", distilled.cost);
-  info!(">>> Distilled plan: {:?}", distilled.plan());
-
   // ==================== BILLING ==================== //
 
   let cost = distilled.cost.cost_in_credits.unwrap_or(0);
@@ -169,8 +166,6 @@ pub async fn omni_gen_image_generate_handler(
       warn!("Image generation failed: {:?}", e);
       AdvancedCommonWebError::from_error(e)
     })?;
-
-  info!(">>> GENERATED!!");
 
   let external_job_id = match &generation_response {
     artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse::Artcraft(p) => {

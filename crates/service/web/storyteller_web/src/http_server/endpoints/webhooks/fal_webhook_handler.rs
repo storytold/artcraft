@@ -36,8 +36,6 @@ pub async fn fal_webhook_handler(
 
   info!("Received FAL webhook body: {}", raw_body);
 
-  println!("\n\nReceived FAL webhook body: {}\n\n", raw_body);
-
   // Step 2: Parse into RawWebhookPayload.
   let webhook_payload = parse_raw_webhook_payload(&raw_body)
       .map_err(|err| {
