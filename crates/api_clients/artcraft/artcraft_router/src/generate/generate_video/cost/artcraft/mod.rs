@@ -8,6 +8,7 @@ pub mod estimate_video_cost_artcraft_kling3p0_standard;
 pub mod estimate_video_cost_artcraft_seedance_1_0_lite;
 pub mod estimate_video_cost_artcraft_seedance1p5_pro;
 pub mod estimate_video_cost_artcraft_seedance2p0;
+pub mod estimate_video_cost_artcraft_seedance2p0_fast;
 pub mod estimate_video_cost_artcraft_sora_2;
 pub mod estimate_video_cost_artcraft_sora_2_pro;
 pub mod estimate_video_cost_artcraft_veo_2;

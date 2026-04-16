@@ -8,6 +8,7 @@ pub mod plan_generate_video_artcraft_kling3p0_standard;
 pub mod plan_generate_video_artcraft_seedance_1_0_lite;
 pub mod plan_generate_video_artcraft_seedance1p5_pro;
 pub mod plan_generate_video_artcraft_seedance2p0;
+pub mod plan_generate_video_artcraft_seedance2p0_fast;
 pub mod plan_generate_video_artcraft_sora_2;
 pub mod plan_generate_video_artcraft_sora_2_pro;
 pub mod plan_generate_video_artcraft_veo_2;

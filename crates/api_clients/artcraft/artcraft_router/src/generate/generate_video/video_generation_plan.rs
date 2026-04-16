@@ -10,6 +10,7 @@ use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraf
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance_1_0_lite::estimate_video_cost_artcraft_seedance_1_0_lite;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance1p5_pro::estimate_video_cost_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance2p0::estimate_video_cost_artcraft_seedance2p0;
+use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance2p0_fast::estimate_video_cost_artcraft_seedance2p0_fast;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_sora_2::estimate_video_cost_artcraft_sora_2;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_sora_2_pro::estimate_video_cost_artcraft_sora_2_pro;
 use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_veo_2::estimate_video_cost_artcraft_veo_2;
@@ -46,6 +47,7 @@ use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance_1_0_lite::execute_artcraft_seedance_1_0_lite;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance1p5_pro::execute_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance2p0::execute_artcraft_seedance2p0;
+use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_seedance2p0_fast::execute_artcraft_seedance2p0_fast;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_sora_2::execute_artcraft_sora_2;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_sora_2_pro::execute_artcraft_sora_2_pro;
 use crate::generate::generate_video::execute::artcraft::generate_video_artcraft_veo_2::execute_artcraft_veo_2;
@@ -122,6 +124,7 @@ pub enum VideoGenerationPlan<'a> {
   ArtcraftSeedance10Lite(PlanArtcraftSeedance10Lite<'a>),
   ArtcraftSeedance1p5Pro(PlanArtcraftSeedance1p5Pro<'a>),
   ArtcraftSeedance2p0(PlanArtcraftSeedance2p0<'a>),
+  ArtcraftSeedance2p0Fast(PlanArtcraftSeedance2p0<'a>),
   ArtcraftSora2(PlanArtcraftSora2<'a>),
   ArtcraftSora2Pro(PlanArtcraftSora2Pro<'a>),
   ArtcraftVeo2(PlanArtcraftVeo2<'a>),
@@ -195,6 +198,10 @@ impl<'a> VideoGenerationPlan<'a> {
       VideoGenerationPlan::ArtcraftSeedance2p0(plan) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
         execute_artcraft_seedance2p0(plan, artcraft_client).await
+      }
+      VideoGenerationPlan::ArtcraftSeedance2p0Fast(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_seedance2p0_fast(plan, artcraft_client).await
       }
       VideoGenerationPlan::ArtcraftSora2(plan) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
@@ -324,6 +331,9 @@ impl<'a> VideoGenerationPlan<'a> {
       }
       VideoGenerationPlan::ArtcraftSeedance2p0(plan) => {
         estimate_video_cost_artcraft_seedance2p0(plan)
+      }
+      VideoGenerationPlan::ArtcraftSeedance2p0Fast(plan) => {
+        estimate_video_cost_artcraft_seedance2p0_fast(plan)
       }
       VideoGenerationPlan::ArtcraftSora2(plan) => {
         estimate_video_cost_artcraft_sora_2(plan)

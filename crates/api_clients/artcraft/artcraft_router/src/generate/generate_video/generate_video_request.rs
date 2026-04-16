@@ -19,6 +19,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance_1_0_lite::plan_generate_video_artcraft_seedance_1_0_lite;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0_fast::plan_generate_video_artcraft_seedance2p0_fast;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_sora_2::plan_generate_video_artcraft_sora_2;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_sora_2_pro::plan_generate_video_artcraft_sora_2_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_2::plan_generate_video_artcraft_veo_2;
@@ -132,6 +133,7 @@ impl<'a> GenerateVideoRequest<'a> {
       CommonVideoModel::Seedance10Lite => plan_generate_video_artcraft_seedance_1_0_lite(self),
       CommonVideoModel::Seedance1p5Pro => plan_generate_video_artcraft_seedance1p5_pro(self),
       CommonVideoModel::Seedance2p0 => plan_generate_video_artcraft_seedance2p0(self),
+      CommonVideoModel::Seedance2p0Fast => plan_generate_video_artcraft_seedance2p0_fast(self),
       CommonVideoModel::Sora2 => plan_generate_video_artcraft_sora_2(self),
       CommonVideoModel::Sora2Pro => plan_generate_video_artcraft_sora_2_pro(self),
       CommonVideoModel::Veo2 => plan_generate_video_artcraft_veo_2(self),
