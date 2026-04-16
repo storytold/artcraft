@@ -14,8 +14,7 @@ const root = ReactDOM.createRoot(
 // In development, route API through the Vite dev server origin to avoid CORS
 if (import.meta.env.DEV) {
   try {
-    const origin = window.location.origin;
-    StorytellerApiHostStore.getInstance().setApiSchemeAndHost(origin);
+    StorytellerApiHostStore.getInstance().setDevelopment();
   } catch (e) {
     console.warn("Failed to set dev API host override", e);
   }
