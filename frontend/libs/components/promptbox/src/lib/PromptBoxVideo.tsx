@@ -759,9 +759,8 @@ export const PromptBoxVideo = ({
   };
 
   const getCurrentAspectRatioIcon = (): SizeIconOption => {
-    const selectedLabel = aspectRatioList.find((item) => item.selected)?.label;
     const allOptions = selectedModel?.sizeOptions ?? DEFAULT_RESOLUTIONS;
-    const match = allOptions.find((o) => o.textLabel === selectedLabel);
+    const match = allOptions.find((o) => o.textLabel === aspectRatio);
     return match?.icon ?? SizeIconOption.Landscape;
   };
 
