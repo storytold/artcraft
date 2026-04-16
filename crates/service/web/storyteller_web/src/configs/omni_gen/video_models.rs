@@ -79,6 +79,38 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     ..Default::default()
   });
 
+  models.push(OmniGenVideoModelDetails {
+    model: CommonVideoModel::Seedance2p0Fast,
+    full_name: None,
+    text_prompt_supported: Some(true),
+    starting_keyframe_supported: Some(true),
+    ending_keyframe_supported: Some(true),
+    image_references_supported: Some(true),
+    image_references_max: Some(9),
+    audio_references_supported: Some(true),
+    audio_references_max: Some(3),
+    audio_references_max_total_duration_seconds: Some(15),
+    video_references_supported: Some(true),
+    video_references_max: Some(3),
+    video_references_max_total_duration_seconds: Some(15),
+    character_references_supported: Some(true),
+    character_references_max: Some(9),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::WideSixteenByNine,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::WideSixteenByNine),
+    batch_size_options: Some(vec![1, 2, 4]),
+    batch_size_default: Some(1),
+    duration_seconds_min: Some(4),
+    duration_seconds_max: Some(15),
+    duration_seconds_default: Some(5),
+    ..Default::default()
+  });
+
   // TODO(bt,2026-04-10): Veo 2 image-to-video doesn't support aspect ratio
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
