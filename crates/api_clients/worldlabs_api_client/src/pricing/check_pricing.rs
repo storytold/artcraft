@@ -42,6 +42,34 @@ fn credits_for(model: WorldLabsModel, input_type: InputType) -> u32 {
     (WorldLabsModel::Marble0p1Plus, InputType::ImageNonPanorama) => 1580,
     (WorldLabsModel::Marble0p1Plus, InputType::MultiImage) => 1600,
     (WorldLabsModel::Marble0p1Plus, InputType::Video) => 1600,
+
+    // Marble 1.0 (successor to 0.1-plus)
+    (WorldLabsModel::Marble1p0, InputType::ImagePanorama) => 1500,
+    (WorldLabsModel::Marble1p0, InputType::Text) => 1580,
+    (WorldLabsModel::Marble1p0, InputType::ImageNonPanorama) => 1580,
+    (WorldLabsModel::Marble1p0, InputType::MultiImage) => 1600,
+    (WorldLabsModel::Marble1p0, InputType::Video) => 1600,
+
+    // Marble 1.0-draft (successor to 0.1-mini)
+    (WorldLabsModel::Marble1p0Draft, InputType::ImagePanorama) => 150,
+    (WorldLabsModel::Marble1p0Draft, InputType::Text) => 230,
+    (WorldLabsModel::Marble1p0Draft, InputType::ImageNonPanorama) => 230,
+    (WorldLabsModel::Marble1p0Draft, InputType::MultiImage) => 250,
+    (WorldLabsModel::Marble1p0Draft, InputType::Video) => 250,
+
+    // Marble 1.1
+    (WorldLabsModel::Marble1p1, InputType::ImagePanorama) => 1500,
+    (WorldLabsModel::Marble1p1, InputType::Text) => 1580,
+    (WorldLabsModel::Marble1p1, InputType::ImageNonPanorama) => 1580,
+    (WorldLabsModel::Marble1p1, InputType::MultiImage) => 1600,
+    (WorldLabsModel::Marble1p1, InputType::Video) => 1600,
+
+    // Marble 1.1-plus
+    (WorldLabsModel::Marble1p1Plus, InputType::ImagePanorama) => 1500,
+    (WorldLabsModel::Marble1p1Plus, InputType::Text) => 1580,
+    (WorldLabsModel::Marble1p1Plus, InputType::ImageNonPanorama) => 1580,
+    (WorldLabsModel::Marble1p1Plus, InputType::MultiImage) => 1600,
+    (WorldLabsModel::Marble1p1Plus, InputType::Video) => 1600,
   }
 }
 
@@ -120,6 +148,10 @@ mod tests {
     let models = [
       WorldLabsModel::Marble0p1Mini,
       WorldLabsModel::Marble0p1Plus,
+      WorldLabsModel::Marble1p0,
+      WorldLabsModel::Marble1p0Draft,
+      WorldLabsModel::Marble1p1,
+      WorldLabsModel::Marble1p1Plus,
     ];
 
     for model in &models {
