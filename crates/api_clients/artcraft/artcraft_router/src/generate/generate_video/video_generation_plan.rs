@@ -110,6 +110,7 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1:
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1_fast::PlanFalVeo3p1Fast;
 use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seedance2p0::PlanMuapiSeedance2p0;
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
+use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::PlanSeedance2proSeedance2p0Fast;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 #[derive(Debug)]
@@ -134,7 +135,7 @@ pub enum VideoGenerationPlan<'a> {
   ArtcraftVeo3p1Fast(PlanArtcraftVeo3p1Fast<'a>),
   MuapiSeedance2p0(PlanMuapiSeedance2p0),
   Seedance2proSeedance2p0(PlanSeedance2proSeedance2p0),
-  Seedance2proSeedance2p0Fast(PlanSeedance2proSeedance2p0),
+  Seedance2proSeedance2p0Fast(PlanSeedance2proSeedance2p0Fast),
   FalVeo2(PlanFalVeo2),
   FalVeo3(PlanFalVeo3),
   FalVeo3Fast(PlanFalVeo3Fast),

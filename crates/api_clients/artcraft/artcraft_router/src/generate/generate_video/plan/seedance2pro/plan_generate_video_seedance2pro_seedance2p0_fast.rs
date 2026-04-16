@@ -7,9 +7,21 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
-use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use seedance2pro_client::requests::generate_video::generate_video::{BatchCount, Resolution};
+
+#[derive(Debug, Clone)]
+pub struct PlanSeedance2proSeedance2p0Fast {
+  pub prompt: Option<String>,
+  pub start_frame_url: Option<String>,
+  pub end_frame_url: Option<String>,
+  pub reference_image_urls: Option<Vec<String>>,
+  pub reference_video_urls: Option<Vec<String>>,
+  pub reference_audio_urls: Option<Vec<String>>,
+  pub resolution: Resolution,
+  pub duration_seconds: u8,
+  pub batch_count: BatchCount,
+}
 
 pub fn plan_generate_video_seedance2pro_seedance2p0_fast<'a>(
   request: &'a GenerateVideoRequest<'a>,
@@ -26,7 +38,7 @@ pub fn plan_generate_video_seedance2pro_seedance2p0_fast<'a>(
   let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
   let duration_seconds = plan_duration(request.duration_seconds, strategy)?;
 
-  Ok(VideoGenerationPlan::Seedance2proSeedance2p0Fast(PlanSeedance2proSeedance2p0 {
+  Ok(VideoGenerationPlan::Seedance2proSeedance2p0Fast(PlanSeedance2proSeedance2p0Fast {
     prompt: request.prompt.map(|p| p.to_string()),
     start_frame_url,
     end_frame_url,

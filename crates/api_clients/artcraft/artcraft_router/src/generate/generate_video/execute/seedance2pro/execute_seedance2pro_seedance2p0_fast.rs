@@ -4,7 +4,7 @@ use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{
   GenerateVideoResponse, Seedance2proVideoResponsePayload,
 };
-use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
+use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::PlanSeedance2proSeedance2p0Fast;
 use crate::generate::generate_video::execute::seedance2pro::execute_seedance2pro_seedance2p0::{
   upload_optional_url, upload_optional_url_list,
 };
@@ -17,7 +17,7 @@ use seedance2pro_client::requests::generate_video::generate_video::{
 /// Identical to the Seedance 2.0 Pro executor except it uses
 /// `ModelType::Seedance2Fast` instead of `ModelType::Seedance2Pro`.
 pub async fn execute_seedance2pro_seedance2p0_fast(
-  plan: &PlanSeedance2proSeedance2p0,
+  plan: &PlanSeedance2proSeedance2p0Fast,
   seedance2pro_client: &RouterSeedance2ProClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let session = &seedance2pro_client.session;
