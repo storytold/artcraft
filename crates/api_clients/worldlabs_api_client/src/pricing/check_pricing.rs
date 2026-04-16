@@ -64,12 +64,16 @@ fn credits_for(model: WorldLabsModel, input_type: InputType) -> u32 {
     (WorldLabsModel::Marble1p1, InputType::MultiImage) => 1600,
     (WorldLabsModel::Marble1p1, InputType::Video) => 1600,
 
-    // Marble 1.1-plus
-    (WorldLabsModel::Marble1p1Plus, InputType::ImagePanorama) => 1500,
-    (WorldLabsModel::Marble1p1Plus, InputType::Text) => 1580,
-    (WorldLabsModel::Marble1p1Plus, InputType::ImageNonPanorama) => 1580,
-    (WorldLabsModel::Marble1p1Plus, InputType::MultiImage) => 1600,
-    (WorldLabsModel::Marble1p1Plus, InputType::Video) => 1600,
+    // TODO: Looks like there's no way for us to know what the price will be
+    //  for us to bill this accurately, we'll have to bill this after the fact.
+    //  also - they don't have an API for us to ascertain this??! Wat.
+    // Marble 1.1-plus (range pricing — we use the max to charge enough upfront)
+    // Actual range: 1500–3000 / 1580–3080 / 1600–3100
+    (WorldLabsModel::Marble1p1Plus, InputType::ImagePanorama) => 3000,
+    (WorldLabsModel::Marble1p1Plus, InputType::Text) => 3080,
+    (WorldLabsModel::Marble1p1Plus, InputType::ImageNonPanorama) => 3080,
+    (WorldLabsModel::Marble1p1Plus, InputType::MultiImage) => 3100,
+    (WorldLabsModel::Marble1p1Plus, InputType::Video) => 3100,
   }
 }
 
@@ -92,6 +96,10 @@ mod tests {
     let models = [
       WorldLabsModel::Marble0p1Mini,
       WorldLabsModel::Marble0p1Plus,
+      WorldLabsModel::Marble1p0,
+      WorldLabsModel::Marble1p0Draft,
+      WorldLabsModel::Marble1p1,
+      WorldLabsModel::Marble1p1Plus,
     ];
 
     println!("\n{:<20} {:<20} {:>10} {:>12}", "Model", "Input Type", "Credits", "USD Cents");
@@ -127,6 +135,59 @@ mod tests {
     assert_eq!(calculate_cost(WorldLabsModel::Marble0p1Plus, InputType::ImagePanorama).worldlabs_credits, 1500);
     assert_eq!(calculate_cost(WorldLabsModel::Marble0p1Plus, InputType::MultiImage).worldlabs_credits, 1600);
     assert_eq!(calculate_cost(WorldLabsModel::Marble0p1Plus, InputType::Video).worldlabs_credits, 1600);
+  }
+
+  #[test]
+  fn test_marble_1p0_draft_credits() {
+    // Same as Marble 0.1-mini (its successor)
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0Draft, InputType::Text).worldlabs_credits, 230);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0Draft, InputType::ImageNonPanorama).worldlabs_credits, 230);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0Draft, InputType::ImagePanorama).worldlabs_credits, 150);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0Draft, InputType::MultiImage).worldlabs_credits, 250);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0Draft, InputType::Video).worldlabs_credits, 250);
+  }
+
+  #[test]
+  fn test_marble_1p0_credits() {
+    // Standard model, same pricing as Marble 0.1-plus
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0, InputType::Text).worldlabs_credits, 1580);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0, InputType::ImageNonPanorama).worldlabs_credits, 1580);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0, InputType::ImagePanorama).worldlabs_credits, 1500);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0, InputType::MultiImage).worldlabs_credits, 1600);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p0, InputType::Video).worldlabs_credits, 1600);
+  }
+
+  #[test]
+  fn test_marble_1p1_credits() {
+    // Standard model, same pricing tier as 1.0
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1, InputType::Text).worldlabs_credits, 1580);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1, InputType::ImageNonPanorama).worldlabs_credits, 1580);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1, InputType::ImagePanorama).worldlabs_credits, 1500);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1, InputType::MultiImage).worldlabs_credits, 1600);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1, InputType::Video).worldlabs_credits, 1600);
+  }
+
+  #[test]
+  fn test_marble_1p1_plus_credits() {
+    // Plus model uses max of the range pricing (1500–3000, 1580–3080, 1600–3100)
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1Plus, InputType::Text).worldlabs_credits, 3080);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1Plus, InputType::ImageNonPanorama).worldlabs_credits, 3080);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1Plus, InputType::ImagePanorama).worldlabs_credits, 3000);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1Plus, InputType::MultiImage).worldlabs_credits, 3100);
+    assert_eq!(calculate_cost(WorldLabsModel::Marble1p1Plus, InputType::Video).worldlabs_credits, 3100);
+  }
+
+  #[test]
+  fn test_marble_1p1_plus_is_more_expensive_than_standard() {
+    for input_type in InputType::iter() {
+      let standard = calculate_cost(WorldLabsModel::Marble1p1, input_type);
+      let plus = calculate_cost(WorldLabsModel::Marble1p1Plus, input_type);
+      assert!(
+        plus.worldlabs_credits > standard.worldlabs_credits,
+        "1.1-plus should cost more than 1.1 for {:?}: {} vs {}",
+        input_type, plus.worldlabs_credits, standard.worldlabs_credits,
+      );
+    }
   }
 
   #[test]
