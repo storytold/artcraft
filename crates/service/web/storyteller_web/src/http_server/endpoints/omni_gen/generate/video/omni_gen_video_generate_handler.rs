@@ -165,11 +165,19 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== DISTILL ==================== //
 
+  println!("\n\n");
+  println!("Distilling video with request: {:?}", request);
+  println!("Model: {:?}", request.model);
+  println!("Provider: {:?}", execution_provider);
+  println!("\n\n");
+
   let distilled = distill_video_request(&request, media_file_hydration_map.as_ref(), execution_provider)?;
 
   info!(">>> Distilled cost: {:?}", distilled.cost);
   info!(">>> Distilled plan: {:?}", distilled.plan());
   info!(">>> Execution provider: {:?}", distilled.execution_provider);
+
+  println!("\n\n");
 
   // ==================== BILLING ==================== //
 

@@ -1,27 +1,186 @@
+use crate::api::audio_list_ref::AudioListRef;
+use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::image_list_ref::ImageListRef;
+use crate::api::image_ref::ImageRef;
+use crate::api::video_list_ref::VideoListRef;
+use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
-use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::{
-  PlanSeedance2proSeedance2p0, plan_generate_video_seedance2pro_seedance2p0,
-};
+use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
+use seedance2pro_client::requests::generate_video::generate_video::{BatchCount, Resolution};
 
-/// Plan for Seedance 2.0 Fast via Seedance2Pro provider.
-///
-/// Uses the same plan structure as Seedance 2.0 Pro (same resolution, duration,
-/// batch count, and media reference handling). The only difference is the model
-/// type used at execution time.
 pub fn plan_generate_video_seedance2pro_seedance2p0_fast<'a>(
   request: &'a GenerateVideoRequest<'a>,
 ) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
-  // Reuse the Pro plan builder — it produces a PlanSeedance2proSeedance2p0.
-  // We wrap it in the Fast variant so execution dispatches to the Fast executor.
-  let pro_plan = plan_generate_video_seedance2pro_seedance2p0(request)?;
+  let strategy = request.request_mismatch_mitigation_strategy;
 
-  // Extract the inner plan struct and re-wrap it.
-  match pro_plan {
-    VideoGenerationPlan::Seedance2proSeedance2p0(plan) => {
-      Ok(VideoGenerationPlan::Seedance2proSeedance2p0Fast(plan))
+  let start_frame_url = resolve_image_ref_url(request.start_frame)?;
+  let end_frame_url = resolve_image_ref_url(request.end_frame)?;
+  let reference_image_urls = resolve_image_list_ref_urls(request.reference_images)?;
+  let reference_video_urls = resolve_video_list_ref_urls(request.reference_videos)?;
+  let reference_audio_urls = resolve_audio_list_ref_urls(request.reference_audio)?;
+
+  let resolution = plan_resolution(request.aspect_ratio, strategy)?;
+  let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
+  let duration_seconds = plan_duration(request.duration_seconds, strategy)?;
+
+  Ok(VideoGenerationPlan::Seedance2proSeedance2p0Fast(PlanSeedance2proSeedance2p0 {
+    prompt: request.prompt.map(|p| p.to_string()),
+    start_frame_url,
+    end_frame_url,
+    reference_image_urls,
+    reference_video_urls,
+    reference_audio_urls,
+    resolution,
+    duration_seconds,
+    batch_count,
+  }))
+}
+
+fn resolve_image_ref_url(
+  image_ref: Option<ImageRef<'_>>,
+) -> Result<Option<String>, ArtcraftRouterError> {
+  match image_ref {
+    None => Ok(None),
+    Some(ImageRef::Url(url)) => Ok(Some(url.to_string())),
+    Some(ImageRef::MediaFileToken(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::Seedance2ProOnlySupportsUrls))
     }
-    _ => unreachable!("plan_generate_video_seedance2pro_seedance2p0 always returns Seedance2proSeedance2p0"),
+  }
+}
+
+fn resolve_image_list_ref_urls(
+  image_list_ref: Option<ImageListRef<'_>>,
+) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
+  match image_list_ref {
+    None => Ok(None),
+    Some(ImageListRef::Urls(urls)) => Ok(Some(urls.clone())),
+    Some(ImageListRef::MediaFileTokens(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::Seedance2ProOnlySupportsUrls))
+    }
+  }
+}
+
+fn resolve_video_list_ref_urls(
+  video_list_ref: Option<VideoListRef<'_>>,
+) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
+  match video_list_ref {
+    None => Ok(None),
+    Some(VideoListRef::Urls(urls)) => Ok(Some(urls.clone())),
+    Some(VideoListRef::MediaFileTokens(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::Seedance2ProOnlySupportsUrls))
+    }
+  }
+}
+
+fn resolve_audio_list_ref_urls(
+  audio_list_ref: Option<AudioListRef<'_>>,
+) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
+  match audio_list_ref {
+    None => Ok(None),
+    Some(AudioListRef::Urls(urls)) => Ok(Some(urls.clone())),
+    Some(AudioListRef::MediaFileTokens(_)) => {
+      Err(ArtcraftRouterError::Client(ClientError::Seedance2ProOnlySupportsUrls))
+    }
+  }
+}
+
+fn plan_resolution(
+  aspect_ratio: Option<CommonAspectRatio>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Resolution, ArtcraftRouterError> {
+  match aspect_ratio {
+    None
+    | Some(CommonAspectRatio::Auto)
+    | Some(CommonAspectRatio::Auto2k)
+    | Some(CommonAspectRatio::Auto4k) => Ok(Resolution::Landscape16x9),
+
+    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
+      Ok(Resolution::Landscape16x9)
+    }
+    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
+      Ok(Resolution::Portrait9x16)
+    }
+    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
+      Ok(Resolution::Square1x1)
+    }
+    Some(CommonAspectRatio::WideFourByThree) => Ok(Resolution::Standard4x3),
+    Some(CommonAspectRatio::TallThreeByFour) => Ok(Resolution::Portrait3x4),
+
+    Some(unsupported) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "aspect_ratio",
+          value: format!("{:?}", unsupported),
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade
+      | RequestMismatchMitigationStrategy::PayLessDowngrade => {
+        Ok(nearest_resolution(unsupported))
+      }
+    },
+  }
+}
+
+fn nearest_resolution(aspect_ratio: CommonAspectRatio) -> Resolution {
+  match aspect_ratio {
+    CommonAspectRatio::WideFiveByFour => Resolution::Standard4x3,
+    CommonAspectRatio::WideThreeByTwo => Resolution::Standard4x3,
+    CommonAspectRatio::WideTwentyOneByNine => Resolution::Landscape16x9,
+    CommonAspectRatio::TallFourByFive => Resolution::Portrait3x4,
+    CommonAspectRatio::TallTwoByThree => Resolution::Portrait3x4,
+    CommonAspectRatio::TallNineByTwentyOne => Resolution::Portrait9x16,
+    _ => Resolution::Square1x1,
+  }
+}
+
+fn plan_batch_count(
+  video_batch_count: Option<u16>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<BatchCount, ArtcraftRouterError> {
+  let count = video_batch_count.unwrap_or(1);
+  match count {
+    0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
+    1 => Ok(BatchCount::One),
+    2 => Ok(BatchCount::Two),
+    4 => Ok(BatchCount::Four),
+    _ => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "video_batch_count",
+          value: format!("{}", count),
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
+        Ok(if count < 4 { BatchCount::Four } else { BatchCount::Four })
+      }
+      RequestMismatchMitigationStrategy::PayLessDowngrade => {
+        Ok(if count < 4 { BatchCount::Two } else { BatchCount::Four })
+      }
+    },
+  }
+}
+
+fn plan_duration(
+  duration_seconds: Option<u16>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<u8, ArtcraftRouterError> {
+  const MIN: u16 = 4;
+  const MAX: u16 = 15;
+  const DEFAULT: u8 = 5;
+  match duration_seconds {
+    None => Ok(DEFAULT),
+    Some(d) if d >= MIN && d <= MAX => Ok(d as u8),
+    Some(d) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "duration_seconds",
+          value: format!("{}", d),
+        }))
+      }
+      _ => Ok(d.clamp(MIN, MAX) as u8),
+    },
   }
 }

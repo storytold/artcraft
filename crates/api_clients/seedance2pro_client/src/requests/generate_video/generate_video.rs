@@ -277,6 +277,8 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
 
   info!("Seedance2pro request : {:?}", request_body);
 
+  println!("\n\nSeedance2pro request : \n\n {:?}\n\n", request_body);
+
   let cookie = args.session.cookies.as_str();
 
   let client = Client::builder()
