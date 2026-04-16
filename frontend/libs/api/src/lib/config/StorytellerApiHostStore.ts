@@ -1,5 +1,6 @@
 // Artcraft / Storyteller API backend
-const DEFAULT_API_HOST = "https://api.storyteller.ai";
+const DEFAULT_API_HOST_PRODUCTION = "https://api.storyteller.ai";
+const DEFAULT_API_HOST_DEVELOPMENT = "http://localhost:12345";
 
 // NB(bt,2025-09-25): 'nx' is creating multiple copies of the library with name 
 //   mangling, so the singleton pattern fails to resolve to a single instance.
@@ -32,7 +33,8 @@ export class StorytellerApiHostStore {
     if ((window as any).STORYTELLER_API_HOST_STORE !== undefined) {
       return (window as any).STORYTELLER_API_HOST_STORE;
     }
-    const instance = new StorytellerApiHostStore(DEFAULT_API_HOST);
+    const defaultValue = StorytellerApiHostStore.getDefaultApiSchemeAndHost();
+    const instance = new StorytellerApiHostStore(defaultValue);
     (window as any).STORYTELLER_API_HOST_STORE = instance;
     return instance;
   }
@@ -65,5 +67,13 @@ export class StorytellerApiHostStore {
 
   private constructor(apiSchemeAndHost: string) {
     this.apiSchemeAndHost = apiSchemeAndHost;
+  }
+
+  private static getDefaultApiSchemeAndHost(): string {
+    // NB: hostname can be empty string
+    if (window.location.hostname === "localhost") {
+      return DEFAULT_API_HOST_DEVELOPMENT;
+    }
+    return DEFAULT_API_HOST_PRODUCTION;
   }
 }
