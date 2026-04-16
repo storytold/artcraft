@@ -12,6 +12,7 @@ use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_video_model::CommonVideoModel;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
   generate_video, BatchCount, GenerateVideoArgs, ModelType, Resolution,
@@ -176,9 +177,14 @@ async fn execute_generation_kinovi(
 
   let prompt = request.prompt.clone().unwrap_or_default();
 
+  let model_type = match request.model {
+    Some(CommonVideoModel::Seedance2p0Fast) => ModelType::Seedance2Fast,
+    _ => ModelType::Seedance2Pro,
+  };
+
   let video_gen_args = GenerateVideoArgs {
     session: &session,
-    model_type: ModelType::Seedance2Pro,
+    model_type,
     prompt,
     resolution,
     duration_seconds,
