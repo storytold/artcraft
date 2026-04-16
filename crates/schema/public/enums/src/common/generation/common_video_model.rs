@@ -38,6 +38,9 @@ pub enum CommonVideoModel {
   #[serde(rename = "seedance_2p0")]
   Seedance2p0,
 
+  #[serde(rename = "seedance_2p0_fast")]
+  Seedance2p0Fast,
+
   #[serde(rename = "sora_2")]
   Sora2,
 
@@ -75,6 +78,7 @@ impl CommonVideoModel {
       Self::Seedance10Lite => CommonModelType::Seedance10Lite,
       Self::Seedance1p5Pro => CommonModelType::Seedance1p5Pro,
       Self::Seedance2p0 => CommonModelType::Seedance2p0,
+      Self::Seedance2p0Fast => CommonModelType::Seedance2p0Fast,
       Self::Sora2 => CommonModelType::Sora2,
       Self::Sora2Pro => CommonModelType::Sora2Pro,
       Self::Veo2 => CommonModelType::Veo2,
@@ -105,6 +109,7 @@ mod tests {
       (CommonVideoModel::Seedance10Lite, CommonModelType::Seedance10Lite),
       (CommonVideoModel::Seedance1p5Pro, CommonModelType::Seedance1p5Pro),
       (CommonVideoModel::Seedance2p0, CommonModelType::Seedance2p0),
+      (CommonVideoModel::Seedance2p0Fast, CommonModelType::Seedance2p0Fast),
       (CommonVideoModel::Sora2, CommonModelType::Sora2),
       (CommonVideoModel::Sora2Pro, CommonModelType::Sora2Pro),
       (CommonVideoModel::Veo2, CommonModelType::Veo2),
