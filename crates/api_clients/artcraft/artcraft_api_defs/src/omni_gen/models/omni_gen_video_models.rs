@@ -2,6 +2,7 @@ use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
+use enums::common::generation::model_creator::ModelCreator;
 use enums::common::generation_provider::GenerationProvider;
 use serde_derive::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
@@ -64,6 +65,9 @@ pub struct OmniGenVideoProviderModelDetails {
 pub struct OmniGenVideoModelDetails {
 
   pub model: CommonVideoModel,
+  
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub model_creator: Option<ModelCreator>,
   
   #[serde(skip_serializing_if = "Option::is_none")]
   pub full_name: Option<String>,
@@ -172,6 +176,7 @@ impl Default for OmniGenVideoModelDetails {
   fn default() -> Self {
     Self {
       model: DEFAULT_VIDEO_MODEL,
+      model_creator: None,
       full_name: None,
       text_prompt_supported: None,
       text_prompt_max_length: None,

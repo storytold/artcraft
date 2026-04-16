@@ -2,6 +2,7 @@ use artcraft_api_defs::omni_gen::models::omni_gen_image_models::{OmniGenImageMod
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_image_model::CommonImageModel;
 use enums::common::generation::common_resolution::CommonResolution;
+use enums::common::generation::model_creator::ModelCreator;
 use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
 use enums::common::generation::common_quality::CommonQuality;
@@ -21,7 +22,8 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::Flux1Dev,
-    full_name: None,
+    model_creator: Some(ModelCreator::BlackForestLabs),
+    full_name: Some("FLUX.1 [dev]".to_string()),
     text_prompt_supported: Some(true),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::SquareHd,
@@ -40,7 +42,8 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::Flux1Schnell,
-    full_name: None,
+    model_creator: Some(ModelCreator::BlackForestLabs),
+    full_name: Some("FLUX.1 [schnell]".to_string()),
     text_prompt_supported: Some(true),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::SquareHd,
@@ -59,6 +62,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::FluxPro11,
+    model_creator: Some(ModelCreator::BlackForestLabs),
     full_name: Some("FLUX 1.1 [pro]".to_string()),
     text_prompt_supported: Some(true),
     aspect_ratio_options: Some(vec![
@@ -78,6 +82,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::FluxPro11Ultra,
+    model_creator: Some(ModelCreator::BlackForestLabs),
     full_name: Some("FLUX 1.1 [pro] ultra".to_string()),
     text_prompt_supported: Some(true),
     aspect_ratio_options: Some(vec![
@@ -100,7 +105,8 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::NanoBanana, // NB: currently Gemini25Flash in our system
-    full_name: None,
+    model_creator: Some(ModelCreator::ArtCraft),
+    full_name: Some("Nano Banana".to_string()),
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
     aspect_ratio_options: Some(vec![
@@ -126,7 +132,8 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::NanoBanana2,
-    full_name: None,
+    model_creator: Some(ModelCreator::ArtCraft),
+    full_name: Some("Nano Banana 2".to_string()),
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
     aspect_ratio_options: Some(vec![
@@ -159,7 +166,8 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::NanoBananaPro,
-    full_name: None,
+    model_creator: Some(ModelCreator::ArtCraft),
+    full_name: Some("Nano Banana Pro".to_string()),
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
     aspect_ratio_options: Some(vec![
@@ -191,6 +199,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::GptImage1,
+    model_creator: Some(ModelCreator::OpenAi),
     full_name: Some("GPT Image 1".to_string()),
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
@@ -214,6 +223,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
   
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::GptImage1p5,
+    model_creator: Some(ModelCreator::OpenAi),
     full_name: Some("GPT Image 1.5".to_string()),
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
@@ -237,6 +247,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::Seedream4,
+    model_creator: Some(ModelCreator::Bytedance),
     full_name: Some("Seedream 4".to_string()),
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
@@ -261,6 +272,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::Seedream4p5,
+    model_creator: Some(ModelCreator::Bytedance),
     full_name: Some("Seedream 4.5".to_string()),
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),
@@ -284,6 +296,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
 
   models.push(OmniGenImageModelDetails {
     model: CommonImageModel::Seedream5Lite,
+    model_creator: Some(ModelCreator::Bytedance),
     full_name: Some("Seedream 5 Lite".to_string()),
     text_prompt_supported: Some(true),
     image_refs_supported: Some(true),

@@ -2,6 +2,7 @@ use artcraft_api_defs::omni_gen::models::omni_gen_video_models::{OmniGenVideoMod
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
+use enums::common::generation::model_creator::ModelCreator;
 use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
 
@@ -20,7 +21,8 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
 
   models.push(OmniGenVideoModelDetails {
     model: CommonVideoModel::Seedance1p5Pro,
-    full_name: None,
+    model_creator: Some(ModelCreator::Bytedance),
+    full_name: Some("Seedance 1.5 Pro".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -49,7 +51,8 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
 
   models.push(OmniGenVideoModelDetails {
     model: CommonVideoModel::Seedance2p0,
-    full_name: None,
+    model_creator: Some(ModelCreator::Bytedance),
+    full_name: Some("Seedance 2.0".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -81,7 +84,8 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
 
   models.push(OmniGenVideoModelDetails {
     model: CommonVideoModel::Seedance2p0Fast,
-    full_name: None,
+    model_creator: Some(ModelCreator::Bytedance),
+    full_name: Some("Seedance 2.0 Fast".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -115,7 +119,8 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo2,
-    full_name: Some("Google Veo 2".to_string()),
+    model_creator: Some(ModelCreator::Google),
+    full_name: Some("Veo 2".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     // TODO(bt,2026-04-10): Veo 2 image-to-video doesn't support aspect ratio
@@ -134,7 +139,8 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo3,
-    full_name: Some("Google Veo 3".to_string()),
+    model_creator: Some(ModelCreator::Google),
+    full_name: Some("Veo 3".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     show_generate_with_sound_toggle: Some(true),
@@ -158,7 +164,8 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
 
   models.push(OmniGenVideoModelDetails {
     model: CommonVideoModel::Veo3Fast,
-    full_name: Some("Google Veo 3 Fast".to_string()),
+    model_creator: Some(ModelCreator::Google),
+    full_name: Some("Veo 3 Fast".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     show_generate_with_sound_toggle: Some(true),
@@ -176,7 +183,8 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo3p1,
-    full_name: Some("Google Veo 3.1".to_string()),
+    model_creator: Some(ModelCreator::Google),
+    full_name: Some("Veo 3.1".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -201,7 +209,8 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Veo3p1Fast,
-    full_name: Some("Google Veo 3.1 Fast".to_string()),
+    model_creator: Some(ModelCreator::Google),
+    full_name: Some("Veo 3.1 Fast".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -226,6 +235,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling16Pro,
+    model_creator: Some(ModelCreator::Kling),
     full_name: Some("Kling 1.6 Pro".to_string()),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -243,6 +253,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling21Pro,
+    model_creator: Some(ModelCreator::Kling),
     full_name: Some("Kling 2.1 Pro".to_string()),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -260,6 +271,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling21Master,
+    model_creator: Some(ModelCreator::Kling),
     full_name: Some("Kling 2.1 Master".to_string()),
     starting_keyframe_supported: Some(true),
     aspect_ratio_options: Some(vec![
@@ -276,6 +288,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling2p5TurboPro,
+    model_creator: Some(ModelCreator::Kling),
     full_name: Some("Kling 2.5 Turbo Pro".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
@@ -294,6 +307,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling2p6Pro,
+    model_creator: Some(ModelCreator::Kling),
     full_name: Some("Kling 2.6 Pro".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
@@ -312,6 +326,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling3p0Pro,
+    model_creator: Some(ModelCreator::Kling),
     full_name: Some("Kling 3.0 Pro".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
@@ -332,6 +347,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Kling3p0Standard,
+    model_creator: Some(ModelCreator::Kling),
     full_name: Some("Kling 3.0 Standard".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
@@ -352,6 +368,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Seedance10Lite,
+    model_creator: Some(ModelCreator::Bytedance),
     full_name: Some("Seedance 1.0 Lite".to_string()),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(true),
@@ -379,6 +396,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Sora2,
+    model_creator: Some(ModelCreator::OpenAi),
     full_name: Some("Sora 2".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
@@ -397,6 +415,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
   models.push(OmniGenVideoModelDetails {
     is_disabled: Some(true), // TODO: Temporarily disable
     model: CommonVideoModel::Sora2Pro,
+    model_creator: Some(ModelCreator::OpenAi),
     full_name: Some("Sora 2 Pro".to_string()),
     text_prompt_supported: Some(true),
     starting_keyframe_supported: Some(true),
