@@ -563,8 +563,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             <div className="absolute -bottom-1 left-1/2 hidden -translate-x-1/2 sm:block">
               <Tooltip
                 content={isExpanded ? "Collapse" : "Expand"}
-                position="bottom"
-                className="-mt-2"
+                position="top"
               >
                 <button
                   type="button"
