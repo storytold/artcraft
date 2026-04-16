@@ -4,6 +4,7 @@ pub mod common_image_model;
 pub mod common_quality;
 pub mod common_model_class;
 pub mod common_model_type;
+pub mod model_creator;
 pub mod common_resolution;
 pub mod common_splat_model;
 pub mod common_video_model;
