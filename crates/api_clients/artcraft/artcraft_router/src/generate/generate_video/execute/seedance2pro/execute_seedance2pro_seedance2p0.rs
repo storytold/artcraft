@@ -60,7 +60,7 @@ pub async fn execute_seedance2pro_seedance2p0(
 }
 
 /// Downloads a file from a source URL and re-uploads it to seedance2pro CDN.
-async fn upload_to_seedance2pro(
+pub(crate) async fn upload_to_seedance2pro(
   session: &seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession,
   source_url: &str,
 ) -> Result<String, ArtcraftRouterError> {
@@ -89,7 +89,7 @@ async fn upload_to_seedance2pro(
   Ok(upload_response.public_url)
 }
 
-async fn upload_optional_url(
+pub(crate) async fn upload_optional_url(
   session: &seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession,
   url: Option<&str>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
@@ -99,7 +99,7 @@ async fn upload_optional_url(
   }
 }
 
-async fn upload_optional_url_list(
+pub(crate) async fn upload_optional_url_list(
   session: &seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession,
   urls: Option<&[String]>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
