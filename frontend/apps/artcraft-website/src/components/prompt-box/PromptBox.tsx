@@ -10,6 +10,8 @@ import {
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faChevronDown,
+  faChevronUp,
   faMusic,
   faUserGroup,
   faVideo,
@@ -143,7 +145,20 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const highlightRef = useRef<HTMLDivElement>(null);
     const mentionEditorRef = useRef<HTMLDivElement>(null);
     const [isFocused, setIsFocused] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [showImagePrompts, setShowImagePrompts] = useState(false);
+
+    const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
+
+    const toggleExpand = () => {
+      setIsExpanded((prev) => {
+        const next = !prev;
+        if (textareaRef.current) {
+          textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
+        }
+        return next;
+      });
+    };
 
     // @-mention state
     const [mentionOpen, setMentionOpen] = useState(false);
@@ -167,13 +182,14 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       );
     }, [mentionItems, mentionFilter]);
 
-    // Auto-resize textarea
+    // Auto-resize textarea (skip when expanded)
     useEffect(() => {
+      if (isExpanded) return;
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
         textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
       }
-    }, [prompt]);
+    }, [prompt, isExpanded]);
 
     // Move caret to end on mount so autoFocus doesn't leave it at position 0
     useEffect(() => {
@@ -402,7 +418,10 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     onChange={onPromptChange}
                     mentionItems={mentionItems}
                     placeholder={placeholder}
-                    className="max-h-[5.5em] w-full text-white"
+                    className={twMerge(
+                      "w-full text-white",
+                      isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
+                    )}
                     colorMap={mentionColorMap}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey && !e.metaKey) {
@@ -419,7 +438,10 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                       <div
                         ref={highlightRef}
                         aria-hidden
-                        className="pointer-events-none absolute inset-0 max-h-[5.5em] overflow-y-auto whitespace-pre-wrap break-words text-sm text-white"
+                        className={twMerge(
+                          "pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words text-sm text-white",
+                          isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
+                        )}
                       >
                         {renderHighlightedPrompt()}
                       </div>
@@ -431,7 +453,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                       autoFocus
                       placeholder={placeholder}
                       className={twMerge(
-                        "max-h-[5.5em] w-full flex-1 resize-none overflow-y-auto bg-transparent text-md text-white placeholder-white/50 focus:outline-none",
+                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent text-md text-white placeholder-white/50 focus:outline-none",
+                        isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                         hasMentionItems && "text-transparent caret-white",
                       )}
                       value={prompt}
@@ -515,9 +538,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             {/* Toolbar */}
             <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                {modelSelector && (
-                  <div className="lg:hidden">{modelSelector}</div>
-                )}
+                {modelSelector}
                 {leftToolbar}
               </div>
               <div className="flex items-center gap-2 sm:shrink-0">
@@ -532,6 +553,26 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                   {submitLabel}
                 </GenerateButton>
               </div>
+            </div>
+
+            {/* Expand / Collapse toggle */}
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+              <Tooltip
+                content={isExpanded ? "Collapse" : "Expand"}
+                position="bottom"
+                className="-mt-2"
+              >
+                <button
+                  type="button"
+                  onClick={toggleExpand}
+                  className="px-3 py-0.5 text-white/30 transition-colors hover:text-white/90"
+                >
+                  <FontAwesomeIcon
+                    icon={isExpanded ? faChevronUp : faChevronDown}
+                    className="text-xs"
+                  />
+                </button>
+              </Tooltip>
             </div>
           </div>
         </div>

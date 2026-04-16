@@ -6,6 +6,9 @@
       "path": "../../libs/components/gravatar"
     },
     {
+      "path": "../../libs/components/slider-v2"
+    },
+    {
       "path": "../../libs/components/tab-selector"
     },
     {

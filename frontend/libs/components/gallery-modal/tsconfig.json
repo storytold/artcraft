@@ -9,7 +9,7 @@
       "path": "../../common"
     },
     {
-      "path": "../loading-spinner"
+      "path": "../../api"
     },
     {
       "path": "../close-button"
@@ -24,10 +24,10 @@
       "path": "../modal"
     },
     {
-      "path": "../../tauri-api"
+      "path": "../toaster"
     },
     {
-      "path": "../../api"
+      "path": "../../tauri-api"
     },
     {
       "path": "../action-reminder-modal"
@@ -37,6 +37,9 @@
     },
     {
       "path": "../tooltip"
+    },
+    {
+      "path": "../loading-spinner"
     },
     {
       "path": "./tsconfig.lib.json"
