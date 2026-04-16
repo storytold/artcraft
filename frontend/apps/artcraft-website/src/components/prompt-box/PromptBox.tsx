@@ -153,8 +153,12 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const toggleExpand = () => {
       setIsExpanded((prev) => {
         const next = !prev;
+        const height = next ? EXPANDED_HEIGHT : "auto";
         if (textareaRef.current) {
-          textareaRef.current.style.height = next ? EXPANDED_HEIGHT : "auto";
+          textareaRef.current.style.height = height;
+        }
+        if (mentionEditorRef.current) {
+          mentionEditorRef.current.style.height = height;
         }
         return next;
       });
@@ -419,7 +423,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     mentionItems={mentionItems}
                     placeholder={placeholder}
                     className={twMerge(
-                      "w-full text-white",
+                      "promptbox-scrollbar min-h-[2.5em] w-full text-white",
                       isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                     )}
                     colorMap={mentionColorMap}
@@ -555,8 +559,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               </div>
             </div>
 
-            {/* Expand / Collapse toggle */}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+            {/* Expand / Collapse toggle — hidden on small screens */}
+            <div className="absolute -bottom-1 left-1/2 hidden -translate-x-1/2 sm:block">
               <Tooltip
                 content={isExpanded ? "Collapse" : "Expand"}
                 position="bottom"
