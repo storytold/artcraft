@@ -210,6 +210,7 @@ export const ImagePromptRow = ({
     id: string;
     file: File;
   } | null>(null);
+  const [isProcessingGallery, setIsProcessingGallery] = useState(false);
 
   const referenceImagesRef = useRef(referenceImages);
   useEffect(() => {
@@ -359,20 +360,21 @@ export const ImagePromptRow = ({
     referenceVideosRef.current = referenceVideos;
   }, [referenceVideos]);
 
-  const getVideoDuration = (file: File): Promise<number> =>
+  const getVideoDurationFromSrc = (src: string): Promise<number> =>
     new Promise((resolve) => {
       const video = document.createElement("video");
       video.preload = "metadata";
-      video.onloadedmetadata = () => {
-        URL.revokeObjectURL(video.src);
-        resolve(Math.round(video.duration));
-      };
-      video.onerror = () => {
-        URL.revokeObjectURL(video.src);
-        resolve(0);
-      };
-      video.src = URL.createObjectURL(file);
+      video.onloadedmetadata = () => resolve(Math.round(video.duration));
+      video.onerror = () => resolve(0);
+      video.src = src;
     });
+
+  const getVideoDuration = (file: File): Promise<number> => {
+    const src = URL.createObjectURL(file);
+    return getVideoDurationFromSrc(src).finally(() =>
+      URL.revokeObjectURL(src),
+    );
+  };
 
   const totalVideoDuration = useMemo(
     () => referenceVideos.reduce((sum, v) => sum + v.duration, 0),
@@ -385,24 +387,30 @@ export const ImagePromptRow = ({
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
-    const availableSlots = Math.max(0, maxVideoCount - referenceVideos.length);
+    // Snapshot the committed state at call time so removes that happened
+    // before this call are respected (don't re-read a stale ref).
+    const baseVideos = [...referenceVideos];
+    const availableSlots = Math.max(0, maxVideoCount - baseVideos.length);
     if (availableSlots <= 0) {
+      toast.error(
+        `Max ${maxVideoCount} videos / ${maxVideoRefDuration}s total`,
+        { id: "video-ref-limit" },
+      );
       if (videoFileInputRef.current) videoFileInputRef.current.value = "";
       return;
     }
 
     const filesToProcess = files.slice(0, availableSlots);
+    let committed = baseVideos;
 
     for (const file of filesToProcess) {
       const duration = await getVideoDuration(file);
-      const currentTotal = referenceVideosRef.current.reduce(
-        (sum, v) => sum + v.duration,
-        0,
-      );
+      const currentTotal = committed.reduce((sum, v) => sum + v.duration, 0);
 
       if (currentTotal + duration > maxVideoRefDuration) {
         toast.error(
           `Total video duration cannot exceed ${maxVideoRefDuration}s`,
+          { id: "video-ref-limit" },
         );
         break;
       }
@@ -426,7 +434,8 @@ export const ImagePromptRow = ({
                 duration,
               };
               setUploadingVideo(null);
-              setReferenceVideos?.([...referenceVideosRef.current, refVideo]);
+              committed = [...committed, refVideo];
+              setReferenceVideos?.(committed);
             } else if (
               newState.status === UploaderStates.assetError ||
               newState.status === UploaderStates.imageCreateError
@@ -445,7 +454,8 @@ export const ImagePromptRow = ({
           duration,
         };
         setUploadingVideo(null);
-        setReferenceVideos?.([...referenceVideosRef.current, refVideo]);
+        committed = [...committed, refVideo];
+        setReferenceVideos?.(committed);
       }
     }
 
@@ -667,7 +677,12 @@ export const ImagePromptRow = ({
   const handleImageSelect = (id: string) => {
     setSelectedGalleryImages((prev) => {
       if (prev.includes(id)) return prev.filter((x) => x !== id);
-      const maxSelections = Math.max(1, maxImagePromptCount);
+      const maxSelections =
+        galleryTarget === "video"
+          ? Math.max(1, maxVideoCount - referenceVideos.length)
+          : galleryTarget === "end"
+            ? 1
+            : Math.max(1, maxImagePromptCount);
       if (prev.length >= maxSelections) {
         return maxSelections === 1 ? [id] : prev;
       }
@@ -675,7 +690,73 @@ export const ImagePromptRow = ({
     });
   };
 
-  const handleGalleryImages = (selectedItems: GalleryItem[]) => {
+  const handleGalleryImages = async (selectedItems: GalleryItem[]) => {
+    if (galleryTarget === "video") {
+      // Snapshot committed state at call time to avoid re-reading a stale
+      // ref after removes.
+      const baseVideos = [...referenceVideos];
+      const availableSlots = Math.max(0, maxVideoCount - baseVideos.length);
+      if (availableSlots <= 0) {
+        toast.error(
+          `Max ${maxVideoCount} videos / ${maxVideoRefDuration}s total`,
+          { id: "video-ref-limit" },
+        );
+        setIsGalleryModalOpen(false);
+        setSelectedGalleryImages([]);
+        return;
+      }
+      const itemsToProcess = selectedItems
+        .slice(0, availableSlots)
+        .filter((item): item is GalleryItem & { fullImage: string } =>
+          Boolean(item.fullImage),
+        );
+
+      setIsProcessingGallery(true);
+      try {
+        // Parallelize duration probes — sequential metadata loads was the
+        // source of the perceived lag on the "Use selected" click.
+        const durations = await Promise.all(
+          itemsToProcess.map((item) => getVideoDurationFromSrc(item.fullImage)),
+        );
+
+        const newVideos: RefVideo[] = [];
+        let currentTotal = baseVideos.reduce(
+          (sum, v) => sum + v.duration,
+          0,
+        );
+        let exceeded = false;
+        for (let i = 0; i < itemsToProcess.length; i++) {
+          const item = itemsToProcess[i]!;
+          const duration = durations[i]!;
+          if (currentTotal + duration > maxVideoRefDuration) {
+            exceeded = true;
+            break;
+          }
+          currentTotal += duration;
+          newVideos.push({
+            id: Math.random().toString(36).substring(7),
+            url: item.fullImage,
+            file: new File([], "library-video"),
+            mediaToken: item.id,
+            duration,
+          });
+        }
+        if (exceeded) {
+          toast.error(
+            `Total video duration cannot exceed ${maxVideoRefDuration}s`,
+            { id: "video-ref-limit" },
+          );
+        }
+        if (newVideos.length > 0) {
+          setReferenceVideos?.([...baseVideos, ...newVideos]);
+        }
+      } finally {
+        setIsProcessingGallery(false);
+      }
+      setIsGalleryModalOpen(false);
+      setSelectedGalleryImages([]);
+      return;
+    }
     if (galleryTarget === "end") {
       const item = selectedItems[0];
       if (item && item.fullImage) {
@@ -1113,16 +1194,47 @@ export const ImagePromptRow = ({
                   )}
                   {referenceVideos.length < maxVideoCount &&
                     !uploadingVideo && (
-                      <Button
-                        variant="action"
-                        className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
-                        onClick={handleUploadClickVideo}
+                      <Tooltip
+                        interactive={true}
+                        position="top"
+                        delay={100}
+                        className="bg-ui-controls text-base-fg border border-ui-panel-border p-2 -mb-0.5"
+                        closeOnClick={true}
+                        content={
+                          <div className="flex flex-col gap-1.5">
+                            <Button
+                              variant="primary"
+                              onClick={handleUploadClickVideo}
+                              icon={faPlus}
+                              className="w-full"
+                            >
+                              Upload
+                            </Button>
+                            <Button
+                              variant="action"
+                              onClick={() => {
+                                setGalleryTarget("video");
+                                setIsGalleryModalOpen(true);
+                              }}
+                              icon={faImages}
+                              className="w-full bg-base-fg/10 hover:bg-base-fg/20"
+                            >
+                              Pick from library
+                            </Button>
+                          </div>
+                        }
                       >
-                        <FontAwesomeIcon
-                          icon={faPlus}
-                          className="text-2xl opacity-80 text-base-fg"
-                        />
-                      </Button>
+                        <Button
+                          variant="action"
+                          className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square w-full overflow-hidden rounded-lg w-14 border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+                          onClick={handleUploadClickVideo}
+                        >
+                          <FontAwesomeIcon
+                            icon={faPlus}
+                            className="text-2xl opacity-80 text-base-fg"
+                          />
+                        </Button>
+                      </Tooltip>
                     )}
                 </div>
               </div>
@@ -1198,17 +1310,23 @@ export const ImagePromptRow = ({
         </div>
       </div>
       <GalleryModal
+        key={galleryTarget === "video" ? "video" : "image"}
         isOpen={!!isGalleryModalOpen}
         onClose={handleGalleryClose}
         mode="select"
         selectedItemIds={selectedGalleryImages}
         onSelectItem={handleImageSelect}
         maxSelections={
-          galleryTarget === "end" ? 1 : Math.max(1, availableSlotsRender)
+          galleryTarget === "end"
+            ? 1
+            : galleryTarget === "video"
+              ? Math.max(1, maxVideoCount - referenceVideos.length)
+              : Math.max(1, availableSlotsRender)
         }
         onUseSelected={handleGalleryImages}
         onDownloadClicked={downloadFileFromUrl}
-        forceFilter="image"
+        useSelectedLoading={isProcessingGallery}
+        forceFilter={galleryTarget === "video" ? "video" : "image"}
       />
     </>
   );

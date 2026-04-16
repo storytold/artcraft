@@ -231,6 +231,7 @@ interface GalleryModalProps {
   onSelectItem?: (id: string) => void;
   maxSelections?: number;
   onUseSelected?: (selectedItems: GalleryItem[]) => void;
+  useSelectedLoading?: boolean;
   onDownloadClicked?: (url: string, mediaClass?: string) => Promise<void>;
   onAddToSceneClicked?: (
     url: string,
@@ -365,6 +366,7 @@ export const GalleryModal = React.memo(
     onSelectItem,
     maxSelections = 4,
     onUseSelected,
+    useSelectedLoading,
     onDownloadClicked,
     onAddToSceneClicked,
     isOpen,
@@ -1430,7 +1432,8 @@ export const GalleryModal = React.memo(
                 </div>
                 <Button
                   onClick={handleUseSelected}
-                  disabled={selectedItemIds.length === 0}
+                  disabled={selectedItemIds.length === 0 || useSelectedLoading}
+                  loading={useSelectedLoading}
                 >
                   Use selected
                 </Button>
