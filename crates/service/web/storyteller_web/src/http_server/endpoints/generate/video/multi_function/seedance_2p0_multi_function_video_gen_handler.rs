@@ -495,6 +495,7 @@ fn estimate_cost_upfront(resolution: KinoviResolution, batch_count: KinoviBatchC
     reference_audio_urls: None,
     character_ids: None,
     use_face_blur_hack: None,
+    output_resolution: None,
     host_override: None,
   };
   args.estimate_cost_in_usd_cents()
@@ -586,6 +587,7 @@ async fn upload_and_generate(
     reference_audio_urls,
     character_ids: kinovi_character_ids,
     use_face_blur_hack: None,
+    output_resolution: None,
     host_override: None,
   };
 

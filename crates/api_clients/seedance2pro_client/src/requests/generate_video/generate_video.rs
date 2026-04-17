@@ -53,6 +53,9 @@ pub struct GenerateVideoArgs<'a> {
   /// Characters are referenced in prompts as @CharacterName.
   pub character_ids: Option<Vec<String>>,
 
+  /// Output resolution quality (480p, 720p, 1080p). None defaults to 720p.
+  pub output_resolution: Option<KinoviOutputResolution>,
+
   /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
   pub use_face_blur_hack: Option<bool>,
 
@@ -74,6 +77,7 @@ impl std::fmt::Debug for GenerateVideoArgs<'_> {
       .field("reference_video_urls", &self.reference_video_urls)
       .field("reference_audio_urls", &self.reference_audio_urls)
       .field("character_ids", &self.character_ids)
+      .field("output_resolution", &self.output_resolution)
       .field("use_face_blur_hack", &self.use_face_blur_hack)
       .field("host_override", &self.host_override)
       .finish()
@@ -141,6 +145,35 @@ impl KinoviResolution {
       Self::Square1x1 => "720x720",
       Self::Standard4x3 => "960x720",
       Self::Portrait3x4 => "720x960",
+    }
+  }
+}
+
+/// Output resolution quality. When omitted, defaults to 720p.
+#[derive(Debug, Clone, Copy)]
+pub enum KinoviOutputResolution {
+  /// 480p
+  FourEightyP,
+  /// 720p (default — omitting the field gives this)
+  SevenTwentyP,
+  /// 1080p
+  TenEightyP,
+}
+
+impl KinoviOutputResolution {
+  fn as_api_str(&self) -> &'static str {
+    match self {
+      Self::FourEightyP => "480p",
+      Self::SevenTwentyP => "720p",
+      Self::TenEightyP => "1080p",
+    }
+  }
+
+  /// Returns the string to send, or None if it's the default (720p) which should be omitted.
+  fn maybe_as_api_str(&self) -> Option<&'static str> {
+    match self {
+      Self::SevenTwentyP => None, // Default — omit from request
+      _ => Some(self.as_api_str()),
     }
   }
 }
@@ -265,6 +298,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
           model: args.model_type.as_api_str(),
           duration,
           mode: video_input_mode,
+          output_resolution: args.output_resolution.and_then(|r| r.maybe_as_api_str()),
           face_blur_mode,
           character_ids: args.character_ids,
           uploaded_urls,
@@ -381,6 +415,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       }
     }
@@ -506,6 +541,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -536,6 +572,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -568,6 +605,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -599,6 +637,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -632,6 +671,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -687,6 +727,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -737,6 +778,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -789,6 +831,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -848,6 +891,7 @@ mod tests {
         reference_audio_urls: None,
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -900,6 +944,7 @@ mod tests {
         reference_audio_urls: Some(vec![upload_result.public_url]),
         character_ids: None,
         use_face_blur_hack: None,
+    output_resolution: None,
         host_override: None,
       };
       let result = generate_video(args).await?;
@@ -936,6 +981,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
           use_face_blur_hack: None,
+    output_resolution: None,
           host_override: None,
         };
         let result = generate_video(args).await?;
@@ -966,6 +1012,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: Some(vec![MOCHI_ID.to_string()]),
           use_face_blur_hack: None,
+    output_resolution: None,
           host_override: None,
         };
         let result = generate_video(args).await?;
@@ -998,6 +1045,7 @@ mod tests {
           reference_audio_urls: None,
           character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
           use_face_blur_hack: None,
+    output_resolution: None,
           host_override: None,
         };
         let result = generate_video(args).await?;
@@ -1031,6 +1079,7 @@ mod tests {
             MOCHI_ID.to_string(),
           ]),
           use_face_blur_hack: None,
+    output_resolution: None,
           host_override: None,
         };
         let result = generate_video(args).await?;

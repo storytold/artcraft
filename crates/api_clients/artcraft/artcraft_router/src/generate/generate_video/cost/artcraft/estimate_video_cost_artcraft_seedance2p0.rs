@@ -36,6 +36,7 @@ pub (crate) fn estimate_video_cost_artcraft_seedance2p0(
     reference_audio_urls: None,
     character_ids: None,
     use_face_blur_hack: None,
+    output_resolution: None,
     host_override: None,
   };
 

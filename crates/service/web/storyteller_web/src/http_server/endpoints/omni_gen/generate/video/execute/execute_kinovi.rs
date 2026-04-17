@@ -118,6 +118,7 @@ pub(super) async fn execute_generation_kinovi(
     reference_audio_urls,
     character_ids: kinovi_character_ids,
     use_face_blur_hack: None,
+    output_resolution: None,
     host_override: None,
   };
 

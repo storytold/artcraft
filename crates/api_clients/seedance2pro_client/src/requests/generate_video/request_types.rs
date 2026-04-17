@@ -28,6 +28,8 @@ pub (super) struct ApiParams {
   pub model: &'static str,
   pub duration: String,
   pub mode: &'static str,
+  #[serde(rename = "outputResolution", skip_serializing_if = "Option::is_none")]
+  pub output_resolution: Option<&'static str>,
   #[serde(rename = "faceBlurMode", skip_serializing_if = "Option::is_none")]
   pub face_blur_mode: Option<&'static str>,
   #[serde(rename = "characterIds", skip_serializing_if = "Option::is_none")]
