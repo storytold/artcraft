@@ -1217,7 +1217,8 @@ mod tests {
       Ok(Seedance2ProSession::from_cookies_string(cookies))
     }
 
-    fn make_args<'a>(
+    fn make_args_with_prompt<'a>(
+      prompt: &'a str,
       session: &'a Seedance2ProSession,
       model_type: KinoviModelType,
       output_resolution: Option<KinoviOutputResolution>,
@@ -1225,7 +1226,7 @@ mod tests {
       GenerateVideoArgs {
         session,
         model_type,
-        prompt: "A corgi running through a field of flowers".to_string(),
+        prompt: prompt.to_string(),
         resolution: KinoviResolution::Landscape16x9,
         duration_seconds: 4,
         batch_count: KinoviBatchCount::One,
@@ -1241,6 +1242,14 @@ mod tests {
       }
     }
 
+    fn make_args<'a>(
+      session: &'a Seedance2ProSession,
+      model_type: KinoviModelType,
+      output_resolution: Option<KinoviOutputResolution>,
+    ) -> GenerateVideoArgs<'a> {
+      make_args_with_prompt("A corgi running through a field of flowers", session, model_type, output_resolution)
+    }
+
     mod seedance_2 {
       use super::*;
 
@@ -1253,6 +1262,8 @@ mod tests {
         let result = generate_video(args).await?;
         println!("Seedance 2.0 @ 480p — task_id={}, order_id={}", result.task_id, result.order_id);
         assert_eq!(1, 2, "Inspect output above");
+        // Output resolution was: "864 × 496"
+        // Cost: 60 credits (4 x 15)
         Ok(())
       }
 
@@ -1262,10 +1273,13 @@ mod tests {
         setup_test_logging(LevelFilter::Trace);
         let session = test_session()?;
         // 720p = None (default, outputResolution field omitted)
-        let args = make_args(&session, KinoviModelType::Seedance2Pro, None);
+        let prompt = "A corgi running through a field of stars";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelType::Seedance2Pro, None);
         let result = generate_video(args).await?;
         println!("Seedance 2.0 @ 720p (default) — task_id={}, order_id={}", result.task_id, result.order_id);
         assert_eq!(1, 2, "Inspect output above");
+        // Output resolution was: "1280 × 720
+        // Cost: 160 credits (4 x 40)
         Ok(())
       }
 
@@ -1274,10 +1288,13 @@ mod tests {
       async fn test_1080p() -> AnyhowResult<()> {
         setup_test_logging(LevelFilter::Trace);
         let session = test_session()?;
-        let args = make_args(&session, KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::TenEightyP));
+        let prompt = "A shiba running through a field of stars";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::TenEightyP));
         let result = generate_video(args).await?;
         println!("Seedance 2.0 @ 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
         assert_eq!(1, 2, "Inspect output above");
+        // Output resolution was: "1920 × 1080"
+        // Cost: 360 credits (4 x 90)
         Ok(())
       }
     }
@@ -1290,10 +1307,13 @@ mod tests {
       async fn test_480p() -> AnyhowResult<()> {
         setup_test_logging(LevelFilter::Trace);
         let session = test_session()?;
-        let args = make_args(&session, KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::FourEightyP));
+        let prompt = "A corgi running through a foggy meadow at dawn";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::FourEightyP));
         let result = generate_video(args).await?;
         println!("Seedance 2.0 Fast @ 480p — task_id={}, order_id={}", result.task_id, result.order_id);
         assert_eq!(1, 2, "Inspect output above");
+        // Output resolution was: "???"
+        // Cost: 40 credits (4 x 10)
         Ok(())
       }
 
@@ -1302,10 +1322,13 @@ mod tests {
       async fn test_720p() -> AnyhowResult<()> {
         setup_test_logging(LevelFilter::Trace);
         let session = test_session()?;
-        let args = make_args(&session, KinoviModelType::Seedance2Fast, None);
+        let prompt = "A shiba running through a foggy meadow at dawn";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelType::Seedance2Fast, None);
         let result = generate_video(args).await?;
         println!("Seedance 2.0 Fast @ 720p (default) — task_id={}, order_id={}", result.task_id, result.order_id);
         assert_eq!(1, 2, "Inspect output above");
+        // Output resolution was: "???"
+        // Cost: 112 credits (4 x 28)
         Ok(())
       }
 
@@ -1314,10 +1337,13 @@ mod tests {
       async fn test_1080p() -> AnyhowResult<()> {
         setup_test_logging(LevelFilter::Trace);
         let session = test_session()?;
-        let args = make_args(&session, KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::TenEightyP));
+        let prompt = "A small klee kai dog running through a foggy meadow at dawn";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::TenEightyP));
         let result = generate_video(args).await?;
         println!("Seedance 2.0 Fast @ 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
         assert_eq!(1, 2, "Inspect output above");
+        // Output resolution was: "???"
+        // Cost: 112 credits (4 x 28) ??? - it enqueued as 720p I think
         Ok(())
       }
     }
