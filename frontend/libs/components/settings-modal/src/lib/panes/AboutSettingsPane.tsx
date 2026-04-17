@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   GetAppInfo,
   GetAppInfoPayload,
 } from "@storyteller/tauri-api";
 import { Label } from "@storyteller/ui-label";
+import { toast } from "react-hot-toast";
+import { gtagEvent } from "@storyteller/google-analytics";
+import { useExperimentalStore } from "../experimental-store";
+
+const UNLOCK_CLICK_COUNT = 7;
+const UNLOCK_WINDOW_MS = 5000;
 
 interface AboutSettingsPaneProps {}
 
@@ -11,6 +17,10 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
   const [appInfo, setAppInfo] = useState<
     GetAppInfoPayload | undefined
   >(undefined);
+
+  const enabled = useExperimentalStore((s) => s.enabled);
+  const enable = useExperimentalStore((s) => s.enable);
+  const clickTimes = useRef<number[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,6 +30,19 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
     fetchData();
   }, []);
 
+  const handleVersionClick = () => {
+    if (enabled) return;
+    const now = performance.now();
+    const recent = clickTimes.current.filter((t) => now - t < UNLOCK_WINDOW_MS);
+    recent.push(now);
+    clickTimes.current = recent;
+    if (recent.length >= UNLOCK_CLICK_COUNT) {
+      clickTimes.current = [];
+      enable();
+      gtagEvent("unlock_experimental_menu", {});
+      toast.success("Experimental features unlocked");
+    }
+  };
 
   return (
     <>
@@ -28,7 +51,12 @@ export const AboutSettingsPane = (args: AboutSettingsPaneProps) => {
           <Label>
             Artcraft Version
           </Label>
-          <div>{appInfo?.artcraft_version}</div>
+          <div
+            onClick={handleVersionClick}
+            style={{ cursor: "default", userSelect: "none" }}
+          >
+            {appInfo?.artcraft_version}
+          </div>
         </div>
 
         <div className="space-y-1">
