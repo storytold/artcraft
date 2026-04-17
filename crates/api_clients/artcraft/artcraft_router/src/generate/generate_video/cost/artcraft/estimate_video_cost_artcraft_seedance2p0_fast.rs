@@ -100,6 +100,37 @@ mod tests {
       .expect("cost_in_usd_cents should be present")
   }
 
+  fn estimate_usd_cents_downgrade(
+    duration_seconds: u16,
+    video_batch_count: u16,
+    resolution: Option<CommonResolution>,
+  ) -> u64 {
+    let request = GenerateVideoRequest {
+      model: CommonVideoModel::Seedance2p0Fast,
+      provider: Provider::Artcraft,
+      prompt: None,
+      negative_prompt: None,
+      start_frame: None,
+      end_frame: None,
+      reference_images: None,
+      reference_videos: None,
+      reference_audio: None,
+      reference_character_tokens: None,
+      resolution,
+      aspect_ratio: None,
+      duration_seconds: Some(duration_seconds),
+      video_batch_count: Some(video_batch_count),
+      generate_audio: None,
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
+      idempotency_token: None,
+    };
+    request.build()
+      .expect("build should succeed")
+      .estimate_costs()
+      .cost_in_usd_cents
+      .expect("cost_in_usd_cents should be present")
+  }
+
   fn estimate_pro_usd_cents(
     duration_seconds: u16,
     video_batch_count: u16,
@@ -179,24 +210,42 @@ mod tests {
     assert_eq!(estimate_usd_cents(5, 4, Some(CommonResolution::FourEightyP)), 104);
   }
 
-  // -- 1080p (new pricing: 193 credits/$1, same rate as 720p for Fast) --
+  // -- 1080p is not supported by Fast; ErrorOut rejects it --
 
   #[test]
-  fn fast_1080p_batch_1() {
-    // Fast 1080p uses 28 credits/sec (same as 720p) but new pricing tier
-    assert_eq!(estimate_usd_cents(5, 1, Some(CommonResolution::TenEightyP)), 73);
-    assert_eq!(estimate_usd_cents(10, 1, Some(CommonResolution::TenEightyP)), 145);
-    assert_eq!(estimate_usd_cents(15, 1, Some(CommonResolution::TenEightyP)), 218);
+  fn fast_1080p_error_out_rejects() {
+    let request = GenerateVideoRequest {
+      model: CommonVideoModel::Seedance2p0Fast,
+      provider: Provider::Artcraft,
+      prompt: None,
+      negative_prompt: None,
+      start_frame: None,
+      end_frame: None,
+      reference_images: None,
+      reference_videos: None,
+      reference_audio: None,
+      reference_character_tokens: None,
+      resolution: Some(CommonResolution::TenEightyP),
+      aspect_ratio: None,
+      duration_seconds: Some(5),
+      video_batch_count: Some(1),
+      generate_audio: None,
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      idempotency_token: None,
+    };
+    assert!(request.build().is_err());
   }
 
-  #[test]
-  fn fast_1080p_batch_2() {
-    assert_eq!(estimate_usd_cents(5, 2, Some(CommonResolution::TenEightyP)), 145);
-  }
+  // -- 1080p rounds down to 720p with PayLessDowngrade --
 
   #[test]
-  fn fast_1080p_batch_4() {
-    assert_eq!(estimate_usd_cents(5, 4, Some(CommonResolution::TenEightyP)), 290);
+  fn fast_1080p_downgraded_same_as_720p() {
+    for duration in [4, 5, 10, 15] {
+      assert_eq!(
+        estimate_usd_cents_downgrade(duration, 1, Some(CommonResolution::TenEightyP)),
+        estimate_usd_cents(duration, 1, Some(CommonResolution::SevenTwentyP)),
+      );
+    }
   }
 
   // -- Relative pricing --
@@ -213,7 +262,6 @@ mod tests {
     for res in [
       Some(CommonResolution::FourEightyP),
       Some(CommonResolution::SevenTwentyP),
-      Some(CommonResolution::TenEightyP),
     ] {
       for duration in [4, 5, 10, 15] {
         let fast = estimate_usd_cents(duration, 1, res);
@@ -238,9 +286,9 @@ mod tests {
 
   #[test]
   fn cost_scales_with_batch() {
-    let b1 = estimate_usd_cents(5, 1, Some(CommonResolution::TenEightyP));
-    let b2 = estimate_usd_cents(5, 2, Some(CommonResolution::TenEightyP));
-    let b4 = estimate_usd_cents(5, 4, Some(CommonResolution::TenEightyP));
+    let b1 = estimate_usd_cents(5, 1, Some(CommonResolution::SevenTwentyP));
+    let b2 = estimate_usd_cents(5, 2, Some(CommonResolution::SevenTwentyP));
+    let b4 = estimate_usd_cents(5, 4, Some(CommonResolution::SevenTwentyP));
     assert!(b1 < b2);
     assert!(b2 < b4);
   }
