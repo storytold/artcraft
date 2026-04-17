@@ -39,6 +39,7 @@ pub fn plan_generate_video_artcraft_seedance2p0_fast(
     reference_audio,
     reference_characters: resolve_character_list_ref(request.reference_character_tokens.clone()),
     aspect_ratio,
+    resolution: request.resolution,
     duration_seconds,
     batch_count,
     idempotency_token: request.get_or_generate_idempotency_token(),

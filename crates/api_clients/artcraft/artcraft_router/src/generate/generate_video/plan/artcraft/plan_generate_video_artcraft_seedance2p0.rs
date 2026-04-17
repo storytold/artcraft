@@ -1,5 +1,6 @@
 use crate::api::audio_list_ref::AudioListRef;
 use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::common_resolution::CommonResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
@@ -24,6 +25,7 @@ pub struct PlanArtcraftSeedance2p0 {
   pub reference_audio: Option<Vec<MediaFileToken>>,
   pub reference_characters: Option<Vec<CharacterToken>>,
   pub aspect_ratio: Option<Seedance2p0AspectRatio>,
+  pub resolution: Option<CommonResolution>,
   pub duration_seconds: Option<u8>,
   pub batch_count: Seedance2p0BatchCount,
   pub idempotency_token: String,
@@ -53,6 +55,7 @@ pub fn plan_generate_video_artcraft_seedance2p0(
     reference_audio,
     reference_characters: resolve_character_list_ref(request.reference_character_tokens.clone()),
     aspect_ratio,
+    resolution: request.resolution,
     duration_seconds,
     batch_count,
     idempotency_token: request.get_or_generate_idempotency_token(),
