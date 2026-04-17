@@ -18,7 +18,7 @@ import { ImageTo3DObject } from "../PageImageTo3DObject";
 import { ImageTo3DWorld } from "../PageImageTo3DWorld";
 import { RemoveBackground } from "../PageRemoveBackground";
 import { Angles } from "../PageAngles";
-import { Moodboard } from "../PageMoodboard";
+import { Storyboard } from "../PageStoryboard";
 import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
 import {
@@ -646,9 +646,9 @@ export const PageEditor = () => {
           <Angles />
         </div>
       )}
-      {tabStore.activeTabId == "MOODBOARD" && storyboardPageEnabled && (
+      {tabStore.activeTabId == "STORYBOARD" && storyboardPageEnabled && (
         <div>
-          <Moodboard />
+          <Storyboard />
         </div>
       )}
     </div>

@@ -32,7 +32,7 @@ export type AppId =
   | "IMAGE_TO_3D_WORLD"
   | "REMOVE_BACKGROUND"
   | "ANGLES"
-  | "MOODBOARD";
+  | "STORYBOARD";
 
 export interface AppDescriptor {
   id: AppId;
@@ -177,12 +177,12 @@ export const ALL_APPS: FullAppItem[] = [
   },
 
   {
-    id: "moodboard",
+    id: "storyboard",
     label: "Storyboard",
     description: "Plan your shots with a visual storyboard",
     icon: faPhotoFilm,
     category: "generate",
-    action: "MOODBOARD",
+    action: "STORYBOARD",
     color: "bg-fuchsia-600/40",
     badge: "NEW",
   },
@@ -216,7 +216,7 @@ export const useVisibleApps = (): FullAppItem[] => {
   return useMemo(
     () =>
       ALL_APPS.filter((app) =>
-        app.action === "MOODBOARD" ? storyboardEnabled : true,
+        app.action === "STORYBOARD" ? storyboardEnabled : true,
       ),
     [storyboardEnabled],
   );
@@ -266,10 +266,10 @@ export const goToApp = (action?: string) => {
       "IMAGE_TO_3D_WORLD",
       "REMOVE_BACKGROUND",
       "ANGLES",
-      "MOODBOARD",
+      "STORYBOARD",
     ].includes(action)
   ) {
-    if (action === "MOODBOARD") {
+    if (action === "STORYBOARD") {
       const { enabled, storyboardPageEnabled } =
         useExperimentalStore.getState();
       if (!enabled || !storyboardPageEnabled) return;

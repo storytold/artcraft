@@ -59,7 +59,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
-import { useMoodboardStore } from "~/pages/PageMoodboard";
+import { useStoryboardStore } from "~/pages/PageStoryboard";
 import { useSceneStore } from "@storyteller/ui-pagedraw";
 import {
   is3DEditorInitialized,
@@ -767,7 +767,7 @@ export const TopBar = ({ pageName }: Props) => {
           setLogoutStates();
         }}
         onStoryboardPageDisable={() => {
-          useMoodboardStore.getState().reset();
+          useStoryboardStore.getState().reset();
           goToApp("IMAGE");
         }}
         initialSection={settingsSection}

@@ -12,7 +12,7 @@ export interface Board {
   duration: number;
 }
 
-interface MoodboardState {
+interface StoryboardState {
   boards: Board[];
   selectedBoardId: string | null;
 
@@ -27,7 +27,7 @@ interface MoodboardState {
 const syncShotNumbers = (boards: Board[]): Board[] =>
   boards.map((b, i) => ({ ...b, shotNumber: i + 1 }));
 
-export const useMoodboardStore = create<MoodboardState>((set, get) => ({
+export const useStoryboardStore = create<StoryboardState>((set, get) => ({
   boards: [],
   selectedBoardId: null,
 

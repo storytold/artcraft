@@ -19,7 +19,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
-import { useMoodboardStore, type Board } from "./MoodboardStore";
+import { useStoryboardStore, type Board } from "./StoryboardStore";
 
 const PIXELS_PER_SECOND = 80;
 const MIN_BLOCK_WIDTH = 40;
@@ -924,16 +924,16 @@ const PlaybackControls = ({
   );
 };
 
-// ─── Moodboard ────────────────────────────────────────────────────────────────
+// ─── Storyboard ───────────────────────────────────────────────────────────────
 
-export const Moodboard = () => {
-  const boards = useMoodboardStore((s) => s.boards);
-  const selectedBoardId = useMoodboardStore((s) => s.selectedBoardId);
-  const addBoard = useMoodboardStore((s) => s.addBoard);
-  const deleteBoard = useMoodboardStore((s) => s.deleteBoard);
-  const selectBoard = useMoodboardStore((s) => s.selectBoard);
-  const updateBoard = useMoodboardStore((s) => s.updateBoard);
-  const reorderBoards = useMoodboardStore((s) => s.reorderBoards);
+export const Storyboard = () => {
+  const boards = useStoryboardStore((s) => s.boards);
+  const selectedBoardId = useStoryboardStore((s) => s.selectedBoardId);
+  const addBoard = useStoryboardStore((s) => s.addBoard);
+  const deleteBoard = useStoryboardStore((s) => s.deleteBoard);
+  const selectBoard = useStoryboardStore((s) => s.selectBoard);
+  const updateBoard = useStoryboardStore((s) => s.updateBoard);
+  const reorderBoards = useStoryboardStore((s) => s.reorderBoards);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragIndexRef = useRef<number | null>(null);
