@@ -18,6 +18,7 @@ import { ImageTo3DObject } from "../PageImageTo3DObject";
 import { ImageTo3DWorld } from "../PageImageTo3DWorld";
 import { RemoveBackground } from "../PageRemoveBackground";
 import { Angles } from "../PageAngles";
+import { Moodboard } from "../PageMoodboard";
 
 import {
   timelineHeight,
@@ -641,6 +642,11 @@ export const PageEditor = () => {
       {tabStore.activeTabId == "ANGLES" && (
         <div>
           <Angles />
+        </div>
+      )}
+      {tabStore.activeTabId == "MOODBOARD" && (
+        <div>
+          <Moodboard />
         </div>
       )}
     </div>

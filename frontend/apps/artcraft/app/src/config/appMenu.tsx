@@ -26,7 +26,8 @@ export type AppId =
   | "IMAGE_TO_3D_OBJECT"
   | "IMAGE_TO_3D_WORLD"
   | "REMOVE_BACKGROUND"
-  | "ANGLES";
+  | "ANGLES"
+  | "MOODBOARD";
 
 export interface AppDescriptor {
   id: AppId;
@@ -171,6 +172,16 @@ export const ALL_APPS: FullAppItem[] = [
   },
 
   {
+    id: "moodboard",
+    label: "Storyboard",
+    description: "Plan your shots with a visual storyboard",
+    icon: faPhotoFilm,
+    category: "generate",
+    action: "MOODBOARD",
+    color: "bg-fuchsia-600/40",
+    badge: "NEW",
+  },
+  {
     id: "2d-canvas",
     label: "Image Editor",
     description: "Easy edits. Great for graphic design.",
@@ -223,6 +234,7 @@ export const goToApp = (action?: string) => {
       "IMAGE_TO_3D_WORLD",
       "REMOVE_BACKGROUND",
       "ANGLES",
+      "MOODBOARD",
     ].includes(action)
   ) {
     if (action === "3D") {
