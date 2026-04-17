@@ -35,9 +35,9 @@ pub struct PlanFalKling2p6Pro {
   pub generate_audio: Option<bool>,
 }
 
-pub fn plan_generate_video_fal_kling_2_6_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_kling_2_6_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   if request.end_frame.is_some() {
@@ -47,7 +47,7 @@ pub fn plan_generate_video_fal_kling_2_6_pro<'a>(
     }));
   }
 
-  let mode = match optional_url(request.start_frame)? {
+  let mode = match optional_url(request.start_frame.clone())? {
     None => FalKling2p6ProMode::TextToVideo,
     Some(image_url) => FalKling2p6ProMode::ImageToVideo { image_url },
   };
@@ -56,8 +56,8 @@ pub fn plan_generate_video_fal_kling_2_6_pro<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalKling2p6Pro(PlanFalKling2p6Pro {
-    prompt: request.prompt.unwrap_or("").to_string(),
-    negative_prompt: request.negative_prompt.map(|s| s.to_string()),
+    prompt: request.prompt.clone().unwrap_or_default(),
+    negative_prompt: request.negative_prompt.clone(),
     mode,
     aspect_ratio,
     duration,

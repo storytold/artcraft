@@ -12,9 +12,9 @@ use artcraft_api_defs::generate::image::angle::qwen_edit_2511_edit_image_angle::
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftQwenEdit2511Angles<'a> {
-  pub prompt: Option<&'a str>,
-  pub image_input: &'a MediaFileToken,
+pub struct PlanArtcraftQwenEdit2511Angles {
+  pub prompt: Option<String>,
+  pub image_input: MediaFileToken,
   pub horizontal_angle: Option<f64>,
   pub vertical_angle: Option<f64>,
   pub zoom: Option<f64>,
@@ -23,18 +23,18 @@ pub struct PlanArtcraftQwenEdit2511Angles<'a> {
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_image_artcraft_qwen_edit_2511_angles<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_artcraft_qwen_edit_2511_angles(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   // Angle models require exactly one input image.
-  let image_input = resolve_single_image_input(request.image_inputs)?;
+  let image_input = resolve_single_image_input(request.image_inputs.clone())?;
   let image_size = plan_image_size(request.aspect_ratio, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::ArtcraftQwenEdit2511Angles(PlanArtcraftQwenEdit2511Angles {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_input,
     horizontal_angle: request.horizontal_angle,
     vertical_angle: request.vertical_angle,
@@ -45,9 +45,9 @@ pub fn plan_generate_image_artcraft_qwen_edit_2511_angles<'a>(
   }))
 }
 
-fn resolve_single_image_input<'a>(
-  image_list_ref: Option<ImageListRef<'a>>,
-) -> Result<&'a MediaFileToken, ArtcraftRouterError> {
+fn resolve_single_image_input(
+  image_list_ref: Option<ImageListRef>,
+) -> Result<MediaFileToken, ArtcraftRouterError> {
   match image_list_ref {
     None => {
       Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -62,7 +62,7 @@ fn resolve_single_image_input<'a>(
           value: format!("Angle models require exactly one input image, got {}", tokens.len()),
         }));
       }
-      Ok(&tokens[0])
+      Ok(tokens.into_iter().next().unwrap())
     }
     Some(ImageListRef::Urls(_)) => {
       Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
@@ -167,7 +167,7 @@ mod tests {
   fn rejects_urls() {
     let urls = vec!["https://example.com/img.png".to_string()];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::Urls(&urls)),
+      image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_qwen_edit_2511_angles_image_request()
     };
     let result = request.build();
@@ -178,7 +178,7 @@ mod tests {
   fn accepts_single_media_token() {
     let tokens = vec![make_token()];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_qwen_edit_2511_angles_image_request()
     };
     let result = request.build();
@@ -189,7 +189,7 @@ mod tests {
   fn rejects_multiple_media_tokens() {
     let tokens = vec![make_token(), make_token()];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_qwen_edit_2511_angles_image_request()
     };
     let result = request.build();
@@ -201,7 +201,7 @@ mod tests {
     let tokens = vec![make_token()];
     let request = GenerateImageRequest {
       aspect_ratio: None,
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_qwen_edit_2511_angles_image_request()
     };
     let ImageGenerationPlan::ArtcraftQwenEdit2511Angles(plan) = request.build().unwrap() else { panic!("expected ArtcraftQwenEdit2511Angles") };
@@ -213,7 +213,7 @@ mod tests {
     let tokens = vec![make_token()];
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Square),
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_qwen_edit_2511_angles_image_request()
     };
     let ImageGenerationPlan::ArtcraftQwenEdit2511Angles(plan) = request.build().unwrap() else { panic!("expected ArtcraftQwenEdit2511Angles") };
@@ -228,7 +228,7 @@ mod tests {
       let request = GenerateImageRequest {
         quality: None,
         image_batch_count: Some(count),
-        image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+        image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
         ..base_qwen_edit_2511_angles_image_request()
       };
       let ImageGenerationPlan::ArtcraftQwenEdit2511Angles(plan) = request.build().unwrap() else { panic!("expected ArtcraftQwenEdit2511Angles") };
@@ -246,7 +246,7 @@ mod tests {
       horizontal_angle: Some(45.0),
       vertical_angle: Some(-30.0),
       zoom: Some(1.5),
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_qwen_edit_2511_angles_image_request()
     };
     let ImageGenerationPlan::ArtcraftQwenEdit2511Angles(plan) = request.build().unwrap() else { panic!("expected ArtcraftQwenEdit2511Angles") };

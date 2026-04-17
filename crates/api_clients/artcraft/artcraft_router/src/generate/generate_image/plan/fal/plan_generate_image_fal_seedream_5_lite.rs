@@ -35,23 +35,23 @@ pub enum FalSeedream5LiteImageSize {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalSeedream5Lite<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalSeedream5Lite {
+  pub prompt: Option<String>,
   pub image_urls: Vec<String>,
   pub image_size: Option<FalSeedream5LiteImageSize>,
   pub num_images: FalSeedream5LiteNumImages,
 }
 
-pub fn plan_generate_image_fal_seedream_5_lite<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_seedream_5_lite(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
-  let image_urls = resolve_image_list_ref(request.image_inputs)?;
+  let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;
   let image_size = plan_image_size(request.aspect_ratio, request.resolution, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalSeedream5Lite(PlanFalSeedream5Lite {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_urls,
     image_size,
     num_images,
@@ -59,7 +59,7 @@ pub fn plan_generate_image_fal_seedream_5_lite<'a>(
 }
 
 fn resolve_image_list_ref(
-  image_list_ref: Option<ImageListRef<'_>>,
+  image_list_ref: Option<ImageListRef>,
 ) -> Result<Vec<String>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(vec![]),

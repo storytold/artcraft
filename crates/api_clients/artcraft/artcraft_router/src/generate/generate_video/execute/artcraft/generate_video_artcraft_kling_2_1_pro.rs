@@ -9,14 +9,14 @@ use artcraft_api_defs::generate::video::generate_kling_2_1_pro_image_to_video::G
 use artcraft_client::endpoints::generate::video::generate_kling_21_pro_image_to_video::generate_kling_21_pro_image_to_video;
 
 pub async fn execute_artcraft_kling_2_1_pro(
-  plan: &PlanArtcraftKling21Pro<'_>,
+  plan: &PlanArtcraftKling21Pro,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = GenerateKling21ProImageToVideoRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    media_file_token: Some(plan.start_frame.to_owned()),
-    end_frame_image_media_token: plan.end_frame.map(|t| t.to_owned()),
-    prompt: plan.prompt.map(|p| p.to_string()),
+    media_file_token: Some(plan.start_frame.clone()),
+    end_frame_image_media_token: plan.end_frame.clone(),
+    prompt: plan.prompt.clone(),
     aspect_ratio: plan.aspect_ratio,
     duration: plan.duration,
   };

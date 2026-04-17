@@ -13,21 +13,21 @@ use artcraft_api_defs::generate::video::multi_function::sora_2_pro_multi_functio
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftSora2Pro<'a> {
-  pub prompt: Option<&'a str>,
-  pub start_frame: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftSora2Pro {
+  pub prompt: Option<String>,
+  pub start_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<Sora2ProMultiFunctionVideoGenAspectRatio>,
   pub resolution: Option<Sora2ProMultiFunctionVideoGenResolution>,
   pub duration: Option<Sora2ProMultiFunctionVideoGenDuration>,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_sora_2_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_sora_2_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = match request.start_frame {
+  let start_frame = match request.start_frame.clone() {
     None => None,
     Some(ImageRef::MediaFileToken(t)) => Some(t),
     Some(ImageRef::Url(_)) => {
@@ -47,7 +47,7 @@ pub fn plan_generate_video_artcraft_sora_2_pro<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftSora2Pro(PlanArtcraftSora2Pro {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     start_frame,
     aspect_ratio,
     resolution,
@@ -128,7 +128,7 @@ fn plan_duration(
   }
 }
 
-impl PlanArtcraftSora2Pro<'_> {
+impl PlanArtcraftSora2Pro {
   /// Fal client default: 4 seconds when None.
   pub fn duration_seconds_for_cost(&self) -> u64 {
     use Sora2ProMultiFunctionVideoGenDuration as D;

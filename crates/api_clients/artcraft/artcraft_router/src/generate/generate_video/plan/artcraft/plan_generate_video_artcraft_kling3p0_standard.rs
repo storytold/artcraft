@@ -12,31 +12,31 @@ use artcraft_api_defs::generate::video::multi_function::kling_3p0_standard_multi
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftKling3p0Standard<'a> {
-  pub prompt: Option<&'a str>,
-  pub negative_prompt: Option<&'a str>,
-  pub start_frame: Option<&'a MediaFileToken>,
-  pub end_frame: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftKling3p0Standard {
+  pub prompt: Option<String>,
+  pub negative_prompt: Option<String>,
+  pub start_frame: Option<MediaFileToken>,
+  pub end_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<Kling3p0StandardMultiFunctionVideoGenAspectRatio>,
   pub duration: Option<Kling3p0StandardMultiFunctionVideoGenDuration>,
   pub generate_audio: Option<bool>,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_kling3p0_standard<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_kling3p0_standard(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = resolve_image_ref(request.start_frame)?;
-  let end_frame = resolve_image_ref(request.end_frame)?;
+  let start_frame = resolve_image_ref(request.start_frame.clone())?;
+  let end_frame = resolve_image_ref(request.end_frame.clone())?;
 
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftKling3p0Standard(PlanArtcraftKling3p0Standard {
-    prompt: request.prompt,
-    negative_prompt: request.negative_prompt,
+    prompt: request.prompt.clone(),
+    negative_prompt: request.negative_prompt.clone(),
     start_frame,
     end_frame,
     aspect_ratio,
@@ -46,9 +46,9 @@ pub fn plan_generate_video_artcraft_kling3p0_standard<'a>(
   }))
 }
 
-fn resolve_image_ref<'a>(
-  image_ref: Option<ImageRef<'a>>,
-) -> Result<Option<&'a MediaFileToken>, ArtcraftRouterError> {
+fn resolve_image_ref(
+  image_ref: Option<ImageRef>,
+) -> Result<Option<MediaFileToken>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),
     Some(ImageRef::MediaFileToken(t)) => Ok(Some(t)),
@@ -169,11 +169,11 @@ mod tests {
   use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
   use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 
-  fn base_request() -> GenerateVideoRequest<'static> {
+  fn base_request() -> GenerateVideoRequest {
     GenerateVideoRequest {
       model: CommonVideoModel::Kling3p0Standard,
       provider: Provider::Artcraft,
-      prompt: Some("a cat in space"),
+      prompt: Some("a cat in space".to_string()),
       negative_prompt: None,
       start_frame: None,
       end_frame: None,
@@ -264,7 +264,7 @@ mod tests {
   #[test]
   fn url_image_ref_returns_error() {
     let request = GenerateVideoRequest {
-      start_frame: Some(ImageRef::Url("https://example.com/image.jpg")),
+      start_frame: Some(ImageRef::Url("https://example.com/image.jpg".to_string())),
       ..base_request()
     };
     let result = request.build();

@@ -4,7 +4,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_2_lora_angles::PlanArtcraftFlux2LoraAngles;
 
 pub(crate) fn estimate_image_cost_artcraft_flux_2_lora_angles(
-  plan: &PlanArtcraftFlux2LoraAngles<'_>,
+  plan: &PlanArtcraftFlux2LoraAngles,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.04/image (4 cents). 1 credit = 1 USD cent.
   let cost_per_image: u64 = 4;
@@ -43,7 +43,7 @@ mod tests {
       model: CommonImageModel::Flux2LoraAngles,
       provider: Provider::Artcraft,
       prompt: None,
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       resolution: None,
       aspect_ratio: None,
       quality: None,

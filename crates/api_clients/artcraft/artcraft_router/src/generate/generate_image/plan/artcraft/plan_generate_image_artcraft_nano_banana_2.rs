@@ -13,29 +13,29 @@ use artcraft_api_defs::generate::image::multi_function::nano_banana_2_multi_func
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftNanaBanana2<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanArtcraftNanaBanana2 {
+  pub prompt: Option<String>,
   /// Input images for image editing. None means text-to-image mode.
-  pub image_inputs: Option<&'a Vec<MediaFileToken>>,
+  pub image_inputs: Option<Vec<MediaFileToken>>,
   pub aspect_ratio: Option<NanaBanana2MultiFunctionImageGenAspectRatio>,
   pub resolution: Option<NanaBanana2MultiFunctionImageGenImageResolution>,
   pub num_images: NanaBanana2MultiFunctionImageGenNumImages,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_image_artcraft_nano_banana_2<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_artcraft_nano_banana_2(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let is_edit_mode = request.image_inputs.is_some();
-  let image_inputs = resolve_image_list_ref(request.image_inputs)?;
+  let image_inputs = resolve_image_list_ref(request.image_inputs.clone())?;
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, is_edit_mode, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::ArtcraftNanaBanana2(PlanArtcraftNanaBanana2 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_inputs,
     aspect_ratio,
     resolution,
@@ -44,9 +44,9 @@ pub fn plan_generate_image_artcraft_nano_banana_2<'a>(
   }))
 }
 
-fn resolve_image_list_ref<'a>(
-  image_list_ref: Option<ImageListRef<'a>>,
-) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+fn resolve_image_list_ref(
+  image_list_ref: Option<ImageListRef>,
+) -> Result<Option<Vec<MediaFileToken>>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
@@ -211,7 +211,7 @@ mod tests {
       let tokens = vec![];
       let request = GenerateImageRequest {
         aspect_ratio: Some(auto_ar),
-        image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+        image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
         ..base_nano_banana_2_image_request()
       };
       let ImageGenerationPlan::ArtcraftNanaBanana2(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBanana2") };

@@ -40,8 +40,8 @@ pub enum FalGptImage1ImageSize {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalGptImage1<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalGptImage1 {
+  pub prompt: Option<String>,
   /// Image URLs for editing. Empty vec = text-to-image mode.
   pub image_urls: Vec<String>,
   pub image_size: Option<FalGptImage1ImageSize>,
@@ -51,17 +51,17 @@ pub struct PlanFalGptImage1<'a> {
   pub num_images: FalGptImage1NumImages,
 }
 
-pub fn plan_generate_image_fal_gpt_image_1<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_gpt_image_1(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
-  let image_urls = resolve_image_list_ref(request.image_inputs)?;
+  let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;
   let image_size = plan_image_size(request.aspect_ratio);
   let quality = plan_quality(request.quality);
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalGptImage1(PlanFalGptImage1 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_urls,
     image_size,
     quality,
@@ -70,7 +70,7 @@ pub fn plan_generate_image_fal_gpt_image_1<'a>(
 }
 
 fn resolve_image_list_ref(
-  image_list_ref: Option<ImageListRef<'_>>,
+  image_list_ref: Option<ImageListRef>,
 ) -> Result<Vec<String>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(vec![]),
@@ -219,11 +219,11 @@ mod tests {
   use crate::api::common_image_model::CommonImageModel;
   use crate::api::provider::Provider;
 
-  fn base_fal_request() -> GenerateImageRequest<'static> {
+  fn base_fal_request() -> GenerateImageRequest {
     GenerateImageRequest {
       model: CommonImageModel::GptImage1,
       provider: Provider::Fal,
-      prompt: Some("a cat in space"),
+      prompt: Some("a cat in space".to_string()),
       image_inputs: None,
       resolution: None,
       aspect_ratio: None,
@@ -238,7 +238,7 @@ mod tests {
     }
   }
 
-  fn build_plan<'a>(request: &'a GenerateImageRequest<'a>) -> PlanFalGptImage1<'a> {
+  fn build_plan(request: &GenerateImageRequest) -> PlanFalGptImage1 {
     let ImageGenerationPlan::FalGptImage1(plan) =
       plan_generate_image_fal_gpt_image_1(request).expect("plan should succeed")
     else {
@@ -263,7 +263,7 @@ mod tests {
       "https://example.com/b.jpg".to_string(),
     ];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::Urls(&urls)),
+      image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_fal_request()
     };
     let plan = build_plan(&request);
@@ -274,7 +274,7 @@ mod tests {
   fn media_token_inputs_return_error() {
     let tokens = vec![];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_fal_request()
     };
     let result = plan_generate_image_fal_gpt_image_1(&request);

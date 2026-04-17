@@ -13,9 +13,9 @@ pub struct PlanFalVeo3p1Fast {
   pub inner: PlanFalVeo3p1,
 }
 
-pub fn plan_generate_video_fal_veo_3p1_fast<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_veo_3p1_fast(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let inner = build_plan_fal_veo_3p1(request, "Veo 3.1 Fast")?;
   Ok(VideoGenerationPlan::FalVeo3p1Fast(PlanFalVeo3p1Fast { inner }))
 }

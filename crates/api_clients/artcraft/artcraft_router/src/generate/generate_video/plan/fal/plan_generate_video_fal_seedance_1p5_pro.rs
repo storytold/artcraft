@@ -57,12 +57,12 @@ pub struct PlanFalSeedance1p5Pro {
   pub generate_audio: Option<bool>,
 }
 
-pub fn plan_generate_video_fal_seedance_1p5_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_seedance_1p5_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let mode = match optional_url(request.start_frame)? {
+  let mode = match optional_url(request.start_frame.clone())? {
     None => {
       if request.end_frame.is_some() {
         return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -74,7 +74,7 @@ pub fn plan_generate_video_fal_seedance_1p5_pro<'a>(
     }
     Some(image_url) => FalSeedance1p5ProMode::ImageToVideo {
       image_url,
-      end_image_url: optional_url(request.end_frame)?,
+      end_image_url: optional_url(request.end_frame.clone())?,
     },
   };
 
@@ -83,7 +83,7 @@ pub fn plan_generate_video_fal_seedance_1p5_pro<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalSeedance1p5Pro(PlanFalSeedance1p5Pro {
-    prompt: request.prompt.unwrap_or("").to_string(),
+    prompt: request.prompt.clone().unwrap_or_default(),
     mode,
     aspect_ratio,
     resolution,

@@ -11,21 +11,21 @@ use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::{
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftKling16Pro<'a> {
-  pub prompt: Option<&'a str>,
-  pub start_frame: &'a MediaFileToken,
-  pub end_frame: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftKling16Pro {
+  pub prompt: Option<String>,
+  pub start_frame: MediaFileToken,
+  pub end_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<GenerateKling16ProAspectRatio>,
   pub duration: Option<GenerateKling16ProDuration>,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_kling_1_6_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_kling_1_6_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = match request.start_frame {
+  let start_frame = match request.start_frame.clone() {
     Some(ImageRef::MediaFileToken(t)) => t,
     Some(ImageRef::Url(_)) => {
       return Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
@@ -37,13 +37,13 @@ pub fn plan_generate_video_artcraft_kling_1_6_pro<'a>(
       }))
     }
   };
-  let end_frame = resolve_end_frame(request.end_frame)?;
+  let end_frame = resolve_end_frame(request.end_frame.clone())?;
 
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftKling16Pro(PlanArtcraftKling16Pro {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     start_frame,
     end_frame,
     aspect_ratio,
@@ -52,9 +52,9 @@ pub fn plan_generate_video_artcraft_kling_1_6_pro<'a>(
   }))
 }
 
-fn resolve_end_frame<'a>(
-  image_ref: Option<ImageRef<'a>>,
-) -> Result<Option<&'a MediaFileToken>, ArtcraftRouterError> {
+fn resolve_end_frame(
+  image_ref: Option<ImageRef>,
+) -> Result<Option<MediaFileToken>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),
     Some(ImageRef::MediaFileToken(t)) => Ok(Some(t)),
@@ -129,7 +129,7 @@ fn plan_duration(
   }
 }
 
-impl PlanArtcraftKling16Pro<'_> {
+impl PlanArtcraftKling16Pro {
   pub fn is_ten_seconds(&self) -> bool {
     matches!(self.duration, Some(GenerateKling16ProDuration::TenSeconds))
   }

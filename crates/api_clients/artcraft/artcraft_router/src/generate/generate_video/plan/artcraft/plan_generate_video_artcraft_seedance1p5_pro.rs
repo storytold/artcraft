@@ -13,10 +13,10 @@ use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_f
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftSeedance1p5Pro<'a> {
-  pub prompt: Option<&'a str>,
-  pub start_frame: Option<&'a MediaFileToken>,
-  pub end_frame: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftSeedance1p5Pro {
+  pub prompt: Option<String>,
+  pub start_frame: Option<MediaFileToken>,
+  pub end_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<Seedance1p5ProMultiFunctionVideoGenAspectRatio>,
   pub duration: Option<Seedance1p5ProMultiFunctionVideoGenDuration>,
   pub resolution: Option<Seedance1p5ProMultiFunctionVideoGenResolution>,
@@ -24,20 +24,20 @@ pub struct PlanArtcraftSeedance1p5Pro<'a> {
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_seedance1p5_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_seedance1p5_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = resolve_image_ref(request.start_frame)?;
-  let end_frame = resolve_image_ref(request.end_frame)?;
+  let start_frame = resolve_image_ref(request.start_frame.clone())?;
+  let end_frame = resolve_image_ref(request.end_frame.clone())?;
 
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftSeedance1p5Pro(PlanArtcraftSeedance1p5Pro {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     start_frame,
     end_frame,
     aspect_ratio,
@@ -48,9 +48,9 @@ pub fn plan_generate_video_artcraft_seedance1p5_pro<'a>(
   }))
 }
 
-fn resolve_image_ref<'a>(
-  image_ref: Option<ImageRef<'a>>,
-) -> Result<Option<&'a MediaFileToken>, ArtcraftRouterError> {
+fn resolve_image_ref(
+  image_ref: Option<ImageRef>,
+) -> Result<Option<MediaFileToken>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),
     Some(ImageRef::MediaFileToken(t)) => Ok(Some(t)),
@@ -187,11 +187,11 @@ mod tests {
   use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
   use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 
-  fn base_seedance_1p5_pro_request() -> GenerateVideoRequest<'static> {
+  fn base_seedance_1p5_pro_request() -> GenerateVideoRequest {
     GenerateVideoRequest {
       model: CommonVideoModel::Seedance1p5Pro,
       provider: Provider::Artcraft,
-      prompt: Some("a cat in space"),
+      prompt: Some("a cat in space".to_string()),
       negative_prompt: None,
       start_frame: None,
       end_frame: None,
@@ -282,7 +282,7 @@ mod tests {
   #[test]
   fn url_image_ref_accepted_for_cost_path() {
     let request = GenerateVideoRequest {
-      start_frame: Some(ImageRef::Url("https://example.com/image.jpg")),
+      start_frame: Some(ImageRef::Url("https://example.com/image.jpg".to_string())),
       ..base_seedance_1p5_pro_request()
     };
     let VideoGenerationPlan::ArtcraftSeedance1p5Pro(plan) = request.build().unwrap() else {

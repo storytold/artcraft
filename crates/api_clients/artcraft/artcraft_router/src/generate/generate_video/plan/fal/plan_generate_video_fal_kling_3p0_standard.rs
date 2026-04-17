@@ -15,9 +15,9 @@ pub struct PlanFalKling3p0Standard {
   pub generate_audio: Option<bool>,
 }
 
-pub fn plan_generate_video_fal_kling_3p0_standard<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_kling_3p0_standard(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let inner = build_kling_3p0_plan(request, "Kling 3.0 Standard")?;
   Ok(VideoGenerationPlan::FalKling3p0Standard(PlanFalKling3p0Standard {
     prompt: inner.prompt,

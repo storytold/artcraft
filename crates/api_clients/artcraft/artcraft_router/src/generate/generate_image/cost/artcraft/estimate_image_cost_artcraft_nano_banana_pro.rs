@@ -6,7 +6,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::PlanArtcraftNanaBananaPro;
 
 pub(crate) fn estimate_image_cost_artcraft_nano_banana_pro(
-  plan: &PlanArtcraftNanaBananaPro<'_>,
+  plan: &PlanArtcraftNanaBananaPro,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.15/image at 1K or 2K resolution, $0.30/image at 4K.
   // (Stored as USD cents.)

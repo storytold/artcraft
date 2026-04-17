@@ -13,11 +13,11 @@ use artcraft_api_defs::generate::video::multi_function::veo_3p1_multi_function_v
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftVeo3p1<'a> {
-  pub prompt: Option<&'a str>,
-  pub negative_prompt: Option<&'a str>,
-  pub start_frame: Option<&'a MediaFileToken>,
-  pub end_frame: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftVeo3p1 {
+  pub prompt: Option<String>,
+  pub negative_prompt: Option<String>,
+  pub start_frame: Option<MediaFileToken>,
+  pub end_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<Veo3p1MultiFunctionVideoGenAspectRatio>,
   pub resolution: Option<Veo3p1MultiFunctionVideoGenResolution>,
   pub duration: Option<Veo3p1MultiFunctionVideoGenDuration>,
@@ -25,28 +25,28 @@ pub struct PlanArtcraftVeo3p1<'a> {
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_veo_3p1<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_veo_3p1(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let plan = build_plan_artcraft_veo_3p1(request)?;
   Ok(VideoGenerationPlan::ArtcraftVeo3p1(plan))
 }
 
-pub(crate) fn build_plan_artcraft_veo_3p1<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<PlanArtcraftVeo3p1<'a>, ArtcraftRouterError> {
+pub(crate) fn build_plan_artcraft_veo_3p1(
+  request: &GenerateVideoRequest,
+) -> Result<PlanArtcraftVeo3p1, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = resolve_image_ref(request.start_frame)?;
-  let end_frame = resolve_image_ref(request.end_frame)?;
+  let start_frame = resolve_image_ref(request.start_frame.clone())?;
+  let end_frame = resolve_image_ref(request.end_frame.clone())?;
 
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(PlanArtcraftVeo3p1 {
-    prompt: request.prompt,
-    negative_prompt: request.negative_prompt,
+    prompt: request.prompt.clone(),
+    negative_prompt: request.negative_prompt.clone(),
     start_frame,
     end_frame,
     aspect_ratio,
@@ -57,9 +57,9 @@ pub(crate) fn build_plan_artcraft_veo_3p1<'a>(
   })
 }
 
-fn resolve_image_ref<'a>(
-  image_ref: Option<ImageRef<'a>>,
-) -> Result<Option<&'a MediaFileToken>, ArtcraftRouterError> {
+fn resolve_image_ref(
+  image_ref: Option<ImageRef>,
+) -> Result<Option<MediaFileToken>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),
     Some(ImageRef::MediaFileToken(t)) => Ok(Some(t)),
@@ -141,7 +141,7 @@ fn plan_duration(
   }
 }
 
-impl PlanArtcraftVeo3p1<'_> {
+impl PlanArtcraftVeo3p1 {
   /// Legacy Veo 3.1 multi-function handler defaults `None` to SixSeconds.
   pub fn duration_seconds_for_cost(&self) -> u64 {
     use Veo3p1MultiFunctionVideoGenDuration as D;

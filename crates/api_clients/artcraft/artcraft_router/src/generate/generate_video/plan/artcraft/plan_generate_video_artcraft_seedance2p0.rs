@@ -15,43 +15,43 @@ use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftSeedance2p0<'a> {
-  pub prompt: Option<&'a str>,
-  pub start_frame: Option<&'a MediaFileToken>,
-  pub end_frame: Option<&'a MediaFileToken>,
-  pub reference_images: Option<&'a Vec<MediaFileToken>>,
-  pub reference_videos: Option<&'a Vec<MediaFileToken>>,
-  pub reference_audio: Option<&'a Vec<MediaFileToken>>,
-  pub reference_characters: Option<&'a Vec<CharacterToken>>,
+pub struct PlanArtcraftSeedance2p0 {
+  pub prompt: Option<String>,
+  pub start_frame: Option<MediaFileToken>,
+  pub end_frame: Option<MediaFileToken>,
+  pub reference_images: Option<Vec<MediaFileToken>>,
+  pub reference_videos: Option<Vec<MediaFileToken>>,
+  pub reference_audio: Option<Vec<MediaFileToken>>,
+  pub reference_characters: Option<Vec<CharacterToken>>,
   pub aspect_ratio: Option<Seedance2p0AspectRatio>,
   pub duration_seconds: Option<u8>,
   pub batch_count: Seedance2p0BatchCount,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_seedance2p0<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_seedance2p0(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = resolve_image_ref(request.start_frame)?;
-  let end_frame = resolve_image_ref(request.end_frame)?;
-  let reference_images = resolve_image_list_ref(request.reference_images)?;
-  let reference_videos = resolve_video_list_ref(request.reference_videos)?;
-  let reference_audio = resolve_audio_list_ref(request.reference_audio)?;
+  let start_frame = resolve_image_ref(request.start_frame.clone())?;
+  let end_frame = resolve_image_ref(request.end_frame.clone())?;
+  let reference_images = resolve_image_list_ref(request.reference_images.clone())?;
+  let reference_videos = resolve_video_list_ref(request.reference_videos.clone())?;
+  let reference_audio = resolve_audio_list_ref(request.reference_audio.clone())?;
 
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
   let duration_seconds = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftSeedance2p0(PlanArtcraftSeedance2p0 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     start_frame,
     end_frame,
     reference_images,
     reference_videos,
     reference_audio,
-    reference_characters: resolve_character_list_ref(request.reference_character_tokens),
+    reference_characters: resolve_character_list_ref(request.reference_character_tokens.clone()),
     aspect_ratio,
     duration_seconds,
     batch_count,
@@ -59,18 +59,18 @@ pub fn plan_generate_video_artcraft_seedance2p0<'a>(
   }))
 }
 
-fn resolve_character_list_ref<'a>(
-  character_list_ref: Option<crate::api::character_list_ref::CharacterListRef<'a>>,
-) -> Option<&'a Vec<CharacterToken>> {
+fn resolve_character_list_ref(
+  character_list_ref: Option<crate::api::character_list_ref::CharacterListRef>,
+) -> Option<Vec<CharacterToken>> {
   match character_list_ref {
     None => None,
     Some(crate::api::character_list_ref::CharacterListRef::CharacterTokens(tokens)) => Some(tokens),
   }
 }
 
-fn resolve_image_ref<'a>(
-  image_ref: Option<ImageRef<'a>>,
-) -> Result<Option<&'a MediaFileToken>, ArtcraftRouterError> {
+fn resolve_image_ref(
+  image_ref: Option<ImageRef>,
+) -> Result<Option<MediaFileToken>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),
     Some(ImageRef::MediaFileToken(t)) => Ok(Some(t)),
@@ -80,9 +80,9 @@ fn resolve_image_ref<'a>(
   }
 }
 
-fn resolve_image_list_ref<'a>(
-  image_list_ref: Option<ImageListRef<'a>>,
-) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+fn resolve_image_list_ref(
+  image_list_ref: Option<ImageListRef>,
+) -> Result<Option<Vec<MediaFileToken>>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
@@ -92,9 +92,9 @@ fn resolve_image_list_ref<'a>(
   }
 }
 
-fn resolve_video_list_ref<'a>(
-  video_list_ref: Option<VideoListRef<'a>>,
-) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+fn resolve_video_list_ref(
+  video_list_ref: Option<VideoListRef>,
+) -> Result<Option<Vec<MediaFileToken>>, ArtcraftRouterError> {
   match video_list_ref {
     None => Ok(None),
     Some(VideoListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
@@ -104,9 +104,9 @@ fn resolve_video_list_ref<'a>(
   }
 }
 
-fn resolve_audio_list_ref<'a>(
-  audio_list_ref: Option<AudioListRef<'a>>,
-) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+fn resolve_audio_list_ref(
+  audio_list_ref: Option<AudioListRef>,
+) -> Result<Option<Vec<MediaFileToken>>, ArtcraftRouterError> {
   match audio_list_ref {
     None => Ok(None),
     Some(AudioListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
@@ -365,7 +365,7 @@ mod tests {
   #[test]
   fn url_image_ref_returns_error() {
     let request = GenerateVideoRequest {
-      start_frame: Some(ImageRef::Url("https://example.com/image.jpg")),
+      start_frame: Some(ImageRef::Url("https://example.com/image.jpg".to_string())),
       ..base_video_request()
     };
     let result = request.build();

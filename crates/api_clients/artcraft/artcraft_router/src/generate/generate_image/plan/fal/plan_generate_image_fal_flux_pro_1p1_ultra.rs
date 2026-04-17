@@ -17,15 +17,15 @@ pub enum FalFluxPro11UltraNumImages {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalFluxPro11Ultra<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalFluxPro11Ultra {
+  pub prompt: Option<String>,
   pub aspect_ratio: FluxPro11UltraAspectRatio,
   pub num_images: FalFluxPro11UltraNumImages,
 }
 
-pub fn plan_generate_image_fal_flux_pro_1p1_ultra<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_flux_pro_1p1_ultra(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   if request.image_inputs.is_some() {
@@ -39,7 +39,7 @@ pub fn plan_generate_image_fal_flux_pro_1p1_ultra<'a>(
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalFluxPro11Ultra(PlanFalFluxPro11Ultra {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     aspect_ratio,
     num_images,
   }))

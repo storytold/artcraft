@@ -10,16 +10,16 @@ use artcraft_api_defs::generate::image::text::generate_flux_1_schnell_text_to_im
 };
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftFlux1Schnell<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanArtcraftFlux1Schnell {
+  pub prompt: Option<String>,
   pub aspect_ratio: Option<GenerateFlux1SchnellTextToImageAspectRatio>,
   pub num_images: GenerateFlux1SchnellTextToImageNumImages,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_image_artcraft_flux_1_schnell<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_artcraft_flux_1_schnell(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   // Flux 1 Schnell is text-to-image only. Abort if image inputs are provided and
   // the caller has opted into strict mode.
   if request.image_inputs.is_some() {
@@ -37,7 +37,7 @@ pub fn plan_generate_image_artcraft_flux_1_schnell<'a>(
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::ArtcraftFlux1Schnell(PlanArtcraftFlux1Schnell {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     aspect_ratio,
     num_images,
     idempotency_token: request.get_or_generate_idempotency_token(),
@@ -147,7 +147,7 @@ mod tests {
   fn image_inputs_with_abort_returns_error() {
     let tokens = vec![];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::AbortGeneration),
       ..base_flux_1_schnell_image_request()
     };
@@ -162,7 +162,7 @@ mod tests {
   fn image_inputs_with_generate_anyway_succeeds() {
     let tokens = vec![];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),
       ..base_flux_1_schnell_image_request()
     };
@@ -173,7 +173,7 @@ mod tests {
   fn image_inputs_with_none_strategy_succeeds() {
     let tokens = vec![];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       generation_mode_mismatch_strategy: None,
       ..base_flux_1_schnell_image_request()
     };

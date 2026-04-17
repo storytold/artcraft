@@ -9,7 +9,7 @@ use artcraft_api_defs::generate::image::angle::qwen_edit_2511_edit_image_angle::
 use artcraft_client::endpoints::generate::image::angle::qwen_edit_2511_edit_image_angle::qwen_edit_2511_edit_image_angle;
 
 pub async fn execute_artcraft_qwen_edit_2511_angles(
-  plan: &PlanArtcraftQwenEdit2511Angles<'_>,
+  plan: &PlanArtcraftQwenEdit2511Angles,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let request = QwenEdit2511EditImageAngleRequest {
@@ -18,7 +18,7 @@ pub async fn execute_artcraft_qwen_edit_2511_angles(
     horizontal_angle: plan.horizontal_angle,
     vertical_angle: plan.vertical_angle,
     zoom: plan.zoom,
-    additional_prompt: plan.prompt.map(|p| p.to_string()),
+    additional_prompt: plan.prompt.clone(),
     num_images: Some(plan.num_images),
     image_size: plan.image_size,
   };
@@ -55,7 +55,7 @@ mod tests {
       quality: None,
       image_batch_count: Some(1),
       prompt: None,
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       horizontal_angle: Some(30.0),
       vertical_angle: Some(0.0),
       zoom: Some(1.0),

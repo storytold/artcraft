@@ -11,27 +11,27 @@ use artcraft_api_defs::generate::image::multi_function::nano_banana_multi_functi
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftNanaBanana<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanArtcraftNanaBanana {
+  pub prompt: Option<String>,
   /// Input images for image editing. None means text-to-image mode.
-  pub image_inputs: Option<&'a Vec<MediaFileToken>>,
+  pub image_inputs: Option<Vec<MediaFileToken>>,
   pub aspect_ratio: Option<NanoBananaMultiFunctionImageGenAspectRatio>,
   pub num_images: NanoBananaMultiFunctionImageGenNumImages,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_image_artcraft_nano_banana<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_artcraft_nano_banana(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let is_edit_mode = request.image_inputs.is_some();
-  let image_inputs = resolve_image_list_ref(request.image_inputs)?;
+  let image_inputs = resolve_image_list_ref(request.image_inputs.clone())?;
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, is_edit_mode, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::ArtcraftNanaBanana(PlanArtcraftNanaBanana {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_inputs,
     aspect_ratio,
     num_images,
@@ -39,9 +39,9 @@ pub fn plan_generate_image_artcraft_nano_banana<'a>(
   }))
 }
 
-fn resolve_image_list_ref<'a>(
-  image_list_ref: Option<ImageListRef<'a>>,
-) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+fn resolve_image_list_ref(
+  image_list_ref: Option<ImageListRef>,
+) -> Result<Option<Vec<MediaFileToken>>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
@@ -222,7 +222,7 @@ mod tests {
       let tokens = vec![];
       let request = GenerateImageRequest {
         aspect_ratio: Some(auto_ar),
-        image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+        image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
         ..base_nano_banana_image_request()
       };
       let ImageGenerationPlan::ArtcraftNanaBanana(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBanana") };
@@ -369,7 +369,7 @@ mod tests {
     // cost only depends on num_images + is_edit_mode.
     let urls = vec!["https://example.com/image.jpg".to_string()];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::Urls(&urls)),
+      image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_nano_banana_image_request()
     };
     let ImageGenerationPlan::ArtcraftNanaBanana(plan) = request.build().unwrap() else {
@@ -391,7 +391,7 @@ mod tests {
   fn media_token_image_inputs_is_edit_mode() {
     let tokens = vec![];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_nano_banana_image_request()
     };
     let ImageGenerationPlan::ArtcraftNanaBanana(plan) = request.build().unwrap() else { panic!("expected ArtcraftNanaBanana") };

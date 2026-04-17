@@ -4,7 +4,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_ban
 };
 
 pub(crate) fn estimate_image_cost_fal_nano_banana(
-  plan: &PlanFalNanoBanana<'_>,
+  plan: &PlanFalNanoBanana,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.039/image (no resolution multiplier — Gemini 25 Flash has no resolution option).
   // Rounded to 4 cents per image.

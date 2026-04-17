@@ -17,12 +17,12 @@ pub struct PlanFalKling21Master {
   pub duration: Kling2p1MasterDuration,
 }
 
-pub fn plan_generate_video_fal_kling_2_1_master<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_kling_2_1_master(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let image_url = require_url(request.start_frame, "start_frame", "Kling 2.1 Master requires a starting frame")?;
+  let image_url = require_url(request.start_frame.clone(), "start_frame", "Kling 2.1 Master requires a starting frame")?;
   if request.end_frame.is_some() {
     return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
       field: "end_frame",
@@ -34,7 +34,7 @@ pub fn plan_generate_video_fal_kling_2_1_master<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalKling21Master(PlanFalKling21Master {
-    prompt: request.prompt.unwrap_or("").to_string(),
+    prompt: request.prompt.clone().unwrap_or_default(),
     image_url,
     aspect_ratio,
     duration,

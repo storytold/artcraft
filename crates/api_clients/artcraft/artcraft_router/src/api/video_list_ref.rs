@@ -1,7 +1,7 @@
 use tokens::tokens::media_files::MediaFileToken;
 
-#[derive(Copy, Clone, Debug)]
-pub enum VideoListRef<'a> {
-  MediaFileTokens(&'a Vec<MediaFileToken>),
-  Urls(&'a Vec<String>),
+#[derive(Clone, Debug)]
+pub enum VideoListRef {
+  MediaFileTokens(Vec<MediaFileToken>),
+  Urls(Vec<String>),
 }

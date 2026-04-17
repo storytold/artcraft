@@ -13,7 +13,7 @@ use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_i
 };
 
 pub async fn execute_fal_flux_1_schnell(
-  plan: &PlanFalFlux1Schnell<'_>,
+  plan: &PlanFalFlux1Schnell,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let webhook_response = if let Some(image_url) = &plan.maybe_image_url {
@@ -31,7 +31,7 @@ pub async fn execute_fal_flux_1_schnell(
   } else {
     // Text-to-image mode
     let args = Flux1SchnellArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       aspect_ratio: plan.t2i_aspect_ratio,
       num_images: plan.num_images.to_t2i(),
       webhook_url: fal_client.webhook_url.as_str(),

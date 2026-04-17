@@ -18,18 +18,18 @@ pub struct PlanFalKling21Pro {
   pub duration: Kling2p1ProDuration,
 }
 
-pub fn plan_generate_video_fal_kling_2_1_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_kling_2_1_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let image_url = require_url(request.start_frame, "start_frame", "Kling 2.1 Pro requires a starting frame")?;
-  let end_image_url = optional_url(request.end_frame)?;
+  let image_url = require_url(request.start_frame.clone(), "start_frame", "Kling 2.1 Pro requires a starting frame")?;
+  let end_image_url = optional_url(request.end_frame.clone())?;
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalKling21Pro(PlanFalKling21Pro {
-    prompt: request.prompt.unwrap_or("").to_string(),
+    prompt: request.prompt.clone().unwrap_or_default(),
     image_url,
     end_image_url,
     aspect_ratio,

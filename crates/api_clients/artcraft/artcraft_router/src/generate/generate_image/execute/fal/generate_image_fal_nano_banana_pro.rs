@@ -16,13 +16,13 @@ use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_
   EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageResolution,
 };
 pub async fn execute_fal_nano_banana_pro(
-  plan: &PlanFalNanaBananaPro<'_>,
+  plan: &PlanFalNanaBananaPro,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let webhook_response = if plan.image_urls.is_empty() {
     // Text-to-image mode
     let args = EnqueueNanoBananaProTextToImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       num_images: to_t2i_num_images(plan.num_images),
       resolution: plan.resolution.map(to_t2i_resolution),
       aspect_ratio: plan.t2i_aspect_ratio,
@@ -35,7 +35,7 @@ pub async fn execute_fal_nano_banana_pro(
   } else {
     // Image-edit mode
     let args = EnqueueNanoBananaProEditImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       image_urls: plan.image_urls.clone(),
       num_images: to_edit_num_images(plan.num_images),
       resolution: plan.resolution.map(to_edit_resolution),
@@ -107,7 +107,7 @@ mod tests {
       resolution: Some(CommonResolution::TwoK),
       quality: None,
       image_batch_count: Some(1),
-      prompt: Some("a cyberpunk city skyline at dusk, neon lights reflecting on rain-soaked streets"),
+      prompt: Some("a cyberpunk city skyline at dusk, neon lights reflecting on rain-soaked streets".to_string()),
       ..base_fal_image_request()
     };
 
@@ -132,7 +132,7 @@ mod tests {
       resolution: Some(CommonResolution::OneK),
       quality: None,
       image_batch_count: Some(4),
-      prompt: Some("a golden retriever surfing a wave, cinematic, 4K"),
+      prompt: Some("a golden retriever surfing a wave, cinematic, 4K".to_string()),
       ..base_fal_image_request()
     };
 
@@ -159,8 +159,8 @@ mod tests {
     ];
 
     let request = GenerateImageRequest {
-      prompt: Some("Add the ghost from the first image hovering above the T-Rex skeleton in the second image, make it look spooky but friendly"),
-      image_inputs: Some(ImageListRef::Urls(&image_urls)),
+      prompt: Some("Add the ghost from the first image hovering above the T-Rex skeleton in the second image, make it look spooky but friendly".to_string()),
+      image_inputs: Some(ImageListRef::Urls(image_urls.clone())),
       aspect_ratio: Some(CommonAspectRatio::Auto), // edit mode: preserve source dimensions
       resolution: Some(CommonResolution::TwoK),
       quality: None,

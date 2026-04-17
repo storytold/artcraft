@@ -4,7 +4,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_imag
 };
 
 pub(crate) fn estimate_image_cost_fal_gpt_image_1(
-  plan: &PlanFalGptImage1<'_>,
+  plan: &PlanFalGptImage1,
 ) -> ImageGenerationCostEstimate {
   // Per fal docs (fal-ai/gpt-image-1/{text-to-image,edit-image}):
   //
@@ -59,9 +59,9 @@ mod tests {
     quality: FalGptImage1Quality,
     image_size: Option<FalGptImage1ImageSize>,
     num_images: FalGptImage1NumImages,
-  ) -> PlanFalGptImage1<'static> {
+  ) -> PlanFalGptImage1 {
     PlanFalGptImage1 {
-      prompt: Some("p"),
+      prompt: Some("p".to_string()),
       image_urls: vec![],
       image_size,
       quality,
@@ -74,12 +74,12 @@ mod tests {
     image_size: Option<FalGptImage1ImageSize>,
     num_images: FalGptImage1NumImages,
     num_input_images: usize,
-  ) -> PlanFalGptImage1<'static> {
+  ) -> PlanFalGptImage1 {
     let image_urls = (0..num_input_images)
       .map(|i| format!("https://fake.example.com/img{}.png", i))
       .collect();
     PlanFalGptImage1 {
-      prompt: Some("p"),
+      prompt: Some("p".to_string()),
       image_urls,
       image_size,
       quality,

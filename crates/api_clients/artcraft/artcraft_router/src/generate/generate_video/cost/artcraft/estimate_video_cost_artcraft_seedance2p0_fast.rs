@@ -6,7 +6,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_artcraft_seedance2p0_fast(
-  plan: &PlanArtcraftSeedance2p0<'_>,
+  plan: &PlanArtcraftSeedance2p0,
 ) -> VideoGenerationCostEstimate {
   let duration_seconds = plan.duration_seconds.unwrap_or(5).clamp(4, 15);
 

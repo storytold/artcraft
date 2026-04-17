@@ -12,11 +12,11 @@ use artcraft_api_defs::generate::video::generate_veo_3_image_to_video::{
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftVeo3<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanArtcraftVeo3 {
+  pub prompt: Option<String>,
   /// Required for image-to-video. None for text-to-video or when the
   /// omni-gen distillation hydrated the token to a URL.
-  pub start_frame: Option<&'a MediaFileToken>,
+  pub start_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<GenerateVeo3AspectRatio>,
   pub resolution: Option<GenerateVeo3Resolution>,
   pub duration: Option<GenerateVeo3Duration>,
@@ -28,12 +28,12 @@ pub struct PlanArtcraftVeo3<'a> {
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_veo_3<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_veo_3(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = match request.start_frame {
+  let start_frame = match request.start_frame.clone() {
     Some(ImageRef::MediaFileToken(t)) => Some(t),
     // Omni-gen distillation hydrates media tokens to URLs before running the
     // Artcraft cost path. Cost only depends on duration/audio, so URL-form
@@ -62,7 +62,7 @@ pub fn plan_generate_video_artcraft_veo_3<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftVeo3(PlanArtcraftVeo3 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     start_frame,
     aspect_ratio,
     resolution,
@@ -149,7 +149,7 @@ fn plan_duration(
   }
 }
 
-impl PlanArtcraftVeo3<'_> {
+impl PlanArtcraftVeo3 {
   /// Duration in seconds for cost estimation. Uses the raw requested
   /// duration, clamped to {4, 6, 8}, defaulting to 8s.
   pub fn duration_seconds_for_cost(&self) -> u64 {

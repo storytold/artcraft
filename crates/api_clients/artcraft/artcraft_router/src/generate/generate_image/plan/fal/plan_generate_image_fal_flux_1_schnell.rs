@@ -22,8 +22,8 @@ pub enum FalFlux1SchnellNumImages {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalFlux1Schnell<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalFlux1Schnell {
+  pub prompt: Option<String>,
   /// Image URL for editing. None = text-to-image mode.
   pub maybe_image_url: Option<String>,
   pub t2i_aspect_ratio: Flux1SchnellAspectRatio,
@@ -31,17 +31,17 @@ pub struct PlanFalFlux1Schnell<'a> {
   pub num_images: FalFlux1SchnellNumImages,
 }
 
-pub fn plan_generate_image_fal_flux_1_schnell<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_flux_1_schnell(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
-  let maybe_image_url = resolve_single_image_url(request.image_inputs)?;
+  let maybe_image_url = resolve_single_image_url(request.image_inputs.clone())?;
   let t2i_aspect_ratio = plan_t2i_aspect_ratio(request.aspect_ratio, strategy)?;
   let edit_image_size = plan_edit_image_size(request.aspect_ratio);
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalFlux1Schnell(PlanFalFlux1Schnell {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     maybe_image_url,
     t2i_aspect_ratio,
     edit_image_size,
@@ -50,7 +50,7 @@ pub fn plan_generate_image_fal_flux_1_schnell<'a>(
 }
 
 fn resolve_single_image_url(
-  image_inputs: Option<ImageListRef<'_>>,
+  image_inputs: Option<ImageListRef>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   match image_inputs {
     None => Ok(None),

@@ -9,15 +9,15 @@ use artcraft_api_defs::generate::video::multi_function::kling_2_5_turbo_multi_fu
 use artcraft_client::endpoints::generate::video::multi_function::kling_2p5_turbo_pro_multi_function_video_gen::kling_2p5_turbo_pro_multi_function_video_gen;
 
 pub async fn execute_artcraft_kling_2_5_turbo_pro(
-  plan: &PlanArtcraftKling2p5TurboPro<'_>,
+  plan: &PlanArtcraftKling2p5TurboPro,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = Kling2p5TurboProMultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    negative_prompt: plan.negative_prompt.map(|p| p.to_string()),
-    start_frame_image_media_token: plan.start_frame.map(|t| t.to_owned()),
-    end_frame_image_media_token: plan.end_frame.map(|t| t.to_owned()),
+    prompt: plan.prompt.clone(),
+    negative_prompt: plan.negative_prompt.clone(),
+    start_frame_image_media_token: plan.start_frame.clone(),
+    end_frame_image_media_token: plan.end_frame.clone(),
     duration: plan.duration,
     aspect_ratio: plan.aspect_ratio,
   };

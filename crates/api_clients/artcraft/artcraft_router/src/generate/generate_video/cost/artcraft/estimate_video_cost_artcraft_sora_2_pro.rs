@@ -2,7 +2,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_artcraft_sora_2_pro(
-  plan: &PlanArtcraftSora2Pro<'_>,
+  plan: &PlanArtcraftSora2Pro,
 ) -> VideoGenerationCostEstimate {
   // Sora 2 Pro: $0.30/second @ 720p, $0.50/second @ 1080p.
   // Default duration 4s. Default resolution: 1080p for text-to-video, 720p (Auto) for image-to-video.

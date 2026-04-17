@@ -17,13 +17,13 @@ use fal_client::requests::webhook::image::text::enqueue_nano_banana_2_text_to_im
 };
 
 pub async fn execute_fal_nano_banana_2(
-  plan: &PlanFalNanaBanana2<'_>,
+  plan: &PlanFalNanaBanana2,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let webhook_response = if plan.image_urls.is_empty() {
     // Text-to-image mode
     let args = EnqueueNanoBanana2TextToImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       num_images: to_t2i_num_images(plan.num_images),
       resolution: plan.resolution.map(to_t2i_resolution),
       aspect_ratio: plan.t2i_aspect_ratio,
@@ -36,7 +36,7 @@ pub async fn execute_fal_nano_banana_2(
   } else {
     // Image-edit mode
     let args = EnqueueNanoBanana2EditImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       image_urls: plan.image_urls.clone(),
       num_images: to_edit_num_images(plan.num_images),
       resolution: plan.resolution.map(to_edit_resolution),

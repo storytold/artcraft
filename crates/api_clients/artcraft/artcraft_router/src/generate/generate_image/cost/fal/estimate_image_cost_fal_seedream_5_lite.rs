@@ -2,7 +2,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_5_lite::PlanFalSeedream5Lite;
 
 pub(crate) fn estimate_image_cost_fal_seedream_5_lite(
-  plan: &PlanFalSeedream5Lite<'_>,
+  plan: &PlanFalSeedream5Lite,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.035 per image — round up to 4 cents.
   let cost_per_image: u64 = 4;

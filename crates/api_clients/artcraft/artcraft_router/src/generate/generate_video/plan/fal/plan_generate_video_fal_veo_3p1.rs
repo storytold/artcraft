@@ -48,27 +48,27 @@ pub struct PlanFalVeo3p1 {
   pub generate_audio: Option<bool>,
 }
 
-pub fn plan_generate_video_fal_veo_3p1<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_veo_3p1(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let plan = build_plan_fal_veo_3p1(request, "Veo 3.1")?;
   Ok(VideoGenerationPlan::FalVeo3p1(plan))
 }
 
-pub(crate) fn build_plan_fal_veo_3p1<'a>(
-  request: &'a GenerateVideoRequest<'a>,
+pub(crate) fn build_plan_fal_veo_3p1(
+  request: &GenerateVideoRequest,
   model_label: &'static str,
 ) -> Result<PlanFalVeo3p1, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let mode = resolve_mode(request.start_frame, request.end_frame, model_label)?;
+  let mode = resolve_mode(request.start_frame.clone(), request.end_frame.clone(), model_label)?;
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(PlanFalVeo3p1 {
-    prompt: request.prompt.unwrap_or("").to_string(),
-    negative_prompt: request.negative_prompt.map(|s| s.to_string()),
+    prompt: request.prompt.clone().unwrap_or_default(),
+    negative_prompt: request.negative_prompt.clone(),
     mode,
     aspect_ratio,
     resolution,
@@ -78,8 +78,8 @@ pub(crate) fn build_plan_fal_veo_3p1<'a>(
 }
 
 fn resolve_mode(
-  start_frame: Option<ImageRef<'_>>,
-  end_frame: Option<ImageRef<'_>>,
+  start_frame: Option<ImageRef>,
+  end_frame: Option<ImageRef>,
   model_label: &'static str,
 ) -> Result<FalVeo3p1Mode, ArtcraftRouterError> {
   let start = resolve_optional_image_url(start_frame)?;
@@ -99,7 +99,7 @@ fn resolve_mode(
 }
 
 fn resolve_optional_image_url(
-  image_ref: Option<ImageRef<'_>>,
+  image_ref: Option<ImageRef>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),

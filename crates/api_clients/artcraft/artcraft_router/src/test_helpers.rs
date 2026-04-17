@@ -21,11 +21,11 @@ pub fn get_artcraft_client() -> RouterClient {
   RouterClient::Artcraft(RouterArtcraftClient::new(ApiHost::Storyteller, credentials))
 }
 
-pub fn base_image_request() -> GenerateImageRequest<'static> {
+pub fn base_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::NanoBananaPro,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -48,11 +48,11 @@ pub fn get_fal_client() -> RouterClient {
   RouterClient::Fal(RouterFalClient::new(api_key, webhook_url))
 }
 
-pub fn base_fal_image_request() -> GenerateImageRequest<'static> {
+pub fn base_fal_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::NanoBananaPro,
     provider: Provider::Fal,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -67,11 +67,11 @@ pub fn base_fal_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_seedream_4_image_request() -> GenerateImageRequest<'static> {
+pub fn base_seedream_4_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::Seedream4,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -86,11 +86,11 @@ pub fn base_seedream_4_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_seedream_4p5_image_request() -> GenerateImageRequest<'static> {
+pub fn base_seedream_4p5_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::Seedream4p5,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -105,11 +105,11 @@ pub fn base_seedream_4p5_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_seedream_5_lite_image_request() -> GenerateImageRequest<'static> {
+pub fn base_seedream_5_lite_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::Seedream5Lite,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -124,11 +124,11 @@ pub fn base_seedream_5_lite_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_nano_banana_2_image_request() -> GenerateImageRequest<'static> {
+pub fn base_nano_banana_2_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::NanoBanana2,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -143,11 +143,11 @@ pub fn base_nano_banana_2_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_nano_banana_image_request() -> GenerateImageRequest<'static> {
+pub fn base_nano_banana_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::NanoBanana,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -162,11 +162,11 @@ pub fn base_nano_banana_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_gpt_image_1_image_request() -> GenerateImageRequest<'static> {
+pub fn base_gpt_image_1_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::GptImage1,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -181,11 +181,11 @@ pub fn base_gpt_image_1_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_gpt_image_1p5_image_request() -> GenerateImageRequest<'static> {
+pub fn base_gpt_image_1p5_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::GptImage1p5,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -200,11 +200,11 @@ pub fn base_gpt_image_1p5_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_flux_1_dev_image_request() -> GenerateImageRequest<'static> {
+pub fn base_flux_1_dev_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::Flux1Dev,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -219,11 +219,11 @@ pub fn base_flux_1_dev_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_flux_1_schnell_image_request() -> GenerateImageRequest<'static> {
+pub fn base_flux_1_schnell_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::Flux1Schnell,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -238,11 +238,11 @@ pub fn base_flux_1_schnell_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_flux_pro_1p1_image_request() -> GenerateImageRequest<'static> {
+pub fn base_flux_pro_1p1_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::FluxPro11,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -257,7 +257,7 @@ pub fn base_flux_pro_1p1_image_request() -> GenerateImageRequest<'static> {
   }
 }
 
-pub fn base_qwen_edit_2511_angles_image_request() -> GenerateImageRequest<'static> {
+pub fn base_qwen_edit_2511_angles_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::QwenEdit2511Angles,
     provider: Provider::Artcraft,
@@ -276,7 +276,7 @@ pub fn base_qwen_edit_2511_angles_image_request() -> GenerateImageRequest<'stati
   }
 }
 
-pub fn base_flux_2_lora_angles_image_request() -> GenerateImageRequest<'static> {
+pub fn base_flux_2_lora_angles_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::Flux2LoraAngles,
     provider: Provider::Artcraft,
@@ -295,11 +295,11 @@ pub fn base_flux_2_lora_angles_image_request() -> GenerateImageRequest<'static> 
   }
 }
 
-pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequest<'static> {
+pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::FluxPro11Ultra,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     image_inputs: None,
     resolution: None,
     aspect_ratio: None,
@@ -314,11 +314,11 @@ pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequest<'static> 
   }
 }
 
-pub fn base_video_request() -> GenerateVideoRequest<'static> {
+pub fn base_video_request() -> GenerateVideoRequest {
   GenerateVideoRequest {
     model: CommonVideoModel::Seedance2p0,
     provider: Provider::Artcraft,
-    prompt: Some("a cat in space"),
+    prompt: Some("a cat in space".to_string()),
     negative_prompt: None,
     start_frame: None,
     end_frame: None,

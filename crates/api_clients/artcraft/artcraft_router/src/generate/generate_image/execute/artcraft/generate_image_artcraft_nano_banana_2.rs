@@ -9,13 +9,13 @@ use artcraft_api_defs::generate::image::multi_function::nano_banana_2_multi_func
 use artcraft_client::endpoints::generate::image::multi_function::nano_banana_2_multi_function_image_gen_image::nano_banana_2_multi_function_image_gen;
 
 pub async fn execute_artcraft_nano_banana_2(
-  plan: &PlanArtcraftNanaBanana2<'_>,
+  plan: &PlanArtcraftNanaBanana2,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let request = NanaBanana2MultiFunctionImageGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    image_media_tokens: plan.image_inputs.map(|tokens| tokens.to_owned()),
+    prompt: plan.prompt.clone(),
+    image_media_tokens: plan.image_inputs.clone(),
     num_images: Some(plan.num_images),
     resolution: plan.resolution,
     aspect_ratio: plan.aspect_ratio,
@@ -51,7 +51,7 @@ mod tests {
       resolution: Some(CommonResolution::OneK),
       quality: None,
       image_batch_count: Some(1),
-      prompt: Some("a cat walking through a cyberpunk city at night"),
+      prompt: Some("a cat walking through a cyberpunk city at night".to_string()),
       ..base_nano_banana_2_image_request()
     };
 

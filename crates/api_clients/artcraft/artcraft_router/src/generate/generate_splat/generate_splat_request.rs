@@ -6,7 +6,7 @@ use crate::generate::generate_splat::plan::artcraft::plan_generate_splat_artcraf
 use crate::generate::generate_splat::plan::artcraft::plan_generate_splat_artcraft_marble_0p1_plus::plan_generate_splat_artcraft_marble_0p1_plus;
 use crate::generate::generate_splat::splat_generation_plan::SplatGenerationPlan;
 
-pub struct GenerateSplatRequest<'a> {
+pub struct GenerateSplatRequest {
   /// Which model to use.
   pub model: CommonSplatModel,
 
@@ -14,40 +14,40 @@ pub struct GenerateSplatRequest<'a> {
   pub provider: Provider,
 
   /// The prompt for splat generation (optional).
-  pub prompt: Option<&'a str>,
+  pub prompt: Option<String>,
 
   /// Reference images (optional).
-  pub reference_images: Option<ImageListRef<'a>>,
+  pub reference_images: Option<ImageListRef>,
 
   /// Some providers support idempotency.
   /// If not supplied, we'll generate one for the required providers.
-  pub idempotency_token: Option<&'a str>,
+  pub idempotency_token: Option<String>,
 }
 
-impl<'a> GenerateSplatRequest<'a> {
+impl GenerateSplatRequest {
   /// Read the splat generation request, construct a plan, then yield a means to execute it.
-  pub fn build(&self) -> Result<SplatGenerationPlan<'_>, ArtcraftRouterError> {
+  pub fn build(&self) -> Result<SplatGenerationPlan, ArtcraftRouterError> {
     match self.provider {
       Provider::Artcraft => self.build_artcraft(),
       _ => self.unsupported_provider(),
     }
   }
 
-  fn build_artcraft(&self) -> Result<SplatGenerationPlan<'_>, ArtcraftRouterError> {
+  fn build_artcraft(&self) -> Result<SplatGenerationPlan, ArtcraftRouterError> {
     match self.model {
       CommonSplatModel::Marble0p1Mini => plan_generate_splat_artcraft_marble_0p1_mini(self),
       CommonSplatModel::Marble0p1Plus => plan_generate_splat_artcraft_marble_0p1_plus(self),
     }
   }
 
-  fn unsupported_provider(&self) -> Result<SplatGenerationPlan<'_>, ArtcraftRouterError> {
+  fn unsupported_provider(&self) -> Result<SplatGenerationPlan, ArtcraftRouterError> {
     Err(ArtcraftRouterError::UnsupportedModel(
       format!("Splat generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
     ))
   }
 
   pub fn get_or_generate_idempotency_token(&self) -> String {
-    self.idempotency_token.map(|t| t.to_string())
+    self.idempotency_token.clone()
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
   }
 }

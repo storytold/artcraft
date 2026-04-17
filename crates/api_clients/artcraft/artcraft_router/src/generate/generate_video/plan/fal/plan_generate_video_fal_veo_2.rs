@@ -28,16 +28,16 @@ pub struct PlanFalVeo2 {
   pub duration: Veo2Duration,
 }
 
-pub fn plan_generate_video_fal_veo_2<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_veo_2(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   if request.end_frame.is_some() {
     return Err(unsupported("end_frame", "Veo 2 does not support an ending frame"));
   }
 
-  let mode = match request.start_frame {
+  let mode = match request.start_frame.clone() {
     Some(ImageRef::Url(url)) => FalVeo2Mode::ImageToVideo {
       image_url: url.to_string(),
     },
@@ -56,8 +56,8 @@ pub fn plan_generate_video_fal_veo_2<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalVeo2(PlanFalVeo2 {
-    prompt: request.prompt.unwrap_or("").to_string(),
-    negative_prompt: request.negative_prompt.map(|s| s.to_string()),
+    prompt: request.prompt.clone().unwrap_or_default(),
+    negative_prompt: request.negative_prompt.clone(),
     mode,
     aspect_ratio,
     duration,

@@ -9,14 +9,14 @@ use artcraft_api_defs::generate::video::multi_function::kling_2_6_multi_function
 use artcraft_client::endpoints::generate::video::multi_function::kling_2p6_pro_multi_function_video_gen::kling_2p6_pro_multi_function_video_gen;
 
 pub async fn execute_artcraft_kling_2_6_pro(
-  plan: &PlanArtcraftKling2p6Pro<'_>,
+  plan: &PlanArtcraftKling2p6Pro,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = Kling2p6ProMultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    negative_prompt: plan.negative_prompt.map(|p| p.to_string()),
-    start_frame_image_media_token: plan.start_frame.map(|t| t.to_owned()),
+    prompt: plan.prompt.clone(),
+    negative_prompt: plan.negative_prompt.clone(),
+    start_frame_image_media_token: plan.start_frame.clone(),
     duration: plan.duration,
     generate_audio: plan.generate_audio,
     aspect_ratio: plan.aspect_ratio,

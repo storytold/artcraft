@@ -4,7 +4,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1_ultra::PlanArtcraftFluxPro11Ultra;
 
 pub(crate) fn estimate_image_cost_artcraft_flux_pro_1p1_ultra(
-  plan: &PlanArtcraftFluxPro11Ultra<'_>,
+  plan: &PlanArtcraftFluxPro11Ultra,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.06/image (6 cents). 1 credit = 1 USD cent.
   let cost_per_image: u64 = 6;

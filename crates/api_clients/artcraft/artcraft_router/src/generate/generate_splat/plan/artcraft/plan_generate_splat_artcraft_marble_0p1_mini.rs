@@ -6,31 +6,31 @@ use crate::generate::generate_splat::splat_generation_plan::SplatGenerationPlan;
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftMarble0p1Mini<'a> {
-  pub prompt: Option<&'a str>,
-  pub reference_image: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftMarble0p1Mini {
+  pub prompt: Option<String>,
+  pub reference_image: Option<MediaFileToken>,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_splat_artcraft_marble_0p1_mini<'a>(
-  request: &'a GenerateSplatRequest<'a>,
-) -> Result<SplatGenerationPlan<'a>, ArtcraftRouterError> {
-  let reference_image = resolve_single_image_ref(request.reference_images)?;
+pub fn plan_generate_splat_artcraft_marble_0p1_mini(
+  request: &GenerateSplatRequest,
+) -> Result<SplatGenerationPlan, ArtcraftRouterError> {
+  let reference_image = resolve_single_image_ref(request.reference_images.clone())?;
 
   Ok(SplatGenerationPlan::ArtcraftMarble0p1Mini(PlanArtcraftMarble0p1Mini {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     reference_image,
     idempotency_token: request.get_or_generate_idempotency_token(),
   }))
 }
 
-fn resolve_single_image_ref<'a>(
-  image_list_ref: Option<ImageListRef<'a>>,
-) -> Result<Option<&'a MediaFileToken>, ArtcraftRouterError> {
+fn resolve_single_image_ref(
+  image_list_ref: Option<ImageListRef>,
+) -> Result<Option<MediaFileToken>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => {
-      Ok(tokens.first())
+      Ok(tokens.into_iter().next())
     }
     Some(ImageListRef::Urls(_)) => {
       Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))

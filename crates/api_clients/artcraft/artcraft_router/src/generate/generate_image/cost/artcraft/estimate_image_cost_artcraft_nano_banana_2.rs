@@ -6,7 +6,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_2::PlanArtcraftNanaBanana2;
 
 pub(crate) fn estimate_image_cost_artcraft_nano_banana_2(
-  plan: &PlanArtcraftNanaBanana2<'_>,
+  plan: &PlanArtcraftNanaBanana2,
 ) -> ImageGenerationCostEstimate {
   // Pricing (USD cents per image), scaled off the 1K base cost of $0.08:
   //   0.5K → $0.06 (0.75×)

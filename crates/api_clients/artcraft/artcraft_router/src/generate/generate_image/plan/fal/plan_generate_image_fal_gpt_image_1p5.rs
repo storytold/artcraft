@@ -40,25 +40,25 @@ pub enum FalGptImage1p5ImageSize {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalGptImage1p5<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalGptImage1p5 {
+  pub prompt: Option<String>,
   pub image_urls: Vec<String>,
   pub image_size: Option<FalGptImage1p5ImageSize>,
   pub quality: FalGptImage1p5Quality,
   pub num_images: FalGptImage1p5NumImages,
 }
 
-pub fn plan_generate_image_fal_gpt_image_1p5<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_gpt_image_1p5(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
-  let image_urls = resolve_image_list_ref(request.image_inputs)?;
+  let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;
   let image_size = plan_image_size(request.aspect_ratio);
   let quality = plan_quality(request.quality);
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalGptImage1p5(PlanFalGptImage1p5 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_urls,
     image_size,
     quality,
@@ -67,7 +67,7 @@ pub fn plan_generate_image_fal_gpt_image_1p5<'a>(
 }
 
 fn resolve_image_list_ref(
-  image_list_ref: Option<ImageListRef<'_>>,
+  image_list_ref: Option<ImageListRef>,
 ) -> Result<Vec<String>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(vec![]),

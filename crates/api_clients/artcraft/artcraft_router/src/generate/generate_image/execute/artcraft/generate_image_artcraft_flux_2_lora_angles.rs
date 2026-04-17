@@ -9,7 +9,7 @@ use artcraft_api_defs::generate::image::angle::flux_2_lora_edit_image_angle::Flu
 use artcraft_client::endpoints::generate::image::angle::flux_2_lora_edit_image_angle::flux_2_lora_edit_image_angle;
 
 pub async fn execute_artcraft_flux_2_lora_angles(
-  plan: &PlanArtcraftFlux2LoraAngles<'_>,
+  plan: &PlanArtcraftFlux2LoraAngles,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let request = Flux2LoraEditImageAngleRequest {
@@ -53,7 +53,7 @@ mod tests {
       aspect_ratio: Some(CommonAspectRatio::SquareHd),
       quality: None,
       image_batch_count: Some(1),
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       horizontal_angle: Some(30.0),
       vertical_angle: Some(0.0),
       zoom: Some(1.0),

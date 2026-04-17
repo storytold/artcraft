@@ -35,25 +35,25 @@ pub enum FalSeedream4ImageSize {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalSeedream4<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalSeedream4 {
+  pub prompt: Option<String>,
   /// Image URLs for editing. Empty vec = text-to-image mode.
   pub image_urls: Vec<String>,
   pub image_size: Option<FalSeedream4ImageSize>,
   pub num_images: FalSeedream4NumImages,
 }
 
-pub fn plan_generate_image_fal_seedream_4<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_seedream_4(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let is_edit_mode = request.image_inputs.is_some();
-  let image_urls = resolve_image_list_ref(request.image_inputs)?;
+  let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;
   let image_size = plan_image_size(request.aspect_ratio, is_edit_mode, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalSeedream4(PlanFalSeedream4 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_urls,
     image_size,
     num_images,
@@ -61,7 +61,7 @@ pub fn plan_generate_image_fal_seedream_4<'a>(
 }
 
 fn resolve_image_list_ref(
-  image_list_ref: Option<ImageListRef<'_>>,
+  image_list_ref: Option<ImageListRef>,
 ) -> Result<Vec<String>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(vec![]),

@@ -43,9 +43,9 @@ pub struct PlanFalSora2Pro {
   pub duration: Option<FalSora2ProDuration>,
 }
 
-pub fn plan_generate_video_fal_sora_2_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_sora_2_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   if request.end_frame.is_some() {
@@ -55,7 +55,7 @@ pub fn plan_generate_video_fal_sora_2_pro<'a>(
     }));
   }
 
-  let mode = match optional_url(request.start_frame)? {
+  let mode = match optional_url(request.start_frame.clone())? {
     None => FalSora2ProMode::TextToVideo,
     Some(image_url) => FalSora2ProMode::ImageToVideo { image_url },
   };
@@ -65,7 +65,7 @@ pub fn plan_generate_video_fal_sora_2_pro<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalSora2Pro(PlanFalSora2Pro {
-    prompt: request.prompt.unwrap_or("").to_string(),
+    prompt: request.prompt.clone().unwrap_or_default(),
     mode,
     aspect_ratio,
     resolution,

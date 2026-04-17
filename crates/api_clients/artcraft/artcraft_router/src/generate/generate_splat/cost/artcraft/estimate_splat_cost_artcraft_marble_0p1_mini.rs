@@ -4,7 +4,7 @@ use worldlabs_api_client::api::api_types::world_labs_model::WorldLabsModel;
 use worldlabs_api_client::pricing::check_pricing::{calculate_cost, InputType};
 
 pub(crate) fn estimate_splat_cost_artcraft_marble_0p1_mini(
-  plan: &PlanArtcraftMarble0p1Mini<'_>,
+  plan: &PlanArtcraftMarble0p1Mini,
 ) -> SplatGenerationCostEstimate {
   let input_type = if plan.reference_image.is_some() {
     InputType::ImageNonPanorama
@@ -33,11 +33,11 @@ mod tests {
 
   use tokens::tokens::media_files::MediaFileToken;
 
-  fn estimate_usd_cents(prompt: Option<&str>, image_tokens: Option<&Vec<MediaFileToken>>) -> u64 {
+  fn estimate_usd_cents(prompt: Option<&str>, image_tokens: Option<Vec<MediaFileToken>>) -> u64 {
     let request = GenerateSplatRequest {
       model: CommonSplatModel::Marble0p1Mini,
       provider: Provider::Artcraft,
-      prompt,
+      prompt: prompt.map(|s| s.to_string()),
       reference_images: image_tokens.map(crate::api::image_list_ref::ImageListRef::MediaFileTokens),
       idempotency_token: None,
     };
@@ -63,14 +63,14 @@ mod tests {
   #[test]
   fn test_estimate_cost_image() {
     let tokens = vec![MediaFileToken("test_token".to_string())];
-    let cost = estimate_usd_cents(None, Some(&tokens));
+    let cost = estimate_usd_cents(None, Some(tokens.clone()));
     assert_eq!(cost, 18); // 230 credits → 18 cents (same as text for mini)
   }
 
   #[test]
   fn test_estimate_cost_image_with_prompt() {
     let tokens = vec![MediaFileToken("test_token".to_string())];
-    let cost = estimate_usd_cents(Some("a cozy room"), Some(&tokens));
+    let cost = estimate_usd_cents(Some("a cozy room"), Some(tokens.clone()));
     assert_eq!(cost, 18); // 230 credits → 18 cents
   }
 }

@@ -28,8 +28,8 @@ pub enum FalNb2NumImages {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalNanaBanana2<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalNanaBanana2 {
+  pub prompt: Option<String>,
   /// Image URLs for editing. Empty vec = text-to-image mode.
   pub image_urls: Vec<String>,
   /// Pre-resolved aspect ratio for text-to-image mode.
@@ -42,19 +42,19 @@ pub struct PlanFalNanaBanana2<'a> {
   pub num_images: FalNb2NumImages,
 }
 
-pub fn plan_generate_image_fal_nano_banana_2<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_nano_banana_2(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let is_edit_mode = request.image_inputs.is_some();
-  let image_urls = resolve_image_list_ref(request.image_inputs)?;
+  let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;
   let t2i_aspect_ratio = plan_t2i_aspect_ratio(request.aspect_ratio, strategy)?;
   let edit_aspect_ratio = plan_edit_aspect_ratio(request.aspect_ratio, is_edit_mode, strategy)?;
   let resolution = plan_resolution(request.resolution)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalNanaBanana2(PlanFalNanaBanana2 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_urls,
     t2i_aspect_ratio,
     edit_aspect_ratio,
@@ -64,7 +64,7 @@ pub fn plan_generate_image_fal_nano_banana_2<'a>(
 }
 
 fn resolve_image_list_ref(
-  image_list_ref: Option<ImageListRef<'_>>,
+  image_list_ref: Option<ImageListRef>,
 ) -> Result<Vec<String>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(vec![]),

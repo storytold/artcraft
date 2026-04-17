@@ -13,12 +13,12 @@ use fal_client::requests::webhook::image::text::enqueue_gpt_image_1_text_to_imag
 };
 
 pub async fn execute_fal_gpt_image_1(
-  plan: &PlanFalGptImage1<'_>,
+  plan: &PlanFalGptImage1,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let webhook_response = if plan.image_urls.is_empty() {
     let args = EnqueueGptImage1TextToImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       num_images: plan.num_images.to_t2i(),
       image_size: plan.image_size.map(|s| s.to_t2i()),
       quality: Some(plan.quality.to_t2i()),
@@ -32,7 +32,7 @@ pub async fn execute_fal_gpt_image_1(
       .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
   } else {
     let args = EnqueueGptImage1EditImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       image_urls: plan.image_urls.clone(),
       num_images: plan.num_images.to_edit(),
       mask_image_url: None,
@@ -67,11 +67,11 @@ mod tests {
   use crate::generate::generate_image::image_generation_plan::ImageGenerationPlan;
   use crate::test_helpers::get_fal_client;
 
-  fn base_fal_request() -> GenerateImageRequest<'static> {
+  fn base_fal_request() -> GenerateImageRequest {
     GenerateImageRequest {
       model: CommonImageModel::GptImage1,
       provider: Provider::Fal,
-      prompt: Some("a cat in space"),
+      prompt: Some("a cat in space".to_string()),
       image_inputs: None,
       resolution: None,
       aspect_ratio: None,
@@ -106,7 +106,7 @@ mod tests {
   fn build_edit_image_plan_smoke() {
     let urls = vec!["https://example.com/img.jpg".to_string()];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::Urls(&urls)),
+      image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_fal_request()
     };
     let plan = request.build().expect("plan should build");
@@ -123,7 +123,7 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       image_batch_count: Some(1),
-      prompt: Some("a horse walking through a cyberpunk city at night"),
+      prompt: Some("a horse walking through a cyberpunk city at night".to_string()),
       ..base_fal_request()
     };
 
@@ -143,10 +143,10 @@ mod tests {
       TREX_SKELETON_IMAGE_URL.to_string(),
     ];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::Urls(&urls)),
+      image_inputs: Some(ImageListRef::Urls(urls.clone())),
       aspect_ratio: Some(CommonAspectRatio::Square),
       image_batch_count: Some(1),
-      prompt: Some("change the background to a desert"),
+      prompt: Some("change the background to a desert".to_string()),
       ..base_fal_request()
     };
 

@@ -4,7 +4,7 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 };
 
 pub(crate) fn estimate_image_cost_artcraft_gpt_image_1(
-  plan: &PlanArtcraftGptImage1<'_>,
+  plan: &PlanArtcraftGptImage1,
 ) -> ImageGenerationCostEstimate {
   // Pricing per the fal-ai GPT Image 1 docs, adapted for our artcraft billing:
   //
@@ -62,7 +62,7 @@ mod tests {
   use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
   use tokens::tokens::media_files::MediaFileToken;
 
-  fn base() -> GenerateImageRequest<'static> {
+  fn base() -> GenerateImageRequest {
     GenerateImageRequest {
       model: CommonImageModel::GptImage1,
       provider: Provider::Artcraft,
@@ -109,7 +109,7 @@ mod tests {
       quality,
       aspect_ratio,
       image_batch_count: Some(batch),
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base()
     };
     request.build().unwrap().estimate_costs()

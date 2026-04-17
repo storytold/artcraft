@@ -2,7 +2,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_1_schnell::PlanArtcraftFlux1Schnell;
 
 pub(crate) fn estimate_image_cost_artcraft_flux_1_schnell(
-  _plan: &PlanArtcraftFlux1Schnell<'_>,
+  _plan: &PlanArtcraftFlux1Schnell,
 ) -> ImageGenerationCostEstimate {
   // Pricing: not available
   ImageGenerationCostEstimate {

@@ -29,8 +29,8 @@ pub enum FalNbpNumImages {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalNanaBananaPro<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalNanaBananaPro {
+  pub prompt: Option<String>,
   /// Image URLs for editing. Empty vec = text-to-image mode.
   pub image_urls: Vec<String>,
   /// Pre-resolved aspect ratio for text-to-image mode.
@@ -43,19 +43,19 @@ pub struct PlanFalNanaBananaPro<'a> {
   pub num_images: FalNbpNumImages,
 }
 
-pub fn plan_generate_image_fal_nano_banana_pro<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_nano_banana_pro(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
   let is_edit_mode = request.image_inputs.is_some();
-  let image_urls = resolve_image_list_ref(request.image_inputs)?;
+  let image_urls = resolve_image_list_ref(request.image_inputs.clone())?;
   let t2i_aspect_ratio = plan_t2i_aspect_ratio(request.aspect_ratio, strategy)?;
   let edit_aspect_ratio = plan_edit_aspect_ratio(request.aspect_ratio, is_edit_mode, strategy)?;
   let resolution = plan_resolution(request.resolution)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalNanaBananaPro(PlanFalNanaBananaPro {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_urls,
     t2i_aspect_ratio,
     edit_aspect_ratio,
@@ -65,7 +65,7 @@ pub fn plan_generate_image_fal_nano_banana_pro<'a>(
 }
 
 fn resolve_image_list_ref(
-  image_list_ref: Option<ImageListRef<'_>>,
+  image_list_ref: Option<ImageListRef>,
 ) -> Result<Vec<String>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(vec![]),
@@ -248,11 +248,11 @@ mod tests {
   use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::EnqueueNanoBananaProEditImageAspectRatio as EditAr;
   use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::EnqueueNanoBananaProTextToImageAspectRatio as T2iAr;
 
-  fn base_fal_request() -> GenerateImageRequest<'static> {
+  fn base_fal_request() -> GenerateImageRequest {
     GenerateImageRequest {
       model: CommonImageModel::NanoBananaPro,
       provider: Provider::Fal,
-      prompt: Some("a cat in space"),
+      prompt: Some("a cat in space".to_string()),
       image_inputs: None,
       resolution: None,
       aspect_ratio: None,
@@ -267,9 +267,9 @@ mod tests {
     }
   }
 
-  fn build_plan<'a>(
-    request: &'a GenerateImageRequest<'a>,
-  ) -> PlanFalNanaBananaPro<'a> {
+  fn build_plan(
+    request: &GenerateImageRequest,
+  ) -> PlanFalNanaBananaPro {
     let ImageGenerationPlan::FalNanaBananaPro(plan) = plan_generate_image_fal_nano_banana_pro(request).expect("plan should succeed") else {
       panic!("expected FalNanaBananaPro variant")
     };
@@ -292,7 +292,7 @@ mod tests {
       "https://example.com/b.jpg".to_string(),
     ];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::Urls(&urls)),
+      image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_fal_request()
     };
     let plan = build_plan(&request);
@@ -303,7 +303,7 @@ mod tests {
   fn media_token_inputs_return_error() {
     let tokens = vec![];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_fal_request()
     };
     let result = plan_generate_image_fal_nano_banana_pro(&request);
@@ -406,7 +406,7 @@ mod tests {
     for auto_ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
       let request = GenerateImageRequest {
         aspect_ratio: Some(auto_ar),
-        image_inputs: Some(ImageListRef::Urls(&urls)),
+        image_inputs: Some(ImageListRef::Urls(urls.clone())),
         ..base_fal_request()
       };
       let plan = build_plan(&request);

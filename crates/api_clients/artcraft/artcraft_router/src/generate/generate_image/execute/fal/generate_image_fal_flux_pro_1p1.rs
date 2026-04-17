@@ -10,11 +10,11 @@ use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_imag
 };
 
 pub async fn execute_fal_flux_pro_1p1(
-  plan: &PlanFalFluxPro11<'_>,
+  plan: &PlanFalFluxPro11,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let args = FluxPro11Args {
-    prompt: plan.prompt.unwrap_or(""),
+    prompt: plan.prompt.as_deref().unwrap_or(""),
     aspect_ratio: plan.aspect_ratio,
     num_images: plan.num_images.to_fal(),
     webhook_url: fal_client.webhook_url.as_str(),

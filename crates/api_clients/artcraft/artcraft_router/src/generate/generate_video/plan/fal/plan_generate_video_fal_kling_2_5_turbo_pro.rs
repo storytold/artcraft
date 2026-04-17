@@ -37,12 +37,12 @@ pub struct PlanFalKling2p5TurboPro {
   pub duration: Option<FalKling2p5TurboProDuration>,
 }
 
-pub fn plan_generate_video_fal_kling_2_5_turbo_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_kling_2_5_turbo_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let mode = match optional_url(request.start_frame)? {
+  let mode = match optional_url(request.start_frame.clone())? {
     None => {
       if request.end_frame.is_some() {
         return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -54,7 +54,7 @@ pub fn plan_generate_video_fal_kling_2_5_turbo_pro<'a>(
     }
     Some(image_url) => FalKling2p5TurboProMode::ImageToVideo {
       image_url,
-      end_image_url: optional_url(request.end_frame)?,
+      end_image_url: optional_url(request.end_frame.clone())?,
     },
   };
 
@@ -62,8 +62,8 @@ pub fn plan_generate_video_fal_kling_2_5_turbo_pro<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalKling2p5TurboPro(PlanFalKling2p5TurboPro {
-    prompt: request.prompt.unwrap_or("").to_string(),
-    negative_prompt: request.negative_prompt.map(|s| s.to_string()),
+    prompt: request.prompt.clone().unwrap_or_default(),
+    negative_prompt: request.negative_prompt.clone(),
     mode,
     aspect_ratio,
     duration,

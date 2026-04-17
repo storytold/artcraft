@@ -13,22 +13,22 @@ use artcraft_api_defs::generate::video::generate_seedance_1_0_lite_image_to_vide
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftSeedance10Lite<'a> {
-  pub prompt: Option<&'a str>,
-  pub start_frame: &'a MediaFileToken,
-  pub end_frame: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftSeedance10Lite {
+  pub prompt: Option<String>,
+  pub start_frame: MediaFileToken,
+  pub end_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<GenerateSeedance10LiteAspectRatio>,
   pub resolution: Option<GenerateSeedance10LiteResolution>,
   pub duration: Option<GenerateSeedance10LiteDuration>,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_seedance_1_0_lite<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_seedance_1_0_lite(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = match request.start_frame {
+  let start_frame = match request.start_frame.clone() {
     Some(ImageRef::MediaFileToken(t)) => t,
     Some(ImageRef::Url(_)) => {
       return Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
@@ -40,14 +40,14 @@ pub fn plan_generate_video_artcraft_seedance_1_0_lite<'a>(
       }))
     }
   };
-  let end_frame = resolve_end_frame(request.end_frame)?;
+  let end_frame = resolve_end_frame(request.end_frame.clone())?;
 
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftSeedance10Lite(PlanArtcraftSeedance10Lite {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     start_frame,
     end_frame,
     aspect_ratio,
@@ -57,9 +57,9 @@ pub fn plan_generate_video_artcraft_seedance_1_0_lite<'a>(
   }))
 }
 
-fn resolve_end_frame<'a>(
-  image_ref: Option<ImageRef<'a>>,
-) -> Result<Option<&'a MediaFileToken>, ArtcraftRouterError> {
+fn resolve_end_frame(
+  image_ref: Option<ImageRef>,
+) -> Result<Option<MediaFileToken>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),
     Some(ImageRef::MediaFileToken(t)) => Ok(Some(t)),
@@ -145,7 +145,7 @@ fn plan_duration(
   }
 }
 
-impl PlanArtcraftSeedance10Lite<'_> {
+impl PlanArtcraftSeedance10Lite {
   /// Legacy handler default: 5 seconds.
   pub fn duration_seconds_for_cost(&self) -> u64 {
     match self.duration {

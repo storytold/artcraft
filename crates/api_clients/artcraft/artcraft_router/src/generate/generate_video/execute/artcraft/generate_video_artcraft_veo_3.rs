@@ -12,16 +12,16 @@ use artcraft_client::endpoints::omni_gen::generate::video::omni_gen_video::omni_
 use enums::common::generation::common_video_model::CommonVideoModel;
 
 pub async fn execute_artcraft_veo_3(
-  plan: &PlanArtcraftVeo3<'_>,
+  plan: &PlanArtcraftVeo3,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-  let inference_job_token = match plan.start_frame {
+  let inference_job_token = match plan.start_frame.clone() {
     Some(media_file_token) => {
       // Image-to-video: use the legacy dedicated endpoint.
       let request = GenerateVeo3ImageToVideoRequest {
         uuid_idempotency_token: plan.idempotency_token.clone(),
         media_file_token: Some(media_file_token.to_owned()),
-        prompt: plan.prompt.map(|p| p.to_string()),
+        prompt: plan.prompt.clone(),
         aspect_ratio: plan.aspect_ratio,
         resolution: plan.resolution,
         duration: plan.duration,
@@ -43,7 +43,7 @@ pub async fn execute_artcraft_veo_3(
       let request = OmniGenVideoCostAndGenerateRequest {
         idempotency_token: Some(plan.idempotency_token.clone()),
         model: Some(CommonVideoModel::Veo3),
-        prompt: plan.prompt.map(|p| p.to_string()),
+        prompt: plan.prompt.clone(),
         negative_prompt: None,
         start_frame_image_media_token: None,
         end_frame_image_media_token: None,

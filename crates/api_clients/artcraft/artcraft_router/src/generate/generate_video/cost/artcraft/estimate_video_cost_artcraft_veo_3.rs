@@ -2,7 +2,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_artcraft_veo_3(
-  plan: &PlanArtcraftVeo3<'_>,
+  plan: &PlanArtcraftVeo3,
 ) -> VideoGenerationCostEstimate {
   // Mirrors fal_client veo_3 cost calculator (720p/1080p):
   // $0.20/sec audio off, $0.40/sec audio on. Default 8s, audio off (legacy handler).

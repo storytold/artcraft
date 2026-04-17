@@ -20,23 +20,23 @@ pub struct PlanFalSeedance10Lite {
   pub duration: Seedance1LiteDuration,
 }
 
-pub fn plan_generate_video_fal_seedance_1_0_lite<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_seedance_1_0_lite(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let image_url = require_url(
-    request.start_frame,
+    request.start_frame.clone(),
     "start_frame",
     "Seedance 1.0 Lite requires a starting frame",
   )?;
-  let end_image_url = optional_url(request.end_frame)?;
+  let end_image_url = optional_url(request.end_frame.clone())?;
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let resolution = plan_resolution(request.resolution, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalSeedance10Lite(PlanFalSeedance10Lite {
-    prompt: request.prompt.unwrap_or("").to_string(),
+    prompt: request.prompt.clone().unwrap_or_default(),
     image_url,
     end_image_url,
     aspect_ratio,

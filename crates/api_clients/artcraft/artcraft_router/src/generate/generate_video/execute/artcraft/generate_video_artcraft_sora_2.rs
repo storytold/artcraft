@@ -9,13 +9,13 @@ use artcraft_api_defs::generate::video::multi_function::sora_2_multi_function_vi
 use artcraft_client::endpoints::generate::video::multi_function::sora_2_multi_function_video_gen::sora_2_multi_function_video_gen;
 
 pub async fn execute_artcraft_sora_2(
-  plan: &PlanArtcraftSora2<'_>,
+  plan: &PlanArtcraftSora2,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = Sora2MultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    image_media_token: plan.start_frame.map(|t| t.to_owned()),
+    prompt: plan.prompt.clone(),
+    image_media_token: plan.start_frame.clone(),
     resolution: plan.resolution,
     duration: plan.duration,
     aspect_ratio: plan.aspect_ratio,

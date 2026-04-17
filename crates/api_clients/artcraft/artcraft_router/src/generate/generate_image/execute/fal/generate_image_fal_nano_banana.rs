@@ -17,13 +17,13 @@ use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_
 };
 
 pub async fn execute_fal_nano_banana(
-  plan: &PlanFalNanoBanana<'_>,
+  plan: &PlanFalNanoBanana,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let webhook_response = if plan.image_urls.is_empty() {
     // Text-to-image mode
     let args = Gemini25FlashTextToImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       num_images: to_t2i_num_images(plan.num_images),
       aspect_ratio: plan.t2i_aspect_ratio,
       webhook_url: fal_client.webhook_url.as_str(),
@@ -35,7 +35,7 @@ pub async fn execute_fal_nano_banana(
   } else {
     // Image-edit mode
     let args = Gemini25FlashEditArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       image_urls: plan.image_urls.clone(),
       num_images: to_edit_num_images(plan.num_images),
       aspect_ratio: plan.edit_aspect_ratio,

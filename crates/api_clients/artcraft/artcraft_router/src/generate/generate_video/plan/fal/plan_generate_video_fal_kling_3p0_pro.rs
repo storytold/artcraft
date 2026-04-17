@@ -36,9 +36,9 @@ pub struct PlanFalKling3p0Pro {
   pub generate_audio: Option<bool>,
 }
 
-pub fn plan_generate_video_fal_kling_3p0_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_kling_3p0_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let inner = build_kling_3p0_plan(request, "Kling 3.0 Pro")?;
   Ok(VideoGenerationPlan::FalKling3p0Pro(PlanFalKling3p0Pro {
     prompt: inner.prompt,
@@ -59,13 +59,13 @@ pub(crate) struct Kling3p0Common {
   pub generate_audio: Option<bool>,
 }
 
-pub(crate) fn build_kling_3p0_plan<'a>(
-  request: &'a GenerateVideoRequest<'a>,
+pub(crate) fn build_kling_3p0_plan(
+  request: &GenerateVideoRequest,
   _model_label: &'static str,
 ) -> Result<Kling3p0Common, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let mode = match optional_url(request.start_frame)? {
+  let mode = match optional_url(request.start_frame.clone())? {
     None => {
       if request.end_frame.is_some() {
         return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -77,7 +77,7 @@ pub(crate) fn build_kling_3p0_plan<'a>(
     }
     Some(image_url) => FalKling3p0Mode::ImageToVideo {
       image_url,
-      end_image_url: optional_url(request.end_frame)?,
+      end_image_url: optional_url(request.end_frame.clone())?,
     },
   };
 
@@ -85,8 +85,8 @@ pub(crate) fn build_kling_3p0_plan<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(Kling3p0Common {
-    prompt: request.prompt.unwrap_or("").to_string(),
-    negative_prompt: request.negative_prompt.map(|s| s.to_string()),
+    prompt: request.prompt.clone().unwrap_or_default(),
+    negative_prompt: request.negative_prompt.clone(),
     mode,
     aspect_ratio,
     duration,

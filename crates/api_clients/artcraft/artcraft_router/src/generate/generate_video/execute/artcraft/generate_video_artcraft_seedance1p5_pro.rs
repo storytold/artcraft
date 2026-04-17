@@ -9,14 +9,14 @@ use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_f
 use artcraft_client::endpoints::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen::seedance_1p5_pro_multi_function_video_gen;
 
 pub async fn execute_artcraft_seedance1p5_pro(
-  plan: &PlanArtcraftSeedance1p5Pro<'_>,
+  plan: &PlanArtcraftSeedance1p5Pro,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = Seedance1p5ProMultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    start_frame_image_media_token: plan.start_frame.map(|t| t.to_owned()),
-    end_frame_image_media_token: plan.end_frame.map(|t| t.to_owned()),
+    prompt: plan.prompt.clone(),
+    start_frame_image_media_token: plan.start_frame.clone(),
+    end_frame_image_media_token: plan.end_frame.clone(),
     aspect_ratio: plan.aspect_ratio,
     duration: plan.duration,
     resolution: plan.resolution,

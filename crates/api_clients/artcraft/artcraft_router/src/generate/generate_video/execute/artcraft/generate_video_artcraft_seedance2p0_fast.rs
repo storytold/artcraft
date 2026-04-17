@@ -15,7 +15,7 @@ use enums::common::generation::common_video_model::CommonVideoModel;
 /// Unlike Seedance 2.0 Pro (which uses the legacy dedicated endpoint),
 /// Seedance 2.0 Fast routes through the omni-gen unified video endpoint.
 pub async fn execute_artcraft_seedance2p0_fast(
-  plan: &PlanArtcraftSeedance2p0<'_>,
+  plan: &PlanArtcraftSeedance2p0,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let aspect_ratio = plan.aspect_ratio.map(|ar| match ar {
@@ -29,13 +29,13 @@ pub async fn execute_artcraft_seedance2p0_fast(
   let request = OmniGenVideoCostAndGenerateRequest {
     idempotency_token: Some(plan.idempotency_token.clone()),
     model: Some(CommonVideoModel::Seedance2p0Fast),
-    prompt: plan.prompt.map(|p| p.to_string()),
+    prompt: plan.prompt.clone(),
     negative_prompt: None,
-    start_frame_image_media_token: plan.start_frame.cloned(),
-    end_frame_image_media_token: plan.end_frame.cloned(),
-    reference_image_media_tokens: plan.reference_images.cloned(),
-    reference_video_media_tokens: plan.reference_videos.cloned(),
-    reference_audio_media_tokens: plan.reference_audio.cloned(),
+    start_frame_image_media_token: plan.start_frame.clone(),
+    end_frame_image_media_token: plan.end_frame.clone(),
+    reference_image_media_tokens: plan.reference_images.clone(),
+    reference_video_media_tokens: plan.reference_videos.clone(),
+    reference_audio_media_tokens: plan.reference_audio.clone(),
     reference_character_tokens: None,
     resolution: None,
     aspect_ratio,

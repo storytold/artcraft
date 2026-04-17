@@ -4,7 +4,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_ban
 };
 
 pub(crate) fn estimate_image_cost_fal_nano_banana_2(
-  plan: &PlanFalNanaBanana2<'_>,
+  plan: &PlanFalNanaBanana2,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.08/image base (1K). Multipliers: 0.5K = 0.75x, 2K = 1.5x, 4K = 2x.
   // (Stored as USD cents.)

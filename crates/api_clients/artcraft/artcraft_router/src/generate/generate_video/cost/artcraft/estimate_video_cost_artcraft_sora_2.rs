@@ -2,7 +2,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_artcraft_sora_2(
-  plan: &PlanArtcraftSora2<'_>,
+  plan: &PlanArtcraftSora2,
 ) -> VideoGenerationCostEstimate {
   // Sora 2: $0.10/second. Default duration (Fal client): 4 seconds.
   let cost_in_usd_cents = plan.duration_seconds_for_cost() * 10;

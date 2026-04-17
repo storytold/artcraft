@@ -14,14 +14,14 @@ use artcraft_client::endpoints::generate::image::text::generate_gpt_image_1_text
 /// text-to-image, one for image-edit), so we dispatch on whether image refs
 /// are present rather than calling a single multi-function endpoint.
 pub async fn execute_artcraft_gpt_image_1(
-  plan: &PlanArtcraftGptImage1<'_>,
+  plan: &PlanArtcraftGptImage1,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let inference_job_token = match plan.image_inputs {
+  let inference_job_token = match plan.image_inputs.clone() {
     Some(image_inputs) => {
       let request = GptImage1EditImageRequest {
         uuid_idempotency_token: plan.idempotency_token.clone(),
-        prompt: plan.prompt.map(|p| p.to_string()),
+        prompt: plan.prompt.clone(),
         image_media_tokens: Some(image_inputs.to_owned()),
         image_size: plan.image_size.map(|s| s.to_edit()),
         num_images: Some(plan.num_images.to_edit()),
@@ -39,7 +39,7 @@ pub async fn execute_artcraft_gpt_image_1(
     None => {
       let request = GenerateGptImage1TextToImageRequest {
         uuid_idempotency_token: plan.idempotency_token.clone(),
-        prompt: plan.prompt.map(|p| p.to_string()),
+        prompt: plan.prompt.clone(),
         image_size: plan.image_size.map(|s| s.to_t2i()),
         num_images: Some(plan.num_images.to_t2i()),
         image_quality: Some(plan.quality.to_t2i()),
@@ -89,7 +89,7 @@ mod tests {
   fn build_edit_image_plan_smoke() {
     let tokens = vec![MediaFileToken::new_from_str("mf_test00000000000000000000000000")];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_gpt_image_1_image_request()
     };
     let plan = request.build().expect("plan should build");
@@ -106,7 +106,7 @@ mod tests {
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       image_batch_count: Some(1),
-      prompt: Some("a horse walking through a cyberpunk city at night"),
+      prompt: Some("a horse walking through a cyberpunk city at night".to_string()),
       ..base_gpt_image_1_image_request()
     };
 
@@ -129,8 +129,8 @@ mod tests {
     ];
 
     let request = GenerateImageRequest {
-      prompt: Some("Change the background to a desert with cacti"),
-      image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
+      prompt: Some("Change the background to a desert with cacti".to_string()),
+      image_inputs: Some(ImageListRef::MediaFileTokens(image_tokens.clone())),
       aspect_ratio: Some(CommonAspectRatio::Square),
       image_batch_count: Some(1),
       ..base_gpt_image_1_image_request()

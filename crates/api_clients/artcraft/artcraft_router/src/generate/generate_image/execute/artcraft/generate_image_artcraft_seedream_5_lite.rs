@@ -9,13 +9,13 @@ use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_5_lit
 use artcraft_client::endpoints::generate::image::multi_function::bytedance_seedream_5_lite_multi_function_image_gen_image::bytedance_seedream_5_lite_multi_function_image_gen;
 
 pub async fn execute_artcraft_seedream_5_lite(
-  plan: &PlanArtcraftSeedream5Lite<'_>,
+  plan: &PlanArtcraftSeedream5Lite,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let request = BytedanceSeedream5LiteMultiFunctionImageGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    image_media_tokens: plan.image_inputs.map(|tokens| tokens.to_owned()),
+    prompt: plan.prompt.clone(),
+    image_media_tokens: plan.image_inputs.clone(),
     num_images: Some(plan.num_images),
     image_size: plan.image_size,
     max_images: None,
@@ -49,7 +49,7 @@ mod tests {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       quality: None,
       image_batch_count: Some(1),
-      prompt: Some("a corgi walking through a cyberpunk city at night"),
+      prompt: Some("a corgi walking through a cyberpunk city at night".to_string()),
       ..base_seedream_5_lite_image_request()
     };
 

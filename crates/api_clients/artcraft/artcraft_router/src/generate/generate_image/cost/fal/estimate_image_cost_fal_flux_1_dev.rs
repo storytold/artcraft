@@ -2,7 +2,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_dev::PlanFalFlux1Dev;
 
 pub(crate) fn estimate_image_cost_fal_flux_1_dev(
-  plan: &PlanFalFlux1Dev<'_>,
+  plan: &PlanFalFlux1Dev,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.025 per megapixel, billed by rounding up to nearest megapixel.
   // Default image sizes are ~1MP (1024x1024), so ~$0.025/image = 3 cents rounded up.

@@ -9,13 +9,13 @@ use artcraft_api_defs::generate::splat::generate_worldlabs_marble_0p1_plus_splat
 use artcraft_client::endpoints::generate::splat::generate_worldlabs_marble_0p1_plus_splat::generate_worldlabs_marble_0p1_plus_splat;
 
 pub async fn execute_artcraft_marble_0p1_plus(
-  plan: &PlanArtcraftMarble0p1Plus<'_>,
+  plan: &PlanArtcraftMarble0p1Plus,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateSplatResponse, ArtcraftRouterError> {
   let request = GenerateWorldlabsMarble0p1PlusSplatRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    image_media_file_token: plan.reference_image.cloned(),
-    prompt: plan.prompt.map(|p| p.to_string()),
+    image_media_file_token: plan.reference_image.clone(),
+    prompt: plan.prompt.clone(),
   };
 
   let response = generate_worldlabs_marble_0p1_plus_splat(

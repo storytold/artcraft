@@ -9,18 +9,18 @@ use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_funct
 use artcraft_client::endpoints::generate::video::multi_function::seedance_2p0_multi_function_video_gen::seedance_2p0_multi_function_video_gen;
 
 pub async fn execute_artcraft_seedance2p0(
-  plan: &PlanArtcraftSeedance2p0<'_>,
+  plan: &PlanArtcraftSeedance2p0,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = Seedance2p0MultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    start_frame_media_token: plan.start_frame.map(|t| t.to_owned()),
-    end_frame_media_token: plan.end_frame.map(|t| t.to_owned()),
-    reference_image_media_tokens: plan.reference_images.map(|tokens| tokens.to_owned()),
-    reference_video_media_tokens: plan.reference_videos.map(|tokens| tokens.to_owned()),
-    reference_audio_media_tokens: plan.reference_audio.map(|tokens| tokens.to_owned()),
-    reference_character_tokens: plan.reference_characters.map(|tokens| tokens.to_owned()),
+    prompt: plan.prompt.clone(),
+    start_frame_media_token: plan.start_frame.clone(),
+    end_frame_media_token: plan.end_frame.clone(),
+    reference_image_media_tokens: plan.reference_images.clone(),
+    reference_video_media_tokens: plan.reference_videos.clone(),
+    reference_audio_media_tokens: plan.reference_audio.clone(),
+    reference_character_tokens: plan.reference_characters.clone(),
     aspect_ratio: plan.aspect_ratio,
     duration_seconds: plan.duration_seconds,
     batch_count: Some(plan.batch_count),
@@ -53,7 +53,7 @@ mod tests {
     let request = crate::generate::generate_video::generate_video_request::GenerateVideoRequest {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       video_batch_count: Some(1),
-      prompt: Some("a cat walking through a cyberpunk city at night"),
+      prompt: Some("a cat walking through a cyberpunk city at night".to_string()),
       ..base_video_request()
     };
 
@@ -76,7 +76,7 @@ mod tests {
     let request = crate::generate::generate_video::generate_video_request::GenerateVideoRequest {
       aspect_ratio: Some(CommonAspectRatio::Square),
       video_batch_count: Some(2),
-      prompt: Some("a dog surfing a wave, cinematic"),
+      prompt: Some("a dog surfing a wave, cinematic".to_string()),
       ..base_video_request()
     };
 

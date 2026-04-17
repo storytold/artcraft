@@ -69,16 +69,16 @@ pub struct PlanFalVeo3 {
   pub generate_audio: bool,
 }
 
-pub fn plan_generate_video_fal_veo_3<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_veo_3(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   if request.end_frame.is_some() {
     return Err(unsupported("end_frame", "Veo 3 does not support an ending frame"));
   }
 
-  let mode = match request.start_frame {
+  let mode = match request.start_frame.clone() {
     Some(ImageRef::Url(url)) => FalVeo3Mode::ImageToVideo {
       image_url: url.to_string(),
     },
@@ -101,8 +101,8 @@ pub fn plan_generate_video_fal_veo_3<'a>(
   let generate_audio = request.generate_audio.unwrap_or(true);
 
   Ok(VideoGenerationPlan::FalVeo3(PlanFalVeo3 {
-    prompt: request.prompt.unwrap_or("").to_string(),
-    negative_prompt: request.negative_prompt.map(|s| s.to_string()),
+    prompt: request.prompt.clone().unwrap_or_default(),
+    negative_prompt: request.negative_prompt.clone(),
     mode,
     t2v_aspect_ratio,
     i2v_aspect_ratio,

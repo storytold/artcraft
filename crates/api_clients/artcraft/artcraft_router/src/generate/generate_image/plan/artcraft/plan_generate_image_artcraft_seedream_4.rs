@@ -12,27 +12,27 @@ use artcraft_api_defs::generate::image::multi_function::bytedance_seedream_v4_mu
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftSeedream4<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanArtcraftSeedream4 {
+  pub prompt: Option<String>,
   /// Input images for image editing. None means text-to-image mode.
-  pub image_inputs: Option<&'a Vec<MediaFileToken>>,
+  pub image_inputs: Option<Vec<MediaFileToken>>,
   pub image_size: Option<BytedanceSeedreamV4MultiFunctionImageGenImageSize>,
   pub num_images: BytedanceSeedreamV4MultiFunctionImageGenNumImages,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_image_artcraft_seedream_4<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_artcraft_seedream_4(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   let is_edit_mode = request.image_inputs.is_some();
-  let image_inputs = resolve_image_list_ref(request.image_inputs)?;
+  let image_inputs = resolve_image_list_ref(request.image_inputs.clone())?;
   let image_size = plan_image_size(request.aspect_ratio, is_edit_mode, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::ArtcraftSeedream4(PlanArtcraftSeedream4 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_inputs,
     image_size,
     num_images,
@@ -40,9 +40,9 @@ pub fn plan_generate_image_artcraft_seedream_4<'a>(
   }))
 }
 
-fn resolve_image_list_ref<'a>(
-  image_list_ref: Option<ImageListRef<'a>>,
-) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+fn resolve_image_list_ref(
+  image_list_ref: Option<ImageListRef>,
+) -> Result<Option<Vec<MediaFileToken>>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
@@ -220,7 +220,7 @@ mod tests {
     let tokens = vec![];
     let request = GenerateImageRequest {
       aspect_ratio: Some(CommonAspectRatio::Auto),
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_seedream_4_image_request()
     };
     let ImageGenerationPlan::ArtcraftSeedream4(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4") };
@@ -355,7 +355,7 @@ mod tests {
   fn url_image_inputs_are_accepted_for_cost_path() {
     let urls = vec!["https://example.com/image.jpg".to_string()];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::Urls(&urls)),
+      image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_seedream_4_image_request()
     };
     let ImageGenerationPlan::ArtcraftSeedream4(plan) = request.build().unwrap() else {
@@ -375,7 +375,7 @@ mod tests {
   fn media_token_image_inputs_is_edit_mode() {
     let tokens = vec![];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_seedream_4_image_request()
     };
     let ImageGenerationPlan::ArtcraftSeedream4(plan) = request.build().unwrap() else { panic!("expected ArtcraftSeedream4") };

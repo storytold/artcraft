@@ -9,15 +9,15 @@ use artcraft_api_defs::generate::video::multi_function::veo_3p1_fast_multi_funct
 use artcraft_client::endpoints::generate::video::multi_function::veo_3p1_fast_multi_function_video_gen::veo_3p1_fast_multi_function_video_gen;
 
 pub async fn execute_artcraft_veo_3p1_fast(
-  plan: &PlanArtcraftVeo3p1Fast<'_>,
+  plan: &PlanArtcraftVeo3p1Fast,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = Veo3p1FastMultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    negative_prompt: plan.negative_prompt.map(|p| p.to_string()),
-    start_frame_image_media_token: plan.start_frame.map(|t| t.to_owned()),
-    end_frame_image_media_token: plan.end_frame.map(|t| t.to_owned()),
+    prompt: plan.prompt.clone(),
+    negative_prompt: plan.negative_prompt.clone(),
+    start_frame_image_media_token: plan.start_frame.clone(),
+    end_frame_image_media_token: plan.end_frame.clone(),
     duration: plan.duration,
     aspect_ratio: plan.aspect_ratio,
     resolution: plan.resolution,

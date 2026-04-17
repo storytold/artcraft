@@ -9,13 +9,13 @@ use artcraft_api_defs::generate::image::multi_function::nano_banana_pro_multi_fu
 use artcraft_client::endpoints::generate::image::multi_function::nano_banana_pro_multi_function_image_gen_image::nano_banana_pro_multi_function_image_gen;
 
 pub async fn execute_artcraft_nano_banana_pro(
-  plan: &PlanArtcraftNanaBananaPro<'_>,
+  plan: &PlanArtcraftNanaBananaPro,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let request = NanoBananaProMultiFunctionImageGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
-    image_media_tokens: plan.image_inputs.map(|tokens| tokens.to_owned()),
+    prompt: plan.prompt.clone(),
+    image_media_tokens: plan.image_inputs.clone(),
     num_images: Some(plan.num_images),
     resolution: plan.resolution,
     aspect_ratio: plan.aspect_ratio,
@@ -53,7 +53,7 @@ mod tests {
       resolution: Some(CommonResolution::OneK),
       quality: None,
       image_batch_count: Some(1),
-      prompt: Some("a cat walking through a cyberpunk city at night"),
+      prompt: Some("a cat walking through a cyberpunk city at night".to_string()),
       ..base_image_request()
     };
 
@@ -77,7 +77,7 @@ mod tests {
       resolution: Some(CommonResolution::OneK),
       quality: None,
       image_batch_count: Some(4),
-      prompt: Some("a dog surfing a wave, cinematic"),
+      prompt: Some("a dog surfing a wave, cinematic".to_string()),
       ..base_image_request()
     };
 
@@ -104,8 +104,8 @@ mod tests {
     ];
 
     let request = GenerateImageRequest {
-      prompt: Some("Add the man in the first image into the fantasy scene in the second image. Keep his hoodie and attire, but match the vibe of the fantasy scene."),
-      image_inputs: Some(ImageListRef::MediaFileTokens(&image_tokens)),
+      prompt: Some("Add the man in the first image into the fantasy scene in the second image. Keep his hoodie and attire, but match the vibe of the fantasy scene.".to_string()),
+      image_inputs: Some(ImageListRef::MediaFileTokens(image_tokens.clone())),
       aspect_ratio: Some(CommonAspectRatio::Auto), // edit mode: preserve source dimensions
       resolution: Some(CommonResolution::OneK),
       quality: None,

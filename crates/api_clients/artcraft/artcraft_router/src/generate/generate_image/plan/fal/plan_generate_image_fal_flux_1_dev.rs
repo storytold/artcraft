@@ -20,24 +20,24 @@ pub enum FalFlux1DevNumImages {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanFalFlux1Dev<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanFalFlux1Dev {
+  pub prompt: Option<String>,
   /// Image URL for editing. None = text-to-image mode.
   pub maybe_image_url: Option<String>,
   pub aspect_ratio: Flux1DevAspectRatio,
   pub num_images: FalFlux1DevNumImages,
 }
 
-pub fn plan_generate_image_fal_flux_1_dev<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_fal_flux_1_dev(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
-  let maybe_image_url = resolve_single_image_url(request.image_inputs)?;
+  let maybe_image_url = resolve_single_image_url(request.image_inputs.clone())?;
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::FalFlux1Dev(PlanFalFlux1Dev {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     maybe_image_url,
     aspect_ratio,
     num_images,
@@ -45,7 +45,7 @@ pub fn plan_generate_image_fal_flux_1_dev<'a>(
 }
 
 fn resolve_single_image_url(
-  image_inputs: Option<ImageListRef<'_>>,
+  image_inputs: Option<ImageListRef>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   match image_inputs {
     None => Ok(None),

@@ -12,9 +12,9 @@ use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::{
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftVeo3Fast<'a> {
-  pub prompt: Option<&'a str>,
-  pub start_frame: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftVeo3Fast {
+  pub prompt: Option<String>,
+  pub start_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<GenerateVeo3FastAspectRatio>,
   pub resolution: Option<GenerateVeo3FastResolution>,
   pub duration: Option<GenerateVeo3FastDuration>,
@@ -22,12 +22,12 @@ pub struct PlanArtcraftVeo3Fast<'a> {
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_veo_3_fast<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_veo_3_fast(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = match request.start_frame {
+  let start_frame = match request.start_frame.clone() {
     Some(ImageRef::MediaFileToken(t)) => Some(t),
     Some(ImageRef::Url(_)) => None,
     None => None,
@@ -45,7 +45,7 @@ pub fn plan_generate_video_artcraft_veo_3_fast<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftVeo3Fast(PlanArtcraftVeo3Fast {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     start_frame,
     aspect_ratio,
     resolution,
@@ -124,7 +124,7 @@ fn plan_duration(
   }
 }
 
-impl PlanArtcraftVeo3Fast<'_> {
+impl PlanArtcraftVeo3Fast {
   pub fn duration_seconds_for_cost(&self) -> u64 {
     8
   }

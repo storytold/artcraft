@@ -7,7 +7,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1p5::PlanArtcraftGptImage1p5;
 
 pub(crate) fn estimate_image_cost_artcraft_gpt_image_1p5(
-  plan: &PlanArtcraftGptImage1p5<'_>,
+  plan: &PlanArtcraftGptImage1p5,
 ) -> ImageGenerationCostEstimate {
   // Per fal docs (fal-ai/gpt-image-1.5 and fal-ai/gpt-image-1.5/edit):
   //

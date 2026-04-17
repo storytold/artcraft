@@ -40,9 +40,9 @@ pub struct PlanMuapiSeedance2p0 {
   pub mode: MuapiSeedance2p0Mode,
 }
 
-pub fn plan_generate_video_muapi_seedance2p0<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_muapi_seedance2p0(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
   // Muapi does not support start/end frames, video references, or audio references.
@@ -71,9 +71,9 @@ pub fn plan_generate_video_muapi_seedance2p0<'a>(
     }));
   }
 
-  let image_urls = resolve_image_urls(request.reference_images)?;
+  let image_urls = resolve_image_urls(request.reference_images.clone())?;
 
-  let prompt = request.prompt.unwrap_or("").to_string();
+  let prompt = request.prompt.clone().unwrap_or_default();
 
   let mode = match image_urls {
     Some(urls) => {
@@ -100,7 +100,7 @@ pub fn plan_generate_video_muapi_seedance2p0<'a>(
 }
 
 fn resolve_image_urls(
-  reference_images: Option<ImageListRef<'_>>,
+  reference_images: Option<ImageListRef>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
   match reference_images {
     None => Ok(None),

@@ -10,12 +10,12 @@ use crate::generate::generate_splat::plan::artcraft::plan_generate_splat_artcraf
 use crate::generate::generate_splat::splat_generation_cost_estimate::SplatGenerationCostEstimate;
 
 #[derive(Debug)]
-pub enum SplatGenerationPlan<'a> {
-  ArtcraftMarble0p1Mini(PlanArtcraftMarble0p1Mini<'a>),
-  ArtcraftMarble0p1Plus(PlanArtcraftMarble0p1Plus<'a>),
+pub enum SplatGenerationPlan {
+  ArtcraftMarble0p1Mini(PlanArtcraftMarble0p1Mini),
+  ArtcraftMarble0p1Plus(PlanArtcraftMarble0p1Plus),
 }
 
-impl<'a> SplatGenerationPlan<'a> {
+impl SplatGenerationPlan {
   pub async fn generate_splat(
     &self,
     client: &RouterClient,

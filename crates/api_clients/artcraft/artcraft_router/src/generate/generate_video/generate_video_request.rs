@@ -52,7 +52,7 @@ use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 /// This works across multiple providers by shaping a generic "GenerateVideoRequest" into a provider-specific plan.
 /// That plan can then be used to return a cost estimate for that given provider or return a struct that can be used to send a real generation request.
 #[derive(Debug)]
-pub struct GenerateVideoRequest<'a> {
+pub struct GenerateVideoRequest {
   /// Which model to use.
   pub model: CommonVideoModel,
 
@@ -60,28 +60,28 @@ pub struct GenerateVideoRequest<'a> {
   pub provider: Provider,
 
   /// The prompt for the video generation
-  pub prompt: Option<&'a str>,
+  pub prompt: Option<String>,
 
   /// Some models support negative prompts
-  pub negative_prompt: Option<&'a str>,
+  pub negative_prompt: Option<String>,
 
   /// Starting keyframe (optional).
-  pub start_frame: Option<ImageRef<'a>>,
+  pub start_frame: Option<ImageRef>,
 
   /// Ending keyframe (optional).
-  pub end_frame: Option<ImageRef<'a>>,
+  pub end_frame: Option<ImageRef>,
 
   /// Reference images (optional).
-  pub reference_images: Option<ImageListRef<'a>>,
+  pub reference_images: Option<ImageListRef>,
 
   /// Reference videos (optional).
-  pub reference_videos: Option<VideoListRef<'a>>,
+  pub reference_videos: Option<VideoListRef>,
 
   /// Reference audio (optional).
-  pub reference_audio: Option<AudioListRef<'a>>,
+  pub reference_audio: Option<AudioListRef>,
 
   /// Reference characters (optional).
-  pub reference_character_tokens: Option<CharacterListRef<'a>>,
+  pub reference_character_tokens: Option<CharacterListRef>,
 
   /// The resolution to use
   pub resolution: Option<CommonResolution>,
@@ -106,12 +106,12 @@ pub struct GenerateVideoRequest<'a> {
 
   /// Some providers support idempotency.
   /// If not supplied, we'll generate one for the required providers.
-  pub idempotency_token: Option<&'a str>,
+  pub idempotency_token: Option<String>,
 }
 
-impl<'a> GenerateVideoRequest<'a> {
+impl GenerateVideoRequest {
   /// Read the video generation request, construct a plan, then yield a means to execute it.
-  pub fn build(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+  pub fn build(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     match self.provider {
       Provider::Artcraft => self.build_artcraft(),
       Provider::Fal => self.build_fal(),
@@ -121,7 +121,7 @@ impl<'a> GenerateVideoRequest<'a> {
     }
   }
 
-  fn build_artcraft(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+  fn build_artcraft(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     match self.model {
       CommonVideoModel::Kling16Pro => plan_generate_video_artcraft_kling_1_6_pro(self),
       CommonVideoModel::Kling21Master => plan_generate_video_artcraft_kling_2_1_master(self),
@@ -145,7 +145,7 @@ impl<'a> GenerateVideoRequest<'a> {
     }
   }
 
-  fn build_fal(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+  fn build_fal(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     match self.model {
       CommonVideoModel::Veo2 => plan_generate_video_fal_veo_2(self),
       CommonVideoModel::Veo3 => plan_generate_video_fal_veo_3(self),
@@ -167,14 +167,14 @@ impl<'a> GenerateVideoRequest<'a> {
     }
   }
 
-  fn build_muapi(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+  fn build_muapi(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     match self.model {
       CommonVideoModel::Seedance2p0 => plan_generate_video_muapi_seedance2p0(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }
 
-  fn build_seedance2pro(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+  fn build_seedance2pro(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     match self.model {
       CommonVideoModel::Seedance2p0 => plan_generate_video_seedance2pro_seedance2p0(self),
       CommonVideoModel::Seedance2p0Fast => plan_generate_video_seedance2pro_seedance2p0_fast(self),
@@ -182,14 +182,14 @@ impl<'a> GenerateVideoRequest<'a> {
     }
   }
 
-  fn unsupported_provider(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
+  fn unsupported_provider(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     Err(ArtcraftRouterError::UnsupportedModel(
       format!("Video generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
     ))
   }
 
   pub fn get_or_generate_idempotency_token(&self) -> String {
-    self.idempotency_token.map(|t| t.to_string())
+    self.idempotency_token.clone()
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
   }
 }

@@ -4,7 +4,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_imag
 };
 
 pub(crate) fn estimate_image_cost_fal_gpt_image_1p5(
-  plan: &PlanFalGptImage1p5<'_>,
+  plan: &PlanFalGptImage1p5,
 ) -> ImageGenerationCostEstimate {
   // Per fal docs (fal-ai/gpt-image-1.5 and fal-ai/gpt-image-1.5/edit):
   //
@@ -50,9 +50,9 @@ mod tests {
     quality: FalGptImage1p5Quality,
     image_size: Option<FalGptImage1p5ImageSize>,
     num_images: FalGptImage1p5NumImages,
-  ) -> PlanFalGptImage1p5<'static> {
+  ) -> PlanFalGptImage1p5 {
     PlanFalGptImage1p5 {
-      prompt: Some("p"),
+      prompt: Some("p".to_string()),
       image_urls: vec![],
       image_size,
       quality,

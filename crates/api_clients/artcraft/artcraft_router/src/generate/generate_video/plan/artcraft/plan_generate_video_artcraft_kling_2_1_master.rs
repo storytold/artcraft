@@ -11,20 +11,20 @@ use artcraft_api_defs::generate::video::generate_kling_2_1_master_image_to_video
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftKling21Master<'a> {
-  pub prompt: Option<&'a str>,
-  pub start_frame: &'a MediaFileToken,
+pub struct PlanArtcraftKling21Master {
+  pub prompt: Option<String>,
+  pub start_frame: MediaFileToken,
   pub aspect_ratio: Option<GenerateKling21MasterAspectRatio>,
   pub duration: Option<GenerateKling21MasterDuration>,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_kling_2_1_master<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_kling_2_1_master(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = match request.start_frame {
+  let start_frame = match request.start_frame.clone() {
     Some(ImageRef::MediaFileToken(t)) => t,
     Some(ImageRef::Url(_)) => {
       return Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
@@ -48,7 +48,7 @@ pub fn plan_generate_video_artcraft_kling_2_1_master<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftKling21Master(PlanArtcraftKling21Master {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     start_frame,
     aspect_ratio,
     duration,
@@ -121,7 +121,7 @@ fn plan_duration(
   }
 }
 
-impl PlanArtcraftKling21Master<'_> {
+impl PlanArtcraftKling21Master {
   pub fn is_ten_seconds(&self) -> bool {
     matches!(self.duration, Some(GenerateKling21MasterDuration::TenSeconds))
   }

@@ -13,12 +13,12 @@ use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v5_li
 };
 
 pub async fn execute_fal_seedream_5_lite(
-  plan: &PlanFalSeedream5Lite<'_>,
+  plan: &PlanFalSeedream5Lite,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let webhook_response = if plan.image_urls.is_empty() {
     let args = EnqueueBytedanceSeedreamV5LiteTextToImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       num_images: Some(plan.num_images.to_t2i()),
       max_images: None,
       image_size: plan.image_size.map(|s| s.to_t2i()),
@@ -30,7 +30,7 @@ pub async fn execute_fal_seedream_5_lite(
       .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
   } else {
     let args = EnqueueBytedanceSeedreamV5LiteEditImageArgs {
-      prompt: plan.prompt.unwrap_or(""),
+      prompt: plan.prompt.as_deref().unwrap_or(""),
       image_urls: plan.image_urls.clone(),
       num_images: Some(plan.num_images.to_edit()),
       max_images: None,

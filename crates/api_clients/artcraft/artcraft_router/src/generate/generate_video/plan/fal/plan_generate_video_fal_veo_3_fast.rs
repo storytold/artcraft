@@ -20,12 +20,12 @@ pub struct PlanFalVeo3Fast {
   pub generate_audio: bool,
 }
 
-pub fn plan_generate_video_fal_veo_3_fast<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_veo_3_fast(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame_url = resolve_required_image_url(request.start_frame)?;
+  let start_frame_url = resolve_required_image_url(request.start_frame.clone())?;
   if request.end_frame.is_some() {
     return Err(unsupported("end_frame", "Veo 3 Fast does not support an ending frame"));
   }
@@ -36,7 +36,7 @@ pub fn plan_generate_video_fal_veo_3_fast<'a>(
   let generate_audio = request.generate_audio.unwrap_or(true);
 
   Ok(VideoGenerationPlan::FalVeo3Fast(PlanFalVeo3Fast {
-    prompt: request.prompt.unwrap_or("").to_string(),
+    prompt: request.prompt.clone().unwrap_or_default(),
     start_frame_url,
     aspect_ratio,
     resolution,
@@ -46,7 +46,7 @@ pub fn plan_generate_video_fal_veo_3_fast<'a>(
 }
 
 fn resolve_required_image_url(
-  image_ref: Option<ImageRef<'_>>,
+  image_ref: Option<ImageRef>,
 ) -> Result<String, ArtcraftRouterError> {
   match image_ref {
     Some(ImageRef::Url(url)) => Ok(url.to_string()),

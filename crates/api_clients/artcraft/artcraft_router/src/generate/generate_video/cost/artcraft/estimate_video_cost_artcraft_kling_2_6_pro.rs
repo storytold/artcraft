@@ -2,7 +2,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_artcraft_kling_2_6_pro(
-  plan: &PlanArtcraftKling2p6Pro<'_>,
+  plan: &PlanArtcraftKling2p6Pro,
 ) -> VideoGenerationCostEstimate {
   // Mirrors fal_client kling_v2p6_pro:
   //   audio off: $0.07/sec  → 5s=35¢, 10s=70¢

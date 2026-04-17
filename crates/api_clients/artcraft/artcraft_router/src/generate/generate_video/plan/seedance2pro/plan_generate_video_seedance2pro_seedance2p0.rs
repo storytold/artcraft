@@ -23,23 +23,23 @@ pub struct PlanSeedance2proSeedance2p0 {
   pub batch_count: BatchCount,
 }
 
-pub fn plan_generate_video_seedance2pro_seedance2p0<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_seedance2pro_seedance2p0(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame_url = resolve_image_ref_url(request.start_frame)?;
-  let end_frame_url = resolve_image_ref_url(request.end_frame)?;
-  let reference_image_urls = resolve_image_list_ref_urls(request.reference_images)?;
-  let reference_video_urls = resolve_video_list_ref_urls(request.reference_videos)?;
-  let reference_audio_urls = resolve_audio_list_ref_urls(request.reference_audio)?;
+  let start_frame_url = resolve_image_ref_url(request.start_frame.clone())?;
+  let end_frame_url = resolve_image_ref_url(request.end_frame.clone())?;
+  let reference_image_urls = resolve_image_list_ref_urls(request.reference_images.clone())?;
+  let reference_video_urls = resolve_video_list_ref_urls(request.reference_videos.clone())?;
+  let reference_audio_urls = resolve_audio_list_ref_urls(request.reference_audio.clone())?;
 
   let resolution = plan_resolution(request.aspect_ratio, strategy)?;
   let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
   let duration_seconds = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::Seedance2proSeedance2p0(PlanSeedance2proSeedance2p0 {
-    prompt: request.prompt.map(|p| p.to_string()),
+    prompt: request.prompt.clone(),
     start_frame_url,
     end_frame_url,
     reference_image_urls,
@@ -52,7 +52,7 @@ pub fn plan_generate_video_seedance2pro_seedance2p0<'a>(
 }
 
 fn resolve_image_ref_url(
-  image_ref: Option<ImageRef<'_>>,
+  image_ref: Option<ImageRef>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),
@@ -64,7 +64,7 @@ fn resolve_image_ref_url(
 }
 
 fn resolve_image_list_ref_urls(
-  image_list_ref: Option<ImageListRef<'_>>,
+  image_list_ref: Option<ImageListRef>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(None),
@@ -76,7 +76,7 @@ fn resolve_image_list_ref_urls(
 }
 
 fn resolve_video_list_ref_urls(
-  video_list_ref: Option<VideoListRef<'_>>,
+  video_list_ref: Option<VideoListRef>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
   match video_list_ref {
     None => Ok(None),
@@ -88,7 +88,7 @@ fn resolve_video_list_ref_urls(
 }
 
 fn resolve_audio_list_ref_urls(
-  audio_list_ref: Option<AudioListRef<'_>>,
+  audio_list_ref: Option<AudioListRef>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
   match audio_list_ref {
     None => Ok(None),

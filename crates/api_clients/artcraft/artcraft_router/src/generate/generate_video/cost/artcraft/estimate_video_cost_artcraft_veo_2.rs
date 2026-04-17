@@ -2,7 +2,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_artcraft_veo_2(
-  plan: &PlanArtcraftVeo2<'_>,
+  plan: &PlanArtcraftVeo2,
 ) -> VideoGenerationCostEstimate {
   // Mirrors fal_client veo_2 cost calculator: 5s = $2.50, +$0.50/s above 5s.
   let seconds = plan.duration_seconds_for_cost();

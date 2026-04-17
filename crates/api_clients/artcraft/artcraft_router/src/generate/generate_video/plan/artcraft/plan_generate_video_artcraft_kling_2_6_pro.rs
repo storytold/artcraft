@@ -11,22 +11,22 @@ use artcraft_api_defs::generate::video::multi_function::kling_2_6_multi_function
 use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftKling2p6Pro<'a> {
-  pub prompt: Option<&'a str>,
-  pub negative_prompt: Option<&'a str>,
-  pub start_frame: Option<&'a MediaFileToken>,
+pub struct PlanArtcraftKling2p6Pro {
+  pub prompt: Option<String>,
+  pub negative_prompt: Option<String>,
+  pub start_frame: Option<MediaFileToken>,
   pub aspect_ratio: Option<Kling2p6ProMultiFunctionVideoGenAspectRatio>,
   pub duration: Option<Kling2p6ProMultiFunctionVideoGenDuration>,
   pub generate_audio: Option<bool>,
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_video_artcraft_kling_2_6_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_artcraft_kling_2_6_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let start_frame = match request.start_frame {
+  let start_frame = match request.start_frame.clone() {
     None => None,
     Some(ImageRef::MediaFileToken(t)) => Some(t),
     Some(ImageRef::Url(_)) => {
@@ -45,8 +45,8 @@ pub fn plan_generate_video_artcraft_kling_2_6_pro<'a>(
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::ArtcraftKling2p6Pro(PlanArtcraftKling2p6Pro {
-    prompt: request.prompt,
-    negative_prompt: request.negative_prompt,
+    prompt: request.prompt.clone(),
+    negative_prompt: request.negative_prompt.clone(),
     start_frame,
     aspect_ratio,
     duration,
@@ -120,7 +120,7 @@ fn plan_duration(
   }
 }
 
-impl PlanArtcraftKling2p6Pro<'_> {
+impl PlanArtcraftKling2p6Pro {
   pub fn is_ten_seconds(&self) -> bool {
     matches!(self.duration, Some(Kling2p6ProMultiFunctionVideoGenDuration::TenSeconds))
   }

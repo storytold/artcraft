@@ -9,7 +9,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_artcraft_seedance_1_0_lite(
-  plan: &PlanArtcraftSeedance10Lite<'_>,
+  plan: &PlanArtcraftSeedance10Lite,
 ) -> VideoGenerationCostEstimate {
   // Legacy handler defaults: 5 seconds, 720p. Delegate to the Fal client's
   // cost calculator to guarantee parity with what we actually charge.

@@ -37,7 +37,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_ban
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_banana_pro::plan_generate_image_fal_nano_banana_pro;
 
 #[derive(Clone, Debug)]
-pub struct GenerateImageRequest<'a> {
+pub struct GenerateImageRequest {
   /// Which model to use.
   pub model: CommonImageModel,
 
@@ -45,12 +45,12 @@ pub struct GenerateImageRequest<'a> {
   pub provider: Provider,
 
   /// The prompt for the image generation.
-  pub prompt: Option<&'a str>,
+  pub prompt: Option<String>,
 
   /// Input images for image editing.
   /// If present, we're doing image editing (image-to-image).
   /// If absent, we're doing text-to-image.
-  pub image_inputs: Option<ImageListRef<'a>>,
+  pub image_inputs: Option<ImageListRef>,
 
   /// The resolution to use.
   pub resolution: Option<CommonResolution>,
@@ -83,12 +83,12 @@ pub struct GenerateImageRequest<'a> {
 
   /// Some providers support idempotency.
   /// If not supplied, we'll generate one for the required providers.
-  pub idempotency_token: Option<&'a str>,
+  pub idempotency_token: Option<String>,
 }
 
-impl<'a> GenerateImageRequest<'a> {
+impl GenerateImageRequest {
   /// Read the image generation request, construct a plan, then yield a means to execute it.
-  pub fn build(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
+  pub fn build(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
     match self.provider {
       Provider::Artcraft => self.build_artcraft(),
       Provider::Fal => self.build_fal(),
@@ -96,7 +96,7 @@ impl<'a> GenerateImageRequest<'a> {
     }
   }
 
-  fn build_artcraft(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
+  fn build_artcraft(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
     match self.model {
       CommonImageModel::Flux1Dev => plan_generate_image_artcraft_flux_1_dev(self),
       CommonImageModel::Flux1Schnell => plan_generate_image_artcraft_flux_1_schnell(self),
@@ -115,7 +115,7 @@ impl<'a> GenerateImageRequest<'a> {
     }
   }
 
-  fn build_fal(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
+  fn build_fal(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
     match self.model {
       CommonImageModel::Flux1Dev => plan_generate_image_fal_flux_1_dev(self),
       CommonImageModel::Flux1Schnell => plan_generate_image_fal_flux_1_schnell(self),
@@ -138,14 +138,14 @@ impl<'a> GenerateImageRequest<'a> {
     }
   }
 
-  fn unsupported_provider(&self) -> Result<ImageGenerationPlan<'_>, ArtcraftRouterError> {
+  fn unsupported_provider(&self) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
     Err(ArtcraftRouterError::UnsupportedModel(
       format!("Image generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
     ))
   }
 
   pub fn get_or_generate_idempotency_token(&self) -> String {
-    self.idempotency_token.map(|t| t.to_string())
+    self.idempotency_token.clone()
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
   }
 }

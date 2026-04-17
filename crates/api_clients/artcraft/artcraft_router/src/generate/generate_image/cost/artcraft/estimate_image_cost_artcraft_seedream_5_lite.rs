@@ -4,7 +4,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_seedream_5_lite::PlanArtcraftSeedream5Lite;
 
 pub(crate) fn estimate_image_cost_artcraft_seedream_5_lite(
-  plan: &PlanArtcraftSeedream5Lite<'_>,
+  plan: &PlanArtcraftSeedream5Lite,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.04/image (4 cents). 1 credit = 1 USD cent.
   let cost_per_image: u64 = 4;

@@ -2,7 +2,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_artcraft_kling_1_6_pro(
-  plan: &PlanArtcraftKling16Pro<'_>,
+  plan: &PlanArtcraftKling16Pro,
 ) -> VideoGenerationCostEstimate {
   // Mirrors fal_client kling_v1p6_pro: 5s = $0.475 (rounded up to 48¢), 10s = $0.95 (95¢).
   let cost_in_usd_cents: u64 = if plan.is_ten_seconds() { 95 } else { 48 };

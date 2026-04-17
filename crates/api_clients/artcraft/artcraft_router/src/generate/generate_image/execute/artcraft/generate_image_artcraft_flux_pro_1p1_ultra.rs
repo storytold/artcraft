@@ -9,12 +9,12 @@ use artcraft_api_defs::generate::image::text::generate_flux_pro_11_ultra_text_to
 use artcraft_client::endpoints::generate::image::text::generate_flux_pro_11_ultra_text_to_image::generate_flux_pro_11_ultra_text_to_image;
 
 pub async fn execute_artcraft_flux_pro_1p1_ultra(
-  plan: &PlanArtcraftFluxPro11Ultra<'_>,
+  plan: &PlanArtcraftFluxPro11Ultra,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let request = GenerateFluxPro11UltraTextToImageRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    prompt: plan.prompt.map(|p| p.to_string()),
+    prompt: plan.prompt.clone(),
     aspect_ratio: plan.aspect_ratio,
     num_images: Some(plan.num_images),
   };
@@ -49,7 +49,7 @@ mod tests {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       quality: None,
       image_batch_count: Some(1),
-      prompt: Some("a cat walking through a cyberpunk city at night"),
+      prompt: Some("a cat walking through a cyberpunk city at night".to_string()),
       ..base_flux_pro_1p1_ultra_image_request()
     };
 
@@ -72,7 +72,7 @@ mod tests {
       aspect_ratio: Some(CommonAspectRatio::Square),
       quality: None,
       image_batch_count: Some(4),
-      prompt: Some("a dog surfing a wave, cinematic"),
+      prompt: Some("a dog surfing a wave, cinematic".to_string()),
       ..base_flux_pro_1p1_ultra_image_request()
     };
 
@@ -98,7 +98,7 @@ mod tests {
         aspect_ratio: Some(ar),
         quality: None,
         image_batch_count: Some(1),
-        prompt: Some("a t-rex walking through an abandoned desert city at night"),
+        prompt: Some("a t-rex walking through an abandoned desert city at night".to_string()),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
         ..base_flux_pro_1p1_ultra_image_request()
       };

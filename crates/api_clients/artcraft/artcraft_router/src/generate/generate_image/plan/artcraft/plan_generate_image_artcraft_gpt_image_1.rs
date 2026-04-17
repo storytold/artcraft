@@ -43,10 +43,10 @@ pub enum ArtcraftGptImage1NumImages {
 }
 
 #[derive(Debug, Clone)]
-pub struct PlanArtcraftGptImage1<'a> {
-  pub prompt: Option<&'a str>,
+pub struct PlanArtcraftGptImage1 {
+  pub prompt: Option<String>,
   /// Input images for image editing. None means text-to-image mode.
-  pub image_inputs: Option<&'a Vec<MediaFileToken>>,
+  pub image_inputs: Option<Vec<MediaFileToken>>,
   /// Number of input images (0 for text-to-image). This is counted from either
   /// media tokens or hydrated URLs, so the cost estimator can use it without
   /// needing to inspect image_inputs (which is None for URL-form inputs).
@@ -59,19 +59,19 @@ pub struct PlanArtcraftGptImage1<'a> {
   pub idempotency_token: String,
 }
 
-pub fn plan_generate_image_artcraft_gpt_image_1<'a>(
-  request: &'a GenerateImageRequest<'a>,
-) -> Result<ImageGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_image_artcraft_gpt_image_1(
+  request: &GenerateImageRequest,
+) -> Result<ImageGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let image_inputs = resolve_image_list_ref(request.image_inputs)?;
-  let num_input_images = count_input_images(request.image_inputs);
+  let image_inputs = resolve_image_list_ref(request.image_inputs.clone())?;
+  let num_input_images = count_input_images(request.image_inputs.clone());
   let image_size = plan_image_size(request.aspect_ratio);
   let quality = plan_quality(request.quality);
   let num_images = plan_num_images(request.image_batch_count, strategy)?;
 
   Ok(ImageGenerationPlan::ArtcraftGptImage1(PlanArtcraftGptImage1 {
-    prompt: request.prompt,
+    prompt: request.prompt.clone(),
     image_inputs,
     num_input_images,
     image_size,
@@ -81,9 +81,9 @@ pub fn plan_generate_image_artcraft_gpt_image_1<'a>(
   }))
 }
 
-fn resolve_image_list_ref<'a>(
-  image_list_ref: Option<ImageListRef<'a>>,
-) -> Result<Option<&'a Vec<MediaFileToken>>, ArtcraftRouterError> {
+fn resolve_image_list_ref(
+  image_list_ref: Option<ImageListRef>,
+) -> Result<Option<Vec<MediaFileToken>>, ArtcraftRouterError> {
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
@@ -95,7 +95,7 @@ fn resolve_image_list_ref<'a>(
   }
 }
 
-fn count_input_images(image_inputs: Option<ImageListRef<'_>>) -> u64 {
+fn count_input_images(image_inputs: Option<ImageListRef>) -> u64 {
   match image_inputs {
     None => 0,
     Some(ImageListRef::MediaFileTokens(tokens)) => tokens.len() as u64,
@@ -435,7 +435,7 @@ mod tests {
   fn media_token_image_inputs_is_edit_mode() {
     let tokens = vec![];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       ..base_gpt_image_1_image_request()
     };
     let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
@@ -451,7 +451,7 @@ mod tests {
     // cost only depends on quality + size + num_images.
     let urls = vec!["https://example.com/image.jpg".to_string()];
     let request = GenerateImageRequest {
-      image_inputs: Some(ImageListRef::Urls(&urls)),
+      image_inputs: Some(ImageListRef::Urls(urls.clone())),
       ..base_gpt_image_1_image_request()
     };
     let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
@@ -474,7 +474,7 @@ mod tests {
   #[test]
   fn idempotency_token_passthrough() {
     let token = "11111111-1111-1111-1111-111111111111";
-    let request = GenerateImageRequest { idempotency_token: Some(token), ..base_gpt_image_1_image_request() };
+    let request = GenerateImageRequest { idempotency_token: Some(token.to_string()), ..base_gpt_image_1_image_request() };
     let ImageGenerationPlan::ArtcraftGptImage1(plan) = request.build().unwrap() else {
       panic!("expected ArtcraftGptImage1")
     };

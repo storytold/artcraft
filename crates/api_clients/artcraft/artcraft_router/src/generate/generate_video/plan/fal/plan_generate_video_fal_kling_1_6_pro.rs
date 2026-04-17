@@ -18,18 +18,18 @@ pub struct PlanFalKling16Pro {
   pub duration: Kling1p6ProDuration,
 }
 
-pub fn plan_generate_video_fal_kling_1_6_pro<'a>(
-  request: &'a GenerateVideoRequest<'a>,
-) -> Result<VideoGenerationPlan<'a>, ArtcraftRouterError> {
+pub fn plan_generate_video_fal_kling_1_6_pro(
+  request: &GenerateVideoRequest,
+) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
-  let image_url = require_url(request.start_frame, "start_frame", "Kling 1.6 Pro requires a starting frame")?;
-  let end_image_url = optional_url(request.end_frame)?;
+  let image_url = require_url(request.start_frame.clone(), "start_frame", "Kling 1.6 Pro requires a starting frame")?;
+  let end_image_url = optional_url(request.end_frame.clone())?;
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let duration = plan_duration(request.duration_seconds, strategy)?;
 
   Ok(VideoGenerationPlan::FalKling16Pro(PlanFalKling16Pro {
-    prompt: request.prompt.unwrap_or("").to_string(),
+    prompt: request.prompt.clone().unwrap_or_default(),
     image_url,
     end_image_url,
     aspect_ratio,
@@ -38,7 +38,7 @@ pub fn plan_generate_video_fal_kling_1_6_pro<'a>(
 }
 
 pub(crate) fn require_url(
-  image_ref: Option<ImageRef<'_>>,
+  image_ref: Option<ImageRef>,
   field: &'static str,
   reason: &str,
 ) -> Result<String, ArtcraftRouterError> {
@@ -55,7 +55,7 @@ pub(crate) fn require_url(
 }
 
 pub(crate) fn optional_url(
-  image_ref: Option<ImageRef<'_>>,
+  image_ref: Option<ImageRef>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
   match image_ref {
     None => Ok(None),

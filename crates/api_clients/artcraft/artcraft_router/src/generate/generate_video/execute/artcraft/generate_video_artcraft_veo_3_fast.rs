@@ -9,13 +9,13 @@ use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::Gene
 use artcraft_client::endpoints::generate::video::generate_veo_3_fast_image_to_video::generate_veo_3_fast_image_to_video;
 
 pub async fn execute_artcraft_veo_3_fast(
-  plan: &PlanArtcraftVeo3Fast<'_>,
+  plan: &PlanArtcraftVeo3Fast,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let request = GenerateVeo3FastImageToVideoRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
-    media_file_token: plan.start_frame.map(|t| t.to_owned()),
-    prompt: plan.prompt.map(|p| p.to_string()),
+    media_file_token: plan.start_frame.clone(),
+    prompt: plan.prompt.clone(),
     aspect_ratio: plan.aspect_ratio,
     resolution: plan.resolution,
     duration: plan.duration,

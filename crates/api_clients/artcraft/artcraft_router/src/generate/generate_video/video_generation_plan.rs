@@ -114,25 +114,25 @@ use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_see
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 #[derive(Debug)]
-pub enum VideoGenerationPlan<'a> {
-  ArtcraftKling16Pro(PlanArtcraftKling16Pro<'a>),
-  ArtcraftKling21Master(PlanArtcraftKling21Master<'a>),
-  ArtcraftKling21Pro(PlanArtcraftKling21Pro<'a>),
-  ArtcraftKling2p5TurboPro(PlanArtcraftKling2p5TurboPro<'a>),
-  ArtcraftKling2p6Pro(PlanArtcraftKling2p6Pro<'a>),
-  ArtcraftKling3p0Pro(PlanArtcraftKling3p0Pro<'a>),
-  ArtcraftKling3p0Standard(PlanArtcraftKling3p0Standard<'a>),
-  ArtcraftSeedance10Lite(PlanArtcraftSeedance10Lite<'a>),
-  ArtcraftSeedance1p5Pro(PlanArtcraftSeedance1p5Pro<'a>),
-  ArtcraftSeedance2p0(PlanArtcraftSeedance2p0<'a>),
-  ArtcraftSeedance2p0Fast(PlanArtcraftSeedance2p0<'a>),
-  ArtcraftSora2(PlanArtcraftSora2<'a>),
-  ArtcraftSora2Pro(PlanArtcraftSora2Pro<'a>),
-  ArtcraftVeo2(PlanArtcraftVeo2<'a>),
-  ArtcraftVeo3(PlanArtcraftVeo3<'a>),
-  ArtcraftVeo3Fast(PlanArtcraftVeo3Fast<'a>),
-  ArtcraftVeo3p1(PlanArtcraftVeo3p1<'a>),
-  ArtcraftVeo3p1Fast(PlanArtcraftVeo3p1Fast<'a>),
+pub enum VideoGenerationPlan {
+  ArtcraftKling16Pro(PlanArtcraftKling16Pro),
+  ArtcraftKling21Master(PlanArtcraftKling21Master),
+  ArtcraftKling21Pro(PlanArtcraftKling21Pro),
+  ArtcraftKling2p5TurboPro(PlanArtcraftKling2p5TurboPro),
+  ArtcraftKling2p6Pro(PlanArtcraftKling2p6Pro),
+  ArtcraftKling3p0Pro(PlanArtcraftKling3p0Pro),
+  ArtcraftKling3p0Standard(PlanArtcraftKling3p0Standard),
+  ArtcraftSeedance10Lite(PlanArtcraftSeedance10Lite),
+  ArtcraftSeedance1p5Pro(PlanArtcraftSeedance1p5Pro),
+  ArtcraftSeedance2p0(PlanArtcraftSeedance2p0),
+  ArtcraftSeedance2p0Fast(PlanArtcraftSeedance2p0),
+  ArtcraftSora2(PlanArtcraftSora2),
+  ArtcraftSora2Pro(PlanArtcraftSora2Pro),
+  ArtcraftVeo2(PlanArtcraftVeo2),
+  ArtcraftVeo3(PlanArtcraftVeo3),
+  ArtcraftVeo3Fast(PlanArtcraftVeo3Fast),
+  ArtcraftVeo3p1(PlanArtcraftVeo3p1),
+  ArtcraftVeo3p1Fast(PlanArtcraftVeo3p1Fast),
   MuapiSeedance2p0(PlanMuapiSeedance2p0),
   Seedance2proSeedance2p0(PlanSeedance2proSeedance2p0),
   Seedance2proSeedance2p0Fast(PlanSeedance2proSeedance2p0Fast),
@@ -154,7 +154,7 @@ pub enum VideoGenerationPlan<'a> {
   FalSora2Pro(PlanFalSora2Pro),
 }
 
-impl<'a> VideoGenerationPlan<'a> {
+impl VideoGenerationPlan {
   pub async fn generate_video(
     &self,
     client: &RouterClient,

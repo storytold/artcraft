@@ -4,7 +4,7 @@ use crate::generate::generate_image::image_generation_cost_estimate::ImageGenera
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_qwen_edit_2511_angles::PlanArtcraftQwenEdit2511Angles;
 
 pub(crate) fn estimate_image_cost_artcraft_qwen_edit_2511_angles(
-  plan: &PlanArtcraftQwenEdit2511Angles<'_>,
+  plan: &PlanArtcraftQwenEdit2511Angles,
 ) -> ImageGenerationCostEstimate {
   // Pricing: $0.04/image (4 cents). 1 credit = 1 USD cent.
   let cost_per_image: u64 = 4;
@@ -43,7 +43,7 @@ mod tests {
       model: CommonImageModel::QwenEdit2511Angles,
       provider: Provider::Artcraft,
       prompt: None,
-      image_inputs: Some(ImageListRef::MediaFileTokens(&tokens)),
+      image_inputs: Some(ImageListRef::MediaFileTokens(tokens.clone())),
       resolution: None,
       aspect_ratio: None,
       quality: None,
