@@ -473,6 +473,8 @@ function formatTitleParts(job: Job) {
     kind = "Video";
   } else if (taskTypeStr.includes("image")) {
     kind = "Image";
+  } else if (taskTypeStr.includes("character")) {
+    kind = "Character";
   }
 
   const modelDisplay = modelTypeStr
@@ -631,6 +633,10 @@ export const TaskQueue = () => {
   const [lightboxCdnUrl, setLightboxCdnUrl] = useState<string | undefined>();
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
   const prevFailedIdsRef = useRef<Set<string>>(new Set());
+  // On first load we seed the "seen" sets with whatever is already on the
+  // server so we don't blast the user with toasts for jobs completed during
+  // a previous session.
+  const initialLoadDoneRef = useRef(false);
 
   const [confirmationConfig, setConfirmationConfig] = useState<{
     isOpen: boolean;
@@ -752,40 +758,46 @@ export const TaskQueue = () => {
 
         // Track newly completed IDs
         const newCompletedIdSet = new Set(done.map((d) => d.id));
-        const newlyCompleted = done.filter(
-          (d) => !prevCompletedIdsRef.current.has(d.id),
-        );
-        prevCompletedIdsRef.current = newCompletedIdSet;
-
-        if (newlyCompleted.length > 0) {
-          // Show toasts for newly completed jobs
-          for (const task of newlyCompleted) {
-            showToast(
-              "success",
-              `${task.title} complete${task.subtitle ? ` — ${task.subtitle}` : ""}`,
-            );
-          }
-          if (!isPopoverOpen) {
-            setUnreadCompletedIds((prev) =>
-              Array.from(
-                new Set([...(prev ?? []), ...newlyCompleted.map((d) => d.id)]),
-              ),
-            );
-          }
-        }
-
-        // Track newly failed IDs and show toasts
         const newFailedIdSet = new Set(failedTasks.map((f) => f.id));
-        const newlyFailed = failedTasks.filter(
-          (f) => !prevFailedIdsRef.current.has(f.id),
-        );
-        prevFailedIdsRef.current = newFailedIdSet;
 
-        for (const task of newlyFailed) {
-          showToast(
-            "error",
-            `${task.title} failed${task.failureReason ? ` — ${task.failureReason}` : ""}`,
+        if (!initialLoadDoneRef.current) {
+          // First load: seed the "seen" sets without toasting.
+          prevCompletedIdsRef.current = newCompletedIdSet;
+          prevFailedIdsRef.current = newFailedIdSet;
+          initialLoadDoneRef.current = true;
+        } else {
+          const newlyCompleted = done.filter(
+            (d) => !prevCompletedIdsRef.current.has(d.id),
           );
+          prevCompletedIdsRef.current = newCompletedIdSet;
+
+          if (newlyCompleted.length > 0) {
+            for (const task of newlyCompleted) {
+              showToast("success", `${task.title} creation complete`);
+            }
+            if (!isPopoverOpen) {
+              setUnreadCompletedIds((prev) =>
+                Array.from(
+                  new Set([
+                    ...(prev ?? []),
+                    ...newlyCompleted.map((d) => d.id),
+                  ]),
+                ),
+              );
+            }
+          }
+
+          const newlyFailed = failedTasks.filter(
+            (f) => !prevFailedIdsRef.current.has(f.id),
+          );
+          prevFailedIdsRef.current = newFailedIdSet;
+
+          for (const task of newlyFailed) {
+            showToast(
+              "error",
+              `${task.title} creation failed${task.failureReason ? ` — ${task.failureReason}` : ""}`,
+            );
+          }
         }
       } catch {
         // ignore

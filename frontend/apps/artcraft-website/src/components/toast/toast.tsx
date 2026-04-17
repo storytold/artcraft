@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCheck,
-  faCircleExclamation,
+  faExclamation,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 
@@ -27,11 +27,7 @@ interface ToastDetail {
   duration?: number;
 }
 
-export function showToast(
-  type: ToastType,
-  message: string,
-  duration?: number,
-) {
+export function showToast(type: ToastType, message: string, duration?: number) {
   window.dispatchEvent(
     new CustomEvent<ToastDetail>(TOAST_EVENT, {
       detail: { type, message, duration },
@@ -57,8 +53,7 @@ export const ToastContainer = () => {
       setToasts((prev) => {
         if (
           prev.some(
-            (t) =>
-              t.message === message && now - t.createdAt < DEDUP_WINDOW,
+            (t) => t.message === message && now - t.createdAt < DEDUP_WINDOW,
           )
         )
           return prev;
@@ -86,23 +81,25 @@ export const ToastContainer = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-16 right-6 z-[100] flex flex-col items-end gap-2">
+    <div className="fixed sm:top-16 top-14 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-5 z-[100] flex flex-col items-center sm:items-end gap-2 px-4 sm:px-0 max-w-[calc(100vw-1rem)]">
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          className={`flex items-center gap-2.5 rounded-lg border px-4 py-2.5 text-sm shadow-lg backdrop-blur-xl animate-toast-in ${
-            toast.type === "success"
-              ? "border-green-500/30 bg-green-500/15 text-green-200"
-              : "border-red-500/30 bg-red-500/15 text-red-200"
-          }`}
+          className="glass flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-white animate-toast-in"
         >
-          <FontAwesomeIcon
-            icon={toast.type === "success" ? faCheck : faCircleExclamation}
-            className={
-              toast.type === "success" ? "text-green-400" : "text-red-400"
-            }
-          />
-          <span>{toast.message}</span>
+          <div
+            className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${
+              toast.type === "success" ? "bg-green-500" : "bg-red-500"
+            }`}
+          >
+            <FontAwesomeIcon
+              icon={toast.type === "success" ? faCheck : faExclamation}
+              className="h-3 w-3 text-white"
+            />
+          </div>
+          <span className="flex-1 text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">
+            {toast.message}
+          </span>
           <button
             onClick={() => dismiss(toast.id)}
             className="ml-1 text-white/40 transition-colors hover:text-white/80"

@@ -613,10 +613,23 @@ export default function CreateVideo() {
         ? referenceAudios.map((a) => a.mediaToken).filter((t) => t.length > 0)
         : undefined;
 
-    // Extract character tokens from @-mentions in prompt
-    const mentionedCharacters = activeCharacters.filter((c) =>
-      prompt.includes(`@${c.name}`),
-    );
+    // Extract character tokens from @-mentions in the prompt. Match longest
+    // names first and require a non-word boundary after so `@Bob` doesn't
+    // false-match inside `@Bobby`, and only pick up characters that still
+    // exist in the current store (stale names are ignored).
+    const mentionedCharacters = (() => {
+      if (activeCharacters.length === 0) return [];
+      const sorted = [...activeCharacters].sort(
+        (a, b) => b.name.length - a.name.length,
+      );
+      const matched = new Set<string>();
+      for (const c of sorted) {
+        const escaped = c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`@${escaped}(?![\\w])`);
+        if (regex.test(prompt)) matched.add(c.character_token);
+      }
+      return activeCharacters.filter((c) => matched.has(c.character_token));
+    })();
     const referenceCharacterTokens =
       mentionedCharacters.length > 0
         ? mentionedCharacters.map((c) => c.character_token)
