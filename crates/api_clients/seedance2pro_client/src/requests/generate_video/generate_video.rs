@@ -126,7 +126,7 @@ impl GenerateVideoArgs<'_> {
   ///
   /// Legacy 720p pricing uses the original Kinovi credit package rates.
   /// All other model/resolution combos use the newer rate: 22,000 credits / $114.
-  pub fn credits_per_dollar(&self) -> f64 {
+  fn credits_per_dollar(&self) -> f64 {
     match (self.model_type, self.output_resolution) {
       // Legacy: Seedance 2.0 Pro @ 720p — 25,000 credits for $99.99
       (KinoviModelType::Seedance2Pro, None)
@@ -700,12 +700,11 @@ mod tests {
 
     #[test]
     fn credits_per_dollar_new_rate() {
-      let new_rate = 22_000.0 / 114.0;
-      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).credits_per_dollar(), new_rate);
-      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).credits_per_dollar(), new_rate);
-      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).credits_per_dollar(), new_rate);
+      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).credits_per_dollar(), 193.0);
       // Fast 1080p (not officially supported) also uses new rate
-      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).credits_per_dollar(), new_rate);
+      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).credits_per_dollar(), 193.0);
     }
   }
 
