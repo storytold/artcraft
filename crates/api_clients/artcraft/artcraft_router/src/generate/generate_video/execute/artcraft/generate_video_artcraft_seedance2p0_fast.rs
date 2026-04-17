@@ -5,6 +5,7 @@ use crate::generate::generate_video::generate_video_response::{
   ArtcraftVideoResponsePayload, GenerateVideoResponse,
 };
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
+use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{Seedance2p0AspectRatio, Seedance2p0BatchCount};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_client::endpoints::omni_gen::generate::video::omni_gen_video::omni_gen_video_generate;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
@@ -19,11 +20,11 @@ pub async fn execute_artcraft_seedance2p0_fast(
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let aspect_ratio = plan.aspect_ratio.map(|ar| match ar {
-    artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0AspectRatio::Landscape16x9 => CommonAspectRatio::WideSixteenByNine,
-    artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0AspectRatio::Portrait9x16 => CommonAspectRatio::TallNineBySixteen,
-    artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0AspectRatio::Square1x1 => CommonAspectRatio::Square,
-    artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0AspectRatio::Standard4x3 => CommonAspectRatio::WideFourByThree,
-    artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0AspectRatio::Portrait3x4 => CommonAspectRatio::TallThreeByFour,
+    Seedance2p0AspectRatio::Landscape16x9 => CommonAspectRatio::WideSixteenByNine,
+    Seedance2p0AspectRatio::Portrait9x16 => CommonAspectRatio::TallNineBySixteen,
+    Seedance2p0AspectRatio::Square1x1 => CommonAspectRatio::Square,
+    Seedance2p0AspectRatio::Standard4x3 => CommonAspectRatio::WideFourByThree,
+    Seedance2p0AspectRatio::Portrait3x4 => CommonAspectRatio::TallThreeByFour,
   });
 
   let request = OmniGenVideoCostAndGenerateRequest {
@@ -42,9 +43,9 @@ pub async fn execute_artcraft_seedance2p0_fast(
     quality: None,
     duration_seconds: plan.duration_seconds.map(|d| d as u16),
     video_batch_count: Some(match plan.batch_count {
-      artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0BatchCount::One => 1,
-      artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0BatchCount::Two => 2,
-      artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0BatchCount::Four => 4,
+      Seedance2p0BatchCount::One => 1,
+      Seedance2p0BatchCount::Two => 2,
+      Seedance2p0BatchCount::Four => 4,
     }),
     generate_audio: None,
   };
