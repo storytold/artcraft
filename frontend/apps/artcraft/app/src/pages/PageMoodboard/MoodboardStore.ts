@@ -21,6 +21,7 @@ interface MoodboardState {
   selectBoard: (id: string) => void;
   updateBoard: (id: string, patch: Partial<Omit<Board, "id" | "shotNumber">>) => void;
   reorderBoards: (fromIndex: number, toIndex: number) => void;
+  reset: () => void;
 }
 
 const syncShotNumbers = (boards: Board[]): Board[] =>
@@ -76,5 +77,9 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       arr.splice(toIndex, 0, moved);
       return { boards: syncShotNumbers(arr) };
     });
+  },
+
+  reset: () => {
+    set({ boards: [], selectedBoardId: null });
   },
 }));

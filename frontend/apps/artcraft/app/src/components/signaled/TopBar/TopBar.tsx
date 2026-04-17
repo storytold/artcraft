@@ -58,7 +58,8 @@ import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { APP_DESCRIPTORS } from "~/config/appMenu";
+import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
+import { useMoodboardStore } from "~/pages/PageMoodboard";
 import { useSceneStore } from "@storyteller/ui-pagedraw";
 import {
   is3DEditorInitialized,
@@ -764,6 +765,10 @@ export const TopBar = ({ pageName }: Props) => {
         globalAccountLogoutCallback={() => {
           setIsSettingsModalOpen(false);
           setLogoutStates();
+        }}
+        onStoryboardPageDisable={() => {
+          useMoodboardStore.getState().reset();
+          goToApp("IMAGE");
         }}
         initialSection={settingsSection}
       />

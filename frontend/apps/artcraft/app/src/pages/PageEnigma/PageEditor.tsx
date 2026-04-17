@@ -19,6 +19,7 @@ import { ImageTo3DWorld } from "../PageImageTo3DWorld";
 import { RemoveBackground } from "../PageRemoveBackground";
 import { Angles } from "../PageAngles";
 import { Moodboard } from "../PageMoodboard";
+import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
 import {
   timelineHeight,
@@ -109,6 +110,7 @@ export const PageEditor = () => {
   }, [status.value, triggerRecheck]);
 
   const tabStore = useTabStore();
+  const storyboardPageEnabled = useStoryboardPageEnabled();
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };
@@ -644,7 +646,7 @@ export const PageEditor = () => {
           <Angles />
         </div>
       )}
-      {tabStore.activeTabId == "MOODBOARD" && (
+      {tabStore.activeTabId == "MOODBOARD" && storyboardPageEnabled && (
         <div>
           <Moodboard />
         </div>

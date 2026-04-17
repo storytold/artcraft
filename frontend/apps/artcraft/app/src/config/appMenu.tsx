@@ -11,6 +11,11 @@ import {
   faPenNib,
   faCrosshairs,
 } from "@fortawesome/pro-solid-svg-icons";
+import { useMemo } from "react";
+import {
+  useExperimentalStore,
+  useStoryboardPageEnabled,
+} from "@storyteller/ui-settings-modal";
 import { useTabStore, TabId } from "~/pages/Stores/TabState";
 import { set3DPageMounted } from "~/pages/PageEnigma/Editor/editor";
 
@@ -206,6 +211,33 @@ export const GENERATE_APPS = ALL_APPS.filter(
 );
 export const EDIT_APPS = ALL_APPS.filter((app) => app.category === "edit");
 
+export const useVisibleApps = (): FullAppItem[] => {
+  const storyboardEnabled = useStoryboardPageEnabled();
+  return useMemo(
+    () =>
+      ALL_APPS.filter((app) =>
+        app.action === "MOODBOARD" ? storyboardEnabled : true,
+      ),
+    [storyboardEnabled],
+  );
+};
+
+export const useGenerateApps = (): FullAppItem[] => {
+  const visible = useVisibleApps();
+  return useMemo(
+    () => visible.filter((app) => app.category === "generate"),
+    [visible],
+  );
+};
+
+export const useEditApps = (): FullAppItem[] => {
+  const visible = useVisibleApps();
+  return useMemo(
+    () => visible.filter((app) => app.category === "edit"),
+    [visible],
+  );
+};
+
 export const getBadgeStyles = (badge?: string) => {
   switch (badge) {
     case "NEW":
@@ -237,6 +269,11 @@ export const goToApp = (action?: string) => {
       "MOODBOARD",
     ].includes(action)
   ) {
+    if (action === "MOODBOARD") {
+      const { enabled, storyboardPageEnabled } =
+        useExperimentalStore.getState();
+      if (!enabled || !storyboardPageEnabled) return;
+    }
     if (action === "3D") {
       set3DPageMounted(true);
     } else {

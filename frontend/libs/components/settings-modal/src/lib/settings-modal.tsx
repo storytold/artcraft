@@ -28,6 +28,7 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   globalAccountLogoutCallback: () => void;
+  onStoryboardPageDisable?: () => void;
   initialSection?: SettingsSection;
 }
 
@@ -45,6 +46,7 @@ export const SettingsModal = ({
   isOpen,
   onClose,
   globalAccountLogoutCallback,
+  onStoryboardPageDisable,
   initialSection = "general",
 }: SettingsModalProps) => {
   const [selectedSection, setSelectedSection] =
@@ -110,7 +112,11 @@ export const SettingsModal = ({
       case "billing":
         return <BillingSettingsPane />;
       case "experimental":
-        return <ExperimentalSettingsPane />;
+        return (
+          <ExperimentalSettingsPane
+            onStoryboardPageDisable={onStoryboardPageDisable}
+          />
+        );
     }
   };
 

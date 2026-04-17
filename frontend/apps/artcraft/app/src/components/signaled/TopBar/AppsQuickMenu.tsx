@@ -1,19 +1,21 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 import {
-  GENERATE_APPS,
-  EDIT_APPS,
+  useGenerateApps,
+  useEditApps,
   getBadgeStyles,
   goToApp,
 } from "~/config/appMenu";
 
 export const AppsQuickMenu = () => {
+  const generateApps = useGenerateApps();
+  const editApps = useEditApps();
   return (
     <div className="grid w-[680px] grid-cols-2 gap-3">
       <div>
         <h3 className="mb-2 px-2 text-xs font-semibold opacity-50">Generate</h3>
         <div className="space-y-0.5">
-          {GENERATE_APPS.map((app) => (
+          {generateApps.map((app) => (
             <button
               key={app.id}
               onClick={() => goToApp(app.action)}
@@ -61,7 +63,7 @@ export const AppsQuickMenu = () => {
       <div>
         <h3 className="mb-2 px-2 text-xs font-semibold opacity-50">Edit</h3>
         <div className="space-y-0.5">
-          {EDIT_APPS.map((app) => (
+          {editApps.map((app) => (
             <button
               key={app.id}
               onClick={() => goToApp(app.action)}

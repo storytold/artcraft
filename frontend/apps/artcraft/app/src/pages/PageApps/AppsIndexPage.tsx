@@ -2,16 +2,18 @@ import { faGrid2 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 import {
-  GENERATE_APPS,
-  EDIT_APPS,
+  useGenerateApps,
+  useEditApps,
   getBadgeStyles,
   goToApp,
 } from "~/config/appMenu";
 
 export const AppsIndexPage = () => {
+  const generateApps = useGenerateApps();
+  const editApps = useEditApps();
   const categories = [
-    { title: "Generate", apps: GENERATE_APPS },
-    { title: "Edit", apps: EDIT_APPS },
+    { title: "Generate", apps: generateApps },
+    { title: "Edit", apps: editApps },
   ];
 
   return (
