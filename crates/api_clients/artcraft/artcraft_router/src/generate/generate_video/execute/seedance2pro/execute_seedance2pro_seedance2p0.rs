@@ -46,7 +46,7 @@ pub async fn execute_seedance2pro_seedance2p0(
     reference_audio_urls,
     character_ids: None,
     use_face_blur_hack: None,
-    output_resolution: None,
+    output_resolution: plan.output_resolution,
     host_override: None,
   };
 

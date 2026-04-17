@@ -17,6 +17,7 @@ pub(crate) fn estimate_video_cost_seedance2pro_seedance2p0_fast(
     resolution: KinoviResolution::Square1x1, // Resolution does not affect cost
     duration_seconds: plan.duration_seconds,
     batch_count: plan.batch_count,
+    output_resolution: plan.output_resolution,
     start_frame_url: None,
     end_frame_url: None,
     reference_image_urls: None,
@@ -24,7 +25,6 @@ pub(crate) fn estimate_video_cost_seedance2pro_seedance2p0_fast(
     reference_audio_urls: None,
     character_ids: None,
     use_face_blur_hack: None,
-    output_resolution: None,
     host_override: None,
   };
 
@@ -43,12 +43,17 @@ pub(crate) fn estimate_video_cost_seedance2pro_seedance2p0_fast(
 
 #[cfg(test)]
 mod tests {
+  use crate::api::common_resolution::CommonResolution;
   use crate::api::common_video_model::CommonVideoModel;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 
-  fn estimate_usd_cents(duration_seconds: u16, video_batch_count: u16) -> u64 {
+  fn estimate_usd_cents(
+    duration_seconds: u16,
+    video_batch_count: u16,
+    resolution: Option<CommonResolution>,
+  ) -> u64 {
     let request = GenerateVideoRequest {
       model: CommonVideoModel::Seedance2p0Fast,
       provider: Provider::Seedance2Pro,
@@ -60,7 +65,7 @@ mod tests {
       reference_videos: None,
       reference_audio: None,
       reference_character_tokens: None,
-      resolution: None,
+      resolution,
       aspect_ratio: None,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),
@@ -75,36 +80,12 @@ mod tests {
       .expect("cost_in_usd_cents should be present")
   }
 
-  #[test]
-  fn cost_is_present() {
-    let cents = estimate_usd_cents(5, 1);
-    assert!(cents > 0);
-  }
-
-  #[test]
-  fn cost_batch_1() {
-    // Seedance2Fast: 28 credits/sec, 220 credits/$1 (with rounding)
-    assert_eq!(estimate_usd_cents(4, 1), 51);
-    assert_eq!(estimate_usd_cents(5, 1), 64);
-    assert_eq!(estimate_usd_cents(10, 1), 127);
-    assert_eq!(estimate_usd_cents(15, 1), 191);
-  }
-
-  #[test]
-  fn cost_batch_2() {
-    assert_eq!(estimate_usd_cents(5, 2), 127);
-  }
-
-  #[test]
-  fn cost_batch_4() {
-    assert_eq!(estimate_usd_cents(5, 4), 255);
-  }
-
-  #[test]
-  fn fast_is_cheaper_than_pro() {
-    let fast = estimate_usd_cents(5, 1);
-
-    let pro_request = GenerateVideoRequest {
+  fn estimate_pro_usd_cents(
+    duration_seconds: u16,
+    video_batch_count: u16,
+    resolution: Option<CommonResolution>,
+  ) -> u64 {
+    let request = GenerateVideoRequest {
       model: CommonVideoModel::Seedance2p0,
       provider: Provider::Seedance2Pro,
       prompt: None,
@@ -115,16 +96,131 @@ mod tests {
       reference_videos: None,
       reference_audio: None,
       reference_character_tokens: None,
-      resolution: None,
+      resolution,
       aspect_ratio: None,
-      duration_seconds: Some(5),
-      video_batch_count: Some(1),
+      duration_seconds: Some(duration_seconds),
+      video_batch_count: Some(video_batch_count),
       generate_audio: None,
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
       idempotency_token: None,
     };
-    let pro = pro_request.build().unwrap().estimate_costs().cost_in_usd_cents.unwrap();
+    request.build()
+      .expect("build should succeed")
+      .estimate_costs()
+      .cost_in_usd_cents
+      .expect("cost_in_usd_cents should be present")
+  }
 
-    assert!(fast < pro, "Fast ({}) should be cheaper than Pro ({})", fast, pro);
+  // -- 720p (default / legacy pricing: 220 credits/$1) --
+
+  #[test]
+  fn fast_720p_batch_1() {
+    assert_eq!(estimate_usd_cents(4, 1, Some(CommonResolution::SevenTwentyP)), 51);
+    assert_eq!(estimate_usd_cents(5, 1, Some(CommonResolution::SevenTwentyP)), 64);
+    assert_eq!(estimate_usd_cents(10, 1, Some(CommonResolution::SevenTwentyP)), 127);
+    assert_eq!(estimate_usd_cents(15, 1, Some(CommonResolution::SevenTwentyP)), 191);
+  }
+
+  #[test]
+  fn fast_720p_batch_2() {
+    assert_eq!(estimate_usd_cents(5, 2, Some(CommonResolution::SevenTwentyP)), 127);
+  }
+
+  #[test]
+  fn fast_720p_batch_4() {
+    assert_eq!(estimate_usd_cents(5, 4, Some(CommonResolution::SevenTwentyP)), 255);
+  }
+
+  #[test]
+  fn fast_none_resolution_same_as_720p() {
+    assert_eq!(
+      estimate_usd_cents(5, 1, None),
+      estimate_usd_cents(5, 1, Some(CommonResolution::SevenTwentyP)),
+    );
+  }
+
+  // -- 480p (new pricing: 193 credits/$1) --
+
+  #[test]
+  fn fast_480p_batch_1() {
+    assert_eq!(estimate_usd_cents(4, 1, Some(CommonResolution::FourEightyP)), 21);
+    assert_eq!(estimate_usd_cents(5, 1, Some(CommonResolution::FourEightyP)), 26);
+    assert_eq!(estimate_usd_cents(10, 1, Some(CommonResolution::FourEightyP)), 52);
+    assert_eq!(estimate_usd_cents(15, 1, Some(CommonResolution::FourEightyP)), 78);
+  }
+
+  #[test]
+  fn fast_480p_batch_2() {
+    assert_eq!(estimate_usd_cents(5, 2, Some(CommonResolution::FourEightyP)), 52);
+  }
+
+  #[test]
+  fn fast_480p_batch_4() {
+    assert_eq!(estimate_usd_cents(5, 4, Some(CommonResolution::FourEightyP)), 104);
+  }
+
+  // -- 1080p (new pricing: 193 credits/$1, same rate as 720p for Fast) --
+
+  #[test]
+  fn fast_1080p_batch_1() {
+    assert_eq!(estimate_usd_cents(5, 1, Some(CommonResolution::TenEightyP)), 73);
+    assert_eq!(estimate_usd_cents(10, 1, Some(CommonResolution::TenEightyP)), 145);
+    assert_eq!(estimate_usd_cents(15, 1, Some(CommonResolution::TenEightyP)), 218);
+  }
+
+  #[test]
+  fn fast_1080p_batch_2() {
+    assert_eq!(estimate_usd_cents(5, 2, Some(CommonResolution::TenEightyP)), 145);
+  }
+
+  #[test]
+  fn fast_1080p_batch_4() {
+    assert_eq!(estimate_usd_cents(5, 4, Some(CommonResolution::TenEightyP)), 290);
+  }
+
+  // -- Relative pricing --
+
+  #[test]
+  fn fast_480p_cheaper_than_720p() {
+    let c480 = estimate_usd_cents(5, 1, Some(CommonResolution::FourEightyP));
+    let c720 = estimate_usd_cents(5, 1, Some(CommonResolution::SevenTwentyP));
+    assert!(c480 < c720, "480p ({}) should be cheaper than 720p ({})", c480, c720);
+  }
+
+  #[test]
+  fn fast_is_cheaper_than_pro() {
+    for res in [
+      Some(CommonResolution::FourEightyP),
+      Some(CommonResolution::SevenTwentyP),
+      Some(CommonResolution::TenEightyP),
+    ] {
+      for duration in [4, 5, 10, 15] {
+        let fast = estimate_usd_cents(duration, 1, res);
+        let pro = estimate_pro_usd_cents(duration, 1, res);
+        assert!(
+          fast < pro,
+          "Fast ({}) should be cheaper than Pro ({}) at {}s {:?}",
+          fast, pro, duration, res,
+        );
+      }
+    }
+  }
+
+  #[test]
+  fn cost_scales_with_duration() {
+    let c4 = estimate_usd_cents(4, 1, Some(CommonResolution::SevenTwentyP));
+    let c10 = estimate_usd_cents(10, 1, Some(CommonResolution::SevenTwentyP));
+    let c15 = estimate_usd_cents(15, 1, Some(CommonResolution::SevenTwentyP));
+    assert!(c4 < c10);
+    assert!(c10 < c15);
+  }
+
+  #[test]
+  fn cost_scales_with_batch() {
+    let b1 = estimate_usd_cents(5, 1, Some(CommonResolution::TenEightyP));
+    let b2 = estimate_usd_cents(5, 2, Some(CommonResolution::TenEightyP));
+    let b4 = estimate_usd_cents(5, 4, Some(CommonResolution::TenEightyP));
+    assert!(b1 < b2);
+    assert!(b2 < b4);
   }
 }

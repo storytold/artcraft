@@ -8,7 +8,9 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use seedance2pro_client::requests::generate_video::generate_video::{KinoviBatchCount, KinoviResolution};
+use seedance2pro_client::requests::generate_video::generate_video::{KinoviBatchCount, KinoviOutputResolution, KinoviResolution};
+
+use crate::api::common_resolution::CommonResolution;
 
 #[derive(Debug, Clone)]
 pub struct PlanSeedance2proSeedance2p0Fast {
@@ -19,6 +21,7 @@ pub struct PlanSeedance2proSeedance2p0Fast {
   pub reference_video_urls: Option<Vec<String>>,
   pub reference_audio_urls: Option<Vec<String>>,
   pub resolution: KinoviResolution,
+  pub output_resolution: Option<KinoviOutputResolution>,
   pub duration_seconds: u8,
   pub batch_count: KinoviBatchCount,
 }
@@ -38,6 +41,8 @@ pub fn plan_generate_video_seedance2pro_seedance2p0_fast(
   let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
   let duration_seconds = plan_duration(request.duration_seconds, strategy)?;
 
+  let output_resolution = request.resolution.map(map_common_resolution_to_kinovi);
+
   Ok(VideoGenerationPlan::Seedance2proSeedance2p0Fast(PlanSeedance2proSeedance2p0Fast {
     prompt: request.prompt.clone(),
     start_frame_url,
@@ -46,9 +51,19 @@ pub fn plan_generate_video_seedance2pro_seedance2p0_fast(
     reference_video_urls,
     reference_audio_urls,
     resolution,
+    output_resolution,
     duration_seconds,
     batch_count,
   }))
+}
+
+fn map_common_resolution_to_kinovi(resolution: CommonResolution) -> KinoviOutputResolution {
+  match resolution {
+    CommonResolution::FourEightyP => KinoviOutputResolution::FourEightyP,
+    CommonResolution::SevenTwentyP => KinoviOutputResolution::SevenTwentyP,
+    CommonResolution::TenEightyP => KinoviOutputResolution::SevenTwentyP, // NB: Kinovi doesn't have 1080p fast currently
+    _ => KinoviOutputResolution::SevenTwentyP,
+  }
 }
 
 fn resolve_image_ref_url(
