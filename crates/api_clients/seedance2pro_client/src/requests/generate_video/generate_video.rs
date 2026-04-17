@@ -1086,4 +1086,118 @@ mod tests {
       }
     }
   }
+
+  mod output_resolution_tests {
+    use super::*;
+
+    fn test_session() -> AnyhowResult<Seedance2ProSession> {
+      let cookies = get_test_cookies()?;
+      Ok(Seedance2ProSession::from_cookies_string(cookies))
+    }
+
+    fn make_args<'a>(
+      session: &'a Seedance2ProSession,
+      model_type: KinoviModelType,
+      output_resolution: Option<KinoviOutputResolution>,
+    ) -> GenerateVideoArgs<'a> {
+      GenerateVideoArgs {
+        session,
+        model_type,
+        prompt: "A corgi running through a field of flowers".to_string(),
+        resolution: KinoviResolution::Landscape16x9,
+        duration_seconds: 4,
+        batch_count: KinoviBatchCount::One,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        character_ids: None,
+        output_resolution,
+        use_face_blur_hack: None,
+        host_override: None,
+      }
+    }
+
+    mod seedance_2 {
+      use super::*;
+
+      #[tokio::test]
+      #[ignore] // manually test — requires real cookies and costs money
+      async fn test_480p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = make_args(&session, KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::FourEightyP));
+        let result = generate_video(args).await?;
+        println!("Seedance 2.0 @ 480p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore] // manually test — requires real cookies and costs money
+      async fn test_720p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        // 720p = None (default, outputResolution field omitted)
+        let args = make_args(&session, KinoviModelType::Seedance2Pro, None);
+        let result = generate_video(args).await?;
+        println!("Seedance 2.0 @ 720p (default) — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore] // manually test — requires real cookies and costs money
+      async fn test_1080p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = make_args(&session, KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::TenEightyP));
+        let result = generate_video(args).await?;
+        println!("Seedance 2.0 @ 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+    }
+
+    mod seedance_2_fast {
+      use super::*;
+
+      #[tokio::test]
+      #[ignore] // manually test — requires real cookies and costs money
+      async fn test_480p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = make_args(&session, KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::FourEightyP));
+        let result = generate_video(args).await?;
+        println!("Seedance 2.0 Fast @ 480p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore] // manually test — requires real cookies and costs money
+      async fn test_720p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = make_args(&session, KinoviModelType::Seedance2Fast, None);
+        let result = generate_video(args).await?;
+        println!("Seedance 2.0 Fast @ 720p (default) — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore] // manually test — requires real cookies and costs money
+      async fn test_1080p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = make_args(&session, KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::TenEightyP));
+        let result = generate_video(args).await?;
+        println!("Seedance 2.0 Fast @ 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+    }
+  }
 }
