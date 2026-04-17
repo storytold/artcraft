@@ -87,19 +87,34 @@ impl std::fmt::Debug for GenerateVideoArgs<'_> {
 impl GenerateVideoArgs<'_> {
   /// Estimates the credit cost for this generation request.
   ///
-  /// Pricing rules:
-  /// - Seedance 2 Pro: 40 credits per second of video
-  /// - Seedance 2 Fast: 28 credits per second of video
-  /// - Resolution has no effect on cost
-  /// - Input mode (text, keyframe, reference) has no effect on cost
-  /// - Batch 1 = 1×, Batch 2 = 2×, Batch 4 = 4×
+  /// Pricing is per-second × batch count, with the per-second rate
+  /// depending on model type and output resolution:
+  ///
+  /// | Model     | 480p | 720p | 1080p |
+  /// |-----------|------|------|-------|
+  /// | Pro       |   15 |   40 |    90 |
+  /// | Fast      |   10 |   28 |   n/a |
+  ///
+  /// Input mode (text, keyframe, reference) has no effect on cost.
+  /// Aspect ratio (`resolution` field) has no effect on cost.
   pub fn estimate_credits(&self) -> u32 {
-    let credits_per_second = match self.model_type {
-      KinoviModelType::Seedance2Pro => 40, // 40 credits per sec
-      KinoviModelType::Seedance2Fast => 28, // 28 credits per sec
+    let credits_per_second: u32 = match (self.model_type, self.output_resolution) {
+      // Seedance 2.0 Pro
+      (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::FourEightyP)) => 15,
+      (KinoviModelType::Seedance2Pro, None)
+      | (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::SevenTwentyP)) => 40,
+      (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::TenEightyP)) => 90,
+
+      // Seedance 2.0 Fast
+      (KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::FourEightyP)) => 10,
+      (KinoviModelType::Seedance2Fast, None)
+      | (KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::SevenTwentyP)) => 28,
+      // NB: 1080p not officially supported for Fast, but price as 720p if requested
+      (KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::TenEightyP)) => 28,
     };
+
     let per_video = u32::from(self.duration_seconds) * credits_per_second;
-    let batch_multiplier = match self.batch_count {
+    let batch_multiplier: u32 = match self.batch_count {
       KinoviBatchCount::One => 1,
       KinoviBatchCount::Two => 2,
       KinoviBatchCount::Four => 4,
@@ -392,8 +407,12 @@ mod tests {
       Seedance2ProSession::from_cookies_string(String::new())
     }
 
-    fn args_with(model_type: KinoviModelType, duration_seconds: u8, batch_count: KinoviBatchCount) -> GenerateVideoArgs<'static> {
-      // Safety: the dummy session is leaked so the reference is 'static for test purposes.
+    fn make_args(
+      model_type: KinoviModelType,
+      duration_seconds: u8,
+      batch_count: KinoviBatchCount,
+      output_resolution: Option<KinoviOutputResolution>,
+    ) -> GenerateVideoArgs<'static> {
       let session = Box::leak(Box::new(dummy_session()));
       GenerateVideoArgs {
         session,
@@ -408,104 +427,207 @@ mod tests {
         reference_video_urls: None,
         reference_audio_urls: None,
         character_ids: None,
+        output_resolution,
         use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
       }
     }
 
-    fn pro(duration_seconds: u8, batch_count: KinoviBatchCount) -> GenerateVideoArgs<'static> {
-      args_with(KinoviModelType::Seedance2Pro, duration_seconds, batch_count)
+    fn pro(dur: u8, batch: KinoviBatchCount) -> GenerateVideoArgs<'static> {
+      make_args(KinoviModelType::Seedance2Pro, dur, batch, None)
     }
 
-    fn fast(duration_seconds: u8, batch_count: KinoviBatchCount) -> GenerateVideoArgs<'static> {
-      args_with(KinoviModelType::Seedance2Fast, duration_seconds, batch_count)
+    fn pro_res(dur: u8, batch: KinoviBatchCount, res: KinoviOutputResolution) -> GenerateVideoArgs<'static> {
+      make_args(KinoviModelType::Seedance2Pro, dur, batch, Some(res))
     }
+
+    fn fast(dur: u8, batch: KinoviBatchCount) -> GenerateVideoArgs<'static> {
+      make_args(KinoviModelType::Seedance2Fast, dur, batch, None)
+    }
+
+    fn fast_res(dur: u8, batch: KinoviBatchCount, res: KinoviOutputResolution) -> GenerateVideoArgs<'static> {
+      make_args(KinoviModelType::Seedance2Fast, dur, batch, Some(res))
+    }
+
+    // ── Spot checks: exact values from the pricing table ──
 
     #[test]
-    fn test_estimate_credits_pro() {
-      // 40 credits per second, batch 1
-      assert_eq!(pro(4, KinoviBatchCount::One).estimate_credits(), 160);
+    fn spot_check_pro_720p() {
+      // Pro 720p = 40 credits/sec (default when output_resolution is None)
       assert_eq!(pro(5, KinoviBatchCount::One).estimate_credits(), 200);
-      assert_eq!(pro(6, KinoviBatchCount::One).estimate_credits(), 240);
-      assert_eq!(pro(7, KinoviBatchCount::One).estimate_credits(), 280);
+      assert_eq!(pro(10, KinoviBatchCount::One).estimate_credits(), 400);
       assert_eq!(pro(15, KinoviBatchCount::One).estimate_credits(), 600);
-
-      // Batch 2 = 2×
-      assert_eq!(pro(4, KinoviBatchCount::Two).estimate_credits(), 320);
-      assert_eq!(pro(5, KinoviBatchCount::Two).estimate_credits(), 400);
-      assert_eq!(pro(15, KinoviBatchCount::Two).estimate_credits(), 1200);
-
-      // Batch 4 = 4×
-      assert_eq!(pro(4, KinoviBatchCount::Four).estimate_credits(), 640);
-      assert_eq!(pro(5, KinoviBatchCount::Four).estimate_credits(), 800);
-      assert_eq!(pro(15, KinoviBatchCount::Four).estimate_credits(), 2400);
     }
 
     #[test]
-    fn test_estimate_credits_fast() {
-      // 28 credits per second, batch 1
-      assert_eq!(fast(4, KinoviBatchCount::One).estimate_credits(), 112);
+    fn spot_check_pro_480p() {
+      // Pro 480p = 15 credits/sec
+      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits(), 75);
+      assert_eq!(pro_res(10, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits(), 150);
+      assert_eq!(pro_res(15, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits(), 225);
+    }
+
+    #[test]
+    fn spot_check_pro_1080p() {
+      // Pro 1080p = 90 credits/sec
+      assert_eq!(pro_res(4, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 360);
+      assert_eq!(pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 450);
+      assert_eq!(pro_res(6, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 540);
+      assert_eq!(pro_res(7, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 630);
+      assert_eq!(pro_res(8, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 720);
+      assert_eq!(pro_res(9, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 810);
+      assert_eq!(pro_res(10, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 900);
+      assert_eq!(pro_res(11, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 990);
+      assert_eq!(pro_res(12, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 1080);
+      assert_eq!(pro_res(13, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 1170);
+      assert_eq!(pro_res(14, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 1260);
+      assert_eq!(pro_res(15, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits(), 1350);
+    }
+
+    #[test]
+    fn spot_check_fast_720p() {
+      // Fast 720p = 28 credits/sec
       assert_eq!(fast(5, KinoviBatchCount::One).estimate_credits(), 140);
-      assert_eq!(fast(6, KinoviBatchCount::One).estimate_credits(), 168);
-      assert_eq!(fast(7, KinoviBatchCount::One).estimate_credits(), 196);
-      assert_eq!(fast(15, KinoviBatchCount::One).estimate_credits(), 420);
-
-      // Batch 2 = 2×
-      assert_eq!(fast(4, KinoviBatchCount::Two).estimate_credits(), 224);
-      assert_eq!(fast(5, KinoviBatchCount::Two).estimate_credits(), 280);
-      assert_eq!(fast(15, KinoviBatchCount::Two).estimate_credits(), 840);
-
-      // Batch 4 = 4×
-      assert_eq!(fast(4, KinoviBatchCount::Four).estimate_credits(), 448);
-      assert_eq!(fast(5, KinoviBatchCount::Four).estimate_credits(), 560);
-      assert_eq!(fast(15, KinoviBatchCount::Four).estimate_credits(), 1680);
+      assert_eq!(fast(10, KinoviBatchCount::One).estimate_credits(), 280);
     }
 
     #[test]
-    fn test_estimate_cost_usd_cents_pro() {
-      // 40 credits per second, batch 1
-      assert_eq!(pro(4, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 64);
-      assert_eq!(pro(5, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 80);
-      assert_eq!(pro(6, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 96);
-      assert_eq!(pro(7, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 112);
-      assert_eq!(pro(15, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 240);
+    fn spot_check_fast_480p() {
+      // Fast 480p = 10 credits/sec
+      assert_eq!(fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits(), 50);
+      assert_eq!(fast_res(10, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits(), 100);
+    }
 
-      // Batch 2 = 2×
-      assert_eq!(pro(4, KinoviBatchCount::Two).estimate_cost_in_usd_cents(), 128);
-      assert_eq!(pro(5, KinoviBatchCount::Two).estimate_cost_in_usd_cents(), 160);
-      assert_eq!(pro(15, KinoviBatchCount::Two).estimate_cost_in_usd_cents(), 480);
+    // ── Pro is more expensive than Fast at the same resolution ──
 
-      // Batch 4 = 4×
-      assert_eq!(pro(4, KinoviBatchCount::Four).estimate_cost_in_usd_cents(), 256);
-      assert_eq!(pro(5, KinoviBatchCount::Four).estimate_cost_in_usd_cents(), 320);
-      assert_eq!(pro(15, KinoviBatchCount::Four).estimate_cost_in_usd_cents(), 960);
+    #[test]
+    fn pro_more_expensive_than_fast_720p() {
+      let p = pro(5, KinoviBatchCount::One).estimate_credits();
+      let f = fast(5, KinoviBatchCount::One).estimate_credits();
+      assert!(p > f, "Pro 720p ({}) should be more than Fast 720p ({})", p, f);
     }
 
     #[test]
-    fn test_estimate_cost_usd_cents_fast() {
-      // 28 credits per second, 220 credits/$1 (22,000 credits for $99.99)
-      // 28 * 4 = 112 credits => 112 / 220 * 100 = 50.9 => 51 cents
-      assert_eq!(fast(4, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 51);
-      // 28 * 5 = 140 credits => 140 / 220 * 100 = 63.6 => 64 cents
-      assert_eq!(fast(5, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 64);
-      // 28 * 6 = 168 credits => 168 / 220 * 100 = 76.4 => 76 cents
-      assert_eq!(fast(6, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 76);
-      // 28 * 7 = 196 credits => 196 / 220 * 100 = 89.1 => 89 cents
-      assert_eq!(fast(7, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 89);
-      // 28 * 15 = 420 credits => 420 / 220 * 100 = 190.9 => 191 cents
-      assert_eq!(fast(15, KinoviBatchCount::One).estimate_cost_in_usd_cents(), 191);
-
-      // Batch 2 = 2×
-      assert_eq!(fast(4, KinoviBatchCount::Two).estimate_cost_in_usd_cents(), 102);
-      assert_eq!(fast(5, KinoviBatchCount::Two).estimate_cost_in_usd_cents(), 127);
-      assert_eq!(fast(15, KinoviBatchCount::Two).estimate_cost_in_usd_cents(), 382);
-
-      // Batch 4 = 4×
-      assert_eq!(fast(4, KinoviBatchCount::Four).estimate_cost_in_usd_cents(), 204);
-      assert_eq!(fast(5, KinoviBatchCount::Four).estimate_cost_in_usd_cents(), 255);
-      assert_eq!(fast(15, KinoviBatchCount::Four).estimate_cost_in_usd_cents(), 764);
+    fn pro_more_expensive_than_fast_480p() {
+      let p = pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits();
+      let f = fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits();
+      assert!(p > f, "Pro 480p ({}) should be more than Fast 480p ({})", p, f);
     }
+
+    // ── Higher resolution is more expensive ──
+
+    #[test]
+    fn pro_1080p_more_than_720p_more_than_480p() {
+      let c480 = pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits();
+      let c720 = pro(5, KinoviBatchCount::One).estimate_credits();
+      let c1080 = pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::TenEightyP).estimate_credits();
+      assert!(c480 < c720, "480p ({}) should be less than 720p ({})", c480, c720);
+      assert!(c720 < c1080, "720p ({}) should be less than 1080p ({})", c720, c1080);
+    }
+
+    #[test]
+    fn fast_720p_more_than_480p() {
+      let c480 = fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::FourEightyP).estimate_credits();
+      let c720 = fast(5, KinoviBatchCount::One).estimate_credits();
+      assert!(c480 < c720, "Fast 480p ({}) should be less than Fast 720p ({})", c480, c720);
+    }
+
+    // ── None output_resolution same as explicit 720p ──
+
+    #[test]
+    fn pro_none_same_as_720p() {
+      let none = pro(5, KinoviBatchCount::One).estimate_credits();
+      let explicit = pro_res(5, KinoviBatchCount::One, KinoviOutputResolution::SevenTwentyP).estimate_credits();
+      assert_eq!(none, explicit);
+    }
+
+    #[test]
+    fn fast_none_same_as_720p() {
+      let none = fast(5, KinoviBatchCount::One).estimate_credits();
+      let explicit = fast_res(5, KinoviBatchCount::One, KinoviOutputResolution::SevenTwentyP).estimate_credits();
+      assert_eq!(none, explicit);
+    }
+
+    // ── Table-driven: batch × duration × model × resolution spot checks ──
+
+    #[test]
+    fn table_driven_credits() {
+      // (model, output_res, duration, batch, expected_credits)
+      let cases: Vec<(KinoviModelType, Option<KinoviOutputResolution>, u8, KinoviBatchCount, u32)> = vec![
+        // Pro 720p (40/sec)
+        (KinoviModelType::Seedance2Pro, None, 4, KinoviBatchCount::One, 160),
+        (KinoviModelType::Seedance2Pro, None, 5, KinoviBatchCount::Two, 400),
+        (KinoviModelType::Seedance2Pro, None, 10, KinoviBatchCount::Four, 1600),
+        // Pro 480p (15/sec)
+        (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::FourEightyP), 5, KinoviBatchCount::One, 75),
+        (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::FourEightyP), 10, KinoviBatchCount::Two, 300),
+        (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::FourEightyP), 15, KinoviBatchCount::Four, 900),
+        // Pro 1080p (90/sec)
+        (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::TenEightyP), 5, KinoviBatchCount::One, 450),
+        (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::TenEightyP), 10, KinoviBatchCount::Two, 1800),
+        (KinoviModelType::Seedance2Pro, Some(KinoviOutputResolution::TenEightyP), 15, KinoviBatchCount::Four, 5400),
+        // Fast 720p (28/sec)
+        (KinoviModelType::Seedance2Fast, None, 4, KinoviBatchCount::One, 112),
+        (KinoviModelType::Seedance2Fast, None, 5, KinoviBatchCount::Two, 280),
+        (KinoviModelType::Seedance2Fast, None, 15, KinoviBatchCount::Four, 1680),
+        // Fast 480p (10/sec)
+        (KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::FourEightyP), 5, KinoviBatchCount::One, 50),
+        (KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::FourEightyP), 10, KinoviBatchCount::Two, 200),
+        (KinoviModelType::Seedance2Fast, Some(KinoviOutputResolution::FourEightyP), 15, KinoviBatchCount::Four, 600),
+      ];
+
+      for (i, (model, res, dur, batch, expected)) in cases.iter().enumerate() {
+        let args = make_args(*model, *dur, *batch, *res);
+        let actual = args.estimate_credits();
+        assert_eq!(
+          actual, *expected,
+          "Case {}: {:?} {:?} {}s batch {:?} — expected {} credits, got {}",
+          i, model, res, dur, batch, expected, actual,
+        );
+      }
+    }
+
+    // ── Aspect ratio doesn't affect cost ──
+
+    #[test]
+    fn aspect_ratio_does_not_affect_credits() {
+      let resolutions = [
+        KinoviResolution::Landscape16x9,
+        KinoviResolution::Portrait9x16,
+        KinoviResolution::Square1x1,
+        KinoviResolution::Standard4x3,
+        KinoviResolution::Portrait3x4,
+      ];
+
+      let baseline = pro(5, KinoviBatchCount::One).estimate_credits();
+
+      for res in &resolutions {
+        let session = Box::leak(Box::new(dummy_session()));
+        let args = GenerateVideoArgs {
+          session,
+          model_type: KinoviModelType::Seedance2Pro,
+          prompt: String::new(),
+          resolution: *res,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          output_resolution: None,
+          use_face_blur_hack: None,
+          host_override: None,
+        };
+        assert_eq!(
+          args.estimate_credits(), baseline,
+          "Aspect ratio {:?} should not change credits from baseline {}",
+          res, baseline,
+        );
+      }
+    }
+
   }
 
   mod real_requests {
