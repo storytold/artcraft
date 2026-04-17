@@ -9,7 +9,7 @@ use crate::generate::generate_video::execute::seedance2pro::execute_seedance2pro
   upload_optional_url, upload_optional_url_list,
 };
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, GenerateVideoArgs, ModelType,
+  generate_video, GenerateVideoArgs, KinoviModelType,
 };
 
 /// Execute Seedance 2.0 Fast via the Seedance2Pro/Kinovi provider.
@@ -31,7 +31,7 @@ pub async fn execute_seedance2pro_seedance2p0_fast(
 
   let args = GenerateVideoArgs {
     session,
-    model_type: ModelType::Seedance2Fast, // <-- Fast, not Pro
+    model_type: KinoviModelType::Seedance2Fast, // <-- Fast, not Pro
     prompt: plan.prompt.clone().unwrap_or_default(),
     resolution: plan.resolution,
     duration_seconds: plan.duration_seconds,

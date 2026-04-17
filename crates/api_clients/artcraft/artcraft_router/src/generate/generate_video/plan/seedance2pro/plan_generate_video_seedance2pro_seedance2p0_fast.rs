@@ -8,7 +8,7 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use seedance2pro_client::requests::generate_video::generate_video::{BatchCount, Resolution};
+use seedance2pro_client::requests::generate_video::generate_video::{KinoviBatchCount, KinoviResolution};
 
 #[derive(Debug, Clone)]
 pub struct PlanSeedance2proSeedance2p0Fast {
@@ -18,9 +18,9 @@ pub struct PlanSeedance2proSeedance2p0Fast {
   pub reference_image_urls: Option<Vec<String>>,
   pub reference_video_urls: Option<Vec<String>>,
   pub reference_audio_urls: Option<Vec<String>>,
-  pub resolution: Resolution,
+  pub resolution: KinoviResolution,
   pub duration_seconds: u8,
-  pub batch_count: BatchCount,
+  pub batch_count: KinoviBatchCount,
 }
 
 pub fn plan_generate_video_seedance2pro_seedance2p0_fast(
@@ -102,24 +102,24 @@ fn resolve_audio_list_ref_urls(
 fn plan_resolution(
   aspect_ratio: Option<CommonAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Resolution, ArtcraftRouterError> {
+) -> Result<KinoviResolution, ArtcraftRouterError> {
   match aspect_ratio {
     None
     | Some(CommonAspectRatio::Auto)
     | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Resolution::Landscape16x9),
+    | Some(CommonAspectRatio::Auto4k) => Ok(KinoviResolution::Landscape16x9),
 
     Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
-      Ok(Resolution::Landscape16x9)
+      Ok(KinoviResolution::Landscape16x9)
     }
     Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
-      Ok(Resolution::Portrait9x16)
+      Ok(KinoviResolution::Portrait9x16)
     }
     Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
-      Ok(Resolution::Square1x1)
+      Ok(KinoviResolution::Square1x1)
     }
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Resolution::Standard4x3),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Resolution::Portrait3x4),
+    Some(CommonAspectRatio::WideFourByThree) => Ok(KinoviResolution::Standard4x3),
+    Some(CommonAspectRatio::TallThreeByFour) => Ok(KinoviResolution::Portrait3x4),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -136,28 +136,28 @@ fn plan_resolution(
   }
 }
 
-fn nearest_resolution(aspect_ratio: CommonAspectRatio) -> Resolution {
+fn nearest_resolution(aspect_ratio: CommonAspectRatio) -> KinoviResolution {
   match aspect_ratio {
-    CommonAspectRatio::WideFiveByFour => Resolution::Standard4x3,
-    CommonAspectRatio::WideThreeByTwo => Resolution::Standard4x3,
-    CommonAspectRatio::WideTwentyOneByNine => Resolution::Landscape16x9,
-    CommonAspectRatio::TallFourByFive => Resolution::Portrait3x4,
-    CommonAspectRatio::TallTwoByThree => Resolution::Portrait3x4,
-    CommonAspectRatio::TallNineByTwentyOne => Resolution::Portrait9x16,
-    _ => Resolution::Square1x1,
+    CommonAspectRatio::WideFiveByFour => KinoviResolution::Standard4x3,
+    CommonAspectRatio::WideThreeByTwo => KinoviResolution::Standard4x3,
+    CommonAspectRatio::WideTwentyOneByNine => KinoviResolution::Landscape16x9,
+    CommonAspectRatio::TallFourByFive => KinoviResolution::Portrait3x4,
+    CommonAspectRatio::TallTwoByThree => KinoviResolution::Portrait3x4,
+    CommonAspectRatio::TallNineByTwentyOne => KinoviResolution::Portrait9x16,
+    _ => KinoviResolution::Square1x1,
   }
 }
 
 fn plan_batch_count(
   video_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<BatchCount, ArtcraftRouterError> {
+) -> Result<KinoviBatchCount, ArtcraftRouterError> {
   let count = video_batch_count.unwrap_or(1);
   match count {
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
-    1 => Ok(BatchCount::One),
-    2 => Ok(BatchCount::Two),
-    4 => Ok(BatchCount::Four),
+    1 => Ok(KinoviBatchCount::One),
+    2 => Ok(KinoviBatchCount::Two),
+    4 => Ok(KinoviBatchCount::Four),
     _ => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -166,10 +166,10 @@ fn plan_batch_count(
         }))
       }
       RequestMismatchMitigationStrategy::PayMoreUpgrade => {
-        Ok(if count < 4 { BatchCount::Four } else { BatchCount::Four })
+        Ok(if count < 4 { KinoviBatchCount::Four } else { KinoviBatchCount::Four })
       }
       RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if count < 4 { BatchCount::Two } else { BatchCount::Four })
+        Ok(if count < 4 { KinoviBatchCount::Two } else { KinoviBatchCount::Four })
       }
     },
   }

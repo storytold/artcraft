@@ -39,7 +39,7 @@ use pager::notification::notification_details_builder::NotificationDetailsBuilde
 use pager::notification::notification_urgency::NotificationUrgency;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, BatchCount, GenerateVideoArgs, GenerateVideoResponse, ModelType, Resolution,
+  generate_video, KinoviBatchCount, GenerateVideoArgs, GenerateVideoResponse, KinoviModelType, KinoviResolution,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -458,32 +458,32 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
 
 // ======================== Helpers ========================
 
-fn map_resolution(aspect_ratio: Option<Seedance2p0AspectRatio>) -> Resolution {
+fn map_resolution(aspect_ratio: Option<Seedance2p0AspectRatio>) -> KinoviResolution {
   match aspect_ratio {
-    Some(Seedance2p0AspectRatio::Landscape16x9) => Resolution::Landscape16x9,
-    Some(Seedance2p0AspectRatio::Portrait9x16) => Resolution::Portrait9x16,
-    Some(Seedance2p0AspectRatio::Square1x1) => Resolution::Square1x1,
-    Some(Seedance2p0AspectRatio::Standard4x3) => Resolution::Standard4x3,
-    Some(Seedance2p0AspectRatio::Portrait3x4) => Resolution::Portrait3x4,
-    None => Resolution::Landscape16x9,
+    Some(Seedance2p0AspectRatio::Landscape16x9) => KinoviResolution::Landscape16x9,
+    Some(Seedance2p0AspectRatio::Portrait9x16) => KinoviResolution::Portrait9x16,
+    Some(Seedance2p0AspectRatio::Square1x1) => KinoviResolution::Square1x1,
+    Some(Seedance2p0AspectRatio::Standard4x3) => KinoviResolution::Standard4x3,
+    Some(Seedance2p0AspectRatio::Portrait3x4) => KinoviResolution::Portrait3x4,
+    None => KinoviResolution::Landscape16x9,
   }
 }
 
-fn map_batch_count(batch_count: Option<Seedance2p0BatchCount>) -> BatchCount {
+fn map_batch_count(batch_count: Option<Seedance2p0BatchCount>) -> KinoviBatchCount {
   match batch_count {
-    Some(Seedance2p0BatchCount::One) | None => BatchCount::One,
-    Some(Seedance2p0BatchCount::Two) => BatchCount::Two,
-    Some(Seedance2p0BatchCount::Four) => BatchCount::Four,
+    Some(Seedance2p0BatchCount::One) | None => KinoviBatchCount::One,
+    Some(Seedance2p0BatchCount::Two) => KinoviBatchCount::Two,
+    Some(Seedance2p0BatchCount::Four) => KinoviBatchCount::Four,
   }
 }
 
 /// Estimate the cost without needing uploaded URLs. We construct a temporary
 /// `GenerateVideoArgs` with dummy values for the session and URL fields.
-fn estimate_cost_upfront(resolution: Resolution, batch_count: BatchCount, duration_seconds: u8) -> u64 {
+fn estimate_cost_upfront(resolution: KinoviResolution, batch_count: KinoviBatchCount, duration_seconds: u8) -> u64 {
   let dummy_session = Seedance2ProSession::from_cookies_string(String::new());
   let args = GenerateVideoArgs {
     session: &dummy_session,
-    model_type: ModelType::Seedance2Pro,
+    model_type: KinoviModelType::Seedance2Pro,
     prompt: String::new(),
     resolution,
     duration_seconds,
@@ -506,8 +506,8 @@ async fn upload_and_generate(
   session: &Seedance2ProSession,
   request: &Seedance2p0MultiFunctionVideoGenRequest,
   file_urls_by_token: &HashMap<MediaFileToken, Url>,
-  resolution: Resolution,
-  batch_count: BatchCount,
+  resolution: KinoviResolution,
+  batch_count: KinoviBatchCount,
   duration_seconds: u8,
   kinovi_character_ids: Option<Vec<String>>,
 ) -> Result<SeedanceGenerationResult, AdvancedCommonWebError> {
@@ -574,7 +574,7 @@ async fn upload_and_generate(
 
   let video_gen_args = GenerateVideoArgs {
     session,
-    model_type: ModelType::Seedance2Pro,
+    model_type: KinoviModelType::Seedance2Pro,
     prompt,
     resolution,
     duration_seconds,

@@ -11,11 +11,12 @@ use url::Url;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, BatchCount, GenerateVideoArgs, ModelType, Resolution,
+  generate_video, KinoviBatchCount, GenerateVideoArgs, KinoviModelType, KinoviResolution,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -167,19 +168,21 @@ async fn execute_generation_kinovi(
   };
 
   // Map aspect ratio / duration / batch from the request.
-  let resolution = Resolution::Landscape16x9; // TODO: Map from request.aspect_ratio
+  let resolution = map_common_aspect_ratio_to_kinovi_resolution(request.aspect_ratio);
+  
   let duration_seconds = request.duration_seconds.unwrap_or(5).clamp(4, 15) as u8;
+  
   let batch_count = match request.video_batch_count {
-    Some(2) => BatchCount::Two,
-    Some(4) => BatchCount::Four,
-    _ => BatchCount::One,
+    Some(2) => KinoviBatchCount::Two,
+    Some(4) => KinoviBatchCount::Four,
+    _ => KinoviBatchCount::One,
   };
 
   let prompt = request.prompt.clone().unwrap_or_default();
 
   let model_type = match request.model {
-    Some(CommonVideoModel::Seedance2p0Fast) => ModelType::Seedance2Fast,
-    _ => ModelType::Seedance2Pro,
+    Some(CommonVideoModel::Seedance2p0Fast) => KinoviModelType::Seedance2Fast,
+    _ => KinoviModelType::Seedance2Pro,
   };
 
   let video_gen_args = GenerateVideoArgs {
@@ -308,4 +311,22 @@ async fn upload_url_to_seedance2pro(
       })?;
 
   Ok(upload_result.public_url)
+}
+
+/// Map a CommonAspectRatio to the Seedance2Pro Resolution enum.
+fn map_common_aspect_ratio_to_kinovi_resolution(aspect_ratio: Option<CommonAspectRatio>) -> KinoviResolution {
+  match aspect_ratio {
+    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => KinoviResolution::Landscape16x9,
+    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => KinoviResolution::Portrait9x16,
+    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => KinoviResolution::Square1x1,
+    Some(CommonAspectRatio::WideFourByThree) => KinoviResolution::Standard4x3,
+    Some(CommonAspectRatio::TallThreeByFour) => KinoviResolution::Portrait3x4,
+    // For unsupported aspect ratios, pick the nearest match.
+    Some(CommonAspectRatio::WideFiveByFour) | Some(CommonAspectRatio::WideThreeByTwo) => KinoviResolution::Standard4x3,
+    Some(CommonAspectRatio::WideTwentyOneByNine) => KinoviResolution::Landscape16x9,
+    Some(CommonAspectRatio::TallFourByFive) | Some(CommonAspectRatio::TallTwoByThree) => KinoviResolution::Portrait3x4,
+    Some(CommonAspectRatio::TallNineByTwentyOne) => KinoviResolution::Portrait9x16,
+    // Auto or None — default to landscape.
+    _ => KinoviResolution::Landscape16x9,
+  }
 }

@@ -1,6 +1,6 @@
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0BatchCount;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::generate_video::generate_video::{BatchCount, GenerateVideoArgs, ModelType, Resolution};
+use seedance2pro_client::requests::generate_video::generate_video::{KinoviBatchCount, GenerateVideoArgs, KinoviModelType, KinoviResolution};
 
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
@@ -11,18 +11,18 @@ pub(crate) fn estimate_video_cost_artcraft_seedance2p0_fast(
   let duration_seconds = plan.duration_seconds.unwrap_or(5).clamp(4, 15);
 
   let batch_count = match plan.batch_count {
-    Seedance2p0BatchCount::One => BatchCount::One,
-    Seedance2p0BatchCount::Two => BatchCount::Two,
-    Seedance2p0BatchCount::Four => BatchCount::Four,
+    Seedance2p0BatchCount::One => KinoviBatchCount::One,
+    Seedance2p0BatchCount::Two => KinoviBatchCount::Two,
+    Seedance2p0BatchCount::Four => KinoviBatchCount::Four,
   };
 
   let dummy_session = Seedance2ProSession::from_cookies_string(String::new());
 
   let args = GenerateVideoArgs {
     session: &dummy_session,
-    model_type: ModelType::Seedance2Fast, // <-- Fast, not Pro
+    model_type: KinoviModelType::Seedance2Fast, // <-- Fast, not Pro
     prompt: String::new(),
-    resolution: Resolution::Square1x1,
+    resolution: KinoviResolution::Square1x1,
     duration_seconds,
     batch_count,
     start_frame_url: None,

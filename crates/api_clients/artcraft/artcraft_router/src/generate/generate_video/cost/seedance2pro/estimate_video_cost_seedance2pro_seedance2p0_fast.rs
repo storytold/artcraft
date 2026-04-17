@@ -1,5 +1,5 @@
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoArgs, ModelType, Resolution};
+use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoArgs, KinoviModelType, KinoviResolution};
 
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::PlanSeedance2proSeedance2p0Fast;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
@@ -12,9 +12,9 @@ pub(crate) fn estimate_video_cost_seedance2pro_seedance2p0_fast(
 
   let args = GenerateVideoArgs {
     session: &dummy_session,
-    model_type: ModelType::Seedance2Fast, // <-- Fast, not Pro
+    model_type: KinoviModelType::Seedance2Fast, // <-- Fast, not Pro
     prompt: String::new(),
-    resolution: Resolution::Square1x1, // Resolution does not affect cost
+    resolution: KinoviResolution::Square1x1, // Resolution does not affect cost
     duration_seconds: plan.duration_seconds,
     batch_count: plan.batch_count,
     start_frame_url: None,
