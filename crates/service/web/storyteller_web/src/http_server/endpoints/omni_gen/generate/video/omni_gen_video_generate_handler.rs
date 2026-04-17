@@ -10,10 +10,10 @@ use url::Url;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
 use artcraft_router::api::provider::Provider;
-use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_model_type::CommonModelType;
+use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -37,12 +37,11 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
+use crate::http_server::endpoints::omni_gen::generate::video::distill_video_request::distill_video_request;
+use crate::http_server::endpoints::omni_gen::generate::video::execute::execute_generation::execute_generation;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
-
-use super::distill_video_request::distill_video_request;
-use super::execute_generation::execute_generation;
 
 /// Generate a video using the omni-gen unified endpoint.
 #[utoipa::path(

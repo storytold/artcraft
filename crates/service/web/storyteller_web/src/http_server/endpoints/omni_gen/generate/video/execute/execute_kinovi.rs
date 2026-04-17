@@ -1,7 +1,7 @@
-//! Execution helpers for the omni-gen video generation handler.
+//! Seedance2Pro / Kinovi provider execution path.
 //!
-//! Routes generation to the appropriate provider (Fal or Seedance2Pro/Kinovi)
-//! based on the distilled request's `execution_provider`.
+//! Downloads all referenced media from our CDN, re-uploads to Seedance2Pro's
+//! CDN, then calls the Seedance2Pro generate endpoint.
 
 use std::collections::HashMap;
 
@@ -9,14 +9,12 @@ use log::{info, warn};
 use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
-use artcraft_router::api::provider::Provider;
-use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, KinoviBatchCount, GenerateVideoArgs, KinoviModelType, KinoviResolution,
+  generate_video, GenerateVideoArgs, KinoviBatchCount, KinoviModelType, KinoviResolution,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -31,95 +29,11 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 
-use super::distill_video_request::DistilledVideoRequest;
+use super::super::distill_video_request::DistilledVideoRequest;
+use super::execute_generation::GenerationResult;
 
-/// Result of a successful generation, regardless of provider.
-pub struct GenerationResult {
-  /// The external job ID used to track the generation (first order_id for Seedance).
-  pub external_job_id: String,
-
-  /// Whether this is a Seedance2Pro generation (changes DB insertion path).
-  pub is_seedance2pro: bool,
-
-  /// For Seedance2Pro batch jobs, the list of all order IDs.
-  pub maybe_seedance_order_ids: Option<Vec<String>>,
-
-  /// The generation mode (Text, Keyframe, Reference).
-  pub generation_mode: CommonGenerationMode,
-}
-
-/// Execute video generation via the appropriate provider.
-pub async fn execute_generation(
-  distilled: &DistilledVideoRequest,
-  request: &OmniGenVideoCostAndGenerateRequest,
-  server_state: &ServerState,
-  media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
-) -> Result<GenerationResult, AdvancedCommonWebError> {
-  match distilled.execution_provider {
-    Provider::Seedance2Pro => {
-      execute_generation_kinovi(
-        distilled,
-        request,
-        server_state,
-        media_file_hydration_map,
-      ).await
-    }
-    _ => {
-      execute_generation_fal(
-        distilled,
-        request,
-        server_state,
-      ).await
-    }
-  }
-}
-
-/// Execute generation via Fal (the existing path).
-async fn execute_generation_fal(
-  distilled: &DistilledVideoRequest,
-  request: &OmniGenVideoCostAndGenerateRequest,
-  server_state: &ServerState,
-) -> Result<GenerationResult, AdvancedCommonWebError> {
-  let fal_client = artcraft_router::client::router_fal_client::RouterFalClient::new(
-    server_state.fal.api_key.clone(),
-    server_state.fal.webhook_url.clone(),
-  );
-  let router_client = artcraft_router::client::router_client::RouterClient::Fal(fal_client);
-
-  let generation_response = distilled.plan().generate_video(&router_client)
-    .await
-    .map_err(|e| {
-      warn!("Video generation failed (Fal): {:?}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?;
-
-  let external_job_id = match &generation_response {
-    GenerateVideoResponse::Artcraft(p) => p.inference_job_token.as_str().to_string(),
-    GenerateVideoResponse::Muapi(p) => p.request_id.as_str().to_string(),
-    GenerateVideoResponse::Seedance2Pro(p) => p.order_id.clone(),
-    GenerateVideoResponse::Fal(p) => p.request_id.clone().unwrap_or_default(),
-  };
-
-  let generation_mode = if request.start_frame_image_media_token.is_some() {
-    CommonGenerationMode::Keyframe
-  } else {
-    CommonGenerationMode::Text
-  };
-
-  Ok(GenerationResult {
-    external_job_id,
-    is_seedance2pro: false,
-    maybe_seedance_order_ids: None,
-    generation_mode,
-  })
-}
-
-/// Execute generation via Seedance2Pro/Kinovi.
-///
-/// Downloads all referenced media from our CDN, re-uploads to Seedance2Pro's
-/// CDN, then calls the Seedance2Pro generate endpoint.
-async fn execute_generation_kinovi(
-  distilled: &DistilledVideoRequest,
+pub(super) async fn execute_generation_kinovi(
+  _distilled: &DistilledVideoRequest,
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
   media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
@@ -127,6 +41,8 @@ async fn execute_generation_kinovi(
   let session = Seedance2ProSession::from_cookies_string(
     server_state.seedance2pro.cookies.clone()
   );
+
+  // TODO(bt): Move this logic to `artcraft_router` as an intermediate step between plan and execute.
 
   let empty_map = HashMap::new();
   let hydration_map = media_file_hydration_map.unwrap_or(&empty_map);
@@ -159,6 +75,8 @@ async fn execute_generation_kinovi(
       || request.reference_video_media_tokens.as_ref().map_or(false, |t| !t.is_empty())
       || request.reference_audio_media_tokens.as_ref().map_or(false, |t| !t.is_empty());
 
+  // TODO(bt): Move this logic to `artcraft_router` to the `execute` phase.
+
   let generation_mode = if is_keyframe {
     CommonGenerationMode::Keyframe
   } else if is_reference {
@@ -169,9 +87,9 @@ async fn execute_generation_kinovi(
 
   // Map aspect ratio / duration / batch from the request.
   let resolution = map_common_aspect_ratio_to_kinovi_resolution(request.aspect_ratio);
-  
+
   let duration_seconds = request.duration_seconds.unwrap_or(5).clamp(4, 15) as u8;
-  
+
   let batch_count = match request.video_batch_count {
     Some(2) => KinoviBatchCount::Two,
     Some(4) => KinoviBatchCount::Four,
@@ -313,7 +231,7 @@ async fn upload_url_to_seedance2pro(
   Ok(upload_result.public_url)
 }
 
-/// Map a CommonAspectRatio to the Seedance2Pro Resolution enum.
+/// Map a CommonAspectRatio to the Seedance2Pro KinoviResolution enum.
 fn map_common_aspect_ratio_to_kinovi_resolution(aspect_ratio: Option<CommonAspectRatio>) -> KinoviResolution {
   match aspect_ratio {
     Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => KinoviResolution::Landscape16x9,
