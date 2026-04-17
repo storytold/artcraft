@@ -54,13 +54,13 @@ fn resolve_single_image_input(
       }))
     }
     Some(ImageListRef::MediaFileTokens(tokens)) => {
-      if tokens.len() != 1 {
-        return Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
-          field: "image_inputs",
-          value: format!("Angle models require exactly one input image, got {}", tokens.len()),
-        }));
+      if let Some(token) = tokens.first() {
+        return Ok(token.clone());
       }
-      Ok(tokens.into_iter().next().unwrap())
+      Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+        field: "image_inputs",
+        value: format!("Angle models require exactly one input image, got {}", tokens.len()),
+      }))
     }
     Some(ImageListRef::Urls(_)) => {
       Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
