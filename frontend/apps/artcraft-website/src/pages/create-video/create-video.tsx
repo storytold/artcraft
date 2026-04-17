@@ -153,9 +153,7 @@ function resolveDurationForModel(
   }
   if (model.duration_seconds_options?.length) {
     if (model.duration_seconds_options.includes(current)) return current;
-    return (
-      model.duration_seconds_default ?? model.duration_seconds_options[0]!
-    );
+    return model.duration_seconds_default ?? model.duration_seconds_options[0]!;
   }
   return model.duration_seconds_default ?? null;
 }
@@ -310,9 +308,12 @@ export default function CreateVideo() {
     generateAudio: hasSound ? generateWithSound : undefined,
   });
 
-  // Characters are only supported for seedance_2p0
-  const isSeedance2p0 = selectedModel?.model === "seedance_2p0";
-  const activeCharacters = isSeedance2p0 ? storedCharacters : [];
+  // Characters are supported for Seedance 2.0 and Seedance 2.0 Fast, in
+  // both keyframe and reference input modes.
+  const supportsCharacters =
+    selectedModel?.model === "seedance_2p0" ||
+    selectedModel?.model === "seedance_2p0_fast";
+  const activeCharacters = supportsCharacters ? storedCharacters : [];
 
   // Popover items
   const mentionItems = useMemo((): MentionItem[] => {
@@ -475,38 +476,49 @@ export default function CreateVideo() {
     (item: PopoverItem) => {
       const model = item.action ? _modelLookup.get(item.action) : undefined;
       if (!model) return;
-      const currentDuration = useCreateVideoStore.getState().ui.duration;
-      const nextDuration = resolveDurationForModel(model, currentDuration);
+      const currentState = useCreateVideoStore.getState().ui;
+      const nextDuration = resolveDurationForModel(
+        model,
+        currentState.duration,
+      );
+
+      const newSupportsKeyframe =
+        !!model.starting_keyframe_supported ||
+        !!model.starting_keyframe_required;
+      const newSupportsRefs =
+        !!model.image_references_supported ||
+        !!model.video_references_supported ||
+        !!model.audio_references_supported;
+
+      const nextInputMode =
+        currentState.inputMode === "reference" && newSupportsRefs
+          ? "reference"
+          : "keyframe";
+
       setUi({
         selectedModelId: model.model,
         selectedSize: model.aspect_ratio_default ?? "wide_sixteen_by_nine",
         duration: nextDuration,
         resolution: model.resolution_default ?? null,
         generateWithSound: false,
-        inputMode: "keyframe",
+        inputMode: nextInputMode,
         numVideos: Math.min(
           model.batch_size_max ?? 4,
           model.batch_size_default ?? 1,
         ),
       });
 
-      // Only clear media that the new model doesn't support
-      const newSupportsKeyframe =
-        !!model.starting_keyframe_supported ||
-        !!model.starting_keyframe_required;
-      if (!newSupportsKeyframe) {
+      // Only clear media that the new model can't use in any mode.
+      if (!newSupportsKeyframe && !model.image_references_supported) {
         setReferenceImages([]);
       }
       if (!model.ending_keyframe_supported) {
         setEndFrameImage(undefined);
       }
-
-      const newSupportsRefs =
-        !!model.image_references_supported ||
-        !!model.video_references_supported ||
-        !!model.audio_references_supported;
-      if (!newSupportsRefs) {
+      if (!model.video_references_supported) {
         setReferenceVideos([]);
+      }
+      if (!model.audio_references_supported) {
         setReferenceAudios([]);
       }
     },
@@ -615,8 +627,7 @@ export default function CreateVideo() {
       model: selectedModel.model,
       numVideos: 1,
       aspectRatio: selectedSize,
-      duration:
-        duration ?? selectedModel.duration_seconds_default ?? undefined,
+      duration: duration ?? selectedModel.duration_seconds_default ?? undefined,
       resolution: hasResolutionOptions
         ? (resolution ?? selectedModel.resolution_default ?? undefined)
         : undefined,
@@ -786,7 +797,12 @@ export default function CreateVideo() {
               hasEndFrame ? () => setIsEndFramePickerOpen(true) : undefined
             }
             modelSelector={
-              <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+              <Tooltip
+                content="Model"
+                position="top"
+                className="z-50"
+                closeOnClick
+              >
                 <PopoverMenu
                   items={modelItems}
                   onSelect={handleModelChange}
@@ -954,7 +970,7 @@ export default function CreateVideo() {
                     />
                   </Tooltip>
                 )}
-                {isSeedance2p0 && (
+                {supportsCharacters && (
                   <button
                     type="button"
                     onClick={() => setIsCharactersModalOpen(true)}
