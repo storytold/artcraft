@@ -161,19 +161,13 @@ pub enum KinoviOutputResolution {
 }
 
 impl KinoviOutputResolution {
-  fn as_api_str(&self) -> &'static str {
+  /// Returns the API string to send, or None for 720p (the default, which is
+  /// expressed by omitting the field entirely).
+  pub fn as_api_str(&self) -> Option<&'static str> {
     match self {
-      Self::FourEightyP => "480p",
-      Self::SevenTwentyP => "720p",
-      Self::TenEightyP => "1080p",
-    }
-  }
-
-  /// Returns the string to send, or None if it's the default (720p) which should be omitted.
-  fn maybe_as_api_str(&self) -> Option<&'static str> {
-    match self {
+      Self::FourEightyP => Some("480p"),
       Self::SevenTwentyP => None, // Default — omit from request
-      _ => Some(self.as_api_str()),
+      Self::TenEightyP => Some("1080p"),
     }
   }
 }
@@ -298,7 +292,7 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
           model: args.model_type.as_api_str(),
           duration,
           mode: video_input_mode,
-          output_resolution: args.output_resolution.and_then(|r| r.maybe_as_api_str()),
+          output_resolution: args.output_resolution.and_then(|r| r.as_api_str()),
           face_blur_mode,
           character_ids: args.character_ids,
           uploaded_urls,
