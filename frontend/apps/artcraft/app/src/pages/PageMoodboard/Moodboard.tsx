@@ -328,7 +328,13 @@ const Timeline = ({
 }: TimelineProps) => {
   const laneRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<{ id: string; startX: number; startDuration: number } | null>(null);
-  const dragRef = useRef<{ boardId: string; boardIndex: number } | null>(null);
+  // Store full drag data in a ref so onUp can read it without going through a setState updater
+  const activeDragRef = useRef<{
+    boardId: string;
+    boardIndex: number;
+    insertionIndex: number;
+    caretX: number;
+  } | null>(null);
   const [dragState, setDragState] = useState<TimelineDragState | null>(null);
 
   const boardTimings: BoardTiming[] = useMemo(() => buildBoardTimings(boards), [boards]);
@@ -398,40 +404,33 @@ const Timeline = ({
       e.stopPropagation();
       e.preventDefault();
 
-      dragRef.current = { boardId, boardIndex };
+      activeDragRef.current = { boardId, boardIndex, insertionIndex: boardIndex, caretX: 0 };
 
       const onMove = (ev: PointerEvent) => {
-        if (!dragRef.current || !laneRef.current) return;
+        if (!activeDragRef.current || !laneRef.current) return;
         const rect = laneRef.current.getBoundingClientRect();
         const scrollLeft = laneRef.current.scrollLeft;
         const pointerX = ev.clientX - rect.left + scrollLeft;
         const { caretX, insertionIndex } = computeInsertionFromPointerX(
           pointerX,
-          dragRef.current.boardIndex,
+          activeDragRef.current.boardIndex,
         );
-        setDragState({
-          boardId: dragRef.current.boardId,
-          boardIndex: dragRef.current.boardIndex,
-          caretX,
-          insertionIndex,
-        });
+        activeDragRef.current = { ...activeDragRef.current, caretX, insertionIndex };
+        setDragState({ boardId, boardIndex, caretX, insertionIndex });
       };
 
       const onUp = () => {
-        if (dragRef.current) {
-          setDragState((prev) => {
-            if (!prev || !dragRef.current) return null;
-            const { boardIndex, insertionIndex } = prev;
-            // Adjust toIndex: if moving forward, subtract 1 because the item is removed first
-            const toIndex =
-              insertionIndex > boardIndex ? insertionIndex - 1 : insertionIndex;
-            if (toIndex !== boardIndex) {
-              onReorder(boardIndex, toIndex);
-            }
-            return null;
-          });
-          dragRef.current = null;
+        // Read from ref synchronously — setState updaters run async so can't rely on them
+        if (activeDragRef.current) {
+          const { boardIndex: fromIdx, insertionIndex } = activeDragRef.current;
+          // If moving forward, subtract 1 because the item is removed first before inserting
+          const toIndex = insertionIndex > fromIdx ? insertionIndex - 1 : insertionIndex;
+          if (toIndex !== fromIdx) {
+            onReorder(fromIdx, toIndex);
+          }
+          activeDragRef.current = null;
         }
+        setDragState(null);
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
       };
@@ -687,16 +686,18 @@ export const Moodboard = () => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Refs for playback rAF loop (avoid stale closures)
-  const isPlayingRef = useRef(false);
   const currentTimeRef = useRef(0);
   const boardsRef = useRef<Board[]>([]);
   const rafRef = useRef<number | null>(null);
   const lastTimestampRef = useRef<number | null>(null);
 
-  // Keep refs in sync with state/props
-  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
-  useEffect(() => { currentTimeRef.current = currentTimeSeconds; }, [currentTimeSeconds]);
+  // Keep refs in sync — currentTimeRef is updated manually in every handler and in the rAF
+  // tick itself, so we do NOT sync it here (that would race with and reset manual updates).
   useEffect(() => { boardsRef.current = boards; }, [boards]);
+
+  // selectedBoardId ref so the rAF tick can check current selection without a stale closure
+  const selectedBoardIdRef = useRef<string | null>(selectedBoardId);
+  useEffect(() => { selectedBoardIdRef.current = selectedBoardId; }, [selectedBoardId]);
 
   const boardTimings = useMemo(() => buildBoardTimings(boards), [boards]);
   const totalDuration = boardTimings.reduce((s, { board }) => s + board.duration, 0);
@@ -742,13 +743,14 @@ export const Moodboard = () => {
         setCurrentTimeSeconds(nextTime);
         currentTimeRef.current = nextTime;
 
-        // Auto-select board under playhead
+        // Auto-select board under playhead — use ref to avoid stale closure
         const hit = timings.find(
           ({ board, startTime }) =>
             nextTime >= startTime && nextTime < startTime + board.duration,
         );
-        if (hit && hit.board.id !== selectedBoardId) {
+        if (hit && hit.board.id !== selectedBoardIdRef.current) {
           selectBoard(hit.board.id);
+          selectedBoardIdRef.current = hit.board.id;
         }
       }
       lastTimestampRef.current = timestamp;
