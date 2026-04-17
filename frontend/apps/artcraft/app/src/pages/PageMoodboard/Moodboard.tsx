@@ -1,10 +1,16 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus,
   faTrash,
   faUpload,
   faPhotoFilm,
+  faPlay,
+  faPause,
+  faBackwardStep,
+  faForwardStep,
+  faBackwardFast,
+  faForwardFast,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button } from "@storyteller/ui-button";
 import { twMerge } from "tailwind-merge";
@@ -14,13 +20,32 @@ const PIXELS_PER_SECOND = 80;
 const MIN_BLOCK_WIDTH = 40;
 const MIN_DURATION = 0.5;
 
-// ─── EmptyState ───────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-interface EmptyStateProps {
-  onAdd: () => void;
+interface BoardTiming {
+  board: Board;
+  startTime: number;
 }
 
-const EmptyState = ({ onAdd }: EmptyStateProps) => (
+const buildBoardTimings = (boards: Board[]): BoardTiming[] => {
+  let t = 0;
+  return boards.map((board) => {
+    const startTime = t;
+    t += board.duration;
+    return { board, startTime };
+  });
+};
+
+const formatTime = (s: number): string => {
+  const clamped = Math.max(0, s);
+  const mins = Math.floor(clamped / 60);
+  const secs = (clamped % 60).toFixed(1);
+  return mins > 0 ? `${mins}:${secs.padStart(4, "0")}` : `${secs}s`;
+};
+
+// ─── EmptyState ───────────────────────────────────────────────────────────────
+
+const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
   <div className="flex h-[calc(100vh-56px)] w-full items-center justify-center bg-ui-background">
     <div className="flex flex-col items-center gap-4 text-center">
       <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/5">
@@ -130,12 +155,13 @@ const MetadataEditor = ({ board, onUpdate, onDelete, onUpload }: MetadataEditorP
 
 // ─── MainPreview ──────────────────────────────────────────────────────────────
 
-interface MainPreviewProps {
+const MainPreview = ({
+  board,
+  onUploadClick,
+}: {
   board: Board | null;
   onUploadClick: () => void;
-}
-
-const MainPreview = ({ board, onUploadClick }: MainPreviewProps) => (
+}) => (
   <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-ui-background">
     {board === null ? (
       <p className="text-sm text-base-fg/30">Select a shot</p>
@@ -274,9 +300,11 @@ const Filmstrip = ({
 
 // ─── Timeline ─────────────────────────────────────────────────────────────────
 
-interface BoardTiming {
-  board: Board;
-  startTime: number;
+interface TimelineDragState {
+  boardId: string;
+  boardIndex: number;
+  caretX: number;
+  insertionIndex: number;
 }
 
 interface TimelineProps {
@@ -286,13 +314,8 @@ interface TimelineProps {
   onSelectBoard: (id: string, startTime: number) => void;
   onUpdateDuration: (id: string, duration: number) => void;
   onSeek: (time: number) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
 }
-
-const formatTime = (s: number): string => {
-  const mins = Math.floor(s / 60);
-  const secs = (s % 60).toFixed(1);
-  return mins > 0 ? `${mins}:${secs.padStart(4, "0")}` : `${secs}s`;
-};
 
 const Timeline = ({
   boards,
@@ -301,24 +324,128 @@ const Timeline = ({
   onSelectBoard,
   onUpdateDuration,
   onSeek,
+  onReorder,
 }: TimelineProps) => {
   const laneRef = useRef<HTMLDivElement>(null);
   const resizeRef = useRef<{ id: string; startX: number; startDuration: number } | null>(null);
+  const dragRef = useRef<{ boardId: string; boardIndex: number } | null>(null);
+  const [dragState, setDragState] = useState<TimelineDragState | null>(null);
 
-  const boardTimings: BoardTiming[] = useMemo(() => {
-    let time = 0;
-    return boards.map((board) => {
-      const startTime = time;
-      time += board.duration;
-      return { board, startTime };
-    });
-  }, [boards]);
-
+  const boardTimings: BoardTiming[] = useMemo(() => buildBoardTimings(boards), [boards]);
   const totalDuration = boardTimings.reduce((s, { board }) => s + board.duration, 0);
   const totalWidth = Math.max(totalDuration * PIXELS_PER_SECOND, 300);
 
-  const handleLaneClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+  // ── Resize handlers ──────────────────────────────────────────────────────
+
+  const handleResizePointerDown = useCallback(
+    (e: React.PointerEvent, id: string, currentDuration: number) => {
+      e.stopPropagation();
+      e.preventDefault();
+      resizeRef.current = { id, startX: e.clientX, startDuration: currentDuration };
+
+      const onMove = (ev: PointerEvent) => {
+        if (!resizeRef.current) return;
+        const delta = ev.clientX - resizeRef.current.startX;
+        const newDuration = Math.max(
+          MIN_DURATION,
+          parseFloat((resizeRef.current.startDuration + delta / PIXELS_PER_SECOND).toFixed(1)),
+        );
+        onUpdateDuration(resizeRef.current.id, newDuration);
+      };
+
+      const onUp = () => {
+        resizeRef.current = null;
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      };
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [onUpdateDuration],
+  );
+
+  // ── Drag-to-rearrange handlers ───────────────────────────────────────────
+
+  const computeInsertionFromPointerX = useCallback(
+    (pointerX: number, fromIndex: number): { caretX: number; insertionIndex: number } => {
+      let insertionIndex = boardTimings.length;
+      let caretX = totalWidth;
+
+      for (let i = 0; i < boardTimings.length; i++) {
+        if (i === fromIndex) continue;
+        const { startTime, board } = boardTimings[i];
+        const midX = (startTime + board.duration / 2) * PIXELS_PER_SECOND;
+        if (pointerX < midX) {
+          insertionIndex = i;
+          caretX = startTime * PIXELS_PER_SECOND;
+          break;
+        } else {
+          insertionIndex = i + 1;
+          caretX = (startTime + board.duration) * PIXELS_PER_SECOND;
+        }
+      }
+
+      return { caretX, insertionIndex };
+    },
+    [boardTimings, totalWidth],
+  );
+
+  const handleBoardPointerDown = useCallback(
+    (e: React.PointerEvent, boardId: string, boardIndex: number) => {
+      // Don't initiate drag if clicking the resize handle
+      if ((e.target as HTMLElement).dataset.resize) return;
+      e.stopPropagation();
+      e.preventDefault();
+
+      dragRef.current = { boardId, boardIndex };
+
+      const onMove = (ev: PointerEvent) => {
+        if (!dragRef.current || !laneRef.current) return;
+        const rect = laneRef.current.getBoundingClientRect();
+        const scrollLeft = laneRef.current.scrollLeft;
+        const pointerX = ev.clientX - rect.left + scrollLeft;
+        const { caretX, insertionIndex } = computeInsertionFromPointerX(
+          pointerX,
+          dragRef.current.boardIndex,
+        );
+        setDragState({
+          boardId: dragRef.current.boardId,
+          boardIndex: dragRef.current.boardIndex,
+          caretX,
+          insertionIndex,
+        });
+      };
+
+      const onUp = () => {
+        if (dragRef.current) {
+          setDragState((prev) => {
+            if (!prev || !dragRef.current) return null;
+            const { boardIndex, insertionIndex } = prev;
+            // Adjust toIndex: if moving forward, subtract 1 because the item is removed first
+            const toIndex =
+              insertionIndex > boardIndex ? insertionIndex - 1 : insertionIndex;
+            if (toIndex !== boardIndex) {
+              onReorder(boardIndex, toIndex);
+            }
+            return null;
+          });
+          dragRef.current = null;
+        }
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      };
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [computeInsertionFromPointerX, onReorder],
+  );
+
+  // ── Seek by clicking empty lane area ─────────────────────────────────────
+
+  const handleLanePointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
       if (!laneRef.current) return;
       const rect = laneRef.current.getBoundingClientRect();
       const scrollLeft = laneRef.current.scrollLeft;
@@ -326,38 +453,14 @@ const Timeline = ({
       const time = Math.min(Math.max(0, x / PIXELS_PER_SECOND), totalDuration);
       onSeek(time);
 
-      // Select whichever board falls under the click
       const hit = boardTimings.find(
-        ({ board, startTime }) => x >= startTime * PIXELS_PER_SECOND && x < (startTime + board.duration) * PIXELS_PER_SECOND,
+        ({ board, startTime }) =>
+          x >= startTime * PIXELS_PER_SECOND &&
+          x < (startTime + board.duration) * PIXELS_PER_SECOND,
       );
       if (hit) onSelectBoard(hit.board.id, hit.startTime);
     },
     [boardTimings, totalDuration, onSeek, onSelectBoard],
-  );
-
-  const handleResizeMouseDown = useCallback(
-    (e: React.MouseEvent, id: string, currentDuration: number) => {
-      e.stopPropagation();
-      e.preventDefault();
-      resizeRef.current = { id, startX: e.clientX, startDuration: currentDuration };
-
-      const onMouseMove = (ev: MouseEvent) => {
-        if (!resizeRef.current) return;
-        const delta = ev.clientX - resizeRef.current.startX;
-        const newDuration = Math.max(MIN_DURATION, resizeRef.current.startDuration + delta / PIXELS_PER_SECOND);
-        onUpdateDuration(resizeRef.current.id, parseFloat(newDuration.toFixed(1)));
-      };
-
-      const onMouseUp = () => {
-        resizeRef.current = null;
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("mouseup", onMouseUp);
-      };
-
-      window.addEventListener("mousemove", onMouseMove);
-      window.addEventListener("mouseup", onMouseUp);
-    },
-    [onUpdateDuration],
   );
 
   const playheadLeft = currentTimeSeconds * PIXELS_PER_SECOND;
@@ -365,26 +468,21 @@ const Timeline = ({
   return (
     <div className="shrink-0 border-t border-ui-panel-border bg-[#1a1a1a]">
       {/* Header row */}
-      <div className="flex items-center justify-between border-b border-ui-panel-border/50 px-3 py-1">
-        <span className="font-mono text-xs text-base-fg/50">
-          {formatTime(currentTimeSeconds)}
-        </span>
-        <span className="text-xs text-base-fg/30">Timeline</span>
-        <span className="font-mono text-xs text-base-fg/50">
-          {formatTime(totalDuration)}
-        </span>
+      <div className="flex items-center justify-between border-b border-ui-panel-border/40 px-3 py-1">
+        <span className="font-mono text-xs text-base-fg/50">{formatTime(currentTimeSeconds)}</span>
+        <span className="text-xs text-base-fg/25">Timeline</span>
+        <span className="font-mono text-xs text-base-fg/50">{formatTime(totalDuration)}</span>
       </div>
 
-      {/* Board lane */}
+      {/* Lane */}
       <div
         ref={laneRef}
         className="relative h-[90px] overflow-x-auto overflow-y-hidden"
-        onClick={handleLaneClick}
-        style={{ cursor: "crosshair" }}
+        style={{ cursor: dragState ? "grabbing" : "crosshair" }}
+        onPointerDown={handleLanePointerDown}
       >
-        {/* Inner scrollable canvas */}
         <div className="relative h-full" style={{ width: totalWidth + 40 }}>
-          {/* Time ruler ticks */}
+          {/* Ruler ticks */}
           {Array.from({ length: Math.ceil(totalDuration) + 1 }, (_, i) => (
             <div
               key={i}
@@ -397,9 +495,11 @@ const Timeline = ({
           ))}
 
           {/* Board blocks */}
-          {boardTimings.map(({ board, startTime }) => {
+          {boardTimings.map(({ board, startTime }, idx) => {
             const blockWidth = Math.max(MIN_BLOCK_WIDTH, board.duration * PIXELS_PER_SECOND);
             const isSelected = board.id === selectedBoardId;
+            const isDragging = dragState?.boardId === board.id;
+
             return (
               <div
                 key={board.id}
@@ -412,14 +512,13 @@ const Timeline = ({
                 style={{
                   left: startTime * PIXELS_PER_SECOND + 1,
                   width: blockWidth - 2,
+                  opacity: isDragging ? 0.5 : 1,
+                  filter: isDragging ? "saturate(1.4)" : undefined,
+                  cursor: "grab",
+                  userSelect: "none",
                 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectBoard(board.id, startTime);
-                  onSeek(startTime);
-                }}
+                onPointerDown={(e) => handleBoardPointerDown(e, board.id, idx)}
               >
-                {/* Thumbnail strip on left */}
                 {board.imageDataUrl && (
                   <img
                     src={board.imageDataUrl}
@@ -428,8 +527,6 @@ const Timeline = ({
                     style={{ pointerEvents: "none" }}
                   />
                 )}
-
-                {/* Text labels */}
                 <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-1.5">
                   <span className="truncate text-[10px] font-semibold text-base-fg/80">
                     {board.shotNumber}
@@ -440,31 +537,133 @@ const Timeline = ({
                       "{board.dialogue}"
                     </span>
                   )}
-                  <span className="text-[9px] text-base-fg/30">
-                    {board.duration.toFixed(1)}s
-                  </span>
+                  <span className="text-[9px] text-base-fg/30">{board.duration.toFixed(1)}s</span>
                 </div>
 
                 {/* Resize handle */}
                 <div
-                  className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize rounded-r opacity-0 transition-opacity hover:bg-white/30 hover:opacity-100"
-                  onMouseDown={(e) => handleResizeMouseDown(e, board.id, board.duration)}
+                  data-resize="true"
+                  className="absolute right-0 top-0 bottom-0 w-2 rounded-r opacity-0 transition-opacity hover:bg-white/30 hover:opacity-100"
+                  style={{ cursor: "ew-resize" }}
+                  onPointerDown={(e) => handleResizePointerDown(e, board.id, board.duration)}
                   title="Drag to resize duration"
                 />
               </div>
             );
           })}
 
+          {/* Drag insertion caret */}
+          {dragState && (
+            <div
+              className="pointer-events-none absolute top-5 bottom-0 z-30 w-0.5 bg-yellow-400"
+              style={{ left: dragState.caretX }}
+            >
+              {/* Downward-pointing triangle at top */}
+              <div className="absolute -left-[5px] -top-[6px] h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent border-t-yellow-400" />
+            </div>
+          )}
+
           {/* Playhead */}
           <div
             className="pointer-events-none absolute top-0 bottom-0 z-20 w-px bg-primary"
             style={{ left: playheadLeft }}
           >
-            <div className="relative">
-              <div className="absolute -left-[4px] top-0 h-0 w-0 border-x-[4px] border-t-[7px] border-x-transparent border-t-primary" />
-            </div>
+            <div className="absolute -left-[4px] top-0 h-0 w-0 border-x-[4px] border-t-[7px] border-x-transparent border-t-primary" />
           </div>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── PlaybackControls ─────────────────────────────────────────────────────────
+
+interface PlaybackControlsProps {
+  isPlaying: boolean;
+  currentTimeSeconds: number;
+  totalDuration: number;
+  currentBoardNumber: number | null;
+  totalBoards: number;
+  onPlay: () => void;
+  onPause: () => void;
+  onPrevBoard: () => void;
+  onNextBoard: () => void;
+  onPrevScene: () => void;
+  onNextScene: () => void;
+}
+
+const PlaybackControls = ({
+  isPlaying,
+  currentTimeSeconds,
+  totalDuration,
+  currentBoardNumber,
+  totalBoards,
+  onPlay,
+  onPause,
+  onPrevBoard,
+  onNextBoard,
+  onPrevScene,
+  onNextScene,
+}: PlaybackControlsProps) => {
+  const transportBtnClass =
+    "flex h-9 w-9 items-center justify-center rounded-md text-base-fg/70 transition-colors hover:bg-white/10 hover:text-base-fg active:scale-95";
+
+  return (
+    <div className="flex h-[52px] shrink-0 items-center border-t border-ui-panel-border bg-[#111] px-4">
+      {/* Left stats */}
+      <div className="flex w-32 flex-col">
+        <span className="font-mono text-xs text-base-fg/60">{formatTime(currentTimeSeconds)}</span>
+        <span className="text-[10px] text-base-fg/30">
+          {currentBoardNumber !== null ? `Shot ${currentBoardNumber}` : "—"}
+        </span>
+      </div>
+
+      {/* Transport buttons — centered */}
+      <div className="flex flex-1 items-center justify-center gap-1">
+        <button
+          className={transportBtnClass}
+          onClick={onPrevScene}
+          title="Go to start (Ctrl+←)"
+        >
+          <FontAwesomeIcon icon={faBackwardFast} />
+        </button>
+        <button
+          className={transportBtnClass}
+          onClick={onPrevBoard}
+          title="Previous shot (←)"
+        >
+          <FontAwesomeIcon icon={faBackwardStep} />
+        </button>
+
+        {/* Play / Pause */}
+        <button
+          className="mx-1 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white transition-all hover:bg-primary-400 active:scale-95"
+          onClick={isPlaying ? onPause : onPlay}
+          title={isPlaying ? "Pause" : "Play"}
+        >
+          <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} className="text-sm" />
+        </button>
+
+        <button
+          className={transportBtnClass}
+          onClick={onNextBoard}
+          title="Next shot (→)"
+        >
+          <FontAwesomeIcon icon={faForwardStep} />
+        </button>
+        <button
+          className={transportBtnClass}
+          onClick={onNextScene}
+          title="Go to end (Ctrl+→)"
+        >
+          <FontAwesomeIcon icon={faForwardFast} />
+        </button>
+      </div>
+
+      {/* Right stats */}
+      <div className="flex w-32 flex-col items-end">
+        <span className="font-mono text-xs text-base-fg/60">{formatTime(totalDuration)}</span>
+        <span className="text-[10px] text-base-fg/30">{totalBoards} shot{totalBoards !== 1 ? "s" : ""}</span>
       </div>
     </div>
   );
@@ -485,8 +684,144 @@ export const Moodboard = () => {
   const dragIndexRef = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
+  // Refs for playback rAF loop (avoid stale closures)
+  const isPlayingRef = useRef(false);
+  const currentTimeRef = useRef(0);
+  const boardsRef = useRef<Board[]>([]);
+  const rafRef = useRef<number | null>(null);
+  const lastTimestampRef = useRef<number | null>(null);
+
+  // Keep refs in sync with state/props
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { currentTimeRef.current = currentTimeSeconds; }, [currentTimeSeconds]);
+  useEffect(() => { boardsRef.current = boards; }, [boards]);
+
+  const boardTimings = useMemo(() => buildBoardTimings(boards), [boards]);
+  const totalDuration = boardTimings.reduce((s, { board }) => s + board.duration, 0);
   const selectedBoard = boards.find((b) => b.id === selectedBoardId) ?? null;
+
+  // ── Playback engine ────────────────────────────────────────────────────────
+
+  const stopPlayback = useCallback(() => {
+    setIsPlaying(false);
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    lastTimestampRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      lastTimestampRef.current = null;
+      return;
+    }
+
+    const tick = (timestamp: number) => {
+      const last = lastTimestampRef.current;
+      if (last !== null) {
+        const delta = (timestamp - last) / 1000;
+        const nextTime = currentTimeRef.current + delta;
+        const timings = buildBoardTimings(boardsRef.current);
+        const dur = timings.reduce((s, { board }) => s + board.duration, 0);
+
+        if (nextTime >= dur) {
+          // Reached end — stop
+          setCurrentTimeSeconds(dur);
+          currentTimeRef.current = dur;
+          stopPlayback();
+          return;
+        }
+
+        setCurrentTimeSeconds(nextTime);
+        currentTimeRef.current = nextTime;
+
+        // Auto-select board under playhead
+        const hit = timings.find(
+          ({ board, startTime }) =>
+            nextTime >= startTime && nextTime < startTime + board.duration,
+        );
+        if (hit && hit.board.id !== selectedBoardId) {
+          selectBoard(hit.board.id);
+        }
+      }
+      lastTimestampRef.current = timestamp;
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying]);
+
+  // ── Playback control actions ───────────────────────────────────────────────
+
+  const handlePlay = useCallback(() => {
+    // If at the end, restart from beginning
+    if (currentTimeRef.current >= totalDuration && totalDuration > 0) {
+      setCurrentTimeSeconds(0);
+      currentTimeRef.current = 0;
+    }
+    setIsPlaying(true);
+  }, [totalDuration]);
+
+  const handlePause = useCallback(() => stopPlayback(), [stopPlayback]);
+
+  const handlePrevBoard = useCallback(() => {
+    const timings = buildBoardTimings(boards);
+    const curTime = currentTimeRef.current;
+    // If we're more than 0.3s into the current board, rewind to its start
+    const currentEntry = timings.find(
+      ({ startTime, board }) => curTime >= startTime && curTime < startTime + board.duration,
+    );
+    if (currentEntry && curTime - currentEntry.startTime > 0.3) {
+      setCurrentTimeSeconds(currentEntry.startTime);
+      currentTimeRef.current = currentEntry.startTime;
+      selectBoard(currentEntry.board.id);
+      return;
+    }
+    // Otherwise go to start of previous board
+    const idx = timings.findIndex(({ board }) => board.id === selectedBoardId);
+    const prevEntry = idx > 0 ? timings[idx - 1] : timings[0];
+    if (prevEntry) {
+      setCurrentTimeSeconds(prevEntry.startTime);
+      currentTimeRef.current = prevEntry.startTime;
+      selectBoard(prevEntry.board.id);
+    }
+  }, [boards, selectedBoardId, selectBoard]);
+
+  const handleNextBoard = useCallback(() => {
+    const timings = buildBoardTimings(boards);
+    const idx = timings.findIndex(({ board }) => board.id === selectedBoardId);
+    const nextEntry = idx >= 0 && idx < timings.length - 1 ? timings[idx + 1] : null;
+    if (nextEntry) {
+      setCurrentTimeSeconds(nextEntry.startTime);
+      currentTimeRef.current = nextEntry.startTime;
+      selectBoard(nextEntry.board.id);
+    }
+  }, [boards, selectedBoardId, selectBoard]);
+
+  const handlePrevScene = useCallback(() => {
+    setCurrentTimeSeconds(0);
+    currentTimeRef.current = 0;
+    if (boards.length > 0) selectBoard(boards[0].id);
+  }, [boards, selectBoard]);
+
+  const handleNextScene = useCallback(() => {
+    setCurrentTimeSeconds(totalDuration);
+    currentTimeRef.current = totalDuration;
+    stopPlayback();
+  }, [totalDuration, stopPlayback]);
+
+  // ── File upload ────────────────────────────────────────────────────────────
 
   const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click();
@@ -508,6 +843,8 @@ export const Moodboard = () => {
     },
     [selectedBoardId, updateBoard],
   );
+
+  // ── Filmstrip drag handlers ────────────────────────────────────────────────
 
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     dragIndexRef.current = index;
@@ -536,6 +873,8 @@ export const Moodboard = () => {
     dragIndexRef.current = null;
   }, []);
 
+  // ── Metadata update / delete ───────────────────────────────────────────────
+
   const handleUpdate = useCallback(
     (patch: Partial<Omit<Board, "id" | "shotNumber">>) => {
       if (selectedBoardId) updateBoard(selectedBoardId, patch);
@@ -547,20 +886,37 @@ export const Moodboard = () => {
     if (selectedBoardId) deleteBoard(selectedBoardId);
   }, [selectedBoardId, deleteBoard]);
 
+  // ── Timeline callbacks ────────────────────────────────────────────────────
+
   const handleTimelineSelect = useCallback(
     (id: string, startTime: number) => {
       selectBoard(id);
       setCurrentTimeSeconds(startTime);
+      currentTimeRef.current = startTime;
     },
     [selectBoard],
   );
 
+  const handleSeek = useCallback((time: number) => {
+    setCurrentTimeSeconds(time);
+    currentTimeRef.current = time;
+  }, []);
+
   const handleUpdateDuration = useCallback(
-    (id: string, duration: number) => {
-      updateBoard(id, { duration });
-    },
+    (id: string, duration: number) => updateBoard(id, { duration }),
     [updateBoard],
   );
+
+  // ── Derived values for PlaybackControls ──────────────────────────────────
+
+  const currentBoardNumber = useMemo(() => {
+    const hit = boardTimings.find(
+      ({ startTime, board }) =>
+        currentTimeSeconds >= startTime &&
+        currentTimeSeconds < startTime + board.duration,
+    );
+    return hit?.board.shotNumber ?? null;
+  }, [boardTimings, currentTimeSeconds]);
 
   if (boards.length === 0) {
     return <EmptyState onAdd={addBoard} />;
@@ -611,7 +967,23 @@ export const Moodboard = () => {
         currentTimeSeconds={currentTimeSeconds}
         onSelectBoard={handleTimelineSelect}
         onUpdateDuration={handleUpdateDuration}
-        onSeek={setCurrentTimeSeconds}
+        onSeek={handleSeek}
+        onReorder={reorderBoards}
+      />
+
+      {/* Playback controls */}
+      <PlaybackControls
+        isPlaying={isPlaying}
+        currentTimeSeconds={currentTimeSeconds}
+        totalDuration={totalDuration}
+        currentBoardNumber={currentBoardNumber}
+        totalBoards={boards.length}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onPrevBoard={handlePrevBoard}
+        onNextBoard={handleNextBoard}
+        onPrevScene={handlePrevScene}
+        onNextScene={handleNextScene}
       />
     </div>
   );
