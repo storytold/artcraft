@@ -88,6 +88,7 @@ mod tests {
     assert_eq!(estimate_usd_cents(5, 1, Some(CommonResolution::SevenTwentyP)), 80);
     assert_eq!(estimate_usd_cents(6, 1, Some(CommonResolution::SevenTwentyP)), 96);
     assert_eq!(estimate_usd_cents(7, 1, Some(CommonResolution::SevenTwentyP)), 112);
+    assert_eq!(estimate_usd_cents(10, 1, Some(CommonResolution::SevenTwentyP)), 160);
     assert_eq!(estimate_usd_cents(15, 1, Some(CommonResolution::SevenTwentyP)), 240);
   }
 

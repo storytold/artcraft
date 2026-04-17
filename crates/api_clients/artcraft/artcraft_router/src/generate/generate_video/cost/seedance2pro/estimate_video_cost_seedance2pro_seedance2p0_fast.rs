@@ -159,23 +159,32 @@ mod tests {
     assert_eq!(estimate_usd_cents(5, 4, Some(CommonResolution::FourEightyP)), 104);
   }
 
-  // -- 1080p (new pricing: 193 credits/$1, same rate as 720p for Fast) --
+  // -- 1080p maps to 720p for Fast (Kinovi doesn't support 1080p fast) --
 
   #[test]
-  fn fast_1080p_batch_1() {
-    assert_eq!(estimate_usd_cents(5, 1, Some(CommonResolution::TenEightyP)), 73);
-    assert_eq!(estimate_usd_cents(10, 1, Some(CommonResolution::TenEightyP)), 145);
-    assert_eq!(estimate_usd_cents(15, 1, Some(CommonResolution::TenEightyP)), 218);
+  fn fast_1080p_same_as_720p() {
+    for duration in [4, 5, 10, 15] {
+      assert_eq!(
+        estimate_usd_cents(duration, 1, Some(CommonResolution::TenEightyP)),
+        estimate_usd_cents(duration, 1, Some(CommonResolution::SevenTwentyP)),
+      );
+    }
   }
 
   #[test]
   fn fast_1080p_batch_2() {
-    assert_eq!(estimate_usd_cents(5, 2, Some(CommonResolution::TenEightyP)), 145);
+    assert_eq!(
+      estimate_usd_cents(5, 2, Some(CommonResolution::TenEightyP)),
+      estimate_usd_cents(5, 2, Some(CommonResolution::SevenTwentyP)),
+    );
   }
 
   #[test]
   fn fast_1080p_batch_4() {
-    assert_eq!(estimate_usd_cents(5, 4, Some(CommonResolution::TenEightyP)), 290);
+    assert_eq!(
+      estimate_usd_cents(5, 4, Some(CommonResolution::TenEightyP)),
+      estimate_usd_cents(5, 4, Some(CommonResolution::SevenTwentyP)),
+    );
   }
 
   // -- Relative pricing --
