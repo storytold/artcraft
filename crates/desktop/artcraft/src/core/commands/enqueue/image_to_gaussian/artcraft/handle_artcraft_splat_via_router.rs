@@ -26,13 +26,11 @@ pub(super) async fn handle_artcraft_splat_via_router(
     creds.clone(),
   ));
 
-  let reference_image_tokens = request.image_media_tokens.as_ref();
-
   let router_request = GenerateSplatRequest {
     model,
     provider: Provider::Artcraft,
-    prompt: request.prompt.as_deref(),
-    reference_images: reference_image_tokens.map(ImageListRef::MediaFileTokens),
+    prompt: request.prompt.clone(),
+    reference_images: request.image_media_tokens.clone().map(ImageListRef::MediaFileTokens),
     idempotency_token: None,
   };
 

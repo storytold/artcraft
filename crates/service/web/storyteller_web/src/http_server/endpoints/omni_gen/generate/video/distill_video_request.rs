@@ -5,11 +5,7 @@
 //! [`DistilledVideoRequest`] holding:
 //!   - the (private) router request, kept for inspection in tests / debugging
 //!   - the [`VideoGenerationCostEstimate`] (Artcraft provider, what we bill on)
-//!   - the [`VideoGenerationPlan`] (Fal provider, what we actually execute)
-//!
-//! All borrows inside `request` and `plan` resolve to heap data owned by the
-//! returned struct, so it has no caller-managed lifetimes and can be moved /
-//! returned freely.
+//!   - the [`VideoGenerationPlan`] (execution provider, what we actually execute)
 
 use std::collections::HashMap;
 
@@ -34,28 +30,14 @@ use super::distill_helper::hydrate_to_router_request::hydrate_to_router_request;
 /// Self-contained, owned representation of a fully-distilled omni-gen video
 /// request: the router request, the bill-on cost estimate, and the executable
 /// plan, all in one place.
-///
-/// Borrows inside `request` and `plan` point into the boxed owned data fields
-/// below; those boxes live for the lifetime of `Self`, so the borrows are
-/// always valid.
 pub struct DistilledVideoRequest {
-  // Owned heap-stable backing data for the borrows in `request` / `plan`.
-  _owned_prompt: Option<Box<String>>,
-  _owned_negative_prompt: Option<Box<String>>,
-  _owned_idempotency_token: Option<Box<String>>,
-  _owned_start_frame_url: Option<Box<String>>,
-  _owned_end_frame_url: Option<Box<String>>,
-  _owned_reference_image_urls: Option<Box<Vec<String>>>,
-  _owned_reference_video_urls: Option<Box<Vec<String>>>,
-  _owned_reference_audio_urls: Option<Box<Vec<String>>>,
-
-  request: GenerateVideoRequest<'static>,
+  request: GenerateVideoRequest,
 
   /// Cost estimate as computed by the Artcraft provider — this is what we bill on.
   pub cost: VideoGenerationCostEstimate,
 
   /// Execution plan as computed by the execution provider — what we hand to the router.
-  plan: VideoGenerationPlan<'static>,
+  plan: VideoGenerationPlan,
 
   /// The provider used for execution (Fal, Seedance2Pro, etc.).
   pub execution_provider: Provider,
@@ -63,13 +45,13 @@ pub struct DistilledVideoRequest {
 
 impl DistilledVideoRequest {
   /// Borrow the execution plan.
-  pub fn plan(&self) -> &VideoGenerationPlan<'_> {
+  pub fn plan(&self) -> &VideoGenerationPlan {
     &self.plan
   }
 
   /// Borrow the underlying router request. Useful for tests / debugging.
   #[allow(dead_code)]
-  pub(crate) fn request(&self) -> &GenerateVideoRequest<'_> {
+  pub(crate) fn request(&self) -> &GenerateVideoRequest {
     &self.request
   }
 }
@@ -84,59 +66,13 @@ pub fn distill_video_request(
   // 1. Convert the raw API request into a router request.
   let initial = hydrate_to_router_request(request)?;
 
-  // 2. Hoist every borrowed field into an owned Box.
-  let owned_prompt: Option<Box<String>> = initial.prompt.map(|s| Box::new(s.to_string()));
-  let owned_negative_prompt: Option<Box<String>> =
-    initial.negative_prompt.map(|s| Box::new(s.to_string()));
-  let owned_idempotency_token: Option<Box<String>> =
-    initial.idempotency_token.map(|s| Box::new(s.to_string()));
-
-  // Resolve media tokens to URLs.
-  let owned_start_frame_url: Option<Box<String>> = resolve_single_media_token(
-    request.start_frame_image_media_token.as_ref(),
-    media_file_hydration_map,
-  )?;
-  let owned_end_frame_url: Option<Box<String>> = resolve_single_media_token(
-    request.end_frame_image_media_token.as_ref(),
-    media_file_hydration_map,
-  )?;
-  let owned_reference_image_urls: Option<Box<Vec<String>>> = resolve_media_token_list(
-    request.reference_image_media_tokens.as_ref(),
-    media_file_hydration_map,
-  )?;
-  let owned_reference_video_urls: Option<Box<Vec<String>>> = resolve_media_token_list(
-    request.reference_video_media_tokens.as_ref(),
-    media_file_hydration_map,
-  )?;
-  let owned_reference_audio_urls: Option<Box<Vec<String>>> = resolve_media_token_list(
-    request.reference_audio_media_tokens.as_ref(),
-    media_file_hydration_map,
-  )?;
-
-  // 3. Build static lifetime references for text fields.
-  //    SAFETY: each box lives in `Self` for the full lifetime of `DistilledVideoRequest`.
-  let prompt_static: Option<&'static str> = owned_prompt.as_deref().map(|s: &String| {
-    let raw: *const str = s.as_str();
-    unsafe { &*raw }
-  });
-  let negative_prompt_static: Option<&'static str> =
-    owned_negative_prompt.as_deref().map(|s: &String| {
-      let raw: *const str = s.as_str();
-      unsafe { &*raw }
-    });
-  let idempotency_static: Option<&'static str> =
-    owned_idempotency_token.as_deref().map(|s: &String| {
-      let raw: *const str = s.as_str();
-      unsafe { &*raw }
-    });
-
-  // 4. Cost estimate (Artcraft provider).
+  // 2. Cost estimate (Artcraft provider).
   //    `initial` already has media fields in token form (from hydrate_to_router_request),
   //    which is exactly what the Artcraft cost builder needs. Just swap the provider.
   let cost: VideoGenerationCostEstimate = {
     let cost_request = GenerateVideoRequest {
       provider: Provider::Artcraft,
-      ..initial
+      ..initial.clone()
     };
     let cost_plan = cost_request.build().map_err(|e| {
       warn!("Failed to build cost plan during video distillation: {}", e);
@@ -145,44 +81,39 @@ pub fn distill_video_request(
     cost_plan.estimate_costs()
   };
 
-  // 5. Execution plan (execution provider).
-  //    The execution plan uses URL-form media references (resolved from the hydration map).
-  let start_frame_static: Option<ImageRef<'static>> =
-    owned_start_frame_url.as_deref().map(|s: &String| {
-      let raw: *const str = s.as_str();
-      ImageRef::Url(unsafe { &*raw })
-    });
-  let end_frame_static: Option<ImageRef<'static>> =
-    owned_end_frame_url.as_deref().map(|s: &String| {
-      let raw: *const str = s.as_str();
-      ImageRef::Url(unsafe { &*raw })
-    });
-  let reference_images_static: Option<ImageListRef<'static>> =
-    owned_reference_image_urls.as_deref().map(|v: &Vec<String>| {
-      let raw: *const Vec<String> = v;
-      ImageListRef::Urls(unsafe { &*raw })
-    });
-  let reference_videos_static: Option<VideoListRef<'static>> =
-    owned_reference_video_urls.as_deref().map(|v: &Vec<String>| {
-      let raw: *const Vec<String> = v;
-      VideoListRef::Urls(unsafe { &*raw })
-    });
-  let reference_audio_static: Option<AudioListRef<'static>> =
-    owned_reference_audio_urls.as_deref().map(|v: &Vec<String>| {
-      let raw: *const Vec<String> = v;
-      AudioListRef::Urls(unsafe { &*raw })
-    });
+  // 3. Resolve media tokens to URLs for the execution request.
+  let start_frame_url = resolve_single_media_token(
+    request.start_frame_image_media_token.as_ref(),
+    media_file_hydration_map,
+  )?;
+  let end_frame_url = resolve_single_media_token(
+    request.end_frame_image_media_token.as_ref(),
+    media_file_hydration_map,
+  )?;
+  let reference_image_urls = resolve_media_token_list(
+    request.reference_image_media_tokens.as_ref(),
+    media_file_hydration_map,
+  )?;
+  let reference_video_urls = resolve_media_token_list(
+    request.reference_video_media_tokens.as_ref(),
+    media_file_hydration_map,
+  )?;
+  let reference_audio_urls = resolve_media_token_list(
+    request.reference_audio_media_tokens.as_ref(),
+    media_file_hydration_map,
+  )?;
 
-  let request_static: GenerateVideoRequest<'static> = GenerateVideoRequest {
+  // 4. Build the execution request with resolved URLs.
+  let exec_request = GenerateVideoRequest {
     model: initial.model,
     provider: execution_provider,
-    prompt: prompt_static,
-    negative_prompt: negative_prompt_static,
-    start_frame: start_frame_static,
-    end_frame: end_frame_static,
-    reference_images: reference_images_static,
-    reference_videos: reference_videos_static,
-    reference_audio: reference_audio_static,
+    prompt: initial.prompt,
+    negative_prompt: initial.negative_prompt,
+    start_frame: start_frame_url.map(ImageRef::Url),
+    end_frame: end_frame_url.map(ImageRef::Url),
+    reference_images: reference_image_urls.map(ImageListRef::Urls),
+    reference_videos: reference_video_urls.map(VideoListRef::Urls),
+    reference_audio: reference_audio_urls.map(AudioListRef::Urls),
     reference_character_tokens: None,
     resolution: initial.resolution,
     aspect_ratio: initial.aspect_ratio,
@@ -190,41 +121,28 @@ pub fn distill_video_request(
     video_batch_count: initial.video_batch_count,
     generate_audio: initial.generate_audio,
     request_mismatch_mitigation_strategy: initial.request_mismatch_mitigation_strategy,
-    idempotency_token: idempotency_static,
+    idempotency_token: initial.idempotency_token,
   };
 
-  let plan: VideoGenerationPlan<'static> = {
-    let request_ref: &'static GenerateVideoRequest<'static> = unsafe {
-      let raw: *const GenerateVideoRequest<'static> = &request_static;
-      &*raw
-    };
-    request_ref.build().map_err(|e| {
-      warn!("Failed to build video generation plan during distillation: {}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?
-  };
+  // 5. Build the execution plan.
+  let plan = exec_request.build().map_err(|e| {
+    warn!("Failed to build video generation plan during distillation: {}", e);
+    AdvancedCommonWebError::from_error(e)
+  })?;
 
   Ok(DistilledVideoRequest {
-    _owned_prompt: owned_prompt,
-    _owned_negative_prompt: owned_negative_prompt,
-    _owned_idempotency_token: owned_idempotency_token,
-    _owned_start_frame_url: owned_start_frame_url,
-    _owned_end_frame_url: owned_end_frame_url,
-    _owned_reference_image_urls: owned_reference_image_urls,
-    _owned_reference_video_urls: owned_reference_video_urls,
-    _owned_reference_audio_urls: owned_reference_audio_urls,
-    request: request_static,
+    request: exec_request,
     cost,
     plan,
     execution_provider,
   })
 }
 
-/// Resolve a single optional media token to its URL.
+/// Resolve a single optional media token to its URL string.
 fn resolve_single_media_token(
   token: Option<&MediaFileToken>,
   hydration_map: Option<&HashMap<MediaFileToken, Url>>,
-) -> Result<Option<Box<String>>, AdvancedCommonWebError> {
+) -> Result<Option<String>, AdvancedCommonWebError> {
   let token = match token {
     Some(t) => t,
     None => return Ok(None),
@@ -237,7 +155,7 @@ fn resolve_single_media_token(
   })?;
 
   match map.get(token) {
-    Some(url) => Ok(Some(Box::new(url.to_string()))),
+    Some(url) => Ok(Some(url.to_string())),
     None => Err(AdvancedCommonWebError::BadInputWithSimpleMessage(format!(
       "Media token not found in hydration map: {:?}",
       token
@@ -245,11 +163,11 @@ fn resolve_single_media_token(
   }
 }
 
-/// Resolve a list of media tokens to their URLs.
+/// Resolve a list of media tokens to their URL strings.
 fn resolve_media_token_list(
   tokens: Option<&Vec<MediaFileToken>>,
   hydration_map: Option<&HashMap<MediaFileToken, Url>>,
-) -> Result<Option<Box<Vec<String>>>, AdvancedCommonWebError> {
+) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
   let tokens = match tokens {
     Some(tokens) if !tokens.is_empty() => tokens,
     _ => return Ok(None),
@@ -274,5 +192,5 @@ fn resolve_media_token_list(
     }
   }
 
-  Ok(Some(Box::new(urls)))
+  Ok(Some(urls))
 }

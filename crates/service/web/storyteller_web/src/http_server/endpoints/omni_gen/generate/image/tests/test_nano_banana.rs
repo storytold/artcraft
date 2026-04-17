@@ -337,7 +337,7 @@ mod tests {
     use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::Gemini25FlashTextToImageAspectRatio;
 
     /// Distill a text request and run an assertion against the inner plan.
-    fn with_text_plan<F: FnOnce(&PlanFalNanoBanana<'_>)>(
+    fn with_text_plan<F: FnOnce(&PlanFalNanoBanana)>(
       request: &OmniGenImageCostAndGenerateRequest,
       assertion: F,
     ) {
@@ -349,7 +349,7 @@ mod tests {
     }
 
     /// Distill an edit request and run an assertion against the inner plan.
-    fn with_edit_plan<F: FnOnce(&PlanFalNanoBanana<'_>)>(
+    fn with_edit_plan<F: FnOnce(&PlanFalNanoBanana)>(
       request: &OmniGenImageCostAndGenerateRequest,
       hydration: &HashMap<MediaFileToken, Url>,
       assertion: F,
@@ -364,14 +364,14 @@ mod tests {
     mod text {
       use super::*;
 
-      fn assert_t2i_for_aspect_ratio<F: FnOnce(&PlanFalNanoBanana<'_>)>(
+      fn assert_t2i_for_aspect_ratio<F: FnOnce(&PlanFalNanoBanana)>(
         ar: Option<CommonAspectRatio>,
         assertion: F,
       ) {
         with_text_plan(&make_request(Some("p"), ar, Some(1), None), assertion);
       }
 
-      fn assert_t2i_for_batch<F: FnOnce(&PlanFalNanoBanana<'_>)>(
+      fn assert_t2i_for_batch<F: FnOnce(&PlanFalNanoBanana)>(
         batch: Option<u16>,
         assertion: F,
       ) {
@@ -608,7 +608,7 @@ mod tests {
       #[test]
       fn prompt_is_passed_through() {
         with_text_plan(&make_request(Some("a corgi in a hat"), None, Some(1), None), |plan| {
-          assert_eq!(plan.prompt, Some("a corgi in a hat"));
+          assert_eq!(plan.prompt, Some("a corgi in a hat".to_string()));
         });
       }
 
@@ -623,7 +623,7 @@ mod tests {
     mod edit {
       use super::*;
 
-      fn assert_edit_for_aspect_ratio<F: FnOnce(&PlanFalNanoBanana<'_>)>(
+      fn assert_edit_for_aspect_ratio<F: FnOnce(&PlanFalNanoBanana)>(
         ar: Option<CommonAspectRatio>,
         assertion: F,
       ) {
@@ -635,7 +635,7 @@ mod tests {
         );
       }
 
-      fn assert_edit_for_batch<F: FnOnce(&PlanFalNanoBanana<'_>)>(
+      fn assert_edit_for_batch<F: FnOnce(&PlanFalNanoBanana)>(
         batch: Option<u16>,
         assertion: F,
       ) {
@@ -927,7 +927,7 @@ mod tests {
           &make_request(Some("make it shiny"), None, Some(1), Some(tokens)),
           &hydration,
           |plan| {
-            assert_eq!(plan.prompt, Some("make it shiny"));
+            assert_eq!(plan.prompt, Some("make it shiny".to_string()));
           },
         );
       }

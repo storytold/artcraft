@@ -441,7 +441,7 @@ mod tests {
       FalGptImage1ImageSize, FalGptImage1NumImages, FalGptImage1Quality, PlanFalGptImage1,
     };
 
-    fn with_text_plan<F: FnOnce(&PlanFalGptImage1<'_>)>(
+    fn with_text_plan<F: FnOnce(&PlanFalGptImage1)>(
       request: &OmniGenImageCostAndGenerateRequest,
       assertion: F,
     ) {
@@ -452,7 +452,7 @@ mod tests {
       }
     }
 
-    fn with_edit_plan<F: FnOnce(&PlanFalGptImage1<'_>)>(
+    fn with_edit_plan<F: FnOnce(&PlanFalGptImage1)>(
       request: &OmniGenImageCostAndGenerateRequest,
       hydration: &HashMap<MediaFileToken, Url>,
       assertion: F,
@@ -606,7 +606,7 @@ mod tests {
       #[test]
       fn prompt_is_passed_through() {
         with_text_plan(&make_request(Some("a corgi in a hat"), None, None, Some(1), None), |plan| {
-          assert_eq!(plan.prompt, Some("a corgi in a hat"));
+          assert_eq!(plan.prompt, Some("a corgi in a hat".to_string()));
         });
       }
 
@@ -805,7 +805,7 @@ mod tests {
         with_edit_plan(
           &make_request(Some("make it shiny"), None, None, Some(1), Some(tokens)),
           &hydration,
-          |plan| { assert_eq!(plan.prompt, Some("make it shiny")); },
+          |plan| { assert_eq!(plan.prompt, Some("make it shiny".to_string())); },
         );
       }
 

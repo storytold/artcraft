@@ -28,20 +28,20 @@ pub(super) async fn handle_artcraft_video_via_router(
     creds.clone(),
   ));
 
-  let start_frame = request.image_media_token.as_ref().map(ImageRef::MediaFileToken);
-  let end_frame = request.end_frame_image_media_token.as_ref().map(ImageRef::MediaFileToken);
+  let start_frame = request.image_media_token.clone().map(ImageRef::MediaFileToken);
+  let end_frame = request.end_frame_image_media_token.clone().map(ImageRef::MediaFileToken);
 
   let router_request = GenerateVideoRequest {
     model,
     provider: Provider::Artcraft,
-    prompt: request.prompt.as_deref(),
+    prompt: request.prompt.clone(),
     negative_prompt: None,
     start_frame,
     end_frame,
     reference_images: None,
     reference_videos: None,
     reference_audio: None,
-    reference_character_tokens: request.reference_character_tokens.as_ref().map(CharacterListRef::CharacterTokens),
+    reference_character_tokens: request.reference_character_tokens.clone().map(CharacterListRef::CharacterTokens),
     resolution: None,
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,

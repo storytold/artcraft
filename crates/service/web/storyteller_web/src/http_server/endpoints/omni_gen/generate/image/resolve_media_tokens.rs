@@ -62,12 +62,12 @@ pub async fn resolve_media_tokens(
 }
 
 /// Apply resolved media URLs to a GenerateImageRequest, replacing MediaFileToken refs with URL refs.
-pub fn apply_resolved_media<'a>(
-  request: &mut GenerateImageRequest<'a>,
-  resolved: &'a ResolvedImageMedia,
+pub fn apply_resolved_media(
+  request: &mut GenerateImageRequest,
+  resolved: &ResolvedImageMedia,
 ) {
   if !resolved.image_input_urls.is_empty() {
-    request.image_inputs = Some(ImageListRef::Urls(&resolved.image_input_urls));
+    request.image_inputs = Some(ImageListRef::Urls(resolved.image_input_urls.clone()));
   } else {
     request.image_inputs = None;
   }

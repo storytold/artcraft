@@ -44,11 +44,11 @@ pub async fn estimate_splat_cost_handler(
     match router_provider {
       RouterProvider::Artcraft => {
         dummy_tokens = vec![MediaFileToken::new_from_str("FAKE_TOKEN")];
-        Some(ImageListRef::MediaFileTokens(&dummy_tokens))
+        Some(ImageListRef::MediaFileTokens(dummy_tokens.clone()))
       }
       _ => {
         dummy_urls = vec!["https://example.com/fake.png".to_string()];
-        Some(ImageListRef::Urls(&dummy_urls))
+        Some(ImageListRef::Urls(dummy_urls.clone()))
       }
     }
   } else {

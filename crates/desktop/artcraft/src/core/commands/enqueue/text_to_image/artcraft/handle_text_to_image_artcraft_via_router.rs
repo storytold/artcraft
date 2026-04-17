@@ -38,7 +38,7 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
     creds,
   ));
 
-  let image_inputs = request.image_media_tokens.as_ref().map(ImageListRef::MediaFileTokens);
+  let image_inputs = request.image_media_tokens.clone().map(ImageListRef::MediaFileTokens);
 
   let aspect_ratio = get_aspect_ratio_t2i(request);
   let resolution = get_resolution_t2i(request);
@@ -46,7 +46,7 @@ pub(super) async fn handle_text_to_image_artcraft_via_router(
   let router_request = GenerateImageRequest {
     model,
     provider: Provider::Artcraft,
-    prompt: request.prompt.as_deref(),
+    prompt: request.prompt.clone(),
     image_inputs,
     resolution,
     aspect_ratio,

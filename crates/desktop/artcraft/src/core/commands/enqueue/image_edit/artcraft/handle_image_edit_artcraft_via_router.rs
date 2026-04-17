@@ -59,7 +59,7 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
   let image_inputs = if media_tokens.is_empty() {
     None
   } else {
-    Some(ImageListRef::MediaFileTokens(&media_tokens))
+    Some(ImageListRef::MediaFileTokens(media_tokens))
   };
 
   let aspect_ratio = get_aspect_ratio_edit(request);
@@ -68,7 +68,7 @@ pub(super) async fn handle_image_edit_artcraft_via_router(
   let router_request = GenerateImageRequest {
     model,
     provider: Provider::Artcraft,
-    prompt: Some(request.prompt.as_str()),
+    prompt: Some(request.prompt.clone()),
     image_inputs,
     resolution,
     aspect_ratio,

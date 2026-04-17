@@ -60,7 +60,7 @@ fn convert_quality(
 
 pub fn hydrate_to_router_request(
   request: &OmniGenImageCostAndGenerateRequest,
-) -> Result<GenerateImageRequest<'_>, AdvancedCommonWebError> {
+) -> Result<GenerateImageRequest, AdvancedCommonWebError> {
   let api_model = request.model.as_ref()
     .ok_or_else(|| AdvancedCommonWebError::BadInputWithSimpleMessage(
       "model is required".to_string(),
@@ -83,8 +83,8 @@ pub fn hydrate_to_router_request(
   Ok(GenerateImageRequest {
     model,
     provider: Provider::Artcraft,
-    prompt: request.prompt.as_deref(),
-    image_inputs: request.image_media_tokens.as_ref()
+    prompt: request.prompt.clone(),
+    image_inputs: request.image_media_tokens.clone()
       .map(ImageListRef::MediaFileTokens),
     resolution,
     aspect_ratio,
@@ -95,6 +95,6 @@ pub fn hydrate_to_router_request(
     zoom: request.adjust_zoom,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     generation_mode_mismatch_strategy: None,
-    idempotency_token: request.idempotency_token.as_deref(),
+    idempotency_token: request.idempotency_token.clone(),
   })
 }

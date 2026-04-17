@@ -189,7 +189,7 @@ mod tests {
     /// We pass the plan by reference (rather than moving it out of `distilled`)
     /// because the plan's borrows are tied to data owned by `distilled` —
     /// moving it out would dangle those borrows.
-    fn with_fal_plan<F: FnOnce(&PlanFalFluxPro11Ultra<'_>)>(
+    fn with_fal_plan<F: FnOnce(&PlanFalFluxPro11Ultra)>(
       request: &OmniGenImageCostAndGenerateRequest,
       assertion: F,
     ) {
@@ -200,14 +200,14 @@ mod tests {
       }
     }
 
-    fn assert_plan_for_aspect_ratio<F: FnOnce(&PlanFalFluxPro11Ultra<'_>)>(
+    fn assert_plan_for_aspect_ratio<F: FnOnce(&PlanFalFluxPro11Ultra)>(
       ar: Option<CommonAspectRatio>,
       assertion: F,
     ) {
       with_fal_plan(&make_request(Some("p"), ar, Some(1)), assertion);
     }
 
-    fn assert_plan_for_batch<F: FnOnce(&PlanFalFluxPro11Ultra<'_>)>(
+    fn assert_plan_for_batch<F: FnOnce(&PlanFalFluxPro11Ultra)>(
       batch: Option<u16>,
       assertion: F,
     ) {
@@ -403,7 +403,7 @@ mod tests {
     #[test]
     fn prompt_is_passed_through() {
       with_fal_plan(&make_request(Some("a corgi in a hat"), None, Some(1)), |plan| {
-        assert_eq!(plan.prompt, Some("a corgi in a hat"));
+        assert_eq!(plan.prompt, Some("a corgi in a hat".to_string()));
       });
     }
 

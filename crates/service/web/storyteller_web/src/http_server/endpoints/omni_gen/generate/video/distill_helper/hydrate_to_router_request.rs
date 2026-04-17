@@ -49,7 +49,7 @@ fn convert_resolution(
 
 pub fn hydrate_to_router_request(
   request: &OmniGenVideoCostAndGenerateRequest,
-) -> Result<GenerateVideoRequest<'_>, AdvancedCommonWebError> {
+) -> Result<GenerateVideoRequest, AdvancedCommonWebError> {
   let api_model = request.model.as_ref()
     .ok_or_else(|| AdvancedCommonWebError::BadInputWithSimpleMessage(
       "model is required".to_string(),
@@ -68,17 +68,17 @@ pub fn hydrate_to_router_request(
   Ok(GenerateVideoRequest {
     model,
     provider: Provider::Artcraft,
-    prompt: request.prompt.as_deref(),
-    negative_prompt: request.negative_prompt.as_deref(),
-    start_frame: request.start_frame_image_media_token.as_ref()
+    prompt: request.prompt.clone(),
+    negative_prompt: request.negative_prompt.clone(),
+    start_frame: request.start_frame_image_media_token.clone()
       .map(ImageRef::MediaFileToken),
-    end_frame: request.end_frame_image_media_token.as_ref()
+    end_frame: request.end_frame_image_media_token.clone()
       .map(ImageRef::MediaFileToken),
-    reference_images: request.reference_image_media_tokens.as_ref()
+    reference_images: request.reference_image_media_tokens.clone()
       .map(ImageListRef::MediaFileTokens),
-    reference_videos: request.reference_video_media_tokens.as_ref()
+    reference_videos: request.reference_video_media_tokens.clone()
       .map(VideoListRef::MediaFileTokens),
-    reference_audio: request.reference_audio_media_tokens.as_ref()
+    reference_audio: request.reference_audio_media_tokens.clone()
       .map(AudioListRef::MediaFileTokens),
     reference_character_tokens: None,
     resolution,
@@ -87,6 +87,6 @@ pub fn hydrate_to_router_request(
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-    idempotency_token: request.idempotency_token.as_deref(),
+    idempotency_token: request.idempotency_token.clone(),
   })
 }

@@ -606,7 +606,7 @@ mod tests {
     use fal_client::requests::webhook::image::edit::enqueue_nano_banana_2_edit_image_webhook::EnqueueNanoBanana2EditImageAspectRatio;
     use fal_client::requests::webhook::image::text::enqueue_nano_banana_2_text_to_image_webhook::EnqueueNanoBanana2TextToImageAspectRatio;
 
-    fn with_text_plan<F: FnOnce(&PlanFalNanaBanana2<'_>)>(
+    fn with_text_plan<F: FnOnce(&PlanFalNanaBanana2)>(
       request: &OmniGenImageCostAndGenerateRequest,
       assertion: F,
     ) {
@@ -617,7 +617,7 @@ mod tests {
       }
     }
 
-    fn with_edit_plan<F: FnOnce(&PlanFalNanaBanana2<'_>)>(
+    fn with_edit_plan<F: FnOnce(&PlanFalNanaBanana2)>(
       request: &OmniGenImageCostAndGenerateRequest,
       hydration: &HashMap<MediaFileToken, Url>,
       assertion: F,
@@ -632,21 +632,21 @@ mod tests {
     mod text {
       use super::*;
 
-      fn assert_t2i_for_aspect_ratio<F: FnOnce(&PlanFalNanaBanana2<'_>)>(
+      fn assert_t2i_for_aspect_ratio<F: FnOnce(&PlanFalNanaBanana2)>(
         ar: Option<CommonAspectRatio>,
         assertion: F,
       ) {
         with_text_plan(&make_request(Some("p"), ar, None, Some(1), None), assertion);
       }
 
-      fn assert_t2i_for_batch<F: FnOnce(&PlanFalNanaBanana2<'_>)>(
+      fn assert_t2i_for_batch<F: FnOnce(&PlanFalNanaBanana2)>(
         batch: Option<u16>,
         assertion: F,
       ) {
         with_text_plan(&make_request(Some("p"), None, None, batch, None), assertion);
       }
 
-      fn assert_t2i_for_resolution<F: FnOnce(&PlanFalNanaBanana2<'_>)>(
+      fn assert_t2i_for_resolution<F: FnOnce(&PlanFalNanaBanana2)>(
         res: Option<CommonResolution>,
         assertion: F,
       ) {
@@ -926,7 +926,7 @@ mod tests {
       #[test]
       fn prompt_is_passed_through() {
         with_text_plan(&make_request(Some("a corgi in a hat"), None, None, Some(1), None), |plan| {
-          assert_eq!(plan.prompt, Some("a corgi in a hat"));
+          assert_eq!(plan.prompt, Some("a corgi in a hat".to_string()));
         });
       }
 
@@ -941,7 +941,7 @@ mod tests {
     mod edit {
       use super::*;
 
-      fn assert_edit_for_aspect_ratio<F: FnOnce(&PlanFalNanaBanana2<'_>)>(
+      fn assert_edit_for_aspect_ratio<F: FnOnce(&PlanFalNanaBanana2)>(
         ar: Option<CommonAspectRatio>,
         assertion: F,
       ) {
@@ -953,7 +953,7 @@ mod tests {
         );
       }
 
-      fn assert_edit_for_batch<F: FnOnce(&PlanFalNanaBanana2<'_>)>(
+      fn assert_edit_for_batch<F: FnOnce(&PlanFalNanaBanana2)>(
         batch: Option<u16>,
         assertion: F,
       ) {
@@ -965,7 +965,7 @@ mod tests {
         );
       }
 
-      fn assert_edit_for_resolution<F: FnOnce(&PlanFalNanaBanana2<'_>)>(
+      fn assert_edit_for_resolution<F: FnOnce(&PlanFalNanaBanana2)>(
         res: Option<CommonResolution>,
         assertion: F,
       ) {
@@ -1300,7 +1300,7 @@ mod tests {
           &make_request(Some("make it shiny"), None, None, Some(1), Some(tokens)),
           &hydration,
           |plan| {
-            assert_eq!(plan.prompt, Some("make it shiny"));
+            assert_eq!(plan.prompt, Some("make it shiny".to_string()));
           },
         );
       }

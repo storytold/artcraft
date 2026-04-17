@@ -258,7 +258,7 @@ mod tests {
     fn text_only_prompt_is_passed_through() {
       let d = distill_text(&text_only_request(Some(5), None));
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert_eq!(plan.prompt.as_deref(), Some("a cat dancing"));
+        assert_eq!(plan.prompt, Some("a cat dancing".to_string()));
       } else {
         panic!("wrong plan variant");
       }

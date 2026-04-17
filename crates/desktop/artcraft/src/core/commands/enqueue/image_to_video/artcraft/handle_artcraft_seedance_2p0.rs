@@ -29,21 +29,21 @@ pub(super) async fn handle_artcraft_seedance_2p0(
     creds.clone(),
   ));
 
-  let start_frame = request.image_media_token.as_ref().map(ImageRef::MediaFileToken);
-  let end_frame = request.end_frame_image_media_token.as_ref().map(ImageRef::MediaFileToken);
-  let reference_images = request.reference_image_media_tokens.as_ref().map(ImageListRef::MediaFileTokens);
+  let start_frame = request.image_media_token.clone().map(ImageRef::MediaFileToken);
+  let end_frame = request.end_frame_image_media_token.clone().map(ImageRef::MediaFileToken);
+  let reference_images = request.reference_image_media_tokens.clone().map(ImageListRef::MediaFileTokens);
 
   let router_request = GenerateVideoRequest {
     model: CommonVideoModel::Seedance2p0,
     provider: Provider::Artcraft,
-    prompt: request.prompt.as_deref(),
+    prompt: request.prompt.clone(),
     negative_prompt: None,
     start_frame,
     end_frame,
     reference_images,
-    reference_videos: request.reference_video_media_tokens.as_ref().map(VideoListRef::MediaFileTokens),
-    reference_audio: request.reference_audio_media_tokens.as_ref().map(AudioListRef::MediaFileTokens),
-    reference_character_tokens: request.reference_character_tokens.as_ref().map(CharacterListRef::CharacterTokens),
+    reference_videos: request.reference_video_media_tokens.clone().map(VideoListRef::MediaFileTokens),
+    reference_audio: request.reference_audio_media_tokens.clone().map(AudioListRef::MediaFileTokens),
+    reference_character_tokens: request.reference_character_tokens.clone().map(CharacterListRef::CharacterTokens),
     resolution: None,
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,
