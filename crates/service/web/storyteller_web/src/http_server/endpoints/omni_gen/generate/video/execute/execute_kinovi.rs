@@ -37,6 +37,7 @@ pub(super) async fn execute_generation_kinovi(
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
   media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
+  kinovi_character_ids: Option<Vec<String>>,
 ) -> Result<GenerationResult, AdvancedCommonWebError> {
   let session = Seedance2ProSession::from_cookies_string(
     server_state.seedance2pro.cookies.clone()
@@ -115,7 +116,7 @@ pub(super) async fn execute_generation_kinovi(
     reference_image_urls,
     reference_video_urls,
     reference_audio_urls,
-    character_ids: None, // TODO: resolve_kinovi_character_ids when character support is added
+    character_ids: kinovi_character_ids,
     use_face_blur_hack: None,
     host_override: None,
   };

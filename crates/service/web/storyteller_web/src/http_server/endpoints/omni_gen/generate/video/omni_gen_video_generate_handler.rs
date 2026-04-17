@@ -39,6 +39,7 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::distill_video_request::distill_video_request;
 use crate::http_server::endpoints::omni_gen::generate::video::execute::execute_generation::execute_generation;
+use crate::http_server::endpoints::omni_gen::generate::video::request_helper::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
@@ -154,6 +155,13 @@ pub async fn omni_gen_video_generate_handler(
     }
   };
 
+  // ==================== RESOLVE CHARACTER TOKENS ==================== //
+
+  let kinovi_character_ids = resolve_kinovi_character_ids(
+    request.reference_character_tokens.as_deref(),
+    &mut mysql_connection,
+  ).await?;
+
   // ==================== DETERMINE PROVIDER ==================== //
 
   let execution_provider = match request.model {
@@ -190,6 +198,7 @@ pub async fn omni_gen_video_generate_handler(
     &request,
     &server_state,
     media_file_hydration_map.as_ref(),
+    kinovi_character_ids,
   ).await?;
 
   // ==================== DB TRANSACTION ==================== //

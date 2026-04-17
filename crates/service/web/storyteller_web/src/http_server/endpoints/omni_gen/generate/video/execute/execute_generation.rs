@@ -40,6 +40,7 @@ pub async fn execute_generation(
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
   media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
+  kinovi_character_ids: Option<Vec<String>>,
 ) -> Result<GenerationResult, AdvancedCommonWebError> {
   match distilled.execution_provider {
     Provider::Seedance2Pro => {
@@ -48,6 +49,7 @@ pub async fn execute_generation(
         request,
         server_state,
         media_file_hydration_map,
+        kinovi_character_ids,
       ).await
     }
     _ => {
