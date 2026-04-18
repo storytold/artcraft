@@ -14,7 +14,7 @@ use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
   Seedance2p0AspectRatio, Seedance2p0BatchCount, Seedance2p0MultiFunctionVideoGenRequest,
-  Seedance2p0MultiFunctionVideoGenResponse,
+  Seedance2p0MultiFunctionVideoGenResponse, Seedance2p0OutputResolution,
 };
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
@@ -39,7 +39,7 @@ use pager::notification::notification_details_builder::NotificationDetailsBuilde
 use pager::notification::notification_urgency::NotificationUrgency;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, KinoviBatchCount, GenerateVideoArgs, GenerateVideoResponse, KinoviModelType, KinoviResolution,
+  generate_video, KinoviBatchCount, GenerateVideoArgs, GenerateVideoResponse, KinoviModelType, KinoviOutputResolution, KinoviResolution,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -164,10 +164,11 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
   // --- Calculate cost and charge wallet upfront (before uploads) ---
 
   let resolution = map_resolution(request.aspect_ratio);
+  let output_resolution = map_output_resolution(request.output_resolution);
   let batch_count = map_batch_count(request.batch_count);
   let duration_seconds = request.duration_seconds.unwrap_or(5).clamp(4, 15);
 
-  let cost_in_cents = estimate_cost_upfront(resolution, batch_count, duration_seconds);
+  let cost_in_cents = estimate_cost_upfront(resolution, output_resolution, batch_count, duration_seconds);
 
   let apriori_job_token = InferenceJobToken::generate();
 
@@ -199,6 +200,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       &request,
       &file_urls_by_token,
       resolution,
+      output_resolution,
       batch_count,
       duration_seconds,
       kinovi_character_ids.clone(),
@@ -221,6 +223,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
           &request,
           &file_urls_by_token,
           resolution,
+          output_resolution,
           batch_count,
           duration_seconds,
           kinovi_character_ids.clone(),
@@ -258,6 +261,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
       &request,
       &file_urls_by_token,
       resolution,
+      output_resolution,
       batch_count,
       duration_seconds,
       kinovi_character_ids,
@@ -469,6 +473,14 @@ fn map_resolution(aspect_ratio: Option<Seedance2p0AspectRatio>) -> KinoviResolut
   }
 }
 
+fn map_output_resolution(output_resolution: Option<Seedance2p0OutputResolution>) -> Option<KinoviOutputResolution> {
+  output_resolution.map(|r| match r {
+    Seedance2p0OutputResolution::FourEightyP => KinoviOutputResolution::FourEightyP,
+    Seedance2p0OutputResolution::SevenTwentyP => KinoviOutputResolution::SevenTwentyP,
+    Seedance2p0OutputResolution::TenEightyP => KinoviOutputResolution::TenEightyP,
+  })
+}
+
 fn map_batch_count(batch_count: Option<Seedance2p0BatchCount>) -> KinoviBatchCount {
   match batch_count {
     Some(Seedance2p0BatchCount::One) | None => KinoviBatchCount::One,
@@ -479,7 +491,12 @@ fn map_batch_count(batch_count: Option<Seedance2p0BatchCount>) -> KinoviBatchCou
 
 /// Estimate the cost without needing uploaded URLs. We construct a temporary
 /// `GenerateVideoArgs` with dummy values for the session and URL fields.
-fn estimate_cost_upfront(resolution: KinoviResolution, batch_count: KinoviBatchCount, duration_seconds: u8) -> u64 {
+fn estimate_cost_upfront(
+  resolution: KinoviResolution,
+  output_resolution: Option<KinoviOutputResolution>,
+  batch_count: KinoviBatchCount,
+  duration_seconds: u8,
+) -> u64 {
   let dummy_session = Seedance2ProSession::from_cookies_string(String::new());
   let args = GenerateVideoArgs {
     session: &dummy_session,
@@ -488,6 +505,7 @@ fn estimate_cost_upfront(resolution: KinoviResolution, batch_count: KinoviBatchC
     resolution,
     duration_seconds,
     batch_count,
+    output_resolution,
     start_frame_url: None,
     end_frame_url: None,
     reference_image_urls: None,
@@ -495,7 +513,6 @@ fn estimate_cost_upfront(resolution: KinoviResolution, batch_count: KinoviBatchC
     reference_audio_urls: None,
     character_ids: None,
     use_face_blur_hack: None,
-    output_resolution: None,
     host_override: None,
   };
   args.estimate_cost_in_usd_cents()
@@ -508,6 +525,7 @@ async fn upload_and_generate(
   request: &Seedance2p0MultiFunctionVideoGenRequest,
   file_urls_by_token: &HashMap<MediaFileToken, Url>,
   resolution: KinoviResolution,
+  output_resolution: Option<KinoviOutputResolution>,
   batch_count: KinoviBatchCount,
   duration_seconds: u8,
   kinovi_character_ids: Option<Vec<String>>,
@@ -578,6 +596,7 @@ async fn upload_and_generate(
     model_type: KinoviModelType::Seedance2Pro,
     prompt,
     resolution,
+    output_resolution,
     duration_seconds,
     batch_count,
     start_frame_url,
@@ -587,7 +606,6 @@ async fn upload_and_generate(
     reference_audio_urls,
     character_ids: kinovi_character_ids,
     use_face_blur_hack: None,
-    output_resolution: None,
     host_override: None,
   };
 

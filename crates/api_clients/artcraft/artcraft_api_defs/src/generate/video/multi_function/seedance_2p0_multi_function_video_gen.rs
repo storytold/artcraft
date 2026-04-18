@@ -37,6 +37,9 @@ pub struct Seedance2p0MultiFunctionVideoGenRequest {
   /// Video aspect ratio / resolution.
   pub aspect_ratio: Option<Seedance2p0AspectRatio>,
 
+  /// Output resolution quality tier (480p, 720p, 1080p).
+  pub output_resolution: Option<Seedance2p0OutputResolution>,
+
   /// Duration in seconds (4–15).
   pub duration_seconds: Option<u8>,
 
@@ -65,6 +68,17 @@ pub enum Seedance2p0BatchCount {
   One,
   Two,
   Four,
+}
+
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Seedance2p0OutputResolution {
+  /// 480p
+  FourEightyP,
+  /// 720p (default)
+  SevenTwentyP,
+  /// 1080p
+  TenEightyP,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]

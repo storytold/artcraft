@@ -5,13 +5,23 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::generate_video_response::{
   ArtcraftVideoResponsePayload, GenerateVideoResponse,
 };
-use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0MultiFunctionVideoGenRequest;
+use crate::api::common_resolution::CommonResolution as CommonResolutionRouter;
+use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
+  Seedance2p0MultiFunctionVideoGenRequest, Seedance2p0OutputResolution,
+};
 use artcraft_client::endpoints::generate::video::multi_function::seedance_2p0_multi_function_video_gen::seedance_2p0_multi_function_video_gen;
 
 pub async fn execute_artcraft_seedance2p0(
   plan: &PlanArtcraftSeedance2p0,
   artcraft_client: &RouterArtcraftClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
+  let output_resolution = plan.resolution.map(|r| match r {
+    CommonResolutionRouter::FourEightyP => Seedance2p0OutputResolution::FourEightyP,
+    CommonResolutionRouter::SevenTwentyP => Seedance2p0OutputResolution::SevenTwentyP,
+    CommonResolutionRouter::TenEightyP => Seedance2p0OutputResolution::TenEightyP,
+    _ => Seedance2p0OutputResolution::SevenTwentyP,
+  });
+
   let request = Seedance2p0MultiFunctionVideoGenRequest {
     uuid_idempotency_token: plan.idempotency_token.clone(),
     prompt: plan.prompt.clone(),
@@ -22,6 +32,7 @@ pub async fn execute_artcraft_seedance2p0(
     reference_audio_media_tokens: plan.reference_audio.clone(),
     reference_character_tokens: plan.reference_characters.clone(),
     aspect_ratio: plan.aspect_ratio,
+    output_resolution,
     duration_seconds: plan.duration_seconds,
     batch_count: Some(plan.batch_count),
   };
