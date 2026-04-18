@@ -8,7 +8,7 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use seedance2pro_client::requests::generate_video::generate_video::{KinoviBatchCount, KinoviOutputResolution, KinoviResolution};
+use seedance2pro_client::requests::generate_video::generate_video::{KinoviBatchCount, KinoviOutputResolution, KinoviAspectRatio};
 
 use crate::api::common_resolution::CommonResolution;
 
@@ -20,7 +20,7 @@ pub struct PlanSeedance2proSeedance2p0Fast {
   pub reference_image_urls: Option<Vec<String>>,
   pub reference_video_urls: Option<Vec<String>>,
   pub reference_audio_urls: Option<Vec<String>>,
-  pub resolution: KinoviResolution,
+  pub aspect_ratio: KinoviAspectRatio,
   pub output_resolution: Option<KinoviOutputResolution>,
   pub duration_seconds: u8,
   pub batch_count: KinoviBatchCount,
@@ -37,7 +37,7 @@ pub fn plan_generate_video_seedance2pro_seedance2p0_fast(
   let reference_video_urls = resolve_video_list_ref_urls(request.reference_videos.clone())?;
   let reference_audio_urls = resolve_audio_list_ref_urls(request.reference_audio.clone())?;
 
-  let resolution = plan_resolution(request.aspect_ratio, strategy)?;
+  let aspect_ratio = plan_resolution(request.aspect_ratio, strategy)?;
   let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
   let duration_seconds = plan_duration(request.duration_seconds, strategy)?;
 
@@ -50,7 +50,7 @@ pub fn plan_generate_video_seedance2pro_seedance2p0_fast(
     reference_image_urls,
     reference_video_urls,
     reference_audio_urls,
-    resolution,
+    aspect_ratio,
     output_resolution,
     duration_seconds,
     batch_count,
@@ -117,24 +117,24 @@ fn resolve_audio_list_ref_urls(
 fn plan_resolution(
   aspect_ratio: Option<CommonAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<KinoviResolution, ArtcraftRouterError> {
+) -> Result<KinoviAspectRatio, ArtcraftRouterError> {
   match aspect_ratio {
     None
     | Some(CommonAspectRatio::Auto)
     | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(KinoviResolution::Landscape16x9),
+    | Some(CommonAspectRatio::Auto4k) => Ok(KinoviAspectRatio::Landscape16x9),
 
     Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
-      Ok(KinoviResolution::Landscape16x9)
+      Ok(KinoviAspectRatio::Landscape16x9)
     }
     Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
-      Ok(KinoviResolution::Portrait9x16)
+      Ok(KinoviAspectRatio::Portrait9x16)
     }
     Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
-      Ok(KinoviResolution::Square1x1)
+      Ok(KinoviAspectRatio::Square1x1)
     }
-    Some(CommonAspectRatio::WideFourByThree) => Ok(KinoviResolution::Standard4x3),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(KinoviResolution::Portrait3x4),
+    Some(CommonAspectRatio::WideFourByThree) => Ok(KinoviAspectRatio::Standard4x3),
+    Some(CommonAspectRatio::TallThreeByFour) => Ok(KinoviAspectRatio::Portrait3x4),
 
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -151,15 +151,15 @@ fn plan_resolution(
   }
 }
 
-fn nearest_resolution(aspect_ratio: CommonAspectRatio) -> KinoviResolution {
+fn nearest_resolution(aspect_ratio: CommonAspectRatio) -> KinoviAspectRatio {
   match aspect_ratio {
-    CommonAspectRatio::WideFiveByFour => KinoviResolution::Standard4x3,
-    CommonAspectRatio::WideThreeByTwo => KinoviResolution::Standard4x3,
-    CommonAspectRatio::WideTwentyOneByNine => KinoviResolution::Landscape16x9,
-    CommonAspectRatio::TallFourByFive => KinoviResolution::Portrait3x4,
-    CommonAspectRatio::TallTwoByThree => KinoviResolution::Portrait3x4,
-    CommonAspectRatio::TallNineByTwentyOne => KinoviResolution::Portrait9x16,
-    _ => KinoviResolution::Square1x1,
+    CommonAspectRatio::WideFiveByFour => KinoviAspectRatio::Standard4x3,
+    CommonAspectRatio::WideThreeByTwo => KinoviAspectRatio::Standard4x3,
+    CommonAspectRatio::WideTwentyOneByNine => KinoviAspectRatio::Landscape16x9,
+    CommonAspectRatio::TallFourByFive => KinoviAspectRatio::Portrait3x4,
+    CommonAspectRatio::TallTwoByThree => KinoviAspectRatio::Portrait3x4,
+    CommonAspectRatio::TallNineByTwentyOne => KinoviAspectRatio::Portrait9x16,
+    _ => KinoviAspectRatio::Square1x1,
   }
 }
 

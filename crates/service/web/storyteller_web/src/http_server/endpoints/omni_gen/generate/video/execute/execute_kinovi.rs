@@ -14,7 +14,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, GenerateVideoArgs, GenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviResolution,
+  generate_video, GenerateVideoArgs, GenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviAspectRatio,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -87,7 +87,7 @@ pub(super) async fn execute_generation_kinovi(
   };
 
   // Map aspect ratio / duration / batch from the request.
-  let resolution = map_common_aspect_ratio_to_kinovi_resolution(request.aspect_ratio);
+  let aspect_ratio = map_common_aspect_ratio_to_kinovi_resolution(request.aspect_ratio);
 
   let duration_seconds = request.duration_seconds.unwrap_or(5).clamp(4, 15) as u8;
 
@@ -110,7 +110,7 @@ pub(super) async fn execute_generation_kinovi(
     request: GenerateVideoRequest {
       model_type,
       prompt,
-      resolution,
+      aspect_ratio,
       duration_seconds,
       batch_count,
       start_frame_url,
@@ -235,20 +235,20 @@ async fn upload_url_to_seedance2pro(
   Ok(upload_result.public_url)
 }
 
-/// Map a CommonAspectRatio to the Seedance2Pro KinoviResolution enum.
-fn map_common_aspect_ratio_to_kinovi_resolution(aspect_ratio: Option<CommonAspectRatio>) -> KinoviResolution {
+/// Map a CommonAspectRatio to the Seedance2Pro KinoviAspectRatio enum.
+fn map_common_aspect_ratio_to_kinovi_resolution(aspect_ratio: Option<CommonAspectRatio>) -> KinoviAspectRatio {
   match aspect_ratio {
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => KinoviResolution::Landscape16x9,
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => KinoviResolution::Portrait9x16,
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => KinoviResolution::Square1x1,
-    Some(CommonAspectRatio::WideFourByThree) => KinoviResolution::Standard4x3,
-    Some(CommonAspectRatio::TallThreeByFour) => KinoviResolution::Portrait3x4,
+    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => KinoviAspectRatio::Landscape16x9,
+    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => KinoviAspectRatio::Portrait9x16,
+    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => KinoviAspectRatio::Square1x1,
+    Some(CommonAspectRatio::WideFourByThree) => KinoviAspectRatio::Standard4x3,
+    Some(CommonAspectRatio::TallThreeByFour) => KinoviAspectRatio::Portrait3x4,
     // For unsupported aspect ratios, pick the nearest match.
-    Some(CommonAspectRatio::WideFiveByFour) | Some(CommonAspectRatio::WideThreeByTwo) => KinoviResolution::Standard4x3,
-    Some(CommonAspectRatio::WideTwentyOneByNine) => KinoviResolution::Landscape16x9,
-    Some(CommonAspectRatio::TallFourByFive) | Some(CommonAspectRatio::TallTwoByThree) => KinoviResolution::Portrait3x4,
-    Some(CommonAspectRatio::TallNineByTwentyOne) => KinoviResolution::Portrait9x16,
+    Some(CommonAspectRatio::WideFiveByFour) | Some(CommonAspectRatio::WideThreeByTwo) => KinoviAspectRatio::Standard4x3,
+    Some(CommonAspectRatio::WideTwentyOneByNine) => KinoviAspectRatio::Landscape16x9,
+    Some(CommonAspectRatio::TallFourByFive) | Some(CommonAspectRatio::TallTwoByThree) => KinoviAspectRatio::Portrait3x4,
+    Some(CommonAspectRatio::TallNineByTwentyOne) => KinoviAspectRatio::Portrait9x16,
     // Auto or None — default to landscape.
-    _ => KinoviResolution::Landscape16x9,
+    _ => KinoviAspectRatio::Landscape16x9,
   }
 }

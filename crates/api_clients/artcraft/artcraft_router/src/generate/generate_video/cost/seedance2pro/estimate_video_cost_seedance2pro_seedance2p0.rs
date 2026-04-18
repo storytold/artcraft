@@ -1,4 +1,4 @@
-use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoRequest, KinoviModelType, KinoviResolution};
+use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoRequest, KinoviModelType, KinoviAspectRatio};
 
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::PlanSeedance2proSeedance2p0;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
@@ -9,7 +9,7 @@ pub(crate) fn estimate_video_cost_seedance2pro_seedance2p0(
   let request = GenerateVideoRequest {
     model_type: KinoviModelType::Seedance2Pro,
     prompt: String::new(),
-    resolution: KinoviResolution::Square1x1, // Resolution does not affect cost
+    aspect_ratio: KinoviAspectRatio::Square1x1, // Aspect ratio does not affect cost
     duration_seconds: plan.duration_seconds,
     batch_count: plan.batch_count,
     output_resolution: plan.output_resolution,

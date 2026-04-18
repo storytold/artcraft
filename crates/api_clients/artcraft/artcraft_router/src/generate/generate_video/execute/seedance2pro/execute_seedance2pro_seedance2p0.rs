@@ -38,7 +38,7 @@ pub async fn execute_seedance2pro_seedance2p0(
     request: GenerateVideoRequest {
       model_type: KinoviModelType::Seedance2Pro,
       prompt: plan.prompt.clone().unwrap_or_default(),
-      resolution: plan.resolution,
+      aspect_ratio: plan.aspect_ratio,
       output_resolution: plan.output_resolution,
       duration_seconds: plan.duration_seconds,
       batch_count: plan.batch_count,

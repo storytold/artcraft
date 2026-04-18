@@ -460,92 +460,92 @@ mod tests {
 
     #[test]
     fn aspect_ratio_wide_16x9() {
-      use seedance2pro_client::requests::generate_video::generate_video::KinoviResolution;
+      use seedance2pro_client::requests::generate_video::generate_video::KinoviAspectRatio;
       let req = make_request(
         Some("test"), Some(CommonAspectRatio::WideSixteenByNine), Some(5), None,
         None, None, None, None, None,
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.resolution, KinoviResolution::Landscape16x9));
+        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Landscape16x9));
       } else { panic!("wrong plan variant"); }
     }
 
     #[test]
     fn aspect_ratio_tall_9x16() {
-      use seedance2pro_client::requests::generate_video::generate_video::KinoviResolution;
+      use seedance2pro_client::requests::generate_video::generate_video::KinoviAspectRatio;
       let req = make_request(
         Some("test"), Some(CommonAspectRatio::TallNineBySixteen), Some(5), None,
         None, None, None, None, None,
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.resolution, KinoviResolution::Portrait9x16));
+        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Portrait9x16));
       } else { panic!("wrong plan variant"); }
     }
 
     #[test]
     fn aspect_ratio_square() {
-      use seedance2pro_client::requests::generate_video::generate_video::KinoviResolution;
+      use seedance2pro_client::requests::generate_video::generate_video::KinoviAspectRatio;
       let req = make_request(
         Some("test"), Some(CommonAspectRatio::Square), Some(5), None,
         None, None, None, None, None,
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.resolution, KinoviResolution::Square1x1));
+        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Square1x1));
       } else { panic!("wrong plan variant"); }
     }
 
     #[test]
     fn aspect_ratio_4x3() {
-      use seedance2pro_client::requests::generate_video::generate_video::KinoviResolution;
+      use seedance2pro_client::requests::generate_video::generate_video::KinoviAspectRatio;
       let req = make_request(
         Some("test"), Some(CommonAspectRatio::WideFourByThree), Some(5), None,
         None, None, None, None, None,
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.resolution, KinoviResolution::Standard4x3));
+        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Standard4x3));
       } else { panic!("wrong plan variant"); }
     }
 
     #[test]
     fn aspect_ratio_3x4() {
-      use seedance2pro_client::requests::generate_video::generate_video::KinoviResolution;
+      use seedance2pro_client::requests::generate_video::generate_video::KinoviAspectRatio;
       let req = make_request(
         Some("test"), Some(CommonAspectRatio::TallThreeByFour), Some(5), None,
         None, None, None, None, None,
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.resolution, KinoviResolution::Portrait3x4));
+        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Portrait3x4));
       } else { panic!("wrong plan variant"); }
     }
 
     #[test]
     fn aspect_ratio_none_defaults_to_landscape() {
-      use seedance2pro_client::requests::generate_video::generate_video::KinoviResolution;
+      use seedance2pro_client::requests::generate_video::generate_video::KinoviAspectRatio;
       let req = make_request(
         Some("test"), None, Some(5), None,
         None, None, None, None, None,
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.resolution, KinoviResolution::Landscape16x9));
+        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Landscape16x9));
       } else { panic!("wrong plan variant"); }
     }
 
     #[test]
     fn aspect_ratio_auto_defaults_to_landscape() {
-      use seedance2pro_client::requests::generate_video::generate_video::KinoviResolution;
+      use seedance2pro_client::requests::generate_video::generate_video::KinoviAspectRatio;
       let req = make_request(
         Some("test"), Some(CommonAspectRatio::Auto), Some(5), None,
         None, None, None, None, None,
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.resolution, KinoviResolution::Landscape16x9));
+        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Landscape16x9));
       } else { panic!("wrong plan variant"); }
     }
   }

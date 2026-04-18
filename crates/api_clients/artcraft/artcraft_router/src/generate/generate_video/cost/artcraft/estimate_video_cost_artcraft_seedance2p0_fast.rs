@@ -1,5 +1,5 @@
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0BatchCount;
-use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviOutputResolution, KinoviResolution};
+use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviOutputResolution, KinoviAspectRatio};
 
 use crate::api::common_resolution::CommonResolution;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
@@ -21,7 +21,7 @@ pub(crate) fn estimate_video_cost_artcraft_seedance2p0_fast(
   let request = GenerateVideoRequest {
     model_type: KinoviModelType::Seedance2Fast,
     prompt: String::new(),
-    resolution: KinoviResolution::Square1x1,
+    aspect_ratio: KinoviAspectRatio::Square1x1,
     duration_seconds,
     batch_count,
     output_resolution,
