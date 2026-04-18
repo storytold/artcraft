@@ -37,7 +37,7 @@ pub struct DistilledVideoRequest {
   pub cost: VideoGenerationCostEstimate,
 
   /// Execution plan as computed by the execution provider — what we hand to the router.
-  plan: VideoGenerationPlan,
+  pub plan: VideoGenerationPlan,
 
   /// The provider used for execution (Fal, Seedance2Pro, etc.).
   pub execution_provider: Provider,

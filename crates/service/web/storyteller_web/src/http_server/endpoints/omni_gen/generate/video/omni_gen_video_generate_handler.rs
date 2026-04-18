@@ -63,6 +63,8 @@ pub async fn omni_gen_video_generate_handler(
   request: Json<OmniGenVideoCostAndGenerateRequest>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenVideoGenerateResponse>, AdvancedCommonWebError> {
+  
+  info!("request: {:?}", request);
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
 
@@ -173,6 +175,8 @@ pub async fn omni_gen_video_generate_handler(
   // ==================== DISTILL ==================== //
 
   let distilled = distill_video_request(&request, media_file_hydration_map.as_ref(), execution_provider)?;
+
+  info!("distilled plan: {:?}", distilled.plan);
 
   // ==================== BILLING ==================== //
 

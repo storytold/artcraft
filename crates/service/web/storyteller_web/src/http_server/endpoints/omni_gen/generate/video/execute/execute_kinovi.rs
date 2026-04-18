@@ -11,11 +11,10 @@ use url::Url;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, GenerateVideoArgs, GenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviAspectRatio,
-};
+use seedance2pro_client::requests::generate_video::generate_video::{generate_video, GenerateVideoArgs, GenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviAspectRatio, KinoviOutputResolution};
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
 };
@@ -104,24 +103,33 @@ pub(super) async fn execute_generation_kinovi(
     _ => KinoviModelType::Seedance2Pro,
   };
 
+  let output_resolution = match model_type {
+    KinoviModelType::Seedance2Pro => request.resolution.map(|res| map_common_resolution_to_kinovi_pro(res)),
+    KinoviModelType::Seedance2Fast => request.resolution.map(|res| map_common_resolution_to_kinovi_fast(res)),
+  };
+
+  let request = GenerateVideoRequest {
+    model_type,
+    prompt,
+    aspect_ratio,
+    duration_seconds,
+    batch_count,
+    start_frame_url,
+    end_frame_url,
+    reference_image_urls,
+    reference_video_urls,
+    reference_audio_urls,
+    character_ids: kinovi_character_ids,
+    use_face_blur_hack: None,
+    output_resolution,
+  };
+
+  info!("\n\nKinovi Request: {:?}\n\n", request);
+
   let video_gen_args = GenerateVideoArgs {
     session: &session,
     host_override: None,
-    request: GenerateVideoRequest {
-      model_type,
-      prompt,
-      aspect_ratio,
-      duration_seconds,
-      batch_count,
-      start_frame_url,
-      end_frame_url,
-      reference_image_urls,
-      reference_video_urls,
-      reference_audio_urls,
-      character_ids: kinovi_character_ids,
-      use_face_blur_hack: None,
-      output_resolution: None,
-    },
+    request,
   };
 
   let gen_response = generate_video(video_gen_args).await
@@ -250,5 +258,24 @@ fn map_common_aspect_ratio_to_kinovi_resolution(aspect_ratio: Option<CommonAspec
     Some(CommonAspectRatio::TallNineByTwentyOne) => KinoviAspectRatio::Portrait9x16,
     // Auto or None — default to landscape.
     _ => KinoviAspectRatio::Landscape16x9,
+  }
+}
+
+// TODO TEMP HACK
+fn map_common_resolution_to_kinovi_pro(resolution: CommonResolution) -> KinoviOutputResolution {
+  match resolution {
+    CommonResolution::FourEightyP => KinoviOutputResolution::FourEightyP,
+    CommonResolution::SevenTwentyP => KinoviOutputResolution::SevenTwentyP,
+    CommonResolution::TenEightyP => KinoviOutputResolution::TenEightyP,
+    _ => KinoviOutputResolution::SevenTwentyP,
+  }
+}
+
+// TODO TEMP HACK
+fn map_common_resolution_to_kinovi_fast(resolution: CommonResolution) -> KinoviOutputResolution {
+  match resolution {
+    CommonResolution::FourEightyP => KinoviOutputResolution::FourEightyP,
+    CommonResolution::SevenTwentyP => KinoviOutputResolution::SevenTwentyP,
+    _ => KinoviOutputResolution::SevenTwentyP,
   }
 }
