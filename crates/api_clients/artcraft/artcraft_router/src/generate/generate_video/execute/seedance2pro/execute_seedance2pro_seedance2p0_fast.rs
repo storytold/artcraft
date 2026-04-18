@@ -1,13 +1,13 @@
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
+use crate::generate::generate_video::execute::seedance2pro::execute_seedance2pro_seedance2p0::{
+  upload_optional_url, upload_optional_url_list,
+};
 use crate::generate::generate_video::generate_video_response::{
   GenerateVideoResponse, Seedance2proVideoResponsePayload,
 };
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::PlanSeedance2proSeedance2p0Fast;
-use crate::generate::generate_video::execute::seedance2pro::execute_seedance2pro_seedance2p0::{
-  upload_optional_url, upload_optional_url_list,
-};
 use seedance2pro_client::requests::generate_video::generate_video::{
   generate_video, GenerateVideoArgs, KinoviModelType,
 };
@@ -34,6 +34,7 @@ pub async fn execute_seedance2pro_seedance2p0_fast(
     model_type: KinoviModelType::Seedance2Fast, // <-- Fast, not Pro
     prompt: plan.prompt.clone().unwrap_or_default(),
     resolution: plan.resolution,
+    output_resolution: plan.output_resolution,
     duration_seconds: plan.duration_seconds,
     batch_count: plan.batch_count,
     start_frame_url,
@@ -43,7 +44,6 @@ pub async fn execute_seedance2pro_seedance2p0_fast(
     reference_audio_urls,
     character_ids: None,
     use_face_blur_hack: None,
-    output_resolution: plan.output_resolution,
     host_override: None,
   };
 

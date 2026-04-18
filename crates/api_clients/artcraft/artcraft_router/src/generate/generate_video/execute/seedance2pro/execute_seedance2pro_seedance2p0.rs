@@ -37,6 +37,7 @@ pub async fn execute_seedance2pro_seedance2p0(
     model_type: KinoviModelType::Seedance2Pro,
     prompt: plan.prompt.clone().unwrap_or_default(),
     resolution: plan.resolution,
+    output_resolution: plan.output_resolution,
     duration_seconds: plan.duration_seconds,
     batch_count: plan.batch_count,
     start_frame_url,
@@ -46,7 +47,6 @@ pub async fn execute_seedance2pro_seedance2p0(
     reference_audio_urls,
     character_ids: None,
     use_face_blur_hack: None,
-    output_resolution: plan.output_resolution,
     host_override: None,
   };
 
