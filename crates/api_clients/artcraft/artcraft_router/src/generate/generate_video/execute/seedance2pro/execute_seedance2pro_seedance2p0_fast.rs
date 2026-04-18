@@ -9,7 +9,7 @@ use crate::generate::generate_video::generate_video_response::{
 };
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::PlanSeedance2proSeedance2p0Fast;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, GenerateVideoArgs, GenerateVideoRequest, KinoviModelType,
+  generate_video, GenerateVideoArgs,
 };
 
 /// Execute Seedance 2.0 Fast via the Seedance2Pro/Kinovi provider.
@@ -23,30 +23,23 @@ pub async fn execute_seedance2pro_seedance2p0_fast(
   let session = &seedance2pro_client.session;
 
   // Upload media files to seedance2pro CDN
-  let start_frame_url = upload_optional_url(session, plan.start_frame_url.as_deref()).await?;
-  let end_frame_url = upload_optional_url(session, plan.end_frame_url.as_deref()).await?;
-  let reference_image_urls = upload_optional_url_list(session, plan.reference_image_urls.as_deref()).await?;
-  let reference_video_urls = upload_optional_url_list(session, plan.reference_video_urls.as_deref()).await?;
-  let reference_audio_urls = upload_optional_url_list(session, plan.reference_audio_urls.as_deref()).await?;
+  let start_frame_url = upload_optional_url(session, plan.request.start_frame_url.as_deref()).await?;
+  let end_frame_url = upload_optional_url(session, plan.request.end_frame_url.as_deref()).await?;
+  let reference_image_urls = upload_optional_url_list(session, plan.request.reference_image_urls.as_deref()).await?;
+  let reference_video_urls = upload_optional_url_list(session, plan.request.reference_video_urls.as_deref()).await?;
+  let reference_audio_urls = upload_optional_url_list(session, plan.request.reference_audio_urls.as_deref()).await?;
+
+  let mut request = plan.request.clone();
+  request.start_frame_url = start_frame_url;
+  request.end_frame_url = end_frame_url;
+  request.reference_image_urls = reference_image_urls;
+  request.reference_video_urls = reference_video_urls;
+  request.reference_audio_urls = reference_audio_urls;
 
   let args = GenerateVideoArgs {
     session,
     host_override: None,
-    request: GenerateVideoRequest {
-      model_type: KinoviModelType::Seedance2Fast, // <-- Fast, not Pro
-      prompt: plan.prompt.clone().unwrap_or_default(),
-      aspect_ratio: plan.aspect_ratio,
-      output_resolution: plan.output_resolution,
-      duration_seconds: plan.duration_seconds,
-      batch_count: plan.batch_count,
-      start_frame_url,
-      end_frame_url,
-      reference_image_urls,
-      reference_video_urls,
-      reference_audio_urls,
-      character_ids: None,
-      use_face_blur_hack: None,
-    },
+    request,
   };
 
   let response = generate_video(args)

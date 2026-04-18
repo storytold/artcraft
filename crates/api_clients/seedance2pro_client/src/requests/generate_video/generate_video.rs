@@ -14,6 +14,7 @@ use wreq_util::Emulation;
 // --- Request args ---
 
 /// Video generation parameters (no session/host info).
+#[derive(Clone)]
 pub struct GenerateVideoRequest {
   /// Seedance 2.0 Pro vs Fast
   pub model_type: KinoviModelType,

@@ -1,33 +1,11 @@
-use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoRequest, KinoviModelType, KinoviAspectRatio};
-
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::PlanSeedance2proSeedance2p0Fast;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 
 pub(crate) fn estimate_video_cost_seedance2pro_seedance2p0_fast(
   plan: &PlanSeedance2proSeedance2p0Fast,
 ) -> VideoGenerationCostEstimate {
-  let request = GenerateVideoRequest {
-    model_type: KinoviModelType::Seedance2Fast, // <-- Fast, not Pro
-    prompt: String::new(),
-    aspect_ratio: KinoviAspectRatio::Square1x1, // Aspect ratio does not affect cost
-    duration_seconds: plan.duration_seconds,
-    batch_count: plan.batch_count,
-    output_resolution: plan.output_resolution,
-
-    // TODO: This is a cost factor
-    reference_video_urls: None,
-
-    // NB: These do not contribute to costs in the Seedance2 integration
-    start_frame_url: None,
-    end_frame_url: None,
-    reference_image_urls: None,
-    reference_audio_urls: None,
-    character_ids: None,
-    use_face_blur_hack: None,
-  };
-
-  let cost_in_credits = request.estimate_credits();
-  let cost_in_usd_cents = request.estimate_cost_in_usd_cents();
+  let cost_in_credits = plan.request.estimate_credits();
+  let cost_in_usd_cents = plan.request.estimate_cost_in_usd_cents();
 
   VideoGenerationCostEstimate {
     cost_in_credits: Some(cost_in_credits as u64),

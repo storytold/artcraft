@@ -8,22 +8,16 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use seedance2pro_client::requests::generate_video::generate_video::{KinoviBatchCount, KinoviOutputResolution, KinoviAspectRatio};
+use seedance2pro_client::requests::generate_video::generate_video::{
+  GenerateVideoRequest as SeedanceGenerateVideoRequest,
+  KinoviBatchCount, KinoviModelType, KinoviOutputResolution, KinoviAspectRatio,
+};
 
 use crate::api::common_resolution::CommonResolution;
 
 #[derive(Debug, Clone)]
 pub struct PlanSeedance2proSeedance2p0 {
-  pub prompt: Option<String>,
-  pub start_frame_url: Option<String>,
-  pub end_frame_url: Option<String>,
-  pub reference_image_urls: Option<Vec<String>>,
-  pub reference_video_urls: Option<Vec<String>>,
-  pub reference_audio_urls: Option<Vec<String>>,
-  pub aspect_ratio: KinoviAspectRatio,
-  pub output_resolution: Option<KinoviOutputResolution>,
-  pub duration_seconds: u8,
-  pub batch_count: KinoviBatchCount,
+  pub request: SeedanceGenerateVideoRequest,
 }
 
 pub fn plan_generate_video_seedance2pro_seedance2p0(
@@ -44,16 +38,21 @@ pub fn plan_generate_video_seedance2pro_seedance2p0(
   let output_resolution = request.resolution.map(map_common_resolution_to_kinovi);
 
   Ok(VideoGenerationPlan::Seedance2proSeedance2p0(PlanSeedance2proSeedance2p0 {
-    prompt: request.prompt.clone(),
-    start_frame_url,
-    end_frame_url,
-    reference_image_urls,
-    reference_video_urls,
-    reference_audio_urls,
-    aspect_ratio,
-    output_resolution,
-    duration_seconds,
-    batch_count,
+    request: SeedanceGenerateVideoRequest {
+      model_type: KinoviModelType::Seedance2Pro,
+      prompt: request.prompt.clone().unwrap_or_default(),
+      aspect_ratio,
+      output_resolution,
+      duration_seconds,
+      batch_count,
+      start_frame_url,
+      end_frame_url,
+      reference_image_urls,
+      reference_video_urls,
+      reference_audio_urls,
+      character_ids: None,
+      use_face_blur_hack: None,
+    },
   }))
 }
 
