@@ -25,10 +25,14 @@ pub(crate) fn estimate_video_cost_artcraft_seedance2p0_fast(
     duration_seconds,
     batch_count,
     output_resolution,
+
+    // TODO: This is a cost factor
+    reference_video_urls: None,
+    
+    // NB: These do not contribute to costs in the Seedance2 integration
     start_frame_url: None,
     end_frame_url: None,
     reference_image_urls: None,
-    reference_video_urls: None,
     reference_audio_urls: None,
     character_ids: None,
     use_face_blur_hack: None,
