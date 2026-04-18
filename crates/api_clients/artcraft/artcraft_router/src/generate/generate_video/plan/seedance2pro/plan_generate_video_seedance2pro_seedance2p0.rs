@@ -37,7 +37,7 @@ pub fn plan_generate_video_seedance2pro_seedance2p0(
   let reference_video_urls = resolve_video_list_ref_urls(request.reference_videos.clone())?;
   let reference_audio_urls = resolve_audio_list_ref_urls(request.reference_audio.clone())?;
 
-  let aspect_ratio = plan_resolution(request.aspect_ratio, strategy)?;
+  let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
   let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
   let duration_seconds = plan_duration(request.duration_seconds, strategy)?;
 
@@ -119,7 +119,7 @@ fn resolve_audio_list_ref_urls(
 //
 // All supported ratios cost the same, so PayMoreUpgrade and PayLessDowngrade both
 // select the nearest match rather than rounding in a specific direction.
-fn plan_resolution(
+fn plan_aspect_ratio(
   aspect_ratio: Option<CommonAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<KinoviAspectRatio, ArtcraftRouterError> {
