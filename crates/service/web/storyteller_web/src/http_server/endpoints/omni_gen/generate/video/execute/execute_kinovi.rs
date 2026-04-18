@@ -14,7 +14,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, GenerateVideoArgs, KinoviBatchCount, KinoviModelType, KinoviResolution,
+  generate_video, GenerateVideoArgs, GenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviResolution,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -106,20 +106,22 @@ pub(super) async fn execute_generation_kinovi(
 
   let video_gen_args = GenerateVideoArgs {
     session: &session,
-    model_type,
-    prompt,
-    resolution,
-    duration_seconds,
-    batch_count,
-    start_frame_url,
-    end_frame_url,
-    reference_image_urls,
-    reference_video_urls,
-    reference_audio_urls,
-    character_ids: kinovi_character_ids,
-    use_face_blur_hack: None,
-    output_resolution: None,
     host_override: None,
+    request: GenerateVideoRequest {
+      model_type,
+      prompt,
+      resolution,
+      duration_seconds,
+      batch_count,
+      start_frame_url,
+      end_frame_url,
+      reference_image_urls,
+      reference_video_urls,
+      reference_audio_urls,
+      character_ids: kinovi_character_ids,
+      use_face_blur_hack: None,
+      output_resolution: None,
+    },
   };
 
   let gen_response = generate_video(video_gen_args).await

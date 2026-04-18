@@ -1,6 +1,5 @@
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0BatchCount;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoArgs, KinoviBatchCount, KinoviModelType, KinoviOutputResolution, KinoviResolution};
+use seedance2pro_client::requests::generate_video::generate_video::{GenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviOutputResolution, KinoviResolution};
 
 use crate::api::common_resolution::CommonResolution;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
@@ -19,12 +18,7 @@ pub (crate) fn estimate_video_cost_artcraft_seedance2p0(
 
   let output_resolution = plan.resolution.map(map_common_resolution_to_kinovi);
 
-  // TODO: Make a better client that doesn't require this.
-  // A dummy session is sufficient — cost estimation does not make any network calls.
-  let dummy_session = Seedance2ProSession::from_cookies_string(String::new());
-
-  let args = GenerateVideoArgs {
-    session: &dummy_session,
+  let request = GenerateVideoRequest {
     model_type: KinoviModelType::Seedance2Pro,
     prompt: String::new(),
     resolution: KinoviResolution::Square1x1,
@@ -40,10 +34,9 @@ pub (crate) fn estimate_video_cost_artcraft_seedance2p0(
     reference_audio_urls: None,
     character_ids: None,
     use_face_blur_hack: None,
-    host_override: None,
   };
 
-  let cost_in_usd_cents = args.estimate_cost_in_usd_cents();
+  let cost_in_usd_cents = request.estimate_cost_in_usd_cents();
 
   VideoGenerationCostEstimate {
     cost_in_credits: Some(cost_in_usd_cents),

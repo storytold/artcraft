@@ -13,9 +13,8 @@ use wreq_util::Emulation;
 
 // --- Request args ---
 
-pub struct GenerateVideoArgs<'a> {
-  pub session: &'a Seedance2ProSession,
-
+/// Video generation parameters (no session/host info).
+pub struct GenerateVideoRequest {
   /// Seedance 2.0 Pro vs Fast
   pub model_type: KinoviModelType,
 
@@ -58,14 +57,18 @@ pub struct GenerateVideoArgs<'a> {
 
   /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
   pub use_face_blur_hack: Option<bool>,
+}
 
-  /// Override the default host (kinovi.ai).
+/// Wrapper that bundles a [`GenerateVideoRequest`] with session and host info.
+pub struct GenerateVideoArgs<'a> {
+  pub request: GenerateVideoRequest,
+  pub session: &'a Seedance2ProSession,
   pub host_override: Option<KinoviHost>,
 }
 
-impl std::fmt::Debug for GenerateVideoArgs<'_> {
+impl std::fmt::Debug for GenerateVideoRequest {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("GenerateVideoArgs")
+    f.debug_struct("GenerateVideoRequest")
       .field("model_type", &self.model_type)
       .field("prompt", &self.prompt)
       .field("resolution", &self.resolution)
@@ -79,12 +82,20 @@ impl std::fmt::Debug for GenerateVideoArgs<'_> {
       .field("character_ids", &self.character_ids)
       .field("output_resolution", &self.output_resolution)
       .field("use_face_blur_hack", &self.use_face_blur_hack)
+      .finish()
+  }
+}
+
+impl std::fmt::Debug for GenerateVideoArgs<'_> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("GenerateVideoArgs")
+      .field("request", &self.request)
       .field("host_override", &self.host_override)
       .finish()
   }
 }
 
-impl GenerateVideoArgs<'_> {
+impl GenerateVideoRequest {
   /// Estimates the credit cost for this generation request.
   ///
   /// Pricing is per-second × batch count, with the per-second rate
@@ -258,11 +269,13 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
   let base_url = host.api_base_url();
   let run_task_url = format!("{}/api/trpc/workflow.runTask?batch=1", base_url);
 
-  info!("Requesting video from Seedance2Pro: {:?}", args);
+  let req = args.request;
 
-  let has_reference_images = args.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
-  let has_reference_videos = args.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
-  let has_reference_audio = args.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  info!("Requesting video from Seedance2Pro: {:?}", req);
+
+  let has_reference_images = req.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_reference_videos = req.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_reference_audio = req.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
 
   let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio;
 
@@ -270,44 +283,44 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
 
   let uploaded_urls: Option<Vec<String>> = if is_reference_mode {
     let mut urls = Vec::new();
-    if let Some(video_urls) = args.reference_video_urls {
+    if let Some(video_urls) = req.reference_video_urls {
       urls.extend(video_urls);
     }
-    if let Some(image_urls) = args.reference_image_urls {
+    if let Some(image_urls) = req.reference_image_urls {
       urls.extend(image_urls);
     }
     if urls.is_empty() { None } else { Some(urls) }
   } else {
     let mut urls = Vec::new();
-    if let Some(url) = args.start_frame_url {
+    if let Some(url) = req.start_frame_url {
       urls.push(url);
     }
-    if let Some(url) = args.end_frame_url {
+    if let Some(url) = req.end_frame_url {
       urls.push(url);
     }
     if urls.is_empty() { None } else { Some(urls) }
   };
 
   let audio_urls: Option<Vec<String>> = if has_reference_audio {
-    args.reference_audio_urls
+    req.reference_audio_urls
   } else {
     None
   };
 
-  let face_blur_mode = match args.use_face_blur_hack {
+  let face_blur_mode = match req.use_face_blur_hack {
     Some(true) => Some("on"),
     Some(false) => Some("off"),
     None => None,
   };
 
-  let batch_count_value = args.batch_count.as_u8();
+  let batch_count_value = req.batch_count.as_u8();
   let batch_count = if batch_count_value > 1 { Some(batch_count_value) } else { None };
 
-  let duration = format!("{}s", args.duration_seconds);
+  let duration = format!("{}s", req.duration_seconds);
 
   info!(
     "Generating video: mode={}, resolution={}, duration={}, batch={}",
-    video_input_mode, args.resolution.as_str(), duration, batch_count_value
+    video_input_mode, req.resolution.as_str(), duration, batch_count_value
   );
 
   let request_body = BatchRequest {
@@ -315,15 +328,15 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
       json: BatchRequestJson {
         business_type: "wan22-video-generation",
         api_params: ApiParams {
-          prompt: args.prompt,
-          resolution: args.resolution.as_str().to_string(),
+          prompt: req.prompt,
+          resolution: req.resolution.as_str().to_string(),
           content_mode: "normal",
-          model: args.model_type.as_api_str(),
+          model: req.model_type.as_api_str(),
           duration,
           mode: video_input_mode,
-          output_resolution: args.output_resolution.and_then(|r| r.as_api_str()),
+          output_resolution: req.output_resolution.and_then(|r| r.as_api_str()),
           face_blur_mode,
-          character_ids: args.character_ids,
+          character_ids: req.character_ids,
           uploaded_urls,
           audio_urls,
           batch_count,
@@ -417,19 +430,13 @@ mod tests {
   mod pricing_tests {
     use super::*;
 
-    fn dummy_session() -> Seedance2ProSession {
-      Seedance2ProSession::from_cookies_string(String::new())
-    }
-
     fn make_args(
       model_type: KinoviModelType,
       duration_seconds: u8,
       batch_count: KinoviBatchCount,
       output_resolution: Option<KinoviOutputResolution>,
-    ) -> GenerateVideoArgs<'static> {
-      let session = Box::leak(Box::new(dummy_session()));
-      GenerateVideoArgs {
-        session,
+    ) -> GenerateVideoRequest {
+      GenerateVideoRequest {
         model_type,
         prompt: String::new(),
         resolution: KinoviResolution::Square1x1,
@@ -443,23 +450,22 @@ mod tests {
         character_ids: None,
         output_resolution,
         use_face_blur_hack: None,
-        host_override: None,
       }
     }
 
-    fn pro(dur: u8, batch: KinoviBatchCount) -> GenerateVideoArgs<'static> {
+    fn pro(dur: u8, batch: KinoviBatchCount) -> GenerateVideoRequest {
       make_args(KinoviModelType::Seedance2Pro, dur, batch, None)
     }
 
-    fn pro_res(dur: u8, batch: KinoviBatchCount, res: KinoviOutputResolution) -> GenerateVideoArgs<'static> {
+    fn pro_res(dur: u8, batch: KinoviBatchCount, res: KinoviOutputResolution) -> GenerateVideoRequest {
       make_args(KinoviModelType::Seedance2Pro, dur, batch, Some(res))
     }
 
-    fn fast(dur: u8, batch: KinoviBatchCount) -> GenerateVideoArgs<'static> {
+    fn fast(dur: u8, batch: KinoviBatchCount) -> GenerateVideoRequest {
       make_args(KinoviModelType::Seedance2Fast, dur, batch, None)
     }
 
-    fn fast_res(dur: u8, batch: KinoviBatchCount, res: KinoviOutputResolution) -> GenerateVideoArgs<'static> {
+    fn fast_res(dur: u8, batch: KinoviBatchCount, res: KinoviOutputResolution) -> GenerateVideoRequest {
       make_args(KinoviModelType::Seedance2Fast, dur, batch, Some(res))
     }
 
@@ -616,9 +622,7 @@ mod tests {
       let baseline = pro(5, KinoviBatchCount::One).estimate_credits();
 
       for res in &resolutions {
-        let session = Box::leak(Box::new(dummy_session()));
-        let args = GenerateVideoArgs {
-          session,
+        let req = GenerateVideoRequest {
           model_type: KinoviModelType::Seedance2Pro,
           prompt: String::new(),
           resolution: *res,
@@ -632,10 +636,9 @@ mod tests {
           character_ids: None,
           output_resolution: None,
           use_face_blur_hack: None,
-          host_override: None,
         };
         assert_eq!(
-          args.estimate_credits(), baseline,
+          req.estimate_credits(), baseline,
           "Aspect ratio {:?} should not change credits from baseline {}",
           res, baseline,
         );
@@ -723,20 +726,22 @@ mod tests {
       let session = test_session()?;
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Pro,
-        prompt: "A corgi eating a cake in a fancy kitchen.".to_string(),
-        resolution: KinoviResolution::Square1x1,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: None,
-        end_frame_url: None,
-        reference_image_urls: None,
-        reference_video_urls: None,
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Pro,
+          prompt: "A corgi eating a cake in a fancy kitchen.".to_string(),
+          resolution: KinoviResolution::Square1x1,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -754,20 +759,22 @@ mod tests {
       let session = test_session()?;
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Pro,
-        prompt: "A dog shakes the glasses off its head. The camera pans out as the shiba shakes. The shiba barks.".to_string(),
-        resolution: KinoviResolution::Landscape16x9,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: Some("https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string()),
-        end_frame_url: None,
-        reference_image_urls: None,
-        reference_video_urls: None,
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Pro,
+          prompt: "A dog shakes the glasses off its head. The camera pans out as the shiba shakes. The shiba barks.".to_string(),
+          resolution: KinoviResolution::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: Some("https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string()),
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -784,23 +791,25 @@ mod tests {
       let session = test_session()?;
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Pro,
-        prompt: "The dog in @2 is in the office at @1 without the man. The office is dark and moonlight streams in through the windows. Particles of dust gleam in the moon beams. Suddenly, the dog jumps walks in front of the desk and barks.".to_string(),
-        resolution: KinoviResolution::Standard4x3,
-        duration_seconds: 10,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: None,
-        end_frame_url: None,
-        reference_image_urls: Some(vec![
+        host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Pro,
+          prompt: "The dog in @2 is in the office at @1 without the man. The office is dark and moonlight streams in through the windows. Particles of dust gleam in the moon beams. Suddenly, the dog jumps walks in front of the desk and barks.".to_string(),
+          resolution: KinoviResolution::Standard4x3,
+          duration_seconds: 10,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: Some(vec![
           "https://static.seedance2-pro.com/materials/20260219/1771463564512-b14bfe90.png".to_string(),
           "https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string(),
-        ]),
-        reference_video_urls: None,
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
-        host_override: None,
+          ]),
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -817,22 +826,24 @@ mod tests {
       let session = test_session()?;
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Pro,
-        prompt: "Change the Video @video1 to night time.".to_string(),
-        resolution: KinoviResolution::Landscape16x9,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: None,
-        end_frame_url: None,
-        reference_image_urls: None,
-        reference_video_urls: Some(vec![
-          "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
-        ]),
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Pro,
+          prompt: "Change the Video @video1 to night time.".to_string(),
+          resolution: KinoviResolution::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: Some(vec![
+          "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+          ]),
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -849,24 +860,26 @@ mod tests {
       let session = test_session()?;
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Pro,
-        prompt: "Put the robot in @video1 next to the house in @image1".to_string(),
-        resolution: KinoviResolution::Landscape16x9,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: None,
-        end_frame_url: None,
-        reference_image_urls: Some(vec![
-          "https://static.seedance2-pro.com/materials/20260315/1773595053724-07a1d500.png".to_string(),
-        ]),
-        reference_video_urls: Some(vec![
-          "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
-        ]),
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Pro,
+          prompt: "Put the robot in @video1 next to the house in @image1".to_string(),
+          resolution: KinoviResolution::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: Some(vec![
+          "https://static.seedance2-pro.com/materials/20260315/1773595053724-07a1d500.png".to_string(),
+          ]),
+          reference_video_urls: Some(vec![
+          "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+          ]),
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -907,22 +920,24 @@ mod tests {
 
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Pro,
-        prompt: "Change @video1 to night time".to_string(),
-        resolution: KinoviResolution::Landscape16x9,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: None,
-        end_frame_url: None,
-        reference_image_urls: None,
-        reference_video_urls: Some(vec![
-          result.public_url,
-        ]),
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Pro,
+          prompt: "Change @video1 to night time".to_string(),
+          resolution: KinoviResolution::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: Some(vec![
+          result.public_url,
+          ]),
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -960,20 +975,22 @@ mod tests {
 
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Pro,
-        prompt: "The corgi dog watches the lake.".to_string(),
-        resolution: KinoviResolution::Portrait9x16,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: Some(upload_result.public_url),
-        end_frame_url: None,
-        reference_image_urls: None,
-        reference_video_urls: None,
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Pro,
+          prompt: "The corgi dog watches the lake.".to_string(),
+          resolution: KinoviResolution::Portrait9x16,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: Some(upload_result.public_url),
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -1013,20 +1030,22 @@ mod tests {
 
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Fast,
-        prompt: "A corgi dog runs along the lake shore, splashing water. Camera follows.".to_string(),
-        resolution: KinoviResolution::Landscape16x9,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: Some(upload_result.public_url),
-        end_frame_url: None,
-        reference_image_urls: None,
-        reference_video_urls: None,
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Fast,
+          prompt: "A corgi dog runs along the lake shore, splashing water. Camera follows.".to_string(),
+          resolution: KinoviResolution::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: Some(upload_result.public_url),
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -1073,20 +1092,22 @@ mod tests {
 
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Fast,
-        prompt: "The dog in @1 is running through the scenery in @3 towards the building in @2. Golden hour lighting.".to_string(),
-        resolution: KinoviResolution::Landscape16x9,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: None,
-        end_frame_url: None,
-        reference_image_urls: Some(uploaded_urls),
-        reference_video_urls: None,
-        reference_audio_urls: None,
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Fast,
+          prompt: "The dog in @1 is running through the scenery in @3 towards the building in @2. Golden hour lighting.".to_string(),
+          resolution: KinoviResolution::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: Some(uploaded_urls),
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -1126,20 +1147,22 @@ mod tests {
 
       let args = GenerateVideoArgs {
         session: &session,
-        model_type: KinoviModelType::Seedance2Fast,
-        prompt: "A fantasy forest with mushrooms glowing in the dark. Fireflies dance between the trees. A small character walks along a winding path.".to_string(),
-        resolution: KinoviResolution::Landscape16x9,
-        duration_seconds: 5,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: None,
-        end_frame_url: None,
-        reference_image_urls: None,
-        reference_video_urls: None,
-        reference_audio_urls: Some(vec![upload_result.public_url]),
-        character_ids: None,
-        use_face_blur_hack: None,
-    output_resolution: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type: KinoviModelType::Seedance2Fast,
+          prompt: "A fantasy forest with mushrooms glowing in the dark. Fireflies dance between the trees. A small character walks along a winding path.".to_string(),
+          resolution: KinoviResolution::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: Some(vec![upload_result.public_url]),
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
       };
       let result = generate_video(args).await?;
       println!("Task ID: {}", result.task_id);
@@ -1163,20 +1186,22 @@ mod tests {
         let session = test_session()?;
         let args = GenerateVideoArgs {
           session: &session,
-          model_type: KinoviModelType::Seedance2Pro,
-          prompt: "@Steampunk Clown is juggling flaming torches in a circus tent.".to_string(),
-          resolution: KinoviResolution::Landscape16x9,
-          duration_seconds: 5,
-          batch_count: KinoviBatchCount::One,
-          start_frame_url: None,
-          end_frame_url: None,
-          reference_image_urls: None,
-          reference_video_urls: None,
-          reference_audio_urls: None,
-          character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
-          use_face_blur_hack: None,
-    output_resolution: None,
           host_override: None,
+          request: GenerateVideoRequest {
+            model_type: KinoviModelType::Seedance2Pro,
+            prompt: "@Steampunk Clown is juggling flaming torches in a circus tent.".to_string(),
+            resolution: KinoviResolution::Landscape16x9,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCount::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
+            use_face_blur_hack: None,
+            output_resolution: None,
+          },
         };
         let result = generate_video(args).await?;
         println!("Task ID: {}", result.task_id);
@@ -1194,20 +1219,22 @@ mod tests {
         let session = test_session()?;
         let args = GenerateVideoArgs {
           session: &session,
-          model_type: KinoviModelType::Seedance2Fast,
-          prompt: "@Mochi the female shiba inu is eating a cheese pizza while standing on the table".to_string(),
-          resolution: KinoviResolution::Portrait9x16,
-          duration_seconds: 5,
-          batch_count: KinoviBatchCount::One,
-          start_frame_url: None,
-          end_frame_url: None,
-          reference_image_urls: None,
-          reference_video_urls: None,
-          reference_audio_urls: None,
-          character_ids: Some(vec![MOCHI_ID.to_string()]),
-          use_face_blur_hack: None,
-    output_resolution: None,
           host_override: None,
+          request: GenerateVideoRequest {
+            model_type: KinoviModelType::Seedance2Fast,
+            prompt: "@Mochi the female shiba inu is eating a cheese pizza while standing on the table".to_string(),
+            resolution: KinoviResolution::Portrait9x16,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCount::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: Some(vec![MOCHI_ID.to_string()]),
+            use_face_blur_hack: None,
+            output_resolution: None,
+          },
         };
         let result = generate_video(args).await?;
         println!("Task ID: {}", result.task_id);
@@ -1225,22 +1252,24 @@ mod tests {
         let session = test_session()?;
         let args = GenerateVideoArgs {
           session: &session,
-          model_type: KinoviModelType::Seedance2Pro,
-          prompt: "@Steampunk Clown is walking up to pet a dog on the couch.".to_string(),
-          resolution: KinoviResolution::Landscape16x9,
-          duration_seconds: 5,
-          batch_count: KinoviBatchCount::One,
-          start_frame_url: None,
-          end_frame_url: None,
-          reference_image_urls: Some(vec![
-            "https://static.seedance2-pro.com/materials/20260329/1774752385699-1ff44886.jpeg".to_string(),
-          ]),
-          reference_video_urls: None,
-          reference_audio_urls: None,
-          character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
-          use_face_blur_hack: None,
-    output_resolution: None,
           host_override: None,
+          request: GenerateVideoRequest {
+            model_type: KinoviModelType::Seedance2Pro,
+            prompt: "@Steampunk Clown is walking up to pet a dog on the couch.".to_string(),
+            resolution: KinoviResolution::Landscape16x9,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCount::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: Some(vec![
+            "https://static.seedance2-pro.com/materials/20260329/1774752385699-1ff44886.jpeg".to_string(),
+            ]),
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
+            use_face_blur_hack: None,
+            output_resolution: None,
+          },
         };
         let result = generate_video(args).await?;
         println!("Task ID: {}", result.task_id);
@@ -1258,23 +1287,25 @@ mod tests {
         let session = test_session()?;
         let args = GenerateVideoArgs {
           session: &session,
-          model_type: KinoviModelType::Seedance2Fast,
-          prompt: "@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string(),
-          resolution: KinoviResolution::Landscape16x9,
-          duration_seconds: 5,
-          batch_count: KinoviBatchCount::One,
-          start_frame_url: None,
-          end_frame_url: None,
-          reference_image_urls: None,
-          reference_video_urls: None,
-          reference_audio_urls: None,
-          character_ids: Some(vec![
+          host_override: None,
+          request: GenerateVideoRequest {
+            model_type: KinoviModelType::Seedance2Fast,
+            prompt: "@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string(),
+            resolution: KinoviResolution::Landscape16x9,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCount::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: Some(vec![
             STEAMPUNK_CLOWN_ID.to_string(),
             MOCHI_ID.to_string(),
-          ]),
-          use_face_blur_hack: None,
-    output_resolution: None,
-          host_override: None,
+            ]),
+            use_face_blur_hack: None,
+            output_resolution: None,
+          },
         };
         let result = generate_video(args).await?;
         println!("Task ID: {}", result.task_id);
@@ -1303,20 +1334,22 @@ mod tests {
     ) -> GenerateVideoArgs<'a> {
       GenerateVideoArgs {
         session,
-        model_type,
-        prompt: prompt.to_string(),
-        resolution: KinoviResolution::Landscape16x9,
-        duration_seconds: 4,
-        batch_count: KinoviBatchCount::One,
-        start_frame_url: None,
-        end_frame_url: None,
-        reference_image_urls: None,
-        reference_video_urls: None,
-        reference_audio_urls: None,
-        character_ids: None,
-        output_resolution,
-        use_face_blur_hack: None,
         host_override: None,
+        request: GenerateVideoRequest {
+          model_type,
+          prompt: prompt.to_string(),
+          resolution: KinoviResolution::Landscape16x9,
+          duration_seconds: 4,
+          batch_count: KinoviBatchCount::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          output_resolution,
+          use_face_blur_hack: None,
+        },
       }
     }
 

@@ -9,7 +9,7 @@ use crate::generate::generate_video::generate_video_response::{
 };
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::PlanSeedance2proSeedance2p0Fast;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, GenerateVideoArgs, KinoviModelType,
+  generate_video, GenerateVideoArgs, GenerateVideoRequest, KinoviModelType,
 };
 
 /// Execute Seedance 2.0 Fast via the Seedance2Pro/Kinovi provider.
@@ -31,20 +31,22 @@ pub async fn execute_seedance2pro_seedance2p0_fast(
 
   let args = GenerateVideoArgs {
     session,
-    model_type: KinoviModelType::Seedance2Fast, // <-- Fast, not Pro
-    prompt: plan.prompt.clone().unwrap_or_default(),
-    resolution: plan.resolution,
-    output_resolution: plan.output_resolution,
-    duration_seconds: plan.duration_seconds,
-    batch_count: plan.batch_count,
-    start_frame_url,
-    end_frame_url,
-    reference_image_urls,
-    reference_video_urls,
-    reference_audio_urls,
-    character_ids: None,
-    use_face_blur_hack: None,
     host_override: None,
+    request: GenerateVideoRequest {
+      model_type: KinoviModelType::Seedance2Fast, // <-- Fast, not Pro
+      prompt: plan.prompt.clone().unwrap_or_default(),
+      resolution: plan.resolution,
+      output_resolution: plan.output_resolution,
+      duration_seconds: plan.duration_seconds,
+      batch_count: plan.batch_count,
+      start_frame_url,
+      end_frame_url,
+      reference_image_urls,
+      reference_video_urls,
+      reference_audio_urls,
+      character_ids: None,
+      use_face_blur_hack: None,
+    },
   };
 
   let response = generate_video(args)

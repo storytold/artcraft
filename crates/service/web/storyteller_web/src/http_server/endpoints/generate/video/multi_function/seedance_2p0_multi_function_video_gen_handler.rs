@@ -39,7 +39,7 @@ use pager::notification::notification_details_builder::NotificationDetailsBuilde
 use pager::notification::notification_urgency::NotificationUrgency;
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{
-  generate_video, KinoviBatchCount, GenerateVideoArgs, GenerateVideoResponse, KinoviModelType, KinoviOutputResolution, KinoviResolution,
+  generate_video, KinoviBatchCount, GenerateVideoArgs, GenerateVideoRequest, GenerateVideoResponse, KinoviModelType, KinoviOutputResolution, KinoviResolution,
 };
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
   prepare_file_upload, PrepareFileUploadArgs,
@@ -490,16 +490,14 @@ fn map_batch_count(batch_count: Option<Seedance2p0BatchCount>) -> KinoviBatchCou
 }
 
 /// Estimate the cost without needing uploaded URLs. We construct a temporary
-/// `GenerateVideoArgs` with dummy values for the session and URL fields.
+/// `GenerateVideoRequest` with dummy values for the URL fields.
 fn estimate_cost_upfront(
   resolution: KinoviResolution,
   output_resolution: Option<KinoviOutputResolution>,
   batch_count: KinoviBatchCount,
   duration_seconds: u8,
 ) -> u64 {
-  let dummy_session = Seedance2ProSession::from_cookies_string(String::new());
-  let args = GenerateVideoArgs {
-    session: &dummy_session,
+  let request = GenerateVideoRequest {
     model_type: KinoviModelType::Seedance2Pro,
     prompt: String::new(),
     resolution,
@@ -513,9 +511,8 @@ fn estimate_cost_upfront(
     reference_audio_urls: None,
     character_ids: None,
     use_face_blur_hack: None,
-    host_override: None,
   };
-  args.estimate_cost_in_usd_cents()
+  request.estimate_cost_in_usd_cents()
 }
 
 /// Uploads all media files and calls generate_video using the given session.
@@ -593,20 +590,22 @@ async fn upload_and_generate(
 
   let video_gen_args = GenerateVideoArgs {
     session,
-    model_type: KinoviModelType::Seedance2Pro,
-    prompt,
-    resolution,
-    output_resolution,
-    duration_seconds,
-    batch_count,
-    start_frame_url,
-    end_frame_url,
-    reference_image_urls,
-    reference_video_urls,
-    reference_audio_urls,
-    character_ids: kinovi_character_ids,
-    use_face_blur_hack: None,
     host_override: None,
+    request: GenerateVideoRequest {
+      model_type: KinoviModelType::Seedance2Pro,
+      prompt,
+      resolution,
+      output_resolution,
+      duration_seconds,
+      batch_count,
+      start_frame_url,
+      end_frame_url,
+      reference_image_urls,
+      reference_video_urls,
+      reference_audio_urls,
+      character_ids: kinovi_character_ids,
+      use_face_blur_hack: None,
+    },
   };
 
   let gen_response = generate_video(video_gen_args).await
