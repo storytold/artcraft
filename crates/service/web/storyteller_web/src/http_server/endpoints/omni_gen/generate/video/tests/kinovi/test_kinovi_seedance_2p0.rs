@@ -244,11 +244,11 @@ mod tests {
     fn text_only_has_no_media_urls() {
       let d = distill_text(&text_only_request(Some(5), None));
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(plan.start_frame_url.is_none());
-        assert!(plan.end_frame_url.is_none());
-        assert!(plan.reference_image_urls.is_none());
-        assert!(plan.reference_video_urls.is_none());
-        assert!(plan.reference_audio_urls.is_none());
+        assert!(plan.request.start_frame_url.is_none());
+        assert!(plan.request.end_frame_url.is_none());
+        assert!(plan.request.reference_image_urls.is_none());
+        assert!(plan.request.reference_video_urls.is_none());
+        assert!(plan.request.reference_audio_urls.is_none());
       } else {
         panic!("wrong plan variant");
       }
@@ -258,7 +258,7 @@ mod tests {
     fn text_only_prompt_is_passed_through() {
       let d = distill_text(&text_only_request(Some(5), None));
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert_eq!(plan.prompt, Some("a cat dancing".to_string()));
+        assert_eq!(plan.request.prompt, "a cat dancing");
       } else {
         panic!("wrong plan variant");
       }
@@ -276,7 +276,7 @@ mod tests {
       let d = distill_with_map(&req, &map);
 
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        let url = plan.start_frame_url.as_ref().expect("start_frame_url should be set");
+        let url = plan.request.start_frame_url.as_ref().expect("start_frame_url should be set");
         assert!(url.starts_with("https://"), "expected URL, got: {}", url);
         assert!(!url.contains("m_"), "URL should not look like a media token");
       } else {
@@ -296,7 +296,7 @@ mod tests {
       let d = distill_with_map(&req, &map);
 
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        let url = plan.end_frame_url.as_ref().expect("end_frame_url should be set");
+        let url = plan.request.end_frame_url.as_ref().expect("end_frame_url should be set");
         assert!(url.starts_with("https://"), "expected URL, got: {}", url);
       } else {
         panic!("wrong plan variant");
@@ -316,8 +316,8 @@ mod tests {
       let d = distill_with_map(&req, &map);
 
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(plan.start_frame_url.is_some());
-        assert!(plan.end_frame_url.is_some());
+        assert!(plan.request.start_frame_url.is_some());
+        assert!(plan.request.end_frame_url.is_some());
       } else {
         panic!("wrong plan variant");
       }
@@ -338,7 +338,7 @@ mod tests {
       let d = distill_with_map(&req, &map);
 
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        let urls = plan.reference_image_urls.as_ref().expect("reference_image_urls should be set");
+        let urls = plan.request.reference_image_urls.as_ref().expect("reference_image_urls should be set");
         assert_eq!(urls.len(), 2);
         for url in urls {
           assert!(url.starts_with("https://"), "expected URL, got: {}", url);
@@ -362,7 +362,7 @@ mod tests {
       let d = distill_with_map(&req, &map);
 
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        let urls = plan.reference_video_urls.as_ref().expect("reference_video_urls should be set");
+        let urls = plan.request.reference_video_urls.as_ref().expect("reference_video_urls should be set");
         assert_eq!(urls.len(), 1);
         assert!(urls[0].starts_with("https://"));
       } else {
@@ -383,7 +383,7 @@ mod tests {
       let d = distill_with_map(&req, &map);
 
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        let urls = plan.reference_audio_urls.as_ref().expect("reference_audio_urls should be set");
+        let urls = plan.request.reference_audio_urls.as_ref().expect("reference_audio_urls should be set");
         assert_eq!(urls.len(), 1);
         assert!(urls[0].starts_with("https://"));
       } else {
@@ -410,12 +410,12 @@ mod tests {
       let d = distill_with_map(&req, &map);
 
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(plan.start_frame_url.is_some());
-        assert!(plan.end_frame_url.is_some());
-        assert_eq!(plan.reference_image_urls.as_ref().map(|v| v.len()), Some(1));
-        assert_eq!(plan.reference_video_urls.as_ref().map(|v| v.len()), Some(1));
-        assert_eq!(plan.reference_audio_urls.as_ref().map(|v| v.len()), Some(1));
-        assert!(plan.prompt.as_deref() == Some("full test"));
+        assert!(plan.request.start_frame_url.is_some());
+        assert!(plan.request.end_frame_url.is_some());
+        assert_eq!(plan.request.reference_image_urls.as_ref().map(|v| v.len()), Some(1));
+        assert_eq!(plan.request.reference_video_urls.as_ref().map(|v| v.len()), Some(1));
+        assert_eq!(plan.request.reference_audio_urls.as_ref().map(|v| v.len()), Some(1));
+        assert_eq!(plan.request.prompt, "full test");
       } else {
         panic!("wrong plan variant");
       }
@@ -426,7 +426,7 @@ mod tests {
       // Duration below 4 should clamp to 4.
       let d = distill_text(&text_only_request(Some(1), None));
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(plan.duration_seconds >= 4, "expected >= 4, got {}", plan.duration_seconds);
+        assert!(plan.request.duration_seconds >= 4, "expected >= 4, got {}", plan.request.duration_seconds);
       } else {
         panic!("wrong plan variant");
       }
@@ -434,7 +434,7 @@ mod tests {
       // Duration above 15 should clamp to 15.
       let d = distill_text(&text_only_request(Some(99), None));
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(plan.duration_seconds <= 15, "expected <= 15, got {}", plan.duration_seconds);
+        assert!(plan.request.duration_seconds <= 15, "expected <= 15, got {}", plan.request.duration_seconds);
       } else {
         panic!("wrong plan variant");
       }
@@ -449,8 +449,7 @@ mod tests {
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
         // Prompt should be None or empty string.
-        let prompt = plan.prompt.as_deref().unwrap_or("");
-        assert!(prompt.is_empty() || plan.prompt.is_none());
+        assert!(plan.request.prompt.is_empty());
       } else {
         panic!("wrong plan variant");
       }
@@ -467,7 +466,7 @@ mod tests {
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Landscape16x9));
+        assert!(matches!(plan.request.aspect_ratio, KinoviAspectRatio::Landscape16x9));
       } else { panic!("wrong plan variant"); }
     }
 
@@ -480,7 +479,7 @@ mod tests {
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Portrait9x16));
+        assert!(matches!(plan.request.aspect_ratio, KinoviAspectRatio::Portrait9x16));
       } else { panic!("wrong plan variant"); }
     }
 
@@ -493,7 +492,7 @@ mod tests {
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Square1x1));
+        assert!(matches!(plan.request.aspect_ratio, KinoviAspectRatio::Square1x1));
       } else { panic!("wrong plan variant"); }
     }
 
@@ -506,7 +505,7 @@ mod tests {
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Standard4x3));
+        assert!(matches!(plan.request.aspect_ratio, KinoviAspectRatio::Standard4x3));
       } else { panic!("wrong plan variant"); }
     }
 
@@ -519,7 +518,7 @@ mod tests {
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Portrait3x4));
+        assert!(matches!(plan.request.aspect_ratio, KinoviAspectRatio::Portrait3x4));
       } else { panic!("wrong plan variant"); }
     }
 
@@ -532,7 +531,7 @@ mod tests {
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Landscape16x9));
+        assert!(matches!(plan.request.aspect_ratio, KinoviAspectRatio::Landscape16x9));
       } else { panic!("wrong plan variant"); }
     }
 
@@ -545,7 +544,7 @@ mod tests {
       );
       let d = distill_text(&req);
       if let VideoGenerationPlan::Seedance2proSeedance2p0(plan) = d.plan() {
-        assert!(matches!(plan.aspect_ratio, KinoviAspectRatio::Landscape16x9));
+        assert!(matches!(plan.request.aspect_ratio, KinoviAspectRatio::Landscape16x9));
       } else { panic!("wrong plan variant"); }
     }
   }

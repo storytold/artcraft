@@ -11,6 +11,7 @@ use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost
 use artcraft_router::api::provider::Provider;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::state::server_state::ServerState;
@@ -41,6 +42,8 @@ pub async fn execute_generation(
   server_state: &ServerState,
   media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
   kinovi_character_ids: Option<Vec<String>>,
+  maybe_wallet_ledger_entry_token: Option<&WalletLedgerEntryToken>,
+  mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
 ) -> Result<GenerationResult, AdvancedCommonWebError> {
   match distilled.execution_provider {
     Provider::Seedance2Pro => {
@@ -50,6 +53,8 @@ pub async fn execute_generation(
         server_state,
         media_file_hydration_map,
         kinovi_character_ids,
+        maybe_wallet_ledger_entry_token,
+        mysql_connection,
       ).await
     }
     _ => {

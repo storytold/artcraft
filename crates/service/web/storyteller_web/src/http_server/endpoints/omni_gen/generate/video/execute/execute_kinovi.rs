@@ -5,7 +5,7 @@
 
 use std::collections::HashMap;
 
-use log::{info, warn};
+use log::{error, info, warn};
 use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
@@ -20,11 +20,13 @@ use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
 };
 use seedance2pro_client::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
 use url_utils::extension::extract_extension_from_url::{
   extract_extension_from_url, ExtractExtensions,
 };
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 
@@ -33,6 +35,33 @@ use super::execute_generation::GenerationResult;
 
 pub(super) async fn execute_generation_kinovi(
   _distilled: &DistilledVideoRequest,
+  request: &OmniGenVideoCostAndGenerateRequest,
+  server_state: &ServerState,
+  media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
+  kinovi_character_ids: Option<Vec<String>>,
+  maybe_wallet_ledger_entry_token: Option<&WalletLedgerEntryToken>,
+  mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
+) -> Result<GenerationResult, AdvancedCommonWebError> {
+  let result = execute_generation_kinovi_inner(
+    request,
+    server_state,
+    media_file_hydration_map,
+    kinovi_character_ids,
+  ).await;
+
+  if let Err(ref err) = result {
+    if let Some(ledger_entry_token) = maybe_wallet_ledger_entry_token {
+      warn!("Kinovi generation failed, issuing refund for ledger entry {}: {:?}", ledger_entry_token.as_str(), err);
+      if let Err(refund_err) = refund_wallet_after_api_failure(ledger_entry_token, mysql_connection).await {
+        error!("Failed to refund wallet after Kinovi failure: {:?}", refund_err);
+      }
+    }
+  }
+
+  result
+}
+
+async fn execute_generation_kinovi_inner(
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
   media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,

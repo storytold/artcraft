@@ -186,14 +186,16 @@ pub async fn omni_gen_video_generate_handler(
 
   let apriori_job_token = InferenceJobToken::generate();
 
-  if cost > 0 {
-    attempt_wallet_deduction_else_common_web_error(
+  let maybe_deduction_result = if cost > 0 {
+    Some(attempt_wallet_deduction_else_common_web_error(
       user_token,
       Some(apriori_job_token.as_str()),
       cost,
       &mut mysql_connection,
-    ).await?;
-  }
+    ).await?)
+  } else {
+    None
+  };
 
   // ==================== EXECUTE GENERATION ==================== //
 
@@ -203,6 +205,8 @@ pub async fn omni_gen_video_generate_handler(
     &server_state,
     media_file_hydration_map.as_ref(),
     kinovi_character_ids,
+    maybe_deduction_result.as_ref().map(|d| &d.ledger_entry_token),
+    &mut mysql_connection,
   ).await?;
 
   // ==================== DB TRANSACTION ==================== //
