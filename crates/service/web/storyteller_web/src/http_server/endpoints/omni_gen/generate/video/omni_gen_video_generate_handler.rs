@@ -301,6 +301,9 @@ pub async fn omni_gen_video_generate_handler(
 
   // -- Inference job --
 
+  let maybe_ledger_entry_token = maybe_deduction_result.as_ref()
+    .map(|d| &d.ledger_entry_token);
+
   let job_token = if gen_result.is_seedance2pro {
     // Seedance2Pro path: insert one job per order_id (batch support).
     let fallback_ids = vec![gen_result.external_job_id.clone()];
@@ -330,7 +333,7 @@ pub async fn omni_gen_video_generate_handler(
           maybe_external_third_party_id: order_id,
           maybe_inference_args: None,
           maybe_prompt_token: prompt_token.as_ref(),
-          maybe_wallet_ledger_entry_token: None,
+          maybe_wallet_ledger_entry_token: maybe_ledger_entry_token,
           maybe_creator_user_token: Some(user_token),
           maybe_avt_token: maybe_avt_token.as_ref(),
           creator_ip_address: &ip_address,
@@ -357,6 +360,7 @@ pub async fn omni_gen_video_generate_handler(
     })?
   } else {
     // Fal / other providers path.
+    // TODO: Pass maybe_wallet_ledger_entry_token to fal jobs once the fal insert supports it.
     let db_result = insert_generic_inference_job_for_fal_queue_with_apriori_job_token(
       InsertGenericInferenceForFalWithAprioriJobTokenArgs {
         apriori_job_token: &apriori_job_token,
