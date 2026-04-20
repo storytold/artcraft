@@ -66,14 +66,14 @@ mod tests {
   use crate::api::common_video_model::CommonVideoModel;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn estimate_usd_cents(
     duration_seconds: u16,
     video_batch_count: u16,
     resolution: Option<CommonResolution>,
   ) -> u64 {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       model: CommonVideoModel::Seedance2p0Fast,
       provider: Provider::Artcraft,
       prompt: None,
@@ -104,7 +104,7 @@ mod tests {
     video_batch_count: u16,
     resolution: Option<CommonResolution>,
   ) -> u64 {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       model: CommonVideoModel::Seedance2p0Fast,
       provider: Provider::Artcraft,
       prompt: None,
@@ -135,7 +135,7 @@ mod tests {
     video_batch_count: u16,
     resolution: Option<CommonResolution>,
   ) -> u64 {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       model: CommonVideoModel::Seedance2p0,
       provider: Provider::Artcraft,
       prompt: None,
@@ -213,7 +213,7 @@ mod tests {
 
   #[test]
   fn fast_1080p_error_out_rejects() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       model: CommonVideoModel::Seedance2p0Fast,
       provider: Provider::Artcraft,
       prompt: None,

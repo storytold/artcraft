@@ -1,5 +1,5 @@
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1::{
   build_plan_fal_veo_3p1, PlanFalVeo3p1,
 };
@@ -14,7 +14,7 @@ pub struct PlanFalVeo3p1Fast {
 }
 
 pub fn plan_generate_video_fal_veo_3p1_fast(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let inner = build_plan_fal_veo_3p1(request, "Veo 3.1 Fast")?;
   Ok(VideoGenerationPlan::FalVeo3p1Fast(PlanFalVeo3p1Fast { inner }))

@@ -3,7 +3,7 @@ use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen::{
   Seedance1p5ProMultiFunctionVideoGenAspectRatio,
@@ -25,7 +25,7 @@ pub struct PlanArtcraftSeedance1p5Pro {
 }
 
 pub fn plan_generate_video_artcraft_seedance1p5_pro(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -184,11 +184,11 @@ mod tests {
   use crate::api::provider::Provider;
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
-  use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 
-  fn base_seedance_1p5_pro_request() -> GenerateVideoRequest {
-    GenerateVideoRequest {
+  fn base_seedance_1p5_pro_request() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
       model: CommonVideoModel::Seedance1p5Pro,
       provider: Provider::Artcraft,
       prompt: Some("a cat in space".to_string()),
@@ -211,7 +211,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_direct_16x9() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       ..base_seedance_1p5_pro_request()
     };
@@ -221,7 +221,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_direct_9x16() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
       ..base_seedance_1p5_pro_request()
     };
@@ -231,7 +231,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_direct_21x9() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideTwentyOneByNine),
       ..base_seedance_1p5_pro_request()
     };
@@ -241,7 +241,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_error_out_on_unsupported() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideThreeByTwo),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_seedance_1p5_pro_request()
@@ -256,7 +256,7 @@ mod tests {
   #[test]
   fn duration_valid_range() {
     for d in 4..=12 {
-      let request = GenerateVideoRequest {
+      let request = GenerateVideoRequestBuilder {
         duration_seconds: Some(d),
         ..base_seedance_1p5_pro_request()
       };
@@ -267,7 +267,7 @@ mod tests {
 
   #[test]
   fn duration_out_of_range_error_out() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       duration_seconds: Some(13),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_seedance_1p5_pro_request()
@@ -281,7 +281,7 @@ mod tests {
 
   #[test]
   fn url_image_ref_accepted_for_cost_path() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       start_frame: Some(ImageRef::Url("https://example.com/image.jpg".to_string())),
       ..base_seedance_1p5_pro_request()
     };

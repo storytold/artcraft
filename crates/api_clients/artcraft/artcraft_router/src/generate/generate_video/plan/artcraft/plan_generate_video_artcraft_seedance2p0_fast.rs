@@ -7,7 +7,7 @@ use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
@@ -17,7 +17,7 @@ use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 pub fn plan_generate_video_artcraft_seedance2p0_fast(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -249,14 +249,14 @@ mod tests {
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::errors::client_error::ClientError;
-  use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
   use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
     Seedance2p0AspectRatio, Seedance2p0BatchCount,
   };
 
-  fn base_request() -> GenerateVideoRequest {
-    GenerateVideoRequest {
+  fn base_request() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
       model: CommonVideoModel::Seedance2p0Fast,
       provider: Provider::Artcraft,
       prompt: Some("a cat in space".to_string()),
@@ -295,7 +295,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_16x9() {
-    let req = GenerateVideoRequest {
+    let req = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       ..base_request()
     };
@@ -306,7 +306,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_9x16() {
-    let req = GenerateVideoRequest {
+    let req = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
       ..base_request()
     };
@@ -317,7 +317,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_square() {
-    let req = GenerateVideoRequest {
+    let req = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       ..base_request()
     };
@@ -336,7 +336,7 @@ mod tests {
 
   #[test]
   fn batch_count_2() {
-    let req = GenerateVideoRequest { video_batch_count: Some(2), ..base_request() };
+    let req = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..base_request() };
     let plan = req.build().unwrap();
     let VideoGenerationPlan::ArtcraftSeedance2p0Fast(p) = plan else { panic!("wrong variant") };
     assert!(matches!(p.batch_count, Seedance2p0BatchCount::Two));
@@ -344,7 +344,7 @@ mod tests {
 
   #[test]
   fn batch_count_4() {
-    let req = GenerateVideoRequest { video_batch_count: Some(4), ..base_request() };
+    let req = GenerateVideoRequestBuilder { video_batch_count: Some(4), ..base_request() };
     let plan = req.build().unwrap();
     let VideoGenerationPlan::ArtcraftSeedance2p0Fast(p) = plan else { panic!("wrong variant") };
     assert!(matches!(p.batch_count, Seedance2p0BatchCount::Four));
@@ -352,7 +352,7 @@ mod tests {
 
   #[test]
   fn duration_in_range() {
-    let req = GenerateVideoRequest { duration_seconds: Some(10), ..base_request() };
+    let req = GenerateVideoRequestBuilder { duration_seconds: Some(10), ..base_request() };
     let plan = req.build().unwrap();
     let VideoGenerationPlan::ArtcraftSeedance2p0Fast(p) = plan else { panic!("wrong variant") };
     assert_eq!(p.duration_seconds, Some(10));
@@ -360,7 +360,7 @@ mod tests {
 
   #[test]
   fn duration_clamped_to_max() {
-    let req = GenerateVideoRequest { duration_seconds: Some(99), ..base_request() };
+    let req = GenerateVideoRequestBuilder { duration_seconds: Some(99), ..base_request() };
     let plan = req.build().unwrap();
     let VideoGenerationPlan::ArtcraftSeedance2p0Fast(p) = plan else { panic!("wrong variant") };
     assert_eq!(p.duration_seconds, Some(15));
@@ -368,7 +368,7 @@ mod tests {
 
   #[test]
   fn url_image_ref_returns_error() {
-    let req = GenerateVideoRequest {
+    let req = GenerateVideoRequestBuilder {
       start_frame: Some(ImageRef::Url("https://example.com/image.jpg".to_string())),
       ..base_request()
     };

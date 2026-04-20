@@ -1,5 +1,5 @@
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_3p0_pro::{
   build_kling_3p0_plan, FalKling3p0AspectRatio, FalKling3p0Duration, FalKling3p0Mode,
 };
@@ -16,7 +16,7 @@ pub struct PlanFalKling3p0Standard {
 }
 
 pub fn plan_generate_video_fal_kling_3p0_standard(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let inner = build_kling_3p0_plan(request, "Kling 3.0 Standard")?;
   Ok(VideoGenerationPlan::FalKling3p0Standard(PlanFalKling3p0Standard {

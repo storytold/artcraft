@@ -18,7 +18,7 @@ use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::api::video_list_ref::VideoListRef;
-use artcraft_router::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use artcraft_router::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use artcraft_router::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use tokens::tokens::media_files::MediaFileToken;
@@ -31,7 +31,7 @@ use super::distill_helper::hydrate_to_router_request::hydrate_to_router_request;
 /// request: the router request, the bill-on cost estimate, and the executable
 /// plan, all in one place.
 pub struct DistilledVideoRequest {
-  request: GenerateVideoRequest,
+  request: GenerateVideoRequestBuilder,
 
   /// Cost estimate as computed by the Artcraft provider — this is what we bill on.
   pub cost: VideoGenerationCostEstimate,
@@ -51,7 +51,7 @@ impl DistilledVideoRequest {
 
   /// Borrow the underlying router request. Useful for tests / debugging.
   #[allow(dead_code)]
-  pub(crate) fn request(&self) -> &GenerateVideoRequest {
+  pub(crate) fn request(&self) -> &GenerateVideoRequestBuilder {
     &self.request
   }
 }
@@ -70,7 +70,7 @@ pub fn distill_video_request(
   //    `initial` already has media fields in token form (from hydrate_to_router_request),
   //    which is exactly what the Artcraft cost builder needs. Just swap the provider.
   let cost: VideoGenerationCostEstimate = {
-    let cost_request = GenerateVideoRequest {
+    let cost_request = GenerateVideoRequestBuilder {
       provider: Provider::Artcraft,
       ..initial.clone()
     };
@@ -104,7 +104,7 @@ pub fn distill_video_request(
   )?;
 
   // 4. Build the execution request with resolved URLs.
-  let exec_request = GenerateVideoRequest {
+  let exec_request = GenerateVideoRequestBuilder {
     model: initial.model,
     provider: execution_provider,
     prompt: initial.prompt,

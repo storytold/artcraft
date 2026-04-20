@@ -84,13 +84,13 @@ mod tests {
   use crate::api::common_resolution::CommonResolution;
   use crate::api::common_video_model::CommonVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
   use crate::test_helpers::{base_video_request, get_artcraft_client};
   use tokens::tokens::media_files::MediaFileToken;
 
-  fn fast_request() -> GenerateVideoRequest {
-    GenerateVideoRequest {
+  fn fast_request() -> GenerateVideoRequestBuilder {
+    GenerateVideoRequestBuilder {
       model: CommonVideoModel::Seedance2p0Fast,
       prompt: Some("a corgi walking through a cyberpunk city at night".to_string()),
       ..base_video_request()
@@ -101,7 +101,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_video_fast_720p_wide() {
     let client = get_artcraft_client();
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       resolution: Some(CommonResolution::SevenTwentyP),
       video_batch_count: Some(1),
@@ -121,7 +121,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_video_fast_480p_square() {
     let client = get_artcraft_client();
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       resolution: Some(CommonResolution::FourEightyP),
       video_batch_count: Some(1),
@@ -141,7 +141,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_image_to_video_fast_with_start_keyframe() {
     let client = get_artcraft_client();
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       start_frame: Some(ImageRef::MediaFileToken(
         MediaFileToken::new("mf_test_keyframe_placeholder".to_string()),
       )),
@@ -164,7 +164,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_video_fast_batch_2() {
     let client = get_artcraft_client();
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
       resolution: Some(CommonResolution::SevenTwentyP),
       video_batch_count: Some(2),
@@ -187,7 +187,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_video_fast_with_reference_images() {
     let client = get_artcraft_client();
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       reference_images: Some(crate::api::image_list_ref::ImageListRef::MediaFileTokens(vec![
         MediaFileToken::new("mf_test_ref_image_placeholder".to_string()),
       ])),
@@ -208,7 +208,7 @@ mod tests {
 
   #[test]
   fn plan_includes_resolution() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       resolution: Some(CommonResolution::FourEightyP),
       ..fast_request()
     };
@@ -222,7 +222,7 @@ mod tests {
     use crate::api::character_list_ref::CharacterListRef;
     use tokens::tokens::characters::CharacterToken;
 
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
         CharacterToken::new("char_test123".to_string()),
       ])),

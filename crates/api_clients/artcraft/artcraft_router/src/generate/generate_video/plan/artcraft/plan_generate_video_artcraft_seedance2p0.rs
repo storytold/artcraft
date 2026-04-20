@@ -7,7 +7,7 @@ use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
   Seedance2p0AspectRatio, Seedance2p0BatchCount,
@@ -32,7 +32,7 @@ pub struct PlanArtcraftSeedance2p0 {
 }
 
 pub fn plan_generate_video_artcraft_seedance2p0(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
@@ -286,7 +286,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_direct_16x9() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       ..base_video_request()
     };
@@ -296,7 +296,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_direct_9x16() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
       ..base_video_request()
     };
@@ -306,7 +306,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_direct_square() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       ..base_video_request()
     };
@@ -321,7 +321,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateVideoRequest {
+      let request = GenerateVideoRequestBuilder {
         aspect_ratio: Some(CommonAspectRatio::WideThreeByTwo),
         request_mismatch_mitigation_strategy: strategy,
         ..base_video_request()
@@ -336,7 +336,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_error_out_on_unsupported() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideThreeByTwo),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_video_request()
@@ -355,7 +355,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayMoreUpgrade,
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
-      let request = GenerateVideoRequest {
+      let request = GenerateVideoRequestBuilder {
         video_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
         ..base_video_request()
@@ -370,22 +370,22 @@ mod tests {
 
   #[test]
   fn batch_count_direct_mapping() {
-    let req = GenerateVideoRequest { video_batch_count: Some(1), ..base_video_request() };
+    let req = GenerateVideoRequestBuilder { video_batch_count: Some(1), ..base_video_request() };
     let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.batch_count, Seedance2p0BatchCount::One));
 
-    let req = GenerateVideoRequest { video_batch_count: Some(2), ..base_video_request() };
+    let req = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..base_video_request() };
     let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Two));
 
-    let req = GenerateVideoRequest { video_batch_count: Some(4), ..base_video_request() };
+    let req = GenerateVideoRequestBuilder { video_batch_count: Some(4), ..base_video_request() };
     let VideoGenerationPlan::ArtcraftSeedance2p0(plan) = req.build().unwrap() else { panic!("wrong variant") };
     assert!(matches!(plan.batch_count, Seedance2p0BatchCount::Four));
   }
 
   #[test]
   fn batch_count_three_upgrade_rounds_to_four() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       video_batch_count: Some(3),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
       ..base_video_request()
@@ -396,7 +396,7 @@ mod tests {
 
   #[test]
   fn batch_count_three_downgrade_rounds_to_two() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       video_batch_count: Some(3),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
       ..base_video_request()
@@ -407,7 +407,7 @@ mod tests {
 
   #[test]
   fn url_image_ref_returns_error() {
-    let request = GenerateVideoRequest {
+    let request = GenerateVideoRequestBuilder {
       start_frame: Some(ImageRef::Url("https://example.com/image.jpg".to_string())),
       ..base_video_request()
     };

@@ -52,7 +52,7 @@ use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 /// This works across multiple providers by shaping a generic "GenerateVideoRequest" into a provider-specific plan.
 /// That plan can then be used to return a cost estimate for that given provider or return a struct that can be used to send a real generation request.
 #[derive(Clone, Debug)]
-pub struct GenerateVideoRequest {
+pub struct GenerateVideoRequestBuilder {
   /// Which model to use.
   pub model: CommonVideoModel,
 
@@ -109,7 +109,7 @@ pub struct GenerateVideoRequest {
   pub idempotency_token: Option<String>,
 }
 
-impl GenerateVideoRequest {
+impl GenerateVideoRequestBuilder {
   /// Read the video generation request, construct a plan, then yield a means to execute it.
   pub fn build(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     match self.provider {

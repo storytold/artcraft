@@ -12,7 +12,7 @@ use artcraft_router::api::common_resolution::CommonResolution as RouterResolutio
 use artcraft_router::api::common_video_model::CommonVideoModel as RouterVideoModel;
 use artcraft_router::api::provider::Provider as RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-use artcraft_router::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation::common_resolution::CommonResolution;
@@ -38,7 +38,7 @@ pub async fn estimate_video_cost_handler(
   let router_aspect_ratio = request.aspect_ratio.map(map_aspect_ratio);
   let router_resolution = request.resolution.map(map_resolution);
 
-  let router_request = GenerateVideoRequest {
+  let router_request = GenerateVideoRequestBuilder {
     model: router_model,
     provider: router_provider,
     prompt: None,

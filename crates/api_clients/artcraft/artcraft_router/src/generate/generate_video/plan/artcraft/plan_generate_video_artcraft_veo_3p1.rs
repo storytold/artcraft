@@ -4,7 +4,7 @@ use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use artcraft_api_defs::generate::video::multi_function::veo_3p1_multi_function_video_gen::{
   Veo3p1MultiFunctionVideoGenAspectRatio, Veo3p1MultiFunctionVideoGenDuration,
@@ -26,14 +26,14 @@ pub struct PlanArtcraftVeo3p1 {
 }
 
 pub fn plan_generate_video_artcraft_veo_3p1(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let plan = build_plan_artcraft_veo_3p1(request)?;
   Ok(VideoGenerationPlan::ArtcraftVeo3p1(plan))
 }
 
 pub(crate) fn build_plan_artcraft_veo_3p1(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<PlanArtcraftVeo3p1, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 

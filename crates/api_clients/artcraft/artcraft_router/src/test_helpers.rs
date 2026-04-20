@@ -6,7 +6,7 @@ use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_client::RouterClient;
 use crate::client::router_fal_client::RouterFalClient;
 use crate::generate::generate_image::generate_image_request::GenerateImageRequest;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 use artcraft_client::utils::api_host::ApiHost;
 use fal_client::creds::fal_api_key::FalApiKey;
@@ -314,8 +314,8 @@ pub fn base_flux_pro_1p1_ultra_image_request() -> GenerateImageRequest {
   }
 }
 
-pub fn base_video_request() -> GenerateVideoRequest {
-  GenerateVideoRequest {
+pub fn base_video_request() -> GenerateVideoRequestBuilder {
+  GenerateVideoRequestBuilder {
     model: CommonVideoModel::Seedance2p0,
     provider: Provider::Artcraft,
     prompt: Some("a cat in space".to_string()),

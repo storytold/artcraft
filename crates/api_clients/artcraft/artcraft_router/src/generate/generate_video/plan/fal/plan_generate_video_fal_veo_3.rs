@@ -4,7 +4,7 @@ use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use fal_client::requests::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{
   Veo3I2vAspectRatio, Veo3I2vDuration, Veo3I2vResolution,
@@ -70,7 +70,7 @@ pub struct PlanFalVeo3 {
 }
 
 pub fn plan_generate_video_fal_veo_3(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 

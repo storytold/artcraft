@@ -61,7 +61,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_video_seedance_2p0() {
     let client = get_artcraft_client();
-    let request = crate::generate::generate_video::generate_video_request::GenerateVideoRequest {
+    let request = crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
       video_batch_count: Some(1),
       prompt: Some("a cat walking through a cyberpunk city at night".to_string()),
@@ -84,7 +84,7 @@ mod tests {
   #[ignore] // manually run — fires a real API request and incurs cost
   async fn test_text_to_video_seedance_2p0_batch_two() {
     let client = get_artcraft_client();
-    let request = crate::generate::generate_video::generate_video_request::GenerateVideoRequest {
+    let request = crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
       video_batch_count: Some(2),
       prompt: Some("a dog surfing a wave, cinematic".to_string()),

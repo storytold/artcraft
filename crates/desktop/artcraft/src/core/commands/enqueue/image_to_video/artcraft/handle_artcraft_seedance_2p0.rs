@@ -14,7 +14,7 @@ use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
-use artcraft_router::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
@@ -33,7 +33,7 @@ pub(super) async fn handle_artcraft_seedance_2p0(
   let end_frame = request.end_frame_image_media_token.clone().map(ImageRef::MediaFileToken);
   let reference_images = request.reference_image_media_tokens.clone().map(ImageListRef::MediaFileTokens);
 
-  let router_request = GenerateVideoRequest {
+  let router_request = GenerateVideoRequestBuilder {
     model: CommonVideoModel::Seedance2p0,
     provider: Provider::Artcraft,
     prompt: request.prompt.clone(),

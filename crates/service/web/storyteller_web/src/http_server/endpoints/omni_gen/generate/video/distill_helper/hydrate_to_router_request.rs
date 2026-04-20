@@ -9,7 +9,7 @@ use artcraft_router::api::image_ref::ImageRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-use artcraft_router::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
 use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
@@ -49,7 +49,7 @@ fn convert_resolution(
 
 pub fn hydrate_to_router_request(
   request: &OmniGenVideoCostAndGenerateRequest,
-) -> Result<GenerateVideoRequest, AdvancedCommonWebError> {
+) -> Result<GenerateVideoRequestBuilder, AdvancedCommonWebError> {
   let api_model = request.model.as_ref()
     .ok_or_else(|| AdvancedCommonWebError::BadInputWithSimpleMessage(
       "model is required".to_string(),
@@ -65,7 +65,7 @@ pub fn hydrate_to_router_request(
     .map(convert_resolution)
     .transpose()?;
 
-  Ok(GenerateVideoRequest {
+  Ok(GenerateVideoRequestBuilder {
     model,
     provider: Provider::Artcraft,
     prompt: request.prompt.clone(),

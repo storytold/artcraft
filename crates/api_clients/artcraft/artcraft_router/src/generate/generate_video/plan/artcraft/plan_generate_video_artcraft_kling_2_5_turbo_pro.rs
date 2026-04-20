@@ -3,7 +3,7 @@ use crate::api::image_ref::ImageRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use artcraft_api_defs::generate::video::multi_function::kling_2_5_turbo_multi_function_video_gen::{
   Kling2p5TurboProMultiFunctionVideoGenAspectRatio, Kling2p5TurboProMultiFunctionVideoGenDuration,
@@ -22,7 +22,7 @@ pub struct PlanArtcraftKling2p5TurboPro {
 }
 
 pub fn plan_generate_video_artcraft_kling_2_5_turbo_pro(
-  request: &GenerateVideoRequest,
+  request: &GenerateVideoRequestBuilder,
 ) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
   let strategy = request.request_mismatch_mitigation_strategy;
 
