@@ -14,7 +14,6 @@ import {
 import {
   faWaveformLines,
   faClock,
-  faTriangleExclamation,
   faChevronDown,
   faChevronUp,
 } from "@fortawesome/pro-solid-svg-icons";
@@ -169,15 +168,27 @@ export const PromptBoxVideo = ({
       .finally(() => storeSetLoaded(true));
   }, [charactersLoaded, storeSetCharacters, storeSetLoaded]);
 
-  // CSS viewport units handle resize reactivity automatically
-  const EXPANDED_HEIGHT = "clamp(120px, calc(100vh - 700px), 500px)";
+  // Reserves room for the textarea's inline action-buttons row plus the fixed
+  // Model / Costs / Help row at the bottom of the page.
+  const BOTTOM_SAFE_AREA_PX = 160;
+
+  const computeAvailableEditorHeight = (el: HTMLElement): number => {
+    const topFromViewport = el.getBoundingClientRect().top;
+    return Math.max(
+      88,
+      Math.floor(window.innerHeight - topFromViewport - BOTTOM_SAFE_AREA_PX),
+    );
+  };
 
   const toggleExpand = () => {
     setIsExpanded((prev) => {
       const next = !prev;
-      const el = (mentionEditorRef.current ?? textareaRef.current) as HTMLElement | null;
+      const el = (mentionEditorRef.current ??
+        textareaRef.current) as HTMLElement | null;
       if (el) {
-        el.style.height = next ? EXPANDED_HEIGHT : "auto";
+        el.style.height = next
+          ? `${computeAvailableEditorHeight(el)}px`
+          : "auto";
       }
       return next;
     });
@@ -232,12 +243,52 @@ export const PromptBoxVideo = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const mentionEditorRef = useRef<HTMLDivElement>(null);
 
-  // Apply height constraints to whichever editor element is active
+  // Held in a ref so the window.resize listener (installed once) always
+  // invokes the latest closure — picks up current `isExpanded`, refs, etc.
+  const applyHeightsRef = useRef<() => void>(() => {});
+  applyHeightsRef.current = () => {
+    const el = (mentionEditorRef.current ??
+      textareaRef.current) as HTMLElement | null;
+    if (!el) return;
+    const available = computeAvailableEditorHeight(el);
+    const maxH = isExpanded ? available : Math.min(available, 500);
+    el.style.maxHeight = `${maxH}px`;
+    el.style.minHeight = "0";
+    if (!isExpanded) {
+      const capped = Math.min(el.scrollHeight, 88);
+      el.style.minHeight = `${capped}px`;
+    }
+  };
+
+  // Re-apply on viewport changes (window resize, windowed↔fullscreen,
+  // monitor moves). Fires immediately + after the parent's react-spring
+  // `top: vh/2` tween settles so getBoundingClientRect reads the final
+  // position, not a mid-animation one.
   useEffect(() => {
-    const el = (mentionEditorRef.current ?? textareaRef.current) as HTMLElement | null;
+    let settledId: number | undefined;
+    const onResize = () => {
+      applyHeightsRef.current();
+      if (settledId !== undefined) window.clearTimeout(settledId);
+      settledId = window.setTimeout(() => applyHeightsRef.current(), 100);
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (settledId !== undefined) window.clearTimeout(settledId);
+    };
+  }, []);
+
+  // Apply height constraints to whichever editor element is active. Max
+  // height is derived from the editor's actual position so long prompts
+  // never push the box past the bottom action row — regardless of viewport
+  // size (4K was previously capped at 500px while the viewport had room).
+  useEffect(() => {
+    const el = (mentionEditorRef.current ??
+      textareaRef.current) as HTMLElement | null;
     if (el) {
-      const maxH = isExpanded ? 500 : Math.min(window.innerHeight - 700, 500);
-      el.style.maxHeight = `${Math.max(maxH, 88)}px`;
+      const available = computeAvailableEditorHeight(el);
+      const maxH = isExpanded ? available : Math.min(available, 500);
+      el.style.maxHeight = `${maxH}px`;
       el.style.minHeight = "0";
       if (!isExpanded) {
         const capped = Math.min(el.scrollHeight, 88);
@@ -472,32 +523,41 @@ export const PromptBoxVideo = ({
   );
 
   // All mention items (unfiltered) for the contentEditable MentionTextarea
-  const allMentionItems: MentionItem[] = useMemo(() => [
-    ...(isReferenceMode
-      ? [
-          ...referenceImages.map((img, i) => ({
-            label: `@Image${i + 1}`,
-            type: "image" as const,
-            preview: img.url,
-          })),
-          ...referenceVideos.map((vid, i) => ({
-            label: `@Video${i + 1}`,
-            type: "video" as const,
-            preview: vid.url,
-          })),
-          ...referenceAudios.map((_aud, i) => ({
-            label: `@Audio${i + 1}`,
-            type: "audio" as const,
-            preview: undefined as string | undefined,
-          })),
-        ]
-      : []),
-    ...activeCharacters.map((char) => ({
-      label: `@${char.name}`,
-      type: "character" as const,
-      preview: char.avatar_image_url,
-    })),
-  ], [isReferenceMode, referenceImages, referenceVideos, referenceAudios, activeCharacters]);
+  const allMentionItems: MentionItem[] = useMemo(
+    () => [
+      ...(isReferenceMode
+        ? [
+            ...referenceImages.map((img, i) => ({
+              label: `@Image${i + 1}`,
+              type: "image" as const,
+              preview: img.url,
+            })),
+            ...referenceVideos.map((vid, i) => ({
+              label: `@Video${i + 1}`,
+              type: "video" as const,
+              preview: vid.url,
+            })),
+            ...referenceAudios.map((_aud, i) => ({
+              label: `@Audio${i + 1}`,
+              type: "audio" as const,
+              preview: undefined as string | undefined,
+            })),
+          ]
+        : []),
+      ...activeCharacters.map((char) => ({
+        label: `@${char.name}`,
+        type: "character" as const,
+        preview: char.avatar_image_url,
+      })),
+    ],
+    [
+      isReferenceMode,
+      referenceImages,
+      referenceVideos,
+      referenceAudios,
+      activeCharacters,
+    ],
+  );
 
   // Build label → color map for inline mention highlighting
   const mentionColorMap = useMemo(() => {
@@ -900,7 +960,7 @@ export const PromptBoxVideo = ({
           )}
         >
           <div className="relative flex justify-center gap-2">
-            <div className="promptbox-resize-wrap relative flex-1">
+            <div className="promptbox-resize-wrap relative flex-1 min-w-0">
               {hasAnyMentionables ? (
                 <MentionTextarea
                   ref={mentionEditorRef}
@@ -917,7 +977,11 @@ export const PromptBoxVideo = ({
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      if (selectedModel?.requiresImage && referenceImages.length === 0) return;
+                      if (
+                        selectedModel?.requiresImage &&
+                        referenceImages.length === 0
+                      )
+                        return;
                       if (!prompt.trim()) return;
                       handleEnqueue();
                     }
@@ -1052,12 +1116,12 @@ export const PromptBoxVideo = ({
 
               {selectedModel?.id === "seedance_2p0" && (
                 <button
-                    type="button"
-                    onClick={() => setIsCharactersModalOpen(true)}
-                    className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
-                  >
-                    @Characters
-                  </button>
+                  type="button"
+                  onClick={() => setIsCharactersModalOpen(true)}
+                  className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
+                >
+                  @Characters
+                </button>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -1117,7 +1181,7 @@ export const PromptBoxVideo = ({
             </Tooltip>
           </div>
         </div>
-        {selectedModel?.id === "seedance_2p0" && (
+        {/* {selectedModel?.id === "seedance_2p0" && (
           <div className="flex items-start gap-2.5 rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3.5 py-2.5 text-xs text-yellow-200">
             <FontAwesomeIcon
               icon={faTriangleExclamation}
@@ -1129,14 +1193,15 @@ export const PromptBoxVideo = ({
               Try several short generations before longer ones.
             </span>
           </div>
-        )}
+        )} */}
       </div>
       <CharactersModal
         isOpen={isCharactersModalOpen}
         onClose={() => setIsCharactersModalOpen(false)}
         onSelectCharacter={(character) => {
           const mention = `@${character.name}`;
-          const spaceBefore = prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
+          const spaceBefore =
+            prompt.length > 0 && !prompt.endsWith(" ") ? " " : "";
           setPrompt(prompt + spaceBefore + mention + " ");
           setIsCharactersModalOpen(false);
           requestAnimationFrame(() => {

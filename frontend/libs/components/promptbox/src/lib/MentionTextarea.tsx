@@ -684,7 +684,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           onBlur={onBlur}
           className={twMerge(
             className,
-            "outline-none whitespace-pre-wrap break-words overflow-y-auto",
+            "outline-none whitespace-pre-wrap [overflow-wrap:anywhere] overflow-y-auto",
           )}
         />
 
