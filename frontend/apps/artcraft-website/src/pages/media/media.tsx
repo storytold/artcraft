@@ -1,58 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
-import dayjs from "dayjs";
-import { Button } from "@storyteller/ui-button";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { toast } from "@storyteller/ui-toaster";
-import { MediaFilesApi, PromptsApi, UserInfo } from "@storyteller/api";
-import { Gravatar } from "@storyteller/ui-gravatar";
-import { twMerge } from "tailwind-merge";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCopy,
-  faLink,
-  faCheck,
-  faArrowDownToLine,
-  faPencil,
-  faCircleInfo,
-  faImage,
-  faUser,
-} from "@fortawesome/pro-solid-svg-icons";
-import {
-  addCorsParam,
-  getContextImageThumbnail,
-  THUMBNAIL_SIZES,
-  PLACEHOLDER_IMAGES,
-} from "@storyteller/common";
-import {
-  getModelCreatorIcon,
-  getModelDisplayName,
-  getProviderDisplayName,
-  getProviderIconByName,
-} from "@storyteller/model-list";
+import { MediaFilesApi, PromptsApi, type UserInfo } from "@storyteller/api";
+import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
 import Seo from "../../components/seo";
-
-const VIDEO_EXTENSIONS = [".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"];
-const MODEL_3D_EXTENSIONS = [".glb", ".gltf", ".fbx", ".spz"];
-const COPY_FEEDBACK_DURATION = 1500;
-const SHARE_URL_BASE = "https://getartcraft.com/media/";
-
-const isVideoUrl = (url: string): boolean => {
-  const urlLower = url.toLowerCase();
-  return VIDEO_EXTENSIONS.some((ext) => urlLower.includes(ext));
-};
-
-const is3DModelUrl = (url: string): boolean => {
-  const urlLower = url.toLowerCase();
-  return MODEL_3D_EXTENSIONS.some((ext) => urlLower.includes(ext));
-};
-
-interface ContextImage {
-  media_links: { cdn_url: string; maybe_thumbnail_template: string };
-  media_token: string;
-  semantic: string;
-}
+import { LightboxDetails } from "../../components/lightbox/LightboxDetails";
+import {
+  createPromptData,
+  EMPTY_PROMPT,
+  is3DModelUrl,
+  isVideoUrl,
+  type PromptData,
+} from "../../components/lightbox/shared";
+import { applyRecreateFromMediaToken } from "../../lib/recreate";
 
 interface MediaData {
   url: string | null;
@@ -66,98 +28,25 @@ interface MediaData {
   creator: UserInfo | null;
 }
 
-interface PromptData {
-  text: string | null;
-  loading: boolean;
-  hasToken: boolean;
-  provider: string | null;
-  modelType: string | null;
-  contextImages: ContextImage[] | null;
-}
-
-const EMPTY_PROMPT_DATA: PromptData = {
-  text: null,
-  loading: false,
-  hasToken: false,
-  provider: null,
-  modelType: null,
-  contextImages: null,
+const EMPTY_MEDIA: MediaData = {
+  url: null,
+  token: null,
+  createdAt: null,
+  isVideo: false,
+  is3D: false,
+  isLoaded: false,
+  creator: null,
 };
-
-const createPromptData = (
-  data: any,
-  hasToken: boolean,
-  loading: boolean = false,
-): PromptData => ({
-  text: data?.maybe_positive_prompt || null,
-  loading,
-  hasToken,
-  provider: data?.maybe_generation_provider || null,
-  modelType: data?.maybe_model_type || null,
-  contextImages: data?.maybe_context_images || null,
-});
-
-const useCopyFeedback = () => {
-  const [copied, setCopied] = useState(false);
-  const timeoutRef = useRef<number | null>(null);
-
-  const triggerCopy = useCallback(() => {
-    setCopied(true);
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-    }
-    timeoutRef.current = window.setTimeout(() => {
-      setCopied(false);
-      timeoutRef.current = null;
-    }, COPY_FEEDBACK_DURATION);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  return { copied, triggerCopy };
-};
-
-const InfoRow = ({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) => (
-  <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 last:border-0">
-    <span className="text-sm text-white/60 font-medium">{label}</span>
-    <span className="text-sm text-white font-medium flex items-center gap-2">
-      {value}
-    </span>
-  </div>
-);
 
 export default function MediaPage() {
   const { id: routeId } = useParams<{ id?: string }>();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const mediaIdParam = routeId || searchParams.get("media") || undefined;
 
-  const [media, setMedia] = useState<MediaData>({
-    url: null,
-    token: null,
-    createdAt: null,
-    isVideo: false,
-    is3D: false,
-    isLoaded: false,
-    creator: null,
-  });
+  const [media, setMedia] = useState<MediaData>(EMPTY_MEDIA);
   const [mediaRecordLoading, setMediaRecordLoading] = useState(true);
-
-  const [promptData, setPromptData] = useState<PromptData>(EMPTY_PROMPT_DATA);
-
-  const shareCopy = useCopyFeedback();
-  const promptCopy = useCopyFeedback();
+  const [promptData, setPromptData] = useState<PromptData>(EMPTY_PROMPT);
 
   const loadMedia = useCallback(async (id: string) => {
     setMediaRecordLoading(true);
@@ -202,30 +91,14 @@ export default function MediaPage() {
             setPromptData((prev) => ({ ...prev, loading: false }));
           }
         } else {
-          setPromptData(EMPTY_PROMPT_DATA);
+          setPromptData(EMPTY_PROMPT);
         }
       } else {
-        setMedia({
-          url: null,
-          token: null,
-          createdAt: null,
-          isVideo: false,
-          is3D: false,
-          isLoaded: false,
-          creator: null,
-        });
+        setMedia(EMPTY_MEDIA);
         toast.error("Media not found");
       }
     } catch {
-      setMedia({
-        url: null,
-        token: null,
-        createdAt: null,
-        isVideo: false,
-        is3D: false,
-        isLoaded: false,
-        creator: null,
-      });
+      setMedia(EMPTY_MEDIA);
       toast.error("Failed to load media");
     } finally {
       setMediaRecordLoading(false);
@@ -238,29 +111,16 @@ export default function MediaPage() {
     }
   }, [mediaIdParam, loadMedia]);
 
-  const handleCopyPrompt = useCallback(async () => {
-    if (!promptData.text) return;
-    try {
-      await navigator.clipboard.writeText(promptData.text);
-      promptCopy.triggerCopy();
-    } catch {
-      toast.error("Unable to copy prompt");
-    }
-  }, [promptData.text, promptCopy]);
+  const recreateMediaClass: "image" | "video" | null = media.isVideo
+    ? "video"
+    : media.is3D
+      ? null
+      : "image";
 
-  const handleCopyShareLink = useCallback(async () => {
-    if (!media.token) return;
-    const shareUrl = `${SHARE_URL_BASE}${media.token}`;
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      shareCopy.triggerCopy();
-      toast.success("Share link copied");
-    } catch {
-      toast.error("Unable to copy link");
-    }
-  }, [media.token, shareCopy]);
-
-  const shareButtonIcon = shareCopy.copied ? faCheck : faLink;
+  const handleRecreate = useCallback(async () => {
+    if (!media.token || !recreateMediaClass) return;
+    await applyRecreateFromMediaToken(media.token, recreateMediaClass, navigate);
+  }, [media.token, recreateMediaClass, navigate]);
 
   return (
     <div className="relative min-h-screen w-full p-4 pt-16 bg-dots flex items-start lg:items-center justify-center">
@@ -346,269 +206,19 @@ export default function MediaPage() {
             )}
           </div>
 
-          {/* Sidebar Area */}
-          <div className="flex w-full lg:w-[360px] shrink-0 flex-col bg-ui-panel h-auto lg:h-full">
-            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
-              {mediaRecordLoading ? (
-                <div className="space-y-6 animate-pulse">
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 bg-white/10 rounded-xl" />
-                    <div className="space-y-1.5">
-                      <div className="h-4 w-24 bg-white/10 rounded" />
-                      <div className="h-3 w-12 bg-white/10 rounded" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-4 w-20 bg-white/10 rounded" />
-                    <div className="h-4 w-40 bg-white/10 rounded" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-4 w-16 bg-white/10 rounded" />
-                    <div className="h-20 w-full bg-white/10 rounded-lg" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-4 w-32 bg-white/10 rounded" />
-                    <div className="grid grid-cols-5 gap-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="aspect-square w-full bg-white/10 rounded-lg"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {media.creator && (
-                    <div className="flex items-center gap-3 pb-2">
-                      {media.creator.core_info ? (
-                        <Gravatar
-                          size={36}
-                          username={media.creator.username}
-                          email_hash={media.creator.email_gravatar_hash}
-                          avatarIndex={
-                            media.creator.core_info.default_avatar.image_index
-                          }
-                          backgroundIndex={
-                            media.creator.core_info.default_avatar.color_index
-                          }
-                          className="rounded-xl border-white/10"
-                        />
-                      ) : (
-                        <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/10 text-white/50 border border-white/5">
-                          <FontAwesomeIcon icon={faUser} />
-                        </div>
-                      )}
-                      <div className="flex flex-col gap-1">
-                        <span className="text-white text-sm font-semibold leading-none">
-                          {media.creator.display_name}
-                        </span>
-                        <span className="text-white/60 text-xs font-medium">
-                          Author
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {media.createdAt && (
-                    <div className="space-y-1.5 hidden">
-                      <div className="text-sm font-medium text-white/90">
-                        Created
-                      </div>
-                      <div className="text-sm text-white/60">
-                        {dayjs(media.createdAt).format("MMM D, YYYY")} at{" "}
-                        {dayjs(media.createdAt).format("hh:mm A")}
-                      </div>
-                    </div>
-                  )}
-
-                  {promptData.hasToken && (
-                    <>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-                            <FontAwesomeIcon icon={faPencil} />
-                            <span>Prompt</span>
-                          </div>
-                          <button
-                            onClick={handleCopyPrompt}
-                            className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors"
-                          >
-                            <FontAwesomeIcon
-                              icon={promptCopy.copied ? faCheck : faCopy}
-                            />
-                            <span>{promptCopy.copied ? "Copied" : "Copy"}</span>
-                          </button>
-                        </div>
-
-                        <div className="relative text-sm text-white/90 break-words px-4 py-3 rounded-xl bg-black/20 leading-relaxed border border-white/5">
-                          {promptData.loading ? (
-                            <div className="flex items-center gap-2">
-                              <LoadingSpinner className="h-4 w-4" />
-                              <span className="text-sm text-white/60">
-                                Loading prompt...
-                              </span>
-                            </div>
-                          ) : (
-                            promptData.text || (
-                              <span className="text-sm text-white/60">
-                                No prompt
-                              </span>
-                            )
-                          )}
-                        </div>
-                      </div>
-
-                      {promptData.contextImages &&
-                        promptData.contextImages.length > 0 && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-                              <FontAwesomeIcon icon={faImage} />
-                              <span>Reference Images</span>
-                            </div>
-                            <div className="grid grid-cols-5 gap-2">
-                              {promptData.contextImages.map(
-                                (contextImage, index) => {
-                                  const { thumbnail } =
-                                    getContextImageThumbnail(contextImage, {
-                                      size: THUMBNAIL_SIZES.SMALL,
-                                    });
-                                  return (
-                                    <a
-                                      key={contextImage.media_token}
-                                      href={`/media/${contextImage.media_token}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="glass relative aspect-square overflow-hidden rounded-lg border border-white/10 hover:border-white/40 transition-colors block"
-                                    >
-                                      <img
-                                        src={thumbnail}
-                                        alt={`Reference image ${index + 1}`}
-                                        className="h-full w-full object-cover"
-                                      />
-                                    </a>
-                                  );
-                                },
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                      {(promptData.provider ||
-                        promptData.modelType ||
-                        media.createdAt) && (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs font-medium text-white/60">
-                            <FontAwesomeIcon icon={faCircleInfo} />
-                            <span>Information</span>
-                          </div>
-
-                          <div className="flex flex-col rounded-xl bg-black/20 border border-white/5 overflow-hidden">
-                            {promptData.modelType && (
-                              <InfoRow
-                                label="Model"
-                                value={
-                                  <>
-                                    {getModelCreatorIcon(promptData.modelType)}
-                                    <span>
-                                      {getModelDisplayName(
-                                        promptData.modelType,
-                                      )}
-                                    </span>
-                                  </>
-                                }
-                              />
-                            )}
-
-                            {promptData.provider && (
-                              <InfoRow
-                                label="Provider"
-                                value={
-                                  <>
-                                    {getProviderIconByName(
-                                      promptData.provider,
-                                      "h-4 w-4 invert",
-                                    )}
-                                    <span>
-                                      {getProviderDisplayName(
-                                        promptData.provider,
-                                      )}
-                                    </span>
-                                  </>
-                                }
-                              />
-                            )}
-
-                            {media.width && media.height && (
-                              <InfoRow
-                                label="Size"
-                                value={`${media.width} × ${media.height}`}
-                              />
-                            )}
-
-                            {media.createdAt && (
-                              <InfoRow
-                                label="Created"
-                                value={dayjs(media.createdAt).format(
-                                  "MMMM D, YYYY",
-                                )}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="p-5 pt-2 space-y-3 rounded-br-xl lg:rounded-bl-none rounded-bl-xl">
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
-                  icon={shareButtonIcon}
-                  variant="secondary"
-                  onClick={handleCopyShareLink}
-                >
-                  {shareCopy.copied ? "Copied" : "Share"}
-                </Button>
-                <a
-                  className={twMerge(
-                    "w-full inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors border border-ui-panel-border",
-                    media.url
-                      ? "bg-ui-controls/40 hover:bg-ui-controls/60 text-white"
-                      : "bg-ui-controls/20 text-white/60 cursor-not-allowed pointer-events-none",
-                  )}
-                  href={
-                    media.url ? addCorsParam(media.url) || media.url : undefined
-                  }
-                  download={
-                    media.url
-                      ? `artcraft-${media.token || (media.isVideo ? "video" : "image")}`
-                      : undefined
-                  }
-                  aria-disabled={!media.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <FontAwesomeIcon icon={faArrowDownToLine} />
-                  Download
-                </a>
-              </div>
-              <Button
-                icon={faArrowDownToLine}
-                className="w-full shadow-lg shadow-brand-primary/20"
-                variant="primary"
-                onClick={() => {
-                  window.location.href = "/download";
-                }}
-              >
-                Download ArtCraft
-              </Button>
-            </div>
-          </div>
+          <LightboxDetails
+            promptData={
+              mediaRecordLoading ? { ...EMPTY_PROMPT, loading: true } : promptData
+            }
+            mediaToken={media.token}
+            mediaUrl={media.url}
+            mediaWidth={media.width}
+            mediaHeight={media.height}
+            createdAt={media.createdAt}
+            creator={media.creator}
+            onRecreate={recreateMediaClass ? handleRecreate : undefined}
+            showDownloadAppCta
+          />
         </div>
       </div>
     </div>

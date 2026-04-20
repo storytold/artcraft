@@ -305,21 +305,27 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       ],
     );
 
-    // Build a regex that matches all known @-mention labels
+    // Build a regex that matches all known @-mention labels. Case-insensitive
+    // so a typed `@image1` still highlights when the canonical label is
+    // `@Image1`.
     const mentionRegex = useMemo(() => {
       if (!mentionItems?.length) return null;
-      // Escape special regex characters in labels and sort longest first
       const escaped = mentionItems
         .map((m) => m.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
         .sort((a, b) => b.length - a.length);
-      return new RegExp(`(${escaped.join("|")})`, "g");
+      return new RegExp(`(${escaped.join("|")})`, "gi");
     }, [mentionItems]);
 
-    // Set of valid mention labels for fast lookup
-    const mentionLabelSet = useMemo(
-      () => new Set(mentionItems?.map((m) => m.label)),
-      [mentionItems],
-    );
+    // Lower-cased label → canonical label lookup, so the split-parts match
+    // against the original case-sensitive mentionItems regardless of how the
+    // user capitalized their mention.
+    const mentionLabelMap = useMemo(() => {
+      const m = new Map<string, string>();
+      for (const item of mentionItems ?? []) {
+        m.set(item.label.toLowerCase(), item.label);
+      }
+      return m;
+    }, [mentionItems]);
 
     // Build label → color map for MentionTextarea
     const mentionColorMap = useMemo(() => {
@@ -336,12 +342,13 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       if (!hasMentionItems || !mentionRegex) return null;
       const parts = prompt.split(mentionRegex);
       return parts.map((part, i) => {
-        if (mentionLabelSet.has(part)) {
+        const canonical = mentionLabelMap.get(part.toLowerCase());
+        if (canonical) {
           return (
             <span
               key={i}
               style={{
-                color: getMentionColor(part, mentionItems),
+                color: getMentionColor(canonical, mentionItems),
                 fontWeight: 600,
               }}
             >
@@ -351,7 +358,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
         }
         return <span key={i}>{part}</span>;
       });
-    }, [prompt, hasMentionItems, mentionRegex, mentionLabelSet, mentionItems]);
+    }, [prompt, hasMentionItems, mentionRegex, mentionLabelMap, mentionItems]);
 
     return (
       <div ref={ref}>

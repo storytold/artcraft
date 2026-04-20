@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { RecreatePayload } from "../../lib/recreate";
 
 export interface GeneratedVideo {
   media_token: string;
@@ -33,7 +34,10 @@ export type VideoUiState = {
 type CreateVideoState = {
   batches: VideoBatch[];
   ui: VideoUiState;
+  pendingRecreate: RecreatePayload | null;
   setUi: (patch: Partial<VideoUiState>) => void;
+  setPendingRecreate: (payload: RecreatePayload | null) => void;
+  consumePendingRecreate: () => RecreatePayload | null;
   startBatch: (prompt: string, modelLabel: string) => string;
   setBatchJobToken: (batchId: string, jobToken: string) => void;
   completeBatch: (batchId: string, video: GeneratedVideo) => void;
@@ -54,12 +58,21 @@ const DEFAULT_UI: VideoUiState = {
   numVideos: 1,
 };
 
-export const useCreateVideoStore = create<CreateVideoState>((set) => ({
+export const useCreateVideoStore = create<CreateVideoState>((set, get) => ({
   batches: [],
   ui: { ...DEFAULT_UI },
+  pendingRecreate: null,
 
   setUi: (patch) =>
     set((s) => ({ ui: { ...s.ui, ...patch } })),
+
+  setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
+
+  consumePendingRecreate: () => {
+    const payload = get().pendingRecreate;
+    if (payload) set({ pendingRecreate: null });
+    return payload;
+  },
 
   startBatch: (prompt, modelLabel) => {
     const id = crypto.randomUUID();

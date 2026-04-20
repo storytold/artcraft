@@ -19,6 +19,7 @@ import {
   CreateMediaPageShell,
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
+import { AppDownloadCta } from "../../components/app-download-cta/AppDownloadCta";
 import { useCreateImageStore } from "./create-image-store";
 import { enqueueImageGeneration, startPolling } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
@@ -29,7 +30,6 @@ import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
   useOmniGenImageModels,
   getModelCreatorIconPath,
-  getModelDisplayName,
 } from "../../lib/omni-gen-hooks";
 
 // ── Constants ────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ function buildModelPopoverItems(
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
   return models.map((model) => ({
-    label: getModelDisplayName(model.model, model.full_name),
+    label: model.full_name || model.model,
     selected: model.model === selectedId,
     icon: (
       <img
@@ -169,6 +169,23 @@ export default function CreateImage() {
     gallery.isInitialLoading;
 
   // ── Effects ──────────────────────────────────────────────────────────────
+
+  // Consume a pending recreate payload (set by the lightbox Recreate button)
+  // and populate the promptbox fields. Does NOT trigger generation. Subscribes
+  // to the store so it fires even when the user is already on this route.
+  const pendingRecreate = useCreateImageStore((s) => s.pendingRecreate);
+  useEffect(() => {
+    if (!pendingRecreate) return;
+    const payload = useCreateImageStore.getState().consumePendingRecreate();
+    if (!payload) return;
+    setReferenceImages(payload.referenceImages);
+    setUi({
+      prompt: payload.prompt,
+      ...(payload.aspectRatio ? { aspectRatio: payload.aspectRatio } : {}),
+      ...(payload.resolution ? { resolution: payload.resolution } : {}),
+      ...(payload.modelId ? { selectedModelId: payload.modelId } : {}),
+    });
+  }, [pendingRecreate, setUi]);
 
   // Resume polling for pending batches
   useEffect(() => {
@@ -346,11 +363,12 @@ export default function CreateImage() {
       }
       promptBox={
         <div
+          ref={promptBoxRef}
           className="animate-fade-in-up fixed bottom-2 sm:bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4"
           style={{ animationDelay: "150ms" }}
         >
+          <AppDownloadCta />
           <PromptBox
-            ref={promptBoxRef}
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleGenerate}

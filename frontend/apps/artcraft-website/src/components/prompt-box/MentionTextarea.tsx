@@ -329,14 +329,25 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       );
     }, [mentionItems, mentionState.isOpen, mentionState.query]);
 
-    // Build a regex that matches any known mention label
+    // Build a regex that matches any known mention label. Case-insensitive so
+    // a typed `@image1` still highlights when the canonical label is `@Image1`.
+    // Sort longest-first so `@Pumpkin Head` matches before `@Pumpkin`.
     const mentionRegex = useMemo(() => {
       const labels = mentionItems.map((item) => item.label);
       if (labels.length === 0) return null;
       const sorted = [...labels].sort((a, b) => b.length - a.length);
       const pattern = sorted.map((l) => escapeRegex(l)).join("|");
-      return new RegExp(`(${pattern})`, "g");
+      return new RegExp(`(${pattern})`, "gi");
     }, [mentionItems]);
+
+    // Case-insensitive colorMap lookup: "@image1" finds "@Image1".
+    const lowerColorMap = useMemo(() => {
+      const m: Record<string, string> = {};
+      for (const [k, v] of Object.entries(colorMap)) {
+        m[k.toLowerCase()] = v;
+      }
+      return m;
+    }, [colorMap]);
 
     // Build innerHTML with colored @mentions inline
     const buildHTML = useCallback(
@@ -356,7 +367,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         while ((match = regex.exec(text)) !== null) {
           const fullMatch = match[0];
-          const color = colorMap[fullMatch];
+          const color = lowerColorMap[fullMatch.toLowerCase()];
 
           if (match.index > lastIndex) {
             html += escapeHTML(text.slice(lastIndex, match.index));
@@ -382,7 +393,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
 
         return html;
       },
-      [colorMap, mentionRegex],
+      [lowerColorMap, mentionRegex],
     );
 
     // Sync DOM when value changes from parent
@@ -439,12 +450,18 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
       }
     }, []);
 
-    // Detect @mention trigger from cursor position
+    // Detect @mention trigger from cursor position. The `@` is a valid mention
+    // trigger when it follows anything that isn't a word character — that covers
+    // whitespace, punctuation, CJK/Chinese text, emoji, line starts, etc. Only
+    // reject it when it's sitting mid-word after an alphanumeric/underscore.
     const detectMention = useCallback(
       (text: string, cursorPos: number) => {
         const textBefore = text.slice(0, cursorPos);
         const lastAt = textBefore.lastIndexOf("@");
-        if (lastAt !== -1 && (lastAt === 0 || /\s/.test(text[lastAt - 1]))) {
+        if (
+          lastAt !== -1 &&
+          (lastAt === 0 || !/[A-Za-z0-9_]/.test(text[lastAt - 1]))
+        ) {
           const query = text.slice(lastAt, cursorPos);
           if (!query.includes("\n")) {
             const pos = getOffsetRect(lastAt);

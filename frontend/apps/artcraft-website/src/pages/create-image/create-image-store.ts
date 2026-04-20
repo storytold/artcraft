@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { RecreatePayload } from "../../lib/recreate";
 
 export interface GeneratedImage {
   media_token: string;
@@ -30,7 +31,10 @@ export type ImageUiState = {
 type CreateImageState = {
   batches: ImageBatch[];
   ui: ImageUiState;
+  pendingRecreate: RecreatePayload | null;
   setUi: (patch: Partial<ImageUiState>) => void;
+  setPendingRecreate: (payload: RecreatePayload | null) => void;
+  consumePendingRecreate: () => RecreatePayload | null;
   startBatch: (
     prompt: string,
     requestedCount: number,
@@ -53,12 +57,21 @@ const DEFAULT_UI: ImageUiState = {
   quality: undefined,
 };
 
-export const useCreateImageStore = create<CreateImageState>((set) => ({
+export const useCreateImageStore = create<CreateImageState>((set, get) => ({
   batches: [],
   ui: { ...DEFAULT_UI },
+  pendingRecreate: null,
 
   setUi: (patch) =>
     set((s) => ({ ui: { ...s.ui, ...patch } })),
+
+  setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
+
+  consumePendingRecreate: () => {
+    const payload = get().pendingRecreate;
+    if (payload) set({ pendingRecreate: null });
+    return payload;
+  },
 
   startBatch: (prompt, requestedCount, modelLabel) => {
     const id = crypto.randomUUID();

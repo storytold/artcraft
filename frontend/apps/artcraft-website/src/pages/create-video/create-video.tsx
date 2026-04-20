@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClock,
@@ -32,6 +33,7 @@ import {
   CreateMediaPageShell,
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
+import { AppDownloadCta } from "../../components/app-download-cta/AppDownloadCta";
 import { useCreateVideoStore } from "./create-video-store";
 import {
   enqueueVideoGeneration,
@@ -46,7 +48,6 @@ import { useVideoCostEstimate } from "../../lib/cost-estimate-api";
 import {
   useOmniGenVideoModels,
   getModelCreatorIconPath,
-  getModelDisplayName,
 } from "../../lib/omni-gen-hooks";
 
 // ── Constants ────────────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ function buildModelPopoverItems(
 ): PopoverItem[] {
   _modelLookup = new Map(models.map((m) => [m.model, m]));
   return models.map((model) => ({
-    label: getModelDisplayName(model.model, model.full_name),
+    label: model.full_name || model.model,
     selected: model.model === selectedId,
     icon: (
       <img
@@ -440,6 +441,44 @@ export default function CreateVideo() {
 
   // ── Effects ──────────────────────────────────────────────────────────────
 
+  // Consume a pending recreate payload (set by the lightbox Recreate button)
+  // and populate the promptbox fields. Does NOT trigger generation. Subscribes
+  // to the store so it fires even when the user is already on this route.
+  //
+  // References must commit BEFORE the prompt so the mention highlighter (which
+  // builds its label regex from `referenceImages`/`referenceVideos`/etc.) knows
+  // about every `@ImageN` before the contentEditable does its DOM sync. Without
+  // this ordering, only the last reference's mention would end up colored.
+  const pendingRecreate = useCreateVideoStore((s) => s.pendingRecreate);
+  useEffect(() => {
+    if (!pendingRecreate) return;
+    const payload = useCreateVideoStore.getState().consumePendingRecreate();
+    if (!payload) return;
+
+    flushSync(() => {
+      setReferenceImages(payload.referenceImages);
+      setEndFrameImage(payload.endFrameImage);
+      setReferenceVideos(payload.referenceVideos ?? []);
+      setReferenceAudios(payload.referenceAudios ?? []);
+      setUi({
+        ...(payload.modelId ? { selectedModelId: payload.modelId } : {}),
+        ...(payload.inputMode ? { inputMode: payload.inputMode } : {}),
+      });
+    });
+
+    setUi({
+      prompt: payload.prompt,
+      ...(payload.aspectRatio ? { selectedSize: payload.aspectRatio } : {}),
+      ...(payload.resolution ? { resolution: payload.resolution } : {}),
+      ...(payload.durationSeconds != null
+        ? { duration: payload.durationSeconds }
+        : {}),
+      ...(payload.generateWithSound != null
+        ? { generateWithSound: payload.generateWithSound }
+        : {}),
+    });
+  }, [pendingRecreate, setUi]);
+
   useEffect(() => {
     const cleanups = pollingCleanupsRef.current;
     const pendingBatches = useCreateVideoStore
@@ -770,6 +809,7 @@ export default function CreateVideo() {
       }
       promptBox={
         <div
+          ref={promptBoxRef}
           className="animate-fade-in-up fixed bottom-2 sm:bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4"
           style={{ animationDelay: "150ms" }}
         >
@@ -782,8 +822,8 @@ export default function CreateVideo() {
               </span>
             </div>
           )} */}
+          <AppDownloadCta />
           <PromptBox
-            ref={promptBoxRef}
             prompt={prompt}
             onPromptChange={setPrompt}
             onSubmit={handleGenerate}
