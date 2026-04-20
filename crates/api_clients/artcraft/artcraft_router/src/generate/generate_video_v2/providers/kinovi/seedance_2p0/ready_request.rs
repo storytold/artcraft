@@ -13,7 +13,7 @@ pub struct KinoviSeedance2p0ReadyRequest {
 
 impl KinoviSeedance2p0ReadyRequest {
   
-  pub async fn from_ready_request(
+  pub async fn from_draft(
     mut request: KinoviSeedance2p0DraftRequest,
     client: &RouterSeedance2ProClient,
   ) -> Result<Self, ArtcraftRouterError> {

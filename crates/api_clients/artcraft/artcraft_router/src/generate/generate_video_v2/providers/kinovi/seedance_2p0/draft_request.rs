@@ -1,7 +1,8 @@
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
-use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::type_conversions::{map_common_resolution_to_kinovi, plan_aspect_ratio, plan_batch_count, plan_duration};
+use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::type_conversions::{map_common_resolution_to_kinovi, plan_aspect_ratio, plan_batch_count, plan_duration};
+use crate::generate::generate_video_v2::video_generation_draft_request::VideoGenerationDraftRequest;
 use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviGenerateVideoRequest, KinoviModelType, KinoviOutputResolution};
 
 #[derive(Debug, Clone)]
@@ -24,7 +25,7 @@ pub struct KinoviSeedance2p0DraftRequest {
 
   // Pending types that need to be queried.
 
-  pub remaining_request: Option<GenerateVideoRequest>,
+  pub remaining_request: Option<GenerateVideoRequestBuilder>,
 
   // pub start_frame: Option<ImageRef>,
   // pub end_frame: Option<ImageRef>,
@@ -35,7 +36,7 @@ pub struct KinoviSeedance2p0DraftRequest {
 }
 
 impl KinoviSeedance2p0DraftRequest {
-  pub fn from_request(mut request: GenerateVideoRequest) -> Result<Self, ArtcraftRouterError> {
+  pub fn from_builder(mut request: GenerateVideoRequestBuilder) -> Result<VideoGenerationDraftRequest, ArtcraftRouterError> {
     let strategy = request.request_mismatch_mitigation_strategy;
 
     let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
@@ -45,14 +46,14 @@ impl KinoviSeedance2p0DraftRequest {
     let prompt = request.prompt.take().unwrap_or_default();
 
     // TODO: Fill out body
-    Ok(Self {
+    Ok(VideoGenerationDraftRequest::KinoviSeedance2p0(Self {
       aspect_ratio,
       resolution,
       batch_count,
       duration_seconds,
       prompt,
       remaining_request: Some(request),
-    })
+    }))
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {

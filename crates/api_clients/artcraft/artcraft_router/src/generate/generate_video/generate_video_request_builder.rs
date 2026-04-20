@@ -9,17 +9,17 @@ use crate::api::provider::Provider;
 use crate::api::video_list_ref::VideoListRef;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_pro::plan_generate_video_artcraft_kling3p0_pro;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::plan_generate_video_artcraft_kling3p0_standard;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_1_6_pro::plan_generate_video_artcraft_kling_1_6_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_1_master::plan_generate_video_artcraft_kling_2_1_master;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_1_pro::plan_generate_video_artcraft_kling_2_1_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_5_turbo_pro::plan_generate_video_artcraft_kling_2_5_turbo_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling_2_6_pro::plan_generate_video_artcraft_kling_2_6_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_pro::plan_generate_video_artcraft_kling3p0_pro;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_kling3p0_standard::plan_generate_video_artcraft_kling3p0_standard;
-use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance_1_0_lite::plan_generate_video_artcraft_seedance_1_0_lite;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0_fast::plan_generate_video_artcraft_seedance2p0_fast;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance_1_0_lite::plan_generate_video_artcraft_seedance_1_0_lite;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_sora_2::plan_generate_video_artcraft_sora_2;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_sora_2_pro::plan_generate_video_artcraft_sora_2_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_2::plan_generate_video_artcraft_veo_2;
@@ -47,6 +47,8 @@ use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seed
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::plan_generate_video_seedance2pro_seedance2p0;
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::plan_generate_video_seedance2pro_seedance2p0_fast;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft_request::KinoviSeedance2p0DraftRequest;
+use crate::generate::generate_video_v2::video_generation_draft_request::VideoGenerationDraftRequest;
 
 /// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
 /// This works across multiple providers by shaping a generic "GenerateVideoRequest" into a provider-specific plan.
@@ -110,6 +112,13 @@ pub struct GenerateVideoRequestBuilder {
 }
 
 impl GenerateVideoRequestBuilder {
+  pub fn to_draft(self) -> Result<VideoGenerationDraftRequest, ArtcraftRouterError> {
+    match (self.provider, self.model) {
+      (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => Ok(KinoviSeedance2p0DraftRequest::from_builder(self)?),
+      _ => self.unsupported_provider_and_model(),
+    }
+  }
+  
   /// Read the video generation request, construct a plan, then yield a means to execute it.
   pub fn build(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     match self.provider {
@@ -185,6 +194,12 @@ impl GenerateVideoRequestBuilder {
   fn unsupported_provider(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     Err(ArtcraftRouterError::UnsupportedModel(
       format!("Video generation for model `{:?}` is not supported for provider {:?}", self.model, self.provider)
+    ))
+  }
+
+  fn unsupported_provider_and_model(&self) -> Result<VideoGenerationDraftRequest, ArtcraftRouterError> {
+    Err(ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(
+      format!("Video generation for model `{:?}` is not supported for provider {:?} using the new API", self.model, self.provider)
     ))
   }
 
