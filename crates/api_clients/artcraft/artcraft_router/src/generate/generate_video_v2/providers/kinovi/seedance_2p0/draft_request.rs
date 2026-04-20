@@ -1,10 +1,8 @@
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::generate_video_request::GenerateVideoRequest;
-use crate::generate::generate_video::providers::kinovi::seedance_2p0::type_conversions::{map_common_resolution_to_kinovi, plan_aspect_ratio, plan_batch_count, plan_duration};
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::type_conversions::{map_common_resolution_to_kinovi, plan_aspect_ratio, plan_batch_count, plan_duration};
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use seedance2pro_client::requests::generate_video::generate_video::{
-  GenerateVideoRequest as SeedanceGenerateVideoRequest,
-  KinoviAspectRatio, KinoviBatchCount, KinoviModelType, KinoviOutputResolution};
+use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviGenerateVideoRequest, KinoviModelType, KinoviOutputResolution};
 
 #[derive(Debug, Clone)]
 pub struct KinoviSeedance2p0DraftRequest {
@@ -58,7 +56,7 @@ impl KinoviSeedance2p0DraftRequest {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    let request = SeedanceGenerateVideoRequest {
+    let request = KinoviGenerateVideoRequest {
       model_type: KinoviModelType::Seedance2Pro,
       prompt: self.prompt.clone(),
       aspect_ratio: self.aspect_ratio,
