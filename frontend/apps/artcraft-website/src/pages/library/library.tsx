@@ -16,24 +16,10 @@ import {
   faImage,
   faVideo,
 } from "@fortawesome/pro-solid-svg-icons";
-import {
-  getMediaThumbnail,
-  THUMBNAIL_SIZES,
-  PLACEHOLDER_IMAGES,
-} from "@storyteller/common";
+import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { Lightbox } from "../../components/lightbox/lightbox";
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-interface GalleryItem {
-  id: string;
-  label: string;
-  thumbnail: string | null;
-  fullImage: string | null;
-  createdAt: string;
-  mediaClass: string;
-  batchImageToken?: string;
-}
+import { GalleryCard } from "../../components/generation-gallery/GalleryCard";
+import type { GalleryItem } from "../../components/generation-gallery/useGalleryData";
 
 const PAGE_SIZE = 60;
 
@@ -149,6 +135,7 @@ export default function Library() {
       fullImage: item.media_links?.cdn_url || null,
       createdAt: item.created_at,
       mediaClass: item.media_class || "image",
+      modelId: item.maybe_model_type || undefined,
       batchImageToken: item.maybe_batch_token,
     };
   }, []);
@@ -273,10 +260,15 @@ export default function Library() {
     setAllItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
+  const handleCardClick = useCallback((item: GalleryItem) => {
+    setLightboxItem(item);
+    setLightboxOpen(true);
+  }, []);
+
   // Not logged in
   if (isLoggedIn === false) {
     return (
-      <div className="relative min-h-screen w-full bg-dots flex items-center justify-center px-4">
+      <div className="relative min-h-screen w-full bg-[#101014] flex items-center justify-center px-4">
         <div className="text-center space-y-6">
           <h1 className="text-3xl font-bold text-white">My Library</h1>
           <p className="text-white/60 text-lg max-w-md mx-auto">
@@ -308,14 +300,14 @@ export default function Library() {
   // Loading auth
   if (isLoggedIn === null) {
     return (
-      <div className="relative min-h-screen w-full bg-dots flex items-center justify-center">
+      <div className="relative min-h-screen w-full bg-[#101014] flex items-center justify-center">
         <LoadingSpinner className="h-10 w-10 text-white/60" />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-dots pt-14 sm:pt-20 pb-8 px-3 sm:px-4 md:px-8 lg:px-12">
+    <div className="relative min-h-screen w-full bg-[#101014] pt-14 sm:pt-20 pb-8 px-3 sm:px-4 md:px-8 lg:px-12">
       <div className="mx-auto max-w-[1600px]">
         {/* Header — sticky below navbar */}
         <div className="sticky top-12 sm:top-16 z-10 -mx-3 sm:-mx-4 md:-mx-8 lg:-mx-12 px-3 sm:px-4 md:px-8 lg:px-12 pb-3 pt-3 bg-[#101014]">
@@ -370,8 +362,8 @@ export default function Library() {
             <div className="space-y-6">
               <div>
                 <div className="h-4 w-24 rounded bg-white/[0.06] mb-3" />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
-                  {Array.from({ length: 18 }).map((_, i) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
+                  {Array.from({ length: 15 }).map((_, i) => (
                     <div
                       key={i}
                       className="aspect-square rounded-lg overflow-hidden"
@@ -419,65 +411,14 @@ export default function Library() {
                   <h3 className="text-sm font-medium text-white/50 mb-2">
                     {date}
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
                     {dateItems.map((item) => (
-                      <button
+                      <GalleryCard
                         key={item.id}
-                        className="group relative aspect-square overflow-hidden rounded-lg bg-ui-controls/40 transition-all hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400"
-                        onClick={() => {
-                          setLightboxItem(item);
-                          setLightboxOpen(true);
-                        }}
-                      >
-                        {item.thumbnail ? (
-                          <img
-                            src={item.thumbnail}
-                            alt={item.label}
-                            loading="lazy"
-                            className="h-full w-full object-cover"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              if (target.dataset.fallback) return;
-                              target.dataset.fallback = "1";
-                              target.src = PLACEHOLDER_IMAGES.DEFAULT;
-                              target.style.opacity = "0.3";
-                            }}
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <FontAwesomeIcon
-                              icon={
-                                item.mediaClass === "video"
-                                  ? faVideo
-                                  : item.mediaClass === "dimensional"
-                                    ? faCube
-                                    : faImage
-                              }
-                              className="text-xl text-white/20"
-                            />
-                          </div>
-                        )}
-                        {/* Video badge */}
-                        {item.mediaClass === "video" && (
-                          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
-                            <FontAwesomeIcon
-                              icon={faVideo}
-                              className="text-[8px]"
-                            />
-                            Video
-                          </div>
-                        )}
-                        {/* Mesh badge */}
-                        {item.mediaClass === "dimensional" && (
-                          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
-                            <FontAwesomeIcon
-                              icon={faCube}
-                              className="text-[8px]"
-                            />
-                            3D
-                          </div>
-                        )}
-                      </button>
+                        item={item}
+                        onClick={handleCardClick}
+                        shape="square"
+                      />
                     ))}
                   </div>
                 </div>

@@ -1,16 +1,28 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faArrowDownToLine,
+  faArrowRotateRight,
+  faCheck,
   faCube,
   faImage,
+  faLink,
   faSpinnerThird,
   faVideo,
 } from "@fortawesome/pro-solid-svg-icons";
-import { PLACEHOLDER_IMAGES } from "@storyteller/common";
+import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
+import { Tooltip } from "@storyteller/ui-tooltip";
+import { toast } from "@storyteller/ui-toaster";
 import {
   getModelCreatorIconPath,
   getModelDisplayName,
 } from "../../lib/omni-gen-hooks";
+import {
+  applyRecreateFromMediaToken,
+  type RecreateMediaClass,
+} from "../../lib/recreate";
+import { SHARE_URL_BASE } from "../lightbox/shared";
 import type { GalleryItem } from "./useGalleryData";
 
 // ── Persistent aspect ratio cache ─────────────────────────────────────────
@@ -91,15 +103,29 @@ const RETRY_INTERVAL = 5000;
 interface GalleryCardProps {
   item: GalleryItem;
   onClick: (item: GalleryItem) => void;
+  // "auto" = dynamic aspect ratio from the loaded image (masonry layouts).
+  // "square" = fixed 1:1; skips the ratio measurement path (uniform grids).
+  shape?: "auto" | "square";
 }
 
 export const GalleryCard = memo(function GalleryCard({
   item,
   onClick,
+  shape = "auto",
 }: GalleryCardProps) {
+  const isSquare = shape === "square";
+  const navigate = useNavigate();
   const cached = aspectRatioCache.get(item.id);
   const [ratio, setRatio] = useState<number | undefined>(cached);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [isRecreating, setIsRecreating] = useState(false);
   const isVideo = item.mediaClass === "video";
+  const is3D = item.mediaClass === "dimensional";
+  const recreateMediaClass: RecreateMediaClass | null = isVideo
+    ? "video"
+    : is3D
+      ? null
+      : "image";
 
   // Video thumbnail retry — "retrying" flips to true only after the first
   // error, so videos with ready thumbnails render the normal <img> path
@@ -147,11 +173,11 @@ export const GalleryCard = memo(function GalleryCard({
 
   const displayRatio = ratio ? Math.min(ratio, MAX_RATIO) : 1;
 
-  const style: React.CSSProperties = {
-    aspectRatio: `1 / ${displayRatio}`,
-    contentVisibility: "auto",
-    containIntrinsicSize: "auto 200px",
-  };
+  // In square mode the wrapper sets the ratio via `aspect-square`; we only
+  // compute the dynamic aspectRatio for masonry-style layouts.
+  const outerStyle: React.CSSProperties | undefined = isSquare
+    ? undefined
+    : { aspectRatio: `1 / ${displayRatio}` };
 
   const modelDisplayName = item.modelId
     ? getModelDisplayName(item.modelId)
@@ -208,67 +234,174 @@ export const GalleryCard = memo(function GalleryCard({
     [isVideo, scheduleRetry],
   );
 
+  const handleRecreate = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!recreateMediaClass || isRecreating) return;
+      setIsRecreating(true);
+      try {
+        await applyRecreateFromMediaToken(item.id, recreateMediaClass, navigate);
+      } finally {
+        setIsRecreating(false);
+      }
+    },
+    [item.id, recreateMediaClass, navigate, isRecreating],
+  );
+
+  const handleShare = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(`${SHARE_URL_BASE}${item.id}`);
+        toast.success("Share link copied");
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 1500);
+      } catch {
+        toast.error("Unable to copy link");
+      }
+    },
+    [item.id],
+  );
+
+  const handleCardClick = useCallback(() => {
+    onClick(item);
+  }, [item, onClick]);
+
+  const handleCardKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onClick(item);
+      }
+    },
+    [item, onClick],
+  );
+
+  const downloadHref = item.fullImage
+    ? addCorsParam(item.fullImage) || item.fullImage
+    : undefined;
+
   return (
-    <button
-      className="group relative block w-full overflow-hidden rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400"
-      style={style}
-      onClick={() => onClick(item)}
+    <div
+      role="button"
+      tabIndex={0}
+      className={`group relative block w-full rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 cursor-pointer ${isSquare ? "aspect-square" : ""}`}
+      style={outerStyle}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
     >
-      {retrying ? (
-        <>
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-            <FontAwesomeIcon
-              icon={faSpinnerThird}
-              className="animate-spin text-lg text-white/30"
+      {/* Media layer — kept in its own overflow-hidden box so the hover
+          overlay below (including tooltips from the action pill) can render
+          outside the card's rounded corners without being clipped. */}
+      <div
+        className="absolute inset-0 overflow-hidden rounded-[inherit]"
+        style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
+      >
+        {retrying ? (
+          <>
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+              <FontAwesomeIcon
+                icon={faSpinnerThird}
+                className="animate-spin text-lg text-white/30"
+              />
+              <span className="text-[10px] text-white/30">
+                Loading thumbnail…
+              </span>
+            </div>
+            {/* Hidden img retries in background via ref — zero re-renders */}
+            <img
+              ref={retryImgRef}
+              src={item.thumbnail!}
+              alt=""
+              className="absolute h-0 w-0 opacity-0"
+              aria-hidden
+              onLoad={handleLoad}
+              onError={handleError}
             />
-            <span className="text-[10px] text-white/30">
-              Loading thumbnail…
-            </span>
-          </div>
-          {/* Hidden img retries in background via ref — zero re-renders */}
+          </>
+        ) : item.thumbnail ? (
           <img
-            ref={retryImgRef}
-            src={item.thumbnail!}
-            alt=""
-            className="absolute h-0 w-0 opacity-0"
-            aria-hidden
+            src={item.thumbnail}
+            alt={item.label}
+            loading="lazy"
+            decoding="async"
+            className="block h-full w-full object-cover"
             onLoad={handleLoad}
             onError={handleError}
           />
-        </>
-      ) : item.thumbnail ? (
-        <img
-          src={item.thumbnail}
-          alt={item.label}
-          loading="lazy"
-          decoding="async"
-          className="block h-full w-full object-cover"
-          onLoad={handleLoad}
-          onError={handleError}
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <FontAwesomeIcon icon={mediaIcon} className="text-xl text-white/20" />
-        </div>
-      )}
-
-      {/* Hover overlay with media type + model badges */}
-      <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
-        <div className="flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
-          <FontAwesomeIcon icon={mediaIcon} className="text-[8px]" />
-          {mediaLabel}
-        </div>
-        {modelDisplayName && modelIconPath && (
-          <div className="flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white/80">
-            <img
-              src={modelIconPath}
-              alt=""
-              className="h-3 w-3 icon-auto-contrast"
-            />
-            <span className="max-w-[100px] truncate">{modelDisplayName}</span>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <FontAwesomeIcon icon={mediaIcon} className="text-xl text-white/20" />
           </div>
         )}
       </div>
-    </button>
+
+      {/* Hover overlay with media type + model badges and quick actions */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-6 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="pointer-events-auto flex min-w-0 flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1.5 rounded-lg bg-black/60 px-2.5 py-1 text-xs font-medium text-white/90">
+            <FontAwesomeIcon icon={mediaIcon} className="text-[10px]" />
+            {mediaLabel}
+          </div>
+          {modelDisplayName && modelIconPath && (
+            <div className="flex items-center gap-1 rounded-lg bg-black/60 px-2 py-1 text-[10px] text-white/80">
+              <img
+                src={modelIconPath}
+                alt=""
+                className="h-3 w-3 icon-auto-contrast"
+              />
+              <span className="max-w-[100px] truncate">{modelDisplayName}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="pointer-events-auto flex shrink-0 items-center gap-0.5 rounded-lg bg-black/60 p-1 backdrop-blur-sm">
+          {recreateMediaClass && (
+            <Tooltip content="Recreate" position="top">
+              <button
+                type="button"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white disabled:opacity-60"
+                onClick={handleRecreate}
+                disabled={isRecreating}
+                aria-label="Recreate"
+              >
+                <FontAwesomeIcon
+                  icon={isRecreating ? faSpinnerThird : faArrowRotateRight}
+                  className={`text-sm ${isRecreating ? "animate-spin" : ""}`}
+                />
+              </button>
+            </Tooltip>
+          )}
+          <Tooltip content={shareCopied ? "Copied" : "Share"} position="top">
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+              onClick={handleShare}
+              aria-label="Share"
+            >
+              <FontAwesomeIcon
+                icon={shareCopied ? faCheck : faLink}
+                className="text-sm"
+              />
+            </button>
+          </Tooltip>
+          {downloadHref && (
+            <Tooltip content="Download" position="top">
+              <a
+                href={downloadHref}
+                download={`artcraft-${item.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+                aria-label="Download"
+              >
+                <FontAwesomeIcon icon={faArrowDownToLine} className="text-sm" />
+              </a>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </div>
   );
 });
