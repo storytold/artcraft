@@ -47,6 +47,7 @@ use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seed
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::plan_generate_video_seedance2pro_seedance2p0;
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::plan_generate_video_seedance2pro_seedance2p0_fast;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
+use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::build::build_artcraft_seedance_2p0;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -140,6 +141,7 @@ impl GenerateVideoRequestBuilder {
 
   pub fn use_new_builder(&self) -> bool {
     match (self.provider, self.model) {
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0) => true,
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => true,
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0Fast) => true,
       _ => false,
@@ -149,6 +151,7 @@ impl GenerateVideoRequestBuilder {
   // New builder (transitional state)
   pub fn build2(self) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
+      (Provider::Artcraft, CommonVideoModel::Seedance2p0) => build_artcraft_seedance_2p0(self),
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0Fast) => build_kinovi_seedance_2p0_fast(self),
       _ => self.unsupported_provider_and_model(),

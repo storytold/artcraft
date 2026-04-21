@@ -28,7 +28,7 @@ VideoGenerationDraftOrRequest
     │       ▼
     │   GenerateVideoResponse
     │
-    └─ Request(VideoGenerationRequest)  ← skips draft phase (not used yet)
+    └─ Request(VideoGenerationRequest)  ← skips draft phase (used by Artcraft provider)
 ```
 
 ### Key types
@@ -38,7 +38,9 @@ VideoGenerationDraftOrRequest
   gates which provider+model combos use the v2 path. `build2()` dispatches to the correct
   provider's build function.
 
-- **`VideoGenerationDraftOrRequest`** — the output of `build2()`. Currently always `Draft`.
+- **`VideoGenerationDraftOrRequest`** — the output of `build2()`. Either `Draft` (for providers
+  that need media upload/resolution, like Kinovi) or `Request` (for providers that work with
+  media file tokens directly, like Artcraft).
 
 - **`VideoGenerationDraftRequest`** — enum with one variant per provider+model. Holds
   materialized settings (resolution, duration, batch count) plus unresolved media references.
@@ -68,6 +70,12 @@ generate_video_v2/
 ├── video_generation_draft_or_request.rs
 ├── video_generation_request.rs         ← VideoGenerationRequest enum
 └── providers/
+    ├── artcraft/                       ← Artcraft provider (uses media file tokens directly)
+    │   └── seedance_2p0/              ← Seedance 2.0 Pro model (skips draft, returns Request directly)
+    │       ├── mod.rs
+    │       ├── build.rs               ← builder → Request conversion + plan helpers
+    │       ├── cost.rs                ← standalone cost estimation (independent of seedance2pro_client)
+    │       └── request.rs             ← request state + send() via Artcraft omni-gen API
     └── kinovi/                         ← Kinovi/Seedance2Pro provider
         ├── mod.rs
         ├── resolve.rs                  ← shared: media token resolution, upload helpers
@@ -93,13 +101,17 @@ generate_video_v2/
    - `build.rs` — `build_{provider}_{model}(builder) -> VideoGenerationDraftOrRequest`.
      Contains `plan_*` helpers for aspect ratio, resolution, batch count, duration.
    - `draft.rs` — draft state struct with `to_request()` async method for finalization.
-   - `cost.rs` — cost state with `from_draft()`, `from_request()`, and `estimate_cost()`.
+     **Not needed** if the provider uses media tokens directly (no upload/resolution needed);
+     in that case `build.rs` returns `VideoGenerationDraftOrRequest::Request(...)` directly.
+   - `cost.rs` — cost state with `from_request()` and `estimate_cost()`. Add `from_draft()`
+     if the provider uses the draft phase.
    - `request.rs` — request state with `send()` async method.
 
 2. **Register the module** in the parent provider's `mod.rs`.
 
 3. **Add enum variants** in:
    - `video_generation_draft.rs` — `VideoGenerationDraftRequest` enum + `estimate_cost` + `finalize`
+     (skip if provider has no draft phase)
    - `video_generation_request.rs` — `VideoGenerationRequest` enum + `estimate_cost` + `send_request`
 
 4. **Wire into the builder** in `generate_video_request_builder.rs`:
