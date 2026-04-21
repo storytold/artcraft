@@ -115,7 +115,7 @@ mod tests {
     #[ignore] // manually run — fires a real API request and incurs cost
     async fn res_720p() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A fox walking through a snowy forest.".to_string()),
+        prompt: Some("A golden retriever catching a frisbee on the beach.".to_string()),
         resolution: Some(CommonResolution::SevenTwentyP),
         ..seedance2pro_builder()
       }).await;
@@ -127,7 +127,7 @@ mod tests {
     #[ignore] // manually run — fires a real API request and incurs cost
     async fn res_1080p() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A golden retriever catching a frisbee on the beach.".to_string()),
+        prompt: Some("A fox walking through a snowy forest.".to_string()),
         resolution: Some(CommonResolution::TenEightyP),
         ..seedance2pro_builder()
       }).await;
