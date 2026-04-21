@@ -1,9 +1,5 @@
-use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::type_conversions::{map_common_resolution_to_kinovi, plan_aspect_ratio, plan_batch_count, plan_duration};
-use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
-use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviGenerateVideoRequest, KinoviModelType, KinoviOutputResolution};
+use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviOutputResolution};
 
 #[derive(Debug, Clone)]
 pub struct KinoviSeedance2p0DraftState {
@@ -33,37 +29,4 @@ pub struct KinoviSeedance2p0DraftState {
   // pub reference_videos: Option<VideoListRef>,
   // pub reference_audio: Option<AudioListRef>,
   // pub reference_character_tokens: Option<CharacterListRef>,
-}
-
-impl KinoviSeedance2p0DraftState {
-
-  pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    let request = KinoviGenerateVideoRequest {
-      model_type: KinoviModelType::Seedance2Pro,
-      prompt: self.prompt.clone(),
-      aspect_ratio: self.aspect_ratio,
-      output_resolution: self.resolution,
-      duration_seconds: self.duration_seconds,
-      batch_count: self.batch_count,
-      start_frame_url: None, // TODO
-      end_frame_url: None, // TODO
-      reference_image_urls: None, // TODO
-      reference_video_urls: None, // TODO
-      reference_audio_urls: None, // TODO
-      character_ids: None, // TODO
-      use_face_blur_hack: None,
-    };
-    
-    let cost_in_credits = request.estimate_credits();
-    let cost_in_usd_cents = request.estimate_cost_in_usd_cents();
-
-    VideoGenerationCostEstimate {
-      cost_in_credits: Some(cost_in_credits as u64),
-      cost_in_usd_cents: Some(cost_in_usd_cents),
-      is_free: false,
-      is_unlimited: false,
-      is_rate_limited: false,
-      has_watermark: false,
-    }
-  }
 }

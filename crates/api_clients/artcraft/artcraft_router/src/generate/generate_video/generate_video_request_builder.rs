@@ -114,6 +114,14 @@ pub struct GenerateVideoRequestBuilder {
 }
 
 impl GenerateVideoRequestBuilder {
+
+  pub fn use_new_builder(&self) -> bool {
+    match (self.provider, self.model) {
+      (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => true,
+      _ => false,
+    }
+  }
+
   // New builder (transitional state)
   pub fn build2(self) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
@@ -121,7 +129,7 @@ impl GenerateVideoRequestBuilder {
       _ => self.unsupported_provider_and_model(),
     }
   }
-  
+
   /// Read the video generation request, construct a plan, then yield a means to execute it.
   pub fn build(&self) -> Result<VideoGenerationPlan, ArtcraftRouterError> {
     match self.provider {
