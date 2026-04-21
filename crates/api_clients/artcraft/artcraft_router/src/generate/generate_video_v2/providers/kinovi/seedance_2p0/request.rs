@@ -2,7 +2,7 @@ use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{GenerateVideoResponse, Seedance2proVideoResponsePayload};
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft_request::KinoviSeedance2p0DraftRequest;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftRequest;
 use seedance2pro_client::requests::generate_video::generate_video::{generate_video, GenerateVideoArgs, KinoviGenerateVideoRequest, KinoviModelType};
 
 #[derive(Debug, Clone)]

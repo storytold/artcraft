@@ -47,7 +47,7 @@ use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seed
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::plan_generate_video_seedance2pro_seedance2p0;
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::plan_generate_video_seedance2pro_seedance2p0_fast;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft_request::KinoviSeedance2p0DraftRequest;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftRequest;
 use crate::generate::generate_video_v2::video_generation_draft_request::VideoGenerationDraftRequest;
 
 /// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
