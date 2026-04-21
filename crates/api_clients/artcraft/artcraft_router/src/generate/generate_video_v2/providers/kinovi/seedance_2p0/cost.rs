@@ -26,7 +26,7 @@ impl KinoviSeedance2p0CostState {
   }
 
   pub fn from_draft(draft: &KinoviSeedance2p0DraftState) -> Self {
-    let has_video_reference = draft.remaining_request
+    let has_video_reference = draft.unhandled_request_state
       .as_ref()
       .and_then(|rem| rem.reference_videos.as_ref())
       .is_some();

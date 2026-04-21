@@ -46,6 +46,9 @@ pub enum ClientError {
   
   /// The pre-dispatch context of media file token to URL map was not supplied.
   MediaFileToUrlMapNotProvided,
+
+  /// A media file token was not found in the provided media-file-to-URL map.
+  MediaFileTokenNotFoundInMap { token: String },
 }
 
 impl Error for ClientError {}
@@ -76,6 +79,9 @@ impl Display for ClientError {
       }
       Self::MediaFileToUrlMapNotProvided => {
         write!(f, "Media file to URL map was not provided")
+      }
+      Self::MediaFileTokenNotFoundInMap { token } => {
+        write!(f, "Media file token '{}' was not found in the provided URL map", token)
       }
     }
   }
