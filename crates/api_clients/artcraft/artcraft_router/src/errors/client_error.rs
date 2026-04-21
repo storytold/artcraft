@@ -1,5 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use tokens::tokens::characters::CharacterToken;
+use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ClientType {
@@ -48,7 +50,13 @@ pub enum ClientError {
   MediaFileToUrlMapNotProvided,
 
   /// A media file token was not found in the provided media-file-to-URL map.
-  MediaFileTokenNotFoundInMap { token: String },
+  MediaFileTokenNotFoundInMap { token: MediaFileToken },
+
+  /// The pre-dispatch context of character token to ID map was not supplied.
+  CharacterTokenToKinoviCharacterIdNotProvided,
+
+  /// A character token was not found in the provided character-token-to-id map
+  CharacterTokenNotFoundInMap { token: CharacterToken },
 }
 
 impl Error for ClientError {}
@@ -81,7 +89,13 @@ impl Display for ClientError {
         write!(f, "Media file to URL map was not provided")
       }
       Self::MediaFileTokenNotFoundInMap { token } => {
-        write!(f, "Media file token '{}' was not found in the provided URL map", token)
+        write!(f, "Media file token '{}' was not found in the provided URL map", token.as_str())
+      }
+      Self::CharacterTokenToKinoviCharacterIdNotProvided => {
+        write!(f, "Character token to Kinovi character ID map was not provided")
+      }
+      Self::CharacterTokenNotFoundInMap { token } => {
+        write!(f, "Character token '{}' was not found in the provided character-token-to-id map", token.as_str())
       }
     }
   }

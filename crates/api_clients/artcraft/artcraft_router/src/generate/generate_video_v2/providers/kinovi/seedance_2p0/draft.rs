@@ -175,7 +175,7 @@ fn resolve_token(
   let map = maybe_map.ok_or(ArtcraftRouterError::Client(ClientError::MediaFileToUrlMapNotProvided))?;
   map.get(token).cloned().ok_or_else(|| {
     ArtcraftRouterError::Client(ClientError::MediaFileTokenNotFoundInMap {
-      token: token.as_str().to_string(),
+      token: token.clone(),
     })
   })
 }
