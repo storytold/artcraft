@@ -52,6 +52,7 @@ impl KinoviSeedance2p0DraftState {
     let mut reference_image_urls = None;
     let mut reference_video_urls = None;
     let mut reference_audio_urls = None;
+    let mut character_ids = None;
 
     if let Some(remaining) = self.unhandled_request_state.take() {
       let map = draft_context.media_file_to_artcraft_url_map;
@@ -71,7 +72,10 @@ impl KinoviSeedance2p0DraftState {
         session, remaining.reference_audio.map(AudioListRef::into_urls_or_tokens), map,
       ).await?;
 
-      // TODO: Handle remaining.reference_character_tokens
+      character_ids = resolve_character_tokens(
+        remaining.reference_character_tokens.as_ref(),
+        draft_context,
+      )?;
     }
 
     let request = KinoviGenerateVideoRequest {
@@ -86,7 +90,7 @@ impl KinoviSeedance2p0DraftState {
       reference_image_urls,
       reference_video_urls,
       reference_audio_urls,
-      character_ids: None, // TODO: resolve character tokens
+      character_ids,
       use_face_blur_hack: None,
     };
 
@@ -185,4 +189,36 @@ fn resolve_tokens(
   tokens: &[MediaFileToken],
 ) -> Result<Vec<String>, ArtcraftRouterError> {
   tokens.iter().map(|t| resolve_token(maybe_map, t)).collect()
+}
+
+// --- Character token resolution ---
+
+/// Map character tokens to their Kinovi character IDs, preserving order.
+fn resolve_character_tokens(
+  character_list_ref: Option<&CharacterListRef>,
+  draft_context: &VideoGenerationDraftContext<'_>,
+) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
+  let list = match character_list_ref {
+    None => return Ok(None),
+    Some(r) => r,
+  };
+
+  let tokens = match list {
+    CharacterListRef::CharacterTokens(tokens) if tokens.is_empty() => return Ok(None),
+    CharacterListRef::CharacterTokens(tokens) => tokens,
+  };
+
+  let map = draft_context.get_character_token_to_kinovi_map()?;
+
+  let ids: Result<Vec<String>, _> = tokens.iter()
+    .map(|token| {
+      map.get(token).cloned().ok_or_else(|| {
+        ArtcraftRouterError::Client(ClientError::CharacterTokenNotFoundInMap {
+          token: token.clone(),
+        })
+      })
+    })
+    .collect();
+
+  ids.map(Some)
 }
