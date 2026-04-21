@@ -9,11 +9,11 @@ use crate::api::character_list_ref::CharacterListRef;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
-use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::request::KinoviSeedance2p0RequestState;
 use crate::generate::generate_video_v2::providers::kinovi::upload::upload_to_seedance2pro;
+use crate::generate::generate_video_v2::video_generation_draft_context::VideoGenerationDraftContext;
 
 #[derive(Debug, Clone)]
 pub struct KinoviSeedance2p0DraftState {
@@ -42,9 +42,9 @@ pub struct KinoviSeedance2p0RemainingItems {
 impl KinoviSeedance2p0DraftState {
   pub async fn to_request(
     &mut self,
-    client: &RouterSeedance2ProClient,
-    maybe_media_file_to_url_map: Option<&HashMap<MediaFileToken, String>>,
+    draft_context: &VideoGenerationDraftContext<'_>,
   ) -> Result<KinoviSeedance2p0RequestState, ArtcraftRouterError> {
+    let client = draft_context.get_seedance2pro_client_ref()?;
     let session = &client.session;
 
     let mut start_frame_url = None;
@@ -54,7 +54,7 @@ impl KinoviSeedance2p0DraftState {
     let mut reference_audio_urls = None;
 
     if let Some(remaining) = self.unhandled_request_state.take() {
-      let map = maybe_media_file_to_url_map;
+      let map = draft_context.media_file_to_artcraft_url_map;
 
       start_frame_url = resolve_and_upload_single(session, remaining.start_frame, map).await?;
       end_frame_url = resolve_and_upload_single(session, remaining.end_frame, map).await?;
