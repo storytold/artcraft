@@ -138,29 +138,33 @@ mod tests {
 
   // -- Relative pricing --
 
-  #[test]
-  fn cost_480p_cheaper_than_720p() {
-    let c480 = usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One);
-    let c720 = usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One);
-    assert!(c480 < c720, "480p ({}) should be cheaper than 720p ({})", c480, c720);
-  }
+  mod relative_pricing_tests {
+    use super::*;
 
-  #[test]
-  fn cost_scales_with_duration() {
-    let c4 = usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One);
-    let c10 = usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One);
-    let c15 = usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One);
-    assert!(c4 < c10);
-    assert!(c10 < c15);
-  }
+    #[test]
+    fn cost_480p_cheaper_than_720p() {
+      let c480 = usd_cents(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One);
+      let c720 = usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One);
+      assert!(c480 < c720, "480p ({}) should be cheaper than 720p ({})", c480, c720);
+    }
 
-  #[test]
-  fn cost_scales_with_batch() {
-    let b1 = usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One);
-    let b2 = usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Two);
-    let b4 = usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Four);
-    assert!(b1 < b2);
-    assert!(b2 < b4);
+    #[test]
+    fn cost_scales_with_duration() {
+      let c4 = usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One);
+      let c10 = usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One);
+      let c15 = usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One);
+      assert!(c4 < c10);
+      assert!(c10 < c15);
+    }
+
+    #[test]
+    fn cost_scales_with_batch() {
+      let b1 = usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One);
+      let b2 = usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Two);
+      let b4 = usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Four);
+      assert!(b1 < b2);
+      assert!(b2 < b4);
+    }
   }
 
   // -- Video reference does NOT affect cost (yet) --
@@ -306,14 +310,18 @@ mod tests {
 
   // ── Credits spot checks ──
 
-  #[test]
-  fn credits_720p() {
-    assert_eq!(credits(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One), 140);
-  }
+  mod credits_tests {
+    use super::*;
 
-  #[test]
-  fn credits_480p() {
-    assert_eq!(credits(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One), 50);
+    #[test]
+    fn credits_720p() {
+      assert_eq!(credits(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One), 140);
+    }
+
+    #[test]
+    fn credits_480p() {
+      assert_eq!(credits(KinoviOutputResolution::FourEightyP, 5, KinoviBatchCount::One), 50);
+    }
   }
 
   // ── Helpers ──
