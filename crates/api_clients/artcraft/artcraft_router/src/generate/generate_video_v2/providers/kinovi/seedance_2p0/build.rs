@@ -34,7 +34,6 @@ fn do_build_kinovi_seedance_2p0(mut builder: GenerateVideoRequestBuilder) -> Res
     batch_count,
     duration_seconds,
     prompt,
-    remaining_request: Some(builder),
     unhandled_request_state: Some(unhandled_request_state),
   })
 }

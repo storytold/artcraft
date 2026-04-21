@@ -27,9 +27,6 @@ pub struct KinoviSeedance2p0DraftState {
   pub batch_count: KinoviBatchCount,
 
   // Pending types that need to be queried.
-
-  pub remaining_request: Option<GenerateVideoRequestBuilder>,
-
   pub unhandled_request_state: Option<KinoviSeedance2p0RemainingItems>,
 }
 
