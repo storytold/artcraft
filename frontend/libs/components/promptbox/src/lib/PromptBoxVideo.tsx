@@ -16,6 +16,7 @@ import {
   faClock,
   faChevronDown,
   faChevronUp,
+  faFilm,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faCircleInfo } from "@fortawesome/pro-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -44,6 +45,7 @@ import { CharactersModal } from "./CharactersModal";
 import { CharactersApi } from "@storyteller/api";
 import { MentionTextarea } from "./MentionTextarea";
 import type { MentionItem } from "./MentionTextarea";
+import { MultishotPromptEditor } from "./MultishotPromptEditor";
 
 declare global {
   interface Window {
@@ -136,6 +138,18 @@ export const PromptBoxVideo = ({
   const setInputMode = usePromptVideoStore((s) => s.setInputMode);
   const generationCount = usePromptVideoStore((s) => s.generationCount);
   const setGenerationCount = usePromptVideoStore((s) => s.setGenerationCount);
+  const isMultishot = usePromptVideoStore((s) => s.isMultishot);
+  const setIsMultishot = usePromptVideoStore((s) => s.setIsMultishot);
+  const multishotShots = usePromptVideoStore((s) => s.multishotShots);
+  const multishotActiveShotId = usePromptVideoStore(
+    (s) => s.multishotActiveShotId,
+  );
+  const setMultishotActiveShotId = usePromptVideoStore(
+    (s) => s.setMultishotActiveShotId,
+  );
+  const addMultishotShot = usePromptVideoStore((s) => s.addMultishotShot);
+  const removeMultishotShot = usePromptVideoStore((s) => s.removeMultishotShot);
+  const updateMultishotShot = usePromptVideoStore((s) => s.updateMultishotShot);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -473,6 +487,19 @@ export const PromptBoxVideo = ({
     referenceVideos.length > 0 ||
     referenceAudios.length > 0;
 
+  // Kling 3.0 (pro + standard) supports Fal's `shot_type: customize` multi-shot
+  // mode. If the user switches off a capable model while multishot is on, turn
+  // it off so stale shots don't leak into a future single-prompt generation.
+  const isMultishotCapable =
+    selectedModel?.id === "kling_3p0_pro" ||
+    selectedModel?.id === "kling_3p0_standard";
+  const isMultishotActive = isMultishot && isMultishotCapable;
+  useEffect(() => {
+    if (isMultishot && !isMultishotCapable) {
+      setIsMultishot(false);
+    }
+  }, [isMultishot, isMultishotCapable, setIsMultishot]);
+
   // Characters are only supported for seedance_2p0
   const isSeedance2p0 = selectedModel?.id === "seedance_2p0";
   const activeCharacters = isSeedance2p0 ? storedCharacters : EMPTY_CHARACTERS;
@@ -654,16 +681,32 @@ export const PromptBoxVideo = ({
   const maxLen = selectedModel?.maxPromptLength ?? 1000;
 
   const handleEnqueue = async () => {
-    if (!prompt.trim()) {
-      console.warn("Cannot generate video: prompt is empty");
-      toast.error("Please enter a prompt to generate video");
-      return;
-    }
-    if (isFinite(maxLen) && prompt.length > maxLen) {
-      toast.error(
-        `Prompt exceeds the ${maxLen} character limit for this model`,
+    // In multishot mode the single `prompt` field is ignored; instead, every
+    // shot must have its own non-empty prompt.
+    if (isMultishotActive) {
+      if (multishotShots.length === 0) {
+        toast.error("Add at least one shot to generate video");
+        return;
+      }
+      const emptyShotIndex = multishotShots.findIndex(
+        (s) => !s.prompt.trim(),
       );
-      return;
+      if (emptyShotIndex !== -1) {
+        toast.error(`Shot ${emptyShotIndex + 1} is missing a prompt`);
+        return;
+      }
+    } else {
+      if (!prompt.trim()) {
+        console.warn("Cannot generate video: prompt is empty");
+        toast.error("Please enter a prompt to generate video");
+        return;
+      }
+      if (isFinite(maxLen) && prompt.length > maxLen) {
+        toast.error(
+          `Prompt exceeds the ${maxLen} character limit for this model`,
+        );
+        return;
+      }
     }
 
     if (!selectedModel) {
@@ -701,17 +744,40 @@ export const PromptBoxVideo = ({
       setIsEnqueueing(false);
     }, 10000);
 
+    // Effective prompt: in multishot mode we still set a `prompt` field so
+    // downstream persistence / logs have something readable; the backend is
+    // expected to route off `multi_prompt` + `shot_type: customize` instead.
+    const effectivePrompt = isMultishotActive
+      ? multishotShots
+          .map((s, i) => `Shot ${i + 1}: ${s.prompt.trim()}`)
+          .join("\n\n")
+      : prompt;
+
     const buildRequest = (subscriberId: string): EnqueueImageToVideoRequest => {
       let request: EnqueueImageToVideoRequest = {
         model: selectedModel,
         image_media_token: imageMediaToken,
-        prompt: prompt,
+        prompt: effectivePrompt,
         end_frame_image_media_token: isRefMode
           ? undefined
           : endFrameImage?.mediaToken,
         frontend_caller: "image_to_video",
         frontend_subscriber_id: subscriberId,
       };
+
+      if (isMultishotActive) {
+        request.shot_type = "customize";
+        request.multi_prompt = multishotShots.map((s) => ({
+          prompt: s.prompt.trim(),
+          duration: String(s.durationSeconds),
+        }));
+        // Backend should use the summed multishot duration instead of the
+        // single duration picker when multi_prompt is present.
+        request.duration_seconds = multishotShots.reduce(
+          (sum, s) => sum + s.durationSeconds,
+          0,
+        );
+      }
 
       if (!!selectedProvider) {
         request.provider = selectedProvider;
@@ -752,8 +818,13 @@ export const PromptBoxVideo = ({
         );
       }
 
-      // Pass duration if model supports it
-      if (selectedModel.durationOptions && duration !== null) {
+      // Pass duration if model supports it. Multishot already set its own
+      // summed duration above and must not be overwritten here.
+      if (
+        !isMultishotActive &&
+        selectedModel.durationOptions &&
+        duration !== null
+      ) {
         request.duration_seconds = duration;
       }
 
@@ -789,7 +860,7 @@ export const PromptBoxVideo = ({
     };
 
     window.__storeTaskEnqueueMeta?.({
-      prompt,
+      prompt: effectivePrompt,
       refImageUrls: referenceImages?.map((img) => img.url).filter(Boolean),
       modelType: (selectedModel as any)?.tauriId || String(selectedModel),
       timestamp: Date.now(),
@@ -961,7 +1032,30 @@ export const PromptBoxVideo = ({
         >
           <div className="relative flex justify-center gap-2">
             <div className="promptbox-resize-wrap relative flex-1 min-w-0">
-              {hasAnyMentionables ? (
+              {isMultishotActive ? (
+                <MultishotPromptEditor
+                  shots={multishotShots}
+                  activeShotId={multishotActiveShotId}
+                  onSelectShot={setMultishotActiveShotId}
+                  onAddShot={addMultishotShot}
+                  onRemoveShot={removeMultishotShot}
+                  onUpdateShot={updateMultishotShot}
+                  onPromptKeyEnter={() => {
+                    if (
+                      selectedModel?.requiresImage &&
+                      referenceImages.length === 0
+                    )
+                      return;
+                    handleEnqueue();
+                  }}
+                  mentionItems={
+                    hasAnyMentionables ? allMentionItems : undefined
+                  }
+                  mentionColorMap={
+                    hasAnyMentionables ? mentionColorMap : undefined
+                  }
+                />
+              ) : hasAnyMentionables ? (
                 <MentionTextarea
                   ref={mentionEditorRef}
                   value={prompt}
@@ -1003,11 +1097,13 @@ export const PromptBoxVideo = ({
                   onBlur={() => setIsFocused(false)}
                 />
               )}
-              <span
-                className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
-              >
-                {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
-              </span>
+              {!isMultishotActive && (
+                <span
+                  className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}
+                >
+                  {prompt.length} / {isFinite(maxLen) ? maxLen : "∞"}
+                </span>
+              )}
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between gap-2">
@@ -1046,7 +1142,7 @@ export const PromptBoxVideo = ({
                 </Tooltip>
               )}
 
-              {durationRange && (
+              {durationRange && !isMultishotActive && (
                 <Tooltip content="Duration" position="top" className="z-50">
                   <PopoverMenu
                     mode="default"
@@ -1094,6 +1190,22 @@ export const PromptBoxVideo = ({
                     icon={faWaveformLines}
                     activeIcon={faWaveformLines}
                     onClick={() => setGenerateWithSound(!generateWithSound)}
+                  />
+                </Tooltip>
+              )}
+
+              {isMultishotCapable && (
+                <Tooltip
+                  content={isMultishot ? "Multishot: ON" : "Multishot: OFF"}
+                  position="top"
+                  className="z-50"
+                  delay={200}
+                >
+                  <ToggleButton
+                    isActive={isMultishot}
+                    icon={faFilm}
+                    activeIcon={faFilm}
+                    onClick={() => setIsMultishot(!isMultishot)}
                   />
                 </Tooltip>
               )}
@@ -1150,7 +1262,12 @@ export const PromptBoxVideo = ({
                     className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
                     icon={undefined}
                     onClick={handleEnqueue}
-                    disabled={!prompt.trim()}
+                    disabled={
+                      isMultishotActive
+                        ? multishotShots.length === 0 ||
+                          multishotShots.some((s) => !s.prompt.trim())
+                        : !prompt.trim()
+                    }
                     loading={isEnqueueing}
                     credits={
                       credits != null ? credits * generationCount : credits

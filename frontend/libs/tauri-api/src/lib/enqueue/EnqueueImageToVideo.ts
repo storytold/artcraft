@@ -63,6 +63,20 @@ export interface EnqueueImageToVideoRequest {
 
   // Optional. Character tokens for character consistency (from @-mentions).
   reference_character_tokens?: string[];
+
+  // Optional. Kling 3.0 `shot_type`: "customize" | "intelligent". When
+  // `multi_prompt` is provided, this must be "customize".
+  shot_type?: "customize" | "intelligent";
+
+  // Optional. Kling 3.0 multi-shot prompt list. When present and non-empty,
+  // overrides `prompt`. Each entry's duration is a string-encoded integer
+  // between "1" and "15" (Fal's enum format).
+  multi_prompt?: MultiPromptShot[];
+}
+
+export interface MultiPromptShot {
+  prompt: string;
+  duration: string;
 }
 
 interface RawEnqueueImageToVideoRequest {
@@ -82,6 +96,8 @@ interface RawEnqueueImageToVideoRequest {
   reference_video_media_tokens?: string[];
   reference_audio_media_tokens?: string[];
   reference_character_tokens?: string[];
+  shot_type?: "customize" | "intelligent";
+  multi_prompt?: MultiPromptShot[];
 }
 
 export interface EnqueueImageToVideoError extends CommandResult {
@@ -177,6 +193,14 @@ export const EnqueueImageToVideo = async (
     request.reference_character_tokens.length > 0
   ) {
     mutableRequest.reference_character_tokens = request.reference_character_tokens;
+  }
+
+  if (request.shot_type) {
+    mutableRequest.shot_type = request.shot_type;
+  }
+
+  if (request.multi_prompt && request.multi_prompt.length > 0) {
+    mutableRequest.multi_prompt = request.multi_prompt;
   }
 
   const result = await invoke("enqueue_image_to_video_command", {
