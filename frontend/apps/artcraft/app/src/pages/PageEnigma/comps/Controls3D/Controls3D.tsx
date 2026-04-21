@@ -37,6 +37,10 @@ import {
 import { twMerge } from "tailwind-merge";
 import { UploadModalImage } from "../../../../components/reusable/UploadModalImage";
 import { UploadModalSplat } from "~/components/reusable/UploadModalSplat";
+import {
+  FloatingToolbar,
+  FloatingToolbarDivider,
+} from "~/components/reusable/FloatingToolbar";
 
 export const Controls3D = () => {
   useSignals();
@@ -205,151 +209,140 @@ export const Controls3D = () => {
 
   return (
     <>
-      <div className="flex justify-center">
-        <div className="glass rounded-b-xl p-1.5 pr-2 text-white shadow-md">
-          <div className="flex items-center justify-center gap-2.5">
-            <div className="flex items-center gap-1.5">
-              <div className="relative">
-                {showEmptySceneTooltip && (
-                  <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 transform whitespace-nowrap">
-                    <div className="animate-bounce rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-lg">
-                      Click + to add your first 3D asset!
-                      <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 transform bg-primary" />
-                    </div>
-                  </div>
-                )}
-                <Tooltip
-                  content="Add an asset to scene"
-                  position="bottom"
-                  delay={300}
-                  closeOnClick
-                  className={twMerge(
-                    showEmptySceneTooltip ? "hidden" : "block",
-                  )}
-                >
-                  <PopoverMenu
-                    mode="button"
-                    position="bottom"
-                    panelTitle="Add an asset to scene"
-                    onOpenChange={setIsAddAssetPopoverOpen}
-                    items={[
-                      {
-                        label: "ArtCraft Presets (B)",
-                        selected: false,
-                        icon: (
-                          <FontAwesomeIcon icon={faCube} className="h-4 w-4" />
-                        ),
-                        action: "presets",
-                      },
-                      {
-                        label: "My Library",
-                        selected: false,
-                        icon: (
-                          <FontAwesomeIcon
-                            icon={faImages}
-                            className="h-4 w-4"
-                          />
-                        ),
-                        action: "library",
-                        divider: true,
-                      },
-                      {
-                        label: "Upload 3D Model",
-                        selected: false,
-                        icon: (
-                          <FontAwesomeIcon
-                            icon={faArrowUpFromBracket}
-                            className="h-4 w-4"
-                          />
-                        ),
-                        action: "upload-3d",
-                      },
-                      {
-                        label: "Upload Image",
-                        selected: false,
-                        icon: (
-                          <FontAwesomeIcon
-                            icon={faArrowUpFromBracket}
-                            className="h-4 w-4"
-                          />
-                        ),
-                        action: "upload-image",
-                      },
-                      {
-                        label: "Upload Splat",
-                        selected: false,
-                        icon: (
-                          <FontAwesomeIcon
-                            icon={faArrowUpFromBracket}
-                            className="h-4 w-4"
-                          />
-                        ),
-                        action: "upload-splat",
-                      },
-                    ]}
-                    onPanelAction={handleAddAssetAction}
-                    showIconsInList
-                    buttonClassName={`h-9 w-9 rounded-[10px] text-lg ${showEmptySceneTooltip
-                      ? "bg-primary/90 hover:bg-primary/70"
-                      : "border-transparent bg-primary/90 hover:bg-primary/70"
-                      }`}
-                    triggerIcon={
-                      <FontAwesomeIcon icon={faPlus} className="text-xl" />
-                    }
-                  />
-                </Tooltip>
+      <FloatingToolbar className="pr-2">
+        <div className="flex items-center gap-1.5">
+          <div className="relative">
+            {showEmptySceneTooltip && (
+              <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 transform whitespace-nowrap">
+                <div className="animate-bounce rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-lg">
+                  Click + to add your first 3D asset!
+                  <div className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 transform bg-primary" />
+                </div>
               </div>
-              <Tooltip
-                content="Create 3D model from image"
-                position="bottom"
-                delay={300}
-                closeOnClick
-              >
-                <Button
-                  icon={faMagicWandSparkles}
-                  className="text-md h-9 w-9 rounded-[10px] bg-white/15 transition-colors hover:bg-white/25"
-                  variant="secondary"
-                  onClick={handleOpenCreate3dModal}
-                />
-              </Tooltip>
-            </div>
-
-            <span className="opacity-20">|</span>
-            <ButtonIconSelect
-              options={modes}
-              onOptionChange={handleModeChange}
-              selectedOption={selectedMode.value}
-            />
-            {selectedMode.value === "scale" ? (
-              <Tooltip
-                content="Scale is always in local space"
-                position="bottom"
-                delay={300}
-              >
-                <button
-                  disabled
-                  className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 uppercase tracking-wide opacity-40 cursor-not-allowed"
-                >
-                  Local
-                </button>
-              </Tooltip>
-            ) : (
-              <Tooltip
-                content={`Transform space: ${transformSpace.value} (X to toggle)`}
-                position="bottom"
-                delay={300}
-              >
-                <button
-                  className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 hover:bg-white/25 transition-colors uppercase tracking-wide"
-                  onClick={() => editorEngine?.toggleTransformSpace()}
-                >
-                  {transformSpace.value === "world" ? "World" : "Local"}
-                </button>
-              </Tooltip>
             )}
+            <Tooltip
+              content="Add an asset to scene"
+              position="bottom"
+              delay={300}
+              closeOnClick
+              className={twMerge(showEmptySceneTooltip ? "hidden" : "block")}
+            >
+              <PopoverMenu
+                mode="button"
+                position="bottom"
+                panelTitle="Add an asset to scene"
+                onOpenChange={setIsAddAssetPopoverOpen}
+                items={[
+                  {
+                    label: "ArtCraft Presets (B)",
+                    selected: false,
+                    icon: (
+                      <FontAwesomeIcon icon={faCube} className="h-4 w-4" />
+                    ),
+                    action: "presets",
+                  },
+                  {
+                    label: "My Library",
+                    selected: false,
+                    icon: (
+                      <FontAwesomeIcon icon={faImages} className="h-4 w-4" />
+                    ),
+                    action: "library",
+                    divider: true,
+                  },
+                  {
+                    label: "Upload 3D Model",
+                    selected: false,
+                    icon: (
+                      <FontAwesomeIcon
+                        icon={faArrowUpFromBracket}
+                        className="h-4 w-4"
+                      />
+                    ),
+                    action: "upload-3d",
+                  },
+                  {
+                    label: "Upload Image",
+                    selected: false,
+                    icon: (
+                      <FontAwesomeIcon
+                        icon={faArrowUpFromBracket}
+                        className="h-4 w-4"
+                      />
+                    ),
+                    action: "upload-image",
+                  },
+                  {
+                    label: "Upload Splat",
+                    selected: false,
+                    icon: (
+                      <FontAwesomeIcon
+                        icon={faArrowUpFromBracket}
+                        className="h-4 w-4"
+                      />
+                    ),
+                    action: "upload-splat",
+                  },
+                ]}
+                onPanelAction={handleAddAssetAction}
+                showIconsInList
+                buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-primary/90 text-lg hover:bg-primary/70"
+                triggerIcon={
+                  <FontAwesomeIcon icon={faPlus} className="text-xl" />
+                }
+              />
+            </Tooltip>
           </div>
+          <Tooltip
+            content="Create 3D model from image"
+            position="bottom"
+            delay={300}
+            closeOnClick
+          >
+            <Button
+              icon={faMagicWandSparkles}
+              className="text-md h-9 w-9 rounded-[10px] bg-white/15 transition-colors hover:bg-white/25"
+              variant="secondary"
+              onClick={handleOpenCreate3dModal}
+            />
+          </Tooltip>
         </div>
-      </div>
+
+        <FloatingToolbarDivider />
+
+        <ButtonIconSelect
+          options={modes}
+          onOptionChange={handleModeChange}
+          selectedOption={selectedMode.value}
+        />
+        {selectedMode.value === "scale" ? (
+          <Tooltip
+            content="Scale is always in local space"
+            position="bottom"
+            delay={300}
+          >
+            <button
+              disabled
+              className="h-9 cursor-not-allowed rounded-[10px] bg-white/15 px-2.5 font-mono text-[10px] font-semibold uppercase tracking-wide opacity-40"
+            >
+              Local
+            </button>
+          </Tooltip>
+        ) : (
+          <Tooltip
+            content={`Transform space: ${transformSpace.value} (X to toggle)`}
+            position="bottom"
+            delay={300}
+          >
+            <button
+              className="h-9 rounded-[10px] bg-white/15 px-2.5 font-mono text-[10px] font-semibold uppercase tracking-wide transition-colors hover:bg-white/25"
+              onClick={() => editorEngine?.toggleTransformSpace()}
+            >
+              {transformSpace.value === "world" ? "World" : "Local"}
+            </button>
+          </Tooltip>
+        )}
+      </FloatingToolbar>
 
       <AssetModal />
 

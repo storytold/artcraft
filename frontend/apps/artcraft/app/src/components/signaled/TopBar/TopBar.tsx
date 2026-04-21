@@ -502,6 +502,10 @@ export const TopBar = ({ pageName }: Props) => {
         return "Image to 3D World";
       case "APPS":
         return "ArtCraft Apps";
+      case "STORYBOARD":
+        return "Storyboard";
+      case "MOODBOARD":
+        return "Moodboard";
       default:
         return "Artcraft";
     }

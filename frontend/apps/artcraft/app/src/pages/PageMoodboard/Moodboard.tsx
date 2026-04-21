@@ -9,8 +9,10 @@ import { usePasteHandler } from "./interactions/usePasteHandler";
 import { useGalleryDropEvent } from "./interactions/useGalleryDropEvent";
 import { useKeyboardShortcuts } from "./interactions/useKeyboardShortcuts";
 import { useShortcutCheatsheet } from "./interactions/useShortcutCheatsheet";
+import { useMoodboardImageEntry } from "./useMoodboardImageEntry";
 import { RecenterIndicator } from "./overlays/RecenterIndicator";
 import { ShortcutCheatsheet } from "./overlays/ShortcutCheatsheet";
+import { EmptyMoodboardCTA } from "./EmptyMoodboardCTA";
 
 export const Moodboard = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -18,12 +20,15 @@ export const Moodboard = () => {
   const deleteSelected = useMoodboardStore((s) => s.deleteSelected);
   const setSelection = useMoodboardStore((s) => s.setSelection);
   const editingTextId = useMoodboardStore((s) => s.transient.editingTextId);
+  const isEmpty = useMoodboardStore((s) => s.rootOrder.length === 0);
 
   useUndoRedo(true);
   usePasteHandler(true, stageRef);
   useGalleryDropEvent(true, stageRef);
   useKeyboardShortcuts(true);
   const cheatsheetVisible = useShortcutCheatsheet();
+  const { triggerUpload, triggerGallery, modals } =
+    useMoodboardImageEntry(stageRef);
 
   // Delete / Backspace removes the current selection. Skip when typing in
   // an input or while a text node is in edit mode.
@@ -45,14 +50,27 @@ export const Moodboard = () => {
   }, [deleteSelected, setSelection, editingTextId]);
 
   return (
-    <div className="flex h-[calc(100vh-56px)] w-screen flex-col bg-[#0b0b0e]">
-      <MoodboardToolbar />
-      <div ref={containerRef} className="relative flex-1 overflow-hidden">
-        <MoodboardStage containerRef={containerRef} stageRef={stageRef} />
-        <TextEditOverlay containerRef={containerRef} />
-        <RecenterIndicator />
-        <ShortcutCheatsheet visible={cheatsheetVisible} />
+    <div
+      ref={containerRef}
+      className="relative h-[calc(100vh-56px)] w-screen overflow-hidden bg-ui-background"
+    >
+      <MoodboardStage containerRef={containerRef} stageRef={stageRef} />
+      <TextEditOverlay containerRef={containerRef} />
+      <RecenterIndicator />
+      <ShortcutCheatsheet visible={cheatsheetVisible} />
+      {isEmpty && (
+        <EmptyMoodboardCTA
+          onUploadClick={triggerUpload}
+          onGalleryClick={triggerGallery}
+        />
+      )}
+      <div className="absolute left-0 right-0 top-0 z-10">
+        <MoodboardToolbar
+          onUploadClick={triggerUpload}
+          onGalleryClick={triggerGallery}
+        />
       </div>
+      {modals}
     </div>
   );
 };

@@ -288,7 +288,7 @@ export const Tooltip = ({
         show={isShowing}
         enter={twMerge(
           "transition ease-out duration-200",
-          delay ? `delay-[${delay}ms]` : "delay-[300ms]",
+          delay ? `delay-[${delay}ms]` : "delay-[200ms]",
         )}
         enterFrom="opacity-0"
         enterTo="opacity-100"
