@@ -9,12 +9,40 @@ use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigati
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 
-pub (super) fn map_common_resolution_to_kinovi(resolution: CommonResolution) -> KinoviOutputResolution {
+// Seedance 2.0 Pro supports output resolutions: 480p, 720p, 1080p.
+pub (super) fn plan_output_resolution(
+  resolution: Option<CommonResolution>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Option<KinoviOutputResolution>, ArtcraftRouterError> {
   match resolution {
-    CommonResolution::FourEightyP => KinoviOutputResolution::FourEightyP,
-    CommonResolution::SevenTwentyP => KinoviOutputResolution::SevenTwentyP,
-    CommonResolution::TenEightyP => KinoviOutputResolution::TenEightyP,
-    _ => KinoviOutputResolution::SevenTwentyP,
+    None => Ok(None),
+
+    // Direct mappings
+    Some(CommonResolution::FourEightyP) => Ok(Some(KinoviOutputResolution::FourEightyP)),
+    Some(CommonResolution::SevenTwentyP) => Ok(Some(KinoviOutputResolution::SevenTwentyP)),
+    Some(CommonResolution::TenEightyP) => Ok(Some(KinoviOutputResolution::TenEightyP)),
+
+    // Mismatches
+    Some(unsupported) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "resolution",
+          value: format!("{:?}", unsupported),
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
+        Ok(Some(match unsupported {
+          CommonResolution::HalfK => KinoviOutputResolution::FourEightyP,
+          _ => KinoviOutputResolution::TenEightyP,
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayLessDowngrade => {
+        Ok(Some(match unsupported {
+          CommonResolution::HalfK => KinoviOutputResolution::FourEightyP,
+          _ => KinoviOutputResolution::TenEightyP,
+        }))
+      }
+    },
   }
 }
 
