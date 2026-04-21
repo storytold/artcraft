@@ -10,13 +10,13 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::reque
 // ArtCraft credits: 100 credits = $1.00. Credits always equal USD cents.
 //
 // The per-second USD cost varies by resolution. We compute cents directly
-// from the upstream Kinovi credit rates and their credit-package prices,
+// from the upstream credit rates and their credit-package prices,
 // then set ArtCraft credits = cents.
 
-/// USD cents per second by resolution, derived from Kinovi rates:
-///   480p:  15 kinovi-credits/sec ÷ 193 kinovi-credits/$1 × 100 ≈ 7.772 ¢/s
-///   720p:  40 kinovi-credits/sec ÷ 250 kinovi-credits/$1 × 100 = 16.0   ¢/s
-///   1080p: 90 kinovi-credits/sec ÷ 193 kinovi-credits/$1 × 100 ≈ 46.632 ¢/s
+/// USD cents per second by resolution, derived from Upstream rates:
+///   480p:  15 upstream-credits/sec ÷ 193 upstream-credits/$1 × 100 ≈ 7.772 ¢/s
+///   720p:  40 upstream-credits/sec ÷ 250 upstream-credits/$1 × 100 = 16.0 ¢/s
+///   1080p: 90 upstream-credits/sec ÷ 193 upstream-credits/$1 × 100 ≈ 46.632 ¢/s
 ///
 /// We keep these as f64 because per-second rates are fractional; rounding
 /// happens once at the end after multiplying by duration × batch.
