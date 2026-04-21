@@ -650,10 +650,7 @@ export const PageEditor = () => {
         </div>
       )}
       {tabStore.activeTabId == "MOODBOARD" && moodboardPageEnabled && (
-        <div
-          className="w-screen"
-          style={{ height: "calc(100vh - 68px)" }}
-        >
+        <div>
           <Moodboard />
         </div>
       )}

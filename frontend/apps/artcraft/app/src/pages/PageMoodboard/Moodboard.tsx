@@ -45,7 +45,7 @@ export const Moodboard = () => {
   }, [deleteSelected, setSelection, editingTextId]);
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#0b0b0e]">
+    <div className="flex h-[calc(100vh-56px)] w-screen flex-col bg-[#0b0b0e]">
       <MoodboardToolbar />
       <div ref={containerRef} className="relative flex-1 overflow-hidden">
         <MoodboardStage containerRef={containerRef} stageRef={stageRef} />
