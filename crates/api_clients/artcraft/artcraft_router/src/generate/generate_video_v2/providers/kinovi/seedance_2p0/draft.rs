@@ -5,6 +5,11 @@ use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::request
 use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviGenerateVideoRequest, KinoviModelType, KinoviOutputResolution};
 use std::collections::HashMap;
 use tokens::tokens::media_files::MediaFileToken;
+use crate::api::audio_list_ref::AudioListRef;
+use crate::api::character_list_ref::CharacterListRef;
+use crate::api::image_list_ref::ImageListRef;
+use crate::api::image_ref::ImageRef;
+use crate::api::video_list_ref::VideoListRef;
 
 #[derive(Debug, Clone)]
 pub struct KinoviSeedance2p0DraftState {
@@ -27,6 +32,8 @@ pub struct KinoviSeedance2p0DraftState {
   // Pending types that need to be queried.
 
   pub remaining_request: Option<GenerateVideoRequestBuilder>,
+  
+  pub unhandled_request_state: Option<KinoviSeedance2p0RemainingItems>,
 
   // pub start_frame: Option<ImageRef>,
   // pub end_frame: Option<ImageRef>,
@@ -34,6 +41,16 @@ pub struct KinoviSeedance2p0DraftState {
   // pub reference_videos: Option<VideoListRef>,
   // pub reference_audio: Option<AudioListRef>,
   // pub reference_character_tokens: Option<CharacterListRef>,
+}
+
+#[derive(Debug, Clone)]
+pub struct KinoviSeedance2p0RemainingItems {
+  pub start_frame: Option<ImageRef>,
+  pub end_frame: Option<ImageRef>,
+  pub reference_images: Option<ImageListRef>,
+  pub reference_videos: Option<VideoListRef>,
+  pub reference_audio: Option<AudioListRef>,
+  pub reference_character_tokens: Option<CharacterListRef>,
 }
 
 impl KinoviSeedance2p0DraftState {
