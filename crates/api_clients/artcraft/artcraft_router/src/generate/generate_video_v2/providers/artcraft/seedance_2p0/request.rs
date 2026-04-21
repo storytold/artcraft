@@ -51,6 +51,15 @@ mod tests {
   use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
   use artcraft_client::utils::api_host::ApiHost;
 
+  // Media file tokens from test_data::web::image_urls comments.
+  const JUNO_AT_LAKE_TOKEN: &str = "m_m1bz02z1kkzanxy6rb4vk1kvq9de9g";
+  const FOREST_BACKDROP_TOKEN: &str = "m_f5yy0fdmkwrf2hxaq4yw4sd95tvvrf";
+  const WHITE_HOUSE_SUNSET_TOKEN: &str = "m_xmzdeqhjpxs5418kvepcrj5a3vkfb1";
+
+  // TODO: Replace with real character tokens from the test account.
+  const STEAMPUNK_CLOWN_CHAR_TOKEN: &str = "character_placeholder_steampunk_clown";
+  const MOCHI_CHAR_TOKEN: &str = "character_placeholder_mochi";
+
   // ── Aspect ratio tests ──
 
   mod aspect_ratio_tests {
@@ -156,10 +165,11 @@ mod tests {
     #[ignore] // manually run — fires a real API request and incurs cost
     async fn keyframe_start_and_end_frame() {
       // Artcraft uses media file tokens directly — no URL resolution needed.
+      // Tokens from test_data::web::image_urls comments.
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("The dog walks from the lake to the forest.".to_string()),
-        start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_m1bz02z1kkzanxy6rb4vk1kvq9de9g".to_string()))),
-        end_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_f5yy0fdmkwrf2hxaq4yw4sd95tvvrf".to_string()))),
+        start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new(JUNO_AT_LAKE_TOKEN.to_string()))),
+        end_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new(FOREST_BACKDROP_TOKEN.to_string()))),
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
         ..artcraft_builder()
       }).await;
@@ -171,12 +181,13 @@ mod tests {
     #[ignore] // manually run — fires a real API request and incurs cost
     async fn image_references() {
       // Artcraft uses media file tokens directly.
+      // Tokens from test_data::web::image_urls comments.
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("The dog in @2 runs through the scenery in @1 towards the building in @3.".to_string()),
         reference_images: Some(ImageListRef::MediaFileTokens(vec![
-          MediaFileToken::new("mf_f5yy0fdmkwrf2hxaq4yw4sd95tvvrf".to_string()),  // forest
-          MediaFileToken::new("mf_m1bz02z1kkzanxy6rb4vk1kvq9de9g".to_string()),  // juno at lake
-          MediaFileToken::new("mf_xmzdeqhjpxs5418kvepcrj5a3vkfb1".to_string()),  // white house
+          MediaFileToken::new(FOREST_BACKDROP_TOKEN.to_string()),
+          MediaFileToken::new(JUNO_AT_LAKE_TOKEN.to_string()),
+          MediaFileToken::new(WHITE_HOUSE_SUNSET_TOKEN.to_string()),
         ])),
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
         ..artcraft_builder()
@@ -188,11 +199,11 @@ mod tests {
     #[tokio::test]
     #[ignore] // manually run — fires a real API request and incurs cost
     async fn video_references() {
-      // Artcraft uses media file tokens for video references too.
+      // TODO: Needs a real video media file token to test properly.
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("Change @video1 to a nighttime scene with moonlight.".to_string()),
         reference_videos: Some(VideoListRef::MediaFileTokens(vec![
-          MediaFileToken::new("mf_testvideo_placeholder".to_string()),
+          MediaFileToken::new(JUNO_AT_LAKE_TOKEN.to_string()), // Using an image token as placeholder
         ])),
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
         ..artcraft_builder()
@@ -205,11 +216,12 @@ mod tests {
     #[ignore] // manually run — fires a real API request and incurs cost
     async fn character_references() {
       // Character tokens are passed through directly to the Artcraft API.
+      // These are real character tokens from the test account.
       let response = run_pipeline(GenerateVideoRequestBuilder {
         prompt: Some("@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string()),
         reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
-          CharacterToken::new("char_steampunk_clown".to_string()),
-          CharacterToken::new("char_mochi".to_string()),
+          CharacterToken::new(STEAMPUNK_CLOWN_CHAR_TOKEN.to_string()),
+          CharacterToken::new(MOCHI_CHAR_TOKEN.to_string()),
         ])),
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
         ..artcraft_builder()
