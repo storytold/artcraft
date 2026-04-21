@@ -6,18 +6,23 @@ use crate::generate::generate_video::video_generation_cost_estimate::VideoGenera
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
 
 // ── Pricing constants ──
+//
+// ArtCraft credits: 100 credits = $1.00. Credits always equal USD cents.
+//
+// The per-second USD cost varies by resolution. We compute cents directly
+// from the upstream Kinovi credit rates and their credit-package prices,
+// then set ArtCraft credits = cents.
 
-/// Credits consumed per second of video by resolution tier.
-const CREDITS_PER_SECOND_480P: u64 = 15;
-const CREDITS_PER_SECOND_720P: u64 = 40;
-const CREDITS_PER_SECOND_1080P: u64 = 90;
-
-/// Credits per dollar — determines the USD conversion rate.
-/// 720p uses legacy pricing (25,000 credits for $99.99 ~ 250/dollar).
-/// 480p and 1080p use new pricing (22,000 credits for $114 ~ 193/dollar).
-const CREDITS_PER_DOLLAR_720P: f64 = 250.0;
-const CREDITS_PER_DOLLAR_480P: f64 = 193.0;
-const CREDITS_PER_DOLLAR_1080P: f64 = 193.0;
+/// USD cents per second by resolution, derived from Kinovi rates:
+///   480p:  15 kinovi-credits/sec ÷ 193 kinovi-credits/$1 × 100 ≈ 7.772 ¢/s
+///   720p:  40 kinovi-credits/sec ÷ 250 kinovi-credits/$1 × 100 = 16.0   ¢/s
+///   1080p: 90 kinovi-credits/sec ÷ 193 kinovi-credits/$1 × 100 ≈ 46.632 ¢/s
+///
+/// We keep these as f64 because per-second rates are fractional; rounding
+/// happens once at the end after multiplying by duration × batch.
+const CENTS_PER_SECOND_480P: f64 = 7.772;
+const CENTS_PER_SECOND_720P: f64 = 16.0;
+const CENTS_PER_SECOND_1080P: f64 = 46.632;
 
 pub struct ArtcraftSeedance2p0CostState {
   pub resolution: Seedance2p0OutputResolution,
@@ -41,30 +46,23 @@ impl ArtcraftSeedance2p0CostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    let credits_per_second = match self.resolution {
-      Seedance2p0OutputResolution::FourEightyP => CREDITS_PER_SECOND_480P,
-      Seedance2p0OutputResolution::SevenTwentyP => CREDITS_PER_SECOND_720P,
-      Seedance2p0OutputResolution::TenEightyP => CREDITS_PER_SECOND_1080P,
+    let cents_per_second = match self.resolution {
+      Seedance2p0OutputResolution::FourEightyP => CENTS_PER_SECOND_480P,
+      Seedance2p0OutputResolution::SevenTwentyP => CENTS_PER_SECOND_720P,
+      Seedance2p0OutputResolution::TenEightyP => CENTS_PER_SECOND_1080P,
     };
 
-    let batch_multiplier: u64 = match self.batch_count {
-      Seedance2p0BatchCount::One => 1,
-      Seedance2p0BatchCount::Two => 2,
-      Seedance2p0BatchCount::Four => 4,
+    let batch_multiplier: f64 = match self.batch_count {
+      Seedance2p0BatchCount::One => 1.0,
+      Seedance2p0BatchCount::Two => 2.0,
+      Seedance2p0BatchCount::Four => 4.0,
     };
 
-    let credits = (self.duration_seconds as u64) * credits_per_second * batch_multiplier;
+    let usd_cents = (self.duration_seconds as f64 * cents_per_second * batch_multiplier).round() as u64;
 
-    let credits_per_dollar = match self.resolution {
-      Seedance2p0OutputResolution::FourEightyP => CREDITS_PER_DOLLAR_480P,
-      Seedance2p0OutputResolution::SevenTwentyP => CREDITS_PER_DOLLAR_720P,
-      Seedance2p0OutputResolution::TenEightyP => CREDITS_PER_DOLLAR_1080P,
-    };
-
-    let usd_cents = (credits as f64 / credits_per_dollar * 100.0).round() as u64;
-
+    // ArtCraft credits: 100 credits = $1.00, so credits = cents.
     VideoGenerationCostEstimate {
-      cost_in_credits: Some(credits),
+      cost_in_credits: Some(usd_cents),
       cost_in_usd_cents: Some(usd_cents),
       is_free: false,
       is_unlimited: false,
@@ -85,8 +83,6 @@ mod tests {
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
-  use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
-  use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
   use super::*;
 
@@ -351,18 +347,38 @@ mod tests {
     use super::*;
 
     #[test]
+    fn credits_equal_usd_cents() {
+      // ArtCraft credits: 100 credits = $1.00, so credits always equal cents.
+      for res in [
+        Seedance2p0OutputResolution::FourEightyP,
+        Seedance2p0OutputResolution::SevenTwentyP,
+        Seedance2p0OutputResolution::TenEightyP,
+      ] {
+        for dur in [4, 5, 10, 15] {
+          for batch in [Seedance2p0BatchCount::One, Seedance2p0BatchCount::Two, Seedance2p0BatchCount::Four] {
+            assert_eq!(
+              credits(res, dur, batch),
+              usd_cents(res, dur, batch),
+              "credits should equal usd_cents for {:?} {}s {:?}", res, dur, batch,
+            );
+          }
+        }
+      }
+    }
+
+    #[test]
     fn credits_720p() {
-      assert_eq!(credits(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::One), 200);
+      assert_eq!(credits(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::One), 80);
     }
 
     #[test]
     fn credits_480p() {
-      assert_eq!(credits(Seedance2p0OutputResolution::FourEightyP, 5, Seedance2p0BatchCount::One), 75);
+      assert_eq!(credits(Seedance2p0OutputResolution::FourEightyP, 5, Seedance2p0BatchCount::One), 39);
     }
 
     #[test]
     fn credits_1080p() {
-      assert_eq!(credits(Seedance2p0OutputResolution::TenEightyP, 5, Seedance2p0BatchCount::One), 450);
+      assert_eq!(credits(Seedance2p0OutputResolution::TenEightyP, 5, Seedance2p0BatchCount::One), 233);
     }
   }
 
