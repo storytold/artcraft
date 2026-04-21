@@ -43,6 +43,9 @@ pub enum ClientError {
 
   /// Seedance2Pro only accepts URLs for media inputs, not media tokens.
   Seedance2ProOnlySupportsUrls,
+  
+  /// The pre-dispatch context of media file token to URL map was not supplied.
+  MediaFileToUrlMapNotProvided,
 }
 
 impl Error for ClientError {}
@@ -70,6 +73,9 @@ impl Display for ClientError {
       }
       Self::Seedance2ProOnlySupportsUrls => {
         write!(f, "Seedance2Pro only supports URLs for media inputs; resolve media tokens to URLs before calling this provider")
+      }
+      Self::MediaFileToUrlMapNotProvided => {
+        write!(f, "Media file to URL map was not provided")
       }
     }
   }

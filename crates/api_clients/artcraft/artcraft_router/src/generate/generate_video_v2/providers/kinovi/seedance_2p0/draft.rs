@@ -3,6 +3,8 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::request::KinoviSeedance2p0RequestState;
 use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviGenerateVideoRequest, KinoviModelType, KinoviOutputResolution};
+use std::collections::HashMap;
+use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone)]
 pub struct KinoviSeedance2p0DraftState {
@@ -38,6 +40,7 @@ impl KinoviSeedance2p0DraftState {
   pub async fn to_request(
     &mut self,
     client: &RouterSeedance2ProClient,
+    maybe_media_file_to_url_map: Option<&HashMap<MediaFileToken, String>>,
   ) -> Result<KinoviSeedance2p0RequestState, ArtcraftRouterError> {
     let _session = &client.session;
 

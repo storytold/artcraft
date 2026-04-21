@@ -3,6 +3,7 @@ use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::cost::KinoviSeedance2p0CostState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftState;
+use crate::generate::generate_video_v2::video_generation_draft_context::VideoGenerationDraftContext;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
 /**
@@ -24,11 +25,12 @@ impl VideoGenerationDraftRequest {
 
   /// Finalize the draft request before generation
   /// This may involve uploading media to the provider.
-  pub async fn finalize(self, client: &RouterClient) -> Result<VideoGenerationRequest, ArtcraftRouterError> {
+  pub async fn finalize(self, draft_context: VideoGenerationDraftContext<'_>) -> Result<VideoGenerationRequest, ArtcraftRouterError> {
     match self {
       VideoGenerationDraftRequest::KinoviSeedance2p0(mut draft) => {
-        let client_ref = client.get_seedance2pro_client_ref()?;
-        let result = draft.to_request(client_ref).await?;
+        let client_ref = draft_context.get_seedance2pro_client_ref()?;
+        let maybe_media_file_map_ref = draft_context.media_file_to_artcraft_url_map;
+        let result = draft.to_request(client_ref, maybe_media_file_map_ref).await?;
         Ok(VideoGenerationRequest::KinoviSeedance2p0(result))
       },
     }
