@@ -80,34 +80,18 @@ impl KinoviSeedance2p0CostState {
 mod tests {
   use super::*;
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
   use crate::api::provider::Provider;
   use crate::api::video_list_ref::VideoListRef;
-  use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   // ======================== Helpers ========================
-
-  fn cost_state(
-    resolution: KinoviOutputResolution,
-    duration_seconds: u8,
-    batch_count: KinoviBatchCount,
-    has_video_reference: bool,
-  ) -> KinoviSeedance2p0CostState {
-    KinoviSeedance2p0CostState {
-      resolution,
-      duration_seconds,
-      batch_count,
-      has_video_reference,
-    }
-  }
 
   fn usd_cents(
     resolution: KinoviOutputResolution,
     duration_seconds: u8,
     batch_count: KinoviBatchCount,
   ) -> u64 {
-    cost_state(resolution, duration_seconds, batch_count, false)
+    KinoviSeedance2p0CostState { resolution, duration_seconds, batch_count, has_video_reference: false }
       .estimate_cost()
       .cost_in_usd_cents
       .unwrap()
@@ -118,7 +102,7 @@ mod tests {
     duration_seconds: u8,
     batch_count: KinoviBatchCount,
   ) -> u64 {
-    cost_state(resolution, duration_seconds, batch_count, false)
+    KinoviSeedance2p0CostState { resolution, duration_seconds, batch_count, has_video_reference: false }
       .estimate_cost()
       .cost_in_credits
       .unwrap()
@@ -138,27 +122,15 @@ mod tests {
     };
 
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0,
       provider: Provider::Seedance2Pro,
-      prompt: Some("test".to_string()),
-      negative_prompt: None,
-      start_frame: None,
-      end_frame: None,
-      reference_images: None,
-      reference_videos,
-      reference_audio: None,
-      reference_character_tokens: None,
       resolution,
-      aspect_ratio: None,
+      reference_videos,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),
-      generate_audio: None,
-      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-      idempotency_token: None,
+      ..Default::default()
     };
 
-    let draft_or_request = builder.build2().expect("build2 should succeed");
-    match draft_or_request {
+    match builder.build2().expect("build2 should succeed") {
       crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest::Draft(
         crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest::KinoviSeedance2p0(draft)
       ) => draft,
@@ -300,10 +272,14 @@ mod tests {
 
   #[test]
   fn video_reference_does_not_affect_cost() {
-    let without = cost_state(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One, false)
-      .estimate_cost();
-    let with = cost_state(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One, true)
-      .estimate_cost();
+    let base = KinoviSeedance2p0CostState {
+      resolution: KinoviOutputResolution::SevenTwentyP,
+      duration_seconds: 5,
+      batch_count: KinoviBatchCount::One,
+      has_video_reference: false,
+    };
+    let without = base.estimate_cost();
+    let with = KinoviSeedance2p0CostState { has_video_reference: true, ..base }.estimate_cost();
     assert_eq!(without.cost_in_usd_cents, with.cost_in_usd_cents);
     assert_eq!(without.cost_in_credits, with.cost_in_credits);
   }

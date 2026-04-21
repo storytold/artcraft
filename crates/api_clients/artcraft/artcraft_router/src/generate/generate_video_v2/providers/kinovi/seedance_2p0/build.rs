@@ -201,7 +201,6 @@ mod tests {
   use crate::api::character_list_ref::CharacterListRef;
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
@@ -213,31 +212,18 @@ mod tests {
 
   use super::*;
 
-  fn base_builder() -> GenerateVideoRequestBuilder {
+  fn seedance2pro_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0,
       provider: Provider::Seedance2Pro,
       prompt: Some("a cat dancing".to_string()),
-      negative_prompt: None,
-      start_frame: None,
-      end_frame: None,
-      reference_images: None,
-      reference_videos: None,
-      reference_audio: None,
-      reference_character_tokens: None,
-      resolution: None,
-      aspect_ratio: None,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
-      generate_audio: None,
-      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-      idempotency_token: None,
+      ..Default::default()
     }
   }
 
   fn unwrap_draft(result: Result<VideoGenerationDraftOrRequest, ArtcraftRouterError>) -> KinoviSeedance2p0DraftState {
-    let draft_or_request = result.expect("build should succeed");
-    match draft_or_request {
+    match result.expect("build should succeed") {
       VideoGenerationDraftOrRequest::Draft(
         VideoGenerationDraftRequest::KinoviSeedance2p0(draft)
       ) => draft,
@@ -249,27 +235,27 @@ mod tests {
 
   #[test]
   fn prompt_is_passed_through() {
-    let draft = unwrap_draft(build_kinovi_seedance_2p0(base_builder()));
+    let draft = unwrap_draft(build_kinovi_seedance_2p0(seedance2pro_builder()));
     assert_eq!(draft.prompt, "a cat dancing");
   }
 
   #[test]
   fn prompt_defaults_to_empty() {
-    let builder = GenerateVideoRequestBuilder { prompt: None, ..base_builder() };
+    let builder = GenerateVideoRequestBuilder { prompt: None, ..seedance2pro_builder() };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert_eq!(draft.prompt, "");
   }
 
   #[test]
   fn duration_seconds_converted() {
-    let builder = GenerateVideoRequestBuilder { duration_seconds: Some(10), ..base_builder() };
+    let builder = GenerateVideoRequestBuilder { duration_seconds: Some(10), ..seedance2pro_builder() };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert_eq!(draft.duration_seconds, 10);
   }
 
   #[test]
   fn duration_defaults_to_5() {
-    let builder = GenerateVideoRequestBuilder { duration_seconds: None, ..base_builder() };
+    let builder = GenerateVideoRequestBuilder { duration_seconds: None, ..seedance2pro_builder() };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert_eq!(draft.duration_seconds, 5);
   }
@@ -278,7 +264,7 @@ mod tests {
   fn duration_clamped_to_max() {
     let builder = GenerateVideoRequestBuilder {
       duration_seconds: Some(99),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert_eq!(draft.duration_seconds, 15);
@@ -286,21 +272,21 @@ mod tests {
 
   #[test]
   fn batch_count_one() {
-    let builder = GenerateVideoRequestBuilder { video_batch_count: Some(1), ..base_builder() };
+    let builder = GenerateVideoRequestBuilder { video_batch_count: Some(1), ..seedance2pro_builder() };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.batch_count, KinoviBatchCount::One));
   }
 
   #[test]
   fn batch_count_two() {
-    let builder = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..base_builder() };
+    let builder = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..seedance2pro_builder() };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.batch_count, KinoviBatchCount::Two));
   }
 
   #[test]
   fn batch_count_four() {
-    let builder = GenerateVideoRequestBuilder { video_batch_count: Some(4), ..base_builder() };
+    let builder = GenerateVideoRequestBuilder { video_batch_count: Some(4), ..seedance2pro_builder() };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.batch_count, KinoviBatchCount::Four));
   }
@@ -311,7 +297,7 @@ mod tests {
   fn aspect_ratio_wide() {
     let builder = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.aspect_ratio, KinoviAspectRatio::Landscape16x9));
@@ -321,7 +307,7 @@ mod tests {
   fn aspect_ratio_tall() {
     let builder = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.aspect_ratio, KinoviAspectRatio::Portrait9x16));
@@ -331,7 +317,7 @@ mod tests {
   fn aspect_ratio_square() {
     let builder = GenerateVideoRequestBuilder {
       aspect_ratio: Some(CommonAspectRatio::Square),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.aspect_ratio, KinoviAspectRatio::Square1x1));
@@ -339,7 +325,7 @@ mod tests {
 
   #[test]
   fn aspect_ratio_defaults_to_landscape() {
-    let builder = GenerateVideoRequestBuilder { aspect_ratio: None, ..base_builder() };
+    let builder = GenerateVideoRequestBuilder { aspect_ratio: None, ..seedance2pro_builder() };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.aspect_ratio, KinoviAspectRatio::Landscape16x9));
   }
@@ -350,7 +336,7 @@ mod tests {
   fn resolution_480p() {
     let builder = GenerateVideoRequestBuilder {
       resolution: Some(CommonResolution::FourEightyP),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.resolution, Some(KinoviOutputResolution::FourEightyP)));
@@ -360,7 +346,7 @@ mod tests {
   fn resolution_720p() {
     let builder = GenerateVideoRequestBuilder {
       resolution: Some(CommonResolution::SevenTwentyP),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
@@ -370,7 +356,7 @@ mod tests {
   fn resolution_1080p() {
     let builder = GenerateVideoRequestBuilder {
       resolution: Some(CommonResolution::TenEightyP),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.resolution, Some(KinoviOutputResolution::TenEightyP)));
@@ -378,7 +364,7 @@ mod tests {
 
   #[test]
   fn resolution_none() {
-    let builder = GenerateVideoRequestBuilder { resolution: None, ..base_builder() };
+    let builder = GenerateVideoRequestBuilder { resolution: None, ..seedance2pro_builder() };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(draft.resolution.is_none());
   }
@@ -388,7 +374,7 @@ mod tests {
     let builder = GenerateVideoRequestBuilder {
       resolution: Some(CommonResolution::FourK),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     assert!(build_kinovi_seedance_2p0(builder).is_err());
   }
@@ -398,7 +384,7 @@ mod tests {
     let builder = GenerateVideoRequestBuilder {
       resolution: Some(CommonResolution::FourK),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     assert!(matches!(draft.resolution, Some(KinoviOutputResolution::TenEightyP)));
@@ -408,7 +394,7 @@ mod tests {
 
   #[test]
   fn unhandled_state_is_present() {
-    let draft = unwrap_draft(build_kinovi_seedance_2p0(base_builder()));
+    let draft = unwrap_draft(build_kinovi_seedance_2p0(seedance2pro_builder()));
     assert!(draft.unhandled_request_state.is_some());
   }
 
@@ -416,7 +402,7 @@ mod tests {
   fn start_frame_placed_in_unhandled() {
     let builder = GenerateVideoRequestBuilder {
       start_frame: Some(ImageRef::Url("https://example.com/start.jpg".to_string())),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     let remaining = draft.unhandled_request_state.unwrap();
@@ -427,7 +413,7 @@ mod tests {
   fn end_frame_placed_in_unhandled() {
     let builder = GenerateVideoRequestBuilder {
       end_frame: Some(ImageRef::Url("https://example.com/end.jpg".to_string())),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     let remaining = draft.unhandled_request_state.unwrap();
@@ -438,7 +424,7 @@ mod tests {
   fn start_frame_media_token_placed_in_unhandled() {
     let builder = GenerateVideoRequestBuilder {
       start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test123".to_string()))),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     let remaining = draft.unhandled_request_state.unwrap();
@@ -452,7 +438,7 @@ mod tests {
         "https://example.com/ref1.jpg".to_string(),
         "https://example.com/ref2.jpg".to_string(),
       ])),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     let remaining = draft.unhandled_request_state.unwrap();
@@ -472,7 +458,7 @@ mod tests {
       reference_videos: Some(VideoListRef::Urls(vec![
         "https://example.com/vid.mp4".to_string(),
       ])),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     let remaining = draft.unhandled_request_state.unwrap();
@@ -485,7 +471,7 @@ mod tests {
       reference_audio: Some(AudioListRef::Urls(vec![
         "https://example.com/audio.mp3".to_string(),
       ])),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     let remaining = draft.unhandled_request_state.unwrap();
@@ -499,7 +485,7 @@ mod tests {
         CharacterToken::new("char_abc".to_string()),
         CharacterToken::new("char_def".to_string()),
       ])),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
     let remaining = draft.unhandled_request_state.unwrap();
@@ -515,7 +501,7 @@ mod tests {
 
   #[test]
   fn empty_refs_are_none_in_unhandled() {
-    let draft = unwrap_draft(build_kinovi_seedance_2p0(base_builder()));
+    let draft = unwrap_draft(build_kinovi_seedance_2p0(seedance2pro_builder()));
     let remaining = draft.unhandled_request_state.unwrap();
     assert!(remaining.start_frame.is_none());
     assert!(remaining.end_frame.is_none());
@@ -543,7 +529,7 @@ mod tests {
       reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
         CharacterToken::new("char_xyz".to_string()),
       ])),
-      ..base_builder()
+      ..seedance2pro_builder()
     };
     let draft = unwrap_draft(build_kinovi_seedance_2p0(builder));
 
