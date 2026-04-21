@@ -25,6 +25,7 @@ import {
 } from "~/components/reusable/FloatingToolbar";
 import { useMoodboardStore } from "./MoodboardStore";
 import { Tool } from "./types";
+import { MOD, fmtShortcut } from "./overlays/shortcuts";
 import { computeFitToGridPatches } from "./layout/fitToGrid";
 import { computeAABB } from "./layout/geometry";
 import { computePackPatches } from "./layout/packCollage";
@@ -146,14 +147,14 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
 
       <FloatingToolbarButton
         icon={faObjectGroup}
-        label="Group (⌘G)"
+        label={`Group (${fmtShortcut([MOD, "G"])})`}
         onClick={() => group()}
         disabled={selectedIds.size < 2}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
         icon={faObjectUngroup}
-        label="Ungroup (⌘⇧G)"
+        label={`Ungroup (${fmtShortcut([MOD, "Shift", "G"])})`}
         onClick={() => ungroup()}
         disabled={selectedIds.size === 0}
         tooltipDelay={100}
@@ -185,13 +186,13 @@ export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
 
       <FloatingToolbarButton
         icon={faRotateLeft}
-        label="Undo (⌘Z)"
+        label={`Undo (${fmtShortcut([MOD, "Z"])})`}
         onClick={undo}
         tooltipDelay={100}
       />
       <FloatingToolbarButton
         icon={faRotateRight}
-        label="Redo (⌘⇧Z)"
+        label={`Redo (${fmtShortcut([MOD, "Shift", "Z"])})`}
         onClick={redo}
         tooltipDelay={100}
       />

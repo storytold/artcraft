@@ -52,7 +52,7 @@ export const Moodboard = () => {
   return (
     <div
       ref={containerRef}
-      className="relative h-[calc(100vh-56px)] w-screen overflow-hidden bg-ui-background"
+      className="relative h-[calc(100vh-56px)] w-screen overflow-hidden bg-ui-panel"
     >
       <MoodboardStage containerRef={containerRef} stageRef={stageRef} />
       <TextEditOverlay containerRef={containerRef} />
