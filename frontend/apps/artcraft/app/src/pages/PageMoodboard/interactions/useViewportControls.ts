@@ -2,20 +2,9 @@ import { useEffect, useRef } from "react";
 import Konva from "konva";
 import { useMoodboardStore } from "../MoodboardStore";
 import { Vec2 } from "../types";
+import { ZOOM_MAX, ZOOM_MIN, clamp } from "../layout/geometry";
 
 const ZOOM_STEP = 1.1;
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 8;
-
-interface ViewportSetters {
-  zoomRef: React.MutableRefObject<number>;
-  panRef: React.MutableRefObject<Vec2>;
-  setZoom: (z: number) => void;
-  setPan: (p: Vec2) => void;
-}
-
-const clamp = (v: number, lo: number, hi: number) =>
-  Math.max(lo, Math.min(hi, v));
 
 const isEditableTarget = (target: EventTarget | null): boolean => {
   const el = target as HTMLElement | null;
@@ -26,14 +15,16 @@ const isEditableTarget = (target: EventTarget | null): boolean => {
 };
 
 // Centralizes wheel-zoom and three pan gestures (drag-empty, spacebar+drag,
-// middle-click drag) for the moodboard canvas. Owns no state of its own —
-// reads zoom/pan from refs (live values) and writes through the provided
-// setters so React state stays in sync.
+// middle-click drag) for the moodboard canvas. Reads/writes viewport from
+// the store directly — no more ref props, which keeps a future minimap or
+// other camera-driving UI (recenter button, Shift+1 fit, etc.) able to
+// co-exist with these gestures.
 export const useViewportControls = (
   stageRef: React.RefObject<Konva.Stage | null>,
-  setters: ViewportSetters,
 ) => {
-  const { zoomRef, panRef, setZoom, setPan } = setters;
+  const setZoom = useMoodboardStore((s) => s.setZoom);
+  const setPan = useMoodboardStore((s) => s.setPan);
+  const resetViewport = useMoodboardStore((s) => s.resetViewport);
   const setIsPanning = useMoodboardStore((s) => s.setIsPanning);
 
   // Track spacebar so any subsequent mousedown becomes a pan, not a select.
@@ -60,10 +51,11 @@ export const useViewportControls = (
       // Ignore zoom if the user is typing in the text-edit overlay or an input.
       if (isEditableTarget(document.activeElement)) return;
       e.preventDefault();
-      const oldScale = zoomRef.current;
+      const { viewport } = useMoodboardStore.getState();
+      const oldScale = viewport.zoom;
       const pointer = stage.getPointerPosition();
       if (!pointer) return;
-      const stagePos = panRef.current;
+      const stagePos = viewport.pan;
       const mousePointTo = {
         x: (pointer.x - stagePos.x) / oldScale,
         y: (pointer.y - stagePos.y) / oldScale,
@@ -71,8 +63,8 @@ export const useViewportControls = (
       const direction = e.deltaY > 0 ? -1 : 1;
       const newScale = clamp(
         direction > 0 ? oldScale * ZOOM_STEP : oldScale / ZOOM_STEP,
-        MIN_ZOOM,
-        MAX_ZOOM,
+        ZOOM_MIN,
+        ZOOM_MAX,
       );
       const newPan = {
         x: pointer.x - mousePointTo.x * newScale,
@@ -86,7 +78,7 @@ export const useViewportControls = (
     return () => {
       container.removeEventListener("wheel", handleWheel);
     };
-  }, [stageRef, zoomRef, panRef, setZoom, setPan]);
+  }, [stageRef, setZoom, setPan]);
 
   // Pan gestures: middle-mouse drag, or spacebar+left-drag. Plain left
   // click is reserved for selection (clicking nodes, lasso, future marquee)
@@ -100,7 +92,7 @@ export const useViewportControls = (
       panState.current = {
         active: true,
         startScreen: { x: clientX, y: clientY },
-        startPan: { ...panRef.current },
+        startPan: { ...useMoodboardStore.getState().viewport.pan },
       };
       setIsPanning(true);
       container.style.cursor = "grabbing";
@@ -156,8 +148,7 @@ export const useViewportControls = (
       const mod = isMac ? e.metaKey : e.ctrlKey;
       if (mod && e.key === "0") {
         e.preventDefault();
-        setZoom(1);
-        setPan({ x: 0, y: 0 });
+        resetViewport();
       }
     };
 
@@ -186,5 +177,5 @@ export const useViewportControls = (
       document.removeEventListener("keyup", handleKeyUp);
       container.style.cursor = "";
     };
-  }, [stageRef, panRef, setPan, setZoom, setIsPanning]);
+  }, [stageRef, setPan, resetViewport, setIsPanning]);
 };

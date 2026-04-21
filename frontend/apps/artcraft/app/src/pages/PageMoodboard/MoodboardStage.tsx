@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import Konva from "konva";
 import { Stage, Layer, Rect, Line, Group, Transformer } from "react-konva";
+import { useShallow } from "zustand/react/shallow";
 import { useMoodboardStore } from "./MoodboardStore";
 import { MoodboardBackground } from "./MoodboardBackground";
 import { ImageNode } from "./nodes/ImageNode";
@@ -10,7 +11,6 @@ import { useSelection } from "./interactions/useSelection";
 import { useTransformer } from "./interactions/useTransformer";
 import { useViewportControls } from "./interactions/useViewportControls";
 import { stagePointerPos } from "./interactions/useStagePointer";
-import { Vec2 } from "./types";
 
 interface Props {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -20,40 +20,48 @@ interface Props {
 export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
   const transformerRef = useTransformer(stageRef);
 
-  const [size, setSize] = useState({ width: 800, height: 600 });
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState<Vec2>({ x: 0, y: 0 });
-  const zoomRef = useRef(zoom);
-  const panRef = useRef(pan);
-  zoomRef.current = zoom;
-  panRef.current = pan;
-
   const nodes = useMoodboardStore((s) => s.nodes);
   const rootOrder = useMoodboardStore((s) => s.rootOrder);
   const selectedIds = useMoodboardStore((s) => s.selectedIds);
   const tool = useMoodboardStore((s) => s.tool);
   const gridSpacing = useMoodboardStore((s) => s.gridSpacing);
-  const transient = useMoodboardStore((s) => s.transient);
+  // Only subscribe to the transient fields this component actually renders
+  // (marquee + lasso). Skips re-renders on `editingTextId` and `isPanning`
+  // toggles, which don't affect Stage JSX.
+  const { marquee, lassoPath } = useMoodboardStore(
+    useShallow((s) => ({
+      marquee: s.transient.marquee,
+      lassoPath: s.transient.lassoPath,
+    })),
+  );
+  const viewport = useMoodboardStore((s) => s.viewport);
+  const canvasSize = useMoodboardStore((s) => s.canvasSize);
   const setLastDropPoint = useMoodboardStore((s) => s.setLastDropPoint);
+  const setCanvasSize = useMoodboardStore((s) => s.setCanvasSize);
   const toggleInSelection = useMoodboardStore((s) => s.toggleInSelection);
   const setEditingText = useMoodboardStore((s) => s.setEditingText);
   const addText = useMoodboardStore((s) => s.addText);
 
+  const zoom = viewport.zoom;
+  const pan = viewport.pan;
+
   // Track wrapper size with ResizeObserver so the Stage fills its container.
+  // The size lives in the store so overlays (recenter indicator, future
+  // minimap) can read it without drilling refs through the tree.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return undefined;
     const updateSize = () => {
-      setSize({ width: el.clientWidth, height: el.clientHeight });
+      setCanvasSize({ width: el.clientWidth, height: el.clientHeight });
     };
     updateSize();
     const ro = new ResizeObserver(updateSize);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [containerRef]);
+  }, [containerRef, setCanvasSize]);
 
   useSelection(stageRef);
-  useViewportControls(stageRef, { zoomRef, panRef, setZoom, setPan });
+  useViewportControls(stageRef);
 
   // Update lastDropPoint as the cursor moves across the stage so external
   // drops (uploads, paste fallbacks) land near the cursor.
@@ -70,14 +78,17 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
     };
   }, [setLastDropPoint, stageRef]);
 
-  const handleNodeSelect = (
-    id: string,
-    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-  ) => {
-    const evt = e.evt as MouseEvent | TouchEvent;
-    const additive = "shiftKey" in evt && evt.shiftKey;
-    toggleInSelection(id, additive);
-  };
+  // Stable across renders so memoized node children see an unchanged
+  // onSelect prop and skip re-render when only camera/selection state
+  // changes. Depends only on a Zustand action, which itself is stable.
+  const handleNodeSelect = useCallback(
+    (id: string, e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+      const evt = e.evt as MouseEvent | TouchEvent;
+      const additive = "shiftKey" in evt && evt.shiftKey;
+      toggleInSelection(id, additive);
+    },
+    [toggleInSelection],
+  );
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.target !== stageRef.current) return;
@@ -95,20 +106,26 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
 
   // Visible region in stage coords; drives the dotted background grid so
   // it follows pan/zoom rather than rendering a fixed (0,0,w,h) block.
-  const visibleViewport = {
-    x: -pan.x / zoom,
-    y: -pan.y / zoom,
-    width: size.width / zoom,
-    height: size.height / zoom,
-  };
+  // Memoized so transient store updates (marquee, lasso, isPanning) don't
+  // churn its identity and force `MoodboardBackground` to re-run sceneFunc
+  // every frame of a marquee drag.
+  const visibleViewport = useMemo(
+    () => ({
+      x: -pan.x / zoom,
+      y: -pan.y / zoom,
+      width: canvasSize.width / zoom,
+      height: canvasSize.height / zoom,
+    }),
+    [pan.x, pan.y, zoom, canvasSize.width, canvasSize.height],
+  );
 
   return (
     <Stage
       ref={(s) => {
         stageRef.current = s;
       }}
-      width={size.width}
-      height={size.height}
+      width={canvasSize.width}
+      height={canvasSize.height}
       x={pan.x}
       y={pan.y}
       scaleX={zoom}
@@ -125,24 +142,26 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
           height={visibleViewport.height}
           fill="#0f0f12"
         />
-        <MoodboardBackground viewport={visibleViewport} spacing={gridSpacing} />
+        <MoodboardBackground
+          viewport={visibleViewport}
+          spacing={gridSpacing}
+          zoom={zoom}
+        />
       </Layer>
       <Layer>
         {rootOrder.map((id) => {
           const n = nodes[id];
           if (!n) return null;
           const selected = selectedIds.has(id);
-          const onSelect = (
-            e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-          ) => handleNodeSelect(id, e);
+          const draggable = tool === "select";
           if (n.kind === "image") {
             return (
               <ImageNode
                 key={id}
                 node={n}
-                draggable={tool === "select"}
+                draggable={draggable}
                 selected={selected}
-                onSelect={onSelect}
+                onSelect={handleNodeSelect}
               />
             );
           }
@@ -151,9 +170,9 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
               <TextNode
                 key={id}
                 node={n}
-                draggable={tool === "select"}
+                draggable={draggable}
                 selected={selected}
-                onSelect={onSelect}
+                onSelect={handleNodeSelect}
               />
             );
           }
@@ -163,7 +182,7 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
                 key={id}
                 node={n}
                 selected={selected}
-                onSelect={onSelect}
+                onSelect={handleNodeSelect}
               />
             );
           }
@@ -233,21 +252,21 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
             />
           );
         })}
-        {transient.marquee && (
+        {marquee && (
           <Rect
-            x={transient.marquee.x}
-            y={transient.marquee.y}
-            width={transient.marquee.width}
-            height={transient.marquee.height}
+            x={marquee.x}
+            y={marquee.y}
+            width={marquee.width}
+            height={marquee.height}
             stroke="#3b82f6"
             strokeWidth={1 / zoom}
             dash={[4 / zoom, 4 / zoom]}
             fill="rgba(59,130,246,0.08)"
           />
         )}
-        {transient.lassoPath && transient.lassoPath.length >= 2 && (
+        {lassoPath && lassoPath.length >= 2 && (
           <Line
-            points={transient.lassoPath.flatMap((p) => [p.x, p.y])}
+            points={lassoPath.flatMap((p) => [p.x, p.y])}
             stroke="#3b82f6"
             strokeWidth={1 / zoom}
             dash={[4 / zoom, 4 / zoom]}

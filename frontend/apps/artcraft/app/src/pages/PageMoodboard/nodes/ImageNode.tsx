@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import Konva from "konva";
 import { Image as KonvaImage, Rect } from "react-konva";
 import { ImageNode as ImageNodeData } from "../types";
@@ -8,10 +8,15 @@ interface Props {
   node: ImageNodeData;
   draggable: boolean;
   selected: boolean;
-  onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
+  // Receives the node id so parents can pass one stable callback to every
+  // sibling rather than allocating a per-item closure on each render.
+  onSelect: (
+    id: string,
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  ) => void;
 }
 
-export const ImageNode = ({ node, draggable, selected, onSelect }: Props) => {
+const ImageNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
   const updateNode = useMoodboardStore((s) => s.updateNode);
   const pushHistory = useMoodboardStore((s) => s.pushHistory);
   const ref = useRef<Konva.Image | null>(null);
@@ -26,6 +31,10 @@ export const ImageNode = ({ node, draggable, selected, onSelect }: Props) => {
       i.onload = null;
     };
   }, [node.src]);
+
+  const handleSelect = (
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  ) => onSelect(node.id, e);
 
   return (
     <>
@@ -53,8 +62,8 @@ export const ImageNode = ({ node, draggable, selected, onSelect }: Props) => {
         height={node.height}
         rotation={node.rotation}
         draggable={draggable}
-        onMouseDown={onSelect}
-        onTouchStart={onSelect}
+        onMouseDown={handleSelect}
+        onTouchStart={handleSelect}
         onDragStart={() => {
           pushHistory();
         }}
@@ -65,3 +74,5 @@ export const ImageNode = ({ node, draggable, selected, onSelect }: Props) => {
     </>
   );
 };
+
+export const ImageNode = memo(ImageNodeInner);

@@ -1,4 +1,5 @@
-import { computeAABB, computePackPatches } from "~/pages/PageMoodboard/layout/packCollage";
+import { computeAABB } from "~/pages/PageMoodboard/layout/geometry";
+import { computePackPatches } from "~/pages/PageMoodboard/layout/packCollage";
 import { MoodboardNode } from "~/pages/PageMoodboard/types";
 
 const img = (

@@ -7,6 +7,10 @@ import { useMoodboardStore } from "./MoodboardStore";
 import { useUndoRedo } from "./interactions/useUndoRedo";
 import { usePasteHandler } from "./interactions/usePasteHandler";
 import { useGalleryDropEvent } from "./interactions/useGalleryDropEvent";
+import { useKeyboardShortcuts } from "./interactions/useKeyboardShortcuts";
+import { useShortcutCheatsheet } from "./interactions/useShortcutCheatsheet";
+import { RecenterIndicator } from "./overlays/RecenterIndicator";
+import { ShortcutCheatsheet } from "./overlays/ShortcutCheatsheet";
 
 export const Moodboard = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -18,6 +22,8 @@ export const Moodboard = () => {
   useUndoRedo(true);
   usePasteHandler(true, stageRef);
   useGalleryDropEvent(true, stageRef);
+  useKeyboardShortcuts(true);
+  const cheatsheetVisible = useShortcutCheatsheet();
 
   // Delete / Backspace removes the current selection. Skip when typing in
   // an input or while a text node is in edit mode.
@@ -44,6 +50,8 @@ export const Moodboard = () => {
       <div ref={containerRef} className="relative flex-1 overflow-hidden">
         <MoodboardStage containerRef={containerRef} stageRef={stageRef} />
         <TextEditOverlay containerRef={containerRef} />
+        <RecenterIndicator />
+        <ShortcutCheatsheet visible={cheatsheetVisible} />
       </div>
     </div>
   );

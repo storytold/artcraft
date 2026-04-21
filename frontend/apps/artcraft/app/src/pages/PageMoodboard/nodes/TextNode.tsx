@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Konva from "konva";
 import { Text as KonvaText } from "react-konva";
 import { TextNode as TextNodeData } from "../types";
@@ -7,15 +8,25 @@ interface Props {
   node: TextNodeData;
   draggable: boolean;
   selected: boolean;
-  onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
+  onSelect: (
+    id: string,
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  ) => void;
 }
 
-export const TextNode = ({ node, draggable, selected, onSelect }: Props) => {
+const TextNodeInner = ({ node, draggable, selected, onSelect }: Props) => {
   const updateNode = useMoodboardStore((s) => s.updateNode);
   const pushHistory = useMoodboardStore((s) => s.pushHistory);
   const setEditingText = useMoodboardStore((s) => s.setEditingText);
-  const editingTextId = useMoodboardStore((s) => s.transient.editingTextId);
-  const isEditing = editingTextId === node.id;
+  // Selector compares a single id — only the TextNode whose isEditing
+  // actually flips will re-render when someone enters/exits text edit.
+  const isEditing = useMoodboardStore(
+    (s) => s.transient.editingTextId === node.id,
+  );
+
+  const handleSelect = (
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  ) => onSelect(node.id, e);
 
   return (
     <KonvaText
@@ -30,8 +41,8 @@ export const TextNode = ({ node, draggable, selected, onSelect }: Props) => {
       fill={node.color}
       padding={6}
       draggable={draggable}
-      onMouseDown={onSelect}
-      onTouchStart={onSelect}
+      onMouseDown={handleSelect}
+      onTouchStart={handleSelect}
       onDblClick={() => setEditingText(node.id)}
       onDblTap={() => setEditingText(node.id)}
       onDragStart={() => {
@@ -45,3 +56,5 @@ export const TextNode = ({ node, draggable, selected, onSelect }: Props) => {
     />
   );
 };
+
+export const TextNode = memo(TextNodeInner);

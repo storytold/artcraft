@@ -11,6 +11,13 @@ import {
   Vec2,
 } from "./types";
 import { useMoodboardHistoryStore } from "./MoodboardHistoryStore";
+import {
+  CanvasSize,
+  Viewport,
+  computeAABBById,
+  computeContentBounds,
+  fitViewportToBounds,
+} from "./layout/geometry";
 
 interface Transient {
   marquee: Rect | null;
@@ -26,10 +33,18 @@ interface MoodboardState {
   tool: Tool;
   gridSpacing: number;
   lastDropPoint: Vec2;
+  viewport: Viewport;
+  canvasSize: CanvasSize;
   transient: Transient;
 
   setTool: (t: Tool) => void;
   setLastDropPoint: (p: Vec2) => void;
+  setZoom: (z: number) => void;
+  setPan: (p: Vec2) => void;
+  setCanvasSize: (s: CanvasSize) => void;
+  resetViewport: () => void;
+  fitToContent: (padding?: number) => void;
+  selectAll: () => void;
 
   addImage: (
     src: string,
@@ -90,6 +105,8 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
   tool: "select",
   gridSpacing: 32,
   lastDropPoint: { x: 200, y: 200 },
+  viewport: { zoom: 1, pan: { x: 0, y: 0 } },
+  canvasSize: { width: 800, height: 600 },
   transient: {
     marquee: null,
     lassoPath: null,
@@ -99,6 +116,22 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
 
   setTool: (t) => set({ tool: t }),
   setLastDropPoint: (p) => set({ lastDropPoint: p }),
+  setZoom: (z) => set((s) => ({ viewport: { ...s.viewport, zoom: z } })),
+  setPan: (p) => set((s) => ({ viewport: { ...s.viewport, pan: p } })),
+  setCanvasSize: (sz) => set({ canvasSize: sz }),
+  resetViewport: () =>
+    set({ viewport: { zoom: 1, pan: { x: 0, y: 0 } } }),
+  fitToContent: (padding = 48) => {
+    const { nodes, rootOrder, canvasSize } = get();
+    const bounds = computeContentBounds(nodes, rootOrder);
+    if (!bounds) return;
+    set({ viewport: fitViewportToBounds(bounds, canvasSize, padding) });
+  },
+  selectAll: () => {
+    const { rootOrder } = get();
+    if (rootOrder.length === 0) return;
+    set({ selectedIds: new Set(rootOrder) });
+  },
 
   addImage: (src, pos, naturalW, naturalH, mediaId = null) => {
     get().pushHistory();
@@ -242,7 +275,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
     get().pushHistory();
     const groupId = uuidv4();
 
-    const aabb = computeAABB(nodes, topLevelIds);
+    const aabb = computeAABBById(nodes, topLevelIds);
     if (!aabb) return null;
 
     const groupNode: GroupNode = {
@@ -301,7 +334,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
           return n && n.parentId === null;
         });
         if (topLevelIds.length < 2) continue;
-        const aabb = computeAABB(newNodes, topLevelIds);
+        const aabb = computeAABBById(newNodes, topLevelIds);
         if (!aabb) continue;
         const groupId = uuidv4();
         const groupNode: GroupNode = {
@@ -440,6 +473,7 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       selectedIds: new Set(),
       tool: "select",
       lastDropPoint: { x: 200, y: 200 },
+      viewport: { zoom: 1, pan: { x: 0, y: 0 } },
       transient: {
         marquee: null,
         lassoPath: null,
@@ -482,27 +516,6 @@ const stripAncestorsAndDescendants = (
     }
   });
   return result;
-};
-
-const computeAABB = (
-  nodes: Record<string, MoodboardNode>,
-  ids: string[],
-): Rect | null => {
-  if (ids.length === 0) return null;
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const id of ids) {
-    const n = nodes[id];
-    if (!n) continue;
-    minX = Math.min(minX, n.x);
-    minY = Math.min(minY, n.y);
-    maxX = Math.max(maxX, n.x + n.width);
-    maxY = Math.max(maxY, n.y + n.height);
-  }
-  if (!isFinite(minX)) return null;
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 };
 
 // Maps a group-local point to stage-local coords using the group's transform.

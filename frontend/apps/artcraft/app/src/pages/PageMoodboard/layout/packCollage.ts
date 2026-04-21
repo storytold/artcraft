@@ -8,21 +8,6 @@ export interface PackOptions {
 
 const DEFAULTS: PackOptions = { rowHeight: 180, gap: 8 };
 
-export const computeAABB = (nodes: MoodboardNode[]): Rect | null => {
-  if (nodes.length === 0) return null;
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const n of nodes) {
-    minX = Math.min(minX, n.x);
-    minY = Math.min(minY, n.y);
-    maxX = Math.max(maxX, n.x + n.width);
-    maxY = Math.max(maxY, n.y + n.height);
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-};
-
 export const computePackPatches = (
   nodes: MoodboardNode[],
   bounds: Rect,

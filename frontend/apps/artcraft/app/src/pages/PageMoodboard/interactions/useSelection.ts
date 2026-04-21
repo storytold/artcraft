@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import Konva from "konva";
 import { useMoodboardStore } from "../MoodboardStore";
-import { Rect, Vec2 } from "../types";
+import { Vec2 } from "../types";
 import { stagePointerPos } from "./useStagePointer";
 import { pointInPolygon } from "../layout/pointInPolygon";
 import { polygonIntersectsRect } from "../layout/segmentsIntersect";
+import { rectCorners, rectFromPoints, rectsIntersect } from "../layout/geometry";
 
 const MIN_DRAG = 4; // screen px before a press becomes a drag
 
@@ -14,31 +15,6 @@ interface DragState {
   active: boolean;
   mode: "rect" | "lasso" | null;
 }
-
-const rectFromPoints = (a: Vec2, b: Vec2): Rect => ({
-  x: Math.min(a.x, b.x),
-  y: Math.min(a.y, b.y),
-  width: Math.abs(b.x - a.x),
-  height: Math.abs(b.y - a.y),
-});
-
-const aabbCorners = (n: { x: number; y: number; width: number; height: number }): Vec2[] => [
-  { x: n.x, y: n.y },
-  { x: n.x + n.width, y: n.y },
-  { x: n.x + n.width, y: n.y + n.height },
-  { x: n.x, y: n.y + n.height },
-];
-
-const intersectsRect = (
-  n: { x: number; y: number; width: number; height: number },
-  r: Rect,
-) =>
-  !(
-    n.x + n.width < r.x ||
-    n.x > r.x + r.width ||
-    n.y + n.height < r.y ||
-    n.y > r.y + r.height
-  );
 
 // Selection state machine for rectangle marquee (Select tool) and free-form
 // lasso (Lasso tool). Pan gestures (middle-mouse, spacebar+left) are owned
@@ -110,7 +86,12 @@ export const useSelection = (
           setSelection([]);
         } else {
           const hit = candidates
-            .filter((n) => intersectsRect(n, rect))
+            .filter((n) =>
+              rectsIntersect(
+                { x: n.x, y: n.y, width: n.width, height: n.height },
+                rect,
+              ),
+            )
             .map((n) => n.id);
           setSelection(hit);
         }
@@ -123,7 +104,7 @@ export const useSelection = (
           const closed = [...path, path[0]];
           const hit = candidates
             .filter((n) => {
-              const corners = aabbCorners(n);
+              const corners = rectCorners(n);
               if (corners.some((c) => pointInPolygon(c, closed))) return true;
               if (polygonIntersectsRect(closed, n)) return true;
               return false;

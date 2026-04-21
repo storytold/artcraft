@@ -1,5 +1,7 @@
+import { memo } from "react";
 import Konva from "konva";
 import { Group, Rect } from "react-konva";
+import { useShallow } from "zustand/react/shallow";
 import { GroupNode as GroupNodeData, MoodboardNode } from "../types";
 import { useMoodboardStore } from "../MoodboardStore";
 import { ImageNode } from "./ImageNode";
@@ -8,17 +10,37 @@ import { TextNode } from "./TextNode";
 interface Props {
   node: GroupNodeData;
   selected: boolean;
-  onSelect: (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => void;
+  onSelect: (
+    id: string,
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  ) => void;
 }
 
-export const GroupNode = ({ node, selected, onSelect }: Props) => {
-  const nodes = useMoodboardStore((s) => s.nodes);
+// Shared no-op for child renders: the group absorbs all clicks, so child
+// nodes never fire `onSelect`. Using a module-level constant keeps the
+// reference stable across renders, which lets the memoized child nodes
+// skip work when nothing else about them changed.
+const NO_OP_SELECT = () => {};
+
+const GroupNodeInner = ({ node, selected, onSelect }: Props) => {
   const updateNode = useMoodboardStore((s) => s.updateNode);
   const pushHistory = useMoodboardStore((s) => s.pushHistory);
 
-  const children: MoodboardNode[] = node.childIds
-    .map((id) => nodes[id])
-    .filter((n): n is MoodboardNode => Boolean(n));
+  // Subscribe only to this group's own children, with a shallow compare on
+  // the returned array. Avoids re-rendering every group whenever any node
+  // anywhere in the board updates (which would otherwise mutate the whole
+  // `nodes` map reference).
+  const children = useMoodboardStore(
+    useShallow((s) =>
+      node.childIds
+        .map((id) => s.nodes[id])
+        .filter((n): n is MoodboardNode => Boolean(n)),
+    ),
+  );
+
+  const handleSelect = (
+    e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  ) => onSelect(node.id, e);
 
   return (
     <Group
@@ -29,8 +51,8 @@ export const GroupNode = ({ node, selected, onSelect }: Props) => {
       height={node.height}
       rotation={node.rotation}
       draggable
-      onMouseDown={onSelect}
-      onTouchStart={onSelect}
+      onMouseDown={handleSelect}
+      onTouchStart={handleSelect}
       onDragStart={() => {
         pushHistory();
       }}
@@ -58,7 +80,7 @@ export const GroupNode = ({ node, selected, onSelect }: Props) => {
               node={child}
               draggable={false}
               selected={false}
-              onSelect={() => {}}
+              onSelect={NO_OP_SELECT}
             />
           );
         }
@@ -69,7 +91,7 @@ export const GroupNode = ({ node, selected, onSelect }: Props) => {
               node={child}
               draggable={false}
               selected={false}
-              onSelect={() => {}}
+              onSelect={NO_OP_SELECT}
             />
           );
         }
@@ -80,7 +102,7 @@ export const GroupNode = ({ node, selected, onSelect }: Props) => {
               key={child.id}
               node={child}
               selected={false}
-              onSelect={() => {}}
+              onSelect={NO_OP_SELECT}
             />
           );
         }
@@ -89,3 +111,5 @@ export const GroupNode = ({ node, selected, onSelect }: Props) => {
     </Group>
   );
 };
+
+export const GroupNode = memo(GroupNodeInner);
