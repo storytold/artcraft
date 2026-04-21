@@ -4,10 +4,13 @@ use crate::generate::generate_video::generate_video_response::GenerateVideoRespo
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::cost::KinoviSeedance2p0CostState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::request::KinoviSeedance2p0RequestState;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::cost::KinoviSeedance2p0FastCostState;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::request::KinoviSeedance2p0FastRequestState;
 
 #[derive(Clone, Debug)]
 pub enum VideoGenerationRequest {
   KinoviSeedance2p0(KinoviSeedance2p0RequestState),
+  KinoviSeedance2p0Fast(KinoviSeedance2p0FastRequestState),
 }
 
 impl VideoGenerationRequest {
@@ -16,6 +19,7 @@ impl VideoGenerationRequest {
   pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
     match self {
       VideoGenerationRequest::KinoviSeedance2p0(request) => Ok(KinoviSeedance2p0CostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::KinoviSeedance2p0Fast(request) => Ok(KinoviSeedance2p0FastCostState::from_request(request).estimate_cost()),
     }
   }
 
@@ -24,6 +28,10 @@ impl VideoGenerationRequest {
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     match self {
       VideoGenerationRequest::KinoviSeedance2p0(request) => {
+        let client_ref = client.get_seedance2pro_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::KinoviSeedance2p0Fast(request) => {
         let client_ref = client.get_seedance2pro_client_ref()?;
         request.send(client_ref).await
       },

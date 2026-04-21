@@ -11,11 +11,11 @@ use crate::generate::generate_video_v2::providers::kinovi::resolve::{
   resolve_and_upload_list, resolve_and_upload_single, resolve_character_tokens,
   video_list_ref_into_urls_or_tokens,
 };
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::request::KinoviSeedance2p0RequestState;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::request::KinoviSeedance2p0FastRequestState;
 use crate::generate::generate_video_v2::video_generation_draft_context::VideoGenerationDraftContext;
 
 #[derive(Debug, Clone)]
-pub struct KinoviSeedance2p0DraftState {
+pub struct KinoviSeedance2p0FastDraftState {
   // Materialized / finalized types
 
   pub prompt: String,
@@ -25,11 +25,11 @@ pub struct KinoviSeedance2p0DraftState {
   pub batch_count: KinoviBatchCount,
 
   // Pending types that need to be queried.
-  pub unhandled_request_state: Option<KinoviSeedance2p0RemainingItems>,
+  pub unhandled_request_state: Option<KinoviSeedance2p0FastRemainingItems>,
 }
 
 #[derive(Debug, Clone)]
-pub struct KinoviSeedance2p0RemainingItems {
+pub struct KinoviSeedance2p0FastRemainingItems {
   pub start_frame: Option<ImageRef>,
   pub end_frame: Option<ImageRef>,
   pub reference_images: Option<ImageListRef>,
@@ -38,11 +38,11 @@ pub struct KinoviSeedance2p0RemainingItems {
   pub reference_character_tokens: Option<CharacterListRef>,
 }
 
-impl KinoviSeedance2p0DraftState {
+impl KinoviSeedance2p0FastDraftState {
   pub async fn to_request(
     &mut self,
     draft_context: &VideoGenerationDraftContext<'_>,
-  ) -> Result<KinoviSeedance2p0RequestState, ArtcraftRouterError> {
+  ) -> Result<KinoviSeedance2p0FastRequestState, ArtcraftRouterError> {
     let client = draft_context.get_seedance2pro_client_ref()?;
     let session = &client.session;
 
@@ -78,7 +78,7 @@ impl KinoviSeedance2p0DraftState {
     }
 
     let request = KinoviGenerateVideoRequest {
-      model_type: KinoviModelType::Seedance2Pro,
+      model_type: KinoviModelType::Seedance2Fast,
       prompt: self.prompt.clone(),
       aspect_ratio: self.aspect_ratio,
       output_resolution: self.resolution,
@@ -93,6 +93,6 @@ impl KinoviSeedance2p0DraftState {
       use_face_blur_hack: None,
     };
 
-    Ok(KinoviSeedance2p0RequestState { request })
+    Ok(KinoviSeedance2p0FastRequestState { request })
   }
 }
