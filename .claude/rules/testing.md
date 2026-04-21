@@ -14,6 +14,21 @@
 - Enum tests should cover: serialization, deserialization, `to_str`/`from_str` round-trip, variant count
 - Password/crypto tests: be mindful of computation cost, don't add too many bcrypt test cases
 
+## Test File Layout
+
+Put test cases first, helpers last. Engineers should see the actual tests before scrolling
+to understand helper plumbing.
+
+Within a `mod tests { ... }` block:
+
+1. **Imports** at the top
+2. **Constants** (test data IDs, URLs, etc.) — small context that tests reference
+3. **Test functions** (`#[test]` / `#[tokio::test]`) grouped by category
+4. **Helper functions** (builders, pipeline runners, etc.) at the very bottom
+
+If tests are grouped into sub-modules, the same rule applies within each sub-module:
+constants first, then tests, then helpers at the end of that sub-module.
+
 ## What to Test
 
 - New error types and their mappings

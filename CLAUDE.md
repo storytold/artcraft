@@ -75,3 +75,4 @@ Organize for top-to-bottom reading. Important things first, details later.
 - **In impl blocks**: constructors first, then public methods, then private helpers
 - Private helpers go *below* the methods that call them
 - Among helpers: meatier logic above leaf-level formatters
+- **In test modules**: constants first, then test cases, then helper functions last

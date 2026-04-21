@@ -42,6 +42,16 @@ then the story, then the fine print.
    - A method that calls another method in the same file should appear *above* the method
      it calls. This lets readers follow the call chain downward.
 
+### Ordering within test modules
+
+Put test cases first, helpers last. A reader opening a test file should immediately see
+*what* is being tested before *how* the test machinery works.
+
+1. **Imports**
+2. **Constants** (test IDs, URLs, fixture data) — small context that tests reference
+3. **Test functions** grouped by category
+4. **Helper functions** (builders, pipeline runners, assertions)
+
 ## Naming
 
 - Handler functions: `{verb}_{noun}_handler` (e.g. `get_health_check_handler`, `login_handler`)
