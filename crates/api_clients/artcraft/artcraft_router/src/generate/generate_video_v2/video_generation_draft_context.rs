@@ -6,9 +6,10 @@ use std::collections::HashMap;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct VideoGenerationDraftContext<'a> {
-  pub client: &'a RouterClient,
+  /// Optional: the router client, needed for providers that require authentication.
+  pub client: Option<&'a RouterClient>,
 
   /// Optional context: a map of Media File Tokens to their ArtCraft URLs
   /// Only needed if we have to fetch these assets and upload them to another provider.
@@ -21,17 +22,18 @@ pub struct VideoGenerationDraftContext<'a> {
 
 impl <'a> VideoGenerationDraftContext<'a> {
   pub fn get_seedance2pro_client_ref(&self) -> Result<&RouterSeedance2ProClient, ArtcraftRouterError> {
-    self.client.get_seedance2pro_client_ref()
-        .map_err(|err| ArtcraftRouterError::Client(err))
+    let client = self.client.ok_or(ArtcraftRouterError::Client(ClientError::RouterClientNotProvided))?;
+    client.get_seedance2pro_client_ref()
+      .map_err(|err| ArtcraftRouterError::Client(err))
   }
 
   pub fn get_media_file_to_artcraft_url_map(&self) -> Result<&HashMap<MediaFileToken, String>, ArtcraftRouterError> {
     self.media_file_to_artcraft_url_map
-        .ok_or_else(|| ArtcraftRouterError::Client(ClientError::MediaFileToUrlMapNotProvided))
+      .ok_or_else(|| ArtcraftRouterError::Client(ClientError::MediaFileToUrlMapNotProvided))
   }
 
   pub fn get_character_token_to_kinovi_map(&self) -> Result<&HashMap<CharacterToken, String>, ArtcraftRouterError> {
     self.character_token_to_kinovi_id_map
-        .ok_or_else(|| ArtcraftRouterError::Client(ClientError::CharacterTokenToKinoviCharacterIdNotProvided))
+      .ok_or_else(|| ArtcraftRouterError::Client(ClientError::CharacterTokenToKinoviCharacterIdNotProvided))
   }
 }

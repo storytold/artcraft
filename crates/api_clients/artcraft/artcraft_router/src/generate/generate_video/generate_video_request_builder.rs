@@ -48,8 +48,6 @@ use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_see
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::plan_generate_video_seedance2pro_seedance2p0_fast;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftState;
-use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
 /// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
@@ -111,6 +109,30 @@ pub struct GenerateVideoRequestBuilder {
   /// Some providers support idempotency.
   /// If not supplied, we'll generate one for the required providers.
   pub idempotency_token: Option<String>,
+}
+
+impl Default for GenerateVideoRequestBuilder {
+  fn default() -> Self {
+    Self {
+      model: CommonVideoModel::Seedance2p0,
+      provider: Provider::Artcraft,
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+      prompt: None,
+      negative_prompt: None,
+      start_frame: None,
+      end_frame: None,
+      reference_images: None,
+      reference_videos: None,
+      reference_audio: None,
+      reference_character_tokens: None,
+      resolution: None,
+      aspect_ratio: None,
+      duration_seconds: None,
+      video_batch_count: None,
+      generate_audio: None,
+      idempotency_token: None,
+    }
+  }
 }
 
 impl GenerateVideoRequestBuilder {

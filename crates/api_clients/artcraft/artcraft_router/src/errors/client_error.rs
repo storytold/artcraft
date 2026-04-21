@@ -57,6 +57,9 @@ pub enum ClientError {
 
   /// A character token was not found in the provided character-token-to-id map
   CharacterTokenNotFoundInMap { token: CharacterToken },
+
+  /// A RouterClient was required but not provided on the draft context.
+  RouterClientNotProvided,
 }
 
 impl Error for ClientError {}
@@ -96,6 +99,9 @@ impl Display for ClientError {
       }
       Self::CharacterTokenNotFoundInMap { token } => {
         write!(f, "Character token '{}' was not found in the provided character-token-to-id map", token.as_str())
+      }
+      Self::RouterClientNotProvided => {
+        write!(f, "A RouterClient is required but was not provided on the draft context")
       }
     }
   }
