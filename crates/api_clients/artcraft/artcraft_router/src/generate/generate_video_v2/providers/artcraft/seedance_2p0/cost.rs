@@ -260,84 +260,143 @@ mod tests {
     }
   }
 
-  // ── Cross-check: Artcraft v2 matches Kinovi v2 pricing ──
+  // ── Cross-check: Artcraft v2 matches Kinovi v2 via GenerateVideoRequestBuilder ──
 
-  mod cross_check_with_kinovi {
-    use seedance2pro_client::requests::generate_video::generate_video::{
-      KinoviBatchCount, KinoviOutputResolution,
-    };
-
-    use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::cost::KinoviSeedance2p0CostState;
+  mod cross_check_with_kinovi_via_builder {
+    use crate::api::common_video_model::CommonVideoModel;
 
     use super::*;
 
+    /// Combinatorial test: build the same request with Provider::Artcraft and
+    /// Provider::Seedance2Pro, then compare USD cents. They must match for all
+    /// resolution × duration × batch combinations.
     #[test]
-    fn matches_kinovi_720p_5s_b1() {
-      assert_prices_match(Seedance2p0OutputResolution::SevenTwentyP, KinoviOutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::One, KinoviBatchCount::One);
-    }
+    fn artcraft_matches_kinovi_all_combos() {
+      let resolutions = [
+        Some(CommonResolution::FourEightyP),
+        Some(CommonResolution::SevenTwentyP),
+        None, // defaults to 720p
+        Some(CommonResolution::TenEightyP),
+      ];
+      let durations: [u16; 4] = [4, 5, 10, 15];
+      let batches: [u16; 3] = [1, 2, 4];
 
+      for res in &resolutions {
+        for dur in &durations {
+          for batch in &batches {
+            let artcraft = GenerateVideoRequestBuilder {
+              model: CommonVideoModel::Seedance2p0,
+              provider: Provider::Artcraft,
+              resolution: *res,
+              duration_seconds: Some(*dur),
+              video_batch_count: Some(*batch),
+              ..Default::default()
+            };
+
+            let kinovi = GenerateVideoRequestBuilder {
+              model: CommonVideoModel::Seedance2p0,
+              provider: Provider::Seedance2Pro,
+              resolution: *res,
+              duration_seconds: Some(*dur),
+              video_batch_count: Some(*batch),
+              ..Default::default()
+            };
+
+            let artcraft_cost = artcraft.build2()
+              .expect("artcraft build2 should succeed")
+              .estimate_cost()
+              .expect("artcraft estimate_cost should succeed");
+
+            let kinovi_cost = kinovi.build2()
+              .expect("kinovi build2 should succeed")
+              .estimate_cost()
+              .expect("kinovi estimate_cost should succeed");
+
+            assert_eq!(
+              artcraft_cost.cost_in_usd_cents, kinovi_cost.cost_in_usd_cents,
+              "USD cents mismatch: res={:?} dur={}s batch={} — artcraft={:?}, kinovi={:?}",
+              res, dur, batch,
+              artcraft_cost.cost_in_usd_cents, kinovi_cost.cost_in_usd_cents,
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // ── Cross-check: Artcraft v2 matches v1 estimate_video_cost_artcraft_seedance2p0 ──
+
+  mod cross_check_with_v1 {
+    use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0AspectRatio;
+    use tokens::tokens::media_files::MediaFileToken;
+
+    use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance2p0::estimate_video_cost_artcraft_seedance2p0;
+    use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
+
+    use super::*;
+
+    /// Combinatorial test: compare v2 ArtcraftSeedance2p0CostState against
+    /// v1 estimate_video_cost_artcraft_seedance2p0 for all resolution ×
+    /// duration × batch combinations.
     #[test]
-    fn matches_kinovi_720p_15s_b2() {
-      assert_prices_match(Seedance2p0OutputResolution::SevenTwentyP, KinoviOutputResolution::SevenTwentyP, 15, Seedance2p0BatchCount::Two, KinoviBatchCount::Two);
-    }
+    fn v2_matches_v1_all_combos() {
+      let resolutions = [
+        (Some(CommonResolution::FourEightyP), Seedance2p0OutputResolution::FourEightyP),
+        (Some(CommonResolution::SevenTwentyP), Seedance2p0OutputResolution::SevenTwentyP),
+        (None, Seedance2p0OutputResolution::SevenTwentyP), // None defaults to 720p
+        (Some(CommonResolution::TenEightyP), Seedance2p0OutputResolution::TenEightyP),
+      ];
+      let durations: [u8; 4] = [4, 5, 10, 15];
+      let batches = [
+        (Seedance2p0BatchCount::One, Seedance2p0BatchCount::One),
+        (Seedance2p0BatchCount::Two, Seedance2p0BatchCount::Two),
+        (Seedance2p0BatchCount::Four, Seedance2p0BatchCount::Four),
+      ];
 
-    #[test]
-    fn matches_kinovi_480p_5s_b1() {
-      assert_prices_match(Seedance2p0OutputResolution::FourEightyP, KinoviOutputResolution::FourEightyP, 5, Seedance2p0BatchCount::One, KinoviBatchCount::One);
-    }
+      for (v1_res, v2_res) in &resolutions {
+        for dur in &durations {
+          for (v1_batch, v2_batch) in &batches {
+            // v1: construct a PlanArtcraftSeedance2p0 and call the v1 cost function
+            let v1_plan = PlanArtcraftSeedance2p0 {
+              prompt: None,
+              start_frame: None,
+              end_frame: None,
+              reference_images: None,
+              reference_videos: None,
+              reference_audio: None,
+              reference_characters: None,
+              aspect_ratio: Some(Seedance2p0AspectRatio::Square1x1),
+              resolution: *v1_res,
+              duration_seconds: Some(*dur),
+              batch_count: *v1_batch,
+              idempotency_token: "test".to_string(),
+            };
+            let v1_cost = estimate_video_cost_artcraft_seedance2p0(&v1_plan);
 
-    #[test]
-    fn matches_kinovi_480p_10s_b4() {
-      assert_prices_match(Seedance2p0OutputResolution::FourEightyP, KinoviOutputResolution::FourEightyP, 10, Seedance2p0BatchCount::Four, KinoviBatchCount::Four);
-    }
+            // v2: construct cost state directly
+            let v2_cost = ArtcraftSeedance2p0CostState {
+              resolution: *v2_res,
+              duration_seconds: *dur,
+              batch_count: *v2_batch,
+              has_video_reference: false,
+            }.estimate_cost();
 
-    #[test]
-    fn matches_kinovi_1080p_5s_b1() {
-      assert_prices_match(Seedance2p0OutputResolution::TenEightyP, KinoviOutputResolution::TenEightyP, 5, Seedance2p0BatchCount::One, KinoviBatchCount::One);
-    }
+            assert_eq!(
+              v2_cost.cost_in_usd_cents, v1_cost.cost_in_usd_cents,
+              "USD cents mismatch: res={:?} dur={}s batch={:?} — v2={:?}, v1={:?}",
+              v1_res, dur, v1_batch,
+              v2_cost.cost_in_usd_cents, v1_cost.cost_in_usd_cents,
+            );
 
-    #[test]
-    fn matches_kinovi_1080p_10s_b2() {
-      assert_prices_match(Seedance2p0OutputResolution::TenEightyP, KinoviOutputResolution::TenEightyP, 10, Seedance2p0BatchCount::Two, KinoviBatchCount::Two);
-    }
-
-    #[test]
-    fn matches_kinovi_720p_4s_b4() {
-      assert_prices_match(Seedance2p0OutputResolution::SevenTwentyP, KinoviOutputResolution::SevenTwentyP, 4, Seedance2p0BatchCount::Four, KinoviBatchCount::Four);
-    }
-
-    #[test]
-    fn matches_kinovi_1080p_15s_b4() {
-      assert_prices_match(Seedance2p0OutputResolution::TenEightyP, KinoviOutputResolution::TenEightyP, 15, Seedance2p0BatchCount::Four, KinoviBatchCount::Four);
-    }
-
-    fn assert_prices_match(
-      artcraft_res: Seedance2p0OutputResolution,
-      kinovi_res: KinoviOutputResolution,
-      duration_seconds: u8,
-      artcraft_batch: Seedance2p0BatchCount,
-      kinovi_batch: KinoviBatchCount,
-    ) {
-      let artcraft_cost = ArtcraftSeedance2p0CostState {
-        resolution: artcraft_res,
-        duration_seconds,
-        batch_count: artcraft_batch,
-        has_video_reference: false,
-      }.estimate_cost();
-
-      let kinovi_cost = KinoviSeedance2p0CostState {
-        resolution: kinovi_res,
-        duration_seconds,
-        batch_count: kinovi_batch,
-        has_video_reference: false,
-      }.estimate_cost();
-
-      assert_eq!(
-        artcraft_cost.cost_in_usd_cents, kinovi_cost.cost_in_usd_cents,
-        "USD cents mismatch for {:?} {}s {:?}: artcraft={:?}, kinovi={:?}",
-        artcraft_res, duration_seconds, artcraft_batch,
-        artcraft_cost.cost_in_usd_cents, kinovi_cost.cost_in_usd_cents,
-      );
+            assert_eq!(
+              v2_cost.cost_in_credits, v1_cost.cost_in_credits,
+              "Credits mismatch: res={:?} dur={}s batch={:?} — v2={:?}, v1={:?}",
+              v1_res, dur, v1_batch,
+              v2_cost.cost_in_credits, v1_cost.cost_in_credits,
+            );
+          }
+        }
+      }
     }
   }
 
