@@ -9,6 +9,8 @@ pub enum VideoGenerationRequest {
 }
 
 impl VideoGenerationRequest {
+  /// Send the video generation request
+  /// If successful, returns the job IDs.
   pub async fn send_request(&self, client: &RouterClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     match self {
       VideoGenerationRequest::KinoviSeedance2p0(request) => {
