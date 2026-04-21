@@ -60,6 +60,8 @@ import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { APP_DESCRIPTORS, goToApp } from "~/config/appMenu";
 import { useStoryboardStore } from "~/pages/PageStoryboard";
+import { useMoodboardStore } from "~/pages/PageMoodboard";
+import { useExperimentalStore } from "@storyteller/ui-settings-modal";
 import { useSceneStore } from "@storyteller/ui-pagedraw";
 import {
   is3DEditorInitialized,
@@ -125,6 +127,36 @@ export const TopBar = ({ pageName }: Props) => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("general");
+
+  // Reset gated page state when its experimental flag flips off — including
+  // the global "Reset Experimental" path that bypasses the per-toggle confirm
+  // modal. Without this, store contents and the tab survive the disable.
+  const storyboardPageEnabled = useExperimentalStore(
+    (s) => s.enabled && s.storyboardPageEnabled,
+  );
+  const moodboardPageEnabled = useExperimentalStore(
+    (s) => s.enabled && s.moodboardPageEnabled,
+  );
+  const prevStoryboardEnabled = useRef(storyboardPageEnabled);
+  const prevMoodboardEnabled = useRef(moodboardPageEnabled);
+  useEffect(() => {
+    if (prevStoryboardEnabled.current && !storyboardPageEnabled) {
+      useStoryboardStore.getState().reset();
+      if (useTabStore.getState().activeTabId === "STORYBOARD") {
+        goToApp("IMAGE");
+      }
+    }
+    prevStoryboardEnabled.current = storyboardPageEnabled;
+  }, [storyboardPageEnabled]);
+  useEffect(() => {
+    if (prevMoodboardEnabled.current && !moodboardPageEnabled) {
+      useMoodboardStore.getState().reset();
+      if (useTabStore.getState().activeTabId === "MOODBOARD") {
+        goToApp("IMAGE");
+      }
+    }
+    prevMoodboardEnabled.current = moodboardPageEnabled;
+  }, [moodboardPageEnabled]);
 
   const { isDesktop, isMaximized, minimize, toggleMaximize, close } =
     useTauriWindowControls();
@@ -768,6 +800,10 @@ export const TopBar = ({ pageName }: Props) => {
         }}
         onStoryboardPageDisable={() => {
           useStoryboardStore.getState().reset();
+          goToApp("IMAGE");
+        }}
+        onMoodboardPageDisable={() => {
+          useMoodboardStore.getState().reset();
           goToApp("IMAGE");
         }}
         initialSection={settingsSection}

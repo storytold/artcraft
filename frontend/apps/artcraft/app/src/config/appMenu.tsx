@@ -10,11 +10,13 @@ import {
   faWandMagicSparkles,
   faPenNib,
   faCrosshairs,
+  faObjectGroup,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useMemo } from "react";
 import {
   useExperimentalStore,
   useStoryboardPageEnabled,
+  useMoodboardPageEnabled,
 } from "@storyteller/ui-settings-modal";
 import { useTabStore, TabId } from "~/pages/Stores/TabState";
 import { set3DPageMounted } from "~/pages/PageEnigma/Editor/editor";
@@ -32,7 +34,8 @@ export type AppId =
   | "IMAGE_TO_3D_WORLD"
   | "REMOVE_BACKGROUND"
   | "ANGLES"
-  | "STORYBOARD";
+  | "STORYBOARD"
+  | "MOODBOARD";
 
 export interface AppDescriptor {
   id: AppId;
@@ -187,6 +190,16 @@ export const ALL_APPS: FullAppItem[] = [
     badge: "NEW",
   },
   {
+    id: "moodboard",
+    label: "Moodboard",
+    description: "Collage references on a 2D canvas",
+    icon: faObjectGroup,
+    category: "generate",
+    action: "MOODBOARD",
+    color: "bg-orange-500/40",
+    badge: "NEW",
+  },
+  {
     id: "2d-canvas",
     label: "Image Editor",
     description: "Easy edits. Great for graphic design.",
@@ -213,12 +226,15 @@ export const EDIT_APPS = ALL_APPS.filter((app) => app.category === "edit");
 
 export const useVisibleApps = (): FullAppItem[] => {
   const storyboardEnabled = useStoryboardPageEnabled();
+  const moodboardEnabled = useMoodboardPageEnabled();
   return useMemo(
     () =>
-      ALL_APPS.filter((app) =>
-        app.action === "STORYBOARD" ? storyboardEnabled : true,
-      ),
-    [storyboardEnabled],
+      ALL_APPS.filter((app) => {
+        if (app.action === "STORYBOARD") return storyboardEnabled;
+        if (app.action === "MOODBOARD") return moodboardEnabled;
+        return true;
+      }),
+    [storyboardEnabled, moodboardEnabled],
   );
 };
 
@@ -267,12 +283,18 @@ export const goToApp = (action?: string) => {
       "REMOVE_BACKGROUND",
       "ANGLES",
       "STORYBOARD",
+      "MOODBOARD",
     ].includes(action)
   ) {
     if (action === "STORYBOARD") {
       const { enabled, storyboardPageEnabled } =
         useExperimentalStore.getState();
       if (!enabled || !storyboardPageEnabled) return;
+    }
+    if (action === "MOODBOARD") {
+      const { enabled, moodboardPageEnabled } =
+        useExperimentalStore.getState();
+      if (!enabled || !moodboardPageEnabled) return;
     }
     if (action === "3D") {
       set3DPageMounted(true);

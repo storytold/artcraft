@@ -19,7 +19,11 @@ import { ImageTo3DWorld } from "../PageImageTo3DWorld";
 import { RemoveBackground } from "../PageRemoveBackground";
 import { Angles } from "../PageAngles";
 import { Storyboard } from "../PageStoryboard";
-import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
+import { Moodboard } from "../PageMoodboard";
+import {
+  useStoryboardPageEnabled,
+  useMoodboardPageEnabled,
+} from "@storyteller/ui-settings-modal";
 
 import {
   timelineHeight,
@@ -111,6 +115,7 @@ export const PageEditor = () => {
 
   const tabStore = useTabStore();
   const storyboardPageEnabled = useStoryboardPageEnabled();
+  const moodboardPageEnabled = useMoodboardPageEnabled();
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };
@@ -386,55 +391,48 @@ export const PageEditor = () => {
       );
 
       // 2D Drag and Drop Logic
-    } else if (tabStore.activeTabId === "2D") {
+    } else if (
+      tabStore.activeTabId === "2D" ||
+      tabStore.activeTabId === "MOODBOARD"
+    ) {
+      const eventName =
+        tabStore.activeTabId === "MOODBOARD"
+          ? "gallery-moodboard-drop"
+          : "gallery-2d-drop";
       handler = onImageDrop(
         (item: GalleryItem, position: { x: number; y: number }) => {
-          console.log("2D Drop debug (event):", {
-            item,
-            position,
-          });
-
           // Find the main Konva canvas element - get the first canvas (left panel)
           const canvasElements = document.querySelectorAll("canvas");
-          const canvasElement = canvasElements[0]; // Get the main drawing canvas (left panel)
+          const canvasElement = canvasElements[0];
           if (!canvasElement) {
-            console.error("Could not find canvas element for 2D drop");
+            console.error("Could not find canvas element for canvas drop");
             return;
           }
 
           const rect = canvasElement.getBoundingClientRect();
-
-          // Convert screen coordinates to canvas coordinates
           const canvasX = position.x - rect.left;
           const canvasY = position.y - rect.top;
 
-          // Ensure the drop position is within canvas bounds
           if (
             canvasX < 0 ||
             canvasY < 0 ||
             canvasX > rect.width ||
             canvasY > rect.height
           ) {
-            console.log("Drop position outside canvas bounds");
             return;
           }
 
-          console.log("Canvas drop position:", { canvasX, canvasY });
-
-          (async () => {
-            try {
-              // event that PageDraw listens for
-              const dropEvent = new CustomEvent("gallery-2d-drop", {
-                detail: {
-                  item,
-                  canvasPosition: { x: canvasX, y: canvasY },
-                },
-              });
-              window.dispatchEvent(dropEvent);
-            } catch (err) {
-              console.error("Failed to add image to 2D canvas:", err);
-            }
-          })();
+          try {
+            const dropEvent = new CustomEvent(eventName, {
+              detail: {
+                item,
+                canvasPosition: { x: canvasX, y: canvasY },
+              },
+            });
+            window.dispatchEvent(dropEvent);
+          } catch (err) {
+            console.error("Failed to dispatch canvas drop event:", err);
+          }
         },
       );
     }
@@ -649,6 +647,14 @@ export const PageEditor = () => {
       {tabStore.activeTabId == "STORYBOARD" && storyboardPageEnabled && (
         <div>
           <Storyboard />
+        </div>
+      )}
+      {tabStore.activeTabId == "MOODBOARD" && moodboardPageEnabled && (
+        <div
+          className="w-screen"
+          style={{ height: "calc(100vh - 68px)" }}
+        >
+          <Moodboard />
         </div>
       )}
     </div>

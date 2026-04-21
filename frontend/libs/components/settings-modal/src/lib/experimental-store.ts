@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 const ENABLED_STORAGE_KEY = "artcraft_experimental_enabled";
 const STORYBOARD_STORAGE_KEY = "artcraft_experimental_storyboard_page";
+const MOODBOARD_STORAGE_KEY = "artcraft_experimental_moodboard_page";
 
 const readBoolFlag = (key: string): boolean => {
   if (typeof window === "undefined") return false;
@@ -28,14 +29,17 @@ const writeBoolFlag = (key: string, enabled: boolean) => {
 interface ExperimentalState {
   enabled: boolean;
   storyboardPageEnabled: boolean;
+  moodboardPageEnabled: boolean;
   enable: () => void;
   disable: () => void;
   setStoryboardPageEnabled: (enabled: boolean) => void;
+  setMoodboardPageEnabled: (enabled: boolean) => void;
 }
 
 export const useExperimentalStore = create<ExperimentalState>((set) => ({
   enabled: readBoolFlag(ENABLED_STORAGE_KEY),
   storyboardPageEnabled: readBoolFlag(STORYBOARD_STORAGE_KEY),
+  moodboardPageEnabled: readBoolFlag(MOODBOARD_STORAGE_KEY),
   enable: () => {
     writeBoolFlag(ENABLED_STORAGE_KEY, true);
     set({ enabled: true });
@@ -44,13 +48,25 @@ export const useExperimentalStore = create<ExperimentalState>((set) => ({
     // Resetting experimental clears every gated feature flag too.
     writeBoolFlag(ENABLED_STORAGE_KEY, false);
     writeBoolFlag(STORYBOARD_STORAGE_KEY, false);
-    set({ enabled: false, storyboardPageEnabled: false });
+    writeBoolFlag(MOODBOARD_STORAGE_KEY, false);
+    set({
+      enabled: false,
+      storyboardPageEnabled: false,
+      moodboardPageEnabled: false,
+    });
   },
   setStoryboardPageEnabled: (enabled: boolean) => {
     writeBoolFlag(STORYBOARD_STORAGE_KEY, enabled);
     set({ storyboardPageEnabled: enabled });
   },
+  setMoodboardPageEnabled: (enabled: boolean) => {
+    writeBoolFlag(MOODBOARD_STORAGE_KEY, enabled);
+    set({ moodboardPageEnabled: enabled });
+  },
 }));
 
 export const useStoryboardPageEnabled = () =>
   useExperimentalStore((s) => s.enabled && s.storyboardPageEnabled);
+
+export const useMoodboardPageEnabled = () =>
+  useExperimentalStore((s) => s.enabled && s.moodboardPageEnabled);

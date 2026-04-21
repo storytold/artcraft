@@ -29,6 +29,7 @@ interface SettingsModalProps {
   onClose: () => void;
   globalAccountLogoutCallback: () => void;
   onStoryboardPageDisable?: () => void;
+  onMoodboardPageDisable?: () => void;
   initialSection?: SettingsSection;
 }
 
@@ -47,6 +48,7 @@ export const SettingsModal = ({
   onClose,
   globalAccountLogoutCallback,
   onStoryboardPageDisable,
+  onMoodboardPageDisable,
   initialSection = "general",
 }: SettingsModalProps) => {
   const [selectedSection, setSelectedSection] =
@@ -115,6 +117,7 @@ export const SettingsModal = ({
         return (
           <ExperimentalSettingsPane
             onStoryboardPageDisable={onStoryboardPageDisable}
+            onMoodboardPageDisable={onMoodboardPageDisable}
           />
         );
     }
