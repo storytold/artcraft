@@ -12,7 +12,6 @@ use crate::api::video_list_ref::VideoListRef;
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
-use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::request::KinoviSeedance2p0RequestState;
 use crate::generate::generate_video_v2::providers::kinovi::upload::upload_to_seedance2pro;
 
@@ -55,24 +54,21 @@ impl KinoviSeedance2p0DraftState {
     let mut reference_audio_urls = None;
 
     if let Some(remaining) = self.unhandled_request_state.take() {
-      start_frame_url = resolve_and_upload_image_ref(
-        session, remaining.start_frame, maybe_media_file_to_url_map,
+      let map = maybe_media_file_to_url_map;
+
+      start_frame_url = resolve_and_upload_single(session, remaining.start_frame, map).await?;
+      end_frame_url = resolve_and_upload_single(session, remaining.end_frame, map).await?;
+
+      reference_image_urls = resolve_and_upload_list(
+        session, remaining.reference_images.map(ImageListRef::into_urls_or_tokens), map,
       ).await?;
 
-      end_frame_url = resolve_and_upload_image_ref(
-        session, remaining.end_frame, maybe_media_file_to_url_map,
+      reference_video_urls = resolve_and_upload_list(
+        session, remaining.reference_videos.map(VideoListRef::into_urls_or_tokens), map,
       ).await?;
 
-      reference_image_urls = resolve_and_upload_image_list_ref(
-        session, remaining.reference_images, maybe_media_file_to_url_map,
-      ).await?;
-
-      reference_video_urls = resolve_and_upload_video_list_ref(
-        session, remaining.reference_videos, maybe_media_file_to_url_map,
-      ).await?;
-
-      reference_audio_urls = resolve_and_upload_audio_list_ref(
-        session, remaining.reference_audio, maybe_media_file_to_url_map,
+      reference_audio_urls = resolve_and_upload_list(
+        session, remaining.reference_audio.map(AudioListRef::into_urls_or_tokens), map,
       ).await?;
 
       // TODO: Handle remaining.reference_character_tokens
@@ -98,48 +94,70 @@ impl KinoviSeedance2p0DraftState {
   }
 }
 
+/// Either resolved URLs or unresolved media file tokens.
+enum UrlsOrTokens {
+  Urls(Vec<String>),
+  Tokens(Vec<MediaFileToken>),
+}
+
+// Allow each list ref type to decompose into this common representation.
+impl ImageListRef {
+  fn into_urls_or_tokens(self) -> UrlsOrTokens {
+    match self {
+      Self::Urls(urls) => UrlsOrTokens::Urls(urls),
+      Self::MediaFileTokens(tokens) => UrlsOrTokens::Tokens(tokens),
+    }
+  }
+}
+
+impl VideoListRef {
+  fn into_urls_or_tokens(self) -> UrlsOrTokens {
+    match self {
+      Self::Urls(urls) => UrlsOrTokens::Urls(urls),
+      Self::MediaFileTokens(tokens) => UrlsOrTokens::Tokens(tokens),
+    }
+  }
+}
+
+impl AudioListRef {
+  fn into_urls_or_tokens(self) -> UrlsOrTokens {
+    match self {
+      Self::Urls(urls) => UrlsOrTokens::Urls(urls),
+      Self::MediaFileTokens(tokens) => UrlsOrTokens::Tokens(tokens),
+    }
+  }
+}
+
 // --- Resolve + upload helpers ---
 
-/// Resolve a single ImageRef to a URL string, then upload to Seedance2Pro CDN.
-async fn resolve_and_upload_image_ref(
+/// Resolve a single ImageRef and upload to Seedance2Pro CDN.
+async fn resolve_and_upload_single(
   session: &Seedance2ProSession,
   image_ref: Option<ImageRef>,
   maybe_map: Option<&HashMap<MediaFileToken, String>>,
 ) -> Result<Option<String>, ArtcraftRouterError> {
-  let image_ref = match image_ref {
-    None => return Ok(None),
-    Some(r) => r,
-  };
-
   let source_url = match image_ref {
-    ImageRef::Url(url) => url,
-    ImageRef::MediaFileToken(token) => resolve_token_to_url(&token, maybe_map)?,
+    None => return Ok(None),
+    Some(ImageRef::Url(url)) => url,
+    Some(ImageRef::MediaFileToken(token)) => resolve_token(maybe_map, &token)?,
   };
-
-  let uploaded = upload_to_seedance2pro(session, &source_url).await?;
-  Ok(Some(uploaded))
+  Ok(Some(upload_to_seedance2pro(session, &source_url).await?))
 }
 
-/// Resolve an ImageListRef to URL strings, then upload each to Seedance2Pro CDN.
-/// Order of the input list is preserved in the output.
-async fn resolve_and_upload_image_list_ref(
+/// Resolve a list of refs to URLs and upload each to Seedance2Pro CDN.
+/// Order is preserved.
+async fn resolve_and_upload_list(
   session: &Seedance2ProSession,
-  image_list_ref: Option<ImageListRef>,
+  urls_or_tokens: Option<UrlsOrTokens>,
   maybe_map: Option<&HashMap<MediaFileToken, String>>,
 ) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
-  let list = match image_list_ref {
+  let source_urls = match urls_or_tokens {
     None => return Ok(None),
-    Some(r) => r,
+    Some(UrlsOrTokens::Urls(urls)) if urls.is_empty() => return Ok(None),
+    Some(UrlsOrTokens::Urls(urls)) => urls,
+    Some(UrlsOrTokens::Tokens(tokens)) if tokens.is_empty() => return Ok(None),
+    Some(UrlsOrTokens::Tokens(tokens)) => resolve_tokens(maybe_map, &tokens)?,
   };
-
-  let source_urls = match list {
-    ImageListRef::Urls(urls) => urls,
-    ImageListRef::MediaFileTokens(tokens) => resolve_tokens_to_urls(&tokens, maybe_map)?,
-  };
-
-  if source_urls.is_empty() {
-    return Ok(None);
-  }
 
   let mut uploaded = Vec::with_capacity(source_urls.len());
   for url in &source_urls {
@@ -148,100 +166,23 @@ async fn resolve_and_upload_image_list_ref(
   Ok(Some(uploaded))
 }
 
-/// Resolve a VideoListRef to URL strings, then upload each to Seedance2Pro CDN.
-/// Order of the input list is preserved in the output.
-async fn resolve_and_upload_video_list_ref(
-  session: &Seedance2ProSession,
-  video_list_ref: Option<VideoListRef>,
+// --- Token resolution ---
+
+fn resolve_token(
   maybe_map: Option<&HashMap<MediaFileToken, String>>,
-) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
-  let list = match video_list_ref {
-    None => return Ok(None),
-    Some(r) => r,
-  };
-
-  let source_urls = match list {
-    VideoListRef::Urls(urls) => urls,
-    VideoListRef::MediaFileTokens(tokens) => resolve_tokens_to_urls(&tokens, maybe_map)?,
-  };
-
-  if source_urls.is_empty() {
-    return Ok(None);
-  }
-
-  let mut uploaded = Vec::with_capacity(source_urls.len());
-  for url in &source_urls {
-    uploaded.push(upload_to_seedance2pro(session, url).await?);
-  }
-  Ok(Some(uploaded))
-}
-
-/// Resolve an AudioListRef to URL strings, then upload each to Seedance2Pro CDN.
-/// Order of the input list is preserved in the output.
-async fn resolve_and_upload_audio_list_ref(
-  session: &Seedance2ProSession,
-  audio_list_ref: Option<AudioListRef>,
-  maybe_map: Option<&HashMap<MediaFileToken, String>>,
-) -> Result<Option<Vec<String>>, ArtcraftRouterError> {
-  let list = match audio_list_ref {
-    None => return Ok(None),
-    Some(r) => r,
-  };
-
-  let source_urls = match list {
-    AudioListRef::Urls(urls) => urls,
-    AudioListRef::MediaFileTokens(tokens) => resolve_tokens_to_urls(&tokens, maybe_map)?,
-  };
-
-  if source_urls.is_empty() {
-    return Ok(None);
-  }
-
-  let mut uploaded = Vec::with_capacity(source_urls.len());
-  for url in &source_urls {
-    uploaded.push(upload_to_seedance2pro(session, url).await?);
-  }
-  Ok(Some(uploaded))
-}
-
-// --- Token resolution helpers ---
-
-/// Look up a single media file token in the map to get its CDN URL.
-fn resolve_token_to_url(
   token: &MediaFileToken,
-  maybe_map: Option<&HashMap<MediaFileToken, String>>,
 ) -> Result<String, ArtcraftRouterError> {
-  let map = maybe_map.ok_or_else(|| {
-    ArtcraftRouterError::Client(ClientError::MediaFileToUrlMapNotProvided)
-  })?;
-
-  map.get(token)
-    .cloned()
-    .ok_or_else(|| {
-      ArtcraftRouterError::Client(ClientError::MediaFileTokenNotFoundInMap {
-        token: token.as_str().to_string(),
-      })
+  let map = maybe_map.ok_or(ArtcraftRouterError::Client(ClientError::MediaFileToUrlMapNotProvided))?;
+  map.get(token).cloned().ok_or_else(|| {
+    ArtcraftRouterError::Client(ClientError::MediaFileTokenNotFoundInMap {
+      token: token.as_str().to_string(),
     })
+  })
 }
 
-/// Look up multiple media file tokens in the map. Order is preserved.
-fn resolve_tokens_to_urls(
-  tokens: &[MediaFileToken],
+fn resolve_tokens(
   maybe_map: Option<&HashMap<MediaFileToken, String>>,
+  tokens: &[MediaFileToken],
 ) -> Result<Vec<String>, ArtcraftRouterError> {
-  let map = maybe_map.ok_or_else(|| {
-    ArtcraftRouterError::Client(ClientError::MediaFileToUrlMapNotProvided)
-  })?;
-
-  tokens.iter()
-    .map(|token| {
-      map.get(token)
-        .cloned()
-        .ok_or_else(|| {
-          ArtcraftRouterError::Client(ClientError::MediaFileTokenNotFoundInMap {
-            token: token.as_str().to_string(),
-          })
-        })
-    })
-    .collect()
+  tokens.iter().map(|t| resolve_token(maybe_map, t)).collect()
 }
