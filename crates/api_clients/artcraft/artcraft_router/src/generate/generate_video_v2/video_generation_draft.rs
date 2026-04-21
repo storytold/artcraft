@@ -24,9 +24,9 @@ impl VideoGenerationDraftRequest {
   /// This may involve uploading media to the provider.
   pub async fn finalize(self, client: &RouterClient) -> Result<VideoGenerationRequest, ArtcraftRouterError> {
     match self {
-      VideoGenerationDraftRequest::KinoviSeedance2p0(draft) => {
+      VideoGenerationDraftRequest::KinoviSeedance2p0(mut draft) => {
         let client_ref = client.get_seedance2pro_client_ref()?;
-        let result = KinoviSeedance2p0RequestState::from_draft(draft, client_ref).await?;
+        let result = draft.to_request(client_ref).await?;
         Ok(VideoGenerationRequest::KinoviSeedance2p0(result))
       },
     }
