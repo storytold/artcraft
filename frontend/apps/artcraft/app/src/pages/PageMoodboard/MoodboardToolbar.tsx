@@ -16,7 +16,8 @@ import { twMerge } from "tailwind-merge";
 import { useMoodboardStore } from "./MoodboardStore";
 import { Tool } from "./types";
 import { computeFitToGridPatches } from "./layout/fitToGrid";
-import { computeAABB, computePackPatches } from "./layout/packCollage";
+import { computeAABB } from "./layout/geometry";
+import { computePackPatches } from "./layout/packCollage";
 import { clusterByProximity } from "./layout/clusterProximity";
 
 const TOOLS: Array<{ id: Tool; icon: typeof faMousePointer; label: string }> = [
@@ -41,9 +42,10 @@ export const MoodboardToolbar = () => {
   const gridSpacing = useMoodboardStore((s) => s.gridSpacing);
 
   const handleFitToGrid = () => {
-    const targetIds =
-      selectedIds.size > 0 ? Array.from(selectedIds) : rootOrder;
-    const targetNodes = targetIds.map((id) => nodes[id]).filter(Boolean);
+    if (selectedIds.size === 0) return;
+    const targetNodes = Array.from(selectedIds)
+      .map((id) => nodes[id])
+      .filter(Boolean);
     applyLayoutPatches(computeFitToGridPatches(targetNodes, gridSpacing));
   };
 
@@ -104,6 +106,7 @@ export const MoodboardToolbar = () => {
         icon={faTableCells}
         label="Fit to grid"
         onClick={handleFitToGrid}
+        disabled={selectedIds.size === 0}
       />
       <ToolbarButton
         icon={faGripVertical}
