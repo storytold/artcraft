@@ -47,8 +47,10 @@ use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seed
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::plan_generate_video_seedance2pro_seedance2p0;
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::plan_generate_video_seedance2pro_seedance2p0_fast;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftRequest;
-use crate::generate::generate_video_v2::video_generation_draft_request::VideoGenerationDraftRequest;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftState;
+use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
+use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
 /// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
 /// This works across multiple providers by shaping a generic "GenerateVideoRequest" into a provider-specific plan.
@@ -112,9 +114,10 @@ pub struct GenerateVideoRequestBuilder {
 }
 
 impl GenerateVideoRequestBuilder {
-  pub fn to_draft(self) -> Result<VideoGenerationDraftRequest, ArtcraftRouterError> {
+  // New builder (transitional state)
+  pub fn build2(self) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
     match (self.provider, self.model) {
-      (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => Ok(KinoviSeedance2p0DraftRequest::from_builder(self)?),
+      (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
       _ => self.unsupported_provider_and_model(),
     }
   }
@@ -197,7 +200,7 @@ impl GenerateVideoRequestBuilder {
     ))
   }
 
-  fn unsupported_provider_and_model(&self) -> Result<VideoGenerationDraftRequest, ArtcraftRouterError> {
+  fn unsupported_provider_and_model(&self) -> Result<VideoGenerationDraftOrRequest, ArtcraftRouterError> {
     Err(ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(
       format!("Video generation for model `{:?}` is not supported for provider {:?} using the new API", self.model, self.provider)
     ))

@@ -2,19 +2,19 @@ use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{GenerateVideoResponse, Seedance2proVideoResponsePayload};
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftRequest;
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftState;
 use seedance2pro_client::requests::generate_video::generate_video::{generate_video, GenerateVideoArgs, KinoviGenerateVideoRequest, KinoviModelType};
 
 #[derive(Debug, Clone)]
-pub struct KinoviSeedance2p0ReadyRequest {
+pub struct KinoviSeedance2p0RequestState {
   /// Final materialized request; ready to fire.
   pub request: KinoviGenerateVideoRequest,
 }
 
-impl KinoviSeedance2p0ReadyRequest {
+impl KinoviSeedance2p0RequestState {
   
   pub async fn from_draft(
-    mut request: KinoviSeedance2p0DraftRequest,
+    mut request: KinoviSeedance2p0DraftState,
     client: &RouterSeedance2ProClient,
   ) -> Result<Self, ArtcraftRouterError> {
     let session = &client.session;
