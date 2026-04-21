@@ -33,9 +33,16 @@ impl ArtcraftSeedance2p0RequestState {
 
 #[cfg(test)]
 mod tests {
+  use tokens::tokens::characters::CharacterToken;
+  use tokens::tokens::media_files::MediaFileToken;
+
+  use crate::api::character_list_ref::CharacterListRef;
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
+  use crate::api::image_list_ref::ImageListRef;
+  use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
+  use crate::api::video_list_ref::VideoListRef;
   use crate::client::router_artcraft_client::RouterArtcraftClient;
   use crate::client::router_client::RouterClient;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
@@ -44,29 +51,174 @@ mod tests {
   use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
   use artcraft_client::utils::api_host::ApiHost;
 
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn text_to_video_landscape() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A corgi running through a field of wildflowers at sunset.".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      ..artcraft_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
-    assert_eq!(1, 2, "Inspect output above");
+  // ── Aspect ratio tests ──
+
+  mod aspect_ratio_tests {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn landscape() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A corgi running through a field of wildflowers at sunset.".to_string()),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn portrait() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A cat sitting on a windowsill watching rain.".to_string()),
+        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn square() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A hummingbird hovering near a flower.".to_string()),
+        aspect_ratio: Some(CommonAspectRatio::Square),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
   }
 
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn text_to_video_1080p() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A fox walking through a snowy forest.".to_string()),
-      resolution: Some(CommonResolution::TenEightyP),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      ..artcraft_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
-    assert_eq!(1, 2, "Inspect output above");
+  // ── Resolution tests ──
+
+  mod resolution_tests {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn res_480p() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A shiba inu playing in autumn leaves.".to_string()),
+        resolution: Some(CommonResolution::FourEightyP),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn res_720p() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A golden retriever catching a frisbee on the beach.".to_string()),
+        resolution: Some(CommonResolution::SevenTwentyP),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn res_1080p() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A fox walking through a snowy forest.".to_string()),
+        resolution: Some(CommonResolution::TenEightyP),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+  }
+
+  // ── Modality tests ──
+
+  mod modality_tests {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn text_to_video() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A whale breaching in the open ocean at dawn, cinematic.".to_string()),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn keyframe_start_and_end_frame() {
+      // Artcraft uses media file tokens directly — no URL resolution needed.
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("The dog walks from the lake to the forest.".to_string()),
+        start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_m1bz02z1kkzanxy6rb4vk1kvq9de9g".to_string()))),
+        end_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_f5yy0fdmkwrf2hxaq4yw4sd95tvvrf".to_string()))),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn image_references() {
+      // Artcraft uses media file tokens directly.
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("The dog in @2 runs through the scenery in @1 towards the building in @3.".to_string()),
+        reference_images: Some(ImageListRef::MediaFileTokens(vec![
+          MediaFileToken::new("mf_f5yy0fdmkwrf2hxaq4yw4sd95tvvrf".to_string()),  // forest
+          MediaFileToken::new("mf_m1bz02z1kkzanxy6rb4vk1kvq9de9g".to_string()),  // juno at lake
+          MediaFileToken::new("mf_xmzdeqhjpxs5418kvepcrj5a3vkfb1".to_string()),  // white house
+        ])),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn video_references() {
+      // Artcraft uses media file tokens for video references too.
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("Change @video1 to a nighttime scene with moonlight.".to_string()),
+        reference_videos: Some(VideoListRef::MediaFileTokens(vec![
+          MediaFileToken::new("mf_testvideo_placeholder".to_string()),
+        ])),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn character_references() {
+      // Character tokens are passed through directly to the Artcraft API.
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string()),
+        reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
+          CharacterToken::new("char_steampunk_clown".to_string()),
+          CharacterToken::new("char_mochi".to_string()),
+        ])),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..artcraft_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Artcraft(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    // TODO: Add audio reference test once a media file token for a test audio file is available.
   }
 
   // ── Helpers ──
