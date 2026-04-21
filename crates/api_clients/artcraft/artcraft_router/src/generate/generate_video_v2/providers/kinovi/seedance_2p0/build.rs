@@ -1,7 +1,7 @@
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftState;
-use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::type_conversions::{map_common_resolution_to_kinovi, plan_aspect_ratio, plan_batch_count, plan_duration};
+use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::convert::{map_common_resolution_to_kinovi, plan_aspect_ratio, plan_batch_count, plan_duration};
 use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
