@@ -56,186 +56,184 @@ mod tests {
   const STEAMPUNK_CLOWN_KINOVI_ID: &str = "char_1775176566518_sik0te";
   const MOCHI_KINOVI_ID: &str = "char_1775177718294_g2pitx";
 
-  // ── Aspect ratio tests ──
+  mod aspect_ratio_tests {
+    use super::*;
 
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_text_to_video_landscape() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A corgi running through a field of wildflowers at sunset.".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn landscape() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A corgi running through a field of wildflowers at sunset.".to_string()),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..seedance2pro_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn portrait() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A cat sitting on a windowsill watching rain.".to_string()),
+        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        ..seedance2pro_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn square() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A hummingbird hovering near a flower.".to_string()),
+        aspect_ratio: Some(CommonAspectRatio::Square),
+        ..seedance2pro_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
   }
 
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_text_to_video_portrait() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A cat sitting on a windowsill watching rain.".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
+  mod resolution_tests {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn res_480p() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A shiba inu playing in autumn leaves.".to_string()),
+        resolution: Some(CommonResolution::FourEightyP),
+        ..seedance2pro_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn res_720p() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A fox walking through a snowy forest.".to_string()),
+        resolution: Some(CommonResolution::SevenTwentyP),
+        ..seedance2pro_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn res_1080p() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A golden retriever catching a frisbee on the beach.".to_string()),
+        resolution: Some(CommonResolution::TenEightyP),
+        ..seedance2pro_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
   }
 
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_text_to_video_square() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A hummingbird hovering near a flower.".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::Square),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
+  mod modality_tests {
+    use super::*;
 
-  // ── Resolution tests ──
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn text_to_video() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("A whale breaching in the open ocean at dawn, cinematic.".to_string()),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..seedance2pro_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
 
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_text_to_video_480p() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A shiba inu playing in autumn leaves.".to_string()),
-      resolution: Some(CommonResolution::FourEightyP),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn keyframe_start_and_end_frame() {
+      let start_token = MediaFileToken::new("mf_start".to_string());
+      let end_token = MediaFileToken::new("mf_end".to_string());
 
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_text_to_video_720p() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A fox walking through a snowy forest.".to_string()),
-      resolution: Some(CommonResolution::SevenTwentyP),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
+      let mut media_map = HashMap::new();
+      media_map.insert(start_token.clone(), test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL.to_string());
+      media_map.insert(end_token.clone(), test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL.to_string());
 
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_text_to_video_1080p() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A golden retriever catching a frisbee on the beach.".to_string()),
-      resolution: Some(CommonResolution::TenEightyP),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
+      let response = run_pipeline_with_media_map(GenerateVideoRequestBuilder {
+        prompt: Some("The dog walks from the lake to the forest.".to_string()),
+        start_frame: Some(ImageRef::MediaFileToken(start_token)),
+        end_frame: Some(ImageRef::MediaFileToken(end_token)),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..seedance2pro_builder()
+      }, media_map).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
 
-  // ── Modality: text to video ──
-
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_text_to_video() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("A whale breaching in the open ocean at dawn, cinematic.".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
-
-  // ── Modality: keyframe (start + end frame) ──
-
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_keyframe_start_and_end_frame() {
-    let start_token = MediaFileToken::new("mf_start".to_string());
-    let end_token = MediaFileToken::new("mf_end".to_string());
-
-    let mut media_map = HashMap::new();
-    media_map.insert(start_token.clone(), test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL.to_string());
-    media_map.insert(end_token.clone(), test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL.to_string());
-
-    let response = run_pipeline_with_media_map(GenerateVideoRequestBuilder {
-      prompt: Some("The dog walks from the lake to the forest.".to_string()),
-      start_frame: Some(ImageRef::MediaFileToken(start_token)),
-      end_frame: Some(ImageRef::MediaFileToken(end_token)),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      ..seedance2pro_builder()
-    }, media_map).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
-
-  // ── Modality: image references ──
-
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_image_references() {
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("The dog in @2 runs through the scenery in @1 towards the building in @3.".to_string()),
-      reference_images: Some(ImageListRef::Urls(vec![
-        test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL.to_string(),
-        test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL.to_string(),
-        test_data::web::image_urls::WHITE_HOUSE_SUNSET_IMAGE_URL.to_string(),
-      ])),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
-
-  // ── Modality: video reference ──
-
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_video_reference() {
-    // NB: This URL is a pre-uploaded video on the Seedance2Pro CDN from prior tests.
-    let response = run_pipeline(GenerateVideoRequestBuilder {
-      prompt: Some("Change @video1 to a nighttime scene with moonlight.".to_string()),
-      reference_videos: Some(VideoListRef::Urls(vec![
-        "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
-      ])),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      ..seedance2pro_builder()
-    }).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
-
-  // ── Modality: character references ──
-
-  #[tokio::test]
-  #[ignore] // manually run — fires a real API request and incurs cost
-  async fn test_character_references() {
-    let char_clown = CharacterToken::new("char_clown".to_string());
-    let char_mochi = CharacterToken::new("char_mochi".to_string());
-
-    let mut character_map = HashMap::new();
-    character_map.insert(char_clown.clone(), STEAMPUNK_CLOWN_KINOVI_ID.to_string());
-    character_map.insert(char_mochi.clone(), MOCHI_KINOVI_ID.to_string());
-
-    let response = run_pipeline_with_maps(
-      GenerateVideoRequestBuilder {
-        prompt: Some("@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string()),
-        reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
-          char_clown,
-          char_mochi,
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn image_references() {
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("The dog in @2 runs through the scenery in @1 towards the building in @3.".to_string()),
+        reference_images: Some(ImageListRef::Urls(vec![
+          test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL.to_string(),
+          test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL.to_string(),
+          test_data::web::image_urls::WHITE_HOUSE_SUNSET_IMAGE_URL.to_string(),
         ])),
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
         ..seedance2pro_builder()
-      },
-      HashMap::new(),
-      character_map,
-    ).await;
-    assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-    assert_eq!(1, 2, "Inspect output above");
-  }
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
 
-  // TODO: Add audio reference test once a web-accessible audio URL is available in test_data.
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn video_reference() {
+      // NB: This URL is a pre-uploaded video on the Seedance2Pro CDN from prior tests.
+      let response = run_pipeline(GenerateVideoRequestBuilder {
+        prompt: Some("Change @video1 to a nighttime scene with moonlight.".to_string()),
+        reference_videos: Some(VideoListRef::Urls(vec![
+          "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+        ])),
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..seedance2pro_builder()
+      }).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    #[tokio::test]
+    #[ignore] // manually run — fires a real API request and incurs cost
+    async fn character_references() {
+      let char_clown = CharacterToken::new("char_clown".to_string());
+      let char_mochi = CharacterToken::new("char_mochi".to_string());
+
+      let mut character_map = HashMap::new();
+      character_map.insert(char_clown.clone(), STEAMPUNK_CLOWN_KINOVI_ID.to_string());
+      character_map.insert(char_mochi.clone(), MOCHI_KINOVI_ID.to_string());
+
+      let response = run_pipeline_with_maps(
+        GenerateVideoRequestBuilder {
+          prompt: Some("@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string()),
+          reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
+            char_clown,
+            char_mochi,
+          ])),
+          aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+          ..seedance2pro_builder()
+        },
+        HashMap::new(),
+        character_map,
+      ).await;
+      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
+      assert_eq!(1, 2, "Inspect output above");
+    }
+
+    // TODO: Add audio reference test once a web-accessible audio URL is available in test_data.
+  }
 
   // ── Helpers ──
 

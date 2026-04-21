@@ -10,7 +10,10 @@
 ## Test Patterns
 
 - Tests live in `#[cfg(test)] mod tests { ... }` at the bottom of each file
-- Group related tests in sub-modules: `mod explicit_checks`, `mod mechanical_checks`
+- Group related tests into sub-modules by category (e.g. `mod pricing_tests`, `mod resolution_tests`)
+- Only create a sub-module when it has 2+ tests — don't wrap a single test in its own module
+- Keep nesting shallow: `mod tests { mod category { ... } }` is fine; a third level is rarely needed
+- Shared helpers used by multiple sub-modules belong in the parent `mod tests`, not duplicated in each sub-module
 - Enum tests should cover: serialization, deserialization, `to_str`/`from_str` round-trip, variant count
 - Password/crypto tests: be mindful of computation cost, don't add too many bcrypt test cases
 

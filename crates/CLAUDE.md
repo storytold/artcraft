@@ -29,11 +29,15 @@ Within `#[cfg(test)] mod tests { ... }`:
 
 1. **Imports**
 2. **Constants** (test IDs, URLs, fixture data) — small context that tests reference
-3. **Test functions** (`#[test]` / `#[tokio::test]`) grouped by category
+3. **Test functions or sub-modules** grouped by category
 4. **Helper functions** (builders, pipeline runners, assertions)
 
 Constants provide small context up front. Test cases come next so engineers see *what* is
-tested before *how* the helpers work. The same ordering applies within test sub-modules.
+tested before *how* the helpers work.
+
+Group related tests into sub-modules (`mod pricing_tests { ... }`) when a category has 2+
+tests. Don't wrap a single test in its own module. Keep nesting to two levels max. Shared
+helpers go in the parent `mod tests` so sub-modules can `use super::*`.
 
 ## Building
 

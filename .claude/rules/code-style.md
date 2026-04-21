@@ -49,8 +49,13 @@ Put test cases first, helpers last. A reader opening a test file should immediat
 
 1. **Imports**
 2. **Constants** (test IDs, URLs, fixture data) — small context that tests reference
-3. **Test functions** grouped by category
+3. **Test functions** or **sub-modules** grouped by category
 4. **Helper functions** (builders, pipeline runners, assertions)
+
+Group related tests into sub-modules (`mod pricing_tests { ... }`) when a category has 2+
+tests. Don't create a sub-module for a single test. Keep nesting to two levels max
+(`mod tests { mod category { ... } }`). Shared helpers go in the parent module so
+sub-modules can reach them via `use super::*`.
 
 ## Naming
 
