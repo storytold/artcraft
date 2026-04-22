@@ -36,7 +36,7 @@ export interface EnqueueTextToImageRequest {
   common_resolution?: CommonResolution;
 
   // Quality level (used by OpenAI image models — gpt_image_1, gpt_image_1p5, gpt_image_2).
-  common_quality?: CommonQuality;
+  quality?: CommonQuality;
 
   // TODO: This is deprecated and will be phased out.
   // The desired output aspect ratio.
@@ -72,7 +72,7 @@ interface EnqueueTextToImageRawRequest {
   aspect_ratio?: EnqueueTextToImageSize;
   common_aspect_ratio?: CommonAspectRatio;
   common_resolution?: CommonResolution;
-  common_quality?: CommonQuality;
+  quality?: CommonQuality;
   image_resolution?: EnqueueTextToImageResolution;
   number_images?: number;
   image_media_tokens?: string[];
@@ -155,8 +155,8 @@ export const EnqueueTextToImage = async (
     mutableRequest.common_resolution = request.common_resolution;
   }
 
-  if (!!request.common_quality) {
-    mutableRequest.common_quality = request.common_quality;
+  if (!!request.quality) {
+    mutableRequest.quality = request.quality;
   }
 
   if (!!request.aspect_ratio) {

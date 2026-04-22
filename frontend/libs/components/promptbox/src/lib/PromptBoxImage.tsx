@@ -321,7 +321,7 @@ export const PromptBoxImage = ({
       }
 
       if (selectedModel?.supportsQuality()) {
-        request.common_quality = commonQuality ?? selectedModel.defaultQuality;
+        request.quality = commonQuality ?? selectedModel.defaultQuality;
       }
 
       if (
