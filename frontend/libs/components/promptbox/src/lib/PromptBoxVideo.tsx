@@ -1274,7 +1274,7 @@ export const PromptBoxVideo = ({
             <Tooltip
               content={
                 isMultishotActive
-                  ? "Not available in multishot"
+                  ? "Cannot expand in multishot"
                   : isExpanded
                     ? "Collapse"
                     : "Expand"

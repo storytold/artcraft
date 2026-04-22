@@ -277,7 +277,7 @@ export const MultishotPromptEditor = forwardRef<
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeShot = useMemo(
-    () => (activeId ? shots.find((s) => s.id === activeId) ?? null : null),
+    () => (activeId ? (shots.find((s) => s.id === activeId) ?? null) : null),
     [activeId, shots],
   );
   const activeIndex = useMemo(
@@ -303,31 +303,74 @@ export const MultishotPromptEditor = forwardRef<
     setActiveId(null);
   };
 
-  // Cap the scroll wrapper's max-height to whatever vertical space is available
-  // between its top and the viewport bottom, minus a reserve for the footer
-  // (add-shot + total), the promptbox padding, and the controls rows below.
-  // Re-measured on window resize and on any document-size change (e.g., the
-  // reference-image row appearing/disappearing above the promptbox).
+  // Cap the scroll wrapper's max-height so the entire glass promptbox never
+  // exceeds the viewport. We measure the promptbox's current bottom position,
+  // and if it would overflow (or has slack), adjust the wrapper's maxHeight by
+  // exactly that amount. Self-correcting regardless of how much chrome sits
+  // around the shot list or what's above/below the promptbox on the page.
+  // Re-runs on shots.length to catch the common case where adding shots
+  // pushes the panel past the viewport.
   const scrollWrapperRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = scrollWrapperRef.current;
     if (!el) return;
-    const RESERVE_BELOW_PX = 200;
     const MIN_HEIGHT_PX = 120;
+    const SAFETY_PX = 120;
+    let promptbox: HTMLElement | null = el;
+    while (promptbox && !promptbox.classList.contains("glass")) {
+      promptbox = promptbox.parentElement;
+    }
     const measure = () => {
-      const top = el.getBoundingClientRect().top;
-      const available = window.innerHeight - top - RESERVE_BELOW_PX;
-      el.style.maxHeight = `${Math.max(MIN_HEIGHT_PX, available)}px`;
+      const anchor = promptbox ?? document.body;
+      const anchorBottom = anchor.getBoundingClientRect().bottom;
+      const wrapperHeight = el.getBoundingClientRect().height;
+      const slack = window.innerHeight - anchorBottom - SAFETY_PX;
+      const newMax = Math.max(MIN_HEIGHT_PX, wrapperHeight + slack);
+      el.style.maxHeight = `${newMax}px`;
+    };
+    // Coalesce triggers in the same frame into one measurement, and always
+    // read positions AFTER the browser has settled the new layout. Raw resize
+    // events often fire before glass.bottom has moved to its final position.
+    // A settle timer re-measures ~150ms after the last trigger, which catches
+    // fullscreen/restore transitions where layout takes multiple paint cycles
+    // and no further event fires to prompt a retry.
+    let rafId: number | null = null;
+    let settleTimer: number | null = null;
+    const schedule = () => {
+      if (rafId == null) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          measure();
+        });
+      }
+      if (settleTimer != null) clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        settleTimer = null;
+        measure();
+      }, 150);
     };
     measure();
-    window.addEventListener("resize", measure);
-    const observer = new ResizeObserver(measure);
+    schedule();
+    window.addEventListener("resize", schedule);
+    // visualViewport is the canonical source for viewport-size changes and
+    // catches fullscreen/restore transitions that window.resize sometimes
+    // misses (notably in Tauri/webviews).
+    const vv = window.visualViewport;
+    vv?.addEventListener("resize", schedule);
+    vv?.addEventListener("scroll", schedule);
+    const observer = new ResizeObserver(schedule);
+    if (promptbox) observer.observe(promptbox);
+    observer.observe(document.documentElement);
     observer.observe(document.body);
     return () => {
-      window.removeEventListener("resize", measure);
+      if (rafId != null) cancelAnimationFrame(rafId);
+      if (settleTimer != null) clearTimeout(settleTimer);
+      window.removeEventListener("resize", schedule);
+      vv?.removeEventListener("resize", schedule);
+      vv?.removeEventListener("scroll", schedule);
       observer.disconnect();
     };
-  }, []);
+  }, [shots.length]);
 
   return (
     <div ref={ref} className="flex flex-col">
@@ -355,9 +398,7 @@ export const MultishotPromptEditor = forwardRef<
                 key={shot.id}
                 shot={shot}
                 index={i}
-                canDecrement={
-                  shot.durationSeconds > MULTISHOT_MIN_SHOT_SECONDS
-                }
+                canDecrement={shot.durationSeconds > MULTISHOT_MIN_SHOT_SECONDS}
                 canIncrement={remaining >= 1}
                 canRemove={canRemove}
                 hasMentions={hasMentions}
