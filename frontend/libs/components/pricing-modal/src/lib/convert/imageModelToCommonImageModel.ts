@@ -14,8 +14,12 @@ export function imageModelToCommonImageModel(
       return CommonImageModel.FluxPro11;
     case "flux_pro_11_ultra":
       return CommonImageModel.FluxPro11Ultra;
+    case "gpt_image_1":
+      return CommonImageModel.GptImage1;
     case "gpt_image_1p5":
       return CommonImageModel.GptImage1p5;
+    case "gpt_image_2":
+      return CommonImageModel.GptImage2;
     case "nano_banana":
       return CommonImageModel.NanaBanana;
     case "nano_banana_2":

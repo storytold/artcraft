@@ -277,6 +277,7 @@ export function CostBreakdownModal({ activeTabId }: CostBreakdownModalProps) {
     "flux_pro_11",
     "flux_pro_11_ultra",
     "gpt_image_1p5",
+    "gpt_image_2",
     "nano_banana",
     "nano_banana_2",
     "nano_banana_pro",

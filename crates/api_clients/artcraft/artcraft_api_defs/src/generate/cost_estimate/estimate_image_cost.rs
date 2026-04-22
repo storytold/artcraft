@@ -10,7 +10,7 @@ use enums::common::generation_provider::GenerationProvider;
 pub const ESTIMATE_IMAGE_COST_PATH: &str = "/v1/generate/cost_estimate/image";
 
 /// Request body for the image cost estimate endpoint.
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 pub struct EstimateImageCostRequest {
   /// The image model to estimate costs for.
   pub model: CommonImageModel,
@@ -38,7 +38,7 @@ pub struct EstimateImageCostRequest {
 }
 
 /// Describes the type of image generation being requested.
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum GenerationMode {
   /// No input images — generate from prompt only.
