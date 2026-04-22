@@ -9,6 +9,7 @@ use artcraft_api_defs::generate::cost_estimate::estimate_image_cost::{
 };
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterAspectRatio;
 use artcraft_router::api::common_image_model::CommonImageModel as RouterImageModel;
+use artcraft_router::api::common_quality::CommonQuality as RouterQuality;
 use artcraft_router::api::common_resolution::CommonResolution as RouterResolution;
 use artcraft_router::api::provider::Provider as RouterProvider;
 use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
@@ -16,6 +17,7 @@ use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismat
 use artcraft_router::generate::generate_image::generate_image_request::GenerateImageRequest;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_image_model::CommonImageModel;
+use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 
@@ -37,6 +39,7 @@ pub async fn estimate_image_cost_handler(
   let router_model = map_image_model(request.model)?;
   let router_aspect_ratio = request.aspect_ratio.map(map_aspect_ratio);
   let router_resolution = request.resolution.map(map_resolution);
+  let router_quality = request.quality.map(map_quality);
 
   let router_request = GenerateImageRequest {
     model: router_model,
@@ -45,7 +48,7 @@ pub async fn estimate_image_cost_handler(
     image_inputs: None, // TODO: Only some models charge for this - we'll need to add later.
     resolution: router_resolution,
     aspect_ratio: router_aspect_ratio,
-    quality: None,
+    quality: router_quality,
     image_batch_count: request.image_batch_count,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),
@@ -132,13 +135,13 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::FluxPro11Ultra => RouterImageModel::FluxPro11Ultra,
     CommonImageModel::GptImage1 => RouterImageModel::GptImage1,
     CommonImageModel::GptImage1p5 => RouterImageModel::GptImage1p5,
+    CommonImageModel::GptImage2 => RouterImageModel::GptImage2,
     CommonImageModel::NanoBanana => RouterImageModel::NanoBanana,
     CommonImageModel::NanoBanana2 => RouterImageModel::NanoBanana2,
     CommonImageModel::NanoBananaPro => RouterImageModel::NanoBananaPro,
     CommonImageModel::Seedream4 => RouterImageModel::Seedream4,
     CommonImageModel::Seedream4p5 => RouterImageModel::Seedream4p5,
     CommonImageModel::Seedream5Lite => RouterImageModel::Seedream5Lite,
-    CommonImageModel::GptImage2 => RouterImageModel::GptImage2,
   };
   Ok(router_model)
 }
@@ -176,5 +179,13 @@ fn map_resolution(res: CommonResolution) -> RouterResolution {
     CommonResolution::FourEightyP => RouterResolution::FourEightyP,
     CommonResolution::SevenTwentyP => RouterResolution::SevenTwentyP,
     CommonResolution::TenEightyP => RouterResolution::TenEightyP,
+  }
+}
+
+fn map_quality(res: CommonQuality) -> RouterQuality {
+  match res {
+    CommonQuality::Low => RouterQuality::Low,
+    CommonQuality::Medium => RouterQuality::Medium,
+    CommonQuality::High => RouterQuality::High,
   }
 }

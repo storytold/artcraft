@@ -15,11 +15,12 @@ body:
   type: json
   content: |
     {
-        "model": "seedream_5_lite",
+        "model": "gpt_image_2",
         "provider": "artcraft",
         "generation_mode": {"type": "text_to_image" },
         "aspect_ratio": "wide_sixteen_by_nine",
         "resolution": "two_k",
+        "quality": "low",
         "image_batch_count": 1
     }
 order: 2000

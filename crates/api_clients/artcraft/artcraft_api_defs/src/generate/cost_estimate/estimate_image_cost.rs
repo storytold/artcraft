@@ -3,6 +3,7 @@ use utoipa::ToSchema;
 
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_image_model::CommonImageModel;
+use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 
@@ -28,6 +29,9 @@ pub struct EstimateImageCostRequest {
 
   /// Optional resolution.
   pub resolution: Option<CommonResolution>,
+
+  // Optional quality.
+  pub quality: Option<CommonQuality>,
 
   /// Number of images to generate in parallel.
   pub image_batch_count: Option<u16>,
@@ -94,6 +98,7 @@ mod tests {
       generation_mode: GenerationMode::TextToImage,
       aspect_ratio: None,
       resolution: None,
+      quality: None,
       image_batch_count: None,
     };
     let serialized = serde_json::to_string(&request).unwrap();
@@ -108,6 +113,7 @@ mod tests {
       generation_mode: GenerationMode::ImageEdit { count: 2 },
       aspect_ratio: None,
       resolution: None,
+      quality: None,
       image_batch_count: None,
     };
     let serialized = serde_json::to_string(&request).unwrap();
