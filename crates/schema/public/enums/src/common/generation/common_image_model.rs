@@ -17,6 +17,8 @@ pub enum CommonImageModel {
   GptImage1,
   #[serde(rename = "gpt_image_1p5")]
   GptImage1p5,
+  #[serde(rename = "gpt_image_2")]
+  GptImage2,
   #[serde(rename = "nano_banana")]
   NanoBanana,
   #[serde(rename = "nano_banana_2")]
@@ -41,6 +43,7 @@ impl CommonImageModel {
       Self::FluxPro11Ultra => CommonModelType::FluxPro11Ultra,
       Self::GptImage1 => CommonModelType::GptImage1,
       Self::GptImage1p5 => CommonModelType::GptImage1p5,
+      Self::GptImage2 => CommonModelType::GptImage2,
       Self::NanoBanana => CommonModelType::NanoBanana,
       Self::NanoBanana2 => CommonModelType::NanoBanana2,
       Self::NanoBananaPro => CommonModelType::NanoBananaPro,
@@ -65,6 +68,7 @@ mod tests {
       (CommonImageModel::FluxPro11Ultra, CommonModelType::FluxPro11Ultra),
       (CommonImageModel::GptImage1, CommonModelType::GptImage1),
       (CommonImageModel::GptImage1p5, CommonModelType::GptImage1p5),
+      (CommonImageModel::GptImage2, CommonModelType::GptImage2),
       (CommonImageModel::NanoBanana, CommonModelType::NanoBanana),
       (CommonImageModel::NanoBanana2, CommonModelType::NanoBanana2),
       (CommonImageModel::NanoBananaPro, CommonModelType::NanoBananaPro),

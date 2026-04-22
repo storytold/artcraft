@@ -48,6 +48,8 @@ pub enum CommonModelType {
   GptImage1,
   #[serde(rename = "gpt_image_1p5")]
   GptImage1p5,
+  #[serde(rename = "gpt_image_2")]
+  GptImage2,
   // Generic grok image model without a version
   #[serde(rename = "grok_image")]
   GrokImage,
@@ -176,6 +178,7 @@ impl CommonModelType {
       Self::Flux2LoraAngles => "flux_2_lora_angles",
       Self::GptImage1 => "gpt_image_1",
       Self::GptImage1p5 => "gpt_image_1p5",
+      Self::GptImage2 => "gpt_image_2",
       Self::GrokImage => "grok_image",
       Self::Recraft3 => "recraft_3",
       Self::SeedEdit3 => "seededit_3",
@@ -243,6 +246,7 @@ impl CommonModelType {
       "flux_2_lora_angles" => Ok(Self::Flux2LoraAngles),
       "gpt_image_1" => Ok(Self::GptImage1),
       "gpt_image_1p5" => Ok(Self::GptImage1p5),
+      "gpt_image_2" => Ok(Self::GptImage2),
       "grok_image" => Ok(Self::GrokImage),
       "recraft_3" => Ok(Self::Recraft3),
       "seededit_3" => Ok(Self::SeedEdit3),
@@ -314,6 +318,7 @@ impl CommonModelType {
       Self::Flux2LoraAngles,
       Self::GptImage1,
       Self::GptImage1p5,
+      Self::GptImage2,
       Self::GrokImage,
       Self::Recraft3,
       Self::SeedEdit3,
@@ -382,6 +387,7 @@ impl CommonModelType {
       Self::Flux2LoraAngles => CommonModelClass::Image,
       Self::GptImage1 => CommonModelClass::Image,
       Self::GptImage1p5 => CommonModelClass::Image,
+      Self::GptImage2 => CommonModelClass::Image,
       Self::GrokImage => CommonModelClass::Image,
       Self::Recraft3 => CommonModelClass::Image,
       Self::SeedEdit3 => CommonModelClass::Image,
@@ -460,6 +466,7 @@ mod tests {
       assert_serialization(CommonModelType::Flux2LoraAngles, "flux_2_lora_angles");
       assert_serialization(CommonModelType::GptImage1, "gpt_image_1");
       assert_serialization(CommonModelType::GptImage1p5, "gpt_image_1p5");
+      assert_serialization(CommonModelType::GptImage2, "gpt_image_2");
       assert_serialization(CommonModelType::GrokImage, "grok_image");
       assert_serialization(CommonModelType::Recraft3, "recraft_3");
       assert_serialization(CommonModelType::SeedEdit3, "seededit_3");
@@ -523,6 +530,7 @@ mod tests {
       assert_eq!(CommonModelType::Flux2LoraAngles.to_str(), "flux_2_lora_angles");
       assert_eq!(CommonModelType::GptImage1.to_str(), "gpt_image_1");
       assert_eq!(CommonModelType::GptImage1p5.to_str(), "gpt_image_1p5");
+      assert_eq!(CommonModelType::GptImage2.to_str(), "gpt_image_2");
       assert_eq!(CommonModelType::GrokImage.to_str(), "grok_image");
       assert_eq!(CommonModelType::Recraft3.to_str(), "recraft_3");
       assert_eq!(CommonModelType::SeedEdit3.to_str(), "seededit_3");
@@ -588,6 +596,7 @@ mod tests {
       assert_eq!(CommonModelType::from_str("flux_2_lora_angles").unwrap(), CommonModelType::Flux2LoraAngles);
       assert_eq!(CommonModelType::from_str("gpt_image_1").unwrap(), CommonModelType::GptImage1);
       assert_eq!(CommonModelType::from_str("gpt_image_1p5").unwrap(), CommonModelType::GptImage1p5);
+      assert_eq!(CommonModelType::from_str("gpt_image_2").unwrap(), CommonModelType::GptImage2);
       assert_eq!(CommonModelType::from_str("grok_image").unwrap(), CommonModelType::GrokImage);
       assert_eq!(CommonModelType::from_str("recraft_3").unwrap(), CommonModelType::Recraft3);
       assert_eq!(CommonModelType::from_str("seededit_3").unwrap(), CommonModelType::SeedEdit3);
@@ -642,7 +651,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 55);
+      assert_eq!(variants.len(), 56);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -654,6 +663,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux2LoraAngles));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImage));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Recraft3));
       assert_eq!(variants.pop_first(), Some(CommonModelType::SeedEdit3));
