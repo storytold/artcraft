@@ -14,6 +14,7 @@ export interface EstimateImageCostRequest {
   generation_mode: ImageGenerationMode;
   aspect_ratio?: CommonAspectRatio;
   resolution?: CommonVideoResolution;
+  quality?: string;
   image_batch_count?: number;
 }
 

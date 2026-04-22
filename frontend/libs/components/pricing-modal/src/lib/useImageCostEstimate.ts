@@ -44,6 +44,7 @@ export function useImageCostEstimate(
   const imageLegacyResolution = usePromptImageStore((s) => s.resolution);
   const imageReferenceImages = usePromptImageStore((s) => s.referenceImages);
   const imageGenerationCount = usePromptImageStore((s) => s.generationCount);
+  const imageQuality = usePromptImageStore((s) => s.commonQuality);
 
   // Canvas2D store
   const prompt2DAspectRatio = usePrompt2DStore((s) => s.aspectRatio);
@@ -74,6 +75,7 @@ export function useImageCostEstimate(
     let aspectRatioStr: string | undefined;
     let legacyAspectRatioStr: string | undefined;
     let resolutionStr: string | undefined;
+    let qualityStr: string | undefined;
     let referenceImageCount = 0;
     let generationCount = 1;
 
@@ -82,6 +84,7 @@ export function useImageCostEstimate(
         aspectRatioStr = imageAspectRatio;
         legacyAspectRatioStr = imageLegacyAspectRatio;
         resolutionStr = imageResolution ?? imageLegacyResolution;
+        qualityStr = imageQuality;
         referenceImageCount = imageReferenceImages.length;
         generationCount = imageGenerationCount;
         break;
@@ -131,6 +134,7 @@ export function useImageCostEstimate(
       generation_mode: generationMode,
       aspect_ratio: commonAspectRatio ?? undefined,
       resolution: commonResolution ?? undefined,
+      quality: qualityStr ?? undefined,
     })
       .then((result) => {
         if (isEstimateImageCostSuccess(result)) {
@@ -160,6 +164,7 @@ export function useImageCostEstimate(
     imageLegacyResolution,
     imageReferenceImages.length,
     imageGenerationCount,
+    imageQuality,
     prompt2DAspectRatio,
     prompt2DResolution,
     prompt2DReferenceImages.length,
