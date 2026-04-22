@@ -1,8 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { CommandResult } from "../common/CommandStatus";
-import { CommonAspectRatio, Model } from "@storyteller/model-list";
+import {
+  CommonAspectRatio,
+  CommonResolution,
+  CommonQuality,
+  Model,
+} from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
-import { CommonResolution } from "@storyteller/model-list";
 
 export enum EnqueueTextToImageErrorType {
   /// Caller didn't specify a model
@@ -31,6 +35,9 @@ export interface EnqueueTextToImageRequest {
   // This is the new aspect ratio.
   common_resolution?: CommonResolution;
 
+  // Quality level (used by OpenAI image models — gpt_image_1, gpt_image_1p5, gpt_image_2).
+  common_quality?: CommonQuality;
+
   // TODO: This is deprecated and will be phased out.
   // The desired output aspect ratio.
   aspect_ratio?: EnqueueTextToImageSize;
@@ -44,7 +51,7 @@ export interface EnqueueTextToImageRequest {
 
   // Optional image-to-image prompts
   // These are not semantic buckets, but rather just "reference images",
-  // and models do not have any further instruction about them. (ie. they 
+  // and models do not have any further instruction about them. (ie. they
   // are not "style", "character", etc. references)
   image_media_tokens?: string[];
 
@@ -65,6 +72,7 @@ interface EnqueueTextToImageRawRequest {
   aspect_ratio?: EnqueueTextToImageSize;
   common_aspect_ratio?: CommonAspectRatio;
   common_resolution?: CommonResolution;
+  common_quality?: CommonQuality;
   image_resolution?: EnqueueTextToImageResolution;
   number_images?: number;
   image_media_tokens?: string[];
@@ -106,9 +114,13 @@ export interface EnqueueTextToImageSuccess extends CommandResult {
   payload: EnqueueTextToImagePayload;
 }
 
-export type EnqueueTextToImageResult = EnqueueTextToImageSuccess | EnqueueTextToImageError;
+export type EnqueueTextToImageResult =
+  | EnqueueTextToImageSuccess
+  | EnqueueTextToImageError;
 
-export const EnqueueTextToImage = async (request: EnqueueTextToImageRequest) : Promise<EnqueueTextToImageResult> => {
+export const EnqueueTextToImage = async (
+  request: EnqueueTextToImageRequest,
+): Promise<EnqueueTextToImageResult> => {
   let modelName = undefined;
 
   if (!!request.model) {
@@ -121,10 +133,12 @@ export const EnqueueTextToImage = async (request: EnqueueTextToImageRequest) : P
   }
 
   if (!modelName) {
-    throw new Error("No model specified in request: " + JSON.stringify(request));
+    throw new Error(
+      "No model specified in request: " + JSON.stringify(request),
+    );
   }
 
-  let mutableRequest : EnqueueTextToImageRawRequest = {
+  let mutableRequest: EnqueueTextToImageRawRequest = {
     model: modelName,
     prompt: request.prompt,
   };
@@ -141,10 +155,14 @@ export const EnqueueTextToImage = async (request: EnqueueTextToImageRequest) : P
     mutableRequest.common_resolution = request.common_resolution;
   }
 
+  if (!!request.common_quality) {
+    mutableRequest.common_quality = request.common_quality;
+  }
+
   if (!!request.aspect_ratio) {
     mutableRequest.aspect_ratio = request.aspect_ratio;
   }
-  
+
   if (!!request.image_resolution) {
     mutableRequest.image_resolution = request.image_resolution;
   }
@@ -165,9 +183,9 @@ export const EnqueueTextToImage = async (request: EnqueueTextToImageRequest) : P
     mutableRequest.frontend_subscriber_id = request.frontend_subscriber_id;
   }
 
-  const result = await invoke("enqueue_text_to_image_command", { 
+  const result = await invoke("enqueue_text_to_image_command", {
     request: mutableRequest,
   });
 
-  return (result as EnqueueTextToImageResult);
-}
+  return result as EnqueueTextToImageResult;
+};

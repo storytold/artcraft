@@ -30,6 +30,7 @@ import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
 import { ResolutionPicker } from "./common/ResolutionPicker";
+import { QualityPicker } from "./common/QualityPicker";
 import { CommonResolution } from "@storyteller/model-list";
 
 interface PromptBoxImageProps {
@@ -131,6 +132,8 @@ export const PromptBoxImage = ({
   );
   const commonResolution = usePromptImageStore((s) => s.commonResolution);
   const setCommonResolution = usePromptImageStore((s) => s.setCommonResolution);
+  const commonQuality = usePromptImageStore((s) => s.commonQuality);
+  const setCommonQuality = usePromptImageStore((s) => s.setCommonQuality);
 
   useEffect(() => {
     onImageRowVisibilityChange?.(isImageRowVisible);
@@ -315,6 +318,10 @@ export const PromptBoxImage = ({
 
       if (selectedModel?.supportsNewResolution()) {
         request.common_resolution = commonResolution;
+      }
+
+      if (selectedModel?.supportsQuality()) {
+        request.common_quality = commonQuality ?? selectedModel.defaultQuality;
       }
 
       if (
@@ -553,6 +560,13 @@ export const PromptBoxImage = ({
                     />
                   </Tooltip>
                 )}
+              {selectedModel?.supportsQuality() && (
+                <QualityPicker
+                  model={selectedModel}
+                  currentQuality={commonQuality}
+                  handleCommonQualitySelect={setCommonQuality}
+                />
+              )}
             </div>
             <div className="flex items-center gap-2">
               <GenerationCountPicker
