@@ -5,6 +5,7 @@ import { ModelTag } from "./metadata/ModelTag.js";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { CommonAspectRatio } from "./properties/CommonAspectRatio.js";
 import { CommonResolution } from "./properties/CommonResolution.js";
+import { CommonQuality } from "./properties/CommonQuality.js";
 
 export class ImageModel extends Model {
   // Typescript type discriminator property
@@ -57,6 +58,8 @@ export class ImageModel extends Model {
   readonly aspectRatios: CommonAspectRatio[];
 
   readonly resolutions: CommonResolution[];
+  
+  readonly qualityOptions: CommonQuality[];
 
   // Aspect ratio to use as default when nothing is selected.
   // Otherwise, use `aspectRatios[0]` as default.
@@ -65,6 +68,10 @@ export class ImageModel extends Model {
   // Resolution to use as default when nothing is selected.
   // Otherwise, use `resolutions[0]` as default.
   readonly defaultResolution?: CommonResolution;
+
+  // Quality to use as default when nothing is selected.
+  // Otherwise, use `qualityOptions[0]` as default.
+  readonly defaultQuality?: CommonQuality;
 
   constructor(args: {
     id: string;
@@ -92,8 +99,10 @@ export class ImageModel extends Model {
     providers?: GenerationProvider[];
     aspectRatios?: CommonAspectRatio[];
     resolutions?: CommonResolution[];
+    qualityOptions?: CommonQuality[];
     defaultAspectRatio?: CommonAspectRatio;
     defaultResolution?: CommonResolution;
+    defaultQuality?: CommonQuality;
     maxPromptLength?: number;
   }) {
     if (args.maxGenerationCount < 1) {
@@ -122,8 +131,10 @@ export class ImageModel extends Model {
     this.canChangeAspectRatio = args.canChangeAspectRatio ?? false;
     this.aspectRatios = args.aspectRatios ?? [];
     this.resolutions = args.resolutions ?? [];
+    this.qualityOptions = args.qualityOptions ?? [];
     this.defaultAspectRatio = args.defaultAspectRatio ?? (args.aspectRatios && args.aspectRatios.length > 0 ? args.aspectRatios[0] : undefined);
     this.defaultResolution = args.defaultResolution ?? (args.resolutions && args.resolutions.length > 0 ? args.resolutions[0] : undefined);
+    this.defaultQuality = args.defaultQuality ?? (args.qualityOptions && args.qualityOptions.length > 0 ? args.qualityOptions[0] : undefined);
   }
 
   // If the model is a "Nano Banana"-type model, we may want to enable certain features. 

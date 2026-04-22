@@ -1,4 +1,5 @@
 use crate::core::api_adapters::aspect_ratio::common_aspect_ratio::CommonAspectRatio;
+use crate::core::api_adapters::quality::common_quality::CommonQuality;
 use crate::core::api_adapters::resolution::common_resolution::CommonResolution;
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason};
@@ -100,6 +101,10 @@ pub struct EnqueueTextToImageRequest {
   /// New field for resolution.
   /// Not all models support each of these resolutions, but we can choose or interpolate sensibly.
   pub common_resolution: Option<CommonResolution>,
+
+  /// Quality. 
+  /// Tends to be used by OpenAI models.
+  pub quality: Option<CommonQuality>,
 
   /// Aspect ratio.
   #[deprecated(note="use common_aspect_ratio")]

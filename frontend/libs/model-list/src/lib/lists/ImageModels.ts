@@ -4,6 +4,7 @@ import { ModelCreator } from "../classes/metadata/ModelCreator.js";
 import { ModelTag } from "../classes/metadata/ModelTag.js";
 import { CommonAspectRatio } from "../classes/properties/CommonAspectRatio.js";
 import { CommonResolution } from "../classes/properties/CommonResolution.js";
+import { CommonQuality } from "../classes/properties/CommonQuality.js";
 
 // TODO: Some of the model configs, such as generation counts, are authoritatively controlled in `legacy/Models.ts`
 
@@ -355,6 +356,12 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.TallNineBySixteen,
       CommonAspectRatio.WideFourByThree,
       CommonAspectRatio.WideSixteenByNine,
+    ],
+    defaultQuality: CommonQuality.High,
+    qualityOptions: [
+      CommonQuality.High,
+      CommonQuality.Medium,
+      CommonQuality.Low,
     ]
   }),
   new ImageModel({
