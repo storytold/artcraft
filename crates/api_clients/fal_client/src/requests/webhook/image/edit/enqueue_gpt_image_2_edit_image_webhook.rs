@@ -5,6 +5,8 @@ use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostC
 use crate::requests::http::image::edit::http_gpt_image_2_edit_image::{gpt_image_2_edit_image, GptImage2EditImageInput};
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
+use crate::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhook::EnqueueGptImage2EditImageQuality::{High, Medium};
+use crate::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhook::EnqueueGptImage2EditImageSize::SquareHd;
 
 pub struct EnqueueGptImage2EditImageArgs<'a, R: IntoUrl> {
   // Request required
@@ -33,18 +35,13 @@ pub enum EnqueueGptImage2EditImageNumImages {
 
 #[derive(Copy, Clone, Debug)]
 pub enum EnqueueGptImage2EditImageSize {
-  /// 1024x768
-  Landscape4x3,
-  /// 1024x1024
+  SquareHd,
   Square,
-  /// 1024x1536
-  Portrait,
-  /// 1920x1080
+  Portrait4x3,
+  Portrait16x9,
+  Landscape4x3,
   Landscape16x9,
-  /// 2560x1440
-  Qhd,
-  /// 3840x2160
-  Uhd4k,
+  Auto,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -64,31 +61,34 @@ pub enum EnqueueGptImage2EditImageOutputFormat {
 
 impl <U: IntoUrl> FalRequestCostCalculator for EnqueueGptImage2EditImageArgs<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
-    // Cost table (per image):
-    // 1024x768:  low=$0.01, medium=$0.04, high=$0.15
-    // 1024x1024: low=$0.01, medium=$0.06, high=$0.22
-    // 1024x1536: low=$0.01, medium=$0.05, high=$0.17
-    // 1920x1080: low=$0.01, medium=$0.04, high=$0.16
-    // 2560x1440: low=$0.01, medium=$0.06, high=$0.23
-    // 3840x2160: low=$0.02, medium=$0.11, high=$0.41
+    // Cost table (per image) by approximate pixel dimensions:
+    //
+    // landscape_4_3 (~1024x768):  low=$0.01, medium=$0.04, high=$0.15
+    // square        (~1024x1024): low=$0.01, medium=$0.06, high=$0.22
+    // portrait_4_3  (~768x1024):  low=$0.01, medium=$0.04, high=$0.15
+    // landscape_16_9(~1920x1080): low=$0.01, medium=$0.04, high=$0.16
+    // portrait_16_9 (~1080x1920): low=$0.01, medium=$0.04, high=$0.16
+    // square_hd     (~2048x2048): low=$0.01, medium=$0.06, high=$0.23
+    // auto          (varies):     estimated as square
     let use_quality = self.quality.unwrap_or(EnqueueGptImage2EditImageQuality::High);
     let use_size = self.image_size.unwrap_or(EnqueueGptImage2EditImageSize::Square);
+
+    use EnqueueGptImage2EditImageQuality::*;
+    use EnqueueGptImage2EditImageSize::*;
+
     let base_cost = match (use_quality, use_size) {
-      (EnqueueGptImage2EditImageQuality::Low, EnqueueGptImage2EditImageSize::Uhd4k) => 2,
-      (EnqueueGptImage2EditImageQuality::Low, _) => 1,
-      (EnqueueGptImage2EditImageQuality::Medium, EnqueueGptImage2EditImageSize::Landscape4x3) => 4,
-      (EnqueueGptImage2EditImageQuality::Medium, EnqueueGptImage2EditImageSize::Square) => 6,
-      (EnqueueGptImage2EditImageQuality::Medium, EnqueueGptImage2EditImageSize::Portrait) => 5,
-      (EnqueueGptImage2EditImageQuality::Medium, EnqueueGptImage2EditImageSize::Landscape16x9) => 4,
-      (EnqueueGptImage2EditImageQuality::Medium, EnqueueGptImage2EditImageSize::Qhd) => 6,
-      (EnqueueGptImage2EditImageQuality::Medium, EnqueueGptImage2EditImageSize::Uhd4k) => 11,
-      (EnqueueGptImage2EditImageQuality::High, EnqueueGptImage2EditImageSize::Landscape4x3) => 15,
-      (EnqueueGptImage2EditImageQuality::High, EnqueueGptImage2EditImageSize::Square) => 22,
-      (EnqueueGptImage2EditImageQuality::High, EnqueueGptImage2EditImageSize::Portrait) => 17,
-      (EnqueueGptImage2EditImageQuality::High, EnqueueGptImage2EditImageSize::Landscape16x9) => 16,
-      (EnqueueGptImage2EditImageQuality::High, EnqueueGptImage2EditImageSize::Qhd) => 23,
-      (EnqueueGptImage2EditImageQuality::High, EnqueueGptImage2EditImageSize::Uhd4k) => 41,
+      (Low, _) => 1,
+      (Medium, Landscape4x3 | Portrait4x3 | Landscape16x9 | Portrait16x9) => 4,
+      (Medium, Square) => 6,
+      (Medium, SquareHd) => 6,
+      (Medium, Auto) => 6, // TODO(bt): Unknown
+      (High, Landscape4x3 | Portrait4x3) => 15,
+      (High, Landscape16x9 | Portrait16x9) => 16,
+      (High, Square) => 22,
+      (High, SquareHd) => 23,
+      (High, Auto) => 23, // TODO(bt): Unknown
     };
+
     let cost = match self.num_images {
       EnqueueGptImage2EditImageNumImages::One => base_cost,
       EnqueueGptImage2EditImageNumImages::Two => base_cost * 2,
@@ -113,14 +113,15 @@ pub async fn enqueue_gpt_image_2_edit_image_webhook<R: IntoUrl>(
 
   let image_size = args.image_size
       .map(|s| match s {
-        EnqueueGptImage2EditImageSize::Landscape4x3 => "1024x768",
-        EnqueueGptImage2EditImageSize::Square => "1024x1024",
-        EnqueueGptImage2EditImageSize::Portrait => "1024x1536",
-        EnqueueGptImage2EditImageSize::Landscape16x9 => "1920x1080",
-        EnqueueGptImage2EditImageSize::Qhd => "2560x1440",
-        EnqueueGptImage2EditImageSize::Uhd4k => "3840x2160",
+        EnqueueGptImage2EditImageSize::SquareHd => "square_hd",
+        EnqueueGptImage2EditImageSize::Square => "square",
+        EnqueueGptImage2EditImageSize::Portrait4x3 => "portrait_4_3",
+        EnqueueGptImage2EditImageSize::Portrait16x9 => "portrait_16_9",
+        EnqueueGptImage2EditImageSize::Landscape4x3 => "landscape_4_3",
+        EnqueueGptImage2EditImageSize::Landscape16x9 => "landscape_16_9",
+        EnqueueGptImage2EditImageSize::Auto => "auto",
       })
-      .map(|resolution| resolution.to_string());
+      .map(|size| size.to_string());
 
   let quality = args.quality
       .map(|s| match s {

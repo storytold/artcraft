@@ -31,18 +31,12 @@ pub enum EnqueueGptImage2TextToImageNumImages {
 
 #[derive(Copy, Clone, Debug)]
 pub enum EnqueueGptImage2TextToImageSize {
-  /// 1024x768
-  Landscape4x3,
-  /// 1024x1024
+  SquareHd,
   Square,
-  /// 1024x1536
-  Portrait,
-  /// 1920x1080
+  Portrait4x3,
+  Portrait16x9,
+  Landscape4x3,
   Landscape16x9,
-  /// 2560x1440
-  Qhd,
-  /// 3840x2160
-  Uhd4k,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -62,31 +56,32 @@ pub enum EnqueueGptImage2TextToImageOutputFormat {
 
 impl <U: IntoUrl> FalRequestCostCalculator for EnqueueGptImage2TextToImageArgs<'_, U> {
   fn calculate_cost_in_cents(&self) -> UsdCents {
-    // Cost table (per image):
-    // 1024x768:  low=$0.01, medium=$0.04, high=$0.15
-    // 1024x1024: low=$0.01, medium=$0.06, high=$0.22
-    // 1024x1536: low=$0.01, medium=$0.05, high=$0.17
-    // 1920x1080: low=$0.01, medium=$0.04, high=$0.16
-    // 2560x1440: low=$0.01, medium=$0.06, high=$0.23
-    // 3840x2160: low=$0.02, medium=$0.11, high=$0.41
+    // Cost table (per image) by approximate pixel dimensions:
+    //
+    // landscape_4_3 (~1024x768):  low=$0.01, medium=$0.04, high=$0.15
+    // square        (~1024x1024): low=$0.01, medium=$0.06, high=$0.22
+    // portrait_4_3  (~768x1024):  low=$0.01, medium=$0.04, high=$0.15
+    // landscape_16_9(~1920x1080): low=$0.01, medium=$0.04, high=$0.16
+    // portrait_16_9 (~1080x1920): low=$0.01, medium=$0.04, high=$0.16
+    // square_hd     (~2048x2048): low=$0.01, medium=$0.06, high=$0.23
+    // auto          (varies):     estimated as square
     let use_quality = self.quality.unwrap_or(EnqueueGptImage2TextToImageQuality::High);
     let use_size = self.image_size.unwrap_or(EnqueueGptImage2TextToImageSize::Square);
+
+    use EnqueueGptImage2TextToImageQuality::*;
+    use EnqueueGptImage2TextToImageSize::*;
+
     let base_cost = match (use_quality, use_size) {
-      (EnqueueGptImage2TextToImageQuality::Low, EnqueueGptImage2TextToImageSize::Uhd4k) => 2,
-      (EnqueueGptImage2TextToImageQuality::Low, _) => 1,
-      (EnqueueGptImage2TextToImageQuality::Medium, EnqueueGptImage2TextToImageSize::Landscape4x3) => 4,
-      (EnqueueGptImage2TextToImageQuality::Medium, EnqueueGptImage2TextToImageSize::Square) => 6,
-      (EnqueueGptImage2TextToImageQuality::Medium, EnqueueGptImage2TextToImageSize::Portrait) => 5,
-      (EnqueueGptImage2TextToImageQuality::Medium, EnqueueGptImage2TextToImageSize::Landscape16x9) => 4,
-      (EnqueueGptImage2TextToImageQuality::Medium, EnqueueGptImage2TextToImageSize::Qhd) => 6,
-      (EnqueueGptImage2TextToImageQuality::Medium, EnqueueGptImage2TextToImageSize::Uhd4k) => 11,
-      (EnqueueGptImage2TextToImageQuality::High, EnqueueGptImage2TextToImageSize::Landscape4x3) => 15,
-      (EnqueueGptImage2TextToImageQuality::High, EnqueueGptImage2TextToImageSize::Square) => 22,
-      (EnqueueGptImage2TextToImageQuality::High, EnqueueGptImage2TextToImageSize::Portrait) => 17,
-      (EnqueueGptImage2TextToImageQuality::High, EnqueueGptImage2TextToImageSize::Landscape16x9) => 16,
-      (EnqueueGptImage2TextToImageQuality::High, EnqueueGptImage2TextToImageSize::Qhd) => 23,
-      (EnqueueGptImage2TextToImageQuality::High, EnqueueGptImage2TextToImageSize::Uhd4k) => 41,
+      (Low, _) => 1,
+      (Medium, Landscape4x3 | Portrait4x3 | Landscape16x9 | Portrait16x9) => 4,
+      (Medium, Square) => 6,
+      (Medium, SquareHd) => 6,
+      (High, Landscape4x3 | Portrait4x3) => 15,
+      (High, Landscape16x9 | Portrait16x9) => 16,
+      (High, Square) => 22,
+      (High, SquareHd) => 23,
     };
+
     let cost = match self.num_images {
       EnqueueGptImage2TextToImageNumImages::One => base_cost,
       EnqueueGptImage2TextToImageNumImages::Two => base_cost * 2,
@@ -111,14 +106,14 @@ pub async fn enqueue_gpt_image_2_text_to_image_webhook<R: IntoUrl>(
 
   let image_size = args.image_size
       .map(|s| match s {
-        EnqueueGptImage2TextToImageSize::Landscape4x3 => "1024x768",
-        EnqueueGptImage2TextToImageSize::Square => "1024x1024",
-        EnqueueGptImage2TextToImageSize::Portrait => "1024x1536",
-        EnqueueGptImage2TextToImageSize::Landscape16x9 => "1920x1080",
-        EnqueueGptImage2TextToImageSize::Qhd => "2560x1440",
-        EnqueueGptImage2TextToImageSize::Uhd4k => "3840x2160",
+        EnqueueGptImage2TextToImageSize::SquareHd => "square_hd",
+        EnqueueGptImage2TextToImageSize::Square => "square",
+        EnqueueGptImage2TextToImageSize::Portrait4x3 => "portrait_4_3",
+        EnqueueGptImage2TextToImageSize::Portrait16x9 => "portrait_16_9",
+        EnqueueGptImage2TextToImageSize::Landscape4x3 => "landscape_4_3",
+        EnqueueGptImage2TextToImageSize::Landscape16x9 => "landscape_16_9",
       })
-      .map(|resolution| resolution.to_string());
+      .map(|size| size.to_string());
 
   let quality = args.quality
       .map(|s| match s {

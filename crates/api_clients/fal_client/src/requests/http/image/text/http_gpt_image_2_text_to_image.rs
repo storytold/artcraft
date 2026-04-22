@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct GptImage2TextToImageInput {
   pub prompt: String,
 
-  /// "1024x768", "1024x1024", "1024x1536", "1920x1080", "2560x1440", "3840x2160"
+  /// square_hd, square, portrait_4_3, portrait_16_9, landscape_4_3, landscape_16_9
   #[serde(skip_serializing_if = "Option::is_none")]
   pub image_size: Option<String>,
 
