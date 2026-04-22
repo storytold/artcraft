@@ -16,7 +16,7 @@ import { useCostBreakdownModalStore } from "./cost-breakdown-modal-store";
 import {
   imageModelToCommonImageModel,
   imageAspectRatioToCommonAspectRatio,
-  imageQualityToCommonQuality,
+  stringToCommonQuality,
   stringToCommonVideoResolution,
 } from "./convert/index.js";
 
@@ -118,7 +118,7 @@ export function useImageCostEstimate(
     );
     const commonResolution =
       stringToCommonVideoResolution(resolutionStr);
-    const commonQuality = imageQualityToCommonQuality(qualityStr);
+    const commonQuality = stringToCommonQuality(qualityStr);
     const generationMode =
       referenceImageCount > 0
         ? { type: "image_edit" as const, count: referenceImageCount }

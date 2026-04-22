@@ -5,7 +5,7 @@ import { CommonQuality } from "@storyteller/api-enums";
  *
  * Accepts a CommonQuality string value from @storyteller/model-list ("high", "medium", "low").
  */
-export function imageQualityToCommonQuality(
+export function stringToCommonQuality(
   quality: string | undefined,
 ): CommonQuality | null {
   switch (quality) {
