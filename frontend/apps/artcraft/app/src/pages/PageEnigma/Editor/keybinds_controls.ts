@@ -393,8 +393,8 @@ export class MouseControls {
         } finally {
           this.isProcessing = false;
         }
-      } else if (keyLower === "y" && !event.metaKey) {
-        // redo (Ctrl+Y, Windows/Linux)
+      } else if (keyLower === "y") {
+        // redo (Ctrl+Y on Windows/Linux, Cmd+Y on macOS)
         event.preventDefault();
         this.isProcessing = true;
         try {
