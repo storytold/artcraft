@@ -59,6 +59,8 @@ pub enum TextToImageModel {
   GptImage1,
   #[serde(rename = "gpt_image_1p5")]
   GptImage1p5,
+  #[serde(rename = "gpt_image_2")]
+  GptImage2,
   #[serde(rename = "gemini_25_flash")]
   Gemini25Flash,
   #[serde(rename = "nano_banana")]

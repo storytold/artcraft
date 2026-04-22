@@ -11,6 +11,7 @@ pub fn text_to_image_model_to_model_type(model: TextToImageModel) -> CommonModel
     TextToImageModel::Recraft3 => CommonModelType::Recraft3,
     TextToImageModel::GptImage1 => CommonModelType::GptImage1,
     TextToImageModel::GptImage1p5 => CommonModelType::GptImage1p5,
+    TextToImageModel::GptImage2 => CommonModelType::GptImage2,
     TextToImageModel::Gemini25Flash => CommonModelType::NanoBanana,
     TextToImageModel::NanoBanana => CommonModelType::NanoBanana,
     TextToImageModel::NanoBanana2 => CommonModelType::NanoBanana2,

@@ -73,6 +73,7 @@ impl TaskEnqueueSuccess{
       Some(GenerationModel::NanoBananaPro) => Some(TaskModelType::NanoBananaPro),
       Some(GenerationModel::GptImage1) => Some(TaskModelType::GptImage1),
       Some(GenerationModel::GptImage1p5) => Some(TaskModelType::GptImage1p5),
+      Some(GenerationModel::GptImage2) => Some(TaskModelType::GptImage2),
       Some(GenerationModel::Seedream4) => Some(TaskModelType::Seedream4),
       Some(GenerationModel::Seedream4p5) => Some(TaskModelType::Seedream4p5),
       Some(GenerationModel::Seedream5Lite) => Some(TaskModelType::Seedream5Lite),
