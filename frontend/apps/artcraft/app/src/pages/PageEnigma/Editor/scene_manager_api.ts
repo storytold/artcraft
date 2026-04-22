@@ -118,10 +118,10 @@ export class SceneManager implements SceneManagerAPI {
   }
 
   public async undo() {
-    this.undoIndex += 1;
     if (this.undoIndex >= this.undoStack.length) {
-      this.undoIndex = this.undoStack.length;
+      return;
     }
+    this.undoIndex += 1;
     const undoCommand = this.undoStack.at(
       this.undoStack.length - this.undoIndex,
     );
@@ -131,16 +131,28 @@ export class SceneManager implements SceneManagerAPI {
   }
 
   public async redo() {
+    if (this.undoIndex <= 0) {
+      return;
+    }
     const undoCommand = this.undoStack.at(
       this.undoStack.length - this.undoIndex,
     );
     await undoCommand?.redo();
     this.undoIndex -= 1;
-    if (this.undoIndex <= -1) {
-      this.undoIndex = 0;
-    }
     this.updateOutliner(); // In the future we will address this because of its relational issues with editor and the current class.
     this.lastSceneState = this.getSceneState();
+  }
+
+  // Drop any redo-future before pushing a fresh command so the new action
+  // replaces the branch of history the user had undone past.
+  private dropRedoHistory() {
+    if (this.undoIndex > 0) {
+      this.undoStack = this.undoStack.slice(
+        0,
+        this.undoStack.length - this.undoIndex,
+      );
+      this.undoIndex = 0;
+    }
   }
 
   public async create(
@@ -467,6 +479,7 @@ export class SceneManager implements SceneManagerAPI {
   }
 
   public async add_creation_undostack(object: THREE.Object3D) {
+    this.dropRedoHistory();
     this.undoStack.push(
       new CreationSceneItem(this, {
         object_uuid: object.uuid,
@@ -488,6 +501,7 @@ export class SceneManager implements SceneManagerAPI {
       const is_transform = this.is_transformation(sceneState);
       const is_userdata = this.is_userdata(sceneState);
 
+      this.dropRedoHistory();
       this.undoStack = this.undoStack.slice(-16);
 
       if (is_deleted != "") {
@@ -558,7 +572,6 @@ export class SceneManager implements SceneManagerAPI {
         }
       }
     }
-    this.undoIndex = 0;
     this.lastSceneState = sceneState;
   }
 }
