@@ -43,5 +43,5 @@ pub struct GptImage2EditImageOutput {
 pub fn gpt_image_2_edit_image(
   params: GptImage2EditImageInput,
 ) -> FalRequest<GptImage2EditImageInput, GptImage2EditImageOutput> {
-  FalRequest::new("fal-ai/gpt-image-2/edit", params)
+  FalRequest::new("openai/gpt-image-2/edit", params)
 }
