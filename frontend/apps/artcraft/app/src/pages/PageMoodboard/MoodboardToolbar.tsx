@@ -1,8 +1,6 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMousePointer,
   faDrawPolygon,
-  faTextHeight,
   faObjectGroup,
   faObjectUngroup,
   faGripVertical,
@@ -11,22 +9,44 @@ import {
   faRotateLeft,
   faRotateRight,
   faTrash,
+  faPlus,
+  faImages,
+  faArrowUpFromBracket,
+  faText,
 } from "@fortawesome/pro-solid-svg-icons";
-import { twMerge } from "tailwind-merge";
+import { ButtonIconSelect } from "@storyteller/ui-button-icon-select";
+import { PopoverMenu } from "@storyteller/ui-popover";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Tooltip } from "@storyteller/ui-tooltip";
+import {
+  FloatingToolbar,
+  FloatingToolbarButton,
+  FloatingToolbarDivider,
+} from "~/components/reusable/FloatingToolbar";
 import { useMoodboardStore } from "./MoodboardStore";
 import { Tool } from "./types";
+import { MOD, fmtShortcut } from "./overlays/shortcuts";
 import { computeFitToGridPatches } from "./layout/fitToGrid";
 import { computeAABB } from "./layout/geometry";
 import { computePackPatches } from "./layout/packCollage";
 import { clusterByProximity } from "./layout/clusterProximity";
 
-const TOOLS: Array<{ id: Tool; icon: typeof faMousePointer; label: string }> = [
-  { id: "select", icon: faMousePointer, label: "Select" },
-  { id: "lasso", icon: faDrawPolygon, label: "Lasso" },
-  { id: "text", icon: faTextHeight, label: "Text" },
+const MODES: Array<{
+  value: Tool;
+  icon: typeof faMousePointer;
+  tooltip: string;
+}> = [
+  { value: "select", icon: faMousePointer, tooltip: "Select (V)" },
+  { value: "lasso", icon: faDrawPolygon, tooltip: "Lasso (L)" },
+  { value: "text", icon: faText, tooltip: "Text (T)" },
 ];
 
-export const MoodboardToolbar = () => {
+interface Props {
+  onUploadClick: () => void;
+  onGalleryClick: () => void;
+}
+
+export const MoodboardToolbar = ({ onUploadClick, onGalleryClick }: Props) => {
   const tool = useMoodboardStore((s) => s.tool);
   const setTool = useMoodboardStore((s) => s.setTool);
   const group = useMoodboardStore((s) => s.group);
@@ -50,8 +70,7 @@ export const MoodboardToolbar = () => {
   };
 
   const handlePackCollage = () => {
-    const ids =
-      selectedIds.size > 0 ? Array.from(selectedIds) : rootOrder;
+    const ids = selectedIds.size > 0 ? Array.from(selectedIds) : rootOrder;
     const targetNodes = ids
       .map((id) => nodes[id])
       .filter((n) => n && n.parentId === null);
@@ -62,101 +81,128 @@ export const MoodboardToolbar = () => {
   };
 
   const handleAutoGroup = () => {
-    const ids =
-      selectedIds.size > 0 ? Array.from(selectedIds) : rootOrder;
+    const ids = selectedIds.size > 0 ? Array.from(selectedIds) : rootOrder;
     const targetNodes = ids
       .map((id) => nodes[id])
       .filter((n) => n && n.parentId === null);
     if (targetNodes.length < 2) return;
     const clusters = clusterByProximity(targetNodes);
     const clusterIds = clusters.map((c) => c.map((n) => n.id));
-    // One atomic store mutation: single history entry, selection ends on
-    // the freshly-created groups so the user immediately sees their effect.
     groupClusters(clusterIds);
   };
 
+  const handleAddAction = (action: string) => {
+    if (action === "upload") onUploadClick();
+    else if (action === "library") onGalleryClick();
+  };
+
   return (
-    <div className="flex w-full items-center gap-2 border-b border-ui-panel-border bg-ui-modal/60 px-3 py-2 text-base-fg backdrop-blur">
-      <div className="flex items-center gap-1">
-        {TOOLS.map((t) => (
-          <ToolbarButton
-            key={t.id}
-            icon={t.icon}
-            label={t.label}
-            active={tool === t.id}
-            onClick={() => setTool(t.id)}
-          />
-        ))}
-      </div>
-      <Divider />
-      <ToolbarButton
+    <FloatingToolbar>
+      <Tooltip
+        content="Add an image"
+        position="bottom"
+        delay={300}
+        closeOnClick
+      >
+        <PopoverMenu
+          mode="button"
+          position="bottom"
+          panelTitle="Add an image"
+          items={[
+            {
+              label: "Upload Image",
+              selected: false,
+              icon: (
+                <FontAwesomeIcon
+                  icon={faArrowUpFromBracket}
+                  className="h-4 w-4"
+                />
+              ),
+              action: "upload",
+            },
+            {
+              label: "Pick from Library",
+              selected: false,
+              icon: <FontAwesomeIcon icon={faImages} className="h-4 w-4" />,
+              action: "library",
+            },
+          ]}
+          onPanelAction={handleAddAction}
+          showIconsInList
+          buttonClassName="h-9 w-9 rounded-[10px] border-transparent bg-primary/90 text-lg text-white hover:bg-primary/70"
+          triggerIcon={<FontAwesomeIcon icon={faPlus} className="text-xl" />}
+        />
+      </Tooltip>
+
+      <FloatingToolbarDivider />
+
+      <ButtonIconSelect
+        options={MODES}
+        onOptionChange={(value) => setTool(value as Tool)}
+        selectedOption={tool}
+        tooltipDelay={100}
+      />
+
+      <FloatingToolbarDivider />
+
+      <FloatingToolbarButton
         icon={faObjectGroup}
-        label="Group"
+        label={`Group (${fmtShortcut([MOD, "G"])})`}
         onClick={() => group()}
         disabled={selectedIds.size < 2}
+        tooltipDelay={100}
       />
-      <ToolbarButton
+      <FloatingToolbarButton
         icon={faObjectUngroup}
-        label="Ungroup"
+        label={`Ungroup (${fmtShortcut([MOD, "Shift", "G"])})`}
         onClick={() => ungroup()}
         disabled={selectedIds.size === 0}
+        tooltipDelay={100}
       />
-      <Divider />
-      <ToolbarButton
+
+      <FloatingToolbarDivider />
+
+      <FloatingToolbarButton
         icon={faTableCells}
         label="Fit to grid"
         onClick={handleFitToGrid}
         disabled={selectedIds.size === 0}
+        tooltipDelay={100}
       />
-      <ToolbarButton
+      <FloatingToolbarButton
         icon={faGripVertical}
         label="Pack collage"
         onClick={handlePackCollage}
+        tooltipDelay={100}
       />
-      <ToolbarButton
+      <FloatingToolbarButton
         icon={faDiagramProject}
         label="Auto-group by proximity"
         onClick={handleAutoGroup}
+        tooltipDelay={100}
       />
-      <div className="ml-auto flex items-center gap-1">
-        <ToolbarButton icon={faRotateLeft} label="Undo" onClick={undo} />
-        <ToolbarButton icon={faRotateRight} label="Redo" onClick={redo} />
-        <ToolbarButton
-          icon={faTrash}
-          label="Delete"
-          onClick={deleteSelected}
-          disabled={selectedIds.size === 0}
-        />
-      </div>
-    </div>
+
+      <FloatingToolbarDivider />
+
+      <FloatingToolbarButton
+        icon={faRotateLeft}
+        label={`Undo (${fmtShortcut([MOD, "Z"])})`}
+        onClick={undo}
+        tooltipDelay={100}
+      />
+      <FloatingToolbarButton
+        icon={faRotateRight}
+        label={`Redo (${fmtShortcut([MOD, "Shift", "Z"])})`}
+        onClick={redo}
+        tooltipDelay={100}
+      />
+      <FloatingToolbarButton
+        icon={faTrash}
+        label="Delete (Del)"
+        onClick={deleteSelected}
+        disabled={selectedIds.size === 0}
+        tooltipDelay={100}
+      />
+    </FloatingToolbar>
   );
 };
-
-interface ButtonProps {
-  icon: typeof faMousePointer;
-  label: string;
-  active?: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-}
-
-const ToolbarButton = ({ icon, label, active, disabled, onClick }: ButtonProps) => (
-  <button
-    type="button"
-    title={label}
-    aria-label={label}
-    onClick={onClick}
-    disabled={disabled}
-    className={twMerge(
-      "flex h-8 items-center gap-1.5 rounded-md px-2 text-xs transition-colors",
-      "hover:bg-white/10",
-      active ? "bg-white/15 text-white" : "text-white/70",
-      disabled ? "cursor-not-allowed opacity-40 hover:bg-transparent" : "",
-    )}
-  >
-    <FontAwesomeIcon icon={icon} className="text-sm" />
-    <span className="hidden sm:inline">{label}</span>
-  </button>
-);
-
-const Divider = () => <div className="h-5 w-px bg-white/10" />;

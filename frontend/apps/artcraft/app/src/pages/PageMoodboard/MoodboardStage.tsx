@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import Konva from "konva";
 import { Stage, Layer, Rect, Line, Group, Transformer } from "react-konva";
+import { useThemeFgRgb } from "./useThemeFgRgb";
 import { useShallow } from "zustand/react/shallow";
 import { useMoodboardStore } from "./MoodboardStore";
 import { MoodboardBackground } from "./MoodboardBackground";
@@ -44,6 +45,7 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
 
   const zoom = viewport.zoom;
   const pan = viewport.pan;
+  const fgRgb = useThemeFgRgb();
 
   // Track wrapper size with ResizeObserver so the Stage fills its container.
   // The size lives in the store so overlays (recenter indicator, future
@@ -135,17 +137,11 @@ export const MoodboardStage = ({ containerRef, stageRef }: Props) => {
       style={{ cursor: tool === "text" ? "text" : "default" }}
     >
       <Layer listening={false}>
-        <Rect
-          x={visibleViewport.x}
-          y={visibleViewport.y}
-          width={visibleViewport.width}
-          height={visibleViewport.height}
-          fill="#0f0f12"
-        />
         <MoodboardBackground
           viewport={visibleViewport}
           spacing={gridSpacing}
           zoom={zoom}
+          dotColor={`rgb(${fgRgb} / 0.10)`}
         />
       </Layer>
       <Layer>

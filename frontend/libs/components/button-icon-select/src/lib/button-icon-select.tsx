@@ -15,15 +15,17 @@ interface ButtonIconSelectProps {
   options: Option[];
   onOptionChange?: (value: string) => void;
   selectedOption?: string;
+  tooltipDelay?: number;
 }
 
 export function ButtonIconSelect({
   options,
   onOptionChange,
   selectedOption,
+  tooltipDelay = 300,
 }: ButtonIconSelectProps) {
   const [internalSelectedOption, setInternalSelectedOption] = useState<string>(
-    selectedOption || options[0].value
+    selectedOption || options[0].value,
   );
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function ButtonIconSelect({
             key={value}
             content={tooltip}
             position="bottom"
-            delay={300}
+            delay={tooltipDelay}
             closeOnClick
           >
             <button
@@ -53,8 +55,8 @@ export function ButtonIconSelect({
                 "flex h-9 items-center justify-center rounded-lg border text-sm outline-none transition-all duration-150 focus:outline-none",
                 text ? "h-auto w-auto gap-2 px-3 py-1.5" : "w-9",
                 internalSelectedOption === value
-                  ? "border-brand-primary bg-brand-primary/20"
-                  : "border-transparent hover:bg-ui-panel/[0.4]"
+                  ? "border-brand-primary bg-brand-primary/20 text-base-fg"
+                  : "border-transparent text-base-fg/70 hover:bg-base-fg/10 hover:text-base-fg",
               )}
               onClick={() => handleOptionChange(value)}
             >
@@ -72,7 +74,7 @@ export function ButtonIconSelect({
               text ? "h-auto w-auto gap-2 px-3 py-1.5" : "w-9",
               internalSelectedOption === value
                 ? "border-brand-primary bg-brand-primary/20"
-                : "border-transparent hover:bg-ui-panel/[0.4]"
+                : "border-transparent text-white/80 hover:bg-white/15 hover:text-white",
             )}
             onClick={() => handleOptionChange(value)}
           >
@@ -81,7 +83,7 @@ export function ButtonIconSelect({
               <span className="text-nowrap text-sm font-medium">{text}</span>
             )}
           </button>
-        )
+        ),
       )}
     </div>
   );
