@@ -51,15 +51,13 @@ mod tests {
   use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
   use artcraft_client::utils::api_host::ApiHost;
 
+  use test_data::web::character_tokens::{JIM, KNIGHT};
   use test_data::web::image_media_tokens::{
     FOREST_BACKDROP_PRODUCTION_MEDIA_TOKEN,
     JUNO_AT_LAKE_PRODUCTION_MEDIA_TOKEN,
     WHITE_HOUSE_SUNSET_PRODUCTION_MEDIA_TOKEN,
   };
 
-  // TODO: Replace with real character tokens from the test account.
-  const STEAMPUNK_CLOWN_CHAR_TOKEN: &str = "character_placeholder_steampunk_clown";
-  const MOCHI_CHAR_TOKEN: &str = "character_placeholder_mochi";
 
   // ── Aspect ratio tests ──
 
@@ -217,12 +215,11 @@ mod tests {
     #[ignore] // manually run — fires a real API request and incurs cost
     async fn character_references() {
       // Character tokens are passed through directly to the Artcraft API.
-      // These are real character tokens from the test account.
       let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string()),
+        prompt: Some("@Jim and @Knight are sparring in a medieval arena.".to_string()),
         reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
-          CharacterToken::new(STEAMPUNK_CLOWN_CHAR_TOKEN.to_string()),
-          CharacterToken::new(MOCHI_CHAR_TOKEN.to_string()),
+          CharacterToken::new(JIM.token.to_string()),
+          CharacterToken::new(KNIGHT.token.to_string()),
         ])),
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
         ..artcraft_builder()
