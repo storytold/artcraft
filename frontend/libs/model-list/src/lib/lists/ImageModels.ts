@@ -296,12 +296,12 @@ export const IMAGE_MODELS: ImageModel[] = [
     progressBarTime: 60000,
     maxPromptLength: 1500,
     canChangeAspectRatio: true,
-    // qualityOptions: [
-    //   CommonQuality.High,
-    //   CommonQuality.Medium,
-    //   CommonQuality.Low,
-    // ],
-    // defaultQuality: CommonQuality.High,
+    defaultQuality: CommonQuality.High,
+    qualityOptions: [
+      CommonQuality.High,
+      CommonQuality.Medium,
+      CommonQuality.Low,
+    ],
   }),
   new ImageModel({
     id: "gpt_image_1p5",
@@ -327,12 +327,12 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.Wide,
       CommonAspectRatio.Tall,
     ],
-    // qualityOptions: [
-    //   CommonQuality.High,
-    //   CommonQuality.Medium,
-    //   CommonQuality.Low,
-    // ],
-    // defaultQuality: CommonQuality.High,
+    defaultQuality: CommonQuality.High,
+    qualityOptions: [
+      CommonQuality.High,
+      CommonQuality.Medium,
+      CommonQuality.Low,
+    ],
   }),
   new ImageModel({
     id: "gpt_image_2",

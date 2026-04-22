@@ -379,6 +379,10 @@ fn build_omni_gen_image_model_providers() -> Vec<OmniGenImageModelProviderDetail
         overrides: None,
       },
       OmniGenImageProviderModelDetails {
+        model: CommonImageModel::GptImage2,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
         model: CommonImageModel::Seedream4,
         overrides: None,
       },
