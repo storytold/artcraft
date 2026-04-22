@@ -5,6 +5,7 @@ pub mod http_gemini_25_flash_edit;
 pub mod http_gpt_image_1_edit_image;
 pub mod http_gpt_image_1_non_byok_edit_image;
 pub mod http_gpt_image_1p5_edit_image;
+pub mod http_gpt_image_2_edit_image;
 pub mod http_nano_banana_2_edit_image;
 pub mod http_nano_banana_pro_edit_image;
 pub mod http_qwen_image_edit;

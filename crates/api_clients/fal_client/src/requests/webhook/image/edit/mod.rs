@@ -9,6 +9,7 @@ pub mod enqueue_gemini_25_flash_edit_webhook;
 pub mod enqueue_gpt_image_1_byok_edit_image_webhook;
 pub mod enqueue_gpt_image_1_edit_image_webhook;
 pub mod enqueue_gpt_image_1p5_edit_image_webhook;
+pub mod enqueue_gpt_image_2_edit_image_webhook;
 pub mod enqueue_nano_banana_pro_edit_image_webhook;
 pub mod enqueue_qwen_image_edit_webhook;
 pub mod enqueue_seededit_v3_edit_webhook;
