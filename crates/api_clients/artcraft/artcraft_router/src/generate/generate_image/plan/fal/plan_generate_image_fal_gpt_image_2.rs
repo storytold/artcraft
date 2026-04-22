@@ -40,6 +40,7 @@ pub enum FalGptImage2ImageSize {
   Portrait16x9,
   Landscape4x3,
   Landscape16x9,
+  Auto,
 }
 
 #[derive(Debug, Clone)]
@@ -97,7 +98,7 @@ fn plan_image_size(aspect_ratio: Option<CommonAspectRatio>) -> Option<FalGptImag
     | Some(CommonAspectRatio::Auto)
     | Some(CommonAspectRatio::Auto2k)
     | Some(CommonAspectRatio::Auto3k)
-    | Some(CommonAspectRatio::Auto4k) => None,
+    | Some(CommonAspectRatio::Auto4k) => Some(S::Auto),
 
     Some(CommonAspectRatio::Square) => Some(S::Square),
     Some(CommonAspectRatio::SquareHd) => Some(S::SquareHd),
@@ -204,6 +205,7 @@ impl FalGptImage2ImageSize {
       Self::Portrait16x9 => T::Portrait16x9,
       Self::Landscape4x3 => T::Landscape4x3,
       Self::Landscape16x9 => T::Landscape16x9,
+      Self::Auto => T::SquareHd,
     }
   }
 
@@ -216,6 +218,318 @@ impl FalGptImage2ImageSize {
       Self::Portrait16x9 => E::Portrait16x9,
       Self::Landscape4x3 => E::Landscape4x3,
       Self::Landscape16x9 => E::Landscape16x9,
+      Self::Auto => E::Auto,
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::api::common_image_model::CommonImageModel;
+  use crate::api::provider::Provider;
+
+  // ── Mode detection ──
+
+  mod mode_detection {
+    use super::*;
+
+    #[test]
+    fn no_image_inputs_yields_empty_urls() {
+      let plan = build_plan(&GenerateImageRequest { image_inputs: None, ..base_request() });
+      assert!(plan.image_urls.is_empty());
+    }
+
+    #[test]
+    fn url_image_inputs_are_extracted() {
+      let urls = vec![
+        "https://example.com/a.jpg".to_string(),
+        "https://example.com/b.jpg".to_string(),
+      ];
+      let plan = build_plan(&GenerateImageRequest {
+        image_inputs: Some(ImageListRef::Urls(urls.clone())),
+        ..base_request()
+      });
+      assert_eq!(plan.image_urls, urls);
+    }
+
+    #[test]
+    fn media_token_inputs_return_error() {
+      let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequest {
+        image_inputs: Some(ImageListRef::MediaFileTokens(vec![])),
+        ..base_request()
+      });
+      assert!(matches!(result, Err(ArtcraftRouterError::Client(ClientError::FalOnlySupportsUrls))));
+    }
+  }
+
+  // ── Quality ──
+
+  mod quality_tests {
+    use super::*;
+
+    #[test]
+    fn defaults_to_high() {
+      let plan = build_plan(&base_request());
+      assert!(matches!(plan.quality, FalGptImage2Quality::High));
+    }
+
+    #[test]
+    fn low() {
+      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::Low), ..base_request() });
+      assert!(matches!(plan.quality, FalGptImage2Quality::Low));
+    }
+
+    #[test]
+    fn medium() {
+      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::Medium), ..base_request() });
+      assert!(matches!(plan.quality, FalGptImage2Quality::Medium));
+    }
+
+    #[test]
+    fn high() {
+      let plan = build_plan(&GenerateImageRequest { quality: Some(CommonQuality::High), ..base_request() });
+      assert!(matches!(plan.quality, FalGptImage2Quality::High));
+    }
+  }
+
+  // ── Image size mapping ──
+
+  mod image_size_tests {
+    use super::*;
+
+    #[test]
+    fn none_yields_auto() {
+      let plan = build_plan(&GenerateImageRequest { aspect_ratio: None, ..base_request() });
+      assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Auto)));
+    }
+
+    #[test]
+    fn auto_variants_yield_auto() {
+      for ar in [CommonAspectRatio::Auto, CommonAspectRatio::Auto2k, CommonAspectRatio::Auto4k] {
+        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Auto)), "expected Auto for {:?}", ar);
+      }
+    }
+
+    #[test]
+    fn square() {
+      let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(CommonAspectRatio::Square), ..base_request() });
+      assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Square)));
+    }
+
+    #[test]
+    fn square_hd() {
+      let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(CommonAspectRatio::SquareHd), ..base_request() });
+      assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::SquareHd)));
+    }
+
+    #[test]
+    fn landscape_4x3_variants() {
+      for ar in [CommonAspectRatio::WideFourByThree, CommonAspectRatio::WideFiveByFour] {
+        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Landscape4x3)), "expected Landscape4x3 for {:?}", ar);
+      }
+    }
+
+    #[test]
+    fn landscape_16x9_variants() {
+      for ar in [
+        CommonAspectRatio::WideThreeByTwo,
+        CommonAspectRatio::WideSixteenByNine,
+        CommonAspectRatio::WideTwentyOneByNine,
+        CommonAspectRatio::Wide,
+      ] {
+        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Landscape16x9)), "expected Landscape16x9 for {:?}", ar);
+      }
+    }
+
+    #[test]
+    fn portrait_4x3_variants() {
+      for ar in [CommonAspectRatio::TallThreeByFour, CommonAspectRatio::TallFourByFive] {
+        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Portrait4x3)), "expected Portrait4x3 for {:?}", ar);
+      }
+    }
+
+    #[test]
+    fn portrait_16x9_variants() {
+      for ar in [
+        CommonAspectRatio::TallTwoByThree,
+        CommonAspectRatio::TallNineBySixteen,
+        CommonAspectRatio::TallNineByTwentyOne,
+        CommonAspectRatio::Tall,
+      ] {
+        let plan = build_plan(&GenerateImageRequest { aspect_ratio: Some(ar), ..base_request() });
+        assert!(matches!(plan.image_size, Some(FalGptImage2ImageSize::Portrait16x9)), "expected Portrait16x9 for {:?}", ar);
+      }
+    }
+  }
+
+  // ── Num images ──
+
+  mod num_images_tests {
+    use super::*;
+
+    #[test]
+    fn default_is_one() {
+      let plan = build_plan(&GenerateImageRequest { image_batch_count: None, ..base_request() });
+      assert!(matches!(plan.num_images, FalGptImage2NumImages::One));
+    }
+
+    #[test]
+    fn direct_mapping() {
+      for (count, expected) in [(1, 1), (2, 2), (3, 3), (4, 4)] {
+        let plan = build_plan(&GenerateImageRequest { image_batch_count: Some(count), ..base_request() });
+        assert_eq!(plan.num_images.as_u64(), expected);
+      }
+    }
+
+    #[test]
+    fn zero_is_always_error() {
+      for strategy in [
+        RequestMismatchMitigationStrategy::ErrorOut,
+        RequestMismatchMitigationStrategy::PayMoreUpgrade,
+        RequestMismatchMitigationStrategy::PayLessDowngrade,
+      ] {
+        let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequest {
+          image_batch_count: Some(0),
+          request_mismatch_mitigation_strategy: strategy,
+          ..base_request()
+        });
+        assert!(matches!(result, Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations))));
+      }
+    }
+
+    #[test]
+    fn out_of_range_error_out() {
+      let result = plan_generate_image_fal_gpt_image_2(&GenerateImageRequest {
+        image_batch_count: Some(5),
+        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+        ..base_request()
+      });
+      assert!(matches!(result, Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption { .. }))));
+    }
+
+    #[test]
+    fn out_of_range_clamps_to_four() {
+      for strategy in [
+        RequestMismatchMitigationStrategy::PayMoreUpgrade,
+        RequestMismatchMitigationStrategy::PayLessDowngrade,
+      ] {
+        let plan = build_plan(&GenerateImageRequest {
+          image_batch_count: Some(9),
+          request_mismatch_mitigation_strategy: strategy,
+          ..base_request()
+        });
+        assert!(matches!(plan.num_images, FalGptImage2NumImages::Four));
+      }
+    }
+  }
+
+  // ── as_u64 ──
+
+  #[test]
+  fn num_images_as_u64() {
+    assert_eq!(FalGptImage2NumImages::One.as_u64(), 1);
+    assert_eq!(FalGptImage2NumImages::Two.as_u64(), 2);
+    assert_eq!(FalGptImage2NumImages::Three.as_u64(), 3);
+    assert_eq!(FalGptImage2NumImages::Four.as_u64(), 4);
+  }
+
+  // ── Conversions to fal-client enqueue enums ──
+
+  mod conversion_tests {
+    use super::*;
+
+    #[test]
+    fn num_images_to_t2i() {
+      use EnqueueGptImage2TextToImageNumImages as T;
+      assert!(matches!(FalGptImage2NumImages::One.to_t2i(), T::One));
+      assert!(matches!(FalGptImage2NumImages::Two.to_t2i(), T::Two));
+      assert!(matches!(FalGptImage2NumImages::Three.to_t2i(), T::Three));
+      assert!(matches!(FalGptImage2NumImages::Four.to_t2i(), T::Four));
+    }
+
+    #[test]
+    fn num_images_to_edit() {
+      use EnqueueGptImage2EditImageNumImages as E;
+      assert!(matches!(FalGptImage2NumImages::One.to_edit(), E::One));
+      assert!(matches!(FalGptImage2NumImages::Two.to_edit(), E::Two));
+      assert!(matches!(FalGptImage2NumImages::Three.to_edit(), E::Three));
+      assert!(matches!(FalGptImage2NumImages::Four.to_edit(), E::Four));
+    }
+
+    #[test]
+    fn quality_to_t2i() {
+      use EnqueueGptImage2TextToImageQuality as T;
+      assert!(matches!(FalGptImage2Quality::Low.to_t2i(), T::Low));
+      assert!(matches!(FalGptImage2Quality::Medium.to_t2i(), T::Medium));
+      assert!(matches!(FalGptImage2Quality::High.to_t2i(), T::High));
+    }
+
+    #[test]
+    fn quality_to_edit() {
+      use EnqueueGptImage2EditImageQuality as E;
+      assert!(matches!(FalGptImage2Quality::Low.to_edit(), E::Low));
+      assert!(matches!(FalGptImage2Quality::Medium.to_edit(), E::Medium));
+      assert!(matches!(FalGptImage2Quality::High.to_edit(), E::High));
+    }
+
+    #[test]
+    fn size_to_t2i() {
+      use EnqueueGptImage2TextToImageSize as T;
+      assert!(matches!(FalGptImage2ImageSize::SquareHd.to_t2i(), T::SquareHd));
+      assert!(matches!(FalGptImage2ImageSize::Square.to_t2i(), T::Square));
+      assert!(matches!(FalGptImage2ImageSize::Portrait4x3.to_t2i(), T::Portrait4x3));
+      assert!(matches!(FalGptImage2ImageSize::Portrait16x9.to_t2i(), T::Portrait16x9));
+      assert!(matches!(FalGptImage2ImageSize::Landscape4x3.to_t2i(), T::Landscape4x3));
+      assert!(matches!(FalGptImage2ImageSize::Landscape16x9.to_t2i(), T::Landscape16x9));
+      // Auto falls back to SquareHd for t2i (which doesn't have an Auto variant)
+      assert!(matches!(FalGptImage2ImageSize::Auto.to_t2i(), T::SquareHd));
+    }
+
+    #[test]
+    fn size_to_edit() {
+      use EnqueueGptImage2EditImageSize as E;
+      assert!(matches!(FalGptImage2ImageSize::SquareHd.to_edit(), E::SquareHd));
+      assert!(matches!(FalGptImage2ImageSize::Square.to_edit(), E::Square));
+      assert!(matches!(FalGptImage2ImageSize::Portrait4x3.to_edit(), E::Portrait4x3));
+      assert!(matches!(FalGptImage2ImageSize::Portrait16x9.to_edit(), E::Portrait16x9));
+      assert!(matches!(FalGptImage2ImageSize::Landscape4x3.to_edit(), E::Landscape4x3));
+      assert!(matches!(FalGptImage2ImageSize::Landscape16x9.to_edit(), E::Landscape16x9));
+      assert!(matches!(FalGptImage2ImageSize::Auto.to_edit(), E::Auto));
+    }
+  }
+
+  // ── Helpers ──
+
+  fn base_request() -> GenerateImageRequest {
+    GenerateImageRequest {
+      model: CommonImageModel::GptImage2,
+      provider: Provider::Fal,
+      prompt: Some("a cat in space".to_string()),
+      image_inputs: None,
+      resolution: None,
+      aspect_ratio: None,
+      quality: None,
+      image_batch_count: None,
+      request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+      generation_mode_mismatch_strategy: None,
+      idempotency_token: None,
+      horizontal_angle: None,
+      vertical_angle: None,
+      zoom: None,
+    }
+  }
+
+  fn build_plan(request: &GenerateImageRequest) -> PlanFalGptImage2 {
+    let ImageGenerationPlan::FalGptImage2(plan) =
+      plan_generate_image_fal_gpt_image_2(request).expect("plan should succeed")
+    else {
+      panic!("expected FalGptImage2 variant")
+    };
+    plan
   }
 }

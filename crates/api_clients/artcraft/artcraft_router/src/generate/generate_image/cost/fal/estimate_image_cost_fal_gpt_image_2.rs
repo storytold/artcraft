@@ -29,12 +29,14 @@ pub(crate) fn estimate_image_cost_fal_gpt_image_2(
     (FalGptImage2Quality::Medium, None | Some(S::Square) | Some(S::SquareHd)) => 6,
     (FalGptImage2Quality::Medium, Some(S::Landscape4x3) | Some(S::Portrait4x3)) => 4,
     (FalGptImage2Quality::Medium, Some(S::Landscape16x9) | Some(S::Portrait16x9)) => 4,
+    (FalGptImage2Quality::Medium, Some(S::Auto)) => 6, // TODO: Not checked
 
     // High quality
     (FalGptImage2Quality::High, None | Some(S::Square)) => 22,
     (FalGptImage2Quality::High, Some(S::SquareHd)) => 23,
     (FalGptImage2Quality::High, Some(S::Landscape4x3) | Some(S::Portrait4x3)) => 15,
     (FalGptImage2Quality::High, Some(S::Landscape16x9) | Some(S::Portrait16x9)) => 16,
+    (FalGptImage2Quality::High, Some(S::Auto)) => 23, // TODO: Not checked
   };
   let cost_in_usd_cents = cost_per_image * plan.num_images.as_u64();
 
