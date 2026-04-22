@@ -28,6 +28,8 @@ export function videoModelToCommonVideoModel(
       return CommonVideoModel.Seedance1p5Pro;
     case "seedance_2p0":
       return CommonVideoModel.Seedance2p0;
+    case "seedance_2p0_fast":
+      return CommonVideoModel.Seedance2p0Fast;
     case "sora_2":
       return CommonVideoModel.Sora2;
     case "sora_2_pro":
