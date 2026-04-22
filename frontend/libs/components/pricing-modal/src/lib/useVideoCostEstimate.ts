@@ -12,7 +12,7 @@ import {
   videoModelToCommonVideoModel,
   videoAspectRatioToCommonAspectRatio,
   videoStoreToGenerationMode,
-  imageResolutionToCommonVideoResolution,
+  stringToCommonVideoResolution,
 } from "./convert/index.js";
 
 export function useVideoCostEstimate(
@@ -49,7 +49,7 @@ export function useVideoCostEstimate(
       aspectRatio,
       videoModel.sizeOptions,
     );
-    const commonResolution = imageResolutionToCommonVideoResolution(resolution);
+    const commonResolution = stringToCommonVideoResolution(resolution);
     const generationMode = videoStoreToGenerationMode(
       inputMode,
       referenceImages,

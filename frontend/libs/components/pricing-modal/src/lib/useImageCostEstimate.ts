@@ -17,7 +17,7 @@ import {
   imageModelToCommonImageModel,
   imageAspectRatioToCommonAspectRatio,
   imageQualityToCommonQuality,
-  imageResolutionToCommonVideoResolution,
+  stringToCommonVideoResolution,
 } from "./convert/index.js";
 
 const IMAGE_PAGES = new Set<ModelPage>([
@@ -117,7 +117,7 @@ export function useImageCostEstimate(
       legacyAspectRatioStr,
     );
     const commonResolution =
-      imageResolutionToCommonVideoResolution(resolutionStr);
+      stringToCommonVideoResolution(resolutionStr);
     const commonQuality = imageQualityToCommonQuality(qualityStr);
     const generationMode =
       referenceImageCount > 0
