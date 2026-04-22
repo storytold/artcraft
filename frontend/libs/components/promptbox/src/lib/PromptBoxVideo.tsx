@@ -141,12 +141,7 @@ export const PromptBoxVideo = ({
   const isMultishot = usePromptVideoStore((s) => s.isMultishot);
   const setIsMultishot = usePromptVideoStore((s) => s.setIsMultishot);
   const multishotShots = usePromptVideoStore((s) => s.multishotShots);
-  const multishotActiveShotId = usePromptVideoStore(
-    (s) => s.multishotActiveShotId,
-  );
-  const setMultishotActiveShotId = usePromptVideoStore(
-    (s) => s.setMultishotActiveShotId,
-  );
+  const setMultishotShots = usePromptVideoStore((s) => s.setMultishotShots);
   const addMultishotShot = usePromptVideoStore((s) => s.addMultishotShot);
   const removeMultishotShot = usePromptVideoStore((s) => s.removeMultishotShot);
   const updateMultishotShot = usePromptVideoStore((s) => s.updateMultishotShot);
@@ -688,9 +683,7 @@ export const PromptBoxVideo = ({
         toast.error("Add at least one shot to generate video");
         return;
       }
-      const emptyShotIndex = multishotShots.findIndex(
-        (s) => !s.prompt.trim(),
-      );
+      const emptyShotIndex = multishotShots.findIndex((s) => !s.prompt.trim());
       if (emptyShotIndex !== -1) {
         toast.error(`Shot ${emptyShotIndex + 1} is missing a prompt`);
         return;
@@ -1031,15 +1024,19 @@ export const PromptBoxVideo = ({
           )}
         >
           <div className="relative flex justify-center gap-2">
-            <div className="promptbox-resize-wrap relative flex-1 min-w-0">
+            <div
+              className={twMerge(
+                "relative flex-1 min-w-0",
+                !isMultishotActive && "promptbox-resize-wrap",
+              )}
+            >
               {isMultishotActive ? (
                 <MultishotPromptEditor
                   shots={multishotShots}
-                  activeShotId={multishotActiveShotId}
-                  onSelectShot={setMultishotActiveShotId}
                   onAddShot={addMultishotShot}
                   onRemoveShot={removeMultishotShot}
                   onUpdateShot={updateMultishotShot}
+                  onReorderShots={setMultishotShots}
                   onPromptKeyEnter={() => {
                     if (
                       selectedModel?.requiresImage &&
@@ -1195,19 +1192,13 @@ export const PromptBoxVideo = ({
               )}
 
               {isMultishotCapable && (
-                <Tooltip
-                  content={isMultishot ? "Multishot: ON" : "Multishot: OFF"}
-                  position="top"
-                  className="z-50"
-                  delay={200}
-                >
-                  <ToggleButton
-                    isActive={isMultishot}
-                    icon={faFilm}
-                    activeIcon={faFilm}
-                    onClick={() => setIsMultishot(!isMultishot)}
-                  />
-                </Tooltip>
+                <ToggleButton
+                  isActive={isMultishot}
+                  icon={faFilm}
+                  activeIcon={faFilm}
+                  label={`Multishot: ${isMultishot ? "ON" : "OFF"}`}
+                  onClick={() => setIsMultishot(!isMultishot)}
+                />
               )}
 
               {inputModeOptions && (
@@ -1281,14 +1272,21 @@ export const PromptBoxVideo = ({
           </div>
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
             <Tooltip
-              content={isExpanded ? "Collapse" : "Expand"}
+              content={
+                isMultishotActive
+                  ? "Not available in multishot"
+                  : isExpanded
+                    ? "Collapse"
+                    : "Expand"
+              }
               position="top"
               className="-mb-2"
             >
               <button
                 type="button"
                 onClick={toggleExpand}
-                className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5"
+                disabled={isMultishotActive}
+                className="text-base-fg/30 hover:text-base-fg/90 transition-colors px-3 py-0.5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-base-fg/30"
               >
                 <FontAwesomeIcon
                   icon={isExpanded ? faChevronUp : faChevronDown}

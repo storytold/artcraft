@@ -26,12 +26,12 @@ export const ToggleButton = ({
   return (
     <Button
       className={twMerge(
-        "flex h-9 items-center justify-center rounded-lg border-2 border-transparent text-sm text-white backdrop-blur-lg transition-all",
+        "flex h-9 items-center justify-center rounded-lg border border-transparent text-sm text-white backdrop-blur-lg transition-all",
         hasLabel ? "px-3" : "w-9",
         isActive
           ? "border-white/20 bg-brand-primary/40 hover:border-white/30 hover:bg-brand-primary/40"
-          : "bg-[#5F5F68]/60 hover:bg-[#5F5F68]/90",
-        className
+          : "bg-ui-controls text-base-fg hover:bg-ui-controls/80 border-ui-controls-border",
+        className,
       )}
       variant="secondary"
       onClick={onClick}
