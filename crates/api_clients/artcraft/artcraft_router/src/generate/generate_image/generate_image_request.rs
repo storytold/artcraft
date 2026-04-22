@@ -113,6 +113,8 @@ impl GenerateImageRequest {
       CommonImageModel::Seedream5Lite => plan_generate_image_artcraft_seedream_5_lite(self),
       CommonImageModel::QwenEdit2511Angles => plan_generate_image_artcraft_qwen_edit_2511_angles(self),
       CommonImageModel::Flux2LoraAngles => plan_generate_image_artcraft_flux_2_lora_angles(self),
+      // GPT Image 2 uses the Fal plan for cost estimation (same cost regardless of provider)
+      CommonImageModel::GptImage2 => plan_generate_image_fal_gpt_image_2(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }
