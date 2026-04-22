@@ -74,7 +74,7 @@
     "react-virtualized": "^9.22.6",
     "tailwind-merge": "^2.2.2",
     "terser": "^5.30.3",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.0",
     "wavesurfer.js": "^7.7.11",
     "webm-writer": "^1.0.0"
   },

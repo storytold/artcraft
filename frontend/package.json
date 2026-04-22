@@ -40,7 +40,7 @@
     "react-spring": "^10.0.1",
     "tailwind-merge": "^2.2.2",
     "three": "^0.171.0",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.0",
     "zustand": "^5.0.5"
   },
   "devDependencies": {
