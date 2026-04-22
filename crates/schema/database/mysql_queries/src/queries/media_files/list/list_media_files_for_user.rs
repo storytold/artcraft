@@ -128,7 +128,8 @@ pub async fn list_media_files_for_user(args: ListMediaFileForUserArgs<'_>) -> An
   let query = query.build_query_as::<MediaFileListItemInternal>();
   let results = query.fetch_all(args.mysql_pool).await?;
 
-  let number_of_pages = (row_count_result / args.page_size as i64) as usize;
+  let number_of_pages = 1 + (row_count_result / args.page_size as i64) as usize;
+  
   let results = results.into_iter()
       .map(|record| {
         MediaFileListItem {
