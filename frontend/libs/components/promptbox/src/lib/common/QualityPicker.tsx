@@ -37,7 +37,7 @@ export const QualityPicker = ({
     if (quality) handleCommonQualitySelect(quality);
   };
 
-  const qualityList: PopoverItem[] = model.qualities.map((q) => ({
+  const qualityList: PopoverItem[] = model.qualityOptions.map((q) => ({
     label: QUALITY_LABELS[q] ?? q,
     selected: useQuality === q,
   }));
