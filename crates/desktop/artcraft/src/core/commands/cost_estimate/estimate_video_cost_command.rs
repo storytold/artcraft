@@ -18,7 +18,7 @@ pub async fn estimate_video_cost_command(
   request: EstimateVideoCostRequest,
   app_env_configs: State<'_, AppEnvConfigs>,
 ) -> ResponseOrError<EstimateVideoCostResponse, EstimateVideoCostError> {
-  info!("estimate_video_cost_command called: {:?}", request);
+  debug!("estimate_video_cost_command called: {:?}", request);
 
   let result = estimate_video_cost(
     &app_env_configs.storyteller_host,
