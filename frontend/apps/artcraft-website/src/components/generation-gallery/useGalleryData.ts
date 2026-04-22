@@ -40,8 +40,9 @@ const getLabel = (item: any) => {
 export function useGalleryData(options: {
   username: string | null;
   filterMediaClasses: FilterMediaClasses[];
+  excludeUploads?: boolean;
 }) {
-  const { username, filterMediaClasses } = options;
+  const { username, filterMediaClasses, excludeUploads } = options;
 
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,7 +84,7 @@ export function useGalleryData(options: {
         const response = await api.listUserMediaFiles({
           username,
           filter_media_classes: filterMediaClasses,
-          include_user_uploads: true,
+          include_user_uploads: !excludeUploads,
           page_index: reset ? 0 : pageIndex,
           page_size: PAGE_SIZE,
         });
@@ -91,7 +92,9 @@ export function useGalleryData(options: {
         if (response.success && response.data) {
           const newItems = response.data
             .filter(
-              (item: any) => item.media_type !== FilterMediaType.SCENE_JSON,
+              (item: any) =>
+                item.media_type !== FilterMediaType.SCENE_JSON &&
+                !(excludeUploads && item.origin_category === "upload"),
             )
             .map(mapApiItem);
 
@@ -114,7 +117,7 @@ export function useGalleryData(options: {
       setIsInitialLoading(false);
       isLoadingRef.current = false;
     },
-    [username, filterMediaClasses, pageIndex, api, mapApiItem],
+    [username, filterMediaClasses, pageIndex, api, mapApiItem, excludeUploads],
   );
 
   // Initial load + filter change

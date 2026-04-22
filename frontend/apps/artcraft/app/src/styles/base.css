@@ -51,10 +51,12 @@ body {
 
 /* ===================== THEME VARIABLES ===================== */
 :root {
-  --st-bg: #242424; /* gray theme default */
+  --st-bg: #242424;
+  /* gray theme default */
   --st-panel: #1f1f1f;
   --st-panel-border: #3f3f3f;
-  --st-modal: #1f1f1f; /* default modal surface (can be gradient per theme) */
+  --st-modal: #1f1f1f;
+  /* default modal surface (can be gradient per theme) */
   --st-controls: #3e3e41;
   --st-controls-rgb: 62 62 65;
   --st-controls-border: #3f3f3f;
@@ -76,9 +78,11 @@ body {
   --st-panel: #f8f8f8;
   --st-panel-border: #e5e7eb;
   --st-modal: #f8f8f8;
-  --st-controls: #eeeeef; /* requested light button surface */
+  --st-controls: #eeeeef;
+  /* requested light button surface */
   --st-controls-rgb: 238 238 239;
-  --st-controls-border: #dcdcdf; /* requested light button border */
+  --st-controls-border: #dcdcdf;
+  /* requested light button border */
   --st-fg: #111827;
   --st-fg-rgb: 17 24 39;
   --st-divider: #d1d5db;
@@ -94,14 +98,14 @@ body {
 .theme-gray {
   --st-bg: #242424;
   --st-panel: #1f1f1f;
-  --st-panel-border: #303030;
+  --st-panel-border: #272727;
   --st-modal: #1f1f1f;
   --st-controls: #3e3e41;
   --st-controls-rgb: 62 62 65;
   --st-controls-border: #464646;
   --st-fg: #ffffff;
   --st-fg-rgb: 255 255 255;
-  --st-divider: #424242;
+  --st-divider: #272727;
   --st-color-scheme: dark;
   --st-gallery-vignette-alpha: 0.3;
   --st-photo-tint-rgb: 0 0 0;
@@ -147,7 +151,8 @@ body {
   --st-fg-rgb: 248 250 252;
   --st-divider: #2a3152;
   --st-color-scheme: dark;
-  --st-photo-tint-rgb: 22 32 56; /* slightly darker bluish tint */
+  --st-photo-tint-rgb: 22 32 56;
+  /* slightly darker bluish tint */
   --st-photo-tint-alpha: 0.34;
   --st-photo-grayscale: 0;
   --st-badge-alpha: 0.4;
@@ -170,7 +175,8 @@ body {
   --st-fg-rgb: 248 250 252;
   --st-divider: #4a2e3a;
   --st-color-scheme: dark;
-  --st-photo-tint-rgb: 96 32 48; /* warmer tint for images */
+  --st-photo-tint-rgb: 96 32 48;
+  /* warmer tint for images */
   --st-photo-tint-alpha: 0.3;
   --st-photo-grayscale: 0;
   --st-badge-alpha: 0.4;
@@ -180,37 +186,44 @@ body {
 .bg-ui-background {
   background: var(--st-bg);
 }
+
 .bg-ui-panel {
   background: var(--st-panel);
 }
+
 .bg-ui-panel-gradient {
   background:
-    radial-gradient(
-      60.68% 60.68% at 50% 0%,
+    radial-gradient(60.68% 60.68% at 50% 0%,
       rgba(255, 255, 255, 0.08) 0%,
-      rgba(0, 0, 0, 0) 70%
-    ),
+      rgba(0, 0, 0, 0) 70%),
     var(--st-panel);
   background-color: var(--st-panel);
 }
+
 .bg-ui-modal {
   background: var(--st-modal);
 }
+
 .border-ui-panel-border {
   border-color: var(--st-panel-border);
 }
+
 .border-ui-controls-border {
   border-color: var(--st-controls-border);
 }
+
 .bg-ui-controls {
   background: var(--st-controls);
 }
+
 .bg-ui-badge {
   background-color: rgba(0, 0, 0, var(--st-badge-alpha));
 }
+
 .text-base-fg {
   color: rgb(var(--st-fg-rgb) / 1);
 }
+
 .border-ui-divider {
   border-color: var(--st-divider);
 }
@@ -239,6 +252,7 @@ img {
 .icon-auto-contrast {
   filter: invert(1);
 }
+
 .theme-light .icon-auto-contrast {
   filter: none;
 }
@@ -249,35 +263,45 @@ img {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
+
 .promptbox-scrollbar::-webkit-scrollbar {
   width: 4px;
 }
+
 .promptbox-scrollbar::-webkit-scrollbar:vertical {
   width: 4px;
 }
+
 .promptbox-scrollbar::-webkit-scrollbar:horizontal {
   height: 4px;
 }
+
 .promptbox-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .promptbox-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.2);
   border-radius: 9999px;
 }
+
 .promptbox-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.35);
 }
+
 .promptbox-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
 }
+
 .promptbox-scrollbar::-webkit-resizer {
   background: transparent;
   border: none;
 }
+
 .promptbox-resize-wrap {
   position: relative;
 }
+
 .promptbox-resize-wrap::after {
   content: "";
   position: absolute;
@@ -288,17 +312,21 @@ img {
   pointer-events: none;
   background:
     linear-gradient(135deg,
-    transparent 40%, rgba(255, 255, 255, 0.5) 40%, rgba(255, 255, 255, 0.5) 45%, transparent 45%,
-    transparent 55%, rgba(255, 255, 255, 0.5) 55%, rgba(255, 255, 255, 0.5) 60%, transparent 60%,
-    transparent 70%, rgba(255, 255, 255, 0.5) 70%, rgba(255, 255, 255, 0.5) 75%, transparent 75%);
+      transparent 40%, rgba(255, 255, 255, 0.5) 40%, rgba(255, 255, 255, 0.5) 45%, transparent 45%,
+      transparent 55%, rgba(255, 255, 255, 0.5) 55%, rgba(255, 255, 255, 0.5) 60%, transparent 60%,
+      transparent 70%, rgba(255, 255, 255, 0.5) 70%, rgba(255, 255, 255, 0.5) 75%, transparent 75%);
 }
 
 .scrollbar-hidden {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .scrollbar-hidden::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 
 .topbar-spacer {
@@ -307,9 +335,12 @@ img {
 }
 
 .prevent-select {
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none; /* IE 10 and IE 11 */
-  user-select: none; /* Standard syntax */
+  -webkit-user-select: none;
+  /* Safari */
+  -ms-user-select: none;
+  /* IE 10 and IE 11 */
+  user-select: none;
+  /* Standard syntax */
   pointer-events: none;
 }
 
@@ -357,36 +388,42 @@ img {
       9999px 0 0 0 #ffffff30,
       10014px 0 0 0 #ffffff30;
   }
+
   16.667% {
     box-shadow:
       9984px -10px 0 0 #ffffff30,
       9999px 0 0 0 #ffffff30,
       10014px 0 0 0 #ffffff30;
   }
+
   33.333% {
     box-shadow:
       9984px 0 0 0 #ffffff30,
       9999px 0 0 0 #ffffff30,
       10014px 0 0 0 #ffffff30;
   }
+
   50% {
     box-shadow:
       9984px 0 0 0 #ffffff30,
       9999px -10px 0 0 #ffffff30,
       10014px 0 0 0 #ffffff30;
   }
+
   66.667% {
     box-shadow:
       9984px 0 0 0 #ffffff30,
       9999px 0 0 0 #ffffff30,
       10014px 0 0 0 #ffffff30;
   }
+
   83.333% {
     box-shadow:
       9984px 0 0 0 #ffffff30,
       9999px 0 0 0 #ffffff30,
       10014px -10px 0 0 #ffffff30;
   }
+
   100% {
     box-shadow:
       9984px 0 0 0 #ffffff30,
@@ -423,72 +460,84 @@ img {
       9991px 0 0 0 #ffffff30,
       10007px 0 0 0 #ffffff30;
   }
+
   8.333% {
     box-shadow:
       10007px -16px 0 0 #ffffff30,
       9991px 0 0 0 #ffffff30,
       10007px 0 0 0 #ffffff30;
   }
+
   16.667% {
     box-shadow:
       10007px -16px 0 0 #ffffff30,
       9991px -16px 0 0 #ffffff30,
       10007px 0 0 0 #ffffff30;
   }
+
   25% {
     box-shadow:
       10007px -16px 0 0 #ffffff30,
       9991px -16px 0 0 #ffffff30,
       9991px 0 0 0 #ffffff30;
   }
+
   33.333% {
     box-shadow:
       10007px 0 0 0 #ffffff30,
       9991px -16px 0 0 #ffffff30,
       9991px 0 0 0 #ffffff30;
   }
+
   41.667% {
     box-shadow:
       10007px 0 0 0 #ffffff30,
       10007px -16px 0 0 #ffffff30,
       9991px 0 0 0 #ffffff30;
   }
+
   50% {
     box-shadow:
       10007px 0 0 0 #ffffff30,
       10007px -16px 0 0 #ffffff30,
       9991px -16px 0 0 #ffffff30;
   }
+
   58.333% {
     box-shadow:
       9991px 0 0 0 #ffffff30,
       10007px -16px 0 0 #ffffff30,
       9991px -16px 0 0 #ffffff30;
   }
+
   66.666% {
     box-shadow:
       9991px 0 0 0 #ffffff30,
       10007px 0 0 0 #ffffff30,
       9991px -16px 0 0 #ffffff30;
   }
+
   75% {
     box-shadow:
       9991px 0 0 0 #ffffff30,
       10007px 0 0 0 #ffffff30,
       10007px -16px 0 0 #ffffff30;
   }
+
   83.333% {
     box-shadow:
       9991px -16px 0 0 #ffffff30,
       10007px 0 0 0 #ffffff30,
       10007px -16px 0 0 #ffffff30;
   }
+
   91.667% {
     box-shadow:
       9991px -16px 0 0 #ffffff30,
       9991px 0 0 0 #ffffff30,
       10007px -16px 0 0 #ffffff30;
   }
+
   100% {
     box-shadow:
       9991px -16px 0 0 #ffffff30,
@@ -505,6 +554,7 @@ img {
 .st-loading-tile {
   position: relative;
 }
+
 .st-border-svg {
   position: absolute;
   inset: -2px;
@@ -525,17 +575,18 @@ img {
 /* Single runner: a solid line chasing its tail */
 /* Continuous runner with wrapping to avoid flicker at corners */
 .st-border-solid {
-  stroke-dasharray: 90 110; /* shorter visible segment + larger gap = clearer motion */
+  stroke-dasharray: 90 110;
+  /* shorter visible segment + larger gap = clearer motion */
   stroke-dashoffset: 0;
   animation: st-solid-wrap 1.6s linear infinite;
-  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8))
-    drop-shadow(0 0 18px rgba(59, 130, 246, 0.5));
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8)) drop-shadow(0 0 18px rgba(59, 130, 246, 0.5));
 }
 
 @keyframes st-solid-wrap {
   0% {
     stroke-dashoffset: 0;
   }
+
   100% {
     stroke-dashoffset: -200;
   }
@@ -545,6 +596,7 @@ img {
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-100%);
   }

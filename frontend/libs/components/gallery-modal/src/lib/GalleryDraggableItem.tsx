@@ -17,7 +17,6 @@ import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
-import { MediaFileDelete } from "@storyteller/tauri-api";
 import { toast } from "@storyteller/ui-toaster";
 
 type ModalMode = "select" | "view";
@@ -32,6 +31,8 @@ interface GalleryDraggableItemProps {
   disableTooltipAndBadge?: boolean;
   imageFit?: "cover" | "contain";
   onDeleted?: (id: string) => void;
+  /** Performs the actual delete. When absent, the delete menu item is hidden. */
+  onDelete?: (id: string) => Promise<unknown>;
   onEditClicked?: (url: string, media_id?: string) => Promise<void> | void;
   maxSelections?: number;
   bulkSelected?: boolean;
@@ -49,6 +50,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   disableTooltipAndBadge = false,
   imageFit = "cover",
   onDeleted,
+  onDelete,
   onEditClicked,
   maxSelections,
   bulkSelected = false,
@@ -87,6 +89,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handleDelete = () => {
+    if (!onDelete) return;
     showActionReminder({
       reminderType: "default",
       title: "Delete this media?",
@@ -101,18 +104,22 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
       primaryActionBtnClassName: "bg-red text-white hover:bg-red/90",
       onPrimaryAction: async () => {
         try {
-          const result = await MediaFileDelete(item.id);
-          console.log("MediaFileDelete result:", result);
-          if (result && "status" in result && result.status !== "success") {
+          const result = await onDelete(item.id);
+          if (
+            result &&
+            typeof result === "object" &&
+            "status" in result &&
+            (result as any).status !== "success"
+          ) {
             const msg =
               (result as any).error_message || "Failed to delete media.";
-            console.error("MediaFileDelete failed:", result);
+            console.error("Delete failed:", result);
             toast.error(msg);
             return;
           }
           onDeleted?.(item.id);
         } catch (err) {
-          console.error("MediaFileDelete threw:", err);
+          console.error("Delete threw:", err);
           toast.error(
             `Failed to delete media: ${err instanceof Error ? err.message : String(err)}`,
           );
@@ -283,18 +290,20 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
                     <span>Edit image</span>
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDelete();
-                    close();
-                  }}
-                >
-                  <FontAwesomeIcon icon={faTrashCan} className="text-red" />
-                  <span className="text-red">Delete</span>
-                </button>
+                {onDelete && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-ui-controls/60 text-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete();
+                      close();
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faTrashCan} className="text-red" />
+                    <span className="text-red">Delete</span>
+                  </button>
+                )}
               </div>
             )}
           </PopoverMenu>

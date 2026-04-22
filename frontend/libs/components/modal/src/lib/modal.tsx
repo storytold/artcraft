@@ -168,8 +168,8 @@ export const Modal = ({
   titleIcon,
   onTitleIconClick,
   onClose,
-  enableHotkeyInput = () => {},
-  disableHotkeyInput = () => {},
+  enableHotkeyInput = () => { },
+  disableHotkeyInput = () => { },
   className,
   backdropClassName,
   width,
@@ -448,47 +448,47 @@ export const Modal = ({
     let foundHandle = false;
     enhancedChildren = Array.isArray(children)
       ? children.map((child) => {
-          if (
-            !foundHandle &&
-            isValidElement(child) &&
-            (child.type === DragHandle ||
-              (child.type as any).displayName === "ModalDragHandle")
-          ) {
-            foundHandle = true;
-            const typedChild = child as React.ReactElement<{
-              children: ReactNode;
-            }>;
-            return cloneElement(typedChild, {
-              children: (
-                <div
-                  style={{ cursor: "move", userSelect: "none" }}
-                  onMouseDown={handleDragStart}
-                >
-                  {typedChild.props.children}
-                </div>
-              ),
-            });
-          }
-          return child;
-        })
+        if (
+          !foundHandle &&
+          isValidElement(child) &&
+          (child.type === DragHandle ||
+            (child.type as any).displayName === "ModalDragHandle")
+        ) {
+          foundHandle = true;
+          const typedChild = child as React.ReactElement<{
+            children: ReactNode;
+          }>;
+          return cloneElement(typedChild, {
+            children: (
+              <div
+                style={{ cursor: "move", userSelect: "none" }}
+                onMouseDown={handleDragStart}
+              >
+                {typedChild.props.children}
+              </div>
+            ),
+          });
+        }
+        return child;
+      })
       : isValidElement(children) &&
-          (children.type === DragHandle ||
-            (children.type as any).displayName === "ModalDragHandle")
+        (children.type === DragHandle ||
+          (children.type as any).displayName === "ModalDragHandle")
         ? (() => {
-            const typedChildren = children as React.ReactElement<{
-              children: ReactNode;
-            }>;
-            return cloneElement(typedChildren, {
-              children: (
-                <div
-                  style={{ cursor: "move", userSelect: "none" }}
-                  onMouseDown={handleDragStart}
-                >
-                  {typedChildren.props.children}
-                </div>
-              ),
-            });
-          })()
+          const typedChildren = children as React.ReactElement<{
+            children: ReactNode;
+          }>;
+          return cloneElement(typedChildren, {
+            children: (
+              <div
+                style={{ cursor: "move", userSelect: "none" }}
+                onMouseDown={handleDragStart}
+              >
+                {typedChildren.props.children}
+              </div>
+            ),
+          });
+        })()
         : children;
   }
 
@@ -552,7 +552,7 @@ export const Modal = ({
           minWidth = Math.max(minWidth, parsedMinW);
         if (!Number.isNaN(parsedMinH) && parsedMinH > 0)
           minHeight = Math.max(minHeight, parsedMinH);
-      } catch {}
+      } catch { }
 
       if (dir.includes("right")) {
         newWidth = resizeStart.current.width + dx;
@@ -980,7 +980,7 @@ export const Modal = ({
                         className,
                         "!transition-none", // Always disable CSS transitions for spring animations
                         expanded &&
-                          "w-screen h-screen max-w-screen max-h-screen rounded-none",
+                        "w-screen h-screen max-w-screen max-h-screen rounded-none",
                       )}
                       ref={modalRef}
                       style={{

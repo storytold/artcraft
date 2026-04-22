@@ -384,7 +384,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           <div
             className={twMerge(
               "glass rounded-xl p-3 sm:p-4 !transition-all duration-200",
-              hasAnyRowAbove && "rounded-t-none",
+              hasAnyRowAbove && "rounded-t-none border-t-0",
               isFocused && "ring-1 ring-primary",
             )}
           >
@@ -430,7 +430,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     mentionItems={mentionItems}
                     placeholder={placeholder}
                     className={twMerge(
-                      "promptbox-scrollbar min-h-[2.5em] w-full text-white",
+                      "promptbox-scrollbar min-h-[2.5em] w-full text-base-fg placeholder-base-fg/60",
                       isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                     )}
                     colorMap={mentionColorMap}
@@ -450,7 +450,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                         ref={highlightRef}
                         aria-hidden
                         className={twMerge(
-                          "pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words text-sm text-white",
+                          "pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words text-sm text-base-fg",
                           isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                         )}
                       >
@@ -464,7 +464,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                       autoFocus
                       placeholder={placeholder}
                       className={twMerge(
-                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent text-md text-white placeholder-white/50 focus:outline-none",
+                        "promptbox-scrollbar min-h-[2.5em] w-full flex-1 resize-y overflow-y-auto bg-transparent text-md text-base-fg placeholder-base-fg/60 focus:outline-none",
                         isExpanded ? "max-h-[500px]" : "max-h-[5.5em]",
                         hasMentionItems && "text-transparent caret-white",
                       )}
@@ -477,15 +477,15 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     />
 
                     {mentionOpen && filteredMentionItems.length > 0 && (
-                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden rounded-lg border border-white/10 bg-[#2a2a2e] shadow-lg backdrop-blur-xl">
-                        <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/50">
+                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden rounded-lg border border-ui-panel-border bg-ui-controls shadow-lg backdrop-blur-xl">
+                        <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-base-fg/50">
                           Mentions
                         </div>
                         {filteredMentionItems.map((item, i) => (
                           <button
                             key={item.label}
                             className={twMerge(
-                              "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-white transition-colors",
+                              "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-base-fg transition-colors",
                               i === mentionIndex
                                 ? "bg-white/10"
                                 : "hover:bg-white/5",
