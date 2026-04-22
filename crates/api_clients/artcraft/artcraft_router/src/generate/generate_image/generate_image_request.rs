@@ -29,6 +29,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1_ultra::plan_generate_image_fal_flux_pro_1p1_ultra;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1::plan_generate_image_fal_gpt_image_1;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1p5::plan_generate_image_fal_gpt_image_1p5;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_2::plan_generate_image_fal_gpt_image_2;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4::plan_generate_image_fal_seedream_4;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4p5::plan_generate_image_fal_seedream_4p5;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_5_lite::plan_generate_image_fal_seedream_5_lite;
@@ -124,6 +125,7 @@ impl GenerateImageRequest {
       CommonImageModel::FluxPro11Ultra => plan_generate_image_fal_flux_pro_1p1_ultra(self),
       CommonImageModel::GptImage1 => plan_generate_image_fal_gpt_image_1(self),
       CommonImageModel::GptImage1p5 => plan_generate_image_fal_gpt_image_1p5(self),
+      CommonImageModel::GptImage2 => plan_generate_image_fal_gpt_image_2(self),
       CommonImageModel::Seedream4 => plan_generate_image_fal_seedream_4(self),
       CommonImageModel::Seedream4p5 => plan_generate_image_fal_seedream_4p5(self),
       CommonImageModel::Seedream5Lite => plan_generate_image_fal_seedream_5_lite(self),
