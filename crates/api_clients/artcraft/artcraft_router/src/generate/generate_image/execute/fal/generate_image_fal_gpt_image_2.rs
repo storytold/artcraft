@@ -54,7 +54,7 @@ pub async fn execute_fal_gpt_image_2(
 
 #[cfg(test)]
 mod tests {
-  use test_data::web::image_urls::TREX_SKELETON_IMAGE_URL;
+  use test_data::web::image_urls::{GHOST_IMAGE_URL, JUNO_AT_LAKE_IMAGE_URL, TREX_SKELETON_IMAGE_URL};
   use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_image_model::CommonImageModel;
   use crate::api::image_list_ref::ImageListRef;
@@ -85,8 +85,12 @@ mod tests {
 
     #[test]
     fn edit_image_plan() {
-      let urls = vec!["https://example.com/img.jpg".to_string()];
+      let urls = vec![
+        JUNO_AT_LAKE_IMAGE_URL.to_string(),
+        GHOST_IMAGE_URL.to_string(),
+      ];
       let request = GenerateImageRequest {
+        prompt: Some("dog running from a scary ghost".to_string()),
         image_inputs: Some(ImageListRef::Urls(urls.clone())),
         ..base_request()
       };
@@ -128,12 +132,13 @@ mod tests {
     async fn edit_image() {
       let client = get_fal_client();
       let request = GenerateImageRequest {
+        prompt: Some("dog running from a scary ghost".to_string()),
         image_inputs: Some(ImageListRef::Urls(vec![
-          TREX_SKELETON_IMAGE_URL.to_string(),
+          JUNO_AT_LAKE_IMAGE_URL.to_string(),
+          GHOST_IMAGE_URL.to_string(),
         ])),
         aspect_ratio: Some(CommonAspectRatio::Square),
         image_batch_count: Some(1),
-        prompt: Some("change the background to a desert".to_string()),
         ..base_request()
       };
 
