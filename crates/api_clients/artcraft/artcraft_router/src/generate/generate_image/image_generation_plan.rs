@@ -6,6 +6,7 @@ use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraf
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_flux_pro_1p1_ultra::estimate_image_cost_artcraft_flux_pro_1p1_ultra;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_gpt_image_1::estimate_image_cost_artcraft_gpt_image_1;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_gpt_image_1p5::estimate_image_cost_artcraft_gpt_image_1p5;
+use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_gpt_image_2::estimate_image_cost_artcraft_gpt_image_2;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_nano_banana::estimate_image_cost_artcraft_nano_banana;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_nano_banana_2::estimate_image_cost_artcraft_nano_banana_2;
 use crate::generate::generate_image::cost::artcraft::estimate_image_cost_artcraft_nano_banana_pro::estimate_image_cost_artcraft_nano_banana_pro;
@@ -33,6 +34,7 @@ use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_flux_pro_1p1_ultra::execute_artcraft_flux_pro_1p1_ultra;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_gpt_image_1::execute_artcraft_gpt_image_1;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_gpt_image_1p5::execute_artcraft_gpt_image_1p5;
+use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_gpt_image_2::execute_artcraft_gpt_image_2;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_nano_banana::execute_artcraft_nano_banana;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_nano_banana_2::execute_artcraft_nano_banana_2;
 use crate::generate::generate_image::execute::artcraft::generate_image_artcraft_nano_banana_pro::execute_artcraft_nano_banana_pro;
@@ -62,6 +64,7 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1_ultra::PlanArtcraftFluxPro11Ultra;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1::PlanArtcraftGptImage1;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1p5::PlanArtcraftGptImage1p5;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_2::PlanArtcraftGptImage2;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana::PlanArtcraftNanaBanana;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_2::PlanArtcraftNanaBanana2;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::PlanArtcraftNanaBananaPro;
@@ -92,6 +95,7 @@ pub enum ImageGenerationPlan {
   ArtcraftFluxPro11Ultra(PlanArtcraftFluxPro11Ultra),
   ArtcraftGptImage1(PlanArtcraftGptImage1),
   ArtcraftGptImage1p5(PlanArtcraftGptImage1p5),
+  ArtcraftGptImage2(PlanArtcraftGptImage2),
   ArtcraftNanaBanana(PlanArtcraftNanaBanana),
   ArtcraftNanaBanana2(PlanArtcraftNanaBanana2),
   ArtcraftNanaBananaPro(PlanArtcraftNanaBananaPro),
@@ -144,6 +148,10 @@ impl ImageGenerationPlan {
       ImageGenerationPlan::ArtcraftGptImage1p5(plan) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
         execute_artcraft_gpt_image_1p5(plan, artcraft_client).await
+      }
+      ImageGenerationPlan::ArtcraftGptImage2(plan) => {
+        let artcraft_client = client.get_artcraft_client_ref()?;
+        execute_artcraft_gpt_image_2(plan, artcraft_client).await
       }
       ImageGenerationPlan::ArtcraftNanaBanana(plan) => {
         let artcraft_client = client.get_artcraft_client_ref()?;
@@ -251,6 +259,9 @@ impl ImageGenerationPlan {
       }
       ImageGenerationPlan::ArtcraftGptImage1p5(plan) => {
         estimate_image_cost_artcraft_gpt_image_1p5(plan)
+      }
+      ImageGenerationPlan::ArtcraftGptImage2(plan) => {
+        estimate_image_cost_artcraft_gpt_image_2(plan)
       }
       ImageGenerationPlan::ArtcraftNanaBanana(plan) => {
         estimate_image_cost_artcraft_nano_banana(plan)

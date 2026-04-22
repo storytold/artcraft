@@ -11,14 +11,18 @@ use artcraft_client::credentials::storyteller_credential_set::StorytellerCredent
 use artcraft_client::utils::api_host::ApiHost;
 use fal_client::creds::fal_api_key::FalApiKey;
 
-pub fn get_artcraft_client() -> RouterClient {
+pub fn get_artcraft_client_for_env(host: ApiHost) -> RouterClient {
   let cookies = std::fs::read_to_string("/Users/bt/Artcraft/credentials/artcraft_cookies.txt")
     .expect("Failed to read /Users/bt/Artcraft/credentials/artcraft_cookies.txt");
   let cookies = cookies.trim().to_string();
   let credentials = StorytellerCredentialSet::parse_multi_cookie_header(&cookies)
       .expect("Failed to parse cookies")
       .expect("No credentials found");
-  RouterClient::Artcraft(RouterArtcraftClient::new(ApiHost::Storyteller, credentials))
+  RouterClient::Artcraft(RouterArtcraftClient::new(host, credentials))
+}
+
+pub fn get_artcraft_client() -> RouterClient {
+  get_artcraft_client_for_env(ApiHost::Storyteller)
 }
 
 pub fn base_image_request() -> GenerateImageRequest {
@@ -165,6 +169,25 @@ pub fn base_nano_banana_image_request() -> GenerateImageRequest {
 pub fn base_gpt_image_1_image_request() -> GenerateImageRequest {
   GenerateImageRequest {
     model: CommonImageModel::GptImage1,
+    provider: Provider::Artcraft,
+    prompt: Some("a cat in space".to_string()),
+    image_inputs: None,
+    resolution: None,
+    aspect_ratio: None,
+    quality: None,
+    image_batch_count: None,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+    generation_mode_mismatch_strategy: None,
+    idempotency_token: None,
+    horizontal_angle: None,
+    vertical_angle: None,
+    zoom: None,
+  }
+}
+
+pub fn base_gpt_image_2_image_request() -> GenerateImageRequest {
+  GenerateImageRequest {
+    model: CommonImageModel::GptImage2,
     provider: Provider::Artcraft,
     prompt: Some("a cat in space".to_string()),
     image_inputs: None,
