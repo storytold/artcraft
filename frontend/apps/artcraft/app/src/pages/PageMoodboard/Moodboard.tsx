@@ -12,7 +12,7 @@ import { useShortcutCheatsheet } from "./interactions/useShortcutCheatsheet";
 import { useMoodboardImageEntry } from "./useMoodboardImageEntry";
 import { RecenterIndicator } from "./overlays/RecenterIndicator";
 import { ShortcutCheatsheet } from "./overlays/ShortcutCheatsheet";
-import { EmptyMoodboardCTA } from "./EmptyMoodboardCTA";
+// import { EmptyMoodboardCTA } from "./EmptyMoodboardCTA";
 
 export const Moodboard = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -20,7 +20,7 @@ export const Moodboard = () => {
   const deleteSelected = useMoodboardStore((s) => s.deleteSelected);
   const setSelection = useMoodboardStore((s) => s.setSelection);
   const editingTextId = useMoodboardStore((s) => s.transient.editingTextId);
-  const isEmpty = useMoodboardStore((s) => s.rootOrder.length === 0);
+  // const isEmpty = useMoodboardStore((s) => s.rootOrder.length === 0);
 
   useUndoRedo(true);
   usePasteHandler(true, stageRef);
@@ -58,12 +58,12 @@ export const Moodboard = () => {
       <TextEditOverlay containerRef={containerRef} />
       <RecenterIndicator />
       <ShortcutCheatsheet visible={cheatsheetVisible} />
-      {isEmpty && (
+      {/* {isEmpty && (
         <EmptyMoodboardCTA
           onUploadClick={triggerUpload}
           onGalleryClick={triggerGallery}
         />
-      )}
+      )} */}
       <div className="absolute left-0 right-0 top-0 z-10">
         <MoodboardToolbar
           onUploadClick={triggerUpload}
