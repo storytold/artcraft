@@ -10,8 +10,6 @@ use artcraft_router::api::image_ref::ImageRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-use artcraft_router::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
-use artcraft_router::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -34,26 +32,6 @@ pub struct RunPipelineV1Args<'a> {
   pub user_token: &'a UserToken,
   pub media_url_map: &'a Option<HashMap<MediaFileToken, Url>>,
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
-}
-
-// ── DistilledVideoRequest (used by tests) ──
-
-pub struct DistilledVideoRequest {
-  pub(crate) request: GenerateVideoRequestBuilder,
-  pub cost: VideoGenerationCostEstimate,
-  pub plan: VideoGenerationPlan,
-  pub execution_provider: Provider,
-}
-
-impl DistilledVideoRequest {
-  pub fn plan(&self) -> &VideoGenerationPlan {
-    &self.plan
-  }
-
-  #[allow(dead_code)]
-  pub(crate) fn request(&self) -> &GenerateVideoRequestBuilder {
-    &self.request
-  }
 }
 
 // ── Pipeline entrypoint ──
@@ -83,7 +61,7 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
 
   let initial = hydrate_to_router_request(request)?;
 
-  let cost: VideoGenerationCostEstimate = {
+  let cost = {
     let cost_request = GenerateVideoRequestBuilder {
       provider: Provider::Artcraft,
       ..initial.clone()
@@ -166,66 +144,6 @@ fn lookup_url(map: &HashMap<MediaFileToken, Url>, token: Option<&MediaFileToken>
 
 fn lookup_urls(map: &HashMap<MediaFileToken, Url>, tokens: Option<&Vec<MediaFileToken>>) -> Option<Vec<String>> {
   tokens
-      .filter(|v| !v.is_empty())
-      .map(|tokens| tokens.iter().filter_map(|t| map.get(t).map(|u| u.to_string())).collect())
-}
-
-// ── Distillation (kept public for tests) ──
-
-pub fn distill_video_request(
-  request: &OmniGenVideoCostAndGenerateRequest,
-  media_url_map: &HashMap<MediaFileToken, Url>,
-  execution_provider: Provider,
-) -> Result<DistilledVideoRequest, AdvancedCommonWebError> {
-  let initial = hydrate_to_router_request(request)?;
-
-  let cost: VideoGenerationCostEstimate = {
-    let cost_request = GenerateVideoRequestBuilder {
-      provider: Provider::Artcraft,
-      ..initial.clone()
-    };
-    let cost_plan = cost_request.build().map_err(|e| {
-      warn!("Failed to build cost plan during video distillation: {}", e);
-      AdvancedCommonWebError::from_error(e)
-    })?;
-    cost_plan.estimate_costs()
-  };
-
-  let start_frame = lookup_url(media_url_map, request.start_frame_image_media_token.as_ref()).map(ImageRef::Url);
-  let end_frame = lookup_url(media_url_map, request.end_frame_image_media_token.as_ref()).map(ImageRef::Url);
-  let reference_images = lookup_urls(media_url_map, request.reference_image_media_tokens.as_ref()).map(ImageListRef::Urls);
-  let reference_videos = lookup_urls(media_url_map, request.reference_video_media_tokens.as_ref()).map(VideoListRef::Urls);
-  let reference_audio = lookup_urls(media_url_map, request.reference_audio_media_tokens.as_ref()).map(AudioListRef::Urls);
-
-  let exec_request = GenerateVideoRequestBuilder {
-    model: initial.model,
-    provider: execution_provider,
-    prompt: initial.prompt,
-    negative_prompt: initial.negative_prompt,
-    start_frame,
-    end_frame,
-    reference_images,
-    reference_videos,
-    reference_audio,
-    reference_character_tokens: None,
-    resolution: initial.resolution,
-    aspect_ratio: initial.aspect_ratio,
-    duration_seconds: initial.duration_seconds,
-    video_batch_count: initial.video_batch_count,
-    generate_audio: initial.generate_audio,
-    request_mismatch_mitigation_strategy: initial.request_mismatch_mitigation_strategy,
-    idempotency_token: initial.idempotency_token,
-  };
-
-  let plan = exec_request.build().map_err(|e| {
-    warn!("Failed to build video generation plan during distillation: {}", e);
-    AdvancedCommonWebError::from_error(e)
-  })?;
-
-  Ok(DistilledVideoRequest {
-    request: exec_request,
-    cost,
-    plan,
-    execution_provider,
-  })
+    .filter(|v| !v.is_empty())
+    .map(|tokens| tokens.iter().filter_map(|t| map.get(t).map(|u| u.to_string())).collect())
 }
