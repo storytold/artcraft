@@ -112,18 +112,14 @@ async fn upload_and_generate(
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
 ) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
-  // Finalize draft → request (or use request directly)
+  let provider = draft_or_request.get_provider();
+  let client = build_client(provider, server_state)?;
+
   let video_request = match draft_or_request {
     VideoGenerationDraftOrRequest::Request(request) => request,
     VideoGenerationDraftOrRequest::Draft(draft) => {
-      let session = Seedance2ProSession::from_cookies_string(
-        server_state.seedance2pro.cookies.clone()
-      );
-      let seedance2pro_client = RouterSeedance2ProClient::new(session);
-      let router_client = RouterClient::Seedance2Pro(seedance2pro_client);
-
       let draft_context = VideoGenerationDraftContext {
-        client: Some(&router_client),
+        client: Some(&client),
         media_file_to_artcraft_url_map: media_file_urls_by_token,
         character_token_to_kinovi_id_map: kinovi_character_ids,
       };
@@ -135,29 +131,24 @@ async fn upload_and_generate(
     }
   };
 
-  // Build client and send
-  let client = build_client(&video_request, server_state);
-
   video_request.send_request(&client).await.map_err(|err| {
     warn!("v2 video generation failed: {:?}", err);
     AdvancedCommonWebError::from_error(err)
   })
 }
 
-fn build_client(request: &VideoGenerationRequest, server_state: &ServerState) -> RouterClient {
-  match request.get_provider() {
+fn build_client(provider: Provider, server_state: &ServerState) -> Result<RouterClient, AdvancedCommonWebError> {
+  match provider {
     Provider::Seedance2Pro => {
       let session = Seedance2ProSession::from_cookies_string(
         server_state.seedance2pro.cookies.clone()
       );
-      RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session))
+      Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
     }
-    // For future providers, add arms here.
-    _ => {
-      let session = Seedance2ProSession::from_cookies_string(
-        server_state.seedance2pro.cookies.clone()
-      );
-      RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session))
+    other => {
+      Err(AdvancedCommonWebError::server_error_with_message(
+        &format!("Unsupported provider for v2 pipeline: {:?}", other),
+      ))
     }
   }
 }
