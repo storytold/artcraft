@@ -9,6 +9,7 @@ use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use artcraft_router::generate::generate_video_v2::video_generation_draft_context::VideoGenerationDraftContext;
 use artcraft_router::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
+use enums::common::generation::common_video_model::CommonVideoModel;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
@@ -32,25 +33,29 @@ pub struct RunPipelineV2Args<'a> {
 
 pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
   let RunPipelineV2Args {
-    request, 
-    server_state, 
-    mysql_connection, 
+    request,
+    server_state,
+    mysql_connection,
     user_token,
-    media_file_to_url_map, 
+    media_file_to_url_map,
     kinovi_character_id_map,
   } = args;
 
-  // 1. Build execution request (provider = Seedance2Pro for Kinovi)
+  let provider = match request.model {
+    Some(CommonVideoModel::Seedance2p0) => Provider::Seedance2Pro,
+    Some(CommonVideoModel::Seedance2p0Fast) => Provider::Seedance2Pro,
+    _ => Provider::Fal,
+  };
+
+  // 1. Build execution request
   let mut exec_builder = hydrate_to_router_request(request)?;
-  exec_builder.provider = Provider::Seedance2Pro;
+  exec_builder.provider = provider;
 
   let draft_or_request = exec_builder.build2()
-      .map_err(|e| { 
+      .map_err(|e| {
         warn!("Failed to build2 for v2 pipeline: {}", e);
         AdvancedCommonWebError::from_error(e)
       })?;
-
-  let provider = draft_or_request.get_provider();
 
   // 2. Calculate cost (swap provider to Artcraft for billing)
   let mut cost_builder = hydrate_to_router_request(request)?;
@@ -88,9 +93,9 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     if matches!(provider, Provider::Seedance2Pro) {
       if let Some(ledger_entry_token) = billing.maybe_wallet_ledger_entry_token.as_ref() {
         warn!("Kinovi v2 generation failed, issuing refund for {}: {:?}", ledger_entry_token.as_str(), err);
-        
+
         let result = refund_wallet_after_api_failure(ledger_entry_token, mysql_connection).await;
-        
+
         if let Err(refund_err) = result {
           error!("Failed to refund wallet after Kinovi v2 failure: {:?}", refund_err);
         }
@@ -114,7 +119,7 @@ async fn upload_and_generate(
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
 ) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
-  
+
   let provider = draft_or_request.get_provider();
   let client = build_router_client(provider, server_state)?;
 
