@@ -30,7 +30,7 @@ import {
   useMotionControlCompleteEvent,
   MotionControlCompleteEvent,
 } from "@storyteller/tauri-events";
-import BackgroundGallery from "../PageVideo/BackgroundGallery";
+import BackgroundGallery from "./BackgroundGallery";
 import { TabSelector } from "@storyteller/ui-tab-selector";
 import { GalleryModal, GalleryItem } from "@storyteller/ui-gallery-modal";
 
