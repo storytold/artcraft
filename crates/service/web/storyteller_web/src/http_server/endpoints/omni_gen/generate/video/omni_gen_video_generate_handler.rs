@@ -28,8 +28,9 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
-use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_fal_job::insert_fal_job;
-use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_seedance2pro_jobs::insert_seedance2pro_jobs;
+use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
+use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
+use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
@@ -280,26 +281,38 @@ pub async fn omni_gen_video_generate_handler(
 
   let job_token = match &pipeline_result.response {
     GenerateVideoResponse::Seedance2Pro(payload) => {
-      insert_seedance2pro_jobs(
-        &payload.order_id, None,
-        &pipeline_result.billing.apriori_job_token, &idempotency_token,
-        pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
-        user_token, maybe_avt_token.as_ref(),
-        prompt_token.as_ref(), &ip_address,
-        &mut transaction,
-      ).await?
+      insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
+        primary_order_id: &payload.order_id,
+        maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
+        maybe_wallet_ledger_entry_token: pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
+        shared: SharedJobArgs {
+          apriori_job_token: &pipeline_result.billing.apriori_job_token,
+          idempotency_token: &idempotency_token,
+          user_token,
+          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_prompt_token: prompt_token.as_ref(),
+          ip_address: &ip_address,
+          transaction: &mut transaction,
+        },
+      }).await?
     }
     GenerateVideoResponse::Fal(payload) => {
       let external_id = payload.request_id.as_deref().ok_or_else(|| {
         error!("Fal generation response missing request_id");
         AdvancedCommonWebError::server_error_with_message("Fal generation response missing request_id")
       })?;
-      insert_fal_job(
-        external_id, &pipeline_result.billing.apriori_job_token, &idempotency_token,
-        user_token, maybe_avt_token.as_ref(),
-        prompt_token.as_ref(), &ip_address,
-        &mut transaction,
-      ).await?
+      insert_fal_job(InsertFalJobArgs {
+        external_job_id: external_id,
+        shared: SharedJobArgs {
+          apriori_job_token: &pipeline_result.billing.apriori_job_token,
+          idempotency_token: &idempotency_token,
+          user_token,
+          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_prompt_token: prompt_token.as_ref(),
+          ip_address: &ip_address,
+          transaction: &mut transaction,
+        },
+      }).await?
     }
     GenerateVideoResponse::Artcraft(payload) => {
       payload.inference_job_token.clone()
