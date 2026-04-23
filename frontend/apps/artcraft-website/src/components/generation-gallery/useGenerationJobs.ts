@@ -155,8 +155,9 @@ function jobToGalleryItem(job: Job): GalleryItem | null {
     label: getPrompt(job) || "Generation",
     thumbnail,
     fullImage: result.media_links?.cdn_url || null,
-    createdAt:
-      result.maybe_successfully_completed_at || job.updated_at,
+    // Sort by job creation time (not completion time) so the completed card
+    // occupies the same Masonry slot the pending card held — no layout shift.
+    createdAt: job.created_at,
     mediaClass,
     modelId: job.request.maybe_model_type ?? undefined,
   };
@@ -256,6 +257,7 @@ export function useGenerationJobs(options: {
       const completedIdSet = new Set(completedJobs.map((j) => j.job_token));
 
       // Detect newly completed (skip on first load to avoid flooding)
+      let expandedNewItems: GalleryItem[] = [];
       if (initialLoadDoneRef.current) {
         const newOnes = completedJobs.filter(
           (j) => !prevCompletedIdsRef.current.has(j.job_token),
@@ -265,17 +267,12 @@ export function useGenerationJobs(options: {
             .map(jobToGalleryItem)
             .filter((item): item is GalleryItem => item !== null);
           if (items.length > 0) {
-            // Expand batch items (fetch siblings) then update state
-            Promise.all(
+            // Await expansion so the pending card and its completed replacement
+            // commit in the same React render — no "remove then add" gap.
+            const expanded = await Promise.all(
               items.map((item) => expandBatchItems(item, mediaApiRef.current)),
-            ).then((expanded) => {
-              const allItems = expanded.flat();
-              setNewlyCompleted((prev) => {
-                const existingIds = new Set(prev.map((i) => i.id));
-                const fresh = allItems.filter((i) => !existingIds.has(i.id));
-                return [...fresh, ...prev];
-              });
-            });
+            );
+            expandedNewItems = expanded.flat();
           }
         }
       }
@@ -288,6 +285,13 @@ export function useGenerationJobs(options: {
         if (!activeIds.has(id)) taskDurationCache.delete(id);
       }
 
+      if (expandedNewItems.length > 0) {
+        setNewlyCompleted((prev) => {
+          const existingIds = new Set(prev.map((i) => i.id));
+          const fresh = expandedNewItems.filter((i) => !existingIds.has(i.id));
+          return [...fresh, ...prev];
+        });
+      }
       setInProgress(inProg);
       setFailed(failedJobs);
     } catch {

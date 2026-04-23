@@ -32,6 +32,7 @@ interface GenerationGalleryGridProps {
   newlyCompletedTokens: Set<string>;
   hasMore: boolean;
   isLoading: boolean;
+  isInitialLoading: boolean;
   onLoadMore: () => void;
   onGalleryItemClick: (item: GalleryItem) => void;
 }
@@ -47,6 +48,7 @@ export function GenerationGalleryGrid({
   newlyCompletedTokens,
   hasMore,
   isLoading,
+  isInitialLoading,
   onLoadMore,
   onGalleryItemClick,
 }: GenerationGalleryGridProps) {
@@ -116,6 +118,14 @@ export function GenerationGalleryGrid({
     entries.sort((a, b) => b.createdAt - a.createdAt);
     return entries;
   }, [inProgressJobs, failedJobs, newlyCompletedItems, galleryItems, newlyCompletedTokens]);
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <LoadingSpinner className="h-6 w-6 text-white/60" />
+      </div>
+    );
+  }
 
   return (
     <>

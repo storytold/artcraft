@@ -21,7 +21,7 @@ export const FailedCard = memo(function FailedCard({
 }: FailedCardProps) {
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-red-500/10">
-      <div className="flex h-full flex-col items-center justify-center gap-2 px-4">
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-4 sm:px-6">
         <FontAwesomeIcon
           icon={faCircleExclamation}
           className="text-2xl text-red-400"

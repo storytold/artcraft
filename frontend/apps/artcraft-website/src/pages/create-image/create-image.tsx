@@ -381,6 +381,7 @@ export default function CreateImage() {
           newlyCompletedTokens={newlyCompletedTokens}
           hasMore={gallery.hasMore}
           isLoading={gallery.isLoading}
+          isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
         />
