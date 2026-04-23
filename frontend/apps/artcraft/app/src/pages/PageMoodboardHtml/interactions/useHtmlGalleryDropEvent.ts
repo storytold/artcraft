@@ -5,6 +5,7 @@ interface GalleryItem {
   id?: string;
   thumbnail?: string | null;
   fullImage?: string | null;
+  mediaClass?: string;
 }
 
 // canvasPosition from the PageEditor dispatcher is already container-local
@@ -15,13 +16,25 @@ interface GalleryMoodboardDropDetail {
   canvasPosition: { x: number; y: number };
 }
 
-const measure = (url: string): Promise<{ w: number; h: number }> =>
+const measureImage = (url: string): Promise<{ w: number; h: number }> =>
   new Promise((resolve) => {
     const i = new window.Image();
     i.crossOrigin = "anonymous";
     i.onload = () => resolve({ w: i.naturalWidth, h: i.naturalHeight });
     i.onerror = () => resolve({ w: 320, h: 320 });
     i.src = url;
+  });
+
+const measureVideo = (url: string): Promise<{ w: number; h: number }> =>
+  new Promise((resolve) => {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.crossOrigin = "anonymous";
+    v.muted = true;
+    v.onloadedmetadata = () =>
+      resolve({ w: v.videoWidth || 320, h: v.videoHeight || 320 });
+    v.onerror = () => resolve({ w: 320, h: 320 });
+    v.src = url;
   });
 
 // HTML analogue of useGalleryDropEvent.ts. Converts container-local drop
@@ -32,6 +45,7 @@ export const useHtmlGalleryDropEvent = (
   _containerRef: React.RefObject<HTMLDivElement | null>,
 ) => {
   const addImage = useMoodboardStore((s) => s.addImage);
+  const addVideo = useMoodboardStore((s) => s.addVideo);
 
   useEffect(() => {
     if (!active) return undefined;
@@ -50,12 +64,17 @@ export const useHtmlGalleryDropEvent = (
         y: (canvasPosition.y - viewport.pan.y) / viewport.zoom,
       };
 
-      const dims = await measure(url);
-      addImage(url, stagePoint, dims.w, dims.h, item.id ?? null);
+      if (item.mediaClass === "video") {
+        const dims = await measureVideo(url);
+        addVideo(url, stagePoint, dims.w, dims.h, item.id ?? null);
+      } else {
+        const dims = await measureImage(url);
+        addImage(url, stagePoint, dims.w, dims.h, item.id ?? null);
+      }
     };
 
     window.addEventListener("gallery-moodboard-drop", handler);
     return () =>
       window.removeEventListener("gallery-moodboard-drop", handler);
-  }, [active, addImage]);
+  }, [active, addImage, addVideo]);
 };

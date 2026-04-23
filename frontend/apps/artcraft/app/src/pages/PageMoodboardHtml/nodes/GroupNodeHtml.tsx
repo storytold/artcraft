@@ -7,6 +7,7 @@ import {
 import { useMoodboardStore } from "../../PageMoodboard/MoodboardStore";
 import { ImageNodeHtml } from "./ImageNodeHtml";
 import { TextNodeHtml } from "./TextNodeHtml";
+import { VideoNodeHtml } from "./VideoNodeHtml";
 
 interface Props {
   node: GroupNodeData;
@@ -91,6 +92,17 @@ const GroupNodeHtmlInner = ({ node, onSelect }: Props) => {
         if (child.kind === "image") {
           return (
             <ImageNodeHtml
+              key={child.id}
+              node={child}
+              draggable={false}
+              selected={false}
+              onSelect={NO_OP_SELECT}
+            />
+          );
+        }
+        if (child.kind === "video") {
+          return (
+            <VideoNodeHtml
               key={child.id}
               node={child}
               draggable={false}

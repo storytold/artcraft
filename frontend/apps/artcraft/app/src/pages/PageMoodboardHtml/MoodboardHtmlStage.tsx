@@ -6,6 +6,7 @@ import { MoodboardHtmlBackground } from "./MoodboardHtmlBackground";
 import { ImageNodeHtml } from "./nodes/ImageNodeHtml";
 import { TextNodeHtml } from "./nodes/TextNodeHtml";
 import { GroupNodeHtml } from "./nodes/GroupNodeHtml";
+import { VideoNodeHtml } from "./nodes/VideoNodeHtml";
 import { useHtmlSelection } from "./interactions/useHtmlSelection";
 import { useHtmlViewportControls } from "./interactions/useHtmlViewportControls";
 import { worldPointFromClient } from "./interactions/htmlStagePointer";
@@ -206,6 +207,17 @@ export const MoodboardHtmlStage = ({ containerRef }: Props) => {
           if (n.kind === "image") {
             return (
               <ImageNodeHtml
+                key={id}
+                node={n}
+                draggable={draggable}
+                selected={selectedIds.has(id)}
+                onSelect={handleNodeSelect}
+              />
+            );
+          }
+          if (n.kind === "video") {
+            return (
+              <VideoNodeHtml
                 key={id}
                 node={n}
                 draggable={draggable}

@@ -18,6 +18,18 @@ const measure = (url: string): Promise<{ w: number; h: number }> =>
     img.src = url;
   });
 
+const measureVideo = (url: string): Promise<{ w: number; h: number }> =>
+  new Promise((resolve) => {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.crossOrigin = "anonymous";
+    v.muted = true;
+    v.onloadedmetadata = () =>
+      resolve({ w: v.videoWidth || 320, h: v.videoHeight || 320 });
+    v.onerror = () => resolve({ w: 320, h: 320 });
+    v.src = url;
+  });
+
 interface UseReturn {
   triggerUpload: () => void;
   triggerGallery: () => void;
@@ -28,6 +40,7 @@ interface UseReturn {
 // canvasSize + viewport instead of a Konva stage, so no stageRef is needed.
 export const useHtmlMoodboardImageEntry = (): UseReturn => {
   const addImage = useMoodboardStore((s) => s.addImage);
+  const addVideo = useMoodboardStore((s) => s.addVideo);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedGalleryIds, setSelectedGalleryIds] = useState<string[]>([]);
@@ -90,15 +103,20 @@ export const useHtmlMoodboardImageEntry = (): UseReturn => {
 
   const handleUseSelected = async (items: GalleryItem[]) => {
     if (items.length === 0) {
-      toast.error("No image selected");
+      toast.error("Nothing selected");
       return;
     }
     const center = getCenter();
     for (const item of items) {
       const url = item.fullImage || item.thumbnail;
       if (!url) continue;
-      const dims = await measure(url);
-      addImage(url, center, dims.w, dims.h, item.id ?? null);
+      if (item.mediaClass === "video") {
+        const dims = await measureVideo(url);
+        addVideo(url, center, dims.w, dims.h, item.id ?? null);
+      } else {
+        const dims = await measure(url);
+        addImage(url, center, dims.w, dims.h, item.id ?? null);
+      }
     }
     handleGalleryClose();
   };
@@ -121,7 +139,6 @@ export const useHtmlMoodboardImageEntry = (): UseReturn => {
         onSelectItem={handleGallerySelectItem}
         onUseSelected={handleUseSelected}
         onDownloadClicked={downloadFileFromUrl}
-        forceFilter="image"
       />
     </>
   );
