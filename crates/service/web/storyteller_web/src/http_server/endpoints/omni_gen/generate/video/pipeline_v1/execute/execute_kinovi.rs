@@ -30,7 +30,7 @@ use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refun
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 
-use super::super::distill_video_request::DistilledVideoRequest;
+use super::super::run_pipeline_v1::DistilledVideoRequest;
 use super::GenerationResult;
 
 pub(crate) async fn execute_generation_kinovi(

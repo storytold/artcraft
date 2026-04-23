@@ -11,7 +11,7 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::state::server_state::ServerState;
 
-use super::super::distill_video_request::DistilledVideoRequest;
+use super::super::run_pipeline_v1::DistilledVideoRequest;
 use super::GenerationResult;
 
 /// Execute generation via Fal (the existing path).
