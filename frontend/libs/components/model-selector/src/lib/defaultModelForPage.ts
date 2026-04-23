@@ -34,6 +34,9 @@ export const defaultModelForPage = (
     case ModelPage.Angles:
       imageModel = IMAGE_MODELS_BY_ID.get("flux_2_lora_angles");
       break;
+    case ModelPage.MotionControl:
+      imageModel = VIDEO_MODELS_BY_ID.get("seedance_2p0");
+      break;
   }
 
   return imageModel || models[0];

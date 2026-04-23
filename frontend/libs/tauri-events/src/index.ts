@@ -9,6 +9,7 @@ export * from "./lib/events/functional/ShowProviderLoginModalEvent";
 export * from "./lib/events/functional/SubscriptionPlanChangedEvent";
 export * from "./lib/events/functional/TextToImageGenerationCompleteEvent";
 export * from "./lib/events/functional/VideoGenerationCompleteEvent";
+export * from "./lib/events/functional/MotionControlCompleteEvent";
 export * from "./lib/events/generation/useGenerationCompleteEvent";
 export * from "./lib/events/generation/useGenerationEnqueueFailureEvent";
 export * from "./lib/events/generation/useGenerationEnqueueSuccessEvent";
