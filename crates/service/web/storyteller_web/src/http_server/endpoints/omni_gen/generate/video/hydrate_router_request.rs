@@ -14,6 +14,53 @@ use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonA
 use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
 use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
+pub fn hydrate_to_router_request(
+  request: &OmniGenVideoCostAndGenerateRequest,
+) -> Result<GenerateVideoRequestBuilder, AdvancedCommonWebError> {
+  let api_model = request.model
+    .as_ref()
+    .ok_or_else(|| AdvancedCommonWebError::BadInputWithSimpleMessage(
+      "model is required".to_string(),
+    ))?;
+
+  let model = convert_model(api_model)?;
+
+  let aspect_ratio = request.aspect_ratio
+    .as_ref()
+    .map(convert_aspect_ratio)
+    .transpose()?;
+
+  let resolution = request.resolution
+    .as_ref()
+    .map(convert_resolution)
+    .transpose()?;
+
+  Ok(GenerateVideoRequestBuilder {
+    model,
+    provider: Provider::Artcraft,
+    prompt: request.prompt.clone(),
+    negative_prompt: request.negative_prompt.clone(),
+    start_frame: request.start_frame_image_media_token.clone()
+      .map(ImageRef::MediaFileToken),
+    end_frame: request.end_frame_image_media_token.clone()
+      .map(ImageRef::MediaFileToken),
+    reference_images: request.reference_image_media_tokens.clone()
+      .map(ImageListRef::MediaFileTokens),
+    reference_videos: request.reference_video_media_tokens.clone()
+      .map(VideoListRef::MediaFileTokens),
+    reference_audio: request.reference_audio_media_tokens.clone()
+      .map(AudioListRef::MediaFileTokens),
+    reference_character_tokens: None,
+    resolution,
+    aspect_ratio,
+    duration_seconds: request.duration_seconds,
+    video_batch_count: request.video_batch_count,
+    generate_audio: request.generate_audio,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+    idempotency_token: request.idempotency_token.clone(),
+  })
+}
+
 fn convert_model(
   model: &CommonVideoModelEnum,
 ) -> Result<CommonVideoModelRouter, AdvancedCommonWebError> {
@@ -44,49 +91,5 @@ fn convert_resolution(
     AdvancedCommonWebError::BadInputWithSimpleMessage(
       format!("Unsupported resolution: {}", e),
     )
-  })
-}
-
-pub fn hydrate_to_router_request(
-  request: &OmniGenVideoCostAndGenerateRequest,
-) -> Result<GenerateVideoRequestBuilder, AdvancedCommonWebError> {
-  let api_model = request.model.as_ref()
-    .ok_or_else(|| AdvancedCommonWebError::BadInputWithSimpleMessage(
-      "model is required".to_string(),
-    ))?;
-
-  let model = convert_model(api_model)?;
-
-  let aspect_ratio = request.aspect_ratio.as_ref()
-    .map(convert_aspect_ratio)
-    .transpose()?;
-
-  let resolution = request.resolution.as_ref()
-    .map(convert_resolution)
-    .transpose()?;
-
-  Ok(GenerateVideoRequestBuilder {
-    model,
-    provider: Provider::Artcraft,
-    prompt: request.prompt.clone(),
-    negative_prompt: request.negative_prompt.clone(),
-    start_frame: request.start_frame_image_media_token.clone()
-      .map(ImageRef::MediaFileToken),
-    end_frame: request.end_frame_image_media_token.clone()
-      .map(ImageRef::MediaFileToken),
-    reference_images: request.reference_image_media_tokens.clone()
-      .map(ImageListRef::MediaFileTokens),
-    reference_videos: request.reference_video_media_tokens.clone()
-      .map(VideoListRef::MediaFileTokens),
-    reference_audio: request.reference_audio_media_tokens.clone()
-      .map(AudioListRef::MediaFileTokens),
-    reference_character_tokens: None,
-    resolution,
-    aspect_ratio,
-    duration_seconds: request.duration_seconds,
-    video_batch_count: request.video_batch_count,
-    generate_audio: request.generate_audio,
-    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-    idempotency_token: request.idempotency_token.clone(),
   })
 }

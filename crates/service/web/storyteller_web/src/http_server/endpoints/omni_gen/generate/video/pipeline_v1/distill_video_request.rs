@@ -25,7 +25,7 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 
-use super::distill_helper::hydrate_to_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::video::hydrate_router_request::hydrate_to_router_request;
 
 /// Self-contained, owned representation of a fully-distilled omni-gen video
 /// request: the router request, the bill-on cost estimate, and the executable

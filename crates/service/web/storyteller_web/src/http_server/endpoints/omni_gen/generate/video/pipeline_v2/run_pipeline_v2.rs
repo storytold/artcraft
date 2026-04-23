@@ -12,7 +12,7 @@ use tokens::tokens::media_files::MediaFileToken;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_result::PipelineResult;
-use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::distill_helper::hydrate_to_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::video::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::execute::execute_pipeline_v2;
 use crate::state::server_state::ServerState;
 
