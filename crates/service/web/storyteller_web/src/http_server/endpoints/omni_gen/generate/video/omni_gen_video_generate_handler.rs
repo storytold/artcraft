@@ -10,16 +10,22 @@ use url::Url;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
+use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_video_model::CommonVideoModel;
+use enums::common::generation_provider::GenerationProvider;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
+use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
+  insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
+};
+use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_fal_job::insert_fal_job;
-use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_prompt_and_context::insert_prompt_and_context;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_seedance2pro_jobs::insert_seedance2pro_jobs;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::run_pipeline_v1;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::run_pipeline_v2;
@@ -160,9 +166,82 @@ pub async fn omni_gen_video_generate_handler(
     AdvancedCommonWebError::from_error(err)
   })?;
 
-  insert_prompt_and_context(
-    &request, &mut transaction, user_token, maybe_prompt_model_type, &ip_address,
-  ).await;
+  // -- Prompt --
+
+  let prompt_result = insert_prompt(InsertPromptArgs {
+    maybe_apriori_prompt_token: None,
+    prompt_type: PromptType::ArtcraftApp,
+    maybe_creator_user_token: Some(user_token),
+    maybe_model_type: maybe_prompt_model_type,
+    maybe_generation_provider: Some(GenerationProvider::Artcraft),
+    maybe_positive_prompt: request.prompt.as_deref(),
+    maybe_negative_prompt: request.negative_prompt.as_deref(),
+    maybe_other_args: None,
+    maybe_generation_mode: None,
+    maybe_aspect_ratio: None,
+    maybe_resolution: None,
+    maybe_batch_count: request.video_batch_count.map(|c| c as u8),
+    maybe_generate_audio: request.generate_audio,
+    maybe_duration_seconds: request.duration_seconds.map(|d| d as u32),
+    creator_ip_address: &ip_address,
+    mysql_executor: &mut *transaction,
+    phantom: Default::default(),
+  }).await;
+
+  let prompt_token = match prompt_result {
+    Ok(token) => Some(token),
+    Err(err) => {
+      warn!("Error inserting prompt: {:?}", err);
+      None
+    }
+  };
+
+  // -- Prompt context items --
+
+  if let Some(token) = prompt_token.as_ref() {
+    let mut context_items = Vec::new();
+
+    if let Some(media_token) = &request.start_frame_image_media_token {
+      context_items.push(PromptContextItem {
+        media_token: media_token.clone(),
+        context_semantic_type: PromptContextSemanticType::VidStartFrame,
+      });
+    }
+    if let Some(media_token) = &request.end_frame_image_media_token {
+      context_items.push(PromptContextItem {
+        media_token: media_token.clone(),
+        context_semantic_type: PromptContextSemanticType::VidEndFrame,
+      });
+    }
+    if let Some(ref_tokens) = &request.reference_image_media_tokens {
+      for media_token in ref_tokens {
+        context_items.push(PromptContextItem {
+          media_token: media_token.clone(),
+          context_semantic_type: PromptContextSemanticType::Imgref,
+        });
+      }
+    }
+    if let Some(ref_tokens) = &request.reference_video_media_tokens {
+      for media_token in ref_tokens {
+        context_items.push(PromptContextItem {
+          media_token: media_token.clone(),
+          context_semantic_type: PromptContextSemanticType::VidRef,
+        });
+      }
+    }
+
+    if !context_items.is_empty() {
+      if let Err(err) = insert_batch_prompt_context_items(InsertBatchArgs {
+        prompt_token: token.clone(),
+        items: context_items,
+        transaction: &mut transaction,
+      }).await {
+        warn!("Error inserting batch prompt context items: {:?}", err);
+      }
+    }
+  }
+
+  // -- Inference job --
 
   let job_token = match &pipeline_result.response {
     GenerateVideoResponse::Seedance2Pro(payload) => {
