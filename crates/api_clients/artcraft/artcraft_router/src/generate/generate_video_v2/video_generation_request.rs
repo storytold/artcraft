@@ -1,3 +1,4 @@
+use crate::api::provider::Provider;
 use crate::client::router_client::RouterClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
@@ -20,6 +21,15 @@ pub enum VideoGenerationRequest {
 }
 
 impl VideoGenerationRequest {
+
+  pub fn get_provider(&self) -> Provider {
+    match self {
+      Self::ArtcraftSeedance2p0(_) => Provider::Artcraft,
+      Self::ArtcraftSeedance2p0Fast(_) => Provider::Artcraft,
+      Self::KinoviSeedance2p0(_) => Provider::Seedance2Pro,
+      Self::KinoviSeedance2p0Fast(_) => Provider::Seedance2Pro,
+    }
+  }
 
   /// Return a cost estimate to fulfill the request.
   pub fn estimate_cost(&self) -> Result<VideoGenerationCostEstimate, ArtcraftRouterError> {
