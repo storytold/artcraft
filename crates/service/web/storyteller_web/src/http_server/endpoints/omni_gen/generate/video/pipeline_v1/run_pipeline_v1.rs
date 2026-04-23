@@ -32,7 +32,7 @@ pub struct RunPipelineV1Args<'a> {
   pub server_state: &'a ServerState,
   pub mysql_connection: &'a mut sqlx::pool::PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
-  pub media_url_map: &'a HashMap<MediaFileToken, Url>,
+  pub media_url_map: &'a Option<HashMap<MediaFileToken, Url>>,
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
 }
 
@@ -95,18 +95,29 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
     cost_plan.estimate_costs()
   };
 
-  // ── Build the execution request (resolve media tokens → URLs from handler map) ──
+  // ── Resolve media tokens → URLs from handler map ──
+
+  let empty_map = HashMap::new();
+  let url_map = media_url_map.as_ref().unwrap_or(&empty_map);
+
+  let start_frame = lookup_url(url_map, request.start_frame_image_media_token.as_ref()).map(ImageRef::Url);
+  let end_frame = lookup_url(url_map, request.end_frame_image_media_token.as_ref()).map(ImageRef::Url);
+  let reference_images = lookup_urls(url_map, request.reference_image_media_tokens.as_ref()).map(ImageListRef::Urls);
+  let reference_videos = lookup_urls(url_map, request.reference_video_media_tokens.as_ref()).map(VideoListRef::Urls);
+  let reference_audio = lookup_urls(url_map, request.reference_audio_media_tokens.as_ref()).map(AudioListRef::Urls);
+
+  // ── Build the execution request ──
 
   let exec_request = GenerateVideoRequestBuilder {
     model: initial.model,
     provider: execution_provider,
     prompt: initial.prompt,
     negative_prompt: initial.negative_prompt,
-    start_frame: lookup_url(media_url_map, request.start_frame_image_media_token.as_ref()).map(ImageRef::Url),
-    end_frame: lookup_url(media_url_map, request.end_frame_image_media_token.as_ref()).map(ImageRef::Url),
-    reference_images: lookup_urls(media_url_map, request.reference_image_media_tokens.as_ref()).map(ImageListRef::Urls),
-    reference_videos: lookup_urls(media_url_map, request.reference_video_media_tokens.as_ref()).map(VideoListRef::Urls),
-    reference_audio: lookup_urls(media_url_map, request.reference_audio_media_tokens.as_ref()).map(AudioListRef::Urls),
+    start_frame,
+    end_frame,
+    reference_images,
+    reference_videos,
+    reference_audio,
     reference_character_tokens: initial.reference_character_tokens.clone(),
     resolution: initial.resolution,
     aspect_ratio: initial.aspect_ratio,
@@ -135,7 +146,7 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
     Provider::Seedance2Pro => {
       execute_generation_kinovi(
         request, server_state,
-        Some(media_url_map), kinovi_character_ids,
+        media_url_map.as_ref(), kinovi_character_ids,
         billing.maybe_wallet_ledger_entry_token.as_ref(), mysql_connection,
       ).await?
     }
@@ -180,16 +191,22 @@ pub fn distill_video_request(
     cost_plan.estimate_costs()
   };
 
+  let start_frame = lookup_url(media_url_map, request.start_frame_image_media_token.as_ref()).map(ImageRef::Url);
+  let end_frame = lookup_url(media_url_map, request.end_frame_image_media_token.as_ref()).map(ImageRef::Url);
+  let reference_images = lookup_urls(media_url_map, request.reference_image_media_tokens.as_ref()).map(ImageListRef::Urls);
+  let reference_videos = lookup_urls(media_url_map, request.reference_video_media_tokens.as_ref()).map(VideoListRef::Urls);
+  let reference_audio = lookup_urls(media_url_map, request.reference_audio_media_tokens.as_ref()).map(AudioListRef::Urls);
+
   let exec_request = GenerateVideoRequestBuilder {
     model: initial.model,
     provider: execution_provider,
     prompt: initial.prompt,
     negative_prompt: initial.negative_prompt,
-    start_frame: lookup_url(media_url_map, request.start_frame_image_media_token.as_ref()).map(ImageRef::Url),
-    end_frame: lookup_url(media_url_map, request.end_frame_image_media_token.as_ref()).map(ImageRef::Url),
-    reference_images: lookup_urls(media_url_map, request.reference_image_media_tokens.as_ref()).map(ImageListRef::Urls),
-    reference_videos: lookup_urls(media_url_map, request.reference_video_media_tokens.as_ref()).map(VideoListRef::Urls),
-    reference_audio: lookup_urls(media_url_map, request.reference_audio_media_tokens.as_ref()).map(AudioListRef::Urls),
+    start_frame,
+    end_frame,
+    reference_images,
+    reference_videos,
+    reference_audio,
     reference_character_tokens: None,
     resolution: initial.resolution,
     aspect_ratio: initial.aspect_ratio,
