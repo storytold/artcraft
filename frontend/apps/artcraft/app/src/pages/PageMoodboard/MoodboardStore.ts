@@ -9,6 +9,7 @@ import {
   TextNode,
   Tool,
   Vec2,
+  VideoNode,
 } from "./types";
 import { useMoodboardHistoryStore } from "./MoodboardHistoryStore";
 import {
@@ -47,6 +48,13 @@ interface MoodboardState {
   selectAll: () => void;
 
   addImage: (
+    src: string,
+    pos: Vec2,
+    naturalW: number,
+    naturalH: number,
+    mediaId?: string | null,
+  ) => string;
+  addVideo: (
     src: string,
     pos: Vec2,
     naturalW: number,
@@ -151,6 +159,38 @@ export const useMoodboardStore = create<MoodboardState>((set, get) => ({
       mediaId,
       naturalW,
       naturalH,
+    };
+    set((s) => ({
+      nodes: { ...s.nodes, [id]: node },
+      rootOrder: [...s.rootOrder, id],
+      selectedIds: new Set([id]),
+    }));
+    return id;
+  },
+
+  addVideo: (src, pos, naturalW, naturalH, mediaId = null) => {
+    get().pushHistory();
+    const id = uuidv4();
+    const fit = fitWithinBox(naturalW || 320, naturalH || 320, MAX_IMAGE_DIMENSION);
+    const node: VideoNode = {
+      id,
+      kind: "video",
+      parentId: null,
+      x: pos.x - fit.w / 2,
+      y: pos.y - fit.h / 2,
+      width: fit.w,
+      height: fit.h,
+      rotation: 0,
+      zIndex: get().rootOrder.length,
+      src,
+      mediaId,
+      naturalW,
+      naturalH,
+      // Silent looping autoplay is the Milanote-style default — browsers
+      // only permit autoplay when muted, so these three travel together.
+      muted: true,
+      loop: true,
+      autoplay: true,
     };
     set((s) => ({
       nodes: { ...s.nodes, [id]: node },

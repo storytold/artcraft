@@ -23,6 +23,17 @@ export type ImageNode = BaseNode & {
   naturalH: number;
 };
 
+export type VideoNode = BaseNode & {
+  kind: "video";
+  src: string;
+  mediaId: string | null;
+  naturalW: number;
+  naturalH: number;
+  muted: boolean;
+  loop: boolean;
+  autoplay: boolean;
+};
+
 export type TextNode = BaseNode & {
   kind: "text";
   text: string;
@@ -35,7 +46,7 @@ export type GroupNode = BaseNode & {
   childIds: string[];
 };
 
-export type MoodboardNode = ImageNode | TextNode | GroupNode;
+export type MoodboardNode = ImageNode | VideoNode | TextNode | GroupNode;
 
 export interface MoodboardSnapshot {
   nodes: Record<string, MoodboardNode>;
