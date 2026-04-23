@@ -10,7 +10,6 @@ use artcraft_router::api::image_ref::ImageRef;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use artcraft_router::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use artcraft_router::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use enums::common::generation::common_video_model::CommonVideoModel;
@@ -152,7 +151,7 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
 
   // ── Execute generation via the appropriate provider ──
 
-  let gen_result = match execution_provider {
+  let response = match execution_provider {
     Provider::Seedance2Pro => {
       execute_generation_kinovi(
         request, server_state,
@@ -161,26 +160,8 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
       ).await?
     }
     _ => {
-      execute_generation_fal(&plan, request, server_state).await?
+      execute_generation_fal(&plan, server_state).await?
     }
-  };
-
-  // ── Map GenerationResult → GenerateVideoResponse for the shared suffix ──
-
-  let response = if gen_result.is_seedance2pro {
-    GenerateVideoResponse::Seedance2Pro(
-      artcraft_router::generate::generate_video::generate_video_response::Seedance2proVideoResponsePayload {
-        order_id: gen_result.external_job_id,
-        task_id: String::new(),
-      }
-    )
-  } else {
-    GenerateVideoResponse::Fal(
-      artcraft_router::generate::generate_video::generate_video_response::FalVideoResponsePayload {
-        request_id: Some(gen_result.external_job_id),
-        gateway_request_id: None,
-      }
-    )
   };
 
   Ok(PipelineResult { billing, response })

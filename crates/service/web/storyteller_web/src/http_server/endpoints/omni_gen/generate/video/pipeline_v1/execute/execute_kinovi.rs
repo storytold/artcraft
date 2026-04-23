@@ -9,10 +9,11 @@ use log::{error, info, warn};
 use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+use artcraft_router::generate::generate_video::generate_video_response::{GenerateVideoResponse, Seedance2proVideoResponsePayload};
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
-use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_video_model::CommonVideoModel;
+
 use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use seedance2pro_client::requests::generate_video::generate_video::{generate_video, GenerateVideoArgs, KinoviGenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviAspectRatio, KinoviOutputResolution};
 use seedance2pro_client::requests::prepare_file_upload::prepare_file_upload::{
@@ -30,8 +31,6 @@ use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refun
 use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 
-use super::GenerationResult;
-
 pub(crate) async fn execute_generation_kinovi(
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
@@ -39,7 +38,7 @@ pub(crate) async fn execute_generation_kinovi(
   kinovi_character_ids: Option<Vec<String>>,
   maybe_wallet_ledger_entry_token: Option<&WalletLedgerEntryToken>,
   mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-) -> Result<GenerationResult, AdvancedCommonWebError> {
+) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
   let result = execute_generation_kinovi_inner(
     request,
     server_state,
@@ -64,7 +63,7 @@ async fn execute_generation_kinovi_inner(
   server_state: &ServerState,
   media_file_hydration_map: Option<&HashMap<MediaFileToken, Url>>,
   kinovi_character_ids: Option<Vec<String>>,
-) -> Result<GenerationResult, AdvancedCommonWebError> {
+) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
   let session = Seedance2ProSession::from_cookies_string(
     server_state.seedance2pro.cookies.clone()
   );
@@ -94,23 +93,6 @@ async fn execute_generation_kinovi_inner(
   let reference_audio_urls = upload_tokens_to_seedance2pro(
     &session, hydration_map, request.reference_audio_media_tokens.as_deref(),
   ).await?;
-
-  // Determine generation mode.
-  let is_keyframe = request.start_frame_image_media_token.is_some()
-      || request.end_frame_image_media_token.is_some();
-  let is_reference = request.reference_image_media_tokens.as_ref().map_or(false, |t| !t.is_empty())
-      || request.reference_video_media_tokens.as_ref().map_or(false, |t| !t.is_empty())
-      || request.reference_audio_media_tokens.as_ref().map_or(false, |t| !t.is_empty());
-
-  // TODO(bt): Move this logic to `artcraft_router` to the `execute` phase.
-
-  let generation_mode = if is_keyframe {
-    CommonGenerationMode::Keyframe
-  } else if is_reference {
-    CommonGenerationMode::Reference
-  } else {
-    CommonGenerationMode::Text
-  };
 
   // Map aspect ratio / duration / batch from the request.
   let aspect_ratio = map_common_aspect_ratio_to_kinovi_resolution(request.aspect_ratio);
@@ -170,17 +152,10 @@ async fn execute_generation_kinovi_inner(
     gen_response.task_id, gen_response.order_id
   );
 
-  let order_ids: Vec<String> = match gen_response.order_ids {
-    Some(ids) if !ids.is_empty() => ids,
-    _ => vec![gen_response.order_id.clone()],
-  };
-
-  Ok(GenerationResult {
-    external_job_id: gen_response.order_id,
-    is_seedance2pro: true,
-    maybe_seedance_order_ids: Some(order_ids),
-    generation_mode,
-  })
+  Ok(GenerateVideoResponse::Seedance2Pro(Seedance2proVideoResponsePayload {
+    order_id: gen_response.order_id,
+    task_id: gen_response.task_id,
+  }))
 }
 
 // --- Upload helpers ---

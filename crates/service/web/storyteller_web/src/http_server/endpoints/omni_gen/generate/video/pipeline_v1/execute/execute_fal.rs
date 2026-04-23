@@ -2,50 +2,27 @@
 
 use log::warn;
 
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use artcraft_router::generate::generate_video::video_generation_plan::VideoGenerationPlan;
-use enums::common::generation::common_generation_mode::CommonGenerationMode;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::state::server_state::ServerState;
 
-use super::GenerationResult;
-
 /// Execute generation via Fal (the existing path).
 pub(crate) async fn execute_generation_fal(
   plan: &VideoGenerationPlan,
-  request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
-) -> Result<GenerationResult, AdvancedCommonWebError> {
+) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
   let router_client = build_router_client(Provider::Fal, server_state)?;
 
-  let generation_response = plan.generate_video(&router_client)
+  let response = plan.generate_video(&router_client)
     .await
     .map_err(|e| {
       warn!("Video generation failed (Fal): {:?}", e);
       AdvancedCommonWebError::from_error(e)
     })?;
 
-  let external_job_id = match &generation_response {
-    GenerateVideoResponse::Artcraft(p) => p.inference_job_token.as_str().to_string(),
-    GenerateVideoResponse::Muapi(p) => p.request_id.as_str().to_string(),
-    GenerateVideoResponse::Seedance2Pro(p) => p.order_id.clone(),
-    GenerateVideoResponse::Fal(p) => p.request_id.clone().unwrap_or_default(),
-  };
-
-  let generation_mode = if request.start_frame_image_media_token.is_some() {
-    CommonGenerationMode::Keyframe
-  } else {
-    CommonGenerationMode::Text
-  };
-
-  Ok(GenerationResult {
-    external_job_id,
-    is_seedance2pro: false,
-    maybe_seedance_order_ids: None,
-    generation_mode,
-  })
+  Ok(response)
 }
