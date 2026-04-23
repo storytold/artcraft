@@ -15,7 +15,8 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::distill_video_request::distill_video_request;
-use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_generation::execute_generation;
+use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_fal::execute_generation_fal;
+use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_kinovi::execute_generation_kinovi;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV1Args<'a> {
@@ -54,10 +55,19 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
   let cost = distilled.cost.cost_in_credits.unwrap_or(0);
   let billing = bill_wallet(user_token, cost, mysql_connection).await?;
 
-  let gen_result = execute_generation(
-    &distilled, request, server_state, media_file_hydration_map.as_ref(),
-    kinovi_character_ids, billing.maybe_wallet_ledger_entry_token.as_ref(), mysql_connection,
-  ).await?;
+  // Execute generation via the appropriate provider.
+  let gen_result = match distilled.execution_provider {
+    Provider::Seedance2Pro => {
+      execute_generation_kinovi(
+        &distilled, request, server_state,
+        media_file_hydration_map.as_ref(), kinovi_character_ids,
+        billing.maybe_wallet_ledger_entry_token.as_ref(), mysql_connection,
+      ).await?
+    }
+    _ => {
+      execute_generation_fal(&distilled, request, server_state).await?
+    }
+  };
 
   // Map v1 GenerationResult → GenerateVideoResponse for the shared suffix
   let response = if gen_result.is_seedance2pro {

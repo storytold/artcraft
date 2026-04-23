@@ -12,10 +12,10 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_rou
 use crate::state::server_state::ServerState;
 
 use super::super::distill_video_request::DistilledVideoRequest;
-use super::execute_generation::GenerationResult;
+use super::GenerationResult;
 
 /// Execute generation via Fal (the existing path).
-pub(super) async fn execute_generation_fal(
+pub(crate) async fn execute_generation_fal(
   distilled: &DistilledVideoRequest,
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,

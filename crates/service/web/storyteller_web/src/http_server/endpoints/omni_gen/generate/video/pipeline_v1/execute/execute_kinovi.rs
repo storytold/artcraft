@@ -31,9 +31,9 @@ use crate::state::server_state::ServerState;
 use crate::util::http_download_url_to_bytes::http_download_url_to_bytes;
 
 use super::super::distill_video_request::DistilledVideoRequest;
-use super::execute_generation::GenerationResult;
+use super::GenerationResult;
 
-pub(super) async fn execute_generation_kinovi(
+pub(crate) async fn execute_generation_kinovi(
   _distilled: &DistilledVideoRequest,
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
