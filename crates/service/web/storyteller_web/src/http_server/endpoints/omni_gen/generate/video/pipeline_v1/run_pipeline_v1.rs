@@ -107,7 +107,7 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
     reference_images: lookup_urls(media_url_map, request.reference_image_media_tokens.as_ref()).map(ImageListRef::Urls),
     reference_videos: lookup_urls(media_url_map, request.reference_video_media_tokens.as_ref()).map(VideoListRef::Urls),
     reference_audio: lookup_urls(media_url_map, request.reference_audio_media_tokens.as_ref()).map(AudioListRef::Urls),
-    reference_character_tokens: None,
+    reference_character_tokens: initial.reference_character_tokens.clone(),
     resolution: initial.resolution,
     aspect_ratio: initial.aspect_ratio,
     duration_seconds: initial.duration_seconds,
