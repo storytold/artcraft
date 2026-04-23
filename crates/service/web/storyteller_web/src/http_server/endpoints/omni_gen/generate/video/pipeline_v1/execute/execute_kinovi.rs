@@ -155,6 +155,8 @@ async fn execute_generation_kinovi_inner(
   Ok(GenerateVideoResponse::Seedance2Pro(Seedance2proVideoResponsePayload {
     order_id: gen_response.order_id,
     task_id: gen_response.task_id,
+    maybe_order_ids: gen_response.order_ids,
+    maybe_task_ids: gen_response.task_ids,
   }))
 }
 

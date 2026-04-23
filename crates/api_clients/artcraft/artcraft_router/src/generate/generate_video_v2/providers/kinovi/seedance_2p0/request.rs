@@ -27,6 +27,8 @@ impl KinoviSeedance2p0RequestState {
     Ok(GenerateVideoResponse::Seedance2Pro(Seedance2proVideoResponsePayload {
       order_id: response.order_id,
       task_id: response.task_id,
+      maybe_order_ids: response.order_ids,
+      maybe_task_ids: response.task_ids,
     }))
   }
 }
