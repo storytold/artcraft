@@ -16,7 +16,8 @@ export type TabId =
   | "REMOVE_BACKGROUND"
   | "ANGLES"
   | "STORYBOARD"
-  | "MOODBOARD";
+  | "MOODBOARD"
+  | "MOODBOARD_HTML";
 
 const DEFAULT_TAB: TabId = "IMAGE";
 

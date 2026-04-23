@@ -20,9 +20,11 @@ import { RemoveBackground } from "../PageRemoveBackground";
 import { Angles } from "../PageAngles";
 import { Storyboard } from "../PageStoryboard";
 import { Moodboard } from "../PageMoodboard";
+import { MoodboardHtml } from "../PageMoodboardHtml";
 import {
   useStoryboardPageEnabled,
   useMoodboardPageEnabled,
+  useMoodboardHtmlPageEnabled,
 } from "@storyteller/ui-settings-modal";
 
 import {
@@ -116,6 +118,7 @@ export const PageEditor = () => {
   const tabStore = useTabStore();
   const storyboardPageEnabled = useStoryboardPageEnabled();
   const moodboardPageEnabled = useMoodboardPageEnabled();
+  const moodboardHtmlPageEnabled = useMoodboardHtmlPageEnabled();
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };
@@ -393,23 +396,29 @@ export const PageEditor = () => {
       // 2D Drag and Drop Logic
     } else if (
       tabStore.activeTabId === "2D" ||
-      tabStore.activeTabId === "MOODBOARD"
+      tabStore.activeTabId === "MOODBOARD" ||
+      tabStore.activeTabId === "MOODBOARD_HTML"
     ) {
       const eventName =
-        tabStore.activeTabId === "MOODBOARD"
+        tabStore.activeTabId === "MOODBOARD" ||
+        tabStore.activeTabId === "MOODBOARD_HTML"
           ? "gallery-moodboard-drop"
           : "gallery-2d-drop";
+      const activeTab = tabStore.activeTabId;
       handler = onImageDrop(
         (item: GalleryItem, position: { x: number; y: number }) => {
-          // Find the main Konva canvas element - get the first canvas (left panel)
-          const canvasElements = document.querySelectorAll("canvas");
-          const canvasElement = canvasElements[0];
-          if (!canvasElement) {
-            console.error("Could not find canvas element for canvas drop");
+          // Find the drop target element. For the HTML moodboard tab there's
+          // no <canvas>; use the HTML stage container element instead.
+          const target: Element | null =
+            activeTab === "MOODBOARD_HTML"
+              ? document.querySelector("[data-moodboard-html-stage]")
+              : document.querySelectorAll("canvas")[0] ?? null;
+          if (!target) {
+            console.error("Could not find drop target element for canvas drop");
             return;
           }
 
-          const rect = canvasElement.getBoundingClientRect();
+          const rect = target.getBoundingClientRect();
           const canvasX = position.x - rect.left;
           const canvasY = position.y - rect.top;
 
@@ -652,6 +661,11 @@ export const PageEditor = () => {
       {tabStore.activeTabId == "MOODBOARD" && moodboardPageEnabled && (
         <div>
           <Moodboard />
+        </div>
+      )}
+      {tabStore.activeTabId == "MOODBOARD_HTML" && moodboardHtmlPageEnabled && (
+        <div>
+          <MoodboardHtml />
         </div>
       )}
     </div>

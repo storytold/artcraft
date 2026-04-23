@@ -4,4 +4,5 @@ export {
   useExperimentalStore,
   useStoryboardPageEnabled,
   useMoodboardPageEnabled,
+  useMoodboardHtmlPageEnabled,
 } from './lib/experimental-store';
