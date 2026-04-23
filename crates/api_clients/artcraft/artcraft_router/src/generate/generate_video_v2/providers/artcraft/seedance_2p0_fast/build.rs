@@ -36,10 +36,9 @@ pub fn build_artcraft_seedance_2p0_fast(mut builder: GenerateVideoRequestBuilder
   let idempotency_token = builder.get_or_generate_idempotency_token();
 
   let request = OmniGenVideoCostAndGenerateRequest {
-    idempotency_token: Some(idempotency_token),
     model: Some(CommonVideoModelEnum::Seedance2p0Fast),
+    idempotency_token: Some(idempotency_token),
     prompt,
-    negative_prompt: None,
     start_frame_image_media_token: start_frame,
     end_frame_image_media_token: end_frame,
     reference_image_media_tokens: reference_images,
@@ -48,9 +47,10 @@ pub fn build_artcraft_seedance_2p0_fast(mut builder: GenerateVideoRequestBuilder
     reference_character_tokens: reference_characters,
     resolution,
     aspect_ratio,
-    quality: None,
     duration_seconds: duration_seconds.map(|d| d as u16),
     video_batch_count: Some(batch_count),
+    negative_prompt: None,
+    quality: None,
     generate_audio: None,
   };
 
