@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use log::{error, info, warn};
-use sqlx::pool::PoolConnection;
 use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
@@ -19,15 +18,16 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wall
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::http_server::endpoints::omni_gen::generate::video::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_result::PipelineResult;
-use crate::http_server::endpoints::omni_gen::generate::video::request_helper::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
 use crate::state::server_state::ServerState;
 
 pub async fn run_pipeline_v2(
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
-  mysql_connection: &mut PoolConnection<sqlx::MySql>,
+  mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
   user_token: &UserToken,
   media_file_hydration_map: &Option<HashMap<MediaFileToken, Url>>,
+  media_file_to_url_map: &Option<HashMap<MediaFileToken, String>>,
+  kinovi_character_id_map: &Option<HashMap<CharacterToken, String>>,
 ) -> Result<PipelineResult, AdvancedCommonWebError> {
   // 1. Build execution request (provider = Seedance2Pro for Kinovi)
   let mut exec_builder = hydrate_to_router_request(request)?;
@@ -62,28 +62,16 @@ pub async fn run_pipeline_v2(
   // 3. Bill wallet
   let billing = bill_wallet(user_token, cost, mysql_connection).await?;
 
-  // 4. Build context maps for draft finalization
-  let media_file_urls_as_strings: Option<HashMap<MediaFileToken, String>> =
-    media_file_hydration_map.as_ref().map(|map| {
-      map.iter().map(|(k, v)| (k.clone(), v.to_string())).collect()
-    });
-
-  let kinovi_character_id_map: Option<HashMap<CharacterToken, String>> =
-    resolve_kinovi_character_ids(
-      request.reference_character_tokens.as_deref(),
-      mysql_connection,
-    ).await?;
-
-  // 5. Upload media (if draft) and generate video.
+  // 4. Upload media (if draft) and generate video.
   //    The entire block is wrapped so Kinovi failures trigger a refund.
   let result = upload_and_generate(
     draft_or_request,
     server_state,
-    media_file_urls_as_strings.as_ref(),
+    media_file_to_url_map.as_ref(),
     kinovi_character_id_map.as_ref(),
   ).await;
 
-  // 6. On failure, refund wallet for Kinovi requests.
+  // 5. On failure, refund wallet for Kinovi requests.
   if let Err(ref err) = result {
     if matches!(provider, Provider::Seedance2Pro) {
       if let Some(ledger_entry_token) = billing.maybe_wallet_ledger_entry_token.as_ref() {

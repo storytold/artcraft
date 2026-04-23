@@ -21,12 +21,14 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
 };
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
+use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_fal_job::insert_fal_job;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_seedance2pro_jobs::insert_seedance2pro_jobs;
+use crate::http_server::endpoints::omni_gen::generate::video::request_helper::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::run_pipeline_v1;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::run_pipeline_v2;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
@@ -144,6 +146,19 @@ pub async fn omni_gen_video_generate_handler(
     }
   };
 
+  // ==================== RESOLVE MEDIA, CHARACTERS ==================== //
+
+  let media_file_to_url_map: Option<HashMap<MediaFileToken, String>> =
+    media_file_hydration_map.as_ref().map(|map| {
+      map.iter().map(|(k, v)| (k.clone(), v.to_string())).collect()
+    });
+
+  let kinovi_character_id_map: Option<HashMap<CharacterToken, String>> =
+    resolve_kinovi_character_ids(
+      request.reference_character_tokens.as_deref(),
+      &mut mysql_connection,
+    ).await?;
+
   // ==================== PIPELINE DISPATCH ==================== //
 
   let use_v2 = matches!(
@@ -152,7 +167,10 @@ pub async fn omni_gen_video_generate_handler(
   );
 
   let pipeline_result = if use_v2 {
-    run_pipeline_v2(&request, &server_state, &mut mysql_connection, user_token, &media_file_hydration_map).await?
+    run_pipeline_v2(
+      &request, &server_state, &mut mysql_connection, user_token,
+      &media_file_hydration_map, &media_file_to_url_map, &kinovi_character_id_map,
+    ).await?
   } else {
     run_pipeline_v1(&request, &server_state, &mut mysql_connection, user_token, &media_file_hydration_map).await?
   };
