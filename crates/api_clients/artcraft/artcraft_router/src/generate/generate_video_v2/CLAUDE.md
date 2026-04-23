@@ -71,10 +71,15 @@ generate_video_v2/
 ├── video_generation_request.rs         ← VideoGenerationRequest enum
 └── providers/
     ├── artcraft/                       ← Artcraft provider (uses media file tokens directly)
-    │   └── seedance_2p0/              ← Seedance 2.0 Pro model (skips draft, returns Request directly)
+    │   ├── seedance_2p0/              ← Seedance 2.0 Pro model (skips draft, returns Request directly)
+    │   │   ├── mod.rs
+    │   │   ├── build.rs               ← builder → Request conversion + plan helpers
+    │   │   ├── cost.rs                ← standalone cost estimation (independent of seedance2pro_client)
+    │   │   └── request.rs             ← request state + send() via Artcraft multi-function API
+    │   └── seedance_2p0_fast/         ← Seedance 2.0 Fast model (skips draft, 480p/720p only)
     │       ├── mod.rs
-    │       ├── build.rs               ← builder → Request conversion + plan helpers
-    │       ├── cost.rs                ← standalone cost estimation (independent of seedance2pro_client)
+    │       ├── build.rs               ← builder → Request conversion + plan helpers (no 1080p)
+    │       ├── cost.rs                ← standalone cost estimation with Fast-specific pricing
     │       └── request.rs             ← request state + send() via Artcraft omni-gen API
     └── kinovi/                         ← Kinovi/Seedance2Pro provider
         ├── mod.rs
