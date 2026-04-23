@@ -17,3 +17,4 @@ export * from "./UserBookmarksApi";
 export * from "./UsersApi";
 export * from "./VideoApi";
 export * from "./WeightsApi";
+export * from "./VersionApi";
