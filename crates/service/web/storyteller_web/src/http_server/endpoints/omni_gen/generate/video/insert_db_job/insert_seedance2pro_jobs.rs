@@ -27,12 +27,19 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
     mut shared,
   } = args;
 
-  let fallback_ids = vec![primary_order_id.to_string()];
-  let order_ids = maybe_additional_order_ids.unwrap_or(&fallback_ids);
+  // Build a deduplicated list with primary_order_id first.
+  let mut all_order_ids = vec![primary_order_id.to_string()];
+  if let Some(additional) = maybe_additional_order_ids {
+    for id in additional {
+      if id != primary_order_id {
+        all_order_ids.push(id.clone());
+      }
+    }
+  }
 
-  let mut all_job_tokens: Vec<InferenceJobToken> = Vec::with_capacity(order_ids.len());
+  let mut all_job_tokens: Vec<InferenceJobToken> = Vec::with_capacity(all_order_ids.len());
 
-  for (i, order_id) in order_ids.iter().enumerate() {
+  for (i, order_id) in all_order_ids.iter().enumerate() {
     let job_token = if i == 0 { shared.apriori_job_token.clone() } else { InferenceJobToken::generate() };
     let idempotency_str = if i == 0 { shared.idempotency_token.to_string() } else { format!("{}-batch-{}", shared.idempotency_token, i) };
 
