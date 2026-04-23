@@ -5,7 +5,7 @@ use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_router::api::provider::Provider;
-use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
+use artcraft_router::generate::generate_video::generate_video_response::{FalVideoResponsePayload, GenerateVideoResponse, Seedance2proVideoResponsePayload};
 use enums::common::generation::common_video_model::CommonVideoModel;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
@@ -72,14 +72,14 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
   // Map v1 GenerationResult → GenerateVideoResponse for the shared suffix
   let response = if gen_result.is_seedance2pro {
     GenerateVideoResponse::Seedance2Pro(
-      artcraft_router::generate::generate_video::generate_video_response::Seedance2proVideoResponsePayload {
+      Seedance2proVideoResponsePayload {
         order_id: gen_result.external_job_id,
-        task_id: String::new(),
+        task_id: String::new(), // TODO/FIXME/WTF: THIS IS BROKEN AS HELL
       }
     )
   } else {
     GenerateVideoResponse::Fal(
-      artcraft_router::generate::generate_video::generate_video_response::FalVideoResponsePayload {
+      FalVideoResponsePayload {
         request_id: Some(gen_result.external_job_id),
         gateway_request_id: None,
       }
