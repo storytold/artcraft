@@ -176,12 +176,14 @@ pub async fn omni_gen_video_generate_handler(
       kinovi_character_id_map: &kinovi_character_id_map,
     }).await?
   } else {
+    let empty_map = HashMap::new();
+    let media_url_map = media_file_hydration_map.as_ref().unwrap_or(&empty_map);
     run_pipeline_v1(RunPipelineV1Args {
       request: &request,
       server_state: &server_state,
       mysql_connection: &mut mysql_connection,
       user_token,
-      media_file_hydration_map: &media_file_hydration_map,
+      media_url_map,
       kinovi_character_id_map: &kinovi_character_id_map,
     }).await?
   };

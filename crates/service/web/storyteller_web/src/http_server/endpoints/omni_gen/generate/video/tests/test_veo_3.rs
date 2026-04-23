@@ -69,7 +69,7 @@ mod tests {
 
   fn distill_text(request: &OmniGenVideoCostAndGenerateRequest) -> DistilledVideoRequest {
     let empty: HashMap<MediaFileToken, Url> = HashMap::new();
-    distill_video_request(request, Some(&empty), Provider::Fal)
+    distill_video_request(request, &empty, Provider::Fal)
       .expect("distill should succeed for Veo 3 (text)")
   }
 
@@ -77,7 +77,7 @@ mod tests {
     request: &OmniGenVideoCostAndGenerateRequest,
     hydration: &HashMap<MediaFileToken, Url>,
   ) -> DistilledVideoRequest {
-    distill_video_request(request, Some(hydration), Provider::Fal)
+    distill_video_request(request, hydration, Provider::Fal)
       .expect("distill should succeed for Veo 3 (image)")
   }
 

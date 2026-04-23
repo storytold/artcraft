@@ -83,7 +83,7 @@ mod tests {
 
   fn distill_text(request: &OmniGenVideoCostAndGenerateRequest) -> DistilledVideoRequest {
     let empty: HashMap<MediaFileToken, Url> = HashMap::new();
-    distill_video_request(request, Some(&empty), Provider::Seedance2Pro)
+    distill_video_request(request, &empty, Provider::Seedance2Pro)
       .expect("distill should succeed for Seedance 2.0 (text)")
   }
 
@@ -91,7 +91,7 @@ mod tests {
     request: &OmniGenVideoCostAndGenerateRequest,
     hydration: &HashMap<MediaFileToken, Url>,
   ) -> DistilledVideoRequest {
-    distill_video_request(request, Some(hydration), Provider::Seedance2Pro)
+    distill_video_request(request, hydration, Provider::Seedance2Pro)
       .expect("distill should succeed for Seedance 2.0 (with media)")
   }
 
