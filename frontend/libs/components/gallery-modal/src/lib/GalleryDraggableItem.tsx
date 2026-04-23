@@ -124,8 +124,6 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
-    // Disable dragging for video items, but allow clicks in select mode
-    if (item.mediaClass === "video" && mode !== "select") return;
     // In bulk selection mode, skip drag — clicks toggle selection
     if (bulkSelectionMode) {
       dragStarted.current = false;
@@ -186,7 +184,7 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           : disableTooltipAndBadge
             ? "border-transparent hover:border-primary/80"
             : "border-transparent hover:border-primary",
-        mode === "select" || item.mediaClass === "video" || bulkSelectionMode
+        mode === "select" || bulkSelectionMode
           ? "cursor-pointer"
           : disableTooltipAndBadge
             ? "cursor-pointer"
@@ -346,16 +344,14 @@ export const GalleryDraggableItem: React.FC<GalleryDraggableItemProps> = ({
           className="-mt-3 bg-ui-controls text-base-fg border border-ui-panel-border"
           content={
             <div className="flex flex-col items-center text-xs whitespace-nowrap">
-              {item.mediaClass !== "video" && (
-                <span>
-                  <span className="font-bold">Drag</span>
-                  <span className="opacity-50">
-                    {item.mediaClass === "dimensional"
-                      ? " to add to scene"
-                      : " to add"}
-                  </span>
+              <span>
+                <span className="font-bold">Drag</span>
+                <span className="opacity-50">
+                  {item.mediaClass === "dimensional"
+                    ? " to add to scene"
+                    : " to add"}
                 </span>
-              )}
+              </span>
               <span>
                 <span className="font-bold">Click</span>
                 <span className="opacity-50"> to view</span>

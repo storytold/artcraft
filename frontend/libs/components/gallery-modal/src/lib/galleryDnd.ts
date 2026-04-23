@@ -82,7 +82,8 @@ function onPointerUp(event: PointerEvent) {
     dragState.item &&
     dragState.isDragging &&
     (dragState.item.mediaClass === "image" ||
-      dragState.item.mediaClass === "dimensional")
+      dragState.item.mediaClass === "dimensional" ||
+      dragState.item.mediaClass === "video")
   ) {
     emitImageDrop(dragState.item, { x: event.pageX, y: event.pageY });
   }
