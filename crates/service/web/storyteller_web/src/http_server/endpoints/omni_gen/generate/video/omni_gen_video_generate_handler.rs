@@ -26,6 +26,7 @@ use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_fal_job::insert_fal_job;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_seedance2pro_jobs::insert_seedance2pro_jobs;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
@@ -159,6 +160,10 @@ pub async fn omni_gen_video_generate_handler(
       &mut mysql_connection,
     ).await?;
 
+  // ==================== HYDRATE ROUTER REQUEST ==================== //
+
+  let router_builder = hydrate_to_router_request(&request)?;
+
   // ==================== PIPELINE DISPATCH ==================== //
 
   let use_v2 = match request.model {
@@ -169,7 +174,7 @@ pub async fn omni_gen_video_generate_handler(
 
   let pipeline_result = if use_v2 {
     run_pipeline_v2(RunPipelineV2Args {
-      request: &request,
+      router_builder: &router_builder,
       server_state: &server_state,
       mysql_connection: &mut mysql_connection,
       user_token,
@@ -179,6 +184,7 @@ pub async fn omni_gen_video_generate_handler(
   } else {
     run_pipeline_v1(RunPipelineV1Args {
       request: &request,
+      router_builder: &router_builder,
       server_state: &server_state,
       mysql_connection: &mut mysql_connection,
       user_token,
@@ -208,8 +214,8 @@ pub async fn omni_gen_video_generate_handler(
     maybe_negative_prompt: request.negative_prompt.as_deref(),
     maybe_other_args: None,
     maybe_generation_mode: None,
-    maybe_aspect_ratio: None,
-    maybe_resolution: None,
+    maybe_aspect_ratio: request.aspect_ratio,
+    maybe_resolution: request.resolution,
     maybe_batch_count: request.video_batch_count.map(|c| c as u8),
     maybe_generate_audio: request.generate_audio,
     maybe_duration_seconds: request.duration_seconds.map(|d| d as u32),

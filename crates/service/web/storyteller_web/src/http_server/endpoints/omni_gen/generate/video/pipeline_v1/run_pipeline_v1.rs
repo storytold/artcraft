@@ -17,7 +17,6 @@ use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
-use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_fal::execute_generation_fal;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_kinovi::execute_generation_kinovi;
@@ -27,6 +26,7 @@ use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV1Args<'a> {
   pub request: &'a OmniGenVideoCostAndGenerateRequest,
+  pub router_builder: &'a GenerateVideoRequestBuilder,
   pub server_state: &'a ServerState,
   pub mysql_connection: &'a mut sqlx::pool::PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
@@ -39,6 +39,7 @@ pub struct RunPipelineV1Args<'a> {
 pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
   let RunPipelineV1Args {
     request,
+    router_builder,
     server_state,
     mysql_connection,
     user_token,
@@ -59,12 +60,10 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
 
   // ── Cost estimate (Artcraft provider — what we bill on) ──
 
-  let initial = hydrate_to_router_request(request)?;
-
   let cost = {
     let cost_request = GenerateVideoRequestBuilder {
       provider: Provider::Artcraft,
-      ..initial.clone()
+      ..router_builder.clone()
     };
     let cost_plan = cost_request.build().map_err(|e| {
       warn!("Failed to build cost plan during video distillation: {}", e);
@@ -87,23 +86,23 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
   // ── Build the execution request ──
 
   let exec_request = GenerateVideoRequestBuilder {
-    model: initial.model,
+    model: router_builder.model,
     provider: execution_provider,
-    prompt: initial.prompt,
-    negative_prompt: initial.negative_prompt,
+    prompt: router_builder.prompt.clone(),
+    negative_prompt: router_builder.negative_prompt.clone(),
     start_frame,
     end_frame,
     reference_images,
     reference_videos,
     reference_audio,
-    reference_character_tokens: initial.reference_character_tokens.clone(),
-    resolution: initial.resolution,
-    aspect_ratio: initial.aspect_ratio,
-    duration_seconds: initial.duration_seconds,
-    video_batch_count: initial.video_batch_count,
-    generate_audio: initial.generate_audio,
-    request_mismatch_mitigation_strategy: initial.request_mismatch_mitigation_strategy,
-    idempotency_token: initial.idempotency_token,
+    reference_character_tokens: router_builder.reference_character_tokens.clone(),
+    resolution: router_builder.resolution,
+    aspect_ratio: router_builder.aspect_ratio,
+    duration_seconds: router_builder.duration_seconds,
+    video_batch_count: router_builder.video_batch_count,
+    generate_audio: router_builder.generate_audio,
+    request_mismatch_mitigation_strategy: router_builder.request_mismatch_mitigation_strategy,
+    idempotency_token: router_builder.idempotency_token.clone(),
   };
 
   let plan = exec_request.build().map_err(|e| {

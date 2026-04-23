@@ -2,14 +2,12 @@ use std::collections::HashMap;
 
 use log::{error, info, warn};
 use sqlx::pool::PoolConnection;
-use url::Url;
-
-use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+use artcraft_router::api::common_video_model::CommonVideoModel;
 use artcraft_router::api::provider::Provider;
+use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use artcraft_router::generate::generate_video_v2::video_generation_draft_context::VideoGenerationDraftContext;
 use artcraft_router::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
-use enums::common::generation::common_video_model::CommonVideoModel;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 use tokens::tokens::users::UserToken;
@@ -18,12 +16,11 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
-use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {
-  pub request: &'a OmniGenVideoCostAndGenerateRequest,
+  pub router_builder: &'a GenerateVideoRequestBuilder,
   pub server_state: &'a ServerState,
   pub mysql_connection: &'a mut PoolConnection<sqlx::MySql>,
   pub user_token: &'a UserToken,
@@ -33,7 +30,7 @@ pub struct RunPipelineV2Args<'a> {
 
 pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
   let RunPipelineV2Args {
-    request,
+    router_builder,
     server_state,
     mysql_connection,
     user_token,
@@ -41,14 +38,14 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     kinovi_character_id_map,
   } = args;
 
-  let provider = match request.model {
-    Some(CommonVideoModel::Seedance2p0) => Provider::Seedance2Pro,
-    Some(CommonVideoModel::Seedance2p0Fast) => Provider::Seedance2Pro,
+  let provider = match router_builder.model {
+    CommonVideoModel::Seedance2p0 => Provider::Seedance2Pro,
+    CommonVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
     _ => Provider::Fal,
   };
 
   // 1. Build execution request
-  let mut exec_builder = hydrate_to_router_request(request)?;
+  let mut exec_builder = router_builder.clone();
   exec_builder.provider = provider;
 
   let draft_or_request = exec_builder.build2()
@@ -58,7 +55,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
       })?;
 
   // 2. Calculate cost (swap provider to Artcraft for billing)
-  let mut cost_builder = hydrate_to_router_request(request)?;
+  let mut cost_builder = router_builder.clone();
   cost_builder.provider = Provider::Artcraft;
 
   let cost = cost_builder.build2()
