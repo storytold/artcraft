@@ -4,3 +4,4 @@ mod request_helper;
 
 #[cfg(test)]
 mod tests;
+pub mod pipeline_v2;
