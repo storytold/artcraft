@@ -72,38 +72,19 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
     cost_plan.estimate_costs()
   };
 
-  // ── Resolve media tokens → URLs from handler map ──
+  // ── Build the execution request (clone builder, override provider + media URLs) ──
 
   let empty_map = HashMap::new();
   let url_map = media_url_map.as_ref().unwrap_or(&empty_map);
 
-  let start_frame = lookup_url(url_map, request.start_frame_image_media_token.as_ref()).map(ImageRef::Url);
-  let end_frame = lookup_url(url_map, request.end_frame_image_media_token.as_ref()).map(ImageRef::Url);
-  let reference_images = lookup_urls(url_map, request.reference_image_media_tokens.as_ref()).map(ImageListRef::Urls);
-  let reference_videos = lookup_urls(url_map, request.reference_video_media_tokens.as_ref()).map(VideoListRef::Urls);
-  let reference_audio = lookup_urls(url_map, request.reference_audio_media_tokens.as_ref()).map(AudioListRef::Urls);
+  let mut exec_request = router_builder.clone();
+  exec_request.provider = execution_provider;
 
-  // ── Build the execution request ──
-
-  let exec_request = GenerateVideoRequestBuilder {
-    model: router_builder.model,
-    provider: execution_provider,
-    prompt: router_builder.prompt.clone(),
-    negative_prompt: router_builder.negative_prompt.clone(),
-    start_frame,
-    end_frame,
-    reference_images,
-    reference_videos,
-    reference_audio,
-    reference_character_tokens: router_builder.reference_character_tokens.clone(),
-    resolution: router_builder.resolution,
-    aspect_ratio: router_builder.aspect_ratio,
-    duration_seconds: router_builder.duration_seconds,
-    video_batch_count: router_builder.video_batch_count,
-    generate_audio: router_builder.generate_audio,
-    request_mismatch_mitigation_strategy: router_builder.request_mismatch_mitigation_strategy,
-    idempotency_token: router_builder.idempotency_token.clone(),
-  };
+  exec_request.start_frame = lookup_url(url_map, request.start_frame_image_media_token.as_ref()).map(ImageRef::Url);
+  exec_request.end_frame = lookup_url(url_map, request.end_frame_image_media_token.as_ref()).map(ImageRef::Url);
+  exec_request.reference_images = lookup_urls(url_map, request.reference_image_media_tokens.as_ref()).map(ImageListRef::Urls);
+  exec_request.reference_videos = lookup_urls(url_map, request.reference_video_media_tokens.as_ref()).map(VideoListRef::Urls);
+  exec_request.reference_audio = lookup_urls(url_map, request.reference_audio_media_tokens.as_ref()).map(AudioListRef::Urls);
 
   let plan = exec_request.build().map_err(|e| {
     warn!("Failed to build video generation plan during distillation: {}", e);
