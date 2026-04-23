@@ -50,8 +50,8 @@ pub fn build_artcraft_seedance_2p0_fast(mut builder: GenerateVideoRequestBuilder
     duration_seconds: duration_seconds.map(|d| d as u16),
     video_batch_count: Some(batch_count),
     negative_prompt: None,
-    quality: None,
     generate_audio: None,
+    quality: None,
   };
 
   let state = ArtcraftSeedance2p0FastRequestState { request };

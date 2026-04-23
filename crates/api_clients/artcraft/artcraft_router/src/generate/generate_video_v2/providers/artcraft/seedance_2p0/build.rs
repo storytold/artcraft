@@ -1,7 +1,7 @@
-use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
-  Seedance2p0AspectRatio, Seedance2p0BatchCount, Seedance2p0MultiFunctionVideoGenRequest,
-  Seedance2p0OutputResolution,
-};
+use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
+use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
+use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
 use crate::api::audio_list_ref::AudioListRef;
 use crate::api::character_list_ref::CharacterListRef;
@@ -22,39 +22,43 @@ pub fn build_artcraft_seedance_2p0(mut builder: GenerateVideoRequestBuilder) -> 
   let strategy = builder.request_mismatch_mitigation_strategy;
 
   let aspect_ratio = plan_aspect_ratio(builder.aspect_ratio.take(), strategy)?;
-  let output_resolution = plan_output_resolution(builder.resolution.take(), strategy)?;
+  let resolution = plan_output_resolution(builder.resolution.take(), strategy)?;
   let batch_count = plan_batch_count(builder.video_batch_count.take(), strategy)?;
   let duration_seconds = plan_duration(builder.duration_seconds.take(), strategy)?;
   let prompt = builder.prompt.take();
 
-  let start_frame_media_token = resolve_image_ref(builder.start_frame.take())?;
-  let end_frame_media_token = resolve_image_ref(builder.end_frame.take())?;
-  let reference_image_media_tokens = resolve_image_list_ref(builder.reference_images.take())?;
-  let reference_video_media_tokens = resolve_video_list_ref(builder.reference_videos.take())?;
-  let reference_audio_media_tokens = resolve_audio_list_ref(builder.reference_audio.take())?;
-  let reference_character_tokens = resolve_character_list_ref(builder.reference_character_tokens.take());
+  let start_frame = resolve_image_ref(builder.start_frame.take())?;
+  let end_frame = resolve_image_ref(builder.end_frame.take())?;
+  let reference_images = resolve_image_list_ref(builder.reference_images.take())?;
+  let reference_videos = resolve_video_list_ref(builder.reference_videos.take())?;
+  let reference_audio = resolve_audio_list_ref(builder.reference_audio.take())?;
+  let reference_characters = resolve_character_list_ref(builder.reference_character_tokens.take());
   let idempotency_token = builder.get_or_generate_idempotency_token();
 
-  let request = Seedance2p0MultiFunctionVideoGenRequest {
-    uuid_idempotency_token: idempotency_token,
+  let request = OmniGenVideoCostAndGenerateRequest {
+    model: Some(CommonVideoModelEnum::Seedance2p0),
+    idempotency_token: Some(idempotency_token),
     prompt,
-    start_frame_media_token,
-    end_frame_media_token,
-    reference_image_media_tokens,
-    reference_video_media_tokens,
-    reference_audio_media_tokens,
-    reference_character_tokens,
+    start_frame_image_media_token: start_frame,
+    end_frame_image_media_token: end_frame,
+    reference_image_media_tokens: reference_images,
+    reference_video_media_tokens: reference_videos,
+    reference_audio_media_tokens: reference_audio,
+    reference_character_tokens: reference_characters,
+    resolution,
     aspect_ratio,
-    output_resolution,
-    duration_seconds,
-    batch_count: Some(batch_count),
+    duration_seconds: duration_seconds.map(|d| d as u16),
+    video_batch_count: Some(batch_count),
+    negative_prompt: None,
+    generate_audio: None,
+    quality: None,
   };
 
   let state = ArtcraftSeedance2p0RequestState { request };
   Ok(VideoGenerationDraftOrRequest::Request(VideoGenerationRequest::ArtcraftSeedance2p0(state)))
 }
 
-// ── Resolve helpers ──
+// -- Resolve helpers --
 
 fn resolve_image_ref(
   image_ref: Option<ImageRef>,
@@ -113,38 +117,30 @@ fn resolve_character_list_ref(
   }
 }
 
-// ── Plan helpers ──
+// -- Plan helpers --
 
-// Supported aspect ratios and their AR values (width / height):
-//   Portrait9x16 = 0.5625, Portrait3x4 = 0.75, Square1x1 = 1.0, Standard4x3 = 1.33, Landscape16x9 = 1.78
-//
-// All supported ratios cost the same, so PayMoreUpgrade and PayLessDowngrade both
-// select the nearest match rather than rounding in a specific direction.
 fn plan_aspect_ratio(
   aspect_ratio: Option<CommonAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<Seedance2p0AspectRatio>, ArtcraftRouterError> {
+) -> Result<Option<CommonAspectRatioEnum>, ArtcraftRouterError> {
   match aspect_ratio {
-    // No preference or auto — let the model decide
     None
     | Some(CommonAspectRatio::Auto)
     | Some(CommonAspectRatio::Auto2k)
     | Some(CommonAspectRatio::Auto4k) => Ok(None),
 
-    // Direct mappings
     Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => {
-      Ok(Some(Seedance2p0AspectRatio::Landscape16x9))
+      Ok(Some(CommonAspectRatioEnum::WideSixteenByNine))
     }
     Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => {
-      Ok(Some(Seedance2p0AspectRatio::Portrait9x16))
+      Ok(Some(CommonAspectRatioEnum::TallNineBySixteen))
     }
     Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => {
-      Ok(Some(Seedance2p0AspectRatio::Square1x1))
+      Ok(Some(CommonAspectRatioEnum::Square))
     }
-    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(Seedance2p0AspectRatio::Standard4x3)),
-    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(Seedance2p0AspectRatio::Portrait3x4)),
+    Some(CommonAspectRatio::WideFourByThree) => Ok(Some(CommonAspectRatioEnum::WideFourByThree)),
+    Some(CommonAspectRatio::TallThreeByFour) => Ok(Some(CommonAspectRatioEnum::TallThreeByFour)),
 
-    // Mismatches — apply strategy
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -160,16 +156,15 @@ fn plan_aspect_ratio(
   }
 }
 
-/// Pick the nearest supported aspect ratio by AR value (width / height).
-fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> Seedance2p0AspectRatio {
+fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> CommonAspectRatioEnum {
   match aspect_ratio {
-    CommonAspectRatio::WideFiveByFour => Seedance2p0AspectRatio::Standard4x3,         // 1.25, nearest 1.33
-    CommonAspectRatio::WideThreeByTwo => Seedance2p0AspectRatio::Standard4x3,         // 1.50, nearest 1.33
-    CommonAspectRatio::WideTwentyOneByNine => Seedance2p0AspectRatio::Landscape16x9,  // 2.33, nearest 1.78
-    CommonAspectRatio::TallFourByFive => Seedance2p0AspectRatio::Portrait3x4,         // 0.80, nearest 0.75
-    CommonAspectRatio::TallTwoByThree => Seedance2p0AspectRatio::Portrait3x4,         // 0.67, nearest 0.75
-    CommonAspectRatio::TallNineByTwentyOne => Seedance2p0AspectRatio::Portrait9x16,   // 0.43, nearest 0.56
-    _ => Seedance2p0AspectRatio::Square1x1,
+    CommonAspectRatio::WideFiveByFour => CommonAspectRatioEnum::WideFourByThree,
+    CommonAspectRatio::WideThreeByTwo => CommonAspectRatioEnum::WideFourByThree,
+    CommonAspectRatio::WideTwentyOneByNine => CommonAspectRatioEnum::WideSixteenByNine,
+    CommonAspectRatio::TallFourByFive => CommonAspectRatioEnum::TallThreeByFour,
+    CommonAspectRatio::TallTwoByThree => CommonAspectRatioEnum::TallThreeByFour,
+    CommonAspectRatio::TallNineByTwentyOne => CommonAspectRatioEnum::TallNineBySixteen,
+    _ => CommonAspectRatioEnum::Square,
   }
 }
 
@@ -177,16 +172,14 @@ fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> Seedance2p0AspectRat
 fn plan_output_resolution(
   resolution: Option<CommonResolution>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Option<Seedance2p0OutputResolution>, ArtcraftRouterError> {
+) -> Result<Option<CommonResolutionEnum>, ArtcraftRouterError> {
   match resolution {
     None => Ok(None),
 
-    // Direct mappings
-    Some(CommonResolution::FourEightyP) => Ok(Some(Seedance2p0OutputResolution::FourEightyP)),
-    Some(CommonResolution::SevenTwentyP) => Ok(Some(Seedance2p0OutputResolution::SevenTwentyP)),
-    Some(CommonResolution::TenEightyP) => Ok(Some(Seedance2p0OutputResolution::TenEightyP)),
+    Some(CommonResolution::FourEightyP) => Ok(Some(CommonResolutionEnum::FourEightyP)),
+    Some(CommonResolution::SevenTwentyP) => Ok(Some(CommonResolutionEnum::SevenTwentyP)),
+    Some(CommonResolution::TenEightyP) => Ok(Some(CommonResolutionEnum::TenEightyP)),
 
-    // Mismatches
     Some(unsupported) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -196,31 +189,29 @@ fn plan_output_resolution(
       }
       RequestMismatchMitigationStrategy::PayMoreUpgrade => {
         Ok(Some(match unsupported {
-          CommonResolution::HalfK => Seedance2p0OutputResolution::FourEightyP,
-          _ => Seedance2p0OutputResolution::TenEightyP,
+          CommonResolution::HalfK => CommonResolutionEnum::FourEightyP,
+          _ => CommonResolutionEnum::TenEightyP,
         }))
       }
       RequestMismatchMitigationStrategy::PayLessDowngrade => {
         Ok(Some(match unsupported {
-          CommonResolution::HalfK => Seedance2p0OutputResolution::FourEightyP,
-          _ => Seedance2p0OutputResolution::TenEightyP,
+          CommonResolution::HalfK => CommonResolutionEnum::FourEightyP,
+          _ => CommonResolutionEnum::TenEightyP,
         }))
       }
     },
   }
 }
 
-// Seedance2p0 supports batch counts of 1, 2, and 4 only.
+// Batch counts: 1, 2, 4.
 fn plan_batch_count(
   video_batch_count: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
-) -> Result<Seedance2p0BatchCount, ArtcraftRouterError> {
+) -> Result<u16, ArtcraftRouterError> {
   let count = video_batch_count.unwrap_or(1);
   match count {
     0 => Err(ArtcraftRouterError::Client(ClientError::UserRequestedZeroGenerations)),
-    1 => Ok(Seedance2p0BatchCount::One),
-    2 => Ok(Seedance2p0BatchCount::Two),
-    4 => Ok(Seedance2p0BatchCount::Four),
+    1 | 2 | 4 => Ok(count),
     _ => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
@@ -228,17 +219,15 @@ fn plan_batch_count(
           value: format!("{}", count),
         }))
       }
-      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
-        Ok(if count < 4 { Seedance2p0BatchCount::Four } else { Seedance2p0BatchCount::Four })
-      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => Ok(4),
       RequestMismatchMitigationStrategy::PayLessDowngrade => {
-        Ok(if count < 4 { Seedance2p0BatchCount::Two } else { Seedance2p0BatchCount::Four })
+        Ok(if count < 4 { 2 } else { 4 })
       }
     },
   }
 }
 
-// Seedance2p0 supports duration of 4–15 seconds.
+// Duration: 4-15 seconds.
 fn plan_duration(
   duration_seconds: Option<u16>,
   strategy: RequestMismatchMitigationStrategy,
@@ -262,350 +251,150 @@ fn plan_duration(
 
 #[cfg(test)]
 mod tests {
-  use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
-    Seedance2p0AspectRatio, Seedance2p0BatchCount, Seedance2p0OutputResolution,
-  };
+  use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
+  use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
   use tokens::tokens::characters::CharacterToken;
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
   use crate::api::common_resolution::CommonResolution;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
-  use crate::api::video_list_ref::VideoListRef;
-  use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
-  use crate::errors::artcraft_router_error::ArtcraftRouterError;
-  use crate::errors::client_error::ClientError;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-  use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
   use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
   use super::*;
 
-  // ── Materialized field conversions ──
+  // ── Field conversions ──
 
-  mod materialized_field_conversions {
+  mod field_conversions {
     use super::*;
 
     #[test]
-    fn prompt_is_passed_through() {
-      let state = unwrap_request(build_artcraft_seedance_2p0(artcraft_builder()));
-      assert_eq!(state.request.prompt.as_deref(), Some("a cat dancing"));
+    fn model_is_seedance_2p0() {
+      let req = unwrap_request(make_builder(|_| {}));
+      assert!(matches!(req.request.model, Some(CommonVideoModelEnum::Seedance2p0)));
     }
 
     #[test]
-    fn prompt_defaults_to_none() {
-      let builder = GenerateVideoRequestBuilder { prompt: None, ..artcraft_builder() };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(state.request.prompt.is_none());
+    fn prompt_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.prompt = Some("test".to_string()); }));
+      assert_eq!(req.request.prompt, Some("test".to_string()));
     }
 
     #[test]
-    fn duration_seconds_converted() {
-      let builder = GenerateVideoRequestBuilder { duration_seconds: Some(10), ..artcraft_builder() };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert_eq!(state.request.duration_seconds, Some(10));
-    }
-
-    #[test]
-    fn duration_defaults_to_none() {
-      let builder = GenerateVideoRequestBuilder { duration_seconds: None, ..artcraft_builder() };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(state.request.duration_seconds.is_none());
+    fn duration_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.duration_seconds = Some(10); }));
+      assert_eq!(req.request.duration_seconds, Some(10));
     }
 
     #[test]
     fn duration_clamped_to_max() {
-      let builder = GenerateVideoRequestBuilder {
-        duration_seconds: Some(99),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert_eq!(state.request.duration_seconds, Some(15));
+      let req = unwrap_request(make_builder(|b| { b.duration_seconds = Some(99); }));
+      assert_eq!(req.request.duration_seconds, Some(15));
     }
 
     #[test]
-    fn batch_count_one() {
-      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(1), ..artcraft_builder() };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.batch_count, Some(Seedance2p0BatchCount::One)));
-    }
-
-    #[test]
-    fn batch_count_two() {
-      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..artcraft_builder() };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.batch_count, Some(Seedance2p0BatchCount::Two)));
-    }
-
-    #[test]
-    fn batch_count_four() {
-      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(4), ..artcraft_builder() };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.batch_count, Some(Seedance2p0BatchCount::Four)));
+    fn batch_count_passed_through() {
+      let req = unwrap_request(make_builder(|b| { b.video_batch_count = Some(4); }));
+      assert_eq!(req.request.video_batch_count, Some(4));
     }
   }
 
-  // ── Aspect ratio conversions ──
+  // ── Resolution ──
 
-  mod aspect_ratio_conversions {
+  mod resolution_tests {
     use super::*;
 
     #[test]
-    fn aspect_ratio_wide() {
-      let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.aspect_ratio, Some(Seedance2p0AspectRatio::Landscape16x9)));
+    fn res_480p() {
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourEightyP); }));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::FourEightyP));
     }
 
     #[test]
-    fn aspect_ratio_tall() {
-      let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.aspect_ratio, Some(Seedance2p0AspectRatio::Portrait9x16)));
+    fn res_720p() {
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::SevenTwentyP); }));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
 
     #[test]
-    fn aspect_ratio_square() {
-      let builder = GenerateVideoRequestBuilder {
-        aspect_ratio: Some(CommonAspectRatio::Square),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.aspect_ratio, Some(Seedance2p0AspectRatio::Square1x1)));
+    fn res_1080p() {
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::TenEightyP); }));
+      assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
     }
 
     #[test]
-    fn aspect_ratio_defaults_to_none() {
-      let builder = GenerateVideoRequestBuilder { aspect_ratio: None, ..artcraft_builder() };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(state.request.aspect_ratio.is_none());
+    fn none_stays_none() {
+      let req = unwrap_request(make_builder(|_| {}));
+      assert!(req.request.resolution.is_none());
     }
   }
 
-  // ── Resolution conversions ──
+  // ── Media tokens ──
 
-  mod resolution_conversions {
+  mod media_token_tests {
     use super::*;
 
     #[test]
-    fn resolution_480p() {
-      let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourEightyP),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.output_resolution, Some(Seedance2p0OutputResolution::FourEightyP)));
+    fn start_frame_token_passed_through() {
+      let token = MediaFileToken::new("mf_start".to_string());
+      let req = unwrap_request(make_builder(|b| {
+        b.start_frame = Some(ImageRef::MediaFileToken(token.clone()));
+      }));
+      assert_eq!(req.request.start_frame_image_media_token, Some(token));
     }
 
     #[test]
-    fn resolution_720p() {
-      let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::SevenTwentyP),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.output_resolution, Some(Seedance2p0OutputResolution::SevenTwentyP)));
+    fn url_start_frame_rejected() {
+      let result = build_artcraft_seedance_2p0(GenerateVideoRequestBuilder {
+        start_frame: Some(ImageRef::Url("https://example.com".to_string())),
+        ..base_builder()
+      });
+      assert!(result.is_err());
     }
 
     #[test]
-    fn resolution_1080p() {
-      let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::TenEightyP),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.output_resolution, Some(Seedance2p0OutputResolution::TenEightyP)));
+    fn reference_image_tokens_passed_through() {
+      let tokens = vec![MediaFileToken::new("mf_a".to_string()), MediaFileToken::new("mf_b".to_string())];
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_images = Some(ImageListRef::MediaFileTokens(tokens.clone()));
+      }));
+      assert_eq!(req.request.reference_image_media_tokens, Some(tokens));
     }
 
     #[test]
-    fn resolution_none() {
-      let builder = GenerateVideoRequestBuilder { resolution: None, ..artcraft_builder() };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(state.request.output_resolution.is_none());
+    fn character_tokens_passed_through() {
+      let tokens = vec![CharacterToken::new("char_a".to_string()), CharacterToken::new("char_b".to_string())];
+      let req = unwrap_request(make_builder(|b| {
+        b.reference_character_tokens = Some(CharacterListRef::CharacterTokens(tokens.clone()));
+      }));
+      assert_eq!(req.request.reference_character_tokens, Some(tokens));
     }
-
-    #[test]
-    fn unsupported_resolution_error_out() {
-      let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourK),
-        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
-        ..artcraft_builder()
-      };
-      assert!(build_artcraft_seedance_2p0(builder).is_err());
-    }
-
-    #[test]
-    fn unsupported_resolution_rounds_up() {
-      let builder = GenerateVideoRequestBuilder {
-        resolution: Some(CommonResolution::FourK),
-        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert!(matches!(state.request.output_resolution, Some(Seedance2p0OutputResolution::TenEightyP)));
-    }
-  }
-
-  // ── Media token resolution ──
-
-  mod media_token_resolution {
-    use super::*;
-
-    #[test]
-    fn start_frame_media_token() {
-      let builder = GenerateVideoRequestBuilder {
-        start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_start123".to_string()))),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert_eq!(state.request.start_frame_media_token.as_ref().unwrap().as_str(), "mf_start123");
-    }
-
-    #[test]
-    fn end_frame_media_token() {
-      let builder = GenerateVideoRequestBuilder {
-        end_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_end456".to_string()))),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      assert_eq!(state.request.end_frame_media_token.as_ref().unwrap().as_str(), "mf_end456");
-    }
-
-    #[test]
-    fn reference_image_media_tokens() {
-      let builder = GenerateVideoRequestBuilder {
-        reference_images: Some(ImageListRef::MediaFileTokens(vec![
-          MediaFileToken::new("mf_ref1".to_string()),
-          MediaFileToken::new("mf_ref2".to_string()),
-        ])),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      let tokens = state.request.reference_image_media_tokens.unwrap();
-      assert_eq!(tokens.len(), 2);
-      assert_eq!(tokens[0].as_str(), "mf_ref1");
-      assert_eq!(tokens[1].as_str(), "mf_ref2");
-    }
-
-    #[test]
-    fn reference_video_media_tokens() {
-      let builder = GenerateVideoRequestBuilder {
-        reference_videos: Some(VideoListRef::MediaFileTokens(vec![
-          MediaFileToken::new("mf_vid1".to_string()),
-        ])),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      let tokens = state.request.reference_video_media_tokens.unwrap();
-      assert_eq!(tokens.len(), 1);
-      assert_eq!(tokens[0].as_str(), "mf_vid1");
-    }
-
-    #[test]
-    fn character_tokens() {
-      let builder = GenerateVideoRequestBuilder {
-        reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
-          CharacterToken::new("char_abc".to_string()),
-          CharacterToken::new("char_def".to_string()),
-        ])),
-        ..artcraft_builder()
-      };
-      let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-      let tokens = state.request.reference_character_tokens.unwrap();
-      assert_eq!(tokens.len(), 2);
-      assert_eq!(tokens[0].as_str(), "char_abc");
-      assert_eq!(tokens[1].as_str(), "char_def");
-    }
-
-    #[test]
-    fn url_image_ref_returns_error() {
-      let builder = GenerateVideoRequestBuilder {
-        start_frame: Some(ImageRef::Url("https://example.com/image.jpg".to_string())),
-        ..artcraft_builder()
-      };
-      assert!(matches!(
-        build_artcraft_seedance_2p0(builder),
-        Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-      ));
-    }
-
-    #[test]
-    fn empty_refs_are_none() {
-      let state = unwrap_request(build_artcraft_seedance_2p0(artcraft_builder()));
-      assert!(state.request.start_frame_media_token.is_none());
-      assert!(state.request.end_frame_media_token.is_none());
-      assert!(state.request.reference_image_media_tokens.is_none());
-      assert!(state.request.reference_video_media_tokens.is_none());
-      assert!(state.request.reference_audio_media_tokens.is_none());
-      assert!(state.request.reference_character_tokens.is_none());
-    }
-  }
-
-  // ── Returns Request, not Draft ──
-
-  #[test]
-  fn build_returns_request_variant() {
-    let result = build_artcraft_seedance_2p0(artcraft_builder()).expect("build should succeed");
-    assert!(matches!(result, VideoGenerationDraftOrRequest::Request(_)));
-  }
-
-  // ── Full combination ──
-
-  #[test]
-  fn full_request_all_fields() {
-    let builder = GenerateVideoRequestBuilder {
-      prompt: Some("full test".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
-      resolution: Some(CommonResolution::TenEightyP),
-      duration_seconds: Some(10),
-      video_batch_count: Some(4),
-      start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_start".to_string()))),
-      end_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_end".to_string()))),
-      reference_images: Some(ImageListRef::MediaFileTokens(vec![MediaFileToken::new("mf_img".to_string())])),
-      reference_videos: Some(VideoListRef::MediaFileTokens(vec![MediaFileToken::new("mf_vid".to_string())])),
-      reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
-        CharacterToken::new("char_xyz".to_string()),
-      ])),
-      ..artcraft_builder()
-    };
-    let state = unwrap_request(build_artcraft_seedance_2p0(builder));
-
-    assert_eq!(state.request.prompt.as_deref(), Some("full test"));
-    assert!(matches!(state.request.aspect_ratio, Some(Seedance2p0AspectRatio::Portrait9x16)));
-    assert!(matches!(state.request.output_resolution, Some(Seedance2p0OutputResolution::TenEightyP)));
-    assert_eq!(state.request.duration_seconds, Some(10));
-    assert!(matches!(state.request.batch_count, Some(Seedance2p0BatchCount::Four)));
-    assert!(state.request.start_frame_media_token.is_some());
-    assert!(state.request.end_frame_media_token.is_some());
-    assert!(state.request.reference_image_media_tokens.is_some());
-    assert!(state.request.reference_video_media_tokens.is_some());
-    assert!(state.request.reference_character_tokens.is_some());
   }
 
   // ── Helpers ──
 
-  fn artcraft_builder() -> GenerateVideoRequestBuilder {
+  fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
       provider: Provider::Artcraft,
-      prompt: Some("a cat dancing".to_string()),
       duration_seconds: Some(5),
       video_batch_count: Some(1),
       ..Default::default()
     }
   }
 
-  fn unwrap_request(result: Result<VideoGenerationDraftOrRequest, ArtcraftRouterError>) -> ArtcraftSeedance2p0RequestState {
-    match result.expect("build should succeed") {
+  fn make_builder(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
+    let mut builder = base_builder();
+    f(&mut builder);
+    builder
+  }
+
+  fn unwrap_request(builder: GenerateVideoRequestBuilder) -> ArtcraftSeedance2p0RequestState {
+    let result = build_artcraft_seedance_2p0(builder).expect("build should succeed");
+    match result {
       VideoGenerationDraftOrRequest::Request(
         VideoGenerationRequest::ArtcraftSeedance2p0(state)
       ) => state,
