@@ -134,12 +134,13 @@ mod tests {
 
   mod modality_tests {
     use super::*;
+    use test_data::web::image_media_tokens::TALL_MOCHI_WITH_GLASSES_PRODUCTION_MEDIA_TOKEN;
 
     #[tokio::test]
     #[ignore] // manually run — fires a real API request and incurs cost
     async fn text_to_video() {
       let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A whale breaching in the open ocean at dawn, cinematic.".to_string()),
+        prompt: Some("A sky whale breaching in the open sky, pink clouds at dawn, cinematic.".to_string()),
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
         ..artcraft_fast_builder()
       }).await;
@@ -168,7 +169,7 @@ mod tests {
         prompt: Some("The dog in @2 runs through the scenery in @1 towards the building in @3.".to_string()),
         reference_images: Some(ImageListRef::MediaFileTokens(vec![
           MediaFileToken::new(FOREST_BACKDROP_PRODUCTION_MEDIA_TOKEN.to_string()),
-          MediaFileToken::new(JUNO_AT_LAKE_PRODUCTION_MEDIA_TOKEN.to_string()),
+          MediaFileToken::new(TALL_MOCHI_WITH_GLASSES_PRODUCTION_MEDIA_TOKEN.to_string()),
           MediaFileToken::new(WHITE_HOUSE_SUNSET_PRODUCTION_MEDIA_TOKEN.to_string()),
         ])),
         aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
