@@ -1,6 +1,4 @@
-use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
-  Seedance2p0BatchCount, Seedance2p0OutputResolution,
-};
+use enums::common::generation::common_resolution::CommonResolution;
 
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::request::ArtcraftSeedance2p0FastRequestState;
@@ -10,12 +8,12 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::
 // ArtCraft credits: 100 credits = $1.00. Credits always equal USD cents.
 //
 // The per-second USD cost varies by resolution. We derive cents from the
-// upstream Kinovi credit rates and their credit-package prices, then set
+// upstream credit rates and their credit-package prices, then set
 // ArtCraft credits = cents.
 
-/// USD cents per second by resolution, derived from Kinovi Fast rates:
-///   480p:  10 kinovi-credits/sec / 193 kinovi-credits/$1 * 100 ~= 5.181 c/s
-///   720p:  28 kinovi-credits/sec / 220 kinovi-credits/$1 * 100 ~= 12.727 c/s
+/// USD cents per second by resolution, derived from upstream Fast rates:
+///   480p:  10 upstream-credits/sec / 193 upstream-credits/$1 * 100 ~= 5.181 c/s
+///   720p:  28 upstream-credits/sec / 220 upstream-credits/$1 * 100 ~= 12.727 c/s
 ///
 /// We keep these as f64 because per-second rates are fractional; rounding
 /// happens once at the end after multiplying by duration * batch.
@@ -23,19 +21,18 @@ const CENTS_PER_SECOND_480P: f64 = 5.181;
 const CENTS_PER_SECOND_720P: f64 = 12.727;
 
 pub struct ArtcraftSeedance2p0FastCostState {
-  pub resolution: Seedance2p0OutputResolution,
-  pub duration_seconds: u8,
-  pub batch_count: Seedance2p0BatchCount,
+  pub resolution: CommonResolution,
+  pub duration_seconds: u16,
+  pub batch_count: u16,
   pub has_video_reference: bool,
 }
 
 impl ArtcraftSeedance2p0FastCostState {
   pub fn from_request(request: &ArtcraftSeedance2p0FastRequestState) -> Self {
-    let resolution = request.request.output_resolution
-      .unwrap_or(Seedance2p0OutputResolution::SevenTwentyP);
+    let resolution = request.request.resolution
+      .unwrap_or(CommonResolution::SevenTwentyP);
     let duration_seconds = request.request.duration_seconds.unwrap_or(5);
-    let batch_count = request.request.batch_count
-      .unwrap_or(Seedance2p0BatchCount::One);
+    let batch_count = request.request.video_batch_count.unwrap_or(1);
     let has_video_reference = request.request.reference_video_media_tokens
       .as_ref()
       .is_some_and(|tokens| !tokens.is_empty());
@@ -45,19 +42,12 @@ impl ArtcraftSeedance2p0FastCostState {
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
     let cents_per_second = match self.resolution {
-      Seedance2p0OutputResolution::FourEightyP => CENTS_PER_SECOND_480P,
-      Seedance2p0OutputResolution::SevenTwentyP => CENTS_PER_SECOND_720P,
-      // Fast does not support 1080p; if it somehow appears, price at 720p.
-      Seedance2p0OutputResolution::TenEightyP => CENTS_PER_SECOND_720P,
+      CommonResolution::FourEightyP => CENTS_PER_SECOND_480P,
+      // Everything else (including 720p and unsupported resolutions) prices at 720p.
+      _ => CENTS_PER_SECOND_720P,
     };
 
-    let batch_multiplier: f64 = match self.batch_count {
-      Seedance2p0BatchCount::One => 1.0,
-      Seedance2p0BatchCount::Two => 2.0,
-      Seedance2p0BatchCount::Four => 4.0,
-    };
-
-    let usd_cents = (self.duration_seconds as f64 * cents_per_second * batch_multiplier).round() as u64;
+    let usd_cents = (self.duration_seconds as f64 * cents_per_second * self.batch_count as f64).round() as u64;
 
     // ArtCraft credits: 100 credits = $1.00, so credits = cents.
     VideoGenerationCostEstimate {
@@ -73,16 +63,13 @@ impl ArtcraftSeedance2p0FastCostState {
 
 #[cfg(test)]
 mod tests {
-  use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
-    Seedance2p0BatchCount, Seedance2p0MultiFunctionVideoGenRequest, Seedance2p0OutputResolution,
-  };
+  use enums::common::generation::common_resolution::CommonResolution;
   use tokens::tokens::media_files::MediaFileToken;
 
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::common_resolution::CommonResolution as CommonResolutionRouter;
   use crate::api::common_video_model::CommonVideoModel;
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-  use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::request::ArtcraftSeedance2p0FastRequestState;
 
   use super::*;
 
@@ -92,25 +79,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn cost_720p_batch_1() {
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 4, Seedance2p0BatchCount::One), 51);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::One), 64);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 10, Seedance2p0BatchCount::One), 127);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 15, Seedance2p0BatchCount::One), 191);
+    fn batch_1() {
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 4, 1), 51);
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 5, 1), 64);
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 10, 1), 127);
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 15, 1), 191);
     }
 
     #[test]
-    fn cost_720p_batch_2() {
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 4, Seedance2p0BatchCount::Two), 102);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::Two), 127);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 15, Seedance2p0BatchCount::Two), 382);
+    fn batch_2() {
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 4, 2), 102);
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 5, 2), 127);
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 15, 2), 382);
     }
 
     #[test]
-    fn cost_720p_batch_4() {
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 4, Seedance2p0BatchCount::Four), 204);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::Four), 255);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 15, Seedance2p0BatchCount::Four), 764);
+    fn batch_4() {
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 4, 4), 204);
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 5, 4), 255);
+      assert_eq!(usd_cents(CommonResolution::SevenTwentyP, 15, 4), 764);
     }
   }
 
@@ -120,21 +107,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn cost_480p_batch_1() {
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::FourEightyP, 4, Seedance2p0BatchCount::One), 21);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::FourEightyP, 5, Seedance2p0BatchCount::One), 26);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::FourEightyP, 10, Seedance2p0BatchCount::One), 52);
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::FourEightyP, 15, Seedance2p0BatchCount::One), 78);
+    fn batch_1() {
+      assert_eq!(usd_cents(CommonResolution::FourEightyP, 4, 1), 21);
+      assert_eq!(usd_cents(CommonResolution::FourEightyP, 5, 1), 26);
+      assert_eq!(usd_cents(CommonResolution::FourEightyP, 10, 1), 52);
+      assert_eq!(usd_cents(CommonResolution::FourEightyP, 15, 1), 78);
     }
 
     #[test]
-    fn cost_480p_batch_2() {
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::FourEightyP, 5, Seedance2p0BatchCount::Two), 52);
+    fn batch_2() {
+      assert_eq!(usd_cents(CommonResolution::FourEightyP, 5, 2), 52);
     }
 
     #[test]
-    fn cost_480p_batch_4() {
-      assert_eq!(usd_cents(Seedance2p0OutputResolution::FourEightyP, 5, Seedance2p0BatchCount::Four), 104);
+    fn batch_4() {
+      assert_eq!(usd_cents(CommonResolution::FourEightyP, 5, 4), 104);
     }
   }
 
@@ -145,25 +132,25 @@ mod tests {
 
     #[test]
     fn cost_480p_cheaper_than_720p() {
-      let c480 = usd_cents(Seedance2p0OutputResolution::FourEightyP, 5, Seedance2p0BatchCount::One);
-      let c720 = usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::One);
+      let c480 = usd_cents(CommonResolution::FourEightyP, 5, 1);
+      let c720 = usd_cents(CommonResolution::SevenTwentyP, 5, 1);
       assert!(c480 < c720, "480p ({}) should be cheaper than 720p ({})", c480, c720);
     }
 
     #[test]
     fn cost_scales_with_duration() {
-      let c4 = usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 4, Seedance2p0BatchCount::One);
-      let c10 = usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 10, Seedance2p0BatchCount::One);
-      let c15 = usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 15, Seedance2p0BatchCount::One);
+      let c4 = usd_cents(CommonResolution::SevenTwentyP, 4, 1);
+      let c10 = usd_cents(CommonResolution::SevenTwentyP, 10, 1);
+      let c15 = usd_cents(CommonResolution::SevenTwentyP, 15, 1);
       assert!(c4 < c10);
       assert!(c10 < c15);
     }
 
     #[test]
     fn cost_scales_with_batch() {
-      let b1 = usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::One);
-      let b2 = usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::Two);
-      let b4 = usd_cents(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::Four);
+      let b1 = usd_cents(CommonResolution::SevenTwentyP, 5, 1);
+      let b2 = usd_cents(CommonResolution::SevenTwentyP, 5, 2);
+      let b4 = usd_cents(CommonResolution::SevenTwentyP, 5, 4);
       assert!(b1 < b2);
       assert!(b2 < b4);
     }
@@ -174,9 +161,9 @@ mod tests {
   #[test]
   fn video_reference_does_not_affect_cost() {
     let base = ArtcraftSeedance2p0FastCostState {
-      resolution: Seedance2p0OutputResolution::SevenTwentyP,
+      resolution: CommonResolution::SevenTwentyP,
       duration_seconds: 5,
-      batch_count: Seedance2p0BatchCount::One,
+      batch_count: 1,
       has_video_reference: false,
     };
     let without = base.estimate_cost();
@@ -192,55 +179,50 @@ mod tests {
 
     #[test]
     fn from_request_720p() {
-      let req = make_request_state(Some(Seedance2p0OutputResolution::SevenTwentyP), 5, Seedance2p0BatchCount::One, false);
+      let req = make_request_state(Some(CommonResolution::SevenTwentyP), 5, 1, false);
       let cost = ArtcraftSeedance2p0FastCostState::from_request(&req);
-      assert!(matches!(cost.resolution, Seedance2p0OutputResolution::SevenTwentyP));
+      assert!(matches!(cost.resolution, CommonResolution::SevenTwentyP));
       assert_eq!(cost.duration_seconds, 5);
-      assert!(matches!(cost.batch_count, Seedance2p0BatchCount::One));
+      assert_eq!(cost.batch_count, 1);
       assert!(!cost.has_video_reference);
       assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(64));
     }
 
     #[test]
     fn from_request_none_defaults_to_720p() {
-      let req = make_request_state(None, 5, Seedance2p0BatchCount::One, false);
+      let req = make_request_state(None, 5, 1, false);
       let cost = ArtcraftSeedance2p0FastCostState::from_request(&req);
-      assert!(matches!(cost.resolution, Seedance2p0OutputResolution::SevenTwentyP));
+      assert!(matches!(cost.resolution, CommonResolution::SevenTwentyP));
       assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(64));
     }
 
     #[test]
     fn from_request_480p() {
-      let req = make_request_state(Some(Seedance2p0OutputResolution::FourEightyP), 5, Seedance2p0BatchCount::One, false);
+      let req = make_request_state(Some(CommonResolution::FourEightyP), 5, 1, false);
       let cost = ArtcraftSeedance2p0FastCostState::from_request(&req);
       assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(26));
     }
 
     #[test]
     fn from_request_with_video_reference() {
-      let req = make_request_state(Some(Seedance2p0OutputResolution::SevenTwentyP), 5, Seedance2p0BatchCount::One, true);
+      let req = make_request_state(Some(CommonResolution::SevenTwentyP), 5, 1, true);
       let cost = ArtcraftSeedance2p0FastCostState::from_request(&req);
       assert!(cost.has_video_reference);
       assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(64));
     }
   }
 
-  // -- Cross-check: Artcraft Fast v2 matches Kinovi Fast v2 via GenerateVideoRequestBuilder --
+  // -- Cross-check: Artcraft Fast v2 matches Kinovi Fast v2 via builder --
 
   mod cross_check_with_kinovi_via_builder {
-    use crate::api::common_video_model::CommonVideoModel;
-
     use super::*;
 
-    /// Combinatorial test: build the same request with Provider::Artcraft and
-    /// Provider::Seedance2Pro, then compare USD cents. They must match for all
-    /// resolution x duration x batch combinations.
     #[test]
     fn artcraft_fast_matches_kinovi_fast_all_combos() {
       let resolutions = [
-        Some(CommonResolution::FourEightyP),
-        Some(CommonResolution::SevenTwentyP),
-        None, // defaults to 720p
+        Some(CommonResolutionRouter::FourEightyP),
+        Some(CommonResolutionRouter::SevenTwentyP),
+        None,
       ];
       let durations: [u16; 4] = [4, 5, 10, 15];
       let batches: [u16; 3] = [1, 2, 4];
@@ -288,112 +270,24 @@ mod tests {
     }
   }
 
-  // -- Cross-check: Artcraft Fast v2 matches v1 estimate_video_cost_artcraft_seedance2p0_fast --
-
-  mod cross_check_with_v1 {
-    use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0AspectRatio;
-
-    use crate::generate::generate_video::cost::artcraft::estimate_video_cost_artcraft_seedance2p0_fast::estimate_video_cost_artcraft_seedance2p0_fast;
-    use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;
-
-    use super::*;
-
-    /// Combinatorial test: compare v2 ArtcraftSeedance2p0FastCostState against
-    /// v1 estimate_video_cost_artcraft_seedance2p0_fast for all resolution x
-    /// duration x batch combinations.
-    #[test]
-    fn v2_matches_v1_all_combos() {
-      let resolutions = [
-        (Some(CommonResolution::FourEightyP), Seedance2p0OutputResolution::FourEightyP),
-        (Some(CommonResolution::SevenTwentyP), Seedance2p0OutputResolution::SevenTwentyP),
-        (None, Seedance2p0OutputResolution::SevenTwentyP), // None defaults to 720p
-      ];
-      let durations: [u8; 4] = [4, 5, 10, 15];
-      let batches = [
-        (Seedance2p0BatchCount::One, Seedance2p0BatchCount::One),
-        (Seedance2p0BatchCount::Two, Seedance2p0BatchCount::Two),
-        (Seedance2p0BatchCount::Four, Seedance2p0BatchCount::Four),
-      ];
-
-      for (v1_res, v2_res) in &resolutions {
-        for dur in &durations {
-          for (v1_batch, v2_batch) in &batches {
-            // v1: construct a PlanArtcraftSeedance2p0 and call the v1 cost function
-            let v1_plan = PlanArtcraftSeedance2p0 {
-              prompt: None,
-              start_frame: None,
-              end_frame: None,
-              reference_images: None,
-              reference_videos: None,
-              reference_audio: None,
-              reference_characters: None,
-              aspect_ratio: Some(Seedance2p0AspectRatio::Square1x1),
-              resolution: *v1_res,
-              duration_seconds: Some(*dur),
-              batch_count: *v1_batch,
-              idempotency_token: "test".to_string(),
-            };
-            let v1_cost = estimate_video_cost_artcraft_seedance2p0_fast(&v1_plan);
-
-            // v2: construct cost state directly
-            let v2_cost = ArtcraftSeedance2p0FastCostState {
-              resolution: *v2_res,
-              duration_seconds: *dur,
-              batch_count: *v2_batch,
-              has_video_reference: false,
-            }.estimate_cost();
-
-            assert_eq!(
-              v2_cost.cost_in_usd_cents, v1_cost.cost_in_usd_cents,
-              "USD cents mismatch: res={:?} dur={}s batch={:?} — v2={:?}, v1={:?}",
-              v1_res, dur, v1_batch,
-              v2_cost.cost_in_usd_cents, v1_cost.cost_in_usd_cents,
-            );
-
-            assert_eq!(
-              v2_cost.cost_in_credits, v1_cost.cost_in_credits,
-              "Credits mismatch: res={:?} dur={}s batch={:?} — v2={:?}, v1={:?}",
-              v1_res, dur, v1_batch,
-              v2_cost.cost_in_credits, v1_cost.cost_in_credits,
-            );
-          }
-        }
-      }
-    }
-  }
-
-  // -- Credits spot checks --
+  // -- Credits --
 
   mod credits_tests {
     use super::*;
 
     #[test]
     fn credits_equal_usd_cents() {
-      // ArtCraft credits: 100 credits = $1.00, so credits always equal cents.
-      for res in [
-        Seedance2p0OutputResolution::FourEightyP,
-        Seedance2p0OutputResolution::SevenTwentyP,
-      ] {
+      for res in [CommonResolution::FourEightyP, CommonResolution::SevenTwentyP] {
         for dur in [4, 5, 10, 15] {
-          for batch in [Seedance2p0BatchCount::One, Seedance2p0BatchCount::Two, Seedance2p0BatchCount::Four] {
-            assert_eq!(
-              credits(res, dur, batch),
-              usd_cents(res, dur, batch),
-              "credits should equal usd_cents for {:?} {}s {:?}", res, dur, batch,
-            );
+          for batch in [1, 2, 4] {
+            let state = ArtcraftSeedance2p0FastCostState {
+              resolution: res, duration_seconds: dur, batch_count: batch, has_video_reference: false,
+            };
+            let cost = state.estimate_cost();
+            assert_eq!(cost.cost_in_credits, cost.cost_in_usd_cents);
           }
         }
       }
-    }
-
-    #[test]
-    fn credits_720p() {
-      assert_eq!(credits(Seedance2p0OutputResolution::SevenTwentyP, 5, Seedance2p0BatchCount::One), 64);
-    }
-
-    #[test]
-    fn credits_480p() {
-      assert_eq!(credits(Seedance2p0OutputResolution::FourEightyP, 5, Seedance2p0BatchCount::One), 26);
     }
   }
 
@@ -407,7 +301,7 @@ mod tests {
       let builder = GenerateVideoRequestBuilder {
         model: CommonVideoModel::Seedance2p0Fast,
         provider: Provider::Artcraft,
-        resolution: Some(CommonResolution::SevenTwentyP),
+        resolution: Some(CommonResolutionRouter::SevenTwentyP),
         duration_seconds: Some(5),
         video_batch_count: Some(1),
         ..Default::default()
@@ -422,7 +316,7 @@ mod tests {
       let builder = GenerateVideoRequestBuilder {
         model: CommonVideoModel::Seedance2p0Fast,
         provider: Provider::Artcraft,
-        resolution: Some(CommonResolution::FourEightyP),
+        resolution: Some(CommonResolutionRouter::FourEightyP),
         duration_seconds: Some(5),
         video_batch_count: Some(4),
         ..Default::default()
@@ -435,34 +329,22 @@ mod tests {
 
   // -- Helpers --
 
-  fn usd_cents(
-    resolution: Seedance2p0OutputResolution,
-    duration_seconds: u8,
-    batch_count: Seedance2p0BatchCount,
-  ) -> u64 {
+  fn usd_cents(resolution: CommonResolution, duration_seconds: u16, batch_count: u16) -> u64 {
     ArtcraftSeedance2p0FastCostState { resolution, duration_seconds, batch_count, has_video_reference: false }
       .estimate_cost()
       .cost_in_usd_cents
       .unwrap()
   }
 
-  fn credits(
-    resolution: Seedance2p0OutputResolution,
-    duration_seconds: u8,
-    batch_count: Seedance2p0BatchCount,
-  ) -> u64 {
-    ArtcraftSeedance2p0FastCostState { resolution, duration_seconds, batch_count, has_video_reference: false }
-      .estimate_cost()
-      .cost_in_credits
-      .unwrap()
-  }
-
   fn make_request_state(
-    resolution: Option<Seedance2p0OutputResolution>,
-    duration_seconds: u8,
-    batch_count: Seedance2p0BatchCount,
+    resolution: Option<CommonResolution>,
+    duration_seconds: u16,
+    batch_count: u16,
     with_video_ref: bool,
   ) -> ArtcraftSeedance2p0FastRequestState {
+    use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
+    use enums::common::generation::common_video_model::CommonVideoModel;
+
     let reference_video_media_tokens = if with_video_ref {
       Some(vec![MediaFileToken::new("mf_testvid".to_string())])
     } else {
@@ -470,19 +352,23 @@ mod tests {
     };
 
     ArtcraftSeedance2p0FastRequestState {
-      request: Seedance2p0MultiFunctionVideoGenRequest {
-        uuid_idempotency_token: "test-idem".to_string(),
+      request: OmniGenVideoCostAndGenerateRequest {
+        idempotency_token: Some("test-idem".to_string()),
+        model: Some(CommonVideoModel::Seedance2p0Fast),
         prompt: Some("test".to_string()),
-        start_frame_media_token: None,
-        end_frame_media_token: None,
+        negative_prompt: None,
+        start_frame_image_media_token: None,
+        end_frame_image_media_token: None,
         reference_image_media_tokens: None,
         reference_video_media_tokens,
         reference_audio_media_tokens: None,
         reference_character_tokens: None,
+        resolution,
         aspect_ratio: None,
-        output_resolution: resolution,
+        quality: None,
         duration_seconds: Some(duration_seconds),
-        batch_count: Some(batch_count),
+        video_batch_count: Some(batch_count),
+        generate_audio: None,
       },
     }
   }

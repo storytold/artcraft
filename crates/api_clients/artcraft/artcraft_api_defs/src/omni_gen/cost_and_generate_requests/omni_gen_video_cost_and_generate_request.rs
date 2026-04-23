@@ -9,7 +9,7 @@ use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 /// Shared request body for both the video cost estimate and video generation endpoints.
-#[derive(Serialize, Deserialize, ToSchema, Debug)]
+#[derive(Clone, Serialize, Deserialize, ToSchema, Debug)]
 pub struct OmniGenVideoCostAndGenerateRequest {
   /// REQUIRED (even if marked optional)
   /// Idempotency token to prevent duplicate requests.

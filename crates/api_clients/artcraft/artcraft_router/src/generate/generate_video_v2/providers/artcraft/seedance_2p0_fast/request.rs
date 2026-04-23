@@ -1,12 +1,5 @@
-use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::{
-  Seedance2p0AspectRatio, Seedance2p0BatchCount, Seedance2p0MultiFunctionVideoGenRequest,
-  Seedance2p0OutputResolution,
-};
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_client::endpoints::omni_gen::generate::video::omni_gen_video::omni_gen_video_generate;
-use enums::common::generation::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioEnum;
-use enums::common::generation::common_resolution::CommonResolution as CommonResolutionEnum;
-use enums::common::generation::common_video_model::CommonVideoModel as CommonVideoModelEnum;
 
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
@@ -17,35 +10,16 @@ use crate::generate::generate_video::generate_video_response::{
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftSeedance2p0FastRequestState {
-  /// Final materialized request; ready to fire.
-  pub request: Seedance2p0MultiFunctionVideoGenRequest,
+  /// Final materialized request; ready to fire via the omni-gen video endpoint.
+  pub request: OmniGenVideoCostAndGenerateRequest,
 }
 
 impl ArtcraftSeedance2p0FastRequestState {
   pub async fn send(&self, client: &RouterArtcraftClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-    let omni_request = OmniGenVideoCostAndGenerateRequest {
-      idempotency_token: Some(self.request.uuid_idempotency_token.clone()),
-      model: Some(CommonVideoModelEnum::Seedance2p0Fast),
-      prompt: self.request.prompt.clone(),
-      negative_prompt: None,
-      start_frame_image_media_token: self.request.start_frame_media_token.clone(),
-      end_frame_image_media_token: self.request.end_frame_media_token.clone(),
-      reference_image_media_tokens: self.request.reference_image_media_tokens.clone(),
-      reference_video_media_tokens: self.request.reference_video_media_tokens.clone(),
-      reference_audio_media_tokens: self.request.reference_audio_media_tokens.clone(),
-      reference_character_tokens: self.request.reference_character_tokens.clone(),
-      resolution: self.request.output_resolution.map(map_resolution),
-      aspect_ratio: self.request.aspect_ratio.map(map_aspect_ratio),
-      quality: None,
-      duration_seconds: self.request.duration_seconds.map(|d| d as u16),
-      video_batch_count: self.request.batch_count.map(map_batch_count),
-      generate_audio: None,
-    };
-
     let response = omni_gen_video_generate(
       &client.api_host,
       Some(&client.credentials),
-      omni_request,
+      self.request.clone(),
     )
       .await
       .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Storyteller(err)))?;
@@ -54,32 +28,6 @@ impl ArtcraftSeedance2p0FastRequestState {
       inference_job_token: response.inference_job_token.clone(),
       all_inference_job_tokens: vec![response.inference_job_token],
     }))
-  }
-}
-
-fn map_resolution(resolution: Seedance2p0OutputResolution) -> CommonResolutionEnum {
-  match resolution {
-    Seedance2p0OutputResolution::FourEightyP => CommonResolutionEnum::FourEightyP,
-    Seedance2p0OutputResolution::SevenTwentyP => CommonResolutionEnum::SevenTwentyP,
-    Seedance2p0OutputResolution::TenEightyP => CommonResolutionEnum::TenEightyP,
-  }
-}
-
-fn map_aspect_ratio(aspect_ratio: Seedance2p0AspectRatio) -> CommonAspectRatioEnum {
-  match aspect_ratio {
-    Seedance2p0AspectRatio::Landscape16x9 => CommonAspectRatioEnum::WideSixteenByNine,
-    Seedance2p0AspectRatio::Portrait9x16 => CommonAspectRatioEnum::TallNineBySixteen,
-    Seedance2p0AspectRatio::Square1x1 => CommonAspectRatioEnum::Square,
-    Seedance2p0AspectRatio::Standard4x3 => CommonAspectRatioEnum::WideFourByThree,
-    Seedance2p0AspectRatio::Portrait3x4 => CommonAspectRatioEnum::TallThreeByFour,
-  }
-}
-
-fn map_batch_count(batch_count: Seedance2p0BatchCount) -> u16 {
-  match batch_count {
-    Seedance2p0BatchCount::One => 1,
-    Seedance2p0BatchCount::Two => 2,
-    Seedance2p0BatchCount::Four => 4,
   }
 }
 
@@ -95,7 +43,6 @@ mod tests {
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
-  use crate::api::video_list_ref::VideoListRef;
   use crate::client::router_artcraft_client::RouterArtcraftClient;
   use crate::client::router_client::RouterClient;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
