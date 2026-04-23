@@ -37,7 +37,7 @@ pub struct RunPipelineV1Args<'a> {
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
 }
 
-// ── Distilled request (used by execute_fal, execute_kinovi, and tests) ──
+// ── DistilledVideoRequest (used by tests) ──
 
 pub struct DistilledVideoRequest {
   pub(crate) request: GenerateVideoRequestBuilder,
@@ -80,27 +80,93 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
     _ => Provider::Fal,
   };
 
-  let distilled = distill_video_request(request, media_file_hydration_map.as_ref(), execution_provider)?;
-  info!("v1 distilled plan: {:?}", distilled.plan);
+  // ── Distill: cost estimate (Artcraft provider — what we bill on) ──
 
-  let cost = distilled.cost.cost_in_credits.unwrap_or(0);
-  let billing = bill_wallet(user_token, cost, mysql_connection).await?;
+  let initial = hydrate_to_router_request(request)?;
 
-  // Execute generation via the appropriate provider.
-  let gen_result = match distilled.execution_provider {
+  let cost: VideoGenerationCostEstimate = {
+    let cost_request = GenerateVideoRequestBuilder {
+      provider: Provider::Artcraft,
+      ..initial.clone()
+    };
+    let cost_plan = cost_request.build().map_err(|e| {
+      warn!("Failed to build cost plan during video distillation: {}", e);
+      AdvancedCommonWebError::from_error(e)
+    })?;
+    cost_plan.estimate_costs()
+  };
+
+  // ── Distill: resolve media tokens to URLs for the execution request ──
+
+  let hydration_map = media_file_hydration_map.as_ref();
+
+  let start_frame_url = resolve_single_media_token(
+    request.start_frame_image_media_token.as_ref(), hydration_map,
+  )?;
+  let end_frame_url = resolve_single_media_token(
+    request.end_frame_image_media_token.as_ref(), hydration_map,
+  )?;
+  let reference_image_urls = resolve_media_token_list(
+    request.reference_image_media_tokens.as_ref(), hydration_map,
+  )?;
+  let reference_video_urls = resolve_media_token_list(
+    request.reference_video_media_tokens.as_ref(), hydration_map,
+  )?;
+  let reference_audio_urls = resolve_media_token_list(
+    request.reference_audio_media_tokens.as_ref(), hydration_map,
+  )?;
+
+  // ── Distill: build the execution request with resolved URLs ──
+
+  let exec_request = GenerateVideoRequestBuilder {
+    model: initial.model,
+    provider: execution_provider,
+    prompt: initial.prompt,
+    negative_prompt: initial.negative_prompt,
+    start_frame: start_frame_url.map(ImageRef::Url),
+    end_frame: end_frame_url.map(ImageRef::Url),
+    reference_images: reference_image_urls.map(ImageListRef::Urls),
+    reference_videos: reference_video_urls.map(VideoListRef::Urls),
+    reference_audio: reference_audio_urls.map(AudioListRef::Urls),
+    reference_character_tokens: None,
+    resolution: initial.resolution,
+    aspect_ratio: initial.aspect_ratio,
+    duration_seconds: initial.duration_seconds,
+    video_batch_count: initial.video_batch_count,
+    generate_audio: initial.generate_audio,
+    request_mismatch_mitigation_strategy: initial.request_mismatch_mitigation_strategy,
+    idempotency_token: initial.idempotency_token,
+  };
+
+  let plan = exec_request.build().map_err(|e| {
+    warn!("Failed to build video generation plan during distillation: {}", e);
+    AdvancedCommonWebError::from_error(e)
+  })?;
+
+  info!("v1 distilled plan: {:?}", plan);
+
+  // ── Bill wallet ──
+
+  let cost_in_credits = cost.cost_in_credits.unwrap_or(0);
+  let billing = bill_wallet(user_token, cost_in_credits, mysql_connection).await?;
+
+  // ── Execute generation via the appropriate provider ──
+
+  let gen_result = match execution_provider {
     Provider::Seedance2Pro => {
       execute_generation_kinovi(
-        &distilled, request, server_state,
+        request, server_state,
         media_file_hydration_map.as_ref(), kinovi_character_ids,
         billing.maybe_wallet_ledger_entry_token.as_ref(), mysql_connection,
       ).await?
     }
     _ => {
-      execute_generation_fal(&distilled, request, server_state).await?
+      execute_generation_fal(&plan, request, server_state).await?
     }
   };
 
-  // Map v1 GenerationResult → GenerateVideoResponse for the shared suffix
+  // ── Map GenerationResult → GenerateVideoResponse for the shared suffix ──
+
   let response = if gen_result.is_seedance2pro {
     GenerateVideoResponse::Seedance2Pro(
       artcraft_router::generate::generate_video::generate_video_response::Seedance2proVideoResponsePayload {
@@ -120,7 +186,7 @@ pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResu
   Ok(PipelineResult { billing, response })
 }
 
-// ── Distillation ──
+// ── Distillation (kept public for tests) ──
 
 pub fn distill_video_request(
   request: &OmniGenVideoCostAndGenerateRequest,
