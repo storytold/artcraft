@@ -1,5 +1,7 @@
 //! Resolve character tokens to Kinovi character IDs for prompting.
 
+use std::collections::HashMap;
+
 use log::warn;
 use sqlx::MySql;
 
@@ -8,14 +10,14 @@ use tokens::tokens::characters::CharacterToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 
-/// Resolve character tokens to Kinovi character IDs for prompting.
+/// Resolve character tokens to a map of CharacterToken → Kinovi character ID.
 ///
 /// Looks up the characters, filters to active ones with kinovi IDs, and warns about
 /// any that are missing or inactive (but doesn't fail the request).
 pub async fn resolve_kinovi_character_ids(
   maybe_tokens: Option<&[CharacterToken]>,
   connection: &mut sqlx::pool::PoolConnection<MySql>,
-) -> Result<Option<Vec<String>>, AdvancedCommonWebError> {
+) -> Result<Option<HashMap<CharacterToken, String>>, AdvancedCommonWebError> {
   let tokens = match maybe_tokens {
     None => return Ok(None),
     Some(tokens) if tokens.is_empty() => return Ok(None),
@@ -38,10 +40,12 @@ pub async fn resolve_kinovi_character_ids(
     }
   }
 
-  let ids: Vec<String> = characters.iter()
-      .filter(|c| c.is_active)
-      .filter_map(|c| c.kinovi_character_id.clone())
-      .collect();
+  let map: HashMap<CharacterToken, String> = characters.iter()
+    .filter(|c| c.is_active)
+    .filter_map(|c| {
+      c.kinovi_character_id.as_ref().map(|kid| (c.token.clone(), kid.clone()))
+    })
+    .collect();
 
-  if ids.is_empty() { Ok(None) } else { Ok(Some(ids)) }
+  if map.is_empty() { Ok(None) } else { Ok(Some(map)) }
 }

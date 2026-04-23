@@ -25,10 +25,14 @@ pub async fn run_pipeline_v1(
   user_token: &tokens::tokens::users::UserToken,
   media_file_hydration_map: &Option<HashMap<MediaFileToken, Url>>,
 ) -> Result<PipelineResult, AdvancedCommonWebError> {
-  let kinovi_character_ids = resolve_kinovi_character_ids(
+  let kinovi_character_id_map = resolve_kinovi_character_ids(
     request.reference_character_tokens.as_deref(),
     mysql_connection,
   ).await?;
+
+  // v1 execute_generation expects a flat Vec<String> of kinovi IDs
+  let kinovi_character_ids: Option<Vec<String>> = kinovi_character_id_map
+    .map(|map| map.into_values().collect());
 
   let execution_provider = match request.model {
     Some(CommonVideoModel::Seedance2p0) => Provider::Seedance2Pro,
