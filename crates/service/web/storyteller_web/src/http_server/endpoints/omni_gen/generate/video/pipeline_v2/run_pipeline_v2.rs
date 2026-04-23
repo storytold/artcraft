@@ -18,8 +18,8 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
-use crate::http_server::endpoints::omni_gen::generate::video::hydrate_router_request::hydrate_to_router_request;
-use crate::http_server::endpoints::omni_gen::generate::video::pipeline_result::PipelineResult;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::state::server_state::ServerState;
 
 pub struct RunPipelineV2Args<'a> {

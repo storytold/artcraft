@@ -30,7 +30,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_fa
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_seedance2pro_jobs::insert_seedance2pro_jobs;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
-use crate::http_server::endpoints::omni_gen::generate::video::request_helper::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;

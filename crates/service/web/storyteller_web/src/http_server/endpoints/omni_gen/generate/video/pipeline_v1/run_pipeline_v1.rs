@@ -17,8 +17,8 @@ use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
-use crate::http_server::endpoints::omni_gen::generate::video::hydrate_router_request::hydrate_to_router_request;
-use crate::http_server::endpoints::omni_gen::generate::video::pipeline_result::PipelineResult;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_fal::execute_generation_fal;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_kinovi::execute_generation_kinovi;
 use crate::state::server_state::ServerState;
