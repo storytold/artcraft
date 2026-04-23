@@ -205,7 +205,7 @@ pub async fn omni_gen_video_generate_handler(
 
   // -- Prompt --
 
-  let prompt_result = insert_prompt(InsertPromptArgs {
+  let prompt_token = match insert_prompt(InsertPromptArgs {
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),
@@ -223,9 +223,7 @@ pub async fn omni_gen_video_generate_handler(
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
-  }).await;
-
-  let prompt_token = match prompt_result {
+  }).await {
     Ok(token) => Some(token),
     Err(err) => {
       warn!("Error inserting prompt: {:?}", err);
@@ -286,7 +284,8 @@ pub async fn omni_gen_video_generate_handler(
         &payload.order_id, None,
         &pipeline_result.billing.apriori_job_token, &idempotency_token,
         pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
-        user_token, maybe_avt_token.as_ref(), &ip_address,
+        user_token, maybe_avt_token.as_ref(),
+        prompt_token.as_ref(), &ip_address,
         &mut transaction,
       ).await?
     }
@@ -294,7 +293,8 @@ pub async fn omni_gen_video_generate_handler(
       let external_id = payload.request_id.clone().unwrap_or_default();
       insert_fal_job(
         &external_id, &pipeline_result.billing.apriori_job_token, &idempotency_token,
-        user_token, maybe_avt_token.as_ref(), &ip_address,
+        user_token, maybe_avt_token.as_ref(),
+        prompt_token.as_ref(), &ip_address,
         &mut transaction,
       ).await?
     }

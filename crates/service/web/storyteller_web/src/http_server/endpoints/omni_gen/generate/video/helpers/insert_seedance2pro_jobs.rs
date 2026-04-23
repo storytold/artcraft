@@ -6,6 +6,7 @@ use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_infe
   InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs,
 };
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::prompts::PromptToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 
@@ -18,6 +19,7 @@ pub async fn insert_seedance2pro_jobs(
   maybe_wallet_ledger_entry_token: Option<&tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken>,
   user_token: &tokens::tokens::users::UserToken,
   maybe_avt_token: Option<&tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken>,
+  maybe_prompt_token: Option<&PromptToken>,
   ip_address: &str,
   transaction: &mut sqlx::Transaction<'_, sqlx::MySql>,
 ) -> Result<InferenceJobToken, AdvancedCommonWebError> {
@@ -36,7 +38,7 @@ pub async fn insert_seedance2pro_jobs(
         uuid_idempotency_token: &idempotency_str,
         maybe_external_third_party_id: order_id,
         maybe_inference_args: None,
-        maybe_prompt_token: None,
+        maybe_prompt_token,
         maybe_wallet_ledger_entry_token,
         maybe_creator_user_token: Some(user_token),
         maybe_avt_token,

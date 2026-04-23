@@ -7,6 +7,7 @@ use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job
   InsertGenericInferenceForFalWithAprioriJobTokenArgs,
 };
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::prompts::PromptToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 
@@ -17,6 +18,7 @@ pub async fn insert_fal_job(
   idempotency_token: &str,
   user_token: &tokens::tokens::users::UserToken,
   maybe_avt_token: Option<&tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken>,
+  maybe_prompt_token: Option<&PromptToken>,
   ip_address: &str,
   transaction: &mut sqlx::Transaction<'_, sqlx::MySql>,
 ) -> Result<InferenceJobToken, AdvancedCommonWebError> {
@@ -27,7 +29,7 @@ pub async fn insert_fal_job(
       maybe_external_third_party_id: external_job_id,
       fal_category: FalCategory::VideoGeneration,
       maybe_inference_args: None,
-      maybe_prompt_token: None,
+      maybe_prompt_token,
       maybe_creator_user_token: Some(user_token),
       maybe_avt_token,
       creator_ip_address: ip_address,
