@@ -3,12 +3,12 @@
 use log::warn;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
-use artcraft_router::client::router_client::RouterClient;
-use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::state::server_state::ServerState;
 
 use super::super::distill_video_request::DistilledVideoRequest;
@@ -20,11 +20,7 @@ pub(super) async fn execute_generation_fal(
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
 ) -> Result<GenerationResult, AdvancedCommonWebError> {
-  let fal_client = RouterFalClient::new(
-    server_state.fal.api_key.clone(),
-    server_state.fal.webhook_url.clone(),
-  );
-  let router_client = RouterClient::Fal(fal_client);
+  let router_client = build_router_client(Provider::Fal, server_state)?;
 
   let generation_response = distilled.plan().generate_video(&router_client)
     .await

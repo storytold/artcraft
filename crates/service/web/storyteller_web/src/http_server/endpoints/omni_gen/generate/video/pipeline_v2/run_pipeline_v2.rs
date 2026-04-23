@@ -1,24 +1,22 @@
 use std::collections::HashMap;
 
 use log::{error, info, warn};
+use sqlx::pool::PoolConnection;
 use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_router::api::provider::Provider;
-use artcraft_router::client::router_client::RouterClient;
-use artcraft_router::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use artcraft_router::generate::generate_video_v2::video_generation_draft_context::VideoGenerationDraftContext;
 use artcraft_router::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
-use artcraft_router::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
-use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
-use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
+use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoint_helpers::refund_wallet_after_api_failure::refund_wallet_after_api_failure;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::build_router_client::build_router_client;
 use crate::http_server::endpoints::omni_gen::generate::video::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_result::PipelineResult;
 use crate::http_server::endpoints::omni_gen::generate::video::request_helper::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
@@ -27,8 +25,8 @@ use crate::state::server_state::ServerState;
 pub async fn run_pipeline_v2(
   request: &OmniGenVideoCostAndGenerateRequest,
   server_state: &ServerState,
-  mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-  user_token: &tokens::tokens::users::UserToken,
+  mysql_connection: &mut PoolConnection<sqlx::MySql>,
+  user_token: &UserToken,
   media_file_hydration_map: &Option<HashMap<MediaFileToken, Url>>,
 ) -> Result<PipelineResult, AdvancedCommonWebError> {
   // 1. Build execution request (provider = Seedance2Pro for Kinovi)
@@ -113,7 +111,7 @@ async fn upload_and_generate(
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
 ) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
   let provider = draft_or_request.get_provider();
-  let client = build_client(provider, server_state)?;
+  let client = build_router_client(provider, server_state)?;
 
   let video_request = match draft_or_request {
     VideoGenerationDraftOrRequest::Request(request) => request,
@@ -135,20 +133,4 @@ async fn upload_and_generate(
     warn!("v2 video generation failed: {:?}", err);
     AdvancedCommonWebError::from_error(err)
   })
-}
-
-fn build_client(provider: Provider, server_state: &ServerState) -> Result<RouterClient, AdvancedCommonWebError> {
-  match provider {
-    Provider::Seedance2Pro => {
-      let session = Seedance2ProSession::from_cookies_string(
-        server_state.seedance2pro.cookies.clone()
-      );
-      Ok(RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session)))
-    }
-    other => {
-      Err(AdvancedCommonWebError::server_error_with_message(
-        &format!("Unsupported provider for v2 pipeline: {:?}", other),
-      ))
-    }
-  }
 }
