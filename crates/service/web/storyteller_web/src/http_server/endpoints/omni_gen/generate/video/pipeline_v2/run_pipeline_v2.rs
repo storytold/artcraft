@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use log::{error, info, warn};
+use sqlx::pool::PoolConnection;
 use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
@@ -20,23 +21,34 @@ use crate::http_server::endpoints::omni_gen::generate::video::hydrate_router_req
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_result::PipelineResult;
 use crate::state::server_state::ServerState;
 
-pub async fn run_pipeline_v2(
-  request: &OmniGenVideoCostAndGenerateRequest,
-  server_state: &ServerState,
-  mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-  user_token: &UserToken,
-  media_file_hydration_map: &Option<HashMap<MediaFileToken, Url>>,
-  media_file_to_url_map: &Option<HashMap<MediaFileToken, String>>,
-  kinovi_character_id_map: &Option<HashMap<CharacterToken, String>>,
-) -> Result<PipelineResult, AdvancedCommonWebError> {
+pub struct RunPipelineV2Args<'a> {
+  pub request: &'a OmniGenVideoCostAndGenerateRequest,
+  pub server_state: &'a ServerState,
+  pub mysql_connection: &'a mut PoolConnection<sqlx::MySql>,
+  pub user_token: &'a UserToken,
+  pub media_file_to_url_map: &'a Option<HashMap<MediaFileToken, String>>,
+  pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
+}
+
+pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
+  let RunPipelineV2Args {
+    request, 
+    server_state, 
+    mysql_connection, 
+    user_token,
+    media_file_to_url_map, 
+    kinovi_character_id_map,
+  } = args;
+
   // 1. Build execution request (provider = Seedance2Pro for Kinovi)
   let mut exec_builder = hydrate_to_router_request(request)?;
   exec_builder.provider = Provider::Seedance2Pro;
 
-  let draft_or_request = exec_builder.build2().map_err(|e| {
-    warn!("Failed to build2 for v2 pipeline: {}", e);
-    AdvancedCommonWebError::from_error(e)
-  })?;
+  let draft_or_request = exec_builder.build2()
+      .map_err(|e| { 
+        warn!("Failed to build2 for v2 pipeline: {}", e);
+        AdvancedCommonWebError::from_error(e)
+      })?;
 
   let provider = draft_or_request.get_provider();
 
@@ -76,7 +88,10 @@ pub async fn run_pipeline_v2(
     if matches!(provider, Provider::Seedance2Pro) {
       if let Some(ledger_entry_token) = billing.maybe_wallet_ledger_entry_token.as_ref() {
         warn!("Kinovi v2 generation failed, issuing refund for {}: {:?}", ledger_entry_token.as_str(), err);
-        if let Err(refund_err) = refund_wallet_after_api_failure(ledger_entry_token, mysql_connection).await {
+        
+        let result = refund_wallet_after_api_failure(ledger_entry_token, mysql_connection).await;
+        
+        if let Err(refund_err) = result {
           error!("Failed to refund wallet after Kinovi v2 failure: {:?}", refund_err);
         }
       }
@@ -84,6 +99,7 @@ pub async fn run_pipeline_v2(
   }
 
   let response = result?;
+
   info!("v2 generation response: {:?}", response);
 
   Ok(PipelineResult { billing, response })
@@ -98,6 +114,7 @@ async fn upload_and_generate(
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
 ) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
+  
   let provider = draft_or_request.get_provider();
   let client = build_router_client(provider, server_state)?;
 
@@ -110,15 +127,19 @@ async fn upload_and_generate(
         character_token_to_kinovi_id_map: kinovi_character_ids,
       };
 
-      draft.finalize(draft_context).await.map_err(|err| {
-        warn!("Failed to finalize v2 draft: {:?}", err);
-        AdvancedCommonWebError::from_error(err)
-      })?
+      draft.finalize(draft_context)
+          .await
+          .map_err(|err| {
+            warn!("Failed to finalize v2 draft: {:?}", err);
+            AdvancedCommonWebError::from_error(err)
+          })?
     }
   };
 
-  video_request.send_request(&client).await.map_err(|err| {
-    warn!("v2 video generation failed: {:?}", err);
-    AdvancedCommonWebError::from_error(err)
-  })
+  video_request.send_request(&client)
+      .await
+      .map_err(|err| {
+        warn!("v2 video generation failed: {:?}", err);
+        AdvancedCommonWebError::from_error(err)
+      })
 }

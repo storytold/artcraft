@@ -28,9 +28,9 @@ use crate::http_server::common_responses::advanced_common_web_error::AdvancedCom
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_fal_job::insert_fal_job;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::insert_seedance2pro_jobs::insert_seedance2pro_jobs;
+use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
+use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::request_helper::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
-use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::run_pipeline_v1;
-use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::run_pipeline_v2;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
@@ -167,12 +167,23 @@ pub async fn omni_gen_video_generate_handler(
   );
 
   let pipeline_result = if use_v2 {
-    run_pipeline_v2(
-      &request, &server_state, &mut mysql_connection, user_token,
-      &media_file_hydration_map, &media_file_to_url_map, &kinovi_character_id_map,
-    ).await?
+    run_pipeline_v2(RunPipelineV2Args {
+      request: &request,
+      server_state: &server_state,
+      mysql_connection: &mut mysql_connection,
+      user_token,
+      media_file_to_url_map: &media_file_to_url_map,
+      kinovi_character_id_map: &kinovi_character_id_map,
+    }).await?
   } else {
-    run_pipeline_v1(&request, &server_state, &mut mysql_connection, user_token, &media_file_hydration_map).await?
+    run_pipeline_v1(RunPipelineV1Args {
+      request: &request,
+      server_state: &server_state,
+      mysql_connection: &mut mysql_connection,
+      user_token,
+      media_file_hydration_map: &media_file_hydration_map,
+      kinovi_character_id_map: &kinovi_character_id_map,
+    }).await?
   };
 
   // ==================== WRITE RESULT ==================== //

@@ -7,32 +7,40 @@ use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost
 use artcraft_router::api::provider::Provider;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use enums::common::generation::common_video_model::CommonVideoModel;
+use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::bill_wallet::bill_wallet;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_result::PipelineResult;
-use crate::http_server::endpoints::omni_gen::generate::video::hydrate_router_request::hydrate_to_router_request;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::distill_video_request::distill_video_request;
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::execute::execute_generation::execute_generation;
-use crate::http_server::endpoints::omni_gen::generate::video::request_helper::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
 use crate::state::server_state::ServerState;
 
-pub async fn run_pipeline_v1(
-  request: &OmniGenVideoCostAndGenerateRequest,
-  server_state: &ServerState,
-  mysql_connection: &mut sqlx::pool::PoolConnection<sqlx::MySql>,
-  user_token: &tokens::tokens::users::UserToken,
-  media_file_hydration_map: &Option<HashMap<MediaFileToken, Url>>,
-) -> Result<PipelineResult, AdvancedCommonWebError> {
-  let kinovi_character_id_map = resolve_kinovi_character_ids(
-    request.reference_character_tokens.as_deref(),
+pub struct RunPipelineV1Args<'a> {
+  pub request: &'a OmniGenVideoCostAndGenerateRequest,
+  pub server_state: &'a ServerState,
+  pub mysql_connection: &'a mut sqlx::pool::PoolConnection<sqlx::MySql>,
+  pub user_token: &'a UserToken,
+  pub media_file_hydration_map: &'a Option<HashMap<MediaFileToken, Url>>,
+  pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
+}
+
+pub async fn run_pipeline_v1(args: RunPipelineV1Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
+  let RunPipelineV1Args {
+    request,
+    server_state,
     mysql_connection,
-  ).await?;
+    user_token,
+    media_file_hydration_map,
+    kinovi_character_id_map,
+  } = args;
 
   // v1 execute_generation expects a flat Vec<String> of kinovi IDs
   let kinovi_character_ids: Option<Vec<String>> = kinovi_character_id_map
-    .map(|map| map.into_values().collect());
+    .as_ref()
+    .map(|map| map.values().cloned().collect());
 
   let execution_provider = match request.model {
     Some(CommonVideoModel::Seedance2p0) => Provider::Seedance2Pro,
@@ -51,7 +59,7 @@ pub async fn run_pipeline_v1(
     kinovi_character_ids, billing.maybe_wallet_ledger_entry_token.as_ref(), mysql_connection,
   ).await?;
 
-  // Map v1 GenerationResult -> GenerateVideoResponse for the shared suffix
+  // Map v1 GenerationResult → GenerateVideoResponse for the shared suffix
   let response = if gen_result.is_seedance2pro {
     GenerateVideoResponse::Seedance2Pro(
       artcraft_router::generate::generate_video::generate_video_response::Seedance2proVideoResponsePayload {
