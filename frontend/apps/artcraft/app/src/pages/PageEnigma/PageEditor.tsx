@@ -315,6 +315,10 @@ export const PageEditor = () => {
     if (tabStore.activeTabId === "3D") {
       handler = onImageDrop(
         (item: GalleryItem, position: { x: number; y: number }) => {
+          // Video drops are only handled on the HTML moodboard. Drop on 3D
+          // silently — the gallery allows the drag globally, but only tabs
+          // that know how to render video should consume it.
+          if (item.mediaClass === "video") return;
           console.log("3D Drop debug (event):", {
             editorEngine,
             camera: editorEngine?.camera,
@@ -407,6 +411,12 @@ export const PageEditor = () => {
       const activeTab = tabStore.activeTabId;
       handler = onImageDrop(
         (item: GalleryItem, position: { x: number; y: number }) => {
+          // Only the HTML moodboard renders videos. Silently ignore video
+          // drops on the Konva 2D canvas and the Konva moodboard, which
+          // would otherwise try to load the video URL as an image.
+          if (item.mediaClass === "video" && activeTab !== "MOODBOARD_HTML") {
+            return;
+          }
           // Find the drop target element. For the HTML moodboard tab there's
           // no <canvas>; use the HTML stage container element instead.
           const target: Element | null =
