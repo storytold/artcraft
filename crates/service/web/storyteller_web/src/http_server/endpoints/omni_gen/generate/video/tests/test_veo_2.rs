@@ -21,7 +21,7 @@ mod tests {
   use url::Url;
 
   use artcraft_router::api::provider::Provider;
-  use crate::http_server::endpoints::omni_gen::generate::video::distill_video_request::{
+  use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::distill_video_request::{
     distill_video_request, DistilledVideoRequest,
   };
 

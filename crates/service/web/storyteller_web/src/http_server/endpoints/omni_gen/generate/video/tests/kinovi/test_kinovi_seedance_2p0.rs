@@ -20,7 +20,7 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
   use url::Url;
 
-  use crate::http_server::endpoints::omni_gen::generate::video::distill_video_request::{
+  use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::distill_video_request::{
     distill_video_request, DistilledVideoRequest,
   };
 
