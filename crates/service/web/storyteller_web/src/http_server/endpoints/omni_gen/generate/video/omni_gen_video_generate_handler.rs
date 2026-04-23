@@ -161,10 +161,11 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== PIPELINE DISPATCH ==================== //
 
-  let use_v2 = matches!(
-    request.model,
-    Some(CommonVideoModel::Seedance2p0) | Some(CommonVideoModel::Seedance2p0Fast)
-  );
+  let use_v2 = match request.model {
+    Some(CommonVideoModel::Seedance2p0) => true,
+    Some(CommonVideoModel::Seedance2p0Fast) => true,
+    _ => false,
+  };
 
   let pipeline_result = if use_v2 {
     run_pipeline_v2(RunPipelineV2Args {
