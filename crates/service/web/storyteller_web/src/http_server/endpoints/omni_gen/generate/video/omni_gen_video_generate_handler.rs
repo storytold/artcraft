@@ -12,6 +12,7 @@ use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_resp
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
@@ -213,7 +214,7 @@ pub async fn omni_gen_video_generate_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: request.negative_prompt.as_deref(),
     maybe_other_args: None,
-    maybe_generation_mode: None,
+    maybe_generation_mode: Some(determine_generation_mode(&request)),
     maybe_aspect_ratio: request.aspect_ratio,
     maybe_resolution: request.resolution,
     maybe_batch_count: request.video_batch_count.map(|c| c as u8),
@@ -315,4 +316,24 @@ pub async fn omni_gen_video_generate_handler(
     success: true,
     inference_job_token: job_token,
   }))
+}
+
+fn determine_generation_mode(request: &OmniGenVideoCostAndGenerateRequest) -> CommonGenerationMode {
+  let has_keyframe = request.start_frame_image_media_token.is_some()
+    || request.end_frame_image_media_token.is_some();
+
+  if has_keyframe {
+    return CommonGenerationMode::Keyframe;
+  }
+
+  let has_reference = request.reference_image_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_video_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_audio_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_character_tokens.as_ref().is_some_and(|t| !t.is_empty());
+
+  if has_reference {
+    return CommonGenerationMode::Reference;
+  }
+
+  CommonGenerationMode::Text
 }
