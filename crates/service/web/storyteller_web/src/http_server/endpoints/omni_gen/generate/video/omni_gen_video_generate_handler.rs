@@ -290,9 +290,12 @@ pub async fn omni_gen_video_generate_handler(
       ).await?
     }
     GenerateVideoResponse::Fal(payload) => {
-      let external_id = payload.request_id.clone().unwrap_or_default();
+      let external_id = payload.request_id.as_deref().ok_or_else(|| {
+        error!("Fal generation response missing request_id");
+        AdvancedCommonWebError::server_error_with_message("Fal generation response missing request_id")
+      })?;
       insert_fal_job(
-        &external_id, &pipeline_result.billing.apriori_job_token, &idempotency_token,
+        external_id, &pipeline_result.billing.apriori_job_token, &idempotency_token,
         user_token, maybe_avt_token.as_ref(),
         prompt_token.as_ref(), &ip_address,
         &mut transaction,
