@@ -134,6 +134,9 @@
       "path": "../../libs/components/select"
     },
     {
+      "path": "../../libs/components/checkbox"
+    },
+    {
       "path": "../../libs/components/help-menu"
     },
     {

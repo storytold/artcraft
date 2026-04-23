@@ -3,6 +3,9 @@
   "include": [],
   "references": [
     {
+      "path": "../checkbox"
+    },
+    {
       "path": "../slider-v2"
     },
     {
@@ -25,9 +28,6 @@
     },
     {
       "path": "../toaster"
-    },
-    {
-      "path": "../../tauri-api"
     },
     {
       "path": "../action-reminder-modal"

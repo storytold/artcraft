@@ -20,6 +20,8 @@ interface Status {
   maybe_assigned_worker?: string;
   maybe_extra_status_description?: string;
   maybe_failure_category?: string;
+  maybe_failure_category_updated?: string | null;
+  maybe_failure_message?: string | null;
   maybe_first_started_at: string;
   requires_keepalive: boolean;
   status: string;

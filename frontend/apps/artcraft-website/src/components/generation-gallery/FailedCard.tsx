@@ -1,9 +1,6 @@
 import { memo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCircleExclamation,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
 
 export interface FailedCardProps {
   id: string;
@@ -33,7 +30,7 @@ export const FailedCard = memo(function FailedCard({
           {failureReason || "Generation failed"}
         </span>
         {failureMessage && failureMessage !== failureReason && (
-          <span className="text-center text-[10px] text-red-400/60 line-clamp-2">
+          <span className="text-center text-[10px] max-w-md text-red-400/60 line-clamp-2 sm:line-clamp-4">
             {failureMessage}
           </span>
         )}

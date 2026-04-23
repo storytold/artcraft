@@ -46,6 +46,21 @@ module.exports = {
         900: "#19398f",
         950: "#142457",
       },
+      danger: {
+        // copper rust — aligned with artcraft app's tailwind.config.ts
+        DEFAULT: "#8f4951",
+        50: "#fbf5f5",
+        100: "#f7ecec",
+        200: "#efdcdc",
+        300: "#e2c0bf",
+        400: "#d19b9c",
+        500: "#bd7679",
+        600: "#a5595f",
+        700: "#8f4951",
+        800: "#743d45",
+        900: "#64373f",
+        950: "#361b1e",
+      },
       secondary: {
         DEFAULT: "#3E3E41",
         50: "#f6f6f6",

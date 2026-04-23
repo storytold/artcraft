@@ -591,16 +591,17 @@ function jobsToFailed(jobs: Job[]): FailedTask[] {
     )
     .map((j): FailedTask => {
       const parts = formatTitleParts(j);
-      const failureCategory = j.status.maybe_failure_category;
+      const failureCategory =
+        j.status.maybe_failure_category_updated ||
+        j.status.maybe_failure_category;
+      const rawMessage =
+        j.status.maybe_failure_message ||
+        j.status.maybe_extra_status_description;
       const failureReason = failureCategory
-        ? FAILURE_REASON_LABEL[failureCategory] ||
-          j.status.maybe_extra_status_description ||
-          undefined
-        : j.status.maybe_extra_status_description || undefined;
+        ? FAILURE_REASON_LABEL[failureCategory] || rawMessage || undefined
+        : rawMessage || undefined;
       const failureMessage =
-        j.status.maybe_extra_status_description && failureCategory !== "unknown"
-          ? j.status.maybe_extra_status_description
-          : undefined;
+        rawMessage && failureCategory !== "unknown" ? rawMessage : undefined;
 
       return {
         id: j.job_token,

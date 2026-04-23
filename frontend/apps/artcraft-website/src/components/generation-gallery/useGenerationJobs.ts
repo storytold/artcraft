@@ -18,6 +18,7 @@ export interface InProgressJob {
   modelLabel: string;
   progress: number;
   estimatedTimeLeftMs?: number;
+  createdAt: string;
 }
 
 export interface FailedJob {
@@ -28,6 +29,7 @@ export interface FailedJob {
   failureReason?: string;
   failureMessage?: string;
   status: string;
+  createdAt: string;
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -109,21 +111,22 @@ function jobToInProgress(job: Job): InProgressJob {
     modelLabel: getModelLabel(job),
     progress,
     estimatedTimeLeftMs,
+    createdAt: job.created_at,
   };
 }
 
 function jobToFailed(job: Job): FailedJob {
-  const failureCategory = job.status.maybe_failure_category;
+  const failureCategory =
+    job.status.maybe_failure_category_updated ||
+    job.status.maybe_failure_category;
+  const rawMessage =
+    job.status.maybe_failure_message ||
+    job.status.maybe_extra_status_description;
   const failureReason = failureCategory
-    ? FAILURE_REASON_LABEL[failureCategory] ||
-      job.status.maybe_extra_status_description ||
-      undefined
-    : job.status.maybe_extra_status_description || undefined;
+    ? FAILURE_REASON_LABEL[failureCategory] || rawMessage || undefined
+    : rawMessage || undefined;
   const failureMessage =
-    job.status.maybe_extra_status_description &&
-    failureCategory !== "unknown"
-      ? job.status.maybe_extra_status_description
-      : undefined;
+    rawMessage && failureCategory !== "unknown" ? rawMessage : undefined;
 
   return {
     id: job.job_token,
@@ -133,6 +136,7 @@ function jobToFailed(job: Job): FailedJob {
     failureReason,
     failureMessage,
     status: job.status.status,
+    createdAt: job.created_at,
   };
 }
 
