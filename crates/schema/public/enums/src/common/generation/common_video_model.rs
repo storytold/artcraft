@@ -29,6 +29,9 @@ pub enum CommonVideoModel {
   #[serde(rename = "kling_3p0_pro")]
   Kling3p0Pro,
 
+  #[serde(rename = "happy_horse_1p0")]
+  HappyHorse1p0,
+
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
 
@@ -75,6 +78,7 @@ impl CommonVideoModel {
       Self::Kling2p6Pro => CommonModelType::Kling2p6Pro,
       Self::Kling3p0Standard => CommonModelType::Kling3p0Standard,
       Self::Kling3p0Pro => CommonModelType::Kling3p0Pro,
+      Self::HappyHorse1p0 => CommonModelType::HappyHorse1p0,
       Self::Seedance10Lite => CommonModelType::Seedance10Lite,
       Self::Seedance1p5Pro => CommonModelType::Seedance1p5Pro,
       Self::Seedance2p0 => CommonModelType::Seedance2p0,
@@ -106,6 +110,7 @@ mod tests {
       (CommonVideoModel::Kling2p6Pro, CommonModelType::Kling2p6Pro),
       (CommonVideoModel::Kling3p0Standard, CommonModelType::Kling3p0Standard),
       (CommonVideoModel::Kling3p0Pro, CommonModelType::Kling3p0Pro),
+      (CommonVideoModel::HappyHorse1p0, CommonModelType::HappyHorse1p0),
       (CommonVideoModel::Seedance10Lite, CommonModelType::Seedance10Lite),
       (CommonVideoModel::Seedance1p5Pro, CommonModelType::Seedance1p5Pro),
       (CommonVideoModel::Seedance2p0, CommonModelType::Seedance2p0),
