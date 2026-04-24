@@ -160,134 +160,301 @@ fn plan_duration(
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use crate::api::common_video_model::CommonVideoModel;
+  use tokens::tokens::media_files::MediaFileToken;
+
+  use crate::api::image_ref::ImageRef;
   use crate::api::provider::Provider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
+  use crate::errors::artcraft_router_error::ArtcraftRouterError;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+  use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
+  use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 
-  fn default_builder() -> GenerateVideoRequestBuilder {
+  use super::*;
+
+  // ── Materialized field conversions ──
+
+  mod materialized_field_conversions {
+    use super::*;
+
+    #[test]
+    fn prompt_is_passed_through() {
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(happy_horse_builder()));
+      assert_eq!(draft.prompt, "a cat dancing");
+    }
+
+    #[test]
+    fn prompt_defaults_to_empty() {
+      let builder = GenerateVideoRequestBuilder { prompt: None, ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert_eq!(draft.prompt, "");
+    }
+
+    #[test]
+    fn duration_seconds_converted() {
+      let builder = GenerateVideoRequestBuilder { duration_seconds: Some(10), ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert_eq!(draft.duration_seconds, 10);
+    }
+
+    #[test]
+    fn duration_defaults_to_5() {
+      let builder = GenerateVideoRequestBuilder { duration_seconds: None, ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert_eq!(draft.duration_seconds, 5);
+    }
+
+    #[test]
+    fn duration_clamped_to_max() {
+      let builder = GenerateVideoRequestBuilder { duration_seconds: Some(99), ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert_eq!(draft.duration_seconds, 15);
+    }
+
+    #[test]
+    fn batch_count_none_for_one() {
+      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(1), ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(draft.batch_count.is_none());
+    }
+
+    #[test]
+    fn batch_count_two() {
+      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(2), ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.batch_count, Some(KinoviHappyHorse1p0BatchCount::Two)));
+    }
+
+    #[test]
+    fn batch_count_four() {
+      let builder = GenerateVideoRequestBuilder { video_batch_count: Some(4), ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.batch_count, Some(KinoviHappyHorse1p0BatchCount::Four)));
+    }
+  }
+
+  // ── Aspect ratio conversions ──
+
+  mod aspect_ratio_conversions {
+    use super::*;
+
+    #[test]
+    fn aspect_ratio_wide() {
+      let builder = GenerateVideoRequestBuilder {
+        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.aspect_ratio, Some(KinoviHappyHorse1p0AspectRatio::Landscape16x9)));
+    }
+
+    #[test]
+    fn aspect_ratio_tall() {
+      let builder = GenerateVideoRequestBuilder {
+        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.aspect_ratio, Some(KinoviHappyHorse1p0AspectRatio::Portrait9x16)));
+    }
+
+    #[test]
+    fn aspect_ratio_square() {
+      let builder = GenerateVideoRequestBuilder {
+        aspect_ratio: Some(CommonAspectRatio::Square),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.aspect_ratio, Some(KinoviHappyHorse1p0AspectRatio::Square1x1)));
+    }
+
+    #[test]
+    fn aspect_ratio_none_defaults_to_none() {
+      let builder = GenerateVideoRequestBuilder { aspect_ratio: None, ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(draft.aspect_ratio.is_none());
+    }
+
+    #[test]
+    fn aspect_ratio_auto_defaults_to_none() {
+      let builder = GenerateVideoRequestBuilder {
+        aspect_ratio: Some(CommonAspectRatio::Auto),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(draft.aspect_ratio.is_none());
+    }
+
+    #[test]
+    fn unsupported_aspect_ratio_falls_back() {
+      let builder = GenerateVideoRequestBuilder {
+        aspect_ratio: Some(CommonAspectRatio::WideFiveByFour),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.aspect_ratio, Some(KinoviHappyHorse1p0AspectRatio::Landscape4x3)));
+    }
+
+    #[test]
+    fn unsupported_aspect_ratio_errors_out() {
+      let builder = GenerateVideoRequestBuilder {
+        aspect_ratio: Some(CommonAspectRatio::WideFiveByFour),
+        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+        ..happy_horse_builder()
+      };
+      assert!(build_kinovi_happy_horse_1p0(builder).is_err());
+    }
+  }
+
+  // ── Resolution conversions ──
+
+  mod resolution_conversions {
+    use super::*;
+
+    #[test]
+    fn resolution_720p() {
+      let builder = GenerateVideoRequestBuilder {
+        resolution: Some(CommonResolution::SevenTwentyP),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.resolution, Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP)));
+    }
+
+    #[test]
+    fn resolution_1080p() {
+      let builder = GenerateVideoRequestBuilder {
+        resolution: Some(CommonResolution::TenEightyP),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.resolution, Some(KinoviHappyHorse1p0OutputResolution::TenEightyP)));
+    }
+
+    #[test]
+    fn resolution_none() {
+      let builder = GenerateVideoRequestBuilder { resolution: None, ..happy_horse_builder() };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(draft.resolution.is_none());
+    }
+
+    #[test]
+    fn unsupported_resolution_error_out() {
+      let builder = GenerateVideoRequestBuilder {
+        resolution: Some(CommonResolution::FourEightyP),
+        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
+        ..happy_horse_builder()
+      };
+      assert!(build_kinovi_happy_horse_1p0(builder).is_err());
+    }
+
+    #[test]
+    fn unsupported_resolution_upgrades() {
+      let builder = GenerateVideoRequestBuilder {
+        resolution: Some(CommonResolution::FourK),
+        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.resolution, Some(KinoviHappyHorse1p0OutputResolution::TenEightyP)));
+    }
+
+    #[test]
+    fn unsupported_resolution_downgrades() {
+      let builder = GenerateVideoRequestBuilder {
+        resolution: Some(CommonResolution::FourK),
+        request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      assert!(matches!(draft.resolution, Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP)));
+    }
+  }
+
+  // ── unhandled_request_state ──
+
+  mod unhandled_request_state {
+    use super::*;
+
+    #[test]
+    fn unhandled_state_is_present() {
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(happy_horse_builder()));
+      assert!(draft.unhandled_request_state.is_some());
+    }
+
+    #[test]
+    fn start_frame_url_placed_in_unhandled() {
+      let builder = GenerateVideoRequestBuilder {
+        start_frame: Some(ImageRef::Url("https://example.com/start.jpg".to_string())),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      let remaining = draft.unhandled_request_state.unwrap();
+      assert!(matches!(remaining.start_frame, Some(ImageRef::Url(url)) if url == "https://example.com/start.jpg"));
+    }
+
+    #[test]
+    fn start_frame_media_token_placed_in_unhandled() {
+      let builder = GenerateVideoRequestBuilder {
+        start_frame: Some(ImageRef::MediaFileToken(MediaFileToken::new("mf_test123".to_string()))),
+        ..happy_horse_builder()
+      };
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+      let remaining = draft.unhandled_request_state.unwrap();
+      assert!(matches!(remaining.start_frame, Some(ImageRef::MediaFileToken(t)) if t.as_str() == "mf_test123"));
+    }
+
+    #[test]
+    fn empty_refs_are_none_in_unhandled() {
+      let draft = unwrap_draft(build_kinovi_happy_horse_1p0(happy_horse_builder()));
+      let remaining = draft.unhandled_request_state.unwrap();
+      assert!(remaining.start_frame.is_none());
+    }
+  }
+
+  // ── Full combination ──
+
+  #[test]
+  fn full_request_all_fields() {
+    let builder = GenerateVideoRequestBuilder {
+      prompt: Some("full test".to_string()),
+      aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
+      resolution: Some(CommonResolution::TenEightyP),
+      duration_seconds: Some(10),
+      video_batch_count: Some(4),
+      start_frame: Some(ImageRef::Url("https://example.com/start.jpg".to_string())),
+      ..happy_horse_builder()
+    };
+    let draft = unwrap_draft(build_kinovi_happy_horse_1p0(builder));
+
+    assert_eq!(draft.prompt, "full test");
+    assert!(matches!(draft.aspect_ratio, Some(KinoviHappyHorse1p0AspectRatio::Portrait9x16)));
+    assert!(matches!(draft.resolution, Some(KinoviHappyHorse1p0OutputResolution::TenEightyP)));
+    assert_eq!(draft.duration_seconds, 10);
+    assert!(matches!(draft.batch_count, Some(KinoviHappyHorse1p0BatchCount::Four)));
+
+    let remaining = draft.unhandled_request_state.unwrap();
+    assert!(remaining.start_frame.is_some());
+  }
+
+  // ── Helpers ──
+
+  fn happy_horse_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::HappyHorse1p0,
       provider: Provider::Seedance2Pro,
+      prompt: Some("a cat dancing".to_string()),
+      duration_seconds: Some(5),
+      video_batch_count: Some(1),
       ..Default::default()
     }
   }
 
-  mod aspect_ratio_tests {
-    use super::*;
-
-    #[test]
-    fn none_yields_none() {
-      let r = plan_aspect_ratio(None, RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(r.unwrap().is_none());
+  fn unwrap_draft(result: Result<VideoGenerationDraftOrRequest, ArtcraftRouterError>) -> KinoviHappyHorse1p0DraftState {
+    match result.expect("build should succeed") {
+      VideoGenerationDraftOrRequest::Draft(
+        VideoGenerationDraftRequest::KinoviHappyHorse1p0(draft)
+      ) => draft,
+      _ => panic!("expected KinoviHappyHorse1p0 draft"),
     }
-
-    #[test]
-    fn auto_yields_none() {
-      let r = plan_aspect_ratio(Some(CommonAspectRatio::Auto), RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(r.unwrap().is_none());
-    }
-
-    #[test]
-    fn wide_16x9() {
-      let r = plan_aspect_ratio(Some(CommonAspectRatio::WideSixteenByNine), RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(matches!(r.unwrap(), Some(KinoviHappyHorse1p0AspectRatio::Landscape16x9)));
-    }
-
-    #[test]
-    fn tall_9x16() {
-      let r = plan_aspect_ratio(Some(CommonAspectRatio::TallNineBySixteen), RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(matches!(r.unwrap(), Some(KinoviHappyHorse1p0AspectRatio::Portrait9x16)));
-    }
-
-    #[test]
-    fn square() {
-      let r = plan_aspect_ratio(Some(CommonAspectRatio::Square), RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(matches!(r.unwrap(), Some(KinoviHappyHorse1p0AspectRatio::Square1x1)));
-    }
-
-    #[test]
-    fn unsupported_falls_back() {
-      let r = plan_aspect_ratio(Some(CommonAspectRatio::WideFiveByFour), RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(matches!(r.unwrap(), Some(KinoviHappyHorse1p0AspectRatio::Landscape4x3)));
-    }
-
-    #[test]
-    fn unsupported_errors_out() {
-      let r = plan_aspect_ratio(Some(CommonAspectRatio::WideFiveByFour), RequestMismatchMitigationStrategy::ErrorOut);
-      assert!(r.is_err());
-    }
-  }
-
-  mod resolution_tests {
-    use super::*;
-
-    #[test]
-    fn none_yields_none() {
-      let r = plan_output_resolution(None, RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(r.unwrap().is_none());
-    }
-
-    #[test]
-    fn seven_twenty_p() {
-      let r = plan_output_resolution(Some(CommonResolution::SevenTwentyP), RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(matches!(r.unwrap(), Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP)));
-    }
-
-    #[test]
-    fn ten_eighty_p() {
-      let r = plan_output_resolution(Some(CommonResolution::TenEightyP), RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(matches!(r.unwrap(), Some(KinoviHappyHorse1p0OutputResolution::TenEightyP)));
-    }
-
-    #[test]
-    fn unsupported_upgrades_to_1080p() {
-      let r = plan_output_resolution(Some(CommonResolution::FourK), RequestMismatchMitigationStrategy::PayMoreUpgrade);
-      assert!(matches!(r.unwrap(), Some(KinoviHappyHorse1p0OutputResolution::TenEightyP)));
-    }
-
-    #[test]
-    fn unsupported_downgrades_to_720p() {
-      let r = plan_output_resolution(Some(CommonResolution::FourK), RequestMismatchMitigationStrategy::PayLessDowngrade);
-      assert!(matches!(r.unwrap(), Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP)));
-    }
-
-    #[test]
-    fn unsupported_errors_out() {
-      let r = plan_output_resolution(Some(CommonResolution::FourEightyP), RequestMismatchMitigationStrategy::ErrorOut);
-      assert!(r.is_err());
-    }
-  }
-
-  mod duration_tests {
-    use super::*;
-
-    #[test]
-    fn default_is_5() {
-      assert_eq!(plan_duration(None, RequestMismatchMitigationStrategy::PayMoreUpgrade).unwrap(), 5);
-    }
-
-    #[test]
-    fn clamps_below_4() {
-      assert_eq!(plan_duration(Some(1), RequestMismatchMitigationStrategy::PayMoreUpgrade).unwrap(), 4);
-    }
-
-    #[test]
-    fn clamps_above_15() {
-      assert_eq!(plan_duration(Some(30), RequestMismatchMitigationStrategy::PayMoreUpgrade).unwrap(), 15);
-    }
-
-    #[test]
-    fn passes_through_valid() {
-      assert_eq!(plan_duration(Some(8), RequestMismatchMitigationStrategy::PayMoreUpgrade).unwrap(), 8);
-    }
-  }
-
-  #[test]
-  fn build_succeeds_with_defaults() {
-    let builder = default_builder();
-    let result = build_kinovi_happy_horse_1p0(builder);
-    assert!(result.is_ok());
   }
 }
