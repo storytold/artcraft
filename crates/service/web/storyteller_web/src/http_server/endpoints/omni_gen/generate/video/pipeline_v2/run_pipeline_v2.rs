@@ -39,6 +39,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   } = args;
 
   let provider = match router_builder.model {
+    CommonVideoModel::HappyHorse1p0 => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0 => Provider::Seedance2Pro,
     CommonVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
     _ => Provider::Fal,
