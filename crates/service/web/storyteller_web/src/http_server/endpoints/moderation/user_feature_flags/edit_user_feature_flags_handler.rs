@@ -94,7 +94,7 @@ impl fmt::Display for EditUserFeatureFlagsError {
 #[utoipa::path(
   post,
   tag = "Moderation",
-  path = "/v1/moderation/user_feature_flags/{username_or_token}",
+  path = "/v1/moderation/user_feature_flags/user/{username_or_token}",
   responses(
     (status = 200, description = "Success", body = SimpleGenericJsonSuccess),
     (status = 401, description = "Unauthorized", body = EditUserFeatureFlagsError),

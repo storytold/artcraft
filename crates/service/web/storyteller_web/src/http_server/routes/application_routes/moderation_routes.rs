@@ -59,7 +59,7 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )
-        .service(web::resource("/user_feature_flags/{username_or_token}")
+        .service(web::resource("/user_feature_flags/user/{username_or_token}")
             .route(web::post().to(edit_user_feature_flags_handler))
             .route(web::head().to(|| HttpResponse::Ok()))
         )
