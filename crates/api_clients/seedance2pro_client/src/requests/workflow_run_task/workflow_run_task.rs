@@ -186,7 +186,7 @@ pub enum KinoviAspectRatioRaw {
   /// 1:1 square (720x720)
   Square1x1,
   /// 4:3 standard (960x720)
-  Standard4x3,
+  Landscape4x3,
   /// 3:4 portrait (720x960)
   Portrait3x4,
 }
@@ -197,7 +197,7 @@ impl KinoviAspectRatioRaw {
       Self::Landscape16x9 => "1280x720",
       Self::Portrait9x16 => "720x1280",
       Self::Square1x1 => "720x720",
-      Self::Standard4x3 => "960x720",
+      Self::Landscape4x3 => "960x720",
       Self::Portrait3x4 => "720x960",
     }
   }
@@ -609,7 +609,7 @@ mod tests {
         KinoviAspectRatioRaw::Landscape16x9,
         KinoviAspectRatioRaw::Portrait9x16,
         KinoviAspectRatioRaw::Square1x1,
-        KinoviAspectRatioRaw::Standard4x3,
+        KinoviAspectRatioRaw::Landscape4x3,
         KinoviAspectRatioRaw::Portrait3x4,
       ];
 
@@ -817,7 +817,7 @@ mod tests {
         request: WorkflowRunTaskRequest {
           model_type: KinoviModelTypeRaw::Seedance2Pro,
           prompt: "The dog in @2 is in the office at @1 without the man. The office is dark and moonlight streams in through the windows. Particles of dust gleam in the moon beams. Suddenly, the dog jumps walks in front of the desk and barks.".to_string(),
-          aspect_ratio: KinoviAspectRatioRaw::Standard4x3,
+          aspect_ratio: KinoviAspectRatioRaw::Landscape4x3,
           duration_seconds: 10,
           batch_count: KinoviBatchCountRaw::One,
           start_frame_url: None,
