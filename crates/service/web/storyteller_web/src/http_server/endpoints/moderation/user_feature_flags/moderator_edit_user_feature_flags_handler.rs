@@ -106,7 +106,7 @@ impl fmt::Display for EditUserFeatureFlagsError {
     ("request" = EditUserFeatureFlagsRequest, description = "Payload for Request"),
   )
 )]
-pub async fn edit_user_feature_flags_handler(
+pub async fn moderator_edit_user_feature_flags_handler(
   http_request: HttpRequest,
   path: Path<EditUserFeatureFlagPathInfo>,
   request: Json<EditUserFeatureFlagsRequest>,
