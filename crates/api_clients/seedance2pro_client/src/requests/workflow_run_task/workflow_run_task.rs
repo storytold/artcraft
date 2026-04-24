@@ -3,7 +3,7 @@ use crate::error::seedance2pro_client_error::Seedance2ProClientError;
 use crate::error::seedance2pro_error::Seedance2ProError;
 use crate::error::seedance2pro_generic_api_error::Seedance2ProGenericApiError;
 use crate::error::seedance2pro_specific_api_error::Seedance2ProSpecificApiError;
-use crate::requests::generate_video_2::request_types::*;
+use crate::requests::workflow_run_task::request_types::*;
 use crate::requests::kinovi_host::{KinoviHost, resolve_host};
 use crate::utils::categorize_seedance2pro_error::categorize_seedance2pro_error;
 use crate::utils::common_headers::FIREFOX_USER_AGENT;
@@ -13,34 +13,34 @@ use wreq_util::Emulation;
 
 // --- Request args ---
 
-/// Wrapper that bundles a [`KinoviGenerateVideo2Request`] with session and host info.
-pub struct GenerateVideo2Args<'a> {
-  pub request: KinoviGenerateVideo2Request,
+/// Wrapper that bundles a [`WorkflowRunTaskRequest`] with session and host info.
+pub struct WorkflowRunTaskArgs<'a> {
+  pub request: WorkflowRunTaskRequest,
   pub session: &'a Seedance2ProSession,
   pub host_override: Option<KinoviHost>,
 }
 
 /// Video generation parameters (no session/host info).
 #[derive(Clone)]
-pub struct KinoviGenerateVideo2Request {
+pub struct WorkflowRunTaskRequest {
   /// Seedance 2.0 Pro vs Fast
-  pub model_type: KinoviModelType2,
+  pub model_type: KinoviModelTypeRaw,
 
   pub prompt: String,
 
   /// The aspect ratio
   /// (Kinovi terms this "resolution" in the API, confusingly.)
-  pub aspect_ratio: KinoviAspectRatio2,
+  pub aspect_ratio: KinoviAspectRatioRaw,
 
   /// The resolution
   /// Output resolution quality (480p, 720p, 1080p). None defaults to 720p.
   /// (Kinovi terms this "outputResolution" in the API, which is confusingly named)
-  pub output_resolution: Option<KinoviOutputResolution2>,
+  pub output_resolution: Option<KinoviOutputResolutionRaw>,
 
   /// Duration in seconds (4–15).
   pub duration_seconds: u8,
 
-  pub batch_count: KinoviBatchCount2,
+  pub batch_count: KinoviBatchCountRaw,
 
   /// Optional start frame image URL (keyframe mode).
   pub start_frame_url: Option<String>,
@@ -71,9 +71,9 @@ pub struct KinoviGenerateVideo2Request {
   pub use_face_blur_hack: Option<bool>,
 }
 
-impl std::fmt::Debug for KinoviGenerateVideo2Request {
+impl std::fmt::Debug for WorkflowRunTaskRequest {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("KinoviGenerateVideo2Request")
+    f.debug_struct("WorkflowRunTaskRequest")
       .field("model_type", &self.model_type)
       .field("prompt", &self.prompt)
       .field("aspect_ratio", &self.aspect_ratio)
@@ -91,16 +91,16 @@ impl std::fmt::Debug for KinoviGenerateVideo2Request {
   }
 }
 
-impl std::fmt::Debug for GenerateVideo2Args<'_> {
+impl std::fmt::Debug for WorkflowRunTaskArgs<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("GenerateVideo2Args")
+    f.debug_struct("WorkflowRunTaskArgs")
       .field("request", &self.request)
       .field("host_override", &self.host_override)
       .finish()
   }
 }
 
-impl KinoviGenerateVideo2Request {
+impl WorkflowRunTaskRequest {
   /// Estimates the credit cost for this generation request.
   ///
   /// Pricing is per-second × batch count, with the per-second rate
@@ -116,24 +116,24 @@ impl KinoviGenerateVideo2Request {
   pub fn estimate_credits(&self) -> u32 {
     let credits_per_second: u32 = match (self.model_type, self.output_resolution) {
       // Seedance 2.0 Pro
-      (KinoviModelType2::Seedance2Pro, Some(KinoviOutputResolution2::FourEightyP)) => 15,
-      (KinoviModelType2::Seedance2Pro, None)
-      | (KinoviModelType2::Seedance2Pro, Some(KinoviOutputResolution2::SevenTwentyP)) => 40,
-      (KinoviModelType2::Seedance2Pro, Some(KinoviOutputResolution2::TenEightyP)) => 90,
+      (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP)) => 15,
+      (KinoviModelTypeRaw::Seedance2Pro, None)
+      | (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 40,
+      (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP)) => 90,
 
       // Seedance 2.0 Fast
-      (KinoviModelType2::Seedance2Fast, Some(KinoviOutputResolution2::FourEightyP)) => 10,
-      (KinoviModelType2::Seedance2Fast, None)
-      | (KinoviModelType2::Seedance2Fast, Some(KinoviOutputResolution2::SevenTwentyP)) => 28,
+      (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP)) => 10,
+      (KinoviModelTypeRaw::Seedance2Fast, None)
+      | (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 28,
       // NB: 1080p not officially supported for Fast, but price as 720p if requested
-      (KinoviModelType2::Seedance2Fast, Some(KinoviOutputResolution2::TenEightyP)) => 28,
+      (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::TenEightyP)) => 28,
     };
 
     let per_video = u32::from(self.duration_seconds) * credits_per_second;
     let batch_multiplier: u32 = match self.batch_count {
-      KinoviBatchCount2::One => 1,
-      KinoviBatchCount2::Two => 2,
-      KinoviBatchCount2::Four => 4,
+      KinoviBatchCountRaw::One => 1,
+      KinoviBatchCountRaw::Two => 2,
+      KinoviBatchCountRaw::Four => 4,
     };
     per_video * batch_multiplier
   }
@@ -145,12 +145,12 @@ impl KinoviGenerateVideo2Request {
   fn credits_per_dollar(&self) -> f64 {
     match (self.model_type, self.output_resolution) {
       // Legacy: Seedance 2.0 Pro @ 720p — 25,000 credits for $99.99
-      (KinoviModelType2::Seedance2Pro, None)
-      | (KinoviModelType2::Seedance2Pro, Some(KinoviOutputResolution2::SevenTwentyP)) => 250.0,
+      (KinoviModelTypeRaw::Seedance2Pro, None)
+      | (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 250.0,
 
       // Legacy: Seedance 2.0 Fast @ 720p — 22,000 credits for $99.99
-      (KinoviModelType2::Seedance2Fast, None)
-      | (KinoviModelType2::Seedance2Fast, Some(KinoviOutputResolution2::SevenTwentyP)) => 220.0,
+      (KinoviModelTypeRaw::Seedance2Fast, None)
+      | (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 220.0,
 
       // New pricing: 22,000 credits for $114 (~192.98 credits/$1)
       _ => 193.0,
@@ -169,7 +169,7 @@ impl KinoviGenerateVideo2Request {
 
 /// Video resolution / aspect ratio.
 #[derive(Debug, Clone, Copy)]
-pub enum KinoviAspectRatio2 {
+pub enum KinoviAspectRatioRaw {
   /// 16:9 landscape (1280x720)
   Landscape16x9,
   /// 9:16 portrait (720x1280)
@@ -182,7 +182,7 @@ pub enum KinoviAspectRatio2 {
   Portrait3x4,
 }
 
-impl KinoviAspectRatio2 {
+impl KinoviAspectRatioRaw {
   fn as_str(&self) -> &'static str {
     match self {
       Self::Landscape16x9 => "1280x720",
@@ -196,7 +196,7 @@ impl KinoviAspectRatio2 {
 
 /// Output resolution quality. When omitted, defaults to 720p.
 #[derive(Debug, Clone, Copy)]
-pub enum KinoviOutputResolution2 {
+pub enum KinoviOutputResolutionRaw {
   /// 480p
   FourEightyP,
   /// 720p (default — omitting the field gives this)
@@ -205,7 +205,7 @@ pub enum KinoviOutputResolution2 {
   TenEightyP,
 }
 
-impl KinoviOutputResolution2 {
+impl KinoviOutputResolutionRaw {
   /// Returns the API string to send, or None for 720p (the default, which is
   /// expressed by omitting the field entirely).
   pub fn as_api_str(&self) -> Option<&'static str> {
@@ -219,13 +219,13 @@ impl KinoviOutputResolution2 {
 
 /// Number of videos to generate in a single request.
 #[derive(Debug, Clone, Copy)]
-pub enum KinoviBatchCount2 {
+pub enum KinoviBatchCountRaw {
   One,
   Two,
   Four,
 }
 
-impl KinoviBatchCount2 {
+impl KinoviBatchCountRaw {
   fn as_u8(&self) -> u8 {
     match self {
       Self::One => 1,
@@ -237,14 +237,14 @@ impl KinoviBatchCount2 {
 
 /// The Seedance model variant to use.
 #[derive(Debug, Clone, Copy)]
-pub enum KinoviModelType2 {
+pub enum KinoviModelTypeRaw {
   /// Seedance 2.0 Pro (higher quality, slower).
   Seedance2Pro,
   /// Seedance 2.0 Fast (lower quality, faster).
   Seedance2Fast,
 }
 
-impl KinoviModelType2 {
+impl KinoviModelTypeRaw {
   fn as_api_str(&self) -> &'static str {
     match self {
       Self::Seedance2Pro => "seedance-20",
@@ -255,7 +255,7 @@ impl KinoviModelType2 {
 
 // --- Response ---
 
-pub struct GenerateVideo2Response {
+pub struct WorkflowRunTaskResponse {
   pub task_id: String,
 
   pub order_id: String,
@@ -269,7 +269,7 @@ pub struct GenerateVideo2Response {
 
 // --- Implementation ---
 
-pub async fn generate_video_2(args: GenerateVideo2Args<'_>) -> Result<GenerateVideo2Response, Seedance2ProError> {
+pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<WorkflowRunTaskResponse, Seedance2ProError> {
   let host = resolve_host(args.host_override.as_ref());
   let base_url = host.api_base_url();
   let run_task_url = format!("{}/api/trpc/workflow.runTask?batch=1", base_url);
@@ -410,7 +410,7 @@ pub async fn generate_video_2(args: GenerateVideo2Args<'_>) -> Result<GenerateVi
     return Err(Seedance2ProSpecificApiError::VideoGenerationViolation(response_body).into());
   }
 
-  Ok(GenerateVideo2Response {
+  Ok(WorkflowRunTaskResponse {
     task_id: task_data.task_id,
     order_id: task_data.order_id,
     task_ids: task_data.task_ids,
