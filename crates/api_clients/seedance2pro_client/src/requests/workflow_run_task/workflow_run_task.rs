@@ -417,3 +417,988 @@ pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<Workflow
     order_ids: task_data.order_ids,
   })
 }
+
+#[cfg(test)]
+mod tests {
+  use std::fs;
+  use super::*;
+  use crate::creds::seedance2pro_session::Seedance2ProSession;
+  use crate::test_utils::get_test_cookies::get_test_cookies;
+  use crate::test_utils::setup_test_logging::setup_test_logging;
+  use errors::AnyhowResult;
+  use log::LevelFilter;
+  use crate::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+  use crate::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+
+  mod pricing_tests {
+    use super::*;
+
+    fn make_args(
+      model_type: KinoviModelTypeRaw,
+      duration_seconds: u8,
+      batch_count: KinoviBatchCountRaw,
+      output_resolution: Option<KinoviOutputResolutionRaw>,
+    ) -> WorkflowRunTaskRequest {
+      WorkflowRunTaskRequest {
+        model_type,
+        prompt: String::new(),
+        aspect_ratio: KinoviAspectRatioRaw::Square1x1,
+        duration_seconds,
+        batch_count,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        character_ids: None,
+        output_resolution,
+        use_face_blur_hack: None,
+      }
+    }
+
+    fn pro(dur: u8, batch: KinoviBatchCountRaw) -> WorkflowRunTaskRequest {
+      make_args(KinoviModelTypeRaw::Seedance2Pro, dur, batch, None)
+    }
+
+    fn pro_res(dur: u8, batch: KinoviBatchCountRaw, res: KinoviOutputResolutionRaw) -> WorkflowRunTaskRequest {
+      make_args(KinoviModelTypeRaw::Seedance2Pro, dur, batch, Some(res))
+    }
+
+    fn fast(dur: u8, batch: KinoviBatchCountRaw) -> WorkflowRunTaskRequest {
+      make_args(KinoviModelTypeRaw::Seedance2Fast, dur, batch, None)
+    }
+
+    fn fast_res(dur: u8, batch: KinoviBatchCountRaw, res: KinoviOutputResolutionRaw) -> WorkflowRunTaskRequest {
+      make_args(KinoviModelTypeRaw::Seedance2Fast, dur, batch, Some(res))
+    }
+
+    // ── Spot checks: exact values from the pricing table ──
+
+    #[test]
+    fn spot_check_pro_720p() {
+      assert_eq!(pro(5, KinoviBatchCountRaw::One).estimate_credits(), 200);
+      assert_eq!(pro(10, KinoviBatchCountRaw::One).estimate_credits(), 400);
+      assert_eq!(pro(15, KinoviBatchCountRaw::One).estimate_credits(), 600);
+    }
+
+    #[test]
+    fn spot_check_pro_480p() {
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 75);
+      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 150);
+      assert_eq!(pro_res(15, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 225);
+    }
+
+    #[test]
+    fn spot_check_pro_1080p() {
+      assert_eq!(pro_res(4, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 360);
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 450);
+      assert_eq!(pro_res(6, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 540);
+      assert_eq!(pro_res(7, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 630);
+      assert_eq!(pro_res(8, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 720);
+      assert_eq!(pro_res(9, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 810);
+      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 900);
+      assert_eq!(pro_res(11, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 990);
+      assert_eq!(pro_res(12, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1080);
+      assert_eq!(pro_res(13, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1170);
+      assert_eq!(pro_res(14, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1260);
+      assert_eq!(pro_res(15, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1350);
+    }
+
+    #[test]
+    fn spot_check_fast_720p() {
+      assert_eq!(fast(5, KinoviBatchCountRaw::One).estimate_credits(), 140);
+      assert_eq!(fast(10, KinoviBatchCountRaw::One).estimate_credits(), 280);
+    }
+
+    #[test]
+    fn spot_check_fast_480p() {
+      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 50);
+      assert_eq!(fast_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 100);
+    }
+
+    #[test]
+    fn pro_more_expensive_than_fast_720p() {
+      let p = pro(5, KinoviBatchCountRaw::One).estimate_credits();
+      let f = fast(5, KinoviBatchCountRaw::One).estimate_credits();
+      assert!(p > f, "Pro 720p ({}) should be more than Fast 720p ({})", p, f);
+    }
+
+    #[test]
+    fn pro_more_expensive_than_fast_480p() {
+      let p = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits();
+      let f = fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits();
+      assert!(p > f, "Pro 480p ({}) should be more than Fast 480p ({})", p, f);
+    }
+
+    #[test]
+    fn pro_1080p_more_than_720p_more_than_480p() {
+      let c480 = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits();
+      let c720 = pro(5, KinoviBatchCountRaw::One).estimate_credits();
+      let c1080 = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits();
+      assert!(c480 < c720, "480p ({}) should be less than 720p ({})", c480, c720);
+      assert!(c720 < c1080, "720p ({}) should be less than 1080p ({})", c720, c1080);
+    }
+
+    #[test]
+    fn fast_720p_more_than_480p() {
+      let c480 = fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits();
+      let c720 = fast(5, KinoviBatchCountRaw::One).estimate_credits();
+      assert!(c480 < c720, "Fast 480p ({}) should be less than Fast 720p ({})", c480, c720);
+    }
+
+    #[test]
+    fn pro_none_same_as_720p() {
+      let none = pro(5, KinoviBatchCountRaw::One).estimate_credits();
+      let explicit = pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).estimate_credits();
+      assert_eq!(none, explicit);
+    }
+
+    #[test]
+    fn fast_none_same_as_720p() {
+      let none = fast(5, KinoviBatchCountRaw::One).estimate_credits();
+      let explicit = fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).estimate_credits();
+      assert_eq!(none, explicit);
+    }
+
+    #[test]
+    fn table_driven_credits() {
+      let cases: Vec<(KinoviModelTypeRaw, Option<KinoviOutputResolutionRaw>, u8, KinoviBatchCountRaw, u32)> = vec![
+        (KinoviModelTypeRaw::Seedance2Pro, None, 4, KinoviBatchCountRaw::One, 160),
+        (KinoviModelTypeRaw::Seedance2Pro, None, 5, KinoviBatchCountRaw::Two, 400),
+        (KinoviModelTypeRaw::Seedance2Pro, None, 10, KinoviBatchCountRaw::Four, 1600),
+        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP), 5, KinoviBatchCountRaw::One, 75),
+        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP), 10, KinoviBatchCountRaw::Two, 300),
+        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP), 15, KinoviBatchCountRaw::Four, 900),
+        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP), 5, KinoviBatchCountRaw::One, 450),
+        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP), 10, KinoviBatchCountRaw::Two, 1800),
+        (KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP), 15, KinoviBatchCountRaw::Four, 5400),
+        (KinoviModelTypeRaw::Seedance2Fast, None, 4, KinoviBatchCountRaw::One, 112),
+        (KinoviModelTypeRaw::Seedance2Fast, None, 5, KinoviBatchCountRaw::Two, 280),
+        (KinoviModelTypeRaw::Seedance2Fast, None, 15, KinoviBatchCountRaw::Four, 1680),
+        (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP), 5, KinoviBatchCountRaw::One, 50),
+        (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP), 10, KinoviBatchCountRaw::Two, 200),
+        (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP), 15, KinoviBatchCountRaw::Four, 600),
+      ];
+
+      for (i, (model, res, dur, batch, expected)) in cases.iter().enumerate() {
+        let args = make_args(*model, *dur, *batch, *res);
+        let actual = args.estimate_credits();
+        assert_eq!(
+          actual, *expected,
+          "Case {}: {:?} {:?} {}s batch {:?} — expected {} credits, got {}",
+          i, model, res, dur, batch, expected, actual,
+        );
+      }
+    }
+
+    #[test]
+    fn aspect_ratio_does_not_affect_credits() {
+      let resolutions = [
+        KinoviAspectRatioRaw::Landscape16x9,
+        KinoviAspectRatioRaw::Portrait9x16,
+        KinoviAspectRatioRaw::Square1x1,
+        KinoviAspectRatioRaw::Standard4x3,
+        KinoviAspectRatioRaw::Portrait3x4,
+      ];
+
+      let baseline = pro(5, KinoviBatchCountRaw::One).estimate_credits();
+
+      for res in &resolutions {
+        let req = WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Pro,
+          prompt: String::new(),
+          aspect_ratio: *res,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          output_resolution: None,
+          use_face_blur_hack: None,
+        };
+        assert_eq!(
+          req.estimate_credits(), baseline,
+          "Aspect ratio {:?} should not change credits from baseline {}",
+          res, baseline,
+        );
+      }
+    }
+
+    #[test]
+    fn usd_cents_legacy_pro_720p() {
+      assert_eq!(pro(5, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 80);
+      assert_eq!(pro(10, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 160);
+      assert_eq!(pro(15, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 240);
+      assert_eq!(pro(5, KinoviBatchCountRaw::Two).estimate_cost_in_usd_cents(), 160);
+      assert_eq!(pro(5, KinoviBatchCountRaw::Four).estimate_cost_in_usd_cents(), 320);
+    }
+
+    #[test]
+    fn usd_cents_legacy_fast_720p() {
+      assert_eq!(fast(5, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 64);
+      assert_eq!(fast(10, KinoviBatchCountRaw::One).estimate_cost_in_usd_cents(), 127);
+    }
+
+    #[test]
+    fn usd_cents_new_pro_480p() {
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 39);
+      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 78);
+    }
+
+    #[test]
+    fn usd_cents_new_pro_1080p() {
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 233);
+      assert_eq!(pro_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 466);
+    }
+
+    #[test]
+    fn usd_cents_new_fast_480p() {
+      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 26);
+      assert_eq!(fast_res(10, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_cost_in_usd_cents(), 52);
+    }
+
+    #[test]
+    fn credits_per_dollar_legacy_rates() {
+      assert_eq!(pro(5, KinoviBatchCountRaw::One).credits_per_dollar(), 250.0);
+      assert_eq!(fast(5, KinoviBatchCountRaw::One).credits_per_dollar(), 220.0);
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).credits_per_dollar(), 250.0);
+      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).credits_per_dollar(), 220.0);
+    }
+
+    #[test]
+    fn credits_per_dollar_new_rate() {
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 193.0);
+    }
+  }
+
+  mod real_requests {
+    use super::*;
+
+    fn test_session() -> AnyhowResult<Seedance2ProSession> {
+      let cookies = get_test_cookies()?;
+      Ok(Seedance2ProSession::from_cookies_string(cookies))
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_generate_text_to_video() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Pro,
+          prompt: "A corgi eating a cake in a fancy kitchen.".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Square1x1,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_generate_keyframe_video() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Pro,
+          prompt: "A dog shakes the glasses off its head. The camera pans out as the shiba shakes. The shiba barks.".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: Some("https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string()),
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_generate_reference_image_video() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Pro,
+          prompt: "The dog in @2 is in the office at @1 without the man. The office is dark and moonlight streams in through the windows. Particles of dust gleam in the moon beams. Suddenly, the dog jumps walks in front of the desk and barks.".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Standard4x3,
+          duration_seconds: 10,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: Some(vec![
+            "https://static.seedance2-pro.com/materials/20260219/1771463564512-b14bfe90.png".to_string(),
+            "https://static.seedance2-pro.com/materials/20260219/1771496300184-fb32e08c.jpg".to_string(),
+          ]),
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_generate_reference_video_only() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Pro,
+          prompt: "Change the Video @video1 to night time.".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: Some(vec![
+            "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+          ]),
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_generate_reference_video_and_image() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Pro,
+          prompt: "Put the robot in @video1 next to the house in @image1".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: Some(vec![
+            "https://static.seedance2-pro.com/materials/20260315/1773595053724-07a1d500.png".to_string(),
+          ]),
+          reference_video_urls: Some(vec![
+            "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+          ]),
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_video_ref_file_that_is_too_long() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+
+      let cookies = get_test_cookies()?;
+      let session = Seedance2ProSession::from_cookies_string(cookies);
+      let prepare_args = PrepareFileUploadArgs {
+        session: &session,
+        extension: "mp4".to_string(),
+        host_override: None,
+      };
+      let prepare_result = prepare_file_upload(prepare_args).await?;
+      println!("Upload URL: {}", prepare_result.upload_url);
+
+      let file_bytes = fs::read("/Users/bt/Videos/Artcraft/Artcraft Best/ArtCraft Seedance Knight.mp4")?;
+      println!("File size: {} bytes", file_bytes.len());
+
+      let upload_args = UploadFileArgs {
+        upload_url: prepare_result.upload_url,
+        file_bytes,
+        host_override: None,
+      };
+      let result = upload_file(upload_args).await?;
+      println!("Public URL: {}", result.public_url);
+
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Pro,
+          prompt: "Change @video1 to night time".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: Some(vec![result.public_url]),
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_pro_keyframe_with_start_frame() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      let image_bytes = crate::test_utils::http_download::http_download_to_bytes(
+        test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+      ).await?;
+
+      let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+        session: &session,
+        extension: "jpg".to_string(),
+        host_override: None,
+      }).await?;
+
+      let upload_result = upload_file(UploadFileArgs {
+        upload_url: prepare_result.upload_url,
+        file_bytes: image_bytes,
+        host_override: None,
+      }).await?;
+
+      println!("Uploaded start frame: {}", upload_result.public_url);
+
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Pro,
+          prompt: "The corgi dog watches the lake.".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Portrait9x16,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: Some(upload_result.public_url),
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_fast_keyframe_with_start_frame() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      let image_bytes = crate::test_utils::http_download::http_download_to_bytes(
+        test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+      ).await?;
+
+      let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+        session: &session,
+        extension: "jpg".to_string(),
+        host_override: None,
+      }).await?;
+
+      let upload_result = upload_file(UploadFileArgs {
+        upload_url: prepare_result.upload_url,
+        file_bytes: image_bytes,
+        host_override: None,
+      }).await?;
+
+      println!("Uploaded start frame: {}", upload_result.public_url);
+
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Fast,
+          prompt: "A corgi dog runs along the lake shore, splashing water. Camera follows.".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: Some(upload_result.public_url),
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_fast_three_image_references() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      let image_urls_to_upload = [
+        test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+        test_data::web::image_urls::WHITE_HOUSE_SUNSET_IMAGE_URL,
+        test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL,
+      ];
+
+      let mut uploaded_urls = Vec::new();
+      for (i, source_url) in image_urls_to_upload.iter().enumerate() {
+        let image_bytes = crate::test_utils::http_download::http_download_to_bytes(source_url).await?;
+        let ext = if source_url.ends_with(".png") { "png" } else { "jpg" };
+
+        let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+          session: &session,
+          extension: ext.to_string(),
+          host_override: None,
+        }).await?;
+
+        let upload_result = upload_file(UploadFileArgs {
+          upload_url: prepare_result.upload_url,
+          file_bytes: image_bytes,
+          host_override: None,
+        }).await?;
+
+        println!("Uploaded ref image {}: {}", i + 1, upload_result.public_url);
+        uploaded_urls.push(upload_result.public_url);
+      }
+
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Fast,
+          prompt: "The dog in @1 is running through the scenery in @3 towards the building in @2. Golden hour lighting.".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: Some(uploaded_urls),
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_fast_audio_reference_with_text() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      let audio_path = test_utils::test_file_path::test_file_path(
+        "test_data/audio/mp3/super_mario_rpg_beware_the_forests_mushrooms.mp3",
+      )?;
+      let audio_bytes = fs::read(&audio_path)?;
+      println!("Audio file size: {} bytes", audio_bytes.len());
+
+      let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+        session: &session,
+        extension: "mp3".to_string(),
+        host_override: None,
+      }).await?;
+
+      let upload_result = upload_file(UploadFileArgs {
+        upload_url: prepare_result.upload_url,
+        file_bytes: audio_bytes,
+        host_override: None,
+      }).await?;
+
+      println!("Uploaded audio: {}", upload_result.public_url);
+
+      let args = WorkflowRunTaskArgs {
+        session: &session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type: KinoviModelTypeRaw::Seedance2Fast,
+          prompt: "A fantasy forest with mushrooms glowing in the dark. Fireflies dance between the trees. A small character walks along a winding path.".to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+          duration_seconds: 5,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: Some(vec![upload_result.public_url]),
+          character_ids: None,
+          use_face_blur_hack: None,
+          output_resolution: None,
+        },
+      };
+      let result = workflow_run_task(args).await?;
+      println!("Task ID: {}", result.task_id);
+      println!("Order ID: {}", result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    mod character_tests {
+      use super::*;
+
+      const STEAMPUNK_CLOWN_ID: &str = "char_1775176566518_sik0te";
+      const MOCHI_ID: &str = "char_1775177718294_g2pitx";
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_text_prompt_with_character_pro() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::Seedance2Pro,
+            prompt: "@Steampunk Clown is juggling flaming torches in a circus tent.".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
+            use_face_blur_hack: None,
+            output_resolution: None,
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Task ID: {}", result.task_id);
+        println!("Order ID: {}", result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
+        assert_eq!(1, 2);
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_text_prompt_with_character_fast() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::Seedance2Fast,
+            prompt: "@Mochi the female shiba inu is eating a cheese pizza while standing on the table".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Portrait9x16,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: Some(vec![MOCHI_ID.to_string()]),
+            use_face_blur_hack: None,
+            output_resolution: None,
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Task ID: {}", result.task_id);
+        println!("Order ID: {}", result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
+        assert_eq!(1, 2);
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_character_with_image_ref_pro() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::Seedance2Pro,
+            prompt: "@Steampunk Clown is walking up to pet a dog on the couch.".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: Some(vec![
+              "https://static.seedance2-pro.com/materials/20260329/1774752385699-1ff44886.jpeg".to_string(),
+            ]),
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
+            use_face_blur_hack: None,
+            output_resolution: None,
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Task ID: {}", result.task_id);
+        println!("Order ID: {}", result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
+        assert_eq!(1, 2);
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_two_characters_fast() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::Seedance2Fast,
+            prompt: "@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+            duration_seconds: 5,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: Some(vec![
+              STEAMPUNK_CLOWN_ID.to_string(),
+              MOCHI_ID.to_string(),
+            ]),
+            use_face_blur_hack: None,
+            output_resolution: None,
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Task ID: {}", result.task_id);
+        println!("Order ID: {}", result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
+        assert_eq!(1, 2);
+        Ok(())
+      }
+    }
+  }
+
+  mod output_resolution_tests {
+    use super::*;
+
+    fn test_session() -> AnyhowResult<Seedance2ProSession> {
+      let cookies = get_test_cookies()?;
+      Ok(Seedance2ProSession::from_cookies_string(cookies))
+    }
+
+    fn make_args_with_prompt<'a>(
+      prompt: &'a str,
+      session: &'a Seedance2ProSession,
+      model_type: KinoviModelTypeRaw,
+      output_resolution: Option<KinoviOutputResolutionRaw>,
+    ) -> WorkflowRunTaskArgs<'a> {
+      WorkflowRunTaskArgs {
+        session,
+        host_override: None,
+        request: WorkflowRunTaskRequest {
+          model_type,
+          prompt: prompt.to_string(),
+          aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+          duration_seconds: 4,
+          batch_count: KinoviBatchCountRaw::One,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          output_resolution,
+          use_face_blur_hack: None,
+        },
+      }
+    }
+
+    fn make_args<'a>(
+      session: &'a Seedance2ProSession,
+      model_type: KinoviModelTypeRaw,
+      output_resolution: Option<KinoviOutputResolutionRaw>,
+    ) -> WorkflowRunTaskArgs<'a> {
+      make_args_with_prompt("A corgi running through a field of flowers", session, model_type, output_resolution)
+    }
+
+    mod seedance_2 {
+      use super::*;
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_480p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = make_args(&session, KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::FourEightyP));
+        let result = workflow_run_task(args).await?;
+        println!("Seedance 2.0 @ 480p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_720p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let prompt = "A corgi running through a field of stars";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelTypeRaw::Seedance2Pro, None);
+        let result = workflow_run_task(args).await?;
+        println!("Seedance 2.0 @ 720p (default) — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_1080p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let prompt = "A shiba running through a field of stars";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelTypeRaw::Seedance2Pro, Some(KinoviOutputResolutionRaw::TenEightyP));
+        let result = workflow_run_task(args).await?;
+        println!("Seedance 2.0 @ 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+    }
+
+    mod seedance_2_fast {
+      use super::*;
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_480p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let prompt = "A corgi running through a foggy meadow at dawn";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::FourEightyP));
+        let result = workflow_run_task(args).await?;
+        println!("Seedance 2.0 Fast @ 480p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_720p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let prompt = "A shiba running through a foggy meadow at dawn";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelTypeRaw::Seedance2Fast, None);
+        let result = workflow_run_task(args).await?;
+        println!("Seedance 2.0 Fast @ 720p (default) — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_1080p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let prompt = "A small klee kai dog running through a foggy meadow at dawn";
+        let args = make_args_with_prompt(prompt, &session, KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::TenEightyP));
+        let result = workflow_run_task(args).await?;
+        println!("Seedance 2.0 Fast @ 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert_eq!(1, 2, "Inspect output above");
+        Ok(())
+      }
+    }
+  }
+}
