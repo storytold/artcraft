@@ -86,7 +86,7 @@ use crate::http_server::endpoints::media_files::upsert_upload::write_error::Medi
 use crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::*;
 use crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::*;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::*;
-use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_user_feature_flags_handler::*;
+use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::*;
 use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::*;
 use crate::http_server::endpoints::moderation::user_bans::moderation_ban_user_handler::*;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::*;
@@ -399,7 +399,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::media_files::upsert_upload::write_scene_file::write_scene_file_media_file_handler::write_scene_file_media_file_handler,
     crate::http_server::endpoints::model_download::enqueue_gptsovits_model_download_handler::enqueue_gptsovits_model_download_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler,
-    crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_user_feature_flags_handler::moderator_list_user_feature_flags_handler,
+    crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler,
     crate::http_server::endpoints::prompts::create_prompt_handler::create_prompt_handler,
     crate::http_server::endpoints::prompts::get_prompt_handler::get_prompt_handler,
     crate::http_server::endpoints::service::status_alert_handler::status_alert_handler,

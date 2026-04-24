@@ -45,7 +45,7 @@ pub struct FeatureFlagDescriptor {
     (status = 401, description = "Unauthorized"),
   ),
 )]
-pub async fn moderator_list_user_feature_flags_handler(
+pub async fn moderator_list_all_available_user_feature_flags_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorListUserFeatureFlagsResponse>, AdvancedCommonWebError> {

@@ -37,7 +37,7 @@ use crate::http_server::endpoints::moderation::user::moderator_user_lookup_handl
 use crate::http_server::endpoints::moderation::alerts::moderation_send_alert_handler::moderation_send_alert_handler;
 use crate::http_server::endpoints::moderation::staff_audit_logs::moderator_list_staff_audit_logs_handler::moderator_list_staff_audit_logs_handler;
 use crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler;
-use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_user_feature_flags_handler::moderator_list_user_feature_flags_handler;
+use crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_for_user_handler::moderator_list_user_session_impersonation_requests_for_user_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_list_user_session_impersonation_requests_handler::moderator_list_user_session_impersonation_requests_handler;
 use crate::http_server::endpoints::moderation::user_sessions::moderator_user_session_impersonation_request_handler::moderator_user_session_impersonation_request_handler;
@@ -61,7 +61,7 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
             )
         )
         .service(web::resource("/user_feature_flags/list")
-            .route(web::get().to(moderator_list_user_feature_flags_handler))
+            .route(web::get().to(moderator_list_all_available_user_feature_flags_handler))
             .route(web::head().to(|| HttpResponse::Ok()))
         )
         .service(web::resource("/user_feature_flags/user/{username_or_token}")
