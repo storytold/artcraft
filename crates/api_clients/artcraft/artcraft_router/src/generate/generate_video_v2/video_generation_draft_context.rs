@@ -3,6 +3,7 @@ use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -35,5 +36,15 @@ impl <'a> VideoGenerationDraftContext<'a> {
   pub fn get_character_token_to_kinovi_map(&self) -> Result<&HashMap<CharacterToken, String>, ArtcraftRouterError> {
     self.character_token_to_kinovi_id_map
       .ok_or_else(|| ArtcraftRouterError::Client(ClientError::CharacterTokenToKinoviCharacterIdNotProvided))
+  }
+}
+
+impl Debug for VideoGenerationDraftContext<'_> {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("VideoGenerationDraftContext")
+      .field("client", &self.client.is_some())
+      .field("media_file_to_artcraft_url_map", &self.media_file_to_artcraft_url_map)
+      .field("character_token_to_kinovi_id_map", &self.character_token_to_kinovi_id_map)
+      .finish()
   }
 }

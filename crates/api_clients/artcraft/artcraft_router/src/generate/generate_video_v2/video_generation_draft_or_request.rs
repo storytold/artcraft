@@ -4,6 +4,7 @@ use crate::generate::generate_video::video_generation_cost_estimate::VideoGenera
 use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
 use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
 
+#[derive(Debug, Clone)]
 pub enum VideoGenerationDraftOrRequest {
   Draft(VideoGenerationDraftRequest),
   Request(VideoGenerationRequest),

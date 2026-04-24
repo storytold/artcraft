@@ -1,6 +1,7 @@
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_router::api::audio_list_ref::AudioListRef;
+use artcraft_router::api::character_list_ref::CharacterListRef;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as CommonAspectRatioRouter;
 use artcraft_router::api::common_resolution::CommonResolution as CommonResolutionRouter;
 use artcraft_router::api::common_video_model::CommonVideoModel as CommonVideoModelRouter;
@@ -50,7 +51,8 @@ pub fn hydrate_to_router_request(
       .map(VideoListRef::MediaFileTokens),
     reference_audio: request.reference_audio_media_tokens.clone()
       .map(AudioListRef::MediaFileTokens),
-    reference_character_tokens: None,
+    reference_character_tokens: request.reference_character_tokens.clone()
+      .map(CharacterListRef::CharacterTokens),
     resolution,
     aspect_ratio,
     duration_seconds: request.duration_seconds,
