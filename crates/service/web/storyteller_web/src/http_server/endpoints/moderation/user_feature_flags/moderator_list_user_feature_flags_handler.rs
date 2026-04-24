@@ -31,6 +31,7 @@ pub struct ModeratorListUserFeatureFlagsResponse {
   pub success: bool,
   pub user_token: String,
   pub username: String,
+  pub display_name: String,
   pub feature_flags: Vec<String>,
 }
 
@@ -71,23 +72,23 @@ pub async fn moderator_list_user_feature_flags_handler(
   } else {
     get_user_token_by_username(username_or_token, &server_state.mysql_pool)
       .await
-      .map_err(|e| {
-        warn!("Could not get user token by username: {:?}", e);
-        AdvancedCommonWebError::server_error_with_message("Could not look up user")
+      .map_err(|err| {
+        warn!("Could not get user token by username: {:?}", err);
+        AdvancedCommonWebError::from_anyhow_error(err)
       })?
       .ok_or_else(|| {
-        AdvancedCommonWebError::BadInputWithSimpleMessage("User not found".to_string())
+        AdvancedCommonWebError::NotFound
       })?
   };
 
   let user_profile = get_user_profile_by_token(&user_token, &server_state.mysql_pool)
     .await
-    .map_err(|e| {
-      warn!("Could not get user profile by token: {:?}", e);
-      AdvancedCommonWebError::server_error_with_message("Could not look up user profile")
+    .map_err(|err| {
+      warn!("Could not get user profile by token: {:?}", err);
+      AdvancedCommonWebError::from_anyhow_error(err)
     })?
     .ok_or_else(|| {
-      AdvancedCommonWebError::BadInputWithSimpleMessage("User not found".to_string())
+      AdvancedCommonWebError::NotFound
     })?;
 
   let user_feature_flags =
@@ -102,6 +103,7 @@ pub async fn moderator_list_user_feature_flags_handler(
     success: true,
     user_token: user_profile.user_token.as_str().to_string(),
     username: user_profile.username,
+    display_name: user_profile.display_name,
     feature_flags: flags,
   }))
 }

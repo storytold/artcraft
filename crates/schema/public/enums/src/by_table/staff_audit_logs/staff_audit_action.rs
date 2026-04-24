@@ -36,6 +36,10 @@ pub enum StaffAuditAction {
   /// Staff sent a manual alert via the pager system.
   #[serde(rename = "send_alert")]
   SendAlert,
+
+  /// Staff edited a user's feature flags.
+  #[serde(rename = "edit_user_feature_flags")]
+  EditUserFeatureFlags,
 }
 
 impl_enum_display_and_debug_using_to_str!(StaffAuditAction);
@@ -51,6 +55,7 @@ impl StaffAuditAction {
       Self::UnbanUser => "unban_user",
       Self::AddWalletBankedBalance => "add_wallet_banked_balance",
       Self::SendAlert => "send_alert",
+      Self::EditUserFeatureFlags => "edit_user_feature_flags",
     }
   }
 
@@ -62,6 +67,7 @@ impl StaffAuditAction {
       "unban_user" => Ok(Self::UnbanUser),
       "add_wallet_banked_balance" => Ok(Self::AddWalletBankedBalance),
       "send_alert" => Ok(Self::SendAlert),
+      "edit_user_feature_flags" => Ok(Self::EditUserFeatureFlags),
       _ => Err(format!("invalid StaffAuditAction value: {:?}", value)),
     }
   }
@@ -74,6 +80,7 @@ impl StaffAuditAction {
       Self::UnbanUser,
       Self::AddWalletBankedBalance,
       Self::SendAlert,
+      Self::EditUserFeatureFlags,
     ])
   }
 }
@@ -94,6 +101,7 @@ mod tests {
       assert_serialization(StaffAuditAction::UnbanUser, "unban_user");
       assert_serialization(StaffAuditAction::AddWalletBankedBalance, "add_wallet_banked_balance");
       assert_serialization(StaffAuditAction::SendAlert, "send_alert");
+      assert_serialization(StaffAuditAction::EditUserFeatureFlags, "edit_user_feature_flags");
     }
 
     #[test]
@@ -104,6 +112,7 @@ mod tests {
       assert_eq!(StaffAuditAction::UnbanUser.to_str(), "unban_user");
       assert_eq!(StaffAuditAction::AddWalletBankedBalance.to_str(), "add_wallet_banked_balance");
       assert_eq!(StaffAuditAction::SendAlert.to_str(), "send_alert");
+      assert_eq!(StaffAuditAction::EditUserFeatureFlags.to_str(), "edit_user_feature_flags");
     }
 
     #[test]
@@ -114,12 +123,13 @@ mod tests {
       assert_eq!(StaffAuditAction::from_str("unban_user").unwrap(), StaffAuditAction::UnbanUser);
       assert_eq!(StaffAuditAction::from_str("add_wallet_banked_balance").unwrap(), StaffAuditAction::AddWalletBankedBalance);
       assert_eq!(StaffAuditAction::from_str("send_alert").unwrap(), StaffAuditAction::SendAlert);
+      assert_eq!(StaffAuditAction::from_str("edit_user_feature_flags").unwrap(), StaffAuditAction::EditUserFeatureFlags);
       assert!(StaffAuditAction::from_str("invalid").is_err());
     }
 
     #[test]
     fn all_variants() {
-      const EXPECTED_COUNT: usize = 6;
+      const EXPECTED_COUNT: usize = 7;
       assert_eq!(StaffAuditAction::all_variants().len(), EXPECTED_COUNT);
     }
   }

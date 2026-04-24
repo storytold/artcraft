@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 use std::fmt;
 use std::iter::FromIterator;
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
@@ -9,10 +10,14 @@ use actix_web::web::{Data, Json, Path};
 use actix_web::{HttpRequest, HttpResponse};
 use log::warn;
 use redis::{Client, Commands};
+use sqlx::Acquire;
 use utoipa::ToSchema;
 
+use enums::by_table::staff_audit_logs::staff_audit_action::StaffAuditAction;
+use enums::by_table::staff_audit_logs::staff_audit_entity_type::StaffAuditEntityType;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 use http_server_common::request::get_request_ip::get_request_ip;
+use mysql_queries::queries::staff_audit_logs::insert_staff_audit_log::{insert_staff_audit_log, InsertStaffAuditLogArgs};
 use mysql_queries::queries::users::user::get::get_user_token_by_username::get_user_token_by_username;
 use mysql_queries::queries::users::user::update::set_user_feature_flags::{set_user_feature_flags, SetUserFeatureFlagArgs};
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_token::get_user_profile_by_token;
@@ -114,7 +119,6 @@ pub async fn moderator_edit_user_feature_flags_handler(
   path: Path<EditUserFeatureFlagPathInfo>,
   request: Json<EditUserFeatureFlagsRequest>,
   server_state: Data<Arc<ServerState>>,
-  //redis_ttl_cache: Data<RedisTtlCache>,
   redis_pool: Data<r2d2::Pool<Client>>,
 ) -> Result<HttpResponse, EditUserFeatureFlagsError> {
 
@@ -129,34 +133,28 @@ pub async fn moderator_edit_user_feature_flags_handler(
 
   let username_or_token = path.username_or_token.trim();
 
-  let user_token;
-
-  if username_or_token.starts_with(UserToken::token_prefix()) || username_or_token.starts_with("U:") {
-    user_token = UserToken::new_from_str(username_or_token);
+  let user_token = if username_or_token.starts_with(UserToken::token_prefix()) || username_or_token.starts_with("U:") {
+    UserToken::new_from_str(username_or_token)
   } else {
-    user_token = get_user_token_by_username(&username_or_token, &server_state.mysql_pool)
+    get_user_token_by_username(username_or_token, &server_state.mysql_pool)
       .await
       .map_err(|e| {
         warn!("Could not get user token by username: {:?}", e);
         EditUserFeatureFlagsError::ServerError
       })?
-      .ok_or_else(|| {
-        EditUserFeatureFlagsError::ServerError
-      })?;
-  }
+      .ok_or(EditUserFeatureFlagsError::ServerError)?
+  };
 
   let user_profile = get_user_profile_by_token(&user_token, &server_state.mysql_pool)
     .await
     .map_err(|e| {
-      warn!("Could not get user session by token: {:?}", e);
+      warn!("Could not get user profile by token: {:?}", e);
       EditUserFeatureFlagsError::ServerError
     })?
-    .ok_or_else(|| {
-      EditUserFeatureFlagsError::ServerError
-    })?;
+    .ok_or(EditUserFeatureFlagsError::ServerError)?;
 
   let mut user_feature_flags =
-      UserSessionFeatureFlags::new(user_profile.maybe_feature_flags.as_deref());
+    UserSessionFeatureFlags::new(user_profile.maybe_feature_flags.as_deref());
 
   match &request.action {
     EditUserFeatureFlagsOption::AddFlags { flags } => {
@@ -180,6 +178,7 @@ pub async fn moderator_edit_user_feature_flags_handler(
 
   let ip_address = get_request_ip(&http_request);
 
+  // Update the user's feature flags.
   set_user_feature_flags(SetUserFeatureFlagArgs {
     subject_user_token: &user_profile.user_token,
     maybe_feature_flags: user_feature_flags.maybe_serialize_string().as_deref(),
@@ -192,16 +191,45 @@ pub async fn moderator_edit_user_feature_flags_handler(
       EditUserFeatureFlagsError::ServerError
     })?;
 
-  //if let Ok(mut redis) = redis_ttl_cache.get_connection() {
-  //  // TODO(bt,2024-04-20): This should be coordinated with other code.
-  //  let cache_key = format!("cache:userProfile:{}", user_profile.username);
-  //  let _r = redis.delete_from_cache(&cache_key);
-  //}
+  // Insert staff audit log.
+  let mut mysql_connection = server_state.mysql_pool.acquire()
+    .await
+    .map_err(|e| {
+      warn!("Could not acquire MySQL connection for audit log: {:?}", e);
+      EditUserFeatureFlagsError::ServerError
+    })?;
 
+  let mut transaction = mysql_connection.begin()
+    .await
+    .map_err(|e| {
+      warn!("Could not start transaction for audit log: {:?}", e);
+      EditUserFeatureFlagsError::ServerError
+    })?;
+
+  let _audit_token = insert_staff_audit_log(InsertStaffAuditLogArgs {
+    audit_action: StaffAuditAction::EditUserFeatureFlags,
+    maybe_entity_type: Some(StaffAuditEntityType::User),
+    maybe_entity_token: Some(user_profile.user_token.as_str()),
+    staff_user_token: &user_session.user_token,
+    actor_ip_address: &ip_address,
+    mysql_executor: &mut *transaction,
+    phantom: PhantomData,
+  }).await.map_err(|err| {
+    warn!("Failed to insert staff audit log: {:?}", err);
+    EditUserFeatureFlagsError::ServerError
+  })?;
+
+  transaction.commit()
+    .await
+    .map_err(|e| {
+      warn!("Could not commit audit log transaction: {:?}", e);
+      EditUserFeatureFlagsError::ServerError
+    })?;
+
+  // Invalidate Redis cache for the user profile.
   if let Ok(mut redis) = redis_pool.get() {
-    // TODO(bt,2024-04-20): This should be coordinated with other code.
     let cache_key = format!("cache:userProfile:{}", user_profile.username);
-    let _r : Result<Option<String>, _> = redis.del(&cache_key);
+    let _r: Result<Option<String>, _> = redis.del(&cache_key);
   }
 
   Ok(simple_json_success())

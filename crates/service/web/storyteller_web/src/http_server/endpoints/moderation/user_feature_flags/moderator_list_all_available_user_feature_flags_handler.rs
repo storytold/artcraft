@@ -23,14 +23,14 @@ pub struct ModeratorListUserFeatureFlagsResponse {
 
 #[derive(Serialize, ToSchema)]
 pub struct FeatureFlagDescriptor {
+  /// Key the flag is identified by
+  pub key: String,
+
   /// Full name of the flag
   pub full_name: String,
 
   /// Description of the flag
   pub description: String,
-
-  /// Key the flag is identified by
-  pub key: String,
 }
 
 // ── Handler ──
@@ -61,9 +61,9 @@ pub async fn moderator_list_all_available_user_feature_flags_handler(
   let feature_flags: Vec<FeatureFlagDescriptor> = UserFeatureFlag::all_variants()
     .into_iter()
     .map(|flag| FeatureFlagDescriptor {
+      key: flag.to_str().to_string(),
       full_name: flag.name().to_string(),
       description: flag.description().to_string(),
-      key: flag.to_str().to_string(),
     })
     .collect();
 
