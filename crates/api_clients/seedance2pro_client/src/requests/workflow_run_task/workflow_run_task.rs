@@ -106,10 +106,12 @@ impl WorkflowRunTaskRequest {
   /// Pricing is per-second × batch count, with the per-second rate
   /// depending on model type and output resolution:
   ///
-  /// | Model     | 480p | 720p | 1080p |
-  /// |-----------|------|------|-------|
-  /// | Pro       |   15 |   40 |    90 |
-  /// | Fast      |   10 |   28 |   n/a |
+  /// | Model        | 480p | 720p | 1080p |
+  /// |--------------|------|------|-------|
+  /// | Pro          |   15 |   40 |    90 |
+  /// | Fast         |   10 |   28 |   n/a |
+  /// | HappyHorse   |   15 |   40 |    90 |
+  /// TODO(bt,2026-04-23): Not sure pricing for Happy Horse is correct here.
   ///
   /// Input mode (text, keyframe, reference) has no effect on cost.
   /// Aspect ratio (`resolution` field) has no effect on cost.
@@ -127,6 +129,13 @@ impl WorkflowRunTaskRequest {
       | (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 28,
       // NB: 1080p not officially supported for Fast, but price as 720p if requested
       (KinoviModelTypeRaw::Seedance2Fast, Some(KinoviOutputResolutionRaw::TenEightyP)) => 28,
+
+      // TODO(bt,2026-04-23): Not sure pricing for Happy Horse is correct here.
+      // Happy Horse 1.0 — same credit rates as Seedance 2.0 Pro
+      (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::FourEightyP)) => 15,
+      (KinoviModelTypeRaw::HappyHorse1p0, None)
+      | (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::SevenTwentyP)) => 40,
+      (KinoviModelTypeRaw::HappyHorse1p0, Some(KinoviOutputResolutionRaw::TenEightyP)) => 90,
     };
 
     let per_video = u32::from(self.duration_seconds) * credits_per_second;
@@ -235,13 +244,15 @@ impl KinoviBatchCountRaw {
   }
 }
 
-/// The Seedance model variant to use.
+/// The model variant to use.
 #[derive(Debug, Clone, Copy)]
 pub enum KinoviModelTypeRaw {
   /// Seedance 2.0 Pro (higher quality, slower).
   Seedance2Pro,
   /// Seedance 2.0 Fast (lower quality, faster).
   Seedance2Fast,
+  /// Happy Horse 1.0.
+  HappyHorse1p0,
 }
 
 impl KinoviModelTypeRaw {
@@ -249,6 +260,7 @@ impl KinoviModelTypeRaw {
     match self {
       Self::Seedance2Pro => "seedance-20",
       Self::Seedance2Fast => "seedance2-fast",
+      Self::HappyHorse1p0 => "happyhorse1.0",
     }
   }
 }
@@ -674,6 +686,50 @@ mod tests {
       assert_eq!(pro_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 193.0);
       assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 193.0);
       assert_eq!(fast_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 193.0);
+    }
+
+    // ── Happy Horse 1.0 ──
+
+    fn happy_horse(dur: u8, batch: KinoviBatchCountRaw) -> WorkflowRunTaskRequest {
+      make_args(KinoviModelTypeRaw::HappyHorse1p0, dur, batch, None)
+    }
+
+    fn happy_horse_res(dur: u8, batch: KinoviBatchCountRaw, res: KinoviOutputResolutionRaw) -> WorkflowRunTaskRequest {
+      make_args(KinoviModelTypeRaw::HappyHorse1p0, dur, batch, Some(res))
+    }
+
+    #[test]
+    fn spot_check_happy_horse_720p() {
+      // Same as Pro: 40 credits/sec
+      assert_eq!(happy_horse(5, KinoviBatchCountRaw::One).estimate_credits(), 200);
+      assert_eq!(happy_horse(10, KinoviBatchCountRaw::One).estimate_credits(), 400);
+      assert_eq!(happy_horse(15, KinoviBatchCountRaw::One).estimate_credits(), 600);
+    }
+
+    #[test]
+    fn spot_check_happy_horse_480p() {
+      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).estimate_credits(), 75);
+    }
+
+    #[test]
+    fn spot_check_happy_horse_1080p() {
+      assert_eq!(happy_horse_res(4, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 360);
+      assert_eq!(happy_horse_res(15, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_credits(), 1350);
+    }
+
+    #[test]
+    fn happy_horse_uses_new_pricing_rate() {
+      // All Happy Horse resolutions use the new 193 credits/$1 rate (not legacy)
+      assert_eq!(happy_horse(5, KinoviBatchCountRaw::One).credits_per_dollar(), 193.0);
+      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::SevenTwentyP).credits_per_dollar(), 193.0);
+      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::FourEightyP).credits_per_dollar(), 193.0);
+      assert_eq!(happy_horse_res(5, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).credits_per_dollar(), 193.0);
+    }
+
+    #[test]
+    fn happy_horse_usd_cents_1080p() {
+      // 193 credits/$1: 360 credits (4s×90) = 186.53 → 187¢
+      assert_eq!(happy_horse_res(4, KinoviBatchCountRaw::One, KinoviOutputResolutionRaw::TenEightyP).estimate_cost_in_usd_cents(), 187);
     }
   }
 
@@ -1265,6 +1321,144 @@ mod tests {
         let result = workflow_run_task(args).await?;
         println!("Task ID: {}", result.task_id);
         println!("Order ID: {}", result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
+        assert_eq!(1, 2);
+        Ok(())
+      }
+    }
+
+    mod happy_horse_tests {
+      use super::*;
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_happy_horse_text_to_video_1080p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::HappyHorse1p0,
+            prompt: "A corgi and shiba are in a bamboo forest. They are samurai battling one anotherplaying chess against one another".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Landscape16x9,
+            duration_seconds: 4,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: None,
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: None,
+            use_face_blur_hack: Some(false),
+            output_resolution: Some(KinoviOutputResolutionRaw::TenEightyP),
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Happy Horse t2v 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
+        assert_eq!(1, 2);
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_happy_horse_keyframe_720p() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+
+        let image_bytes = crate::test_utils::http_download::http_download_to_bytes(
+          test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+        ).await?;
+
+        let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+          session: &session,
+          extension: "jpg".to_string(),
+          host_override: None,
+        }).await?;
+
+        let upload_result = upload_file(UploadFileArgs {
+          upload_url: prepare_result.upload_url,
+          file_bytes: image_bytes,
+          host_override: None,
+        }).await?;
+
+        println!("Uploaded start frame: {}", upload_result.public_url);
+
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::HappyHorse1p0,
+            prompt: "The corgi dog watches the lake as the sun sets.".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Portrait9x16,
+            duration_seconds: 8,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: Some(upload_result.public_url),
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: None,
+            use_face_blur_hack: Some(false),
+            output_resolution: None,
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Happy Horse keyframe 720p — task_id={}, order_id={}", result.task_id, result.order_id);
+        assert!(!result.task_id.is_empty());
+        assert!(!result.order_id.is_empty());
+        assert_eq!(1, 2);
+        Ok(())
+      }
+
+      #[tokio::test]
+      #[ignore]
+      async fn test_happy_horse_keyframe_1080p_square() -> AnyhowResult<()> {
+        setup_test_logging(LevelFilter::Trace);
+        let session = test_session()?;
+
+        let image_bytes = crate::test_utils::http_download::http_download_to_bytes(
+          test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL,
+        ).await?;
+
+        let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+          session: &session,
+          extension: "jpg".to_string(),
+          host_override: None,
+        }).await?;
+
+        let upload_result = upload_file(UploadFileArgs {
+          upload_url: prepare_result.upload_url,
+          file_bytes: image_bytes,
+          host_override: None,
+        }).await?;
+
+        println!("Uploaded start frame: {}", upload_result.public_url);
+
+        let args = WorkflowRunTaskArgs {
+          session: &session,
+          host_override: None,
+          request: WorkflowRunTaskRequest {
+            model_type: KinoviModelTypeRaw::HappyHorse1p0,
+            prompt: "A dragon and a raptor fighting on the beach.".to_string(),
+            aspect_ratio: KinoviAspectRatioRaw::Square1x1,
+            duration_seconds: 15,
+            batch_count: KinoviBatchCountRaw::One,
+            start_frame_url: Some(upload_result.public_url),
+            end_frame_url: None,
+            reference_image_urls: None,
+            reference_video_urls: None,
+            reference_audio_urls: None,
+            character_ids: None,
+            use_face_blur_hack: Some(false),
+            output_resolution: Some(KinoviOutputResolutionRaw::TenEightyP),
+          },
+        };
+        let result = workflow_run_task(args).await?;
+        println!("Happy Horse keyframe 1080p square — task_id={}, order_id={}", result.task_id, result.order_id);
         assert!(!result.task_id.is_empty());
         assert!(!result.order_id.is_empty());
         assert_eq!(1, 2);
