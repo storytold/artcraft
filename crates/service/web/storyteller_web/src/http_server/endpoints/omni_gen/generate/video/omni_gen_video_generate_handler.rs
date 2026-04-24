@@ -169,6 +169,7 @@ pub async fn omni_gen_video_generate_handler(
   // ==================== PIPELINE DISPATCH ==================== //
 
   let use_v2 = match request.model {
+    Some(CommonVideoModel::HappyHorse1p0) => true,
     Some(CommonVideoModel::Seedance2p0) => true,
     Some(CommonVideoModel::Seedance2p0Fast) => true,
     _ => false,
