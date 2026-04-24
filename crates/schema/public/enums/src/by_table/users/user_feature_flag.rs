@@ -36,7 +36,7 @@ pub enum UserFeatureFlag {
   /// Access to Happy Horse
   #[serde(rename = "hh")]
   HappyHorse,
-  
+
   /// Access to Happy Horse (with a rate limit)
   #[serde(rename = "hh_rl")]
   HappyHorseRateLimit,
@@ -71,6 +71,30 @@ impl UserFeatureFlag {
       "hh" => Ok(Self::HappyHorse),
       "hh_rl" => Ok(Self::HappyHorseRateLimit),
       _ => Err(format!("invalid value: {:?}", value)),
+    }
+  }
+
+  pub fn name(&self) -> &'static str {
+    match self {
+      Self::ExploreMedia => "Explore Media",
+      Self::Studio => "Storyteller Studio",
+      Self::Upload3d => "Upload 3D",
+      Self::VideoStyleTransfer => "Video Style Transfer",
+      Self::SeedanceWhitelist => "DO NOT USE: Seedance Whitelist (legacy)",
+      Self::HappyHorse => "Happy Horse (no Rate Limit)",
+      Self::HappyHorseRateLimit => "Happy Horse (with Rate Limit)",
+    }
+  }
+
+  pub fn description(&self) -> &'static str {
+    match self {
+      Self::ExploreMedia => "Grants a user the ability to list media on FakeYou (admin permission)",
+      Self::Studio => "Access to Storyteller Studio product",
+      Self::Upload3d => "Whether users are allowed to upload 3D models",
+      Self::VideoStyleTransfer => "Access to video style transfer on Storyteller",
+      Self::SeedanceWhitelist => "DO NOT USE THIS. IT WILL BREAK ACCOUNTS.",
+      Self::HappyHorse => "Access to Happy Horse (without a rate limit - dangerous)",
+      Self::HappyHorseRateLimit => "Access to Happy Horse (with a rate limit)",
     }
   }
 
