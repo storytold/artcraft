@@ -13,6 +13,13 @@ use wreq_util::Emulation;
 
 // --- Request args ---
 
+/// Wrapper that bundles a [`KinoviGenerateVideoRequest`] with session and host info.
+pub struct GenerateVideoArgs<'a> {
+  pub request: KinoviGenerateVideoRequest,
+  pub session: &'a Seedance2ProSession,
+  pub host_override: Option<KinoviHost>,
+}
+
 /// Video generation parameters (no session/host info).
 #[derive(Clone)]
 pub struct KinoviGenerateVideoRequest {
@@ -62,13 +69,6 @@ pub struct KinoviGenerateVideoRequest {
 
   /// Controls the `faceBlurMode` field: true sends "on", false sends "off", None omits it.
   pub use_face_blur_hack: Option<bool>,
-}
-
-/// Wrapper that bundles a [`KinoviGenerateVideoRequest`] with session and host info.
-pub struct GenerateVideoArgs<'a> {
-  pub request: KinoviGenerateVideoRequest,
-  pub session: &'a Seedance2ProSession,
-  pub host_override: Option<KinoviHost>,
 }
 
 impl std::fmt::Debug for KinoviGenerateVideoRequest {
