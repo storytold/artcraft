@@ -293,8 +293,9 @@ pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<Workflow
   let has_reference_images = req.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_videos = req.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_audio = req.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_characters = req.character_ids.as_ref().is_some_and(|ids| !ids.is_empty());
 
-  let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio;
+  let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio || has_characters;
 
   let video_input_mode = if is_reference_mode { "reference" } else { "keyframe" };
 

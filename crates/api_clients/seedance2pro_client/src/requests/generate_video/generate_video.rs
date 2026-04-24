@@ -281,8 +281,9 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
   let has_reference_images = req.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_videos = req.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
   let has_reference_audio = req.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_characters = req.character_ids.as_ref().is_some_and(|ids| !ids.is_empty());
 
-  let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio;
+  let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio || has_characters;
 
   let video_input_mode = if is_reference_mode { "reference" } else { "keyframe" };
 
@@ -351,8 +352,6 @@ pub async fn generate_video(args: GenerateVideoArgs<'_>) -> Result<GenerateVideo
   };
 
   info!("Seedance2pro request : {:?}", request_body);
-
-  println!("\n\nSeedance2pro request : \n\n {:?}\n\n", request_body);
 
   let cookie = args.session.cookies.as_str();
 
