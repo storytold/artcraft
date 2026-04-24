@@ -1,1 +1,2 @@
 pub mod moderator_edit_user_feature_flags_handler;
+pub mod moderator_list_user_feature_flags_handler;
