@@ -1,17 +1,18 @@
 use std::sync::Arc;
 
 use crate::configs::omni_gen::video_models::OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS;
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
+use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::state::server_state::ServerState;
 use actix_web::web::{Json, Query};
 use actix_web::{web, HttpRequest};
-use log::warn;
 use artcraft_api_defs::omni_gen::models::omni_gen_video_models::{
   OmniGenVideoModelsQuery,
   OmniGenVideoModelsResponse,
 };
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use enums::common::generation::common_video_model::CommonVideoModel;
+use log::warn;
 
 /// List available video models.
 #[utoipa::path(
@@ -29,7 +30,16 @@ pub async fn omni_gen_video_models_handler(
   server_state: web::Data<Arc<ServerState>>,
   _query: Query<OmniGenVideoModelsQuery>,
 ) -> Result<Json<OmniGenVideoModelsResponse>, AdvancedCommonWebError> {
-  let response = (*OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS).clone();
+  let mut response = (*OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS).clone();
+
+  let show_happy_horse = can_see_happy_horse(&http_request, &server_state)
+      .await
+      .unwrap_or(false);
+
+  if !show_happy_horse {
+    response.models.retain(|m| !matches!(m.model, CommonVideoModel::HappyHorse1p0));
+  }
+
   Ok(Json(response))
 }
 
