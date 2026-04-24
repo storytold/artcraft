@@ -49,6 +49,7 @@ use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_see
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::build::build_artcraft_seedance_2p0;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::build::build_artcraft_seedance_2p0_fast;
+use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::build::build_kinovi_happy_horse_1p0;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::build::build_kinovi_seedance_2p0;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::build::build_kinovi_seedance_2p0_fast;
 use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -146,6 +147,7 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Fast) => true,
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => true,
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0Fast) => true,
+      (Provider::Seedance2Pro, CommonVideoModel::HappyHorse1p0) => true,
       _ => false,
     }
   }
@@ -157,6 +159,7 @@ impl GenerateVideoRequestBuilder {
       (Provider::Artcraft, CommonVideoModel::Seedance2p0Fast) => build_artcraft_seedance_2p0_fast(self),
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0) => build_kinovi_seedance_2p0(self),
       (Provider::Seedance2Pro, CommonVideoModel::Seedance2p0Fast) => build_kinovi_seedance_2p0_fast(self),
+      (Provider::Seedance2Pro, CommonVideoModel::HappyHorse1p0) => build_kinovi_happy_horse_1p0(self),
       _ => self.unsupported_provider_and_model(),
     }
   }

@@ -17,6 +17,7 @@ pub struct GenerateHappyHorse1p0Args<'a> {
 
 // ── Request ──
 
+#[derive(Clone, Debug)]
 pub struct GenerateHappyHorse1p0Request {
   pub prompt: String,
   pub aspect_ratio: Option<KinoviHappyHorse1p0AspectRatio>,

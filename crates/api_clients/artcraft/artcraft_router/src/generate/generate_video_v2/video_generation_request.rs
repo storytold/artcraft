@@ -7,6 +7,8 @@ use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::cost:
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0::request::ArtcraftSeedance2p0RequestState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::cost::ArtcraftSeedance2p0FastCostState;
 use crate::generate::generate_video_v2::providers::artcraft::seedance_2p0_fast::request::ArtcraftSeedance2p0FastRequestState;
+use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::cost::KinoviHappyHorse1p0CostState;
+use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::request::KinoviHappyHorse1p0RequestState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::cost::KinoviSeedance2p0CostState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::request::KinoviSeedance2p0RequestState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::cost::KinoviSeedance2p0FastCostState;
@@ -18,6 +20,7 @@ pub enum VideoGenerationRequest {
   ArtcraftSeedance2p0Fast(ArtcraftSeedance2p0FastRequestState),
   KinoviSeedance2p0(KinoviSeedance2p0RequestState),
   KinoviSeedance2p0Fast(KinoviSeedance2p0FastRequestState),
+  KinoviHappyHorse1p0(KinoviHappyHorse1p0RequestState),
 }
 
 impl VideoGenerationRequest {
@@ -28,6 +31,7 @@ impl VideoGenerationRequest {
       Self::ArtcraftSeedance2p0Fast(_) => Provider::Artcraft,
       Self::KinoviSeedance2p0(_) => Provider::Seedance2Pro,
       Self::KinoviSeedance2p0Fast(_) => Provider::Seedance2Pro,
+      Self::KinoviHappyHorse1p0(_) => Provider::Seedance2Pro,
     }
   }
 
@@ -38,6 +42,7 @@ impl VideoGenerationRequest {
       VideoGenerationRequest::ArtcraftSeedance2p0Fast(request) => Ok(ArtcraftSeedance2p0FastCostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0(request) => Ok(KinoviSeedance2p0CostState::from_request(request).estimate_cost()),
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => Ok(KinoviSeedance2p0FastCostState::from_request(request).estimate_cost()),
+      VideoGenerationRequest::KinoviHappyHorse1p0(request) => Ok(KinoviHappyHorse1p0CostState::from_request(request).estimate_cost()),
     }
   }
 
@@ -58,6 +63,10 @@ impl VideoGenerationRequest {
         request.send(client_ref).await
       },
       VideoGenerationRequest::KinoviSeedance2p0Fast(request) => {
+        let client_ref = client.get_seedance2pro_client_ref()?;
+        request.send(client_ref).await
+      },
+      VideoGenerationRequest::KinoviHappyHorse1p0(request) => {
         let client_ref = client.get_seedance2pro_client_ref()?;
         request.send(client_ref).await
       },

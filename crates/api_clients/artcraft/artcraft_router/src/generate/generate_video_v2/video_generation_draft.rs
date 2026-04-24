@@ -1,6 +1,8 @@
 use crate::api::provider::Provider;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
+use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::cost::KinoviHappyHorse1p0CostState;
+use crate::generate::generate_video_v2::providers::kinovi::happy_horse_1p0::draft::KinoviHappyHorse1p0DraftState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::cost::KinoviSeedance2p0CostState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0_fast::cost::KinoviSeedance2p0FastCostState;
@@ -15,6 +17,7 @@ use crate::generate::generate_video_v2::video_generation_request::VideoGeneratio
 pub enum VideoGenerationDraftRequest {
   KinoviSeedance2p0(KinoviSeedance2p0DraftState),
   KinoviSeedance2p0Fast(KinoviSeedance2p0FastDraftState),
+  KinoviHappyHorse1p0(KinoviHappyHorse1p0DraftState),
 }
 
 impl VideoGenerationDraftRequest {
@@ -23,6 +26,7 @@ impl VideoGenerationDraftRequest {
     match self {
       Self::KinoviSeedance2p0(_) => Provider::Seedance2Pro,
       Self::KinoviSeedance2p0Fast(_) => Provider::Seedance2Pro,
+      Self::KinoviHappyHorse1p0(_) => Provider::Seedance2Pro,
     }
   }
 
@@ -31,6 +35,7 @@ impl VideoGenerationDraftRequest {
     match self {
       VideoGenerationDraftRequest::KinoviSeedance2p0(draft) => Ok(KinoviSeedance2p0CostState::from_draft(draft).estimate_cost()),
       VideoGenerationDraftRequest::KinoviSeedance2p0Fast(draft) => Ok(KinoviSeedance2p0FastCostState::from_draft(draft).estimate_cost()),
+      VideoGenerationDraftRequest::KinoviHappyHorse1p0(draft) => Ok(KinoviHappyHorse1p0CostState::from_draft(draft).estimate_cost()),
     }
   }
 
@@ -45,6 +50,10 @@ impl VideoGenerationDraftRequest {
       VideoGenerationDraftRequest::KinoviSeedance2p0Fast(mut draft) => {
         let result = draft.to_request(&draft_context).await?;
         Ok(VideoGenerationRequest::KinoviSeedance2p0Fast(result))
+      },
+      VideoGenerationDraftRequest::KinoviHappyHorse1p0(mut draft) => {
+        let result = draft.to_request(&draft_context).await?;
+        Ok(VideoGenerationRequest::KinoviHappyHorse1p0(result))
       },
     }
   }
