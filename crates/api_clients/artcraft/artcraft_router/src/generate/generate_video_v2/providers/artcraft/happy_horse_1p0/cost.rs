@@ -3,18 +3,25 @@ use enums::common::generation::common_resolution::CommonResolution;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::artcraft::happy_horse_1p0::request::ArtcraftHappyHorse1p0RequestState;
 
-// ── Pricing constants ──
+// ── Pricing ──
 //
-// ArtCraft credits: 100 credits = $1.00. Credits always equal USD cents.
+// Happy Horse 1.0 upstream credit pricing:
 //
-// Happy Horse supports 720p and 1080p. Pricing uses the new upstream rate
-// (22,000 credits / $114 ≈ 193 credits/$1) for all resolutions.
+// | Resolution | Credits/sec |
+// |------------|-------------|
+// | 720p       |          33 |
+// | 1080p      |          66 |
 //
-//   720p:  40 upstream-credits/sec ÷ 193 upstream-credits/$1 × 100 ≈ 20.725 ¢/s
-//   1080p: 90 upstream-credits/sec ÷ 193 upstream-credits/$1 × 100 ≈ 46.632 ¢/s
+// Default resolution (None) is 720p.
+// Batch count multiplies the total cost.
+// Credit package: 22,000 credits for $114 (~192.98 credits/$1, rounded to 193).
+//
+// ArtCraft credits: 100 credits = $1.00, so ArtCraft credits = USD cents.
+// We compute USD cents from upstream credits ÷ credits_per_dollar × 100.
 
-const CENTS_PER_SECOND_720P: f64 = 20.725;
-const CENTS_PER_SECOND_1080P: f64 = 46.632;
+const UPSTREAM_CREDITS_PER_SECOND_720P: u32 = 33;
+const UPSTREAM_CREDITS_PER_SECOND_1080P: u32 = 66;
+const UPSTREAM_CREDITS_PER_DOLLAR: f64 = 193.0;
 
 pub struct ArtcraftHappyHorse1p0CostState {
   pub resolution: CommonResolution,
@@ -33,15 +40,18 @@ impl ArtcraftHappyHorse1p0CostState {
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    let cents_per_second = match self.resolution {
-      CommonResolution::TenEightyP => CENTS_PER_SECOND_1080P,
-      // Everything else (including 720p) prices at 720p.
-      _ => CENTS_PER_SECOND_720P,
+    let credits_per_second = match self.resolution {
+      CommonResolution::TenEightyP => UPSTREAM_CREDITS_PER_SECOND_1080P,
+      _ => UPSTREAM_CREDITS_PER_SECOND_720P,
     };
 
-    let usd_cents = (self.duration_seconds as f64 * cents_per_second * self.batch_count as f64).round() as u64;
+    let upstream_credits = credits_per_second as u64
+      * self.duration_seconds as u64
+      * self.batch_count as u64;
 
-    // ArtCraft credits: 100 credits = $1.00, so credits = cents.
+    let usd_cents = (upstream_credits as f64 / UPSTREAM_CREDITS_PER_DOLLAR * 100.0).round() as u64;
+
+    // ArtCraft credits = USD cents.
     VideoGenerationCostEstimate {
       cost_in_credits: Some(usd_cents),
       cost_in_usd_cents: Some(usd_cents),
@@ -60,27 +70,29 @@ mod tests {
   use crate::api::provider::Provider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
-  // ── 720p pricing ──
+  // ── 720p pricing (33 upstream credits/sec) ──
 
   mod pricing_720p {
     use super::*;
 
     #[test]
     fn batch_1() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 4, 1), 83);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 104);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 207);
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 311);
+      // 33 credits/sec; upstream_credits / 193 * 100
+      // (NB: duration 3s is clamped to 4s by the builder)
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 4, 1), 68);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1), 85);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 10, 1), 171);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 15, 1), 256);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2), 207);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 2), 171);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4), 415);
+      assert_eq!(cost_cents(Some(CommonResolution::SevenTwentyP), 5, 4), 342);
     }
 
     #[test]
@@ -89,27 +101,29 @@ mod tests {
     }
   }
 
-  // ── 1080p pricing ──
+  // ── 1080p pricing (66 upstream credits/sec) ──
 
   mod pricing_1080p {
     use super::*;
 
     #[test]
     fn batch_1() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 4, 1), 187);
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 1), 233);
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 1), 466);
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15, 1), 699);
+      // 66 credits/sec; upstream_credits / 193 * 100
+      // (NB: duration 3s is clamped to 4s by the builder)
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 4, 1), 137);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 1), 171);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 10, 1), 342);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 15, 1), 513);
     }
 
     #[test]
     fn batch_2() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 2), 466);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 2), 342);
     }
 
     #[test]
     fn batch_4() {
-      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 4), 933);
+      assert_eq!(cost_cents(Some(CommonResolution::TenEightyP), 5, 4), 684);
     }
   }
 
@@ -123,6 +137,21 @@ mod tests {
       let c720 = cost_cents(Some(CommonResolution::SevenTwentyP), 5, 1);
       let c1080 = cost_cents(Some(CommonResolution::TenEightyP), 5, 1);
       assert!(c720 < c1080);
+    }
+
+    #[test]
+    fn r1080p_approximately_double_720p() {
+      // 1080p upstream credits are exactly 2× 720p, but USD cents may differ
+      // by ±1 due to rounding (each is rounded independently).
+      for dur in [4u16, 5, 10, 15] {
+        let c720 = cost_cents(Some(CommonResolution::SevenTwentyP), dur, 1);
+        let c1080 = cost_cents(Some(CommonResolution::TenEightyP), dur, 1);
+        let expected = c720 * 2;
+        assert!(
+          c1080 >= expected - 1 && c1080 <= expected + 1,
+          "1080p ({}) should be ~2× 720p ({}) at {}s", c1080, c720, dur,
+        );
+      }
     }
 
     #[test]
