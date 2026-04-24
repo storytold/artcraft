@@ -19,10 +19,13 @@ use mysql_queries::queries::users::user_profiles::get_user_profile_by_token::get
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
-use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::web_utils::response_success_helpers::simple_json_success;
+use crate::http_server::web_utils::user_session::require_moderator::{
+  require_moderator, UseDatabase,
+};
 use crate::state::server_state::ServerState;
+use artcraft_api_defs::common::responses::simple_generic_json_success::SimpleGenericJsonSuccess;
 
 /// For the URL PathInfo
 #[derive(Deserialize, ToSchema)]
@@ -115,26 +118,14 @@ pub async fn moderator_edit_user_feature_flags_handler(
   redis_pool: Data<r2d2::Pool<Client>>,
 ) -> Result<HttpResponse, EditUserFeatureFlagsError> {
 
-  let maybe_user_session = server_state
-      .session_checker
-      .maybe_get_user_session(&http_request, &server_state.mysql_pool)
-      .await
-      .map_err(|e| {
-        warn!("Session checker error: {:?}", e);
-        EditUserFeatureFlagsError::ServerError
-      })?;
-
-  let user_session = match maybe_user_session {
-    Some(session) => session,
-    None => {
-      return Err(EditUserFeatureFlagsError::Unauthorized);
-    }
-  };
-
-  if !user_session.can_ban_users {
-    warn!("user is not allowed to add bans: {:?}", user_session.user_token.as_str());
-    return Err(EditUserFeatureFlagsError::Unauthorized);
-  }
+  let user_session = require_moderator(
+    &http_request,
+    &server_state,
+    UseDatabase::GrabNewConnection,
+  ).await.map_err(|err| {
+    warn!("Moderator check failed: {:?}", err);
+    EditUserFeatureFlagsError::Unauthorized
+  })?;
 
   let username_or_token = path.username_or_token.trim();
 
