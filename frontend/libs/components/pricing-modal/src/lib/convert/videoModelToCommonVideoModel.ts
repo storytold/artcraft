@@ -8,6 +8,8 @@ export function videoModelToCommonVideoModel(
   switch (tauriId) {
     case "grok_video":
       return CommonVideoModel.GrokVideo;
+    case "happy_horse_1p0":
+      return CommonVideoModel.HappyHorse1p0;
     case "kling_1.6_pro":
       return CommonVideoModel.Kling16Pro;
     case "kling_2.1_pro":
