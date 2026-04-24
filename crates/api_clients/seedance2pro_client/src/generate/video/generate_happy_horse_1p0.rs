@@ -51,6 +51,50 @@ pub enum KinoviHappyHorse1p0BatchCount {
   Four,
 }
 
+// ── Pricing ──
+//
+// Happy Horse 1.0 credit pricing:
+//
+// | Resolution | Credits/sec |
+// |------------|-------------|
+// | 720p       |          33 |
+// | 1080p      |          66 |
+//
+// Default resolution (None) is 720p.
+// Batch count multiplies the total cost.
+// Credit package: 22,000 credits for $114 (~192.98 credits/$1, rounded to 193).
+
+impl GenerateHappyHorse1p0Request {
+  /// Estimate the credit cost for this generation request.
+  pub fn estimate_credits(&self) -> u32 {
+    let credits_per_second: u32 = match self.output_resolution {
+      Some(KinoviHappyHorse1p0OutputResolution::TenEightyP) => 66,
+      Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP) | None => 33,
+    };
+
+    let per_video = u32::from(self.duration_seconds) * credits_per_second;
+    let batch_multiplier: u32 = match self.batch_count {
+      None | Some(KinoviHappyHorse1p0BatchCount::One) => 1,
+      Some(KinoviHappyHorse1p0BatchCount::Two) => 2,
+      Some(KinoviHappyHorse1p0BatchCount::Four) => 4,
+    };
+    per_video * batch_multiplier
+  }
+
+  /// Credits per dollar for billing conversion.
+  /// 22,000 credits / $114 ≈ 192.98, rounded to 193.
+  fn credits_per_dollar() -> f64 {
+    193.0
+  }
+
+  /// Estimate the USD cost in cents for this generation request.
+  pub fn estimate_cost_in_usd_cents(&self) -> u64 {
+    let credits = self.estimate_credits() as f64;
+    let cost = credits / Self::credits_per_dollar() * 100.0;
+    cost.round() as u64
+  }
+}
+
 // ── Response ──
 
 pub struct GenerateHappyHorse1p0Response {
@@ -137,6 +181,220 @@ mod tests {
   use crate::test_utils::setup_test_logging::setup_test_logging;
   use errors::AnyhowResult;
   use log::LevelFilter;
+
+  mod pricing_tests {
+    use super::*;
+
+    fn make_request(
+      duration_seconds: u8,
+      output_resolution: Option<KinoviHappyHorse1p0OutputResolution>,
+      batch_count: Option<KinoviHappyHorse1p0BatchCount>,
+    ) -> GenerateHappyHorse1p0Request {
+      GenerateHappyHorse1p0Request {
+        prompt: String::new(),
+        aspect_ratio: None,
+        output_resolution,
+        batch_count,
+        duration_seconds,
+        start_frame_url: None,
+      }
+    }
+
+    fn r720(dur: u8) -> GenerateHappyHorse1p0Request {
+      make_request(dur, None, None)
+    }
+
+    fn r1080(dur: u8) -> GenerateHappyHorse1p0Request {
+      make_request(dur, Some(KinoviHappyHorse1p0OutputResolution::TenEightyP), None)
+    }
+
+    // ── 720p credits (33 credits/sec) ──
+
+    mod credits_720p {
+      use super::*;
+
+      #[test]
+      fn every_duration() {
+        assert_eq!(r720(3).estimate_credits(), 99);
+        assert_eq!(r720(4).estimate_credits(), 132);
+        assert_eq!(r720(5).estimate_credits(), 165);
+        assert_eq!(r720(6).estimate_credits(), 198);
+        assert_eq!(r720(7).estimate_credits(), 231);
+        assert_eq!(r720(8).estimate_credits(), 264);
+        assert_eq!(r720(9).estimate_credits(), 297);
+        assert_eq!(r720(10).estimate_credits(), 330);
+        assert_eq!(r720(11).estimate_credits(), 363);
+        assert_eq!(r720(12).estimate_credits(), 396);
+        assert_eq!(r720(13).estimate_credits(), 429);
+        assert_eq!(r720(14).estimate_credits(), 462);
+        assert_eq!(r720(15).estimate_credits(), 495);
+      }
+
+      #[test]
+      fn explicit_720p_same_as_default() {
+        let default = r720(5).estimate_credits();
+        let explicit = make_request(5, Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP), None).estimate_credits();
+        assert_eq!(default, explicit);
+      }
+    }
+
+    // ── 1080p credits (66 credits/sec) ──
+
+    mod credits_1080p {
+      use super::*;
+
+      #[test]
+      fn every_duration() {
+        assert_eq!(r1080(3).estimate_credits(), 198);
+        assert_eq!(r1080(4).estimate_credits(), 264);
+        assert_eq!(r1080(5).estimate_credits(), 330);
+        assert_eq!(r1080(6).estimate_credits(), 396);
+        assert_eq!(r1080(7).estimate_credits(), 462);
+        assert_eq!(r1080(8).estimate_credits(), 528);
+        assert_eq!(r1080(9).estimate_credits(), 594);
+        assert_eq!(r1080(10).estimate_credits(), 660);
+        assert_eq!(r1080(11).estimate_credits(), 726);
+        assert_eq!(r1080(12).estimate_credits(), 792);
+        assert_eq!(r1080(13).estimate_credits(), 858);
+        assert_eq!(r1080(14).estimate_credits(), 924);
+        assert_eq!(r1080(15).estimate_credits(), 990);
+      }
+    }
+
+    // ── Batch multiplier ──
+
+    mod batch_tests {
+      use super::*;
+
+      #[test]
+      fn batch_1_is_base() {
+        let base = r720(5).estimate_credits();
+        let explicit = make_request(5, None, Some(KinoviHappyHorse1p0BatchCount::One)).estimate_credits();
+        assert_eq!(base, explicit);
+      }
+
+      #[test]
+      fn batch_2_doubles() {
+        let base = r720(5).estimate_credits();
+        let batch2 = make_request(5, None, Some(KinoviHappyHorse1p0BatchCount::Two)).estimate_credits();
+        assert_eq!(batch2, base * 2);
+      }
+
+      #[test]
+      fn batch_4_quadruples() {
+        let base = r720(5).estimate_credits();
+        let batch4 = make_request(5, None, Some(KinoviHappyHorse1p0BatchCount::Four)).estimate_credits();
+        assert_eq!(batch4, base * 4);
+      }
+
+      #[test]
+      fn batch_multiplier_applies_to_1080p() {
+        let base = r1080(5).estimate_credits();
+        let batch2 = make_request(5, Some(KinoviHappyHorse1p0OutputResolution::TenEightyP), Some(KinoviHappyHorse1p0BatchCount::Two)).estimate_credits();
+        let batch4 = make_request(5, Some(KinoviHappyHorse1p0OutputResolution::TenEightyP), Some(KinoviHappyHorse1p0BatchCount::Four)).estimate_credits();
+        assert_eq!(batch2, base * 2);
+        assert_eq!(batch4, base * 4);
+      }
+    }
+
+    // ── Relative pricing ──
+
+    mod relative_tests {
+      use super::*;
+
+      #[test]
+      fn r1080p_is_exactly_double_720p() {
+        for dur in 3..=15u8 {
+          let c720 = make_request(dur, None, None).estimate_credits();
+          let c1080 = make_request(dur, Some(KinoviHappyHorse1p0OutputResolution::TenEightyP), None).estimate_credits();
+          assert_eq!(c1080, c720 * 2, "1080p should be 2× 720p at {}s", dur);
+        }
+      }
+
+      #[test]
+      fn cost_scales_with_duration() {
+        let c3 = r720(3).estimate_credits();
+        let c10 = r720(10).estimate_credits();
+        let c15 = r720(15).estimate_credits();
+        assert!(c3 < c10);
+        assert!(c10 < c15);
+      }
+    }
+
+    // ── USD cents ──
+
+    mod usd_cents_tests {
+      use super::*;
+
+      #[test]
+      fn credits_per_dollar_is_193() {
+        assert_eq!(GenerateHappyHorse1p0Request::credits_per_dollar(), 193.0);
+      }
+
+      #[test]
+      fn usd_cents_720p_5s() {
+        // 165 credits / 193 * 100 = 85.49 → 85¢
+        assert_eq!(r720(5).estimate_cost_in_usd_cents(), 85);
+      }
+
+      #[test]
+      fn usd_cents_1080p_5s() {
+        // 330 credits / 193 * 100 = 170.98 → 171¢
+        assert_eq!(r1080(5).estimate_cost_in_usd_cents(), 171);
+      }
+
+      #[test]
+      fn usd_cents_720p_15s() {
+        // 495 credits / 193 * 100 = 256.48 → 256¢
+        assert_eq!(r720(15).estimate_cost_in_usd_cents(), 256);
+      }
+
+      #[test]
+      fn usd_cents_1080p_15s() {
+        // 990 credits / 193 * 100 = 512.95 → 513¢
+        assert_eq!(r1080(15).estimate_cost_in_usd_cents(), 513);
+      }
+
+      #[test]
+      fn batch_multiplies_usd_cents() {
+        let base = r720(5).estimate_cost_in_usd_cents();
+        let batch2 = make_request(5, None, Some(KinoviHappyHorse1p0BatchCount::Two)).estimate_cost_in_usd_cents();
+        // Batch 2 should be approximately 2× base (rounding may differ slightly)
+        assert!(batch2 >= base * 2 - 1 && batch2 <= base * 2 + 1,
+          "batch 2 ({}) should be ~2× base ({})", batch2, base);
+      }
+    }
+
+    // ── Aspect ratio doesn't affect cost ──
+
+    #[test]
+    fn aspect_ratio_does_not_affect_credits() {
+      let baseline = r720(5).estimate_credits();
+
+      let ratios = [
+        KinoviHappyHorse1p0AspectRatio::Landscape16x9,
+        KinoviHappyHorse1p0AspectRatio::Portrait9x16,
+        KinoviHappyHorse1p0AspectRatio::Square1x1,
+        KinoviHappyHorse1p0AspectRatio::Landscape4x3,
+        KinoviHappyHorse1p0AspectRatio::Portrait3x4,
+      ];
+
+      for ar in &ratios {
+        let req = GenerateHappyHorse1p0Request {
+          prompt: String::new(),
+          aspect_ratio: Some(*ar),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: None,
+        };
+        assert_eq!(
+          req.estimate_credits(), baseline,
+          "Aspect ratio {:?} should not change credits from baseline {}", ar, baseline,
+        );
+      }
+    }
+  }
 
   mod text_to_video {
     use super::*;
