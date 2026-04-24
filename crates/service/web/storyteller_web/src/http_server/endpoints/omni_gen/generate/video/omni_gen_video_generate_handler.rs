@@ -34,6 +34,7 @@ use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::sha
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
 use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
+use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
@@ -79,10 +80,15 @@ pub async fn omni_gen_video_generate_handler(
       AdvancedCommonWebError::from(e)
     })?;
 
-  let user_token = match maybe_user_session.as_ref() {
-    Some(session) => &session.user_token,
+  let session = match maybe_user_session.as_ref() {
+    Some(session) => session,
     None => return Err(AdvancedCommonWebError::NotAuthorized),
   };
+
+  let user_token = &session.user_token;
+
+  let user_feature_flags =
+      UserSessionFeatureFlags::new(session.maybe_feature_flags.as_deref());
 
   let maybe_avt_token = server_state
     .avt_cookie_manager
