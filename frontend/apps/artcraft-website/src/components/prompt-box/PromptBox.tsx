@@ -291,7 +291,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           }
         }
 
-        if (e.key === "Enter" && !e.shiftKey) {
+        // Default: Enter inserts a newline; Shift+Enter submits.
+        if (e.key === "Enter" && e.shiftKey) {
           e.preventDefault();
           onSubmit();
         }
@@ -435,7 +436,8 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     )}
                     colorMap={mentionColorMap}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey && !e.metaKey) {
+                      // Default: Enter inserts a newline; Shift+Enter (or Cmd+Enter) submits.
+                      if (e.key === "Enter" && (e.shiftKey || e.metaKey)) {
                         e.preventDefault();
                         onSubmit();
                       }

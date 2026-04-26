@@ -21,7 +21,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
-import { usePromptImageStore, RefImage } from "./promptStore";
+import { usePromptImageStore, RefImage, useEnterToGenerateStore } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -116,6 +116,7 @@ export const PromptBoxImage = ({
 
   const referenceImages = usePromptImageStore((s) => s.referenceImages);
   const setReferenceImages = usePromptImageStore((s) => s.setReferenceImages);
+  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const [uploadingImages, _setUploadingImages] = useState<
     { id: string; file: File }[]
   >([]);
@@ -395,7 +396,9 @@ export const PromptBoxImage = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key !== "Enter") return;
+    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    if (isSubmitCombo) {
       e.preventDefault();
       handleEnqueue();
     }

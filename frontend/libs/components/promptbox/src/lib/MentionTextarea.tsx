@@ -11,6 +11,7 @@ import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser } from "@fortawesome/pro-solid-svg-icons";
 import { faVideo, faMusic } from "@fortawesome/pro-regular-svg-icons";
+import { useEnterToGenerateStore } from "./promptStore";
 
 export interface MentionItem {
   label: string;
@@ -324,6 +325,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
     const isInternalUpdate = useRef(false);
     const isComposing = useRef(false);
     const pendingCaret = useRef<number | null>(null);
+    const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
 
     const [mentionState, setMentionState] = useState<MentionState>({
       isOpen: false,
@@ -618,15 +620,22 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
           }
         }
 
-        // Shift+Enter (or Cmd+Enter on Mac): insert a newline instead of
-        // letting the contentEditable create a <div>
-        if (e.key === "Enter" && (e.shiftKey || e.metaKey)) {
-          e.preventDefault();
-          document.execCommand("insertLineBreak");
-          handleInput();
-          // Scroll caret into view (textarea does this automatically, contentEditable does not)
-          scrollCaretIntoView(editorRef.current!);
-          return;
+        // Insert a newline instead of letting the contentEditable create a <div>.
+        // When `enterToGenerate` is off (default), plain Enter inserts a newline
+        // and Shift/Cmd+Enter submits via externalOnKeyDown. When the user opts
+        // into Enter-to-generate, the modifier combo is what inserts the newline.
+        if (e.key === "Enter") {
+          const newlineCombo = enterToGenerate
+            ? e.shiftKey || e.metaKey
+            : !e.shiftKey && !e.metaKey;
+          if (newlineCombo) {
+            e.preventDefault();
+            document.execCommand("insertLineBreak");
+            handleInput();
+            // Scroll caret into view (textarea does this automatically, contentEditable does not)
+            scrollCaretIntoView(editorRef.current!);
+            return;
+          }
         }
 
         externalOnKeyDown?.(e);
@@ -638,6 +647,7 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         handleSelect,
         externalOnKeyDown,
         handleInput,
+        enterToGenerate,
       ],
     );
 

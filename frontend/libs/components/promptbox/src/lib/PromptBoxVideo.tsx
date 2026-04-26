@@ -31,6 +31,7 @@ import {
   VideoInputMode,
   useCharactersStore,
   StoredCharacter,
+  useEnterToGenerateStore,
 } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -136,6 +137,7 @@ export const PromptBoxVideo = ({
   const setInputMode = usePromptVideoStore((s) => s.setInputMode);
   const generationCount = usePromptVideoStore((s) => s.generationCount);
   const setGenerationCount = usePromptVideoStore((s) => s.setGenerationCount);
+  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -862,7 +864,9 @@ export const PromptBoxVideo = ({
       }
     }
 
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key !== "Enter") return;
+    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    if (isSubmitCombo) {
       e.preventDefault();
 
       if (selectedModel?.requiresImage && referenceImages.length === 0) {
@@ -986,7 +990,11 @@ export const PromptBoxVideo = ({
                   }
                   className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                    if (e.key !== "Enter") return;
+                    const isSubmitCombo = enterToGenerate
+                      ? !e.shiftKey
+                      : e.shiftKey;
+                    if (isSubmitCombo) {
                       e.preventDefault();
                       if (
                         selectedModel?.requiresImage &&

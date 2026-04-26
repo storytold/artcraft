@@ -18,7 +18,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
 
-import { Prompt2DStore, RefImage } from "./promptStore";
+import { Prompt2DStore, RefImage, useEnterToGenerateStore } from "./promptStore";
 import { ImageModel } from "@storyteller/model-list";
 import { ImagePromptRow, UploadImageFn } from "./ImagePromptRow";
 import { twMerge } from "tailwind-merge";
@@ -97,6 +97,7 @@ export const PromptBox2D = ({
 
   const referenceImages = usePrompt2DStore((s) => s.referenceImages);
   const setReferenceImages = usePrompt2DStore((s) => s.setReferenceImages);
+  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const [showImagePrompts, setShowImagePrompts] = useState(false);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
@@ -330,7 +331,9 @@ export const PromptBox2D = ({
     // Stop propagation of keyboard events to prevent them from reaching the canvas
     e.stopPropagation();
 
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key !== "Enter") return;
+    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    if (isSubmitCombo) {
       e.preventDefault();
       handleGenerate();
     }
