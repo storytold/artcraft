@@ -1,0 +1,753 @@
+import { useEffect, useRef, useState, useLayoutEffect } from "react";
+import { isMobile, isMacOs } from "react-device-detect";
+import Lenis from "lenis";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
+import { faWindows, faApple } from "@fortawesome/free-brands-svg-icons";
+import {
+  faPlay,
+  faMapMarkerAlt,
+  faCube,
+  faLayerGroup,
+  faUser,
+  faTools,
+  faShapes,
+  faEraser,
+  faCheck,
+  faXmark,
+  faSparkles,
+  faFilm,
+  faPaintBrush,
+  faCamera,
+} from "@fortawesome/pro-solid-svg-icons";
+import Seo from "../../components/seo";
+import Footer from "../../components/footer";
+import { DownloadModal } from "../../components/download-modal";
+import ModelBadgeGrid from "../../components/model-badge-grid";
+import { UsersApi } from "@storyteller/api";
+import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const FEATURES = [
+  {
+    icon: faMapMarkerAlt,
+    label: "Worlds",
+    title: "Image to Location",
+    description:
+      "Place virtual actors into physical environments. Establish single-location consistency and film multiple shots in a room without things disappearing.",
+    src: "/videos/features/WorldLabs_Demo_2.webm",
+  },
+  {
+    icon: faCube,
+    label: "3D Compositing",
+    title: "Build scenes with depth",
+    description:
+      "Use images, backdrops, foreground elements, and props in scenes with real depth. A couple of images blends naturally into a finished composition.",
+    src: "/videos/features/Panel.webm",
+  },
+  {
+    icon: faLayerGroup,
+    label: "2D Compositing",
+    title: "Precise layered control",
+    description:
+      "Combine images, background removal, layers, and simple drawing tools to compose a scene exactly the way you imagined it.",
+    src: "/videos/features/Editor.webm",
+  },
+  {
+    icon: faShapes,
+    label: "3D Mesh",
+    title: "Image to 3D Mesh",
+    description:
+      "Turning images into 3D helps position elements exactingly. Block complex scenes with intentional geometry instead of fighting prompts.",
+    src: "/videos/features/Make_3D.webm",
+  },
+  {
+    icon: faTools,
+    label: "Mixed Assets",
+    title: "Mix every kind of asset",
+    description:
+      "Combine image cutouts, worlds, and 3D meshes in one canvas to lay out scenes with precision and intention.",
+    src: "/videos/features/Mixed.webm",
+  },
+  {
+    icon: faUser,
+    label: "Posing",
+    title: "Character Posing",
+    description:
+      'Dynamically pose your characters to nail the precise character, scene, and camera blocking before calling "action".',
+    src: "/videos/features/Pose_Second_Version.webm",
+  },
+  {
+    icon: faEraser,
+    label: "Cutouts",
+    title: "Background Removal",
+    description:
+      "Instantly remove backgrounds from images to create assets for your scenes. Clean, precise, and ready for compositing.",
+    src: "/videos/features/Background.webm",
+  },
+];
+
+const MADE_WITH_VIDEOS = [
+  "https://www.youtube.com/embed/HDdsKJl92H4?si=0Hm4AweSRHq3qRt6",
+  "https://www.youtube.com/embed/oqoCWdOwr2U?si=ILMPk8hGHo9hP8RU",
+  "https://www.youtube.com/embed/H4NFXGMuwpY?si=wPuQl5cJOu1v8MJu",
+];
+
+const Landing3 = () => {
+  const [activeVideo, setActiveVideo] = useState<number | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkSession = async () => {
+      try {
+        const api = new UsersApi();
+        const response = await api.GetSession();
+        if (!cancelled && response.success && response.data?.loggedIn) {
+          setIsLoggedIn(true);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    checkSession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Lenis smooth scrolling
+  useEffect(() => {
+    if (isMobile) return;
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      lerp: 0.1,
+    });
+
+    let rafId: number;
+    const raf = (time: number) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+    rafId = requestAnimationFrame(raf);
+
+    lenis.on("scroll", ScrollTrigger.update);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
+
+  // Reveal animations
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      if (isMobile) return;
+      const elements = gsap.utils.toArray<HTMLElement>("[data-reveal]");
+      gsap.set(elements, { autoAlpha: 0, y: 24 });
+      elements.forEach((el) => {
+        gsap.to(el, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.9,
+          ease: "power2.out",
+          scrollTrigger: {
+            trigger: el,
+            start: "top 88%",
+            toggleActions: "play none none none",
+          },
+        });
+      });
+    }, rootRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  const onDownloadClick = () => {
+    if (isLoggedIn) return;
+    setShowDownloadModal(true);
+    localStorage.setItem("artcraft_download_initiated", "true");
+  };
+
+  const downloadUrl = isMacOs ? DOWNLOAD_LINKS.MACOS : DOWNLOAD_LINKS.WINDOWS;
+
+  return (
+    <div
+      ref={rootRef}
+      className="relative min-h-screen bg-[#121212] text-white selection:bg-primary/30 selection:text-white"
+    >
+      <Seo
+        title="ArtCraft. Controllable AI for Artists."
+        description="ArtCraft is the open desktop app for generating AI video and images - built for artists who want real control."
+      />
+
+      {/* Subtle radial accents */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 opacity-60"
+        style={{
+          background:
+            "radial-gradient(1100px 500px at 50% -200px, rgba(45,129,255,0.18), transparent 60%)",
+        }}
+      />
+
+      {/* HERO */}
+      <section className="relative pt-32 sm:pt-40 pb-20 sm:pb-24 px-4 sm:px-8">
+        <div className="max-w-[1100px] mx-auto text-center">
+          {/* Eyebrow chip */}
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 mb-7 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md text-xs sm:text-[13px] font-medium text-white/70"
+            data-reveal
+          >
+            <span className="flex h-1.5 w-1.5 rounded-full bg-primary" />
+            Now with Seedance, Nano Banana 2 & more
+          </div>
+
+          {/* Headline */}
+          <h1
+            className="text-[44px] leading-[1.02] sm:text-6xl md:text-7xl lg:text-[88px] tracking-[-0.045em] font-semibold mb-6 text-white"
+            data-reveal
+          >
+            Controllable AI
+            <br />
+            <span className="font-serif-italic text-white/95">for artists</span>
+            .
+          </h1>
+
+          {/* Subtitle */}
+          <p
+            className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-white/55 leading-relaxed mb-10"
+            data-reveal
+          >
+            Artists deserve unparalleled control and precision. ArtCraft is the
+            open desktop app that pulls you out of prompting — and back into
+            actually crafting.
+          </p>
+
+          {/* CTAs */}
+          <div
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14"
+            data-reveal
+          >
+            {isMobile ? (
+              <button
+                disabled
+                className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white/10 text-white/60 text-[14px] font-semibold"
+              >
+                Download on a desktop
+              </button>
+            ) : (
+              <>
+                <a
+                  href={downloadUrl}
+                  onClick={onDownloadClick}
+                  className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
+                >
+                  <FontAwesomeIcon
+                    icon={isMacOs ? faApple : faWindows}
+                    className="text-[13px]"
+                  />
+                  Download for {isMacOs ? "Mac" : "Windows"}
+                </a>
+                <a
+                  href="/pricing"
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.08] backdrop-blur-md transition-all hover:-translate-y-px"
+                >
+                  <FontAwesomeIcon
+                    icon={faSparkles}
+                    className="text-primary text-[13px]"
+                  />
+                  Buy credits
+                </a>
+              </>
+            )}
+          </div>
+
+          {/* Hero video */}
+          <div
+            className="relative rounded-2xl sm:rounded-[24px] overflow-hidden bg-[#080808] border border-white/[0.08] p-1.5 sm:p-2 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)]"
+            data-reveal
+          >
+            <div
+              className="relative w-full rounded-xl sm:rounded-[20px] overflow-hidden bg-black"
+              style={{ paddingTop: "56.25%" }}
+            >
+              <iframe
+                src="https://player.vimeo.com/video/1179924350?h=8b9b3f0f35&autoplay=1&muted=1&loop=1&background=0&byline=0&portrait=0&title=0"
+                className="absolute inset-0 w-full h-full"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                title="ArtCraft demo"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES SECTION HEADER */}
+      <section id="features" className="relative px-4 sm:px-8 pt-12 sm:pt-20">
+        <div className="max-w-[1100px] mx-auto text-center" data-reveal>
+          <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+            Crafting features
+          </span>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-semibold leading-[1.02] mb-5">
+            We're pulling you{" "}
+            <span className="font-serif-italic">out of prompting.</span>
+          </h2>
+          <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
+            Text prompting is neat, but artists crave control. ArtCraft is the
+            control that mere words cannot buy.
+          </p>
+        </div>
+      </section>
+
+      {/* FEATURES — alternating cards */}
+      <section className="relative px-4 sm:px-8 py-16 sm:py-24">
+        <div className="max-w-[1100px] mx-auto flex flex-col gap-8 sm:gap-12">
+          {FEATURES.map((feature, i) => (
+            <article
+              key={feature.title}
+              data-reveal
+              className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl sm:rounded-[28px] overflow-hidden bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors"
+            >
+              <div
+                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${
+                  i % 2 === 1 ? "lg:order-2" : ""
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-5">
+                  <span className="inline-flex h-7 px-2.5 items-center gap-1.5 rounded-full bg-primary/15 text-primary text-[12px] font-semibold border border-primary/20">
+                    <FontAwesomeIcon
+                      icon={feature.icon}
+                      className="text-[10px]"
+                    />
+                    {feature.label}
+                  </span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl md:text-[32px] tracking-[-0.02em] font-medium leading-[1.15] mb-4 text-white">
+                  {feature.title}
+                </h3>
+                <p className="text-[15px] sm:text-base text-white/55 leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
+              <div
+                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${
+                  i % 2 === 1 ? "lg:order-1" : ""
+                }`}
+              >
+                <video
+                  src={feature.src}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      {/* STOP RENTING SECTION */}
+      <section className="relative px-4 sm:px-8 py-16 sm:py-24">
+        <div className="max-w-[1100px] mx-auto" data-reveal>
+          <div className="text-center mb-12">
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              Ownership
+            </span>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-semibold leading-[1.02] mb-5">
+              Stop renting from{" "}
+              <span className="font-serif-italic">websites</span>.
+            </h2>
+            <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
+              We're artists, not landlords. ArtCraft is yours to have and to
+              hold — forever. Dump the aggregator subscription rent payment.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {/* Websites column */}
+            <div className="rounded-2xl sm:rounded-[28px] bg-[#080808] border border-white/[0.08] p-7 sm:p-8">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-[12px] font-semibold uppercase tracking-wider text-white/40">
+                  Other tools
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white/85">
+                Web apps
+              </h3>
+              <ul className="space-y-3">
+                {[
+                  "Locked behind subscriptions",
+                  "Your work lives on someone else's server",
+                  "Tabs, browsers, latency",
+                  "Paywalled features and credit traps",
+                ].map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-3 text-[15px] text-white/55"
+                  >
+                    <FontAwesomeIcon
+                      icon={faXmark}
+                      className="text-red-400 mt-1 text-xs"
+                    />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* ArtCraft column */}
+            <div className="rounded-2xl sm:rounded-[28px] bg-gradient-to-br from-primary/15 via-white/[0.04] to-white/[0.02] border border-primary/25 p-7 sm:p-8 relative overflow-hidden">
+              <div
+                className="absolute -top-16 -right-16 w-72 h-72 rounded-full pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(45,129,255,0.25) 0%, transparent 60%)",
+                }}
+              />
+              <div className="relative">
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="text-[12px] font-semibold uppercase tracking-wider text-primary">
+                    ArtCraft
+                  </span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white">
+                  Native desktop
+                </h3>
+                <ul className="space-y-3">
+                  {[
+                    "Free to download — yours forever",
+                    "Files live on your own machine",
+                    "Native performance, no tabs",
+                    "Open source on GitHub",
+                  ].map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-3 text-[15px] text-white/80"
+                    >
+                      <FontAwesomeIcon
+                        icon={faCheck}
+                        className="text-primary mt-1 text-xs"
+                      />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FIVE REASONS — original bento, dark theme */}
+      <section id="reasons" className="relative px-4 sm:px-8 py-16 sm:py-24">
+        <div className="max-w-[1280px] mx-auto" data-reveal>
+          <div className="text-center mb-12 sm:mb-16">
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              Why ArtCraft
+            </span>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-semibold leading-[1.02]">
+              Five reasons it's the{" "}
+              <span className="font-serif-italic">best tool</span>.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6">
+            {/* Reason #1 — Text Prompting Sucks */}
+            <div className="xl:col-span-6 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
+              <div className="flex xl:flex-col gap-4 lg:gap-8 h-full flex-col-reverse">
+                <div className="grow h-40">
+                  <img
+                    src="/images/2d-3d.png"
+                    alt="2D and 3D"
+                    className="w-full h-full object-cover rounded-2xl border border-white/[0.05]"
+                  />
+                </div>
+                <div className="flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                      Text Prompting Sucks
+                    </h3>
+                    <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
+                      <span className="text-primary font-semibold">
+                        Create images and videos with our easy-to-use AI tool.
+                      </span>{" "}
+                      Draw on a canvas or work in a 3D space as if you're
+                      playing a video game.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reason #2 — Desktop App */}
+            <div className="xl:col-span-6 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 pb-0 lg:pb-0 group overflow-hidden">
+              <div className="relative flex flex-col h-full">
+                <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                  Desktop App
+                </h3>
+                <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6 lg:text-lg leading-relaxed">
+                  <span className="text-primary font-semibold">
+                    No more hunting for the hundredth tab.
+                  </span>{" "}
+                  Works on Windows, Mac, and soon Linux and Tablets. First class
+                  experience for real artists.
+                </p>
+                <div className="h-20 md:h-24 lg:h-36 xl:h-36 bg-white/[0.02] border-[5px] border-white/[0.02] rounded-t-2xl relative mt-12 lg:mt-16 xl:mt-24 select-none">
+                  <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex gap-9 items-center justify-center drop-shadow-2xl z-20 scale-50 lg:scale-75 xl:scale-100">
+                    <img
+                      src="/images/windows-logo.png"
+                      alt="Windows Logo"
+                      draggable={false}
+                      className="h-32 rotate-6"
+                    />
+                    <img
+                      src="/images/apple-logo.png"
+                      alt="Apple Logo"
+                      draggable={false}
+                      className="h-36 -rotate-6"
+                    />
+                    <img
+                      src="/images/linux-logo.png"
+                      alt="Linux Logo"
+                      draggable={false}
+                      className="h-36 rotate-6"
+                    />
+                  </div>
+                </div>
+                <div className="absolute left-0 bottom-0 w-full h-28 bg-gradient-to-t from-[#121212] via-[#121212]/80 to-transparent z-10 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Reason #3 — Open Source */}
+            <div className="xl:col-span-4 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
+              <div className="flex flex-col h-full">
+                <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                  It's Open Source
+                </h3>
+                <p className="text-white/60 text-sm sm:text-base lg:text-lg mb-4 sm:mb-6 leading-relaxed flex-1">
+                  Our desktop app's code and infrastructure are all{" "}
+                  <a
+                    href="https://github.com/storytold/artcraft"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary font-semibold hover:text-primary-300 underline underline-offset-2 transition-colors"
+                  >
+                    open source on GitHub.
+                  </a>{" "}
+                  Join us and contribute!
+                </p>
+                <div className="flex justify-center items-center h-full p-4 lg:p-6 select-none">
+                  <FontAwesomeIcon
+                    icon={faGithub}
+                    className="text-[80px] md:text-[110px] lg:text-[130px] text-white/85 group-hover:text-white group-hover:scale-105 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Reason #4 — Use Every Model */}
+            <div className="xl:col-span-8 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors group overflow-hidden">
+              <div className="lg:flex-1 flex flex-col justify-between">
+                <div className="p-6 lg:p-8">
+                  <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                    Use Every Model
+                  </h3>
+                  <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
+                    You'll be able to use{" "}
+                    <span className="text-primary font-semibold">
+                      EVERY image and video model
+                    </span>{" "}
+                    all in one place. Log in with your existing subscriptions.
+                  </p>
+                </div>
+                <ModelBadgeGrid
+                  highlight="nano-banana-2"
+                  rowOffsets={[-70, -90, -160]}
+                  className="mt-3"
+                />
+              </div>
+            </div>
+
+            {/* Reason #5 — Created by Artists */}
+            <div className="xl:col-span-12 md:col-span-2 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
+              <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-center">
+                <div className="lg:flex-1">
+                  <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
+                    Created by Artists and Filmmakers
+                  </h3>
+                  <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
+                    <span className="text-primary font-semibold">
+                      The other leading platforms were created by the Google ad
+                      team, crypto bros, and other non-artists.
+                    </span>{" "}
+                    <br />
+                    Not us. We're one of you.
+                  </p>
+                </div>
+                <div className="flex justify-center items-center h-24 lg:h-28">
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-pink-900 rounded-full flex items-center justify-center border-2 border-pink-600 shadow-lg z-10">
+                    <FontAwesomeIcon
+                      icon={faFilm}
+                      className="text-white text-xl lg:text-2xl"
+                    />
+                  </div>
+                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-emerald-600 rounded-full flex items-center justify-center border-2 border-emerald-400 shadow-lg -ml-2 z-30">
+                    <FontAwesomeIcon
+                      icon={faPaintBrush}
+                      className="text-white text-2xl lg:text-3xl"
+                    />
+                  </div>
+                  <div className="w-16 h-16 lg:w-20 lg:h-20 bg-purple-900 rounded-full flex items-center justify-center border-2 border-purple-600 shadow-lg -ml-2 z-20">
+                    <FontAwesomeIcon
+                      icon={faCamera}
+                      className="text-white text-xl lg:text-2xl"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MADE WITH ARTCRAFT */}
+      <section id="made-with" className="relative px-4 sm:px-8 py-16 sm:py-24">
+        <div className="max-w-[1100px] mx-auto" data-reveal>
+          <div className="text-center mb-12">
+            <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
+              Community
+            </span>
+            <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-semibold leading-[1.02] mb-5">
+              Made using <span className="font-serif-italic">ArtCraft</span>.
+            </h2>
+            <p className="text-base sm:text-lg text-white/55">
+              See what artists are creating with the app.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {MADE_WITH_VIDEOS.map((src, index) => {
+              const videoId = src.split("/").pop()?.split("?")[0];
+              return (
+                <button
+                  key={src}
+                  onClick={() => setActiveVideo(index)}
+                  className="group relative rounded-2xl overflow-hidden bg-[#080808] border border-white/[0.08] hover:border-white/[0.2] p-1.5 transition-all hover:-translate-y-0.5"
+                >
+                  <div className="aspect-video rounded-xl overflow-hidden relative bg-black">
+                    {activeVideo === index ? (
+                      <iframe
+                        src={src + "&autoplay=1"}
+                        title="Made with ArtCraft"
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                        allowFullScreen
+                        className="absolute inset-0 w-full h-full"
+                      />
+                    ) : (
+                      <>
+                        <img
+                          src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                          alt="Video thumbnail"
+                          className="absolute inset-0 w-full h-full object-cover opacity-90"
+                        />
+                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/15 transition-colors" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="h-14 w-14 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                            <FontAwesomeIcon
+                              icon={faPlay}
+                              className="text-black text-base translate-x-0.5"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="relative px-4 sm:px-8 py-20 sm:py-32">
+        <div className="max-w-[1100px] mx-auto" data-reveal>
+          <div className="relative rounded-2xl sm:rounded-[32px] bg-[#080808] border border-white/[0.1] p-10 sm:p-16 lg:p-20 text-center overflow-hidden">
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 0%, rgba(45,129,255,0.3) 0%, transparent 60%)",
+              }}
+            />
+            <div className="relative">
+              <h2 className="text-4xl sm:text-5xl md:text-6xl tracking-[-0.035em] font-semibold leading-[1.02] mb-5 text-white">
+                Ready to <span className="font-serif-italic">craft</span>?
+              </h2>
+              <p className="max-w-xl mx-auto text-base sm:text-lg text-white/60 leading-relaxed mb-10">
+                Join thousands of artists and filmmakers using ArtCraft to bring
+                their vision to life. Free to download.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                {isMobile ? (
+                  <button
+                    disabled
+                    className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white/10 text-white/60 text-[14px] font-semibold"
+                  >
+                    Download on a desktop
+                  </button>
+                ) : (
+                  <>
+                    <a
+                      href={downloadUrl}
+                      onClick={onDownloadClick}
+                      className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)]"
+                    >
+                      <FontAwesomeIcon
+                        icon={isMacOs ? faApple : faWindows}
+                        className="text-[13px]"
+                      />
+                      Download for {isMacOs ? "Mac" : "Windows"}
+                    </a>
+                    <a
+                      href="https://github.com/storytold/artcraft"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
+                    >
+                      <FontAwesomeIcon
+                        icon={faGithub}
+                        className="text-[13px]"
+                      />
+                      Star on GitHub
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <DownloadModal
+        isOpen={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+      />
+      <Footer />
+    </div>
+  );
+};
+
+export default Landing3;

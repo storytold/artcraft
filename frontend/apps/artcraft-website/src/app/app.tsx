@@ -7,6 +7,7 @@ import { ToastContainer } from "../components/toast/toast";
 import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
 import Landing2 from "../pages/landing2";
+import Landing3 from "../pages/landing3";
 import LandingSD2 from "../pages/landing-sd2";
 import TutorialsPage from "../pages/tutorials";
 import TutorialsArticle from "../pages/tutorials/article";
@@ -30,6 +31,7 @@ export function App() {
 
       <Routes>
         <Route path="/" element={<Landing2 />} />
+        <Route path="/landing3" element={<Landing3 />} />
         <Route path="/create-image" element={<CreateImage />} />
         <Route path="/create-video" element={<CreateVideo />} />
         <Route path="/seedance-2" element={<LandingSD2 />} />
