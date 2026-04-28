@@ -132,6 +132,20 @@ export const usePromptImageStore = create<PromptImageStore>()((set) => ({
 // ----- Video Prompt Box Store -----
 export type VideoInputMode = "keyframe" | "reference";
 
+// Kling 3.0 multishot (`shot_type: "customize"`): the user splits the video
+// into sequential shots that share everything except prompt text and per-shot
+// duration. The sum of durations is capped at `MULTISHOT_MAX_TOTAL_SECONDS`.
+export const MULTISHOT_MAX_TOTAL_SECONDS = 15;
+export const MULTISHOT_MIN_SHOT_SECONDS = 1;
+export const MULTISHOT_MAX_SHOT_SECONDS = 15;
+export const MULTISHOT_DEFAULT_SHOT_SECONDS = 5;
+
+export interface MultishotShot {
+  id: string;
+  prompt: string;
+  durationSeconds: number;
+}
+
 interface PromptVideoStore {
   prompt: string;
   resolution: Resolution | string;
@@ -145,6 +159,12 @@ interface PromptVideoStore {
   duration: number | null;
   inputMode: VideoInputMode;
   generationCount: number;
+  // Multishot state (only read when the selected model supports it, currently
+  // Kling 3.0 pro / standard). The single `prompt` field above is ignored when
+  // `isMultishot` is true.
+  isMultishot: boolean;
+  multishotShots: MultishotShot[];
+  multishotActiveShotId: string | null;
   setPrompt: (prompt: string) => void;
   setResolution: (resolution: Resolution | string) => void;
   setAspectRatio: (aspectRatio: string | null) => void;
@@ -157,34 +177,152 @@ interface PromptVideoStore {
   setDuration: (duration: number | null) => void;
   setInputMode: (mode: VideoInputMode) => void;
   setGenerationCount: (count: number) => void;
+  setIsMultishot: (value: boolean) => void;
+  setMultishotShots: (shots: MultishotShot[]) => void;
+  setMultishotActiveShotId: (id: string | null) => void;
+  addMultishotShot: () => void;
+  removeMultishotShot: (id: string) => void;
+  updateMultishotShot: (id: string, patch: Partial<Omit<MultishotShot, "id">>) => void;
 }
 
-export const usePromptVideoStore = create<PromptVideoStore>()((set) => ({
-  prompt: "",
-  resolution: "720p",
-  aspectRatio: null,
-  useSystemPrompt: true,
-  referenceImages: [],
-  endFrameImage: undefined,
-  referenceVideos: [],
-  referenceAudios: [],
-  generateWithSound: true,
-  duration: null,
-  inputMode: "keyframe",
-  generationCount: 1,
-  setPrompt: (prompt) => set({ prompt }),
-  setResolution: (resolution) => set({ resolution }),
-  setAspectRatio: (aspectRatio) => set({ aspectRatio }),
-  setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
-  setReferenceImages: (referenceImages) => set({ referenceImages }),
-  setEndFrameImage: (endFrameImage) => set({ endFrameImage }),
-  setReferenceVideos: (referenceVideos) => set({ referenceVideos }),
-  setReferenceAudios: (referenceAudios) => set({ referenceAudios }),
-  setGenerateWithSound: (generateWithSound) => set({ generateWithSound }),
-  setDuration: (duration) => set({ duration }),
-  setInputMode: (inputMode) => set({ inputMode }),
-  setGenerationCount: (generationCount) => set({ generationCount }),
-}));
+function createDefaultShot(durationSeconds = MULTISHOT_DEFAULT_SHOT_SECONDS): MultishotShot {
+  return {
+    id: crypto.randomUUID(),
+    prompt: "",
+    durationSeconds,
+  };
+}
+
+function totalSeconds(shots: MultishotShot[]): number {
+  return shots.reduce((sum, s) => sum + s.durationSeconds, 0);
+}
+
+function clampShotDuration(seconds: number): number {
+  if (!Number.isFinite(seconds)) return MULTISHOT_MIN_SHOT_SECONDS;
+  return Math.min(
+    MULTISHOT_MAX_SHOT_SECONDS,
+    Math.max(MULTISHOT_MIN_SHOT_SECONDS, Math.round(seconds)),
+  );
+}
+
+export const usePromptVideoStore = create<PromptVideoStore>()((set) => {
+  const initialShot = createDefaultShot();
+  return {
+    prompt: "",
+    resolution: "720p",
+    aspectRatio: null,
+    useSystemPrompt: true,
+    referenceImages: [],
+    endFrameImage: undefined,
+    referenceVideos: [],
+    referenceAudios: [],
+    generateWithSound: true,
+    duration: null,
+    inputMode: "keyframe",
+    generationCount: 1,
+    isMultishot: false,
+    multishotShots: [initialShot],
+    multishotActiveShotId: initialShot.id,
+    setPrompt: (prompt) => set({ prompt }),
+    setResolution: (resolution) => set({ resolution }),
+    setAspectRatio: (aspectRatio) => set({ aspectRatio }),
+    setUseSystemPrompt: (useSystemPrompt) => set({ useSystemPrompt }),
+    setReferenceImages: (referenceImages) => set({ referenceImages }),
+    setEndFrameImage: (endFrameImage) => set({ endFrameImage }),
+    setReferenceVideos: (referenceVideos) => set({ referenceVideos }),
+    setReferenceAudios: (referenceAudios) => set({ referenceAudios }),
+    setGenerateWithSound: (generateWithSound) => set({ generateWithSound }),
+    setDuration: (duration) => set({ duration }),
+    setInputMode: (inputMode) => set({ inputMode }),
+    setGenerationCount: (generationCount) => set({ generationCount }),
+    setIsMultishot: (isMultishot) =>
+      set((state) => {
+        if (isMultishot === state.isMultishot) return {};
+        if (isMultishot) {
+          // Turning on: seed the first shot's prompt from the current single
+          // prompt so the toggle feels lossless.
+          if (state.multishotShots.length === 0) {
+            const seed = createDefaultShot();
+            seed.prompt = state.prompt;
+            return {
+              isMultishot: true,
+              multishotShots: [seed],
+              multishotActiveShotId: seed.id,
+            };
+          }
+          const shots = state.multishotShots.map((shot, i) =>
+            i === 0 ? { ...shot, prompt: state.prompt } : shot,
+          );
+          return {
+            isMultishot: true,
+            multishotShots: shots,
+            multishotActiveShotId:
+              state.multishotActiveShotId ?? shots[0]?.id ?? null,
+          };
+        }
+        // Turning off: collapse to shot 1's prompt in the single-prompt field.
+        const firstShotPrompt = state.multishotShots[0]?.prompt ?? state.prompt;
+        return {
+          isMultishot: false,
+          prompt: firstShotPrompt,
+        };
+      }),
+    setMultishotShots: (multishotShots) =>
+      set((state) => ({
+        multishotShots,
+        multishotActiveShotId:
+          multishotShots.find((s) => s.id === state.multishotActiveShotId)?.id ??
+          multishotShots[0]?.id ??
+          null,
+      })),
+    setMultishotActiveShotId: (multishotActiveShotId) =>
+      set({ multishotActiveShotId }),
+    addMultishotShot: () =>
+      set((state) => {
+        const used = totalSeconds(state.multishotShots);
+        const remaining = MULTISHOT_MAX_TOTAL_SECONDS - used;
+        if (remaining < MULTISHOT_MIN_SHOT_SECONDS) return {};
+        const duration = Math.min(MULTISHOT_DEFAULT_SHOT_SECONDS, remaining);
+        const shot = createDefaultShot(duration);
+        return {
+          multishotShots: [...state.multishotShots, shot],
+          multishotActiveShotId: shot.id,
+        };
+      }),
+    removeMultishotShot: (id) =>
+      set((state) => {
+        if (state.multishotShots.length <= 1) return {};
+        const shots = state.multishotShots.filter((s) => s.id !== id);
+        const nextActiveId =
+          state.multishotActiveShotId === id
+            ? shots[0]?.id ?? null
+            : state.multishotActiveShotId;
+        return {
+          multishotShots: shots,
+          multishotActiveShotId: nextActiveId,
+        };
+      }),
+    updateMultishotShot: (id, patch) =>
+      set((state) => {
+        const shots = state.multishotShots.map((shot) => {
+          if (shot.id !== id) return shot;
+          const next = { ...shot, ...patch };
+          if (patch.durationSeconds !== undefined) {
+            // Cap the new duration so the total can never exceed the max.
+            const otherTotal =
+              totalSeconds(state.multishotShots) - shot.durationSeconds;
+            const headroom = MULTISHOT_MAX_TOTAL_SECONDS - otherTotal;
+            next.durationSeconds = Math.min(
+              clampShotDuration(patch.durationSeconds),
+              Math.max(MULTISHOT_MIN_SHOT_SECONDS, headroom),
+            );
+          }
+          return next;
+        });
+        return { multishotShots: shots };
+      }),
+  };
+});
 
 // ----- Edit Prompt Box Store -----
 type EditAspectRatio = "auto" | "wide" | "tall" | "square";
