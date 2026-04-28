@@ -63,21 +63,18 @@ pub enum KinoviSeedance2p0FastBatchCount {
 //
 // | Resolution | Credits/sec |
 // |------------|-------------|
-// | 480p       |          10 |
+// | 480p       |          14 |
 // | 720p       |          28 |
 //
 // Default resolution (None) is 720p.
 // Batch count multiplies the total cost.
-//
-// Credits per dollar:
-// - Fast @ 720p (or None): 220.0 (22,000 credits / $99.99)
-// - Fast @ 480p: 193.0 (22,000 credits / $114)
+// Credit package: 22,000 credits for $114 (~192.98 credits/$1, rounded to 193).
 
 impl GenerateSeedance2p0FastRequest {
   /// Estimate the credit cost for this generation request.
   pub fn estimate_credits(&self) -> u32 {
     let credits_per_second: u32 = match self.output_resolution {
-      Some(KinoviSeedance2p0FastOutputResolution::FourEightyP) => 10,
+      Some(KinoviSeedance2p0FastOutputResolution::FourEightyP) => 14,
       Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP) | None => 28,
     };
 
@@ -91,17 +88,15 @@ impl GenerateSeedance2p0FastRequest {
   }
 
   /// Credits per dollar for billing conversion.
-  fn credits_per_dollar(&self) -> f64 {
-    match self.output_resolution {
-      None | Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP) => 220.0,
-      Some(KinoviSeedance2p0FastOutputResolution::FourEightyP) => 193.0,
-    }
+  /// 22,000 credits / $114 ≈ 192.98, rounded to 193.
+  fn credits_per_dollar() -> f64 {
+    193.0
   }
 
   /// Estimate the USD cost in cents for this generation request.
   pub fn estimate_cost_in_usd_cents(&self) -> u64 {
     let credits = self.estimate_credits() as f64;
-    let cost = credits / self.credits_per_dollar() * 100.0;
+    let cost = credits / Self::credits_per_dollar() * 100.0;
     cost.round() as u64
   }
 }
@@ -223,26 +218,26 @@ mod tests {
       make_request(dur, None, None)
     }
 
-    // ── 480p credits (10 credits/sec) ──
+    // ── 480p credits (14 credits/sec) ──
 
     mod credits_480p {
       use super::*;
 
       #[test]
       fn every_duration() {
-        assert_eq!(r480(3).estimate_credits(), 30);
-        assert_eq!(r480(4).estimate_credits(), 40);
-        assert_eq!(r480(5).estimate_credits(), 50);
-        assert_eq!(r480(6).estimate_credits(), 60);
-        assert_eq!(r480(7).estimate_credits(), 70);
-        assert_eq!(r480(8).estimate_credits(), 80);
-        assert_eq!(r480(9).estimate_credits(), 90);
-        assert_eq!(r480(10).estimate_credits(), 100);
-        assert_eq!(r480(11).estimate_credits(), 110);
-        assert_eq!(r480(12).estimate_credits(), 120);
-        assert_eq!(r480(13).estimate_credits(), 130);
-        assert_eq!(r480(14).estimate_credits(), 140);
-        assert_eq!(r480(15).estimate_credits(), 150);
+        assert_eq!(r480(3).estimate_credits(), 42);
+        assert_eq!(r480(4).estimate_credits(), 56);
+        assert_eq!(r480(5).estimate_credits(), 70);
+        assert_eq!(r480(6).estimate_credits(), 84);
+        assert_eq!(r480(7).estimate_credits(), 98);
+        assert_eq!(r480(8).estimate_credits(), 112);
+        assert_eq!(r480(9).estimate_credits(), 126);
+        assert_eq!(r480(10).estimate_credits(), 140);
+        assert_eq!(r480(11).estimate_credits(), 154);
+        assert_eq!(r480(12).estimate_credits(), 168);
+        assert_eq!(r480(13).estimate_credits(), 182);
+        assert_eq!(r480(14).estimate_credits(), 196);
+        assert_eq!(r480(15).estimate_credits(), 210);
       }
     }
 
@@ -342,37 +337,32 @@ mod tests {
       use super::*;
 
       #[test]
-      fn credits_per_dollar_720p() {
-        assert_eq!(r720(5).credits_per_dollar(), 220.0);
-      }
-
-      #[test]
-      fn credits_per_dollar_480p() {
-        assert_eq!(r480(5).credits_per_dollar(), 193.0);
+      fn credits_per_dollar_is_193() {
+        assert_eq!(GenerateSeedance2p0FastRequest::credits_per_dollar(), 193.0);
       }
 
       #[test]
       fn usd_cents_720p_5s() {
-        // 140 credits / 220 * 100 = 63.64 → 64¢
-        assert_eq!(r720(5).estimate_cost_in_usd_cents(), 64);
+        // 140 credits / 193 * 100 = 72.54 → 73¢
+        assert_eq!(r720(5).estimate_cost_in_usd_cents(), 73);
       }
 
       #[test]
       fn usd_cents_480p_5s() {
-        // 50 credits / 193 * 100 = 25.91 → 26¢
-        assert_eq!(r480(5).estimate_cost_in_usd_cents(), 26);
+        // 70 credits / 193 * 100 = 36.27 → 36¢
+        assert_eq!(r480(5).estimate_cost_in_usd_cents(), 36);
       }
 
       #[test]
       fn usd_cents_720p_15s() {
-        // 420 credits / 220 * 100 = 190.91 → 191¢
-        assert_eq!(r720(15).estimate_cost_in_usd_cents(), 191);
+        // 420 credits / 193 * 100 = 217.62 → 218¢
+        assert_eq!(r720(15).estimate_cost_in_usd_cents(), 218);
       }
 
       #[test]
       fn usd_cents_480p_15s() {
-        // 150 credits / 193 * 100 = 77.72 → 78¢
-        assert_eq!(r480(15).estimate_cost_in_usd_cents(), 78);
+        // 210 credits / 193 * 100 = 108.81 → 109¢
+        assert_eq!(r480(15).estimate_cost_in_usd_cents(), 109);
       }
 
       #[test]

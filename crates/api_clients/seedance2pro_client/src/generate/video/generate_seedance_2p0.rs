@@ -70,10 +70,7 @@ pub enum KinoviSeedance2p0BatchCount {
 //
 // Default resolution (None) is 720p.
 // Batch count multiplies the total cost.
-//
-// Credits per dollar:
-// - Pro @ 720p (or None): 250.0 (25,000 credits / $99.99)
-// - Pro @ 480p, 1080p: 193.0 (22,000 credits / $114)
+// Credit package: 22,000 credits for $114 (~192.98 credits/$1, rounded to 193).
 
 impl GenerateSeedance2p0Request {
   /// Estimate the credit cost for this generation request.
@@ -94,18 +91,15 @@ impl GenerateSeedance2p0Request {
   }
 
   /// Credits per dollar for billing conversion.
-  fn credits_per_dollar(&self) -> f64 {
-    match self.output_resolution {
-      None | Some(KinoviSeedance2p0OutputResolution::SevenTwentyP) => 250.0,
-      Some(KinoviSeedance2p0OutputResolution::FourEightyP)
-      | Some(KinoviSeedance2p0OutputResolution::TenEightyP) => 193.0,
-    }
+  /// 22,000 credits / $114 ≈ 192.98, rounded to 193.
+  fn credits_per_dollar() -> f64 {
+    193.0
   }
 
   /// Estimate the USD cost in cents for this generation request.
   pub fn estimate_cost_in_usd_cents(&self) -> u64 {
     let credits = self.estimate_credits() as f64;
-    let cost = credits / self.credits_per_dollar() * 100.0;
+    let cost = credits / Self::credits_per_dollar() * 100.0;
     cost.round() as u64
   }
 }
@@ -385,24 +379,14 @@ mod tests {
       use super::*;
 
       #[test]
-      fn credits_per_dollar_720p() {
-        assert_eq!(r720(5).credits_per_dollar(), 250.0);
-      }
-
-      #[test]
-      fn credits_per_dollar_480p() {
-        assert_eq!(r480(5).credits_per_dollar(), 193.0);
-      }
-
-      #[test]
-      fn credits_per_dollar_1080p() {
-        assert_eq!(r1080(5).credits_per_dollar(), 193.0);
+      fn credits_per_dollar_is_193() {
+        assert_eq!(GenerateSeedance2p0Request::credits_per_dollar(), 193.0);
       }
 
       #[test]
       fn usd_cents_720p_5s() {
-        // 200 credits / 250 * 100 = 80¢
-        assert_eq!(r720(5).estimate_cost_in_usd_cents(), 80);
+        // 200 credits / 193 * 100 = 103.63 → 104¢
+        assert_eq!(r720(5).estimate_cost_in_usd_cents(), 104);
       }
 
       #[test]
@@ -419,8 +403,8 @@ mod tests {
 
       #[test]
       fn usd_cents_720p_15s() {
-        // 600 credits / 250 * 100 = 240¢
-        assert_eq!(r720(15).estimate_cost_in_usd_cents(), 240);
+        // 600 credits / 193 * 100 = 310.88 → 311¢
+        assert_eq!(r720(15).estimate_cost_in_usd_cents(), 311);
       }
 
       #[test]
