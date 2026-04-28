@@ -92,16 +92,6 @@ pub async fn omni_gen_video_generate_handler(
 
   // ==================== MODEL ACCESS CHECK ==================== //
 
-  if matches!(request.model, Some(CommonVideoModel::HappyHorse1p0)) {
-    let allowed = user_feature_flags.can_use_happy_horse()
-      || user_feature_flags.can_use_happy_horse_rate_limited();
-    if !allowed {
-      return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
-        "Not authorized to use model".to_string(),
-      ));
-    }
-  }
-
   let maybe_avt_token = server_state
     .avt_cookie_manager
     .get_avt_token_from_request(&http_request);

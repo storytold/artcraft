@@ -26,23 +26,15 @@ use log::warn;
   ),
 )]
 pub async fn omni_gen_video_models_handler(
-  http_request: HttpRequest,
-  server_state: web::Data<Arc<ServerState>>,
+  _http_request: HttpRequest,
+  _server_state: web::Data<Arc<ServerState>>,
   _query: Query<OmniGenVideoModelsQuery>,
 ) -> Result<Json<OmniGenVideoModelsResponse>, AdvancedCommonWebError> {
   let mut response = (*OMNI_GEN_VIDEO_MODELS_AND_PROVIDERS).clone();
-
-  let show_happy_horse = can_see_happy_horse(&http_request, &server_state)
-      .await
-      .unwrap_or(false);
-
-  if !show_happy_horse {
-    response.models.retain(|m| !matches!(m.model, CommonVideoModel::HappyHorse1p0));
-  }
-
   Ok(Json(response))
 }
 
+// NB: Keeping this for future reference if we need to feature gate other models.
 pub async fn can_see_happy_horse(
   http_request: &HttpRequest,
   server_state: &ServerState,
