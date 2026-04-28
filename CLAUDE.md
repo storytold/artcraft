@@ -62,6 +62,7 @@ artcraft/
 - A mix of wreq and reqwest for Rust HTTP clients
 - Never use `println!` or `eprintln!` outside of tests; use `log` crate macros instead
 - When two crates export the same type name, alias imports with a suffix: `use foo::Bar as BarFoo;`
+- Prefer `use` imports over inline fully-qualified paths; only qualify inline for true one-offs or std collisions
 - TypeScript with Nx, React, Vite, Zustand, and Three.js
 - Use two spaces for indentation
 
@@ -75,3 +76,4 @@ Organize for top-to-bottom reading. Important things first, details later.
 - **In impl blocks**: constructors first, then public methods, then private helpers
 - Private helpers go *below* the methods that call them
 - Among helpers: meatier logic above leaf-level formatters
+- **In test modules**: constants first, then test cases (grouped into sub-modules when 2+), then helper functions last

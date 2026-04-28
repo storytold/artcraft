@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import type { RecreatePayload } from "../../lib/recreate";
+import type {
+  RefImage,
+  RefVideo,
+  RefAudio,
+} from "../../components/prompt-box";
 
 export interface GeneratedVideo {
   media_token: string;
@@ -31,11 +36,20 @@ export type VideoUiState = {
   numVideos: number;
 };
 
+export type VideoRefsState = {
+  referenceImages: RefImage[];
+  endFrameImage: RefImage | undefined;
+  referenceVideos: RefVideo[];
+  referenceAudios: RefAudio[];
+};
+
 type CreateVideoState = {
   batches: VideoBatch[];
   ui: VideoUiState;
+  refs: VideoRefsState;
   pendingRecreate: RecreatePayload | null;
   setUi: (patch: Partial<VideoUiState>) => void;
+  setRefs: (patch: Partial<VideoRefsState>) => void;
   setPendingRecreate: (payload: RecreatePayload | null) => void;
   consumePendingRecreate: () => RecreatePayload | null;
   startBatch: (prompt: string, modelLabel: string) => string;
@@ -58,13 +72,24 @@ const DEFAULT_UI: VideoUiState = {
   numVideos: 1,
 };
 
+const DEFAULT_REFS: VideoRefsState = {
+  referenceImages: [],
+  endFrameImage: undefined,
+  referenceVideos: [],
+  referenceAudios: [],
+};
+
 export const useCreateVideoStore = create<CreateVideoState>((set, get) => ({
   batches: [],
   ui: { ...DEFAULT_UI },
+  refs: { ...DEFAULT_REFS },
   pendingRecreate: null,
 
   setUi: (patch) =>
     set((s) => ({ ui: { ...s.ui, ...patch } })),
+
+  setRefs: (patch) =>
+    set((s) => ({ refs: { ...s.refs, ...patch } })),
 
   setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
 

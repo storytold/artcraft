@@ -4,6 +4,7 @@ mod test_flux_pro_1p1;
 mod test_flux_pro_1p1_ultra;
 mod test_gpt_image_1;
 mod test_gpt_image_1p5;
+mod test_gpt_image_2;
 mod test_nano_banana;
 mod test_nano_banana_2;
 mod test_nano_banana_pro;

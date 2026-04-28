@@ -102,7 +102,10 @@ export async function pollVideoJobResult(
   ) {
     return {
       status: "failed",
-      error: state.status?.maybe_extra_status_description ?? "Generation failed",
+      error:
+        state.status?.maybe_failure_message ??
+        state.status?.maybe_extra_status_description ??
+        "Generation failed",
     };
   }
 

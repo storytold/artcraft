@@ -116,7 +116,10 @@ export async function pollJobResult(
     return {
       status: "failed",
       images: [],
-      error: state.status?.maybe_extra_status_description ?? "Generation failed",
+      error:
+        state.status?.maybe_failure_message ??
+        state.status?.maybe_extra_status_description ??
+        "Generation failed",
     };
   }
 

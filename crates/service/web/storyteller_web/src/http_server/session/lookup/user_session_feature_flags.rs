@@ -89,6 +89,14 @@ impl UserSessionFeatureFlags {
   pub fn has_seedance_whitelist(&self) -> bool {
     self.feature_flags.contains(&UserFeatureFlag::SeedanceWhitelist)
   }
+
+  pub fn can_use_happy_horse(&self) -> bool {
+    self.feature_flags.contains(&UserFeatureFlag::HappyHorse)
+  }
+
+  pub fn can_use_happy_horse_rate_limited(&self) -> bool {
+    self.feature_flags.contains(&UserFeatureFlag::HappyHorseRateLimit)
+  }
 }
 
 #[cfg(test)]

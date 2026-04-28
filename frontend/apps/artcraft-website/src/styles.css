@@ -53,7 +53,7 @@
       Arial,
       sans-serif;
     color: #ffffff;
-    background-color: #1b1b1f;
+    background-color: #242424;
   }
 }
 
@@ -68,7 +68,7 @@
 
 .glass {
   @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
-  background-color: rgba(46, 46, 49, 0.85) !important;
+  @apply bg-ui-controls/85 !important;
 }
 
 /* Minimal thin scrollbar for prompt textareas */
@@ -132,6 +132,7 @@
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-100%);
   }

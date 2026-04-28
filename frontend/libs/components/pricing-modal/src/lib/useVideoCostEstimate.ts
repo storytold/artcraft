@@ -12,6 +12,7 @@ import {
   videoModelToCommonVideoModel,
   videoAspectRatioToCommonAspectRatio,
   videoStoreToGenerationMode,
+  stringToCommonVideoResolution,
 } from "./convert/index.js";
 
 export function useVideoCostEstimate(
@@ -26,6 +27,7 @@ export function useVideoCostEstimate(
 
   const duration = usePromptVideoStore((s) => s.duration);
   const aspectRatio = usePromptVideoStore((s) => s.aspectRatio);
+  const resolution = usePromptVideoStore((s) => s.resolution);
   const inputMode = usePromptVideoStore((s) => s.inputMode);
   const referenceImages = usePromptVideoStore((s) => s.referenceImages);
   const endFrameImage = usePromptVideoStore((s) => s.endFrameImage);
@@ -47,6 +49,7 @@ export function useVideoCostEstimate(
       aspectRatio,
       videoModel.sizeOptions,
     );
+    const commonResolution = stringToCommonVideoResolution(resolution);
     const generationMode = videoStoreToGenerationMode(
       inputMode,
       referenceImages,
@@ -65,6 +68,7 @@ export function useVideoCostEstimate(
       provider,
       generation_mode: generationMode,
       aspect_ratio: commonAspectRatio ?? undefined,
+      resolution: commonResolution ?? undefined,
       duration_seconds: duration ?? undefined,
       generate_audio: generateWithSound,
     })
@@ -88,6 +92,7 @@ export function useVideoCostEstimate(
     selectedProvider,
     duration,
     aspectRatio,
+    resolution,
     inputMode,
     referenceImages.length,
     !!endFrameImage,

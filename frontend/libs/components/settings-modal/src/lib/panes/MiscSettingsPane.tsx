@@ -9,16 +9,21 @@ import {
 import { PreferenceName, UpdateAppPreferences } from "@storyteller/tauri-api";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Label } from "@storyteller/ui-label";
+import { Switch } from "@storyteller/ui-switch";
 import { DownloadDirectoryReveal } from "@storyteller/tauri-api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFolder, faMagnifyingGlass, faRotateLeft } from "@fortawesome/pro-solid-svg-icons";
+import { useEnterToGenerateStore } from "@storyteller/ui-promptbox";
 
-interface MiscSettingsPaneProps {}
+interface MiscSettingsPaneProps { }
 
 export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
   const [preferences, setPreferences] = useState<
     AppPreferencesPayload | undefined
   >(undefined);
+
+  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
+  const setEnterToGenerate = useEnterToGenerateStore((s) => s.setEnabled);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,6 +108,17 @@ export const MiscSettingsPane = (args: MiscSettingsPaneProps) => {
           <FontAwesomeIcon icon={faMagnifyingGlass} />
           Show Directory
         </Button>
+      </div>
+      <div className="flex flex-col gap-2 pt-3">
+        <div className="flex flex-col gap-0.5">
+          <Label htmlFor="enter-to-generate">Enter to generate</Label>
+          <p className="text-xs opacity-70">
+            When on, pressing Enter submits the prompt and Shift+Enter adds a
+            new line. When off (default), Enter adds a new line and Shift+Enter
+            submits.
+          </p>
+        </div>
+        <Switch enabled={enterToGenerate} setEnabled={setEnterToGenerate} />
       </div>
     </div>
   );

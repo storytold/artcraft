@@ -16,6 +16,8 @@ pub struct MuapiVideoResponsePayload {
 pub struct Seedance2proVideoResponsePayload {
   pub order_id: String,
   pub task_id: String,
+  pub maybe_order_ids: Option<Vec<String>>,
+  pub maybe_task_ids: Option<Vec<String>>,
 }
 
 #[derive(Clone, Debug)]

@@ -73,6 +73,10 @@ import { TabId, useTabStore } from "~/pages/Stores/TabState";
 import { authentication } from "~/signals";
 import { setLogoutStates } from "~/signals/authentication/utilities";
 import type { BaseSelectorImage } from "@storyteller/ui-pagedraw";
+import {
+  galleryModalDeleteMedia,
+  galleryModalSubscribeToMediaEvents,
+} from "~/Helpers/galleryModalTauriBindings";
 import { AppsQuickMenu } from "./AppsQuickMenu";
 import { SceneTitleInput } from "./SceneTitleInput";
 import { TaskQueue } from "./TaskQueue";
@@ -782,6 +786,8 @@ export const TopBar = ({ pageName }: Props) => {
         onMake3DObjectClicked={handleMake3DObjectFromGallery}
         onMake3DWorldClicked={handleMake3DWorldFromGallery}
         onRecreateClicked={handleRecreateFromGallery}
+        onDeleteMedia={galleryModalDeleteMedia}
+        subscribeToMediaEvents={galleryModalSubscribeToMediaEvents}
       />
 
       <ProviderSetupModal />

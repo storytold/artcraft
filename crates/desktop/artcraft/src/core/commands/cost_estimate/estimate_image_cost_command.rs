@@ -17,7 +17,7 @@ pub async fn estimate_image_cost_command(
   request: EstimateImageCostRequest,
   app_env_configs: State<'_, AppEnvConfigs>,
 ) -> ResponseOrError<EstimateImageCostResponse, EstimateImageCostError> {
-  debug!("estimate_image_cost_command called");
+  debug!("estimate_image_cost_command called: {:?}", request);
 
   let result = estimate_image_cost(
     &app_env_configs.storyteller_host,

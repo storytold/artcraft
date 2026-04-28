@@ -32,6 +32,7 @@ import {
   VideoInputMode,
   useCharactersStore,
   StoredCharacter,
+  useEnterToGenerateStore,
 } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -145,6 +146,7 @@ export const PromptBoxVideo = ({
   const addMultishotShot = usePromptVideoStore((s) => s.addMultishotShot);
   const removeMultishotShot = usePromptVideoStore((s) => s.removeMultishotShot);
   const updateMultishotShot = usePromptVideoStore((s) => s.updateMultishotShot);
+  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -801,10 +803,21 @@ export const PromptBoxVideo = ({
         );
       }
 
-      // Extract character tokens from @-mentions in prompt
-      const mentionedCharacters = activeCharacters.filter((c) =>
-        prompt.includes(`@${c.name}`),
-      );
+      // Extract character tokens from @-mentions in prompt.
+      // Use a word-boundary regex so `@Bob` doesn't match inside `@Bob2`.
+      const mentionedCharacters = (() => {
+        if (activeCharacters.length === 0) return [];
+        const sorted = [...activeCharacters].sort(
+          (a, b) => b.name.length - a.name.length,
+        );
+        const matched = new Set<string>();
+        for (const c of sorted) {
+          const escaped = c.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const regex = new RegExp(`@${escaped}(?!\\w)`);
+          if (regex.test(prompt)) matched.add(c.character_token);
+        }
+        return activeCharacters.filter((c) => matched.has(c.character_token));
+      })();
       if (mentionedCharacters.length > 0) {
         request.reference_character_tokens = mentionedCharacters.map(
           (c) => c.character_token,
@@ -915,7 +928,9 @@ export const PromptBoxVideo = ({
       }
     }
 
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key !== "Enter") return;
+    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    if (isSubmitCombo) {
       e.preventDefault();
 
       if (selectedModel?.requiresImage && referenceImages.length === 0) {
@@ -1066,7 +1081,11 @@ export const PromptBoxVideo = ({
                   }
                   className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
+                    if (e.key !== "Enter") return;
+                    const isSubmitCombo = enterToGenerate
+                      ? !e.shiftKey
+                      : e.shiftKey;
+                    if (isSubmitCombo) {
                       e.preventDefault();
                       if (
                         selectedModel?.requiresImage &&

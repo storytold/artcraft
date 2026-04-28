@@ -315,7 +315,7 @@ export const Tooltip = ({
           }}
           className={twMerge(
             isFixed ? "fixed" : "absolute",
-            "w-max rounded-lg bg-ui-controls shadow-xl border border-ui-panel-border",
+            "w-max rounded-lg bg-ui-controls shadow-xl border border-ui-controls-border",
             interactive
               ? "pointer-events-auto p-3"
               : "px-2.5 py-1.5 text-[13px] font-medium pointer-events-none",

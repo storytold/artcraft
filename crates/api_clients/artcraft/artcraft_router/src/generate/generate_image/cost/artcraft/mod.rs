@@ -4,6 +4,7 @@ pub mod estimate_image_cost_artcraft_flux_pro_1p1;
 pub mod estimate_image_cost_artcraft_flux_pro_1p1_ultra;
 pub mod estimate_image_cost_artcraft_gpt_image_1;
 pub mod estimate_image_cost_artcraft_gpt_image_1p5;
+pub mod estimate_image_cost_artcraft_gpt_image_2;
 pub mod estimate_image_cost_artcraft_nano_banana;
 pub mod estimate_image_cost_artcraft_nano_banana_2;
 pub mod estimate_image_cost_artcraft_nano_banana_pro;

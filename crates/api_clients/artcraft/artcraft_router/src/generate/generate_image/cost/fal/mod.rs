@@ -4,6 +4,7 @@ pub(crate) mod estimate_image_cost_fal_flux_pro_1p1;
 pub(crate) mod estimate_image_cost_fal_flux_pro_1p1_ultra;
 pub(crate) mod estimate_image_cost_fal_gpt_image_1;
 pub(crate) mod estimate_image_cost_fal_gpt_image_1p5;
+pub(crate) mod estimate_image_cost_fal_gpt_image_2;
 pub(crate) mod estimate_image_cost_fal_seedream_4;
 pub(crate) mod estimate_image_cost_fal_seedream_4p5;
 pub(crate) mod estimate_image_cost_fal_seedream_5_lite;

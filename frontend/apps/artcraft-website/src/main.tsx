@@ -18,7 +18,7 @@ if (import.meta.env.DEV) {
       window.location.origin,
     );
     // NB: This is for Brandon to test with storyteller-web locally:
-    //StorytellerApiHostStore.getInstance().setDevelopment();
+    StorytellerApiHostStore.getInstance().setDevelopment();
   } catch (e) {
     console.warn("Failed to set dev API host override", e);
   }

@@ -209,6 +209,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
       CommonAspectRatio::TallTwoByThree,
     ]),
     aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
     quality_options: Some(vec![
       CommonQuality::High,
       CommonQuality::Medium,
@@ -233,6 +234,36 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
       CommonAspectRatio::TallTwoByThree,
     ]),
     aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
+    quality_options: Some(vec![
+      CommonQuality::High,
+      CommonQuality::Medium,
+      CommonQuality::Low,
+    ]),
+    default_quality: Some(CommonQuality::High),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+
+  models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::GptImage2,
+    model_creator: Some(ModelCreator::OpenAi),
+    full_name: Some("GPT Image 2".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
+      CommonAspectRatio::Square,
+      CommonAspectRatio::SquareHd,
+      CommonAspectRatio::TallThreeByFour,
+      CommonAspectRatio::TallNineBySixteen,
+      CommonAspectRatio::WideFourByThree,
+      CommonAspectRatio::WideSixteenByNine,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto),
     quality_options: Some(vec![
       CommonQuality::High,
       CommonQuality::Medium,
@@ -345,6 +376,10 @@ fn build_omni_gen_image_model_providers() -> Vec<OmniGenImageModelProviderDetail
       },
       OmniGenImageProviderModelDetails {
         model: CommonImageModel::GptImage1p5,
+        overrides: None,
+      },
+      OmniGenImageProviderModelDetails {
+        model: CommonImageModel::GptImage2,
         overrides: None,
       },
       OmniGenImageProviderModelDetails {

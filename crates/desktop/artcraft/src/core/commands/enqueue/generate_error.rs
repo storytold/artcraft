@@ -235,6 +235,7 @@ impl From<ArtcraftRouterError> for GenerateError {
       ArtcraftRouterError::Provider(ProviderError::Muapi(_)) => Self::ArtcraftRouterNotYetSupportedProvider("muapi"),
       ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(_)) => Self::ArtcraftRouterNotYetSupportedProvider("seedance2pro"),
       ArtcraftRouterError::UnsupportedModel(model) => Self::NotYetImplemented(format!("Unsupported model: {}", model)),
+      ArtcraftRouterError::UnsupportedProviderAndModelForNewApi(message) => Self::ArtcraftRouterNotYetSupportedProvider("unsupported model for new router API"),
     }
   }
 }

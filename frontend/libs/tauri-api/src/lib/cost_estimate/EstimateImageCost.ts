@@ -3,6 +3,7 @@ import { CommandResult, CommandSuccessStatus } from "../common/CommandStatus";
 import {
   CommonImageModel,
   CommonAspectRatio,
+  CommonQuality,
   CommonVideoResolution,
   ImageGenerationMode,
   GenerationProvider,
@@ -14,6 +15,7 @@ export interface EstimateImageCostRequest {
   generation_mode: ImageGenerationMode;
   aspect_ratio?: CommonAspectRatio;
   resolution?: CommonVideoResolution;
+  quality?: CommonQuality;
   image_batch_count?: number;
 }
 

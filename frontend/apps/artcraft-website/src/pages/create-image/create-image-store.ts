@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { RecreatePayload } from "../../lib/recreate";
+import type { RefImage } from "../../components/prompt-box";
 
 export interface GeneratedImage {
   media_token: string;
@@ -31,8 +32,10 @@ export type ImageUiState = {
 type CreateImageState = {
   batches: ImageBatch[];
   ui: ImageUiState;
+  referenceImages: RefImage[];
   pendingRecreate: RecreatePayload | null;
   setUi: (patch: Partial<ImageUiState>) => void;
+  setReferenceImages: (images: RefImage[]) => void;
   setPendingRecreate: (payload: RecreatePayload | null) => void;
   consumePendingRecreate: () => RecreatePayload | null;
   startBatch: (
@@ -60,10 +63,13 @@ const DEFAULT_UI: ImageUiState = {
 export const useCreateImageStore = create<CreateImageState>((set, get) => ({
   batches: [],
   ui: { ...DEFAULT_UI },
+  referenceImages: [],
   pendingRecreate: null,
 
   setUi: (patch) =>
     set((s) => ({ ui: { ...s.ui, ...patch } })),
+
+  setReferenceImages: (images) => set({ referenceImages: images }),
 
   setPendingRecreate: (payload) => set({ pendingRecreate: payload }),
 

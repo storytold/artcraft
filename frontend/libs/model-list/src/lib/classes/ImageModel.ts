@@ -5,6 +5,7 @@ import { ModelTag } from "./metadata/ModelTag.js";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { CommonAspectRatio } from "./properties/CommonAspectRatio.js";
 import { CommonResolution } from "./properties/CommonResolution.js";
+import { CommonQuality } from "./properties/CommonQuality.js";
 
 export class ImageModel extends Model {
   // Typescript type discriminator property
@@ -58,6 +59,8 @@ export class ImageModel extends Model {
 
   readonly resolutions: CommonResolution[];
 
+  readonly qualityOptions: CommonQuality[];
+
   // Aspect ratio to use as default when nothing is selected.
   // Otherwise, use `aspectRatios[0]` as default.
   readonly defaultAspectRatio?: CommonAspectRatio;
@@ -65,6 +68,10 @@ export class ImageModel extends Model {
   // Resolution to use as default when nothing is selected.
   // Otherwise, use `resolutions[0]` as default.
   readonly defaultResolution?: CommonResolution;
+
+  // Quality to use as default when nothing is selected.
+  // Otherwise, use `qualityOptions[0]` as default.
+  readonly defaultQuality?: CommonQuality;
 
   constructor(args: {
     id: string;
@@ -92,8 +99,10 @@ export class ImageModel extends Model {
     providers?: GenerationProvider[];
     aspectRatios?: CommonAspectRatio[];
     resolutions?: CommonResolution[];
+    qualityOptions?: CommonQuality[];
     defaultAspectRatio?: CommonAspectRatio;
     defaultResolution?: CommonResolution;
+    defaultQuality?: CommonQuality;
     maxPromptLength?: number;
   }) {
     if (args.maxGenerationCount < 1) {
@@ -104,7 +113,7 @@ export class ImageModel extends Model {
     }
     if (args.defaultGenerationCount > args.maxGenerationCount) {
       throw new Error(
-        "defaultGenerationCount must be less than or equal to maxGenerationCount"
+        "defaultGenerationCount must be less than or equal to maxGenerationCount",
       );
     }
     super(args);
@@ -122,16 +131,30 @@ export class ImageModel extends Model {
     this.canChangeAspectRatio = args.canChangeAspectRatio ?? false;
     this.aspectRatios = args.aspectRatios ?? [];
     this.resolutions = args.resolutions ?? [];
-    this.defaultAspectRatio = args.defaultAspectRatio ?? (args.aspectRatios && args.aspectRatios.length > 0 ? args.aspectRatios[0] : undefined);
-    this.defaultResolution = args.defaultResolution ?? (args.resolutions && args.resolutions.length > 0 ? args.resolutions[0] : undefined);
+    this.qualityOptions = args.qualityOptions ?? [];
+    this.defaultAspectRatio =
+      args.defaultAspectRatio ??
+      (args.aspectRatios && args.aspectRatios.length > 0
+        ? args.aspectRatios[0]
+        : undefined);
+    this.defaultResolution =
+      args.defaultResolution ??
+      (args.resolutions && args.resolutions.length > 0
+        ? args.resolutions[0]
+        : undefined);
+    this.defaultQuality =
+      args.defaultQuality ??
+      (args.qualityOptions && args.qualityOptions.length > 0
+        ? args.qualityOptions[0]
+        : undefined);
   }
 
-  // If the model is a "Nano Banana"-type model, we may want to enable certain features. 
+  // If the model is a "Nano Banana"-type model, we may want to enable certain features.
   // For example, in the editor, we may want to use the marker.
-  // TODO: Rather than "isNanoBananaModel()", we should have: "enableEditorMarker" as it's 
+  // TODO: Rather than "isNanoBananaModel()", we should have: "enableEditorMarker" as it's
   // more semantic.
   isNanoBananaModel(): boolean {
-    switch(this.id) {
+    switch (this.id) {
       case "gemini_25_flash":
       case "nano_banana":
       case "nano_banana_pro":
@@ -144,17 +167,26 @@ export class ImageModel extends Model {
   // Rolling out new aspect ratio controls to models.
   // If we have them set on the model, we can use the new UI controls.
   supportsNewAspectRatio(): boolean {
-    return this.canChangeAspectRatio 
-      && this.aspectRatios 
-      && this.aspectRatios.length > 0;
+    return (
+      this.canChangeAspectRatio &&
+      this.aspectRatios &&
+      this.aspectRatios.length > 0
+    );
   }
 
   // Rolling out new resolution controls to models.
   // If we have them set on the model, we can use the new UI controls.
   supportsNewResolution(): boolean {
-    return this.canChangeResolution 
-      && this.resolutions 
-      && this.resolutions.length > 0;
+    return (
+      this.canChangeResolution &&
+      this.resolutions &&
+      this.resolutions.length > 0
+    );
+  }
+
+  // True if this model exposes a quality picker (e.g. OpenAI image models).
+  supportsQuality(): boolean {
+    return this.qualityOptions && this.qualityOptions.length > 0;
   }
 
   // Return whether the count of generations is valid for this model

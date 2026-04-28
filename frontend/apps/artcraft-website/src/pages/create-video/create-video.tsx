@@ -12,9 +12,9 @@ import { ToggleButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import {
   PromptBox,
-  ImagePickerModal,
   MediaReferenceRow,
   CharactersModal,
   useCharactersStore,
@@ -209,14 +209,42 @@ export default function CreateVideo() {
   );
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Reference media
-  const [referenceImages, setReferenceImages] = useState<RefImage[]>([]);
-  const [endFrameImage, setEndFrameImage] = useState<RefImage | undefined>();
-  const [referenceVideos, setReferenceVideos] = useState<RefVideo[]>([]);
-  const [referenceAudios, setReferenceAudios] = useState<RefAudio[]>([]);
+  // Reference media (persisted in store so refs survive navigation)
+  const refs = useCreateVideoStore((s) => s.refs);
+  const setRefs = useCreateVideoStore((s) => s.setRefs);
+  const { referenceImages, endFrameImage, referenceVideos, referenceAudios } =
+    refs;
+  const setReferenceImages = useCallback(
+    (v: RefImage[]) => setRefs({ referenceImages: v }),
+    [setRefs],
+  );
+  const setEndFrameImage = useCallback(
+    (v?: RefImage) => setRefs({ endFrameImage: v }),
+    [setRefs],
+  );
+  const setReferenceVideos = useCallback(
+    (v: RefVideo[]) => setRefs({ referenceVideos: v }),
+    [setRefs],
+  );
+  const setReferenceAudios = useCallback(
+    (v: RefAudio[]) => setRefs({ referenceAudios: v }),
+    [setRefs],
+  );
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
   const [isEndFramePickerOpen, setIsEndFramePickerOpen] = useState(false);
   const [isCharactersModalOpen, setIsCharactersModalOpen] = useState(false);
+  const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
+  const [endFramePickerSelectedIds, setEndFramePickerSelectedIds] = useState<
+    string[]
+  >([]);
+
+  useEffect(() => {
+    if (isImagePickerOpen) setPickerSelectedIds([]);
+  }, [isImagePickerOpen]);
+
+  useEffect(() => {
+    if (isEndFramePickerOpen) setEndFramePickerSelectedIds([]);
+  }, [isEndFramePickerOpen]);
 
   // Characters store for @-mentions
   const storedCharacters = useCharactersStore((s) => s.characters);
@@ -278,6 +306,7 @@ export default function CreateVideo() {
   const gallery = useGalleryData({
     username: user?.username ?? null,
     filterMediaClasses: VIDEO_FILTER,
+    excludeUploads: true,
   });
 
   const newlyCompletedTokens = useMemo(
@@ -456,10 +485,12 @@ export default function CreateVideo() {
     if (!payload) return;
 
     flushSync(() => {
-      setReferenceImages(payload.referenceImages);
-      setEndFrameImage(payload.endFrameImage);
-      setReferenceVideos(payload.referenceVideos ?? []);
-      setReferenceAudios(payload.referenceAudios ?? []);
+      setRefs({
+        referenceImages: payload.referenceImages,
+        endFrameImage: payload.endFrameImage,
+        referenceVideos: payload.referenceVideos ?? [],
+        referenceAudios: payload.referenceAudios ?? [],
+      });
       setUi({
         ...(payload.modelId ? { selectedModelId: payload.modelId } : {}),
         ...(payload.inputMode ? { inputMode: payload.inputMode } : {}),
@@ -592,38 +623,65 @@ export default function CreateVideo() {
     [inputMode, setUi],
   );
 
+  const imagePickerMax = Math.max(
+    1,
+    (isReferenceMode
+      ? (selectedModel?.image_references_max ?? 3)
+      : 1) - referenceImages.length,
+  );
+
+  const handlePickerSelect = useCallback(
+    (id: string) => {
+      setPickerSelectedIds((prev) => {
+        if (prev.includes(id)) return prev.filter((x) => x !== id);
+        if (prev.length >= imagePickerMax) {
+          return imagePickerMax === 1 ? [id] : prev;
+        }
+        return [...prev, id];
+      });
+    },
+    [imagePickerMax],
+  );
+
+  const handleEndFramePickerSelect = useCallback((id: string) => {
+    setEndFramePickerSelectedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      // Single-select: auto-swap
+      return [id];
+    });
+  }, []);
+
   const handleLibraryImageSelect = useCallback(
-    (images: { token: string; url: string; thumbnailUrl: string }[]) => {
+    (items: GalleryItem[]) => {
       const maxImages = isReferenceMode
         ? (selectedModel?.image_references_max ?? 3)
         : 1;
       const availableSlots = Math.max(0, maxImages - referenceImages.length);
-      const newImages: RefImage[] = images
+      const newImages: RefImage[] = items
         .slice(0, availableSlots)
-        .map((img) => ({
+        .map((item) => ({
           id: Math.random().toString(36).substring(7),
-          url: img.thumbnailUrl || img.url,
+          url: item.thumbnail || item.fullImage || "",
           file: new File([], "library-image"),
-          mediaToken: img.token,
+          mediaToken: item.id,
         }));
       setReferenceImages([...referenceImages, ...newImages]);
+      setIsImagePickerOpen(false);
     },
     [referenceImages, isReferenceMode, selectedModel],
   );
 
-  const handleEndFrameLibrarySelect = useCallback(
-    (images: { token: string; url: string; thumbnailUrl: string }[]) => {
-      const img = images[0];
-      if (!img) return;
-      setEndFrameImage({
-        id: Math.random().toString(36).substring(7),
-        url: img.thumbnailUrl || img.url,
-        file: new File([], "library-image"),
-        mediaToken: img.token,
-      });
-    },
-    [],
-  );
+  const handleEndFrameLibrarySelect = useCallback((items: GalleryItem[]) => {
+    const item = items[0];
+    if (!item) return;
+    setEndFrameImage({
+      id: Math.random().toString(36).substring(7),
+      url: item.thumbnail || item.fullImage || "",
+      file: new File([], "library-image"),
+      mediaToken: item.id,
+    });
+    setIsEndFramePickerOpen(false);
+  }, []);
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim() || isGenerating || needsImage || !selectedModel) return;
@@ -803,6 +861,7 @@ export default function CreateVideo() {
           newlyCompletedTokens={newlyCompletedTokens}
           hasMore={gallery.hasMore}
           isLoading={gallery.isLoading}
+          isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
         />
@@ -872,12 +931,14 @@ export default function CreateVideo() {
                 />
               </Tooltip>
             }
-            onClearAllRefs={() => {
-              setReferenceImages([]);
-              setEndFrameImage(undefined);
-              setReferenceVideos([]);
-              setReferenceAudios([]);
-            }}
+            onClearAllRefs={() =>
+              setRefs({
+                referenceImages: [],
+                endFrameImage: undefined,
+                referenceVideos: [],
+                referenceAudios: [],
+              })
+            }
             mentionItems={mentionItems.length > 0 ? mentionItems : undefined}
             mediaReferenceRow={
               isReferenceMode ? (
@@ -1039,22 +1100,27 @@ export default function CreateVideo() {
       }
       modals={
         <>
-          <ImagePickerModal
+          <GalleryModal
+            mode="select"
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
-            onSelect={handleLibraryImageSelect}
-            maxSelect={Math.max(
-              1,
-              (isReferenceMode
-                ? (selectedModel?.image_references_max ?? 3)
-                : 1) - referenceImages.length,
-            )}
+            selectedItemIds={pickerSelectedIds}
+            onSelectItem={handlePickerSelect}
+            maxSelections={imagePickerMax}
+            onUseSelected={handleLibraryImageSelect}
+            forceFilter="image"
+            hideFilter
           />
-          <ImagePickerModal
+          <GalleryModal
+            mode="select"
             isOpen={isEndFramePickerOpen}
             onClose={() => setIsEndFramePickerOpen(false)}
-            onSelect={handleEndFrameLibrarySelect}
-            maxSelect={1}
+            selectedItemIds={endFramePickerSelectedIds}
+            onSelectItem={handleEndFramePickerSelect}
+            maxSelections={1}
+            onUseSelected={handleEndFrameLibrarySelect}
+            forceFilter="image"
+            hideFilter
           />
           <CharactersModal
             isOpen={isCharactersModalOpen}

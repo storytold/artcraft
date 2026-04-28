@@ -6,6 +6,7 @@ pub mod http_gemini_25_flash_text_to_image;
 pub mod http_gpt_image_1_non_byok_text_to_image;
 pub mod http_gpt_image_1_text_to_image;
 pub mod http_gpt_image_1p5_text_to_image;
+pub mod http_gpt_image_2_text_to_image;
 pub mod http_nano_banana_2_text_to_image;
 pub mod http_nano_banana_pro_text_to_image;
 pub mod http_seedream_4_text_to_image;

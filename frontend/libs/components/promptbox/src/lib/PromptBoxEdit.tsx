@@ -27,7 +27,7 @@ import { useEffect, useRef, useState } from "react";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { twMerge } from "tailwind-merge";
 import { ImagePromptRow, type UploadImageFn } from "./ImagePromptRow";
-import { RefImage, usePromptEditStore } from "./promptStore";
+import { RefImage, usePromptEditStore, useEnterToGenerateStore } from "./promptStore";
 import { toast } from "@storyteller/ui-toaster";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
@@ -107,6 +107,7 @@ export const PromptBoxEdit = ({
   const setAspectRatio = usePromptEditStore((s) => s.setAspectRatio);
   const resolution = usePromptEditStore((s) => s.resolution);
   const setResolution = usePromptEditStore((s) => s.setResolution);
+  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
 
   const [showImagePrompts, setShowImagePrompts] = useState(false);
 
@@ -237,7 +238,9 @@ export const PromptBoxEdit = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
 
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key !== "Enter") return;
+    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    if (isSubmitCombo) {
       e.preventDefault();
       const busy = Boolean(isEnqueueing ?? internalEnqueueing);
       if (!prompt.trim() || isDisabled || busy) return;

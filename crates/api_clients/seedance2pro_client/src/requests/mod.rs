@@ -1,5 +1,6 @@
 pub mod generate_character;
 pub mod generate_video;
+pub mod workflow_run_task;
 pub mod get_user_auth_details;
 pub mod kinovi_host;
 pub mod poll_characters;

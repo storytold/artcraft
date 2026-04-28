@@ -1,3 +1,4 @@
+use crate::core::api_adapters::quality::common_quality::CommonQuality;
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError};
 use crate::core::commands::enqueue::image_edit::image_edit_models::image_edit_model_to_model_type;
@@ -14,6 +15,8 @@ use crate::core::events::generation_events::generation_enqueue_failure_event::Ge
 use crate::core::events::generation_events::generation_enqueue_success_event::GenerationEnqueueSuccessEvent;
 use crate::core::events::sendable_event_trait::SendableEvent;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
+use crate::core::state::artcraft_usage_tracker::artcraft_usage_type::{ArtcraftUsagePage, ArtcraftUsageType};
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::data_dir::trait_data_subdir::DataSubdir;
 use crate::core::state::provider_priority::ProviderPriorityStore;
@@ -23,6 +26,9 @@ use crate::core::utils::simple_http_download::simple_http_download;
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
+use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
+use artcraft_client::error::storyteller_error::StorytellerError;
+use artcraft_client::utils::api_host::ApiHost;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use errors::AnyhowError;
@@ -34,13 +40,8 @@ use openai_sora_client::requests::image_gen::common::{ImageSize, NumImages};
 use serde_derive::{Deserialize, Serialize};
 use sqlite_tasks::queries::create_task::{create_task, CreateTaskArgs};
 use std::time::Duration;
-use artcraft_client::endpoints::media_files::get_media_file::get_media_file;
-use artcraft_client::error::storyteller_error::StorytellerError;
-use artcraft_client::utils::api_host::ApiHost;
 use tauri::{AppHandle, Manager, State};
 use tokens::tokens::media_files::MediaFileToken;
-use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
-use crate::core::state::artcraft_usage_tracker::artcraft_usage_type::{ArtcraftUsagePage, ArtcraftUsageType};
 
 #[derive(Deserialize, Debug, Copy, Clone)]
 #[serde(rename_all = "snake_case")]
@@ -95,6 +96,10 @@ pub struct EnqueueInpaintImageCommand {
 
   /// Number of images to generate.
   pub image_count: Option<u32>,
+
+  /// Quality. 
+  /// Tends to be used by OpenAI models.
+  pub quality: Option<CommonQuality>,
   
   /// If true, force the dimensions of the source image and mask image to match.
   pub require_matching_dimensions: Option<bool>,

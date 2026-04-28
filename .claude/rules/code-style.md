@@ -42,6 +42,21 @@ then the story, then the fine print.
    - A method that calls another method in the same file should appear *above* the method
      it calls. This lets readers follow the call chain downward.
 
+### Ordering within test modules
+
+Put test cases first, helpers last. A reader opening a test file should immediately see
+*what* is being tested before *how* the test machinery works.
+
+1. **Imports**
+2. **Constants** (test IDs, URLs, fixture data) — small context that tests reference
+3. **Test functions** or **sub-modules** grouped by category
+4. **Helper functions** (builders, pipeline runners, assertions)
+
+Group related tests into sub-modules (`mod pricing_tests { ... }`) when a category has 2+
+tests. Don't create a sub-module for a single test. Keep nesting to two levels max
+(`mod tests { mod category { ... } }`). Shared helpers go in the parent module so
+sub-modules can reach them via `use super::*`.
+
 ## Naming
 
 - Handler functions: `{verb}_{noun}_handler` (e.g. `get_health_check_handler`, `login_handler`)
@@ -53,7 +68,10 @@ then the story, then the fine print.
 ## Imports
 
 - Group imports: std, external crates, internal workspace crates, `crate::` imports
-- Use fully qualified paths for one-off references; `use` for repeated references
+- Prefer `use` imports over inline fully-qualified paths. Inline qualification is acceptable
+  only for genuine one-off references where adding an import would be noise, or for types
+  that collide with std prelude names (`Result`, `Option`, `Error`). If you reference a symbol
+  more than once, always import it.
 - Prefer specific imports over wildcards, except in `api_doc.rs` and test modules
 - When two crates export a type with the same name, alias with a suffix describing the source crate:
   `use enums::...::CommonResolution as CommonResolutionEnum;`

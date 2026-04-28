@@ -3,10 +3,10 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/components/gravatar"
+      "path": "../../libs/components/slider-v2"
     },
     {
-      "path": "../../libs/components/slider-v2"
+      "path": "../../libs/components/gallery-modal"
     },
     {
       "path": "../../libs/components/tab-selector"
@@ -18,25 +18,22 @@
       "path": "../../libs/components/close-button"
     },
     {
-      "path": "../../libs/components/tooltip"
-    },
-    {
       "path": "../../libs/components/viewer-3d"
     },
     {
       "path": "../../libs/components/action-reminder-modal"
     },
     {
-      "path": "../../libs/components/toaster"
-    },
-    {
-      "path": "../../libs/components/modal"
+      "path": "../../libs/components/gravatar"
     },
     {
       "path": "../../libs/model-list"
     },
     {
       "path": "../../libs/components/loading-spinner"
+    },
+    {
+      "path": "../../libs/components/tooltip"
     },
     {
       "path": "../../libs/common"
@@ -46,6 +43,12 @@
     },
     {
       "path": "../../libs/markdown-content"
+    },
+    {
+      "path": "../../libs/components/toaster"
+    },
+    {
+      "path": "../../libs/components/modal"
     },
     {
       "path": "../../libs/components/input"

@@ -4,9 +4,9 @@ import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
+import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import {
   PromptBox,
-  ImagePickerModal,
   type RefImage,
 } from "../../components/prompt-box";
 import {
@@ -109,8 +109,29 @@ export default function CreateImage() {
   );
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const [referenceImages, setReferenceImages] = useState<RefImage[]>([]);
+  const referenceImages = useCreateImageStore((s) => s.referenceImages);
+  const setReferenceImages = useCreateImageStore((s) => s.setReferenceImages);
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
+  const [pickerSelectedIds, setPickerSelectedIds] = useState<string[]>([]);
+  const maxImageRefs = selectedModel?.image_refs_max ?? 6;
+  const imagePickerMax = Math.max(1, maxImageRefs - referenceImages.length);
+
+  useEffect(() => {
+    if (isImagePickerOpen) setPickerSelectedIds([]);
+  }, [isImagePickerOpen]);
+
+  const handlePickerSelect = useCallback(
+    (id: string) => {
+      setPickerSelectedIds((prev) => {
+        if (prev.includes(id)) return prev.filter((x) => x !== id);
+        if (prev.length >= imagePickerMax) {
+          return imagePickerMax === 1 ? [id] : prev;
+        }
+        return [...prev, id];
+      });
+    },
+    [imagePickerMax],
+  );
 
   // Batch store (enqueue flow only)
   const startBatch = useCreateImageStore((s) => s.startBatch);
@@ -124,6 +145,7 @@ export default function CreateImage() {
   const gallery = useGalleryData({
     username: user?.username ?? null,
     filterMediaClasses: IMAGE_FILTER,
+    excludeUploads: true,
   });
 
   const newlyCompletedTokens = useMemo(
@@ -239,20 +261,20 @@ export default function CreateImage() {
   );
 
   const handleLibraryImageSelect = useCallback(
-    (images: { token: string; url: string; thumbnailUrl: string }[]) => {
-      const maxImages = selectedModel?.image_refs_max ?? 1;
-      const availableSlots = Math.max(0, maxImages - referenceImages.length);
-      const newImages: RefImage[] = images
+    (items: GalleryItem[]) => {
+      const availableSlots = Math.max(0, maxImageRefs - referenceImages.length);
+      const newImages: RefImage[] = items
         .slice(0, availableSlots)
-        .map((img) => ({
+        .map((item) => ({
           id: Math.random().toString(36).substring(7),
-          url: img.thumbnailUrl || img.url,
+          url: item.thumbnail || item.fullImage || "",
           file: new File([], "library-image"),
-          mediaToken: img.token,
+          mediaToken: item.id,
         }));
       setReferenceImages([...referenceImages, ...newImages]);
+      setIsImagePickerOpen(false);
     },
-    [referenceImages, selectedModel],
+    [maxImageRefs, referenceImages, setReferenceImages],
   );
 
   const handleGenerate = useCallback(async () => {
@@ -357,6 +379,7 @@ export default function CreateImage() {
           newlyCompletedTokens={newlyCompletedTokens}
           hasMore={gallery.hasMore}
           isLoading={gallery.isLoading}
+          isInitialLoading={gallery.isInitialLoading}
           onLoadMore={gallery.loadMore}
           onGalleryItemClick={lightbox.handleGalleryItemClick}
         />
@@ -376,7 +399,7 @@ export default function CreateImage() {
             credits={estimatedCredits}
             placeholder="Describe what you want in the image..."
             supportsImagePrompts={!!selectedModel?.image_refs_supported}
-            maxImagePromptCount={selectedModel?.image_refs_max ?? 6}
+            maxImagePromptCount={maxImageRefs}
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
@@ -447,14 +470,16 @@ export default function CreateImage() {
       }
       modals={
         <>
-          <ImagePickerModal
+          <GalleryModal
+            mode="select"
             isOpen={isImagePickerOpen}
             onClose={() => setIsImagePickerOpen(false)}
-            onSelect={handleLibraryImageSelect}
-            maxSelect={Math.max(
-              1,
-              (selectedModel?.image_refs_max ?? 1) - referenceImages.length,
-            )}
+            selectedItemIds={pickerSelectedIds}
+            onSelectItem={handlePickerSelect}
+            maxSelections={imagePickerMax}
+            onUseSelected={handleLibraryImageSelect}
+            forceFilter="image"
+            hideFilter
           />
           <Lightbox
             isOpen={lightbox.lightboxOpen}

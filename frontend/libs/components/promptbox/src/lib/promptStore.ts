@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { CommonAspectRatio } from "@storyteller/model-list";
 import { CommonResolution } from "@storyteller/model-list";
+import { CommonQuality } from "@storyteller/model-list";
 
 export interface RefImage {
   id: string;
@@ -95,6 +96,7 @@ interface PromptImageStore {
   // New-style aspect ratio and resolution (preferred over legacy fields above)
   commonAspectRatio: CommonAspectRatio | undefined;
   commonResolution: CommonResolution | undefined;
+  commonQuality: CommonQuality | undefined;
   setPrompt: (prompt: string) => void;
   setAspectRatio: (ratio: AspectRatio) => void;
   setResolution: (resolution: Resolution) => void;
@@ -103,6 +105,7 @@ interface PromptImageStore {
   setGenerationCount: (count: number) => void;
   setCommonAspectRatio: (ratio: CommonAspectRatio | undefined) => void;
   setCommonResolution: (resolution: CommonResolution | undefined) => void;
+  setCommonQuality: (quality: CommonQuality | undefined) => void;
 }
 
 export const usePromptImageStore = create<PromptImageStore>()((set) => ({
@@ -114,6 +117,7 @@ export const usePromptImageStore = create<PromptImageStore>()((set) => ({
   generationCount: 1,
   commonAspectRatio: undefined,
   commonResolution: undefined,
+  commonQuality: undefined,
   setPrompt: (prompt) => set({ prompt }),
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
   setResolution: (resolution) => set({ resolution }),
@@ -122,6 +126,7 @@ export const usePromptImageStore = create<PromptImageStore>()((set) => ({
   setGenerationCount: (generationCount) => set({ generationCount }),
   setCommonAspectRatio: (commonAspectRatio) => set({ commonAspectRatio }),
   setCommonResolution: (commonResolution) => set({ commonResolution }),
+  setCommonQuality: (commonQuality) => set({ commonQuality }),
 }));
 
 // ----- Video Prompt Box Store -----
@@ -338,6 +343,48 @@ export const usePromptEditStore = create<PromptEditStore>()((set) => ({
   setReferenceImages: (referenceImages) => set({ referenceImages }),
   setAspectRatio: (aspectRatio) => set({ aspectRatio }),
   setResolution: (resolution) => set({ resolution }),
+}));
+
+// ----- Enter-to-Generate Preference Store -----
+// Controls how the Enter key behaves inside prompt boxes.
+//   false (default): Enter inserts a newline; Shift+Enter submits.
+//   true:            Enter submits; Shift+Enter inserts a newline.
+// Persisted to localStorage so the choice survives reloads.
+const ENTER_TO_GENERATE_STORAGE_KEY = "artcraft_enter_to_generate";
+
+const readEnterToGenerate = (): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(ENTER_TO_GENERATE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const writeEnterToGenerate = (enabled: boolean) => {
+  if (typeof window === "undefined") return;
+  try {
+    if (enabled) {
+      window.localStorage.setItem(ENTER_TO_GENERATE_STORAGE_KEY, "true");
+    } else {
+      window.localStorage.removeItem(ENTER_TO_GENERATE_STORAGE_KEY);
+    }
+  } catch {
+    // ignore storage failures
+  }
+};
+
+interface EnterToGenerateStore {
+  enabled: boolean;
+  setEnabled: (enabled: boolean) => void;
+}
+
+export const useEnterToGenerateStore = create<EnterToGenerateStore>()((set) => ({
+  enabled: readEnterToGenerate(),
+  setEnabled: (enabled) => {
+    writeEnterToGenerate(enabled);
+    set({ enabled });
+  },
 }));
 
 // ----- Characters Store -----

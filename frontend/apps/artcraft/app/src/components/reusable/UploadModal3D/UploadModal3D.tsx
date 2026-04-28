@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Checkbox } from "@storyteller/ui-checkbox";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { Modal } from "@storyteller/ui-modal";
 import { UploadAssetError, UploadSuccess } from "@storyteller/ui-upload-modal";
@@ -89,15 +90,12 @@ export function UploadModal3D(props: Props) {
       case UploaderStates.ready:
         return (
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <input
-                id="upload-as-character"
-                type="checkbox"
-                checked={isCharacter}
-                onChange={(e) => setIsCharacter(e.target.checked)}
-              />
-              <label htmlFor="upload-as-character">Upload as Character</label>
-            </div>
+            <Checkbox
+              id="upload-as-character"
+              checked={isCharacter}
+              onChange={(e) => setIsCharacter(e.target.checked)}
+              label="Upload as Character"
+            />
             <UploadFiles3D
               title={title}
               engineCategory={selectedCategory}

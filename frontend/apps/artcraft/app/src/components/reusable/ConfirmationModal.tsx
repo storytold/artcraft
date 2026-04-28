@@ -2,6 +2,7 @@ import { Fragment, useCallback } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { DoNotShow } from "~/constants";
 import { Button } from "@storyteller/ui-button"
+import { Checkbox } from "@storyteller/ui-checkbox";
 
 interface Props {
   text: string;
@@ -74,10 +75,7 @@ export const ConfirmationModal = ({
               <div className="mt-2">{text}</div>
               {canHide && (
                 <div className="mt-2">
-                  <label>
-                    <input id="hide-dialog" type="checkbox" />
-                    &nbsp;&nbsp;Do not show this again
-                  </label>
+                  <Checkbox id="hide-dialog" label="Do not show this again" />
                 </div>
               )}
 

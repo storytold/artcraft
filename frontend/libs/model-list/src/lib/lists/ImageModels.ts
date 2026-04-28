@@ -4,6 +4,7 @@ import { ModelCreator } from "../classes/metadata/ModelCreator.js";
 import { ModelTag } from "../classes/metadata/ModelTag.js";
 import { CommonAspectRatio } from "../classes/properties/CommonAspectRatio.js";
 import { CommonResolution } from "../classes/properties/CommonResolution.js";
+import { CommonQuality } from "../classes/properties/CommonQuality.js";
 
 // TODO: Some of the model configs, such as generation counts, are authoritatively controlled in `legacy/Models.ts`
 
@@ -14,9 +15,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "Grok",
     category: "image",
     creator: ModelCreator.Grok,
-    providers: [
-      GenerationProvider.Grok, 
-    ],
+    providers: [GenerationProvider.Grok],
     selectorName: "Grok",
     selectorDescription: "Fast af",
     selectorBadges: ["10 sec."],
@@ -34,7 +33,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.Square,
       CommonAspectRatio.WideThreeByTwo,
       CommonAspectRatio.TallTwoByThree,
-    ]
+    ],
   }),
   new ImageModel({
     id: "midjourney",
@@ -42,9 +41,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "Midjourney",
     category: "image",
     creator: ModelCreator.Midjourney,
-    providers: [
-      GenerationProvider.Midjourney
-    ],
+    providers: [GenerationProvider.Midjourney],
     selectorName: "Midjourney",
     selectorDescription: "Stunning style and quality",
     selectorBadges: ["45 sec."],
@@ -198,7 +195,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.TallThreeByFour,
       CommonAspectRatio.TallTwoByThree,
       CommonAspectRatio.TallNineBySixteen,
-    ]
+    ],
   }),
   new ImageModel({
     id: "nano_banana_2",
@@ -238,7 +235,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonResolution.OneK,
       CommonResolution.TwoK,
       CommonResolution.FourK,
-    ]
+    ],
   }),
   new ImageModel({
     id: "nano_banana_pro",
@@ -278,7 +275,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonResolution.OneK,
       CommonResolution.TwoK,
       CommonResolution.FourK,
-    ]
+    ],
   }),
   new ImageModel({
     id: "gpt_image_1",
@@ -286,10 +283,7 @@ export const IMAGE_MODELS: ImageModel[] = [
     fullName: "GPT Image 1 (GPT-4o)",
     category: "image",
     creator: ModelCreator.OpenAi,
-    providers: [
-      GenerationProvider.Artcraft,
-      GenerationProvider.Sora
-    ],
+    providers: [GenerationProvider.Artcraft, GenerationProvider.Sora],
     selectorName: "GPT Image 1 (GPT-4o)",
     selectorDescription: "Slow, but super smart",
     selectorBadges: ["60 sec."],
@@ -302,6 +296,12 @@ export const IMAGE_MODELS: ImageModel[] = [
     progressBarTime: 60000,
     maxPromptLength: 1500,
     canChangeAspectRatio: true,
+    defaultQuality: CommonQuality.High,
+    qualityOptions: [
+      CommonQuality.High,
+      CommonQuality.Medium,
+      CommonQuality.Low,
+    ],
   }),
   new ImageModel({
     id: "gpt_image_1p5",
@@ -326,7 +326,48 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.Square,
       CommonAspectRatio.Wide,
       CommonAspectRatio.Tall,
-    ]
+    ],
+    defaultQuality: CommonQuality.High,
+    qualityOptions: [
+      CommonQuality.High,
+      CommonQuality.Medium,
+      CommonQuality.Low,
+    ],
+  }),
+  new ImageModel({
+    id: "gpt_image_2",
+    tauriId: "gpt_image_2",
+    fullName: "GPT Image 2",
+    category: "image",
+    creator: ModelCreator.OpenAi,
+    selectorName: "GPT Image 2",
+    selectorDescription: "Smart with great text support",
+    selectorBadges: ["2 min."],
+    maxGenerationCount: 4,
+    defaultGenerationCount: 1,
+    tags: [ModelTag.InstructiveEdit],
+    canEditImages: true,
+    canUseImagePrompt: true,
+    maxImagePromptCount: 6,
+    progressBarTime: 120000,
+    maxPromptLength: 1500,
+    canChangeAspectRatio: true,
+    defaultAspectRatio: CommonAspectRatio.Square,
+    aspectRatios: [
+      CommonAspectRatio.Auto,
+      CommonAspectRatio.Square,
+      CommonAspectRatio.SquareHd,
+      CommonAspectRatio.TallThreeByFour,
+      CommonAspectRatio.TallNineBySixteen,
+      CommonAspectRatio.WideFourByThree,
+      CommonAspectRatio.WideSixteenByNine,
+    ],
+    defaultQuality: CommonQuality.High,
+    qualityOptions: [
+      CommonQuality.High,
+      CommonQuality.Medium,
+      CommonQuality.Low,
+    ],
   }),
   new ImageModel({
     id: "seedream_4",
@@ -356,7 +397,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.WideSixteenByNine,
       CommonAspectRatio.TallThreeByFour,
       CommonAspectRatio.TallNineBySixteen,
-    ]
+    ],
   }),
   new ImageModel({
     id: "seedream_4p5",
@@ -386,7 +427,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.WideSixteenByNine,
       CommonAspectRatio.TallThreeByFour,
       CommonAspectRatio.TallNineBySixteen,
-    ]
+    ],
   }),
   new ImageModel({
     id: "seedream_5_lite",
@@ -415,7 +456,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.WideSixteenByNine,
       CommonAspectRatio.TallThreeByFour,
       CommonAspectRatio.TallNineBySixteen,
-    ]
+    ],
   }),
   new ImageModel({
     id: "qwen_edit_2511_angles",
@@ -444,7 +485,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.WideSixteenByNine,
       CommonAspectRatio.TallThreeByFour,
       CommonAspectRatio.TallNineBySixteen,
-    ]
+    ],
   }),
   new ImageModel({
     id: "flux_2_lora_angles",
@@ -473,7 +514,7 @@ export const IMAGE_MODELS: ImageModel[] = [
       CommonAspectRatio.WideSixteenByNine,
       CommonAspectRatio.TallThreeByFour,
       CommonAspectRatio.TallNineBySixteen,
-    ]
+    ],
   }),
   new ImageModel({
     id: "flux_pro_kontext_max",

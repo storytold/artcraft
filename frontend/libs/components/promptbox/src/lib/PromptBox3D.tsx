@@ -44,7 +44,7 @@ import {
   EnqueueEditImageResolution,
   EnqueueEditImageRequest,
 } from "@storyteller/tauri-api";
-import { usePrompt3DStore } from "./promptStore";
+import { usePrompt3DStore, useEnterToGenerateStore } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
@@ -129,6 +129,7 @@ export const PromptBox3D = ({
   };
   const referenceImages = usePrompt3DStore((s) => s.referenceImages);
   const setReferenceImages = usePrompt3DStore((s) => s.setReferenceImages);
+  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const [showImagePrompts, setShowImagePrompts] = useState(false);
   const [aspectRatioList, setAspectRatioList] = useState<PopoverItem[]>([
     {
@@ -459,7 +460,9 @@ export const PromptBox3D = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     e.stopPropagation();
 
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key !== "Enter") return;
+    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    if (isSubmitCombo) {
       e.preventDefault();
       handleEnqueue();
     }

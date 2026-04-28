@@ -1,9 +1,6 @@
 import { memo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCircleExclamation,
-  faXmark,
-} from "@fortawesome/pro-solid-svg-icons";
+import { faCircleExclamation, faXmark } from "@fortawesome/pro-solid-svg-icons";
 
 export interface FailedCardProps {
   id: string;
@@ -24,7 +21,7 @@ export const FailedCard = memo(function FailedCard({
 }: FailedCardProps) {
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-red-500/10">
-      <div className="flex h-full flex-col items-center justify-center gap-2 px-4">
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-4 sm:px-6">
         <FontAwesomeIcon
           icon={faCircleExclamation}
           className="text-2xl text-red-400"
@@ -33,7 +30,7 @@ export const FailedCard = memo(function FailedCard({
           {failureReason || "Generation failed"}
         </span>
         {failureMessage && failureMessage !== failureReason && (
-          <span className="text-center text-[10px] text-red-400/60 line-clamp-2">
+          <span className="text-center text-[10px] max-w-md text-red-400/60 line-clamp-2 sm:line-clamp-4">
             {failureMessage}
           </span>
         )}
@@ -45,7 +42,7 @@ export const FailedCard = memo(function FailedCard({
           Dismiss
         </button>
       </div>
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-2.5 pt-6">
+      <div className="absolute inset-x-0 bottom-0 hidden bg-gradient-to-t from-black/60 to-transparent px-3 pb-2.5 pt-6 sm:block">
         <p className="truncate text-xs text-white/70">{prompt}</p>
         <p className="truncate text-[10px] text-white/40">{modelLabel}</p>
       </div>

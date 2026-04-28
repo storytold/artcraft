@@ -4,6 +4,7 @@ pub mod generate_image_fal_flux_pro_1p1;
 pub mod generate_image_fal_flux_pro_1p1_ultra;
 pub mod generate_image_fal_gpt_image_1;
 pub mod generate_image_fal_gpt_image_1p5;
+pub mod generate_image_fal_gpt_image_2;
 pub mod generate_image_fal_seedream_4;
 pub mod generate_image_fal_seedream_4p5;
 pub mod generate_image_fal_seedream_5_lite;

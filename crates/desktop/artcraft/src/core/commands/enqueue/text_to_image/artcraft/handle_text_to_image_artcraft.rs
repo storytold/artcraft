@@ -37,6 +37,7 @@ pub async fn handle_text_to_image_artcraft(
     TextToImageModel::FluxPro11Ultra => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::FluxPro11Ultra, GenerationModel::FluxPro11Ultra).await,
     TextToImageModel::GptImage1 => handle_artcraft_gpt_image_1_text_to_image(request, app_env_configs, storyteller_creds_manager).await,
     TextToImageModel::GptImage1p5 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::GptImage1p5, GenerationModel::GptImage1p5).await,
+    TextToImageModel::GptImage2 => handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::GptImage2, GenerationModel::GptImage2).await,
     TextToImageModel::Gemini25Flash | TextToImageModel::NanoBanana => {
       handle_text_to_image_artcraft_via_router(request, app_env_configs, storyteller_creds_manager, CommonImageModel::NanoBanana, GenerationModel::NanoBanana).await
     },

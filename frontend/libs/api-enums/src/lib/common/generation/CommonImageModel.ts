@@ -9,6 +9,7 @@ export enum CommonImageModel {
   FluxPro11Ultra = "flux_pro_1p1_ultra",
   GptImage1 = "gpt_image_1",
   GptImage1p5 = "gpt_image_1p5",
+  GptImage2 = "gpt_image_2",
   NanaBanana = "nano_banana",
   NanaBanana2 = "nano_banana_2",
   NanaBananaPro = "nano_banana_pro",

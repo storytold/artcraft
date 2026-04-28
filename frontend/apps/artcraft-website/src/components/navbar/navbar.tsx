@@ -10,17 +10,20 @@ import {
 } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { useEffect, useState, Fragment } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
-import { UsersApi, UserInfo, CreditsApi } from "@storyteller/api";
+import { PopoverMenu } from "@storyteller/ui-popover";
+import { UsersApi, UserInfo, CreditsApi, BillingApi } from "@storyteller/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCoins,
   faGrid2,
   faBars,
   faXmark,
+  faGem,
 } from "@fortawesome/pro-solid-svg-icons";
 import { TaskQueue } from "./task-queue";
+import { CreditsModal } from "../credits-modal";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
@@ -46,9 +49,25 @@ async function fetchCredits(): Promise<number | null> {
   }
 }
 
+async function fetchHasPaidPlan(): Promise<boolean> {
+  try {
+    const api = new BillingApi();
+    const response = await api.ListActiveSubscriptions();
+    if (response.success && response.data?.active_subscriptions) {
+      return response.data.active_subscriptions.some(
+        (sub) => sub.namespace === "artcraft",
+      );
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Pages with content flush to top need a solid navbar background always
   const alwaysSolid =
@@ -58,6 +77,9 @@ export default function Navbar() {
   const [user, setUser] = useState<UserInfo | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [credits, setCredits] = useState<number | null>(null);
+  // null = unknown (still loading) so we don't flash the upgrade button
+  const [hasPaidPlan, setHasPaidPlan] = useState<boolean | null>(null);
+  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
 
   // Check session on mount and when auth changes or location changes
   useEffect(() => {
@@ -72,9 +94,11 @@ export default function Navbar() {
       ) {
         setUser(response.data.user);
         fetchCredits().then(setCredits);
+        fetchHasPaidPlan().then(setHasPaidPlan);
       } else {
         setUser(undefined);
         setCredits(null);
+        setHasPaidPlan(null);
       }
       setIsLoading(false);
     };
@@ -175,10 +199,10 @@ export default function Navbar() {
               </div>
               <div className="flex items-center">
                 {isLoading ? (
-                  <div className="hidden md:ml-4 md:flex items-center gap-2.5 opacity-0"></div>
+                  <div className="hidden md:ml-4 md:flex items-center gap-2 opacity-0"></div>
                 ) : user ? (
                   // ── Desktop: Logged In ─────────────────────────
-                  <div className="hidden md:ml-4 md:flex items-center gap-2.5">
+                  <div className="hidden md:ml-4 md:flex items-center gap-2">
                     <Link
                       to="/pricing"
                       className="text-[15px] font-semibold text-white/60 hover:text-white transition-colors"
@@ -186,13 +210,84 @@ export default function Navbar() {
                       Pricing
                     </Link>
                     {credits !== null && (
-                      <div className="flex items-center gap-2 px-4 text-[15px] font-semibold text-white/90">
-                        <FontAwesomeIcon
-                          icon={faCoins}
-                          className="text-primary text-sm"
-                        />
-                        {credits.toLocaleString()} Credits
-                      </div>
+                      <PopoverMenu
+                        position="bottom"
+                        align="center"
+                        triggerIcon={
+                          <FontAwesomeIcon
+                            icon={faCoins}
+                            className="text-primary"
+                          />
+                        }
+                        triggerLabel={
+                          <span className="whitespace-nowrap text-[15px] font-semibold">
+                            {credits.toLocaleString()} Credits
+                          </span>
+                        }
+                        buttonClassName="h-[34px] px-2 ps-1.5 bg-transparent hover:bg-white/10 border-0 shadow-none text-white/90 ms-2.5 me-1.5"
+                        panelClassName="mt-3 bg-[#1C1C20] border border-white/10 text-white"
+                      >
+                        {(close) => (
+                          <div className="w-72 p-2.5 text-white">
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-sm font-medium text-white/80">
+                                Your credit balance
+                              </span>
+                              <button
+                                className="text-sm font-medium text-primary-400 transition-all hover:text-primary-300"
+                                onClick={() => {
+                                  close();
+                                  setCreditsModalOpen(true);
+                                }}
+                              >
+                                Buy credits
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2 text-4xl font-bold text-white">
+                              <FontAwesomeIcon
+                                icon={faCoins}
+                                className="text-2xl text-primary"
+                              />
+                              {credits.toLocaleString()}
+                            </div>
+
+                            <div className="mt-3 flex gap-2">
+                              {/* <Button
+                                variant="action"
+                                className="h-9 grow"
+                                onClick={() => {
+                                  close();
+                                  navigate("/pricing");
+                                }}
+                              >
+                                See details
+                              </Button> */}
+                              <Button
+                                variant="primary"
+                                className="h-9 grow"
+                                onClick={() => {
+                                  close();
+                                  navigate("/pricing");
+                                }}
+                                icon={faGem}
+                              >
+                                Support
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </PopoverMenu>
+                    )}
+
+                    {hasPaidPlan === false && (
+                      <Button
+                        variant="primary"
+                        icon={faGem}
+                        onClick={() => navigate("/pricing")}
+                        className="h-[38px] transition-all duration-300 hover:shadow-md hover:shadow-primary-600/75"
+                      >
+                        Support
+                      </Button>
                     )}
 
                     <Link
@@ -405,6 +500,11 @@ export default function Navbar() {
               </div>
             </DisclosurePanel>
           </Transition>
+
+          <CreditsModal
+            isOpen={creditsModalOpen}
+            onClose={() => setCreditsModalOpen(false)}
+          />
 
           <style>{`
             .link-underline {

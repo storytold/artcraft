@@ -32,6 +32,14 @@ pub enum UserFeatureFlag {
   /// Access to the faster Seedance 2.0 whitelist
   #[serde(rename = "sd_wl")]
   SeedanceWhitelist,
+
+  /// Access to Happy Horse
+  #[serde(rename = "hh")]
+  HappyHorse,
+
+  /// Access to Happy Horse (with a rate limit)
+  #[serde(rename = "hh_rl")]
+  HappyHorseRateLimit,
 }
 
 // TODO(bt, 2022-12-21): This desperately needs MySQL integration tests!
@@ -48,6 +56,8 @@ impl UserFeatureFlag {
       Self::Upload3d => "upload_3d",
       Self::VideoStyleTransfer => "video_style_transfer",
       Self::SeedanceWhitelist => "sd_wl",
+      Self::HappyHorse => "hh",
+      Self::HappyHorseRateLimit => "hh_rl",
     }
   }
 
@@ -58,7 +68,33 @@ impl UserFeatureFlag {
       "upload_3d" => Ok(Self::Upload3d),
       "video_style_transfer" => Ok(Self::VideoStyleTransfer),
       "sd_wl" => Ok(Self::SeedanceWhitelist),
+      "hh" => Ok(Self::HappyHorse),
+      "hh_rl" => Ok(Self::HappyHorseRateLimit),
       _ => Err(format!("invalid value: {:?}", value)),
+    }
+  }
+
+  pub fn name(&self) -> &'static str {
+    match self {
+      Self::ExploreMedia => "Explore Media",
+      Self::Studio => "Storyteller Studio",
+      Self::Upload3d => "Upload 3D",
+      Self::VideoStyleTransfer => "Video Style Transfer",
+      Self::SeedanceWhitelist => "DO NOT USE: Seedance Whitelist (legacy)",
+      Self::HappyHorse => "Happy Horse (no Rate Limit)",
+      Self::HappyHorseRateLimit => "Happy Horse (with Rate Limit)",
+    }
+  }
+
+  pub fn description(&self) -> &'static str {
+    match self {
+      Self::ExploreMedia => "Grants a user the ability to list media on FakeYou (admin permission)",
+      Self::Studio => "Access to Storyteller Studio product",
+      Self::Upload3d => "Whether users are allowed to upload 3D models",
+      Self::VideoStyleTransfer => "Access to video style transfer on Storyteller",
+      Self::SeedanceWhitelist => "DO NOT USE THIS. IT WILL BREAK ACCOUNTS.",
+      Self::HappyHorse => "Access to Happy Horse (without a rate limit - dangerous)",
+      Self::HappyHorseRateLimit => "Access to Happy Horse (with a rate limit)",
     }
   }
 
@@ -71,6 +107,8 @@ impl UserFeatureFlag {
       Self::Upload3d,
       Self::VideoStyleTransfer,
       Self::SeedanceWhitelist,
+      Self::HappyHorse,
+      Self::HappyHorseRateLimit,
     ])
   }
 }
@@ -90,6 +128,8 @@ mod tests {
       assert_serialization(UserFeatureFlag::Upload3d, "upload_3d");
       assert_serialization(UserFeatureFlag::VideoStyleTransfer, "video_style_transfer");
       assert_serialization(UserFeatureFlag::SeedanceWhitelist, "sd_wl");
+      assert_serialization(UserFeatureFlag::HappyHorse, "hh");
+      assert_serialization(UserFeatureFlag::HappyHorseRateLimit, "hh_rl");
     }
 
     #[test]
@@ -99,6 +139,8 @@ mod tests {
       assert_eq!(UserFeatureFlag::Upload3d.to_str(), "upload_3d");
       assert_eq!(UserFeatureFlag::VideoStyleTransfer.to_str(), "video_style_transfer");
       assert_eq!(UserFeatureFlag::SeedanceWhitelist.to_str(), "sd_wl");
+      assert_eq!(UserFeatureFlag::HappyHorse.to_str(), "hh");
+      assert_eq!(UserFeatureFlag::HappyHorseRateLimit.to_str(), "hh_rl");
     }
 
     #[test]
@@ -108,18 +150,22 @@ mod tests {
       assert_eq!(UserFeatureFlag::from_str("upload_3d").unwrap(), UserFeatureFlag::Upload3d);
       assert_eq!(UserFeatureFlag::from_str("video_style_transfer").unwrap(), UserFeatureFlag::VideoStyleTransfer);
       assert_eq!(UserFeatureFlag::from_str("sd_wl").unwrap(), UserFeatureFlag::SeedanceWhitelist);
+      assert_eq!(UserFeatureFlag::from_str("hh").unwrap(), UserFeatureFlag::HappyHorse);
+      assert_eq!(UserFeatureFlag::from_str("hh_rl").unwrap(), UserFeatureFlag::HappyHorseRateLimit);
       assert!(UserFeatureFlag::from_str("foo").is_err());
     }
 
     #[test]
     fn all_variants() {
       let mut variants = UserFeatureFlag::all_variants();
-      assert_eq!(variants.len(), 5);
+      assert_eq!(variants.len(), 7);
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::ExploreMedia));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Studio));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::Upload3d));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::VideoStyleTransfer));
       assert_eq!(variants.pop_first(), Some(UserFeatureFlag::SeedanceWhitelist));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::HappyHorse));
+      assert_eq!(variants.pop_first(), Some(UserFeatureFlag::HappyHorseRateLimit));
       assert_eq!(variants.pop_first(), None);
     }
   }

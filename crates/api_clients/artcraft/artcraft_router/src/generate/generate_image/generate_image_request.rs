@@ -16,6 +16,7 @@ use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraf
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_flux_pro_1p1_ultra::plan_generate_image_artcraft_flux_pro_1p1_ultra;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1::plan_generate_image_artcraft_gpt_image_1;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_1p5::plan_generate_image_artcraft_gpt_image_1p5;
+use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_gpt_image_2::plan_generate_image_artcraft_gpt_image_2;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana::plan_generate_image_artcraft_nano_banana;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_2::plan_generate_image_artcraft_nano_banana_2;
 use crate::generate::generate_image::plan::artcraft::plan_generate_image_artcraft_nano_banana_pro::plan_generate_image_artcraft_nano_banana_pro;
@@ -29,6 +30,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1_ultra::plan_generate_image_fal_flux_pro_1p1_ultra;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1::plan_generate_image_fal_gpt_image_1;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_1p5::plan_generate_image_fal_gpt_image_1p5;
+use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_2::plan_generate_image_fal_gpt_image_2;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4::plan_generate_image_fal_seedream_4;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4p5::plan_generate_image_fal_seedream_4p5;
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_5_lite::plan_generate_image_fal_seedream_5_lite;
@@ -100,18 +102,20 @@ impl GenerateImageRequest {
     match self.model {
       CommonImageModel::Flux1Dev => plan_generate_image_artcraft_flux_1_dev(self),
       CommonImageModel::Flux1Schnell => plan_generate_image_artcraft_flux_1_schnell(self),
+      CommonImageModel::Flux2LoraAngles => plan_generate_image_artcraft_flux_2_lora_angles(self),
       CommonImageModel::FluxPro11 => plan_generate_image_artcraft_flux_pro_1p1(self),
       CommonImageModel::FluxPro11Ultra => plan_generate_image_artcraft_flux_pro_1p1_ultra(self),
       CommonImageModel::GptImage1 => plan_generate_image_artcraft_gpt_image_1(self),
       CommonImageModel::GptImage1p5 => plan_generate_image_artcraft_gpt_image_1p5(self),
+      CommonImageModel::GptImage2 => plan_generate_image_artcraft_gpt_image_2(self),
       CommonImageModel::NanoBanana => plan_generate_image_artcraft_nano_banana(self),
       CommonImageModel::NanoBanana2 => plan_generate_image_artcraft_nano_banana_2(self),
       CommonImageModel::NanoBananaPro => plan_generate_image_artcraft_nano_banana_pro(self),
+      CommonImageModel::QwenEdit2511Angles => plan_generate_image_artcraft_qwen_edit_2511_angles(self),
       CommonImageModel::Seedream4 => plan_generate_image_artcraft_seedream_4(self),
       CommonImageModel::Seedream4p5 => plan_generate_image_artcraft_seedream_4p5(self),
       CommonImageModel::Seedream5Lite => plan_generate_image_artcraft_seedream_5_lite(self),
-      CommonImageModel::QwenEdit2511Angles => plan_generate_image_artcraft_qwen_edit_2511_angles(self),
-      CommonImageModel::Flux2LoraAngles => plan_generate_image_artcraft_flux_2_lora_angles(self),
+      _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }
 
@@ -123,12 +127,13 @@ impl GenerateImageRequest {
       CommonImageModel::FluxPro11Ultra => plan_generate_image_fal_flux_pro_1p1_ultra(self),
       CommonImageModel::GptImage1 => plan_generate_image_fal_gpt_image_1(self),
       CommonImageModel::GptImage1p5 => plan_generate_image_fal_gpt_image_1p5(self),
-      CommonImageModel::Seedream4 => plan_generate_image_fal_seedream_4(self),
-      CommonImageModel::Seedream4p5 => plan_generate_image_fal_seedream_4p5(self),
-      CommonImageModel::Seedream5Lite => plan_generate_image_fal_seedream_5_lite(self),
+      CommonImageModel::GptImage2 => plan_generate_image_fal_gpt_image_2(self),
       CommonImageModel::NanoBanana => plan_generate_image_fal_nano_banana(self),
       CommonImageModel::NanoBanana2 => plan_generate_image_fal_nano_banana_2(self),
       CommonImageModel::NanoBananaPro => plan_generate_image_fal_nano_banana_pro(self),
+      CommonImageModel::Seedream4 => plan_generate_image_fal_seedream_4(self),
+      CommonImageModel::Seedream4p5 => plan_generate_image_fal_seedream_4p5(self),
+      CommonImageModel::Seedream5Lite => plan_generate_image_fal_seedream_5_lite(self),
       _ => {
         Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
           field: "provider",

@@ -44,6 +44,9 @@
   ],
   "references": [
     {
+      "path": "../checkbox/tsconfig.lib.json"
+    },
+    {
       "path": "../slider-v2/tsconfig.lib.json"
     },
     {
@@ -66,9 +69,6 @@
     },
     {
       "path": "../toaster/tsconfig.lib.json"
-    },
-    {
-      "path": "../../tauri-api/tsconfig.lib.json"
     },
     {
       "path": "../action-reminder-modal/tsconfig.lib.json"

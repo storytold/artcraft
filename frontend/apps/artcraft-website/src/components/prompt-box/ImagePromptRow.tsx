@@ -304,7 +304,7 @@ export const ImagePromptRow = ({
                   interactive
                   position="top"
                   delay={100}
-                  className="bg-ui-controls text-base-fg border border-ui-panel-border p-2 -mb-0.5"
+                  className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
                   closeOnClick
                   content={
                     <div className="flex flex-col gap-1.5">
@@ -397,7 +397,7 @@ export const ImagePromptRow = ({
                   interactive
                   position="top"
                   delay={100}
-                  className="bg-ui-controls text-base-fg border border-ui-panel-border p-2 -mb-0.5"
+                  className="bg-ui-controls text-base-fg border border-ui-controls-border p-2 -mb-0.5"
                   closeOnClick
                   content={
                     <div className="flex flex-col gap-1.5">

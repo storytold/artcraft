@@ -375,25 +375,53 @@ export class MouseControls {
 
     if ((event.ctrlKey || event.metaKey) && !this.isProcessing) {
       const keyLower = event.key.toLowerCase();
-      if (keyLower === "z") {
-        // redo
+      if (keyLower === "z" && !event.shiftKey) {
+        // undo
+        event.preventDefault();
         this.isProcessing = true;
-        await this.sceneManager?.redo();
-        this.isProcessing = false;
+        try {
+          await this.sceneManager?.undo();
+        } finally {
+          this.isProcessing = false;
+        }
+      } else if (keyLower === "z" && event.shiftKey) {
+        // redo (Ctrl+Shift+Z / Cmd+Shift+Z)
+        event.preventDefault();
+        this.isProcessing = true;
+        try {
+          await this.sceneManager?.redo();
+        } finally {
+          this.isProcessing = false;
+        }
+      } else if (keyLower === "y") {
+        // redo (Ctrl+Y on Windows/Linux, Cmd+Y on macOS)
+        event.preventDefault();
+        this.isProcessing = true;
+        try {
+          await this.sceneManager?.redo();
+        } finally {
+          this.isProcessing = false;
+        }
       } else if (keyLower === "c") {
         // Copy
         event.preventDefault();
         event.stopPropagation();
         this.isProcessing = true;
-        await this.sceneManager?.copy();
-        this.isProcessing = false;
+        try {
+          await this.sceneManager?.copy();
+        } finally {
+          this.isProcessing = false;
+        }
       } else if (keyLower === "v") {
         // Paste
         event.preventDefault();
         event.stopPropagation();
         this.isProcessing = true;
-        await this.sceneManager?.paste();
-        this.isProcessing = false;
+        try {
+          await this.sceneManager?.paste();
+        } finally {
+          this.isProcessing = false;
+        }
       } else if (event.key === "0") {
         // Stats Menu
         this.enable_stats();

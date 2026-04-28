@@ -8,7 +8,7 @@ use artcraft_api_defs::generate::cost_estimate::estimate_video_cost::{
   EstimateVideoCostResponse,
 };
 use artcraft_client::endpoints::generate::cost_estimate::video::estimate_video_cost::estimate_video_cost;
-use log::debug;
+use log::{debug, info};
 use tauri::State;
 
 impl SerializeMarker for EstimateVideoCostResponse {}
@@ -18,7 +18,7 @@ pub async fn estimate_video_cost_command(
   request: EstimateVideoCostRequest,
   app_env_configs: State<'_, AppEnvConfigs>,
 ) -> ResponseOrError<EstimateVideoCostResponse, EstimateVideoCostError> {
-  debug!("estimate_video_cost_command called");
+  debug!("estimate_video_cost_command called: {:?}", request);
 
   let result = estimate_video_cost(
     &app_env_configs.storyteller_host,

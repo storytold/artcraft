@@ -32,6 +32,7 @@ interface GenerationGalleryGridProps {
   newlyCompletedTokens: Set<string>;
   hasMore: boolean;
   isLoading: boolean;
+  isInitialLoading: boolean;
   onLoadMore: () => void;
   onGalleryItemClick: (item: GalleryItem) => void;
 }
@@ -47,6 +48,7 @@ export function GenerationGalleryGrid({
   newlyCompletedTokens,
   hasMore,
   isLoading,
+  isInitialLoading,
   onLoadMore,
   onGalleryItemClick,
 }: GenerationGalleryGridProps) {
@@ -66,13 +68,64 @@ export function GenerationGalleryGrid({
     return () => observer.disconnect();
   }, [hasMore, onLoadMore]);
 
-  const filteredGalleryItems = useMemo(
-    () =>
-      newlyCompletedTokens.size > 0
-        ? galleryItems.filter((item) => !newlyCompletedTokens.has(item.id))
-        : galleryItems,
-    [galleryItems, newlyCompletedTokens],
-  );
+  const mergedEntries = useMemo(() => {
+    type Entry =
+      | { kind: "pending"; key: string; createdAt: number; job: InProgressJob }
+      | { kind: "failed"; key: string; createdAt: number; job: FailedJob }
+      | {
+          kind: "gallery";
+          key: string;
+          createdAt: number;
+          item: GalleryItem;
+        };
+
+    const entries: Entry[] = [];
+
+    for (const job of inProgressJobs) {
+      entries.push({
+        kind: "pending",
+        key: job.id,
+        createdAt: new Date(job.createdAt).getTime(),
+        job,
+      });
+    }
+    for (const job of failedJobs) {
+      entries.push({
+        kind: "failed",
+        key: job.id,
+        createdAt: new Date(job.createdAt).getTime(),
+        job,
+      });
+    }
+    for (const item of newlyCompletedItems) {
+      entries.push({
+        kind: "gallery",
+        key: `new-${item.id}`,
+        createdAt: new Date(item.createdAt).getTime(),
+        item,
+      });
+    }
+    for (const item of galleryItems) {
+      if (newlyCompletedTokens.has(item.id)) continue;
+      entries.push({
+        kind: "gallery",
+        key: item.id,
+        createdAt: new Date(item.createdAt).getTime(),
+        item,
+      });
+    }
+
+    entries.sort((a, b) => b.createdAt - a.createdAt);
+    return entries;
+  }, [inProgressJobs, failedJobs, newlyCompletedItems, galleryItems, newlyCompletedTokens]);
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex justify-center py-20">
+        <LoadingSpinner className="h-6 w-6 text-white/60" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -81,38 +134,31 @@ export function GenerationGalleryGrid({
         className={MASONRY_CLASS}
         columnClassName={COLUMN_CLASS}
       >
-        {inProgressJobs.map((job) => (
-          <div key={job.id} className="mb-[8px]">
-            <PendingCard
-              id={job.id}
-              prompt={job.prompt}
-              modelId={job.modelId}
-              modelLabel={job.modelLabel}
-              progress={job.progress}
-              estimatedTimeLeftMs={job.estimatedTimeLeftMs}
-            />
-          </div>
-        ))}
-        {failedJobs.map((job) => (
-          <div key={job.id} className="mb-[8px]">
-            <FailedCard
-              id={job.id}
-              prompt={job.prompt}
-              modelLabel={job.modelLabel}
-              failureReason={job.failureReason}
-              failureMessage={job.failureMessage}
-              onDismiss={onDismissFailed}
-            />
-          </div>
-        ))}
-        {newlyCompletedItems.map((item) => (
-          <div key={`new-${item.id}`} className="mb-[8px]">
-            <GalleryCard item={item} onClick={onGalleryItemClick} />
-          </div>
-        ))}
-        {filteredGalleryItems.map((item) => (
-          <div key={item.id} className="mb-[8px]">
-            <GalleryCard item={item} onClick={onGalleryItemClick} />
+        {mergedEntries.map((entry) => (
+          <div key={entry.key} className="mb-[8px]">
+            {entry.kind === "pending" && (
+              <PendingCard
+                id={entry.job.id}
+                prompt={entry.job.prompt}
+                modelId={entry.job.modelId}
+                modelLabel={entry.job.modelLabel}
+                progress={entry.job.progress}
+                estimatedTimeLeftMs={entry.job.estimatedTimeLeftMs}
+              />
+            )}
+            {entry.kind === "failed" && (
+              <FailedCard
+                id={entry.job.id}
+                prompt={entry.job.prompt}
+                modelLabel={entry.job.modelLabel}
+                failureReason={entry.job.failureReason}
+                failureMessage={entry.job.failureMessage}
+                onDismiss={onDismissFailed}
+              />
+            )}
+            {entry.kind === "gallery" && (
+              <GalleryCard item={entry.item} onClick={onGalleryItemClick} />
+            )}
           </div>
         ))}
       </Masonry>

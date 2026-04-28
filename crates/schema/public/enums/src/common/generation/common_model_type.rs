@@ -48,6 +48,8 @@ pub enum CommonModelType {
   GptImage1,
   #[serde(rename = "gpt_image_1p5")]
   GptImage1p5,
+  #[serde(rename = "gpt_image_2")]
+  GptImage2,
   // Generic grok image model without a version
   #[serde(rename = "grok_image")]
   GrokImage,
@@ -116,6 +118,8 @@ pub enum CommonModelType {
   Kling3p0Standard,
   #[serde(rename = "kling_3p0_pro")]
   Kling3p0Pro,
+  #[serde(rename = "happy_horse_1p0")]
+  HappyHorse1p0,
   #[serde(rename = "seedance_1p0_lite")]
   Seedance10Lite,
   #[serde(rename = "seedance_1p0_pro")]
@@ -176,6 +180,7 @@ impl CommonModelType {
       Self::Flux2LoraAngles => "flux_2_lora_angles",
       Self::GptImage1 => "gpt_image_1",
       Self::GptImage1p5 => "gpt_image_1p5",
+      Self::GptImage2 => "gpt_image_2",
       Self::GrokImage => "grok_image",
       Self::Recraft3 => "recraft_3",
       Self::SeedEdit3 => "seededit_3",
@@ -206,6 +211,7 @@ impl CommonModelType {
       Self::Kling2p6Pro => "kling_2p6_pro",
       Self::Kling3p0Standard => "kling_3p0_standard",
       Self::Kling3p0Pro => "kling_3p0_pro",
+      Self::HappyHorse1p0 => "happy_horse_1p0",
       Self::Seedance10Lite => "seedance_1p0_lite",
       Self::Seedance10Pro => "seedance_1p0_pro",
       Self::Seedance1p5Pro => "seedance_1p5_pro",
@@ -243,6 +249,7 @@ impl CommonModelType {
       "flux_2_lora_angles" => Ok(Self::Flux2LoraAngles),
       "gpt_image_1" => Ok(Self::GptImage1),
       "gpt_image_1p5" => Ok(Self::GptImage1p5),
+      "gpt_image_2" => Ok(Self::GptImage2),
       "grok_image" => Ok(Self::GrokImage),
       "recraft_3" => Ok(Self::Recraft3),
       "seededit_3" => Ok(Self::SeedEdit3),
@@ -273,6 +280,7 @@ impl CommonModelType {
       "kling_2p6_pro" => Ok(Self::Kling2p6Pro),
       "kling_3p0_standard" => Ok(Self::Kling3p0Standard),
       "kling_3p0_pro" => Ok(Self::Kling3p0Pro),
+      "happy_horse_1p0" => Ok(Self::HappyHorse1p0),
       "seedance_1p0_lite" => Ok(Self::Seedance10Lite),
       "seedance_1p0_pro" => Ok(Self::Seedance10Pro),
       "seedance_1p5_pro" => Ok(Self::Seedance1p5Pro),
@@ -314,6 +322,7 @@ impl CommonModelType {
       Self::Flux2LoraAngles,
       Self::GptImage1,
       Self::GptImage1p5,
+      Self::GptImage2,
       Self::GrokImage,
       Self::Recraft3,
       Self::SeedEdit3,
@@ -344,6 +353,7 @@ impl CommonModelType {
       Self::Kling2p6Pro,
       Self::Kling3p0Standard,
       Self::Kling3p0Pro,
+      Self::HappyHorse1p0,
       Self::Seedance10Lite,
       Self::Seedance10Pro,
       Self::Seedance1p5Pro,
@@ -382,6 +392,7 @@ impl CommonModelType {
       Self::Flux2LoraAngles => CommonModelClass::Image,
       Self::GptImage1 => CommonModelClass::Image,
       Self::GptImage1p5 => CommonModelClass::Image,
+      Self::GptImage2 => CommonModelClass::Image,
       Self::GrokImage => CommonModelClass::Image,
       Self::Recraft3 => CommonModelClass::Image,
       Self::SeedEdit3 => CommonModelClass::Image,
@@ -412,6 +423,7 @@ impl CommonModelType {
       Self::Kling2p6Pro => CommonModelClass::Video,
       Self::Kling3p0Standard => CommonModelClass::Video,
       Self::Kling3p0Pro => CommonModelClass::Video,
+      Self::HappyHorse1p0 => CommonModelClass::Video,
       Self::Seedance10Lite => CommonModelClass::Video,
       Self::Seedance10Pro => CommonModelClass::Video,
       Self::Seedance1p5Pro => CommonModelClass::Video,
@@ -460,6 +472,7 @@ mod tests {
       assert_serialization(CommonModelType::Flux2LoraAngles, "flux_2_lora_angles");
       assert_serialization(CommonModelType::GptImage1, "gpt_image_1");
       assert_serialization(CommonModelType::GptImage1p5, "gpt_image_1p5");
+      assert_serialization(CommonModelType::GptImage2, "gpt_image_2");
       assert_serialization(CommonModelType::GrokImage, "grok_image");
       assert_serialization(CommonModelType::Recraft3, "recraft_3");
       assert_serialization(CommonModelType::SeedEdit3, "seededit_3");
@@ -489,6 +502,7 @@ mod tests {
       assert_serialization(CommonModelType::Kling2p6Pro, "kling_2p6_pro");
       assert_serialization(CommonModelType::Kling3p0Standard, "kling_3p0_standard");
       assert_serialization(CommonModelType::Kling3p0Pro, "kling_3p0_pro");
+      assert_serialization(CommonModelType::HappyHorse1p0, "happy_horse_1p0");
       assert_serialization(CommonModelType::Seedance10Lite, "seedance_1p0_lite");
       assert_serialization(CommonModelType::Seedance10Pro, "seedance_1p0_pro");
       assert_serialization(CommonModelType::Seedance1p5Pro, "seedance_1p5_pro");
@@ -523,6 +537,7 @@ mod tests {
       assert_eq!(CommonModelType::Flux2LoraAngles.to_str(), "flux_2_lora_angles");
       assert_eq!(CommonModelType::GptImage1.to_str(), "gpt_image_1");
       assert_eq!(CommonModelType::GptImage1p5.to_str(), "gpt_image_1p5");
+      assert_eq!(CommonModelType::GptImage2.to_str(), "gpt_image_2");
       assert_eq!(CommonModelType::GrokImage.to_str(), "grok_image");
       assert_eq!(CommonModelType::Recraft3.to_str(), "recraft_3");
       assert_eq!(CommonModelType::SeedEdit3.to_str(), "seededit_3");
@@ -553,6 +568,7 @@ mod tests {
       assert_eq!(CommonModelType::Kling2p6Pro.to_str(), "kling_2p6_pro");
       assert_eq!(CommonModelType::Kling3p0Standard.to_str(), "kling_3p0_standard");
       assert_eq!(CommonModelType::Kling3p0Pro.to_str(), "kling_3p0_pro");
+      assert_eq!(CommonModelType::HappyHorse1p0.to_str(), "happy_horse_1p0");
       assert_eq!(CommonModelType::Seedance10Lite.to_str(), "seedance_1p0_lite");
       assert_eq!(CommonModelType::Seedance10Pro.to_str(), "seedance_1p0_pro");
       assert_eq!(CommonModelType::Seedance1p5Pro.to_str(), "seedance_1p5_pro");
@@ -588,6 +604,7 @@ mod tests {
       assert_eq!(CommonModelType::from_str("flux_2_lora_angles").unwrap(), CommonModelType::Flux2LoraAngles);
       assert_eq!(CommonModelType::from_str("gpt_image_1").unwrap(), CommonModelType::GptImage1);
       assert_eq!(CommonModelType::from_str("gpt_image_1p5").unwrap(), CommonModelType::GptImage1p5);
+      assert_eq!(CommonModelType::from_str("gpt_image_2").unwrap(), CommonModelType::GptImage2);
       assert_eq!(CommonModelType::from_str("grok_image").unwrap(), CommonModelType::GrokImage);
       assert_eq!(CommonModelType::from_str("recraft_3").unwrap(), CommonModelType::Recraft3);
       assert_eq!(CommonModelType::from_str("seededit_3").unwrap(), CommonModelType::SeedEdit3);
@@ -617,6 +634,7 @@ mod tests {
       assert_eq!(CommonModelType::from_str("kling_2p6_pro").unwrap(), CommonModelType::Kling2p6Pro);
       assert_eq!(CommonModelType::from_str("kling_3p0_standard").unwrap(), CommonModelType::Kling3p0Standard);
       assert_eq!(CommonModelType::from_str("kling_3p0_pro").unwrap(), CommonModelType::Kling3p0Pro);
+      assert_eq!(CommonModelType::from_str("happy_horse_1p0").unwrap(), CommonModelType::HappyHorse1p0);
       assert_eq!(CommonModelType::from_str("seedance_1p0_lite").unwrap(), CommonModelType::Seedance10Lite);
       assert_eq!(CommonModelType::from_str("seedance_1p0_pro").unwrap(), CommonModelType::Seedance10Pro);
       assert_eq!(CommonModelType::from_str("seedance_1p5_pro").unwrap(), CommonModelType::Seedance1p5Pro);
@@ -642,7 +660,7 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = CommonModelType::all_variants();
-      assert_eq!(variants.len(), 55);
+      assert_eq!(variants.len(), 57);
       // Image models
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Dev));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux1Schnell));
@@ -654,6 +672,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Flux2LoraAngles));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage1p5));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::GptImage2));
       assert_eq!(variants.pop_first(), Some(CommonModelType::GrokImage));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Recraft3));
       assert_eq!(variants.pop_first(), Some(CommonModelType::SeedEdit3));
@@ -683,6 +702,7 @@ mod tests {
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling2p6Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Standard));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Kling3p0Pro));
+      assert_eq!(variants.pop_first(), Some(CommonModelType::HappyHorse1p0));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance10Lite));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance10Pro));
       assert_eq!(variants.pop_first(), Some(CommonModelType::Seedance1p5Pro));

@@ -1,5 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use tokens::tokens::characters::CharacterToken;
+use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ClientType {
@@ -22,6 +24,9 @@ impl Display for ClientType {
 
 #[derive(Debug)]
 pub enum ClientError {
+  /// A RouterClient was required but not provided on the draft context.
+  RouterClientNotProvided,
+
   /// The requested client is not configured on the RouterClient.
   ClientNotConfigured(ClientType),
 
@@ -43,6 +48,18 @@ pub enum ClientError {
 
   /// Seedance2Pro only accepts URLs for media inputs, not media tokens.
   Seedance2ProOnlySupportsUrls,
+  
+  /// The pre-dispatch context of media file token to URL map was not supplied.
+  MediaFileToUrlMapNotProvided,
+
+  /// A media file token was not found in the provided media-file-to-URL map.
+  MediaFileTokenNotFoundInMap { token: MediaFileToken },
+
+  /// The pre-dispatch context of character token to ID map was not supplied.
+  CharacterTokenToKinoviCharacterIdNotProvided,
+
+  /// A character token was not found in the provided character-token-to-id map
+  CharacterTokenNotFoundInMap { token: CharacterToken },
 }
 
 impl Error for ClientError {}
@@ -50,6 +67,9 @@ impl Error for ClientError {}
 impl Display for ClientError {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
+      Self::RouterClientNotProvided => {
+        write!(f, "A RouterClient is required but was not provided on the draft context")
+      }
       Self::ClientNotConfigured(client_type) => {
         write!(f, "{} client is not configured on the RouterClient", client_type)
       }
@@ -70,6 +90,18 @@ impl Display for ClientError {
       }
       Self::Seedance2ProOnlySupportsUrls => {
         write!(f, "Seedance2Pro only supports URLs for media inputs; resolve media tokens to URLs before calling this provider")
+      }
+      Self::MediaFileToUrlMapNotProvided => {
+        write!(f, "Media file to URL map was not provided")
+      }
+      Self::MediaFileTokenNotFoundInMap { token } => {
+        write!(f, "Media file token '{}' was not found in the provided URL map", token.as_str())
+      }
+      Self::CharacterTokenToKinoviCharacterIdNotProvided => {
+        write!(f, "Character token to Kinovi character ID map was not provided")
+      }
+      Self::CharacterTokenNotFoundInMap { token } => {
+        write!(f, "Character token '{}' was not found in the provided character-token-to-id map", token.as_str())
       }
     }
   }

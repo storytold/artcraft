@@ -1,5 +1,5 @@
 use artcraft_api_defs::generate::video::multi_function::seedance_2p0_multi_function_video_gen::Seedance2p0BatchCount;
-use seedance2pro_client::requests::generate_video::generate_video::{KinoviGenerateVideoRequest, KinoviBatchCount, KinoviModelType, KinoviOutputResolution, KinoviAspectRatio};
+use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviGenerateVideoRequest, KinoviModelType, KinoviOutputResolution};
 
 use crate::api::common_resolution::CommonResolution;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::PlanArtcraftSeedance2p0;

@@ -38,10 +38,10 @@
   ],
   "references": [
     {
-      "path": "../../libs/components/gravatar/tsconfig.lib.json"
+      "path": "../../libs/components/slider-v2/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/slider-v2/tsconfig.lib.json"
+      "path": "../../libs/components/gallery-modal/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/tab-selector/tsconfig.lib.json"
@@ -53,25 +53,22 @@
       "path": "../../libs/components/close-button/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/tooltip/tsconfig.lib.json"
-    },
-    {
       "path": "../../libs/components/viewer-3d/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/action-reminder-modal/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/components/toaster/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/components/modal/tsconfig.lib.json"
+      "path": "../../libs/components/gravatar/tsconfig.lib.json"
     },
     {
       "path": "../../libs/model-list/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/loading-spinner/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/tooltip/tsconfig.lib.json"
     },
     {
       "path": "../../libs/common/tsconfig.lib.json"
@@ -81,6 +78,12 @@
     },
     {
       "path": "../../libs/markdown-content/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/toaster/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/modal/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/input/tsconfig.lib.json"

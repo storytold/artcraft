@@ -16,6 +16,7 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   flux_pro_1_1_ultra: ModelCreator.BlackForestLabs,
   gpt_image_1: ModelCreator.OpenAi,
   gpt_image_1p5: ModelCreator.OpenAi,
+  gpt_image_2: ModelCreator.OpenAi,
   // Kling — p-style IDs
   kling_1p6_pro: ModelCreator.Kling,
   kling_2p1_pro: ModelCreator.Kling,
@@ -77,6 +78,8 @@ export const MODEL_TYPE_TO_CREATOR: Record<string, ModelCreator> = {
   // Angles
   flux_2_lora_angles: ModelCreator.BlackForestLabs,
   qwen_edit_2511_angles: ModelCreator.Alibaba,
+  // Happy Horse (Alibaba wanvideo)
+  happy_horse_1p0: ModelCreator.Alibaba,
 };
 
 // Get creator icon for a model type
@@ -166,6 +169,7 @@ export const getModelDisplayName = (modelType: string): string => {
     // OpenAI
     gpt_image_1: "GPT Image 1",
     gpt_image_1p5: "GPT Image 1.5",
+    gpt_image_2: "GPT Image 2",
     sora_2: "Sora 2",
     sora_2_pro: "Sora 2 Pro",
 
@@ -189,6 +193,9 @@ export const getModelDisplayName = (modelType: string): string => {
     seedance_2p0_fast: "Seedance 2.0 Fast",
     // Seedance — dot-normalized aliases
     seedance_1_0_lite: "Seedance 1.0 Lite",
+
+    // Happy Horse (Alibaba wanvideo)
+    happy_horse_1p0: "Happy Horse 1.0",
 
     // Seedream (ByteDance)
     seedream_4: "Seedream 4",

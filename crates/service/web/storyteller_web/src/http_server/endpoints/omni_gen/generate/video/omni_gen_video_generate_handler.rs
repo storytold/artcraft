@@ -9,37 +9,32 @@ use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
+use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
-use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
-  insert_generic_inference_job_for_fal_queue_with_apriori_job_token,
-  InsertGenericInferenceForFalWithAprioriJobTokenArgs,
-};
-use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
-  insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token,
-  InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs,
-};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
 };
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
-use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::media_files::MediaFileToken;
 
-use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
-use crate::http_server::endpoints::omni_gen::generate::video::distill_video_request::distill_video_request;
-use crate::http_server::endpoints::omni_gen::generate::video::execute::execute_generation::execute_generation;
-use crate::http_server::endpoints::omni_gen::generate::video::request_helper::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::hydrate_router_request::hydrate_to_router_request;
+use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_fal_job::{insert_fal_job, InsertFalJobArgs};
+use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::insert_seedance2pro_jobs::{insert_seedance2pro_jobs, InsertSeedance2proJobsArgs};
+use crate::http_server::endpoints::omni_gen::generate::video::insert_db_job::shared_job_args::SharedJobArgs;
+use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v1::run_pipeline_v1::{run_pipeline_v1, RunPipelineV1Args};
+use crate::http_server::endpoints::omni_gen::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
+use crate::http_server::endpoints::omni_gen::generate::video::helpers::resolve_kinovi_character_ids::resolve_kinovi_character_ids;
+use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_image_urls_as_map::lookup_image_urls_as_map;
@@ -63,7 +58,7 @@ pub async fn omni_gen_video_generate_handler(
   request: Json<OmniGenVideoCostAndGenerateRequest>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<OmniGenVideoGenerateResponse>, AdvancedCommonWebError> {
-  
+
   info!("request: {:?}", request);
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
@@ -85,10 +80,27 @@ pub async fn omni_gen_video_generate_handler(
       AdvancedCommonWebError::from(e)
     })?;
 
-  let user_token = match maybe_user_session.as_ref() {
-    Some(session) => &session.user_token,
+  let session = match maybe_user_session.as_ref() {
+    Some(session) => session,
     None => return Err(AdvancedCommonWebError::NotAuthorized),
   };
+
+  let user_token = &session.user_token;
+
+  let user_feature_flags =
+      UserSessionFeatureFlags::new(session.maybe_feature_flags.as_deref());
+
+  // ==================== MODEL ACCESS CHECK ==================== //
+
+  if matches!(request.model, Some(CommonVideoModel::HappyHorse1p0)) {
+    let allowed = user_feature_flags.can_use_happy_horse()
+      || user_feature_flags.can_use_happy_horse_rate_limited();
+    if !allowed {
+      return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+        "Not authorized to use model".to_string(),
+      ));
+    }
+  }
 
   let maybe_avt_token = server_state
     .avt_cookie_manager
@@ -112,8 +124,6 @@ pub async fn omni_gen_video_generate_handler(
     })?;
 
   // ==================== RESOLVE MEDIA TOKENS ==================== //
-  // Look up media file tokens BEFORE distilling. distill_video_request takes
-  // a pre-computed `MediaFileToken -> Url` map and does no I/O of its own.
 
   let media_file_hydration_map: Option<HashMap<MediaFileToken, Url>> = {
     let mut all_tokens: Vec<MediaFileToken> = Vec::new();
@@ -157,73 +167,67 @@ pub async fn omni_gen_video_generate_handler(
     }
   };
 
-  // ==================== RESOLVE CHARACTER TOKENS ==================== //
+  let media_file_to_url_map: Option<HashMap<MediaFileToken, String>> =
+    media_file_hydration_map.as_ref().map(|map| {
+      map.iter().map(|(k, v)| (k.clone(), v.to_string())).collect()
+    });
 
-  let kinovi_character_ids = resolve_kinovi_character_ids(
-    request.reference_character_tokens.as_deref(),
-    &mut mysql_connection,
-  ).await?;
+  // ==================== RESOLVE CHARACTERS ==================== //
 
-  // ==================== DETERMINE PROVIDER ==================== //
-
-  let execution_provider = match request.model {
-    Some(CommonVideoModel::Seedance2p0) => Provider::Seedance2Pro,
-    Some(CommonVideoModel::Seedance2p0Fast) => Provider::Seedance2Pro,
-    _ => Provider::Fal,
-  };
-
-  // ==================== DISTILL ==================== //
-
-  let distilled = distill_video_request(&request, media_file_hydration_map.as_ref(), execution_provider)?;
-
-  info!("distilled plan: {:?}", distilled.plan);
-
-  // ==================== BILLING ==================== //
-
-  let cost = distilled.cost.cost_in_credits.unwrap_or(0);
-
-  info!("Charging wallet: {} credits", cost);
-
-  let apriori_job_token = InferenceJobToken::generate();
-
-  let maybe_deduction_result = if cost > 0 {
-    Some(attempt_wallet_deduction_else_common_web_error(
-      user_token,
-      Some(apriori_job_token.as_str()),
-      cost,
+  let kinovi_character_id_map: Option<HashMap<CharacterToken, String>> =
+    resolve_kinovi_character_ids(
+      request.reference_character_tokens.as_deref(),
       &mut mysql_connection,
-    ).await?)
-  } else {
-    None
+    ).await?;
+
+  // ==================== HYDRATE ROUTER REQUEST ==================== //
+
+  let router_builder = hydrate_to_router_request(&request)?;
+
+  // ==================== PIPELINE DISPATCH ==================== //
+
+  let use_v2 = match request.model {
+    Some(CommonVideoModel::HappyHorse1p0) => true,
+    Some(CommonVideoModel::Seedance2p0) => true,
+    Some(CommonVideoModel::Seedance2p0Fast) => true,
+    _ => false,
   };
 
-  // ==================== EXECUTE GENERATION ==================== //
+  let pipeline_result = if use_v2 {
+    info!("Using pipeline v2");
+    run_pipeline_v2(RunPipelineV2Args {
+      router_builder: &router_builder,
+      server_state: &server_state,
+      mysql_connection: &mut mysql_connection,
+      user_token,
+      media_file_to_url_map: &media_file_to_url_map,
+      kinovi_character_id_map: &kinovi_character_id_map,
+    }).await?
+  } else {
+    info!("Using pipeline v1");
+    run_pipeline_v1(RunPipelineV1Args {
+      request: &request,
+      router_builder: &router_builder,
+      server_state: &server_state,
+      mysql_connection: &mut mysql_connection,
+      user_token,
+      media_url_map: &media_file_hydration_map,
+      kinovi_character_id_map: &kinovi_character_id_map,
+    }).await?
+  };
 
-  let gen_result = execute_generation(
-    &distilled,
-    &request,
-    &server_state,
-    media_file_hydration_map.as_ref(),
-    kinovi_character_ids,
-    maybe_deduction_result.as_ref().map(|d| &d.ledger_entry_token),
-    &mut mysql_connection,
-  ).await?;
-
-  // ==================== DB TRANSACTION ==================== //
+  // ==================== WRITE RESULT ==================== //
 
   let ip_address = get_request_ip(&http_request);
 
-  let mut transaction = mysql_connection
-    .begin()
-    .await
-    .map_err(|err| {
-      error!("Error starting MySQL transaction: {:?}", err);
-      AdvancedCommonWebError::from_error(err)
-    })?;
+  let mut transaction = mysql_connection.begin().await.map_err(|err| {
+    error!("Error starting MySQL transaction: {:?}", err);
+    AdvancedCommonWebError::from_error(err)
+  })?;
 
   // -- Prompt --
 
-  let prompt_result = insert_prompt(InsertPromptArgs {
+  let prompt_token = match insert_prompt(InsertPromptArgs {
     maybe_apriori_prompt_token: None,
     prompt_type: PromptType::ArtcraftApp,
     maybe_creator_user_token: Some(user_token),
@@ -232,18 +236,16 @@ pub async fn omni_gen_video_generate_handler(
     maybe_positive_prompt: request.prompt.as_deref(),
     maybe_negative_prompt: request.negative_prompt.as_deref(),
     maybe_other_args: None,
-    maybe_generation_mode: Some(gen_result.generation_mode),
-    maybe_aspect_ratio: None,
-    maybe_resolution: None,
+    maybe_generation_mode: Some(determine_generation_mode(&request)),
+    maybe_aspect_ratio: request.aspect_ratio,
+    maybe_resolution: request.resolution,
     maybe_batch_count: request.video_batch_count.map(|c| c as u8),
     maybe_generate_audio: request.generate_audio,
     maybe_duration_seconds: request.duration_seconds.map(|d| d as u32),
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),
-  }).await;
-
-  let prompt_token = match prompt_result {
+  }).await {
     Ok(token) => Some(token),
     Err(err) => {
       warn!("Error inserting prompt: {:?}", err);
@@ -262,14 +264,12 @@ pub async fn omni_gen_video_generate_handler(
         context_semantic_type: PromptContextSemanticType::VidStartFrame,
       });
     }
-
     if let Some(media_token) = &request.end_frame_image_media_token {
       context_items.push(PromptContextItem {
         media_token: media_token.clone(),
         context_semantic_type: PromptContextSemanticType::VidEndFrame,
       });
     }
-
     if let Some(ref_tokens) = &request.reference_image_media_tokens {
       for media_token in ref_tokens {
         context_items.push(PromptContextItem {
@@ -278,7 +278,6 @@ pub async fn omni_gen_video_generate_handler(
         });
       }
     }
-
     if let Some(ref_tokens) = &request.reference_video_media_tokens {
       for media_token in ref_tokens {
         context_items.push(PromptContextItem {
@@ -301,92 +300,49 @@ pub async fn omni_gen_video_generate_handler(
 
   // -- Inference job --
 
-  let maybe_ledger_entry_token = maybe_deduction_result.as_ref()
-    .map(|d| &d.ledger_entry_token);
-
-  let job_token = if gen_result.is_seedance2pro {
-    // Seedance2Pro path: insert one job per order_id (batch support).
-    let fallback_ids = vec![gen_result.external_job_id.clone()];
-    let order_ids = gen_result.maybe_seedance_order_ids
-        .as_deref()
-        .unwrap_or(&fallback_ids);
-
-    let mut all_job_tokens: Vec<InferenceJobToken> = Vec::with_capacity(order_ids.len());
-
-    for (i, order_id) in order_ids.iter().enumerate() {
-      let job_token = if i == 0 {
-        apriori_job_token.clone()
-      } else {
-        InferenceJobToken::generate()
-      };
-
-      let idempotency_str = if i == 0 {
-        idempotency_token.clone()
-      } else {
-        format!("{}-batch-{}", idempotency_token, i)
-      };
-
-      let db_result = insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token(
-        InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs {
-          apriori_job_token: &job_token,
-          uuid_idempotency_token: &idempotency_str,
-          maybe_external_third_party_id: order_id,
-          maybe_inference_args: None,
-          maybe_prompt_token: prompt_token.as_ref(),
-          maybe_wallet_ledger_entry_token: maybe_ledger_entry_token,
-          maybe_creator_user_token: Some(user_token),
+  let job_token = match &pipeline_result.response {
+    GenerateVideoResponse::Seedance2Pro(payload) => {
+      info!("Inserting seedance2pro job(s) with token: {:?}", pipeline_result.billing.apriori_job_token);
+      insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
+        primary_order_id: &payload.order_id,
+        maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
+        maybe_wallet_ledger_entry_token: pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
+        shared: SharedJobArgs {
+          apriori_job_token: &pipeline_result.billing.apriori_job_token,
+          idempotency_token: &idempotency_token,
+          user_token,
           maybe_avt_token: maybe_avt_token.as_ref(),
-          creator_ip_address: &ip_address,
-          creator_set_visibility: Visibility::Public,
-          mysql_executor: &mut *transaction,
-          phantom: Default::default(),
-        }
-      ).await;
-
-      match db_result {
-        Ok(token) => all_job_tokens.push(token),
-        Err(err) => {
-          warn!("Error inserting seedance2pro inference job (order_id={}): {:?}", order_id, err);
-          if i == 0 {
-            return Err(AdvancedCommonWebError::from_error(err));
-          }
-        }
-      }
+          maybe_prompt_token: prompt_token.as_ref(),
+          ip_address: &ip_address,
+          transaction: &mut transaction,
+        },
+      }).await?
     }
-
-    all_job_tokens.first().cloned().ok_or_else(|| {
-      error!("No inference job token was created");
-      AdvancedCommonWebError::server_error_with_message("No inference job token was created")
-    })?
-  } else {
-    // Fal / other providers path.
-    // TODO: Pass maybe_wallet_ledger_entry_token to fal jobs once the fal insert supports it.
-    let db_result = insert_generic_inference_job_for_fal_queue_with_apriori_job_token(
-      InsertGenericInferenceForFalWithAprioriJobTokenArgs {
-        apriori_job_token: &apriori_job_token,
-        uuid_idempotency_token: &idempotency_token,
-        maybe_external_third_party_id: &gen_result.external_job_id,
-        fal_category: FalCategory::VideoGeneration,
-        maybe_inference_args: None,
-        maybe_prompt_token: prompt_token.as_ref(),
-        maybe_creator_user_token: Some(user_token),
-        maybe_avt_token: maybe_avt_token.as_ref(),
-        creator_ip_address: &ip_address,
-        creator_set_visibility: Visibility::Public,
-        mysql_executor: &mut *transaction,
-        starting_job_status_override: None,
-        maybe_frontend_failure_category: None,
-        maybe_failure_reason: None,
-        phantom: Default::default(),
-      }
-    ).await;
-
-    match db_result {
-      Ok(token) => token,
-      Err(err) => {
-        warn!("Error inserting inference job: {:?}", err);
-        return Err(AdvancedCommonWebError::from_error(err));
-      }
+    GenerateVideoResponse::Fal(payload) => {
+      let external_id = payload.request_id.as_deref().ok_or_else(|| {
+        error!("Fal generation response missing request_id");
+        AdvancedCommonWebError::server_error_with_message("Fal generation response missing request_id")
+      })?;
+      info!("Inserting fal job with token: {:?}", pipeline_result.billing.apriori_job_token);
+      insert_fal_job(InsertFalJobArgs {
+        external_job_id: external_id,
+        shared: SharedJobArgs {
+          apriori_job_token: &pipeline_result.billing.apriori_job_token,
+          idempotency_token: &idempotency_token,
+          user_token,
+          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_prompt_token: prompt_token.as_ref(),
+          ip_address: &ip_address,
+          transaction: &mut transaction,
+        },
+      }).await?
+    }
+    GenerateVideoResponse::Artcraft(payload) => {
+      payload.inference_job_token.clone()
+    }
+    other => {
+      error!("Unexpected generation response variant: {:?}", other);
+      return Err(AdvancedCommonWebError::server_error_with_message("Unexpected generation response"));
     }
   };
 
@@ -399,4 +355,24 @@ pub async fn omni_gen_video_generate_handler(
     success: true,
     inference_job_token: job_token,
   }))
+}
+
+fn determine_generation_mode(request: &OmniGenVideoCostAndGenerateRequest) -> CommonGenerationMode {
+  let has_keyframe = request.start_frame_image_media_token.is_some()
+    || request.end_frame_image_media_token.is_some();
+
+  if has_keyframe {
+    return CommonGenerationMode::Keyframe;
+  }
+
+  let has_reference = request.reference_image_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_video_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_audio_media_tokens.as_ref().is_some_and(|t| !t.is_empty())
+    || request.reference_character_tokens.as_ref().is_some_and(|t| !t.is_empty());
+
+  if has_reference {
+    return CommonGenerationMode::Reference;
+  }
+
+  CommonGenerationMode::Text
 }

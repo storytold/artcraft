@@ -57,8 +57,7 @@ import {
   showActionReminder,
   isActionReminderOpen,
 } from "@storyteller/ui-action-reminder-modal";
-import { MediaFileDelete } from "@storyteller/tauri-api";
-import { listen } from "@tauri-apps/api/event";
+import { Checkbox } from "@storyteller/ui-checkbox";
 
 // ─── Module-level gallery cache ───────────────────────────────────────────────
 // Persists gallery items across modal open/close so users see content instantly.
@@ -260,6 +259,15 @@ interface GalleryModalProps {
     promptData: Prompts;
     mediaClass: string | undefined;
   }) => void;
+  /** Hide the filter popover entirely. When unset, the filter button shows (optionally locked via forceFilter). */
+  hideFilter?: boolean;
+  /** Delete a media file by id. Required in view mode to show any delete UI. */
+  onDeleteMedia?: (id: string) => Promise<unknown>;
+  /** Wire external event sources (generation-complete, media-deleted). Returns an unsubscribe fn. */
+  subscribeToMediaEvents?: (handlers: {
+    onGenerationComplete: () => void;
+    onMediaDeleted: (mediaId: string) => void;
+  }) => () => void;
 }
 
 // --- Constants (never re-created) ---
@@ -377,6 +385,9 @@ export const GalleryModal = React.memo(
     onMake3DObjectClicked,
     onMake3DWorldClicked,
     onRecreateClicked,
+    hideFilter,
+    onDeleteMedia,
+    subscribeToMediaEvents,
   }: GalleryModalProps) => {
     const [loading, setLoading] = useState(false);
     // Separate state for pagination spinner (bottom of list) — not shared with background refresh
@@ -394,12 +405,22 @@ export const GalleryModal = React.memo(
     const [activeFilter, setActiveFilter] = useState(forceFilter || "all");
     const minColumns = 3;
     const maxColumns = 12;
-    // Default gridColumns to 5
+    // Default gridColumns to 5 on desktop; narrow screens are locked to 2 columns
     const defaultGridColumns = 5;
+    const [isNarrow, setIsNarrow] = useState(
+      () => typeof window !== "undefined" && window.innerWidth < 640,
+    );
+    useEffect(() => {
+      const handler = () => setIsNarrow(window.innerWidth < 640);
+      window.addEventListener("resize", handler);
+      return () => window.removeEventListener("resize", handler);
+    }, []);
     const [sliderValue, setSliderValue] = useState(
       maxColumns - (defaultGridColumns - minColumns),
     );
-    const gridColumns = maxColumns - (sliderValue - minColumns);
+    const gridColumns = isNarrow
+      ? 2
+      : maxColumns - (sliderValue - minColumns);
     const [imageFit, setImageFit] = useState<"cover" | "contain">("contain");
     const [showUploads, setShowUploads] = useState<boolean>(() => {
       try {
@@ -489,7 +510,7 @@ export const GalleryModal = React.memo(
     // call it without taking a dependency on it. refreshGallery itself is
     // defined lower in the file (it needs loadItems); we wire the ref via a
     // layout-time assignment below.
-    const refreshGalleryRef = useRef<() => void>(() => {});
+    const refreshGalleryRef = useRef<() => void>(() => { });
 
     // Fetch the current session's username every time the modal opens.
     // The modal is permanently mounted in TopBar, so this component survives
@@ -549,8 +570,8 @@ export const GalleryModal = React.memo(
             : item.media_class === "dimensional"
               ? item.cover_image?.maybe_cover_image_public_bucket_url
               : getThumbnailUrl(item.media_links.maybe_thumbnail_template, {
-                  width: THUMBNAIL_SIZES.MEDIUM,
-                }),
+                width: THUMBNAIL_SIZES.MEDIUM,
+              }),
         thumbnailUrlTemplate: item.media_links.maybe_thumbnail_template,
         fullImage: item.media_links.cdn_url,
         createdAt: item.created_at,
@@ -741,43 +762,38 @@ export const GalleryModal = React.memo(
             : true;
     }, [mode, isOpen, galleryModalVisibleViewMode.value]);
 
+    // External media-event subscription. Caller (typically the desktop app's
+    // Tauri bindings) wires `subscribeToMediaEvents` to fire `onGenerationComplete`
+    // when a generation finishes and `onMediaDeleted(id)` when any client deletes
+    // an item, so the gallery refreshes and drops items live. When the prop is
+    // absent (e.g. on the web), these behaviors just don't run.
     useEffect(() => {
-      const unlistenPromise = listen("generation-complete-event", () => {
-        if (modalIsOpenRef.current && username) {
-          refreshGallery();
-        }
-      });
-      return () => {
-        unlistenPromise.then((fn) => fn());
-      };
-    }, [refreshGallery, username]);
-
-    // Drop any item deleted anywhere in the app (lightbox, single, bulk)
-    // so it disappears from the gallery immediately.
-    useEffect(() => {
-      const unlistenPromise = listen<any>("media_file_deleted_event", (event) => {
-        const token: string | undefined =
-          event?.payload?.data?.media_file_token ??
-          event?.payload?.media_file_token;
-        if (!token) return;
-        setAllItems((prev) => prev.filter((it) => it.id !== token));
-        setBulkSelectedIds((prev) => {
-          if (!prev.has(token)) return prev;
-          const next = new Set(prev);
-          next.delete(token);
-          return next;
-        });
-        for (const [key, entry] of galleryCacheMap.entries()) {
-          galleryCacheMap.set(key, {
-            ...entry,
-            items: entry.items.filter((it) => it.id !== token),
+      if (!subscribeToMediaEvents) return;
+      const unsubscribe = subscribeToMediaEvents({
+        onGenerationComplete: () => {
+          if (modalIsOpenRef.current && username) {
+            refreshGallery();
+          }
+        },
+        onMediaDeleted: (token) => {
+          if (!token) return;
+          setAllItems((prev) => prev.filter((it) => it.id !== token));
+          setBulkSelectedIds((prev) => {
+            if (!prev.has(token)) return prev;
+            const next = new Set(prev);
+            next.delete(token);
+            return next;
           });
-        }
+          for (const [key, entry] of galleryCacheMap.entries()) {
+            galleryCacheMap.set(key, {
+              ...entry,
+              items: entry.items.filter((it) => it.id !== token),
+            });
+          }
+        },
       });
-      return () => {
-        unlistenPromise.then((fn) => fn());
-      };
-    }, []);
+      return unsubscribe;
+    }, [subscribeToMediaEvents, refreshGallery, username]);
 
     const toggleBulkSelect = useCallback((id: string) => {
       setBulkSelectedIds((prev) => {
@@ -860,6 +876,7 @@ export const GalleryModal = React.memo(
     );
 
     const handleBulkDelete = useCallback(() => {
+      if (!onDeleteMedia) return;
       const count = bulkSelectedIds.size;
       showActionReminder({
         reminderType: "default",
@@ -876,7 +893,7 @@ export const GalleryModal = React.memo(
         onPrimaryAction: async () => {
           try {
             const ids = Array.from(bulkSelectedIds);
-            await Promise.allSettled(ids.map((id) => MediaFileDelete(id)));
+            await Promise.allSettled(ids.map((id) => onDeleteMedia(id)));
             const idSet = new Set(ids);
             setAllItems((prev) => prev.filter((it) => !idSet.has(it.id)));
             for (const [key, entry] of galleryCacheMap.entries()) {
@@ -891,7 +908,7 @@ export const GalleryModal = React.memo(
           }
         },
       });
-    }, [bulkSelectedIds, clearBulkSelection]);
+    }, [bulkSelectedIds, clearBulkSelection, onDeleteMedia]);
 
     useSignals();
 
@@ -1033,7 +1050,7 @@ export const GalleryModal = React.memo(
           isOpen={
             mode === "view"
               ? galleryModalVisibleViewMode.value &&
-                galleryModalVisibleDuringDrag.value
+              galleryModalVisibleDuringDrag.value
               : typeof isOpen === "boolean"
                 ? isOpen
                 : true
@@ -1047,9 +1064,9 @@ export const GalleryModal = React.memo(
             }
           }}
           className={twMerge(
-            "h-[620px] max-w-4xl rounded-xl",
+            "h-[620px] max-h-[90vh] w-full max-w-4xl rounded-xl",
             mode === "view" &&
-              "h-[640px] min-h-[640px] min-w-[56rem] w-[56rem] max-w-none",
+            "h-[640px] min-h-[640px] min-w-[56rem] w-[56rem] max-w-none",
           )}
           childPadding={false}
           showClose={false}
@@ -1064,8 +1081,8 @@ export const GalleryModal = React.memo(
           )}
           <div className="flex h-full flex-col">
             <div className="border-b border-ui-panel-border p-4 py-3 bg-ui-panel rounded-t-xl">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
+              <div className="flex flex-wrap justify-between items-center gap-y-2">
+                <div className="flex items-center gap-3 flex-wrap gap-y-1">
                   <h2 className="text-xl font-semibold">
                     {mode === "select"
                       ? activeFilter === "video"
@@ -1088,44 +1105,30 @@ export const GalleryModal = React.memo(
                       : "My Library"}
                   </h2>
                   {mode === "view" && (
-                    <div className="flex items-center relative z-[51]">
-                      <input
-                        type="checkbox"
+                    <div className="relative z-[51] flex items-center">
+                      <Checkbox
                         id="gallery-reopen-after-drag"
                         checked={galleryReopenAfterDragSignal.value}
                         onChange={(e) =>
-                          (galleryReopenAfterDragSignal.value =
-                            e.target.checked)
+                        (galleryReopenAfterDragSignal.value =
+                          e.target.checked)
                         }
-                        className="h-4 w-4 cursor-pointer rounded-lg border-gray-300 bg-gray-700 text-primary focus:ring-primary"
+                        label="Reopen after adding"
                       />
-                      <label
-                        htmlFor="gallery-reopen-after-drag"
-                        className="ml-2 cursor-pointer select-none text-sm text-base-fg/70"
-                      >
-                        Reopen after adding
-                      </label>
                     </div>
                   )}
                   {activeFilter !== "uploaded" && (
-                    <div className="flex items-center relative z-[51]">
-                      <input
-                        type="checkbox"
+                    <div className="relative z-[51] flex items-center">
+                      <Checkbox
                         id="gallery-show-uploads"
                         checked={showUploads}
                         onChange={(e) => setShowUploads(e.target.checked)}
-                        className="h-4 w-4 cursor-pointer rounded-lg border-gray-300 bg-gray-700 text-primary focus:ring-primary"
+                        label="Show uploads"
                       />
-                      <label
-                        htmlFor="gallery-show-uploads"
-                        className="ml-2 cursor-pointer select-none text-sm text-base-fg/70"
-                      >
-                        Show uploads
-                      </label>
                     </div>
                   )}
                 </div>
-                <div className="flex justify-end gap-2 items-center">
+                <div className="flex justify-end gap-2 items-center flex-wrap ml-auto">
                   {/* Refresh button */}
                   <Tooltip
                     position="top"
@@ -1135,7 +1138,7 @@ export const GalleryModal = React.memo(
                     <Button
                       variant="action"
                       onClick={refreshGallery}
-                      className="relative z-[51] h-9 w-9 bg-ui-controls/60 hover:bg-ui-controls/90"
+                      className="relative z-[51] h-9 w-9"
                       disabled={loading}
                       aria-label="Refresh list"
                     >
@@ -1158,7 +1161,7 @@ export const GalleryModal = React.memo(
                           fit === "cover" ? "contain" : "cover",
                         )
                       }
-                      className="relative z-[51] h-9 w-9 bg-ui-controls/60 hover:bg-ui-controls/90"
+                      className="relative z-[51] h-9 w-9"
                     >
                       <FontAwesomeIcon
                         icon={imageFit === "cover" ? faExpand : faCompress}
@@ -1167,8 +1170,8 @@ export const GalleryModal = React.memo(
                     </Button>
                   </Tooltip>
 
-                  {/* Slider */}
-                  <div className="w-32 mx-3 relative z-[51] flex items-center gap-2">
+                  {/* Slider (hidden on narrow screens — grid is locked to 2 cols there) */}
+                  <div className="hidden sm:flex w-32 mx-3 relative z-[51] items-center gap-2">
                     <SliderV2
                       min={minColumns}
                       max={maxColumns}
@@ -1179,55 +1182,55 @@ export const GalleryModal = React.memo(
                       showTooltip={false}
                       className="w-full"
                       showProgressBar={false}
-                      tooltipContent={`${
-                        maxColumns - (sliderValue - minColumns)
-                      } columns`}
+                      tooltipContent={`${maxColumns - (sliderValue - minColumns)
+                        } columns`}
                     />
                   </div>
                   {/* Filter popover */}
-                  <Tooltip
-                    position="top"
-                    content={
-                      forceFilter ? "Filter locked" : "Filter"
-                    }
-                    closeOnClick={true}
-                  >
-                    <PopoverMenu
-                      panelTitle="Filter"
-                      position="bottom"
-                      align="end"
-                      buttonClassName={`relative z-[51] mr-3 ${
-                        forceFilter
+                  {!hideFilter && (
+                    <Tooltip
+                      position="top"
+                      content={
+                        forceFilter ? "Filter locked" : "Filter"
+                      }
+                      closeOnClick={true}
+                    >
+                      <PopoverMenu
+                        panelTitle="Filter"
+                        position="bottom"
+                        align="end"
+                        buttonClassName={`relative z-[51] mr-3 ${forceFilter
                           ? "opacity-70 pointer-events-none"
                           : ""
-                      }`}
-                      panelClassName="min-w-36"
-                      items={FILTERS.map((f) => ({
-                        label: f.label,
-                        selected: activeFilter === f.id,
-                        icon: f.icon,
-                        // Use a custom property that will be passed through but not cause type errors
-                        customProps: {
-                          disabled: forceFilter !== undefined,
-                        },
-                      }))}
-                      onSelect={(item) => {
-                        // Only allow filter changes if no forceFilter was provided
-                        if (!forceFilter) {
-                          const filter = FILTERS.find(
-                            (f) => f.label === item.label,
-                          );
-                          if (filter) setActiveFilter(filter.id);
+                          }`}
+                        panelClassName="min-w-36"
+                        items={FILTERS.map((f) => ({
+                          label: f.label,
+                          selected: activeFilter === f.id,
+                          icon: f.icon,
+                          // Use a custom property that will be passed through but not cause type errors
+                          customProps: {
+                            disabled: forceFilter !== undefined,
+                          },
+                        }))}
+                        onSelect={(item) => {
+                          // Only allow filter changes if no forceFilter was provided
+                          if (!forceFilter) {
+                            const filter = FILTERS.find(
+                              (f) => f.label === item.label,
+                            );
+                            if (filter) setActiveFilter(filter.id);
+                          }
+                        }}
+                        triggerIcon={<FontAwesomeIcon icon={faFilter} />}
+                        triggerLabel={
+                          FILTERS.find((f) => f.id === activeFilter)?.label
                         }
-                      }}
-                      triggerIcon={<FontAwesomeIcon icon={faFilter} />}
-                      triggerLabel={
-                        FILTERS.find((f) => f.id === activeFilter)?.label
-                      }
-                      mode="toggle"
-                      showIconsInList={true}
-                    />
-                  </Tooltip>
+                        mode="toggle"
+                        showIconsInList={true}
+                      />
+                    </Tooltip>
+                  )}
                   {mode === "view" && <Modal.ExpandButton />}
                   <CloseButton
                     onClick={() => {
@@ -1332,6 +1335,7 @@ export const GalleryModal = React.memo(
                                 disableTooltipAndBadge={mode === "select"}
                                 imageFit={imageFit}
                                 onDeleted={handleItemDeleted}
+                                onDelete={onDeleteMedia}
                                 onEditClicked={onEditClicked}
                                 maxSelections={maxSelections}
                                 bulkSelected={bulkSelectedIds.has(item.id)}
@@ -1393,14 +1397,16 @@ export const GalleryModal = React.memo(
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="destructive"
-                    onClick={handleBulkDelete}
-                    className="px-3"
-                    icon={faTrashCan}
-                  >
-                    Delete
-                  </Button>
+                  {onDeleteMedia && (
+                    <Button
+                      variant="destructive"
+                      onClick={handleBulkDelete}
+                      className="px-3"
+                      icon={faTrashCan}
+                    >
+                      Delete
+                    </Button>
+                  )}
                   <button
                     onClick={clearBulkSelection}
                     className="flex h-8 w-8 items-center justify-center rounded-md bg-ui-controls/60 hover:bg-ui-controls/90 text-base-fg transition-colors"

@@ -21,7 +21,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
-import { usePromptImageStore, RefImage } from "./promptStore";
+import { usePromptImageStore, RefImage, useEnterToGenerateStore } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { twMerge } from "tailwind-merge";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -30,6 +30,7 @@ import { AspectRatioPicker } from "./common/AspectRatioPicker";
 import { AspectRatioIcon } from "./common/AspectRatioIcon";
 import { GenerationCountPicker } from "./common/GenerationCountPicker";
 import { ResolutionPicker } from "./common/ResolutionPicker";
+import { QualityPicker } from "./common/QualityPicker";
 import { CommonResolution } from "@storyteller/model-list";
 
 interface PromptBoxImageProps {
@@ -115,6 +116,7 @@ export const PromptBoxImage = ({
 
   const referenceImages = usePromptImageStore((s) => s.referenceImages);
   const setReferenceImages = usePromptImageStore((s) => s.setReferenceImages);
+  const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
   const [uploadingImages, _setUploadingImages] = useState<
     { id: string; file: File }[]
   >([]);
@@ -131,6 +133,8 @@ export const PromptBoxImage = ({
   );
   const commonResolution = usePromptImageStore((s) => s.commonResolution);
   const setCommonResolution = usePromptImageStore((s) => s.setCommonResolution);
+  const commonQuality = usePromptImageStore((s) => s.commonQuality);
+  const setCommonQuality = usePromptImageStore((s) => s.setCommonQuality);
 
   useEffect(() => {
     onImageRowVisibilityChange?.(isImageRowVisible);
@@ -317,6 +321,10 @@ export const PromptBoxImage = ({
         request.common_resolution = commonResolution;
       }
 
+      if (selectedModel?.supportsQuality()) {
+        request.quality = commonQuality ?? selectedModel.defaultQuality;
+      }
+
       if (
         selectedModel?.canUseImagePrompt &&
         !!referenceImages &&
@@ -388,7 +396,9 @@ export const PromptBoxImage = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key !== "Enter") return;
+    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    if (isSubmitCombo) {
       e.preventDefault();
       handleEnqueue();
     }
@@ -553,6 +563,13 @@ export const PromptBoxImage = ({
                     />
                   </Tooltip>
                 )}
+              {selectedModel?.supportsQuality() && (
+                <QualityPicker
+                  model={selectedModel}
+                  currentQuality={commonQuality}
+                  handleCommonQualitySelect={setCommonQuality}
+                />
+              )}
             </div>
             <div className="flex items-center gap-2">
               <GenerationCountPicker

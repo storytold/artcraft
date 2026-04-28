@@ -185,6 +185,9 @@
     },
     {
       "path": "./libs/components/pagedraw"
+    },
+    {
+      "path": "./libs/components/checkbox"
     }
   ]
 }

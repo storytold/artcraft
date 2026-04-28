@@ -15,6 +15,9 @@ pub enum ArtcraftRouterError {
   /// The requested model is not yet supported by the router.
   UnsupportedModel(String),
 
+  /// [Temporary during migration] The requested model/provider is not yet supported by the router.
+  UnsupportedProviderAndModelForNewApi(String),
+
   /// Invalid or missing input arguments.
   InvalidInput(String),
 
@@ -30,6 +33,7 @@ impl Display for ArtcraftRouterError {
       Self::Client(e) => write!(f, "Client error: {}", e),
       Self::Download(e) => write!(f, "Download error: {}", e),
       Self::UnsupportedModel(model) => write!(f, "Unsupported model: {}", model),
+      Self::UnsupportedProviderAndModelForNewApi(msg) => write!(f, "Unsupported provider/model (for new API during migration): {}", msg),
       Self::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
       Self::Provider(e) => write!(f, "Provider error: {}", e),
     }
