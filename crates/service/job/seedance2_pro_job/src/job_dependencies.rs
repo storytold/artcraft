@@ -37,6 +37,14 @@ pub struct JobDependencies {
   /// ancient orders that will never match a pending job.
   pub maybe_max_job_age: Option<Duration>,
 
+  /// Maximum number of retries when a poll_orders request fails before
+  /// alerting the pager and aborting the iteration.
+  pub poll_max_retries: u32,
+
+  /// Maximum delay in milliseconds between poll retries. The delay increases
+  /// with each attempt up to this cap.
+  pub poll_retry_max_delay_millis: u64,
+
   /// Page an alert when available Kinovi credits fall below this threshold.
   pub credits_alert_threshold: u64,
 

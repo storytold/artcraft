@@ -6,7 +6,7 @@ use log::{error, info, warn};
 use pager::notification::notification_details_builder::NotificationDetailsBuilder;
 use pager::notification::notification_urgency::NotificationUrgency;
 use mysql_queries::queries::generic_inference::seedance2pro::list_pending_seedance2pro_video_jobs::{list_pending_seedance2pro_video_jobs, PendingSeedance2ProJob};
-use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, TaskStatus};
+use seedance2pro_client::requests::poll_orders::poll_orders::{poll_orders, OrderStatus, PollOrdersArgs, PollOrdersResponse, TaskStatus};
 
 use crate::jobs::video_polling_job::alert_on_error::alert_pager_and_return_err;
 use crate::jobs::video_polling_job::process_orders_batch::process_orders_batch;
@@ -131,22 +131,7 @@ async fn website_polling_loop(
       total_pages_seen, cursor, total_orders_seen
     );
 
-    let response = match poll_orders(PollOrdersArgs {
-      session: &deps.seedance2pro_session,
-      cursor,
-      host_override: None,
-    }).await {
-      Ok(r) => r,
-      Err(err) => {
-        warn!("Error polling Kinovi orders: {:?}", err);
-        return alert_pager_and_return_err(
-          &deps.pager,
-          "Kinovi API polling failed",
-          anyhow::anyhow!("poll_orders failed: {:?}", err),
-          None,
-        );
-      }
-    };
+    let response = poll_orders_with_retry(deps, cursor).await?;
 
     let page_orders_count = response.orders.len() as u32;
 
@@ -230,5 +215,50 @@ async fn website_polling_loop(
     total_pages_seen,
     total_orders_seen
   })
+}
+
+/// Poll orders from Kinovi with retries. On transient failures, waits with
+/// increasing delay (attempt × 2s, capped at `poll_retry_max_delay_millis`).
+/// After exhausting retries, alerts the pager and returns an error.
+async fn poll_orders_with_retry(
+  deps: &JobDependencies,
+  cursor: Option<u64>,
+) -> anyhow::Result<PollOrdersResponse> {
+  let max_retries = deps.poll_max_retries;
+
+  for attempt in 1..=max_retries {
+    match poll_orders(PollOrdersArgs {
+      session: &deps.seedance2pro_session,
+      cursor,
+      host_override: None,
+    }).await {
+      Ok(response) => return Ok(response),
+      Err(err) => {
+        warn!(
+          "Error polling Kinovi orders (attempt {}/{}): {:?}",
+          attempt, max_retries, err
+        );
+
+        if attempt >= max_retries {
+          return alert_pager_and_return_err(
+            &deps.pager,
+            "Kinovi API polling failed after retries",
+            anyhow::anyhow!("poll_orders failed after {} attempts: {:?}", attempt, err),
+            None,
+          );
+        }
+
+        let delay_millis = (attempt as u64 * 2_000).min(deps.poll_retry_max_delay_millis);
+        tokio::time::sleep(Duration::from_millis(delay_millis)).await;
+      }
+    }
+  }
+
+  alert_pager_and_return_err(
+    &deps.pager,
+    "Kinovi API polling failed after max retries",
+    anyhow::anyhow!("poll_orders failed after {} attempts", max_retries),
+    None,
+  )
 }
 

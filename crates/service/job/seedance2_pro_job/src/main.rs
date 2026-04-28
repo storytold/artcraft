@@ -124,6 +124,18 @@ async fn main() -> AnyhowResult<()> {
     info!("Max job age threshold: {} hours", duration.num_hours());
   }
 
+  let poll_max_retries: u32 = easyenv::get_env_num(
+    "POLL_MAX_RETRIES",
+    3,
+  )?;
+
+  let poll_retry_max_delay_millis: u64 = easyenv::get_env_num(
+    "POLL_RETRY_MAX_DELAY_MILLIS",
+    10_000,
+  )?;
+
+  info!("Poll max retries: {}, max retry delay: {}ms", poll_max_retries, poll_retry_max_delay_millis);
+
   let credits_alert_threshold: u64 = easyenv::get_env_num(
     "CREDITS_ALERT_THRESHOLD",
     10_000,
@@ -164,6 +176,8 @@ async fn main() -> AnyhowResult<()> {
     poll_interval_millis,
     maybe_pages_per_batch,
     maybe_max_job_age,
+    poll_max_retries,
+    poll_retry_max_delay_millis,
     credits_alert_threshold,
     application_shutdown: application_shutdown.clone(),
     shutdown_notify: shutdown_notify.clone(),
