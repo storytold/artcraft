@@ -1,6 +1,9 @@
 import { create } from "zustand";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { CameraAspectRatio, EditorStates } from "./enums";
-import { AssetType, AssetFilterOption } from "~/enums";
+import { AssetType, AssetFilterOption, ClipGroup } from "~/enums";
+import { MediaItem } from "./models";
+import { Simple3DVector } from "./datastructures/common";
 
 export type SceneObjectKind = "object" | "character" | "shape";
 
@@ -10,6 +13,39 @@ export interface SceneObject {
   name: string;
   mediaId?: string;
   mediaToken?: string;
+}
+
+// Item in the outliner panel (with icon, visibility, lock state).
+// Distinct from `SceneObject` — outliner tracks UI-side rows; the
+// engine maintains its own object model.
+export interface OutlinerItem {
+  id: string;
+  icon: IconDefinition;
+  name: string;
+  type: string;
+  visible: boolean;
+  locked: boolean;
+}
+
+// The currently inspected object in the right-hand control panel.
+// Distinct from both `SceneObject` and `OutlinerItem`; this carries
+// engine-side identifiers used by the gizmo / property panel.
+export interface ObjectPanelObject {
+  group: ClipGroup;
+  object_uuid: string;
+  object_name: string;
+  version: string;
+  objectVectors: Simple3DVector;
+}
+
+export interface DragPosition {
+  currX: number;
+  currY: number;
+}
+
+export interface PrecisionSelectorCoords {
+  x: number;
+  y: number;
 }
 
 export interface CameraEntry {
@@ -109,6 +145,26 @@ interface PageSceneState {
   errorDialogTitle: string;
   errorDialogMessage: string;
 
+  // drag-and-drop
+  canDrop: boolean;
+  dragItem: MediaItem | null;
+  dragPosition: DragPosition;
+
+  // object panel (right-hand inspector for selected object)
+  objectPanelShowing: boolean;
+  objectPanelCurrent: ObjectPanelObject | undefined;
+
+  // outliner (left-hand scene tree)
+  outlinerItems: OutlinerItem[];
+  outlinerSelectedItem: OutlinerItem | null;
+  outlinerShowing: boolean;
+
+  // precision selector popover
+  precisionSelectorShowing: boolean;
+  precisionSelectorCoords: PrecisionSelectorCoords;
+  precisionSelectorValues: number[];
+  precisionSelectedValue: number;
+
   // ----- actions -----
 
   // scene
@@ -152,6 +208,32 @@ interface PageSceneState {
   toggleEditorLetterBox: (next?: boolean) => void;
   setErrorDialog: (title: string, message: string) => void;
   setShowErrorDialog: (show: boolean) => void;
+
+  // drag-and-drop
+  setCanDrop: (canDrop: boolean) => void;
+  setDragItem: (item: MediaItem | null) => void;
+  setDragPosition: (pos: DragPosition) => void;
+
+  // object panel
+  showObjectPanel: (obj?: ObjectPanelObject) => void;
+  hideObjectPanel: () => void;
+  updateObjectPanel: (obj: ObjectPanelObject) => void;
+
+  // outliner
+  setOutlinerItems: (items: OutlinerItem[]) => void;
+  setOutlinerSelectedItem: (item: OutlinerItem | null) => void;
+  setOutlinerShowing: (showing: boolean) => void;
+  selectOutlinerItem: (id: string) => void;
+  toggleOutlinerVisibility: (id: string) => void;
+  toggleOutlinerLock: (id: string) => void;
+
+  // precision selector
+  showPrecisionSelector: (
+    coords: PrecisionSelectorCoords,
+    values: number[],
+  ) => void;
+  hidePrecisionSelector: () => void;
+  setPrecisionSelectedValue: (v: number) => void;
 }
 
 export const usePageSceneStore = create<PageSceneState>((set, get) => ({
@@ -187,6 +269,22 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   showErrorDialog: false,
   errorDialogTitle: "Error!",
   errorDialogMessage: "Something went wrong.",
+
+  canDrop: false,
+  dragItem: null,
+  dragPosition: { currX: 0, currY: 0 },
+
+  objectPanelShowing: false,
+  objectPanelCurrent: undefined,
+
+  outlinerItems: [],
+  outlinerSelectedItem: null,
+  outlinerShowing: false,
+
+  precisionSelectorShowing: false,
+  precisionSelectorCoords: { x: 0, y: 0 },
+  precisionSelectorValues: [],
+  precisionSelectedValue: 0,
 
   // scene actions
   addObject: (obj) =>
@@ -276,4 +374,49 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
       showErrorDialog: true,
     }),
   setShowErrorDialog: (show) => set({ showErrorDialog: show }),
+
+  // drag-and-drop actions
+  setCanDrop: (canDrop) => set({ canDrop }),
+  setDragItem: (item) => set({ dragItem: item }),
+  setDragPosition: (pos) => set({ dragPosition: pos }),
+
+  // object panel actions
+  showObjectPanel: (obj) =>
+    set((s) => ({
+      objectPanelShowing: true,
+      objectPanelCurrent: obj ?? s.objectPanelCurrent,
+    })),
+  hideObjectPanel: () => set({ objectPanelShowing: false }),
+  updateObjectPanel: (obj) => set({ objectPanelCurrent: obj }),
+
+  // outliner actions
+  setOutlinerItems: (items) => set({ outlinerItems: items }),
+  setOutlinerSelectedItem: (item) => set({ outlinerSelectedItem: item }),
+  setOutlinerShowing: (showing) => set({ outlinerShowing: showing }),
+  selectOutlinerItem: (id) => {
+    const item = get().outlinerItems.find((i) => i.id === id);
+    if (item) set({ outlinerSelectedItem: item });
+  },
+  toggleOutlinerVisibility: (id) =>
+    set((s) => ({
+      outlinerItems: s.outlinerItems.map((i) =>
+        i.id === id ? { ...i, visible: !i.visible } : i,
+      ),
+    })),
+  toggleOutlinerLock: (id) =>
+    set((s) => ({
+      outlinerItems: s.outlinerItems.map((i) =>
+        i.id === id ? { ...i, locked: !i.locked } : i,
+      ),
+    })),
+
+  // precision selector actions
+  showPrecisionSelector: (coords, values) =>
+    set({
+      precisionSelectorShowing: true,
+      precisionSelectorCoords: coords,
+      precisionSelectorValues: values,
+    }),
+  hidePrecisionSelector: () => set({ precisionSelectorShowing: false }),
+  setPrecisionSelectedValue: (v) => set({ precisionSelectedValue: v }),
 }));
