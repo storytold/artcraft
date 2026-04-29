@@ -459,6 +459,12 @@ mod tests {
     }
   }
 
+  use crate::requests::prepare_file_upload::prepare_file_upload::{prepare_file_upload, PrepareFileUploadArgs};
+  use crate::requests::upload_file::upload_file::{upload_file, UploadFileArgs};
+
+  const STEAMPUNK_CLOWN_ID: &str = "char_1775176566518_sik0te";
+  const MOCHI_ID: &str = "char_1775177718294_g2pitx";
+
   mod text_to_video {
     use super::*;
 
@@ -522,8 +528,231 @@ mod tests {
     }
   }
 
+  mod keyframe {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_keyframe_start_frame() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let start_frame_url = upload_test_image(&session, test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL).await?;
+
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "The corgi dog watches the lake as the sun sets.".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::Landscape16x9),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: Some(start_frame_url),
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+        },
+      }).await?;
+      println!("keyframe — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_keyframe_start_and_end_frame() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let start_frame_url = upload_test_image(&session, test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL).await?;
+      let end_frame_url = upload_test_image(&session, test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL).await?;
+
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "The dog walks from the lake toward the camera.".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::Landscape16x9),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: Some(start_frame_url),
+          end_frame_url: Some(end_frame_url),
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+        },
+      }).await?;
+      println!("keyframe start+end — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+  }
+
+  mod image_reference {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_image_references() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let img1 = upload_test_image(&session, test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL).await?;
+      let img2 = upload_test_image(&session, test_data::web::image_urls::WHITE_HOUSE_SUNSET_IMAGE_URL).await?;
+
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "The dog in @1 runs through the scenery in @2.".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::Landscape16x9),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: Some(vec![img1, img2]),
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+        },
+      }).await?;
+      println!("image ref — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+  }
+
+  mod video_reference {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_video_reference() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "Change @video1 to a nighttime scene with moonlight.".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::Landscape16x9),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: Some(vec![
+            "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
+          ]),
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+        },
+      }).await?;
+      println!("video ref — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+  }
+
+  mod character_reference {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_single_character() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "@Steampunk Clown is juggling flaming torches in a circus tent.".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::Landscape16x9),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string()]),
+          use_face_blur_hack: None,
+        },
+      }).await?;
+      println!("character ref — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_two_characters() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::Landscape16x9),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: Some(vec![STEAMPUNK_CLOWN_ID.to_string(), MOCHI_ID.to_string()]),
+          use_face_blur_hack: None,
+        },
+      }).await?;
+      println!("two characters — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+  }
+
   fn test_session() -> AnyhowResult<Seedance2ProSession> {
     let cookies = get_test_cookies()?;
     Ok(Seedance2ProSession::from_cookies_string(cookies))
+  }
+
+  async fn upload_test_image(session: &Seedance2ProSession, image_url: &str) -> AnyhowResult<String> {
+    let image_bytes = crate::test_utils::http_download::http_download_to_bytes(
+      image_url,
+    ).await?;
+
+    let prepare_result = prepare_file_upload(PrepareFileUploadArgs {
+      session,
+      extension: "jpg".to_string(),
+      host_override: None,
+    }).await?;
+
+    let upload_result = upload_file(UploadFileArgs {
+      upload_url: prepare_result.upload_url,
+      file_bytes: image_bytes,
+      host_override: None,
+    }).await?;
+
+    Ok(upload_result.public_url)
   }
 }
