@@ -1,24 +1,16 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { EngineContext, setActiveEditor } from "./EngineContext";
 
-import Editor, { is3DSceneLoaded } from "~/pages/PageScene/engine/editor";
-import { useSignals } from "@preact/signals-react/runtime";
-
-import { signal } from "@preact/signals-react";
+import Editor from "~/pages/PageScene/engine/editor";
 import { useTabStore } from "../../../Stores/TabState";
 import { getSceneGenerationMetaData } from "../../engine/SceneMetadata";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 interface Props {
   sceneToken?: string;
   children: ReactNode;
 }
 
-export const sceneContainerSignal = signal<HTMLDivElement | null>(null);
-export const editorCanvasSignal = signal<HTMLCanvasElement | null>(null);
-export const camViewCanvasSignal = signal<HTMLCanvasElement | null>(null);
-
 export const EngineProvider = ({ sceneToken, children }: Props) => {
-  useSignals();
-
   const [editor, setEditor] = useState<Editor | null>(null);
   const activeEditorRef = useRef<Editor | null>(null);
 
@@ -28,9 +20,9 @@ export const EngineProvider = ({ sceneToken, children }: Props) => {
   const tabStore = useTabStore();
   const tab = tabStore.activeTabId;
 
-  const sceneContainer = sceneContainerSignal.value;
-  const editorCanvas = editorCanvasSignal.value;
-  const camViewCanvas = camViewCanvasSignal.value;
+  const sceneContainer = usePageSceneStore((s) => s.sceneContainerEl);
+  const editorCanvas = usePageSceneStore((s) => s.editorCanvasEl);
+  const camViewCanvas = usePageSceneStore((s) => s.camViewCanvasEl);
   useEffect(() => {
     if (sceneContainer && editorCanvas && camViewCanvas && tab === "3D") {
       // DO NOTHING if another useEffect already created one and hasn't been removed
@@ -80,9 +72,10 @@ export const EngineProvider = ({ sceneToken, children }: Props) => {
       activeEditorRef.current?.unmountEngine();
       activeEditorRef.current = null;
       setActiveEditor(null);
-      sceneContainerSignal.value = null;
-      editorCanvasSignal.value = null;
-      camViewCanvasSignal.value = null;
+      const store = usePageSceneStore.getState();
+      store.setSceneContainerEl(null);
+      store.setEditorCanvasEl(null);
+      store.setCamViewCanvasEl(null);
     }
   }, [sceneToken, editorCanvas, camViewCanvas, setEditor, sceneContainer, tab]);
 

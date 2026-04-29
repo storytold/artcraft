@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { pageHeight, pageWidth } from "~/signals";
-import { sceneContainerSignal } from "~/pages/PageScene/contexts/EngineContext";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { Letterbox } from "./Letterbox";
 
@@ -13,7 +12,7 @@ export const SceneContainer = ({ children }: { children: React.ReactNode }) => {
 
   const callbackRef = useCallback((node: HTMLDivElement) => {
     if (node) {
-      sceneContainerSignal.value = node;
+      usePageSceneStore.getState().setSceneContainerEl(node);
     }
   }, []);
 

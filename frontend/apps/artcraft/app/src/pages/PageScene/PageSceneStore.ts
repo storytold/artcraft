@@ -154,6 +154,17 @@ interface PageSceneState {
   precisionSelectorValues: number[];
   precisionSelectedValue: number;
 
+  // engine lifecycle flags (mirrored to other parts of the app)
+  is3DPageMounted: boolean;
+  is3DEditorInitialized: boolean;
+  is3DSceneLoaded: boolean;
+
+  // canvas DOM refs (set by canvas components on mount; consumed by
+  // the engine + hooks)
+  sceneContainerEl: HTMLDivElement | null;
+  editorCanvasEl: HTMLCanvasElement | null;
+  camViewCanvasEl: HTMLCanvasElement | null;
+
   // ----- actions -----
 
   // scene
@@ -223,6 +234,16 @@ interface PageSceneState {
   ) => void;
   hidePrecisionSelector: () => void;
   setPrecisionSelectedValue: (v: number) => void;
+
+  // engine lifecycle
+  set3DPageMounted: (mounted: boolean) => void;
+  setIs3DEditorInitialized: (initialized: boolean) => void;
+  setIs3DSceneLoaded: (loaded: boolean) => void;
+
+  // canvas refs
+  setSceneContainerEl: (el: HTMLDivElement | null) => void;
+  setEditorCanvasEl: (el: HTMLCanvasElement | null) => void;
+  setCamViewCanvasEl: (el: HTMLCanvasElement | null) => void;
 }
 
 export const usePageSceneStore = create<PageSceneState>((set, get) => ({
@@ -274,6 +295,14 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   precisionSelectorCoords: { x: 0, y: 0 },
   precisionSelectorValues: [],
   precisionSelectedValue: 0,
+
+  is3DPageMounted: false,
+  is3DEditorInitialized: false,
+  is3DSceneLoaded: false,
+
+  sceneContainerEl: null,
+  editorCanvasEl: null,
+  camViewCanvasEl: null,
 
   // scene actions
   addObject: (obj) =>
@@ -408,4 +437,13 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
     }),
   hidePrecisionSelector: () => set({ precisionSelectorShowing: false }),
   setPrecisionSelectedValue: (v) => set({ precisionSelectedValue: v }),
+
+  set3DPageMounted: (mounted) => set({ is3DPageMounted: mounted }),
+  setIs3DEditorInitialized: (initialized) =>
+    set({ is3DEditorInitialized: initialized }),
+  setIs3DSceneLoaded: (loaded) => set({ is3DSceneLoaded: loaded }),
+
+  setSceneContainerEl: (el) => set({ sceneContainerEl: el }),
+  setEditorCanvasEl: (el) => set({ editorCanvasEl: el }),
+  setCamViewCanvasEl: (el) => set({ camViewCanvasEl: el }),
 }));

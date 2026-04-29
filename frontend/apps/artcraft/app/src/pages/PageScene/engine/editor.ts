@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { signal } from "@preact/signals-react";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import {
   freeCamFrameTick,
@@ -49,24 +48,14 @@ export type EditorInitializeConfig = {
   cacheJsonString?: string;
 };
 
-// ONLY USED IN THIS CLASS
-// Need this one to ensure the canvas is inflated and non-zero sized
-const is3DPageMounted = signal(false);
-export const set3DPageMounted = (isMounted: boolean) => {
-  is3DPageMounted.value = isMounted;
-};
-
-// Need this one to know when the engine has initialized (but not necessarily loaded saves)
-export const is3DEditorInitialized = signal(false);
-export const setIs3DEditorInitialized = (isInitialized: boolean) => {
-  is3DEditorInitialized.value = isInitialized;
-};
-
-// Need this one to know when the engine is done loading stuff into the scene for display
-export const is3DSceneLoaded = signal(false);
-export const setIs3DSceneLoaded = (isLoaded: boolean) => {
-  is3DSceneLoaded.value = isLoaded;
-};
+// Lifecycle flags now live on PageSceneStore. These re-exports preserve
+// the call sites that already consume the setters by name (TopBar, etc).
+export const set3DPageMounted = (isMounted: boolean) =>
+  usePageSceneStore.getState().set3DPageMounted(isMounted);
+export const setIs3DEditorInitialized = (isInitialized: boolean) =>
+  usePageSceneStore.getState().setIs3DEditorInitialized(isInitialized);
+export const setIs3DSceneLoaded = (isLoaded: boolean) =>
+  usePageSceneStore.getState().setIs3DSceneLoaded(isLoaded);
 
 class Editor {
   version: number;
@@ -1213,7 +1202,8 @@ class Editor {
   }
 
   remountEngine() {
-    if (!is3DEditorInitialized.peek()) {
+    const store = usePageSceneStore.getState();
+    if (!store.is3DEditorInitialized) {
       console.log("3D mount: Wait for initialization");
       return;
     }
@@ -1223,7 +1213,7 @@ class Editor {
       return;
     }
 
-    if (!is3DPageMounted.peek()) {
+    if (!store.is3DPageMounted) {
       console.log("3D mount: Wait for DOM mount");
       return;
     }

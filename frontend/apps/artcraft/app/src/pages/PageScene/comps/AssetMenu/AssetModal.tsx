@@ -39,7 +39,6 @@ import { MediaItem } from "../../models";
 import { useUserObjects, useFeaturedObjects } from "./hooks";
 import { FilterEngineCategories, FilterMediaType } from "~/enums";
 import { twMerge } from "tailwind-merge";
-import { useSignals } from "@preact/signals-react/runtime";
 import { isAnyStatusFetching } from "./utilities";
 
 type AssetTab = {
@@ -103,7 +102,6 @@ const CHARACTER_PRIORITY_ORDER = ["storyboy", "story girl", "knight", "news anch
 const MEME_OVERRIDES = ["ai trump"];
 
 export const AssetModal = () => {
-  useSignals();
   const {
     assetModalVisible,
     assetModalVisibleDuringDrag,

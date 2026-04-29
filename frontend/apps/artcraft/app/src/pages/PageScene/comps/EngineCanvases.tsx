@@ -1,11 +1,11 @@
 import { useCallback } from "react";
-import { camViewCanvasSignal, editorCanvasSignal } from "~/pages/PageScene/contexts/EngineContext";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 export const EditorCanvas = () => {
   const canvasCallbackRef = useCallback(
     (node: HTMLCanvasElement) => {
       if (node) {
-        editorCanvasSignal.value = node;
+        usePageSceneStore.getState().setEditorCanvasEl(node);
       }
     },
     [],
@@ -27,7 +27,7 @@ export const CameraViewCanvas = ({ className }: { className?: string }) => {
   const canvasCallbackRef = useCallback(
     (node: HTMLCanvasElement) => {
       if (node) {
-        camViewCanvasSignal.value = node;
+        usePageSceneStore.getState().setCamViewCanvasEl(node);
       }
     },
     [],
