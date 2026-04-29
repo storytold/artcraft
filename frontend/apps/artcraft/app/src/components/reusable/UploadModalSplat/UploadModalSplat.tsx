@@ -18,7 +18,7 @@ import { UploadFilesSplat } from "./UploadFilesSplat";
 
 interface Props {
   onClose: () => void;
-  onSuccess: (splatArrayBuffer: ArrayBuffer, shouldFlip: boolean) => void;
+  onSuccess: (category: FilterEngineCategories) => void;
   isOpen: boolean;
   title: string;
   titleIcon: IconDefinition;
@@ -54,11 +54,12 @@ export function UploadModalSplat(props: Props) {
 
   useEffect(() => {
     if (uploaderState.status === UploaderStates.success) {
-      // Automatically open the global Gallery modal after a successful upload
-      // galleryModalVisibleViewMode.value = true;
-      // galleryModalVisibleDuringDrag.value = true;
+      // Match the image / 3D-model upload flow: open the gallery so the
+      // user can drag the freshly uploaded splat onto the canvas.
+      galleryModalVisibleViewMode.value = true;
+      galleryModalVisibleDuringDrag.value = true;
 
-      // onSuccess(selectedCategory);
+      onSuccess(selectedCategory);
       onClose();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,7 +80,6 @@ export function UploadModalSplat(props: Props) {
               }}
               onClose={onClose}
               onUploadProgress={updateUploaderState}
-              onLocalBytes={(buffer, shouldFlip) => { onSuccess(buffer, shouldFlip); }}
             />
           </div>
         );
@@ -104,7 +104,7 @@ export function UploadModalSplat(props: Props) {
             title="Splat"
             onOk={() => {
               onClose();
-              // onSuccess(selectedCategory);
+              onSuccess(selectedCategory);
             }}
           />
         );
