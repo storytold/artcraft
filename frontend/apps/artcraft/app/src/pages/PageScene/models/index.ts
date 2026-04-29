@@ -3,7 +3,6 @@ export * from "./message";
 export * from "./mediaInfo";
 export * from "./pagination";
 export * from "./prompts";
-export * from "./sidePanel";
 export * from "./track";
 export * from "./tts";
 export * from "./types";
