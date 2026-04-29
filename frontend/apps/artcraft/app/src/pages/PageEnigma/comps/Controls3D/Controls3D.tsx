@@ -14,7 +14,8 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { EngineContext } from "../../contexts/EngineContext";
 import { useContext, useEffect, useState } from "react";
-import { assetModalVisibleDuringDrag, assetModalVisible } from "../../signals";
+import { useShallow } from "zustand/shallow";
+import { usePageEnigmaStore } from "../../PageEnigmaStore";
 import { useTabStore } from "~/pages/Stores/TabState";
 // import { v4 as uuidv4 } from "uuid";
 // import { addObject } from "../../signals/objectGroup/addObject";
@@ -43,6 +44,17 @@ import { UploadModalSplat } from "~/components/reusable/UploadModalSplat";
 export const Controls3D = () => {
   useSignals();
   const editorEngine = useContext(EngineContext);
+  const {
+    assetModalVisible,
+    setAssetModalVisible,
+    setAssetModalVisibleDuringDrag,
+  } = usePageEnigmaStore(
+    useShallow((s) => ({
+      assetModalVisible: s.assetModalVisible,
+      setAssetModalVisible: s.setAssetModalVisible,
+      setAssetModalVisibleDuringDrag: s.setAssetModalVisibleDuringDrag,
+    })),
+  );
   const [showEmptySceneTooltip, setShowEmptySceneTooltip] = useState(false);
   // Action reminder is now handled through signals
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -57,7 +69,7 @@ export const Controls3D = () => {
     const checkSceneEmpty = () => {
       const isSceneEmpty =
         outlinerState.items.value.length === 0 &&
-        !assetModalVisible.value &&
+        !assetModalVisible &&
         !galleryModalVisibleViewMode.value &&
         !isAddAssetPopoverOpen &&
         !upload3DIsShowing &&
@@ -78,7 +90,7 @@ export const Controls3D = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    assetModalVisible.value,
+    assetModalVisible,
     galleryModalVisibleViewMode.value,
     isAddAssetPopoverOpen,
     upload3DIsShowing,
@@ -119,8 +131,8 @@ export const Controls3D = () => {
   // }, []);
 
   const handleOpenModal = () => {
-    assetModalVisibleDuringDrag.value = true;
-    assetModalVisible.value = true;
+    setAssetModalVisibleDuringDrag(true);
+    setAssetModalVisible(true);
   };
 
   const handleOpenCreate3dModal = () => {

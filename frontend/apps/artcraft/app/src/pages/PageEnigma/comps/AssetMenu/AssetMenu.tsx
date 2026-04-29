@@ -3,13 +3,13 @@ import { Tooltip } from "~/components";
 import { Button } from "@storyteller/ui-button";
 import { useState } from "react";
 import { AssetModal } from "./AssetModal";
-import { assetModalVisibleDuringDrag } from "../../signals";
+import { usePageEnigmaStore } from "../../PageEnigmaStore";
 
 export const AssetMenu = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
-    assetModalVisibleDuringDrag.value = true;
+    usePageEnigmaStore.getState().setAssetModalVisibleDuringDrag(true);
     setIsModalOpen(true);
   };
 

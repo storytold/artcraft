@@ -32,10 +32,9 @@ import {
   demoShapeItems,
   demoCharacterItems,
   demoMemeItems,
-  assetModalVisibleDuringDrag,
-  reopenAfterDragSignal,
-  assetModalVisible,
 } from "../../signals";
+import { useShallow } from "zustand/shallow";
+import { usePageEnigmaStore } from "../../PageEnigmaStore";
 import { MediaItem } from "../../models";
 import { useUserObjects, useFeaturedObjects } from "../SidePanelTabs/hooks";
 import { FilterEngineCategories, FilterMediaType } from "~/enums";
@@ -105,6 +104,21 @@ const MEME_OVERRIDES = ["ai trump"];
 
 export const AssetModal = () => {
   useSignals();
+  const {
+    assetModalVisible,
+    assetModalVisibleDuringDrag,
+    reopenAfterDrag,
+    setAssetModalVisible,
+    setReopenAfterDrag,
+  } = usePageEnigmaStore(
+    useShallow((s) => ({
+      assetModalVisible: s.assetModalVisible,
+      assetModalVisibleDuringDrag: s.assetModalVisibleDuringDrag,
+      reopenAfterDrag: s.reopenAfterDrag,
+      setAssetModalVisible: s.setAssetModalVisible,
+      setReopenAfterDrag: s.setReopenAfterDrag,
+    })),
+  );
   const [activeLibraryTab, setActiveLibraryTab] = useState("library");
   const [activeAssetTab, setActiveAssetTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -118,20 +132,20 @@ export const AssetModal = () => {
     const newValue = e.target.checked;
     // Force the update to be asynchronous
     setTimeout(() => {
-      reopenAfterDragSignal.value = newValue;
+      setReopenAfterDrag(newValue);
     }, 0);
   };
 
   const handleClose = () => {
-    assetModalVisible.value = false;
+    setAssetModalVisible(false);
   };
 
   const handleOpen = () => {
-    assetModalVisible.value = true;
+    setAssetModalVisible(true);
   };
 
   useEffect(() => {
-    if (assetModalVisible.value) {
+    if (assetModalVisible) {
       // Check for stored category and tab from upload
       const lastUploadedTab = sessionStorage.getItem("lastUploadedTab");
       if (lastUploadedTab) {
@@ -152,7 +166,7 @@ export const AssetModal = () => {
     }
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetModalVisible.value]);
+  }, [assetModalVisible]);
 
   // Fetch objects for different categories
   const {
@@ -486,7 +500,7 @@ export const AssetModal = () => {
   // };
 
   const handleUploadSuccess = (category: FilterEngineCategories) => {
-    if (reopenAfterDragSignal.value) {
+    if (reopenAfterDrag) {
       // Small delay to allow the modal to close and reopen
       setTimeout(() => {
         handleClose();
@@ -523,7 +537,7 @@ export const AssetModal = () => {
   return (
     <>
       <Modal
-        isOpen={assetModalVisible.value && assetModalVisibleDuringDrag.value}
+        isOpen={assetModalVisible && assetModalVisibleDuringDrag}
         onClose={handleClose}
         className="relative h-[640px] max-w-4xl"
         childPadding={false}
@@ -593,7 +607,7 @@ export const AssetModal = () => {
             <div className="mt-auto flex items-center gap-2 pt-3">
               <Checkbox
                 id="reopen-after-add"
-                checked={reopenAfterDragSignal.value}
+                checked={reopenAfterDrag}
                 onChange={handleReopenChange}
                 label="Reopen after adding"
               />

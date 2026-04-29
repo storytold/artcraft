@@ -4,9 +4,8 @@ import {
   canDrop,
   currPosition,
   dragItem,
-  assetModalVisibleDuringDrag,
-  reopenAfterDragSignal,
 } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { pageHeight, pageWidth } from "~/signals";
 import { AssetType } from "~/enums";
 import type Editor from "~/pages/PageEnigma/Editor/editor";
@@ -49,7 +48,7 @@ class DndAsset {
       this.isDragging = false;
       canDrop.value = false;
       this.notDropText = "";
-      assetModalVisibleDuringDrag.value = false;
+      usePageEnigmaStore.getState().setAssetModalVisibleDuringDrag(false);
       window.addEventListener("pointerup", this.onPointerUp);
       window.addEventListener("pointermove", this.onPointerMove);
     }
@@ -61,7 +60,8 @@ class DndAsset {
       canDrop.value = false;
       this.overElement = null;
       this.notDropText = "";
-      assetModalVisibleDuringDrag.value = reopenAfterDragSignal.value;
+      const store = usePageEnigmaStore.getState();
+      store.setAssetModalVisibleDuringDrag(store.reopenAfterDrag);
     }
     this.editor = null;
   }
@@ -81,7 +81,7 @@ class DndAsset {
     window.removeEventListener("pointermove", this.onPointerMove);
 
     if (!this.isDragging) {
-      assetModalVisibleDuringDrag.value = true;
+      usePageEnigmaStore.getState().setAssetModalVisibleDuringDrag(true);
       dragItem.value = null;
       currPosition.value = { currX: 0, currY: 0 };
       this.editor = null;

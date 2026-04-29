@@ -4,9 +4,8 @@ import {
   hotkeysStatus,
   outlinerState,
   showObjectPanel,
-  assetModalVisible,
-  assetModalVisibleDuringDrag,
 } from "../signals";
+import { usePageEnigmaStore } from "../PageEnigmaStore";
 import {
   OrbitControls,
   OutlinePass,
@@ -368,8 +367,9 @@ export class MouseControls {
       return;
     } else if (event.key === "b") {
       // Open asset modal
-      assetModalVisible.value = true;
-      assetModalVisibleDuringDrag.value = true;
+      const store = usePageEnigmaStore.getState();
+      store.setAssetModalVisible(true);
+      store.setAssetModalVisibleDuringDrag(true);
       return;
     }
 
