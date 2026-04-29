@@ -4,7 +4,6 @@ pub mod image_bg_removal;
 pub mod image_edit;
 pub mod image_inpaint;
 pub mod image_to_object;
-pub mod image_to_video;
 pub mod task_enqueue_success;
 pub mod text_to_image;
 pub mod image_to_gaussian;

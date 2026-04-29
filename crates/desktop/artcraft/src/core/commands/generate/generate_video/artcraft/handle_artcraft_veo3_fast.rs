@@ -1,6 +1,6 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
-use crate::core::commands::enqueue::image_to_video::artcraft::get_storyteller_creds_or_error::get_storyteller_creds_or_error;
-use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::{EnqueueImageToVideoRequest, SoraOrientation};
+use crate::core::commands::generate::generate_video::artcraft::get_storyteller_creds_or_error::get_storyteller_creds_or_error;
+use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, SoraOrientation};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
@@ -12,44 +12,39 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::sora::utils::upload_images_to_sora::{upload_images_to_sora, UploadImagesToSoraArgs, UploadImagesToSoraResult};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use artcraft_api_defs::generate::video::multi_function::sora_2_pro_multi_function_video_gen::{Sora2ProMultiFunctionVideoGenAspectRatio, Sora2ProMultiFunctionVideoGenDuration, Sora2ProMultiFunctionVideoGenRequest, Sora2ProMultiFunctionVideoGenResolution};
+use artcraft_api_defs::generate::video::generate_kling_1_6_pro_image_to_video::{GenerateKling16ProAspectRatio, GenerateKling16ProImageToVideoRequest};
+use artcraft_api_defs::generate::video::generate_veo_3_fast_image_to_video::GenerateVeo3FastImageToVideoRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
-use openai_sora_client::recipes::generate_sora2_video::generate_sora2_video_with_session_auto_renew::generate_sora2_video_with_session_auto_renew;
-use openai_sora_client::recipes::list_sora2_drafts::list_sora2_drafts_with_session_auto_renew::list_sora2_drafts_with_session_auto_renew;
-use artcraft_client::endpoints::generate::video::generate_kling_16_pro_image_to_video::generate_kling_16_pro_image_to_video;
-use artcraft_client::endpoints::generate::video::multi_function::sora_2_multi_function_video_gen::sora_2_multi_function_video_gen;
-use artcraft_client::endpoints::generate::video::multi_function::sora_2_pro_multi_function_video_gen::sora_2_pro_multi_function_video_gen;
-use tauri::AppHandle;
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
+use artcraft_client::endpoints::generate::video::generate_veo_3_fast_image_to_video::generate_veo_3_fast_image_to_video;
+use artcraft_client::endpoints::generate::video::generate_veo_3_image_to_video::generate_veo_3_image_to_video;
+use artcraft_client::endpoints::generate::video::multi_function::veo_3p1_multi_function_video_gen::veo_3p1_multi_function_video_gen;
+use tauri::AppHandle;
 use tokens::tokens::media_files::MediaFileToken;
 
-pub (super) async fn handle_artcraft_sora2_pro(
-  request: &EnqueueImageToVideoRequest,
+pub (super) async fn handle_artcraft_veo3_fast(
+  request: &TauriGenerateVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
 
   let uuid_idempotency_token = generate_random_uuid();
 
-  let aspect_ratio = match request.sora_orientation {
-    Some(SoraOrientation::Portrait) => Sora2ProMultiFunctionVideoGenAspectRatio::NineBySixteen,
-    Some(SoraOrientation::Landscape) => Sora2ProMultiFunctionVideoGenAspectRatio::SixteenByNine,
-    None => Sora2ProMultiFunctionVideoGenAspectRatio::SixteenByNine,
-  };
-  
-  let request = Sora2ProMultiFunctionVideoGenRequest {
+  // TODO: No aspect ratio?
+  let request = GenerateVeo3FastImageToVideoRequest {
     uuid_idempotency_token,
+    media_file_token: request.image_media_token.clone(),
     prompt: request.prompt.clone(),
-    image_media_token: request.image_media_token.clone(),
-    aspect_ratio: Some(aspect_ratio),
-    resolution: Some(Sora2ProMultiFunctionVideoGenResolution::TenEightyP), // TODO: Parameterize
-    duration: Some(Sora2ProMultiFunctionVideoGenDuration::TwelveSeconds), // TODO: Parameterize
+    generate_audio: request.generate_audio,
+    duration: None, // TODO: Parameterize
+    resolution: None, // TODO: Parameterize
+    aspect_ratio: None, // TODO: Parameterize
   };
   
-  let result = sora_2_pro_multi_function_video_gen(
+  let result = generate_veo_3_fast_image_to_video(
     &app_env_configs.storyteller_host,
     Some(&creds),
     request,
@@ -68,7 +63,7 @@ pub (super) async fn handle_artcraft_sora2_pro(
 
   Ok(TaskEnqueueSuccess {
     task_type: TaskType::VideoGeneration,
-    model: Some(GenerationModel::Sora2Pro),
+    model: Some(GenerationModel::Veo3Fast),
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_token.to_string()),
   })

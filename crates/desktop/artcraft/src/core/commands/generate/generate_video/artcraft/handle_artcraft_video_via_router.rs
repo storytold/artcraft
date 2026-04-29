@@ -1,5 +1,5 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
-use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::EnqueueImageToVideoRequest;
+use crate::core::commands::generate::generate_video::request::TauriGenerateVideoRequest;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
@@ -22,7 +22,7 @@ use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 
 pub(super) async fn handle_artcraft_video_via_router(
-  request: &EnqueueImageToVideoRequest,
+  request: &TauriGenerateVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
   model: CommonVideoModel,

@@ -1,6 +1,6 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
-use crate::core::commands::enqueue::image_to_video::artcraft::get_storyteller_creds_or_error::get_storyteller_creds_or_error;
-use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::{EnqueueImageToVideoRequest, SoraOrientation};
+use crate::core::commands::generate::generate_video::artcraft::get_storyteller_creds_or_error::get_storyteller_creds_or_error;
+use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, SoraOrientation};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
@@ -26,7 +26,7 @@ use tauri::AppHandle;
 use tokens::tokens::media_files::MediaFileToken;
 
 pub (super) async fn handle_artcraft_kling_1p6_pro(
-  request: &EnqueueImageToVideoRequest,
+  request: &TauriGenerateVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
