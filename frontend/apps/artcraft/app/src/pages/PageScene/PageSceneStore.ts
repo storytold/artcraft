@@ -99,9 +99,6 @@ interface PageSceneState {
   isPromptBoxFocused: boolean;
 
   // layout / panels
-  sidePanelWidth: number;
-  sidePanelVisible: boolean;
-  dndSidePanelWidth: number;
   assetModalVisible: boolean;
   assetModalVisibleDuringDrag: boolean;
   reopenAfterDrag: boolean;
@@ -168,9 +165,6 @@ interface PageSceneState {
   setIsPromptBoxFocused: (focused: boolean) => void;
 
   // layout
-  setSidePanelWidth: (px: number) => void;
-  setSidePanelVisible: (visible: boolean) => void;
-  setDndSidePanelWidth: (px: number) => void;
   setAssetModalVisible: (visible: boolean) => void;
   setAssetModalVisibleDuringDrag: (visible: boolean) => void;
   setReopenAfterDrag: (reopen: boolean) => void;
@@ -230,9 +224,6 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   hotkeyStatus: { disabled: false, disabledBy: DomLevels.NONE },
   isPromptBoxFocused: false,
 
-  sidePanelWidth: 0,
-  sidePanelVisible: false,
-  dndSidePanelWidth: -1,
   assetModalVisible: false,
   assetModalVisibleDuringDrag: true,
   reopenAfterDrag: false,
@@ -328,9 +319,6 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   setIsPromptBoxFocused: (focused) => set({ isPromptBoxFocused: focused }),
 
   // layout actions
-  setSidePanelWidth: (px) => set({ sidePanelWidth: px }),
-  setSidePanelVisible: (visible) => set({ sidePanelVisible: visible }),
-  setDndSidePanelWidth: (px) => set({ dndSidePanelWidth: px }),
   setAssetModalVisible: (visible) => set({ assetModalVisible: visible }),
   setAssetModalVisibleDuringDrag: (visible) =>
     set({ assetModalVisibleDuringDrag: visible }),

@@ -8,24 +8,18 @@ import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 export const PreviewFrameImage = () => {
   useSignals();
-  const { editorState, previewSrc, sidePanelVisible, sidePanelWidth } =
-    usePageSceneStore(
-      useShallow((s) => ({
-        editorState: s.editorState,
-        previewSrc: s.previewSrc,
-        sidePanelVisible: s.sidePanelVisible,
-        sidePanelWidth: s.sidePanelWidth,
-      })),
-    );
+  const { editorState, previewSrc } = usePageSceneStore(
+    useShallow((s) => ({
+      editorState: s.editorState,
+      previewSrc: s.previewSrc,
+    })),
+  );
 
   if (editorState !== EditorStates.PREVIEW) {
     return null;
   }
 
-  const width =
-    pageWidth.value -
-    (sidePanelVisible ? sidePanelWidth : 0) -
-    84;
+  const width = pageWidth.value - 84;
   const height = pageHeight.value - 56;
 
   if (previewSrc === "") {

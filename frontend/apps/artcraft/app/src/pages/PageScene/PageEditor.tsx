@@ -112,7 +112,6 @@ export const PageEditor = () => {
   };
 
   useEffect(() => {
-    usePageSceneStore.getState().setSidePanelWidth(340);
     window.onbeforeunload = () => {
       return "You may have unsaved changes.";
     };
