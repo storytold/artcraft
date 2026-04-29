@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { outlinerState } from "../signals";
 import { usePageSceneStore } from "../PageSceneStore";
 import {
   OrbitControls,
@@ -611,7 +610,7 @@ export class MouseControls {
 
     if (this.sceneManager) {
       const selected: SceneObject | null = this.sceneManager.selected();
-      outlinerState.selectedItem.value = selected;
+      usePageSceneStore.getState().setOutlinerSelectedItem(selected);
     }
   }
 }

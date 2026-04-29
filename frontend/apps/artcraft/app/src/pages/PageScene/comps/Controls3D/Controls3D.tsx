@@ -26,7 +26,6 @@ import { AssetModal } from "../AssetMenu/AssetModal";
 import { setTransformMode } from "../../actions";
 import { TransformMode } from "../../PageSceneStore";
 import { useSignals } from "@preact/signals-react/runtime";
-import { outlinerState } from "../../signals/outliner/outliner";
 // eslint-disable-next-line import/no-unresolved
 import { setLogoutStates } from "~/signals/authentication/utilities";
 import { UploadModal3D } from "../../../../components/reusable/UploadModal3D/UploadModal3D";
@@ -67,32 +66,22 @@ export const Controls3D = () => {
   const [uploadSplatIsShowing, setUploadSplatIsShowing] = useState(false);
 
 
+  const outlinerItemCount = usePageSceneStore((s) => s.outlinerItems.length);
+
   useEffect(() => {
-    // Check if scene is empty and onboarding helper is not visible
-    const checkSceneEmpty = () => {
-      const isSceneEmpty =
-        outlinerState.items.value.length === 0 &&
-        !assetModalVisible &&
-        !galleryModalVisibleViewMode.value &&
-        !isAddAssetPopoverOpen &&
-        !upload3DIsShowing &&
-        !uploadImageIsShowing &&
-        !uploadSplatIsShowing;
+    const isSceneEmpty =
+      outlinerItemCount === 0 &&
+      !assetModalVisible &&
+      !galleryModalVisibleViewMode.value &&
+      !isAddAssetPopoverOpen &&
+      !upload3DIsShowing &&
+      !uploadImageIsShowing &&
+      !uploadSplatIsShowing;
 
-      setShowEmptySceneTooltip(isSceneEmpty);
-    };
-
-    // Initial check
-    checkSceneEmpty();
-
-    // Subscribe to outliner state changes
-    const unsubscribe = outlinerState.items.subscribe(checkSceneEmpty);
-
-    return () => {
-      unsubscribe();
-    };
+    setShowEmptySceneTooltip(isSceneEmpty);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    outlinerItemCount,
     assetModalVisible,
     galleryModalVisibleViewMode.value,
     isAddAssetPopoverOpen,

@@ -10,7 +10,6 @@ import {
 import { EngineContext } from "~/pages/PageScene/contexts/EngineContext";
 import { ToastTypes } from "~/enums";
 import { scene, signalScene, authentication, addToast } from "~/signals";
-import { outlinerIsShowing } from "~/pages/PageScene/signals/outliner/outliner";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
@@ -135,8 +134,10 @@ export const ControlsTopButtons = () => {
     }
   });
 
+  const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
+
   const handleShowOutliner = () => {
-    outlinerIsShowing.value = !outlinerIsShowing.value;
+    usePageSceneStore.getState().setOutlinerShowing(!outlinerShowing);
   };
 
   return (
@@ -273,11 +274,11 @@ export const ControlsTopButtons = () => {
         />
 
         <Button
-          icon={outlinerIsShowing.value ? faCheckSquare : faSquare}
+          icon={outlinerShowing ? faCheckSquare : faSquare}
           className="shadow-xl"
           iconClassName={twMerge(
             "text-[16px]",
-            outlinerIsShowing.value ? "text-white" : "text-white/20",
+            outlinerShowing ? "text-white" : "text-white/20",
           )}
           variant="secondary"
           onClick={handleShowOutliner}

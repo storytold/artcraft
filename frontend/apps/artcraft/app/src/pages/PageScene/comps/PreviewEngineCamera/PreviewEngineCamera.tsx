@@ -8,7 +8,6 @@ import {
   faSpinnerThird,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useShallow } from "zustand/shallow";
-import { outlinerIsShowing } from "~/pages/PageScene/signals";
 import { pageHeight } from "~/signals";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { pageWidth } from "~/signals";
@@ -20,15 +19,21 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 
 export const PreviewEngineCamera = () => {
   useSignals();
-  const { camAspect, editorState, editorLetterBox, toggleEditorLetterBox } =
-    usePageSceneStore(
-      useShallow((s) => ({
-        camAspect: s.cameraAspectRatio,
-        editorState: s.editorState,
-        editorLetterBox: s.editorLetterBox,
-        toggleEditorLetterBox: s.toggleEditorLetterBox,
-      })),
-    );
+  const {
+    camAspect,
+    editorState,
+    editorLetterBox,
+    toggleEditorLetterBox,
+    outlinerShowing,
+  } = usePageSceneStore(
+    useShallow((s) => ({
+      camAspect: s.cameraAspectRatio,
+      editorState: s.editorState,
+      editorLetterBox: s.editorLetterBox,
+      toggleEditorLetterBox: s.toggleEditorLetterBox,
+      outlinerShowing: s.outlinerShowing,
+    })),
+  );
 
   const handleButtonCameraView = () => {
     const { editorState, setEditorState } = usePageSceneStore.getState();
@@ -56,7 +61,7 @@ export const PreviewEngineCamera = () => {
     if (
       camAspect === CameraAspectRatio.VERTICAL_9_16 &&
       pageHeight.value - 64 < 2000 &&
-      outlinerIsShowing.value
+      outlinerShowing
     ) {
       return "w-40 justify-center";
     }

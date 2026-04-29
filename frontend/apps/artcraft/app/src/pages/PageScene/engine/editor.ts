@@ -30,7 +30,6 @@ import {
   signalScene,
 } from "~/signals";
 
-import { outlinerState } from "../signals";
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { MediaUploadApi } from "~/Classes/ApiManager";
 import { SceneManager } from "./scene_manager_api";
@@ -587,7 +586,7 @@ class Editor {
         const result = this.sceneManager?.render_outliner(
           this.getCharactersByUuid(),
         );
-        if (result) outlinerState.items.value = result.items;
+        if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
       }
 
       setIs3DSceneLoaded(true);
@@ -801,7 +800,7 @@ class Editor {
       const result = this.sceneManager?.render_outliner(
         this.getCharactersByUuid(),
       );
-      if (result) outlinerState.items.value = result.items;
+      if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
     }
   }
 
@@ -816,7 +815,7 @@ class Editor {
       const result = this.sceneManager?.render_outliner(
         this.getCharactersByUuid(),
       );
-      if (result) outlinerState.items.value = result.items;
+      if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
     }
   }
 
@@ -1050,7 +1049,7 @@ class Editor {
       const result = this.sceneManager?.render_outliner(
         this.getCharactersByUuid(),
       );
-      if (result) outlinerState.items.value = result.items;
+      if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
     }
   }
 
@@ -1311,7 +1310,7 @@ class Editor {
     const result = this.sceneManager?.render_outliner(
       this.getCharactersByUuid(),
     );
-    if (result) outlinerState.items.value = result.items;
+    if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
     this.updateSelectedUI();
   }
 

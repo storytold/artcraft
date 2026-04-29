@@ -22,7 +22,6 @@ import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
 import {
   cameraAspectRatio,
-  outlinerIsShowing,
   gridVisibility,
   setGridVisibility,
 } from "~/pages/PageScene/signals";
@@ -107,6 +106,7 @@ export const PageEditor = () => {
   const tabStore = useTabStore();
   const storyboardPageEnabled = useStoryboardPageEnabled();
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
+  const outlinerShowing = usePageSceneStore((s) => s.outlinerShowing);
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
   const disableHotkeyInput = usePageSceneStore((s) => s.disableHotkeyInput);
   const enableHotkeyInput = usePageSceneStore((s) => s.enableHotkeyInput);
@@ -138,7 +138,7 @@ export const PageEditor = () => {
 
     if (
       camAspect === CameraAspectRatio.VERTICAL_9_16 &&
-      outlinerIsShowing.value &&
+      outlinerShowing &&
       height < 900
     ) {
       if (pageWidth.value > 2000) {

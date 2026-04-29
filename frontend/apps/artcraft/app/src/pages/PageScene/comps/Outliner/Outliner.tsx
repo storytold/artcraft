@@ -1,12 +1,4 @@
 import { ChangeEvent, useContext, useEffect, useState } from "react";
-import {
-  outlinerIsShowing,
-  outlinerState,
-  selectItem,
-  toggleLock,
-  toggleVisibility,
-} from "../../signals/outliner/outliner";
-import { SceneObject } from "../../signals/outliner/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCircleXmark,
@@ -23,16 +15,16 @@ import { Transition } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { useSignals } from "@preact/signals-react/runtime";
 import { EngineContext } from "../../contexts/EngineContext";
-import { usePageSceneStore } from "../../PageSceneStore";
+import { OutlinerItem, usePageSceneStore } from "../../PageSceneStore";
 import { pageHeight, pageWidth } from "~/signals";
 import { CameraAspectRatio } from "../../enums";
 import { effect } from "@preact/signals-react";
 
-const OutlinerItem = ({ item }: { item: SceneObject }) => {
-  useSignals();
+const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
   const [hovered, setHovered] = useState(false);
-
-  const isSelected = outlinerState.selectedItem.value?.id === item.id;
+  const isSelected = usePageSceneStore(
+    (s) => s.outlinerSelectedItem?.id === item.id,
+  );
 
   const editorEngine = useContext(EngineContext);
 
@@ -45,8 +37,24 @@ const OutlinerItem = ({ item }: { item: SceneObject }) => {
 
   // Double click logic here
   const handleDoubleClick = () => {
-    //console.log("Item double clicked:", item.id);
     editorEngine?.sceneManager?.double_click();
+  };
+
+  const handleSelect = () => {
+    usePageSceneStore.getState().selectOutlinerItem(item.id);
+    editorEngine?.sceneManager?.select_object(item.id);
+  };
+
+  const handleToggleLock = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    usePageSceneStore.getState().toggleOutlinerLock(item.id);
+    editorEngine?.lockUnlockObject(item.id);
+  };
+
+  const handleToggleVisibility = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    usePageSceneStore.getState().toggleOutlinerVisibility(item.id);
+    editorEngine?.sceneManager?.hideObject(item.id);
   };
 
   return (
@@ -61,7 +69,7 @@ const OutlinerItem = ({ item }: { item: SceneObject }) => {
       onMouseLeave={() => setHovered(false)}
       onDoubleClick={handleDoubleClick}
       onKeyDown={handleDeleteKeyPress}
-      onClick={() => selectItem(item.id, editorEngine?.sceneManager)}
+      onClick={handleSelect}
       tabIndex={0}
     >
       <span className="flex items-center gap-2.5">
@@ -72,13 +80,7 @@ const OutlinerItem = ({ item }: { item: SceneObject }) => {
       </span>
       <div className="flex gap-3">
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleLock(
-              item.id,
-              editorEngine?.lockUnlockObject.bind(editorEngine),
-            );
-          }}
+          onClick={handleToggleLock}
           style={{
             opacity: hovered || item.locked ? 1 : 0,
           }}
@@ -91,15 +93,7 @@ const OutlinerItem = ({ item }: { item: SceneObject }) => {
           </div>
         </button>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleVisibility(
-              item.id,
-              editorEngine?.sceneManager?.hideObject.bind(
-                editorEngine.sceneManager,
-              ),
-            );
-          }}
+          onClick={handleToggleVisibility}
           style={{
             opacity: hovered || !item.visible ? 1 : 0,
           }}
@@ -122,6 +116,8 @@ const OutlinerItem = ({ item }: { item: SceneObject }) => {
 export const Outliner = () => {
   useSignals();
   const camAspect = usePageSceneStore((s) => s.cameraAspectRatio);
+  const items = usePageSceneStore((s) => s.outlinerItems);
+  const showing = usePageSceneStore((s) => s.outlinerShowing);
   const [searchTerm, setSearchTerm] = useState("");
   const [editorHeight, setEditorHeight] = useState(0);
 
@@ -132,8 +128,6 @@ export const Outliner = () => {
   const clearSearch = () => {
     setSearchTerm("");
   };
-
-  const items = outlinerState.items.value;
 
   // Filter items based on search term
   const filteredItems = items.filter((item) =>
@@ -182,7 +176,7 @@ export const Outliner = () => {
   return (
     <Transition
       as="div"
-      show={outlinerIsShowing.value}
+      show={showing}
       className={twMerge(
         "glass flex max-h-[34vh] w-[240px] origin-bottom-left flex-col overflow-hidden rounded-lg shadow-lg",
       )}
@@ -203,7 +197,7 @@ export const Outliner = () => {
           icon={faXmark}
           className="h-5 bg-transparent p-0 text-xl opacity-50 hover:bg-transparent hover:opacity-90"
           onClick={() => {
-            outlinerIsShowing.value = false;
+            usePageSceneStore.getState().setOutlinerShowing(false);
           }}
         />
       </div>
@@ -226,7 +220,7 @@ export const Outliner = () => {
 
       <div className="grow overflow-auto">
         {filteredItems.map((item) => (
-          <OutlinerItem key={item.id} item={item} />
+          <OutlinerRow key={item.id} item={item} />
         ))}
       </div>
     </Transition>
