@@ -189,7 +189,7 @@ mod tests {
   mod pricing_tests {
     use super::*;
 
-    fn make_request(
+    fn build_request(
       duration_seconds: u8,
       output_resolution: Option<KinoviSeedance2p0FastOutputResolution>,
       batch_count: Option<KinoviSeedance2p0FastBatchCount>,
@@ -211,11 +211,11 @@ mod tests {
     }
 
     fn r480(dur: u8) -> GenerateSeedance2p0FastRequest {
-      make_request(dur, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), None)
+      build_request(dur, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), None)
     }
 
     fn r720(dur: u8) -> GenerateSeedance2p0FastRequest {
-      make_request(dur, None, None)
+      build_request(dur, None, None)
     }
 
     // ── 480p credits (14 credits/sec) ──
@@ -266,7 +266,7 @@ mod tests {
       #[test]
       fn explicit_720p_same_as_default() {
         let default = r720(5).estimate_credits();
-        let explicit = make_request(5, Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP), None).estimate_credits();
+        let explicit = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::SevenTwentyP), None).estimate_credits();
         assert_eq!(default, explicit);
       }
     }
@@ -279,29 +279,29 @@ mod tests {
       #[test]
       fn batch_1_is_base() {
         let base = r720(5).estimate_credits();
-        let explicit = make_request(5, None, Some(KinoviSeedance2p0FastBatchCount::One)).estimate_credits();
+        let explicit = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::One)).estimate_credits();
         assert_eq!(base, explicit);
       }
 
       #[test]
       fn batch_2_doubles() {
         let base = r720(5).estimate_credits();
-        let batch2 = make_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_credits();
+        let batch2 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_credits();
         assert_eq!(batch2, base * 2);
       }
 
       #[test]
       fn batch_4_quadruples() {
         let base = r720(5).estimate_credits();
-        let batch4 = make_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Four)).estimate_credits();
+        let batch4 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Four)).estimate_credits();
         assert_eq!(batch4, base * 4);
       }
 
       #[test]
       fn batch_multiplier_applies_to_480p() {
         let base = r480(5).estimate_credits();
-        let batch2 = make_request(5, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_credits();
-        let batch4 = make_request(5, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), Some(KinoviSeedance2p0FastBatchCount::Four)).estimate_credits();
+        let batch2 = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_credits();
+        let batch4 = build_request(5, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), Some(KinoviSeedance2p0FastBatchCount::Four)).estimate_credits();
         assert_eq!(batch2, base * 2);
         assert_eq!(batch4, base * 4);
       }
@@ -324,8 +324,8 @@ mod tests {
       #[test]
       fn resolution_ordering() {
         for dur in 3..=15u8 {
-          let c480 = make_request(dur, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), None).estimate_credits();
-          let c720 = make_request(dur, None, None).estimate_credits();
+          let c480 = build_request(dur, Some(KinoviSeedance2p0FastOutputResolution::FourEightyP), None).estimate_credits();
+          let c720 = build_request(dur, None, None).estimate_credits();
           assert!(c480 < c720, "480p should be cheaper than 720p at {}s", dur);
         }
       }
@@ -368,7 +368,7 @@ mod tests {
       #[test]
       fn batch_multiplies_usd_cents() {
         let base = r720(5).estimate_cost_in_usd_cents();
-        let batch2 = make_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_cost_in_usd_cents();
+        let batch2 = build_request(5, None, Some(KinoviSeedance2p0FastBatchCount::Two)).estimate_cost_in_usd_cents();
         assert!(batch2 >= base * 2 - 1 && batch2 <= base * 2 + 1,
           "batch 2 ({}) should be ~2× base ({})", batch2, base);
       }
