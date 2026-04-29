@@ -61,6 +61,7 @@ import {
 } from "~/components/signaled/TopBar/TopBar";
 import { uploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
 import { addObject, addCharacter } from "./actions";
+import { usePageEnigmaStore } from "./PageEnigmaStore";
 import { AssetType, AUTH_STATUS } from "~/enums";
 import { v4 as uuidv4 } from "uuid";
 import { MediaItem } from "~/pages/PageEnigma/models";
@@ -106,6 +107,7 @@ export const PageEditor = () => {
 
   const tabStore = useTabStore();
   const storyboardPageEnabled = useStoryboardPageEnabled();
+  const camAspect = usePageEnigmaStore((s) => s.cameraAspectRatio);
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };
@@ -134,7 +136,7 @@ export const PageEditor = () => {
     const scaleHeight = height < 610 ? height / 610 : 1;
 
     if (
-      cameraAspectRatio.value === CameraAspectRatio.VERTICAL_9_16 &&
+      camAspect === CameraAspectRatio.VERTICAL_9_16 &&
       outlinerIsShowing.value &&
       height < 900
     ) {
@@ -145,7 +147,7 @@ export const PageEditor = () => {
     }
 
     if (
-      cameraAspectRatio.value === CameraAspectRatio.SQUARE_1_1 &&
+      camAspect === CameraAspectRatio.SQUARE_1_1 &&
       pageWidth.value < 2000
     ) {
       return scaleHeight * 0.85;

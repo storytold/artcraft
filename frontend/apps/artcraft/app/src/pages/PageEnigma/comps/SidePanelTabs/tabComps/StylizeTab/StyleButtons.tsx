@@ -4,13 +4,20 @@ import {
   faArrowsRotate,
   faChevronLeft,
 } from "@fortawesome/pro-solid-svg-icons";
-import { editorState, previewSrc, setEditorState } from "~/pages/PageEnigma/signals/engine";
+import { useShallow } from "zustand/shallow";
 import { EditorStates } from "~/pages/PageEnigma/enums";
-import { useSignals } from "@preact/signals-react/runtime";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { StyleStrength } from "~/pages/PageEnigma/comps/SidePanelTabs/tabComps/StylizeTab/StyleStrength";
 import { StyleOptions } from "~/pages/PageEnigma/comps/SidePanelTabs/tabComps/StylizeTab/StyleOptions";
+
 export function StyleButtons() {
-  useSignals();
+  const { editorState, previewSrc, setEditorState } = usePageEnigmaStore(
+    useShallow((s) => ({
+      editorState: s.editorState,
+      previewSrc: s.previewSrc,
+      setEditorState: s.setEditorState,
+    })),
+  );
 
   const switchPreview = async () => {
     setEditorState(EditorStates.PREVIEW);
@@ -32,19 +39,17 @@ export function StyleButtons() {
           <div className="mb-2 text-xs text-white/70">
             (This helps you test and re-test your scene)
           </div>
-          {editorState.value !== EditorStates.PREVIEW && (
-            <>
-              <Button
-                icon={faArrowsRotate}
-                variant="action"
-                className="mt-1.5 w-full"
-                onClick={switchPreview}
-              >
-                Preview Frame
-              </Button>
-            </>
+          {editorState !== EditorStates.PREVIEW && (
+            <Button
+              icon={faArrowsRotate}
+              variant="action"
+              className="mt-1.5 w-full"
+              onClick={switchPreview}
+            >
+              Preview Frame
+            </Button>
           )}
-          {editorState.value === EditorStates.PREVIEW && (
+          {editorState === EditorStates.PREVIEW && (
             <div className="flex gap-2">
               <Button
                 icon={faChevronLeft}
@@ -58,9 +63,9 @@ export function StyleButtons() {
                 variant="primary"
                 onClick={refreshPreview}
                 className="grow"
-                loading={previewSrc.value === ""}
+                loading={previewSrc === ""}
               >
-                {previewSrc.value === "" ? "Rendering..." : "Re-render Preview"}
+                {previewSrc === "" ? "Rendering..." : "Re-render Preview"}
               </Button>
             </div>
           )}

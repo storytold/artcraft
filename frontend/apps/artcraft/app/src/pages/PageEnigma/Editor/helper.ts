@@ -2,7 +2,6 @@ import Scene from "./scene";
 import Editor from "./editor";
 import * as THREE from "three";
 import { XYZ } from "../datastructures/common";
-import { editorState } from "../signals/engine";
 import { EditorStates } from "../enums";
 import { hideObjectPanel } from "../signals";
 import { usePageEnigmaStore } from "../PageEnigmaStore";
@@ -141,7 +140,7 @@ export class SceneUtils {
         this.editor.selected = this.editor.cam_obj;
         this.editor.publishSelect();
         this.editor.updateSelectedUI();
-        editorState.value = EditorStates.CAMERA_VIEW;
+        usePageEnigmaStore.getState().setEditorState(EditorStates.CAMERA_VIEW);
         if (this.editor.activeScene.hot_items) {
           this.editor.activeScene.hot_items.forEach((element) => {
             element.visible = false;
@@ -174,7 +173,7 @@ export class SceneUtils {
         }
 
         hideObjectPanel();
-        editorState.value = EditorStates.EDIT;
+        usePageEnigmaStore.getState().setEditorState(EditorStates.EDIT);
       }
     }
   }

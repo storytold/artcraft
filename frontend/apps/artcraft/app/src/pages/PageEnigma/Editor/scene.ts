@@ -9,7 +9,7 @@ import { MMDAnimationHelper, Water } from "three/examples/jsm/Addons.js";
 import { MediaFileType } from "../enums";
 import { ChromaKeyMaterial } from "./chromakey";
 import { LoadWithoutCors } from "@storyteller/tauri-api";
-import { gridVisibility } from "../signals/engine";
+import { usePageEnigmaStore } from "../PageEnigmaStore";
 import { InfiniteGridHelper } from "./InfiniteGridHelper";
 import { cameras, selectedCameraId } from "../signals/camera";
 import { MediaFilesApi } from "@storyteller/api";
@@ -91,16 +91,15 @@ class Scene {
     this.helper = new MMDAnimationHelper({ afterglow: 0.0 });
     this.scene.userData["helper"] = this.helper;
 
-    // Subscribe to grid visibility changes
-    gridVisibility.subscribe((isVisible) => {
-      if (this.gridHelper) {
-        if (isVisible) {
-          if (!this.scene.children.includes(this.gridHelper)) {
-            this.scene.add(this.gridHelper);
-          }
-        } else {
-          this.scene.remove(this.gridHelper);
+    // Subscribe to grid visibility changes from the store
+    usePageEnigmaStore.subscribe((state, prev) => {
+      if (state.gridVisible === prev.gridVisible || !this.gridHelper) return;
+      if (state.gridVisible) {
+        if (!this.scene.children.includes(this.gridHelper)) {
+          this.scene.add(this.gridHelper);
         }
+      } else {
+        this.scene.remove(this.gridHelper);
       }
     });
   }
@@ -1093,9 +1092,9 @@ class Scene {
     this.scene.add(this.groundPlane);
   }
 
-  // Update grid visibility based on the signal
+  // Update grid visibility based on the store
   updateGridVisibility() {
-    if (gridVisibility.value) {
+    if (usePageEnigmaStore.getState().gridVisible) {
       if (!this.scene.children.includes(this.gridHelper)) {
         this.scene.add(this.gridHelper);
       }

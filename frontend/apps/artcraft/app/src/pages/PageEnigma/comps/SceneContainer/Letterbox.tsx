@@ -1,6 +1,5 @@
-import { useSignals } from "@preact/signals-react/runtime";
 import { twMerge } from "tailwind-merge";
-import { cameraAspectRatio } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 import {
   calcMatteWidth,
@@ -18,32 +17,11 @@ export const Letterbox = ({
   width: number;
   height: number;
 }) => {
-  useSignals();
+  const camAspect = usePageEnigmaStore((s) => s.cameraAspectRatio);
 
-  // if (editorState.value !== EditorStates.CAMERA_VIEW || !isShowing) {
-  //   //case of Letterbox should not show
-  //   return;
-  // }
-
-  const matteOri = getMatteOrientation({
-    camAspect: cameraAspectRatio.value,
-    width,
-    height,
-  });
-
-  const matteWidth = calcMatteWidth({
-    matteOri,
-    camAspect: cameraAspectRatio.value,
-    width,
-    height,
-  });
-
-  const matteHeight = calcMatteHeight({
-    matteOri,
-    camAspect: cameraAspectRatio.value,
-    width,
-    height,
-  });
+  const matteOri = getMatteOrientation({ camAspect, width, height });
+  const matteWidth = calcMatteWidth({ matteOri, camAspect, width, height });
+  const matteHeight = calcMatteHeight({ matteOri, camAspect, width, height });
 
   return (
     <div

@@ -1,4 +1,3 @@
-import { useSignals } from "@preact/signals-react/runtime";
 import {
   faRectangle,
   faRectangleVertical,
@@ -6,45 +5,42 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { useContext } from "react";
 import { CameraAspectRatio } from "~/pages/PageEnigma/enums";
-import { cameraAspectRatio } from "~/pages/PageEnigma/signals";
 import { setCameraAspect } from "~/pages/PageEnigma/actions";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 
+const ICON_BY_RATIO: Record<CameraAspectRatio, typeof faRectangle> = {
+  [CameraAspectRatio.HORIZONTAL_16_9]: faRectangle,
+  [CameraAspectRatio.VERTICAL_9_16]: faRectangleVertical,
+  [CameraAspectRatio.HORIZONTAL_3_2]: faRectangle,
+  [CameraAspectRatio.VERTICAL_2_3]: faRectangleVertical,
+  [CameraAspectRatio.SQUARE_1_1]: faSquare,
+};
+
+const LABEL_BY_RATIO: Record<CameraAspectRatio, string> = {
+  [CameraAspectRatio.HORIZONTAL_16_9]: "16:9 Horizontal",
+  [CameraAspectRatio.VERTICAL_9_16]: "9:16 Vertical",
+  [CameraAspectRatio.HORIZONTAL_3_2]: "3:2 Horizontal",
+  [CameraAspectRatio.VERTICAL_2_3]: "2:3 Vertical",
+  [CameraAspectRatio.SQUARE_1_1]: "1:1 Squared",
+};
+
 export const AspectRatioMenu = () => {
-  useSignals();
+  const aspect = usePageEnigmaStore((s) => s.cameraAspectRatio);
   const editor = useContext(EngineContext);
-  const buttonIcon =
-    cameraAspectRatio.value === CameraAspectRatio.HORIZONTAL_16_9
-      ? faRectangle
-      : cameraAspectRatio.value === CameraAspectRatio.VERTICAL_9_16
-        ? faRectangleVertical
-        : cameraAspectRatio.value === CameraAspectRatio.HORIZONTAL_3_2
-          ? faRectangle
-          : cameraAspectRatio.value === CameraAspectRatio.VERTICAL_2_3
-            ? faRectangleVertical
-            : faSquare;
-  const buttonText =
-    cameraAspectRatio.value === CameraAspectRatio.HORIZONTAL_16_9
-      ? "16:9 Horizontal"
-      : cameraAspectRatio.value === CameraAspectRatio.VERTICAL_9_16
-        ? "9:16 Vertical"
-        : cameraAspectRatio.value === CameraAspectRatio.HORIZONTAL_3_2
-          ? "3:2 Horizontal"
-          : cameraAspectRatio.value === CameraAspectRatio.VERTICAL_2_3
-            ? "2:3 Vertical"
-            : "1:1 Squared";
 
   const handleChangeAspectRatio = (newRatio: CameraAspectRatio) => {
     if (!editor) return;
     setCameraAspect(editor, newRatio);
   };
+
   return (
     <div className="absolute right-0 top-0 m-2 flex flex-col items-end">
       <ButtonDropdown
-        label={`${buttonText}`}
+        label={LABEL_BY_RATIO[aspect]}
         className="shadow-xl"
-        icon={buttonIcon}
+        icon={ICON_BY_RATIO[aspect]}
         align="right"
         showSelected={true}
         options={[
@@ -53,8 +49,7 @@ export const AspectRatioMenu = () => {
             icon: faRectangle,
             className: "pl-4",
             description: "Horizontal",
-            selected:
-              cameraAspectRatio.value === CameraAspectRatio.HORIZONTAL_16_9,
+            selected: aspect === CameraAspectRatio.HORIZONTAL_16_9,
             onClick: () =>
               handleChangeAspectRatio(CameraAspectRatio.HORIZONTAL_16_9),
           },
@@ -63,8 +58,7 @@ export const AspectRatioMenu = () => {
             icon: faRectangle,
             className: "pl-4",
             description: "Horizontal",
-            selected:
-              cameraAspectRatio.value === CameraAspectRatio.HORIZONTAL_3_2,
+            selected: aspect === CameraAspectRatio.HORIZONTAL_3_2,
             onClick: () =>
               handleChangeAspectRatio(CameraAspectRatio.HORIZONTAL_3_2),
           },
@@ -73,8 +67,7 @@ export const AspectRatioMenu = () => {
             icon: faRectangleVertical,
             className: "pl-4",
             description: "Vertical",
-            selected:
-              cameraAspectRatio.value === CameraAspectRatio.VERTICAL_2_3,
+            selected: aspect === CameraAspectRatio.VERTICAL_2_3,
             onClick: () =>
               handleChangeAspectRatio(CameraAspectRatio.VERTICAL_2_3),
           },
@@ -83,8 +76,7 @@ export const AspectRatioMenu = () => {
             icon: faRectangleVertical,
             className: "pl-4",
             description: "Vertical",
-            selected:
-              cameraAspectRatio.value === CameraAspectRatio.VERTICAL_9_16,
+            selected: aspect === CameraAspectRatio.VERTICAL_9_16,
             onClick: () =>
               handleChangeAspectRatio(CameraAspectRatio.VERTICAL_9_16),
           },
@@ -93,7 +85,7 @@ export const AspectRatioMenu = () => {
             icon: faSquare,
             className: "pl-4",
             description: "Squared",
-            selected: cameraAspectRatio.value === CameraAspectRatio.SQUARE_1_1,
+            selected: aspect === CameraAspectRatio.SQUARE_1_1,
             onClick: () =>
               handleChangeAspectRatio(CameraAspectRatio.SQUARE_1_1),
           },

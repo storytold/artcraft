@@ -16,11 +16,6 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 import { EditorStates, CameraAspectRatio } from "~/pages/PageEnigma/enums";
 import { AssetType, ClipGroup } from "~/enums";
 import { XYZ } from "../datastructures/common";
-import {
-  editorState,
-  cameraAspectRatio,
-  gridVisibility,
-} from "../signals/engine";
 import { SceneUtils } from "./helper";
 import { VideoGeneration } from "./video_generation";
 import { MouseControls } from "./keybinds_controls";
@@ -698,11 +693,12 @@ class Editor {
       return null;
     }
 
-    const currentAspectRatio = cameraAspectRatio.value;
+    const store = usePageEnigmaStore.getState();
+    const currentAspectRatio = store.cameraAspectRatio;
 
     // Store grid visibility state and hide grid
-    const wasGridVisible = gridVisibility.value;
-    gridVisibility.value = false;
+    const wasGridVisible = store.gridVisible;
+    store.setGridVisible(false);
 
     // Store and hide transform controls
     const wasControlVisible = this.control?.visible ?? false;
@@ -810,7 +806,7 @@ class Editor {
     }
 
     // Restore grid visibility
-    gridVisibility.value = wasGridVisible;
+    usePageEnigmaStore.getState().setGridVisible(wasGridVisible);
 
     // Restore transform controls visibility
     if (this.control) {
@@ -1336,7 +1332,7 @@ class Editor {
   async switchPreview() {
     if (!this.switchPreviewToggle) {
       this.switchPreviewToggle = true;
-      editorState.value = EditorStates.PREVIEW;
+      usePageEnigmaStore.getState().setEditorState(EditorStates.PREVIEW);
       await this.generateFrame();
     }
   }
@@ -1348,7 +1344,7 @@ class Editor {
       this.rawRenderPass
     ) {
       this.switchPreviewToggle = false;
-      editorState.value = EditorStates.EDIT;
+      usePageEnigmaStore.getState().setEditorState(EditorStates.EDIT);
       setTimeout(() => {
         // if (!this.canvasRenderCamReference) {
         //   this.canvasRenderCamReference =

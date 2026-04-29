@@ -23,7 +23,7 @@ import { Transition } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { useSignals } from "@preact/signals-react/runtime";
 import { EngineContext } from "../../contexts/EngineContext";
-import { cameraAspectRatio } from "../../signals";
+import { usePageEnigmaStore } from "../../PageEnigmaStore";
 import { pageHeight, pageWidth } from "~/signals";
 import { CameraAspectRatio } from "../../enums";
 import { effect } from "@preact/signals-react";
@@ -121,6 +121,7 @@ const OutlinerItem = ({ item }: { item: SceneObject }) => {
 
 export const Outliner = () => {
   useSignals();
+  const camAspect = usePageEnigmaStore((s) => s.cameraAspectRatio);
   const [searchTerm, setSearchTerm] = useState("");
   const [editorHeight, setEditorHeight] = useState(0);
 
@@ -158,9 +159,9 @@ export const Outliner = () => {
 
   const getOutlinerHeightClass = () => {
     if (pageWidth.value >= 2000) {
-      if (cameraAspectRatio.value === CameraAspectRatio.VERTICAL_9_16) {
+      if (camAspect === CameraAspectRatio.VERTICAL_9_16) {
         return `${editorHeight * 0.5 - 120}px`;
-      } else if (cameraAspectRatio.value === CameraAspectRatio.SQUARE_1_1) {
+      } else if (camAspect === CameraAspectRatio.SQUARE_1_1) {
         return `${editorHeight * 0.42}px`;
       } else {
         return `${editorHeight * 0.54}px`;
@@ -168,9 +169,9 @@ export const Outliner = () => {
     }
 
     if (pageWidth.value < 2000) {
-      if (cameraAspectRatio.value === CameraAspectRatio.VERTICAL_9_16) {
+      if (camAspect === CameraAspectRatio.VERTICAL_9_16) {
         return `${editorHeight * 0.7 - 10}px`;
-      } else if (cameraAspectRatio.value === CameraAspectRatio.SQUARE_1_1) {
+      } else if (camAspect === CameraAspectRatio.SQUARE_1_1) {
         return `${editorHeight * 0.7}px`;
       } else {
         return `${editorHeight * 0.7}px`;

@@ -1,6 +1,6 @@
 import Editor from "./editor";
 import { EditorStates } from "~/pages/PageEnigma/enums";
-import { editorState, previewSrc } from "../signals/engine";
+import { usePageEnigmaStore } from "../PageEnigmaStore";
 import { ToastTypes, ClipType } from "~/enums";
 
 import { Visibility } from "./api_manager.js";
@@ -109,7 +109,7 @@ export class VideoGeneration {
         });
       }
 
-      previewSrc.value = "";
+      usePageEnigmaStore.getState().setPreviewSrc("");
 
       this.editor.rawRenderer.setSize(
         this.editor.render_width,
@@ -132,7 +132,7 @@ export class VideoGeneration {
 
       if (!this.editor.camera_person_mode) {
         this.editor.switchCameraView();
-        editorState.value = EditorStates.PREVIEW;
+        usePageEnigmaStore.getState().setEditorState(EditorStates.PREVIEW);
       }
 
       this.editor.generating_preview = false;
@@ -146,7 +146,7 @@ export class VideoGeneration {
           this.editor.negative_prompt,
         );
 
-        previewSrc.value = url;
+        usePageEnigmaStore.getState().setPreviewSrc(url);
         return Promise.resolve(url);
       } catch (err: unknown) {
         const errorMessage =

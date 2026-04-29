@@ -1,6 +1,5 @@
 import { getArtStyle } from "~/enums/ArtStyle";
 import {
-  cameraAspectRatio,
   cinematic,
   enginePreProcessing,
   faceDetail,
@@ -11,6 +10,7 @@ import {
 } from "~/pages/PageEnigma/signals";
 import { SceneGenereationMetaData as SceneGenerationMetaData } from "~/pages/PageEnigma/models/sceneGenerationMetadata";
 import Editor from "./editor";
+import { usePageEnigmaStore } from "../PageEnigmaStore";
 
 export const getSceneGenerationMetaData = (
   editorEngine: Editor,
@@ -20,7 +20,7 @@ export const getSceneGenerationMetaData = (
     positivePrompt: editorEngine.positive_prompt,
     negativePrompt: editorEngine.negative_prompt,
     artisticStyle: getArtStyle(editorEngine.art_style.toString()),
-    cameraAspectRatio: cameraAspectRatio.value,
+    cameraAspectRatio: usePageEnigmaStore.getState().cameraAspectRatio,
     globalIPAMediaToken: globalIPAMediaToken.value || undefined,
     upscale: upscale.value,
     faceDetail: faceDetail.value,

@@ -1,12 +1,13 @@
 import { useSignals } from "@preact/signals-react/runtime";
 import { twMerge } from "tailwind-merge";
+import { useShallow } from "zustand/shallow";
 import { usePosthogFeatureFlag } from "~/hooks/usePosthogFeatureFlag";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { FeatureFlags, TabTitles } from "~/enums";
 import { EditorStates } from "~/pages/PageEnigma/enums";
-import { editorState, setEditorState } from "~/pages/PageEnigma/signals/engine";
 import { sidePanelVisible } from "~/pages/PageEnigma/signals/sidePanel";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 import { TabItem } from "../SidePanel/tabList";
 import { currentPage, pageHeight } from "~/signals";
@@ -23,6 +24,12 @@ export const SidePanelMenu = ({
 }) => {
   useSignals();
   const showStylePage = usePosthogFeatureFlag(FeatureFlags.SHOW_STYLE_PAGE);
+  const { editorState, setEditorState } = usePageEnigmaStore(
+    useShallow((s) => ({
+      editorState: s.editorState,
+      setEditorState: s.setEditorState,
+    })),
+  );
   return (
     <div
       className={twMerge(
@@ -60,7 +67,7 @@ export const SidePanelMenu = ({
                 if (!sidePanelVisible.value) {
                   sidePanelVisible.value = true;
                 }
-                if (editorState.value === EditorStates.PREVIEW) {
+                if (editorState === EditorStates.PREVIEW) {
                   setEditorState(EditorStates.EDIT);
                 }
               }}

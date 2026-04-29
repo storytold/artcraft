@@ -17,7 +17,7 @@ import {
 import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { InputVector } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
-import { editorState } from "~/pages/PageEnigma/signals/engine";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { twMerge } from "tailwind-merge";
 import { EditorStates } from "~/pages/PageEnigma/enums";
 import { sanitize } from "./utils/sanitize";
@@ -43,6 +43,7 @@ const defaultAxises: Record<string, string> = {
 
 export const ControlPanelSceneObject = () => {
   useSignals();
+  const editorState = usePageEnigmaStore((s) => s.editorState);
   const { isShowing, currentObject } = objectPanelSignals;
 
   const editorEngine = useContext(EngineContext);
@@ -114,7 +115,7 @@ export const ControlPanelSceneObject = () => {
     setColor(editorEngine?.selected?.userData.color);
   }, [currentSceneObject, editorEngine]);
 
-  if (!currentSceneObject || editorState.value === EditorStates.PREVIEW) {
+  if (!currentSceneObject || editorState === EditorStates.PREVIEW) {
     return null;
   }
 
