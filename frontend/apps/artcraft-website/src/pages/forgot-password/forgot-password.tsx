@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { PasswordResetApi } from "@storyteller/api";
 
 import Seo from "../../components/seo";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -46,12 +47,20 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white bg-dots flex flex-col">
+    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden flex flex-col">
       <Seo
         title="Reset Password - ArtCraft"
         description="Reset your ArtCraft password."
       />
-      <div className="dotted-pattern absolute inset-0 z-[0] opacity-30" />
+      <PagePatternBackdrop variant="auth" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+        }}
+      />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">

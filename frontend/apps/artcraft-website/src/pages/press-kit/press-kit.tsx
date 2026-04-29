@@ -10,6 +10,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import Footer from "../../components/footer";
 import Seo from "../../components/seo";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { PRESS_KIT_CATEGORIES, type PressKitAsset } from "./press-kit-data";
 
 // ============================================================================
@@ -209,16 +210,22 @@ export default function PressKitPage() {
   );
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white overflow-x-hidden bg-dots">
+    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden">
       <Seo
         title="Press Kit | ArtCraft"
         description="Download ArtCraft press assets including logos, promotional videos, screenshots, and branding materials for media coverage."
       />
 
-      {/* Background glow */}
-      <div className="absolute top-0 inset-x-0 flex justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] -mt-[200px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]" />
-      </div>
+      <PagePatternBackdrop variant="content" />
+
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+        }}
+      />
 
       {/* Hero Section */}
       <main className="relative pt-24 sm:pt-32 pb-12 sm:pb-16 px-4 sm:px-6 lg:px-8">

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { getTutorialItemBySlug, markdownToHtml } from "@storyteller/markdown-content";
 import { faChevronLeft } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -50,12 +51,19 @@ const TutorialsArticle = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white overflow-x-hidden bg-dots">
+    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden">
       <Seo title={title} description={description} jsonLd={jsonLd} />
 
-      <div className="absolute top-0 inset-x-0 flex justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] -mt-[200px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]"></div>
-      </div>
+      <PagePatternBackdrop variant="content" />
+
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+        }}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-32 pb-32">
         <div className="mb-6">

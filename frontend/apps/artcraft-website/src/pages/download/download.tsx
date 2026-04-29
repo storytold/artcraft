@@ -14,6 +14,7 @@ import { UsersApi } from "@storyteller/api";
 import { DownloadModal } from "../../components/download-modal";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 
 const SYSTEMS = [
   {
@@ -61,17 +62,22 @@ const Download = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white bg-dots">
+    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden">
       <Seo
         title="Download ArtCraft - Windows and macOS"
         description="Download ArtCraft for Windows and macOS. Start creating AI artwork today."
       />
 
-      {/* Background effects */}
-      <div className="dotted-pattern absolute inset-0 z-[0] opacity-50 pointer-events-none" />
-      <div className="absolute top-0 inset-x-0 flex justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] -mt-[200px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]" />
-      </div>
+      <PagePatternBackdrop variant="content" />
+
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+        }}
+      />
 
       <div className="relative w-full max-w-6xl mx-auto px-6 sm:px-10 pt-36 sm:pt-40 pb-24">
         {/* Hero */}

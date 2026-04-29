@@ -39,6 +39,9 @@ interface PricingTableProps {
   compact?: boolean;
   showSeedanceFeatures?: boolean;
   showEnterprise?: boolean;
+  /** Use the unified landing3-style monochrome theme instead of per-plan
+   * green/purple/orange color schemes. */
+  unifiedTheme?: boolean;
 }
 
 const PricingTable = ({
@@ -50,6 +53,7 @@ const PricingTable = ({
   compact = false,
   showSeedanceFeatures = false,
   showEnterprise = false,
+  unifiedTheme = false,
 }: PricingTableProps) => {
   const navigate = useNavigate();
   const [billingType, setBillingType] = useState("yearly");
@@ -112,14 +116,17 @@ const PricingTable = ({
   const getColorSchemeClasses = (
     colorScheme: SubscriptionPlanDetails["colorScheme"],
   ) => {
-    const baseClasses =
-      "relative rounded-3xl p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md";
+    const baseClasses = unifiedTheme
+      ? "relative rounded-2xl sm:rounded-[28px] p-5 md:p-6 border flex flex-col transition-all duration-300"
+      : "relative rounded-3xl p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md";
 
     switch (colorScheme) {
       case "dark":
         return twMerge(
           baseClasses,
-          "bg-[#1C1C20] border-white/10 hover:border-white/20",
+          unifiedTheme
+            ? "bg-[#080808] border-white/[0.08] hover:border-white/15"
+            : "bg-[#1C1C20] border-white/10 hover:border-white/20",
         );
       case "green":
         return twMerge(
@@ -332,7 +339,9 @@ const PricingTable = ({
         </span>
       </div>
 
-      <div className={`max-w-7xl mx-auto grid ${gridCols} gap-4 md:gap-6`}>
+      <div
+        className={`${unifiedTheme ? "max-w-6xl" : "max-w-7xl"} mx-auto grid ${gridCols} gap-4 md:gap-6`}
+      >
         {plans.map((plan) => {
           const isPopular = plan.slug === "artcraft_pro";
           const isCurrent = isCurrentPlan(plan.slug);
@@ -349,8 +358,14 @@ const PricingTable = ({
               }
             >
               {isPopular && !isCurrent && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary px-4 py-1 rounded-full text-sm font-bold shadow-lg whitespace-nowrap">
-                  MOST POPULAR
+                <div
+                  className={
+                    unifiedTheme
+                      ? "absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] pl-[0.18em] text-primary-200 bg-primary/[0.18] border border-primary/30 rounded-full px-3 py-1 backdrop-blur whitespace-nowrap"
+                      : "absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary px-4 py-1 rounded-full text-sm font-bold shadow-lg whitespace-nowrap"
+                  }
+                >
+                  Most popular
                 </div>
               )}
 
@@ -436,7 +451,13 @@ const PricingTable = ({
 
         {/* Enterprise card - inline in grid for normal view */}
         {showEnterprise && !compact && (
-          <div className="relative rounded-3xl p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]">
+          <div
+            className={
+              unifiedTheme
+                ? "relative rounded-2xl sm:rounded-[28px] p-5 md:p-6 border flex flex-col transition-all duration-300 bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
+                : "relative rounded-3xl p-6 md:p-8 border flex flex-col transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
+            }
+          >
             <h3 className="text-xl md:text-2xl font-bold mb-2 text-white">
               Enterprise
             </h3>
@@ -468,7 +489,13 @@ const PricingTable = ({
 
       {/* Enterprise card - horizontal bar below grid for compact/sd2 view */}
       {showEnterprise && compact && (
-        <div className="mt-4 relative rounded-3xl p-6 border flex flex-col md:flex-row md:items-center gap-4 md:gap-8 transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]">
+        <div
+          className={
+            unifiedTheme
+              ? "mt-4 relative rounded-2xl sm:rounded-[28px] p-6 border flex flex-col md:flex-row md:items-center gap-4 md:gap-8 transition-all duration-300 bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
+              : "mt-4 relative rounded-3xl p-6 border flex flex-col md:flex-row md:items-center gap-4 md:gap-8 transition-all duration-300 backdrop-blur-md bg-gradient-to-b from-[#0d1f4a]/90 via-[#183878]/60 to-[#2456b8]/15 border-[#3568c9]/40 hover:border-[#3568c9] hover:shadow-[0_0_30px_rgba(53,104,201,0.25)]"
+          }
+        >
           <div className="flex-shrink-0">
             <h3 className="text-lg font-bold text-white">Enterprise</h3>
             <div className="text-2xl font-bold mt-1">Custom</div>

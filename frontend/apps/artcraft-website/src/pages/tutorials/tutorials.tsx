@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
+import { PagePatternBackdrop } from "../../components/truchet-pattern";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -39,11 +40,17 @@ export const TutorialsPage = () => {
   const pageDescription = "Learn tips, tricks, and workflows for ArtCraft.";
 
   return (
-    <div className="relative min-h-screen bg-[#101014] text-white overflow-x-hidden bg-dots">
+    <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden">
       <Seo title={pageTitle} description={pageDescription} />
-      <div className="absolute top-0 inset-x-0 flex justify-center pointer-events-none z-0">
-        <div className="w-[900px] h-[900px] -mt-[200px] rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-20 blur-[120px]"></div>
-      </div>
+      <PagePatternBackdrop variant="content" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-[700px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+        }}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-[1200px] px-4 sm:px-8 pt-28 sm:pt-36 pb-12 min-h-screen">
         {/* Hero */}

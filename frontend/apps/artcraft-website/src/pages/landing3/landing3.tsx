@@ -20,7 +20,6 @@ import {
   faEraser,
   faCheck,
   faXmark,
-  faSparkles,
   faFilm,
   faPaintBrush,
   faCamera,
@@ -34,7 +33,9 @@ import { UsersApi } from "@storyteller/api";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
 import { SOCIAL_LINKS } from "../../config/links";
 import { Button } from "@storyteller/ui-button";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import { Link } from "react-router-dom";
+import { TruchetPattern } from "../../components/truchet-pattern";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -172,6 +173,23 @@ const Landing3 = () => {
           },
         });
       });
+
+      // Hero pattern parallax (slower than scroll, drifts upward)
+      const heroPattern = document.querySelector<HTMLElement>(
+        "[data-hero-pattern]",
+      );
+      if (heroPattern) {
+        gsap.to(heroPattern, {
+          yPercent: -25,
+          ease: "none",
+          scrollTrigger: {
+            trigger: heroPattern,
+            start: "top top",
+            end: "bottom top",
+            scrub: true,
+          },
+        });
+      }
     }, rootRef);
 
     return () => ctx.revert();
@@ -188,26 +206,64 @@ const Landing3 = () => {
   return (
     <div
       ref={rootRef}
-      className="relative min-h-screen bg-[#121212] text-white selection:bg-primary/30 selection:text-white"
+      className="relative min-h-screen bg-[#101014] text-white selection:bg-primary/30 selection:text-white overflow-hidden"
     >
       <Seo
-        title="ArtCraft. Controllable AI for Artists."
-        description="ArtCraft is the open desktop app for generating AI video and images - built for artists who want real control."
+        title="ArtCraft - Controllable AI for Artists"
+        description="ArtCraft is the opensource desktop app for generating AI video and images - built for artists who want real control."
       />
 
-      {/* Subtle radial accents */}
+      {/* Top primary-blue accent, matches the pricing page */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 opacity-60"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[900px] z-0"
         style={{
           background:
-            "radial-gradient(1100px 500px at 50% -200px, rgba(45,129,255,0.18), transparent 60%)",
+            "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Mid-page primary-blue wash */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-[1400px] h-[1100px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(45,129,255,0.08) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Lower-page primary-blue accent */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[900px] z-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 50% at 50% 100%, rgba(45,129,255,0.12) 0%, transparent 70%)",
         }}
       />
 
       {/* HERO */}
-      <section className="relative pt-32 sm:pt-36 pb-20 sm:pb-24 px-4 sm:px-8">
-        <div className="max-w-6xl mx-auto text-center">
+      <section className="relative pt-32 sm:pt-36 pb-20 sm:pb-24 px-4 sm:px-8 overflow-hidden">
+        {/* Triangle pattern background with parallax */}
+        <div
+          aria-hidden
+          data-hero-pattern
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 80% 70% at 50% 35%, black 35%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 80% 70% at 50% 35%, black 35%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            variant="landing"
+            className="absolute inset-0 -top-[10%] w-full h-[120%]"
+          />
+        </div>
+
+        <div className="relative z-10 max-w-6xl mx-auto text-center">
           {/* Eyebrow chip */}
           <div
             className="inline-flex items-center gap-2 px-3 py-1.5 mb-7 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md text-xs sm:text-[13px] font-medium text-white/70"
@@ -234,13 +290,13 @@ const Landing3 = () => {
             data-reveal
           >
             Artists deserve unparalleled control and precision. ArtCraft is the
-            open desktop app that pulls you out of prompting, and back into
+            open source desktop app that pulls you out of prompting, and back into
             actually crafting.
           </p>
 
           {/* CTAs */}
           <div
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16"
             data-reveal
           >
             {isMobile ? (
@@ -252,27 +308,34 @@ const Landing3 = () => {
               </Button>
             ) : (
               <>
-                <Button
+                <Tooltip
+                  content="Buy credits and support open source"
+                  position="top"
+                  delay={0}
+                  className="rounded-full"
+                >
+                  <Link
+                    to="/pricing"
+                    className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
+                  >
+                    <FontAwesomeIcon
+                      icon={faRocket}
+                      className="text-[13px]"
+                    />
+                    Supercharge Credits
+                  </Link>
+                </Tooltip>
+                <a
                   href={downloadUrl}
                   onClick={onDownloadClick}
-                  className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
+                  className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
                 >
                   <FontAwesomeIcon
                     icon={isMacOs ? faApple : faWindows}
                     className="text-[13px]"
                   />
                   Download for {isMacOs ? "Mac" : "Windows"}
-                </Button>
-                <Button
-                  href="/pricing"
-                  className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.08] backdrop-blur-md transition-all hover:-translate-y-px"
-                >
-                  <FontAwesomeIcon
-                    icon={faSparkles}
-                    className="text-primary text-[13px]"
-                  />
-                  Buy credits
-                </Button>
+                </a>
               </>
             )}
           </div>
@@ -382,7 +445,7 @@ const Landing3 = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Websites column */}
-            <div className="rounded-2xl sm:rounded-[28px] bg-[#080808] border border-white/[0.08] p-7 sm:p-8">
+            <div className="rounded-2xl sm:rounded-[28px] bg-[#080808] p-7 sm:p-8">
               <div className="flex items-center gap-2 mb-6">
                 <span className="text-[12px] font-semibold uppercase tracking-wider text-white/40">
                   Other tools
@@ -453,8 +516,27 @@ const Landing3 = () => {
       </section>
 
       {/* FIVE REASONS: original bento, dark theme */}
-      <section id="reasons" className="relative px-4 sm:px-8 py-16 sm:py-24">
-        <div className="max-w-6xl mx-auto" data-reveal>
+      <section
+        id="reasons"
+        className="relative px-4 sm:px-8 py-16 sm:py-24 overflow-hidden"
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            variant="landing"
+            intensity={0.7}
+            className="absolute inset-0 w-full h-full"
+          />
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto" data-reveal>
           <div className="text-center mb-12 sm:mb-16">
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
               Why ArtCraft
@@ -467,7 +549,7 @@ const Landing3 = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6">
             {/* Reason #1: Text Prompting Sucks */}
-            <div className="xl:col-span-6 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
+            <div className="xl:col-span-6 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
               <div className="flex xl:flex-col gap-4 lg:gap-8 h-full flex-col-reverse">
                 <div className="grow h-40">
                   <img
@@ -494,7 +576,7 @@ const Landing3 = () => {
             </div>
 
             {/* Reason #2: Desktop App */}
-            <div className="xl:col-span-6 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 pb-0 lg:pb-0 group overflow-hidden">
+            <div className="xl:col-span-6 rounded-3xl bg-[#080808] p-6 lg:p-8 pb-0 lg:pb-0 group overflow-hidden">
               <div className="relative flex flex-col h-full">
                 <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
                   Desktop App
@@ -528,12 +610,12 @@ const Landing3 = () => {
                     />
                   </div>
                 </div>
-                <div className="absolute left-0 bottom-0 w-full h-28 bg-gradient-to-t from-[#121212] via-[#121212]/80 to-transparent z-10 pointer-events-none" />
+                <div className="absolute left-0 bottom-0 w-full h-28 bg-gradient-to-t from-[#000000] via-[#121212]/50 to-transparent z-10 pointer-events-none" />
               </div>
             </div>
 
             {/* Reason #3: Open Source */}
-            <div className="xl:col-span-4 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
+            <div className="xl:col-span-4 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
               <div className="flex flex-col h-full">
                 <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
                   It's Open Source
@@ -560,7 +642,7 @@ const Landing3 = () => {
             </div>
 
             {/* Reason #4: Use Every Model */}
-            <div className="xl:col-span-8 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors group overflow-hidden">
+            <div className="xl:col-span-8 rounded-3xl bg-[#080808] group overflow-hidden">
               <div className="lg:flex-1 flex flex-col justify-between">
                 <div className="p-6 lg:p-8">
                   <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
@@ -583,7 +665,7 @@ const Landing3 = () => {
             </div>
 
             {/* Reason #5: Created by Artists */}
-            <div className="xl:col-span-12 md:col-span-2 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
+            <div className="xl:col-span-12 md:col-span-2 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
               <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-center">
                 <div className="lg:flex-1">
                   <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
@@ -684,8 +766,24 @@ const Landing3 = () => {
       </section>
 
       {/* FINAL CTA */}
-      <section className="relative px-4 sm:px-8 py-20 sm:py-32">
-        <div className="max-w-6xl mx-auto" data-reveal>
+      <section className="relative px-4 sm:px-8 py-20 sm:py-32 overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-0"
+          style={{
+            maskImage:
+              "radial-gradient(ellipse 80% 70% at 50% 50%, black 20%, transparent 80%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 80% 70% at 50% 50%, black 20%, transparent 80%)",
+          }}
+        >
+          <TruchetPattern
+            variant="landing"
+            intensity={0.6}
+            className="absolute inset-0 w-full h-full"
+          />
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto" data-reveal>
           <div className="relative rounded-2xl sm:rounded-[32px] bg-[#080808] border border-white/[0.1] p-10 sm:p-16 lg:p-20 text-center overflow-hidden">
             <div
               className="absolute inset-0 pointer-events-none"
@@ -713,10 +811,27 @@ const Landing3 = () => {
                   </button>
                 ) : (
                   <>
+                    <Tooltip
+                      content="Buy credits and support open source"
+                      position="top"
+                      delay={0}
+                      className="rounded-full"
+                    >
+                      <Link
+                        to="/pricing"
+                        className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
+                      >
+                        <FontAwesomeIcon
+                          icon={faRocket}
+                          className="text-[13px]"
+                        />
+                        Supercharge Credits
+                      </Link>
+                    </Tooltip>
                     <a
                       href={downloadUrl}
                       onClick={onDownloadClick}
-                      className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)]"
+                      className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white hover:bg-white/90 text-black text-[14px] font-semibold transition-all hover:-translate-y-px shadow-[0_4px_24px_-4px_rgba(255,255,255,0.2)]"
                     >
                       <FontAwesomeIcon
                         icon={isMacOs ? faApple : faWindows}
@@ -724,16 +839,6 @@ const Landing3 = () => {
                       />
                       Download for {isMacOs ? "Mac" : "Windows"}
                     </a>
-                    <Link
-                      to="/pricing"
-                      className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-gradient-to-r from-primary/25 to-purple-500/25 hover:from-primary/35 hover:to-purple-500/35 text-white text-[14px] font-semibold border border-primary/30 transition-all hover:-translate-y-px"
-                    >
-                      <FontAwesomeIcon
-                        icon={faRocket}
-                        className="text-[13px] text-primary-300"
-                      />
-                      Supercharge Credits
-                    </Link>
                     <a
                       href={SOCIAL_LINKS.DISCORD}
                       target="_blank"
