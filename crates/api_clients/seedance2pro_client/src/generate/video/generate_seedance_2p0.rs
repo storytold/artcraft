@@ -38,6 +38,7 @@ pub struct GenerateSeedance2p0Request {
 #[derive(Debug, Clone, Copy)]
 pub enum KinoviSeedance2p0AspectRatio {
   Landscape16x9,
+  UltraWide21x9,
   Portrait9x16,
   Square1x1,
   Standard4x3,
@@ -155,6 +156,7 @@ pub async fn generate_seedance_2p0(
 fn map_aspect_ratio(ar: Option<KinoviSeedance2p0AspectRatio>) -> KinoviAspectRatioRaw {
   match ar {
     Some(KinoviSeedance2p0AspectRatio::Landscape16x9) => KinoviAspectRatioRaw::Landscape16x9,
+    Some(KinoviSeedance2p0AspectRatio::UltraWide21x9) => KinoviAspectRatioRaw::UltraWide21x9,
     Some(KinoviSeedance2p0AspectRatio::Portrait9x16) => KinoviAspectRatioRaw::Portrait9x16,
     Some(KinoviSeedance2p0AspectRatio::Square1x1) => KinoviAspectRatioRaw::Square1x1,
     Some(KinoviSeedance2p0AspectRatio::Standard4x3) => KinoviAspectRatioRaw::Landscape4x3,
@@ -430,6 +432,7 @@ mod tests {
 
       let ratios = [
         KinoviSeedance2p0AspectRatio::Landscape16x9,
+        KinoviSeedance2p0AspectRatio::UltraWide21x9,
         KinoviSeedance2p0AspectRatio::Portrait9x16,
         KinoviSeedance2p0AspectRatio::Square1x1,
         KinoviSeedance2p0AspectRatio::Standard4x3,
@@ -522,6 +525,70 @@ mod tests {
         },
       }).await?;
       println!("t2v 1080p — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+  }
+
+  mod ultra_wide {
+    use super::*;
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_text_to_video_21x9() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "A corgi is riding on the back of a sauropod dinosaur".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::UltraWide21x9),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+        },
+      }).await?;
+      println!("t2v 21:9 — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert_eq!(1, 2);
+      Ok(())
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_keyframe_21x9() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let start_frame_url = upload_test_image(&session, test_data::web::image_urls::WIDE_CORGI_SHIBA_TREASURE_OCEAN_URL).await?;
+
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "The dogs sail across the ocean on a treasure ship.".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::UltraWide21x9),
+          output_resolution: None,
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: Some(start_frame_url),
+          end_frame_url: None,
+          reference_image_urls: None,
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+        },
+      }).await?;
+      println!("keyframe 21:9 — task_id={}, order_id={}", result.task_id, result.order_id);
       assert!(!result.task_id.is_empty());
       assert_eq!(1, 2);
       Ok(())
