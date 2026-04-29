@@ -1,1 +1,0 @@
-export { ControlsVideo } from './ControlsVideo';
