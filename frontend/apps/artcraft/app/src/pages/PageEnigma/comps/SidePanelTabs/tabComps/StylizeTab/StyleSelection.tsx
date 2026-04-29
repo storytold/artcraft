@@ -6,8 +6,8 @@ import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { ArtStyle } from "~/pages/PageEnigma/Editor/api_manager";
 import { faAngleLeft, faAngleRight } from "@fortawesome/pro-solid-svg-icons";
 import { styleList } from "~/pages/PageEnigma/styleList";
-import { sidePanelWidth } from "~/pages/PageEnigma/signals";
 import { pageHeight } from "~/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { ItemPicker } from "./ItemPicker";
 import { useSignals } from "@preact/signals-react/runtime";
 
@@ -17,11 +17,12 @@ interface Props {
 }
 export const StyleSelection = ({ setSelection, selection }: Props) => {
   useSignals();
+  const sidePanelWidth = usePageEnigmaStore((s) => s.sidePanelWidth);
   const [scrollPosition, setScrollPosition] = useState(0);
 
-  const shownImageCount = Math.floor((sidePanelWidth.value - 32) / 104);
+  const shownImageCount = Math.floor((sidePanelWidth - 32) / 104);
   const imageWidth =
-    96 + (sidePanelWidth.value - 32 - shownImageCount * 104) / shownImageCount;
+    96 + (sidePanelWidth - 32 - shownImageCount * 104) / shownImageCount;
   const imageHeight = (54 * imageWidth) / 90;
 
   const imageRows = Math.min(
@@ -49,7 +50,7 @@ export const StyleSelection = ({ setSelection, selection }: Props) => {
           <div
             className="relative overflow-hidden"
             style={{
-              width: sidePanelWidth.value - 32,
+              width: sidePanelWidth - 32,
               height: imageHeight * imageRows + 8 * imageRows,
             }}
           >

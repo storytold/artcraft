@@ -22,7 +22,6 @@ import { Storyboard } from "../PageStoryboard";
 import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
 import {
-  sidePanelWidth,
   cameraAspectRatio,
   outlinerIsShowing,
   gridVisibility,
@@ -113,7 +112,7 @@ export const PageEditor = () => {
   };
 
   useEffect(() => {
-    sidePanelWidth.value = 340;
+    usePageEnigmaStore.getState().setSidePanelWidth(340);
     window.onbeforeunload = () => {
       return "You may have unsaved changes.";
     };
