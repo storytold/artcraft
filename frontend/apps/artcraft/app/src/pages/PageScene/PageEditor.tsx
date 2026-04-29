@@ -33,6 +33,7 @@ import { SceneContainer } from "./comps/SceneContainer";
 import { useEditorCanvas } from "./hooks/useEditorCanvas";
 import { useFreeCam } from "./hooks/useFreeCam";
 import { useViewportPointer } from "./hooks/useViewportPointer";
+import { useViewportKeyboard } from "./hooks/useViewportKeyboard";
 import { Outliner } from "./comps/Outliner";
 import { CameraAspectRatio } from "./enums";
 import { PromptBox3D } from "@storyteller/ui-promptbox";
@@ -161,6 +162,7 @@ export const PageEditor = () => {
   const editorCanvas = useEditorCanvas();
   useFreeCam(editorCanvas, editorEngine);
   useViewportPointer(editorCanvas, editorEngine);
+  useViewportKeyboard(editorEngine);
   const handleCameraSelect = (selectedItem: PopoverItem) => {
     const selectedCamera = cameras.value.find(
       (cam) => cam.label === selectedItem.label,

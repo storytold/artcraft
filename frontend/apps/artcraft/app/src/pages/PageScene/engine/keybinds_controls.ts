@@ -91,7 +91,6 @@ export class MouseControls {
   private fkHelper: FKHelper;
   private isBoneDragged: boolean = false;
   private ignoreNextClick: boolean = false;
-  private manualMouseLock = false;
 
   constructor(
     camera: THREE.PerspectiveCamera,

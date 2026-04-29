@@ -1,0 +1,166 @@
+import type Editor from "~/pages/PageScene/engine/editor";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
+
+// One declarative table for every viewport keyboard shortcut.
+// useViewportKeyboard dispatches against this list; a future Ctrl-hold
+// cheatsheet overlay can render the same data without duplication.
+
+export type KeyGroup = "Transform" | "Selection" | "Edit" | "View";
+
+export interface KeyBinding {
+  code: string; // matches event.code (e.g. "KeyT", "Backspace")
+  modifiers?: { ctrl?: boolean; shift?: boolean; alt?: boolean };
+  label: string;
+  group: KeyGroup;
+  run: (editor: Editor) => void | Promise<void>;
+  // Whether the binding should preventDefault + stopPropagation when
+  // matched. Used for browser shortcut conflicts (Ctrl+Z, Ctrl+C, etc).
+  preventDefault?: boolean;
+}
+
+// The TransformControls gizmo uses "translate" / "rotate" / "scale";
+// the store's TransformMode union uses "move" / "rotate" / "scale".
+// Keep the gizmo and store both in sync from one place.
+const setGizmoMode = (
+  editor: Editor,
+  gizmoMode: "translate" | "rotate" | "scale",
+  storeMode: "move" | "rotate" | "scale",
+) => {
+  editor.mouse_controls?.control?.setMode(gizmoMode);
+  const space = usePageSceneStore.getState().transformSpace;
+  if (editor.mouse_controls?.control) {
+    editor.mouse_controls.control.space = space;
+  }
+  usePageSceneStore.getState().setTransformMode(storeMode);
+  usePageSceneStore.getState().setSelectedMode(storeMode);
+};
+
+const toggleTransformSpace = (editor: Editor) => {
+  if (editor.mouse_controls?.control?.mode === "scale") return;
+  const next =
+    usePageSceneStore.getState().transformSpace === "world" ? "local" : "world";
+  usePageSceneStore.getState().setTransformSpace(next);
+  if (editor.mouse_controls?.control) {
+    editor.mouse_controls.control.space = next;
+  }
+};
+
+const deleteSelected = (editor: Editor) => {
+  const mc = editor.mouse_controls;
+  if (!mc?.selected) return;
+  mc.selected.forEach((sel) => {
+    mc.deleteObject(sel.uuid);
+  });
+  mc.selected = [];
+  mc.removeTransformControls();
+  usePageSceneStore.getState().setShowPoseControls(false);
+};
+
+const onEscape = (editor: Editor) => {
+  const store = usePageSceneStore.getState();
+  if (store.poseMode === "pose") {
+    editor.mouse_controls?.toggleFKMode();
+    return;
+  }
+  if (editor.mouse_controls?.selected?.length) {
+    editor.mouse_controls.removeTransformControls();
+    store.setShowPoseControls(false);
+  }
+};
+
+const focusSelected = (editor: Editor) => {
+  if (
+    editor.mouse_controls?.selected?.length &&
+    editor.mouse_controls.lockControls
+  ) {
+    editor.mouse_controls.focus();
+  }
+};
+
+const openAssetModal = () => {
+  const store = usePageSceneStore.getState();
+  store.setAssetModalVisible(true);
+  store.setAssetModalVisibleDuringDrag(true);
+};
+
+const undo = async (editor: Editor) => {
+  await editor.sceneManager?.undo();
+};
+
+const redo = async (editor: Editor) => {
+  await editor.sceneManager?.redo();
+};
+
+const copy = async (editor: Editor) => {
+  await editor.sceneManager?.copy();
+};
+
+const paste = async (editor: Editor) => {
+  await editor.sceneManager?.paste();
+};
+
+export const buildKeymap = (): KeyBinding[] => [
+  // Transform
+  { code: "KeyT", label: "Translate", group: "Transform",
+    run: (e) => setGizmoMode(e, "translate", "move") },
+  { code: "KeyR", label: "Rotate", group: "Transform",
+    run: (e) => setGizmoMode(e, "rotate", "rotate") },
+  { code: "KeyG", label: "Scale", group: "Transform",
+    run: (e) => setGizmoMode(e, "scale", "scale") },
+  { code: "KeyX", label: "Toggle local/world", group: "Transform",
+    run: toggleTransformSpace },
+  { code: "KeyK", label: "Toggle pose (FK)", group: "Transform",
+    run: (e) => e.mouse_controls?.toggleFKMode() },
+
+  // Selection / view
+  { code: "KeyF", label: "Focus selection", group: "View",
+    run: focusSelected },
+  { code: "KeyB", label: "Open asset menu", group: "View",
+    run: openAssetModal },
+  { code: "Escape", label: "Clear selection / exit pose", group: "Selection",
+    run: onEscape },
+
+  // Edit
+  { code: "Backspace", label: "Delete selected", group: "Edit",
+    run: deleteSelected },
+  { code: "Delete", label: "Delete selected", group: "Edit",
+    run: deleteSelected },
+  { code: "KeyZ", modifiers: { ctrl: true }, label: "Undo", group: "Edit",
+    run: undo, preventDefault: true },
+  { code: "KeyZ", modifiers: { ctrl: true, shift: true }, label: "Redo",
+    group: "Edit", run: redo, preventDefault: true },
+  { code: "KeyY", modifiers: { ctrl: true }, label: "Redo", group: "Edit",
+    run: redo, preventDefault: true },
+  { code: "KeyC", modifiers: { ctrl: true }, label: "Copy", group: "Edit",
+    run: copy, preventDefault: true },
+  { code: "KeyV", modifiers: { ctrl: true }, label: "Paste", group: "Edit",
+    run: paste, preventDefault: true },
+];
+
+const matches = (binding: KeyBinding, e: KeyboardEvent): boolean => {
+  if (binding.code !== e.code) return false;
+  const m = binding.modifiers ?? {};
+  // Treat Ctrl and Meta interchangeably so macOS Cmd+X works too.
+  const ctrlOrMeta = e.ctrlKey || e.metaKey;
+  if (!!m.ctrl !== !!ctrlOrMeta) return false;
+  if (!!m.shift !== !!e.shiftKey) return false;
+  if (!!m.alt !== !!e.altKey) return false;
+  return true;
+};
+
+export const dispatchBinding = (
+  bindings: KeyBinding[],
+  event: KeyboardEvent,
+  editor: Editor,
+): boolean => {
+  for (const binding of bindings) {
+    if (!matches(binding, event)) continue;
+    if (binding.preventDefault) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    void binding.run(editor);
+    return true;
+  }
+  return false;
+};
