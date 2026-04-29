@@ -3,7 +3,7 @@ import { twMerge } from "tailwind-merge";
 import { faFilm } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
-import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 import { activeWorkflowJobs } from "~/signals";
 
@@ -18,7 +18,7 @@ export const MyMoviesButton = () => {
       <Button
         variant="action"
         onClick={() => {
-          const store = usePageEnigmaStore.getState();
+          const store = usePageSceneStore.getState();
           store.setGenerateMovieId("");
           store.setViewMyMovies(true);
         }}

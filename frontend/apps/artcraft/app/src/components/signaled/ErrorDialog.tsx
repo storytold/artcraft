@@ -3,11 +3,11 @@ import { useShallow } from "zustand/shallow";
 
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
-import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 export function ErrorDialog() {
   const { showErrorDialog, errorDialogTitle, errorDialogMessage, setShowErrorDialog } =
-    usePageEnigmaStore(
+    usePageSceneStore(
       useShallow((s) => ({
         showErrorDialog: s.showErrorDialog,
         errorDialogTitle: s.errorDialogTitle,

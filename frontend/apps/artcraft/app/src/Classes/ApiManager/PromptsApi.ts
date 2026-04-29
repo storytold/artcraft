@@ -1,5 +1,5 @@
 import { ApiManager, ApiResponse } from "./ApiManager";
-import { Prompts } from "~/pages/PageEnigma/models";
+import { Prompts } from "~/pages/PageScene/models";
 
 export class PromptsApi extends ApiManager {
   public GetPromptsByToken({

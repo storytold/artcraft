@@ -4,7 +4,7 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { faPencil, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { scene, signalScene, authentication } from "~/signals";
-import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { Input } from "@storyteller/ui-input";
 import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
 import { getCreatorIcon, ModelCreator } from "@storyteller/model-list";
@@ -32,7 +32,7 @@ export const SceneTitleInput = ({ pageName }: Props) => {
   };
 
   const handleShowErrorDialog = (errorMessage: string) => {
-    usePageEnigmaStore.getState().setErrorDialog("Error", errorMessage);
+    usePageSceneStore.getState().setErrorDialog("Error", errorMessage);
   };
 
   const handleChangeSceneTitle = (e: React.ChangeEvent<HTMLInputElement>) => {

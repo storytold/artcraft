@@ -1,5 +1,5 @@
-import { MediaInfo } from "~/pages/PageEnigma/models/movies";
-import { AudioMediaItem } from "~/pages/PageEnigma/models";
+import { MediaInfo } from "~/pages/PageScene/models/movies";
+import { AudioMediaItem } from "~/pages/PageScene/models";
 import { AssetType } from "~/enums";
 
 export const remapResponseToAudioMediaItems = (

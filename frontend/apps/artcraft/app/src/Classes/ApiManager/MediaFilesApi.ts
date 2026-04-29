@@ -3,7 +3,7 @@ import {
   MediaInfo,
   Pagination,
   PaginationInfinite,
-} from "~/pages/PageEnigma/models";
+} from "~/pages/PageScene/models";
 import { ApiManager, ApiResponse } from "./ApiManager";
 import { authentication } from "~/signals";
 import type { Property } from "csstype";

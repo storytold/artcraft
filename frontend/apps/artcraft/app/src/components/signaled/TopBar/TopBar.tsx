@@ -65,7 +65,7 @@ import {
   is3DEditorInitialized,
   is3DSceneLoaded,
   set3DPageMounted,
-} from "~/pages/PageEnigma/Editor/editor";
+} from "~/pages/PageScene/Editor/editor";
 import { useImageTo3DStore } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useImageTo3DWorldStore } from "~/pages/PageImageTo3DWorld/ImageTo3DWorldStore";
 import { useRemoveBackgroundStore } from "~/pages/PageRemoveBackground/RemoveBackgroundStore";
