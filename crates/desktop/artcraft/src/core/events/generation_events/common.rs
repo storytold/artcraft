@@ -95,6 +95,8 @@ pub enum GenerationModel {
   Kling3p0Standard,
   #[serde(rename = "kling_3p0_pro")]
   Kling3p0Pro,
+  #[serde(rename = "happy_horse_1p0")]
+  HappyHorse1p0,
   #[serde(rename = "recraft_3")]
   Recraft3,
   #[serde(rename = "sora")]
@@ -109,6 +111,8 @@ pub enum GenerationModel {
   Seedance1p5Pro,
   #[serde(rename = "seedance_2p0")]
   Seedance2p0,
+  #[serde(rename = "seedance_2p0_fast")]
+  Seedance2p0Fast,
   #[serde(rename = "veo_2")]
   Veo2,
   #[serde(rename = "veo_3")]

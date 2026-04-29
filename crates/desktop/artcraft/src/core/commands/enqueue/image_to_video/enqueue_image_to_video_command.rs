@@ -1,17 +1,14 @@
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
-use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason, ProviderFailureReason};
+use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::image_to_video::artcraft::handle_artcraft_video::handle_video_artcraft;
 use crate::core::commands::enqueue::image_to_video::grok::handle_grok_video::handle_grok_video;
 use crate::core::commands::enqueue::image_to_video::sora2::handle_sora_sora2::handle_sora_sora2;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::TextToImageModel;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::Response;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::functional_events::credits_balance_changed_event::CreditsBalanceChangedEvent;
-use crate::core::events::generation_events::common::GenerationAction;
-use crate::core::events::generation_events::generation_enqueue_failure_event::GenerationEnqueueFailureEvent;
 use crate::core::events::generation_events::generation_enqueue_success_event::GenerationEnqueueSuccessEvent;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
@@ -24,6 +21,7 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio;
+use artcraft_router::api::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
 use log::{error, info, warn};
@@ -61,6 +59,9 @@ pub enum VideoModel {
   #[serde(rename = "kling_3p0_pro")]
   Kling3p0Pro,
 
+  #[serde(rename = "happy_horse_1p0")]
+  HappyHorse1p0,
+
   #[serde(rename = "seedance_1.0_lite")]
   Seedance10Lite,
 
@@ -69,6 +70,9 @@ pub enum VideoModel {
 
   #[serde(rename = "seedance_2p0")]
   Seedance2p0,
+  
+  #[serde(rename = "seedance_2p0_fast")]
+  Seedance2p0Fast,
 
   #[serde(rename = "sora_2")]
   Sora2,
@@ -140,6 +144,10 @@ pub struct EnqueueImageToVideoRequest {
   /// OPTIONAL.
   /// Aspect ratio for the generated video.
   pub aspect_ratio: Option<CommonAspectRatio>,
+
+  /// OPTIONAL.
+  /// Resolution for the generated video.
+  pub resolution: Option<CommonResolution>,
 
   /// OPTIONAL.
   /// Duration of the generated video in seconds.

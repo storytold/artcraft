@@ -3,10 +3,14 @@ use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_comma
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
+use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
+use artcraft_router::api::audio_list_ref::AudioListRef;
 use artcraft_router::api::character_list_ref::CharacterListRef;
 use artcraft_router::api::common_video_model::CommonVideoModel;
+use artcraft_router::api::image_list_ref::ImageListRef;
 use artcraft_router::api::image_ref::ImageRef;
 use artcraft_router::api::provider::Provider;
+use artcraft_router::api::video_list_ref::VideoListRef;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
@@ -14,7 +18,6 @@ use artcraft_router::generate::generate_video::generate_video_request_builder::G
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
-use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
 
 pub(super) async fn handle_artcraft_video_via_router(
   request: &EnqueueImageToVideoRequest,
@@ -31,24 +34,30 @@ pub(super) async fn handle_artcraft_video_via_router(
   let start_frame = request.image_media_token.clone().map(ImageRef::MediaFileToken);
   let end_frame = request.end_frame_image_media_token.clone().map(ImageRef::MediaFileToken);
 
+  let reference_images = request.reference_image_media_tokens.clone().map(ImageListRef::MediaFileTokens);
+  let reference_videos = request.reference_video_media_tokens.clone().map(VideoListRef::MediaFileTokens);
+  let reference_audio = request.reference_audio_media_tokens.clone().map(AudioListRef::MediaFileTokens);
+
+  let reference_character_tokens = request.reference_character_tokens.clone().map(CharacterListRef::CharacterTokens);
+
   let router_request = GenerateVideoRequestBuilder {
     model,
     provider: Provider::Artcraft,
     prompt: request.prompt.clone(),
-    negative_prompt: None,
     start_frame,
     end_frame,
-    reference_images: None,
-    reference_videos: None,
-    reference_audio: None,
-    reference_character_tokens: request.reference_character_tokens.clone().map(CharacterListRef::CharacterTokens),
-    resolution: None,
+    reference_images,
+    reference_videos,
+    reference_audio,
+    reference_character_tokens,
+    resolution: request.resolution,
     aspect_ratio: request.aspect_ratio,
     duration_seconds: request.duration_seconds,
     video_batch_count: request.video_batch_count,
     generate_audio: request.generate_audio,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
     idempotency_token: None,
+    negative_prompt: None,
   };
 
   let plan = router_request.build()?;

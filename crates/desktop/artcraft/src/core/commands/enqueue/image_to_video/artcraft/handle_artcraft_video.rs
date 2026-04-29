@@ -37,16 +37,20 @@ pub async fn handle_video_artcraft(
     None => {
       Err(GenerateError::no_model_specified())
     },
+    // Handled via router
+    Some(VideoModel::Kling3p0Pro) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Kling3p0Pro, GenerationModel::Kling3p0Pro).await,
+    Some(VideoModel::Kling3p0Standard) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Kling3p0Standard, GenerationModel::Kling3p0Standard).await,
+    Some(VideoModel::Seedance1p5Pro) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Seedance1p5Pro, GenerationModel::Seedance1p5Pro).await,
+    Some(VideoModel::Seedance2p0) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Seedance2p0, GenerationModel::Seedance2p0).await,
+    Some(VideoModel::Seedance2p0Fast) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Seedance2p0Fast, GenerationModel::Seedance2p0Fast).await,
+    Some(VideoModel::HappyHorse1p0) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::HappyHorse1p0, GenerationModel::HappyHorse1p0).await,
+    // Legacy endpoints
     Some(VideoModel::Kling16Pro) => handle_artcraft_kling_1p6_pro(request, app_env_configs, &creds).await,
     Some(VideoModel::Kling21Pro) => handle_artcraft_kling_2p1_pro(request, app_env_configs, &creds).await,
     Some(VideoModel::Kling21Master) => handle_artcraft_kling_2p1_master(request, app_env_configs, &creds).await,
     Some(VideoModel::Kling2p5TurboPro) => handle_artcraft_kling_2p5_turbo_pro(request, app_env_configs, &creds).await,
     Some(VideoModel::Kling2p6Pro) => handle_artcraft_kling_2p6_pro(request, app_env_configs, &creds).await,
-    Some(VideoModel::Kling3p0Standard) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Kling3p0Standard, GenerationModel::Kling3p0Standard).await,
-    Some(VideoModel::Kling3p0Pro) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Kling3p0Pro, GenerationModel::Kling3p0Pro).await,
     Some(VideoModel::Seedance10Lite) => handle_artcraft_seedance_1_lite(request, app_env_configs, &creds).await,
-    Some(VideoModel::Seedance1p5Pro) => handle_artcraft_video_via_router(request, app_env_configs, &creds, CommonVideoModel::Seedance1p5Pro, GenerationModel::Seedance1p5Pro).await,
-    Some(VideoModel::Seedance2p0) => handle_artcraft_seedance_2p0(request, app_env_configs, &creds).await,
     Some(VideoModel::Sora2) => handle_artcraft_sora2(request, app_env_configs, &creds).await,
     Some(VideoModel::Sora2Pro) => handle_artcraft_sora2_pro(request, app_env_configs, &creds).await,
     Some(VideoModel::Veo2) => handle_artcraft_veo2(request, app_env_configs, &creds).await,
