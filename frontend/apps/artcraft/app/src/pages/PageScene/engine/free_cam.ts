@@ -9,28 +9,15 @@ import * as THREE from "three";
 import { cameras, selectedCameraId } from "~/pages/PageScene/signals/camera";
 import { isPromptBoxFocused } from "~/pages/PageScene/signals/promptBox";
 
-
-export const isSafariOrWebKit = () => {
-  const ua = navigator.userAgent;
-
-  const isWebKit = /AppleWebKit/i.test(ua) && !/Chrome|Chromium|Edg|OPR|CriOS|FxiOS/i.test(ua);
-  const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua);
-
-  return isSafari || isWebKit;
-};
-
-export const hasApplePay = () => {
-  // @ts-expect-error Apple Pay is not defined in TypeScript
-  return !!window.ApplePaySession;
-}
-
-export const isSafari = () => {
-  return isSafariOrWebKit() || hasApplePay();
-}
-
-export const isPointerLockSupported = () => {
-  return !isSafari();
-}
+// Re-exported here for back-compat with keybinds_controls.ts; the
+// definitions live in browserChecks.ts and will be imported directly
+// once Phase 6 deletes this file.
+export {
+  isSafariOrWebKit,
+  hasApplePay,
+  isSafari,
+  isPointerLockSupported,
+} from "./browserChecks";
 
 class FreeCam extends EventDispatcher {
   object: THREE.PerspectiveCamera;
