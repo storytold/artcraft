@@ -27,7 +27,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useTabStore } from "../../pages/Stores/TabState";
 import { addObject } from "../../pages/PageScene/actions";
 import { getActiveEditor } from "../../pages/PageScene/contexts/EngineContext";
-import { set3DPageMounted } from "../../pages/PageScene/Editor/editor";
+import { set3DPageMounted } from "../../pages/PageScene/engine/editor";
 import { AssetType } from "~/enums";
 import type { MediaItem } from "../../pages/PageScene/models";
 import { SPLAT_MODELS } from "@storyteller/model-list";

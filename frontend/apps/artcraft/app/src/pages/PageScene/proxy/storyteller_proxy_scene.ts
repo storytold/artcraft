@@ -4,8 +4,8 @@ import {
   StoryTellerProxy3DObject,
   ObjectJSON,
 } from "./storyteller_proxy_3d_object";
-import Scene from "../Editor/scene";
-import { BoneJSONHelper } from "../Editor/KinHelpers/BoneJSONHelper";
+import Scene from "../engine/scene";
+import { BoneJSONHelper } from "../engine/KinHelpers/BoneJSONHelper";
 
 interface LookUpDictionary {
   [key: string]: StoryTellerProxy3DObject;

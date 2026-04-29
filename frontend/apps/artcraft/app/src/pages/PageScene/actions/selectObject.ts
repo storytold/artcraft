@@ -1,4 +1,4 @@
-import type Editor from "../Editor/editor";
+import type Editor from "../engine/editor";
 
 // Selecting in the engine triggers Editor.publishSelect which writes the
 // selection into the store, so this action only needs to invoke the engine

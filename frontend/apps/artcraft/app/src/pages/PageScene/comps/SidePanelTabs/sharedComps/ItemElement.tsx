@@ -1,7 +1,6 @@
 // TODO: Move into shared component.
 import { useContext } from "react";
 import { MediaItem } from "~/pages/PageScene/models";
-import { useSignals } from "@preact/signals-react/runtime";
 import DndAsset from "~/pages/PageScene/DragAndDrop/DndAsset";
 import { EngineContext } from "~/pages/PageScene/contexts/EngineContext";
 import { Badge } from "@storyteller/ui-badge";
@@ -38,7 +37,6 @@ const patchExpressionObjectType = (mediaType: string) => {
 };
 
 export const ItemElement = ({ item }: Props) => {
-  useSignals();
   const editor = useContext(EngineContext);
 
   return (

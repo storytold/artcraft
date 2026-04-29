@@ -22,7 +22,7 @@ import { CameraAspectRatio } from "~/pages/PageScene/enums";
 import { twMerge } from "tailwind-merge";
 import { Help } from "./Help";
 import { Modal } from "@storyteller/ui-modal";
-import { getSceneGenerationMetaData } from "../../Editor/SceneMetadata";
+import { getSceneGenerationMetaData } from "../../engine/SceneMetadata";
 
 export const ControlsTopButtons = () => {
   useSignals();

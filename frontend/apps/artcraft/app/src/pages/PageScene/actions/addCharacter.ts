@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import type Editor from "../Editor/editor";
+import type Editor from "../engine/editor";
 import { MediaItem } from "../models";
 import { usePageSceneStore } from "../PageSceneStore";
 

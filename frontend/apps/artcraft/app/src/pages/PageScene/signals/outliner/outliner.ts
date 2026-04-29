@@ -1,6 +1,6 @@
 import { signal } from "@preact/signals-core";
 import { SceneObject } from "./types";
-import { SceneManager } from "../../Editor/scene_manager_api";
+import { SceneManager } from "../../engine/scene_manager_api";
 
 export const outlinerState = {
   selectedItem: signal<SceneObject | null>(null),

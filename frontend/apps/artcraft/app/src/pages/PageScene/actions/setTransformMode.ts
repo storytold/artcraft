@@ -1,4 +1,4 @@
-import type Editor from "../Editor/editor";
+import type Editor from "../engine/editor";
 import { usePageSceneStore, TransformMode } from "../PageSceneStore";
 
 const ENGINE_MODE: Record<TransformMode, "translate" | "rotate" | "scale"> = {

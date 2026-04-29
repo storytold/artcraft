@@ -1,4 +1,3 @@
-import { useSignals } from "@preact/signals-react/runtime";
 import { faBell, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { PopoverMenu } from "@storyteller/ui-popover";
@@ -63,7 +62,6 @@ interface CompletedItem {
 // }
 
 export function Activity() {
-  useSignals();
   const [completedItems, setCompletedItems] = useState<CompletedItem[]>([]);
   const [jobs, setJobs] = useState<ActiveJob[]>([]);
   const processedJobs = useRef(new Set<string>());

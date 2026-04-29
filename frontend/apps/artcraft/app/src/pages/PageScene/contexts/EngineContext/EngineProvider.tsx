@@ -1,12 +1,12 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { EngineContext, setActiveEditor } from "./EngineContext";
 
-import Editor, { is3DSceneLoaded } from "~/pages/PageScene/Editor/editor";
+import Editor, { is3DSceneLoaded } from "~/pages/PageScene/engine/editor";
 import { useSignals } from "@preact/signals-react/runtime";
 
 import { signal } from "@preact/signals-react";
 import { useTabStore } from "../../../Stores/TabState";
-import { getSceneGenerationMetaData } from "../../Editor/SceneMetadata";
+import { getSceneGenerationMetaData } from "../../engine/SceneMetadata";
 interface Props {
   sceneToken?: string;
   children: ReactNode;

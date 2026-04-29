@@ -1,4 +1,4 @@
-import type Editor from "../Editor/editor";
+import type Editor from "../engine/editor";
 
 // Editor.deleteObject already removes the THREE.js object via SceneUtils
 // and updates the store via the helper that calls

@@ -8,7 +8,7 @@ import {
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { pageHeight, pageWidth } from "~/signals";
 import { AssetType } from "~/enums";
-import type Editor from "~/pages/PageScene/Editor/editor";
+import type Editor from "~/pages/PageScene/engine/editor";
 import {
   addCharacter,
   addObject,

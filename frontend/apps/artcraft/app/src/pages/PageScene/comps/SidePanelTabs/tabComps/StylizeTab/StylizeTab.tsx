@@ -3,7 +3,7 @@ import { PageStyleSelection } from "./PageStyleSelection";
 import { Prompts } from "./Prompts";
 import { StyleButtons } from "./StyleButtons";
 import { useState } from "react";
-import { ArtStyle } from "~/pages/PageScene/Editor/api_manager";
+import { ArtStyle } from "~/pages/PageScene/engine/api_manager";
 import { styleList } from "~/pages/PageScene/styleList";
 import { StylizeTabPages } from "~/pages/PageScene/enums";
 import { StyleSelectionButton } from "./StyleSelectionButton";

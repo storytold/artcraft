@@ -1,4 +1,4 @@
-import { ArtStyle } from "~/pages/PageScene/Editor/api_manager";
+import { ArtStyle } from "~/pages/PageScene/engine/api_manager";
 
 export const RandomTextsPositive: Record<ArtStyle, string[]> = {
   [ArtStyle.AnimeStandard]: [

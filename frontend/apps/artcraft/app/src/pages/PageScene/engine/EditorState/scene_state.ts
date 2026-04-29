@@ -1,7 +1,7 @@
 // import * as THREE from "three";
 import { Object3D } from "./object_3d";
 import { Object3DJSON } from "./EditorStateJSON/object_3d_json";
-import Scene from "../../Editor/scene";
+import Scene from "../../engine/scene";
 import { SceneStateJson } from "./EditorStateJSON/scene_state_json";
 const DEFAULT_SCENE_VER = 1.0;
 

@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import Editor from "~/pages/PageScene/Editor/editor";
+import Editor from "~/pages/PageScene/engine/editor";
 
 export interface EditorExpandedI extends Editor {
   setSceneContainer: React.Dispatch<

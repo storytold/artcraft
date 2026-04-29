@@ -1,4 +1,4 @@
-import type Editor from "../Editor/editor";
+import type Editor from "../engine/editor";
 import { CameraAspectRatio } from "../enums";
 import { setCameraAspectRatio as setCameraAspectSignal } from "../signals/engine";
 import { usePageSceneStore } from "../PageSceneStore";

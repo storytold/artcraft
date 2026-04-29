@@ -3,7 +3,7 @@
 import { useContext, useState } from "react";
 import { ButtonIcon } from "@storyteller/ui-button-icon";
 import { EngineContext } from "~/pages/PageScene/contexts/EngineContext";
-import { ArtStyle } from "~/pages/PageScene/Editor/api_manager";
+import { ArtStyle } from "~/pages/PageScene/engine/api_manager";
 import { faAngleLeft, faAngleRight } from "@fortawesome/pro-solid-svg-icons";
 import { styleList } from "~/pages/PageScene/styleList";
 import { pageHeight } from "~/signals";
