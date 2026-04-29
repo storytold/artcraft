@@ -25,11 +25,6 @@ export interface DefaultAvatarInfo {
   color_index: number;
 }
 
-export enum AudioTabPages {
-  LIBRARY = "library",
-  TTS = "tts",
-}
-
 export interface MediaFile {
   token: string;
   media_type: MediaFileType;
