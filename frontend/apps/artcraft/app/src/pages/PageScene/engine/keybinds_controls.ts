@@ -152,10 +152,6 @@ export class MouseControls {
       scene: this.scene,
       onDragChange: this.onFKControlsDragging.bind(this),
     });
-
-    // Expose handlePoseModeChange to window
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).__mouseControls = this;
   }
 
   onFKControlsDragging(dragging: boolean) {

@@ -4,14 +4,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button } from "@storyteller/ui-button";
 import { faCheck, faPersonRunning } from "@fortawesome/pro-solid-svg-icons";
 import { usePageSceneStore } from "../PageSceneStore";
-
-declare global {
-  interface Window {
-    __mouseControls?: {
-      toggleFKMode: () => void;
-    };
-  }
-}
+import { getActiveEditor } from "../contexts/EngineContext/EngineContext";
 
 interface PoseModeSelectorProps {}
 
@@ -26,7 +19,7 @@ export const PoseModeSelector: React.FC<PoseModeSelectorProps> = () => {
 
   const handleModeChange = () => {
     setPoseMode(poseMode === "select" ? "pose" : "select");
-    window.__mouseControls?.toggleFKMode();
+    getActiveEditor()?.mouse_controls?.toggleFKMode();
   };
 
   if (!showPoseControls) {
