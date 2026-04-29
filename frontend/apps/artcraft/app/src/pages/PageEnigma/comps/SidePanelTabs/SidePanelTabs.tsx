@@ -1,7 +1,6 @@
 import { useSignals } from "@preact/signals-react/runtime";
 import { sidePanelHeight } from "~/pages/PageEnigma/signals";
 
-import { useMouseEventsSidePanel } from "~/pages/PageEnigma/comps/Timeline/utils/useMouseEventsSidePanel";
 import { TabItem } from "../SidePanel/tabList";
 
 export const SidePanelTabs = ({
@@ -12,7 +11,6 @@ export const SidePanelTabs = ({
   tabs: TabItem[];
 }) => {
   useSignals();
-  const { onPointerDown } = useMouseEventsSidePanel();
 
   return (
     <>
@@ -30,11 +28,9 @@ export const SidePanelTabs = ({
           </div>
         ))}
       </div>
-      <div
-        className="absolute inset-0 block w-1 cursor-ew-resize"
-        style={{ height: sidePanelHeight.value }}
-        onPointerDown={onPointerDown}
-      />
+      {/* TODO: side-panel resize handle previously used a hook from a
+          long-deleted comps/Timeline path. Rewire when the React event
+          hooks land in Phase 6. */}
     </>
   );
 };

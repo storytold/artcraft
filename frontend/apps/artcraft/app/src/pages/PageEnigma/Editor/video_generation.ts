@@ -61,14 +61,10 @@ export class VideoGeneration {
       //   return clip.type == ClipType.AUDIO;
       // });
 
-      if (!this.editor.engineFrameBuffers.payloadZip) {
-        await this.handleError(
-          `Video Processing Failed Please Try Again (zip process failed)`,
-          3000,
-        );
-      }
-
-      const zipBlob = this.editor.engineFrameBuffers.payloadZip;
+      // TODO: timeline-driven engineFrameBuffers was removed; rewire video
+      // capture to a non-timeline trigger (likely an explicit frame loop
+      // owned by VideoGeneration).
+      const zipBlob: Blob | undefined = undefined;
       if (!zipBlob) {
         await this.handleError(`"Payload blob is null."`, 3000);
       }

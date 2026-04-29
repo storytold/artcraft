@@ -379,9 +379,11 @@ export const Controls3D = () => {
       <UploadModalSplat
         isOpen={uploadSplatIsShowing}
         onClose={() => setUploadSplatIsShowing(false)}
-        onSuccess={(buffer, shouldFlip) => {
-          setUploadSplatIsShowing(false)
-          editorEngine?.timeline.addLocalSplat(buffer, shouldFlip);
+        onSuccess={(_buffer, _shouldFlip) => {
+          setUploadSplatIsShowing(false);
+          // TODO: addLocalSplat lived on the deleted timeline; rewire to a
+          // direct editor.addLocalSplat once the imperative engine grows
+          // that method.
         }}
         title="Upload an spz file"
         titleIcon={faCube}

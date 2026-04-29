@@ -266,9 +266,6 @@ export class SaveManager {
       child.layers.set(1);
     });
 
-    console.debug("Loading Timeline", scene_json["timeline"]);
-
-    this.editor.timeline.checkEditorCanPlay();
   }
 
   public async loadCache(cacheJson: string) {
@@ -278,7 +275,6 @@ export class SaveManager {
     await this.loadFromJson(scene_json);
 
     hideEditorLoader();
-    this.editor.timeline.scrub({ currentTime: 0 });
   }
 
   // TODO Refactor remove editor.
@@ -297,7 +293,5 @@ export class SaveManager {
     await this.loadFromJson(scene_json);
 
     hideEditorLoader();
-    // TODO figure out if this is a bug.
-    this.editor.timeline.scrub({ currentTime: 0 });
   }
 }

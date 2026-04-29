@@ -12,19 +12,10 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { SAOPass } from "three/addons/postprocessing/SAOPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
-import AudioEngine from "./Engines/audio_engine.js";
-import TransformEngine from "./Engines/transform_engine.js";
-import EmotionEngine from "./Engines/emotion_engine";
-import { TimeLine } from "./timeline.js";
-import LipSyncEngine from "./Engines/lip_sync_engine.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { EditorStates, CameraAspectRatio } from "~/pages/PageEnigma/enums";
 import { AssetType, ClipGroup } from "~/enums";
 import { XYZ } from "../datastructures/common";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { fromEngineActions } from "~/pages/PageEnigma/Queue/fromEngineActions";
-import { MediaItem } from "~/pages/PageEnigma/models";
 import {
   editorState,
   cameraAspectRatio,
@@ -44,7 +35,6 @@ import {
 import { outlinerState, updateObjectPanel } from "../signals";
 import { transformSpace } from "../signals/selectedMode";
 import { IGenerationOptions } from "../models/generationOptions";
-import { toEngineActions } from "../Queue/toEngineActions";
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { MediaUploadApi } from "~/Classes/ApiManager";
 import { SceneManager } from "./scene_manager_api";
@@ -52,10 +42,10 @@ import { CustomOutlinePass } from "./CustomOutlinePass.js";
 import FindSurfaces from "./FindSurfaces.js";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
-import { CharacterAnimationEngine } from "./Engines/CharacterAnimationEngine";
 import { cameras, selectedCameraId } from "~/pages/PageEnigma/signals/camera";
 import { SparkRenderer } from "@sparkjsdev/spark";
 import { SSAOPass } from "three/examples/jsm/Addons.js";
+import { usePageEnigmaStore } from "../PageEnigmaStore";
 
 export type EditorInitializeConfig = {
   sceneToken: string;
@@ -124,20 +114,10 @@ class Editor {
   render_timer: number;
   fps_number: number;
   cap_fps: number;
-  can_playback: boolean;
-  playback_location: number;
-  audio_engine: AudioEngine;
-  transform_engine: TransformEngine;
-  emotion_engine: EmotionEngine;
-  lipsync_engine: LipSyncEngine;
-  animation_engine: CharacterAnimationEngine;
-  timeline: TimeLine;
-  current_frame: number;
   lockControls: PointerLockControls | undefined;
   cam_obj: THREE.Object3D | undefined;
   camera_last_pos: THREE.Vector3;
   renderPass: RenderPass | undefined;
-  generating_preview: boolean;
   frames: number;
   lastFrameTime: number;
 
@@ -160,8 +140,8 @@ class Editor {
   negative_prompt: string;
   art_style: ArtStyle;
   rawRenderPass: RenderPass | undefined;
+  generating_preview: boolean = false;
 
-  last_scrub: number;
   recorder: MediaRecorder | undefined;
   container: HTMLElement | null = null;
 
@@ -202,10 +182,6 @@ class Editor {
   customOutlinerPass: CustomOutlinePass | undefined;
   surfaceFinder: FindSurfaces | undefined;
 
-  // New Rendering Pipeline Engine Work
-  //videoAudioPreProcessor: VideoAudioPreProcessor | undefined;
-
-  engineFrameBuffers: EngineFrameBuffers;
   renderIndex: number;
   // this should be set in the future to extend the lenght of the track for rendering engine
   globalSetTrackLengthSeconds: number;
@@ -260,7 +236,6 @@ class Editor {
       this.version,
     );
     this.activeScene.initialize();
-    this.generating_preview = false;
     this.last_cam_pos = new THREE.Vector3(0, 0, 0);
     this.last_cam_rot = new THREE.Euler(0, 0, 0);
     this.camera_last_pos = new THREE.Vector3(0, 0, 0);
@@ -269,56 +244,26 @@ class Editor {
     this.rendering = false;
     this.lastCanvasSize = 0;
     this.switchPreviewToggle = false;
-    // API.
     this.api_manager = new APIManager();
-    // Debug & Movement.
     this.camera_person_mode = false;
     this.locked = false;
-    // Recording params.
     this.render_timer = 0;
     this.fps_number = 60;
     this.cap_fps = 60;
-    // Timeline settings.
-    this.can_playback = false;
-    this.playback_location = 0;
-    this.last_scrub = 0;
     this.frames = 0;
     this.lastFrameTime = 0;
     this.last_selected_sum = 0;
     this.selectedCanvas = false;
     this.renderEventToken = -1;
     this.shouldRender = false;
-    // Audio Engine Test.
 
     this.render_camera_aspect_ratio = CameraAspectRatio.HORIZONTAL_3_2;
     this.render_width = this.getRenderDimensions().width;
     this.render_height = this.getRenderDimensions().height;
 
-    this.audio_engine = new AudioEngine();
-    this.emotion_engine = new EmotionEngine(this.version);
-    this.transform_engine = new TransformEngine(this.version);
-    this.lipsync_engine = new LipSyncEngine();
-    this.animation_engine = new CharacterAnimationEngine(this.version);
-
-    this.timeline = new TimeLine(
-      this,
-      this.audio_engine,
-      this.transform_engine,
-      this.lipsync_engine,
-      this.animation_engine,
-      this.emotion_engine,
-      this.activeScene,
-      this.camera,
-      this.mouse,
-      this.camera_name,
-    );
-
-    this.activeScene.timeline = this.timeline;
-
     this.utils = new SceneUtils(this, this.activeScene);
     this.videoGeneration = new VideoGeneration(this);
     this.save_manager = new SaveManager(this);
-    this.current_frame = 0;
 
     // Scene State
     this.current_scene_media_token = null;
@@ -463,12 +408,6 @@ class Editor {
       this.render_camera.aspect = aspectRatio;
       this.render_camera.updateProjectionMatrix();
     }
-
-    Queue.publish({
-      queueName: QueueNames.FROM_ENGINE,
-      action: fromEngineActions.CAMERA_ASPECT_RATIO_CHANGED,
-      data: this.render_camera_aspect_ratio,
-    });
   }
 
   initialize({
@@ -523,8 +462,6 @@ class Editor {
 
     this.camera.layers.enable(0);
     this.camera.layers.enable(1);
-
-    this.timeline.camera = this.camera;
 
     const otherCameras = cameras.value.filter((cam) => cam.id !== "main");
     if (otherCameras.length > 0) {
@@ -624,8 +561,6 @@ class Editor {
 
     this.setupResizeObserver();
 
-    this.timeline.scene = this.activeScene;
-
     // saving state of the scene
     this.current_scene_media_token = null;
     this.current_scene_glb_media_token = null;
@@ -645,7 +580,7 @@ class Editor {
       this.deleteObject.bind(this),
       this.canvReference,
       this.mouse,
-      this.timeline.mouse,
+      this.mouse,
       this.raycaster,
       this.control,
       this.outlinePass,
@@ -667,7 +602,7 @@ class Editor {
         this.activeScene,
         true,
         this.updateOutliner.bind(this),
-        this.timeline.isCharacter.bind(this.timeline),
+        this.isCharacterUuid.bind(this),
       ); // Enabled dev mode.
       this.mouse_controls.sceneManager = this.sceneManager;
     }
@@ -685,7 +620,7 @@ class Editor {
 
       if (this.outliner_feature_flag) {
         const result = this.sceneManager?.render_outliner(
-          this.timeline.characters,
+          this.getCharactersByUuid(),
         );
         if (result) outlinerState.items.value = result.items;
       }
@@ -908,24 +843,6 @@ class Editor {
 
   public async newScene(sceneTitleInput: string) {
     this.activeScene.clear();
-    this.audio_engine = new AudioEngine();
-    this.emotion_engine = new EmotionEngine(this.version);
-    this.transform_engine = new TransformEngine(this.version);
-    this.lipsync_engine = new LipSyncEngine();
-    this.animation_engine = new CharacterAnimationEngine(this.version);
-
-    this.timeline = new TimeLine(
-      this,
-      this.audio_engine,
-      this.transform_engine,
-      this.lipsync_engine,
-      this.animation_engine,
-      this.emotion_engine,
-      this.activeScene,
-      this.camera,
-      this.mouse,
-      this.camera_name,
-    );
     this.cam_obj = this.activeScene.get_object_by_name(this.camera_name);
     const sceneTitle =
       sceneTitleInput && sceneTitleInput !== ""
@@ -937,15 +854,11 @@ class Editor {
       ownerToken: authentication.userInfo.value?.user_token,
       isModified: false,
     });
-    Queue.publish({
-      queueName: QueueNames.FROM_ENGINE,
-      action: fromEngineActions.RESET_TIMELINE,
-      data: null,
-    });
+    usePageEnigmaStore.getState().resetScene();
 
     if (this.outliner_feature_flag) {
       const result = this.sceneManager?.render_outliner(
-        this.timeline.characters,
+        this.getCharactersByUuid(),
       );
       if (result) outlinerState.items.value = result.items;
     }
@@ -960,16 +873,10 @@ class Editor {
 
     if (this.outliner_feature_flag) {
       const result = this.sceneManager?.render_outliner(
-        this.timeline.characters,
+        this.getCharactersByUuid(),
       );
       if (result) outlinerState.items.value = result.items;
     }
-    // publish to the UI the values for the prompts and artistic style and settings?
-    Queue.publish({
-      queueName: QueueNames.TO_ENGINE,
-      action: toEngineActions.UPDATE_TIME,
-      data: { currentTime: 1 },
-    });
   }
 
   setSelected(object: THREE.Object3D[] | undefined) {
@@ -1200,7 +1107,7 @@ class Editor {
     this.utils.deleteObject(uuid);
     if (this.outliner_feature_flag) {
       const result = this.sceneManager?.render_outliner(
-        this.timeline.characters,
+        this.getCharactersByUuid(),
       );
       if (result) outlinerState.items.value = result.items;
     }
@@ -1221,110 +1128,9 @@ class Editor {
   }
 
   async recordScene() {
-    // Preconditions required to record the scene when generating the movie.
-    if (this.rendering && this.rawRenderer && this.clock && this.renderer) {
-      if (this.recorder === undefined && this.render_camera) {
-        const width =
-          this.render_camera_aspect_ratio === CameraAspectRatio.HORIZONTAL_16_9
-            ? 1024
-            : this.render_camera_aspect_ratio === meraAspectRatio.VERTICAL_9_16
-              ? 576
-              : this.render_camera_aspect_ratio ===
-                meraAspectRatio.HORIZONTAL_3_2
-                ? 900
-                : this.render_camera_aspect_ratio ===
-                  meraAspectRatio.VERTICAL_2_3
-                  ? 600
-                  : 1000;
-        const height =
-          this.render_camera_aspect_ratio === CameraAspectRatio.HORIZONTAL_16_9
-            ? 576
-            : this.render_camera_aspect_ratio === meraAspectRatio.VERTICAL_9_16
-              ? 1024
-              : this.render_camera_aspect_ratio ===
-                meraAspectRatio.HORIZONTAL_3_2
-                ? 600
-                : this.render_camera_aspect_ratio ===
-                  meraAspectRatio.VERTICAL_2_3
-                  ? 900
-                  : 1000;
-
-        this.rawRenderer.setSize(width, height);
-
-        // ensure that during a resize or change in perspective this will processes correct.
-        this.engineFrameBuffers.setRenderSurfaceSize(width, height);
-
-        this.render_camera.aspect = width / height;
-      }
-
-      this.render_timer += this.clock.getDelta();
-
-      this.playback_location++;
-
-      this.utils.removeTransformControls(true);
-
-      if (this.timeline.is_playing) {
-        this.setColorMap();
-        this.render_composer?.render();
-        if (this.canvReference) {
-          console.time("Color Frame RenderTime");
-
-          // reset this flag to ensure that a failure isn't cached
-          this.processingHasFailed = false;
-          // can't render without this.
-
-          if (!this.render_camera) {
-            return;
-          }
-
-          this.engineFrameBuffers.enqueueWork(
-            this.rawRenderer,
-            this.activeScene.scene,
-            this.render_camera,
-          );
-
-          this.renderIndex += 1;
-          console.log(`Frames Counted: ${this.renderIndex}`);
-
-          console.timeEnd("Color Frame RenderTime");
-        } else {
-          console.log("We lost the canvas reference.");
-        }
-
-        this.render_timer += this.clock.getDelta();
-      }
-      if (!this.timeline.is_playing) {
-        this.playback_location = 0;
-        try {
-          if (this.processingRecording) {
-            console.log(
-              "processingRecording is already happening this shouldn't have happened",
-            );
-            return;
-          }
-          this.processingRecording = true;
-          // collect all frames here, there is some kind of race condition that is happening
-          // TODO BUG with the main loop,that sends multiple zip requests.
-          console.log(`COLLECTING COLOR FRAMES COUNTED: ${this.renderIndex}`);
-          await this.engineFrameBuffers.collectColorFrames(this.renderIndex);
-
-          this.renderIndex = 0;
-          console.time("Stop Playback And Upload Video Time");
-          await this.stopPlaybackAndUploadVideo();
-          console.timeEnd("Stop Playback And Upload Video Time");
-
-          this.processingRecording = false;
-          console.log("Processing has ended");
-        } catch (error) {
-          // don't use cache in this case.
-          this.processingHasFailed = true;
-
-          console.log(`Video Generation: ${error}`);
-        }
-      } // End Timeline Playing
-
-      // BRB ^)^
-    }
+    // TODO: timeline-driven frame recording was removed in the refactor;
+    // rewire video capture to a non-timeline trigger (likely
+    // VideoGeneration owning its own frame loop).
   }
 
   // Render the scene to the camera, this is called in the update.
@@ -1407,16 +1213,10 @@ class Editor {
 
     if (this.cameraViewControls && this.camera_person_mode) {
       if (this.cam_obj && this.camera) {
-        if (this.last_scrub != this.timeline.scrubber_frame_position) {
-          this.camera.position.copy(this.cam_obj.position);
-          this.camera.rotation.copy(this.cam_obj.rotation);
-        } else if (!this.timeline.is_playing) {
-          this.cam_obj.position.copy(this.camera.position);
-          this.cam_obj.rotation.copy(this.camera.rotation);
-        } else {
-          this.camera.position.copy(this.cam_obj.position);
-          this.camera.rotation.copy(this.cam_obj.rotation);
-        }
+        // Without a timeline scrubber, edits in camera-person mode write
+        // back into cam_obj rather than copying out of it.
+        this.cam_obj.position.copy(this.camera.position);
+        this.cam_obj.rotation.copy(this.camera.rotation);
 
         this.cam_obj.visible = false;
 
@@ -1434,21 +1234,12 @@ class Editor {
       this.cam_obj.scale.copy(new THREE.Vector3(1, 1, 1));
     }
 
-    if (this.timeline.is_playing) {
-      const changeView = await this.timeline.update(this.rendering, delta_time);
-      if (changeView) {
-        this.switchCameraView();
-      }
-    } else if (
-      this.last_scrub === this.timeline.scrubber_frame_position &&
-      this.utils.getSelectedSum() !== this.last_selected_sum
-    ) {
+    if (this.utils.getSelectedSum() !== this.last_selected_sum) {
       this.updateSelectedUI();
     }
     this.last_selected_sum = this.utils.getSelectedSum();
 
     await this.renderScene();
-    this.last_scrub = this.timeline.scrubber_frame_position;
 
     this.stats.update();
   }
@@ -1597,27 +1388,17 @@ class Editor {
 
   // This initializes the generation of a video render scene is where the core work happens
   async generateVideo() {
-    // cannot run this function reliably without ensuring state below doesn't blow everything up.
     if (await this.checkAndUseCache()) {
       console.log("Generating Video: Checking Cache");
       await this.videoGeneration.handleCachedEnqueue();
       return;
     }
 
-    // some state changes below
-
-    this.timeline.is_playing = false;
-    this.timeline.scrubber_frame_position = 0;
-    this.timeline.current_time = 0;
-
-    if (this.rendering || this.generating_preview) {
+    if (this.rendering) {
       return;
     }
 
     this.showLoading();
-
-    // This for debouncing and also trigging the toggle playback...
-    // has to be here or will break play back ...
     this.rendering = true;
 
     console.log("Running without Cache");
@@ -1625,12 +1406,13 @@ class Editor {
     this.togglePlayback();
     this.render_timer = 0;
     this.activeScene.renderMode(this.rendering);
-    this.timeline.scrubber_frame_position = 0;
     if (this.activeScene.hot_items) {
       this.activeScene.hot_items.forEach((element) => {
         element.visible = false;
       });
     }
+    // TODO: timeline-driven playback was the trigger for frame capture;
+    // rewire VideoGeneration to drive its own frame loop.
   }
 
   // In first case where if it cached data this is for people to reprompt without leaving the app
@@ -1662,9 +1444,7 @@ class Editor {
       this.startRenderWidth = this.rawRenderer.domElement.width;
       this.startRenderHeight = this.rawRenderer.domElement.height;
     }
-    if (!this.rendering && this.timeline.is_playing) {
-      this.timeline.is_playing = false;
-
+    if (!this.rendering) {
       this.switchCameraView();
       if (this.activeScene.hot_items) {
         this.activeScene.hot_items.forEach((element) => {
@@ -1672,8 +1452,6 @@ class Editor {
         });
       }
     } else {
-      this.timeline.is_playing = true;
-      this.timeline.scrubber_frame_position = 0;
       if (!this.camera_person_mode) {
         this.switchCameraView();
       }
@@ -1686,7 +1464,9 @@ class Editor {
   }
 
   updateOutliner() {
-    const result = this.sceneManager?.render_outliner(this.timeline.characters);
+    const result = this.sceneManager?.render_outliner(
+      this.getCharactersByUuid(),
+    );
     if (result) outlinerState.items.value = result.items;
     this.updateSelectedUI();
   }
@@ -1694,10 +1474,7 @@ class Editor {
   updateSelectedUI() {
     let mainSelected;
     if (this.outliner_feature_flag) {
-      if (
-        this.sceneManager?.selected_objects === undefined ||
-        this.timeline.is_playing
-      ) {
+      if (this.sceneManager?.selected_objects === undefined) {
         return;
       }
       if (this.sceneManager?.selected_objects.length <= 0) {
@@ -1706,10 +1483,6 @@ class Editor {
 
       mainSelected = this.sceneManager?.selected_objects[0];
     } else {
-      if (this.timeline.is_playing) {
-        return;
-      }
-
       if (this.selected == undefined) {
         return 0;
       }
@@ -1812,52 +1585,39 @@ class Editor {
   }
 
   publishSelect() {
-    if ((this, this.outliner_feature_flag)) {
-      if (
-        this.sceneManager?.selected_objects &&
-        this.sceneManager?.selected_objects?.length > 0
-      ) {
-        Queue.publish({
-          queueName: QueueNames.FROM_ENGINE,
-          action: fromEngineActions.SELECT_OBJECT,
-          data: {
-            type: this.getAssetType(this.sceneManager?.selected_objects[0]),
-            object_uuid: this.sceneManager?.selected_objects[0].uuid,
-            version: 1,
-            media_id: this.sceneManager?.selected_objects[0].id.toString(),
-            name: "",
-          } as MediaItem,
-        });
-        return;
-      } else {
-        Queue.publish({
-          queueName: QueueNames.FROM_ENGINE,
-          action: fromEngineActions.DESELECT_OBJECT,
-          data: null,
-        });
-      }
+    const store = usePageEnigmaStore.getState();
+    const target = this.outliner_feature_flag
+      ? this.sceneManager?.selected_objects?.[0]
+      : this.selected;
+    if (target) {
+      store.setSelectedObject({
+        type: this.getAssetType(target),
+        id: target.uuid,
+      });
     } else {
-      if (this.selected) {
-        Queue.publish({
-          queueName: QueueNames.FROM_ENGINE,
-          action: fromEngineActions.SELECT_OBJECT,
-          data: {
-            type: this.getAssetType(this.selected),
-            object_uuid: this.selected.uuid,
-            version: 1,
-            media_id: this.selected.id.toString(),
-            name: "",
-          } as MediaItem,
-        });
-        return;
-      } else {
-        Queue.publish({
-          queueName: QueueNames.FROM_ENGINE,
-          action: fromEngineActions.DESELECT_OBJECT,
-          data: null,
-        });
-      }
+      store.setSelectedObject(null);
     }
+  }
+
+  // Replaces the deleted Timeline.isCharacter — checks the Zustand store's
+  // character list, which is the source of truth for which scene objects
+  // are characters.
+  isCharacterUuid(uuid: string): boolean {
+    return usePageEnigmaStore
+      .getState()
+      .characters.some((c) => c.id === uuid);
+  }
+
+  // Replaces Timeline.characters (a Record<uuid, ClipGroup>) — used by
+  // SceneManager.render_outliner to know which scene objects to render as
+  // characters.
+  getCharactersByUuid(): { [uuid: string]: ClipGroup } {
+    const characters = usePageEnigmaStore.getState().characters;
+    const result: { [uuid: string]: ClipGroup } = {};
+    for (const c of characters) {
+      result[c.id] = ClipGroup.CHARACTER;
+    }
+    return result;
   }
 }
 
