@@ -4,7 +4,10 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGithub } from "@fortawesome/free-brands-svg-icons";
+import {
+  faGithub,
+  faDiscord,
+} from "@fortawesome/free-brands-svg-icons";
 import { faWindows, faApple } from "@fortawesome/free-brands-svg-icons";
 import {
   faPlay,
@@ -21,6 +24,7 @@ import {
   faFilm,
   faPaintBrush,
   faCamera,
+  faRocket,
 } from "@fortawesome/pro-solid-svg-icons";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
@@ -28,6 +32,9 @@ import { DownloadModal } from "../../components/download-modal";
 import ModelBadgeGrid from "../../components/model-badge-grid";
 import { UsersApi } from "@storyteller/api";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
+import { SOCIAL_LINKS } from "../../config/links";
+import { Button } from "@storyteller/ui-button";
+import { Link } from "react-router-dom";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -199,15 +206,15 @@ const Landing3 = () => {
       />
 
       {/* HERO */}
-      <section className="relative pt-32 sm:pt-40 pb-20 sm:pb-24 px-4 sm:px-8">
-        <div className="max-w-[1100px] mx-auto text-center">
+      <section className="relative pt-32 sm:pt-36 pb-20 sm:pb-24 px-4 sm:px-8">
+        <div className="max-w-6xl mx-auto text-center">
           {/* Eyebrow chip */}
           <div
             className="inline-flex items-center gap-2 px-3 py-1.5 mb-7 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md text-xs sm:text-[13px] font-medium text-white/70"
             data-reveal
           >
             <span className="flex h-1.5 w-1.5 rounded-full bg-primary" />
-            Now with Seedance, Nano Banana 2 & more
+            Now with Seedance 2.0, Nano Banana 2 & more
           </div>
 
           {/* Headline */}
@@ -227,7 +234,7 @@ const Landing3 = () => {
             data-reveal
           >
             Artists deserve unparalleled control and precision. ArtCraft is the
-            open desktop app that pulls you out of prompting — and back into
+            open desktop app that pulls you out of prompting, and back into
             actually crafting.
           </p>
 
@@ -237,15 +244,15 @@ const Landing3 = () => {
             data-reveal
           >
             {isMobile ? (
-              <button
+              <Button
                 disabled
                 className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-white/10 text-white/60 text-[14px] font-semibold"
               >
                 Download on a desktop
-              </button>
+              </Button>
             ) : (
               <>
-                <a
+                <Button
                   href={downloadUrl}
                   onClick={onDownloadClick}
                   className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
@@ -255,8 +262,8 @@ const Landing3 = () => {
                     className="text-[13px]"
                   />
                   Download for {isMacOs ? "Mac" : "Windows"}
-                </a>
-                <a
+                </Button>
+                <Button
                   href="/pricing"
                   className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.08] backdrop-blur-md transition-all hover:-translate-y-px"
                 >
@@ -265,14 +272,14 @@ const Landing3 = () => {
                     className="text-primary text-[13px]"
                   />
                   Buy credits
-                </a>
+                </Button>
               </>
             )}
           </div>
 
           {/* Hero video */}
           <div
-            className="relative rounded-2xl sm:rounded-[24px] overflow-hidden bg-[#080808] border border-white/[0.08] p-1.5 sm:p-2 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.6)]"
+            className="relative rounded-2xl sm:rounded-[24px] overflow-hidden bg-[#080808] border border-white/[0.08]"
             data-reveal
           >
             <div
@@ -308,19 +315,18 @@ const Landing3 = () => {
         </div>
       </section>
 
-      {/* FEATURES — alternating cards */}
+      {/* FEATURES: alternating cards */}
       <section className="relative px-4 sm:px-8 py-16 sm:py-24">
-        <div className="max-w-[1100px] mx-auto flex flex-col gap-8 sm:gap-12">
+        <div className="max-w-6xl mx-auto flex flex-col gap-8 sm:gap-12">
           {FEATURES.map((feature, i) => (
             <article
               key={feature.title}
               data-reveal
-              className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl sm:rounded-[28px] overflow-hidden bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl sm:rounded-[28px] overflow-hidden bg-[#080808] transition-colors"
             >
               <div
-                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${
-                  i % 2 === 1 ? "lg:order-2" : ""
-                }`}
+                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${i % 2 === 1 ? "lg:order-2" : ""
+                  }`}
               >
                 <div className="flex items-center gap-2 mb-5">
                   <span className="inline-flex h-7 px-2.5 items-center gap-1.5 rounded-full bg-primary/15 text-primary text-[12px] font-semibold border border-primary/20">
@@ -331,7 +337,7 @@ const Landing3 = () => {
                     {feature.label}
                   </span>
                 </div>
-                <h3 className="text-2xl sm:text-3xl md:text-[32px] tracking-[-0.02em] font-medium leading-[1.15] mb-4 text-white">
+                <h3 className="text-2xl sm:text-3xl md:text-[32px] tracking-[-0.02em] font-semibold leading-[1.15] mb-4 text-white">
                   {feature.title}
                 </h3>
                 <p className="text-[15px] sm:text-base text-white/55 leading-relaxed">
@@ -339,9 +345,8 @@ const Landing3 = () => {
                 </p>
               </div>
               <div
-                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${
-                  i % 2 === 1 ? "lg:order-1" : ""
-                }`}
+                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${i % 2 === 1 ? "lg:order-1" : ""
+                  }`}
               >
                 <video
                   src={feature.src}
@@ -359,7 +364,7 @@ const Landing3 = () => {
 
       {/* STOP RENTING SECTION */}
       <section className="relative px-4 sm:px-8 py-16 sm:py-24">
-        <div className="max-w-[1100px] mx-auto" data-reveal>
+        <div className="max-w-6xl mx-auto" data-reveal>
           <div className="text-center mb-12">
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
               Ownership
@@ -369,8 +374,9 @@ const Landing3 = () => {
               <span className="font-serif-italic">websites</span>.
             </h2>
             <p className="max-w-xl mx-auto text-base sm:text-lg text-white/55 leading-relaxed">
-              We're artists, not landlords. ArtCraft is yours to have and to
-              hold — forever. Dump the aggregator subscription rent payment.
+              ArtCraft is yours to own and keep,{" "}
+              <span className="font-serif-italic text-white/75">forever</span>.
+              No subscriptions, no aggregator middleman, no rent payments.
             </p>
           </div>
 
@@ -383,27 +389,24 @@ const Landing3 = () => {
                 </span>
               </div>
               <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white/85">
-                Web apps
+                The rental trap
               </h3>
-              <ul className="space-y-3">
-                {[
-                  "Locked behind subscriptions",
-                  "Your work lives on someone else's server",
-                  "Tabs, browsers, latency",
-                  "Paywalled features and credit traps",
-                ].map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-3 text-[15px] text-white/55"
+              <p className="text-[15px] text-white/55 leading-relaxed mb-6">
+                With browser-based tools, you're paying for access, not a
+                product. Your work, models, and history live on someone
+                else's servers, and disappear with them.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {["No ownership", "Monthly fees"].map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-300/80 bg-red-500/[0.08] border border-red-500/20 rounded-lg px-2.5 py-1.5"
                   >
-                    <FontAwesomeIcon
-                      icon={faXmark}
-                      className="text-red-400 mt-1 text-xs"
-                    />
-                    {item}
-                  </li>
+                    <FontAwesomeIcon icon={faXmark} className="text-red-400 text-[10px]" />
+                    {tag}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
 
             {/* ArtCraft column */}
@@ -422,34 +425,34 @@ const Landing3 = () => {
                   </span>
                 </div>
                 <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white">
-                  Native desktop
+                  Complete ownership
                 </h3>
-                <ul className="space-y-3">
-                  {[
-                    "Free to download — yours forever",
-                    "Files live on your own machine",
-                    "Native performance, no tabs",
-                    "Open source on GitHub",
-                  ].map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-start gap-3 text-[15px] text-white/80"
+                <p className="text-[15px] text-white/80 leading-relaxed mb-6">
+                  Download ArtCraft and it's yours. You own the application,
+                  your files, and everything you create. Bring your own API
+                  keys, or use ours.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["Yours forever", "BYO keys"].map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary-200 bg-primary/[0.12] border border-primary/25 rounded-lg px-2.5 py-1.5"
                     >
                       <FontAwesomeIcon
                         icon={faCheck}
-                        className="text-primary mt-1 text-xs"
+                        className="text-primary text-[10px]"
                       />
-                      {item}
-                    </li>
+                      {tag}
+                    </span>
                   ))}
-                </ul>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FIVE REASONS — original bento, dark theme */}
+      {/* FIVE REASONS: original bento, dark theme */}
       <section id="reasons" className="relative px-4 sm:px-8 py-16 sm:py-24">
         <div className="max-w-6xl mx-auto" data-reveal>
           <div className="text-center mb-12 sm:mb-16">
@@ -463,7 +466,7 @@ const Landing3 = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6">
-            {/* Reason #1 — Text Prompting Sucks */}
+            {/* Reason #1: Text Prompting Sucks */}
             <div className="xl:col-span-6 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
               <div className="flex xl:flex-col gap-4 lg:gap-8 h-full flex-col-reverse">
                 <div className="grow h-40">
@@ -490,7 +493,7 @@ const Landing3 = () => {
               </div>
             </div>
 
-            {/* Reason #2 — Desktop App */}
+            {/* Reason #2: Desktop App */}
             <div className="xl:col-span-6 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 pb-0 lg:pb-0 group overflow-hidden">
               <div className="relative flex flex-col h-full">
                 <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
@@ -529,7 +532,7 @@ const Landing3 = () => {
               </div>
             </div>
 
-            {/* Reason #3 — Open Source */}
+            {/* Reason #3: Open Source */}
             <div className="xl:col-span-4 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
               <div className="flex flex-col h-full">
                 <h3 className="font-semibold tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
@@ -556,7 +559,7 @@ const Landing3 = () => {
               </div>
             </div>
 
-            {/* Reason #4 — Use Every Model */}
+            {/* Reason #4: Use Every Model */}
             <div className="xl:col-span-8 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors group overflow-hidden">
               <div className="lg:flex-1 flex flex-col justify-between">
                 <div className="p-6 lg:p-8">
@@ -579,7 +582,7 @@ const Landing3 = () => {
               </div>
             </div>
 
-            {/* Reason #5 — Created by Artists */}
+            {/* Reason #5: Created by Artists */}
             <div className="xl:col-span-12 md:col-span-2 rounded-3xl bg-[#080808] border border-white/[0.08] hover:border-white/[0.15] transition-colors p-6 lg:p-8 group">
               <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 items-center">
                 <div className="lg:flex-1">
@@ -623,7 +626,7 @@ const Landing3 = () => {
 
       {/* MADE WITH ARTCRAFT */}
       <section id="made-with" className="relative px-4 sm:px-8 py-16 sm:py-24">
-        <div className="max-w-[1100px] mx-auto" data-reveal>
+        <div className="max-w-6xl mx-auto" data-reveal>
           <div className="text-center mb-12">
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
               Community
@@ -632,7 +635,7 @@ const Landing3 = () => {
               Made using <span className="font-serif-italic">ArtCraft</span>.
             </h2>
             <p className="text-base sm:text-lg text-white/55">
-              See what artists are creating with the app.
+              See content created with the app.
             </p>
           </div>
 
@@ -682,7 +685,7 @@ const Landing3 = () => {
 
       {/* FINAL CTA */}
       <section className="relative px-4 sm:px-8 py-20 sm:py-32">
-        <div className="max-w-[1100px] mx-auto" data-reveal>
+        <div className="max-w-6xl mx-auto" data-reveal>
           <div className="relative rounded-2xl sm:rounded-[32px] bg-[#080808] border border-white/[0.1] p-10 sm:p-16 lg:p-20 text-center overflow-hidden">
             <div
               className="absolute inset-0 pointer-events-none"
@@ -700,7 +703,7 @@ const Landing3 = () => {
                 their vision to life. Free to download.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 font-display">
                 {isMobile ? (
                   <button
                     disabled
@@ -721,8 +724,30 @@ const Landing3 = () => {
                       />
                       Download for {isMacOs ? "Mac" : "Windows"}
                     </a>
+                    <Link
+                      to="/pricing"
+                      className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-gradient-to-r from-primary/25 to-purple-500/25 hover:from-primary/35 hover:to-purple-500/35 text-white text-[14px] font-semibold border border-primary/30 transition-all hover:-translate-y-px"
+                    >
+                      <FontAwesomeIcon
+                        icon={faRocket}
+                        className="text-[13px] text-primary-300"
+                      />
+                      Supercharge Credits
+                    </Link>
                     <a
-                      href="https://github.com/storytold/artcraft"
+                      href={SOCIAL_LINKS.DISCORD}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"
+                    >
+                      <FontAwesomeIcon
+                        icon={faDiscord}
+                        className="text-[13px] text-[#5865F2]"
+                      />
+                      Join Discord
+                    </a>
+                    <a
+                      href={SOCIAL_LINKS.GITHUB}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-white text-[14px] font-semibold border border-white/[0.1] transition-all hover:-translate-y-px"

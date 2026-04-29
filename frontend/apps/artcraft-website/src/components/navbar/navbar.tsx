@@ -8,6 +8,7 @@ import {
   MenuItems,
   Transition,
 } from "@headlessui/react";
+import * as NavigationMenu from "@radix-ui/react-navigation-menu";
 import { twMerge } from "tailwind-merge";
 import { useEffect, useState, Fragment } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -23,21 +24,54 @@ import {
   faGem,
   faCog,
   faArrowRight,
+  faChevronDown,
 } from "@fortawesome/pro-solid-svg-icons";
 import { TaskQueue } from "./task-queue";
 import { CreditsModal } from "../credits-modal";
 import { SettingsModal } from "../settings-modal/SettingsModal";
 
-const NAV_ITEMS = [
+type NavLeaf = { name: string; href: string };
+type NavGroup = { name: string; href?: string; children: NavLeaf[] };
+type NavEntry = NavLeaf | NavGroup;
+
+const NAV_ITEMS: NavEntry[] = [
   { name: "Home", href: "/" },
-  { name: "Image", href: "/create-image" },
-  { name: "Video", href: "/create-video" },
-  { name: "Tutorials", href: "/tutorials" },
-  { name: "News", href: "/news" },
-  { name: "FAQ", href: "/faq" },
-  { name: "Press Kit", href: "/press-kit" },
+  {
+    name: "Create",
+    href: "/create-image",
+    children: [
+      { name: "Image", href: "/create-image" },
+      { name: "Video", href: "/create-video" },
+    ],
+  },
+  {
+    name: "Resources",
+    children: [
+      { name: "Tutorials", href: "/tutorials" },
+      { name: "News", href: "/news" },
+      { name: "FAQ", href: "/faq" },
+      { name: "Press Kit", href: "/press-kit" },
+    ],
+  },
   { name: "Download", href: "/download" },
 ];
+
+function isGroup(entry: NavEntry): entry is NavGroup {
+  return "children" in entry && Array.isArray(entry.children);
+}
+
+function isPathActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
+function isEntryActive(pathname: string, entry: NavEntry): boolean {
+  if (isGroup(entry)) {
+    if (entry.href && isPathActive(pathname, entry.href)) return true;
+    return entry.children.some((c) => isPathActive(pathname, c.href));
+  }
+  return isPathActive(pathname, entry.href);
+}
 
 async function fetchCredits(): Promise<number | null> {
   try {
@@ -128,11 +162,17 @@ export default function Navbar() {
       as="nav"
       className="z-50 fixed top-0 left-0 w-full font-display"
     >
-      {({ open }) => (
+      {({ open }) => {
+        const isFullWidthRoute =
+          location.pathname.startsWith("/create-image") ||
+          location.pathname.startsWith("/create-video");
+
+        return (
         <div className="px-3 sm:px-5 pt-3 sm:pt-4">
           <div
             className={twMerge(
-              "liquid-glass mx-auto max-w-6xl transition-all duration-300",
+              "liquid-glass mx-auto transition-all duration-300",
+              isFullWidthRoute ? "max-w-none" : "max-w-6xl",
               open ? "rounded-3xl" : "rounded-full",
             )}
           >
@@ -147,30 +187,110 @@ export default function Navbar() {
                   />
                 </Link>
 
-                <div className="hidden lg:flex items-center gap-1 min-w-0">
-                  {NAV_ITEMS.map((item) => {
-                    const isCurrent =
-                      item.href === "/"
-                        ? location.pathname === "/"
-                        : location.pathname === item.href ||
-                          location.pathname.startsWith(item.href + "/");
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        aria-current={isCurrent ? "page" : undefined}
-                        className={twMerge(
-                          "px-3 py-1.5 text-[13px] font-medium rounded-lg transition-all whitespace-nowrap",
-                          isCurrent
-                            ? "text-white bg-white/[0.08]"
-                            : "text-white/60 hover:text-white hover:bg-white/[0.04]",
-                        )}
-                      >
-                        {item.name}
-                      </Link>
-                    );
-                  })}
-                </div>
+                <NavigationMenu.Root
+                  delayDuration={120}
+                  className="hidden lg:flex items-center min-w-0"
+                >
+                  <NavigationMenu.List className="flex items-center">
+                    {NAV_ITEMS.map((entry) => {
+                      const active = isEntryActive(location.pathname, entry);
+                      const baseClasses =
+                        "px-3 py-1.5 text-[13px] font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5";
+                      const stateClasses = active
+                        ? "text-white bg-white/[0.08]"
+                        : "text-white/60 hover:text-white hover:bg-white/[0.04]";
+
+                      if (!isGroup(entry)) {
+                        return (
+                          <NavigationMenu.Item key={entry.name}>
+                            <NavigationMenu.Link asChild>
+                              <Link
+                                to={entry.href}
+                                aria-current={active ? "page" : undefined}
+                                className={twMerge(baseClasses, stateClasses)}
+                              >
+                                {entry.name}
+                              </Link>
+                            </NavigationMenu.Link>
+                          </NavigationMenu.Item>
+                        );
+                      }
+
+                      return (
+                        <NavigationMenu.Item
+                          key={entry.name}
+                          className="relative"
+                        >
+                          {entry.href ? (
+                            <NavigationMenu.Trigger asChild>
+                              <Link
+                                to={entry.href}
+                                aria-current={active ? "page" : undefined}
+                                className={twMerge(
+                                  baseClasses,
+                                  stateClasses,
+                                  "group",
+                                )}
+                              >
+                                {entry.name}
+                                <FontAwesomeIcon
+                                  icon={faChevronDown}
+                                  className="text-[9px] transition-transform duration-200 group-data-[state=open]:rotate-180"
+                                />
+                              </Link>
+                            </NavigationMenu.Trigger>
+                          ) : (
+                            <NavigationMenu.Trigger
+                              className={twMerge(
+                                baseClasses,
+                                stateClasses,
+                                "group focus:outline-none",
+                              )}
+                            >
+                              {entry.name}
+                              <FontAwesomeIcon
+                                icon={faChevronDown}
+                                className="text-[9px] transition-transform duration-200 group-data-[state=open]:rotate-180"
+                              />
+                            </NavigationMenu.Trigger>
+                          )}
+                          <NavigationMenu.Content
+                            className="absolute top-full left-0 mt-2 rounded-xl border border-white/[0.08] bg-[#1a1a1a] shadow-xl overflow-hidden"
+                          >
+                            <ul className="flex flex-col p-1.5 min-w-[180px]">
+                              {entry.children.map((child) => {
+                                const childActive = isPathActive(
+                                  location.pathname,
+                                  child.href,
+                                );
+                                return (
+                                  <li key={child.name}>
+                                    <NavigationMenu.Link asChild>
+                                      <Link
+                                        to={child.href}
+                                        aria-current={
+                                          childActive ? "page" : undefined
+                                        }
+                                        className={twMerge(
+                                          "block px-3 py-2 text-[13px] font-medium rounded-lg transition-colors whitespace-nowrap",
+                                          childActive
+                                            ? "text-white bg-white/[0.08]"
+                                            : "text-white/70 hover:text-white hover:bg-white/[0.06]",
+                                        )}
+                                      >
+                                        {child.name}
+                                      </Link>
+                                    </NavigationMenu.Link>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </NavigationMenu.Content>
+                        </NavigationMenu.Item>
+                      );
+                    })}
+                  </NavigationMenu.List>
+                </NavigationMenu.Root>
               </div>
 
               {/* Right: Auth/credits/library */}
@@ -323,7 +443,7 @@ export default function Navbar() {
                     </Link>
                     <Link
                       to="/signup"
-                      className="group h-8 flex items-center gap-1.5 px-3.5 rounded-lg text-[13px] font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
+                      className="group h-8 flex items-center gap-1.5 px-3.5 rounded-full text-[13px] font-semibold text-black bg-white hover:bg-white/90 transition-all shadow-sm"
                     >
                       Sign up
                       <FontAwesomeIcon
@@ -360,26 +480,77 @@ export default function Navbar() {
             >
               <DisclosurePanel className="lg:hidden border-t border-white/[0.06] px-3 pb-3 pt-2">
                 <div className="flex flex-col">
-                  {NAV_ITEMS.map((item) => {
-                    const isCurrent =
-                      item.href === "/"
-                        ? location.pathname === "/"
-                        : location.pathname === item.href ||
-                          location.pathname.startsWith(item.href + "/");
+                  {NAV_ITEMS.map((entry) => {
+                    if (!isGroup(entry)) {
+                      const isCurrent = isPathActive(
+                        location.pathname,
+                        entry.href,
+                      );
+                      return (
+                        <DisclosureButton
+                          key={entry.name}
+                          as={Link}
+                          to={entry.href}
+                          className={twMerge(
+                            "rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
+                            isCurrent
+                              ? "bg-white/[0.08] text-white"
+                              : "text-white/60 active:bg-white/[0.04]",
+                          )}
+                        >
+                          {entry.name}
+                        </DisclosureButton>
+                      );
+                    }
+
+                    const headerActive =
+                      entry.href !== undefined &&
+                      isPathActive(location.pathname, entry.href);
+
                     return (
-                      <DisclosureButton
-                        key={item.name}
-                        as={Link}
-                        to={item.href}
-                        className={twMerge(
-                          "rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
-                          isCurrent
-                            ? "bg-white/[0.08] text-white"
-                            : "text-white/60 active:bg-white/[0.04]",
+                      <div key={entry.name} className="flex flex-col">
+                        {entry.href ? (
+                          <DisclosureButton
+                            as={Link}
+                            to={entry.href}
+                            className={twMerge(
+                              "rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
+                              headerActive
+                                ? "bg-white/[0.08] text-white"
+                                : "text-white/60 active:bg-white/[0.04]",
+                            )}
+                          >
+                            {entry.name}
+                          </DisclosureButton>
+                        ) : (
+                          <div className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-white/40">
+                            {entry.name}
+                          </div>
                         )}
-                      >
-                        {item.name}
-                      </DisclosureButton>
+                        <div className="flex flex-col pl-3">
+                          {entry.children.map((child) => {
+                            const childActive = isPathActive(
+                              location.pathname,
+                              child.href,
+                            );
+                            return (
+                              <DisclosureButton
+                                key={child.name}
+                                as={Link}
+                                to={child.href}
+                                className={twMerge(
+                                  "rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
+                                  childActive
+                                    ? "bg-white/[0.08] text-white"
+                                    : "text-white/55 active:bg-white/[0.04]",
+                                )}
+                              >
+                                {child.name}
+                              </DisclosureButton>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -473,7 +644,8 @@ export default function Navbar() {
             onClose={() => setSettingsOpen(false)}
           />
         </div>
-      )}
+        );
+      }}
     </Disclosure>
   );
 }

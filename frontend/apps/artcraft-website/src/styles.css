@@ -73,6 +73,24 @@
     font-weight: 400;
     letter-spacing: -0.01em;
   }
+
+  /* Buttons and prompt boxes use Figtree (display font), not Instrument Sans. */
+  button,
+  .prompt-box-root,
+  .prompt-box-root input,
+  .prompt-box-root textarea,
+  .prompt-box-root button {
+    font-family:
+      "Figtree",
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+  }
 }
 
 /* Shared component utilities (matching desktop app theme) */

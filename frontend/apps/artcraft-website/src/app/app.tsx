@@ -30,7 +30,7 @@ export function App() {
       <Navbar />
 
       <Routes>
-        <Route path="/" element={<Landing2 />} />
+        <Route path="/" element={<Landing3 />} />
         <Route path="/landing3" element={<Landing3 />} />
         <Route path="/create-image" element={<CreateImage />} />
         <Route path="/create-video" element={<CreateVideo />} />
