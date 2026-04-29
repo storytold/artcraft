@@ -286,12 +286,10 @@ const Landing3 = () => {
 
           {/* Subtitle */}
           <p
-            className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-white/55 leading-relaxed mb-10"
+            className="max-w-xl mx-auto text-base sm:text-lg md:text-xl text-white/55 leading-relaxed mb-10"
             data-reveal
           >
-            Artists deserve unparalleled control and precision. ArtCraft is the
-            open source desktop app that pulls you out of prompting, and back into
-            actually crafting.
+            Artists need and deserve unparalleled control and precision. ArtCraft’s got you covered.
           </p>
 
           {/* CTAs */}
