@@ -106,7 +106,7 @@ const Login = () => {
               )}
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-white/60 uppercase tracking-wide ml-1">
+                <label className="text-xs font-semibold text-white/70 ml-1">
                   Email or Username
                 </label>
                 <Input
@@ -119,7 +119,7 @@ const Login = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center ml-1">
-                  <label className="text-xs font-bold text-white/60 uppercase tracking-wide">
+                  <label className="text-xs font-semibold text-white/70">
                     Password
                   </label>
                   <Link

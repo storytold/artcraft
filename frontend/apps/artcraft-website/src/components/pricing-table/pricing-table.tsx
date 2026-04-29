@@ -361,11 +361,11 @@ const PricingTable = ({
                 <div
                   className={
                     unifiedTheme
-                      ? "absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] pl-[0.18em] text-primary-200 bg-primary/[0.18] border border-primary/30 rounded-full px-3 py-1 backdrop-blur whitespace-nowrap"
+                      ? "absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 inline-flex items-center text-xs font-semibold text-primary-200 bg-primary/[0.18] border border-primary/30 rounded-full px-3 py-1 backdrop-blur whitespace-nowrap"
                       : "absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary px-4 py-1 rounded-full text-sm font-bold shadow-lg whitespace-nowrap"
                   }
                 >
-                  Most popular
+                  Most Popular
                 </div>
               )}
 

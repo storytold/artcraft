@@ -452,7 +452,7 @@ const Landing3 = () => {
           speed={-22}
           rotate={8}
         />
-        <div className="max-w-6xl mx-auto flex flex-col gap-8 sm:gap-12">
+        <div className="max-w-6xl mx-auto flex flex-col gap-8 sm:gap-16">
           {FEATURES.map((feature, i) => (
             <article
               key={feature.title}
