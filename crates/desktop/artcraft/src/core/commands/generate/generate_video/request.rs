@@ -74,37 +74,51 @@ pub enum TauriVideoModel {
   Veo3p1Fast,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct TauriGenerateVideoRequest {
   pub provider: Option<GenerationProvider>,
   pub model: Option<TauriVideoModel>,
+
+  pub prompt: Option<String>,
+  pub negative_prompt: Option<String>,
+
+  #[deprecated(note = "Use start_frame_image_media_token instead")]
   pub image_media_token: Option<MediaFileToken>,
+
+  pub start_frame_image_media_token: Option<MediaFileToken>,
   pub end_frame_image_media_token: Option<MediaFileToken>,
+
   pub reference_image_media_tokens: Option<Vec<MediaFileToken>>,
   pub reference_video_media_tokens: Option<Vec<MediaFileToken>>,
   pub reference_audio_media_tokens: Option<Vec<MediaFileToken>>,
   pub reference_character_tokens: Option<Vec<CharacterToken>>,
-  pub prompt: Option<String>,
-  pub generate_audio: Option<bool>,
+
   pub aspect_ratio: Option<CommonAspectRatio>,
   pub resolution: Option<CommonResolution>,
+
   pub duration_seconds: Option<u16>,
+  pub generate_audio: Option<bool>,
   pub video_batch_count: Option<u16>,
+
+  #[deprecated(note = "Use start_frame_image_media_token instead")]
   pub sora_orientation: Option<SoraOrientation>,
+
+  #[deprecated(note = "Use start_frame_image_media_token instead")]
   pub grok_aspect_ratio: Option<GrokAspectRatio>,
+
   pub frontend_caller: Option<TauriCommandCaller>,
   pub frontend_subscriber_id: Option<String>,
   pub frontend_subscriber_payload: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum SoraOrientation {
   Portrait,
   Landscape,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum GrokAspectRatio {
   Portrait,
