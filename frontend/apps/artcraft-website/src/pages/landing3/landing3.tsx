@@ -32,7 +32,10 @@ import { SOCIAL_LINKS } from "../../config/links";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Link } from "react-router-dom";
-import { TruchetPattern, type TruchetVariant } from "../../components/truchet-pattern";
+import {
+  TruchetPattern,
+  type TruchetVariant,
+} from "../../components/truchet-pattern";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -613,7 +616,7 @@ const Landing3 = () => {
         >
           <TruchetPattern
             variant="landing"
-            intensity={0.4}
+            intensity={0.6}
             className="absolute inset-0 w-full h-full"
           />
         </div>
@@ -867,7 +870,7 @@ const Landing3 = () => {
         >
           <TruchetPattern
             variant="landing"
-            intensity={0.4}
+            intensity={0.6}
             className="absolute inset-0 w-full h-full"
           />
         </div>
