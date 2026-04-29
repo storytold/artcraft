@@ -171,9 +171,8 @@ export default function Navbar() {
           <div className="px-3 sm:px-5 pt-3">
             <div
               className={twMerge(
-                "liquid-glass mx-auto transition-all duration-300",
+                "liquid-glass mx-auto rounded-3xl transition-[max-width] duration-300",
                 isFullWidthRoute ? "max-w-none" : "max-w-6xl",
-                open ? "rounded-3xl" : "rounded-full",
               )}
             >
               <div className="flex h-11 sm:h-12 items-center justify-between pl-4 pr-2 sm:pl-5 sm:pr-2.5">
