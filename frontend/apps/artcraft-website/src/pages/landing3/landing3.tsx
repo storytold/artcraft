@@ -32,7 +32,7 @@ import { SOCIAL_LINKS } from "../../config/links";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { Link } from "react-router-dom";
-import { TruchetPattern } from "../../components/truchet-pattern";
+import { TruchetPattern, type TruchetVariant } from "../../components/truchet-pattern";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -100,6 +100,43 @@ const MADE_WITH_VIDEOS = [
   "https://www.youtube.com/embed/oqoCWdOwr2U?si=ILMPk8hGHo9hP8RU",
   "https://www.youtube.com/embed/H4NFXGMuwpY?si=wPuQl5cJOu1v8MJu",
 ];
+
+interface TruchetBlobProps {
+  className: string;
+  variant?: TruchetVariant;
+  intensity?: number;
+  /** Parallax distance in yPercent across the blob's scroll range. Negative drifts upward. */
+  speed?: number;
+  rotate?: number;
+}
+
+const TruchetBlob = ({
+  className,
+  variant = "landing",
+  intensity = 0.5,
+  speed = -18,
+  rotate = 0,
+}: TruchetBlobProps) => (
+  <div
+    aria-hidden
+    data-blob
+    data-blob-speed={speed}
+    className={`pointer-events-none absolute z-0 hidden lg:block ${className}`}
+    style={{
+      maskImage:
+        "radial-gradient(circle at 50% 50%, black 25%, transparent 75%)",
+      WebkitMaskImage:
+        "radial-gradient(circle at 50% 50%, black 25%, transparent 75%)",
+      transform: `rotate(${rotate}deg)`,
+    }}
+  >
+    <TruchetPattern
+      variant={variant}
+      intensity={intensity}
+      className="absolute inset-0 w-full h-full"
+    />
+  </div>
+);
 
 const Landing3 = () => {
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
@@ -187,6 +224,23 @@ const Landing3 = () => {
           },
         });
       }
+
+      // Decorative blob parallax — each drifts at its own speed for an
+      // asymmetric, scattered feel as the user scrolls.
+      const blobs = gsap.utils.toArray<HTMLElement>("[data-blob]");
+      blobs.forEach((blob) => {
+        const speed = parseFloat(blob.dataset.blobSpeed ?? "-18");
+        gsap.to(blob, {
+          yPercent: speed,
+          ease: "none",
+          scrollTrigger: {
+            trigger: blob,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: true,
+          },
+        });
+      });
     }, rootRef);
 
     return () => ctx.revert();
@@ -374,6 +428,27 @@ const Landing3 = () => {
 
       {/* FEATURES: alternating cards */}
       <section className="relative px-4 sm:px-8 py-16 sm:py-24">
+        <TruchetBlob
+          className="top-[6%] -left-40 w-[640px] h-[640px]"
+          variant="content"
+          intensity={0.75}
+          speed={-26}
+          rotate={14}
+        />
+        <TruchetBlob
+          className="top-[40%] -right-36 w-[600px] h-[600px]"
+          variant="landing"
+          intensity={0.75}
+          speed={-18}
+          rotate={-12}
+        />
+        <TruchetBlob
+          className="top-[72%] -left-32 w-[580px] h-[580px]"
+          variant="auth"
+          intensity={0.75}
+          speed={-22}
+          rotate={8}
+        />
         <div className="max-w-6xl mx-auto flex flex-col gap-8 sm:gap-12">
           {FEATURES.map((feature, i) => (
             <article
@@ -423,6 +498,13 @@ const Landing3 = () => {
 
       {/* STOP RENTING SECTION */}
       <section className="relative px-4 sm:px-8 py-16 sm:py-24">
+        <TruchetBlob
+          className="top-[20%] -right-32 w-[540px] h-[540px]"
+          variant="pricing"
+          intensity={0.75}
+          speed={-15}
+          rotate={-20}
+        />
         <div className="max-w-6xl mx-auto" data-reveal>
           <div className="text-center mb-12">
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
@@ -707,6 +789,13 @@ const Landing3 = () => {
 
       {/* MADE WITH ARTCRAFT */}
       <section id="made-with" className="relative px-4 sm:px-8 py-16 sm:py-24">
+        <TruchetBlob
+          className="top-[15%] -left-36 w-[580px] h-[580px]"
+          variant="content"
+          intensity={0.75}
+          speed={-20}
+          rotate={18}
+        />
         <div className="max-w-6xl mx-auto" data-reveal>
           <div className="text-center mb-12">
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
