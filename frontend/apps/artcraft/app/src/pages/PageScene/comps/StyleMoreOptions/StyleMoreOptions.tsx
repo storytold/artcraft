@@ -1,6 +1,6 @@
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
-import { StyleOptions } from "~/pages/PageScene/comps/SidePanelTabs/tabComps/StylizeTab/StyleOptions";
+import { StyleOptions } from "./StyleOptions";
 
 interface Props {
   onClose: () => void;

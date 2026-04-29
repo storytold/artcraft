@@ -23,7 +23,6 @@ interface fetchMediaItemsInterface {
   defaultErrorMessage?: string;
   nextPageCursor?: string; // for featured items' infinite pagination
   nextPageIndex?: number; // for user item's normal pagination
-  searchTerm?: string; //for searches
 }
 
 export const fetchUserMediaItems = async ({
@@ -92,71 +91,4 @@ export const fetchFeaturedMediaItems = async ({
       "Unknown Error in Fetching Media Items",
   );
   return { status: FetchStatus.ERROR };
-};
-
-// Search Results
-export const fetchFeaturedMediaItemsSearchResults = async ({
-  searchTerm,
-  filterEngineCategories,
-  filterMediaType,
-  defaultErrorMessage,
-}: fetchMediaItemsInterface): Promise<FetchMediaItemStates> => {
-  const mediaFilesApi = new MediaFilesApi();
-  const response = await mediaFilesApi.SearchFeaturedMediaFiles({
-    search_term: searchTerm || "",
-    filter_media_type: filterMediaType,
-    filter_engine_categories: filterEngineCategories,
-  });
-
-  if (response.success && response.data) {
-    const newSearchObjects = responseMapping(
-      response.data,
-      filterEngineCategories,
-    );
-    return {
-      mediaItems: newSearchObjects,
-      status: FetchStatus.SUCCESS,
-    };
-  } else {
-    addToast(
-      ToastTypes.ERROR,
-      response.errorMessage ||
-        defaultErrorMessage ||
-        "Failed to fetch search results",
-    );
-    return { status: FetchStatus.ERROR };
-  }
-};
-
-export const fetchUserMediaItemsSearchResults = async ({
-  searchTerm,
-  filterEngineCategories,
-  filterMediaType,
-  defaultErrorMessage,
-}: fetchMediaItemsInterface) => {
-  const mediaFilesApi = new MediaFilesApi();
-  const response = await mediaFilesApi.SearchUserMediaFiles({
-    search_term: searchTerm || "",
-    filter_media_type: filterMediaType,
-    filter_engine_categories: filterEngineCategories,
-  });
-
-  if (response.success && response.data) {
-    const newSearchObjects = responseMapping(
-      response.data,
-      filterEngineCategories,
-    );
-    return {
-      mediaItems: newSearchObjects,
-      status: FetchStatus.SUCCESS,
-    };
-  } else {
-    addToast(
-      ToastTypes.ERROR,
-      response.errorMessage ||
-        defaultErrorMessage ||
-        "Failed to fetch search results",
-    );
-    return { status: FetchStatus.ERROR };
-  }
 };

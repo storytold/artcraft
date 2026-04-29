@@ -26,7 +26,7 @@ import React, {
   useRef,
   ChangeEvent,
 } from "react";
-import { ItemElements } from "../SidePanelTabs/sharedComps/ItemElements";
+import { ItemElements } from "./shared/ItemElements";
 import {
   demoSkyboxItems,
   demoShapeItems,
@@ -36,11 +36,11 @@ import {
 import { useShallow } from "zustand/shallow";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { MediaItem } from "../../models";
-import { useUserObjects, useFeaturedObjects } from "../SidePanelTabs/hooks";
+import { useUserObjects, useFeaturedObjects } from "./hooks";
 import { FilterEngineCategories, FilterMediaType } from "~/enums";
 import { twMerge } from "tailwind-merge";
 import { useSignals } from "@preact/signals-react/runtime";
-import { isAnyStatusFetching } from "../SidePanelTabs/utilities";
+import { isAnyStatusFetching } from "./utilities";
 
 type AssetTab = {
   id: string;
