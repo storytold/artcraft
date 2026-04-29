@@ -5,12 +5,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { FeatureFlags, TabTitles } from "~/enums";
 import { EditorStates } from "~/pages/PageEnigma/enums";
-import { editorState } from "~/pages/PageEnigma/signals/engine";
+import { editorState, setEditorState } from "~/pages/PageEnigma/signals/engine";
 import { sidePanelVisible } from "~/pages/PageEnigma/signals/sidePanel";
-
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { toEngineActions } from "~/pages/PageEnigma/Queue/toEngineActions";
 
 import { TabItem } from "../SidePanel/tabList";
 import { currentPage, pageHeight } from "~/signals";
@@ -65,11 +61,7 @@ export const SidePanelMenu = ({
                   sidePanelVisible.value = true;
                 }
                 if (editorState.value === EditorStates.PREVIEW) {
-                  Queue.publish({
-                    queueName: QueueNames.TO_ENGINE,
-                    action: toEngineActions.ENTER_EDIT_STATE,
-                    data: null,
-                  });
+                  setEditorState(EditorStates.EDIT);
                 }
               }}
             >

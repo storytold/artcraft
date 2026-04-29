@@ -2,16 +2,10 @@ import React from "react";
 import { MediaItem } from "~/pages/PageEnigma/models";
 import {
   addCharacter,
-  addCharacterAnimation,
-  addCharacterAudio,
-  addCharacterExpression,
-  addGlobalAudio,
   addObject,
   canDrop,
   currPosition,
   dragItem,
-  overTimeline,
-  timelineHeight,
   assetModalVisibleDuringDrag,
   reopenAfterDragSignal,
 } from "~/pages/PageEnigma/signals";
@@ -57,7 +51,6 @@ class DndAsset {
       dragItem.value = null;
       canDrop.value = false;
       this.overElement = null;
-      overTimeline.value = false;
       this.notDropText = "";
       assetModalVisibleDuringDrag.value = reopenAfterDragSignal.value;
     }
@@ -78,7 +71,6 @@ class DndAsset {
     window.removeEventListener("pointermove", this.onPointerMove);
 
     if (!this.isDragging) {
-      // It's a click, not a drag
       assetModalVisibleDuringDrag.value = true;
       dragItem.value = null;
       currPosition.value = { currX: 0, currY: 0 };
@@ -91,58 +83,21 @@ class DndAsset {
       if (this.overCanvas(positionX, positionY)) {
         const mediaItem = dragItem.value;
         if (mediaItem.type === AssetType.CHARACTER) {
-          addCharacter(dragItem.value);
+          addCharacter(mediaItem);
         }
-        // if (dragItem.value.type === AssetType.CAMERA) {
-        //   console.log("Dragged In Camera Type")
-        // }
-        /*
-         FIXME:
-         THIS IS A TEMPARARY SOLUTION TO A LONG PROBLEM WITH SKYBOXES
-         UPDATE THIS WHEN UPLOADING SKYBOXES ARE FULLY IMPLEMENTED.
-         THIS IS JUST TEMPARARY!!!
-        */
-        if (mediaItem.type === AssetType.OBJECT || mediaItem.type === AssetType.SPLAT || mediaItem.type === AssetType.SKYBOX) {
+        if (
+          mediaItem.type === AssetType.OBJECT ||
+          mediaItem.type === AssetType.SPLAT ||
+          mediaItem.type === AssetType.SKYBOX
+        ) {
           addObject(mediaItem);
         }
-
         if (mediaItem.type === AssetType.SHAPE) {
           addShape(mediaItem);
         }
-
-        this.endDrag();
-        return;
       }
     }
 
-    if (canDrop.value && dragItem.value) {
-      if (dragItem.value.type === AssetType.ANIMATION) {
-        addCharacterAnimation({
-          dragItem: dragItem.value,
-          characterId: this.dropId,
-          offset: this.dropOffset,
-        });
-      }
-      if (dragItem.value.type === AssetType.EXPRESSION) {
-        addCharacterExpression({
-          dragItem: dragItem.value,
-          characterId: this.dropId,
-          offset: this.dropOffset,
-        });
-      }
-      if (dragItem.value.type === AssetType.AUDIO) {
-        addCharacterAudio({
-          dragItem: dragItem.value,
-          characterId: this.dropId,
-          offset: this.dropOffset,
-        });
-        addGlobalAudio({
-          dragItem: dragItem.value,
-          audioId: this.dropId,
-          offset: this.dropOffset,
-        });
-      }
-    }
     this.endDrag();
   }
 
@@ -162,8 +117,6 @@ class DndAsset {
         currX: this.initX + deltaX,
         currY: this.initY + deltaY,
       };
-      overTimeline.value =
-        event.pageY > pageHeight.value - timelineHeight.value;
       if (this.overElement) {
         const pos = this.overElement;
         const eventY = event.pageY;

@@ -4,12 +4,8 @@ import * as THREE from "three";
 import { XYZ } from "../datastructures/common";
 import { editorState } from "../signals/engine";
 import { EditorStates } from "../enums";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { fromEngineActions } from "~/pages/PageEnigma/Queue/fromEngineActions";
-import { MediaItem } from "~/pages/PageEnigma/models";
-import { AssetType } from "~/enums";
 import { hideObjectPanel } from "../signals";
+import { usePageEnigmaStore } from "../PageEnigmaStore";
 
 export class SceneUtils {
   scene: Scene;
@@ -276,24 +272,9 @@ function removeObject3D(object3D) {
       (obj as THREE.Mesh).geometry.dispose()
     }
 
-    // TODO
-    // FIXME: Timeline deletion is called twice, as well as a queue event.
-    // Why is this necessary?
-    this.editor.timeline.deleteObject(obj);
-    Queue.publish({
-      queueName: QueueNames.FROM_ENGINE,
-      action: fromEngineActions.DELETE_OBJECT,
-      data: {
-        version: 1,
-        type: AssetType.OBJECT,
-        media_id: "",
-        object_uuid: uuid,
-        name: "",
-      } as MediaItem,
-    });
+    usePageEnigmaStore.getState().removeSceneObject(uuid);
     this.editor.selected = undefined;
     this.editor.publishSelect();
     hideObjectPanel();
-    this.editor.timeline.deleteObject(obj);
   }
 }

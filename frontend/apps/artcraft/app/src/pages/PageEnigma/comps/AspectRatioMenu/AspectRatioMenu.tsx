@@ -5,10 +5,7 @@ import {
   faSquare,
 } from "@fortawesome/pro-solid-svg-icons";
 import { CameraAspectRatio } from "~/pages/PageEnigma/enums";
-import { cameraAspectRatio } from "~/pages/PageEnigma/signals";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { toEngineActions } from "~/pages/PageEnigma/Queue/toEngineActions";
+import { cameraAspectRatio, setCameraAspectRatio } from "~/pages/PageEnigma/signals";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 
 export const AspectRatioMenu = () => {
@@ -35,11 +32,7 @@ export const AspectRatioMenu = () => {
             : "1:1 Squared";
 
   const handleChangeAspectRatio = (newRatio: CameraAspectRatio) => {
-    Queue.publish({
-      queueName: QueueNames.TO_ENGINE,
-      action: toEngineActions.CHANGE_CAMERA_ASPECT_RATIO,
-      data: newRatio,
-    });
+    setCameraAspectRatio(newRatio);
   };
   return (
     <div className="absolute right-0 top-0 m-2 flex flex-col items-end">

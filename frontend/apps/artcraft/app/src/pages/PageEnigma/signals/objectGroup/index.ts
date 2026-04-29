@@ -1,4 +1,3 @@
 export * from "./addObject";
-export * from "./loadObjectData";
+export * from "./deleteObject";
 export * from "./objectGroup";
-export * from "./updateObjectGroup";

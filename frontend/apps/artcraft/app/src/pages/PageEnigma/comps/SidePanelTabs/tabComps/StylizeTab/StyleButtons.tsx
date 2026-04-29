@@ -4,46 +4,24 @@ import {
   faArrowsRotate,
   faChevronLeft,
 } from "@fortawesome/pro-solid-svg-icons";
-import { editorState, previewSrc } from "~/pages/PageEnigma/signals/engine";
+import { editorState, previewSrc, setEditorState } from "~/pages/PageEnigma/signals/engine";
 import { EditorStates } from "~/pages/PageEnigma/enums";
 import { useSignals } from "@preact/signals-react/runtime";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { toEngineActions } from "~/pages/PageEnigma/Queue/toEngineActions";
 import { StyleStrength } from "~/pages/PageEnigma/comps/SidePanelTabs/tabComps/StylizeTab/StyleStrength";
 import { StyleOptions } from "~/pages/PageEnigma/comps/SidePanelTabs/tabComps/StylizeTab/StyleOptions";
 export function StyleButtons() {
   useSignals();
 
   const switchPreview = async () => {
-    if (editorState.value === EditorStates.EDIT) {
-      Queue.publish({
-        queueName: QueueNames.TO_ENGINE,
-        action: toEngineActions.ENTER_EDIT_STATE,
-        data: null,
-      });
-    }
-    Queue.publish({
-      queueName: QueueNames.TO_ENGINE,
-      action: toEngineActions.ENTER_PREVIEW_STATE,
-      data: null,
-    });
+    setEditorState(EditorStates.PREVIEW);
   };
 
   const switchEdit = async () => {
-    Queue.publish({
-      queueName: QueueNames.TO_ENGINE,
-      action: toEngineActions.ENTER_EDIT_STATE,
-      data: null,
-    });
+    setEditorState(EditorStates.EDIT);
   };
 
   const refreshPreview = async () => {
-    Queue.publish({
-      queueName: QueueNames.TO_ENGINE,
-      action: toEngineActions.REFRESH_PREVIEW,
-      data: null,
-    });
+    // TODO: wire to editor.refreshPreview() once editor.ts is migrated.
   };
 
   return (

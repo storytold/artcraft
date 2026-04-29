@@ -1,14 +1,5 @@
-import {
-  canDrop,
-  currPosition,
-  dragItem,
-  overTimeline,
-  scale,
-  timelineHeight,
-} from "~/pages/PageEnigma/signals";
+import { currPosition, dragItem } from "~/pages/PageEnigma/signals";
 import { useSignals } from "@preact/signals-react/runtime";
-import DndAsset from "~/pages/PageEnigma/DragAndDrop/DndAsset";
-import { MIN_ANIM_DURATION } from "~/constants";
 
 export const DragComponent = () => {
   useSignals();
@@ -20,66 +11,6 @@ export const DragComponent = () => {
   const thumbnail = dragItem.value.thumbnail
     ? dragItem.value.thumbnail
     : `/resources/images/default-covers/${dragItem.value.imageIndex || 0}.webp`;
-
-  if (overTimeline.value) {
-    if (canDrop.value && DndAsset.overElement) {
-      return (
-        <>
-          <div
-            id={`ani-dnd-${dragItem.value.media_id}`}
-            className={[
-              "absolute p-2",
-              "rounded-md",
-              !canDrop.value
-                ? "bg-brand-primary"
-                : "border border-dashed border-dnd-canDropBorder bg-dnd-canDrop",
-              "block",
-            ].join(" ")}
-            style={{
-              top: DndAsset.overElement.top,
-              left: currX + 1,
-              zIndex: 10000,
-              width: Math.max(dragItem.value.length ?? 0, MIN_ANIM_DURATION) * 4 * scale.value,
-              height: 60,
-            }}
-          />
-          <div
-            id={`ani-dnd-${dragItem.value.media_id}`}
-            className={[
-              "absolute p-2",
-              "rounded opacity-60",
-              "border border-dnd-timeGridBorder bg-dnd-timeGrid",
-            ].join(" ")}
-            style={{
-              bottom: timelineHeight.value - 60,
-              left: currX + 1,
-              zIndex: 10000,
-              width: Math.max(dragItem.value.length ?? 0, MIN_ANIM_DURATION) * 4 * scale.value,
-              height: 16,
-            }}
-          />
-        </>
-      );
-    }
-    return (
-      <div
-        id={`ani-dnd-${dragItem.value.media_id}`}
-        className={[
-          "absolute p-1",
-          "rounded-lg text-xs",
-          "bg-dnd-cannotDrop",
-          "block text-nowrap",
-        ].join(" ")}
-        style={{
-          top: currY - 16,
-          left: currX + 1,
-          zIndex: 10000,
-        }}
-      >
-        {DndAsset.notDropText || "Cannot drop here"}
-      </div>
-    );
-  }
 
   return (
     <div

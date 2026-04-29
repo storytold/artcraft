@@ -2,7 +2,6 @@ import { DragComponent } from "~/pages/PageEnigma/comps/DragComponent/DragCompon
 import { EngineProvider } from "./contexts/EngineContext";
 import { useActiveJobs } from "~/hooks/useActiveJobs";
 import { useBackgroundLoadingMedia } from "~/hooks/useBackgroundLoadingMedia";
-import { useQueueHandler } from "./hooks/useQueueHandler";
 import { ErrorDialog } from "~/components";
 import { GenerateModals } from "~/pages/PageEnigma/comps/GenerateModals/GenerateModals";
 import { toast, Toaster } from "@storyteller/ui-toaster";
@@ -46,7 +45,6 @@ export const PageEnigma = ({ sceneToken }: { sceneToken?: string }) => {
   useSignals();
   useActiveJobs();
   useBackgroundLoadingMedia();
-  useQueueHandler();
 
   // Credits modal state (must be before any early returns)
   const { isOpen: isCreditsOpen, closeModal: closeCreditsModal } =

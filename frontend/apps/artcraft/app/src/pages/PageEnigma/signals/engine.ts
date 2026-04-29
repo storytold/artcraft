@@ -3,6 +3,10 @@ import { CameraAspectRatio, EditorStates } from "~/pages/PageEnigma/enums";
 
 export const editorState = signal<EditorStates>(EditorStates.EDIT);
 
+export const setEditorState = (newState: EditorStates) => {
+  editorState.value = newState;
+};
+
 export const cameraAspectRatio = signal<CameraAspectRatio>(
   CameraAspectRatio.HORIZONTAL_3_2,
 );

@@ -7,8 +7,6 @@ import {
   faCameraViewfinder,
   faSpinnerThird,
 } from "@fortawesome/pro-solid-svg-icons";
-import Queue, { QueueNames } from "~/pages/PageEnigma/Queue";
-import { toEngineActions } from "~/pages/PageEnigma/Queue/toEngineActions";
 import {
   cameraAspectRatio,
   editorState,
@@ -29,13 +27,7 @@ export const PreviewEngineCamera = () => {
   useSignals();
 
   const handleButtonCameraView = () => {
-    console.log("Camera view button clicked");
-    Queue.publish({
-      queueName: QueueNames.TO_ENGINE,
-      action: toEngineActions.TOGGLE_CAMERA_STATE,
-      data: null,
-    });
-    console.log("Action published to queue");
+    // TODO: wire to editor.toggleCameraView() once editor.ts is migrated.
   };
 
   const getLargeScreenHeightClass = () => {

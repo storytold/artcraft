@@ -22,9 +22,7 @@ import { Storyboard } from "../PageStoryboard";
 import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
 import {
-  timelineHeight,
   sidePanelWidth,
-  dndTimelineHeight,
   editorLoader,
   cameraAspectRatio,
   outlinerIsShowing,
@@ -33,6 +31,7 @@ import {
   gridVisibility,
   setGridVisibility,
   DomLevels,
+  setCameraAspectRatio,
 } from "~/pages/PageEnigma/signals";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { SceneContainer } from "./comps/SceneContainer";
@@ -55,9 +54,6 @@ import {
 import { isPromptBoxFocused } from "./signals/promptBox";
 import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { EngineContext } from "./contexts/EngineContext";
-import Queue, { QueueNames } from "./Queue";
-import { toEngineActions } from "./Queue/toEngineActions";
-import { UnionedDataTypes } from "./Queue/Queue";
 
 import {
   topNavMediaId,
@@ -116,7 +112,6 @@ export const PageEditor = () => {
   };
 
   useEffect(() => {
-    timelineHeight.value = 0; //timelineHeight.value = 208;
     sidePanelWidth.value = 340;
     window.onbeforeunload = () => {
       return "You may have unsaved changes.";
@@ -133,13 +128,10 @@ export const PageEditor = () => {
     (s) => s.estimatedCreditsByPage[PAGE_ID],
   );
 
-  const height =
-    dndTimelineHeight.value > -1
-      ? pageHeight.value - dndTimelineHeight.value - 56
-      : pageHeight.value - timelineHeight.value - 56;
+  const height = pageHeight.value - 56;
 
   const getScale = () => {
-    const height = pageHeight.value - timelineHeight.value - 56;
+    const height = pageHeight.value - 56;
     const scaleHeight = height < 610 ? height / 610 : 1;
 
     if (
@@ -290,13 +282,8 @@ export const PageEditor = () => {
     }
   };
 
-  const onAspectRatioSelect = (newRatio: UnionedDataTypes) => {
-    // Publish the change to the engine
-    Queue.publish({
-      queueName: QueueNames.TO_ENGINE,
-      action: toEngineActions.CHANGE_CAMERA_ASPECT_RATIO,
-      data: newRatio,
-    });
+  const onAspectRatioSelect = (newRatio: CameraAspectRatio) => {
+    setCameraAspectRatio(newRatio);
   };
   // MOVE THIS don't throw this in here
   // Image drop from gallery/library modal logic

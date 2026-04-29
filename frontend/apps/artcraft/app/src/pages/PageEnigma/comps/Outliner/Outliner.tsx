@@ -23,7 +23,7 @@ import { Transition } from "@headlessui/react";
 import { twMerge } from "tailwind-merge";
 import { useSignals } from "@preact/signals-react/runtime";
 import { EngineContext } from "../../contexts/EngineContext";
-import { cameraAspectRatio, timelineHeight } from "../../signals";
+import { cameraAspectRatio } from "../../signals";
 import { pageHeight, pageWidth } from "~/signals";
 import { CameraAspectRatio } from "../../enums";
 import { effect } from "@preact/signals-react";
@@ -141,7 +141,7 @@ export const Outliner = () => {
 
   useEffect(() => {
     const updateEditorHeight = () => {
-      setEditorHeight(pageHeight.value - timelineHeight.value - 56);
+      setEditorHeight(pageHeight.value - 56);
     };
 
     updateEditorHeight();

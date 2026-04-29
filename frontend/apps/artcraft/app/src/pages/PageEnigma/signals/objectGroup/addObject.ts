@@ -1,17 +1,19 @@
 import { MediaItem, ObjectTrack, Keyframe } from "~/pages/PageEnigma/models";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { toEngineActions } from "~/pages/PageEnigma/Queue/toEngineActions";
 import { objectGroup } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 export function addObject(
   object: MediaItem & { position?: { x: number; y: number; z: number } }
 ) {
-  Queue.publish({
-    queueName: QueueNames.TO_ENGINE,
-    action: toEngineActions.ADD_OBJECT,
-    data: object,
+  // TODO: After editor.ts is migrated, replace with actions/addObject which
+  // calls editor.addObject(object) and updates the store in one step.
+  usePageEnigmaStore.getState().addObject({
+    id: object.object_uuid ?? object.media_id,
+    kind: "object",
+    name: object.name ?? "object",
+    mediaId: object.media_id,
   });
+  addObjectToTimeline(object);
 }
 
 export function addObjectToTimeline(mediaItem: MediaItem) {

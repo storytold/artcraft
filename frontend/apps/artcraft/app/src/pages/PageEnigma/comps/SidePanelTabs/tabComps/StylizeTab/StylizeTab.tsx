@@ -2,17 +2,13 @@ import { TabTitle } from "~/pages/PageEnigma/comps/SidePanelTabs/sharedComps/Tab
 import { PageStyleSelection } from "./PageStyleSelection";
 import { Prompts } from "./Prompts";
 import { StyleButtons } from "./StyleButtons";
-import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
+import { useSignals } from "@preact/signals-react/runtime";
 import { useState } from "react";
 import { ArtStyle } from "~/pages/PageEnigma/Editor/api_manager";
 import { styleList } from "~/pages/PageEnigma/styleList";
-import { EditorStates, StylizeTabPages } from "~/pages/PageEnigma/enums";
+import { StylizeTabPages } from "~/pages/PageEnigma/enums";
 import { StyleSelectionButton } from "./StyleSelectionButton";
 import { GenerateMovieButton } from "./GenerateMovieButton";
-import { editorState } from "~/pages/PageEnigma/signals/engine";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { toEngineActions } from "~/pages/PageEnigma/Queue/toEngineActions";
 import { IPAdapter } from "./IPAdapter";
 import {
   selectedArtStyle,
@@ -29,15 +25,7 @@ export function StylizeTab() {
     (style) => style.type === selectedArtStyle.value,
   );
 
-  useSignalEffect(() => {
-    if (editorState.value === EditorStates.PREVIEW) {
-      Queue.publish({
-        queueName: QueueNames.TO_ENGINE,
-        action: toEngineActions.REFRESH_PREVIEW,
-        data: null,
-      });
-    }
-  });
+  // TODO: wire preview refresh to editor.refreshPreview() once editor.ts is migrated.
 
   const handleSelectStyle = (newSelection: ArtStyle) => {
     setArtStyleSelection(newSelection);

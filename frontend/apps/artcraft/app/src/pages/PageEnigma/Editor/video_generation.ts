@@ -1,9 +1,6 @@
 import Editor from "./editor";
 import { EditorStates } from "~/pages/PageEnigma/enums";
 import { editorState, previewSrc } from "../signals/engine";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { fromEngineActions } from "~/pages/PageEnigma/Queue/fromEngineActions";
 import { ToastTypes, ClipType } from "~/enums";
 
 import { Visibility } from "./api_manager.js";
@@ -160,14 +157,7 @@ export class VideoGeneration {
           err instanceof Error
             ? err.message
             : "Unknown Error in Generate Frame";
-        Queue.publish({
-          queueName: QueueNames.FROM_ENGINE,
-          action: fromEngineActions.POP_A_TOAST,
-          data: {
-            type: ToastTypes.ERROR,
-            message: errorMessage,
-          },
-        });
+        addToast(ToastTypes.ERROR, errorMessage);
       }
     }
   }

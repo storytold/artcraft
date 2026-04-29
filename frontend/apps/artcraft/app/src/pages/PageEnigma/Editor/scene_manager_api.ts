@@ -8,11 +8,8 @@ import {
 import Scene from "./scene";
 import { MouseControls } from "./keybinds_controls";
 import { ClipGroup } from "~/enums";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { fromEngineActions } from "~/pages/PageEnigma/Queue/fromEngineActions";
-import { MediaItem } from "~/pages/PageEnigma/models";
 import { AssetType } from "~/enums";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import {
   CommandInputTypes,
   CreationSceneItem,
@@ -332,29 +329,20 @@ export class SceneManager implements SceneManagerAPI {
       this.mouse_controls.selectObject(obj);
       this.updateOutliner();
 
+      const store = usePageEnigmaStore.getState();
       if (wasCharacter) {
-        Queue.publish({
-          queueName: QueueNames.FROM_ENGINE,
-          action: fromEngineActions.UPDATE_CHARACTER_ID,
-          data: {
-            version: 1,
-            type: AssetType.CHARACTER,
-            media_id: media_id,
-            object_uuid: obj.uuid,
-            name: name,
-          } as MediaItem,
+        store.addCharacter({
+          id: obj.uuid,
+          kind: "character",
+          name,
+          mediaId: media_id,
         });
       } else {
-        Queue.publish({
-          queueName: QueueNames.FROM_ENGINE,
-          action: fromEngineActions.ADD_OBJECT,
-          data: {
-            version: 1,
-            type: AssetType.OBJECT,
-            media_id: media_id,
-            object_uuid: obj.uuid,
-            name: name,
-          } as MediaItem,
+        store.addObject({
+          id: obj.uuid,
+          kind: "object",
+          name,
+          mediaId: media_id,
         });
       }
 

@@ -13,7 +13,6 @@ import {
   disableHotkeyInput,
   enableHotkeyInput,
   objectPanel as objectPanelSignals,
-  timelineHeight,
 } from "../../signals";
 import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { InputVector } from "@storyteller/ui-input";
@@ -177,7 +176,7 @@ export const ControlPanelSceneObject = () => {
   };
 
   const getScale = () => {
-    const height = pageHeight.value - timelineHeight.value - 56;
+    const height = pageHeight.value - 56;
     return height < 620 ? height / 620 : 1;
   };
 

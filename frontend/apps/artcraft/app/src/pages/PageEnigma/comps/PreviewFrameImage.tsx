@@ -5,7 +5,6 @@ import { EditorStates } from "~/pages/PageEnigma/enums";
 import { pageHeight, pageWidth } from "~/signals";
 import { editorState, previewSrc } from "~/pages/PageEnigma/signals/engine";
 import {
-  timelineHeight,
   sidePanelWidth,
   sidePanelVisible,
 } from "~/pages/PageEnigma/signals";
@@ -22,7 +21,7 @@ export const PreviewFrameImage = () => {
               pageWidth.value -
               (sidePanelVisible.value ? sidePanelWidth.value : 0) -
               84,
-            height: pageHeight.value - timelineHeight.value - 56,
+            height: pageHeight.value - 56,
           }}
         >
           <div className="relative flex h-full w-full flex-col items-center justify-center gap-5">
@@ -43,7 +42,7 @@ export const PreviewFrameImage = () => {
               pageWidth.value -
               (sidePanelVisible.value ? sidePanelWidth.value : 0) -
               84,
-            height: pageHeight.value - timelineHeight.value - 56,
+            height: pageHeight.value - 56,
           }}
         />
       );

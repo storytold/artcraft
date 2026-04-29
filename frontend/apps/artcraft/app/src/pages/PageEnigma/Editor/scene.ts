@@ -8,9 +8,6 @@ import { LoadingPlaceHolderManager } from "./placeholder_manager";
 import { MMDAnimationHelper, Water } from "three/examples/jsm/Addons.js";
 import { MediaFileType } from "../enums";
 import { ChromaKeyMaterial } from "./chromakey";
-import { TimeLine } from "./timeline";
-import { ClipGroup, ClipType } from "~/enums";
-import { ClipUI } from "../clips/clip_ui";
 import { LoadWithoutCors } from "@storyteller/tauri-api";
 import { gridVisibility } from "../signals/engine";
 import { InfiniteGridHelper } from "./InfiniteGridHelper";
@@ -49,7 +46,6 @@ class Scene {
   ambientLight: THREE.AmbientLight | undefined;
   hemisphereLight: THREE.HemisphereLight | undefined;
   directional_light: THREE.DirectionalLight | undefined;
-  timeline: TimeLine | undefined;
   version: number;
 
   // This is used to ensure we do not rerender or process the video if we already have done so.
@@ -797,27 +793,7 @@ class Scene {
     if (auto_add) {
       this.scene.add(child_result);
       if (glb.animations.length > 0) {
-        console.log(glb.animations);
-        const animation = glb.animations[0];
         child_result.animations = glb.animations;
-        // load first animation
-        this.timeline?.addSelfAnimationClip(
-          new ClipUI(
-            this.version,
-            ClipType.ANIMATION,
-            ClipGroup.CHARACTER,
-            animation.name,
-            "SelfClip",
-            animation.uuid,
-            child_result.uuid,
-            name,
-            0,
-            100,
-            0,
-            MediaFileType.GLB,
-          ),
-          animation,
-        );
       }
     }
     this.updateSurfaceIdAttributeToMesh(this.scene);

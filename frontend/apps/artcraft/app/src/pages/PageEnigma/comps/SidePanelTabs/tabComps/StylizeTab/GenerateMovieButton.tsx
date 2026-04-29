@@ -3,9 +3,6 @@ import { useSignals } from "@preact/signals-react/runtime";
 import { Label } from "~/components";
 import { Button } from "@storyteller/ui-button";
 import { GenerationOptions } from "~/pages/PageEnigma/models/generationOptions";
-import Queue from "~/pages/PageEnigma/Queue/Queue";
-import { QueueNames } from "~/pages/PageEnigma/Queue/QueueNames";
-import { toEngineActions } from "~/pages/PageEnigma/Queue/toEngineActions";
 import {
   upscale,
   faceDetail,
@@ -55,7 +52,7 @@ export function GenerateMovieButton({
 
   const generateMovie = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    const options = new GenerationOptions(
+    void new GenerationOptions(
       upscale.value,
       faceDetail.value,
       styleStrength.value,
@@ -64,11 +61,7 @@ export function GenerateMovieButton({
       globalIPAMediaToken.value,
       enginePreProcessing.value,
     );
-    Queue.publish({
-      queueName: QueueNames.TO_ENGINE,
-      action: toEngineActions.GENERATE_VIDEO,
-      data: options,
-    });
+    // TODO: wire to editor.videoGeneration.generate(options) once editor.ts is migrated.
   };
 
   return (
