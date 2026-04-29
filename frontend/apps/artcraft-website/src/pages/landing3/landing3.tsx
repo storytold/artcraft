@@ -4,10 +4,7 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faGithub,
-  faDiscord,
-} from "@fortawesome/free-brands-svg-icons";
+import { faGithub, faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { faWindows, faApple } from "@fortawesome/free-brands-svg-icons";
 import {
   faPlay,
@@ -259,7 +256,7 @@ const Landing3 = () => {
         >
           <TruchetPattern
             variant="landing"
-            intensity={0.6}
+            intensity={0.8}
             className="absolute inset-0 -top-[10%] w-full h-[120%]"
           />
         </div>
@@ -290,7 +287,8 @@ const Landing3 = () => {
             className="max-w-xl mx-auto text-base sm:text-lg md:text-xl text-white/55 leading-relaxed mb-10"
             data-reveal
           >
-            Artists need and deserve unparalleled control and precision. ArtCraft’s got you covered.
+            Artists need and deserve unparalleled control and precision.
+            ArtCraft’s got you covered.
           </p>
 
           {/* CTAs */}
@@ -317,10 +315,7 @@ const Landing3 = () => {
                     to="/pricing"
                     className="group inline-flex items-center gap-2 h-11 px-5 rounded-full bg-primary hover:bg-primary-600 text-white text-[14px] font-semibold transition-all shadow-[0_4px_24px_-4px_rgba(45,129,255,0.4)] hover:shadow-[0_8px_32px_-4px_rgba(45,129,255,0.5)] hover:-translate-y-px"
                   >
-                    <FontAwesomeIcon
-                      icon={faRocket}
-                      className="text-[13px]"
-                    />
+                    <FontAwesomeIcon icon={faRocket} className="text-[13px]" />
                     Supercharge Credits
                   </Link>
                 </Tooltip>
@@ -387,8 +382,9 @@ const Landing3 = () => {
               className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl sm:rounded-[28px] overflow-hidden bg-[#080808] transition-colors"
             >
               <div
-                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${i % 2 === 1 ? "lg:order-2" : ""
-                  }`}
+                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${
+                  i % 2 === 1 ? "lg:order-2" : ""
+                }`}
               >
                 <div className="flex items-center gap-2 mb-5">
                   <span className="inline-flex h-7 px-2.5 items-center gap-1.5 rounded-full bg-primary/15 text-primary text-[12px] font-semibold border border-primary/20">
@@ -407,8 +403,9 @@ const Landing3 = () => {
                 </p>
               </div>
               <div
-                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${i % 2 === 1 ? "lg:order-1" : ""
-                  }`}
+                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${
+                  i % 2 === 1 ? "lg:order-1" : ""
+                }`}
               >
                 <video
                   src={feature.src}
@@ -455,8 +452,8 @@ const Landing3 = () => {
               </h3>
               <p className="text-[15px] text-white/55 leading-relaxed mb-6">
                 With browser-based tools, you're paying for access, not a
-                product. Your work, models, and history live on someone
-                else's servers, and disappear with them.
+                product. Your work, models, and history live on someone else's
+                servers, and disappear with them.
               </p>
               <div className="flex flex-wrap gap-2">
                 {["No ownership", "Monthly fees"].map((tag) => (
@@ -464,7 +461,10 @@ const Landing3 = () => {
                     key={tag}
                     className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-red-300/80 bg-red-500/[0.08] border border-red-500/20 rounded-lg px-2.5 py-1.5"
                   >
-                    <FontAwesomeIcon icon={faXmark} className="text-red-400 text-[10px]" />
+                    <FontAwesomeIcon
+                      icon={faXmark}
+                      className="text-red-400 text-[10px]"
+                    />
                     {tag}
                   </span>
                 ))}
