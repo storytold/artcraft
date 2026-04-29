@@ -34,7 +34,7 @@ export interface SelectedSceneObject {
 
 export type TransformMode = "move" | "rotate" | "scale";
 export type TransformSpace = "world" | "local";
-export type PoseMode = "select" | "edit";
+export type PoseMode = "select" | "pose";
 
 export enum DomLevels {
   NONE = 0,

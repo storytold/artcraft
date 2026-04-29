@@ -14,12 +14,6 @@ import { TransformControls } from "./TransformControls";
 import { SceneManager, SceneObject } from "./scene_manager_api";
 import { FreeCam, isPointerLockSupported } from "./free_cam";
 import { FKHelper } from "./KinHelpers/FKHelper";
-import {
-  selectedMode,
-  poseMode,
-  showPoseControls,
-  transformSpace,
-} from "../signals/selectedMode";
 import { Euler } from "three";
 
 const EDITABLE_INPUT_TYPES = new Set([
@@ -226,7 +220,7 @@ export class MouseControls {
     this.publishSelect();
 
     if (currentObject.userData.isCharacter) {
-      showPoseControls.value = true;
+      usePageEnigmaStore.getState().setShowPoseControls(true);
     }
 
     // Normal selection behavior
@@ -279,8 +273,8 @@ export class MouseControls {
       this.fkHelper.clear();
       this.kinMode = KinMode.NONE;
       this.reattachTransformControls();
-      if (poseMode.value === "pose") {
-        poseMode.value = "select";
+      if (usePageEnigmaStore.getState().poseMode === "pose") {
+        usePageEnigmaStore.getState().setPoseMode("select");
       }
       console.log("FK mode off");
       return;
@@ -302,8 +296,8 @@ export class MouseControls {
     this.hideTransformControls();
     this.kinMode = KinMode.FK;
     this.fkHelper.setTarget(this.selected[0]);
-    if (poseMode.value === "select") {
-      poseMode.value = "pose";
+    if (usePageEnigmaStore.getState().poseMode === "select") {
+      usePageEnigmaStore.getState().setPoseMode("pose");
     }
     console.log("FK mode on");
     return;
@@ -333,33 +327,40 @@ export class MouseControls {
             this.toggleFKMode();
           }
           this.removeTransformControls();
-          showPoseControls.value = false;
+          usePageEnigmaStore.getState().setShowPoseControls(false);
         });
       }
       return;
     } else if (event.key === "t") {
       // transform
       this.control?.setMode("translate");
-      if (this.control) this.control.space = transformSpace.value;
-      selectedMode.value = "move";
+      const ts = usePageEnigmaStore.getState().transformSpace;
+      if (this.control) this.control.space = ts;
+      usePageEnigmaStore.getState().setSelectedMode("move");
       return;
     } else if (event.key === "x") {
       // toggle world/local space (blocked in scale mode)
       if (this.control?.mode === "scale") return;
-      transformSpace.value = transformSpace.value === "world" ? "local" : "world";
-      if (this.control) this.control.space = transformSpace.value;
+      const next =
+        usePageEnigmaStore.getState().transformSpace === "world"
+          ? "local"
+          : "world";
+      usePageEnigmaStore.getState().setTransformSpace(next);
+      if (this.control) this.control.space = next;
       return;
     } else if (event.key === "r" && !event.ctrlKey) {
       // rotate
       this.control?.setMode("rotate");
-      if (this.control) this.control.space = transformSpace.value;
-      selectedMode.value = "rotate";
+      if (this.control)
+        this.control.space = usePageEnigmaStore.getState().transformSpace;
+      usePageEnigmaStore.getState().setSelectedMode("rotate");
       return;
     } else if (event.key === "g") {
       // scale
       this.control?.setMode("scale");
-      if (this.control) this.control.space = transformSpace.value;
-      selectedMode.value = "scale";
+      if (this.control)
+        this.control.space = usePageEnigmaStore.getState().transformSpace;
+      usePageEnigmaStore.getState().setSelectedMode("scale");
       return;
     } else if (event.key === "k") {
       this.toggleFKMode();
@@ -445,13 +446,13 @@ export class MouseControls {
     }
 
     if (event.key === "Escape") {
-      if (poseMode.value === "pose") {
+      if (usePageEnigmaStore.getState().poseMode === "pose") {
         this.toggleFKMode();
         return;
       } else if (this.selected && this.selected.length > 0) {
         this.removeTransformControls();
         hideObjectPanel();
-        showPoseControls.value = false;
+        usePageEnigmaStore.getState().setShowPoseControls(false);
       }
     }
   }
@@ -611,7 +612,7 @@ export class MouseControls {
       this.setSelected(this.selected);
       this.removeTransformControls();
       hideObjectPanel();
-      showPoseControls.value = false;
+      usePageEnigmaStore.getState().setShowPoseControls(false);
     }
 
     if (this.sceneManager) {

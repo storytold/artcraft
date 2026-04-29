@@ -28,7 +28,6 @@ import {
 } from "~/signals";
 
 import { outlinerState, updateObjectPanel } from "../signals";
-import { transformSpace } from "../signals/selectedMode";
 import { IGenerationOptions } from "../models/generationOptions";
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { MediaUploadApi } from "~/Classes/ApiManager";
@@ -1313,7 +1312,10 @@ class Editor {
       return;
     }
     this.control.mode = type;
-    this.control.space = type === "scale" ? "local" : transformSpace.value;
+    this.control.space =
+      type === "scale"
+        ? "local"
+        : usePageEnigmaStore.getState().transformSpace;
     this.transform_interaction = true;
   }
 
@@ -1321,8 +1323,10 @@ class Editor {
     if (this.control == undefined || this.control.mode === "scale") {
       return;
     }
-    transformSpace.value = transformSpace.value === "world" ? "local" : "world";
-    this.control.space = transformSpace.value;
+    const store = usePageEnigmaStore.getState();
+    const next = store.transformSpace === "world" ? "local" : "world";
+    store.setTransformSpace(next);
+    this.control.space = next;
   }
 
   async stopPlaybackAndUploadVideo() {

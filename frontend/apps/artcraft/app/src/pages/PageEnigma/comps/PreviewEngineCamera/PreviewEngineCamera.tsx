@@ -8,10 +8,8 @@ import {
   faSpinnerThird,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useShallow } from "zustand/shallow";
-import {
-  sidePanelHeight,
-  outlinerIsShowing,
-} from "~/pages/PageEnigma/signals";
+import { outlinerIsShowing } from "~/pages/PageEnigma/signals";
+import { pageHeight } from "~/signals";
 import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { pageWidth } from "~/signals";
 import { CameraAspectRatio, EditorStates } from "~/pages/PageEnigma/enums";
@@ -51,7 +49,7 @@ export const PreviewEngineCamera = () => {
   const getSmallScreenHeightClass = () => {
     if (
       camAspect === CameraAspectRatio.VERTICAL_9_16 &&
-      sidePanelHeight.value < 2000 &&
+      pageHeight.value - 64 < 2000 &&
       outlinerIsShowing.value
     ) {
       return "w-40 justify-center";

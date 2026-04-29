@@ -4,15 +4,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useShallow } from "zustand/shallow";
 import { EditorStates } from "~/pages/PageEnigma/enums";
 import { pageHeight, pageWidth } from "~/signals";
-import { sidePanelWidth, sidePanelVisible } from "~/pages/PageEnigma/signals";
+import { sidePanelWidth } from "~/pages/PageEnigma/signals";
 import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 export const PreviewFrameImage = () => {
   useSignals();
-  const { editorState, previewSrc } = usePageEnigmaStore(
+  const { editorState, previewSrc, sidePanelVisible } = usePageEnigmaStore(
     useShallow((s) => ({
       editorState: s.editorState,
       previewSrc: s.previewSrc,
+      sidePanelVisible: s.sidePanelVisible,
     })),
   );
 
@@ -22,7 +23,7 @@ export const PreviewFrameImage = () => {
 
   const width =
     pageWidth.value -
-    (sidePanelVisible.value ? sidePanelWidth.value : 0) -
+    (sidePanelVisible ? sidePanelWidth.value : 0) -
     84;
   const height = pageHeight.value - 56;
 

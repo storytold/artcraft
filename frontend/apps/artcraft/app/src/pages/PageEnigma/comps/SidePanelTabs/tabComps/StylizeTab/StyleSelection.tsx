@@ -6,7 +6,8 @@ import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { ArtStyle } from "~/pages/PageEnigma/Editor/api_manager";
 import { faAngleLeft, faAngleRight } from "@fortawesome/pro-solid-svg-icons";
 import { styleList } from "~/pages/PageEnigma/styleList";
-import { sidePanelHeight, sidePanelWidth } from "~/pages/PageEnigma/signals";
+import { sidePanelWidth } from "~/pages/PageEnigma/signals";
+import { pageHeight } from "~/signals";
 import { ItemPicker } from "./ItemPicker";
 import { useSignals } from "@preact/signals-react/runtime";
 
@@ -24,7 +25,7 @@ export const StyleSelection = ({ setSelection, selection }: Props) => {
   const imageHeight = (54 * imageWidth) / 90;
 
   const imageRows = Math.min(
-    Math.max(Math.floor((sidePanelHeight.value - 520) / imageHeight), 2),
+    Math.max(Math.floor((pageHeight.value - 64 - 520) / imageHeight), 2),
     4,
   );
 

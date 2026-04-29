@@ -1,6 +1,6 @@
 import { faChevronLeft, faClose } from "@fortawesome/pro-solid-svg-icons";
 import { ButtonIcon } from "@storyteller/ui-button-icon";
-import { sidePanelVisible } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 interface Props {
   title: string;
@@ -8,9 +8,8 @@ interface Props {
 }
 
 export function TabTitle({ title, onBack }: Props) {
-  const onClose = () => {
-    sidePanelVisible.value = false;
-  };
+  const setSidePanelVisible = usePageEnigmaStore((s) => s.setSidePanelVisible);
+  const onClose = () => setSidePanelVisible(false);
 
   return (
     <div className="flex items-center justify-between px-4 pt-4">

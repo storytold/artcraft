@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { FeatureFlags, TabTitles } from "~/enums";
 import { EditorStates } from "~/pages/PageEnigma/enums";
-import { sidePanelVisible } from "~/pages/PageEnigma/signals/sidePanel";
 import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 import { TabItem } from "../SidePanel/tabList";
@@ -24,18 +23,21 @@ export const SidePanelMenu = ({
 }) => {
   useSignals();
   const showStylePage = usePosthogFeatureFlag(FeatureFlags.SHOW_STYLE_PAGE);
-  const { editorState, setEditorState } = usePageEnigmaStore(
-    useShallow((s) => ({
-      editorState: s.editorState,
-      setEditorState: s.setEditorState,
-    })),
-  );
+  const { editorState, setEditorState, sidePanelVisible, setSidePanelVisible } =
+    usePageEnigmaStore(
+      useShallow((s) => ({
+        editorState: s.editorState,
+        setEditorState: s.setEditorState,
+        sidePanelVisible: s.sidePanelVisible,
+        setSidePanelVisible: s.setSidePanelVisible,
+      })),
+    );
   return (
     <div
       className={twMerge(
         "fixed bg-assets-background",
         "right-0 top-[64px] w-[84px] overflow-auto border-l px-2 py-2",
-        sidePanelVisible.value ? "border-transparent" : "border-[#363636]",
+        sidePanelVisible ? "border-transparent" : "border-[#363636]",
       )}
       style={{
         height: pageHeight.value - 56,
@@ -48,7 +50,7 @@ export const SidePanelMenu = ({
               key={tab.title}
               className={twMerge([
                 "flex flex-col items-center rounded-lg border border-transparent px-2 py-3 transition-all duration-200 hover:bg-brand-secondary-900/75",
-                tab.title === selectedTab.title && sidePanelVisible.value
+                tab.title === selectedTab.title && sidePanelVisible
                   ? "border-[#363636] bg-brand-secondary-900/60 opacity-100 hover:bg-brand-secondary-900/60"
                   : "opacity-60",
                 tab.title === TabTitles.STYLIZE &&
@@ -64,8 +66,8 @@ export const SidePanelMenu = ({
                   return;
                 }
                 selectTab(tab);
-                if (!sidePanelVisible.value) {
-                  sidePanelVisible.value = true;
+                if (!sidePanelVisible) {
+                  setSidePanelVisible(true);
                 }
                 if (editorState === EditorStates.PREVIEW) {
                   setEditorState(EditorStates.EDIT);

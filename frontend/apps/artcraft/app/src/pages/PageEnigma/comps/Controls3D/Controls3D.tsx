@@ -23,7 +23,6 @@ import { useTabStore } from "~/pages/Stores/TabState";
 // eslint-disable-next-line import/no-unresolved
 // import { AssetType } from "~/enums";
 import { AssetModal } from "../AssetMenu/AssetModal";
-import { selectedMode, transformSpace } from "../../signals/selectedMode";
 import { setTransformMode } from "../../actions";
 import { TransformMode } from "../../PageEnigmaStore";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -48,11 +47,15 @@ export const Controls3D = () => {
     assetModalVisible,
     setAssetModalVisible,
     setAssetModalVisibleDuringDrag,
+    selectedMode,
+    transformSpace,
   } = usePageEnigmaStore(
     useShallow((s) => ({
       assetModalVisible: s.assetModalVisible,
       setAssetModalVisible: s.setAssetModalVisible,
       setAssetModalVisibleDuringDrag: s.setAssetModalVisibleDuringDrag,
+      selectedMode: s.selectedMode,
+      transformSpace: s.transformSpace,
     })),
   );
   const [showEmptySceneTooltip, setShowEmptySceneTooltip] = useState(false);
@@ -303,9 +306,9 @@ export const Controls3D = () => {
             <ButtonIconSelect
               options={modes}
               onOptionChange={handleModeChange}
-              selectedOption={selectedMode.value}
+              selectedOption={selectedMode}
             />
-            {selectedMode.value === "scale" ? (
+            {selectedMode === "scale" ? (
               <Tooltip
                 content="Scale is always in local space"
                 position="bottom"
@@ -320,7 +323,7 @@ export const Controls3D = () => {
               </Tooltip>
             ) : (
               <Tooltip
-                content={`Transform space: ${transformSpace.value} (X to toggle)`}
+                content={`Transform space: ${transformSpace} (X to toggle)`}
                 position="bottom"
                 delay={300}
               >
@@ -328,7 +331,7 @@ export const Controls3D = () => {
                   className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 hover:bg-white/25 transition-colors uppercase tracking-wide"
                   onClick={() => editorEngine?.toggleTransformSpace()}
                 >
-                  {transformSpace.value === "world" ? "World" : "Local"}
+                  {transformSpace === "world" ? "World" : "Local"}
                 </button>
               </Tooltip>
             )}

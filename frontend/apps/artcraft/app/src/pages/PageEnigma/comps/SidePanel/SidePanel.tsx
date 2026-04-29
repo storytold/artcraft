@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
-import {
-  dndSidePanelWidth,
-  sidePanelVisible,
-  sidePanelWidth,
-} from "~/pages/PageEnigma/signals";
+import { useShallow } from "zustand/shallow";
+import { sidePanelWidth } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 import { SidePanelTabs } from "~/pages/PageEnigma/comps/SidePanelTabs";
 import { SidePanelMenu } from "~/pages/PageEnigma/comps/SidePanelMenu";
@@ -12,6 +10,12 @@ import { TabItem, tabList } from "./tabList";
 
 export const SidePanel = () => {
   useSignals();
+  const { sidePanelVisible, dndSidePanelWidth } = usePageEnigmaStore(
+    useShallow((s) => ({
+      sidePanelVisible: s.sidePanelVisible,
+      dndSidePanelWidth: s.dndSidePanelWidth,
+    })),
+  );
 
   const initialTabIdx = 0;
   const [selectedTab, setSelectedTab] = useState<TabItem>(
@@ -19,9 +23,7 @@ export const SidePanel = () => {
   );
 
   const displayWidth =
-    dndSidePanelWidth.value > -1
-      ? dndSidePanelWidth.value
-      : sidePanelWidth.value;
+    dndSidePanelWidth > -1 ? dndSidePanelWidth : sidePanelWidth.value;
 
   return (
     <>
@@ -31,7 +33,7 @@ export const SidePanel = () => {
         ].join(" ")}
         style={{
           top: 64,
-          right: sidePanelVisible.value ? 84 : -400,
+          right: sidePanelVisible ? 84 : -400,
           width: displayWidth,
         }}
       >
