@@ -29,7 +29,7 @@ use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub async fn generate_video_command(
-  request: TauriGenerateVideoRequest,
+  mut request: TauriGenerateVideoRequest,
   app: AppHandle,
   app_env_configs: State<'_, AppEnvConfigs>,
   app_data_root: State<'_, AppDataRoot>,
@@ -43,6 +43,18 @@ pub async fn generate_video_command(
 ) -> Response<TauriGenerateVideoResponse, TauriGenerateVideoErrorType, ()> {
 
   info!("generate_video_command called, request: {:?}", request);
+
+  if request.image_media_token.is_none()
+      && request.start_frame_image_media_token.is_some() {
+    // NB: This is to fix the legacy handlers
+    request.image_media_token = request.start_frame_image_media_token.clone();
+  }
+
+  if request.image_media_token.is_some()
+      && request.start_frame_image_media_token.is_none() {
+    // NB: This is to fix the modern handlers
+    request.start_frame_image_media_token = request.image_media_token.clone();
+  }
 
   let result = handle_request(
     request,
