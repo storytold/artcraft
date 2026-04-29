@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { EngineContext } from "./EngineContext";
+import { EngineContext, setActiveEditor } from "./EngineContext";
 
 import Editor, { is3DSceneLoaded } from "~/pages/PageEnigma/Editor/editor";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -53,6 +53,7 @@ export const EngineProvider = ({ sceneToken, children }: Props) => {
         cacheJsonString: cacheString,
       });
       setEditor(newEditor);
+      setActiveEditor(newEditor);
     } else if (tab !== "3D") {
       if (!activeEditorRef.current) {
         return;
@@ -78,6 +79,7 @@ export const EngineProvider = ({ sceneToken, children }: Props) => {
       // Unmount/Destructor flow
       activeEditorRef.current?.unmountEngine();
       activeEditorRef.current = null;
+      setActiveEditor(null);
       sceneContainerSignal.value = null;
       editorCanvasSignal.value = null;
       camViewCanvasSignal.value = null;

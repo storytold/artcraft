@@ -1,8 +1,6 @@
 import React from "react";
 import { MediaItem } from "~/pages/PageEnigma/models";
 import {
-  addCharacter,
-  addObject,
   canDrop,
   currPosition,
   dragItem,
@@ -10,8 +8,13 @@ import {
   reopenAfterDragSignal,
 } from "~/pages/PageEnigma/signals";
 import { pageHeight, pageWidth } from "~/signals";
-import { addShape } from "~/pages/PageEnigma/signals/shape";
 import { AssetType } from "~/enums";
+import type Editor from "~/pages/PageEnigma/Editor/editor";
+import {
+  addCharacter,
+  addObject,
+  addShape,
+} from "~/pages/PageEnigma/actions";
 
 class DndAsset {
   public dropId: string = "";
@@ -22,14 +25,20 @@ class DndAsset {
   public notDropText = "";
   public isDragging: boolean = false;
   public dragThreshold: number = 5;
+  private editor: Editor | null = null;
 
   constructor() {
     this.onPointerMove = this.onPointerMove.bind(this);
     this.onPointerUp = this.onPointerUp.bind(this);
   }
 
-  onPointerDown(event: React.PointerEvent<HTMLDivElement>, item: MediaItem) {
+  onPointerDown(
+    event: React.PointerEvent<HTMLDivElement>,
+    item: MediaItem,
+    editor: Editor | null,
+  ) {
     if (event.button === 0) {
+      this.editor = editor;
       dragItem.value = item;
       currPosition.value = {
         currX: event.pageX,
@@ -54,6 +63,7 @@ class DndAsset {
       this.notDropText = "";
       assetModalVisibleDuringDrag.value = reopenAfterDragSignal.value;
     }
+    this.editor = null;
   }
 
   overCanvas(positionX: number, positionY: number) {
@@ -74,26 +84,26 @@ class DndAsset {
       assetModalVisibleDuringDrag.value = true;
       dragItem.value = null;
       currPosition.value = { currX: 0, currY: 0 };
+      this.editor = null;
       return;
     }
 
-    if (dragItem.value) {
+    const editor = this.editor;
+    if (dragItem.value && editor) {
       const positionX = event.pageX;
       const positionY = event.pageY;
       if (this.overCanvas(positionX, positionY)) {
         const mediaItem = dragItem.value;
         if (mediaItem.type === AssetType.CHARACTER) {
-          addCharacter(mediaItem);
-        }
-        if (
+          void addCharacter(editor, mediaItem);
+        } else if (
           mediaItem.type === AssetType.OBJECT ||
           mediaItem.type === AssetType.SPLAT ||
           mediaItem.type === AssetType.SKYBOX
         ) {
-          addObject(mediaItem);
-        }
-        if (mediaItem.type === AssetType.SHAPE) {
-          addShape(mediaItem);
+          void addObject(editor, mediaItem);
+        } else if (mediaItem.type === AssetType.SHAPE) {
+          void addShape(editor, mediaItem);
         }
       }
     }

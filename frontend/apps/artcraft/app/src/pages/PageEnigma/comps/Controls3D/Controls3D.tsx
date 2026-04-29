@@ -23,6 +23,8 @@ import { useTabStore } from "~/pages/Stores/TabState";
 // import { AssetType } from "~/enums";
 import { AssetModal } from "../AssetMenu/AssetModal";
 import { selectedMode, transformSpace } from "../../signals/selectedMode";
+import { setTransformMode } from "../../actions";
+import { TransformMode } from "../../PageEnigmaStore";
 import { useSignals } from "@preact/signals-react/runtime";
 import { outlinerState } from "../../signals/outliner/outliner";
 // eslint-disable-next-line import/no-unresolved
@@ -85,39 +87,10 @@ export const Controls3D = () => {
   ]);
 
   const handleModeChange = (value: string) => {
-    selectedMode.value = value;
-    switch (value) {
-      case "move":
-        handleMoveArrows();
-        break;
-      case "rotate":
-        handleRotateArrows();
-        break;
-      case "scale":
-        handleZoomArrows();
-        break;
-      default:
-        console.log("Unknown option");
+    if (!editorEngine) return;
+    if (value === "move" || value === "rotate" || value === "scale") {
+      setTransformMode(editorEngine, value as TransformMode);
     }
-  };
-
-  const handleMoveArrows = () => {
-    if (!editorEngine) {
-      return;
-    }
-    editorEngine.change_mode("translate");
-  };
-  const handleRotateArrows = () => {
-    if (!editorEngine) {
-      return;
-    }
-    editorEngine.change_mode("rotate");
-  };
-  const handleZoomArrows = () => {
-    if (!editorEngine) {
-      return;
-    }
-    editorEngine.change_mode("scale");
   };
 
   // ----- TODO LATER - BFlat for auto add 3d model to scene -----
@@ -379,12 +352,7 @@ export const Controls3D = () => {
       <UploadModalSplat
         isOpen={uploadSplatIsShowing}
         onClose={() => setUploadSplatIsShowing(false)}
-        onSuccess={(_buffer, _shouldFlip) => {
-          setUploadSplatIsShowing(false);
-          // TODO: addLocalSplat lived on the deleted timeline; rewire to a
-          // direct editor.addLocalSplat once the imperative engine grows
-          // that method.
-        }}
+        onSuccess={() => setUploadSplatIsShowing(false)}
         title="Upload an spz file"
         titleIcon={faCube}
       />

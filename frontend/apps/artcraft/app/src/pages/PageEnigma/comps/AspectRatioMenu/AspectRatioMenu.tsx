@@ -4,12 +4,16 @@ import {
   faRectangleVertical,
   faSquare,
 } from "@fortawesome/pro-solid-svg-icons";
+import { useContext } from "react";
 import { CameraAspectRatio } from "~/pages/PageEnigma/enums";
-import { cameraAspectRatio, setCameraAspectRatio } from "~/pages/PageEnigma/signals";
+import { cameraAspectRatio } from "~/pages/PageEnigma/signals";
+import { setCameraAspect } from "~/pages/PageEnigma/actions";
+import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 
 export const AspectRatioMenu = () => {
   useSignals();
+  const editor = useContext(EngineContext);
   const buttonIcon =
     cameraAspectRatio.value === CameraAspectRatio.HORIZONTAL_16_9
       ? faRectangle
@@ -32,7 +36,8 @@ export const AspectRatioMenu = () => {
             : "1:1 Squared";
 
   const handleChangeAspectRatio = (newRatio: CameraAspectRatio) => {
-    setCameraAspectRatio(newRatio);
+    if (!editor) return;
+    setCameraAspect(editor, newRatio);
   };
   return (
     <div className="absolute right-0 top-0 m-2 flex flex-col items-end">

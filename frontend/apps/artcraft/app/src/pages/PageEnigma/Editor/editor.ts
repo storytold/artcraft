@@ -1127,12 +1127,6 @@ class Editor {
     );
   }
 
-  async recordScene() {
-    // TODO: timeline-driven frame recording was removed in the refactor;
-    // rewire video capture to a non-timeline trigger (likely
-    // VideoGeneration owning its own frame loop).
-  }
-
   // Render the scene to the camera, this is called in the update.
   async renderScene() {
     if (
@@ -1141,19 +1135,13 @@ class Editor {
       this.rawRenderer &&
       this.render_composer
     ) {
-      //const then = performance.now();
       this.composer.render();
-      //const now = performance.now();
-      //console.log("Performance: ", now - then);
-      //this.rawRenderer.render(this.activeScene.scene, this.render_camera!);
-      // this.render_composer.render();
     } else if (this.renderer && this.render_camera && !this.rendering) {
       this.renderer.setSize(this.render_width, this.render_height);
       this.renderer.render(this.activeScene.scene, this.render_camera);
     } else if (this.rendering && this.renderer) {
       this.renderer.setSize(this.render_width, this.render_height);
     }
-    // await this.recordScene();
   }
 
   async useCachedMediaTokens(): Promise<boolean> {

@@ -31,8 +31,8 @@ import {
   gridVisibility,
   setGridVisibility,
   DomLevels,
-  setCameraAspectRatio,
 } from "~/pages/PageEnigma/signals";
+import { setCameraAspect } from "~/pages/PageEnigma/actions";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { SceneContainer } from "./comps/SceneContainer";
 import { Outliner } from "./comps/Outliner";
@@ -60,8 +60,7 @@ import {
   topNavMediaUrl,
 } from "~/components/signaled/TopBar/TopBar";
 import { uploadPlaneFromMediaToken } from "~/components/reusable/UploadModalMedia/uploadPlane";
-import { addObject } from "./signals/objectGroup/addObject";
-import { addCharacter } from "./signals/characterGroups/addCharacter";
+import { addObject, addCharacter } from "./actions";
 import { AssetType, AUTH_STATUS } from "~/enums";
 import { v4 as uuidv4 } from "uuid";
 import { MediaItem } from "~/pages/PageEnigma/models";
@@ -283,7 +282,8 @@ export const PageEditor = () => {
   };
 
   const onAspectRatioSelect = (newRatio: CameraAspectRatio) => {
-    setCameraAspectRatio(newRatio);
+    if (!editorEngine) return;
+    setCameraAspect(editorEngine, newRatio);
   };
   // MOVE THIS don't throw this in here
   // Image drop from gallery/library modal logic
@@ -317,44 +317,32 @@ export const PageEditor = () => {
           }
 
           (async () => {
+            if (!editorEngine) {
+              console.warn("Cannot drop asset: editor engine not ready");
+              return;
+            }
             try {
               if (item.mediaClass === "dimensional") {
-                // Handle 3D models
                 const isCharacter = item.assetType === "character";
                 const mediaItem: MediaItem = {
                   version: 1,
                   type: isCharacter ? AssetType.CHARACTER : AssetType.OBJECT,
                   media_id: item.id || uuidv4(),
                   name: item.label || (isCharacter ? "Character" : "3D Object"),
-                  ...(worldPosition && {
-                    position: {
-                      x: worldPosition.x,
-                      y: worldPosition.y,
-                      z: worldPosition.z,
-                    },
-                  }),
                 };
                 if (isCharacter) {
-                  addCharacter(mediaItem);
+                  await addCharacter(editorEngine, mediaItem, worldPosition);
                 } else {
-                  addObject(mediaItem);
+                  await addObject(editorEngine, mediaItem, worldPosition);
                 }
               } else {
-                // Handle images (create image planes)
                 const mediaItem: MediaItem = {
                   version: 1,
                   type: AssetType.OBJECT,
                   media_id: item.id || uuidv4(),
                   name: item.label || "Image Plane",
-                  ...(worldPosition && {
-                    position: {
-                      x: worldPosition.x,
-                      y: worldPosition.y,
-                      z: worldPosition.z,
-                    },
-                  }),
                 };
-                addObject(mediaItem);
+                await addObject(editorEngine, mediaItem, worldPosition);
 
                 await uploadPlaneFromMediaToken({
                   title: item.label || "Image Plane",

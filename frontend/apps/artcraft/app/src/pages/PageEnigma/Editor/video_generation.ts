@@ -64,7 +64,7 @@ export class VideoGeneration {
       // TODO: timeline-driven engineFrameBuffers was removed; rewire video
       // capture to a non-timeline trigger (likely an explicit frame loop
       // owned by VideoGeneration).
-      const zipBlob: Blob | undefined = undefined;
+      const zipBlob: Blob | null = null;
       if (!zipBlob) {
         await this.handleError(`"Payload blob is null."`, 3000);
       }

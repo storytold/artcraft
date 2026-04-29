@@ -1,7 +1,9 @@
 // TODO: Move into shared component.
+import { useContext } from "react";
 import { MediaItem } from "~/pages/PageEnigma/models";
 import { useSignals } from "@preact/signals-react/runtime";
 import DndAsset from "~/pages/PageEnigma/DragAndDrop/DndAsset";
+import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { Badge } from "@storyteller/ui-badge";
 import { AssetType } from "~/enums";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -37,6 +39,7 @@ const patchExpressionObjectType = (mediaType: string) => {
 
 export const ItemElement = ({ item }: Props) => {
   useSignals();
+  const editor = useContext(EngineContext);
 
   return (
     <div className="group relative w-full select-none overflow-hidden transition-all duration-200">
@@ -55,7 +58,7 @@ export const ItemElement = ({ item }: Props) => {
 
       <div
         className="pointer-events-none relative aspect-[16/12] w-full select-none overflow-hidden rounded-xl border-[3px] border-white/5 bg-brand-secondary-600 object-cover object-center transition-all group-hover:border-brand-primary"
-        onPointerDown={(event) => DndAsset.onPointerDown(event, item)}
+        onPointerDown={(event) => DndAsset.onPointerDown(event, item, editor)}
         style={{ cursor: "grab", pointerEvents: "auto" }}
       >
         <img
