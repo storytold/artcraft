@@ -28,8 +28,8 @@ import { Button } from "@storyteller/ui-button";
 import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
 import { BucketConfig } from "~/api/BucketConfig";
-import { useSignals } from "@preact/signals-react/runtime";
-import { globalIPAMediaToken, adapterImage } from "~/pages/PageEnigma/signals";
+import { useShallow } from "zustand/shallow";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 const base64ToFile = (base64: string, filename: string): File => {
   const arr = base64.split(",");
@@ -46,8 +46,20 @@ const base64ToFile = (base64: string, filename: string): File => {
 };
 
 export const IPAdapter: React.FC = () => {
-  useSignals();
   const editorEngine = useContext(EngineContext);
+  const {
+    adapterImage,
+    globalIPAMediaToken,
+    setAdapterImage,
+    setGlobalIPAMediaToken,
+  } = usePageEnigmaStore(
+    useShallow((s) => ({
+      adapterImage: s.adapterImage,
+      globalIPAMediaToken: s.globalIPAMediaToken,
+      setAdapterImage: s.setAdapterImage,
+      setGlobalIPAMediaToken: s.setGlobalIPAMediaToken,
+    })),
+  );
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
@@ -60,20 +72,16 @@ export const IPAdapter: React.FC = () => {
   useEffect(() => {
     const fetchMediaFile = async () => {
       const mediaFilesApi = new MediaFilesApi();
-      if (
-        editorEngine &&
-        adapterImage.value === null &&
-        globalIPAMediaToken.value
-      ) {
+      if (editorEngine && adapterImage === null && globalIPAMediaToken) {
         try {
           const response = await mediaFilesApi.GetMediaFileByToken({
-            mediaFileToken: globalIPAMediaToken.value,
+            mediaFileToken: globalIPAMediaToken,
           });
           if (response.success && response.data) {
             const imageUrl = bucketConfig.getGcsUrl(
               response.data.public_bucket_path,
             );
-            adapterImage.value = imageUrl;
+            setAdapterImage(imageUrl);
           } else {
             console.error("Failed to fetch media file:", response.errorMessage);
           }
@@ -85,7 +93,7 @@ export const IPAdapter: React.FC = () => {
 
     fetchMediaFile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editorEngine, globalIPAMediaToken.value, adapterImage.value]);
+  }, [editorEngine, globalIPAMediaToken, adapterImage]);
 
   const onFileChange = (file: File) => {
     const reader = new FileReader();
@@ -171,7 +179,7 @@ export const IPAdapter: React.FC = () => {
           croppedImageUrl,
           "cropped-image.jpg",
         );
-        adapterImage.value = URL.createObjectURL(croppedImageFile);
+        setAdapterImage(URL.createObjectURL(croppedImageFile));
         if (editorEngine) {
           editorEngine.globalIpAdapterImage = croppedImageFile;
         }
@@ -186,8 +194,8 @@ export const IPAdapter: React.FC = () => {
     event.preventDefault();
     setImageSrc(null);
     setCrop(undefined);
-    adapterImage.value = null;
-    globalIPAMediaToken.value = null;
+    setAdapterImage(null);
+    setGlobalIPAMediaToken(null);
     if (editorEngine) {
       editorEngine.globalIpAdapterImage = undefined;
     }
@@ -218,7 +226,7 @@ export const IPAdapter: React.FC = () => {
         </Label>
       </div>
 
-      {!adapterImage.value && (
+      {!adapterImage && (
         <FileUploader
           handleChange={onFileChange}
           name="file"
@@ -227,7 +235,7 @@ export const IPAdapter: React.FC = () => {
           <DragAndDropZone />
         </FileUploader>
       )}
-      {adapterImage.value && (
+      {adapterImage && (
         <div className="relative">
           <FileUploader
             handleChange={onFileChange}
@@ -236,7 +244,7 @@ export const IPAdapter: React.FC = () => {
           >
             <div className="relative h-[88px] cursor-pointer overflow-hidden rounded-lg border border-white/10 bg-black/25">
               <img
-                src={adapterImage.value}
+                src={adapterImage}
                 alt="IPAdapter"
                 width={512}
                 height={512}
@@ -319,9 +327,9 @@ export const IPAdapter: React.FC = () => {
         onClose={() => setIsExpandedDialogOpen(false)}
       >
         <div className="flex items-center justify-center">
-          {adapterImage.value && (
+          {adapterImage && (
             <img
-              src={adapterImage.value}
+              src={adapterImage}
               alt="Expanded"
               className="max-h-full max-w-full rounded object-contain"
               crossOrigin="anonymous"

@@ -3,4 +3,3 @@ export * from "./engine";
 export * from "./dragAndDrop";
 export * from "./objectPanel";
 export * from "./outliner";
-export * from "./stylizeTab";

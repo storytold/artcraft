@@ -17,7 +17,7 @@ import { Button } from "@storyteller/ui-button";
 import { TestFeaturesButtons } from "./TestFeaturesButtons";
 import { LoadUserScenes } from "./LoadUserScenes";
 import { getCurrentLocationWithoutParams, isNumberString } from "~/utilities";
-import { resetSceneGenerationMetadata } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { CameraAspectRatio } from "~/pages/PageEnigma/enums";
 import { twMerge } from "tailwind-merge";
 import { Help } from "./Help";
@@ -42,7 +42,7 @@ export const ControlsTopButtons = () => {
   };
 
   const handleResetScene = () => {
-    resetSceneGenerationMetadata();
+    usePageEnigmaStore.getState().resetSceneGenerationMetadata();
     editorEngine?.changeRenderCameraAspectRatio(
       CameraAspectRatio.HORIZONTAL_3_2,
     );

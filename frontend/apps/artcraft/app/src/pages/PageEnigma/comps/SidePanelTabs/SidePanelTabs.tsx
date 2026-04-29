@@ -1,5 +1,5 @@
 import { useSignals } from "@preact/signals-react/runtime";
-import { sidePanelHeight } from "~/pages/PageEnigma/signals";
+import { pageHeight } from "~/signals";
 
 import { TabItem } from "../SidePanel/tabList";
 
@@ -14,7 +14,7 @@ export const SidePanelTabs = ({
 
   return (
     <>
-      <div style={{ height: sidePanelHeight.value, width: "100%" }}>
+      <div style={{ height: pageHeight.value - 64, width: "100%" }}>
         {tabs.map((tab, index) => (
           <div
             key={index}

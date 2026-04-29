@@ -9,7 +9,6 @@ import { getSceneSignals, addToast, startPollingActiveJobs } from "~/signals";
 import { v4 as uuidv4 } from "uuid";
 import { SceneGenereationMetaData as SceneGenerationMetaData } from "~/pages/PageEnigma/models/sceneGenerationMetadata";
 import { MediaUploadApi, StudioGen2Api, VideoApi } from "~/Classes/ApiManager";
-import { globalIPAMediaToken } from "../signals";
 
 
 // TODO THIS CLASS MAKES NO SENSE
@@ -228,7 +227,7 @@ export class VideoGeneration {
 
     // update the signal with this information
     if (ipa_image_token) {
-      globalIPAMediaToken.value = ipa_image_token;
+      usePageEnigmaStore.getState().setGlobalIPAMediaToken(ipa_image_token);
     }
 
     // TODO Remove so many of these around wtf. SceneGenereationMetaData should only be one place
@@ -346,7 +345,8 @@ export class VideoGeneration {
         use_strength: this.editor.generation_options.styleStrength,
         use_upscaler: this.editor.generation_options.upscale,
         uuid_idempotency_token: uuidv4(),
-        global_ipa_media_token: globalIPAMediaToken.value ?? "",
+        global_ipa_media_token:
+          usePageEnigmaStore.getState().globalIPAMediaToken ?? "",
         input_depth_file: "",
         input_normal_file: "",
         input_outline_file: "",

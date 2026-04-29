@@ -3,20 +3,19 @@ import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { ArtStyle } from "~/pages/PageEnigma/Editor/api_manager";
 import { styleList } from "~/pages/PageEnigma/styleList";
 import { ItemPicker } from "./ItemPicker";
-import { useSignals } from "@preact/signals-react/runtime";
-import { selectedArtStyle } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { Modal } from "@storyteller/ui-modal";
 
 interface Props {
   onClose: () => void;
 }
 export const StyleSelection = ({ onClose }: Props) => {
-  useSignals();
-
   const editorEngine = useContext(EngineContext);
+  const selectedArtStyle = usePageEnigmaStore((s) => s.selectedArtStyle);
+  const setSelectedArtStyle = usePageEnigmaStore((s) => s.setSelectedArtStyle);
 
   const handlePickingStylizer = (picked: ArtStyle) => {
-    selectedArtStyle.value = picked;
+    setSelectedArtStyle(picked);
     if (editorEngine === null) {
       console.log("Editor is null");
       return;
@@ -39,7 +38,7 @@ export const StyleSelection = ({ onClose }: Props) => {
               key={style.type}
               label={style.label}
               type={style.type}
-              selected={selectedArtStyle.value === style.type}
+              selected={selectedArtStyle === style.type}
               onSelected={handlePickingStylizer}
               src={style.image}
               className="aspect-video"

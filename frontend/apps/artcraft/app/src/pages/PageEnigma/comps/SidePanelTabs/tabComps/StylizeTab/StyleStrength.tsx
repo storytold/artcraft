@@ -1,20 +1,21 @@
 import { Label } from "@storyteller/ui-label";
 import { SliderV2 as Slider } from "@storyteller/ui-sliderv2";
 import { NumberInput } from "@storyteller/ui-input";
-import { useSignals } from "@preact/signals-react/runtime";
-
-import { styleStrength } from "~/pages/PageEnigma/signals/stylizeTab";
+import { useShallow } from "zustand/shallow";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 export function StyleStrength() {
-  useSignals();
+  const { styleStrength, setStyleStrength } = usePageEnigmaStore(
+    useShallow((s) => ({
+      styleStrength: s.styleStrength,
+      setStyleStrength: s.setStyleStrength,
+    })),
+  );
 
-  const sliderChanged = (value: number | number[]) => {
-    styleStrength.value = (value as number) / 100;
-  };
-
-  const handleNumberInputChange = (value: number) => {
-    styleStrength.value = value / 100;
-  };
+  const sliderChanged = (value: number | number[]) =>
+    setStyleStrength((value as number) / 100);
+  const handleNumberInputChange = (value: number) =>
+    setStyleStrength(value / 100);
 
   return (
     <div className="flex w-full flex-col justify-center gap-4 rounded-b-lg bg-ui-panel">
@@ -30,11 +31,11 @@ export function StyleStrength() {
 
           <div className="mb-2 flex items-center gap-3.5">
             <NumberInput
-              value={styleStrength.value * 100}
+              value={styleStrength * 100}
               onChange={handleNumberInputChange}
             />
             <Slider
-              value={styleStrength.value * 100}
+              value={styleStrength * 100}
               min={0}
               max={100}
               step={1}

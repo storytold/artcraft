@@ -8,64 +8,78 @@ import {
   faRandom,
 } from "@fortawesome/pro-solid-svg-icons";
 import { RandomTextsPositive } from "~/pages/PageEnigma/constants/RandomTexts";
-import { promptsStore, selectedArtStyle } from "~/pages/PageEnigma/signals";
+import { useShallow } from "zustand/shallow";
 import { useSignals } from "@preact/signals-react/runtime";
 import { Transition } from "@headlessui/react";
 import { currentPage } from "~/signals";
 import { Pages } from "~/pages/PageEnigma/constants/page";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 export const Prompts = () => {
   useSignals();
   const editorEngine = useContext(EngineContext);
+  const {
+    selectedArtStyle,
+    positivePrompt,
+    negativePrompt,
+    isUserInputPositive,
+    showNegativePrompt,
+    setPositivePrompt,
+    setNegativePrompt,
+    setIsUserInputPositive,
+    setIsUserInputNegative,
+    setShowNegativePrompt,
+  } = usePageEnigmaStore(
+    useShallow((s) => ({
+      selectedArtStyle: s.selectedArtStyle,
+      positivePrompt: s.positivePrompt,
+      negativePrompt: s.negativePrompt,
+      isUserInputPositive: s.isUserInputPositive,
+      showNegativePrompt: s.showNegativePrompt,
+      setPositivePrompt: s.setPositivePrompt,
+      setNegativePrompt: s.setNegativePrompt,
+      setIsUserInputPositive: s.setIsUserInputPositive,
+      setIsUserInputNegative: s.setIsUserInputNegative,
+      setShowNegativePrompt: s.setShowNegativePrompt,
+    })),
+  );
 
   useEffect(() => {
-    if (editorEngine === null) {
-      return;
-    }
-
-    if (!promptsStore.isUserInputPositive.value) {
-      const randomIndexPositive = Math.floor(
-        Math.random() * RandomTextsPositive[selectedArtStyle.value].length,
+    if (editorEngine === null) return;
+    if (!isUserInputPositive) {
+      const randomIndex = Math.floor(
+        Math.random() * RandomTextsPositive[selectedArtStyle].length,
       );
-      const randomTextPositive =
-        RandomTextsPositive[selectedArtStyle.value][randomIndexPositive];
-      editorEngine.positive_prompt = randomTextPositive;
-      promptsStore.textBufferPositive.value = randomTextPositive;
+      const randomText = RandomTextsPositive[selectedArtStyle][randomIndex];
+      editorEngine.positive_prompt = randomText;
+      setPositivePrompt(randomText);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editorEngine]);
 
   const onChangeHandlerNegative = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    if (editorEngine === null) {
-      console.log("Editor is null");
-      return;
-    }
-    promptsStore.isUserInputNegative.value = true;
+    if (editorEngine === null) return;
+    setIsUserInputNegative(true);
     editorEngine.negative_prompt = event.target.value;
-    promptsStore.textBufferNegative.value = event.target.value;
+    setNegativePrompt(event.target.value);
   };
 
   const onChangeHandlerPositive = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    if (editorEngine === null) {
-      console.log("Editor is null");
-      return;
-    }
-    promptsStore.isUserInputPositive.value = true;
+    if (editorEngine === null) return;
+    setIsUserInputPositive(true);
     editorEngine.positive_prompt = event.target.value;
-    promptsStore.textBufferPositive.value = event.target.value;
+    setPositivePrompt(event.target.value);
   };
 
   const generateRandomTextPositive = () => {
     const randomIndex = Math.floor(
-      Math.random() * RandomTextsPositive[selectedArtStyle.value].length,
+      Math.random() * RandomTextsPositive[selectedArtStyle].length,
     );
-    const randomText = RandomTextsPositive[selectedArtStyle.value][randomIndex];
-    if (editorEngine === null) {
-      console.log("Editor is null");
-      return;
-    }
-    promptsStore.isUserInputPositive.value = false;
+    const randomText = RandomTextsPositive[selectedArtStyle][randomIndex];
+    if (editorEngine === null) return;
+    setIsUserInputPositive(false);
     editorEngine.positive_prompt = randomText;
-    promptsStore.textBufferPositive.value = randomText;
+    setPositivePrompt(randomText);
   };
 
   return (
@@ -79,7 +93,7 @@ export const Prompts = () => {
           placeholder="Type here to describe your scene"
           onChange={onChangeHandlerPositive}
           required
-          value={promptsStore.textBufferPositive.value}
+          value={positivePrompt}
           resize="none"
         />
         <div className="absolute right-0 top-[2px]">
@@ -95,7 +109,7 @@ export const Prompts = () => {
       {currentPage.value === Pages.EDIT ? (
         <>
           <Transition
-            show={promptsStore.showNegativePrompt.value}
+            show={showNegativePrompt}
             enter="transition-all duration-200 ease-in-out"
             enterFrom="opacity-0 max-h-0"
             enterTo="opacity-100 max-h-36"
@@ -111,7 +125,7 @@ export const Prompts = () => {
                 name="negative-prompt"
                 placeholder="Type here to filter out the things you don't want in the scene"
                 onChange={onChangeHandlerNegative}
-                value={promptsStore.textBufferNegative.value}
+                value={negativePrompt}
                 resize="none"
               />
             </div>
@@ -119,19 +133,11 @@ export const Prompts = () => {
           <div>
             <button
               className="flex items-center text-xs font-medium text-brand-primary transition-colors duration-100 hover:text-brand-primary-400"
-              onClick={() =>
-                (promptsStore.showNegativePrompt.value =
-                  !promptsStore.showNegativePrompt.value)
-              }
+              onClick={() => setShowNegativePrompt(!showNegativePrompt)}
             >
-              {promptsStore.showNegativePrompt.value ? "Hide" : "Show"} Negative
-              Prompt
+              {showNegativePrompt ? "Hide" : "Show"} Negative Prompt
               <FontAwesomeIcon
-                icon={
-                  promptsStore.showNegativePrompt.value
-                    ? faChevronUp
-                    : faChevronDown
-                }
+                icon={showNegativePrompt ? faChevronUp : faChevronDown}
                 className="ms-1.5"
               />
             </button>
@@ -146,7 +152,7 @@ export const Prompts = () => {
             name="negative-prompt"
             placeholder="Type here to filter out the things you don't want in the scene"
             onChange={onChangeHandlerNegative}
-            value={promptsStore.textBufferNegative.value}
+            value={negativePrompt}
             resize="none"
           />
         </div>

@@ -1,17 +1,8 @@
 import { faFilm } from "@fortawesome/pro-solid-svg-icons";
-import { useSignals } from "@preact/signals-react/runtime";
 import { Label } from "~/components";
 import { Button } from "@storyteller/ui-button";
 import { GenerationOptions } from "~/pages/PageEnigma/models/generationOptions";
-import {
-  upscale,
-  faceDetail,
-  styleStrength,
-  lipSync,
-  cinematic,
-  globalIPAMediaToken,
-  enginePreProcessing,
-} from "~/pages/PageEnigma/signals/stylizeTab";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { useEffect, useRef } from "react";
 
 interface GenerateMovieButtonProps {
@@ -21,7 +12,6 @@ interface GenerateMovieButtonProps {
 export function GenerateMovieButton({
   setGenerateSectionHeight,
 }: GenerateMovieButtonProps) {
-  useSignals();
   const ref = useRef<HTMLDivElement>(null);
 
   // Resizes Height of Generate Movie Section that's at the bottom dynamically if squeezed
@@ -52,14 +42,15 @@ export function GenerateMovieButton({
 
   const generateMovie = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    const s = usePageEnigmaStore.getState();
     void new GenerationOptions(
-      upscale.value,
-      faceDetail.value,
-      styleStrength.value,
-      lipSync.value,
-      cinematic.value,
-      globalIPAMediaToken.value,
-      enginePreProcessing.value,
+      s.upscale,
+      s.faceDetail,
+      s.styleStrength,
+      s.lipSync,
+      s.cinematic,
+      s.globalIPAMediaToken,
+      s.enginePreProcessing,
     );
     // TODO: wire to editor.videoGeneration.generate(options) once editor.ts is migrated.
   };

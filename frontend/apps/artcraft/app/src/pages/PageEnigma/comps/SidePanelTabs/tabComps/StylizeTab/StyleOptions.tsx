@@ -1,51 +1,62 @@
 import { PremiumLock } from "~/components";
-import { useSignals } from "@preact/signals-react/runtime";
+import { useShallow } from "zustand/shallow";
 import { Switch } from "@headlessui/react";
-
-import {
-  faceDetail,
-  upscale,
-  lipSync,
-  cinematic,
-  enginePreProcessing,
-} from "~/pages/PageEnigma/signals/stylizeTab";
 import { twMerge } from "tailwind-merge";
 
 import { useContext } from "react";
 import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 export function StyleOptions() {
-  useSignals();
   const editorEngine = useContext(EngineContext);
+  const {
+    faceDetail,
+    upscale,
+    lipSync,
+    cinematic,
+    enginePreProcessing,
+    setFaceDetail,
+    setUpscale,
+    setLipSync,
+    setCinematic,
+    setEnginePreProcessing,
+  } = usePageEnigmaStore(
+    useShallow((s) => ({
+      faceDetail: s.faceDetail,
+      upscale: s.upscale,
+      lipSync: s.lipSync,
+      cinematic: s.cinematic,
+      enginePreProcessing: s.enginePreProcessing,
+      setFaceDetail: s.setFaceDetail,
+      setUpscale: s.setUpscale,
+      setLipSync: s.setLipSync,
+      setCinematic: s.setCinematic,
+      setEnginePreProcessing: s.setEnginePreProcessing,
+    })),
+  );
 
   const handleCinematicChange = () => {
-    cinematic.value = !cinematic.value;
-    if (cinematic.value) {
-      upscale.value = false;
-    }
+    const next = !cinematic;
+    setCinematic(next);
+    if (next) setUpscale(false);
   };
 
   const enginePreProcessingChange = () => {
-    enginePreProcessing.value = !enginePreProcessing.value;
+    const next = !enginePreProcessing;
+    setEnginePreProcessing(next);
     if (editorEngine) {
-      editorEngine.engine_preprocessing = enginePreProcessing.value;
+      editorEngine.engine_preprocessing = next;
     }
   };
 
   const handleUpscaleChange = () => {
-    upscale.value = !upscale.value;
-    if (upscale.value) {
-      cinematic.value = false;
-    }
+    const next = !upscale;
+    setUpscale(next);
+    if (next) setCinematic(false);
   };
 
-  const handleLipsyncChange = () => {
-    lipSync.value = !lipSync.value;
-  };
-
-  const handleFaceDetailerChange = () => {
-    faceDetail.value = !faceDetail.value;
-  };
+  const handleLipsyncChange = () => setLipSync(!lipSync);
+  const handleFaceDetailerChange = () => setFaceDetail(!faceDetail);
 
   return (
     <div className="flex w-full flex-col justify-center gap-4 rounded-b-lg bg-ui-panel">
@@ -61,10 +72,10 @@ export function StyleOptions() {
                 Sync Lips with Speech
               </Switch.Label>
               <Switch
-                checked={lipSync.value}
+                checked={lipSync}
                 onChange={handleLipsyncChange}
                 className={twMerge(
-                  lipSync.value
+                  lipSync
                     ? "bg-brand-primary hover:bg-brand-primary-400"
                     : "bg-brand-secondary-800 hover:bg-brand-secondary-600",
                   "focus:ring-indigo-500 relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0",
@@ -72,7 +83,7 @@ export function StyleOptions() {
               >
                 <span
                   className={`${
-                    lipSync.value ? "translate-x-6" : "translate-x-1"
+                    lipSync ? "translate-x-6" : "translate-x-1"
                   } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                 />
               </Switch>
@@ -93,10 +104,10 @@ export function StyleOptions() {
                   Face Detailer
                 </Switch.Label>
                 <Switch
-                  checked={faceDetail.value}
+                  checked={faceDetail}
                   onChange={handleFaceDetailerChange}
                   className={twMerge(
-                    faceDetail.value
+                    faceDetail
                       ? "bg-brand-primary hover:bg-brand-primary-400"
                       : "bg-brand-secondary-800 hover:bg-brand-secondary-600",
                     "focus:ring-indigo-500 relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0",
@@ -104,7 +115,7 @@ export function StyleOptions() {
                 >
                   <span
                     className={`${
-                      faceDetail.value ? "translate-x-6" : "translate-x-1"
+                      faceDetail ? "translate-x-6" : "translate-x-1"
                     } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </Switch>
@@ -117,16 +128,16 @@ export function StyleOptions() {
                 <Switch.Label
                   className={twMerge(
                     "mr-3 grow text-sm font-medium transition-opacity",
-                    cinematic.value ? "opacity-50" : "",
+                    cinematic ? "opacity-50" : "",
                   )}
                 >
                   Upscale
                 </Switch.Label>
                 <Switch
-                  checked={upscale.value}
+                  checked={upscale}
                   onChange={handleUpscaleChange}
                   className={twMerge(
-                    upscale.value
+                    upscale
                       ? "bg-brand-primary hover:bg-brand-primary-400"
                       : "bg-brand-secondary-800 hover:bg-brand-secondary-600",
                     "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0",
@@ -134,7 +145,7 @@ export function StyleOptions() {
                 >
                   <span
                     className={`${
-                      upscale.value ? "translate-x-6" : "translate-x-1"
+                      upscale ? "translate-x-6" : "translate-x-1"
                     } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </Switch>
@@ -146,16 +157,16 @@ export function StyleOptions() {
                 <Switch.Label
                   className={twMerge(
                     "mr-3 grow text-sm font-medium transition-opacity",
-                    upscale.value ? "opacity-50" : "",
+                    upscale ? "opacity-50" : "",
                   )}
                 >
                   Use Cinematic
                 </Switch.Label>
                 <Switch
-                  checked={cinematic.value}
+                  checked={cinematic}
                   onChange={handleCinematicChange}
                   className={twMerge(
-                    cinematic.value
+                    cinematic
                       ? "bg-brand-primary hover:bg-brand-primary-400"
                       : "bg-brand-secondary-800 hover:bg-brand-secondary-600",
                     "focus:ring-indigo-500 relative inline-flex h-6 w-11 items-center rounded-full transition-all focus:outline-none focus:ring-0 focus:ring-offset-0",
@@ -163,7 +174,7 @@ export function StyleOptions() {
                 >
                   <span
                     className={`${
-                      cinematic.value ? "translate-x-6" : "translate-x-1"
+                      cinematic ? "translate-x-6" : "translate-x-1"
                     } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </Switch>
@@ -180,10 +191,10 @@ export function StyleOptions() {
                   Engine Preprocessing
                 </Switch.Label>
                 <Switch
-                  checked={enginePreProcessing.value}
+                  checked={enginePreProcessing}
                   onChange={enginePreProcessingChange}
                   className={twMerge(
-                    enginePreProcessing.value
+                    enginePreProcessing
                       ? "bg-brand-primary hover:bg-brand-primary-400"
                       : "bg-brand-secondary-800 hover:bg-brand-secondary-600",
                     "focus:ring-indigo-500 relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-0 focus:ring-offset-0",
@@ -191,9 +202,7 @@ export function StyleOptions() {
                 >
                   <span
                     className={`${
-                      enginePreProcessing.value
-                        ? "translate-x-6"
-                        : "translate-x-1"
+                      enginePreProcessing ? "translate-x-6" : "translate-x-1"
                     } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
                   />
                 </Switch>

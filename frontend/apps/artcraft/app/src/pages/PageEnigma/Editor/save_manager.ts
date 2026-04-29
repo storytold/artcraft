@@ -2,11 +2,7 @@ import * as THREE from "three";
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
 
-import {
-  setCameraAspectRatio,
-  restoreSceneGenerationMetadata,
-  globalIPAMediaToken,
-} from "../signals";
+import { setCameraAspectRatio } from "../signals";
 import { usePageEnigmaStore } from "../PageEnigmaStore";
 
 const showEditorLoader = (message?: string) =>
@@ -238,11 +234,35 @@ export class SaveManager {
 
     // For Remixing Scenes.
     // this calls the signal function to propagate the data to the UI
-    restoreSceneGenerationMetadata(scene_json);
+    // Restore scene generation metadata into the Zustand store
+    {
+      const store = usePageEnigmaStore.getState();
+      if (scene_json.positivePrompt && scene_json.positivePrompt !== "") {
+        store.setPositivePrompt(scene_json.positivePrompt);
+        store.setIsUserInputPositive(true);
+      }
+      if (scene_json.negativePrompt && scene_json.negativePrompt !== "") {
+        store.setNegativePrompt(scene_json.negativePrompt);
+        store.setIsUserInputNegative(true);
+        store.setShowNegativePrompt(true);
+      }
+      if (scene_json.artisticStyle) {
+        store.setSelectedArtStyle(scene_json.artisticStyle);
+      }
+      if (scene_json.upscale) store.setUpscale(scene_json.upscale);
+      if (scene_json.faceDetail) store.setFaceDetail(scene_json.faceDetail);
+      if (scene_json.styleStrength) store.setStyleStrength(scene_json.styleStrength);
+      if (scene_json.lipSync) store.setLipSync(scene_json.lipSync);
+      if (scene_json.cinematic) store.setCinematic(scene_json.cinematic);
+      if (scene_json.enginePreProcessing)
+        store.setEnginePreProcessing(scene_json.enginePreProcessing);
+    }
     // these propogate the values into the editor
     if (scene_json.globalIpAdapterImageMediaToken) {
       // this should be populated right after
-      globalIPAMediaToken.value = scene_json.globalIpAdapterImageMediaToken;
+      usePageEnigmaStore
+        .getState()
+        .setGlobalIPAMediaToken(scene_json.globalIpAdapterImageMediaToken);
     }
     if (scene_json.positivePrompt) {
       this.editor.positive_prompt = scene_json.positivePrompt;
