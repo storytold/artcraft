@@ -25,12 +25,10 @@ import {
   sidePanelWidth,
   cameraAspectRatio,
   outlinerIsShowing,
-  disableHotkeyInput,
-  enableHotkeyInput,
   gridVisibility,
   setGridVisibility,
-  DomLevels,
 } from "~/pages/PageEnigma/signals";
+import { DomLevels } from "~/pages/PageEnigma/PageEnigmaStore";
 import { setCameraAspect } from "~/pages/PageEnigma/actions";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { SceneContainer } from "./comps/SceneContainer";
@@ -108,6 +106,8 @@ export const PageEditor = () => {
   const storyboardPageEnabled = useStoryboardPageEnabled();
   const camAspect = usePageEnigmaStore((s) => s.cameraAspectRatio);
   const editorLoader = usePageEnigmaStore((s) => s.editorLoader);
+  const disableHotkeyInput = usePageEnigmaStore((s) => s.disableHotkeyInput);
+  const enableHotkeyInput = usePageEnigmaStore((s) => s.enableHotkeyInput);
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };

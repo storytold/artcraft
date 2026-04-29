@@ -9,11 +9,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-import {
-  disableHotkeyInput,
-  enableHotkeyInput,
-  objectPanel as objectPanelSignals,
-} from "../../signals";
+import { objectPanel as objectPanelSignals } from "../../signals";
 import { EngineContext } from "~/pages/PageEnigma/contexts/EngineContext";
 import { InputVector } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
@@ -44,6 +40,8 @@ const defaultAxises: Record<string, string> = {
 export const ControlPanelSceneObject = () => {
   useSignals();
   const editorState = usePageEnigmaStore((s) => s.editorState);
+  const disableHotkeyInput = usePageEnigmaStore((s) => s.disableHotkeyInput);
+  const enableHotkeyInput = usePageEnigmaStore((s) => s.enableHotkeyInput);
   const { isShowing, currentObject } = objectPanelSignals;
 
   const editorEngine = useContext(EngineContext);

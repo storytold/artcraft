@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import {
   hideObjectPanel,
-  hotkeysStatus,
   outlinerState,
   showObjectPanel,
 } from "../signals";
@@ -315,7 +314,7 @@ export class MouseControls {
       return;
     }
 
-    if (hotkeysStatus.value.disabled) {
+    if (usePageEnigmaStore.getState().hotkeyStatus.disabled) {
       return;
     } else if (event.key === "f" && this.selected && this.lockControls) {
       this.focus();
