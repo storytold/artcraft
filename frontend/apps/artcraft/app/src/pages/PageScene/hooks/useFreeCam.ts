@@ -10,7 +10,6 @@ import {
   zoomFromWheel,
   type FreeCamControlState,
 } from "~/pages/PageScene/engine/cameraMath";
-import { isPromptBoxFocused } from "~/pages/PageScene/signals/promptBox";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { EditorStates } from "~/pages/PageScene/enums";
 import type Editor from "~/pages/PageScene/engine/editor";
@@ -65,7 +64,7 @@ export const useFreeCam = (
     const state = stateRef.current;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (isPromptBoxFocused.value) return;
+      if (usePageSceneStore.getState().isPromptBoxFocused) return;
       const moveSlot = moveSlotForKeyCode(e.code);
       if (moveSlot) state.moveKeys[moveSlot] = 1;
       const rotateSlot = rotateSlotForKeyCode(e.code);
@@ -73,7 +72,7 @@ export const useFreeCam = (
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (isPromptBoxFocused.value) return;
+      if (usePageSceneStore.getState().isPromptBoxFocused) return;
       const moveSlot = moveSlotForKeyCode(e.code);
       if (moveSlot) state.moveKeys[moveSlot] = 0;
       const rotateSlot = rotateSlotForKeyCode(e.code);
