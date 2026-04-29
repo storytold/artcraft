@@ -1,6 +1,6 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
-use crate::core::commands::enqueue::image_to_video::artcraft::get_storyteller_creds_or_error::get_storyteller_creds_or_error;
-use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::{EnqueueImageToVideoRequest, SoraOrientation};
+use crate::core::commands::generate::generate_video::artcraft::get_storyteller_creds_or_error::get_storyteller_creds_or_error;
+use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, SoraOrientation};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
@@ -12,19 +12,20 @@ use crate::services::sora::state::sora_credential_manager::SoraCredentialManager
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::sora::utils::upload_images_to_sora::{upload_images_to_sora, UploadImagesToSoraArgs, UploadImagesToSoraResult};
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use artcraft_api_defs::generate::video::multi_function::kling_2_5_turbo_multi_function_video_gen::{Kling2p5TurboProMultiFunctionVideoGenAspectRatio, Kling2p5TurboProMultiFunctionVideoGenDuration, Kling2p5TurboProMultiFunctionVideoGenRequest};
+use artcraft_api_defs::generate::video::generate_kling_2_1_pro_image_to_video::{GenerateKling21ProAspectRatio, GenerateKling21ProDuration, GenerateKling21ProImageToVideoRequest};
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use uuid_utils::uuid::generate_random_uuid;
 use log::{error, info};
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
+use artcraft_client::endpoints::generate::video::generate_kling_21_pro_image_to_video::generate_kling_21_pro_image_to_video;
 use artcraft_client::endpoints::generate::video::multi_function::kling_2p5_turbo_pro_multi_function_video_gen::kling_2p5_turbo_pro_multi_function_video_gen;
 use artcraft_client::endpoints::generate::video::multi_function::sora_2_multi_function_video_gen::sora_2_multi_function_video_gen;
 use tauri::AppHandle;
 use tokens::tokens::media_files::MediaFileToken;
 
-pub (super) async fn handle_artcraft_kling_2p5_turbo_pro(
-  request: &EnqueueImageToVideoRequest,
+pub (super) async fn handle_artcraft_kling_2p1_pro(
+  request: &TauriGenerateVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
@@ -33,22 +34,21 @@ pub (super) async fn handle_artcraft_kling_2p5_turbo_pro(
 
   // TODO: Fix this parameter
   let aspect_ratio = match request.sora_orientation {
-    Some(SoraOrientation::Portrait) => Kling2p5TurboProMultiFunctionVideoGenAspectRatio::NineBySixteen,
-    Some(SoraOrientation::Landscape) => Kling2p5TurboProMultiFunctionVideoGenAspectRatio::SixteenByNine,
-    None => Kling2p5TurboProMultiFunctionVideoGenAspectRatio::SixteenByNine,
+    Some(SoraOrientation::Portrait) => GenerateKling21ProAspectRatio::TallNineSixteen,
+    Some(SoraOrientation::Landscape) => GenerateKling21ProAspectRatio::WideSixteenNine,
+    None => GenerateKling21ProAspectRatio::WideSixteenNine,
   };
   
-  let request = Kling2p5TurboProMultiFunctionVideoGenRequest {
+  let request = GenerateKling21ProImageToVideoRequest {
     uuid_idempotency_token,
     prompt: request.prompt.clone(),
-    negative_prompt: None, // TODO: Parameterize
-    start_frame_image_media_token: request.image_media_token.clone(),
+    media_file_token: request.image_media_token.clone(),
     end_frame_image_media_token: request.end_frame_image_media_token.clone(),
     aspect_ratio: Some(aspect_ratio),
-    duration: Some(Kling2p5TurboProMultiFunctionVideoGenDuration::TenSeconds), // TODO: Parameterize
+    duration: Some(GenerateKling21ProDuration::TenSeconds), // TODO: Parameterize
   };
   
-  let result = kling_2p5_turbo_pro_multi_function_video_gen(
+  let result = generate_kling_21_pro_image_to_video(
     &app_env_configs.storyteller_host,
     Some(&creds),
     request,
@@ -67,7 +67,7 @@ pub (super) async fn handle_artcraft_kling_2p5_turbo_pro(
 
   Ok(TaskEnqueueSuccess {
     task_type: TaskType::VideoGeneration,
-    model: Some(GenerationModel::Kling2p5TurboPro),
+    model: Some(GenerationModel::Kling21Pro),
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_token.to_string()),
   })

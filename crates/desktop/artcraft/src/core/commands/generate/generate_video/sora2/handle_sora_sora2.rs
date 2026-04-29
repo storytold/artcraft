@@ -1,5 +1,5 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
-use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::{EnqueueImageToVideoRequest, SoraOrientation};
+use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, SoraOrientation};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
 use crate::core::events::generation_events::common::GenerationModel;
@@ -19,7 +19,7 @@ use tauri::AppHandle;
 use tokens::tokens::media_files::MediaFileToken;
 
 pub async fn handle_sora_sora2(
-  request: &EnqueueImageToVideoRequest,
+  request: &TauriGenerateVideoRequest,
   app: &AppHandle,
   app_data_root: &AppDataRoot,
   app_env_configs: &AppEnvConfigs,
