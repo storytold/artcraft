@@ -1,8 +1,7 @@
-import { signal } from "@preact/signals-core";
 import { AssetType } from "~/enums";
 import { MediaItem } from "~/pages/PageScene/models";
 
-export const demoAnimationItems = signal<MediaItem[]>([
+export const demoAnimationItems: MediaItem[] = [
   {
     version: 1,
     media_id: "m_yzreg1494d08aepezj74607d2ascep",
@@ -339,4 +338,4 @@ export const demoAnimationItems = signal<MediaItem[]>([
     thumbnail: "/resources/characters_gif/Convulsing.gif",
     media_type: "glb",
   },
-]);
+];

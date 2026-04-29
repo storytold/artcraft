@@ -1,8 +1,7 @@
-import { signal } from "@preact/signals-core";
 import { MediaItem } from "../../models";
 import { AssetType } from "~/enums";
 
-export const demoSkyboxItems = signal<MediaItem[]>([
+export const demoSkyboxItems: MediaItem[] = [
   {
     version: 1,
     media_id: "SKY::m_1",
@@ -39,4 +38,4 @@ export const demoSkyboxItems = signal<MediaItem[]>([
     name: "Black Skybox",
     thumbnail: "/resources/skybox/black.jpg",
   },
-]);
+];

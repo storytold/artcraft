@@ -11,7 +11,6 @@ import { ChromaKeyMaterial } from "./chromakey";
 import { LoadWithoutCors } from "@storyteller/tauri-api";
 import { usePageSceneStore } from "../PageSceneStore";
 import { InfiniteGridHelper } from "./InfiniteGridHelper";
-import { cameras, selectedCameraId } from "../signals/camera";
 import { MediaFilesApi } from "@storyteller/api";
 import toast from "react-hot-toast";
 import { SplatMesh } from "@sparkjsdev/spark";
@@ -377,7 +376,8 @@ class Scene {
   }
 
   async _create_camera_obj() {
-    cameras.value.forEach((cameraConfig) => {
+    const { cameras, selectedCameraId } = usePageSceneStore.getState();
+    cameras.forEach((cameraConfig) => {
       const camera_position = new THREE.Vector3(
         cameraConfig.position.x,
         cameraConfig.position.y,
@@ -405,7 +405,7 @@ class Scene {
         });
         this.scene.add(camera_obj);
 
-        if (cameraConfig.id === selectedCameraId.value) {
+        if (cameraConfig.id === selectedCameraId) {
           camera_obj.visible = false;
           camera_obj.layers.disableAll(); // Make the active camera not touchable
         } else {

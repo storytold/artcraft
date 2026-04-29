@@ -1,9 +1,12 @@
 import { create } from "zustand";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { Camera, FocalLengthDragging } from "@storyteller/common";
 import { CameraAspectRatio, EditorStates } from "./enums";
 import { AssetType, AssetFilterOption, ClipGroup } from "~/enums";
 import { MediaItem } from "./models";
 import { Simple3DVector } from "./datastructures/common";
+
+export type { Camera, FocalLengthDragging };
 
 export type SceneObjectKind = "object" | "character" | "shape";
 
@@ -48,20 +51,6 @@ export interface PrecisionSelectorCoords {
   y: number;
 }
 
-export interface CameraEntry {
-  id: string;
-  label: string;
-  focalLength: number;
-  position: { x: number; y: number; z: number };
-  rotation: { x: number; y: number; z: number };
-  lookAt: { x: number; y: number; z: number };
-}
-
-export interface FocalLengthDragging {
-  isDragging: boolean;
-  focalLength: number;
-}
-
 export interface SelectedSceneObject {
   type: AssetType;
   id: string;
@@ -88,7 +77,7 @@ export interface EditorLoader {
   message: string | undefined;
 }
 
-const DEFAULT_CAMERAS: CameraEntry[] = [
+const DEFAULT_CAMERAS: Camera[] = [
   {
     id: "main",
     label: "Main View",
@@ -115,7 +104,7 @@ interface PageSceneState {
   selectedObject: SelectedSceneObject | null;
 
   // cameras
-  cameras: CameraEntry[];
+  cameras: Camera[];
   selectedCameraId: string;
   cameraAspectRatio: CameraAspectRatio;
   focalLengthDragging: FocalLengthDragging;
@@ -176,8 +165,8 @@ interface PageSceneState {
   resetScene: () => void;
 
   // camera
-  addCamera: (camera: CameraEntry) => void;
-  updateCamera: (id: string, updates: Partial<CameraEntry>) => void;
+  addCamera: (camera: Camera) => void;
+  updateCamera: (id: string, updates: Partial<Camera>) => void;
   deleteCamera: (id: string) => void;
   setSelectedCameraId: (id: string) => void;
   setCameraAspectRatio: (ratio: CameraAspectRatio) => void;

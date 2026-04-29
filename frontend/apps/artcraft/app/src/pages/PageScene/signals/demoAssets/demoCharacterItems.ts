@@ -1,8 +1,7 @@
-import { signal } from "@preact/signals-core";
 import { MediaItem } from "~/pages/PageScene/models";
 import { AssetType } from "~/enums";
 
-export const demoCharacterItems = signal<MediaItem[]>([
+export const demoCharacterItems: MediaItem[] = [
   {
     version: 1,
     media_id: "m_gff67btr810vg3ng9szj85zskztcgy",
@@ -20,10 +19,10 @@ export const demoCharacterItems = signal<MediaItem[]>([
     thumbnail: "/resources/characters/roko.png",
     media_type: "glb",
   },
-]);
+];
 
 // TODO: CHANGE TO THIS FOR DEV MODE:
-export const devCharacterItems = signal<MediaItem[]>([
+export const devCharacterItems: MediaItem[] = [
   {
     version: 1,
     media_id: "m_r7w1tmkx2jg8nznr3hyzj4k6zhfh7d ",
@@ -96,4 +95,4 @@ export const devCharacterItems = signal<MediaItem[]>([
     name: "Pop",
     thumbnail: "/resources/placeholders/placeholder.png",
   },
-]);
+];

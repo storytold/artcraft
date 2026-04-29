@@ -1,8 +1,7 @@
-import { signal } from "@preact/signals-core";
 import { MediaItem } from "~/pages/PageScene/models";
 import { AssetType } from "~/enums";
 
-export const demoMemeItems = signal<MediaItem[]>([
+export const demoMemeItems: MediaItem[] = [
   {
     version: 1,
     media_id: "m_yb02j1b0dn6ashn14ap2e2vnvy1jhz",
@@ -51,4 +50,4 @@ export const demoMemeItems = signal<MediaItem[]>([
     name: "Lil JD",
     thumbnail: "/resources/memes/lil_jd.jpg",
   },
-]);
+];

@@ -37,7 +37,6 @@ import { CustomOutlinePass } from "./CustomOutlinePass.js";
 import FindSurfaces from "./FindSurfaces.js";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
-import { cameras, selectedCameraId } from "~/pages/PageScene/signals/camera";
 import { SparkRenderer } from "@sparkjsdev/spark";
 import { SSAOPass } from "three/examples/jsm/Addons.js";
 import { usePageSceneStore } from "../PageSceneStore";
@@ -414,8 +413,10 @@ class Editor {
     const width = this.container.offsetWidth;
     const height = this.container.offsetHeight;
 
-    // Sets up camera and base position using camera configurations from camera.ts
-    const mainCameraConfig = cameras.value.find((cam) => cam.id === "main");
+    // Sets up camera and base position using camera configurations from the store.
+    const mainCameraConfig = usePageSceneStore
+      .getState()
+      .cameras.find((cam) => cam.id === "main");
     if (mainCameraConfig) {
       this.camera = new THREE.PerspectiveCamera(
         this.focalLengthToFov(mainCameraConfig.focalLength),
@@ -438,7 +439,9 @@ class Editor {
     this.camera.layers.enable(0);
     this.camera.layers.enable(1);
 
-    const otherCameras = cameras.value.filter((cam) => cam.id !== "main");
+    const otherCameras = usePageSceneStore
+      .getState()
+      .cameras.filter((cam) => cam.id !== "main");
     if (otherCameras.length > 0) {
       const renderCameraConfig = otherCameras[0];
       this.render_camera = new THREE.PerspectiveCamera(
@@ -1106,11 +1109,10 @@ class Editor {
 
     const delta_time = this.clock.getDelta();
 
-    // Update camera properties from signals before FreeCam update
-    if (selectedCameraId.value && this.camera) {
-      const camData = cameras.value.find(
-        (c) => c.id === selectedCameraId.value,
-      );
+    // Update camera properties from the store before FreeCam update
+    const store = usePageSceneStore.getState();
+    if (store.selectedCameraId && this.camera) {
+      const camData = store.cameras.find((c) => c.id === store.selectedCameraId);
       if (camData) {
         const fov = this.focalLengthToFov(camData.focalLength);
         if (this.camera.fov !== fov) {
@@ -1122,23 +1124,17 @@ class Editor {
 
     if (this.freeCamState && this.camera) {
       const moved = freeCamFrameTick(this.camera, this.freeCamState, 5 * delta_time);
-      // Mirror the active camera's transform back into the cameras
-      // signal so PromptBox3D and the camera-list UI stay in sync.
-      // (Bridge signal: retire when PromptBox3D takes store callbacks.)
-      if (moved && selectedCameraId.value) {
+      // Mirror the active camera's transform back into the store so
+      // PromptBox3D and the camera-list UI stay in sync.
+      if (moved && store.selectedCameraId) {
         const lookAt = lookAtFromCamera(this.camera);
         const pos = this.camera.position;
         const rot = this.camera.rotation;
-        cameras.value = cameras.value.map((cam) =>
-          cam.id === selectedCameraId.value
-            ? {
-                ...cam,
-                position: { x: pos.x, y: pos.y, z: pos.z },
-                rotation: { x: rot.x, y: rot.y, z: rot.z },
-                lookAt: { x: lookAt.x, y: lookAt.y, z: lookAt.z },
-              }
-            : cam,
-        );
+        store.updateCamera(store.selectedCameraId, {
+          position: { x: pos.x, y: pos.y, z: pos.z },
+          rotation: { x: rot.x, y: rot.y, z: rot.z },
+          lookAt: { x: lookAt.x, y: lookAt.y, z: lookAt.z },
+        });
       }
     }
     this.activeScene.shader_objects.forEach((shader) => {

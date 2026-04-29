@@ -20,11 +20,6 @@ import { Angles } from "../PageAngles";
 import { Storyboard } from "../PageStoryboard";
 import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
-import {
-  cameraAspectRatio,
-  gridVisibility,
-  setGridVisibility,
-} from "~/pages/PageScene/signals";
 import { DomLevels } from "~/pages/PageScene/PageSceneStore";
 import { setCameraAspect } from "~/pages/PageScene/actions";
 import { EditorCanvas } from "./comps/EngineCanvases";
@@ -41,15 +36,6 @@ import { LoadingDots } from "@storyteller/ui-loading";
 import { OnboardingHelper } from "./comps/OnboardingHelper";
 import { FocalLengthDisplay } from "./comps/FocalLengthDisplay/FocalLengthDisplay";
 
-import {
-  addCamera,
-  cameras,
-  deleteCamera,
-  focalLengthDragging,
-  selectedCameraId,
-  updateCamera,
-} from "./signals/camera";
-import { isPromptBoxFocused } from "./signals/promptBox";
 import { uploadImage } from "~/components/reusable/UploadModalMedia/uploadImage";
 import { EngineContext } from "./contexts/EngineContext";
 
@@ -110,6 +96,22 @@ export const PageEditor = () => {
   const editorLoader = usePageSceneStore((s) => s.editorLoader);
   const disableHotkeyInput = usePageSceneStore((s) => s.disableHotkeyInput);
   const enableHotkeyInput = usePageSceneStore((s) => s.enableHotkeyInput);
+  const cameras = usePageSceneStore((s) => s.cameras);
+  const selectedCameraId = usePageSceneStore((s) => s.selectedCameraId);
+  const focalLengthDragging = usePageSceneStore((s) => s.focalLengthDragging);
+  const setFocalLengthDragging = usePageSceneStore(
+    (s) => s.setFocalLengthDragging,
+  );
+  const isPromptBoxFocused = usePageSceneStore((s) => s.isPromptBoxFocused);
+  const setIsPromptBoxFocused = usePageSceneStore(
+    (s) => s.setIsPromptBoxFocused,
+  );
+  const gridVisible = usePageSceneStore((s) => s.gridVisible);
+  const setGridVisible = usePageSceneStore((s) => s.setGridVisible);
+  const addCamera = usePageSceneStore((s) => s.addCamera);
+  const updateCamera = usePageSceneStore((s) => s.updateCamera);
+  const deleteCamera = usePageSceneStore((s) => s.deleteCamera);
+  const setSelectedCameraId = usePageSceneStore((s) => s.setSelectedCameraId);
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };
@@ -164,23 +166,23 @@ export const PageEditor = () => {
   useViewportPointer(editorCanvas, editorEngine);
   useViewportKeyboard(editorEngine);
   const handleCameraSelect = (selectedItem: PopoverItem) => {
-    const selectedCamera = cameras.value.find(
+    const selectedCamera = cameras.find(
       (cam) => cam.label === selectedItem.label,
     );
     if (selectedCamera && editorEngine) {
-      selectedCameraId.value = selectedCamera.id;
+      setSelectedCameraId(selectedCamera.id);
 
       // Show focal length display temporarily
       // TODO: Rename dragging to visible - BFlat
-      focalLengthDragging.value = {
+      setFocalLengthDragging({
         isDragging: true,
         focalLength: selectedCamera.focalLength,
-      };
+      });
       setTimeout(() => {
-        focalLengthDragging.value = {
+        setFocalLengthDragging({
           isDragging: false,
           focalLength: selectedCamera.focalLength,
-        };
+        });
       }, 1500);
 
       // Update the main camera to match the selected camera's properties
@@ -225,12 +227,12 @@ export const PageEditor = () => {
 
   const handleAddCamera = () => {
     // Check if we've reached the maximum number of cameras
-    if (cameras.value.length >= 6) {
+    if (cameras.length >= 6) {
       console.warn("Maximum number of cameras (6) reached");
       return;
     }
 
-    const newIndex = cameras.value.length + 1;
+    const newIndex = cameras.length + 1;
     const newId = `cam${newIndex}`;
 
     // This is for generating random orbital position for the new camera using spherical coordinates
@@ -257,7 +259,7 @@ export const PageEditor = () => {
     });
 
     // Switch to the newly created camera
-    selectedCameraId.value = newId;
+    setSelectedCameraId(newId);
 
     // Update the engine camera to match the new camera's properties
     if (editorEngine && editorEngine.camera) {
@@ -282,7 +284,7 @@ export const PageEditor = () => {
   };
 
   const handleCameraFocalLengthChange = (id: string, value: number) => {
-    const camera = cameras.value.find((cam) => cam.id === id);
+    const camera = cameras.find((cam) => cam.id === id);
     if (camera) {
       updateCamera(id, { focalLength: value });
     }
@@ -511,15 +513,17 @@ export const PageEditor = () => {
 
                 <PromptBox3D
                   cameras={cameras}
-                  cameraAspectRatio={cameraAspectRatio}
+                  cameraAspectRatio={camAspect}
                   disableHotkeyInput={disableHotkeyInput}
                   enableHotkeyInput={enableHotkeyInput}
-                  gridVisibility={gridVisibility}
-                  setGridVisibility={setGridVisibility}
+                  gridVisibility={gridVisible}
+                  setGridVisibility={setGridVisible}
                   selectedCameraId={selectedCameraId}
                   deleteCamera={deleteCamera}
                   focalLengthDragging={focalLengthDragging}
+                  setFocalLengthDragging={setFocalLengthDragging}
                   isPromptBoxFocused={isPromptBoxFocused}
+                  setIsPromptBoxFocused={setIsPromptBoxFocused}
                   uploadImage={uploadImage}
                   handleCameraSelect={handleCameraSelect}
                   handleAddCamera={handleAddCamera}

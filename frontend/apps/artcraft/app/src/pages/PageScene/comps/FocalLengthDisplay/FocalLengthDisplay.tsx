@@ -1,13 +1,12 @@
 import { Transition } from "@headlessui/react";
-import { useSignals } from "@preact/signals-react/runtime";
-import { focalLengthDragging } from "~/pages/PageScene/signals/camera";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 export const FocalLengthDisplay = () => {
-  useSignals();
+  const focalLengthDragging = usePageSceneStore((s) => s.focalLengthDragging);
 
   return (
     <Transition
-      show={focalLengthDragging.value.isDragging}
+      show={focalLengthDragging.isDragging}
       enter="transition-opacity duration-200"
       enterFrom="opacity-0"
       enterTo="opacity-100"
@@ -17,7 +16,7 @@ export const FocalLengthDisplay = () => {
     >
       <div className="absolute left-1/2 top-16 z-10 -translate-x-1/2 transform">
         <div className="glass rounded-xl px-5 py-2.5 text-center text-2xl font-bold text-white">
-          {focalLengthDragging.value.focalLength}mm
+          {focalLengthDragging.focalLength}mm
         </div>
       </div>
     </Transition>

@@ -1,12 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { useSignals } from "@preact/signals-react/runtime";
 import { IsDesktopApp } from "@storyteller/tauri-utils";
 import {
   faCamera,
   faSave,
   faDownload,
-  faMessageCheck,
-  faMessageXmark,
   faExpand,
   faChevronDown,
   faChevronUp,
@@ -36,7 +33,6 @@ import { EngineApi } from "@storyteller/api";
 import { CameraSettingsModal } from "@storyteller/ui-camera-settings-modal";
 import { twMerge } from "tailwind-merge";
 import { Modal } from "@storyteller/ui-modal";
-import { Signal } from "@preact/signals-react";
 import {
   CommandSuccessStatus,
   EnqueueEditImage,
@@ -52,16 +48,18 @@ import { ImagePromptRow } from "./ImagePromptRow";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
 
 interface PromptBox3DProps {
-  cameras: Signal<Camera[]>;
-  cameraAspectRatio: Signal<CameraAspectRatio>;
+  cameras: Camera[];
+  cameraAspectRatio: CameraAspectRatio;
   disableHotkeyInput: (level: number) => void;
   enableHotkeyInput: (level: number) => void;
-  gridVisibility: Signal<boolean>;
+  gridVisibility: boolean;
   setGridVisibility: (isVisible: boolean) => void;
-  selectedCameraId: Signal<string>;
+  selectedCameraId: string;
   deleteCamera: (id: string) => void;
-  focalLengthDragging: Signal<FocalLengthDragging>;
-  isPromptBoxFocused: Signal<boolean>;
+  focalLengthDragging: FocalLengthDragging;
+  setFocalLengthDragging: (state: FocalLengthDragging) => void;
+  isPromptBoxFocused: boolean;
+  setIsPromptBoxFocused: (focused: boolean) => void;
   uploadImage: (arg: UploadImageArgs) => Promise<void>;
   handleCameraSelect: (item: PopoverItem) => void;
   handleAddCamera: () => void;
@@ -90,7 +88,9 @@ export const PromptBox3D = ({
   selectedCameraId,
   deleteCamera,
   focalLengthDragging,
+  setFocalLengthDragging,
   isPromptBoxFocused,
+  setIsPromptBoxFocused,
   uploadImage,
   handleCameraSelect,
   handleAddCamera,
@@ -103,7 +103,6 @@ export const PromptBox3D = ({
   snapshotCurrentFrame,
   credits,
 }: PromptBox3DProps) => {
-  useSignals();
   //const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [content, setContent] = useState<React.ReactNode>(null);
@@ -112,7 +111,6 @@ export const PromptBox3D = ({
   const prompt = usePrompt3DStore((s) => s.prompt);
   const setPrompt = usePrompt3DStore((s) => s.setPrompt);
   const useSystemPrompt = usePrompt3DStore((s) => s.useSystemPrompt);
-  const setUseSystemPrompt = usePrompt3DStore((s) => s.setUseSystemPrompt);
   const resolution = usePrompt3DStore((s) => s.resolution);
   const setResolution = usePrompt3DStore((s) => s.setResolution);
   const [isEnqueueing, setIsEnqueueing] = useState(false);
@@ -192,22 +190,22 @@ export const PromptBox3D = ({
     );
   }, [resolution]);
 
-  // Update aspect ratio list based on the current cameraAspectRatio signal
+  // Update aspect ratio list based on the current cameraAspectRatio
   useEffect(() => {
     setAspectRatioList((prev) =>
       prev.map((item) => ({
         ...item,
         selected:
           (item.label === "Wide" &&
-            cameraAspectRatio.value === CameraAspectRatio.HORIZONTAL_3_2) ||
+            cameraAspectRatio === CameraAspectRatio.HORIZONTAL_3_2) ||
           (item.label === "Tall" &&
-            cameraAspectRatio.value === CameraAspectRatio.VERTICAL_2_3) ||
+            cameraAspectRatio === CameraAspectRatio.VERTICAL_2_3) ||
           (item.label === "Square" &&
-            cameraAspectRatio.value === CameraAspectRatio.SQUARE_1_1),
+            cameraAspectRatio === CameraAspectRatio.SQUARE_1_1),
       })),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameraAspectRatio.value]);
+  }, [cameraAspectRatio]);
 
   const handleAspectRatioSelect = (selectedItem: PopoverItem) => {
     setAspectRatioList((prev) =>
@@ -468,9 +466,8 @@ export const PromptBox3D = ({
     }
   };
 
-  // Get the current aspect ratio icon based on the cameraAspectRatio signal
   const getCurrentAspectRatioIcon = () => {
-    switch (cameraAspectRatio.value) {
+    switch (cameraAspectRatio) {
       case CameraAspectRatio.HORIZONTAL_3_2:
         return faRectangle;
       case CameraAspectRatio.VERTICAL_2_3:
@@ -485,7 +482,7 @@ export const PromptBox3D = ({
   };
 
   const getCurrentAspectRatio = (): EnqueueEditImageSize => {
-    switch (cameraAspectRatio.value) {
+    switch (cameraAspectRatio) {
       case CameraAspectRatio.HORIZONTAL_3_2:
         return EnqueueEditImageSize.Wide;
       case CameraAspectRatio.VERTICAL_2_3:
@@ -571,7 +568,7 @@ export const PromptBox3D = ({
         <div
           className={twMerge(
             "glass relative w-[860px] rounded-xl p-4",
-            isPromptBoxFocused.value ? "!border !border-primary" : "",
+            isPromptBoxFocused ? "!border !border-primary" : "",
             selectedImageModel?.canUseImagePrompt &&
             isImageRowVisible &&
             "rounded-t-none",
@@ -628,11 +625,11 @@ export const PromptBox3D = ({
                 onKeyDown={handleKeyDown}
                 onFocus={() => {
                   disableHotkeyInput(DomLevels.INPUT);
-                  isPromptBoxFocused.value = true;
+                  setIsPromptBoxFocused(true);
                 }}
                 onBlur={() => {
                   enableHotkeyInput(DomLevels.INPUT);
-                  isPromptBoxFocused.value = false;
+                  setIsPromptBoxFocused(false);
                 }}
               />
               <span className={`absolute -bottom-1 right-0 text-[10px] tabular-nums ${isFinite(maxLen) && prompt.length > maxLen ? "text-red-500" : "text-base-fg/40"}`}>
@@ -699,10 +696,10 @@ export const PromptBox3D = ({
                 closeOnClick={true}
               >
                 <PopoverMenu
-                  items={cameras.value.map((cam) => ({
+                  items={cameras.map((cam) => ({
                     id: cam.id,
                     label: cam.label,
-                    selected: cam.id === selectedCameraId.value,
+                    selected: cam.id === selectedCameraId,
                     icon: (
                       <FontAwesomeIcon icon={faCamera} className="h-4 w-4" />
                     ),
@@ -717,7 +714,7 @@ export const PromptBox3D = ({
                     <FontAwesomeIcon icon={faCamera} className="h-4 w-4" />
                   }
                   showAddButton
-                  disableAddButton={cameras.value.length >= 6}
+                  disableAddButton={cameras.length >= 6}
                   showIconsInList
                   mode="toggle"
                   panelTitle="Camera"
@@ -727,16 +724,16 @@ export const PromptBox3D = ({
                 />
               </Tooltip>
               <Tooltip
-                content={gridVisibility.value ? "Grid: ON" : "Grid: OFF"}
+                content={gridVisibility ? "Grid: ON" : "Grid: OFF"}
                 position="top"
                 className="z-50"
                 delay={200}
               >
                 <ToggleButton
-                  isActive={gridVisibility.value}
+                  isActive={gridVisibility}
                   icon={faTableCellsLarge}
                   activeIcon={faTableCellsLarge}
-                  onClick={() => setGridVisibility(!gridVisibility.value)}
+                  onClick={() => setGridVisibility(!gridVisibility)}
                 />
               </Tooltip>
             </div>
@@ -791,13 +788,12 @@ export const PromptBox3D = ({
         <CameraSettingsModal
           isOpen={isCameraSettingsOpen}
           onClose={() => setIsCameraSettingsOpen(false)}
-          cameras={cameras.value.map((cam) => ({
+          cameras={cameras.map((cam) => ({
             id: cam.id,
             label: cam.label,
-            selected: cam.id === selectedCameraId.value,
+            selected: cam.id === selectedCameraId,
             icon: <FontAwesomeIcon icon={faCamera} className="h-4 w-4" />,
             focalLength: cam.focalLength,
-            focalLengthDragging: focalLengthDragging,
             position: cam.position,
             rotation: cam.rotation,
             lookAt: cam.lookAt,
@@ -805,12 +801,12 @@ export const PromptBox3D = ({
           onCameraNameChange={handleCameraNameChange}
           onCameraFocalLengthChange={handleCameraFocalLengthChange}
           onAddCamera={handleAddCamera}
-          selectedCameraId={selectedCameraId.value}
+          selectedCameraId={selectedCameraId}
           handleCameraSelect={handleCameraSelect}
           onDeleteCamera={deleteCamera}
           disableHotkeyInput={disableHotkeyInput}
           enableHotkeyInput={enableHotkeyInput}
-          focalLengthDragging={focalLengthDragging}
+          setFocalLengthDragging={setFocalLengthDragging}
         />
       </div>
     </>

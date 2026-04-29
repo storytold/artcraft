@@ -276,7 +276,7 @@ export const AssetModal = () => {
   const assetTabs = useMemo<AssetTab[]>(() => {
     const allCharacterCandidates =
       activeLibraryTab === "library"
-        ? [...demoCharacterItems.value, ...(featuredCharacters ?? [])]
+        ? [...demoCharacterItems, ...(featuredCharacters ?? [])]
         : (userCharacters ?? []);
 
     // Split out items that belong in Memes
@@ -319,7 +319,7 @@ export const AssetModal = () => {
         engineCategory: FilterEngineCategories.OBJECT,
         items:
           activeLibraryTab === "library"
-            ? [...demoShapeItems.value, ...(featuredObjects ?? [])]
+            ? [...demoShapeItems, ...(featuredObjects ?? [])]
             : (userObjects ?? []),
       },
       {
@@ -330,7 +330,7 @@ export const AssetModal = () => {
         engineCategory: FilterEngineCategories.CHARACTER,
         items:
           activeLibraryTab === "library"
-            ? [...demoMemeItems.value, ...memeOverrideItems]
+            ? [...demoMemeItems, ...memeOverrideItems]
             : [],
       },
       {
@@ -360,7 +360,7 @@ export const AssetModal = () => {
         label: "Skybox",
         labelSingle: "Skybox",
         icon: faSun,
-        items: activeLibraryTab === "library" ? demoSkyboxItems.value : [],
+        items: activeLibraryTab === "library" ? demoSkyboxItems : [],
       },
       // {
       //   id: "image-planes",
@@ -378,10 +378,10 @@ export const AssetModal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeLibraryTab,
-      demoCharacterItems.value,
-      demoShapeItems.value,
-      demoSkyboxItems.value,
-      demoMemeItems.value,
+      demoCharacterItems,
+      demoShapeItems,
+      demoSkyboxItems,
+      demoMemeItems,
       featuredCharacters,
       featuredCreatures,
       featuredObjects,

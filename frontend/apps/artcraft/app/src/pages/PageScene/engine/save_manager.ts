@@ -9,7 +9,7 @@ const showEditorLoader = (message?: string) =>
 const hideEditorLoader = () =>
   usePageSceneStore.getState().hideEditorLoader();
 import Editor from "./editor";
-import { cameras, selectedCameraId, Camera } from "../signals/camera";
+import { Camera } from "@storyteller/common";
 
 export type EditorInitializeConfig = {
   sceneToken: string;
@@ -77,8 +77,8 @@ export class SaveManager {
     );
     const scene_json = await proxyScene.saveToScene(this.editor.version);
 
-    // Save all cameras data
-    const camerasData = cameras.value.map((cam: Camera) => ({
+    const sceneState = usePageSceneStore.getState();
+    const camerasData = sceneState.cameras.map((cam: Camera) => ({
       id: cam.id,
       label: cam.label,
       focalLength: cam.focalLength,
@@ -97,9 +97,8 @@ export class SaveManager {
         position: this.editor.camera?.position,
         rotation: this.editor.camera?.rotation,
       },
-      // Add cameras array and selected camera
       cameras: camerasData,
-      selectedCameraId: selectedCameraId.value,
+      selectedCameraId: sceneState.selectedCameraId,
     };
     // take json scene and figure out checksum
     const jsonString = JSON.stringify(save_data);
@@ -118,8 +117,8 @@ export class SaveManager {
     const scene_json = proxyScene.saveToScene(this.editor.version);
     console.log(scene_json);
 
-    // Save all cameras data
-    const camerasData = cameras.value.map((cam: Camera) => ({
+    const sceneState = usePageSceneStore.getState();
+    const camerasData = sceneState.cameras.map((cam: Camera) => ({
       id: cam.id,
       label: cam.label,
       focalLength: cam.focalLength,
@@ -138,9 +137,8 @@ export class SaveManager {
         position: this.editor.camera?.position,
         rotation: this.editor.camera?.rotation,
       },
-      // Add cameras array and selected camera
       cameras: camerasData,
-      selectedCameraId: selectedCameraId.value,
+      selectedCameraId: sceneState.selectedCameraId,
     };
 
     return save_data;
@@ -213,9 +211,8 @@ export class SaveManager {
       this.editor.camera.rotation.copy(camera_rotation);
     }
 
-    // Restore cameras data
     if (scene_json.cameras) {
-      cameras.value = scene_json.cameras.map((cam: Camera) => ({
+      const restored: Camera[] = scene_json.cameras.map((cam: Camera) => ({
         id: cam.id,
         label: cam.label,
         focalLength: cam.focalLength,
@@ -223,11 +220,13 @@ export class SaveManager {
         rotation: cam.rotation,
         lookAt: cam.lookAt,
       }));
+      usePageSceneStore.setState({ cameras: restored });
     }
 
-    // Restore selected camera
     if (scene_json.selectedCameraId) {
-      selectedCameraId.value = scene_json.selectedCameraId;
+      usePageSceneStore
+        .getState()
+        .setSelectedCameraId(scene_json.selectedCameraId);
     }
 
     // Restore prompt text into the editor (PromptBox3D will pick it up

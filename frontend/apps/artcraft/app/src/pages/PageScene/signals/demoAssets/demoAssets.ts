@@ -1,6 +1,4 @@
-import { signal } from "@preact/signals-core";
 import { MediaItem } from "~/pages/PageScene/models";
-// import * as uuid from "uuid";
 import { AssetType } from "~/enums";
 
 // export const cameraItems = signal<MediaItem[]>([
@@ -20,7 +18,7 @@ import { AssetType } from "~/enums";
 //   },
 // ]);
 
-export const demoObjectItems = signal<MediaItem[]>([
+export const demoObjectItems: MediaItem[] = [
   {
     version: 1,
     media_id: "m_0xfrmekc56satjxn66wt6c9dkw7dxe",
@@ -49,10 +47,10 @@ export const demoObjectItems = signal<MediaItem[]>([
     name: "Sakura Tree",
     thumbnail: "/resources/objects/sakura.png",
   },
-]);
+];
 
 // In the future these will have shape id's
-export const demoShapeItems = signal<MediaItem[]>([
+export const demoShapeItems: MediaItem[] = [
   {
     version: 1,
     media_id: "Box",
@@ -95,4 +93,4 @@ export const demoShapeItems = signal<MediaItem[]>([
     name: "Point Light",
     thumbnail: "/resources/shapes/pointlight.png",
   },
-]);
+];

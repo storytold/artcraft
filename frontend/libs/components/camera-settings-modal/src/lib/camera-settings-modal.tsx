@@ -9,7 +9,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { useState, useEffect } from "react";
 import { twMerge } from "tailwind-merge";
-import { Signal } from "@preact/signals-react";
+import { FocalLengthDragging } from "@storyteller/common";
 
 interface ExtendedPopoverItem extends PopoverItem {
   id: string;
@@ -29,7 +29,7 @@ interface CameraSettingsModalProps {
   selectedCameraId: string;
   handleCameraSelect: (selectedItem: PopoverItem) => void;
   onDeleteCamera: (id: string) => void;
-  focalLengthDragging: Signal;
+  setFocalLengthDragging: (state: FocalLengthDragging) => void;
   disableHotkeyInput: (level: number) => void;
   enableHotkeyInput: (level: number) => void;
 }
@@ -44,7 +44,7 @@ export const CameraSettingsModal = ({
   selectedCameraId,
   handleCameraSelect,
   onDeleteCamera,
-  focalLengthDragging,
+  setFocalLengthDragging,
   disableHotkeyInput,
   enableHotkeyInput,
 }: CameraSettingsModalProps) => {
@@ -63,25 +63,25 @@ export const CameraSettingsModal = ({
   useEffect(() => {
     const handlePointerUp = () => {
       setIsDragging(false);
-      focalLengthDragging.value = {
+      setFocalLengthDragging({
         isDragging: false,
         focalLength: selectedCamera?.focalLength || 35,
-      };
+      });
     };
     document.addEventListener("pointerup", handlePointerUp);
     return () => document.removeEventListener("pointerup", handlePointerUp);
-  }, [selectedCamera?.focalLength]);
+  }, [selectedCamera?.focalLength, setFocalLengthDragging]);
 
   const handlePointerDown = () => {
     setIsDragging(true);
-    focalLengthDragging.value = {
+    setFocalLengthDragging({
       isDragging: true,
       focalLength: selectedCamera?.focalLength || 35,
-    };
+    });
   };
 
   const handleFocalLengthChange = (id: string, value: number) => {
-    focalLengthDragging.value = { isDragging: true, focalLength: value };
+    setFocalLengthDragging({ isDragging: true, focalLength: value });
     onCameraFocalLengthChange(id, value);
   };
 
