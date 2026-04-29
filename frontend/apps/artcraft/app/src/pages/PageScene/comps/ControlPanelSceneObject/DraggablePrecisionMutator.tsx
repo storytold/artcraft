@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { twMerge } from "tailwind-merge";
-import { precisionSelectedValue, precisionSelectorMenuCoords, precisionSelectorValues, showPrecisionSelector } from "../../signals/precisionSelectorMenu";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 const DEFAULT_PRECISIONS = [
   10,
@@ -33,9 +33,10 @@ export const DraggablePrecisionMutator = ({
   const localAdjustedValueRef = useRef(initialValue);
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
+    const store = usePageSceneStore.getState();
     // Ignore mouse movement if we're not even dragging
     // or if the menu is still open (we're selecting the precision)
-    if (!isDraggingRef.current || showPrecisionSelector.value) {
+    if (!isDraggingRef.current || store.precisionSelectorShowing) {
       return;
     }
 
@@ -53,7 +54,7 @@ export const DraggablePrecisionMutator = ({
     // Check how far the mouse has moved, and calculate the updated change
     const distX = event.x - dragStartCoordsRef.current.x;
     const scaledDistX = distX / 10;
-    const scaledPrecision = Math.round(scaledDistX) * precisionSelectedValue.value;
+    const scaledPrecision = Math.round(scaledDistX) * store.precisionSelectedValue;
     localAdjustedValueRef.current = initialValue + scaledPrecision;
 
     // Update the listeners
@@ -62,7 +63,7 @@ export const DraggablePrecisionMutator = ({
 
   const handleMouseUp = useCallback((event: MouseEvent) => {
     event.stopPropagation();
-    showPrecisionSelector.value = false;
+    usePageSceneStore.getState().hidePrecisionSelector();
     isDraggingRef.current = false;
     dragStartCoordsRef.current = null;
 
@@ -81,12 +82,10 @@ export const DraggablePrecisionMutator = ({
 
     event.preventDefault();
     event.stopPropagation();
-    precisionSelectorMenuCoords.value = {
-      x: event.clientX,
-      y: event.clientY
-    };
-    precisionSelectorValues.value = precisions;
-    showPrecisionSelector.value = true;
+    usePageSceneStore.getState().showPrecisionSelector(
+      { x: event.clientX, y: event.clientY },
+      precisions,
+    );
     isDraggingRef.current = true;
 
     document.addEventListener("mousemove", handleMouseMove);

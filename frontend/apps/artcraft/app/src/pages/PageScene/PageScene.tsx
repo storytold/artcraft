@@ -10,12 +10,6 @@ import { useEffect, useState } from "react";
 import * as gpu from "detect-gpu";
 import { UsersApi } from "~/Classes/ApiManager";
 import { PrecisionSelector } from "./comps/PrecisionSelector/PrecisionSelector";
-import {
-  precisionSelectedValue,
-  precisionSelectorMenuCoords,
-  precisionSelectorValues,
-  showPrecisionSelector,
-} from "./signals/precisionSelectorMenu";
 import { InstallSounds } from "~/pages/PageScene/InstallSounds";
 import { PageEditor } from "~/pages/PageScene/PageEditor";
 import { GalleryDragComponent } from "@storyteller/ui-gallery-modal";
@@ -137,12 +131,7 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
       <PageEditor />
       <DragComponent />
       <GalleryDragComponent />
-      <PrecisionSelector
-        showSignal={showPrecisionSelector}
-        coordSignal={precisionSelectorMenuCoords}
-        valuesSignal={precisionSelectorValues}
-        selectedValueSignal={precisionSelectedValue}
-      />
+      <PrecisionSelector />
       <ErrorDialog />
 
       <EditorLoadingBar />
