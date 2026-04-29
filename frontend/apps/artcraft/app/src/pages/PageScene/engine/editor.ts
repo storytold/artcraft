@@ -8,7 +8,7 @@ import {
 } from "./cameraMath";
 import { TransformControls } from "./TransformControls.js";
 import Scene from "./scene.js";
-import { APIManager, ArtStyle } from "./api_manager.js";
+import { APIManager } from "./api_manager.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
@@ -31,7 +31,6 @@ import {
 } from "~/signals";
 
 import { outlinerState, updateObjectPanel } from "../signals";
-import { IGenerationOptions } from "../models/generationOptions";
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { MediaUploadApi } from "~/Classes/ApiManager";
 import { SceneManager } from "./scene_manager_api";
@@ -137,8 +136,6 @@ class Editor {
   containerResizeObserver: ResizeObserver | undefined;
 
   positive_prompt: string;
-  negative_prompt: string;
-  art_style: ArtStyle;
   rawRenderPass: RenderPass | undefined;
   generating_preview: boolean = false;
 
@@ -158,11 +155,6 @@ class Editor {
   mouse_controls: MouseControls | undefined;
   save_manager: SaveManager;
 
-  generation_options: IGenerationOptions;
-
-  // just a passive the image to be uploaded. we store the token and use that in snapshots.
-  globalIpAdapterImage: File | undefined;
-
   media_upload: MediaUploadApi;
 
   sceneManager: SceneManager | undefined;
@@ -171,7 +163,6 @@ class Editor {
   ///////////////////////////////////////////////
 
   public outliner_feature_flag: boolean;
-  public engine_preprocessing: boolean = false; // this is to do preprocessing also called render fast.
 
   ///////////////////////////////////////////////
   ///////////////////////////////////////////////
@@ -267,23 +258,10 @@ class Editor {
     this.current_scene_media_token = null;
     this.current_scene_glb_media_token = null;
 
-    // stylization parameters
     this.positive_prompt =
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
-    this.negative_prompt = "";
-    this.art_style = ArtStyle.Anime2DFlat;
-
-    this.generation_options = {
-      faceDetail: false,
-      upscale: false,
-      styleStrength: 1.0,
-      lipSync: false,
-      cinematic: false,
-      globalIpAdapterImageMediaToken: null,
-    };
 
     this.media_upload = new MediaUploadApi();
-    this.globalIpAdapterImage = undefined; // used to display when loading in the app. and to serialize to an image token
     // TODO REMOVE
     this.outliner_feature_flag = true;
 

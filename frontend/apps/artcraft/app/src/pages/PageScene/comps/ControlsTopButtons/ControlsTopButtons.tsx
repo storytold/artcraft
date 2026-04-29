@@ -41,7 +41,6 @@ export const ControlsTopButtons = () => {
   };
 
   const handleResetScene = () => {
-    usePageSceneStore.getState().resetSceneGenerationMetadata();
     editorEngine?.changeRenderCameraAspectRatio(
       CameraAspectRatio.HORIZONTAL_3_2,
     );

@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { CameraAspectRatio, EditorStates } from "./enums";
-import { AssetType, AssetFilterOption, ArtStyle } from "~/enums";
-import { styleList } from "./styleList";
+import { AssetType, AssetFilterOption } from "~/enums";
 
 export type SceneObjectKind = "object" | "character" | "shape";
 
@@ -110,22 +109,6 @@ interface PageSceneState {
   errorDialogTitle: string;
   errorDialogMessage: string;
 
-  // generation / stylize
-  selectedArtStyle: ArtStyle;
-  upscale: boolean;
-  faceDetail: boolean;
-  styleStrength: number;
-  lipSync: boolean;
-  cinematic: boolean;
-  enginePreProcessing: boolean;
-  globalIPAMediaToken: string | null;
-  adapterImage: string | null;
-  positivePrompt: string;
-  negativePrompt: string;
-  isUserInputPositive: boolean;
-  isUserInputNegative: boolean;
-  showNegativePrompt: boolean;
-
   // ----- actions -----
 
   // scene
@@ -169,23 +152,6 @@ interface PageSceneState {
   toggleEditorLetterBox: (next?: boolean) => void;
   setErrorDialog: (title: string, message: string) => void;
   setShowErrorDialog: (show: boolean) => void;
-
-  // generation / stylize
-  setSelectedArtStyle: (style: ArtStyle) => void;
-  setUpscale: (v: boolean) => void;
-  setFaceDetail: (v: boolean) => void;
-  setStyleStrength: (n: number) => void;
-  setLipSync: (v: boolean) => void;
-  setCinematic: (v: boolean) => void;
-  setEnginePreProcessing: (v: boolean) => void;
-  setGlobalIPAMediaToken: (t: string | null) => void;
-  setAdapterImage: (s: string | null) => void;
-  setPositivePrompt: (p: string) => void;
-  setNegativePrompt: (p: string) => void;
-  setIsUserInputPositive: (v: boolean) => void;
-  setIsUserInputNegative: (v: boolean) => void;
-  setShowNegativePrompt: (v: boolean) => void;
-  resetSceneGenerationMetadata: () => void;
 }
 
 export const usePageSceneStore = create<PageSceneState>((set, get) => ({
@@ -221,21 +187,6 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
   showErrorDialog: false,
   errorDialogTitle: "Error!",
   errorDialogMessage: "Something went wrong.",
-
-  selectedArtStyle: styleList[0].type,
-  upscale: false,
-  faceDetail: true,
-  styleStrength: 0.8,
-  lipSync: false,
-  cinematic: true,
-  enginePreProcessing: false,
-  globalIPAMediaToken: null,
-  adapterImage: null,
-  positivePrompt: "",
-  negativePrompt: "",
-  isUserInputPositive: false,
-  isUserInputNegative: false,
-  showNegativePrompt: false,
 
   // scene actions
   addObject: (obj) =>
@@ -325,35 +276,4 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
       showErrorDialog: true,
     }),
   setShowErrorDialog: (show) => set({ showErrorDialog: show }),
-
-  // generation / stylize actions
-  setSelectedArtStyle: (style) => set({ selectedArtStyle: style }),
-  setUpscale: (v) => set({ upscale: v }),
-  setFaceDetail: (v) => set({ faceDetail: v }),
-  setStyleStrength: (n) => set({ styleStrength: n }),
-  setLipSync: (v) => set({ lipSync: v }),
-  setCinematic: (v) => set({ cinematic: v }),
-  setEnginePreProcessing: (v) => set({ enginePreProcessing: v }),
-  setGlobalIPAMediaToken: (t) => set({ globalIPAMediaToken: t }),
-  setAdapterImage: (s) => set({ adapterImage: s }),
-  setPositivePrompt: (p) => set({ positivePrompt: p }),
-  setNegativePrompt: (p) => set({ negativePrompt: p }),
-  setIsUserInputPositive: (v) => set({ isUserInputPositive: v }),
-  setIsUserInputNegative: (v) => set({ isUserInputNegative: v }),
-  setShowNegativePrompt: (v) => set({ showNegativePrompt: v }),
-  resetSceneGenerationMetadata: () =>
-    set({
-      positivePrompt: "",
-      negativePrompt: "",
-      isUserInputPositive: false,
-      isUserInputNegative: false,
-      showNegativePrompt: false,
-      selectedArtStyle: styleList[0].type,
-      upscale: false,
-      faceDetail: false,
-      styleStrength: 0.8,
-      lipSync: false,
-      cinematic: false,
-      enginePreProcessing: false,
-    }),
 }));

@@ -10,7 +10,6 @@ const showEditorLoader = (message?: string) =>
 const hideEditorLoader = () =>
   usePageSceneStore.getState().hideEditorLoader();
 import Editor from "./editor";
-import { getArtStyle } from "~/enums";
 import { cameras, selectedCameraId, Camera } from "../signals/camera";
 
 export type EditorInitializeConfig = {
@@ -232,46 +231,10 @@ export class SaveManager {
       selectedCameraId.value = scene_json.selectedCameraId;
     }
 
-    // For Remixing Scenes.
-    // this calls the signal function to propagate the data to the UI
-    // Restore scene generation metadata into the Zustand store
-    {
-      const store = usePageSceneStore.getState();
-      if (scene_json.positivePrompt && scene_json.positivePrompt !== "") {
-        store.setPositivePrompt(scene_json.positivePrompt);
-        store.setIsUserInputPositive(true);
-      }
-      if (scene_json.negativePrompt && scene_json.negativePrompt !== "") {
-        store.setNegativePrompt(scene_json.negativePrompt);
-        store.setIsUserInputNegative(true);
-        store.setShowNegativePrompt(true);
-      }
-      if (scene_json.artisticStyle) {
-        store.setSelectedArtStyle(scene_json.artisticStyle);
-      }
-      if (scene_json.upscale) store.setUpscale(scene_json.upscale);
-      if (scene_json.faceDetail) store.setFaceDetail(scene_json.faceDetail);
-      if (scene_json.styleStrength) store.setStyleStrength(scene_json.styleStrength);
-      if (scene_json.lipSync) store.setLipSync(scene_json.lipSync);
-      if (scene_json.cinematic) store.setCinematic(scene_json.cinematic);
-      if (scene_json.enginePreProcessing)
-        store.setEnginePreProcessing(scene_json.enginePreProcessing);
-    }
-    // these propogate the values into the editor
-    if (scene_json.globalIpAdapterImageMediaToken) {
-      // this should be populated right after
-      usePageSceneStore
-        .getState()
-        .setGlobalIPAMediaToken(scene_json.globalIpAdapterImageMediaToken);
-    }
+    // Restore prompt text into the editor (PromptBox3D will pick it up
+    // through the editor's positive_prompt field).
     if (scene_json.positivePrompt) {
       this.editor.positive_prompt = scene_json.positivePrompt;
-    }
-    if (scene_json.negativePrompt) {
-      this.editor.negative_prompt = scene_json.negativePrompt;
-    }
-    if (scene_json.artisticStyle) {
-      this.editor.art_style = getArtStyle(scene_json["artisticStyle"]);
     }
     if (scene_json.cameraAspectRatio) {
       //editor propagation
