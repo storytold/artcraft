@@ -124,12 +124,15 @@ export default function Navbar() {
   };
 
   return (
-    <Disclosure as="nav" className="z-50 fixed top-0 left-0 w-full">
+    <Disclosure
+      as="nav"
+      className="z-50 fixed top-0 left-0 w-full font-display"
+    >
       {({ open }) => (
         <div className="px-3 sm:px-5 pt-3 sm:pt-4">
           <div
             className={twMerge(
-              "liquid-glass mx-auto max-w-[1280px] transition-all duration-300",
+              "liquid-glass mx-auto max-w-6xl transition-all duration-300",
               open ? "rounded-3xl" : "rounded-full",
             )}
           >
@@ -199,7 +202,7 @@ export default function Navbar() {
                           </span>
                         }
                         buttonClassName="h-8 px-3 ps-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-white/80 rounded-lg gap-1.5"
-                        panelClassName="mt-2 bg-[#1a1a1a] border border-white/[0.08] text-white rounded-xl"
+                        panelClassName="mt-2 bg-[#1a1a1a] border border-white/[0.08] text-white rounded-xl font-display"
                       >
                         {(close) => (
                           <div className="w-72 p-3 text-white">

@@ -451,7 +451,7 @@ const Landing3 = () => {
 
       {/* FIVE REASONS — original bento, dark theme */}
       <section id="reasons" className="relative px-4 sm:px-8 py-16 sm:py-24">
-        <div className="max-w-[1280px] mx-auto" data-reveal>
+        <div className="max-w-6xl mx-auto" data-reveal>
           <div className="text-center mb-12 sm:mb-16">
             <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
               Why ArtCraft

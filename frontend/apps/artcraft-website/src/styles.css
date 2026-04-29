@@ -31,7 +31,6 @@
 }
 
 @layer base {
-
   h1,
   h2,
   h3,
@@ -39,7 +38,7 @@
   h5,
   h6 {
     font-family:
-      "Instrument Sans",
+      "Figtree",
       system-ui,
       -apple-system,
       BlinkMacSystemFont,
@@ -91,9 +90,9 @@
 }
 
 .liquid-glass {
-  background: #2323234d;
+  background: #232323c0;
   border: 1px solid #ffffff14;
-  backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
   box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.6);
 }
@@ -120,7 +119,6 @@
 .promptbox-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(255, 255, 255, 0.35);
 }
-
 
 @keyframes fade-in-up {
   from {
@@ -176,10 +174,12 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.08) 50%,
-      transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
@@ -216,15 +216,17 @@
   content: "";
   position: absolute;
   inset: -3px;
-  background: conic-gradient(from var(--angle),
-      transparent 0%,
-      transparent 80%,
-      rgba(147, 197, 253, 0.4) 85%,
-      rgba(191, 219, 254, 0.9) 90%,
-      rgba(255, 255, 255, 1) 92.5%,
-      rgba(191, 219, 254, 0.9) 95%,
-      rgba(147, 197, 253, 0.4) 100%,
-      transparent 100%);
+  background: conic-gradient(
+    from var(--angle),
+    transparent 0%,
+    transparent 80%,
+    rgba(147, 197, 253, 0.4) 85%,
+    rgba(191, 219, 254, 0.9) 90%,
+    rgba(255, 255, 255, 1) 92.5%,
+    rgba(191, 219, 254, 0.9) 95%,
+    rgba(147, 197, 253, 0.4) 100%,
+    transparent 100%
+  );
   border-radius: inherit;
   animation: rotate 2.2s linear infinite;
   z-index: -1;

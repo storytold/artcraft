@@ -103,8 +103,8 @@ export default function ModelBadgeGrid({
       className={`select-none relative z-10 h-full overflow-hidden ${className}`}
     >
       {/* Gradient fade overlays */}
-      <div className="absolute left-0 top-0 w-32 xl:w-96 h-full bg-gradient-to-r from-[#28282C] to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 w-32 xl:w-96 h-full bg-gradient-to-l from-[#28282C] to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 w-32 xl:w-96 h-full bg-gradient-to-r from-[#080808] to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 w-32 xl:w-96 h-full bg-gradient-to-l from-[#080808] to-transparent z-10 pointer-events-none" />
 
       <div className="flex flex-col gap-5 h-full -mx-[280px] xl:-mx-8">
         {rows.map((row, rowIdx) => {
@@ -123,7 +123,7 @@ export default function ModelBadgeGrid({
                     className={twMerge(
                       baseBadgeClasses,
                       label ? "" : "min-w-[180px]",
-                      isHighlight ? highlightClasses : ""
+                      isHighlight ? highlightClasses : "",
                     )}
                   >
                     {svg ? (
