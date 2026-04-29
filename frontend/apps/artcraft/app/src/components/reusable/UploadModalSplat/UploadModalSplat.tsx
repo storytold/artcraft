@@ -52,18 +52,6 @@ export function UploadModalSplat(props: Props) {
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (uploaderState.status === UploaderStates.success) {
-      // Match the image / 3D-model upload flow: open the gallery so the
-      // user can drag the freshly uploaded splat onto the canvas.
-      galleryModalVisibleViewMode.value = true;
-      galleryModalVisibleDuringDrag.value = true;
-
-      onSuccess(selectedCategory);
-      onClose();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploaderState.status]);
 
   const UploaderModalContent = () => {
     switch (uploaderState.status) {
@@ -103,8 +91,12 @@ export function UploadModalSplat(props: Props) {
           <UploadSuccess
             title="Splat"
             onOk={() => {
-              onClose();
+              // Open the gallery so the user can drag the freshly
+              // uploaded splat onto the canvas.
+              galleryModalVisibleViewMode.value = true;
+              galleryModalVisibleDuringDrag.value = true;
               onSuccess(selectedCategory);
+              onClose();
             }}
           />
         );
