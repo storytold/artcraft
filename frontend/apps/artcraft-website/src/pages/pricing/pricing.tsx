@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { isMobile } from "react-device-detect";
+import Lenis from "lenis";
 import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
@@ -87,6 +89,26 @@ const Pricing = () => {
     check();
   }, []);
 
+  useEffect(() => {
+    if (isMobile) return;
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      lerp: 0.1,
+    });
+    let rafId: number;
+    const raf = (time: number) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+    rafId = requestAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-[#101014] text-white overflow-hidden">
       <Seo
@@ -116,7 +138,7 @@ const Pricing = () => {
       >
         <TruchetPattern
           variant="pricing"
-          intensity={0.85}
+          intensity={0.5}
           className="absolute inset-0 w-full h-full"
         />
       </div>
@@ -134,7 +156,7 @@ const Pricing = () => {
       >
         <TruchetPattern
           variant="pricing"
-          intensity={0.55}
+          intensity={0.5}
           className="absolute inset-0 w-full h-full"
         />
       </div>

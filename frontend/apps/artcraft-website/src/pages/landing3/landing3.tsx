@@ -259,6 +259,7 @@ const Landing3 = () => {
         >
           <TruchetPattern
             variant="landing"
+            intensity={0.6}
             className="absolute inset-0 -top-[10%] w-full h-[120%]"
           />
         </div>
@@ -530,7 +531,7 @@ const Landing3 = () => {
         >
           <TruchetPattern
             variant="landing"
-            intensity={0.7}
+            intensity={0.4}
             className="absolute inset-0 w-full h-full"
           />
         </div>
@@ -777,7 +778,7 @@ const Landing3 = () => {
         >
           <TruchetPattern
             variant="landing"
-            intensity={0.6}
+            intensity={0.4}
             className="absolute inset-0 w-full h-full"
           />
         </div>

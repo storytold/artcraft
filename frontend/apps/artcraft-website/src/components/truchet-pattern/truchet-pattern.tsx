@@ -142,7 +142,7 @@ export function PagePatternBackdrop({
       >
         <TruchetPattern
           variant={variant}
-          intensity={0.8}
+          intensity={0.5}
           className="absolute inset-0 w-full h-full"
         />
       </div>
