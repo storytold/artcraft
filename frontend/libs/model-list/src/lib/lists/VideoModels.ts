@@ -190,6 +190,53 @@ export const VIDEO_MODELS: VideoModel[] = [
     generateWithSound: true,
   }),
   new VideoModel({
+    id: "happy_horse_1p0",
+    tauriId: "happy_horse_1p0",
+    fullName: "Happy Horse 1.0",
+    category: "video",
+    creator: ModelCreator.Alibaba,
+    selectorName: "Happy Horse 1.0",
+    selectorDescription: "High quality video model",
+    selectorBadges: ["2 min."],
+    startFrame: true,
+    endFrame: false,
+    requiresImage: false,
+    resolutionOptions: ["720p", "1080p"],
+    sizeOptions: [
+      {
+        tauriValue: "wide_sixteen_by_nine",
+        textLabel: "16:9",
+        icon: SizeIconOption.Landscape16x9,
+      },
+      {
+        tauriValue: "wide_four_by_three",
+        textLabel: "4:3",
+        icon: SizeIconOption.Standard4x3,
+      },
+      {
+        tauriValue: "square",
+        textLabel: "1:1",
+        icon: SizeIconOption.Square,
+      },
+      {
+        tauriValue: "tall_three_by_four",
+        textLabel: "3:4",
+        icon: SizeIconOption.Portrait3x4,
+      },
+      {
+        tauriValue: "tall_nine_by_sixteen",
+        textLabel: "9:16",
+        icon: SizeIconOption.Portrait9x16,
+      },
+    ],
+    supportsCommonAspectRatio: true,
+    durationOptions: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    defaultDuration: 5,
+    progressBarTime: 300000,
+    maxPromptLength: 2500,
+    generateWithSound: true,
+  }),
+  new VideoModel({
     id: "seedance_1_0_lite",
     tauriId: "seedance_1.0_lite",
     fullName: "Seedance 1.0 Lite",
@@ -271,6 +318,11 @@ export const VIDEO_MODELS: VideoModel[] = [
     requiresImage: false,
     sizeOptions: [
       {
+        tauriValue: "wide_twenty_one_by_nine",
+        textLabel: "21:9",
+        icon: SizeIconOption.Landscape16x9,
+      },
+      {
         tauriValue: "wide_sixteen_by_nine",
         textLabel: "16:9",
         icon: SizeIconOption.Landscape16x9,
@@ -324,6 +376,11 @@ export const VIDEO_MODELS: VideoModel[] = [
     endFrame: true,
     requiresImage: false,
     sizeOptions: [
+      {
+        tauriValue: "wide_twenty_one_by_nine",
+        textLabel: "21:9",
+        icon: SizeIconOption.Landscape16x9,
+      },
       {
         tauriValue: "wide_sixteen_by_nine",
         textLabel: "16:9",
