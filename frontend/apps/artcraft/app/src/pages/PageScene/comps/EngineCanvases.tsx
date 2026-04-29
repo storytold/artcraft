@@ -17,6 +17,8 @@ export const EditorCanvas = () => {
       id="video-scene"
       width="1280px"
       height="720px"
+      tabIndex={0}
+      style={{ outline: "none" }}
     />
   );
 };
