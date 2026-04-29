@@ -1,5 +1,4 @@
 import { ChangeEvent, useContext, useEffect, useId, useState } from "react";
-import { useSignals } from "@preact/signals-react/runtime";
 import { Transition } from "@headlessui/react";
 import {
   faChevronDown,
@@ -9,7 +8,6 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-import { objectPanel as objectPanelSignals } from "../../signals";
 import { EngineContext } from "~/pages/PageScene/contexts/EngineContext";
 import { InputVector } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
@@ -37,10 +35,10 @@ const defaultAxises: Record<string, string> = {
 };
 
 export const ControlPanelSceneObject = () => {
-  useSignals();
   const disableHotkeyInput = usePageSceneStore((s) => s.disableHotkeyInput);
   const enableHotkeyInput = usePageSceneStore((s) => s.enableHotkeyInput);
-  const { isShowing, currentObject } = objectPanelSignals;
+  const isShowing = usePageSceneStore((s) => s.objectPanelShowing);
+  const currentSceneObject = usePageSceneStore((s) => s.objectPanelCurrent);
 
   const editorEngine = useContext(EngineContext);
 
@@ -64,8 +62,6 @@ export const ControlPanelSceneObject = () => {
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
-
-  const currentSceneObject = currentObject.value;
 
   function localToEngine(xyz: Record<string, string>) {
     return {
@@ -180,7 +176,7 @@ export const ControlPanelSceneObject = () => {
   return (
     <Transition
       as="div"
-      show={isShowing.value}
+      show={isShowing}
       className={twMerge(
         "glass absolute bottom-16 right-0 mb-4 mr-4 flex h-fit w-56 origin-bottom-right flex-col gap-2 rounded-lg border border-ui-panel-border p-3.5 text-white shadow-lg",
       )}

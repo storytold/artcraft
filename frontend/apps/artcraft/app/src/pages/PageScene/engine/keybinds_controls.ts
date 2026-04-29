@@ -1,9 +1,5 @@
 import * as THREE from "three";
-import {
-  hideObjectPanel,
-  outlinerState,
-  showObjectPanel,
-} from "../signals";
+import { outlinerState } from "../signals";
 import { usePageSceneStore } from "../PageSceneStore";
 import {
   OrbitControls,
@@ -230,7 +226,7 @@ export class MouseControls {
     }
     this.transform_interaction = true;
     // Contact react land
-    showObjectPanel();
+    usePageSceneStore.getState().showObjectPanel();
     this.updateSelectedUI();
   }
 
@@ -449,7 +445,7 @@ export class MouseControls {
         return;
       } else if (this.selected && this.selected.length > 0) {
         this.removeTransformControls();
-        hideObjectPanel();
+        usePageSceneStore.getState().hideObjectPanel();
         usePageSceneStore.getState().setShowPoseControls(false);
       }
     }
@@ -609,7 +605,7 @@ export class MouseControls {
       this.selected = [];
       this.setSelected(this.selected);
       this.removeTransformControls();
-      hideObjectPanel();
+      usePageSceneStore.getState().hideObjectPanel();
       usePageSceneStore.getState().setShowPoseControls(false);
     }
 

@@ -3,7 +3,6 @@ import Editor from "./editor";
 import * as THREE from "three";
 import { XYZ } from "../datastructures/common";
 import { EditorStates } from "../enums";
-import { hideObjectPanel } from "../signals";
 import { usePageSceneStore } from "../PageSceneStore";
 
 export class SceneUtils {
@@ -173,7 +172,7 @@ export class SceneUtils {
           });
         }
 
-        hideObjectPanel();
+        usePageSceneStore.getState().hideObjectPanel();
         usePageSceneStore.getState().setEditorState(EditorStates.EDIT);
       }
     }
@@ -275,6 +274,6 @@ function removeObject3D(object3D) {
     usePageSceneStore.getState().removeSceneObject(uuid);
     this.editor.selected = undefined;
     this.editor.publishSelect();
-    hideObjectPanel();
+    usePageSceneStore.getState().hideObjectPanel();
   }
 }

@@ -30,7 +30,7 @@ import {
   signalScene,
 } from "~/signals";
 
-import { outlinerState, updateObjectPanel } from "../signals";
+import { outlinerState } from "../signals";
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { MediaUploadApi } from "~/Classes/ApiManager";
 import { SceneManager } from "./scene_manager_api";
@@ -1339,7 +1339,7 @@ class Editor {
     const scale = mainSelected.scale;
 
     // TODO this is a bug we need to only show when clicked on and use UPDATE when updating.
-    updateObjectPanel({
+    usePageSceneStore.getState().updateObjectPanel({
       group:
         mainSelected.name === this.camera_name
           ? ClipGroup.CAMERA
