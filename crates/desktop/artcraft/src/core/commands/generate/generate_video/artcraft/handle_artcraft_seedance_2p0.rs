@@ -1,5 +1,5 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
-use crate::core::commands::enqueue::image_to_video::enqueue_image_to_video_command::EnqueueImageToVideoRequest;
+use crate::core::commands::generate::generate_video::request::TauriGenerateVideoRequest;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
@@ -20,7 +20,7 @@ use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 
 pub(super) async fn handle_artcraft_seedance_2p0(
-  request: &EnqueueImageToVideoRequest,
+  request: &TauriGenerateVideoRequest,
   app_env_configs: &AppEnvConfigs,
   creds: &StorytellerCredentialSet,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
@@ -34,7 +34,7 @@ pub(super) async fn handle_artcraft_seedance_2p0(
   let reference_images = request.reference_image_media_tokens.clone().map(ImageListRef::MediaFileTokens);
 
   let router_request = GenerateVideoRequestBuilder {
-    model: CommonVideoModel::Seedance2p0,
+    model: CommonTauriVideoModel::Seedance2p0,
     provider: Provider::Artcraft,
     prompt: request.prompt.clone(),
     negative_prompt: None,
