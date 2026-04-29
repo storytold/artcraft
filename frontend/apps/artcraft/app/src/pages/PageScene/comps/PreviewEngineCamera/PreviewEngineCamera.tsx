@@ -17,7 +17,7 @@ import { CameraViewCanvas } from "~/pages/PageScene/comps/EngineCanvases";
 import { ButtonIcon } from "@storyteller/ui-button-icon";
 import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { useEffect } from "react";
+import { getActiveEditor } from "~/pages/PageScene/contexts/EngineContext/EngineContext";
 
 export const PreviewEngineCamera = () => {
   useSignals();
@@ -32,7 +32,16 @@ export const PreviewEngineCamera = () => {
     );
 
   const handleButtonCameraView = () => {
-    // TODO: wire to editor.toggleCameraView() once editor.ts is migrated.
+    const { editorState, setEditorState } = usePageSceneStore.getState();
+    const next =
+      editorState === EditorStates.CAMERA_VIEW
+        ? EditorStates.EDIT
+        : EditorStates.CAMERA_VIEW;
+    setEditorState(next);
+    const editor = getActiveEditor();
+    if (!editor) return;
+    if (next === EditorStates.CAMERA_VIEW) editor.enableFreeCamControls();
+    else editor.disableFreeCamControls();
   };
 
   const getLargeScreenHeightClass = () => {
@@ -65,10 +74,6 @@ export const PreviewEngineCamera = () => {
     }
     return undefined;
   };
-
-  useEffect(() => {
-    console.log("Editor state changed:", editorState);
-  }, [editorState]);
 
   return (
     <div
