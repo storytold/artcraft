@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
 
-import { setCameraAspectRatio } from "../signals";
 import { usePageSceneStore } from "../PageSceneStore";
 
 const showEditorLoader = (message?: string) =>
@@ -237,10 +236,10 @@ export class SaveManager {
       this.editor.positive_prompt = scene_json.positivePrompt;
     }
     if (scene_json.cameraAspectRatio) {
-      //editor propagation
       this.editor.changeRenderCameraAspectRatio(scene_json.cameraAspectRatio);
-      //signal propagation
-      setCameraAspectRatio(scene_json.cameraAspectRatio);
+      usePageSceneStore
+        .getState()
+        .setCameraAspectRatio(scene_json.cameraAspectRatio);
     }
 
     this.editor.version = scene_json["version"];
