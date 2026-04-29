@@ -1,28 +1,31 @@
+use seedance2pro_client::generate::video::generate_seedance_2p0::{
+  generate_seedance_2p0, GenerateSeedance2p0Args, GenerateSeedance2p0Request,
+};
+
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::provider_error::ProviderError;
 use crate::generate::generate_video::generate_video_response::{GenerateVideoResponse, Seedance2proVideoResponsePayload};
-use seedance2pro_client::requests::generate_video::generate_video::{generate_video, GenerateVideoArgs, KinoviGenerateVideoRequest};
 
 #[derive(Debug, Clone)]
 pub struct KinoviSeedance2p0RequestState {
   /// Final materialized request; ready to fire.
-  pub request: KinoviGenerateVideoRequest,
+  pub request: GenerateSeedance2p0Request,
 }
 
 impl KinoviSeedance2p0RequestState {
   pub async fn send(&self, client: &RouterSeedance2ProClient) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
     let session = &client.session;
 
-    let args = GenerateVideoArgs {
+    let args = GenerateSeedance2p0Args {
       session,
       host_override: None,
-      request: self.request.clone(), // TODO: Yuck.
+      request: self.request.clone(),
     };
 
-    let response = generate_video(args)
-        .await
-        .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
+    let response = generate_seedance_2p0(args)
+      .await
+      .map_err(|err| ArtcraftRouterError::Provider(ProviderError::Seedance2Pro(err)))?;
 
     Ok(GenerateVideoResponse::Seedance2Pro(Seedance2proVideoResponsePayload {
       order_id: response.order_id,
@@ -30,322 +33,5 @@ impl KinoviSeedance2p0RequestState {
       maybe_order_ids: response.order_ids,
       maybe_task_ids: response.task_ids,
     }))
-  }
-}
-
-#[cfg(test)]
-mod tests {
-  use std::collections::HashMap;
-
-  use tokens::tokens::characters::CharacterToken;
-  use tokens::tokens::media_files::MediaFileToken;
-
-  use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
-  use crate::api::image_list_ref::ImageListRef;
-  use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
-  use crate::api::video_list_ref::VideoListRef;
-  use crate::client::router_client::RouterClient;
-  use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
-  use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
-  use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
-  use crate::generate::generate_video_v2::video_generation_draft_context::VideoGenerationDraftContext;
-  use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
-  use seedance2pro_client::creds::seedance2pro_session::Seedance2ProSession;
-  use test_data::web::image_urls::{FOREST_BACKDROP_IMAGE_URL, JUNO_AT_LAKE_IMAGE_URL, WHITE_HOUSE_SUNSET_IMAGE_URL};
-
-  const STEAMPUNK_CLOWN_KINOVI_ID: &str = "char_1775176566518_sik0te";
-  const MOCHI_KINOVI_ID: &str = "char_1775177718294_g2pitx";
-
-  mod aspect_ratio_tests {
-    use super::*;
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn landscape() {
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A corgi running through a field of wildflowers at sunset.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn portrait() {
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A cat sitting on a windowsill watching rain.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::TallNineBySixteen),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn square() {
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A hummingbird hovering near a flower.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::Square),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-  }
-
-  mod resolution_tests {
-    use super::*;
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn res_480p() {
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A shiba inu playing in autumn leaves.".to_string()),
-        resolution: Some(CommonResolution::FourEightyP),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn res_720p() {
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A golden retriever catching a frisbee on the beach.".to_string()),
-        resolution: Some(CommonResolution::SevenTwentyP),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn res_1080p() {
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A fox walking through a snowy forest.".to_string()),
-        resolution: Some(CommonResolution::TenEightyP),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-  }
-
-  mod modality_tests {
-    use super::*;
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn text_to_video() {
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("A whale breaching in the open ocean at dawn, cinematic.".to_string()),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn keyframe_start_and_end_frame() {
-      let start_token = MediaFileToken::new("mf_start".to_string());
-      let end_token = MediaFileToken::new("mf_end".to_string());
-
-      let mut media_map = HashMap::new();
-      media_map.insert(start_token.clone(), JUNO_AT_LAKE_IMAGE_URL.to_string());
-      media_map.insert(end_token.clone(), FOREST_BACKDROP_IMAGE_URL.to_string());
-
-      let response = run_pipeline_with_media_map(GenerateVideoRequestBuilder {
-        prompt: Some("The dog walks from the lake to the forest.".to_string()),
-        start_frame: Some(ImageRef::MediaFileToken(start_token)),
-        end_frame: Some(ImageRef::MediaFileToken(end_token)),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-        ..seedance2pro_builder()
-      }, media_map).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn image_references() {
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("The dog in @2 runs through the scenery in @1 towards the building in @3.".to_string()),
-        reference_images: Some(ImageListRef::Urls(vec![
-          FOREST_BACKDROP_IMAGE_URL.to_string(),
-          JUNO_AT_LAKE_IMAGE_URL.to_string(),
-          WHITE_HOUSE_SUNSET_IMAGE_URL.to_string(),
-        ])),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn video_reference() {
-      // NB: This URL is a pre-uploaded video on the Seedance2Pro CDN from prior tests.
-      let response = run_pipeline(GenerateVideoRequestBuilder {
-        prompt: Some("Change @video1 to a nighttime scene with moonlight.".to_string()),
-        reference_videos: Some(VideoListRef::Urls(vec![
-          "https://static.seedance2-pro.com/materials/20260315/1773594284659-3a46d231.mp4".to_string(),
-        ])),
-        aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-        ..seedance2pro_builder()
-      }).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    #[tokio::test]
-    #[ignore] // manually run — fires a real API request and incurs cost
-    async fn character_references() {
-      let char_clown = CharacterToken::new("char_clown".to_string());
-      let char_mochi = CharacterToken::new("char_mochi".to_string());
-
-      let mut character_map = HashMap::new();
-      character_map.insert(char_clown.clone(), STEAMPUNK_CLOWN_KINOVI_ID.to_string());
-      character_map.insert(char_mochi.clone(), MOCHI_KINOVI_ID.to_string());
-
-      let response = run_pipeline_with_maps(
-        GenerateVideoRequestBuilder {
-          prompt: Some("@Steampunk Clown and @Mochi are playing fetch in a sunny park.".to_string()),
-          reference_character_tokens: Some(CharacterListRef::CharacterTokens(vec![
-            char_clown,
-            char_mochi,
-          ])),
-          aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-          ..seedance2pro_builder()
-        },
-        HashMap::new(),
-        character_map,
-      ).await;
-      assert!(matches!(response, GenerateVideoResponse::Seedance2Pro(_)));
-      assert_eq!(1, 2, "Inspect output above");
-    }
-
-    // TODO: Add audio reference test once a web-accessible audio URL is available in test_data.
-  }
-
-  // ── Helpers ──
-
-  fn seedance2pro_builder() -> GenerateVideoRequestBuilder {
-    GenerateVideoRequestBuilder {
-      provider: Provider::Seedance2Pro,
-      duration_seconds: Some(4),
-      video_batch_count: Some(1),
-      ..Default::default()
-    }
-  }
-
-  fn get_seedance2pro_client() -> RouterClient {
-    let cookies = std::fs::read_to_string("/Users/bt/Artcraft/credentials/seedance2pro_cookies.txt")
-      .expect("Failed to read seedance2pro cookies");
-    let session = Seedance2ProSession::from_cookies_string(cookies.trim().to_string());
-    RouterClient::Seedance2Pro(RouterSeedance2ProClient::new(session))
-  }
-
-  /// Run the full pipeline: builder → build2 → finalize → send.
-  async fn run_pipeline(builder: GenerateVideoRequestBuilder) -> GenerateVideoResponse {
-    let client = get_seedance2pro_client();
-
-    let draft_or_request = builder.build2().expect("build2 should succeed");
-    let draft = match draft_or_request {
-      VideoGenerationDraftOrRequest::Draft(d) => d,
-      _ => panic!("expected Draft variant"),
-    };
-
-    let draft_context = VideoGenerationDraftContext {
-      client: Some(&client),
-      ..Default::default()
-    };
-
-    let request = draft.finalize(draft_context).await.expect("finalize should succeed");
-    let response = request.send_request(&client).await.expect("send_request should succeed");
-
-    match &response {
-      GenerateVideoResponse::Seedance2Pro(p) => {
-        println!("task_id={}, order_id={}", p.task_id, p.order_id);
-      }
-      other => println!("response: {:?}", other),
-    }
-
-    response
-  }
-
-  /// Run the full pipeline with a media file token map for resolving references.
-  async fn run_pipeline_with_media_map(
-    builder: GenerateVideoRequestBuilder,
-    media_map: HashMap<MediaFileToken, String>,
-  ) -> GenerateVideoResponse {
-    let client = get_seedance2pro_client();
-
-    let draft_or_request = builder.build2().expect("build2 should succeed");
-    let draft = match draft_or_request {
-      VideoGenerationDraftOrRequest::Draft(d) => d,
-      _ => panic!("expected Draft variant"),
-    };
-
-    let draft_context = VideoGenerationDraftContext {
-      client: Some(&client),
-      media_file_to_artcraft_url_map: Some(&media_map),
-      ..Default::default()
-    };
-
-    let request = draft.finalize(draft_context).await.expect("finalize should succeed");
-    let response = request.send_request(&client).await.expect("send_request should succeed");
-
-    match &response {
-      GenerateVideoResponse::Seedance2Pro(p) => {
-        println!("task_id={}, order_id={}", p.task_id, p.order_id);
-      }
-      other => println!("response: {:?}", other),
-    }
-
-    response
-  }
-
-  /// Run the full pipeline with both a media map and character map.
-  async fn run_pipeline_with_maps(
-    builder: GenerateVideoRequestBuilder,
-    media_map: HashMap<MediaFileToken, String>,
-    character_map: HashMap<CharacterToken, String>,
-  ) -> GenerateVideoResponse {
-    let client = get_seedance2pro_client();
-
-    let draft_or_request = builder.build2().expect("build2 should succeed");
-    let draft = match draft_or_request {
-      VideoGenerationDraftOrRequest::Draft(d) => d,
-      _ => panic!("expected Draft variant"),
-    };
-
-    let draft_context = VideoGenerationDraftContext {
-      client: Some(&client),
-      media_file_to_artcraft_url_map: Some(&media_map),
-      character_token_to_kinovi_id_map: Some(&character_map),
-    };
-
-    let request = draft.finalize(draft_context).await.expect("finalize should succeed");
-    let response = request.send_request(&client).await.expect("send_request should succeed");
-
-    match &response {
-      GenerateVideoResponse::Seedance2Pro(p) => {
-        println!("task_id={}, order_id={}", p.task_id, p.order_id);
-      }
-      other => println!("response: {:?}", other),
-    }
-
-    response
   }
 }

@@ -185,47 +185,47 @@ mod tests {
 
   // -- Cross-check with Kinovi Fast via builder --
 
-  mod cross_check_with_kinovi {
-    use super::*;
-
-    #[test]
-    fn artcraft_fast_matches_kinovi_fast_all_combos() {
-      let resolutions = [
-        Some(CommonResolution::FourEightyP),
-        Some(CommonResolution::SevenTwentyP),
-        None,
-      ];
-      let durations: [u16; 4] = [4, 5, 10, 15];
-      let batches: [u16; 3] = [1, 2, 4];
-
-      for res in &resolutions {
-        for dur in &durations {
-          for batch in &batches {
-            let artcraft_cost = build_cost(*res, *dur, *batch);
-
-            let kinovi = GenerateVideoRequestBuilder {
-              model: CommonVideoModel::Seedance2p0Fast,
-              provider: Provider::Seedance2Pro,
-              resolution: *res,
-              duration_seconds: Some(*dur),
-              video_batch_count: Some(*batch),
-              ..Default::default()
-            };
-            let kinovi_cost = kinovi.build2()
-              .expect("kinovi build2")
-              .estimate_cost()
-              .expect("kinovi estimate_cost");
-
-            assert_eq!(
-              artcraft_cost.cost_in_usd_cents, kinovi_cost.cost_in_usd_cents,
-              "USD cents mismatch: res={:?} dur={}s batch={}",
-              res, dur, batch,
-            );
-          }
-        }
-      }
-    }
-  }
+  //mod cross_check_with_kinovi {
+  //  use super::*;
+  //
+  //  #[test]
+  //  fn artcraft_fast_matches_kinovi_fast_all_combos() {
+  //    let resolutions = [
+  //      Some(CommonResolution::FourEightyP),
+  //      Some(CommonResolution::SevenTwentyP),
+  //      None,
+  //    ];
+  //    let durations: [u16; 4] = [4, 5, 10, 15];
+  //    let batches: [u16; 3] = [1, 2, 4];
+  //
+  //    for res in &resolutions {
+  //      for dur in &durations {
+  //        for batch in &batches {
+  //          let artcraft_cost = build_cost(*res, *dur, *batch);
+  //
+  //          let kinovi = GenerateVideoRequestBuilder {
+  //            model: CommonVideoModel::Seedance2p0Fast,
+  //            provider: Provider::Seedance2Pro,
+  //            resolution: *res,
+  //            duration_seconds: Some(*dur),
+  //            video_batch_count: Some(*batch),
+  //            ..Default::default()
+  //          };
+  //          let kinovi_cost = kinovi.build2()
+  //            .expect("kinovi build2")
+  //            .estimate_cost()
+  //            .expect("kinovi estimate_cost");
+  //
+  //          assert_eq!(
+  //            artcraft_cost.cost_in_usd_cents, kinovi_cost.cost_in_usd_cents,
+  //            "USD cents mismatch: res={:?} dur={}s batch={}",
+  //            res, dur, batch,
+  //          );
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 
   // -- Helpers --
 

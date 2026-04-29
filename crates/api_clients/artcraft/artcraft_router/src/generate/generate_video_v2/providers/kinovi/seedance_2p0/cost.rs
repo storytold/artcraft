@@ -1,22 +1,23 @@
-use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviGenerateVideoRequest, KinoviModelType, KinoviOutputResolution};
+use seedance2pro_client::generate::video::generate_seedance_2p0::{
+  GenerateSeedance2p0Request, KinoviSeedance2p0BatchCount,
+  KinoviSeedance2p0OutputResolution,
+};
+
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::draft::KinoviSeedance2p0DraftState;
 use crate::generate::generate_video_v2::providers::kinovi::seedance_2p0::request::KinoviSeedance2p0RequestState;
 
 pub struct KinoviSeedance2p0CostState {
-  pub resolution: KinoviOutputResolution,
+  pub resolution: Option<KinoviSeedance2p0OutputResolution>,
   pub duration_seconds: u8,
-  pub batch_count: KinoviBatchCount,
-
-  /// Forward-looking: Kinovi charges for this. We need to take it into
-  /// account in the future.
+  pub batch_count: Option<KinoviSeedance2p0BatchCount>,
   pub has_video_reference: bool,
 }
 
 impl KinoviSeedance2p0CostState {
   pub fn from_request(request: &KinoviSeedance2p0RequestState) -> Self {
     Self {
-      resolution: request.request.output_resolution.unwrap_or(KinoviOutputResolution::SevenTwentyP),
+      resolution: request.request.output_resolution,
       duration_seconds: request.request.duration_seconds,
       batch_count: request.request.batch_count,
       has_video_reference: request.request.reference_video_urls
@@ -32,27 +33,22 @@ impl KinoviSeedance2p0CostState {
       .is_some();
 
     Self {
-      resolution: draft.resolution.unwrap_or(KinoviOutputResolution::SevenTwentyP),
+      resolution: draft.resolution,
       duration_seconds: draft.duration_seconds,
-      batch_count: draft.batch_count,
+      batch_count: Some(draft.batch_count),
       has_video_reference,
     }
   }
 
   pub fn estimate_cost(&self) -> VideoGenerationCostEstimate {
-    let request = KinoviGenerateVideoRequest {
-      // Pricing factors
-      model_type: KinoviModelType::Seedance2Pro,
-      output_resolution: Some(self.resolution),
+    let pricing_request = GenerateSeedance2p0Request {
+      output_resolution: self.resolution,
       duration_seconds: self.duration_seconds,
       batch_count: self.batch_count,
 
-      // NB: has_video_reference is tracked but does not affect price yet.
-      // When Kinovi starts charging for video references, add cost here.
-
       // No impact on price
       prompt: String::new(),
-      aspect_ratio: KinoviAspectRatio::Portrait9x16,
+      aspect_ratio: None,
       start_frame_url: None,
       end_frame_url: None,
       reference_image_urls: None,
@@ -62,8 +58,8 @@ impl KinoviSeedance2p0CostState {
       use_face_blur_hack: None,
     };
 
-    let cost_in_credits = request.estimate_credits();
-    let cost_in_usd_cents = request.estimate_cost_in_usd_cents();
+    let cost_in_credits = pricing_request.estimate_credits();
+    let cost_in_usd_cents = pricing_request.estimate_cost_in_usd_cents();
 
     VideoGenerationCostEstimate {
       cost_in_credits: Some(cost_in_credits as u64),
@@ -79,6 +75,11 @@ impl KinoviSeedance2p0CostState {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use seedance2pro_client::generate::video::generate_seedance_2p0::{
+    KinoviSeedance2p0OutputResolution as KinoviOutputResolution,
+    KinoviSeedance2p0BatchCount as KinoviBatchCount,
+  };
+
   use crate::api::common_resolution::CommonResolution;
   use crate::api::provider::Provider;
   use crate::api::video_list_ref::VideoListRef;
@@ -93,26 +94,26 @@ mod tests {
 
     #[test]
     fn cost_720p_batch_1() {
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One), 64);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One), 80);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 6, KinoviBatchCount::One), 96);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 7, KinoviBatchCount::One), 112);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One), 160);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One), 240);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::One), 83);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::One), 104);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 6, KinoviBatchCount::One), 124);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 7, KinoviBatchCount::One), 145);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 10, KinoviBatchCount::One), 207);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::One), 311);
     }
 
     #[test]
     fn cost_720p_batch_2() {
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::Two), 128);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Two), 160);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::Two), 480);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::Two), 166);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Two), 207);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::Two), 622);
     }
 
     #[test]
     fn cost_720p_batch_4() {
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::Four), 256);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Four), 320);
-      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::Four), 960);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 4, KinoviBatchCount::Four), 332);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 5, KinoviBatchCount::Four), 415);
+      assert_eq!(usd_cents(KinoviOutputResolution::SevenTwentyP, 15, KinoviBatchCount::Four), 1244);
     }
   }
 
@@ -202,9 +203,9 @@ mod tests {
   #[test]
   fn video_reference_does_not_affect_cost() {
     let base = KinoviSeedance2p0CostState {
-      resolution: KinoviOutputResolution::SevenTwentyP,
+      resolution: Some(KinoviOutputResolution::SevenTwentyP),
       duration_seconds: 5,
-      batch_count: KinoviBatchCount::One,
+      batch_count: Some(KinoviBatchCount::One),
       has_video_reference: false,
     };
     let without = base.estimate_cost();
@@ -222,19 +223,19 @@ mod tests {
     fn from_request_720p() {
       let req = make_request_state(Some(KinoviOutputResolution::SevenTwentyP), 5, KinoviBatchCount::One, false);
       let cost = KinoviSeedance2p0CostState::from_request(&req);
-      assert!(matches!(cost.resolution, KinoviOutputResolution::SevenTwentyP));
+      assert!(matches!(cost.resolution, Some(KinoviOutputResolution::SevenTwentyP)));
       assert_eq!(cost.duration_seconds, 5);
-      assert!(matches!(cost.batch_count, KinoviBatchCount::One));
+      assert!(matches!(cost.batch_count, Some(KinoviBatchCount::One)));
       assert!(!cost.has_video_reference);
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(80));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(104));
     }
 
     #[test]
     fn from_request_none_defaults_to_720p() {
       let req = make_request_state(None, 5, KinoviBatchCount::One, false);
       let cost = KinoviSeedance2p0CostState::from_request(&req);
-      assert!(matches!(cost.resolution, KinoviOutputResolution::SevenTwentyP));
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(80));
+      assert!(cost.resolution.is_none()); // None defaults to 720p pricing
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(104));
     }
 
     #[test]
@@ -257,7 +258,7 @@ mod tests {
       let cost = KinoviSeedance2p0CostState::from_request(&req);
       assert!(cost.has_video_reference);
       // Video refs don't affect cost yet
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(80));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(104));
     }
 
     #[test]
@@ -277,18 +278,18 @@ mod tests {
     fn from_draft_720p_default() {
       let draft = make_draft(5, 1, None, false);
       let cost = KinoviSeedance2p0CostState::from_draft(&draft);
-      assert!(matches!(cost.resolution, KinoviOutputResolution::SevenTwentyP));
+      assert!(cost.resolution.is_none()); // None defaults to 720p pricing
       assert_eq!(cost.duration_seconds, 5);
-      assert!(matches!(cost.batch_count, KinoviBatchCount::One));
+      assert!(matches!(cost.batch_count, Some(KinoviBatchCount::One)));
       assert!(!cost.has_video_reference);
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(80));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(104));
     }
 
     #[test]
     fn from_draft_480p() {
       let draft = make_draft(5, 1, Some(CommonResolution::FourEightyP), false);
       let cost = KinoviSeedance2p0CostState::from_draft(&draft);
-      assert!(matches!(cost.resolution, KinoviOutputResolution::FourEightyP));
+      assert!(matches!(cost.resolution, Some(KinoviOutputResolution::FourEightyP)));
       assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(39));
     }
 
@@ -296,8 +297,8 @@ mod tests {
     fn from_draft_1080p_batch_4() {
       let draft = make_draft(5, 4, Some(CommonResolution::TenEightyP), false);
       let cost = KinoviSeedance2p0CostState::from_draft(&draft);
-      assert!(matches!(cost.resolution, KinoviOutputResolution::TenEightyP));
-      assert!(matches!(cost.batch_count, KinoviBatchCount::Four));
+      assert!(matches!(cost.resolution, Some(KinoviOutputResolution::TenEightyP)));
+      assert!(matches!(cost.batch_count, Some(KinoviBatchCount::Four)));
       assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(933));
     }
 
@@ -307,7 +308,7 @@ mod tests {
       let cost = KinoviSeedance2p0CostState::from_draft(&draft);
       assert!(cost.has_video_reference);
       // Video refs don't affect cost yet
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(80));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(104));
     }
 
     #[test]
@@ -322,8 +323,8 @@ mod tests {
       let draft = make_draft(15, 2, Some(CommonResolution::SevenTwentyP), false);
       let cost = KinoviSeedance2p0CostState::from_draft(&draft);
       assert_eq!(cost.duration_seconds, 15);
-      assert!(matches!(cost.batch_count, KinoviBatchCount::Two));
-      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(480));
+      assert!(matches!(cost.batch_count, Some(KinoviBatchCount::Two)));
+      assert_eq!(cost.estimate_cost().cost_in_usd_cents, Some(622));
     }
   }
 
@@ -382,7 +383,10 @@ mod tests {
     duration_seconds: u8,
     batch_count: KinoviBatchCount,
   ) -> u64 {
-    KinoviSeedance2p0CostState { resolution, duration_seconds, batch_count, has_video_reference: false }
+    KinoviSeedance2p0CostState {
+      resolution: Some(resolution), duration_seconds, batch_count: Some(batch_count),
+      has_video_reference: false,
+    }
       .estimate_cost()
       .cost_in_usd_cents
       .unwrap()
@@ -393,7 +397,10 @@ mod tests {
     duration_seconds: u8,
     batch_count: KinoviBatchCount,
   ) -> u64 {
-    KinoviSeedance2p0CostState { resolution, duration_seconds, batch_count, has_video_reference: false }
+    KinoviSeedance2p0CostState {
+      resolution: Some(resolution), duration_seconds, batch_count: Some(batch_count),
+      has_video_reference: false,
+    }
       .estimate_cost()
       .cost_in_credits
       .unwrap()
@@ -443,13 +450,12 @@ mod tests {
     };
 
     KinoviSeedance2p0RequestState {
-      request: KinoviGenerateVideoRequest {
-        model_type: KinoviModelType::Seedance2Pro,
+      request: GenerateSeedance2p0Request {
         prompt: "test".to_string(),
-        aspect_ratio: KinoviAspectRatio::Landscape16x9,
+        aspect_ratio: None,
         output_resolution: resolution,
         duration_seconds,
-        batch_count,
+        batch_count: Some(batch_count),
         start_frame_url: None,
         end_frame_url: None,
         reference_image_urls: None,

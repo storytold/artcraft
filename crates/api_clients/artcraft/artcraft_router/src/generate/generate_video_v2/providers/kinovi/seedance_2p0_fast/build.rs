@@ -1,4 +1,8 @@
-use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviOutputResolution};
+use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+  KinoviSeedance2p0FastAspectRatio as KinoviAspectRatio,
+  KinoviSeedance2p0FastBatchCount as KinoviBatchCount,
+  KinoviSeedance2p0FastOutputResolution as KinoviOutputResolution,
+};
 
 use crate::api::common_aspect_ratio::CommonAspectRatio;
 use crate::api::common_resolution::CommonResolution;
@@ -73,6 +77,7 @@ fn plan_aspect_ratio(
     }
     Some(CommonAspectRatio::WideFourByThree) => Ok(KinoviAspectRatio::Standard4x3),
     Some(CommonAspectRatio::TallThreeByFour) => Ok(KinoviAspectRatio::Portrait3x4),
+    Some(CommonAspectRatio::WideTwentyOneByNine) => Ok(KinoviAspectRatio::UltraWide21x9),
 
     // Mismatches — apply strategy
     Some(unsupported) => match strategy {
@@ -95,7 +100,6 @@ fn nearest_aspect_ratio(aspect_ratio: CommonAspectRatio) -> KinoviAspectRatio {
   match aspect_ratio {
     CommonAspectRatio::WideFiveByFour => KinoviAspectRatio::Standard4x3,         // 1.25, nearest 1.33
     CommonAspectRatio::WideThreeByTwo => KinoviAspectRatio::Standard4x3,         // 1.50, nearest 1.33
-    CommonAspectRatio::WideTwentyOneByNine => KinoviAspectRatio::Landscape16x9,  // 2.33, nearest 1.78
     CommonAspectRatio::TallFourByFive => KinoviAspectRatio::Portrait3x4,         // 0.80, nearest 0.75
     CommonAspectRatio::TallTwoByThree => KinoviAspectRatio::Portrait3x4,         // 0.67, nearest 0.75
     CommonAspectRatio::TallNineByTwentyOne => KinoviAspectRatio::Portrait9x16,   // 0.43, nearest 0.56
@@ -208,7 +212,11 @@ fn plan_duration(
 
 #[cfg(test)]
 mod tests {
-  use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviOutputResolution};
+  use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+    KinoviSeedance2p0FastAspectRatio as KinoviAspectRatio,
+    KinoviSeedance2p0FastBatchCount as KinoviBatchCount,
+    KinoviSeedance2p0FastOutputResolution as KinoviOutputResolution,
+  };
   use tokens::tokens::characters::CharacterToken;
   use tokens::tokens::media_files::MediaFileToken;
 

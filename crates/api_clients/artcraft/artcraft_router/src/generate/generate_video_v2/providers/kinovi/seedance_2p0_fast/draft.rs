@@ -1,4 +1,7 @@
-use seedance2pro_client::requests::generate_video::generate_video::{KinoviAspectRatio, KinoviBatchCount, KinoviGenerateVideoRequest, KinoviModelType, KinoviOutputResolution};
+use seedance2pro_client::generate::video::generate_seedance_2p0_fast::{
+  GenerateSeedance2p0FastRequest, KinoviSeedance2p0FastAspectRatio,
+  KinoviSeedance2p0FastBatchCount, KinoviSeedance2p0FastOutputResolution,
+};
 
 use crate::api::audio_list_ref::AudioListRef;
 use crate::api::character_list_ref::CharacterListRef;
@@ -16,15 +19,12 @@ use crate::generate::generate_video_v2::video_generation_draft_context::VideoGen
 
 #[derive(Debug, Clone)]
 pub struct KinoviSeedance2p0FastDraftState {
-  // Materialized / finalized types
-
   pub prompt: String,
-  pub aspect_ratio: KinoviAspectRatio,
-  pub resolution: Option<KinoviOutputResolution>,
+  pub aspect_ratio: KinoviSeedance2p0FastAspectRatio,
+  pub resolution: Option<KinoviSeedance2p0FastOutputResolution>,
   pub duration_seconds: u8,
-  pub batch_count: KinoviBatchCount,
+  pub batch_count: KinoviSeedance2p0FastBatchCount,
 
-  // Pending types that need to be queried.
   pub unhandled_request_state: Option<KinoviSeedance2p0FastRemainingItems>,
 }
 
@@ -77,13 +77,12 @@ impl KinoviSeedance2p0FastDraftState {
       )?;
     }
 
-    let request = KinoviGenerateVideoRequest {
-      model_type: KinoviModelType::Seedance2Fast,
+    let request = GenerateSeedance2p0FastRequest {
       prompt: self.prompt.clone(),
-      aspect_ratio: self.aspect_ratio,
+      aspect_ratio: Some(self.aspect_ratio),
       output_resolution: self.resolution,
       duration_seconds: self.duration_seconds,
-      batch_count: self.batch_count,
+      batch_count: Some(self.batch_count),
       start_frame_url,
       end_frame_url,
       reference_image_urls,
