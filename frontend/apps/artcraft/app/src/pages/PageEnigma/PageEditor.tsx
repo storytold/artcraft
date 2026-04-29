@@ -23,7 +23,6 @@ import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
 import {
   sidePanelWidth,
-  editorLoader,
   cameraAspectRatio,
   outlinerIsShowing,
   disableHotkeyInput,
@@ -108,6 +107,7 @@ export const PageEditor = () => {
   const tabStore = useTabStore();
   const storyboardPageEnabled = useStoryboardPageEnabled();
   const camAspect = usePageEnigmaStore((s) => s.cameraAspectRatio);
+  const editorLoader = usePageEnigmaStore((s) => s.editorLoader);
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
     event.stopPropagation();
   };
@@ -540,9 +540,9 @@ export const PageEditor = () => {
 
                 <LoadingDots
                   className="absolute left-0 top-0 z-50"
-                  isShowing={editorLoader.value.isShowing}
+                  isShowing={editorLoader.isShowing}
                   type="bricks"
-                  message={editorLoader.value.message}
+                  message={editorLoader.message}
                 />
 
                 <div className="absolute bottom-6 left-6 z-20 flex items-center gap-3">

@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { CompletedCard } from "~/pages/PageEnigma/comps/GenerateModals/CompletedCard";
 import { InProgressCard } from "~/pages/PageEnigma/comps/GenerateModals/InProgressCard";
 import { Modal } from "@storyteller/ui-modal";
-import { viewMyMovies } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { activeWorkflowJobs, userMovies } from "~/signals";
 
 interface Props {
@@ -13,6 +13,8 @@ interface Props {
 
 export function MyMovies({ setMovieId }: Props) {
   useSignals();
+  const viewMyMovies = usePageEnigmaStore((s) => s.viewMyMovies);
+  const setViewMyMovies = usePageEnigmaStore((s) => s.setViewMyMovies);
 
   return (
     <Modal
@@ -20,10 +22,10 @@ export function MyMovies({ setMovieId }: Props) {
       titleIcon={faFilm}
       className="max-w-4xl"
       childPadding={false}
-      isOpen={viewMyMovies.value}
+      isOpen={viewMyMovies}
       onClose={() => {
         setMovieId("");
-        viewMyMovies.value = false;
+        setViewMyMovies(false);
       }}
     >
       <div className="h-[560px] overflow-y-auto overflow-x-hidden rounded-b-lg">

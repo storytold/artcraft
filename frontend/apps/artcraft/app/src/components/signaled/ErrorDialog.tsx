@@ -1,32 +1,36 @@
-import { useSignals } from "@preact/signals-react/runtime";
 import { faTriangleExclamation } from "@fortawesome/pro-solid-svg-icons";
+import { useShallow } from "zustand/shallow";
 
 import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
-import {
-  showErrorDialog,
-  errorDialogMessage,
-  errorDialogTitle,
-} from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 export function ErrorDialog() {
-  useSignals();
+  const { showErrorDialog, errorDialogTitle, errorDialogMessage, setShowErrorDialog } =
+    usePageEnigmaStore(
+      useShallow((s) => ({
+        showErrorDialog: s.showErrorDialog,
+        errorDialogTitle: s.errorDialogTitle,
+        errorDialogMessage: s.errorDialogMessage,
+        setShowErrorDialog: s.setShowErrorDialog,
+      })),
+    );
 
   return (
     <Modal
-      title={errorDialogTitle.value}
+      title={errorDialogTitle}
       titleIcon={faTriangleExclamation}
       titleIconClassName="text-brand-primary"
-      isOpen={showErrorDialog.value}
-      onClose={() => (showErrorDialog.value = false)}
+      isOpen={showErrorDialog}
+      onClose={() => setShowErrorDialog(false)}
       showClose={false}
     >
       <div>
-        {errorDialogMessage.value}
+        {errorDialogMessage}
         <div className="flex justify-end">
           <Button
             type="button"
-            onClick={() => (showErrorDialog.value = false)}
+            onClick={() => setShowErrorDialog(false)}
             variant="secondary"
           >
             Close

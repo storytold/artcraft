@@ -1,5 +1,5 @@
-import { useSignals } from "@preact/signals-react/runtime";
 import { useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { MediaFile } from "~/pages/PageEnigma/models";
 import { Input } from "@storyteller/ui-input";
 import { Label } from "@storyteller/ui-label";
@@ -13,7 +13,7 @@ import {
   faLink,
 } from "@fortawesome/pro-solid-svg-icons";
 import SocialButton from "./SocialButton";
-import { generateMovieId, viewMyMovies } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import dayjs from "dayjs";
 import { downloadFile } from "~/pages/PageEnigma/comps/GenerateModals/utils/downloadFile";
 import { GetCdnOrigin } from "~/api/GetCdnOrigin";
@@ -24,7 +24,13 @@ interface Props {
 }
 
 export function Sharing({ mediaFile, setMediaFile }: Props) {
-  useSignals();
+  const { generateMovieId, viewMyMovies, setViewMyMovies } = usePageEnigmaStore(
+    useShallow((s) => ({
+      generateMovieId: s.generateMovieId,
+      viewMyMovies: s.viewMyMovies,
+      setViewMyMovies: s.setViewMyMovies,
+    })),
+  );
 
   const mediaTitle = mediaFile?.maybe_title ?? mediaFile?.token;
   // TODO: ApiManager should provide all endpoints
@@ -56,17 +62,17 @@ export function Sharing({ mediaFile, setMediaFile }: Props) {
   return (
     <Modal
       title={generateTitle()}
-      titleIcon={generateMovieId.value ? faChevronLeft : faFilm}
+      titleIcon={generateMovieId ? faChevronLeft : faFilm}
       titleIconClassName="text-white/60 hover:text-white/80 transition-colors duration-150"
       onTitleIconClick={
-        generateMovieId.value ? () => setMediaFile(null) : undefined
+        generateMovieId ? () => setMediaFile(null) : undefined
       }
       className="max-w-6xl"
       childPadding={false}
-      isOpen={viewMyMovies.value}
+      isOpen={viewMyMovies}
       width={1049}
       onClose={() => {
-        viewMyMovies.value = false;
+        setViewMyMovies(false);
         setMediaFile(null);
       }}
     >

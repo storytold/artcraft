@@ -4,11 +4,15 @@ import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
 
 import {
   setCameraAspectRatio,
-  hideEditorLoader,
   restoreSceneGenerationMetadata,
-  showEditorLoader,
   globalIPAMediaToken,
 } from "../signals";
+import { usePageEnigmaStore } from "../PageEnigmaStore";
+
+const showEditorLoader = (message?: string) =>
+  usePageEnigmaStore.getState().showEditorLoader(message);
+const hideEditorLoader = () =>
+  usePageEnigmaStore.getState().hideEditorLoader();
 import Editor from "./editor";
 import { getArtStyle } from "~/enums";
 import { cameras, selectedCameraId, Camera } from "../signals/camera";

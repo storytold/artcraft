@@ -9,8 +9,6 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { useShallow } from "zustand/shallow";
 import {
-  editorLetterBox,
-  toggleEditorLetterBox,
   sidePanelHeight,
   outlinerIsShowing,
 } from "~/pages/PageEnigma/signals";
@@ -25,12 +23,15 @@ import { useEffect } from "react";
 
 export const PreviewEngineCamera = () => {
   useSignals();
-  const { camAspect, editorState } = usePageEnigmaStore(
-    useShallow((s) => ({
-      camAspect: s.cameraAspectRatio,
-      editorState: s.editorState,
-    })),
-  );
+  const { camAspect, editorState, editorLetterBox, toggleEditorLetterBox } =
+    usePageEnigmaStore(
+      useShallow((s) => ({
+        camAspect: s.cameraAspectRatio,
+        editorState: s.editorState,
+        editorLetterBox: s.editorLetterBox,
+        toggleEditorLetterBox: s.toggleEditorLetterBox,
+      })),
+    );
 
   const handleButtonCameraView = () => {
     // TODO: wire to editor.toggleCameraView() once editor.ts is migrated.
@@ -113,7 +114,7 @@ export const PreviewEngineCamera = () => {
             {editorState === EditorStates.CAMERA_VIEW && (
               <Tooltip content="Toggle Letterbox" position={"top"}>
                 <ButtonIcon
-                  icon={editorLetterBox.value ? faBlinds : faBlindsRaised}
+                  icon={editorLetterBox ? faBlinds : faBlindsRaised}
                   onClick={() => toggleEditorLetterBox()}
                   className="h-7 w-7"
                 />

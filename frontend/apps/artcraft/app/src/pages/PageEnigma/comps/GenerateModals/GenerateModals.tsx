@@ -1,9 +1,8 @@
-import { useCallback, useState } from "react";
-import { useSignals, useSignalEffect } from "@preact/signals-react/runtime";
+import { useCallback, useEffect, useState } from "react";
 
 import { MediaFile } from "~/pages/PageEnigma/models";
 
-import { generateMovieId } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 import { ToastTypes } from "~/enums";
 import { addToast } from "~/signals";
 
@@ -12,8 +11,9 @@ import { Sharing } from "~/pages/PageEnigma/comps/GenerateModals/Sharing";
 import { MediaFilesApi } from "~/Classes/ApiManager/MediaFilesApi";
 
 export function GenerateModals() {
-  useSignals();
   const [mediaFile, setMediaFile] = useState<MediaFile | null>(null);
+  const generateMovieId = usePageEnigmaStore((s) => s.generateMovieId);
+  const setGenerateMovieId = usePageEnigmaStore((s) => s.setGenerateMovieId);
 
   const GetMediaFileByToken = useCallback(async (movieId: string) => {
     const mediaFilesApi = new MediaFilesApi();
@@ -30,14 +30,15 @@ export function GenerateModals() {
         `Unknown Error in Getting Movie (token=${movieId}`,
     );
   }, []);
-  const setMovieId = useCallback((movieId: string) => {
-    generateMovieId.value = movieId;
-  }, []);
-  useSignalEffect(() => {
-    if (generateMovieId.value) {
-      GetMediaFileByToken(generateMovieId.value);
+  const setMovieId = useCallback(
+    (movieId: string) => setGenerateMovieId(movieId),
+    [setGenerateMovieId],
+  );
+  useEffect(() => {
+    if (generateMovieId) {
+      GetMediaFileByToken(generateMovieId);
     }
-  });
+  }, [generateMovieId, GetMediaFileByToken]);
 
   if (!mediaFile) {
     return <MyMovies setMovieId={setMovieId} />;

@@ -3,7 +3,7 @@ import { twMerge } from "tailwind-merge";
 import { faFilm } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
-import { generateMovieId, viewMyMovies } from "~/pages/PageEnigma/signals";
+import { usePageEnigmaStore } from "~/pages/PageEnigma/PageEnigmaStore";
 
 import { activeWorkflowJobs } from "~/signals";
 
@@ -18,8 +18,9 @@ export const MyMoviesButton = () => {
       <Button
         variant="action"
         onClick={() => {
-          generateMovieId.value = "";
-          viewMyMovies.value = true;
+          const store = usePageEnigmaStore.getState();
+          store.setGenerateMovieId("");
+          store.setViewMyMovies(true);
         }}
       >
         <div className="relative flex items-center gap-2">
