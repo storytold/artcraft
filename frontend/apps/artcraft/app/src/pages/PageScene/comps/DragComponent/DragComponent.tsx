@@ -1,16 +1,17 @@
-import { currPosition, dragItem } from "~/pages/PageScene/signals";
-import { useSignals } from "@preact/signals-react/runtime";
+import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 export const DragComponent = () => {
-  useSignals();
-  if (!dragItem.value) {
+  const dragItem = usePageSceneStore((s) => s.dragItem);
+  const dragPosition = usePageSceneStore((s) => s.dragPosition);
+
+  if (!dragItem) {
     return null;
   }
-  const { currX, currY } = currPosition.value;
+  const { currX, currY } = dragPosition;
 
-  const thumbnail = dragItem.value.thumbnail
-    ? dragItem.value.thumbnail
-    : `/resources/images/default-covers/${dragItem.value.imageIndex || 0}.webp`;
+  const thumbnail = dragItem.thumbnail
+    ? dragItem.thumbnail
+    : `/resources/images/default-covers/${dragItem.imageIndex || 0}.webp`;
 
   return (
     <div
@@ -28,11 +29,11 @@ export const DragComponent = () => {
           crossOrigin: "anonymous",
           src: thumbnail,
         }}
-        alt={dragItem.value.name}
+        alt={dragItem.name}
         className="pointer-events-none select-none rounded-t-lg bg-gradient-to-b from-[#CCCCCC] to-[#A0A0A0]"
       />
       <div className="w-full truncate rounded-b-lg bg-ui-controls px-2 py-1 text-center text-[12px]">
-        {dragItem.value.name || dragItem.value.media_id}
+        {dragItem.name || dragItem.media_id}
       </div>
     </div>
   );

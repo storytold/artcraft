@@ -1,10 +1,5 @@
 import React from "react";
 import { MediaItem } from "~/pages/PageScene/models";
-import {
-  canDrop,
-  currPosition,
-  dragItem,
-} from "~/pages/PageScene/signals";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { pageHeight, pageWidth } from "~/signals";
 import { AssetType } from "~/enums";
@@ -38,29 +33,27 @@ class DndAsset {
   ) {
     if (event.button === 0) {
       this.editor = editor;
-      dragItem.value = item;
-      currPosition.value = {
-        currX: event.pageX,
-        currY: event.pageY,
-      };
+      const store = usePageSceneStore.getState();
+      store.setDragItem(item);
+      store.setDragPosition({ currX: event.pageX, currY: event.pageY });
       this.initX = event.pageX;
       this.initY = event.pageY;
       this.isDragging = false;
-      canDrop.value = false;
+      store.setCanDrop(false);
       this.notDropText = "";
-      usePageSceneStore.getState().setAssetModalVisibleDuringDrag(false);
+      store.setAssetModalVisibleDuringDrag(false);
       window.addEventListener("pointerup", this.onPointerUp);
       window.addEventListener("pointermove", this.onPointerMove);
     }
   }
 
   endDrag() {
-    if (dragItem.value) {
-      dragItem.value = null;
-      canDrop.value = false;
+    const store = usePageSceneStore.getState();
+    if (store.dragItem) {
+      store.setDragItem(null);
+      store.setCanDrop(false);
       this.overElement = null;
       this.notDropText = "";
-      const store = usePageSceneStore.getState();
       store.setAssetModalVisibleDuringDrag(store.reopenAfterDrag);
     }
     this.editor = null;
@@ -80,20 +73,21 @@ class DndAsset {
     window.removeEventListener("pointerup", this.onPointerUp);
     window.removeEventListener("pointermove", this.onPointerMove);
 
+    const store = usePageSceneStore.getState();
     if (!this.isDragging) {
-      usePageSceneStore.getState().setAssetModalVisibleDuringDrag(true);
-      dragItem.value = null;
-      currPosition.value = { currX: 0, currY: 0 };
+      store.setAssetModalVisibleDuringDrag(true);
+      store.setDragItem(null);
+      store.setDragPosition({ currX: 0, currY: 0 });
       this.editor = null;
       return;
     }
 
     const editor = this.editor;
-    if (dragItem.value && editor) {
+    const mediaItem = store.dragItem;
+    if (mediaItem && editor) {
       const positionX = event.pageX;
       const positionY = event.pageY;
       if (this.overCanvas(positionX, positionY)) {
-        const mediaItem = dragItem.value;
         if (mediaItem.type === AssetType.CHARACTER) {
           void addCharacter(editor, mediaItem);
         } else if (
@@ -112,7 +106,8 @@ class DndAsset {
   }
 
   onPointerMove(event: MouseEvent) {
-    if (dragItem.value) {
+    const store = usePageSceneStore.getState();
+    if (store.dragItem) {
       event.stopPropagation();
       event.preventDefault();
       const deltaX = event.pageX - this.initX;
@@ -123,10 +118,10 @@ class DndAsset {
       ) {
         this.isDragging = true;
       }
-      currPosition.value = {
+      store.setDragPosition({
         currX: this.initX + deltaX,
         currY: this.initY + deltaY,
-      };
+      });
       if (this.overElement) {
         const pos = this.overElement;
         const eventY = event.pageY;
@@ -137,7 +132,7 @@ class DndAsset {
         if (inHeight && inWidth) {
           return;
         }
-        canDrop.value = false;
+        store.setCanDrop(false);
         this.dropId = "";
         this.overElement = null;
         this.notDropText = "";
