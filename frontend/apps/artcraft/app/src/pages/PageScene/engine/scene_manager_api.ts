@@ -92,26 +92,17 @@ export class SceneManager implements SceneManagerAPI {
     this.onMouseUp = this.onMouseUp.bind(this);
   }
 
+  // Pointer + keyboard listener attachment is now handled by
+  // hooks/useViewportPointer and hooks/useViewportKeyboard, which
+  // attach to the viewport canvas instead of window. The dispatch
+  // methods (onMouseMove etc.) below remain so MouseControls can
+  // continue to drive selection and FK; they're invoked by the hook.
   public attachEventListeners() {
-    if (!this.devMode) {
-      return;
-    }
-    window.addEventListener("mousemove", this.onMouseMove, false);
-    window.addEventListener("click", this.onMouseClick, false);
-    window.addEventListener("keydown", this.onKeyDown, false);
-    window.addEventListener("mousedown", this.onMouseDown, false);
-    window.addEventListener("mouseup", this.onMouseUp, false);
+    // intentionally empty — kept for back-compat with editor lifecycle
   }
 
   public detachEventListeners() {
-    if (!this.devMode) {
-      return;
-    }
-    window.removeEventListener("mousemove", this.onMouseMove, false);
-    window.removeEventListener("click", this.onMouseClick, false);
-    window.removeEventListener("keydown", this.onKeyDown, false);
-    window.removeEventListener("mousedown", this.onMouseDown, false);
-    window.removeEventListener("mouseup", this.onMouseUp, false);
+    // intentionally empty — kept for back-compat with editor lifecycle
   }
 
   public async undo() {
