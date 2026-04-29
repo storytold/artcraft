@@ -5,7 +5,6 @@ import { Controls3D } from "./comps/Controls3D";
 import { ControlsTopButtons } from "./comps/ControlsTopButtons";
 import { ControlPanelSceneObject } from "./comps/ControlPanelSceneObject";
 import { PreviewEngineCamera } from "./comps/PreviewEngineCamera";
-import { PreviewFrameImage } from "./comps/PreviewFrameImage";
 import { authentication, pageHeight, pageWidth } from "~/signals";
 import { PoseModeSelector } from "./comps/PoseModeSelector";
 import ImageToVideo from "../PageVideo/ImageToVideo";
@@ -31,6 +30,8 @@ import { DomLevels } from "~/pages/PageScene/PageSceneStore";
 import { setCameraAspect } from "~/pages/PageScene/actions";
 import { EditorCanvas } from "./comps/EngineCanvases";
 import { SceneContainer } from "./comps/SceneContainer";
+import { useEditorCanvas } from "./hooks/useEditorCanvas";
+import { useFreeCam } from "./hooks/useFreeCam";
 import { Outliner } from "./comps/Outliner";
 import { CameraAspectRatio } from "./enums";
 import { PromptBox3D } from "@storyteller/ui-promptbox";
@@ -156,6 +157,8 @@ export const PageEditor = () => {
 
   // These are callbacks required by promptbox
   const editorEngine = useContext(EngineContext);
+  const editorCanvas = useEditorCanvas();
+  useFreeCam(editorCanvas, editorEngine);
   const handleCameraSelect = (selectedItem: PopoverItem) => {
     const selectedCamera = cameras.value.find(
       (cam) => cam.label === selectedItem.label,
@@ -196,10 +199,10 @@ export const PageEditor = () => {
         );
         editorEngine.camera.updateProjectionMatrix();
 
-        // Reset and update camera controls
-        if (editorEngine.cameraViewControls) {
-          editorEngine.cameraViewControls.reset();
-          editorEngine.cameraViewControls.update(0);
+        // Reset free-cam motion so a switch doesn't carry over a
+        // half-applied drag from the previous camera.
+        if (editorEngine.freeCamState) {
+          editorEngine.freeCamState.velocity.set(0, 0, 0);
         }
 
         // Force a render to update the view
@@ -259,10 +262,10 @@ export const PageEditor = () => {
       editorEngine.camera.fov = editorEngine.focalLengthToFov(24);
       editorEngine.camera.updateProjectionMatrix();
 
-      // Reset and update camera controls
-      if (editorEngine.cameraViewControls) {
-        editorEngine.cameraViewControls.reset();
-        editorEngine.cameraViewControls.update(0);
+      // Reset free-cam motion so the camera doesn't drift after
+      // teleport.
+      if (editorEngine.freeCamState) {
+        editorEngine.freeCamState.velocity.set(0, 0, 0);
       }
 
       // Force a render to update the view
@@ -464,7 +467,6 @@ export const PageEditor = () => {
               <div className="relative w-full overflow-hidden bg-transparent">
                 <SceneContainer>
                   <EditorCanvas />
-                  <PreviewFrameImage />
                 </SceneContainer>
 
                 {/* Focal Length Display */}

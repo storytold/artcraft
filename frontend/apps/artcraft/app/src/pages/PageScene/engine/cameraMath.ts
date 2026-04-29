@@ -107,3 +107,86 @@ export const lerpVelocity = (
   velocity.z = MathUtils.lerp(velocity.z, target.z, smoothing);
   return velocity;
 };
+
+// Per-frame state owned by useFreeCam. The editor's render loop
+// reads this struct on every tick and applies the resulting motion.
+// Mutated in place by event handlers (keyboard) so the React
+// reference stays stable.
+export interface FreeCamControlState {
+  enabled: boolean;
+  moveKeys: HeldMoveKeys;
+  rotateKeys: HeldRotateKeys;
+  velocity: Vector3;
+  movementSpeed: number;
+  rollSpeed: number;
+  smoothing: number;
+}
+
+export const createFreeCamControlState = (): FreeCamControlState => ({
+  enabled: false,
+  moveKeys: emptyMoveKeys(),
+  rotateKeys: emptyRotateKeys(),
+  velocity: new Vector3(),
+  movementSpeed: 1.15,
+  rollSpeed: Math.PI / 180,
+  smoothing: 0.2,
+});
+
+// Translate a code from a KeyboardEvent into the move-state slot it
+// drives, if any. Returns the property name on HeldMoveKeys, or null.
+export const moveSlotForKeyCode = (
+  code: string,
+): keyof HeldMoveKeys | null => {
+  switch (code) {
+    case "KeyW": return "forward";
+    case "KeyS": return "back";
+    case "KeyA": return "left";
+    case "KeyD": return "right";
+    case "KeyQ": return "down";
+    case "KeyE": return "up";
+    default: return null;
+  }
+};
+
+export const rotateSlotForKeyCode = (
+  code: string,
+): keyof HeldRotateKeys | null => {
+  switch (code) {
+    case "ArrowUp":    return "pitchUp";
+    case "ArrowDown":  return "pitchDown";
+    case "ArrowLeft":  return "yawLeft";
+    case "ArrowRight": return "yawRight";
+    default: return null;
+  }
+};
+
+// Per-frame integration step. Reads `state` (held keys + velocity),
+// applies the resulting movement / rotation to `camera`, and returns
+// `true` if anything changed. The caller is responsible for any
+// downstream sync (e.g. lookAt updates) when this returns true.
+export const freeCamFrameTick = (
+  camera: PerspectiveCamera,
+  state: FreeCamControlState,
+  delta: number,
+): boolean => {
+  if (!state.enabled) return false;
+
+  const moveVec = moveVectorFromKeys(state.moveKeys);
+  const rotVec = rotationVectorFromKeys(state.rotateKeys, state.rollSpeed);
+
+  const stationary = moveVec.lengthSq() === 0;
+  const noRotation = rotVec.lengthSq() === 0;
+  const velocityIdle = state.velocity.lengthSq() < 0.0001;
+  if (stationary && noRotation && velocityIdle) return false;
+
+  const target = moveVec.multiplyScalar(delta * state.movementSpeed);
+  lerpVelocity(state.velocity, target, state.smoothing);
+
+  camera.translateX(state.velocity.x);
+  camera.translateY(state.velocity.y);
+  camera.translateZ(state.velocity.z);
+  camera.rotateX(rotVec.x);
+  camera.rotateY(rotVec.y);
+  camera.rotateZ(rotVec.z);
+  return true;
+};

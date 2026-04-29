@@ -1,7 +1,11 @@
 import * as THREE from "three";
 import { signal } from "@preact/signals-react";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { FreeCam } from "./free_cam";
+import {
+  freeCamFrameTick,
+  lookAtFromCamera,
+  type FreeCamControlState,
+} from "./cameraMath";
 import { TransformControls } from "./TransformControls.js";
 import Scene from "./scene.js";
 import { APIManager, ArtStyle } from "./api_manager.js";
@@ -100,7 +104,10 @@ class Editor {
   transform_interaction = false;
   rendering: boolean;
   api_manager: APIManager;
-  cameraViewControls: FreeCam | undefined;
+  freeCamState: FreeCamControlState | null = null;
+  setFreeCamState(state: FreeCamControlState | null) {
+    this.freeCamState = state;
+  }
   orbitControls: OrbitControls | undefined;
   locked: boolean;
 
@@ -509,16 +516,8 @@ class Editor {
       this.camera,
       this.renderer.domElement,
     );
-    this.cameraViewControls = new FreeCam(
-      this.camera,
-      this.renderer.domElement,
-    );
-    this.cameraViewControls.movementSpeed = 1.15;
-    this.cameraViewControls.domElement = this.renderer.domElement;
-    this.cameraViewControls.rollSpeed = Math.PI / 180;
-    this.cameraViewControls.autoForward = false;
-    this.cameraViewControls.dragToLook = true;
-    this.cameraViewControls.enabled = true;
+    // FreeCam math + listeners now live in hooks/useFreeCam.ts; the
+    // editor reads `freeCamState` (set by that hook) on every render.
 
     this.control = new TransformControls(this.camera, this.renderer.domElement);
     this.control.space = "world"; // Default to world space for translate mode
@@ -561,7 +560,7 @@ class Editor {
     this.mouse_controls = new MouseControls(
       this.camera,
       this.get_camera_person_mode.bind(this),
-      this.cameraViewControls,
+      this.freeCamState,
       this.lockControls,
       this.camera_last_pos,
       this.selectedCanvas,
@@ -656,22 +655,16 @@ class Editor {
     document.body.appendChild(this.stats.dom);
   }
 
+  // Track whether the cursor is currently over the viewport canvas.
+  // useFreeCam owns the actual input listeners, but a few sites
+  // (e.g. keybinds_controls.ts) still consult `selectedCanvas`.
   private mouseOverEventHandler(event: MouseEvent) {
-    if (this.cameraViewControls) {
-      if (
-        event.target instanceof HTMLCanvasElement ||
-        (event.target as HTMLElement).id == "letterbox"
-      ) {
-        this.cameraViewControls.enabled = true;
-        this.selectedCanvas = true;
-        this.focused = true;
-      } else {
-        this.cameraViewControls.reset();
-        this.focused = false;
-        this.cameraViewControls.enabled = false;
-        this.selectedCanvas = false;
-      }
-    }
+    const target = event.target;
+    const onCanvas =
+      target instanceof HTMLCanvasElement ||
+      (target instanceof HTMLElement && target.id === "letterbox");
+    this.selectedCanvas = onCanvas;
+    this.focused = onCanvas;
   }
 
   public enableFreeCamControls() {
@@ -1172,12 +1165,32 @@ class Editor {
       }
     }
 
-    this.cameraViewControls?.update(5 * delta_time);
+    if (this.freeCamState && this.camera) {
+      const moved = freeCamFrameTick(this.camera, this.freeCamState, 5 * delta_time);
+      // Mirror the active camera's transform back into the cameras
+      // signal so PromptBox3D and the camera-list UI stay in sync.
+      // (Bridge signal: retire when PromptBox3D takes store callbacks.)
+      if (moved && selectedCameraId.value) {
+        const lookAt = lookAtFromCamera(this.camera);
+        const pos = this.camera.position;
+        const rot = this.camera.rotation;
+        cameras.value = cameras.value.map((cam) =>
+          cam.id === selectedCameraId.value
+            ? {
+                ...cam,
+                position: { x: pos.x, y: pos.y, z: pos.z },
+                rotation: { x: rot.x, y: rot.y, z: rot.z },
+                lookAt: { x: lookAt.x, y: lookAt.y, z: lookAt.z },
+              }
+            : cam,
+        );
+      }
+    }
     this.activeScene.shader_objects.forEach((shader) => {
       shader.material.uniforms["time"].value += 0.5 * delta_time;
     });
 
-    if (this.cameraViewControls && this.camera_person_mode) {
+    if (this.camera_person_mode) {
       if (this.cam_obj && this.camera) {
         // Without a timeline scrubber, edits in camera-person mode write
         // back into cam_obj rather than copying out of it.
@@ -1268,7 +1281,6 @@ class Editor {
     this.startRenderLoop();
     this.sceneManager?.attachEventListeners();
     this.enableFreeCamControls();
-    this.cameraViewControls?.attachEventListeners();
     console.log("3D Editor Engine remounted");
   }
 
@@ -1277,7 +1289,6 @@ class Editor {
     this.stopRenderLoop();
     this.sceneManager?.detachEventListeners();
     this.disableFreeCamControls();
-    this.cameraViewControls?.detachEventListeners();
 
     // Fix: dispose 3D contexts
     this.renderer?.dispose();

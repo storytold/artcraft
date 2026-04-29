@@ -117,7 +117,9 @@ export class SceneUtils {
 
   switchCameraView() {
     this.editor.camera_person_mode = !this.editor.camera_person_mode;
-    this.editor.cameraViewControls?.reset();
+    if (this.editor.freeCamState) {
+      this.editor.freeCamState.velocity.set(0, 0, 0);
+    }
     if (this.editor.cam_obj) {
       if (this.editor.camera_person_mode && this.editor.camera) {
         this.editor.last_cam_pos.copy(this.editor.camera.position);
@@ -131,9 +133,8 @@ export class SceneUtils {
             this.editor.lockControls.getObject(),
           );
         }
-        if (this.editor.cameraViewControls) {
-          this.editor.cameraViewControls.enabled = true;
-        }
+        // useFreeCam reads editorState from the store and enables
+        // itself when CAMERA_VIEW; nothing to do here.
         this.editor.cam_obj.scale.set(0, 0, 0);
 
         this.removeTransformControls();

@@ -12,7 +12,8 @@ import {
 } from "three/examples/jsm/Addons.js";
 import { TransformControls } from "./TransformControls";
 import { SceneManager, SceneObject } from "./scene_manager_api";
-import { FreeCam, isPointerLockSupported } from "./free_cam";
+import { isPointerLockSupported } from "./browserChecks";
+import type { FreeCamControlState } from "./cameraMath";
 import { FKHelper } from "./KinHelpers/FKHelper";
 import { Euler } from "three";
 
@@ -81,7 +82,7 @@ export class MouseControls {
   setSelected: Function;
   sceneManager: SceneManager | undefined;
   private isProcessing: boolean = false;
-  private cameraViewControls: FreeCam;
+  private cameraViewControls: FreeCamControlState | null;
   private isMouseClicked: boolean = false;
   private isMovable: Function;
   enable_stats: Function;
@@ -95,7 +96,7 @@ export class MouseControls {
   constructor(
     camera: THREE.PerspectiveCamera,
     camera_person_mode: boolean,
-    cameraViewControls: FreeCam,
+    cameraViewControls: FreeCamControlState | null,
     lockControls: PointerLockControls | undefined,
     camera_last_pos: THREE.Vector3,
     selectedCanvas: boolean,
@@ -437,12 +438,14 @@ export class MouseControls {
       event.stopPropagation();
     }
 
-    if (event.shiftKey) {
-      this.cameraViewControls.movementSpeed = 3;
-    } else if (event.altKey) {
-      this.cameraViewControls.movementSpeed = 0.1;
-    } else {
-      this.cameraViewControls.movementSpeed = 0.75;
+    if (this.cameraViewControls) {
+      if (event.shiftKey) {
+        this.cameraViewControls.movementSpeed = 3;
+      } else if (event.altKey) {
+        this.cameraViewControls.movementSpeed = 0.1;
+      } else {
+        this.cameraViewControls.movementSpeed = 0.75;
+      }
     }
 
     if (event.key === "Escape") {
