@@ -597,9 +597,6 @@ class Editor {
       this.mouse_controls.sceneManager = this.sceneManager;
     }
 
-    // Attach freecam state controller
-    this.mouseOverEventHandler = this.mouseOverEventHandler.bind(this);
-
     // Add spark renderer as a child of the camera
     // this.activeScene.scene.add(this.sparkRenderer);
     // this.camera?.add(this.sparkRenderer);
@@ -655,25 +652,6 @@ class Editor {
     document.body.appendChild(this.stats.dom);
   }
 
-  // Track whether the cursor is currently over the viewport canvas.
-  // useFreeCam owns the actual input listeners, but a few sites
-  // (e.g. keybinds_controls.ts) still consult `selectedCanvas`.
-  private mouseOverEventHandler(event: MouseEvent) {
-    const target = event.target;
-    const onCanvas =
-      target instanceof HTMLCanvasElement ||
-      (target instanceof HTMLElement && target.id === "letterbox");
-    this.selectedCanvas = onCanvas;
-    this.focused = onCanvas;
-  }
-
-  public enableFreeCamControls() {
-    document.addEventListener("mouseover", this.mouseOverEventHandler);
-  }
-
-  public disableFreeCamControls() {
-    document.removeEventListener("mouseover", this.mouseOverEventHandler);
-  }
 
   // Captures the scene without the grid
   public snapShotOfCurrentFrame(shouldDownload: boolean = true) {
@@ -1280,7 +1258,6 @@ class Editor {
     this.isMounted = true;
     this.startRenderLoop();
     this.sceneManager?.attachEventListeners();
-    this.enableFreeCamControls();
     console.log("3D Editor Engine remounted");
   }
 
@@ -1288,7 +1265,6 @@ class Editor {
     setIs3DSceneLoaded(false);
     this.stopRenderLoop();
     this.sceneManager?.detachEventListeners();
-    this.disableFreeCamControls();
 
     // Fix: dispose 3D contexts
     this.renderer?.dispose();
