@@ -3,16 +3,13 @@
   "include": [],
   "references": [
     {
-      "path": "../../analytics/google-analytics"
-    },
-    {
-      "path": "../modal"
-    },
-    {
       "path": "../../tauri-utils"
     },
     {
       "path": "../../model-list"
+    },
+    {
+      "path": "../promptbox"
     },
     {
       "path": "../../state/subscription"
@@ -33,10 +30,10 @@
       "path": "../../soundboard"
     },
     {
-      "path": "../../tauri-events"
+      "path": "../input"
     },
     {
-      "path": "../input"
+      "path": "../../tauri-events"
     },
     {
       "path": "../login-modal"
@@ -45,13 +42,19 @@
       "path": "../../api"
     },
     {
-      "path": "../button"
+      "path": "../../analytics/google-analytics"
     },
     {
       "path": "../label"
     },
     {
       "path": "../../tauri-api"
+    },
+    {
+      "path": "../button"
+    },
+    {
+      "path": "../modal"
     },
     {
       "path": "./tsconfig.lib.json"

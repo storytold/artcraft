@@ -154,7 +154,7 @@ export const PromptBoxVideo = ({
     if (charactersLoaded) return;
     const api = new CharactersApi();
     api
-      .ListCharacters()
+      .ListAllCharacters()
       .then((res) => {
         if (res.success && res.data) {
           storeSetCharacters(

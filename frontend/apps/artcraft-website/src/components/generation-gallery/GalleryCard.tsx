@@ -13,7 +13,7 @@ import {
 } from "@fortawesome/pro-solid-svg-icons";
 import { PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "../toast/toast";
 import { downloadMediaFile } from "../../lib/download-media";
 import {
   getModelCreatorIconPath,

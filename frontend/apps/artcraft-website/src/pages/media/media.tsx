@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "../../components/toast/toast";
 import { MediaFilesApi, PromptsApi, type UserInfo } from "@storyteller/api";
 import { addCorsParam, PLACEHOLDER_IMAGES } from "@storyteller/common";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";

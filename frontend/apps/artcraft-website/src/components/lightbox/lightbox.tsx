@@ -1,6 +1,6 @@
 import { Modal } from "@storyteller/ui-modal";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "../toast/toast";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { MediaFilesApi, PromptsApi, type UserInfo } from "@storyteller/api";

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import { Button } from "@storyteller/ui-button";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "../toast/toast";
 import { Gravatar } from "@storyteller/ui-gravatar";
 import type { UserInfo } from "@storyteller/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

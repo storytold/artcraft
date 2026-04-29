@@ -1,5 +1,5 @@
 import { addCorsParam } from "@storyteller/common";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "../components/toast/toast";
 
 const EXT_BY_MEDIA_CLASS: Record<string, string> = {
   image: "png",

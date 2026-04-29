@@ -4,7 +4,7 @@ import { Button } from "@storyteller/ui-button";
 import { faCoins } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { BillingApi } from "@storyteller/api";
-import { toast } from "@storyteller/ui-toaster";
+import { toast } from "./toast/toast";
 
 interface CreditPack {
   id: string;
