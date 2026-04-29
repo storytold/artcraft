@@ -14,7 +14,6 @@ import { outlinerIsShowing } from "~/pages/PageScene/signals/outliner/outliner";
 import { ButtonDropdown } from "@storyteller/ui-button-dropdown";
 import { Input } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
-import { TestFeaturesButtons } from "./TestFeaturesButtons";
 import { LoadUserScenes } from "./LoadUserScenes";
 import { getCurrentLocationWithoutParams, isNumberString } from "~/utilities";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
@@ -296,8 +295,6 @@ export const ControlsTopButtons = () => {
           Shortcuts
         </Button>
       </div>
-      <TestFeaturesButtons debug={false} />
-
       <Modal
         isOpen={shortcutsIsShowing}
         onClose={() => setShortcutsIsShowing(false)}

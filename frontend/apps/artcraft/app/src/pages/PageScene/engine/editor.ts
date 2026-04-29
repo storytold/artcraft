@@ -17,7 +17,6 @@ import { EditorStates, CameraAspectRatio } from "~/pages/PageScene/enums";
 import { AssetType, ClipGroup } from "~/enums";
 import { XYZ } from "../datastructures/common";
 import { SceneUtils } from "./helper";
-import { VideoGeneration } from "./video_generation";
 import { MouseControls } from "./keybinds_controls";
 import { SaveManager } from "./save_manager";
 import {
@@ -149,7 +148,6 @@ class Editor {
   camera_name: string;
 
   utils: SceneUtils;
-  videoGeneration: VideoGeneration;
   mouse_controls: MouseControls | undefined;
   save_manager: SaveManager;
 
@@ -256,7 +254,6 @@ class Editor {
     this.render_height = this.getRenderDimensions().height;
 
     this.utils = new SceneUtils(this, this.activeScene);
-    this.videoGeneration = new VideoGeneration(this);
     this.save_manager = new SaveManager(this);
 
     // Scene State
@@ -1139,20 +1136,6 @@ class Editor {
     }
   }
 
-  async useCachedMediaTokens(): Promise<boolean> {
-    // if the preprecessing switch is not the same then we need to rerender
-    if (
-      this.videoGeneration.last_position_of_preprocessing !=
-      this.engine_preprocessing
-    ) {
-      return false;
-    }
-    // this is slower to do so do this last.
-    const checksum = await this.save_manager.computeSceneChecksum();
-    const decision = this.videoGeneration.shouldRenderScenesAgain(checksum);
-    return decision;
-  }
-
   async renderSingleFrame() {
     //console.timeEnd("Single Frame Time");
     //console.time("Single Frame Time");
@@ -1327,98 +1310,6 @@ class Editor {
     const next = store.transformSpace === "world" ? "local" : "world";
     store.setTransformSpace(next);
     this.control.space = next;
-  }
-
-  async stopPlaybackAndUploadVideo() {
-    await this.videoGeneration.stopPlaybackAndUploadVideo();
-  }
-
-  async switchPreview() {
-    if (!this.switchPreviewToggle) {
-      this.switchPreviewToggle = true;
-      usePageSceneStore.getState().setEditorState(EditorStates.PREVIEW);
-      await this.generateFrame();
-    }
-  }
-
-  switchEdit() {
-    if (
-      this.switchPreviewToggle &&
-      this.canvasRenderCamReference &&
-      this.rawRenderPass
-    ) {
-      this.switchPreviewToggle = false;
-      usePageSceneStore.getState().setEditorState(EditorStates.EDIT);
-      setTimeout(() => {
-        // if (!this.canvasRenderCamReference) {
-        //   this.canvasRenderCamReference =
-        //     document.getElementById("camera-view");
-        // }
-        this.camViewCanvasMayReset();
-        // this.rawRenderer = new THREE.WebGLRenderer({
-        //   antialias: true,
-        //   canvas: this.canvasRenderCamReference || undefined,
-        //   preserveDrawingBuffer: true,
-        // });
-        // this._configurePostProcessingRaw();
-
-        if (this.camera_person_mode) {
-          this.switchCameraView();
-        }
-        this.activeScene.renderMode(false);
-      }, 10);
-    }
-  }
-
-  async generateFrame() {
-    this.videoGeneration.generateFrame();
-  }
-
-  // This initializes the generation of a video render scene is where the core work happens
-  async generateVideo() {
-    if (await this.checkAndUseCache()) {
-      console.log("Generating Video: Checking Cache");
-      await this.videoGeneration.handleCachedEnqueue();
-      return;
-    }
-
-    if (this.rendering) {
-      return;
-    }
-
-    this.showLoading();
-    this.rendering = true;
-
-    console.log("Running without Cache");
-
-    this.togglePlayback();
-    this.render_timer = 0;
-    this.activeScene.renderMode(this.rendering);
-    if (this.activeScene.hot_items) {
-      this.activeScene.hot_items.forEach((element) => {
-        element.visible = false;
-      });
-    }
-    // TODO: timeline-driven playback was the trigger for frame capture;
-    // rewire VideoGeneration to drive its own frame loop.
-  }
-
-  // In first case where if it cached data this is for people to reprompt without leaving the app
-  // Skip performing any of this because we have not changed the scene, then exit the scene.
-  // This avoids any unknown state issues from the resulting code below and escapes all the random state changes.
-  // This sadly doesn't cover camera framing style changes,
-  // Reasoning is that there is no defined interface to get changes like that.
-  async checkAndUseCache(): Promise<boolean> {
-    if (
-      (await this.useCachedMediaTokens()) &&
-      this.processingHasFailed == false
-    ) {
-      console.log("Using Cache");
-      return true;
-    } else {
-      console.log("Not Using Cache");
-      return false;
-    }
   }
 
   togglePlayback() {

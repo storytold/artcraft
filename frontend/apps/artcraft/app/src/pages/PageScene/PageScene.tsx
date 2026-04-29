@@ -3,7 +3,6 @@ import { EngineProvider } from "./contexts/EngineContext";
 import { useActiveJobs } from "~/hooks/useActiveJobs";
 import { useBackgroundLoadingMedia } from "~/hooks/useBackgroundLoadingMedia";
 import { ErrorDialog } from "~/components";
-import { GenerateModals } from "~/pages/PageScene/comps/GenerateModals/GenerateModals";
 import { toast, Toaster } from "@storyteller/ui-toaster";
 import { EditorLoadingBar } from "./comps/EditorLoadingBar";
 import { useSignals } from "@preact/signals-react/runtime";
@@ -144,7 +143,6 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
         valuesSignal={precisionSelectorValues}
         selectedValueSignal={precisionSelectedValue}
       />
-      <GenerateModals />
       <ErrorDialog />
 
       <EditorLoadingBar />

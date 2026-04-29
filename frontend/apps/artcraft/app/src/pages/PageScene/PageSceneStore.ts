@@ -106,17 +106,11 @@ interface PageSceneState {
   // overlays
   editorLoader: EditorLoader;
   editorLetterBox: boolean;
-  previewSrc: string;
   showErrorDialog: boolean;
   errorDialogTitle: string;
   errorDialogMessage: string;
 
-  // movies
-  viewMyMovies: boolean;
-  generateMovieId: string;
-
   // generation / stylize
-  generateProgress: number;
   selectedArtStyle: ArtStyle;
   upscale: boolean;
   faceDetail: boolean;
@@ -173,16 +167,10 @@ interface PageSceneState {
   showEditorLoader: (message?: string) => void;
   hideEditorLoader: () => void;
   toggleEditorLetterBox: (next?: boolean) => void;
-  setPreviewSrc: (src: string) => void;
   setErrorDialog: (title: string, message: string) => void;
   setShowErrorDialog: (show: boolean) => void;
 
-  // movies
-  setViewMyMovies: (view: boolean) => void;
-  setGenerateMovieId: (id: string) => void;
-
   // generation / stylize
-  setGenerateProgress: (n: number) => void;
   setSelectedArtStyle: (style: ArtStyle) => void;
   setUpscale: (v: boolean) => void;
   setFaceDetail: (v: boolean) => void;
@@ -230,15 +218,10 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
 
   editorLoader: { isShowing: false, message: "Loading Editor Engine 🦊" },
   editorLetterBox: true,
-  previewSrc: "",
   showErrorDialog: false,
   errorDialogTitle: "Error!",
   errorDialogMessage: "Something went wrong.",
 
-  viewMyMovies: false,
-  generateMovieId: "",
-
-  generateProgress: -1,
   selectedArtStyle: styleList[0].type,
   upscale: false,
   faceDetail: true,
@@ -335,7 +318,6 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
     set((s) => ({
       editorLetterBox: next !== undefined ? next : !s.editorLetterBox,
     })),
-  setPreviewSrc: (src) => set({ previewSrc: src }),
   setErrorDialog: (title, message) =>
     set({
       errorDialogTitle: title,
@@ -344,12 +326,7 @@ export const usePageSceneStore = create<PageSceneState>((set, get) => ({
     }),
   setShowErrorDialog: (show) => set({ showErrorDialog: show }),
 
-  // movies actions
-  setViewMyMovies: (view) => set({ viewMyMovies: view }),
-  setGenerateMovieId: (id) => set({ generateMovieId: id }),
-
   // generation / stylize actions
-  setGenerateProgress: (n) => set({ generateProgress: n }),
   setSelectedArtStyle: (style) => set({ selectedArtStyle: style }),
   setUpscale: (v) => set({ upscale: v }),
   setFaceDetail: (v) => set({ faceDetail: v }),

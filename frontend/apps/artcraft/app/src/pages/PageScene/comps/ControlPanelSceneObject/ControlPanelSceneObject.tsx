@@ -15,7 +15,6 @@ import { InputVector } from "@storyteller/ui-input";
 import { Button } from "@storyteller/ui-button";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { twMerge } from "tailwind-merge";
-import { EditorStates } from "~/pages/PageScene/enums";
 import { sanitize } from "./utils/sanitize";
 import { objectMismatch } from "~/pages/PageScene/comps/ControlPanelSceneObject/utils/objectMismatch";
 import { XYZ } from "~/pages/PageScene/datastructures/common";
@@ -39,7 +38,6 @@ const defaultAxises: Record<string, string> = {
 
 export const ControlPanelSceneObject = () => {
   useSignals();
-  const editorState = usePageSceneStore((s) => s.editorState);
   const disableHotkeyInput = usePageSceneStore((s) => s.disableHotkeyInput);
   const enableHotkeyInput = usePageSceneStore((s) => s.enableHotkeyInput);
   const { isShowing, currentObject } = objectPanelSignals;
@@ -113,7 +111,7 @@ export const ControlPanelSceneObject = () => {
     setColor(editorEngine?.selected?.userData.color);
   }, [currentSceneObject, editorEngine]);
 
-  if (!currentSceneObject || editorState === EditorStates.PREVIEW) {
+  if (!currentSceneObject) {
     return null;
   }
 
