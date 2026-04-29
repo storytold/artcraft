@@ -17,7 +17,7 @@ import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
 import { SAOPass } from "three/addons/postprocessing/SAOPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
-import { EditorStates, CameraAspectRatio } from "~/pages/PageScene/enums";
+import { CameraAspectRatio } from "~/pages/PageScene/enums";
 import { AssetType, ClipGroup } from "~/enums";
 import { XYZ } from "../datastructures/common";
 import { SceneUtils } from "./helper";

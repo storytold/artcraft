@@ -1,5 +1,5 @@
-import { useCallback, useContext } from "react";
-import { camViewCanvasSignal, editorCanvasSignal, EngineContext } from "~/pages/PageScene/contexts/EngineContext";
+import { useCallback } from "react";
+import { camViewCanvasSignal, editorCanvasSignal } from "~/pages/PageScene/contexts/EngineContext";
 
 export const EditorCanvas = () => {
   const canvasCallbackRef = useCallback(
