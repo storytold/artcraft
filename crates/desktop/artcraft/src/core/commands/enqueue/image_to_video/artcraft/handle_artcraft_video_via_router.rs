@@ -15,6 +15,8 @@ use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismat
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
+use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
+use artcraft_router::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
@@ -60,24 +62,17 @@ pub(super) async fn handle_artcraft_video_via_router(
     negative_prompt: None,
   };
 
-  let plan = router_request.build()?;
-
-  info!("Video Generation Plan: {:?}", plan);
-
-  let response = match plan.generate_video(&client).await {
-    Ok(resp) => {
-      info!("Successfully enqueued.");
-      resp
-    }
-    Err(err) => {
-      error!("Failed to enqueue: {:?}", err);
-      return Err(GenerateError::from(err));
-    }
+  let response = if router_request.use_new_builder() {
+    info!("Building request for artcraft_router (v2 pipeline)...");
+    generate_via_v2(router_request, &client).await?
+  } else {
+    info!("Building request for artcraft_router (v1 pipeline)...");
+    generate_via_v1(router_request, &client).await?
   };
 
   let job_id = response.get_artcraft_payload()
-      .map(|p| p.inference_job_token.to_string())
-      .ok_or(GenerateError::ResponseHadNoJobTokens)?;
+    .map(|p| p.inference_job_token.to_string())
+    .ok_or(GenerateError::ResponseHadNoJobTokens)?;
 
   Ok(TaskEnqueueSuccess {
     task_type: TaskType::VideoGeneration,
@@ -85,4 +80,44 @@ pub(super) async fn handle_artcraft_video_via_router(
     provider: GenerationProvider::Artcraft,
     provider_job_id: Some(job_id),
   })
+}
+
+/// V1 pipeline: build → plan → generate_video.
+async fn generate_via_v1(
+  router_request: GenerateVideoRequestBuilder,
+  client: &RouterClient,
+) -> Result<GenerateVideoResponse, GenerateError> {
+  let plan = router_request.build()?;
+
+  let response = plan.generate_video(client).await.map_err(|err| {
+    error!("V1 failed to enqueue: {:?}", err);
+    GenerateError::from(err)
+  })?;
+
+  info!("V1 successfully enqueued.");
+  Ok(response)
+}
+
+/// V2 pipeline: build2 → send_request (Artcraft skips draft phase).
+async fn generate_via_v2(
+  router_request: GenerateVideoRequestBuilder,
+  client: &RouterClient,
+) -> Result<GenerateVideoResponse, GenerateError> {
+  let draft_or_request = router_request.build2()?;
+
+  let request = match draft_or_request {
+    VideoGenerationDraftOrRequest::Request(r) => r,
+    VideoGenerationDraftOrRequest::Draft(_) => {
+      error!("Unexpected Draft variant for Artcraft provider");
+      return Err(GenerateError::NotYetImplemented("Artcraft provider should not produce a draft request".to_string()));
+    }
+  };
+
+  let response = request.send_request(client).await.map_err(|err| {
+    error!("V2 failed to enqueue: {:?}", err);
+    GenerateError::from(err)
+  })?;
+
+  info!("V2 successfully enqueued.");
+  Ok(response)
 }
