@@ -220,6 +220,18 @@ const Landing3 = () => {
   // Separate progress for the character — extends past the text-reveal end so
   // the character keeps walking and exits frame as the user scrolls past.
   const characterProgressRef = useRef(0);
+  // Knight cinema — full-bleed scroll-scrubbed video framed by letterbox bars
+  // that slide in from the top and bottom. Bars carry meta (brand label, scene
+  // label, scroll-driven timecode + progress line).
+  const knightVideoRef = useRef<HTMLVideoElement>(null);
+  const knightTopBarRef = useRef<HTMLDivElement>(null);
+  const knightBottomBarRef = useRef<HTMLDivElement>(null);
+  const knightProgressBarRef = useRef<HTMLDivElement>(null);
+  const knightTimecodeRef = useRef<HTMLSpanElement>(null);
+  // Pause flag for the manifesto Three.js render loop. Flipped to `true` once
+  // the character has walked off frame so the GPU isn't painting a hidden
+  // canvas during the video phase — significant savings on high-DPI displays.
+  const characterPausedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -334,7 +346,11 @@ const Landing3 = () => {
         });
       });
 
-      // Manifesto: pin the section, reveal words sequentially as the user scrolls
+      // Manifesto: pin the section across a long scroll. Phase 1 reveals the
+      // words; phase 2 holds the fully-revealed manifesto frozen in place;
+      // phase 3 wipes a knight video over the scene with a circular clip-path;
+      // phase 4 scroll-scrubs the video from start to end. Once the section
+      // unsticks (after phase 4) the page resumes normal scroll.
       const manifestoSection = document.querySelector<HTMLElement>(
         "[data-manifesto-section]",
       );
@@ -343,17 +359,32 @@ const Landing3 = () => {
       );
       if (manifestoSection && manifestoWords.length > 0) {
         gsap.set(manifestoWords, { y: 6 });
+
+        const knightVideo = knightVideoRef.current;
+        const knightTopBar = knightTopBarRef.current;
+        const knightBottomBar = knightBottomBarRef.current;
+        const knightProgressBar = knightProgressBarRef.current;
+        const knightTimecode = knightTimecodeRef.current;
+        if (knightVideo) gsap.set(knightVideo, { opacity: 0 });
+        if (knightTopBar) gsap.set(knightTopBar, { yPercent: -100 });
+        if (knightBottomBar) gsap.set(knightBottomBar, { yPercent: 100 });
+
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: manifestoSection,
             start: "top top",
             end: "bottom bottom",
-            scrub: 1.2,
+            // Tight scrub so the video frame tracks scroll position
+            // immediately — high values cause the video to keep advancing
+            // for ~1s after Lenis stops, which reads as the frame "lagging."
+            scrub: 0.01,
             onUpdate: (self) => {
               manifestoProgressRef.current = self.progress;
             },
           },
         });
+
+        // Phase 1 — reveal the manifesto words sequentially.
         manifestoWords.forEach((word, i) => {
           tl.to(
             word,
@@ -361,22 +392,105 @@ const Landing3 = () => {
             i * 0.5,
           );
         });
-        // Hold buffer after the last word — pushes the text-reveal completion
-        // earlier in scroll progress so the user gets a beat with the fully
-        // revealed manifesto + character mid-frame before the section starts
-        // unsticking and scrolling away.
+
+        // Phase 2 — hold the fully-revealed manifesto frozen so the user gets
+        // a beat to read it before the transition triggers.
         tl.to({}, { duration: 4 });
 
-        // Character traversal: spans from when the section first enters
-        // viewport to when it fully exits, so the character keeps walking
-        // (and animating) past the manifesto reveal until it's off-screen.
+        // Phase 2b — fade the manifesto text out so the stage is clear before
+        // the knight video slides in.
+        const manifestoH2 = manifestoSection.querySelector<HTMLElement>("h2");
+        if (manifestoH2) {
+          tl.to(
+            manifestoH2,
+            { opacity: 0, duration: 1.5, ease: "power2.in" },
+            ">",
+          );
+        }
+
+        // Brief empty beat between text exit and video entrance.
+        tl.to({}, { duration: 0.3 });
+
+        // Phase 3 — letterbox bars slide in from off-screen edges, framing
+        // the cinema. Video fades in slightly after the bars start moving so
+        // the bars register as the framing element first.
+        if (knightTopBar && knightBottomBar) {
+          tl.to(
+            [knightTopBar, knightBottomBar],
+            { yPercent: 0, duration: 4, ease: "power3.out" },
+            ">",
+          );
+        }
+        if (knightVideo) {
+          tl.to(
+            knightVideo,
+            { opacity: 1, duration: 3, ease: "power2.out" },
+            "<+=0.5",
+          );
+        }
+
+        // Phase 4 — scroll-scrub the knight video. GSAP can't tween a video
+        // element directly, so we tween a proxy `t` from 0→1 and write
+        // currentTime each frame. The same onUpdate keeps the bottom-bar
+        // timecode + progress line in sync with the scrub.
+        if (knightVideo) {
+          const videoProxy = { t: 0 };
+          const formatTC = (s: number) => {
+            const safe = Number.isFinite(s) ? Math.max(0, s) : 0;
+            const m = Math.floor(safe / 60);
+            const sec = Math.floor(safe % 60);
+            return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+          };
+          tl.to(
+            videoProxy,
+            {
+              t: 0.999,
+              duration: 22,
+              ease: "none",
+              onUpdate: () => {
+                if (!knightVideo.duration) return;
+                const time = videoProxy.t * knightVideo.duration;
+                knightVideo.currentTime = time;
+                if (knightTimecode) {
+                  knightTimecode.textContent = `${formatTC(time)} / ${formatTC(knightVideo.duration)}`;
+                }
+                if (knightProgressBar) {
+                  knightProgressBar.style.width = `${videoProxy.t * 100}%`;
+                }
+              },
+            },
+            ">",
+          );
+        }
+
+        // Character traversal — finishes within the first ~30% of section
+        // scroll so the figure has walked off frame before the knight reveal
+        // begins. Without this clamp, the longer section would slow the walk
+        // to a crawl.
         ScrollTrigger.create({
           trigger: manifestoSection,
           start: "top top",
           end: "bottom top",
-          scrub: 1.2,
+          scrub: 0.3,
           onUpdate: (self) => {
-            characterProgressRef.current = self.progress;
+            characterProgressRef.current = Math.min(self.progress / 0.3, 1);
+          },
+        });
+
+        // Pause the Three.js render loop once the character has walked off
+        // frame and is fully covered by the letterbox video. Saves the GPU
+        // from painting a hidden canvas at 2× DPR for the rest of the section
+        // — biggest perf win on 1440p+ / Retina displays. onEnter/onLeaveBack
+        // fire only at the threshold (not on every scroll frame), so this
+        // costs nothing in steady-state scrolling.
+        ScrollTrigger.create({
+          trigger: manifestoSection,
+          start: () => `top+=${window.innerHeight * 1.8} top`,
+          onEnter: () => {
+            characterPausedRef.current = true;
+          },
+          onLeaveBack: () => {
+            characterPausedRef.current = false;
           },
         });
       }
@@ -582,11 +696,12 @@ const Landing3 = () => {
         </section>
       )}
       {!isMobile && (
-        // Desktop: sticky scroll-reveal + 3D character walking across.
+        // Desktop: sticky scroll-reveal + 3D character walking across, then a
+        // circular wipe to the scroll-scrubbed knight video.
         <section
           data-manifesto-section
           className="relative"
-          style={{ height: "220vh" }}
+          style={{ height: "600vh" }}
         >
           <div
             className="flex items-center justify-center overflow-hidden bg-[#101014]"
@@ -608,7 +723,10 @@ const Landing3 = () => {
                 className="absolute inset-0 w-full h-full"
               />
             </div>
-            <ManifestoThreeBackground progressRef={characterProgressRef} />
+            <ManifestoThreeBackground
+              progressRef={characterProgressRef}
+              pausedRef={characterPausedRef}
+            />
             <h2
               className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 text-center text-2xl sm:text-4xl md:text-5xl lg:text-[60px] tracking-[-0.035em] font-semibold text-white"
               style={{
@@ -628,11 +746,68 @@ const Landing3 = () => {
                 </span>
               ))}
             </h2>
+            {/* Knight cinema — full-bleed scroll-scrubbed video framed by
+                letterbox bars that slide in from the top and bottom. Bars
+                carry meta (brand label up top; scene label + scrub timecode
+                + progress line below). Removes the "video card on a flat bg"
+                problem by making the whole viewport the cinema screen. */}
+            <div
+              aria-hidden
+              className="absolute inset-0 z-20 pointer-events-none"
+            >
+              {/* Full-bleed video — fills the viewport edge-to-edge. The
+                  bars sit on top of the video's top/bottom edges, so the
+                  visible band is effectively a wide cinematic crop. */}
+              <video
+                ref={knightVideoRef}
+                src="/videos/knight-walk-scrub.mp4"
+                muted
+                playsInline
+                preload="auto"
+                className="absolute inset-0 w-full h-full object-cover bg-black"
+              />
+
+              {/* Top letterbox bar */}
+              <div
+                ref={knightTopBarRef}
+                className="absolute top-0 inset-x-0 h-[12vh] bg-black flex items-end px-6 sm:px-10 pb-3 sm:pb-4 will-change-transform"
+              >
+                <span className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] uppercase tracking-[0.32em] font-semibold text-white/55">
+                  <span className="inline-block h-1 w-1 rounded-full bg-primary" />
+                  SEEDANCE 2.0
+                </span>
+              </div>
+
+              {/* Bottom letterbox bar */}
+              <div
+                ref={knightBottomBarRef}
+                className="absolute bottom-0 inset-x-0 h-[12vh] bg-black flex items-start justify-between gap-4 px-6 sm:px-10 pt-3 sm:pt-4 will-change-transform"
+              >
+                <span className="hidden sm:inline-flex items-center text-[10px] sm:text-[11px] uppercase tracking-[0.32em] font-semibold text-white/55">
+                  Knight Sneaking IN THE CASTLE
+                </span>
+                <div className="ml-auto flex items-center gap-3 sm:gap-4 shrink-0">
+                  <div className="relative w-28 sm:w-48 h-px bg-white/15">
+                    <div
+                      ref={knightProgressBarRef}
+                      className="absolute inset-y-0 left-0 bg-white/70"
+                      style={{ width: "0%" }}
+                    />
+                  </div>
+                  <span
+                    ref={knightTimecodeRef}
+                    className="text-[10px] sm:text-[11px] tabular-nums text-white/65 min-w-[68px] sm:min-w-[80px] text-right"
+                  >
+                    00:00 / 00:00
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       )}
 
-      <section id="features" className="relative px-4 sm:px-8 pt-12 sm:pt-20">
+      <section id="features" className="relative px-4 sm:px-8 pt-12 sm:pt-32">
         <div className="max-w-[1100px] mx-auto text-center" data-reveal>
           <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
             Crafting features

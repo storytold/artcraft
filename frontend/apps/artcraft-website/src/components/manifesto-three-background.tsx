@@ -5,10 +5,18 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 interface ManifestoThreeBackgroundProps {
   progressRef: React.RefObject<number>;
+  /**
+   * When `true`, the render loop skips the expensive `renderer.render` +
+   * `mixer.update` calls. Used to halt GPU work once the character has walked
+   * off screen and the canvas is fully covered by other UI — saves significant
+   * paint cost on high-DPI / large displays.
+   */
+  pausedRef?: React.RefObject<boolean>;
 }
 
 export const ManifestoThreeBackground = ({
   progressRef,
+  pausedRef,
 }: ManifestoThreeBackgroundProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -215,6 +223,14 @@ export const ManifestoThreeBackground = ({
     // `const dt = (now - lastFrame) / 1000; lastFrame = now;` for mixer.update.
     const start = performance.now();
     const tick = () => {
+      // Skip the entire render pass when the parent flags us as paused.
+      // We still loop rAF (cheap) so resuming is instantaneous, but the
+      // expensive WebGL render + mixer update are gated. Saves 5-15ms per
+      // frame on high-DPI / large displays once the character is off-screen.
+      if (pausedRef?.current) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
       const now = performance.now();
       const t = (now - start) / 1000;
 
