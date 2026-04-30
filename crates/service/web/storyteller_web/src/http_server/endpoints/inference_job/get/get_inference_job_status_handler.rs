@@ -28,6 +28,7 @@ use redis::{Commands, RedisResult};
 use redis_common::redis_keys::RedisKeys;
 use server_environment::ServerEnvironment;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::prompts::PromptToken;
 use utoipa::ToSchema;
 
 /// For certain jobs or job classes (eg. non-premium), we kill the jobs if the user hasn't
@@ -64,6 +65,9 @@ pub struct InferenceJobStatusResponsePayload {
 #[derive(Serialize, ToSchema)]
 pub struct RequestDetailsResponse {
   pub inference_category: InferenceCategory,
+
+  pub maybe_prompt_token: Option<PromptToken>,
+  
   pub maybe_model_type: Option<String>,
   pub maybe_model_token: Option<String>,
 
@@ -248,6 +252,7 @@ fn record_to_payload(
     job_token: record.job_token,
     request: RequestDetailsResponse {
       inference_category: record.request_details.inference_category,
+      maybe_prompt_token: record.request_details.maybe_prompt_token,
       maybe_model_type: maybe_filter_model_name(record.request_details.maybe_model_type.as_deref()),
       maybe_model_token: record.request_details.maybe_model_token,
       maybe_model_title: record.request_details.maybe_model_title,

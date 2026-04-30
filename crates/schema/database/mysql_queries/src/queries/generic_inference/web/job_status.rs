@@ -8,6 +8,7 @@ use enums::no_table::style_transfer::style_transfer_name::StyleTransferName;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
 /// Shared inference job status struct for several queries (list, get, batch get)
@@ -56,6 +57,9 @@ pub struct RequestDetails {
 
   /// Raw JSON payload of polymorphic inference args
   pub maybe_inference_args: Option<String>,
+
+  /// Prompt token linking this job to its prompt record.
+  pub maybe_prompt_token: Option<PromptToken>,
 
   /// For Comfy / Video Style Transfer jobs, this might include
   /// the name of the selected style.

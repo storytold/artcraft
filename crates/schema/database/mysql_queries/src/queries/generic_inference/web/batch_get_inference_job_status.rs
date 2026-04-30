@@ -5,14 +5,15 @@ use sqlx::pool::PoolConnection;
 use sqlx::{FromRow, MySql, MySqlPool, QueryBuilder, Row};
 
 use enums::by_table::generic_inference_jobs::frontend_failure_category::FrontendFailureCategory;
-use enums::traits::mysql_from_row::MySqlFromRow as _;
 use enums::by_table::generic_inference_jobs::inference_category::InferenceCategory;
 use enums::by_table::generic_inference_jobs::inference_job_product_category::InferenceJobProductCategory;
 use enums::common::job_status_plus::JobStatusPlus;
+use enums::traits::mysql_from_row::MySqlFromRow as _;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 use tokens::traits::mysql_token_from_row::MySqlTokenFromRow;
 
@@ -97,6 +98,7 @@ SELECT
     jobs.maybe_model_token,
     jobs.maybe_raw_inference_text,
     jobs.maybe_inference_args,
+    jobs.maybe_prompt_token,
 
     jobs.frontend_failure_category as maybe_frontend_failure_category,
     jobs.failure_reason,
@@ -266,6 +268,7 @@ fn raw_records_to_public_result(records: Vec<RawGenericInferenceJobStatus>) -> V
             maybe_model_title: maybe_model_title.map(|title| title.to_string()),
             maybe_raw_inference_text: record.maybe_raw_inference_text,
             maybe_inference_args: record.maybe_inference_args,
+            maybe_prompt_token: record.maybe_prompt_token,
             maybe_style_name,
           },
           maybe_result_details,
@@ -300,6 +303,7 @@ struct RawGenericInferenceJobStatus {
   pub maybe_model_token: Option<String>,
   pub maybe_raw_inference_text: Option<String>,
   pub maybe_inference_args: Option<String>,
+  pub maybe_prompt_token: Option<PromptToken>,
 
   pub maybe_result_entity_type: Option<String>,
   pub maybe_result_entity_token: Option<String>,
@@ -359,6 +363,7 @@ impl FromRow<'_, MySqlRow> for RawGenericInferenceJobStatus {
       maybe_model_token: row.try_get("maybe_model_token")?,
       maybe_raw_inference_text: row.try_get("maybe_raw_inference_text")?,
       maybe_inference_args: row.try_get("maybe_inference_args")?,
+      maybe_prompt_token: PromptToken::try_from_mysql_row_nullable(row, "maybe_prompt_token")?,
       maybe_result_entity_type: row.try_get("maybe_result_entity_type")?,
       maybe_result_entity_token: row.try_get("maybe_result_entity_token")?,
       maybe_result_batch_token: row.try_get("maybe_result_batch_token")?,
