@@ -11,14 +11,26 @@ import {
   faGrid2,
   faImages,
   faCalculator,
+  faExclamation,
+  faCheck,
 } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { signal } from "@preact/signals-react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { FilterMediaClasses } from "@storyteller/api";
-import { getCreatorIcon, ModelCreator, IMAGE_MODELS_BY_ID, VIDEO_MODELS_BY_ID, CommonAspectRatio, CommonResolution } from "@storyteller/model-list";
-import { useClassyModelSelectorStore, ModelPage } from "@storyteller/ui-model-selector";
-import { useCreditsState } from "@storyteller/credits";
+import {
+  getCreatorIcon,
+  ModelCreator,
+  IMAGE_MODELS_BY_ID,
+  VIDEO_MODELS_BY_ID,
+  CommonAspectRatio,
+  CommonResolution,
+} from "@storyteller/model-list";
+import {
+  useClassyModelSelectorStore,
+  ModelPage,
+} from "@storyteller/ui-model-selector";
+import { useCreditsState, type CreditsIconStatus } from "@storyteller/credits";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ProviderBillingModal } from "@storyteller/provider-billing-modal";
 import { ProviderSetupModal } from "@storyteller/provider-setup-modal";
@@ -51,9 +63,14 @@ import {
   useCostBreakdownModalStore,
   CreditsModal,
 } from "@storyteller/ui-pricing-modal";
-import { RefImage, RefVideo, RefAudio, usePromptImageStore, usePromptVideoStore } from "@storyteller/ui-promptbox";
+import {
+  RefImage,
+  RefVideo,
+  RefAudio,
+  usePromptImageStore,
+  usePromptVideoStore,
+} from "@storyteller/ui-promptbox";
 import type { Prompts } from "@storyteller/api";
-import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { useEffect, useRef, useState } from "react";
@@ -70,6 +87,7 @@ import { useImageTo3DStore } from "~/pages/PageImageTo3DObject/ImageTo3DStore";
 import { useImageTo3DWorldStore } from "~/pages/PageImageTo3DWorld/ImageTo3DWorldStore";
 import { useRemoveBackgroundStore } from "~/pages/PageRemoveBackground/RemoveBackgroundStore";
 import { TabId, useTabStore } from "~/pages/Stores/TabState";
+import { AUTH_STATUS } from "~/enums";
 import { authentication } from "~/signals";
 import { setLogoutStates } from "~/signals/authentication/utilities";
 import type { BaseSelectorImage } from "@storyteller/ui-pagedraw";
@@ -97,6 +115,7 @@ type SettingsSection =
   | "billing";
 
 const SWITCHER_THROTTLE_TIME = 500; // milliseconds
+const CREDITS_POLL_INTERVAL = 60_000; // milliseconds
 
 // NB: See `TabState` for the default tab.
 const appMenuTabs: MenuIconItem[] = [
@@ -122,6 +141,74 @@ const appMenuTabs: MenuIconItem[] = [
 
 export const topNavMediaId = signal<string>("");
 export const topNavMediaUrl = signal<string>("");
+
+const CreditsCoinWithStatus = ({
+  iconStatus,
+}: {
+  iconStatus: CreditsIconStatus;
+}) => {
+  const showBadge = iconStatus !== "hidden";
+
+  const badgeColorClass =
+    iconStatus === "failed"
+      ? "bg-red text-white"
+      : iconStatus === "recovered"
+        ? "bg-emerald-500 text-white"
+        : "bg-amber-400 text-black"; // 'slow'
+
+  const badgeIconDef = iconStatus === "recovered" ? faCheck : faExclamation;
+
+  const tooltipMessage =
+    iconStatus === "failed"
+      ? "Couldn't refresh your balance."
+      : iconStatus === "recovered"
+        ? "Balance up to date."
+        : "Refreshing your balance — current amount may not be up to date.";
+
+  const showRetry = iconStatus === "slow" || iconStatus === "failed";
+
+  const handleRetry = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log("TopBar: Retrying credits fetch");
+
+    void useCreditsState.getState().fetchFromServer();
+  };
+
+  return (
+    <Tooltip
+      position="bottom"
+      interactive
+      disabled={!showBadge}
+      content={
+        <div className="flex max-w-[220px] flex-col gap-2 text-xs text-base-fg">
+          <span>{tooltipMessage}</span>
+          {showRetry && (
+            <Button
+              variant="secondary"
+              className="h-7 self-start px-2 text-xs"
+              onClick={handleRetry}
+            >
+              Retry
+            </Button>
+          )}
+        </div>
+      }
+    >
+      <span className="relative inline-flex">
+        <FontAwesomeIcon icon={faCoins} className="text-primary" />
+        {showBadge && (
+          <span
+            className={`absolute -right-1.5 -top-1.5 flex h-3 w-3 items-center justify-center rounded-full ring-1 ring-ui-background ${badgeColorClass}`}
+          >
+            <FontAwesomeIcon icon={badgeIconDef} className="text-[7px]" />
+          </span>
+        )}
+      </span>
+    </Tooltip>
+  );
+};
 
 export const TopBar = ({ pageName }: Props) => {
   useSignals();
@@ -157,39 +244,33 @@ export const TopBar = ({ pageName }: Props) => {
   const [disableSwitcher, setDisableSwitcher] = useState(false);
   const switcherThrottle = useRef(false);
 
-  const creditsStore = useCreditsState();
-  const sumTotalCredits = creditsStore.totalCredits;
+  const sumTotalCredits = useCreditsState((s) => s.totalCredits);
+  const creditsIconStatus = useCreditsState((s) => s.iconStatus);
 
   // Just calling this function kills the app:
   const subscriptionStore = useSubscriptionState();
   const hasPaidPlan = subscriptionStore.hasPaidPlan();
 
-  const [isCreditsLoading, setIsCreditsLoading] = useState(true);
-
+  // Fetch credits + subscription on entering LOGGED_IN, then poll credits every
+  // 60s. Reading via getState() inside the effect keeps the dep array honest
+  // (the only real dep is the auth status). Earlier versions had a 1s setTimeout
+  // band-aid to outrun intermediate auth states; gating on LOGGED_IN replaces it.
+  const authStatus = authentication.status.value;
   useEffect(() => {
-    const t = setTimeout(() => {
-      Promise.all([
-        creditsStore.fetchFromServer(),
-        subscriptionStore.fetchFromServer(),
-      ])
-    }, 1000);
-    return () => clearTimeout(t);
-  }, []);
+    if (authStatus !== AUTH_STATUS.LOGGED_IN) return;
 
-  // Re-fetch credits & subscription whenever the user logs in and out
-  useEffect(() => {
-    setIsCreditsLoading(true);
-    const t = setTimeout(() => {
-      Promise.all([
-        creditsStore.fetchFromServer(),
-        subscriptionStore.fetchFromServer(),
-      ]).finally(() => setIsCreditsLoading(false));
-    }, 1000); // 1 second delay before fetching to make sure credits and subscription info loads
-    return () => clearTimeout(t);
-  }, [authentication.status.value]);
+    void useCreditsState.getState().fetchFromServer();
+    void useSubscriptionState.getState().fetchFromServer();
+
+    const interval = setInterval(() => {
+      void useCreditsState.getState().fetchFromServer();
+      console.log("TopBar: Polled credits");
+    }, CREDITS_POLL_INTERVAL);
+    return () => clearInterval(interval);
+  }, [authStatus]);
 
   useCreditsBalanceChangedEvent(async () => {
-    creditsStore.fetchFromServer();
+    useCreditsState.getState().fetchFromServer();
   });
 
   useSubscriptionPlanChangedEvent(async () => {
@@ -296,10 +377,18 @@ export const TopBar = ({ pageName }: Props) => {
             endFrameImage = { ...base, file: new File([], "recreate-ref") };
             break;
           case "vid_ref":
-            vidRefs.push({ ...base, file: new File([], "recreate-ref"), duration: 0 });
+            vidRefs.push({
+              ...base,
+              file: new File([], "recreate-ref"),
+              duration: 0,
+            });
             break;
           case "audioref":
-            audioRefs.push({ ...base, file: new File([], "recreate-ref"), duration: 0 });
+            audioRefs.push({
+              ...base,
+              file: new File([], "recreate-ref"),
+              duration: 0,
+            });
             break;
           default:
             // imgref, imgref_character, imgref_style, imgref_bg, imgsrc, vid_start_frame, imgmask
@@ -310,7 +399,8 @@ export const TopBar = ({ pageName }: Props) => {
 
       // Determine input mode from generation_mode or context image semantics
       const hasKeyframeSemantics = contextImages.some(
-        (ci) => ci.semantic === "vid_start_frame" || ci.semantic === "vid_end_frame",
+        (ci) =>
+          ci.semantic === "vid_start_frame" || ci.semantic === "vid_end_frame",
       );
       const inputMode: "keyframe" | "reference" =
         promptData.maybe_generation_mode === "keyframe" || hasKeyframeSemantics
@@ -383,10 +473,14 @@ export const TopBar = ({ pageName }: Props) => {
         }
         if (imgRefs.length > 0) imageStore.setReferenceImages(imgRefs);
         if (promptData.maybe_aspect_ratio) {
-          imageStore.setCommonAspectRatio(promptData.maybe_aspect_ratio as CommonAspectRatio);
+          imageStore.setCommonAspectRatio(
+            promptData.maybe_aspect_ratio as CommonAspectRatio,
+          );
         }
         if (promptData.maybe_resolution) {
-          imageStore.setCommonResolution(promptData.maybe_resolution as CommonResolution);
+          imageStore.setCommonResolution(
+            promptData.maybe_resolution as CommonResolution,
+          );
         }
 
         if (promptData.maybe_model_type) {
@@ -604,97 +698,91 @@ export const TopBar = ({ pageName }: Props) => {
 
           <div className="flex justify-end gap-2" data-tauri-drag-region>
             <div className="no-drag flex items-center gap-1.5">
-              {isCreditsLoading ? (
-                <LoadingSpinner className="mx-2 text-base-fg/50" />
-              ) : (
-                <>
-                  <PopoverMenu
-                    position="bottom"
-                    align="center"
-                    triggerIcon={
-                      <FontAwesomeIcon icon={faCoins} className="text-primary" />
-                    }
-                    triggerLabel={
-                      <span className="whitespace-nowrap text-sm font-medium">
-                        {sumTotalCredits} Credits
+              <PopoverMenu
+                position="bottom"
+                align="center"
+                triggerIcon={
+                  <CreditsCoinWithStatus iconStatus={creditsIconStatus} />
+                }
+                triggerLabel={
+                  <span className="whitespace-nowrap text-sm font-medium">
+                    {sumTotalCredits} Credits
+                  </span>
+                }
+                buttonClassName="h-[30px] px-2 ps-1.5 bg-transparent hover:bg-ui-controls/30 border-0 shadow-none"
+                panelClassName="mt-3 bg-ui-panel border border-ui-panel-border text-base-fg"
+              >
+                {(close) => (
+                  <div className="w-72 p-2.5 text-base-fg">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-sm font-medium text-base-fg/80">
+                        Your credit balance
                       </span>
-                    }
-                    buttonClassName="h-[30px] px-2 ps-1.5 bg-transparent hover:bg-ui-controls/30 border-0 shadow-none"
-                    panelClassName="mt-3 bg-ui-panel border border-ui-panel-border text-base-fg"
-                  >
-                    {(close) => (
-                      <div className="w-72 p-2.5 text-base-fg">
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 text-sm font-medium text-base-fg/80">
-                            Your credit balance
-                          </span>
-                          <button
-                            className="text-sm font-medium text-primary-400 transition-all hover:text-primary-300"
-                            onClick={() => {
-                              close();
-                              toggleCreditsModal();
-                            }}
-                          >
-                            Buy credits
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-2 text-4xl font-bold text-base-fg">
-                          <FontAwesomeIcon
-                            icon={faCoins}
-                            className="text-2xl text-primary"
-                          />
-                          {sumTotalCredits}
-                        </div>
+                      <button
+                        className="text-sm font-medium text-primary-400 transition-all hover:text-primary-300"
+                        onClick={() => {
+                          close();
+                          toggleCreditsModal();
+                        }}
+                      >
+                        Buy credits
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 text-4xl font-bold text-base-fg">
+                      <FontAwesomeIcon
+                        icon={faCoins}
+                        className="text-2xl text-primary"
+                      />
+                      {sumTotalCredits}
+                    </div>
 
-                        <button
-                          className="mt-2 flex items-center gap-1.5 text-xs text-base-fg/50 transition-colors hover:text-primary"
-                          onClick={() => {
-                            close();
-                            useCostBreakdownModalStore.getState().openModal();
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faCalculator} />
-                          Cost calculator
-                        </button>
-
-                        <div className="mt-3 flex gap-2">
-                          <Button
-                            variant="action"
-                            className="h-9 grow"
-                            onClick={() => {
-                              close();
-                              handleOpenBillingSettings();
-                            }}
-                          >
-                            See details
-                          </Button>
-                          <Button
-                            variant="primary"
-                            className="h-9 grow"
-                            onClick={() => {
-                              close();
-                              toggleSubscriptionModal();
-                            }}
-                            icon={faGem}
-                          >
-                            Support
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </PopoverMenu>
-
-                  {!hasPaidPlan && (
-                    <Button
-                      variant="primary"
-                      icon={faGem}
-                      onClick={toggleSubscriptionModal}
-                      className="h-[38px] shadow-md shadow-primary-500/50 transition-all duration-300 hover:shadow-md hover:shadow-primary-500/75"
+                    <button
+                      className="mt-2 flex items-center gap-1.5 text-xs text-base-fg/50 transition-colors hover:text-primary"
+                      onClick={() => {
+                        close();
+                        useCostBreakdownModalStore.getState().openModal();
+                      }}
                     >
-                      Support
-                    </Button>
-                  )}
-                </>
+                      <FontAwesomeIcon icon={faCalculator} />
+                      Cost calculator
+                    </button>
+
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="action"
+                        className="h-9 grow"
+                        onClick={() => {
+                          close();
+                          handleOpenBillingSettings();
+                        }}
+                      >
+                        See details
+                      </Button>
+                      <Button
+                        variant="primary"
+                        className="h-9 grow"
+                        onClick={() => {
+                          close();
+                          toggleSubscriptionModal();
+                        }}
+                        icon={faGem}
+                      >
+                        Support
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </PopoverMenu>
+
+              {!hasPaidPlan && (
+                <Button
+                  variant="primary"
+                  icon={faGem}
+                  onClick={toggleSubscriptionModal}
+                  className="h-[38px] shadow-md shadow-primary-500/50 transition-all duration-300 hover:shadow-md hover:shadow-primary-500/75"
+                >
+                  Support
+                </Button>
               )}
 
               <UploadImagesButton className="h-[38px] w-[38px]" />
