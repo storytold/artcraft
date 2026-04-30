@@ -383,7 +383,7 @@ const Landing3 = () => {
       />
 
       {/* HERO */}
-      <section className="relative pt-32 sm:pt-36 pb-20 sm:pb-24 px-4 sm:px-8 overflow-hidden">
+      <section className="relative pt-24 sm:pt-36 pb-20 sm:pb-24 px-4 sm:px-8 overflow-hidden">
         {/* Triangle pattern background with parallax */}
         <div
           aria-hidden
@@ -478,7 +478,7 @@ const Landing3 = () => {
 
           {/* Secondary: try in browser */}
           <div
-            className="flex items-center justify-center gap-3 mb-16 text-[13px] text-white/45"
+            className="flex items-center justify-center gap-3 mb-12 sm:mb-16 text-[13px] text-white/45"
             data-reveal
           >
             <span>or generate in your browser:</span>
@@ -534,54 +534,54 @@ const Landing3 = () => {
         </section>
       )}
       {!isMobile && (
-      // Desktop: sticky scroll-reveal + 3D character walking across.
-      <section
-        data-manifesto-section
-        className="relative"
-        style={{ height: "220vh" }}
-      >
-        <div
-          className="flex items-center justify-center overflow-hidden bg-[#101014]"
-          style={{ position: "sticky", top: 0, height: "100vh" }}
+        // Desktop: sticky scroll-reveal + 3D character walking across.
+        <section
+          data-manifesto-section
+          className="relative"
+          style={{ height: "220vh" }}
         >
           <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-0"
-            style={{
-              maskImage:
-                "radial-gradient(ellipse 70% 60% at 50% 40%, black 25%, transparent 80%)",
-              WebkitMaskImage:
-                "radial-gradient(ellipse 70% 60% at 50% 40%, black 25%, transparent 80%)",
-            }}
+            className="flex items-center justify-center overflow-hidden bg-[#101014]"
+            style={{ position: "sticky", top: 0, height: "100vh" }}
           >
-            <TruchetPattern
-              variant="landing"
-              intensity={0.5}
-              className="absolute inset-0 w-full h-full"
-            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-0"
+              style={{
+                maskImage:
+                  "radial-gradient(ellipse 70% 60% at 50% 40%, black 25%, transparent 80%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse 70% 60% at 50% 40%, black 25%, transparent 80%)",
+              }}
+            >
+              <TruchetPattern
+                variant="landing"
+                intensity={0.5}
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+            <ManifestoThreeBackground progressRef={characterProgressRef} />
+            <h2
+              className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 text-center text-2xl sm:text-4xl md:text-5xl lg:text-[60px] tracking-[-0.035em] font-semibold text-white"
+              style={{
+                lineHeight: 1.2,
+                textShadow:
+                  "0 2px 32px rgba(0,0,0,0.95), 0 0 60px rgba(0,0,0,0.8), 0 0 100px rgba(0,0,0,0.55), 0 0 160px rgba(0,0,0,0.35)",
+              }}
+            >
+              {MANIFESTO_WORDS.map((w, i) => (
+                <span
+                  key={i}
+                  data-manifesto-word
+                  className="inline-block opacity-15 will-change-[opacity,transform]"
+                >
+                  {w}
+                  {i < MANIFESTO_WORDS.length - 1 ? " " : ""}
+                </span>
+              ))}
+            </h2>
           </div>
-          <ManifestoThreeBackground progressRef={characterProgressRef} />
-          <h2
-            className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 text-center text-2xl sm:text-4xl md:text-5xl lg:text-[60px] tracking-[-0.035em] font-semibold text-white"
-            style={{
-              lineHeight: 1.2,
-              textShadow:
-                "0 2px 32px rgba(0,0,0,0.95), 0 0 60px rgba(0,0,0,0.8), 0 0 100px rgba(0,0,0,0.55), 0 0 160px rgba(0,0,0,0.35)",
-            }}
-          >
-            {MANIFESTO_WORDS.map((w, i) => (
-              <span
-                key={i}
-                data-manifesto-word
-                className="inline-block opacity-15 will-change-[opacity,transform]"
-              >
-                {w}
-                {i < MANIFESTO_WORDS.length - 1 ? " " : ""}
-              </span>
-            ))}
-          </h2>
-        </div>
-      </section>
+        </section>
       )}
 
       {/* FEATURES SECTION HEADER */}
