@@ -484,7 +484,10 @@ const Landing3 = () => {
           end: "bottom top",
           scrub: 0.3,
           onUpdate: (self) => {
-            characterProgressRef.current = Math.min(self.progress / 0.3, 1);
+            // Divisor controls how much of the section scroll the walk
+            // consumes. Higher = slower walk. 0.5 means the character
+            // traverses the screen across the first 50% of the section.
+            characterProgressRef.current = Math.min(self.progress / 0.5, 1);
           },
         });
 
@@ -493,10 +496,11 @@ const Landing3 = () => {
         // from painting a hidden canvas at 2× DPR for the rest of the section
         // — biggest perf win on 1440p+ / Retina displays. onEnter/onLeaveBack
         // fire only at the threshold (not on every scroll frame), so this
-        // costs nothing in steady-state scrolling.
+        // costs nothing in steady-state scrolling. Threshold is set just past
+        // where the character finishes its walk (50% of section scroll).
         ScrollTrigger.create({
           trigger: manifestoSection,
-          start: () => `top+=${window.innerHeight * 1.8} top`,
+          start: () => `top+=${window.innerHeight * 2.7} top`,
           onEnter: () => {
             characterPausedRef.current = true;
           },
