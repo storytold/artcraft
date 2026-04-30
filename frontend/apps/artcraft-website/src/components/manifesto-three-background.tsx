@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 interface ManifestoThreeBackgroundProps {
   progressRef: React.RefObject<number>;
@@ -102,19 +102,23 @@ export const ManifestoThreeBackground = ({
       envMapIntensity: 0.45,
     });
 
-    new FBXLoader().load(
-      "/3d-models/sneaking-forward.fbx",
-      (fbx) => {
+    new GLTFLoader().load(
+      "/3d-models/sneaking-forward.glb",
+      (gltf) => {
         if (cancelled) return;
 
-        // Mixamo defaults: ~100 unit tall, faces -Z. Scale to scene units
-        // and rotate so the character faces the direction of travel (+X).
-        fbx.scale.setScalar(0.035);
-        fbx.rotation.y = Math.PI / 2;
+        const root = gltf.scene;
 
-        // Override Mixamo's flat default materials with the scene's PBR look,
-        // and enable shadow casting so the figure grounds visually.
-        fbx.traverse((child) => {
+        // Mixamo defaults: ~100 unit tall, faces -Z. FBX → GLB conversions
+        // typically apply a 0.01 cm→m scale, so the GLB lands roughly 100×
+        // smaller than the FBX. Scale up to match the previous on-screen
+        // size and rotate so the character faces the direction of travel (+X).
+        root.scale.setScalar(3.5);
+        root.rotation.y = Math.PI / 2;
+
+        // Override default materials with the scene's PBR look, and enable
+        // shadow casting so the figure grounds visually.
+        root.traverse((child) => {
           const mesh = child as THREE.Mesh;
           if (mesh.isMesh) {
             mesh.material = characterMaterial;
@@ -122,12 +126,12 @@ export const ManifestoThreeBackground = ({
           }
         });
 
-        scene.add(fbx);
-        character = fbx;
+        scene.add(root);
+        character = root;
 
-        if (fbx.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(fbx);
-          const clip = fbx.animations[0];
+        if (gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(root);
+          const clip = gltf.animations[0];
           clipDuration = clip.duration;
           action = mixer.clipAction(clip);
           action.play();
@@ -136,7 +140,7 @@ export const ManifestoThreeBackground = ({
         }
       },
       undefined,
-      (err) => console.error("manifesto character load failed", err),
+      (err: unknown) => console.error("manifesto character load failed", err),
     );
 
     const clamp01 = (v: number) => THREE.MathUtils.clamp(v, 0, 1);
