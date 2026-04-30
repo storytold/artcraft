@@ -9,7 +9,6 @@ import Scene from "./scene.js";
 import { APIManager } from "./api_manager.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { CameraAspectRatio } from "~/pages/PageScene/enums";
-import { AssetType, ClipGroup } from "~/enums";
 import { XYZ } from "../datastructures/common";
 import { SceneUtils } from "./helper";
 import { MouseControls } from "./keybinds_controls";
@@ -27,6 +26,7 @@ import { SceneManager } from "./scene_manager_api";
 import { ViewportController } from "./editor/ViewportController";
 import { PostProcessingPipeline } from "./editor/PostProcessingPipeline";
 import { GizmoController } from "./editor/GizmoController";
+import { SelectionBridge } from "./editor/SelectionBridge";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -65,9 +65,6 @@ class Editor {
   last_cam_rot: THREE.Euler;
   raycaster: THREE.Raycaster | undefined;
   mouse: THREE.Vector2 | undefined;
-  selected: THREE.Object3D | undefined;
-  last_selected: THREE.Object3D | undefined;
-  last_selected_sum: number | undefined;
   rendering: boolean;
   api_manager: APIManager;
   freeCamState: FreeCamControlState | null = null;
@@ -111,6 +108,13 @@ class Editor {
   postProcessing: PostProcessingPipeline;
   // Owns the TransformControls gizmo.
   gizmo: GizmoController;
+  // Owns the selection-and-outliner sync into the Zustand store.
+  selection: SelectionBridge;
+
+  // Forwarding getter — ControlPanelSceneObject reads `editor.selected`.
+  get selected(): THREE.Object3D | undefined {
+    return this.selection.selected;
+  }
 
   selectedCanvas: boolean;
   startRenderHeight: number;
@@ -127,14 +131,6 @@ class Editor {
   media_upload: MediaUploadApi;
 
   sceneManager: SceneManager | undefined;
-
-  ///////////////////////////////////////////////
-  ///////////////////////////////////////////////
-
-  public outliner_feature_flag: boolean;
-
-  ///////////////////////////////////////////////
-  ///////////////////////////////////////////////
 
   focused: boolean = false;
 
@@ -189,6 +185,11 @@ class Editor {
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
     this.gizmo = new GizmoController();
+    this.selection = new SelectionBridge({
+      getSceneManager: () => this.sceneManager,
+      cameraName: this.camera_name,
+      version: this.version,
+    });
 
     this.activeScene = new Scene(
       "" + this.version,
@@ -213,7 +214,6 @@ class Editor {
     this.cap_fps = 60;
     this.frames = 0;
     this.lastFrameTime = 0;
-    this.last_selected_sum = 0;
     this.selectedCanvas = false;
     this.renderEventToken = -1;
     this.shouldRender = false;
@@ -240,8 +240,6 @@ class Editor {
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
 
     this.media_upload = new MediaUploadApi();
-    // TODO REMOVE
-    this.outliner_feature_flag = true;
 
     // New Rendering Pipeline Engine Work
     this.globalSetTrackLengthSeconds = 7;
@@ -440,7 +438,7 @@ class Editor {
       {
         onChange: () => this.renderScene(),
         onDraggingChanged: (dragging) => {
-          this.updateSelectedUI();
+          this.selection.updateSelectedUI();
           this.camera_last_pos.copy(new THREE.Vector3(-99999, -99999, -99999));
           this.focused = !dragging;
         },
@@ -482,27 +480,25 @@ class Editor {
       this.gizmo.control,
       this.postProcessing.outlinePass,
       this.activeScene.scene,
-      this.publishSelect.bind(this),
-      this.updateSelectedUI.bind(this),
+      this.selection.publishSelect.bind(this.selection),
+      this.selection.updateSelectedUI.bind(this.selection),
       false,
-      this.last_selected,
-      this.getAssetType.bind(this),
-      this.setSelected.bind(this),
+      undefined,
+      this.selection.getAssetType.bind(this.selection),
+      this.selection.setSelected.bind(this.selection),
       this.isMovable.bind(this),
       this.enable_stats.bind(this),
     );
 
-    if (this.outliner_feature_flag) {
-      this.sceneManager = new SceneManager(
-        this.version,
-        this.mouse_controls,
-        this.activeScene,
-        true,
-        this.updateOutliner.bind(this),
-        this.isCharacterUuid.bind(this),
-      ); // Enabled dev mode.
-      this.mouse_controls.sceneManager = this.sceneManager;
-    }
+    this.sceneManager = new SceneManager(
+      this.version,
+      this.mouse_controls,
+      this.activeScene,
+      true,
+      this.selection.updateOutliner.bind(this.selection),
+      this.selection.isCharacterUuid.bind(this.selection),
+    ); // Enabled dev mode.
+    this.mouse_controls.sceneManager = this.sceneManager;
 
     // Add spark renderer as a child of the camera
     // this.activeScene.scene.add(this.sparkRenderer);
@@ -512,12 +508,7 @@ class Editor {
       console.log("Setting Scene is loaded");
       this._isEngineDataLoaded = true;
 
-      if (this.outliner_feature_flag) {
-        const result = this.sceneManager?.render_outliner(
-          this.getCharactersByUuid(),
-        );
-        if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
-      }
+      this.selection.refreshOutliner();
 
       setIs3DSceneLoaded(true);
     };
@@ -729,12 +720,7 @@ class Editor {
     });
     usePageSceneStore.getState().resetScene();
 
-    if (this.outliner_feature_flag) {
-      const result = this.sceneManager?.render_outliner(
-        this.getCharactersByUuid(),
-      );
-      if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
-    }
+    this.selection.refreshOutliner();
   }
 
   public async loadCache(cacheJson: string) {
@@ -743,19 +729,7 @@ class Editor {
 
   public async loadScene(scene_media_token: string) {
     await this.save_manager.loadScene(scene_media_token);
-
-    if (this.outliner_feature_flag) {
-      const result = this.sceneManager?.render_outliner(
-        this.getCharactersByUuid(),
-      );
-      if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
-    }
-  }
-
-  setSelected(object: THREE.Object3D[] | undefined) {
-    if (this.sceneManager) {
-      this.sceneManager.selected_objects = object;
-    }
+    this.selection.refreshOutliner();
   }
 
   isObjectLipsync(object_uuid: string) {
@@ -768,9 +742,7 @@ class Editor {
 
   lockUnlockObject(object_uuid: string): boolean {
     const res = this.utils.lockUnlockObject(object_uuid);
-    if (this.outliner_feature_flag) {
-      this.updateSelectedUI();
-    }
+    this.selection.updateSelectedUI();
     return res;
   }
 
@@ -849,12 +821,7 @@ class Editor {
     this.mouse_controls?.clearFKVisuals();
     this.mouse_controls?.removeTransformControls(true);
     this.utils.deleteObject(uuid);
-    if (this.outliner_feature_flag) {
-      const result = this.sceneManager?.render_outliner(
-        this.getCharactersByUuid(),
-      );
-      if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
-    }
+    this.selection.refreshOutliner();
   }
 
   async create_parim(name: string, pos: THREE.Vector3) {
@@ -955,10 +922,10 @@ class Editor {
       this.cam_obj.scale.copy(new THREE.Vector3(1, 1, 1));
     }
 
-    if (this.utils.getSelectedSum() !== this.last_selected_sum) {
-      this.updateSelectedUI();
+    if (this.utils.getSelectedSum() !== this.selection.last_selected_sum) {
+      this.selection.updateSelectedUI();
     }
-    this.last_selected_sum = this.utils.getSelectedSum();
+    this.selection.last_selected_sum = this.utils.getSelectedSum();
 
     await this.renderScene();
 
@@ -1089,107 +1056,18 @@ class Editor {
     }
   }
 
+  // Facades — external callers in actions/* and helper.ts target these
+  // names. Internals reach the bridge directly via this.selection.*.
   updateOutliner() {
-    const result = this.sceneManager?.render_outliner(
-      this.getCharactersByUuid(),
-    );
-    if (result) usePageSceneStore.getState().setOutlinerItems(result.items);
-    this.updateSelectedUI();
+    this.selection.updateOutliner();
   }
 
   updateSelectedUI() {
-    let mainSelected;
-    if (this.outliner_feature_flag) {
-      if (this.sceneManager?.selected_objects === undefined) {
-        return;
-      }
-      if (this.sceneManager?.selected_objects.length <= 0) {
-        return 0;
-      }
-
-      mainSelected = this.sceneManager?.selected_objects[0];
-    } else {
-      if (this.selected == undefined) {
-        return 0;
-      }
-      mainSelected = this.selected;
-    }
-
-    this.selected = mainSelected;
-    const pos = mainSelected.position;
-    const rot = mainSelected.rotation;
-    const scale = mainSelected.scale;
-
-    // TODO this is a bug we need to only show when clicked on and use UPDATE when updating.
-    usePageSceneStore.getState().updateObjectPanel({
-      group:
-        mainSelected.name === this.camera_name
-          ? ClipGroup.CAMERA
-          : ClipGroup.OBJECT, // TODO: add meta data to determine what it is a camera or a object or a character into prefab clips
-      object_uuid: mainSelected.uuid,
-      object_name: mainSelected.name,
-      version: String(this.version),
-      objectVectors: {
-        position: {
-          x: parseFloat(pos.x.toFixed(2)),
-          y: parseFloat(pos.y.toFixed(2)),
-          z: parseFloat(pos.z.toFixed(2)),
-        },
-        rotation: {
-          x: parseFloat(THREE.MathUtils.radToDeg(rot.x).toFixed(2)),
-          y: parseFloat(THREE.MathUtils.radToDeg(rot.y).toFixed(2)),
-          z: parseFloat(THREE.MathUtils.radToDeg(rot.z).toFixed(2)),
-        },
-        scale: {
-          x: parseFloat(scale.x.toFixed(6)),
-          y: parseFloat(scale.y.toFixed(6)),
-          z: parseFloat(scale.z.toFixed(6)),
-        },
-      },
-    }); //end updateObjectPanel
-  }
-
-  getAssetType(selected: THREE.Object3D<THREE.Object3DEventMap>): AssetType {
-    if (selected.type === "Mesh") {
-      return selected.name === "::CAM::" ? AssetType.CAMERA : AssetType.OBJECT;
-    }
-    return AssetType.CHARACTER;
+    this.selection.updateSelectedUI();
   }
 
   publishSelect() {
-    const store = usePageSceneStore.getState();
-    const target = this.outliner_feature_flag
-      ? this.sceneManager?.selected_objects?.[0]
-      : this.selected;
-    if (target) {
-      store.setSelectedObject({
-        type: this.getAssetType(target),
-        id: target.uuid,
-      });
-    } else {
-      store.setSelectedObject(null);
-    }
-  }
-
-  // Replaces the deleted Timeline.isCharacter — checks the Zustand store's
-  // character list, which is the source of truth for which scene objects
-  // are characters.
-  isCharacterUuid(uuid: string): boolean {
-    return usePageSceneStore
-      .getState()
-      .characters.some((c) => c.id === uuid);
-  }
-
-  // Replaces Timeline.characters (a Record<uuid, ClipGroup>) — used by
-  // SceneManager.render_outliner to know which scene objects to render as
-  // characters.
-  getCharactersByUuid(): { [uuid: string]: ClipGroup } {
-    const characters = usePageSceneStore.getState().characters;
-    const result: { [uuid: string]: ClipGroup } = {};
-    for (const c of characters) {
-      result[c.id] = ClipGroup.CHARACTER;
-    }
-    return result;
+    this.selection.publishSelect();
   }
 }
 

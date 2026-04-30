@@ -86,7 +86,6 @@ export class SceneUtils {
       return;
     }
     if (remove_outline) {
-      this.editor.last_selected = this.editor.selected;
       outlinePass.selectedObjects = [];
       this.editor.publishSelect();
     }
@@ -136,7 +135,7 @@ export class SceneUtils {
         this.editor.cam_obj.scale.set(0, 0, 0);
 
         this.removeTransformControls();
-        this.editor.selected = this.editor.cam_obj;
+        this.editor.selection.selected = this.editor.cam_obj;
         this.editor.publishSelect();
         this.editor.updateSelectedUI();
         usePageSceneStore.getState().setEditorState(EditorStates.CAMERA_VIEW);
@@ -271,7 +270,7 @@ function removeObject3D(object3D) {
     }
 
     usePageSceneStore.getState().removeSceneObject(uuid);
-    this.editor.selected = undefined;
+    this.editor.selection.selected = undefined;
     this.editor.publishSelect();
     usePageSceneStore.getState().hideObjectPanel();
   }
