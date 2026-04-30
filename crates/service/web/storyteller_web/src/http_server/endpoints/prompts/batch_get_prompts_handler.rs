@@ -25,7 +25,7 @@ const MAX_BATCH_SIZE: usize = 100;
 #[utoipa::path(
   post,
   tag = "Prompts",
-  path = "/v1/prompts/batch",
+  path = "/v1/prompt/batch",
   request_body = BatchGetPromptsRequest,
   responses(
     (status = 200, description = "Found", body = BatchGetPromptsResponse),

@@ -11,7 +11,7 @@ use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::prompts::PromptToken;
 use utoipa::ToSchema;
 
-pub const BATCH_GET_PROMPTS_PATH: &str = "/v1/prompts/batch";
+pub const BATCH_GET_PROMPTS_PATH: &str = "/v1/prompt/batch";
 
 #[derive(Deserialize, ToSchema)]
 pub struct BatchGetPromptsRequest {
