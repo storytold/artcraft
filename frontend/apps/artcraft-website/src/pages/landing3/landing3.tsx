@@ -212,7 +212,18 @@ const Landing3 = () => {
 
     lenis.on("scroll", ScrollTrigger.update);
 
+    // Resize sync: when the viewport changes (window resize, moving between
+    // monitors with different DPI/sizes), Lenis needs to re-measure the
+    // document and ScrollTrigger needs to recalculate trigger positions.
+    // Without this, sticky/pin positions and progress mappings drift.
+    const handleResize = () => {
+      lenis.resize();
+      ScrollTrigger.refresh();
+    };
+    window.addEventListener("resize", handleResize);
+
     return () => {
+      window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(rafId);
       lenis.destroy();
     };
@@ -299,6 +310,11 @@ const Landing3 = () => {
             i * 0.5,
           );
         });
+        // Hold buffer after the last word — pushes the text-reveal completion
+        // earlier in scroll progress so the user gets a beat with the fully
+        // revealed manifesto + character mid-frame before the section starts
+        // unsticking and scrolling away.
+        tl.to({}, { duration: 4 });
 
         // Character traversal: spans from when the section first enters
         // viewport to when it fully exits, so the character keeps walking
