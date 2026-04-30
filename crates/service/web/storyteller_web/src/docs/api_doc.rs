@@ -155,6 +155,7 @@ use artcraft_api_defs::media_file::delete_media_file::DeleteMediaFilePathInfo;
 use artcraft_api_defs::media_file::delete_media_file::DeleteMediaFileRequest;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptRequest;
 use artcraft_api_defs::prompts::create_prompt::CreatePromptResponse;
+use artcraft_api_defs::prompts::batch_get_prompts::*;
 use artcraft_api_defs::prompts::get_prompt::*;
 use artcraft_api_defs::users::change_password::{ChangePasswordRequest, ChangePasswordResponse};
 use artcraft_api_defs::users::edit_email::{EditEmailRequest, EditEmailResponse};
@@ -220,6 +221,7 @@ use enums::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEnti
 use enums::by_table::user_ratings::entity_type::UserRatingEntityType;
 use enums::by_table::user_ratings::rating_value::UserRatingValue;
 use enums::by_table::users::user_feature_flag::UserFeatureFlag;
+use enums::common::generation::common_model_class::CommonModelClass;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -402,6 +404,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_edit_user_feature_flags_handler::moderator_edit_user_feature_flags_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_all_available_user_feature_flags_handler::moderator_list_all_available_user_feature_flags_handler,
     crate::http_server::endpoints::moderation::user_feature_flags::moderator_list_user_feature_flags_handler::moderator_list_user_feature_flags_handler,
+    crate::http_server::endpoints::prompts::batch_get_prompts_handler::batch_get_prompts_handler,
     crate::http_server::endpoints::prompts::create_prompt_handler::create_prompt_handler,
     crate::http_server::endpoints::prompts::get_prompt_handler::get_prompt_handler,
     crate::http_server::endpoints::service::status_alert_handler::status_alert_handler,
@@ -559,6 +562,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     MediaFileOriginProductCategory,
     MediaFileSubtype,
     MediaFileType,
+    CommonModelClass,
     CommonModelType,
     CommonAspectRatio,
     CommonGenerationMode,
@@ -621,6 +625,9 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     BatchGetInferenceJobStatusQueryParams,
     BatchGetInferenceJobStatusSuccessResponse,
     BatchGetMediaFilesModelInfo,
+    BatchGetPromptsRequest,
+    BatchGetPromptsResponse,
+    BatchPromptInfo,
     CreatePromptRequest,
     CreatePromptResponse,
     BatchGetMediaFilesQueryParams,

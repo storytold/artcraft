@@ -1,0 +1,159 @@
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+
+use actix_web::web::Json;
+use actix_web::{web, HttpRequest};
+use artcraft_api_defs::prompts::batch_get_prompts::{
+  BatchGetPromptsRequest, BatchGetPromptsResponse, BatchPromptInfo,
+};
+use artcraft_api_defs::prompts::get_prompt::GetPromptImageContextItem;
+use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
+use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
+use log::warn;
+use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
+use mysql_queries::queries::prompts::batch_get_prompts::batch_get_prompts;
+use tokens::tokens::prompts::PromptToken;
+
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use crate::http_server::common_responses::media::media_links_builder::MediaLinksBuilder;
+use crate::http_server::endpoints::media_files::helpers::get_media_domain::get_media_domain;
+use crate::state::server_state::ServerState;
+
+const MAX_BATCH_SIZE: usize = 100;
+
+/// Batch get details on multiple prompts.
+#[utoipa::path(
+  post,
+  tag = "Prompts",
+  path = "/v1/prompts/batch",
+  request_body = BatchGetPromptsRequest,
+  responses(
+    (status = 200, description = "Found", body = BatchGetPromptsResponse),
+    (status = 400, description = "Bad request"),
+    (status = 500, description = "Server error"),
+  ),
+)]
+pub async fn batch_get_prompts_handler(
+  http_request: HttpRequest,
+  body: Json<BatchGetPromptsRequest>,
+  server_state: web::Data<Arc<ServerState>>,
+) -> Result<Json<BatchGetPromptsResponse>, AdvancedCommonWebError> {
+  let request = body.into_inner();
+
+  if request.tokens.len() > MAX_BATCH_SIZE {
+    return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
+      format!("tokens must contain between 0 and {} items", MAX_BATCH_SIZE),
+    ));
+  }
+  
+  // Deduplicate and trim whitespace
+  let unique_tokens: Vec<PromptToken> = request
+    .tokens
+    .into_iter()
+    .map(|t| PromptToken::new_from_str(t.as_str().trim()))
+    .filter(|t| !t.as_str().is_empty())
+    .collect::<HashSet<_>>()
+    .into_iter()
+    .collect();
+
+  if unique_tokens.is_empty() {
+    return Ok(Json(BatchGetPromptsResponse {
+      success: true,
+      prompts: Vec::new(),
+    }));
+  }
+
+  let mut mysql_connection = server_state.mysql_pool.acquire().await?;
+
+  let results = batch_get_prompts(&unique_tokens, &mut mysql_connection)
+    .await
+    .map_err(|err| {
+      warn!("Batch get prompts query error: {:?}", err);
+      AdvancedCommonWebError::from_error(err)
+    })?;
+
+  let media_domain = get_media_domain(&http_request);
+
+  // Fetch context items for each prompt
+  let mut context_items_map: HashMap<String, Vec<GetPromptImageContextItem>> = HashMap::new();
+
+  for result in &results {
+    let items_result = list_prompt_context_items(
+      &result.token,
+      &mut mysql_connection,
+    ).await;
+
+    let items = items_result.unwrap_or_else(|e| {
+      warn!("Error listing prompt context items for {}: {:?}", result.token.as_str(), e);
+      Vec::new()
+    });
+
+    let filtered_items: Vec<GetPromptImageContextItem> = items
+      .iter()
+      .filter_map(|item| {
+        match item.context_semantic_type {
+          PromptContextSemanticType::VidStartFrame => {},
+          PromptContextSemanticType::VidEndFrame => {},
+          PromptContextSemanticType::Imgref => {},
+          PromptContextSemanticType::ImgrefCharacter => {},
+          PromptContextSemanticType::ImgrefStyle => {},
+          PromptContextSemanticType::ImgrefBg => {},
+          _ => {
+            return None
+          },
+        }
+
+        let bucket_path = MediaFileBucketPath::from_object_hash(
+          &item.public_bucket_directory_hash,
+          item.maybe_public_bucket_prefix.as_deref(),
+          item.maybe_public_bucket_extension.as_deref(),
+        );
+
+        Some(GetPromptImageContextItem {
+          media_token: item.media_token.clone(),
+          semantic: item.context_semantic_type,
+          media_links: MediaLinksBuilder::from_media_path_and_env(
+            media_domain,
+            server_state.server_environment,
+            &bucket_path,
+          ),
+        })
+      })
+      .collect();
+
+    if !filtered_items.is_empty() {
+      context_items_map.insert(result.token.as_str().to_string(), filtered_items);
+    }
+  }
+
+  let prompts: Vec<BatchPromptInfo> = results
+    .into_iter()
+    .map(|result| {
+      let maybe_context_images = context_items_map
+        .remove(result.token.as_str())
+        .filter(|items| !items.is_empty());
+
+      BatchPromptInfo {
+        token: result.token,
+        maybe_model_class: result.maybe_model_type.map(|ty| ty.get_model_class()),
+        maybe_model_type: result.maybe_model_type,
+        maybe_generation_provider: result.maybe_generation_provider,
+        maybe_positive_prompt: result.maybe_positive_prompt,
+        maybe_negative_prompt: result.maybe_negative_prompt,
+        maybe_generation_mode: result.maybe_generation_mode,
+        maybe_aspect_ratio: result.maybe_aspect_ratio,
+        maybe_resolution: result.maybe_resolution,
+        maybe_batch_count: result.maybe_batch_count,
+        maybe_generate_audio: result.maybe_generate_audio,
+        maybe_duration_seconds: result.maybe_duration_seconds,
+        maybe_context_images,
+        created_at: result.created_at,
+      }
+    })
+    .collect();
+
+  Ok(Json(BatchGetPromptsResponse {
+    success: true,
+    prompts,
+  }))
+}
