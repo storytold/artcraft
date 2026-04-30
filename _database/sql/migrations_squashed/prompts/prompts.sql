@@ -68,6 +68,10 @@ CREATE TABLE prompts (
   -- The resolution for the prompt (eg. four_k, 720p, etc.)
   maybe_resolution VARCHAR(16) DEFAULT NULL,
 
+  -- Represented by the enum `CommonQuality`.
+  -- The quality setting (eg. high, medium, low)
+  maybe_quality VARCHAR(16) DEFAULT NULL,
+
   -- The duration in seconds
   maybe_duration_seconds INT UNSIGNED DEFAULT NULL,
 
