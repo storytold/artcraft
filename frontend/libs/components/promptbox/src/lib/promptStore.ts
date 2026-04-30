@@ -209,7 +209,7 @@ export const usePromptEditStore = create<PromptEditStore>()((set) => ({
 
 // ----- Enter-to-Generate Preference Store -----
 // Controls how the Enter key behaves inside prompt boxes.
-//   false (default): Enter inserts a newline; Shift+Enter submits.
+//   false (default): Both Enter and Shift+Enter insert a newline; only the button submits.
 //   true:            Enter submits; Shift+Enter inserts a newline.
 // Persisted to localStorage so the choice survives reloads.
 const ENTER_TO_GENERATE_STORAGE_KEY = "artcraft_enter_to_generate";

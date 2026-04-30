@@ -21,9 +21,11 @@ import {
   faBars,
   faXmark,
   faGem,
+  faCog,
 } from "@fortawesome/pro-solid-svg-icons";
 import { TaskQueue } from "./task-queue";
 import { CreditsModal } from "../credits-modal";
+import { SettingsModal } from "../settings-modal/SettingsModal";
 
 const NAV_ITEMS = [
   { name: "Home", href: "/" },
@@ -80,6 +82,7 @@ export default function Navbar() {
   // null = unknown (still loading) so we don't flash the upgrade button
   const [hasPaidPlan, setHasPaidPlan] = useState<boolean | null>(null);
   const [creditsModalOpen, setCreditsModalOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Check session on mount and when auth changes or location changes
   useEffect(() => {
@@ -300,6 +303,14 @@ export default function Navbar() {
 
                     <TaskQueue />
 
+                    <Button
+                      variant="secondary"
+                      onClick={() => setSettingsOpen(true)}
+                      className="h-[38px] w-[38px]"
+                    >
+                      <FontAwesomeIcon icon={faCog} className="text-base" />
+                    </Button>
+
                     <Menu as="div" className="relative ml-3">
                       <div>
                         <MenuButton className="flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
@@ -355,6 +366,7 @@ export default function Navbar() {
                     >
                       Pricing
                     </Link>
+
                     <div className="flex gap-2">
                       <Link to="/login">
                         <Button
@@ -431,6 +443,16 @@ export default function Navbar() {
 
                 <div className="my-3 border-t border-white/[0.06]" />
 
+                <button
+                  onClick={() => setSettingsOpen(true)}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-[7px] text-[13px] font-medium text-white/60 active:bg-white/5 transition-colors"
+                >
+                  <FontAwesomeIcon icon={faCog} className="text-xs" />
+                  Settings
+                </button>
+
+                <div className="my-3 border-t border-white/[0.06]" />
+
                 {!isLoading && user ? (
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-1.5">
@@ -504,6 +526,11 @@ export default function Navbar() {
           <CreditsModal
             isOpen={creditsModalOpen}
             onClose={() => setCreditsModalOpen(false)}
+          />
+
+          <SettingsModal
+            isOpen={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
           />
 
           <style>{`

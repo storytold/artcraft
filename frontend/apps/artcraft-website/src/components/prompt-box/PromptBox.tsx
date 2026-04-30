@@ -21,6 +21,7 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { ImagePromptRow } from "./ImagePromptRow";
 import { MentionTextarea } from "./MentionTextarea";
 import type { RefImage, MentionItem } from "./types";
+import { useEnterToGenerateStore } from "../../lib/enter-to-generate-store";
 
 // ── @-mention color palette ─────────────────────────────────────────────
 
@@ -144,6 +145,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const highlightRef = useRef<HTMLDivElement>(null);
     const mentionEditorRef = useRef<HTMLDivElement>(null);
+    const enterToGenerate = useEnterToGenerateStore((s) => s.enabled);
     const [isFocused, setIsFocused] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showImagePrompts, setShowImagePrompts] = useState(false);
@@ -291,8 +293,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           }
         }
 
-        // Default: Enter inserts a newline; Shift+Enter submits.
-        if (e.key === "Enter" && e.shiftKey) {
+        if (e.key === "Enter" && enterToGenerate && !e.shiftKey) {
           e.preventDefault();
           onSubmit();
         }
@@ -436,8 +437,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
                     )}
                     colorMap={mentionColorMap}
                     onKeyDown={(e) => {
-                      // Default: Enter inserts a newline; Shift+Enter (or Cmd+Enter) submits.
-                      if (e.key === "Enter" && (e.shiftKey || e.metaKey)) {
+                      if (e.key === "Enter" && enterToGenerate && !e.shiftKey && !e.metaKey) {
                         e.preventDefault();
                         onSubmit();
                       }

@@ -625,13 +625,11 @@ export const MentionTextarea = forwardRef<HTMLDivElement, MentionTextareaProps>(
         }
 
         // Insert a newline instead of letting the contentEditable create a <div>.
-        // When `enterToGenerate` is off (default), plain Enter inserts a newline
-        // and Shift/Cmd+Enter submits via externalOnKeyDown. When the user opts
-        // into Enter-to-generate, the modifier combo is what inserts the newline.
+        // When `enterToGenerate` is off (default), all Enter combos insert a newline
+        // (only the button submits). When the user opts into Enter-to-generate,
+        // Shift/Cmd+Enter inserts a newline and plain Enter submits.
         if (e.key === "Enter") {
-          const newlineCombo = enterToGenerate
-            ? e.shiftKey || e.metaKey
-            : !e.shiftKey && !e.metaKey;
+          const newlineCombo = !enterToGenerate || e.shiftKey || e.metaKey;
           if (newlineCombo) {
             e.preventDefault();
             document.execCommand("insertLineBreak");

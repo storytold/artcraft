@@ -865,7 +865,7 @@ export const PromptBoxVideo = ({
     }
 
     if (e.key !== "Enter") return;
-    const isSubmitCombo = enterToGenerate ? !e.shiftKey : e.shiftKey;
+    const isSubmitCombo = enterToGenerate && !e.shiftKey;
     if (isSubmitCombo) {
       e.preventDefault();
 
@@ -991,9 +991,7 @@ export const PromptBoxVideo = ({
                   className="promptbox-scrollbar text-md relative mb-2 min-h-[2.5em] w-full resize-y overflow-y-auto rounded bg-transparent pb-2 pr-2 pt-1 text-base-fg"
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
-                    const isSubmitCombo = enterToGenerate
-                      ? !e.shiftKey
-                      : e.shiftKey;
+                    const isSubmitCombo = enterToGenerate && !e.shiftKey;
                     if (isSubmitCombo) {
                       e.preventDefault();
                       if (
