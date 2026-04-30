@@ -108,6 +108,24 @@ export default function Example() {
               <Link to="/" className="text-gray-400 hover:text-white">
                 Home
               </Link>
+              <Link
+                to="/create-image"
+                className="text-gray-400 hover:text-white"
+              >
+                Image
+              </Link>
+              <Link
+                to="/create-video"
+                className="text-gray-400 hover:text-white"
+              >
+                Video
+              </Link>
+              <Link to="/download" className="text-gray-400 hover:text-white">
+                Download
+              </Link>
+              <Link to="/pricing" className="text-gray-400 hover:text-white">
+                Pricing
+              </Link>
               <Link to="/news" className="text-gray-400 hover:text-white">
                 News
               </Link>

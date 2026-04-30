@@ -145,7 +145,7 @@ const CheckoutSuccess = () => {
                 <Button
                   as="link"
                   href={downloadUrl}
-                  className="bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                  className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
                 >
                   <FontAwesomeIcon icon={faDownload} className="mr-2" />
                   Download ArtCraft
@@ -192,7 +192,7 @@ const CheckoutSuccess = () => {
                 as="link"
                 href={SOCIAL_LINKS.DISCORD}
                 target="_blank"
-                className="bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
+                className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
               >
                 <FontAwesomeIcon icon={faDiscord} />
                 Join Discord

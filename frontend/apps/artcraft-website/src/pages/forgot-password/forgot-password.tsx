@@ -103,7 +103,7 @@ const ForgotPassword = () => {
                 <div className="pt-2">
                   <Button
                     id="send-reset-btn"
-                    className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                    className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                     type="submit"
                     disabled={isLoading}
                   >
@@ -130,12 +130,12 @@ const ForgotPassword = () => {
                 <span className="text-white font-medium">{email}</span>
               </p>
               <Link to="/forgot-password/verify">
-                <Button className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10 mb-3">
+                <Button className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10 mb-3">
                   Enter Verification Code
                 </Button>
               </Link>
               <Button
-                className="w-full bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-10"
+                className="rounded-full w-full bg-white/10 hover:bg-white/20 text-white border-none justify-center font-bold h-10"
                 onClick={() => setSubmitted(false)}
               >
                 Try another email

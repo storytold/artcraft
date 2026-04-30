@@ -36,14 +36,8 @@ type NavEntry = NavLeaf | NavGroup;
 
 const NAV_ITEMS: NavEntry[] = [
   { name: "Home", href: "/" },
-  {
-    name: "Create",
-    href: "/create-image",
-    children: [
-      { name: "Image", href: "/create-image" },
-      { name: "Video", href: "/create-video" },
-    ],
-  },
+  { name: "Image", href: "/create-image" },
+  { name: "Video", href: "/create-video" },
   {
     name: "Resources",
     children: [
@@ -300,7 +294,7 @@ export default function Navbar() {
                     <div className="hidden md:flex items-center gap-2">
                       <Link
                         to="/pricing"
-                        className="hidden xl:flex h-8 items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/[0.04] transition-all"
+                        className="hidden xl:flex h-8 items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-white/90 hover:text-white hover:bg-white/[0.04] transition-all"
                       >
                         <FontAwesomeIcon icon={faGem} className="text-[11px]" />
                         Pricing
@@ -404,12 +398,32 @@ export default function Navbar() {
                           leaveFrom="opacity-100 scale-100"
                           leaveTo="opacity-0 scale-95"
                         >
-                          <MenuItems className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-[#1a1a1a] border border-white/[0.08] shadow-xl focus:outline-none overflow-hidden">
+                          <MenuItems
+                            modal={false}
+                            className="absolute right-0 z-50 mt-2 w-48 origin-top-right rounded-xl bg-[#1a1a1a] border border-white/[0.08] shadow-xl focus:outline-none overflow-hidden"
+                          >
                             <div className="px-4 py-3 border-b border-white/[0.06]">
                               <p className="text-sm font-medium text-white truncate">
                                 {user.display_name || user.username}
                               </p>
                             </div>
+                            <MenuItem>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => setSettingsOpen(true)}
+                                  className={twMerge(
+                                    active ? "bg-white/[0.04]" : "",
+                                    "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
+                                  )}
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faCog}
+                                    className="text-[11px] text-white/50"
+                                  />
+                                  Settings
+                                </button>
+                              )}
+                            </MenuItem>
                             <MenuItem>
                               {({ active }) => (
                                 <button
@@ -431,7 +445,7 @@ export default function Navbar() {
                     <div className="hidden md:flex items-center gap-2">
                       <Link
                         to="/pricing"
-                        className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/[0.04] transition-all"
+                        className="h-8 flex items-center gap-1.5 px-3 rounded-lg text-[13px] font-medium text-white/90 hover:text-white hover:bg-white/[0.04] transition-all"
                       >
                         <FontAwesomeIcon icon={faGem} className="text-[11px]" />
                         Pricing
@@ -580,6 +594,14 @@ export default function Navbar() {
                           <FontAwesomeIcon icon={faGem} className="text-[10px]" />
                           Pricing
                         </DisclosureButton>
+                        <DisclosureButton
+                          as="button"
+                          onClick={() => setSettingsOpen(true)}
+                          className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
+                        >
+                          <FontAwesomeIcon icon={faCog} className="text-[10px]" />
+                          Settings
+                        </DisclosureButton>
                         {credits !== null && (
                           <span className="flex items-center gap-1.5 ml-auto text-[12px] font-medium text-white/80">
                             <FontAwesomeIcon
@@ -629,6 +651,11 @@ export default function Navbar() {
             <CreditsModal
               isOpen={creditsModalOpen}
               onClose={() => setCreditsModalOpen(false)}
+            />
+
+            <SettingsModal
+              isOpen={settingsOpen}
+              onClose={() => setSettingsOpen(false)}
             />
           </div>
         );

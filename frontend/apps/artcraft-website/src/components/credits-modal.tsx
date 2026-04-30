@@ -101,7 +101,7 @@ export function CreditsModal({ isOpen, onClose }: CreditsModalProps) {
                 </span>
                 <Button
                   variant="primary"
-                  className="pointer-events-none rounded-lg px-5 py-2 text-sm font-semibold"
+                  className="rounded-full pointer-events-none rounded-lg px-5 py-2 text-sm font-semibold"
                   disabled={purchasingId !== null}
                 >
                   {purchasingId === pack.id ? "Loading..." : "Purchase"}

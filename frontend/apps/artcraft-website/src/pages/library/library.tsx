@@ -278,7 +278,7 @@ export default function Library() {
             <Link to="/login">
               <Button
                 variant="primary"
-                className="bg-white text-black hover:bg-white/90 text-sm font-semibold px-6 py-2.5 rounded-lg"
+                className="rounded-full bg-white text-black hover:bg-white/90 text-sm font-semibold px-6 py-2.5 rounded-lg"
               >
                 Login
               </Button>
@@ -286,7 +286,7 @@ export default function Library() {
             <Link to="/signup">
               <Button
                 variant="primary"
-                className="text-sm font-semibold px-6 py-2.5 rounded-lg"
+                className="rounded-full text-sm font-semibold px-6 py-2.5 rounded-lg"
               >
                 Sign up
               </Button>
@@ -390,14 +390,14 @@ export default function Library() {
               <p className="text-white/40 text-sm mb-4">No items yet.</p>
               <div className="flex gap-3">
                 <Link to="/create-image">
-                  <Button variant="primary" className="text-sm px-4 py-2">
+                  <Button variant="primary" className="rounded-full text-sm px-4 py-2">
                     Create Image
                   </Button>
                 </Link>
                 <Link to="/create-video">
                   <Button
                     variant="secondary"
-                    className="text-sm px-4 py-2 border border-ui-panel-border"
+                    className="rounded-full text-sm px-4 py-2 border border-ui-panel-border"
                   >
                     Create Video
                   </Button>

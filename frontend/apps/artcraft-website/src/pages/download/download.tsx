@@ -115,14 +115,14 @@ const Download = () => {
           <div className="mt-10 flex items-center justify-center">
             {isMobile ? (
               <Button
-                className="text-lg font-semibold rounded-xl shadow-lg"
+                className="rounded-full text-lg font-semibold rounded-xl shadow-lg"
                 disabled
               >
                 Download on a desktop
               </Button>
             ) : (
               <Button
-                className="glow-border-animated text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 bg-white text-black hover:bg-white/90"
+                className="rounded-full glow-border-animated text-md px-8 py-4 text-lg font-semibold rounded-xl shadow-lg gap-3 transition-all duration-300 hover:scale-105 hover:shadow-primary/25 bg-white text-black hover:bg-white/90"
                 as="link"
                 href={detectedLink}
                 onClick={onDownloadClick}
@@ -198,14 +198,14 @@ const Download = () => {
 
                   {isMobile ? (
                     <Button
-                      className="w-full justify-center font-semibold"
+                      className="rounded-full w-full justify-center font-semibold"
                       disabled
                     >
                       Desktop only
                     </Button>
                   ) : (
                     <Button
-                      className="w-full justify-center font-semibold gap-2"
+                      className="rounded-full w-full justify-center font-semibold gap-2"
                       as="link"
                       href={system.link}
                       icon={faArrowDownToLine}

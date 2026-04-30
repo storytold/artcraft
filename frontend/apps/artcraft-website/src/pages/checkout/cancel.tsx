@@ -114,7 +114,7 @@ const CheckoutCancel = () => {
               <Button
                 as="link"
                 href="/pricing"
-                className="bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
+                className="rounded-full bg-primary hover:bg-primary-600 px-8 py-3 text-sm font-bold rounded-xl justify-center"
               >
                 View Plans Again
               </Button>
@@ -131,7 +131,7 @@ const CheckoutCancel = () => {
                 as="link"
                 href={SOCIAL_LINKS.DISCORD}
                 target="_blank"
-                className="bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
+                className="rounded-full bg-white text-black hover:bg-white/80 px-4 py-2 text-sm font-bold rounded-xl justify-center border-transparent"
               >
                 <FontAwesomeIcon icon={faDiscord} />
                 Join Discord

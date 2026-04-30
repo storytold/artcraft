@@ -44,6 +44,9 @@
       "path": "../../libs/components/gallery-modal/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/components/switch/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/components/tab-selector/tsconfig.lib.json"
     },
     {
@@ -78,9 +81,6 @@
     },
     {
       "path": "../../libs/markdown-content/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/components/toaster/tsconfig.lib.json"
     },
     {
       "path": "../../libs/components/modal/tsconfig.lib.json"

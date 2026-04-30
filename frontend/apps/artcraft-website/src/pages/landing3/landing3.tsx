@@ -350,7 +350,7 @@ const Landing3 = () => {
 
           {/* CTAs */}
           <div
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4"
             data-reveal
           >
             {isMobile ? (
@@ -389,6 +389,27 @@ const Landing3 = () => {
                 </a>
               </>
             )}
+          </div>
+
+          {/* Secondary: try in browser */}
+          <div
+            className="flex items-center justify-center gap-3 mb-16 text-[13px] text-white/45"
+            data-reveal
+          >
+            <span>or generate in your browser:</span>
+            <Link
+              to="/create-image"
+              className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
+            >
+              Image
+            </Link>
+            <span className="text-white/25">·</span>
+            <Link
+              to="/create-video"
+              className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
+            >
+              Video
+            </Link>
           </div>
 
           {/* Hero video */}
@@ -957,6 +978,25 @@ const Landing3 = () => {
                   </>
                 )}
               </div>
+
+              {!isMobile && (
+                <div className="mt-6 flex items-center justify-center gap-3 text-[13px] text-white/45">
+                  <span>or generate in your browser:</span>
+                  <Link
+                    to="/create-image"
+                    className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
+                  >
+                    Image
+                  </Link>
+                  <span className="text-white/25">·</span>
+                  <Link
+                    to="/create-video"
+                    className="group inline-flex items-center gap-1 text-white/65 hover:text-white underline-offset-4 hover:underline transition-colors"
+                  >
+                    Video
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

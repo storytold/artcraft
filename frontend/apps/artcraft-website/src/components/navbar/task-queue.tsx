@@ -155,10 +155,10 @@ const PromptLine = ({
           style={
             marqueePlaying
               ? {
-                  animation: "marquee 6.5s linear infinite",
-                  animationDelay: "0.5s",
-                  animationFillMode: "both",
-                }
+                animation: "marquee 6.5s linear infinite",
+                animationDelay: "0.5s",
+                animationFillMode: "both",
+              }
               : undefined
           }
         >
@@ -518,8 +518,8 @@ function jobsToInProgress(jobs: Job[]): InProgressTask[] {
       if (!duration) {
         const model = modelType
           ? ALL_MODELS_LIST.find(
-              (m) => m.tauriId === modelType || m.id === modelType,
-            )
+            (m) => m.tauriId === modelType || m.id === modelType,
+          )
           : undefined;
         duration = model?.progressBarTime ?? (isVideo ? 900000 : 30000);
         taskDurationCache.set(j.job_token, duration);
@@ -654,7 +654,7 @@ export const TaskQueue = () => {
     primaryActionText: "",
     primaryActionIcon: faTrashAlt,
     primaryActionBtnClassName: "",
-    onConfirm: async () => {},
+    onConfirm: async () => { },
   });
 
   // ── Confirmation handlers ──────────────────────────────────────────
@@ -1006,24 +1006,24 @@ export const TaskQueue = () => {
       <Tooltip content="Task Queue" position="bottom" closeOnClick={true}>
         <div className="relative task-queue-trigger">
           {badgeCount > 0 && (
-            <div className="absolute -right-1 -top-1 z-20 flex h-[17px] w-[17px] items-center justify-center rounded-full bg-primary-400 text-[13px] font-medium text-white">
+            <div className="absolute -right-1 -top-1 z-20 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-primary-400 px-1 text-[10px] font-semibold text-white ring-2 ring-[#121212]">
               {badgeCount}
             </div>
           )}
           <PopoverMenu
             mode="default"
-            buttonClassName="h-[38px] w-[38px] !p-0 relative"
-            panelClassName="w-[calc(100vw-5rem)] sm:w-[400px] p-2 bg-ui-panel mt-2.5 font-display"
+            buttonClassName="h-8 w-8 !p-0 relative bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/80 rounded-lg shadow-none"
+            panelClassName="w-[calc(100vw-5rem)] sm:w-[400px] p-2 bg-[#1a1a1a] border border-white/[0.08] mt-2 rounded-xl font-display"
             position="bottom"
             align="end"
             triggerIcon={
               inProgressCount > 0 ? (
                 <FontAwesomeIcon
                   icon={faSpinnerThird}
-                  className="animate-spin"
+                  className="animate-spin text-[11px]"
                 />
               ) : (
-                <FontAwesomeIcon icon={faListCheck} />
+                <FontAwesomeIcon icon={faListCheck} className="text-[11px]" />
               )
             }
             onOpenChange={handleOpenChange}
@@ -1065,28 +1065,28 @@ export const TaskQueue = () => {
               <h2 className="text-lg font-semibold">Task Queue</h2>
               <div className="flex items-center gap-2">
                 <Button
-                  className="flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
+                  className="rounded-full flex h-9 items-center justify-center bg-green-500/10 px-3 text-green-500 hover:bg-green-500/20"
                   onClick={() => handleClearCompleted()}
                 >
                   <FontAwesomeIcon icon={faBroom} className="mr-1.5" />
                   Clear completed
                 </Button>
                 <Button
-                  className="flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
+                  className="rounded-full flex h-9 items-center justify-center bg-orange-500/10 px-3 text-orange-500 hover:bg-orange-500/20"
                   onClick={() => handleClearStale()}
                 >
                   <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
                   Clear stale
                 </Button>
                 <Button
-                  className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
+                  className="rounded-full flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-400 hover:bg-red-500/20"
                   onClick={() => handleClearFailed()}
                 >
                   <FontAwesomeIcon icon={faTrashAlt} className="mr-1.5" />
                   Clear failed
                 </Button>
                 <Button
-                  className="flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
+                  className="rounded-full flex h-9 items-center justify-center bg-red-500/10 px-3 text-red-500 hover:bg-red-500/20"
                   onClick={() => handleRemoveAll()}
                 >
                   <FontAwesomeIcon icon={faBomb} className="mr-1.5" />

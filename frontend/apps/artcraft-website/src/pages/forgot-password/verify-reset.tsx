@@ -234,7 +234,7 @@ const VerifyReset = () => {
                 <div className="pt-2">
                   <Button
                     id="change-password-btn"
-                    className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                    className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                     type="submit"
                     disabled={isLoading}
                   >
@@ -274,7 +274,7 @@ const VerifyReset = () => {
                 </p>
                 <Button
                   id="back-to-homepage-btn"
-                  className="w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
+                  className="rounded-full w-full bg-primary hover:bg-primary-600 text-white border-none justify-center font-bold h-10"
                   onClick={() => navigate(redirectTo)}
                 >
                   {redirectLabel}
