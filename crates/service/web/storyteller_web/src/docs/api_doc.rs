@@ -862,7 +862,6 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     GetMediaFilePathInfo,
     GetMediaFileSuccessResponse,
     GetProfilePathInfo,
-    GetPromptError,
     GetPromptPathInfo,
     GetPromptSuccessResponse,
     GetUnifiedQueueStatsError,
