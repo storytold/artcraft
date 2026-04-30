@@ -5,7 +5,6 @@ import {
   lookAtFromCamera,
   type FreeCamControlState,
 } from "./cameraMath";
-import { TransformControls } from "./TransformControls.js";
 import Scene from "./scene.js";
 import { APIManager } from "./api_manager.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
@@ -27,6 +26,7 @@ import { MediaUploadApi } from "~/Classes/ApiManager";
 import { SceneManager } from "./scene_manager_api";
 import { ViewportController } from "./editor/ViewportController";
 import { PostProcessingPipeline } from "./editor/PostProcessingPipeline";
+import { GizmoController } from "./editor/GizmoController";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -63,13 +63,11 @@ class Editor {
 
   last_cam_pos: THREE.Vector3;
   last_cam_rot: THREE.Euler;
-  control: TransformControls | undefined;
   raycaster: THREE.Raycaster | undefined;
   mouse: THREE.Vector2 | undefined;
   selected: THREE.Object3D | undefined;
   last_selected: THREE.Object3D | undefined;
   last_selected_sum: number | undefined;
-  transform_interaction = false;
   rendering: boolean;
   api_manager: APIManager;
   freeCamState: FreeCamControlState | null = null;
@@ -111,6 +109,8 @@ class Editor {
   viewport: ViewportController;
   // Owns the EffectComposer chains and post-process passes.
   postProcessing: PostProcessingPipeline;
+  // Owns the TransformControls gizmo.
+  gizmo: GizmoController;
 
   selectedCanvas: boolean;
   startRenderHeight: number;
@@ -188,6 +188,7 @@ class Editor {
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
+    this.gizmo = new GizmoController();
 
     this.activeScene = new Scene(
       "" + this.version,
@@ -432,33 +433,26 @@ class Editor {
     // FreeCam math + listeners now live in hooks/useFreeCam.ts; the
     // editor reads `freeCamState` (set by that hook) on every render.
 
-    this.control = new TransformControls(this.camera, this.renderer.domElement);
-    this.control.space = "world"; // Default to world space for translate mode
-    this.control.setScaleSnap(0.01);
-    this.control.setTranslationSnap(0.01);
-    this.control.setRotationSnap(0.01);
-    //console.log("Control Sensitivity:", this.control.sensitivity);
+    this.gizmo.configure(
+      this.camera,
+      this.renderer.domElement,
+      this.activeScene.scene,
+      {
+        onChange: () => this.renderScene(),
+        onDraggingChanged: (dragging) => {
+          this.updateSelectedUI();
+          this.camera_last_pos.copy(new THREE.Vector3(-99999, -99999, -99999));
+          this.focused = !dragging;
+        },
+      },
+    );
 
-    // Base control and debug stuff remove debug in prod.
-    if (this.control == undefined) {
-      return;
-    }
-    this.control.addEventListener("change", this.renderScene.bind(this));
-    this.control.addEventListener("dragging-changed", (event: any) => {
-      //TODO: any should be the following
-      this.updateSelectedUI();
-      this.camera_last_pos.copy(new THREE.Vector3(-99999, -99999, -99999));
-      this.focused = !event.value;
-      // this.update_properties()
-    });
-    this.control.setSize(0.5); // Good default value for visuals.
     this.raycaster = new THREE.Raycaster();
     // Configure raycaster to check both layers
     this.raycaster.layers.set(0); // Enable default layer
     this.raycaster.layers.enable(1); // Also check objects on the custom layer
 
     this.mouse = new THREE.Vector2();
-    this.activeScene.scene.add(this.control);
     // Resets canvas size.
     this.viewport.onWindowResize();
 
@@ -485,12 +479,12 @@ class Editor {
       this.mouse,
       this.mouse,
       this.raycaster,
-      this.control,
+      this.gizmo.control,
       this.postProcessing.outlinePass,
       this.activeScene.scene,
       this.publishSelect.bind(this),
       this.updateSelectedUI.bind(this),
-      this.transform_interaction,
+      false,
       this.last_selected,
       this.getAssetType.bind(this),
       this.setSelected.bind(this),
@@ -587,10 +581,8 @@ class Editor {
     store.setGridVisible(false);
 
     // Store and hide transform controls
-    const wasControlVisible = this.control?.visible ?? false;
-    if (this.control) {
-      this.control.visible = false;
-    }
+    const wasControlVisible = this.gizmo.isVisible();
+    this.gizmo.setVisible(false);
 
     // Store and disable outline pass
     const outlinePass = this.postProcessing.outlinePass;
@@ -696,9 +688,7 @@ class Editor {
     usePageSceneStore.getState().setGridVisible(wasGridVisible);
 
     // Restore transform controls visibility
-    if (this.control) {
-      this.control.visible = wasControlVisible;
-    }
+    this.gizmo.setVisible(wasControlVisible);
 
     // Restore outline pass
     if (outlinePass) {
@@ -1051,26 +1041,22 @@ class Editor {
     console.log("3D Editor Engine unmounted");
   }
 
+  // Facade for actions/setTransformMode + keymap dispatch. Reads the
+  // store's current transform space and forwards to the gizmo.
   change_mode(type: "translate" | "rotate" | "scale") {
-    if (this.control == undefined) {
-      return;
-    }
-    this.control.mode = type;
-    this.control.space =
-      type === "scale"
-        ? "local"
-        : usePageSceneStore.getState().transformSpace;
-    this.transform_interaction = true;
+    const space =
+      type === "scale" ? "local" : usePageSceneStore.getState().transformSpace;
+    this.gizmo.changeMode(type, space);
   }
 
+  // Facade for Controls3D button + keymap. Toggles the store's
+  // transform space and pushes the new value into the gizmo.
   toggleTransformSpace() {
-    if (this.control == undefined || this.control.mode === "scale") {
-      return;
-    }
+    if (!this.gizmo.canToggleSpace()) return;
     const store = usePageSceneStore.getState();
     const next = store.transformSpace === "world" ? "local" : "world";
     store.setTransformSpace(next);
-    this.control.space = next;
+    this.gizmo.setSpace(next);
   }
 
   togglePlayback() {

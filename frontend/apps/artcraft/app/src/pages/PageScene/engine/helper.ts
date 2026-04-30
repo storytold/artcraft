@@ -64,12 +64,10 @@ export class SceneUtils {
 
       if (object.userData["locked"]) {
         this.removeTransformControls(false);
-      } else if (this.editor.control) {
-        this.scene.scene.add(this.editor.control);
-        if (this.editor.sceneManager?.selected_objects)
-          this.editor.control.attach(
-            this.editor.sceneManager?.selected_objects[0],
-          );
+      } else {
+        this.editor.gizmo.addToScene(this.scene.scene);
+        const selected = this.editor.sceneManager?.selected_objects?.[0];
+        if (selected) this.editor.gizmo.attach(selected);
       }
 
       return object.userData["locked"];
@@ -80,7 +78,7 @@ export class SceneUtils {
 
   // Removes transform controls and publishes selected.
   removeTransformControls(remove_outline: boolean = true) {
-    if (this.editor.control == undefined) {
+    if (this.editor.gizmo.control == undefined) {
       return;
     }
     const outlinePass = this.editor.postProcessing.outlinePass;
@@ -92,8 +90,8 @@ export class SceneUtils {
       outlinePass.selectedObjects = [];
       this.editor.publishSelect();
     }
-    this.editor.control.detach();
-    this.editor.activeScene.scene.remove(this.editor.control);
+    this.editor.gizmo.detach();
+    this.editor.gizmo.removeFromScene(this.editor.activeScene.scene);
     if (remove_outline) outlinePass.selectedObjects = [];
   }
 
