@@ -28,13 +28,6 @@ pub struct GetPromptSuccessResponse {
 }
 
 #[derive(Serialize, ToSchema)]
-pub struct GetPromptImageContextItem {
-  pub media_token: MediaFileToken,
-  pub semantic: PromptContextSemanticType,
-  pub media_links: MediaLinks,
-}
-
-#[derive(Serialize, ToSchema)]
 pub struct PromptInfo {
   pub token: PromptToken,
 
@@ -128,6 +121,13 @@ pub struct PromptInfo {
   pub maybe_moderator_fields: Option<PromptInfoModeratorFields>,
 
   pub created_at: DateTime<Utc>,
+}
+
+#[derive(Serialize, ToSchema)]
+pub struct GetPromptImageContextItem {
+  pub media_token: MediaFileToken,
+  pub semantic: PromptContextSemanticType,
+  pub media_links: MediaLinks,
 }
 
 #[derive(Serialize, ToSchema)]

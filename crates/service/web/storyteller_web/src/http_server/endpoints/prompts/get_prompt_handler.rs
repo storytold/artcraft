@@ -7,7 +7,7 @@ use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::state::server_state::ServerState;
 use actix_web::error::ResponseError;
 use actix_web::http::StatusCode;
-use actix_web::web::Path;
+use actix_web::web::{Json, Path};
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse};
 use artcraft_api_defs::prompts::get_prompt::{
   GetPromptImageContextItem, GetPromptPathInfo, GetPromptSuccessResponse,
@@ -68,7 +68,7 @@ impl fmt::Display for GetPromptError {
 pub async fn get_prompt_handler(
   http_request: HttpRequest,
   path: Path<GetPromptPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<HttpResponse, GetPromptError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetPromptSuccessResponse>, GetPromptError>
 {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
@@ -208,7 +208,7 @@ pub async fn get_prompt_handler(
     Some(items)
   };
 
-  let response = GetPromptSuccessResponse {
+  Ok(Json(GetPromptSuccessResponse {
     success: true,
     prompt: PromptInfo {
       token: result.token,
@@ -239,12 +239,5 @@ pub async fn get_prompt_handler(
       maybe_global_ipa_image_token,
       maybe_frame_skip,
     },
-  };
-
-  let body = serde_json::to_string(&response)
-    .map_err(|e| GetPromptError::ServerError)?;
-
-  Ok(HttpResponse::Ok()
-    .content_type("application/json")
-    .body(body))
+  }))
 }
