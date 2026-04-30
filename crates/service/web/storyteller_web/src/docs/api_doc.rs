@@ -625,7 +625,7 @@ use crate::http_server::endpoints::media_files::list::list_batch_generated_redux
     BatchGetInferenceJobStatusQueryParams,
     BatchGetInferenceJobStatusSuccessResponse,
     BatchGetMediaFilesModelInfo,
-    BatchGetPromptsRequest,
+    BatchGetPromptsQuery,
     BatchGetPromptsResponse,
     BatchPromptInfo,
     CreatePromptRequest,

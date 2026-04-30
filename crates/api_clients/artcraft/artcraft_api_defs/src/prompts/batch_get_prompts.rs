@@ -7,15 +7,18 @@ use enums::common::generation::common_model_class::CommonModelClass;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
+use std::collections::HashSet;
+
 use serde_derive::{Deserialize, Serialize};
 use tokens::tokens::prompts::PromptToken;
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 
 pub const BATCH_GET_PROMPTS_PATH: &str = "/v1/prompt/batch";
 
-#[derive(Deserialize, ToSchema)]
-pub struct BatchGetPromptsRequest {
-  pub tokens: Vec<PromptToken>,
+#[derive(Deserialize, ToSchema, IntoParams)]
+pub struct BatchGetPromptsQuery {
+  /// Prompt tokens to look up.
+  pub tokens: HashSet<String>,
 }
 
 #[derive(Serialize, ToSchema)]

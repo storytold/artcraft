@@ -3,8 +3,9 @@ use std::sync::Arc;
 
 use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
+use actix_web_lab::extract::Query;
 use artcraft_api_defs::prompts::batch_get_prompts::{
-  BatchGetPromptsRequest, BatchGetPromptsResponse, BatchPromptInfo,
+  BatchGetPromptsQuery, BatchGetPromptsResponse, BatchPromptInfo,
 };
 use artcraft_api_defs::prompts::get_prompt::GetPromptImageContextItem;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
@@ -22,11 +23,13 @@ use crate::state::server_state::ServerState;
 const MAX_BATCH_SIZE: usize = 100;
 
 /// Batch get details on multiple prompts.
+///
+/// Called, eg. {{api_host}}/v1/prompt/batch?tokens={val}&tokens={val}&tokens=...
 #[utoipa::path(
-  post,
+  get,
   tag = "Prompts",
   path = "/v1/prompt/batch",
-  request_body = BatchGetPromptsRequest,
+  params(BatchGetPromptsQuery),
   responses(
     (status = 200, description = "Found", body = BatchGetPromptsResponse),
     (status = 400, description = "Bad request"),
@@ -35,22 +38,19 @@ const MAX_BATCH_SIZE: usize = 100;
 )]
 pub async fn batch_get_prompts_handler(
   http_request: HttpRequest,
-  body: Json<BatchGetPromptsRequest>,
+  query: Query<BatchGetPromptsQuery>,
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<BatchGetPromptsResponse>, AdvancedCommonWebError> {
-  let request = body.into_inner();
-
-  if request.tokens.len() > MAX_BATCH_SIZE {
+  if query.tokens.len() > MAX_BATCH_SIZE {
     return Err(AdvancedCommonWebError::BadInputWithSimpleMessage(
-      format!("tokens must contain between 0 and {} items", MAX_BATCH_SIZE),
+      format!("tokens must contain at most {} items", MAX_BATCH_SIZE),
     ));
   }
 
   // Deduplicate and trim whitespace
-  let unique_tokens: Vec<PromptToken> = request
-    .tokens
-    .into_iter()
-    .map(|t| PromptToken::new_from_str(t.as_str().trim()))
+  let unique_tokens: Vec<PromptToken> = query.tokens
+    .iter()
+    .map(|t| PromptToken::new_from_str(t.trim()))
     .filter(|t| !t.as_str().is_empty())
     .collect::<HashSet<_>>()
     .into_iter()
