@@ -441,6 +441,14 @@ const Landing3 = () => {
             const sec = Math.floor(safe % 60);
             return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
           };
+          // Throttle seeks to ~30fps. GSAP's onUpdate fires at the display
+          // refresh rate (60Hz, sometimes 120/144Hz on high-refresh monitors),
+          // which queues more seek requests than the decoder can keep up with
+          // on larger paint surfaces (1440p+). Halving the seek rate keeps the
+          // motion perceptually smooth (well above the 24fps human-perception
+          // floor) while cutting the decoder + GPU paint work in half.
+          const SEEK_INTERVAL_MS = 15;
+          let lastSeekAt = 0;
           tl.to(
             videoProxy,
             {
@@ -448,6 +456,9 @@ const Landing3 = () => {
               duration: 22,
               ease: "none",
               onUpdate: () => {
+                const now = performance.now();
+                if (now - lastSeekAt < SEEK_INTERVAL_MS) return;
+                lastSeekAt = now;
                 if (!knightVideo.duration) return;
                 const time = videoProxy.t * knightVideo.duration;
                 knightVideo.currentTime = time;
