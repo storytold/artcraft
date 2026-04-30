@@ -15,6 +15,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@storyteller/ui-button";
 import { PopoverMenu } from "@storyteller/ui-popover";
 import { UsersApi, UserInfo, CreditsApi, BillingApi } from "@storyteller/api";
+import { getSession, invalidateSession } from "../../lib/session";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCoins,
@@ -106,9 +107,8 @@ export default function Navbar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
-    const checkSession = async () => {
-      const api = new UsersApi();
-      const response = await api.GetSession();
+    const checkSession = async (force = false) => {
+      const response = await getSession(force);
       if (
         response.success &&
         response.data &&
@@ -130,7 +130,8 @@ export default function Navbar() {
 
     const handleAuthChange = () => {
       setIsLoading(true);
-      checkSession();
+      invalidateSession();
+      checkSession(true);
     };
 
     const handleCreditsChange = () => {
@@ -148,6 +149,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     const api = new UsersApi();
     await api.Logout();
+    invalidateSession();
     window.location.href = "/";
   };
 

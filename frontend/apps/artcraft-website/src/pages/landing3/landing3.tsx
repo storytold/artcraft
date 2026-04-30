@@ -27,7 +27,7 @@ import Seo from "../../components/seo";
 import Footer from "../../components/footer";
 import { DownloadModal } from "../../components/download-modal";
 import ModelBadgeGrid from "../../components/model-badge-grid";
-import { UsersApi } from "@storyteller/api";
+import { getSession } from "../../lib/session";
 import { DOWNLOAD_LINKS } from "../../config/github_download_links";
 import { SOCIAL_LINKS } from "../../config/links";
 import { Button } from "@storyteller/ui-button";
@@ -127,6 +127,48 @@ const MANIFESTO_WORDS: ReadonlyArray<string> = [
   "shot.",
 ];
 
+// Lazy autoplay video — defers the network fetch + decoder spin-up until
+// the element is approaching the viewport. Avoids ~7 simultaneous webm
+// downloads stealing main-thread + bandwidth from the hero animation.
+const LazyAutoplayVideo = ({
+  src,
+  className,
+}: {
+  src: string;
+  className?: string;
+}) => {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [shouldLoad, setShouldLoad] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current || shouldLoad) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoad(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "150% 0px" },
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [shouldLoad]);
+
+  return (
+    <video
+      ref={ref}
+      className={className}
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload={shouldLoad ? "auto" : "none"}
+      src={shouldLoad ? src : undefined}
+    />
+  );
+};
+
 interface TruchetBlobProps {
   className: string;
   variant?: TruchetVariant;
@@ -168,6 +210,11 @@ const Landing3 = () => {
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Defer the Vimeo iframe — its player JS (~500KB) is the biggest above-the-
+  // fold main-thread blocker. Mounting after the hero fade-in completes gives
+  // the user a smooth entrance animation, then the video appears on top of
+  // the existing black placeholder.
+  const [heroIframeMounted, setHeroIframeMounted] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const manifestoProgressRef = useRef(0);
   // Separate progress for the character — extends past the text-reveal end so
@@ -176,21 +223,21 @@ const Landing3 = () => {
 
   useEffect(() => {
     let cancelled = false;
-    const checkSession = async () => {
-      try {
-        const api = new UsersApi();
-        const response = await api.GetSession();
-        if (!cancelled && response.success && response.data?.loggedIn) {
-          setIsLoggedIn(true);
-        }
-      } catch {
-        // ignore
+    getSession().then((response) => {
+      if (!cancelled && response.success && response.data?.loggedIn) {
+        setIsLoggedIn(true);
       }
-    };
-    checkSession();
+    });
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Defer the hero iframe mount past the hero fade-in animation. Vimeo's
+  // player JS is the biggest main-thread blocker on initial load.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setHeroIframeMounted(true), 1000);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Lenis smooth scrolling
@@ -235,18 +282,22 @@ const Landing3 = () => {
       if (isMobile) return;
       const elements = gsap.utils.toArray<HTMLElement>("[data-reveal]");
       gsap.set(elements, { autoAlpha: 0, y: 24 });
-      elements.forEach((el) => {
-        gsap.to(el, {
-          autoAlpha: 1,
-          y: 0,
-          duration: 0.9,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: el,
-            start: "top 88%",
-            toggleActions: "play none none none",
-          },
-        });
+      // One ScrollTrigger watching all data-reveal elements at once instead
+      // of ~25 individual triggers. Above-the-fold elements (hero) batch-fire
+      // on mount; below-the-fold ones fire as their groups enter the viewport.
+      // Far less main-thread work in useLayoutEffect, so the hero fade-in
+      // doesn't get crowded by trigger setup.
+      ScrollTrigger.batch(elements, {
+        start: "top 88%",
+        once: true,
+        onEnter: (batch) =>
+          gsap.to(batch, {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.9,
+            ease: "power2.out",
+            stagger: 0.06,
+          }),
       });
 
       // Hero pattern parallax (slower than scroll, drifts upward)
@@ -351,7 +402,6 @@ const Landing3 = () => {
         title="ArtCraft - Controllable AI for Artists"
         description="ArtCraft is the opensource desktop app for generating AI video and images - built for artists who want real control."
       />
-
       {/* Top primary-blue accent, matches the pricing page */}
       <div
         aria-hidden
@@ -361,7 +411,6 @@ const Landing3 = () => {
             "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(45,129,255,0.18) 0%, transparent 70%)",
         }}
       />
-
       {/* Mid-page primary-blue wash */}
       <div
         aria-hidden
@@ -371,7 +420,6 @@ const Landing3 = () => {
             "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(45,129,255,0.08) 0%, transparent 70%)",
         }}
       />
-
       {/* Lower-page primary-blue accent */}
       <div
         aria-hidden
@@ -381,7 +429,6 @@ const Landing3 = () => {
             "radial-gradient(ellipse 60% 50% at 50% 100%, rgba(45,129,255,0.12) 0%, transparent 70%)",
         }}
       />
-
       {/* HERO */}
       <section className="relative pt-24 sm:pt-36 pb-20 sm:pb-24 px-4 sm:px-8 overflow-hidden">
         {/* Triangle pattern background with parallax */}
@@ -506,18 +553,19 @@ const Landing3 = () => {
               className="relative w-full rounded-xl sm:rounded-[20px] overflow-hidden bg-black"
               style={{ paddingTop: "56.25%" }}
             >
-              <iframe
-                src="https://player.vimeo.com/video/1179924350?h=8b9b3f0f35&autoplay=1&muted=1&loop=1&background=0&byline=0&portrait=0&title=0"
-                className="absolute inset-0 w-full h-full"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-                title="ArtCraft demo"
-              />
+              {heroIframeMounted && (
+                <iframe
+                  src="https://player.vimeo.com/video/1179924350?h=8b9b3f0f35&autoplay=1&muted=1&loop=1&background=0&byline=0&portrait=0&title=0"
+                  className="absolute inset-0 w-full h-full"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  title="ArtCraft demo"
+                />
+              )}
             </div>
           </div>
         </div>
       </section>
-
       {/* MANIFESTO */}
       {isMobile && (
         // Mobile: simple static version — no sticky, no 3D character, no
@@ -584,7 +632,6 @@ const Landing3 = () => {
         </section>
       )}
 
-      {/* FEATURES SECTION HEADER */}
       <section id="features" className="relative px-4 sm:px-8 pt-12 sm:pt-20">
         <div className="max-w-[1100px] mx-auto text-center" data-reveal>
           <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
@@ -600,7 +647,6 @@ const Landing3 = () => {
           </p>
         </div>
       </section>
-
       {/* FEATURES: alternating cards */}
       <section className="relative px-4 sm:px-8 py-16 sm:py-24">
         <TruchetBlob
@@ -657,20 +703,15 @@ const Landing3 = () => {
                   i % 2 === 1 ? "lg:order-1" : ""
                 }`}
               >
-                <video
+                <LazyAutoplayVideo
                   src={feature.src}
                   className="absolute inset-0 w-full h-full object-cover"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
                 />
               </div>
             </article>
           ))}
         </div>
       </section>
-
       {/* STOP RENTING SECTION */}
       <section className="relative px-4 sm:px-8 py-16 sm:py-24">
         <TruchetBlob
@@ -699,13 +740,13 @@ const Landing3 = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Websites column */}
             <div className="rounded-2xl sm:rounded-[28px] bg-[#080808] p-7 sm:p-8">
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-[12px] font-semibold uppercase tracking-wider text-white/40">
+              <div className="flex items-center gap-2 mb-9">
+                <span className="text-[12px] font-bold uppercase tracking-wider text-white/40">
                   Other tools
                 </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white/85">
-                The rental trap
+              <h3 className="text-xl sm:text-2xl font-semibold mb-5 tracking-[-0.01em] text-white/85">
+                The Rental Trap
               </h3>
               <p className="text-[15px] text-white/55 leading-relaxed mb-6">
                 With browser-based tools, you're paying for access, not a
@@ -738,12 +779,15 @@ const Landing3 = () => {
                 }}
               />
               <div className="relative">
-                <div className="flex items-center gap-2 mb-6">
-                  <span className="text-[12px] font-semibold uppercase tracking-wider text-primary">
-                    ArtCraft
-                  </span>
+                <div className="flex items-center gap-1.5 mb-8">
+                  <img
+                    src="/images/artcraft-logo.png"
+                    alt="ArtCraft"
+                    aria-hidden
+                    className="h-5 w-auto"
+                  />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-medium mb-5 tracking-[-0.01em] text-white">
+                <h3 className="text-xl sm:text-2xl font-bold mb-5 tracking-[-0.01em] text-white">
                   Complete ownership
                 </h3>
                 <p className="text-[15px] text-white/80 leading-relaxed mb-6">
@@ -751,7 +795,7 @@ const Landing3 = () => {
                   your files, and everything you create. Bring your own API
                   keys, or use ours.
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 self-end">
                   {["Yours forever", "BYO keys"].map((tag) => (
                     <span
                       key={tag}
@@ -770,7 +814,6 @@ const Landing3 = () => {
           </div>
         </div>
       </section>
-
       {/* FIVE REASONS: original bento, dark theme */}
       <section
         id="reasons"
@@ -811,6 +854,8 @@ const Landing3 = () => {
                   <img
                     src="/images/2d-3d.png"
                     alt="2D and 3D"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover rounded-2xl border border-white/[0.05]"
                   />
                 </div>
@@ -820,7 +865,7 @@ const Landing3 = () => {
                       Text Prompting Sucks
                     </h3>
                     <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
-                      <span className="text-primary font-semibold">
+                      <span className="text-primary-400/80 font-semibold">
                         Create images and videos with our easy-to-use AI tool.
                       </span>{" "}
                       Draw on a canvas or work in a 3D space as if you're
@@ -838,7 +883,7 @@ const Landing3 = () => {
                   Desktop App
                 </h3>
                 <p className="text-white/60 text-sm sm:text-base mb-4 sm:mb-6 lg:text-lg leading-relaxed">
-                  <span className="text-primary font-semibold">
+                  <span className="text-primary-400/80 font-semibold">
                     No more hunting for the hundredth tab.
                   </span>{" "}
                   Works on Windows, Mac, and soon Linux and Tablets. First class
@@ -850,18 +895,24 @@ const Landing3 = () => {
                       src="/images/windows-logo.png"
                       alt="Windows Logo"
                       draggable={false}
+                      loading="lazy"
+                      decoding="async"
                       className="h-32 rotate-6"
                     />
                     <img
                       src="/images/apple-logo.png"
                       alt="Apple Logo"
                       draggable={false}
+                      loading="lazy"
+                      decoding="async"
                       className="h-36 -rotate-6"
                     />
                     <img
                       src="/images/linux-logo.png"
                       alt="Linux Logo"
                       draggable={false}
+                      loading="lazy"
+                      decoding="async"
                       className="h-36 rotate-6"
                     />
                   </div>
@@ -882,7 +933,7 @@ const Landing3 = () => {
                     href="https://github.com/storytold/artcraft"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-primary font-semibold hover:text-primary-300 underline underline-offset-2 transition-colors"
+                    className="text-primary-400/80 font-semibold hover:text-primary-300 underline underline-offset-2 transition-colors"
                   >
                     open source on GitHub.
                   </a>{" "}
@@ -906,7 +957,7 @@ const Landing3 = () => {
                   </h3>
                   <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
                     You'll be able to use{" "}
-                    <span className="text-primary font-semibold">
+                    <span className="text-primary-400/80 font-semibold">
                       EVERY image and video model
                     </span>{" "}
                     all in one place. Log in with your existing subscriptions.
@@ -928,7 +979,7 @@ const Landing3 = () => {
                     Created by Artists and Filmmakers
                   </h3>
                   <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
-                    <span className="text-primary font-semibold">
+                    <span className="text-primary-400/80 font-semibold">
                       The other leading platforms were created by the Google ad
                       team, crypto bros, and other non-artists.
                     </span>{" "}
@@ -961,7 +1012,6 @@ const Landing3 = () => {
           </div>
         </div>
       </section>
-
       {/* MADE WITH ARTCRAFT */}
       <section id="made-with" className="relative px-4 sm:px-8 py-16 sm:py-24">
         <TruchetBlob
@@ -1007,6 +1057,8 @@ const Landing3 = () => {
                         <img
                           src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
                           alt="Video thumbnail"
+                          loading="lazy"
+                          decoding="async"
                           className="absolute inset-0 w-full h-full object-cover opacity-90"
                         />
                         <div className="absolute inset-0 bg-black/30 group-hover:bg-black/15 transition-colors" />
@@ -1027,7 +1079,6 @@ const Landing3 = () => {
           </div>
         </div>
       </section>
-
       {/* FINAL CTA */}
       <section className="relative px-4 sm:px-8 py-20 sm:py-32 overflow-hidden">
         <div
@@ -1152,7 +1203,6 @@ const Landing3 = () => {
           </div>
         </div>
       </section>
-
       <DownloadModal
         isOpen={showDownloadModal}
         onClose={() => setShowDownloadModal(false)}
