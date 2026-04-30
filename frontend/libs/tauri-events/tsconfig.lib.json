@@ -47,9 +47,6 @@
       "path": "../components/toaster/tsconfig.lib.json"
     },
     {
-      "path": "../tauri-api/tsconfig.lib.json"
-    },
-    {
       "path": "../soundboard/tsconfig.lib.json"
     },
     {

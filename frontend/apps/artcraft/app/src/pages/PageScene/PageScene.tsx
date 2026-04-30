@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import * as gpu from "detect-gpu";
 import { UsersApi } from "~/Classes/ApiManager";
 import { PrecisionSelector } from "./comps/PrecisionSelector/PrecisionSelector";
-import { InstallSounds } from "~/pages/PageScene/InstallSounds";
 import { PageEditor } from "~/pages/PageScene/PageEditor";
 import { GalleryDragComponent } from "@storyteller/ui-gallery-modal";
 import {
@@ -31,8 +30,7 @@ import { useGenerationEnqueueSuccessEvent } from "@storyteller/tauri-events";
 import { useGenerationFailedEvent } from "@storyteller/tauri-events";
 import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { useTextToImageStore } from "~/pages/PageImage/TextToImageStore";
-import { GetAppPreferences } from "@storyteller/tauri-api";
-import { SoundRegistry } from "@storyteller/soundboard";
+import { SoundManager } from "@storyteller/soundboard";
 
 export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
   useSignals();
@@ -110,18 +108,8 @@ export const PageScene = ({ sceneToken }: { sceneToken?: string }) => {
 
   useMediaFileDeletedEvent(async (event) => {
     console.log("Media file deleted event received:", event);
-    const prefs = await GetAppPreferences();
-    const soundName = prefs.preferences?.delete_file_sound;
-    if (soundName !== undefined) {
-      const registry = SoundRegistry.getInstance();
-      registry.playSound(soundName);
-    }
+    await SoundManager.playFileDeleted();
     toast.error("File deleted.");
-  });
-
-  useEffect(() => {
-    console.log("installing event listeners");
-    InstallSounds();
   });
 
   const currentReminderModalProps = actionReminderProps.value;

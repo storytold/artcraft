@@ -13,6 +13,7 @@ import EnvironmentVariables from "~/Classes/EnvironmentVariables";
 import { pageHeight, pageWidth, persistLogin } from "~/signals";
 import { SyncStorytellerApiConfig } from "./api/SyncStorytellerApiConfig";
 import { posthog } from "posthog-js";
+import { SoundManager } from "@storyteller/soundboard";
 
 config.autoAddCss = false; /* eslint-disable import/first */
 
@@ -82,6 +83,10 @@ const GlobalSettingsManager = ({ env }: { env: Record<string, string> }) => {
     return () => {
       window.removeEventListener("resize", setPage);
     };
+  }, []);
+
+  useEffect(() => {
+    SoundManager.install();
   }, []);
 
   return null;

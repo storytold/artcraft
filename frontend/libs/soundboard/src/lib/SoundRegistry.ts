@@ -1,3 +1,4 @@
+// Internal to @storyteller/soundboard. Consumers go through SoundManager.
 import { SoundEffect } from "./SoundEffect";
 
 export class SoundRegistry {

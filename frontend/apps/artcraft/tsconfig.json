@@ -29,22 +29,13 @@
   },
   "references": [
     {
-      "path": "../../libs/components/pagination"
-    },
-    {
-      "path": "../../libs/components/search"
-    },
-    {
-      "path": "../../libs/components/badge"
-    },
-    {
       "path": "../../libs/components/button-icon"
     },
     {
-      "path": "../../libs/components/button-icon-select"
+      "path": "../../libs/components/label"
     },
     {
-      "path": "../../libs/components/label"
+      "path": "../../libs/components/button-icon-select"
     },
     {
       "path": "../../libs/components/button-dropdown"
@@ -56,10 +47,13 @@
       "path": "../../libs/components/login-modal"
     },
     {
-      "path": "../../libs/soundboard"
+      "path": "../../libs/components/badge"
     },
     {
       "path": "../../libs/components/slider-v2"
+    },
+    {
+      "path": "../../libs/soundboard"
     },
     {
       "path": "../../libs/components/pagedraw"
