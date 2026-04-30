@@ -3,6 +3,7 @@ import { isMobile, isMacOs } from "react-device-detect";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ManifestoThreeBackground } from "../../components/manifesto-three-background";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithub, faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { faWindows, faApple } from "@fortawesome/free-brands-svg-icons";
@@ -104,6 +105,28 @@ const MADE_WITH_VIDEOS = [
   "https://www.youtube.com/embed/H4NFXGMuwpY?si=wPuQl5cJOu1v8MJu",
 ];
 
+const MANIFESTO_WORDS: ReadonlyArray<string> = [
+  "ArtCraft",
+  "brings",
+  "3D",
+  "control",
+  "to",
+  "AI",
+  "image",
+  "and",
+  "video",
+  "generation,",
+  "giving",
+  "artists",
+  "like",
+  "you",
+  "full",
+  "power",
+  "over",
+  "every",
+  "shot.",
+];
+
 interface TruchetBlobProps {
   className: string;
   variant?: TruchetVariant;
@@ -146,6 +169,10 @@ const Landing3 = () => {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const manifestoProgressRef = useRef(0);
+  // Separate progress for the character — extends past the text-reveal end so
+  // the character keeps walking and exits frame as the user scrolls past.
+  const characterProgressRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,6 +271,48 @@ const Landing3 = () => {
           },
         });
       });
+
+      // Manifesto: pin the section, reveal words sequentially as the user scrolls
+      const manifestoSection = document.querySelector<HTMLElement>(
+        "[data-manifesto-section]",
+      );
+      const manifestoWords = gsap.utils.toArray<HTMLElement>(
+        "[data-manifesto-word]",
+      );
+      if (manifestoSection && manifestoWords.length > 0) {
+        gsap.set(manifestoWords, { y: 6 });
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: manifestoSection,
+            start: "top top",
+            end: "bottom bottom",
+            scrub: 1.2,
+            onUpdate: (self) => {
+              manifestoProgressRef.current = self.progress;
+            },
+          },
+        });
+        manifestoWords.forEach((word, i) => {
+          tl.to(
+            word,
+            { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" },
+            i * 0.5,
+          );
+        });
+
+        // Character traversal: spans from when the section first enters
+        // viewport to when it fully exits, so the character keeps walking
+        // (and animating) past the manifesto reveal until it's off-screen.
+        ScrollTrigger.create({
+          trigger: manifestoSection,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1.2,
+          onUpdate: (self) => {
+            characterProgressRef.current = self.progress;
+          },
+        });
+      }
     }, rootRef);
 
     return () => ctx.revert();
@@ -260,7 +329,7 @@ const Landing3 = () => {
   return (
     <div
       ref={rootRef}
-      className="relative min-h-screen bg-[#101014] text-white selection:bg-primary/30 selection:text-white overflow-hidden"
+      className="relative min-h-screen bg-[#101014] text-white selection:bg-primary/30 selection:text-white overflow-x-clip"
     >
       <Seo
         title="ArtCraft - Controllable AI for Artists"
@@ -432,6 +501,72 @@ const Landing3 = () => {
           </div>
         </div>
       </section>
+
+      {/* MANIFESTO */}
+      {isMobile && (
+        // Mobile: simple static version — no sticky, no 3D character, no
+        // scroll reveal. Just the manifesto as a regular centered headline.
+        <section className="relative px-4 py-20 bg-[#101014]">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2
+              className="text-2xl sm:text-3xl tracking-[-0.035em] font-semibold text-white"
+              style={{ lineHeight: 1.4 }}
+            >
+              {MANIFESTO_WORDS.join(" ")}
+            </h2>
+          </div>
+        </section>
+      )}
+      {!isMobile && (
+      // Desktop: sticky scroll-reveal + 3D character walking across.
+      <section
+        data-manifesto-section
+        className="relative"
+        style={{ height: "220vh" }}
+      >
+        <div
+          className="flex items-center justify-center overflow-hidden bg-[#101014]"
+          style={{ position: "sticky", top: 0, height: "100vh" }}
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{
+              maskImage:
+                "radial-gradient(ellipse 70% 60% at 50% 40%, black 25%, transparent 80%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 70% 60% at 50% 40%, black 25%, transparent 80%)",
+            }}
+          >
+            <TruchetPattern
+              variant="landing"
+              intensity={0.5}
+              className="absolute inset-0 w-full h-full"
+            />
+          </div>
+          <ManifestoThreeBackground progressRef={characterProgressRef} />
+          <h2
+            className="relative z-10 max-w-4xl mx-auto px-4 sm:px-8 text-center text-2xl sm:text-4xl md:text-5xl lg:text-[60px] tracking-[-0.035em] font-semibold text-white"
+            style={{
+              lineHeight: 1.2,
+              textShadow:
+                "0 2px 32px rgba(0,0,0,0.95), 0 0 60px rgba(0,0,0,0.8), 0 0 100px rgba(0,0,0,0.55), 0 0 160px rgba(0,0,0,0.35)",
+            }}
+          >
+            {MANIFESTO_WORDS.map((w, i) => (
+              <span
+                key={i}
+                data-manifesto-word
+                className="inline-block opacity-15 will-change-[opacity,transform]"
+              >
+                {w}
+                {i < MANIFESTO_WORDS.length - 1 ? " " : ""}
+              </span>
+            ))}
+          </h2>
+        </div>
+      </section>
+      )}
 
       {/* FEATURES SECTION HEADER */}
       <section id="features" className="relative px-4 sm:px-8 pt-12 sm:pt-20">
