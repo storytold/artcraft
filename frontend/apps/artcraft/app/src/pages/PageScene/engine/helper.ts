@@ -83,17 +83,18 @@ export class SceneUtils {
     if (this.editor.control == undefined) {
       return;
     }
-    if (this.editor.outlinePass == undefined) {
+    const outlinePass = this.editor.postProcessing.outlinePass;
+    if (outlinePass == undefined) {
       return;
     }
     if (remove_outline) {
       this.editor.last_selected = this.editor.selected;
-      this.editor.outlinePass.selectedObjects = [];
+      outlinePass.selectedObjects = [];
       this.editor.publishSelect();
     }
     this.editor.control.detach();
     this.editor.activeScene.scene.remove(this.editor.control);
-    if (remove_outline) this.editor.outlinePass.selectedObjects = [];
+    if (remove_outline) outlinePass.selectedObjects = [];
   }
 
   // TO UPDATE selected objects in the scene might want to add to the scene ...

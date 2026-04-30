@@ -8,13 +8,6 @@ import {
 import { TransformControls } from "./TransformControls.js";
 import Scene from "./scene.js";
 import { APIManager } from "./api_manager.js";
-import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
-import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
-import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { SMAAPass } from "three/addons/postprocessing/SMAAPass.js";
-import { SAOPass } from "three/addons/postprocessing/SAOPass.js";
-import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { CameraAspectRatio } from "~/pages/PageScene/enums";
 import { AssetType, ClipGroup } from "~/enums";
@@ -32,13 +25,11 @@ import {
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { MediaUploadApi } from "~/Classes/ApiManager";
 import { SceneManager } from "./scene_manager_api";
-import { CustomOutlinePass } from "./CustomOutlinePass.js";
-import FindSurfaces from "./FindSurfaces.js";
 import { ViewportController } from "./editor/ViewportController";
+import { PostProcessingPipeline } from "./editor/PostProcessingPipeline";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
-import { SSAOPass } from "three/examples/jsm/Addons.js";
 import { usePageSceneStore } from "../PageSceneStore";
 
 export type EditorInitializeConfig = {
@@ -70,16 +61,8 @@ class Editor {
   rawRenderer: THREE.WebGLRenderer | undefined;
   clock: THREE.Clock | undefined;
 
-  composer: EffectComposer | undefined;
-  render_composer: EffectComposer | undefined;
-  outlinePass: OutlinePass | undefined;
   last_cam_pos: THREE.Vector3;
   last_cam_rot: THREE.Euler;
-  ssaoPass: SSAOPass | undefined;
-  outputPass: OutputPass | undefined;
-  renderOutputPass: OutputPass | undefined;
-  bloomPass: UnrealBloomPass | undefined;
-  smaaPass: SMAAPass | undefined;
   control: TransformControls | undefined;
   raycaster: THREE.Raycaster | undefined;
   mouse: THREE.Vector2 | undefined;
@@ -102,7 +85,6 @@ class Editor {
   lockControls: PointerLockControls | undefined;
   cam_obj: THREE.Object3D | undefined;
   camera_last_pos: THREE.Vector3;
-  renderPass: RenderPass | undefined;
   frames: number;
   lastFrameTime: number;
 
@@ -121,13 +103,14 @@ class Editor {
   render_height: number;
 
   positive_prompt: string;
-  rawRenderPass: RenderPass | undefined;
   generating_preview: boolean = false;
 
   recorder: MediaRecorder | undefined;
 
   // Owns canvas/container DOM refs and the resize cascade.
   viewport: ViewportController;
+  // Owns the EffectComposer chains and post-process passes.
+  postProcessing: PostProcessingPipeline;
 
   selectedCanvas: boolean;
   startRenderHeight: number;
@@ -154,9 +137,6 @@ class Editor {
   ///////////////////////////////////////////////
 
   focused: boolean = false;
-
-  customOutlinerPass: CustomOutlinePass | undefined;
-  surfaceFinder: FindSurfaces | undefined;
 
   renderIndex: number;
   // this should be set in the future to extend the lenght of the track for rendering engine
@@ -205,10 +185,15 @@ class Editor {
     // global names
     this.camera_name = "::CAM::";
 
+    // PostProcessingPipeline must exist before Scene because Scene's
+    // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
+    this.postProcessing = new PostProcessingPipeline();
+
     this.activeScene = new Scene(
       "" + this.version,
       this.camera_name,
-      this.updateSurfaceIdAttributeToMesh.bind(this),
+      (scene: THREE.Scene) =>
+        this.postProcessing.updateSurfaceIdAttributeToMesh(scene),
       this.version,
     );
     this.activeScene.initialize();
@@ -243,16 +228,7 @@ class Editor {
       getRenderCamera: () => this.render_camera,
       getRenderer: () => this.renderer,
       getRenderAspectRatio: () => this.getRenderDimensions().aspectRatio,
-      resizePostProcessing: (w, h) => {
-        // Each pass is created at a different point in initialize() —
-        // composer in _configurePostProcessing, render_composer +
-        // customOutlinerPass in _configurePostProcessingRaw. The first
-        // viewport.onWindowResize() runs between the two, so the optional
-        // chaining here is load-bearing, not paranoia.
-        this.composer?.setSize(w, h);
-        this.render_composer?.setSize(w, h);
-        this.customOutlinerPass?.setSize(w, h);
-      },
+      resizePostProcessing: (w, h) => this.postProcessing.resize(w, h),
     });
 
     // Scene State
@@ -440,7 +416,13 @@ class Editor {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(window.devicePixelRatio);
 
-    this._configurePostProcessing();
+    this.postProcessing.configureMain(
+      this.renderer,
+      this.activeScene.scene,
+      this.camera,
+      this.viewport.canvReference?.width ?? 0,
+      this.viewport.canvReference?.height ?? 0,
+    );
     // Controls and movement.
 
     this.lockControls = new PointerLockControls(
@@ -504,7 +486,7 @@ class Editor {
       this.mouse,
       this.raycaster,
       this.control,
-      this.outlinePass,
+      this.postProcessing.outlinePass,
       this.activeScene.scene,
       this.publishSelect.bind(this),
       this.updateSelectedUI.bind(this),
@@ -560,7 +542,13 @@ class Editor {
       onloadCallback();
     }
 
-    this._configurePostProcessingRaw();
+    this.postProcessing.configureRaw(
+      this.rawRenderer,
+      this.activeScene.scene,
+      this.render_camera,
+      this.viewport.canvasRenderCamReference?.width ?? 0,
+      this.viewport.canvasRenderCamReference?.height ?? 0,
+    );
 
     loadingBarData.value = {
       ...loadingBarData.value,
@@ -605,9 +593,10 @@ class Editor {
     }
 
     // Store and disable outline pass
-    const wasOutlineEnabled = this.outlinePass?.enabled ?? false;
-    if (this.outlinePass) {
-      this.outlinePass.enabled = false;
+    const outlinePass = this.postProcessing.outlinePass;
+    const wasOutlineEnabled = outlinePass?.enabled ?? false;
+    if (outlinePass) {
+      outlinePass.enabled = false;
     }
 
     // High quality dimensions for each aspect ratio
@@ -670,9 +659,9 @@ class Editor {
     }
 
     // Re-render the scene at high resolution
-    if (this.composer) {
-      this.composer.setSize(targetWidth, targetHeight);
-      this.composer.render();
+    if (this.postProcessing.composer) {
+      this.postProcessing.composer.setSize(targetWidth, targetHeight);
+      this.postProcessing.composer.render();
     } else {
       this.renderer.render(this.activeScene.scene, this.camera);
     }
@@ -696,9 +685,9 @@ class Editor {
     this.renderer.setPixelRatio(originalPixelRatio);
 
     // Re-render at original resolution
-    if (this.composer) {
-      this.composer.setSize(originalWidth, originalHeight);
-      this.composer.render();
+    if (this.postProcessing.composer) {
+      this.postProcessing.composer.setSize(originalWidth, originalHeight);
+      this.postProcessing.composer.render();
     } else {
       this.renderer.render(this.activeScene.scene, this.camera);
     }
@@ -712,8 +701,8 @@ class Editor {
     }
 
     // Restore outline pass
-    if (this.outlinePass) {
-      this.outlinePass.enabled = wasOutlineEnabled;
+    if (outlinePass) {
+      outlinePass.enabled = wasOutlineEnabled;
     }
 
     if (shouldDownload) {
@@ -866,135 +855,6 @@ class Editor {
     loadingBarIsShowing.value = false;
   }
 
-  _configurePostProcessingRaw() {
-    const width = this.viewport.canvasRenderCamReference?.width ?? 0;
-    const height = this.viewport.canvasRenderCamReference?.height ?? 0;
-    if (
-      this.rawRenderer == undefined ||
-      this.render_camera == undefined ||
-      this.renderer == undefined
-    ) {
-      return;
-    }
-
-    const depthTexture = new THREE.DepthTexture(width, height);
-    depthTexture.type = THREE.UnsignedShortType;
-
-    const renderTarget = new THREE.WebGLRenderTarget(
-      window.innerWidth,
-      window.innerHeight,
-      {
-        depthTexture: depthTexture,
-        depthBuffer: true,
-      },
-    );
-
-    this.customOutlinerPass = new CustomOutlinePass(
-      new THREE.Vector2(width, height),
-      this.activeScene.scene,
-      this.render_camera,
-    );
-
-    this.render_composer = new EffectComposer(this.rawRenderer, renderTarget);
-
-    this.surfaceFinder = new FindSurfaces();
-
-    this.rawRenderPass = new RenderPass(
-      this.activeScene.scene,
-      this.render_camera,
-    );
-
-    this.render_composer.addPass(this.rawRenderPass);
-
-    this.render_composer.addPass(this.customOutlinerPass);
-
-    this.renderOutputPass = new OutputPass();
-
-    this.render_composer.addPass(this.renderOutputPass);
-
-    this.setColorMap();
-  }
-
-  setRenderDepth() {
-    this.updateSurfaceIdAttributeToMesh(this.activeScene.scene);
-    if (this.render_camera && this.customOutlinerPass) {
-      this.customOutlinerPass.fsQuad.material.uniforms.debugVisualize.value = 3; // Depth
-    }
-  }
-
-  setNormalMap() {
-    this.updateSurfaceIdAttributeToMesh(this.activeScene.scene);
-    if (this.render_camera && this.customOutlinerPass) {
-      this.customOutlinerPass.fsQuad.material.uniforms.debugVisualize.value = 4; // Normal Map
-    }
-  }
-
-  setColorMap() {
-    this.updateSurfaceIdAttributeToMesh(this.activeScene.scene);
-    if (this.render_camera && this.customOutlinerPass) {
-      this.customOutlinerPass.fsQuad.material.uniforms.debugVisualize.value = 2; // Renderd Color
-    }
-  }
-
-  setOutlineRender() {
-    this.updateSurfaceIdAttributeToMesh(this.activeScene.scene);
-    if (this.render_camera && this.customOutlinerPass) {
-      this.customOutlinerPass.fsQuad.material.uniforms.debugVisualize.value = 7; // Outlines Only
-    }
-  }
-
-  // Configure post processing.
-  _configurePostProcessing() {
-    const width = this.viewport.canvReference?.width ?? 0;
-    const height = this.viewport.canvReference?.height ?? 0;
-
-    if (this.renderer == undefined || this.camera == undefined) {
-      return;
-    }
-
-    this.composer = new EffectComposer(this.renderer);
-    this.renderPass = new RenderPass(this.activeScene.scene, this.camera);
-
-    this.composer.addPass(this.renderPass);
-
-    this.outlinePass = new OutlinePass(
-      new THREE.Vector2(width / 10, height / 10),
-      this.activeScene.scene,
-      this.camera,
-    );
-
-    // this.outlinePass.edgeStrength = 5.0;
-    // this.outlinePass.edgeGlow = 0.1;
-    // this.outlinePass.edgeThickness = 1.2;
-    // this.outlinePass.pulsePeriod = 3;
-    // this.outlinePass.usePatternTexture = false;
-    // this.outlinePass.visibleEdgeColor.set(0x4b9fff);
-
-    // this.composer.addPass(this.outlinePass);
-
-    this.bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(width, height),
-      1.5,
-      0.4,
-      0.85,
-    );
-    this.bloomPass.strength = 0.25;
-
-    // this.smaaPass = new SMAAPass(
-    //   width * this.renderer.getPixelRatio(),
-    //   height * this.renderer.getPixelRatio(),
-    // );
-
-    // this.composer.addPass(this.bloomPass);
-    // this.composer.addPass(this.smaaPass);
-
-    // this.ssaoPass = new SSAOPass(this.activeScene.scene, this.camera, width, height);
-    // this.composer.addPass(this.ssaoPass);
-
-    this.outputPass = new OutputPass();
-    this.composer.addPass(this.outputPass);
-  }
-
   deleteObject(uuid: string) {
     this.mouse_controls?.clearFKVisuals();
     this.mouse_controls?.removeTransformControls(true);
@@ -1011,25 +871,15 @@ class Editor {
     return await this.activeScene.instantiate(name, pos);
   }
 
-  updateSurfaceIdAttributeToMesh(scene: THREE.Scene) {
-    if (this.surfaceFinder === undefined) {
-      return;
-    }
-    this.surfaceFinder.surfaceId = 0;
-    this.customOutlinerPass?.updateMaxSurfaceId(
-      this.surfaceFinder.surfaceId + 1,
-    );
-  }
-
   // Render the scene to the camera, this is called in the update.
   async renderScene() {
     if (
-      this.composer != null &&
+      this.postProcessing.composer != null &&
       !this.rendering &&
       this.rawRenderer &&
-      this.render_composer
+      this.postProcessing.render_composer
     ) {
-      this.composer.render();
+      this.postProcessing.composer.render();
     } else if (this.renderer && this.render_camera && !this.rendering) {
       this.renderer.setSize(this.render_width, this.render_height);
       this.renderer.render(this.activeScene.scene, this.render_camera);
@@ -1193,8 +1043,7 @@ class Editor {
 
     // Fix: dispose 3D contexts
     this.renderer?.dispose();
-    this.composer?.dispose();
-    this.render_composer?.dispose();
+    this.postProcessing.dispose();
     this.rawRenderer?.dispose();
 
     this.isMounted = false;
