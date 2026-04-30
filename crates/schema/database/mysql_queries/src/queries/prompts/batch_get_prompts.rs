@@ -15,6 +15,7 @@ use tokens::traits::mysql_token_from_row::MySqlTokenFromRow;
 
 pub struct BatchPromptResult {
   pub token: PromptToken,
+  pub prompt_type: PromptType,
   pub maybe_model_type: Option<CommonModelType>,
   pub maybe_generation_provider: Option<GenerationProvider>,
   pub maybe_positive_prompt: Option<String>,
@@ -32,6 +33,7 @@ impl FromRow<'_, MySqlRow> for BatchPromptResult {
   fn from_row(row: &MySqlRow) -> Result<Self, sqlx::Error> {
     Ok(Self {
       token: PromptToken::try_from_mysql_row(row, "token")?,
+      prompt_type: PromptType::try_from_mysql_row(row, "prompt_type")?,
       maybe_model_type: row.try_get::<Option<String>, _>("maybe_model_type")?
         .and_then(|s| CommonModelType::from_str(&s).ok()),
       maybe_generation_provider: row.try_get::<Option<String>, _>("maybe_generation_provider")?
@@ -63,6 +65,7 @@ pub async fn batch_get_prompts(
   let mut query_builder: QueryBuilder<MySql> = QueryBuilder::new(r#"
 SELECT
     p.token,
+    p.prompt_type,
     p.maybe_model_type,
     p.maybe_generation_provider,
     p.maybe_positive_prompt,

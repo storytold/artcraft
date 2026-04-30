@@ -10,7 +10,7 @@ use artcraft_api_defs::prompts::get_prompt::GetPromptImageContextItem;
 use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path::MediaFileBucketPath;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use log::warn;
-use mysql_queries::queries::prompt_context_items::list_prompt_context_items::list_prompt_context_items;
+use mysql_queries::queries::prompt_context_items::batch_list_prompt_context_items::batch_list_prompt_context_items;
 use mysql_queries::queries::prompts::batch_get_prompts::batch_get_prompts;
 use tokens::tokens::prompts::PromptToken;
 
@@ -45,7 +45,7 @@ pub async fn batch_get_prompts_handler(
       format!("tokens must contain between 0 and {} items", MAX_BATCH_SIZE),
     ));
   }
-  
+
   // Deduplicate and trim whitespace
   let unique_tokens: Vec<PromptToken> = request
     .tokens
@@ -65,6 +65,7 @@ pub async fn batch_get_prompts_handler(
 
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
+  // Batch query: fetch all prompts in one query
   let results = batch_get_prompts(&unique_tokens, &mut mysql_connection)
     .await
     .map_err(|err| {
@@ -72,60 +73,55 @@ pub async fn batch_get_prompts_handler(
       AdvancedCommonWebError::from_error(err)
     })?;
 
+  // Batch query: fetch all context items for all prompts in one query
+  let all_context_items = batch_list_prompt_context_items(&unique_tokens, &mut mysql_connection)
+    .await
+    .map_err(|err| {
+      warn!("Batch list prompt context items query error: {:?}", err);
+      AdvancedCommonWebError::from_error(err)
+    })?;
+
   let media_domain = get_media_domain(&http_request);
 
-  // Fetch context items for each prompt
+  // Group context items by prompt token
   let mut context_items_map: HashMap<String, Vec<GetPromptImageContextItem>> = HashMap::new();
 
-  for result in &results {
-    let items_result = list_prompt_context_items(
-      &result.token,
-      &mut mysql_connection,
-    ).await;
-
-    let items = items_result.unwrap_or_else(|e| {
-      warn!("Error listing prompt context items for {}: {:?}", result.token.as_str(), e);
-      Vec::new()
-    });
-
-    let filtered_items: Vec<GetPromptImageContextItem> = items
-      .iter()
-      .filter_map(|item| {
-        match item.context_semantic_type {
-          PromptContextSemanticType::VidStartFrame => {},
-          PromptContextSemanticType::VidEndFrame => {},
-          PromptContextSemanticType::Imgref => {},
-          PromptContextSemanticType::ImgrefCharacter => {},
-          PromptContextSemanticType::ImgrefStyle => {},
-          PromptContextSemanticType::ImgrefBg => {},
-          _ => {
-            return None
-          },
-        }
-
-        let bucket_path = MediaFileBucketPath::from_object_hash(
-          &item.public_bucket_directory_hash,
-          item.maybe_public_bucket_prefix.as_deref(),
-          item.maybe_public_bucket_extension.as_deref(),
-        );
-
-        Some(GetPromptImageContextItem {
-          media_token: item.media_token.clone(),
-          semantic: item.context_semantic_type,
-          media_links: MediaLinksBuilder::from_media_path_and_env(
-            media_domain,
-            server_state.server_environment,
-            &bucket_path,
-          ),
-        })
-      })
-      .collect();
-
-    if !filtered_items.is_empty() {
-      context_items_map.insert(result.token.as_str().to_string(), filtered_items);
+  for item in all_context_items {
+    // Filter to only image-like context types
+    match item.context_semantic_type {
+      PromptContextSemanticType::VidStartFrame
+      | PromptContextSemanticType::VidEndFrame
+      | PromptContextSemanticType::Imgref
+      | PromptContextSemanticType::ImgrefCharacter
+      | PromptContextSemanticType::ImgrefStyle
+      | PromptContextSemanticType::ImgrefBg
+      | PromptContextSemanticType::VidRef => {} // Include
+      _ => continue, // Ignore
     }
+
+    let bucket_path = MediaFileBucketPath::from_object_hash(
+      &item.public_bucket_directory_hash,
+      item.maybe_public_bucket_prefix.as_deref(),
+      item.maybe_public_bucket_extension.as_deref(),
+    );
+
+    let context_item = GetPromptImageContextItem {
+      media_token: item.media_token,
+      semantic: item.context_semantic_type,
+      media_links: MediaLinksBuilder::from_media_path_and_env(
+        media_domain,
+        server_state.server_environment,
+        &bucket_path,
+      ),
+    };
+
+    context_items_map
+      .entry(item.prompt_token.as_str().to_string())
+      .or_default()
+      .push(context_item);
   }
 
+  // Assemble final response
   let prompts: Vec<BatchPromptInfo> = results
     .into_iter()
     .map(|result| {
@@ -135,6 +131,7 @@ pub async fn batch_get_prompts_handler(
 
       BatchPromptInfo {
         token: result.token,
+        prompt_type: result.prompt_type,
         maybe_model_class: result.maybe_model_type.map(|ty| ty.get_model_class()),
         maybe_model_type: result.maybe_model_type,
         maybe_generation_provider: result.maybe_generation_provider,

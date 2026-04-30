@@ -28,6 +28,8 @@ pub struct BatchGetPromptsResponse {
 pub struct BatchPromptInfo {
   pub token: PromptToken,
 
+  pub prompt_type: PromptType,
+
   /// The type of model used
   pub maybe_model_type: Option<CommonModelType>,
 
