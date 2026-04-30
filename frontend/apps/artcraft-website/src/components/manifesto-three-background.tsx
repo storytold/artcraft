@@ -163,7 +163,7 @@ export const ManifestoThreeBackground = ({
         // visible duration). At that point the character is around mid-frame.
         // From p=0.55 → 1.0 the character continues walking and exits to
         // the right while the section scrolls away.
-        character.position.x = -14 + 28 * cp;
+        character.position.x = -11 + 25 * cp;
         character.position.y = -2.5 + Math.sin(t * 1.6) * 0.04;
       }
 
