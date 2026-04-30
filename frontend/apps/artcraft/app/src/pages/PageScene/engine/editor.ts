@@ -34,6 +34,7 @@ import { MediaUploadApi } from "~/Classes/ApiManager";
 import { SceneManager } from "./scene_manager_api";
 import { CustomOutlinePass } from "./CustomOutlinePass.js";
 import FindSurfaces from "./FindSurfaces.js";
+import { ViewportController } from "./editor/ViewportController";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -68,8 +69,6 @@ class Editor {
   sparkRenderer: SparkRenderer | null = null;
   rawRenderer: THREE.WebGLRenderer | undefined;
   clock: THREE.Clock | undefined;
-  canvReference: HTMLCanvasElement | null = null;
-  canvasRenderCamReference: HTMLCanvasElement | null = null;
 
   composer: EffectComposer | undefined;
   render_composer: EffectComposer | undefined;
@@ -120,19 +119,19 @@ class Editor {
   // getSceneSignals: () => SceneSignal;
   render_width: number;
   render_height: number;
-  containerResizeObserver: ResizeObserver | undefined;
 
   positive_prompt: string;
   rawRenderPass: RenderPass | undefined;
   generating_preview: boolean = false;
 
   recorder: MediaRecorder | undefined;
-  container: HTMLElement | null = null;
+
+  // Owns canvas/container DOM refs and the resize cascade.
+  viewport: ViewportController;
 
   selectedCanvas: boolean;
   startRenderHeight: number;
   startRenderWidth: number;
-  lastCanvasSize: number;
   // Default params.
 
   // global names of scene entities
@@ -219,7 +218,6 @@ class Editor {
     this.startRenderWidth = 0;
     this.startRenderHeight = 0;
     this.rendering = false;
-    this.lastCanvasSize = 0;
     this.switchPreviewToggle = false;
     this.api_manager = new APIManager();
     this.camera_person_mode = false;
@@ -240,6 +238,22 @@ class Editor {
 
     this.utils = new SceneUtils(this, this.activeScene);
     this.save_manager = new SaveManager(this);
+    this.viewport = new ViewportController({
+      getCamera: () => this.camera,
+      getRenderCamera: () => this.render_camera,
+      getRenderer: () => this.renderer,
+      getRenderAspectRatio: () => this.getRenderDimensions().aspectRatio,
+      resizePostProcessing: (w, h) => {
+        // Each pass is created at a different point in initialize() —
+        // composer in _configurePostProcessing, render_composer +
+        // customOutlinerPass in _configurePostProcessingRaw. The first
+        // viewport.onWindowResize() runs between the two, so the optional
+        // chaining here is load-bearing, not paranoia.
+        this.composer?.setSize(w, h);
+        this.render_composer?.setSize(w, h);
+        this.customOutlinerPass?.setSize(w, h);
+      },
+    });
 
     // Scene State
     this.current_scene_media_token = null;
@@ -310,58 +324,6 @@ class Editor {
     return value === null || value.trim().length === 0;
   }
 
-  containerMayReset() {
-    //TODO: we should not need this, if the container is reset,
-    // updateSceneContainer should update the reference in the editor
-    if (!this.container) {
-      console.warn(
-        "Editor - Container does not exist, querying from DOM via document.getElementById",
-      );
-      this.container = document.getElementById("video-scene-container");
-    }
-  }
-  updateSceneContainer(newContainer: HTMLDivElement) {
-    this.container = newContainer;
-    this.containerResizeObserver?.disconnect();
-    this.containerResizeObserver?.observe(this.container);
-  }
-  engineCanvasMayReset() {
-    //TODO: we should not need this, if the this canvas is reset,
-    // updateEngineCanvas should update the reference in the editor
-    if (!this.canvReference) {
-      console.warn(
-        "Editor - Engine Canbas does not exist, querying from DOM via document.getElementById",
-      );
-      this.canvReference = document.getElementById(
-        "video-scene",
-      ) as HTMLCanvasElement;
-    }
-  }
-  updateEngineCanvas(newCanvas: HTMLCanvasElement) {
-    this.canvReference = newCanvas;
-    if (this.renderer) {
-      this.renderer.domElement = this.canvReference;
-    }
-  }
-  camViewCanvasMayReset() {
-    //TODO: we should not need this, if the this canvas is reset,
-    // updateCamViewCanvas should update the reference in the editor
-    if (!this.canvasRenderCamReference) {
-      console.warn(
-        "Editor - Cam View Canvas does not exist, querying from DOM via document.getElementById",
-      );
-      this.canvasRenderCamReference = document.getElementById(
-        "camera-view",
-      ) as HTMLCanvasElement;
-    }
-  }
-  updateCamViewCanvas(newCanvas: HTMLCanvasElement) {
-    this.canvasRenderCamReference = newCanvas;
-    if (this.rawRenderer) {
-      this.rawRenderer.domElement = this.canvasRenderCamReference;
-    }
-  }
-
   changeRenderCameraAspectRatio(newAspectRatio: CameraAspectRatio) {
     this.render_camera_aspect_ratio = newAspectRatio;
     const { width, height, aspectRatio } = this.getRenderDimensions();
@@ -392,15 +354,15 @@ class Editor {
     this.processingRecording = false;
 
     // Gets the canvas.
-    this.canvReference = editorCanvasEl;
-    this.canvasRenderCamReference = camViewCanvasEl;
+    this.viewport.canvReference = editorCanvasEl;
+    this.viewport.canvasRenderCamReference = camViewCanvasEl;
 
     // Find the container element
-    this.container = sceneContainerEl;
+    this.viewport.container = sceneContainerEl;
 
     // Use the container's dimensions
-    const width = this.container.offsetWidth;
-    const height = this.container.offsetHeight;
+    const width = this.viewport.container.offsetWidth;
+    const height = this.viewport.container.offsetHeight;
 
     // Sets up camera and base position using camera configurations from the store.
     const mainCameraConfig = usePageSceneStore
@@ -456,7 +418,7 @@ class Editor {
     // Base WebGL render and clock for delta time.
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
-      canvas: this.canvReference,
+      canvas: this.viewport.canvReference,
       preserveDrawingBuffer: true,
     });
 
@@ -467,7 +429,7 @@ class Editor {
 
     this.rawRenderer = new THREE.WebGLRenderer({
       antialias: true,
-      canvas: this.canvasRenderCamReference,
+      canvas: this.viewport.canvasRenderCamReference,
       preserveDrawingBuffer: true,
     });
 
@@ -516,9 +478,9 @@ class Editor {
     this.mouse = new THREE.Vector2();
     this.activeScene.scene.add(this.control);
     // Resets canvas size.
-    this.onWindowResize();
+    this.viewport.onWindowResize();
 
-    this.setupResizeObserver();
+    this.viewport.setupResizeObserver();
 
     // saving state of the scene
     this.current_scene_media_token = null;
@@ -537,7 +499,7 @@ class Editor {
       this.rendering,
       this.togglePlayback.bind(this),
       this.deleteObject.bind(this),
-      this.canvReference,
+      this.viewport.canvReference,
       this.mouse,
       this.mouse,
       this.raycaster,
@@ -905,8 +867,8 @@ class Editor {
   }
 
   _configurePostProcessingRaw() {
-    const width = this.canvasRenderCamReference?.width ?? 0;
-    const height = this.canvasRenderCamReference?.height ?? 0;
+    const width = this.viewport.canvasRenderCamReference?.width ?? 0;
+    const height = this.viewport.canvasRenderCamReference?.height ?? 0;
     if (
       this.rawRenderer == undefined ||
       this.render_camera == undefined ||
@@ -983,8 +945,8 @@ class Editor {
 
   // Configure post processing.
   _configurePostProcessing() {
-    const width = this.canvReference?.width ?? 0;
-    const height = this.canvReference?.height ?? 0;
+    const width = this.viewport.canvReference?.width ?? 0;
+    const height = this.viewport.canvReference?.height ?? 0;
 
     if (this.renderer == undefined || this.camera == undefined) {
       return;
@@ -1079,16 +1041,16 @@ class Editor {
   async renderSingleFrame() {
     //console.timeEnd("Single Frame Time");
     //console.time("Single Frame Time");
-    this.containerMayReset();
+    this.viewport.containerMayReset();
 
-    if (!this.rendering && this.container) {
+    if (!this.rendering && this.viewport.container) {
       if (
-        this.container.clientWidth + this.container.clientHeight !==
-        this.lastCanvasSize
+        this.viewport.container.clientWidth + this.viewport.container.clientHeight !==
+        this.viewport.lastCanvasSize
       ) {
-        this.onWindowResize();
-        this.lastCanvasSize =
-          this.container.clientWidth + this.container.clientHeight;
+        this.viewport.onWindowResize();
+        this.viewport.lastCanvasSize =
+          this.viewport.container.clientWidth + this.viewport.container.clientHeight;
       }
     }
 
@@ -1350,60 +1312,6 @@ class Editor {
         },
       },
     }); //end updateObjectPanel
-  }
-
-  // Automaticly resize scene.
-  onWindowResize() {
-    this.containerMayReset();
-    if (!this.container) return;
-
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
-
-    if (this.camera == undefined || this.renderer == undefined) {
-      return;
-    }
-    // Set the camera aspect to the desired aspect ratio
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
-
-    // Set the renderer size to the calculated dimensions
-    this.renderer.setSize(width, height);
-    if (this.composer != null) {
-      this.composer.setSize(width, height);
-    }
-
-    this.render_composer?.setSize(width, height);
-
-    if (this.render_camera == undefined) {
-      return;
-    }
-
-    this.customOutlinerPass?.setSize(width, height);
-    this.render_camera.aspect = this.getRenderDimensions().aspectRatio;
-    this.render_camera.updateProjectionMatrix();
-  }
-
-  setupResizeObserver() {
-    this.containerMayReset();
-
-    if (!this.container) {
-      return;
-    }
-
-    this.containerResizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (this.camera) {
-          this.camera.aspect = width / height;
-          this.camera.updateProjectionMatrix();
-        }
-        this.renderer?.setSize(width, height);
-        this.renderer?.setPixelRatio(window.devicePixelRatio);
-      }
-    });
-
-    this.containerResizeObserver.observe(this.container);
   }
 
   getAssetType(selected: THREE.Object3D<THREE.Object3DEventMap>): AssetType {
