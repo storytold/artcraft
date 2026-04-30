@@ -16,7 +16,20 @@ export const ManifestoThreeBackground = ({
     if (!containerRef.current) return;
     const container = containerRef.current;
 
+    // CAPTURE MODE — disabled. Uncomment this block + the matching sections
+    // below (search "CAPTURE MODE") to record a self-driven walk video via
+    // `?capture=manifesto`. Used to produce a motion-reference clip for
+    // Seedance without depending on smooth manual scrolling.
+    // const captureMode =
+    //   typeof window !== "undefined" &&
+    //   new URLSearchParams(window.location.search).get("capture") ===
+    //     "manifesto";
+
     const scene = new THREE.Scene();
+    // if (captureMode) {
+    //   // Solid background so the recorded video is self-contained (no alpha).
+    //   scene.background = new THREE.Color(0x101014);
+    // }
     // Long-lens (telephoto) feel — narrow FOV + camera pulled further back.
     // Flattens perspective distortion so the scene reads as a 2D-ish plane
     // instead of a wide-angle bowl.
@@ -136,8 +149,11 @@ export const ManifestoThreeBackground = ({
           action = mixer.clipAction(clip);
           action.play();
           // Pause real-time playback — we'll set action.time manually in tick.
+          // (For CAPTURE MODE: set this to `!captureMode` instead.)
           action.paused = true;
         }
+
+        // CAPTURE MODE: if (captureMode) startCaptureRecording();
       },
       undefined,
       (err: unknown) => console.error("manifesto character load failed", err),
@@ -145,14 +161,76 @@ export const ManifestoThreeBackground = ({
 
     const clamp01 = (v: number) => THREE.MathUtils.clamp(v, 0, 1);
 
+    // CAPTURE MODE — disabled. Records the canvas in real time and downloads
+    // the walk as a video. To re-enable: uncomment, restore the call in the
+    // GLTF load callback above, and the capture branch in the tick below.
+    // let recorder: MediaRecorder | null = null;
+    // let captureStart = 0;
+    // const captureChunks: Blob[] = [];
+    // const captureDuration = 6; // seconds of recorded walk
+    // const startCaptureRecording = () => {
+    //   const stream = (
+    //     renderer.domElement as HTMLCanvasElement
+    //   ).captureStream(60);
+    //   // Prefer MP4 — MediaRecorder's webm output has a known broken duration
+    //   // header (file contains all frames but most players report ~1s). MP4
+    //   // writes duration correctly. Fall back to webm where MP4 isn't supported.
+    //   const mimeCandidates = [
+    //     "video/mp4;codecs=h264",
+    //     "video/mp4;codecs=avc1",
+    //     "video/mp4",
+    //     "video/webm;codecs=vp9",
+    //     "video/webm",
+    //   ];
+    //   const mimeType =
+    //     mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) ??
+    //     "video/webm";
+    //   const ext = mimeType.startsWith("video/mp4") ? "mp4" : "webm";
+    //   recorder = new MediaRecorder(stream, {
+    //     mimeType,
+    //     videoBitsPerSecond: 12_000_000,
+    //   });
+    //   recorder.ondataavailable = (e) => {
+    //     if (e.data.size > 0) captureChunks.push(e.data);
+    //   };
+    //   recorder.onstop = () => {
+    //     const blob = new Blob(captureChunks, { type: mimeType });
+    //     const url = URL.createObjectURL(blob);
+    //     const a = document.createElement("a");
+    //     a.href = url;
+    //     a.download = `manifesto-walk.${ext}`;
+    //     document.body.appendChild(a);
+    //     a.click();
+    //     a.remove();
+    //     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    //   };
+    //   // Timeslice forces periodic chunk emission instead of buffering
+    //   // everything until stop() — more reliable across browsers.
+    //   recorder.start(100);
+    //   captureStart = performance.now();
+    // };
+
     let rafId = 0;
+    // CAPTURE MODE: also track `let lastFrame = performance.now();` and
+    // `const dt = (now - lastFrame) / 1000; lastFrame = now;` for mixer.update.
     const start = performance.now();
     const tick = () => {
-      const t = (performance.now() - start) / 1000;
-      const p = progressRef.current;
+      const now = performance.now();
+      const t = (now - start) / 1000;
 
       if (character && mixer && action && clipDuration > 0) {
-        const cp = clamp01(p);
+        // CAPTURE MODE branch (disabled):
+        // if (captureMode && captureStart > 0) {
+        //   const elapsed = (now - captureStart) / 1000;
+        //   const cp = clamp01(elapsed / captureDuration);
+        //   mixer.update(dt);
+        //   character.position.x = -11 + 25 * cp;
+        //   character.position.y = -2.5 + Math.sin(t * 1.6) * 0.04;
+        //   if (elapsed >= captureDuration && recorder?.state === "recording") {
+        //     recorder.stop();
+        //   }
+        // } else {
+        const cp = clamp01(progressRef.current);
 
         // Drive animation time from scroll. Multiplier sets how many walk
         // cycles play across the full section so the legs cycle visibly.
@@ -169,6 +247,7 @@ export const ManifestoThreeBackground = ({
         // the right while the section scrolls away.
         character.position.x = -11 + 25 * cp;
         character.position.y = -2.5 + Math.sin(t * 1.6) * 0.04;
+        // }
       }
 
       renderer.render(scene, camera);
@@ -188,6 +267,7 @@ export const ManifestoThreeBackground = ({
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafId);
+      // CAPTURE MODE: if (recorder && recorder.state === "recording") recorder.stop();
       window.removeEventListener("resize", handleResize);
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
