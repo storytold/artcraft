@@ -15,6 +15,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use enums::common::generation_provider::GenerationProvider;
 use log::{error, info};
 use tauri::{AppHandle, State};
+use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 
 #[tauri::command]
 pub async fn generate_image_command(
@@ -50,10 +51,21 @@ pub async fn generate_image_command(
     &storyteller_creds_manager,
   ).await;
 
-  let success = match result {
-    Ok(success) => success,
-    Err(err) => return map_error_to_response(err),
-  };
+  match result {
+    Ok(success) => handle_success_behavior(&app, &task_database, &request, success).await,
+    Err(err) => handle_error_behavior(&app, err).await,
+  }
+}
+
+// ── Result mapping ──
+
+async fn handle_success_behavior(
+  app: &AppHandle,
+  task_database: &TaskDatabase,
+  request: &TauriGenerateImageRequest,
+  success: TaskEnqueueSuccess,
+) -> Response<TauriGenerateImageResponse, TauriGenerateImageErrorType, ()> {
+
 
   // Insert into task database
   let db_result = success
@@ -68,6 +80,19 @@ pub async fn generate_image_command(
   if let Err(err) = db_result {
     error!("Failed to create task in database: {:?}", err);
   }
+
+  /*
+  let usage_type = if is_image_to_image {
+    ArtcraftUsageType::ImageToResult
+  } else {
+    ArtcraftUsageType::TextToResult
+  };
+
+  if let Err(err) = artcraft_usage_tracker.record_image_generation(num_images, usage_type, ArtcraftUsagePage::ImagePage) {
+    // NB: Fail open.
+    warn!("Failed to report usage: {:?}", err);
+  }
+   */
 
   let event = GenerationEnqueueSuccessEvent {
     action: success.to_frontend_event_action(),
@@ -84,13 +109,13 @@ pub async fn generate_image_command(
   Ok(TauriGenerateImageResponse {}.into())
 }
 
-// ── Result mapping ──
-
-
-fn map_error_to_response(
+async fn handle_error_behavior(
+  app: &AppHandle,
   err: GenerateError,
 ) -> Response<TauriGenerateImageResponse, TauriGenerateImageErrorType, ()> {
   error!("generate_image_command error: {:?}", err);
+
+  notify_frontend_of_errors(&app, &err).await;
 
   let error_type = match &err {
     GenerateError::BadInput(_) => TauriGenerateImageErrorType::BadInput,
@@ -99,6 +124,39 @@ fn map_error_to_response(
     GenerateError::BillingIssue(_) => TauriGenerateImageErrorType::BillingIssue,
     _ => TauriGenerateImageErrorType::ServerError,
   };
+
+  // TODO:
+  /*
+    let mut status = CommandErrorStatus::ServerError;
+    let mut error_type = EnqueueTextToImageErrorType::ServerError;
+    let mut error_message = "A server error occurred. Please try again. If it continues, please tell our staff about the problem.";
+
+    match err {
+      GenerateError::BadInput(BadInputReason::NoModelSpecified) => {
+        status = CommandErrorStatus::BadRequest;
+        error_type = EnqueueTextToImageErrorType::ModelNotSpecified;
+        error_message = "No model specified for image generation";
+      }
+      GenerateError::NoProviderAvailable => {
+        status = CommandErrorStatus::ServerError;
+        error_type = EnqueueTextToImageErrorType::NoProviderAvailable;
+        error_message = "No configured provider available for image generation";
+      }
+      GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey) => {
+        status = CommandErrorStatus::Unauthorized;
+        error_type = EnqueueTextToImageErrorType::NeedsFalApiKey;
+        error_message = "You need to set a FAL api key";
+      },
+      _ => {}, // Fall-through
+    }
+
+    Err(CommandErrorResponseWrapper {
+      status,
+      error_message: Some(error_message.to_string()),
+      error_type: Some(error_type),
+      error_details: None,
+    })
+   */
 
   Err(CommandErrorResponseWrapper {
     status: CommandErrorStatus::ServerError,
