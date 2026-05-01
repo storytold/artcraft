@@ -16,6 +16,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 use enums::common::generation_provider::GenerationProvider;
 use log::{error, info};
 use tauri::{AppHandle, State};
+use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
 
 #[tauri::command]
 pub async fn generate_image_command(
