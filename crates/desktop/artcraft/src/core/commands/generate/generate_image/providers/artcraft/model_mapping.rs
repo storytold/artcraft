@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 use artcraft_router::api::common_aspect_ratio::CommonAspectRatio as RouterCommonAspectRatio;
 use artcraft_router::api::common_image_model::CommonImageModel as RouterCommonImageModel;
 use artcraft_router::api::common_resolution::CommonResolution as RouterCommonResolution;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio as OmniCommonAspectRatio;
 use enums::common::generation::common_image_model::CommonImageModel as OmniCommonImageModel;
 use enums::common::generation::common_resolution::CommonResolution as OmniCommonResolution;
+=======
+use artcraft_router::api::common_image_model::CommonImageModel as RouterCommonImageModel;
+use enums::common::generation::common_image_model::CommonImageModel as OmniCommonImageModel;
+>>>>>>> 13896d9306 (cleanup)
 
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
 use crate::core::events::generation_events::common::GenerationModel;
@@ -14,7 +19,10 @@ pub fn map_to_omni_image_model(model: TauriImageModel) -> Option<OmniCommonImage
   match model {
     TauriImageModel::Flux1Dev => Some(OmniCommonImageModel::Flux1Dev),
     TauriImageModel::Flux1Schnell => Some(OmniCommonImageModel::Flux1Schnell),
+<<<<<<< HEAD
     TauriImageModel::FluxPro1 => Some(OmniCommonImageModel::FluxPro11), // TODO: Might be a slight mismatch
+=======
+>>>>>>> 13896d9306 (cleanup)
     TauriImageModel::FluxPro11 => Some(OmniCommonImageModel::FluxPro11),
     TauriImageModel::FluxPro11Ultra => Some(OmniCommonImageModel::FluxPro11Ultra),
     TauriImageModel::GptImage1 => Some(OmniCommonImageModel::GptImage1),
@@ -27,6 +35,7 @@ pub fn map_to_omni_image_model(model: TauriImageModel) -> Option<OmniCommonImage
     TauriImageModel::Seedream4 => Some(OmniCommonImageModel::Seedream4),
     TauriImageModel::Seedream4p5 => Some(OmniCommonImageModel::Seedream4p5),
     TauriImageModel::Seedream5Lite => Some(OmniCommonImageModel::Seedream5Lite),
+<<<<<<< HEAD
     // Not accounted for yet
     TauriImageModel::GrokImage => None,
     TauriImageModel::Recraft3 => None,
@@ -35,6 +44,9 @@ pub fn map_to_omni_image_model(model: TauriImageModel) -> Option<OmniCommonImage
     TauriImageModel::QwenEdit2511Angles => None,
     TauriImageModel::Flux2LoraAngles => None,
     TauriImageModel::FluxDevJuggernaut => None,
+=======
+    _ => None,
+>>>>>>> 13896d9306 (cleanup)
   }
 }
 
@@ -42,6 +54,7 @@ pub fn map_to_omni_image_model(model: TauriImageModel) -> Option<OmniCommonImage
 /// Returns None for models not supported by the router (Grok, Midjourney).
 pub fn map_to_router_image_model(model: TauriImageModel) -> Option<RouterCommonImageModel> {
   match model {
+<<<<<<< HEAD
     TauriImageModel::Flux1Dev => Some(RouterCommonImageModel::Flux1Dev), // Text-to-Image
     TauriImageModel::Flux1Schnell => Some(RouterCommonImageModel::Flux1Schnell), // Text-to-Image
     TauriImageModel::FluxPro1 => Some(RouterCommonImageModel::FluxPro11), // TODO: Might be a slight mismatch
@@ -103,6 +116,25 @@ pub fn map_to_omni_resolution(res: RouterCommonResolution) -> OmniCommonResoluti
     RouterCommonResolution::FourEightyP => OmniCommonResolution::FourEightyP,
     RouterCommonResolution::SevenTwentyP => OmniCommonResolution::SevenTwentyP,
     RouterCommonResolution::TenEightyP => OmniCommonResolution::TenEightyP,
+=======
+    TauriImageModel::Flux1Dev => Some(RouterCommonImageModel::Flux1Dev),
+    TauriImageModel::Flux1Schnell => Some(RouterCommonImageModel::Flux1Schnell),
+    TauriImageModel::FluxPro11 => Some(RouterCommonImageModel::FluxPro11),
+    TauriImageModel::FluxPro11Ultra => Some(RouterCommonImageModel::FluxPro11Ultra),
+    TauriImageModel::GptImage1 => Some(RouterCommonImageModel::GptImage1),
+    TauriImageModel::GptImage1p5 => Some(RouterCommonImageModel::GptImage1p5),
+    TauriImageModel::GptImage2 => Some(RouterCommonImageModel::GptImage2),
+    TauriImageModel::NanoBanana => Some(RouterCommonImageModel::NanoBanana),
+    TauriImageModel::NanoBanana2 => Some(RouterCommonImageModel::NanoBanana2),
+    TauriImageModel::NanoBananaPro => Some(RouterCommonImageModel::NanoBananaPro),
+    TauriImageModel::Gemini25Flash => Some(RouterCommonImageModel::NanoBanana),
+    TauriImageModel::Seedream4 => Some(RouterCommonImageModel::Seedream4),
+    TauriImageModel::Seedream4p5 => Some(RouterCommonImageModel::Seedream4p5),
+    TauriImageModel::Seedream5Lite => Some(RouterCommonImageModel::Seedream5Lite),
+    TauriImageModel::QwenEdit2511Angles => Some(RouterCommonImageModel::QwenEdit2511Angles),
+    TauriImageModel::Flux2LoraAngles => Some(RouterCommonImageModel::Flux2LoraAngles),
+    _ => None,
+>>>>>>> 13896d9306 (cleanup)
   }
 }
 
