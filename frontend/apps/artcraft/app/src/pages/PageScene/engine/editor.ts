@@ -103,7 +103,13 @@ class Editor {
 
   sceneManager: SceneManager | undefined;
 
-  focused: boolean = false;
+  // True when the user is allowed to drive the camera with the mouse
+  // (left/middle-click look-around). Flipped to false WHILE a gizmo
+  // handle is being dragged, then back to true on dragend so the
+  // gizmo drag doesn't accidentally pan the camera. Defaults to true
+  // so camera controls are available before the user has touched the
+  // gizmo for the first time.
+  focused: boolean = true;
 
   renderIndex: number;
   stats: Stats;
