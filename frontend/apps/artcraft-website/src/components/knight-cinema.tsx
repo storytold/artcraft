@@ -180,7 +180,7 @@ export const setupKnightCinemaTimeline = (
       const sec = Math.floor(safe % 60);
       return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
     };
-    const SEEK_INTERVAL_MS = 33;
+    const SEEK_INTERVAL_MS = 15;
     let lastSeekAt = 0;
     tl.to(
       videoProxy,
