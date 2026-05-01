@@ -30,7 +30,7 @@ import { twMerge } from "tailwind-merge";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 // import { Switch } from "@headlessui/react";
-import { EnqueueEditImage } from "@storyteller/tauri-api";
+import { GenerateImage } from "@storyteller/tauri-api";
 import {
   ClassyModelSelector,
   ANGLES_PAGE_MODEL_LIST,
@@ -278,14 +278,14 @@ export const Angles = () => {
     });
 
     try {
-      await EnqueueEditImage({
-        model: selectedModel ?? ("flux_2_lora_angles" as any),
+      await GenerateImage({
+        model: selectedModel ?? "flux_2_lora_angles",
         provider: selectedProvider ?? undefined,
         image_media_tokens: [state.sourceMediaToken],
         prompt: "",
-        horizontal_angle: state.angleConfig.rotation,
-        vertical_angle: state.angleConfig.tilt,
-        zoom: state.angleConfig.zoom,
+        adjust_horizontal_angle: state.angleConfig.rotation,
+        adjust_vertical_angle: state.angleConfig.tilt,
+        adjust_zoom: state.angleConfig.zoom,
         frontend_subscriber_id: subscriberId,
       });
 
