@@ -17,7 +17,8 @@ import {
 import { Modal } from "@storyteller/ui-modal";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { JobsApi, JobStatus } from "@storyteller/api";
-import type { Job } from "@storyteller/api";
+import type { Job, Prompts } from "@storyteller/api";
+import { getCachedPrompt, usePrompts } from "../../lib/prompts-cache";
 import { Button } from "@storyteller/ui-button";
 import {
   getProviderDisplayName,
@@ -460,8 +461,16 @@ const FailedCard = ({
 
 // ── Job → Task transformers ────────────────────────────────────────────────
 
-function getPrompt(job: Job): string {
-  return job.request.maybe_raw_inference_text || "";
+function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
+  const promptToken = job.request.maybe_prompt_token;
+  const cached = promptToken
+    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
+    : undefined;
+  return (
+    cached?.maybe_positive_prompt ||
+    job.request.maybe_raw_inference_text ||
+    ""
+  );
 }
 
 function formatTitleParts(job: Job) {
@@ -495,7 +504,10 @@ function formatTitleParts(job: Job) {
 // Cache per-task durations so model changes don't affect existing progress bars
 const taskDurationCache = new Map<string, number>();
 
-function jobsToInProgress(jobs: Job[]): InProgressTask[] {
+function jobsToInProgress(
+  jobs: Job[],
+  promptsMap: Map<string, Prompts>,
+): InProgressTask[] {
   const now = Date.now();
   const activeIds = new Set<string>();
 
@@ -541,7 +553,7 @@ function jobsToInProgress(jobs: Job[]): InProgressTask[] {
         canDismiss,
         estimatedTimeLeftMs,
         modelType: modelType ?? undefined,
-        prompt: getPrompt(j) || undefined,
+        prompt: getPrompt(j, promptsMap) || undefined,
       };
     });
 
@@ -553,7 +565,10 @@ function jobsToInProgress(jobs: Job[]): InProgressTask[] {
   return result;
 }
 
-function jobsToCompleted(jobs: Job[]): CompletedTask[] {
+function jobsToCompleted(
+  jobs: Job[],
+  promptsMap: Map<string, Prompts>,
+): CompletedTask[] {
   return jobs
     .filter((j) => COMPLETED_STATUSES.has(j.status.status))
     .sort(
@@ -577,12 +592,15 @@ function jobsToCompleted(jobs: Job[]): CompletedTask[] {
         mediaTokens: j.maybe_result?.entity_token
           ? [j.maybe_result.entity_token]
           : [],
-        prompt: getPrompt(j) || undefined,
+        prompt: getPrompt(j, promptsMap) || undefined,
       };
     });
 }
 
-function jobsToFailed(jobs: Job[]): FailedTask[] {
+function jobsToFailed(
+  jobs: Job[],
+  promptsMap: Map<string, Prompts>,
+): FailedTask[] {
   return jobs
     .filter((j) => FAILED_STATUSES.has(j.status.status))
     .sort(
@@ -611,7 +629,7 @@ function jobsToFailed(jobs: Job[]): FailedTask[] {
         status: j.status.status,
         failureReason,
         failureMessage,
-        prompt: getPrompt(j) || undefined,
+        prompt: getPrompt(j, promptsMap) || undefined,
       };
     });
 }
@@ -620,11 +638,31 @@ function jobsToFailed(jobs: Job[]): FailedTask[] {
 
 export const TaskQueue = () => {
   const [isModalOpen, setModalOpen] = useState(false);
-  const [inProgress, setInProgress] = useState<InProgressTask[]>([]);
-  const [completed, setCompleted] = useState<CompletedTask[]>([]);
-  const [failed, setFailed] = useState<FailedTask[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [unreadCompletedIds, setUnreadCompletedIds] = useState<string[]>([]);
+
+  const promptTokens = useMemo(() => {
+    const tokens: string[] = [];
+    for (const j of jobs) {
+      if (j.request.maybe_prompt_token) tokens.push(j.request.maybe_prompt_token);
+    }
+    return tokens;
+  }, [jobs]);
+  const promptsMap = usePrompts(promptTokens);
+
+  const inProgress = useMemo(
+    () => jobsToInProgress(jobs, promptsMap),
+    [jobs, promptsMap],
+  );
+  const completed = useMemo(
+    () => jobsToCompleted(jobs, promptsMap),
+    [jobs, promptsMap],
+  );
+  const failed = useMemo(
+    () => jobsToFailed(jobs, promptsMap),
+    [jobs, promptsMap],
+  );
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -747,19 +785,19 @@ export const TaskQueue = () => {
         const response = await api.ListRecentJobs();
         if (cancelled || !response.success || !response.data) return;
 
-        const jobs: Job[] = response.data;
+        const fetchedJobs: Job[] = response.data;
+        setJobs(fetchedJobs);
 
-        const inProg = jobsToInProgress(jobs);
-        const done = jobsToCompleted(jobs);
-        const failedTasks = jobsToFailed(jobs);
-
-        setInProgress(inProg);
-        setCompleted(done);
-        setFailed(failedTasks);
-
-        // Track newly completed IDs
-        const newCompletedIdSet = new Set(done.map((d) => d.id));
-        const newFailedIdSet = new Set(failedTasks.map((f) => f.id));
+        // Toast titles use formatTitleParts directly so we don't depend on
+        // the prompt cache being populated here.
+        const completedJobs = fetchedJobs.filter((j) =>
+          COMPLETED_STATUSES.has(j.status.status),
+        );
+        const failedJobs = fetchedJobs.filter((j) =>
+          FAILED_STATUSES.has(j.status.status),
+        );
+        const newCompletedIdSet = new Set(completedJobs.map((j) => j.job_token));
+        const newFailedIdSet = new Set(failedJobs.map((j) => j.job_token));
 
         if (!initialLoadDoneRef.current) {
           // First load: seed the "seen" sets without toasting.
@@ -767,36 +805,47 @@ export const TaskQueue = () => {
           prevFailedIdsRef.current = newFailedIdSet;
           initialLoadDoneRef.current = true;
         } else {
-          const newlyCompleted = done.filter(
-            (d) => !prevCompletedIdsRef.current.has(d.id),
+          const newlyCompletedJobs = completedJobs.filter(
+            (j) => !prevCompletedIdsRef.current.has(j.job_token),
           );
           prevCompletedIdsRef.current = newCompletedIdSet;
 
-          if (newlyCompleted.length > 0) {
-            for (const task of newlyCompleted) {
-              showToast("success", `${task.title} creation complete`);
+          if (newlyCompletedJobs.length > 0) {
+            for (const job of newlyCompletedJobs) {
+              const parts = formatTitleParts(job);
+              showToast("success", `${parts.title} creation complete`);
             }
             if (!isPopoverOpen) {
               setUnreadCompletedIds((prev) =>
                 Array.from(
                   new Set([
                     ...(prev ?? []),
-                    ...newlyCompleted.map((d) => d.id),
+                    ...newlyCompletedJobs.map((j) => j.job_token),
                   ]),
                 ),
               );
             }
           }
 
-          const newlyFailed = failedTasks.filter(
-            (f) => !prevFailedIdsRef.current.has(f.id),
+          const newlyFailedJobs = failedJobs.filter(
+            (j) => !prevFailedIdsRef.current.has(j.job_token),
           );
           prevFailedIdsRef.current = newFailedIdSet;
 
-          for (const task of newlyFailed) {
+          for (const job of newlyFailedJobs) {
+            const parts = formatTitleParts(job);
+            const failureCategory =
+              job.status.maybe_failure_category_updated ||
+              job.status.maybe_failure_category;
+            const rawMessage =
+              job.status.maybe_failure_message ||
+              job.status.maybe_extra_status_description;
+            const failureReason = failureCategory
+              ? FAILURE_REASON_LABEL[failureCategory] || rawMessage || undefined
+              : rawMessage || undefined;
             showToast(
               "error",
-              `${task.title} creation failed${task.failureReason ? ` — ${task.failureReason}` : ""}`,
+              `${parts.title} creation failed${failureReason ? ` — ${failureReason}` : ""}`,
             );
           }
         }
@@ -844,9 +893,7 @@ export const TaskQueue = () => {
     try {
       const api = new JobsApi();
       await api.DeleteJobByToken(id);
-      setInProgress((prev) => prev.filter((t) => t.id !== id));
-      setCompleted((prev) => prev.filter((t) => t.id !== id));
-      setFailed((prev) => prev.filter((t) => t.id !== id));
+      setJobs((prev) => prev.filter((j) => j.job_token !== id));
       setUnreadCompletedIds((prev) => (prev ?? []).filter((x) => x !== id));
     } catch {
       // ignore
@@ -862,7 +909,8 @@ export const TaskQueue = () => {
     } catch {
       // ignore
     } finally {
-      setCompleted([]);
+      const idSet = new Set(ids);
+      setJobs((prev) => prev.filter((j) => !idSet.has(j.job_token)));
       setUnreadCompletedIds([]);
     }
   };
@@ -876,7 +924,8 @@ export const TaskQueue = () => {
     } catch {
       // ignore
     } finally {
-      setFailed([]);
+      const idSet = new Set(ids);
+      setJobs((prev) => prev.filter((j) => !idSet.has(j.job_token)));
     }
   };
 
@@ -886,7 +935,8 @@ export const TaskQueue = () => {
       await Promise.allSettled(
         staleIds.map((id) => new JobsApi().DeleteJobByToken(id)),
       );
-      setInProgress((prev) => prev.filter((t) => !staleIds.includes(t.id)));
+      const idSet = new Set(staleIds);
+      setJobs((prev) => prev.filter((j) => !idSet.has(j.job_token)));
     } catch {
       // ignore
     }
@@ -905,9 +955,7 @@ export const TaskQueue = () => {
     } catch {
       // ignore
     } finally {
-      setInProgress([]);
-      setCompleted([]);
-      setFailed([]);
+      setJobs([]);
       setUnreadCompletedIds([]);
     }
   };

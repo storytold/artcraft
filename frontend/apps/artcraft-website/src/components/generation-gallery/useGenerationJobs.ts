@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { JobsApi, JobStatus, MediaFilesApi } from "@storyteller/api";
-import type { Job } from "@storyteller/api";
+import type { Job, Prompts } from "@storyteller/api";
 import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import {
   getModelDisplayName,
@@ -8,6 +8,7 @@ import {
   ALL_MODELS_LIST,
 } from "@storyteller/model-list";
 import type { GalleryItem } from "./useGalleryData";
+import { getCachedPrompt, usePrompts } from "../../lib/prompts-cache";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -79,11 +80,19 @@ function getModelLabel(job: Job): string {
   return modelDisplay || job.request.maybe_model_title || "Unknown model";
 }
 
-function getPrompt(job: Job): string {
-  return job.request.maybe_raw_inference_text || "";
+function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
+  const promptToken = job.request.maybe_prompt_token;
+  const cached = promptToken
+    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
+    : undefined;
+  return (
+    cached?.maybe_positive_prompt ||
+    job.request.maybe_raw_inference_text ||
+    ""
+  );
 }
 
-function jobToInProgress(job: Job): InProgressJob {
+function jobToInProgress(job: Job, promptsMap: Map<string, Prompts>): InProgressJob {
   const now = Date.now();
   const createdMs = new Date(job.created_at).getTime();
   const modelType = job.request.maybe_model_type;
@@ -107,7 +116,7 @@ function jobToInProgress(job: Job): InProgressJob {
 
   return {
     id: job.job_token,
-    prompt: getPrompt(job),
+    prompt: getPrompt(job, promptsMap),
     modelId: job.request.maybe_model_type ?? "",
     modelLabel: getModelLabel(job),
     progress,
@@ -116,7 +125,7 @@ function jobToInProgress(job: Job): InProgressJob {
   };
 }
 
-function jobToFailed(job: Job): FailedJob {
+function jobToFailed(job: Job, promptsMap: Map<string, Prompts>): FailedJob {
   const failureCategory =
     job.status.maybe_failure_category_updated ||
     job.status.maybe_failure_category;
@@ -131,7 +140,7 @@ function jobToFailed(job: Job): FailedJob {
 
   return {
     id: job.job_token,
-    prompt: getPrompt(job),
+    prompt: getPrompt(job, promptsMap),
     modelId: job.request.maybe_model_type ?? "",
     modelLabel: getModelLabel(job),
     failureReason,
@@ -141,7 +150,10 @@ function jobToFailed(job: Job): FailedJob {
   };
 }
 
-function jobToGalleryItem(job: Job): GalleryItem | null {
+function jobToGalleryItem(
+  job: Job,
+  promptsMap?: Map<string, Prompts>,
+): GalleryItem | null {
   const result = job.maybe_result;
   if (!result?.entity_token) return null;
 
@@ -153,7 +165,7 @@ function jobToGalleryItem(job: Job): GalleryItem | null {
 
   return {
     id: result.entity_token,
-    label: getPrompt(job) || "Generation",
+    label: getPrompt(job, promptsMap) || "Generation",
     thumbnail,
     fullImage: result.media_links?.cdn_url || null,
     // Sort by job creation time (not completion time) so the completed card
@@ -214,12 +226,50 @@ export function useGenerationJobs(options: {
   const apiRef = useRef(new JobsApi());
   const mediaApiRef = useRef(new MediaFilesApi());
 
-  const [inProgress, setInProgress] = useState<InProgressJob[]>([]);
-  const [failed, setFailed] = useState<FailedJob[]>([]);
+  const [inProgressJobs, setInProgressJobs] = useState<Job[]>([]);
+  const [failedJobsRaw, setFailedJobsRaw] = useState<Job[]>([]);
   const [newlyCompleted, setNewlyCompleted] = useState<GalleryItem[]>([]);
 
   const prevCompletedIdsRef = useRef<Set<string>>(new Set());
   const initialLoadDoneRef = useRef(false);
+
+  const promptTokens = useMemo(() => {
+    const tokens: string[] = [];
+    for (const j of inProgressJobs) {
+      if (j.request.maybe_prompt_token) tokens.push(j.request.maybe_prompt_token);
+    }
+    for (const j of failedJobsRaw) {
+      if (j.request.maybe_prompt_token) tokens.push(j.request.maybe_prompt_token);
+    }
+    return tokens;
+  }, [inProgressJobs, failedJobsRaw]);
+  const promptsMap = usePrompts(promptTokens);
+
+  const inProgress = useMemo(
+    () =>
+      inProgressJobs
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime(),
+        )
+        .map((j) => jobToInProgress(j, promptsMap)),
+    [inProgressJobs, promptsMap],
+  );
+
+  const failed = useMemo(
+    () =>
+      failedJobsRaw
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.updated_at).getTime() -
+            new Date(a.updated_at).getTime(),
+        )
+        .map((j) => jobToFailed(j, promptsMap)),
+    [failedJobsRaw, promptsMap],
+  );
 
   const load = useCallback(async () => {
     try {
@@ -231,25 +281,12 @@ export function useGenerationJobs(options: {
       // Filter by media type
       const filtered = jobs.filter((j) => getJobMediaType(j) === mediaType);
 
-      // In-progress
-      const inProg = filtered
-        .filter((j) => IN_PROGRESS_STATUSES.has(j.status.status))
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() -
-            new Date(a.created_at).getTime(),
-        )
-        .map(jobToInProgress);
-
-      // Failed
-      const failedJobs = filtered
-        .filter((j) => FAILED_STATUSES.has(j.status.status))
-        .sort(
-          (a, b) =>
-            new Date(b.updated_at).getTime() -
-            new Date(a.updated_at).getTime(),
-        )
-        .map(jobToFailed);
+      const newInProgress = filtered.filter((j) =>
+        IN_PROGRESS_STATUSES.has(j.status.status),
+      );
+      const newFailed = filtered.filter((j) =>
+        FAILED_STATUSES.has(j.status.status),
+      );
 
       // Completed
       const completedJobs = filtered.filter((j) =>
@@ -265,7 +302,7 @@ export function useGenerationJobs(options: {
         );
         if (newOnes.length > 0) {
           const items = newOnes
-            .map(jobToGalleryItem)
+            .map((j) => jobToGalleryItem(j))
             .filter((item): item is GalleryItem => item !== null);
           if (items.length > 0) {
             // Await expansion so the pending card and its completed replacement
@@ -281,7 +318,7 @@ export function useGenerationJobs(options: {
       prevCompletedIdsRef.current = completedIdSet;
 
       // Prune duration cache
-      const activeIds = new Set(inProg.map((t) => t.id));
+      const activeIds = new Set(newInProgress.map((j) => j.job_token));
       for (const id of taskDurationCache.keys()) {
         if (!activeIds.has(id)) taskDurationCache.delete(id);
       }
@@ -293,8 +330,8 @@ export function useGenerationJobs(options: {
           return [...fresh, ...prev];
         });
       }
-      setInProgress(inProg);
-      setFailed(failedJobs);
+      setInProgressJobs(newInProgress);
+      setFailedJobsRaw(newFailed);
     } catch {
       // ignore
     }
@@ -318,7 +355,7 @@ export function useGenerationJobs(options: {
     async (jobToken: string) => {
       try {
         await apiRef.current.DeleteJobByToken(jobToken);
-        setFailed((prev) => prev.filter((f) => f.id !== jobToken));
+        setFailedJobsRaw((prev) => prev.filter((f) => f.job_token !== jobToken));
       } catch {
         // ignore
       }

@@ -33,6 +33,7 @@ export interface JobRequest {
   maybe_model_title: string;
   maybe_model_token: string;
   maybe_model_type: string;
+  maybe_prompt_token: string | null;
   maybe_raw_inference_text: string;
   maybe_style_name: string;
 }
