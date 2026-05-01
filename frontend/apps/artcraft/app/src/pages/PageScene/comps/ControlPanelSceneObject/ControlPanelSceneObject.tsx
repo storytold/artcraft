@@ -25,7 +25,7 @@ import { objectMismatch } from "~/pages/PageScene/comps/ControlPanelSceneObject/
 import { XYZ } from "~/pages/PageScene/datastructures/common";
 import { pageHeight } from "~/signals";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
-import { ColorAction } from "~/pages/PageScene/engine/editor/actions/ColorAction";
+import { setObjectColor } from "~/pages/PageScene/actions/setObjectColor";
 import {
   beginTransformSession,
   TransformSession,
@@ -261,16 +261,12 @@ export const ControlPanelSceneObject = () => {
             id={colorInputId}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
               // <input type="color"> fires onChange once per committed
-              // pick (when the picker closes), so recording here gives
-              // exactly one undo entry per user-visible color change.
+              // pick (when the picker closes), so the action helper
+              // gets exactly one record per user-visible color change.
               const uuid = editorEngine?.selected?.uuid;
-              const before = color;
               const after = e.target.value;
-              editorEngine?.activeScene.setColor(uuid || "", after);
               if (uuid && editorEngine) {
-                editorEngine.history.record(
-                  new ColorAction(editorEngine, uuid, before, after),
-                );
+                setObjectColor(editorEngine, uuid, after);
               }
               setColor(after);
             }}
