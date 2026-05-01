@@ -1,5 +1,5 @@
-use artcraft_router::api::common_aspect_ratio::CommonAspectRatio;
-use artcraft_router::api::common_resolution::CommonResolution;
+use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
+use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation::common_quality::CommonQuality;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::ux::tauri_command_caller::TauriCommandCaller;
