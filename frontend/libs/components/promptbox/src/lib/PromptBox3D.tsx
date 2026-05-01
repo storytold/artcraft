@@ -183,6 +183,21 @@ export const PromptBox3D = ({
     if (mapped) onAspectRatioSelect(mapped);
   };
 
+  // Sync the editor letterbox to the model's default aspect ratio on first
+  // mount / model change. Without this, the picker visually shows e.g.
+  // "Square" (the model default) but the editor letterbox stays on its own
+  // default until the user clicks a ratio.
+  useEffect(() => {
+    if (!selectedImageModel?.supportsNewAspectRatio()) return;
+    if (commonAspectRatio !== undefined) return;
+    const def = selectedImageModel.defaultAspectRatio;
+    if (!def) return;
+    setCommonAspectRatio(def);
+    const mapped = commonToCameraAspect(def);
+    if (mapped) onAspectRatioSelect(mapped);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedImageModel]);
+
   useEffect(() => {
     if (textareaRef.current && !isExpanded) {
       textareaRef.current.style.height = "auto";
