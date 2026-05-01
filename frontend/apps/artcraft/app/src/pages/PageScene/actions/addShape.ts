@@ -9,16 +9,17 @@ export async function addShape(
   position?: THREE.Vector3,
 ): Promise<string | undefined> {
   const obj = await editor.sceneManager?.create(
+    "Parim",
     item.media_id,
-    item.name ?? "shape",
     position ?? new THREE.Vector3(),
   );
   if (!obj) return undefined;
+  obj.name = item.name ?? "shape";
 
   usePageSceneStore.getState().addShape({
     id: obj.uuid,
     kind: "shape",
-    name: obj.name || (item.name ?? "shape"),
+    name: obj.name,
     mediaId: item.media_id,
   });
   editor.selection.refreshOutliner();
