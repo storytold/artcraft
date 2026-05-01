@@ -664,10 +664,6 @@ class Editor {
     this.selection.refreshOutliner();
   }
 
-  async create_parim(name: string, pos: THREE.Vector3) {
-    return await this.activeScene.instantiate(name, pos);
-  }
-
   // Render the scene to the camera, this is called in the update.
   async renderScene() {
     const { render_camera, render_width, render_height } = this.cameraController;
