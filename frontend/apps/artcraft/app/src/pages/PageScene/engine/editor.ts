@@ -55,7 +55,6 @@ class Editor {
 
   raycaster: THREE.Raycaster | undefined;
   mouse: THREE.Vector2 | undefined;
-  rendering: boolean;
   api_manager: APIManager;
   orbitControls: OrbitControls | undefined;
   locked: boolean;
@@ -70,12 +69,9 @@ class Editor {
   current_scene_glb_media_token: string | null;
 
   can_initialize: boolean;
-  switchPreviewToggle: boolean;
 
   positive_prompt: string;
   generating_preview: boolean = false;
-
-  recorder: MediaRecorder | undefined;
 
   // Owns canvas/container DOM refs and the resize cascade.
   viewport: ViewportController;
@@ -93,10 +89,6 @@ class Editor {
     return this.selection.selected;
   }
 
-  selectedCanvas: boolean;
-  startRenderHeight: number;
-  startRenderWidth: number;
-
   utils: SceneUtils;
   mouse_controls: MouseControls | undefined;
   save_manager: SaveManager;
@@ -108,15 +100,6 @@ class Editor {
   focused: boolean = false;
 
   renderIndex: number;
-  // this should be set in the future to extend the lenght of the track for rendering engine
-  globalSetTrackLengthSeconds: number;
-
-  // this is to prevent recording processing from happening twice there is an update loop bug at its core.
-  processingRecording: boolean;
-
-  // this is to catch and ensure that caching doesn't break the app.
-  // this happens because we can error out during the video generation process and things will cache despite that failing.
-  processingHasFailed: boolean;
   stats: Stats;
 
   // Allows us to cancel the queued render
@@ -129,12 +112,10 @@ class Editor {
   }
 
   constructor() {
-    this.processingHasFailed = false;
     console.log(
       "If you see this message twice! then it rendered twice, if you see it once it's all good.",
     );
     this.can_initialize = true;
-    this.processingRecording = false;
     this.stats = new Stats();
     // TODO: REMOVE LATER WITH BETTER FIX FOR IMPORTING AMMOJS
     document.body.appendChild(
@@ -171,10 +152,6 @@ class Editor {
       this.version,
     );
     this.activeScene.initialize();
-    this.startRenderWidth = 0;
-    this.startRenderHeight = 0;
-    this.rendering = false;
-    this.switchPreviewToggle = false;
     this.api_manager = new APIManager();
     this.locked = false;
     this.render_timer = 0;
@@ -182,7 +159,6 @@ class Editor {
     this.cap_fps = 60;
     this.frames = 0;
     this.lastFrameTime = 0;
-    this.selectedCanvas = false;
     this.renderEventToken = -1;
     this.shouldRender = false;
 
@@ -205,9 +181,6 @@ class Editor {
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
 
     this.media_upload = new MediaUploadApi();
-
-    // New Rendering Pipeline Engine Work
-    this.globalSetTrackLengthSeconds = 7;
 
     // set image type at this stage
 
@@ -232,9 +205,6 @@ class Editor {
 
     this._isEngineDataLoaded = false;
     this.can_initialize = false;
-
-    // This is to prevent recording processing from happening twice there is an update loop bug at its core.
-    this.processingRecording = false;
 
     // Gets the canvas.
     this.viewport.canvReference = editorCanvasEl;
@@ -383,10 +353,7 @@ class Editor {
       this.cameraController.freeCamState,
       this.cameraController.lockControls,
       this.cameraController.camera_last_pos,
-      this.selectedCanvas,
-      this.switchPreviewToggle,
-      this.rendering,
-      this.togglePlayback.bind(this),
+      this.switchCameraView.bind(this),
       this.deleteObject.bind(this),
       this.viewport.canvReference,
       this.mouse,
@@ -708,30 +675,6 @@ class Editor {
     this.utils.switchCameraView();
   }
 
-  async showLoading() {
-    loadingBarIsShowing.value = true;
-  }
-
-  async updateLoad({
-    progress,
-    message,
-    label,
-  }: {
-    progress?: number;
-    message?: string;
-    label?: string;
-  }) {
-    loadingBarData.value = {
-      label: label ?? loadingBarData.value.label,
-      progress: progress ?? loadingBarData.value.progress,
-      message: message ?? loadingBarData.value.message,
-    };
-  }
-
-  async endLoading() {
-    loadingBarIsShowing.value = false;
-  }
-
   deleteObject(uuid: string) {
     this.mouse_controls?.clearFKVisuals();
     this.mouse_controls?.removeTransformControls(true);
@@ -748,16 +691,13 @@ class Editor {
     const { render_camera, render_width, render_height } = this.cameraController;
     if (
       this.postProcessing.composer != null &&
-      !this.rendering &&
       this.rawRenderer &&
       this.postProcessing.render_composer
     ) {
       this.postProcessing.composer.render();
-    } else if (this.renderer && render_camera && !this.rendering) {
+    } else if (this.renderer && render_camera) {
       this.renderer.setSize(render_width, render_height);
       this.renderer.render(this.activeScene.scene, render_camera);
-    } else if (this.rendering && this.renderer) {
-      this.renderer.setSize(render_width, render_height);
     }
   }
 
@@ -766,7 +706,7 @@ class Editor {
     //console.time("Single Frame Time");
     this.viewport.containerMayReset();
 
-    if (!this.rendering && this.viewport.container) {
+    if (this.viewport.container) {
       if (
         this.viewport.container.clientWidth + this.viewport.container.clientHeight !==
         this.viewport.lastCanvasSize
@@ -891,36 +831,6 @@ class Editor {
     const next = store.transformSpace === "world" ? "local" : "world";
     store.setTransformSpace(next);
     this.gizmo.setSpace(next);
-  }
-
-  togglePlayback() {
-    this.updateLoad({
-      progress: 25,
-      label: "Starting Processing",
-      message:
-        "Please stay on this screen and do not switch tabs! while your video is being processed.",
-    });
-    if (this.rawRenderer) {
-      this.startRenderWidth = this.rawRenderer.domElement.width;
-      this.startRenderHeight = this.rawRenderer.domElement.height;
-    }
-    if (!this.rendering) {
-      this.switchCameraView();
-      if (this.activeScene.hot_items) {
-        this.activeScene.hot_items.forEach((element) => {
-          element.visible = true;
-        });
-      }
-    } else {
-      if (!this.cameraController.camera_person_mode) {
-        this.switchCameraView();
-      }
-      if (this.activeScene.hot_items) {
-        this.activeScene.hot_items.forEach((element) => {
-          element.visible = false;
-        });
-      }
-    }
   }
 
   // Facades — external callers in actions/* and helper.ts target these

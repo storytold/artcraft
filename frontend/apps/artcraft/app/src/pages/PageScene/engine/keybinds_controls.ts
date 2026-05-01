@@ -57,10 +57,7 @@ export class MouseControls {
   camera_last_pos: THREE.Vector3;
   selected: THREE.Object3D[] | undefined;
   orbitControls: OrbitControls | undefined;
-  selectedCanvas: boolean;
-  switchPreviewToggle: boolean;
-  rendering: boolean;
-  togglePlayback: Function;
+  switchCameraView: Function;
   deleteObject: Function;
   canvReference: HTMLCanvasElement | null = null;
   mouse: THREE.Vector2 | undefined;
@@ -93,10 +90,7 @@ export class MouseControls {
     cameraViewControls: FreeCamControlState | null,
     lockControls: PointerLockControls | undefined,
     camera_last_pos: THREE.Vector3,
-    selectedCanvas: boolean,
-    switchPreviewToggle: boolean,
-    rendering: boolean,
-    togglePlayback: Function,
+    switchCameraView: Function,
     deleteObject: Function,
     canvReference: HTMLCanvasElement | null,
     mouse: THREE.Vector2 | undefined,
@@ -120,10 +114,7 @@ export class MouseControls {
     this.lockControls = lockControls;
     this.camera_last_pos = camera_last_pos;
     this.selected = [];
-    this.selectedCanvas = selectedCanvas;
-    this.switchPreviewToggle = switchPreviewToggle;
-    this.rendering = rendering;
-    this.togglePlayback = togglePlayback;
+    this.switchCameraView = switchCameraView;
     this.deleteObject = deleteObject;
     this.canvReference = canvReference;
     this.mouse = mouse;
@@ -305,9 +296,7 @@ export class MouseControls {
       this.focus();
       return;
     } else if (event.key === " ") {
-      if (!this.rendering && !this.switchPreviewToggle && this.selectedCanvas) {
-        this.togglePlayback();
-      }
+      this.switchCameraView();
       return;
     } else if (event.key === "Backspace" || event.key === "Delete") {
       if (this.selected) {
