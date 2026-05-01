@@ -18,12 +18,6 @@ export interface UndoableAction {
   readonly label: string;
   apply(): Promise<void> | void; // do or redo
   revert(): Promise<void> | void; // undo
-  // Optional: try to absorb a freshly-recorded same-kind same-target
-  // action into this one. Used to coalesce burst inputs (panel input
-  // keystrokes / scrub drags / native color-picker per-pixel onChange)
-  // into a single undo entry. Return true if absorbed (caller drops
-  // the new action); false to push the new action as a separate entry.
-  tryMerge?(other: UndoableAction): boolean;
 }
 
 export interface HistoryManagerOptions {
@@ -47,16 +41,6 @@ export class HistoryManager {
 
   record(action: UndoableAction): void {
     if (this.isReplaying) return;
-    // Try to coalesce into the most-recent action so burst inputs
-    // (panel keystrokes, scrub drags, color-picker per-pixel onChange)
-    // become one undo entry. Action classes opt in by implementing
-    // tryMerge; the manager itself stays generic.
-    const prev = this.past[this.past.length - 1];
-    if (prev?.tryMerge?.(action)) {
-      this.future.length = 0;
-      this.notifyChange();
-      return;
-    }
     this.future.length = 0;
     this.past.push(action);
     if (this.past.length > this.capacity) this.past.shift();
