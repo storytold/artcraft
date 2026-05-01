@@ -1,39 +1,39 @@
 import type Editor from "../engine/editor";
 import { TransformAction } from "../engine/editor/actions/TransformAction";
+import {
+  snapshotTransform,
+  transformsEqual,
+} from "../engine/editor/actions/snapshots";
+import type { XYZ } from "../datastructures/common";
 
-// A transform "session" — opened on the first edit of a multi-input
-// editing flow (e.g. Object Panel position/rotation/scale text fields),
-// committed at the end of the session (selection change, panel
-// unmount, focus moving away from the panel).
+// Apply a transform change and record it for undo.
 //
-// The session captures the before-state at construction. On commit it
-// captures the after-state, pushes a single TransformAction onto the
-// undo stack only if the transform actually changed, and re-syncs the
-// Zustand `objectPanel` slice from the engine so the panel's view of
-// the selection matches the engine state.
+// Burst inputs (panel keystrokes, scrub drags) call this on every
+// engine update. HistoryManager.record coalesces consecutive
+// TransformActions for the same uuid into one undo entry, so the
+// caller doesn't need session-state — `tryMerge` on TransformAction
+// folds successive entries into the most recent one.
 //
-// Engine-level concerns (capture / apply / revert) stay in
-// `engine/editor/actions/TransformAction.ts`; this file is the
-// orchestration wrapper that the action layer (UI code) uses so the
-// view never has to construct an UndoableAction directly.
-export type TransformSession = {
-  commit(): void;
-};
-
-export function beginTransformSession(
+// Snapshots before and after so the recorded action holds the actual
+// engine state delta (not the panel's local React state). Also
+// re-syncs the Zustand objectPanel slice so the panel's
+// currentSceneObject reflects the post-update transform.
+export function transformObject(
   editor: Editor,
   uuid: string,
-): TransformSession {
-  const action = new TransformAction(editor, uuid);
-  return {
-    commit() {
-      if (action.commit()) {
-        editor.history.record(action);
-      }
-      // Push the engine's post-edit transform back into the Zustand
-      // objectPanel slice so the panel's currentSceneObject vectors
-      // are in sync with what the user just committed. Idempotent.
-      editor.selection.updateSelectedUI();
-    },
-  };
+  position: XYZ,
+  rotation: XYZ,
+  scale: XYZ,
+): void {
+  const obj = editor.activeScene.scene.getObjectByProperty("uuid", uuid);
+  if (!obj) return;
+  const before = snapshotTransform(obj);
+
+  editor.sceneManager?.updateSelectedTransform(position, rotation, scale);
+
+  const after = snapshotTransform(obj);
+  if (!transformsEqual(before, after)) {
+    editor.history.record(new TransformAction(editor, uuid, before, after));
+  }
+  editor.selection.updateSelectedUI();
 }

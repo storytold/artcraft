@@ -25,6 +25,11 @@ import { CameraController } from "./editor/CameraController";
 import { HistoryManager } from "./editor/HistoryManager";
 import { DeleteAction } from "./editor/actions/DeleteAction";
 import { TransformAction } from "./editor/actions/TransformAction";
+import {
+  snapshotTransform,
+  transformsEqual,
+  type TransformSnap,
+} from "./editor/actions/snapshots";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -86,9 +91,10 @@ class Editor {
   // engine/editor/actions/ encapsulates its own apply/revert.
   history: HistoryManager;
 
-  // Holds the in-flight transform action between gizmo dragstart and
-  // dragend. Null whenever no drag is in progress.
-  private activeTransform: TransformAction | null = null;
+  // Captured at gizmo dragstart so dragend can build the right
+  // TransformAction (before-snapshot + uuid). Null whenever no drag
+  // is in progress.
+  private activeDragStart: { uuid: string; before: TransformSnap } | null = null;
 
   // Forwarding getter — ControlPanelSceneObject reads `editor.selected`.
   get selected(): THREE.Object3D | undefined {
@@ -388,19 +394,38 @@ class Editor {
             new THREE.Vector3(-99999, -99999, -99999),
           );
           this.focused = !dragging;
-          // Gizmo drag boundary → TransformAction. Begin captures the
-          // pre-drag transform in the constructor; end commits the diff
-          // (or drops a no-op move).
+          // Gizmo drag boundary → TransformAction.
+          // Dragstart: snapshot the live obj's transform.
+          // Dragend: snapshot again; record TransformAction(before,after)
+          // if anything changed. HistoryManager.record will coalesce
+          // this with any preceding transform of the same object.
           if (dragging) {
             const target = this.sceneManager?.selected_objects?.[0];
             if (target) {
-              this.activeTransform = new TransformAction(this, target.uuid);
+              this.activeDragStart = {
+                uuid: target.uuid,
+                before: snapshotTransform(target),
+              };
             }
-          } else if (this.activeTransform) {
-            if (this.activeTransform.commit()) {
-              this.history.record(this.activeTransform);
+          } else if (this.activeDragStart) {
+            const target = this.activeScene.scene.getObjectByProperty(
+              "uuid",
+              this.activeDragStart.uuid,
+            );
+            if (target) {
+              const after = snapshotTransform(target);
+              if (!transformsEqual(this.activeDragStart.before, after)) {
+                this.history.record(
+                  new TransformAction(
+                    this,
+                    this.activeDragStart.uuid,
+                    this.activeDragStart.before,
+                    after,
+                  ),
+                );
+              }
             }
-            this.activeTransform = null;
+            this.activeDragStart = null;
           }
         },
       },

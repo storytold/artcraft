@@ -3,7 +3,6 @@ import {
   useContext,
   useEffect,
   useId,
-  useRef,
   useState,
 } from "react";
 import { Transition } from "@headlessui/react";
@@ -25,14 +24,8 @@ import { objectMismatch } from "~/pages/PageScene/comps/ControlPanelSceneObject/
 import { XYZ } from "~/pages/PageScene/datastructures/common";
 import { pageHeight } from "~/signals";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
-import {
-  beginColorSession,
-  ColorSession,
-} from "~/pages/PageScene/actions/setObjectColor";
-import {
-  beginTransformSession,
-  TransformSession,
-} from "~/pages/PageScene/actions/transformObject";
+import { setObjectColor } from "~/pages/PageScene/actions/setObjectColor";
+import { transformObject } from "~/pages/PageScene/actions/transformObject";
 
 // TODO this will be useful later to fix the bug on leading zeros
 // const formatNumber = (input: string): number => {
@@ -72,34 +65,11 @@ export const ControlPanelSceneObject = () => {
 
   const [color, setColor] = useState("#ffffff");
 
-  // Pending transform session — opened on first panel edit, committed
-  // when the *selection's uuid* actually changes (NOT on every per-frame
-  // updateSelectedUI re-push that just creates a new currentSceneObject
-  // reference for the same uuid). lastUuidRef tracks the previous uuid
-  // so the commit effect can distinguish a real selection change from
-  // a same-uuid resync.
-  const transformSessionRef = useRef<TransformSession | null>(null);
-  const lastUuidRef = useRef<string | null>(null);
-
-  const beginPanelTransform = () => {
-    if (transformSessionRef.current) return;
-    if (!editorEngine || !currentSceneObject) return;
-    transformSessionRef.current = beginTransformSession(
-      editorEngine,
-      currentSceneObject.object_uuid,
-    );
-  };
-
-  const commitPanelTransform = () => {
-    transformSessionRef.current?.commit();
-    transformSessionRef.current = null;
-  };
-
-  // Color picker session — opened on input focus (picker dialog opens),
-  // committed on input blur (picker dialog closes). Records exactly one
-  // ColorAction per pick regardless of how many onChange events the
-  // native picker fires while the user drags the slider.
-  const colorSessionRef = useRef<ColorSession | null>(null);
+  // No session machinery here — burst inputs (keystrokes, scrub drags,
+  // native color-picker per-pixel onChange) record per engine update.
+  // HistoryManager coalesces consecutive same-target same-kind actions
+  // into one undo entry via tryMerge, so each editing run collapses to
+  // a single Ctrl+Z step automatically.
 
   const colorInputId = useId();
 
@@ -123,36 +93,31 @@ export const ControlPanelSceneObject = () => {
   }
 
   useEffect(() => {
-    if (!inputsUpdated || !editorEngine) {
+    if (!inputsUpdated || !editorEngine || !currentSceneObject) {
       return;
     }
 
     setInputsUpdated(false);
-    editorEngine.sceneManager?.updateSelectedTransform(
+    transformObject(
+      editorEngine,
+      currentSceneObject.object_uuid,
       localToEngine(localPosition),
       localToEngine(localRotation),
       localToEngine(localScale),
     );
-  }, [inputsUpdated, localPosition, localRotation, localScale, editorEngine]);
+  }, [
+    inputsUpdated,
+    localPosition,
+    localRotation,
+    localScale,
+    editorEngine,
+    currentSceneObject,
+  ]);
 
   useEffect(() => {
     if (!editorEngine || !currentSceneObject) {
       return;
     }
-
-    // The per-frame `updateSelectedUI` in the engine pushes a fresh
-    // `currentSceneObject` object into the store every frame the
-    // selected obj's transform changes. That re-fires this effect with
-    // the *same* uuid but new vectors. Only an actual selection change
-    // (different uuid) is a real session boundary — commit the pending
-    // session for the previous uuid before we resync local state.
-    if (
-      lastUuidRef.current !== null &&
-      lastUuidRef.current !== currentSceneObject.object_uuid
-    ) {
-      commitPanelTransform();
-    }
-    lastUuidRef.current = currentSceneObject.object_uuid;
 
     const vectors = currentSceneObject.objectVectors;
 
@@ -163,14 +128,7 @@ export const ControlPanelSceneObject = () => {
 
     setLocked(editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""));
     setColor(editorEngine?.selected?.userData.color);
-    // No cleanup function — uuid-change commit lives in the body
-    // above. Unmount commit is handled by the separate effect below.
   }, [currentSceneObject, editorEngine]);
-
-  // Final commit on panel unmount.
-  useEffect(() => {
-    return () => commitPanelTransform();
-  }, []);
 
   if (!currentSceneObject) {
     return null;
@@ -191,7 +149,6 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localPosition, cleanXyz)) {
-      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalPosition(xyz);
@@ -204,7 +161,6 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localRotation, cleanXyz)) {
-      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalRotation(xyz);
@@ -226,7 +182,6 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localScale, cleanXyz)) {
-      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalScale(xyz);
@@ -290,30 +245,17 @@ export const ControlPanelSceneObject = () => {
             type="color"
             value={color}
             disabled={locked}
-            onFocus={() => {
-              // Picker is opening — open a session that captures the
-              // before-state once. apply()/commit() handle visual
-              // feedback during the drag and the final undo entry on
-              // close.
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              // The native picker fires onChange per slider pixel.
+              // setObjectColor records each one as a small ColorAction;
+              // HistoryManager.record uses ColorAction.tryMerge to
+              // collapse the burst into a single undo entry.
+              const after = e.target.value;
               const uuid = editorEngine?.selected?.uuid;
               if (uuid && editorEngine) {
-                colorSessionRef.current = beginColorSession(
-                  editorEngine,
-                  uuid,
-                );
+                setObjectColor(editorEngine, uuid, after);
               }
-            }}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              // Native color picker fires per-pixel during slider
-              // drag. apply() updates the engine for visual feedback
-              // but does NOT record. Recording happens once on blur.
-              const after = e.target.value;
-              colorSessionRef.current?.apply(after);
               setColor(after);
-            }}
-            onBlur={() => {
-              colorSessionRef.current?.commit();
-              colorSessionRef.current = null;
             }}
           />
           <Button
