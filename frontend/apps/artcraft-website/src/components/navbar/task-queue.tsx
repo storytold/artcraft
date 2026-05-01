@@ -31,6 +31,7 @@ import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Lightbox } from "../lightbox/lightbox";
 import { showToast } from "../toast/toast";
 import { getModelCreatorIconPath } from "../../lib/omni-gen-hooks";
+import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import { twMerge } from "tailwind-merge";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -473,9 +474,17 @@ function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
   );
 }
 
-function formatTitleParts(job: Job) {
+function formatTitleParts(job: Job, promptsMap?: Map<string, Prompts>) {
+  const promptToken = job.request.maybe_prompt_token;
+  const cachedPrompt = promptToken
+    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
+    : undefined;
+
   const taskTypeStr = job.request.inference_category?.toLowerCase() ?? "";
-  const modelTypeStr = job.request.maybe_model_type ?? "";
+  const modelTypeStr =
+    cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? "";
+  const providerKey =
+    cachedPrompt?.maybe_generation_provider ?? modelTypeStr;
 
   let kind: string | undefined;
   if (taskTypeStr.includes("video")) {
@@ -489,15 +498,15 @@ function formatTitleParts(job: Job) {
   const modelDisplay = modelTypeStr
     ? getModelDisplayName(modelTypeStr)
     : undefined;
-  const provider = modelTypeStr
-    ? getProviderDisplayName(modelTypeStr.toLowerCase())
+  const provider = providerKey
+    ? getProviderDisplayName(providerKey.toLowerCase())
     : undefined;
 
   const title = kind || "Task";
   const subtitle =
     modelDisplay && provider
-      ? `${modelDisplay} — ${provider}`
-      : modelDisplay || job.request.maybe_model_title || undefined;
+      ? `${modelDisplay} · ${provider}`
+      : modelDisplay || provider || undefined;
   return { title, subtitle, kind };
 }
 
@@ -520,7 +529,7 @@ function jobsToInProgress(
     .map((j): InProgressTask => {
       activeIds.add(j.job_token);
       const createdMs = new Date(j.created_at).getTime();
-      const parts = formatTitleParts(j);
+      const parts = formatTitleParts(j, promptsMap);
       const isVideo =
         j.request.inference_category?.toLowerCase().includes("video") ?? false;
       const modelType = j.request.maybe_model_type;
@@ -577,13 +586,22 @@ function jobsToCompleted(
     )
     .map((j): CompletedTask => {
       const cdnUrl = j.maybe_result?.media_links?.cdn_url;
-      const parts = formatTitleParts(j);
+      const mediaClass = j.request.inference_category
+        ?.toLowerCase()
+        .includes("video")
+        ? "video"
+        : "image";
+      const thumbnailUrl =
+        getMediaThumbnail(j.maybe_result?.media_links, mediaClass, {
+          size: THUMBNAIL_SIZES.MEDIUM,
+        }) ?? cdnUrl;
+      const parts = formatTitleParts(j, promptsMap);
 
       return {
         id: j.job_token,
         title: parts.title,
         subtitle: parts.subtitle,
-        thumbnailUrl: cdnUrl,
+        thumbnailUrl,
         completedAt: j.maybe_result?.maybe_successfully_completed_at
           ? new Date(j.maybe_result.maybe_successfully_completed_at)
           : new Date(j.updated_at),
@@ -608,7 +626,7 @@ function jobsToFailed(
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
     )
     .map((j): FailedTask => {
-      const parts = formatTitleParts(j);
+      const parts = formatTitleParts(j, promptsMap);
       const failureCategory =
         j.status.maybe_failure_category_updated ||
         j.status.maybe_failure_category;

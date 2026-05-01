@@ -151,6 +151,7 @@ export function GenerationGalleryGrid({
               <FailedCard
                 id={entry.job.id}
                 prompt={entry.job.prompt}
+                modelId={entry.job.modelId}
                 modelLabel={entry.job.modelLabel}
                 failureReason={entry.job.failureReason}
                 failureMessage={entry.job.failureMessage}

@@ -70,14 +70,23 @@ function getJobMediaType(job: Job): "image" | "video" | "other" {
   return "other";
 }
 
-function getModelLabel(job: Job): string {
-  const modelType = job.request.maybe_model_type ?? "";
-  const modelDisplay = modelType ? getModelDisplayName(modelType) : undefined;
-  const provider = modelType
-    ? getProviderDisplayName(modelType.toLowerCase())
+function getModelLabel(job: Job, promptsMap?: Map<string, Prompts>): string {
+  const promptToken = job.request.maybe_prompt_token;
+  const cachedPrompt = promptToken
+    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
     : undefined;
-  if (modelDisplay && provider) return `${modelDisplay} — ${provider}`;
-  return modelDisplay || job.request.maybe_model_title || "Unknown model";
+
+  const modelType =
+    cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? "";
+  const providerKey = cachedPrompt?.maybe_generation_provider ?? modelType;
+
+  const modelDisplay = modelType ? getModelDisplayName(modelType) : undefined;
+  const provider = providerKey
+    ? getProviderDisplayName(providerKey.toLowerCase())
+    : undefined;
+
+  if (modelDisplay && provider) return `${modelDisplay} · ${provider}`;
+  return modelDisplay || provider || "Unknown model";
 }
 
 function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
@@ -89,6 +98,16 @@ function getPrompt(job: Job, promptsMap?: Map<string, Prompts>): string {
     cached?.maybe_positive_prompt ||
     job.request.maybe_raw_inference_text ||
     ""
+  );
+}
+
+function getModelId(job: Job, promptsMap?: Map<string, Prompts>): string {
+  const promptToken = job.request.maybe_prompt_token;
+  const cachedPrompt = promptToken
+    ? (promptsMap?.get(promptToken) ?? getCachedPrompt(promptToken))
+    : undefined;
+  return (
+    cachedPrompt?.maybe_model_type ?? job.request.maybe_model_type ?? ""
   );
 }
 
@@ -117,8 +136,8 @@ function jobToInProgress(job: Job, promptsMap: Map<string, Prompts>): InProgress
   return {
     id: job.job_token,
     prompt: getPrompt(job, promptsMap),
-    modelId: job.request.maybe_model_type ?? "",
-    modelLabel: getModelLabel(job),
+    modelId: getModelId(job, promptsMap),
+    modelLabel: getModelLabel(job, promptsMap),
     progress,
     estimatedTimeLeftMs,
     createdAt: job.created_at,
@@ -141,8 +160,8 @@ function jobToFailed(job: Job, promptsMap: Map<string, Prompts>): FailedJob {
   return {
     id: job.job_token,
     prompt: getPrompt(job, promptsMap),
-    modelId: job.request.maybe_model_type ?? "",
-    modelLabel: getModelLabel(job),
+    modelId: getModelId(job, promptsMap),
+    modelLabel: getModelLabel(job, promptsMap),
     failureReason,
     failureMessage,
     status: job.status.status,
