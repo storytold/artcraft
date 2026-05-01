@@ -1,6 +1,6 @@
 use crate::core::commands::enqueue::generate_error::GenerateError;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft_via_omni_endpoint::handle_artcraft_via_omni_endpoint;
+use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
 };
@@ -44,54 +44,48 @@ pub async fn generate_image_command(
     });
   }
 
-  let result = handle_artcraft_via_omni_endpoint(
+  let result = handle_artcraft(
     &request,
     &app_env_configs,
     &storyteller_creds_manager,
   ).await;
 
-  match result {
-    Ok(success) => {
-      // Insert into task database
-      let db_result = success
-        .insert_into_task_database_with_frontend_payload(
-          &task_database,
-          request.frontend_caller,
-          request.frontend_subscriber_id.as_deref(),
-          request.frontend_subscriber_payload.as_deref(),
-        )
-        .await;
+  let success = match result {
+    Ok(success) => success,
+    Err(err) => return map_error_to_response(err),
+  };
 
-      if let Err(err) = db_result {
-        error!("Failed to create task in database: {:?}", err);
-      }
+  // Insert into task database
+  let db_result = success
+      .insert_into_task_database_with_frontend_payload(
+        &task_database,
+        request.frontend_caller,
+        request.frontend_subscriber_id.as_deref(),
+        request.frontend_subscriber_payload.as_deref(),
+      )
+      .await;
 
-      map_success_to_response(success, &app)
-    }
-    Err(err) => map_error_to_response(err),
+  if let Err(err) = db_result {
+    error!("Failed to create task in database: {:?}", err);
   }
-}
 
-// ── Result mapping ──
-
-fn map_success_to_response(
-  success: TaskEnqueueSuccess,
-  app: &AppHandle,
-) -> Response<TauriGenerateImageResponse, TauriGenerateImageErrorType, ()> {
   let event = GenerationEnqueueSuccessEvent {
     action: success.to_frontend_event_action(),
     service: success.to_frontend_event_service(),
     model: success.model,
   };
 
-  if let Err(err) = event.send(app) {
+  if let Err(err) = event.send(&app) {
     error!("Failed to emit event: {:?}", err);
   }
 
-  CreditsBalanceChangedEvent{}.send_infallible(app);
+  CreditsBalanceChangedEvent{}.send_infallible(&app);
 
   Ok(TauriGenerateImageResponse {}.into())
 }
+
+// ── Result mapping ──
+
 
 fn map_error_to_response(
   err: GenerateError,
