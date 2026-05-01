@@ -9,6 +9,7 @@ import Scene from "./scene";
 import { MouseControls } from "./keybinds_controls";
 import { ClipGroup } from "~/enums";
 import { AssetType } from "~/enums";
+import { XYZ } from "../datastructures/common";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import {
   CommandInputTypes,
@@ -255,6 +256,20 @@ export class SceneManager implements SceneManagerAPI {
       this.mouse_controls.selected = [object];
       this.mouse_controls.selectObject(object);
     }
+  }
+
+  // Writes position/rotation/scale onto the currently selected object.
+  // Rotation is taken in degrees (matches the Object Panel input).
+  public updateSelectedTransform(position: XYZ, rotation: XYZ, scale: XYZ) {
+    const object = this.selected_objects?.[0];
+    if (!object) return;
+    object.position.set(position.x, position.y, position.z);
+    object.rotation.set(
+      THREE.MathUtils.degToRad(rotation.x),
+      THREE.MathUtils.degToRad(rotation.y),
+      THREE.MathUtils.degToRad(rotation.z),
+    );
+    object.scale.set(scale.x, scale.y, scale.z);
   }
 
   // Converts a 3d object to signal item format.

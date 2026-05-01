@@ -4,7 +4,6 @@ import Scene from "./scene.js";
 import { APIManager } from "./api_manager.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { CameraAspectRatio } from "~/pages/PageScene/enums";
-import { XYZ } from "../datastructures/common";
 import { SceneUtils } from "./helper";
 import { MouseControls } from "./keybinds_controls";
 import { SaveManager } from "./save_manager";
@@ -158,6 +157,15 @@ class Editor {
       getSceneManager: () => this.sceneManager,
       cameraName: this.cameraController.camera_name,
       version: this.version,
+      toggleObjectLocked: (uuid) => this.utils.toggleObjectLocked(uuid),
+      isObjectLocked: (uuid) => this.utils.isObjectLocked(uuid),
+      removeTransformControls: () =>
+        this.utils.removeTransformControls(false),
+      attachGizmoToCurrentSelection: () => {
+        this.gizmo.addToScene(this.activeScene.scene);
+        const selected = this.sceneManager?.selected_objects?.[0];
+        if (selected) this.gizmo.attach(selected);
+      },
     });
 
     this.activeScene = new Scene(
@@ -634,29 +642,6 @@ class Editor {
     this.selection.refreshOutliner();
   }
 
-  isObjectLipsync(object_uuid: string) {
-    return this.utils.isObjectLipsync(object_uuid);
-  }
-
-  isObjectLocked(object_uuid: string): boolean {
-    return this.utils.isObjectLocked(object_uuid);
-  }
-
-  lockUnlockObject(object_uuid: string): boolean {
-    const res = this.utils.lockUnlockObject(object_uuid);
-    this.selection.updateSelectedUI();
-    return res;
-  }
-
-  setColor(object_uuid: string, hex_color: string) {
-    this.activeScene.setColor(object_uuid, hex_color);
-  }
-
-  // TO UPDATE selected objects in the scene might want to add to the scene ...
-  async setSelectedObject(position: XYZ, rotation: XYZ, scale: XYZ) {
-    this.utils.setSelectedObject(position, rotation, scale);
-  }
-
   public async saveScene({
     sceneTitle,
     sceneToken,
@@ -669,20 +654,6 @@ class Editor {
     return await this.save_manager.saveScene({
       sceneTitle: sceneTitle,
       sceneToken: sceneToken,
-      sceneGenerationMetadata: sceneGenerationMetadata,
-    });
-  }
-
-  public cacheScene({
-    sceneTitle,
-    sceneToken,
-    sceneGenerationMetadata,
-  }: {
-    sceneTitle: string;
-    sceneToken: string;
-    sceneGenerationMetadata: SceneGenereationMetaData;
-  }) {
-    return this.save_manager.getSceneJson({
       sceneGenerationMetadata: sceneGenerationMetadata,
     });
   }
@@ -825,20 +796,6 @@ class Editor {
     this.isMounted = false;
     setIs3DEditorInitialized(false);
     console.log("3D Editor Engine unmounted");
-  }
-
-  // Facades — external callers in actions/* and helper.ts target these
-  // names. Internals reach the bridge directly via this.selection.*.
-  updateOutliner() {
-    this.selection.updateOutliner();
-  }
-
-  updateSelectedUI() {
-    this.selection.updateSelectedUI();
-  }
-
-  publishSelect() {
-    this.selection.publishSelect();
   }
 }
 

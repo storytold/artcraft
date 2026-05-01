@@ -21,6 +21,6 @@ export async function addShape(
     name: obj.name || (item.name ?? "shape"),
     mediaId: item.media_id,
   });
-  editor.updateOutliner?.();
+  editor.selection.refreshOutliner();
   return obj.uuid;
 }

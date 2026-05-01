@@ -59,9 +59,7 @@ export const EngineProvider = ({ sceneToken, children }: Props) => {
         const sceneGenerationMetadata = getSceneGenerationMetaData(
           activeEditorRef.current,
         );
-        const cacheJson = activeEditorRef.current.cacheScene({
-          sceneTitle: "",
-          sceneToken: "",
+        const cacheJson = activeEditorRef.current.save_manager.getSceneJson({
           sceneGenerationMetadata: sceneGenerationMetadata,
         });
         const cacheString = JSON.stringify(cacheJson);

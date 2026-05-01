@@ -11,5 +11,5 @@ export function deselectObject(editor: Editor): void {
   if (editor.sceneManager) {
     editor.sceneManager.selected_objects = undefined;
   }
-  editor.publishSelect();
+  editor.selection.publishSelect();
 }

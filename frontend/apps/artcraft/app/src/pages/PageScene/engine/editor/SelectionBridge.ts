@@ -13,7 +13,7 @@ import { AssetType, ClipGroup } from "~/enums";
 import { usePageSceneStore } from "../../PageSceneStore";
 import type { SceneManager } from "../scene_manager_api";
 
-export type SelectionEngineRefs = {
+export type SelectionBridgeDeps = {
   // Lazy: SceneManager is created in Editor.initialize, after the bridge.
   getSceneManager: () => SceneManager | undefined;
   // The reserved camera-entity name ("::CAM::") used to distinguish
@@ -21,6 +21,14 @@ export type SelectionEngineRefs = {
   cameraName: string;
   // Editor's data version, written into the object panel.
   version: number;
+
+  // Lock/unlock plumbing — the userData mutation lives in SceneUtils,
+  // and the gizmo attach/detach lives on GizmoController. The bridge
+  // calls them through these callbacks instead of importing either.
+  toggleObjectLocked: (uuid: string) => boolean; // returns new locked state
+  isObjectLocked: (uuid: string) => boolean;
+  removeTransformControls: () => void;
+  attachGizmoToCurrentSelection: () => void;
 };
 
 export class SelectionBridge {
@@ -32,7 +40,26 @@ export class SelectionBridge {
   // compared in renderSingleFrame against utils.getSelectedSum().
   last_selected_sum: number = 0;
 
-  constructor(private readonly engine: SelectionEngineRefs) {}
+  constructor(private readonly engine: SelectionBridgeDeps) {}
+
+  // Toggle the locked flag on an object's userData, then either yank
+  // the gizmo (lock) or re-attach it to the current selection (unlock).
+  // Returns the new locked state.
+  lockUnlockObject(object_uuid: string): boolean {
+    const locked = this.engine.toggleObjectLocked(object_uuid);
+    if (locked) {
+      this.engine.removeTransformControls();
+    } else {
+      this.engine.attachGizmoToCurrentSelection();
+    }
+    this.updateSelectedUI();
+    return locked;
+  }
+
+  // True if the object is currently locked. Pure passthrough.
+  isObjectLocked(object_uuid: string): boolean {
+    return this.engine.isObjectLocked(object_uuid);
+  }
 
   setSelected(object: THREE.Object3D[] | undefined) {
     const sceneManager = this.engine.getSceneManager();

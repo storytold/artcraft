@@ -1,7 +1,6 @@
 import Scene from "./scene";
 import Editor from "./editor";
 import * as THREE from "three";
-import { XYZ } from "../datastructures/common";
 import { usePageSceneStore } from "../PageSceneStore";
 
 export class SceneUtils {
@@ -19,26 +18,6 @@ export class SceneUtils {
     );
   }
 
-  // For react to see if an object has lipsync capability or not.
-  isObjectLipsync(object_uuid: string) {
-    const object = this.scene.get_object_by_uuid(object_uuid);
-    let hasLipsync = false;
-    if (object) {
-      object.traverse((c: THREE.Object3D) => {
-        if (c instanceof THREE.Mesh) {
-          if (c.morphTargetInfluences && c.morphTargetDictionary) {
-            const blendShapeIndexE = c.morphTargetDictionary["E"];
-            // console.log(c.morphTargetDictionary, blendShapeIndexE)
-            if (blendShapeIndexE !== null) {
-              hasLipsync = true;
-            }
-          }
-        }
-      });
-    }
-    return hasLipsync;
-  }
-
   // Returns if the object is locked or unlocked.
   isObjectLocked(object_uuid: string): boolean {
     const object = this.scene.get_object_by_uuid(object_uuid);
@@ -48,31 +27,20 @@ export class SceneUtils {
       }
       return object.userData["locked"];
     }
-    //console.log("No object found.");
     return false;
   }
 
-  // Locks or unlocks and object and returns its new state,
-  lockUnlockObject(object_uuid: string): boolean {
+  // Pure userData mutation: flips the locked flag and returns the new
+  // value. Higher-level wiring (gizmo attach/detach, selection refresh)
+  // lives on SelectionBridge.lockUnlockObject.
+  toggleObjectLocked(object_uuid: string): boolean {
     const object = this.scene.get_object_by_uuid(object_uuid);
-    if (object) {
-      if (object.userData["locked"] == undefined) {
-        object.userData["locked"] = false;
-      }
-      object.userData["locked"] = !object.userData["locked"];
-
-      if (object.userData["locked"]) {
-        this.removeTransformControls(false);
-      } else {
-        this.editor.gizmo.addToScene(this.scene.scene);
-        const selected = this.editor.sceneManager?.selected_objects?.[0];
-        if (selected) this.editor.gizmo.attach(selected);
-      }
-
-      return object.userData["locked"];
+    if (!object) return false;
+    if (object.userData["locked"] == undefined) {
+      object.userData["locked"] = false;
     }
-    //console.log("No object found.");
-    return false;
+    object.userData["locked"] = !object.userData["locked"];
+    return object.userData["locked"];
   }
 
   // Removes transform controls and publishes selected.
@@ -86,29 +54,11 @@ export class SceneUtils {
     }
     if (remove_outline) {
       outlinePass.selectedObjects = [];
-      this.editor.publishSelect();
+      this.editor.selection.publishSelect();
     }
     this.editor.gizmo.detach();
     this.editor.gizmo.removeFromScene(this.editor.activeScene.scene);
     if (remove_outline) outlinePass.selectedObjects = [];
-  }
-
-  // TO UPDATE selected objects in the scene might want to add to the scene ...
-  async setSelectedObject(position: XYZ, rotation: XYZ, scale: XYZ) {
-    if (this.editor.sceneManager?.selected_objects) {
-      const object = this.editor.sceneManager?.selected_objects[0];
-      if (object != undefined || object != null) {
-        object.position.x = position.x;
-        object.position.y = position.y;
-        object.position.z = position.z;
-        object.rotation.x = THREE.MathUtils.degToRad(rotation.x);
-        object.rotation.y = THREE.MathUtils.degToRad(rotation.y);
-        object.rotation.z = THREE.MathUtils.degToRad(rotation.z);
-        object.scale.x = scale.x;
-        object.scale.y = scale.y;
-        object.scale.z = scale.z;
-      }
-    }
   }
 
   // Returns the "check sum" of the editors selected object.
@@ -206,7 +156,7 @@ function removeObject3D(object3D) {
 
     usePageSceneStore.getState().removeSceneObject(uuid);
     this.editor.selection.selected = undefined;
-    this.editor.publishSelect();
+    this.editor.selection.publishSelect();
     usePageSceneStore.getState().hideObjectPanel();
   }
 }

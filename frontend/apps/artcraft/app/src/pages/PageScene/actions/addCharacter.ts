@@ -23,6 +23,6 @@ export async function addCharacter(
     name: obj.name || (item.name ?? "character"),
     mediaId: item.media_id,
   });
-  editor.updateOutliner?.();
+  editor.selection.refreshOutliner();
   return obj.uuid;
 }
