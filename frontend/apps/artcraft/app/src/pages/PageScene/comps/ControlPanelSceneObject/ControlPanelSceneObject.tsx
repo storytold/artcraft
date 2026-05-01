@@ -220,11 +220,17 @@ export const ControlPanelSceneObject = () => {
             className="h-0 w-0 cursor-pointer opacity-0"
             id={colorInputId}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              editorEngine?.activeScene.setColor(
-                editorEngine?.selected?.uuid || "",
-                e.target.value,
-              );
-              setColor(e.target.value);
+              // <input type="color"> fires onChange once per committed
+              // pick (when the picker closes), so recording here gives
+              // exactly one undo entry per user-visible color change.
+              const uuid = editorEngine?.selected?.uuid;
+              const before = color;
+              const after = e.target.value;
+              editorEngine?.activeScene.setColor(uuid || "", after);
+              if (uuid) {
+                editorEngine?.history.recordSetColor(uuid, before, after);
+              }
+              setColor(after);
             }}
             type="color"
             value={color}
