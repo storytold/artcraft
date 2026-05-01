@@ -26,7 +26,10 @@ import { XYZ } from "~/pages/PageScene/datastructures/common";
 import { pageHeight } from "~/signals";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
 import { ColorAction } from "~/pages/PageScene/engine/editor/actions/ColorAction";
-import { TransformAction } from "~/pages/PageScene/engine/editor/actions/TransformAction";
+import {
+  beginTransformSession,
+  TransformSession,
+} from "~/pages/PageScene/actions/transformObject";
 
 // TODO this will be useful later to fix the bug on leading zeros
 // const formatNumber = (input: string): number => {
@@ -66,26 +69,24 @@ export const ControlPanelSceneObject = () => {
 
   const [color, setColor] = useState("#ffffff");
 
-  // Pending transform action — opened on first panel edit to capture
-  // the before-state, committed on selection change / unmount.
-  const transformActionRef = useRef<TransformAction | null>(null);
+  // Pending transform session — opened on first panel edit, committed
+  // on selection change / unmount. The action layer (transformObject)
+  // owns recording + Zustand sync; this view just opens and closes the
+  // session boundary.
+  const transformSessionRef = useRef<TransformSession | null>(null);
 
   const beginPanelTransform = () => {
-    if (transformActionRef.current) return;
+    if (transformSessionRef.current) return;
     if (!editorEngine || !currentSceneObject) return;
-    transformActionRef.current = new TransformAction(
+    transformSessionRef.current = beginTransformSession(
       editorEngine,
       currentSceneObject.object_uuid,
     );
   };
 
   const commitPanelTransform = () => {
-    const action = transformActionRef.current;
-    transformActionRef.current = null;
-    if (!action || !editorEngine) return;
-    if (action.commit()) {
-      editorEngine.history.record(action);
-    }
+    transformSessionRef.current?.commit();
+    transformSessionRef.current = null;
   };
 
   const colorInputId = useId();
