@@ -174,6 +174,15 @@ export const PromptBox3D = ({
     CommonAspectRatio | undefined
   >(undefined);
 
+  // The new picker drives both the API request payload (commonAspectRatio)
+  // and the 3D editor's letterbox/render-camera. Auto* ratios have no
+  // fixed shape, so they leave the letterbox alone.
+  const handleCommonAspectRatioSelect = (ratio: CommonAspectRatio) => {
+    setCommonAspectRatio(ratio);
+    const mapped = commonToCameraAspect(ratio);
+    if (mapped) onAspectRatioSelect(mapped);
+  };
+
   useEffect(() => {
     if (textareaRef.current && !isExpanded) {
       textareaRef.current.style.height = "auto";
@@ -643,7 +652,7 @@ export const PromptBox3D = ({
                 <AspectRatioPicker
                   model={selectedImageModel}
                   currentAspectRatio={commonAspectRatio}
-                  handleCommonAspectRatioSelect={setCommonAspectRatio}
+                  handleCommonAspectRatioSelect={handleCommonAspectRatioSelect}
                 />
               )}
               {selectedImageModel?.canChangeAspectRatio &&
@@ -811,4 +820,38 @@ export const PromptBox3D = ({
       </div>
     </>
   );
+};
+
+// Map a CommonAspectRatio (the 2D/API-side enum) to the closest
+// CameraAspectRatio variant the 3D editor's letterbox supports. Returns
+// undefined for Auto* values, which have no fixed shape.
+const commonToCameraAspect = (
+  ratio: CommonAspectRatio,
+): CameraAspectRatio | undefined => {
+  switch (ratio) {
+    case CommonAspectRatio.Square:
+    case CommonAspectRatio.SquareHd:
+      return CameraAspectRatio.SQUARE_1_1;
+    case CommonAspectRatio.WideSixteenByNine:
+    case CommonAspectRatio.WideTwentyOneByNine:
+      return CameraAspectRatio.HORIZONTAL_16_9;
+    case CommonAspectRatio.WideThreeByTwo:
+    case CommonAspectRatio.WideFourByThree:
+    case CommonAspectRatio.WideFiveByFour:
+    case CommonAspectRatio.Wide:
+      return CameraAspectRatio.HORIZONTAL_3_2;
+    case CommonAspectRatio.TallNineBySixteen:
+    case CommonAspectRatio.TallNineByTwentyOne:
+      return CameraAspectRatio.VERTICAL_9_16;
+    case CommonAspectRatio.TallTwoByThree:
+    case CommonAspectRatio.TallThreeByFour:
+    case CommonAspectRatio.TallFourByFive:
+    case CommonAspectRatio.Tall:
+      return CameraAspectRatio.VERTICAL_2_3;
+    case CommonAspectRatio.Auto:
+    case CommonAspectRatio.Auto2k:
+    case CommonAspectRatio.Auto3k:
+    case CommonAspectRatio.Auto4k:
+      return undefined;
+  }
 };
