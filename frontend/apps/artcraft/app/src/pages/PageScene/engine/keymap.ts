@@ -72,6 +72,10 @@ const openAssetModal = () => {
   store.setAssetModalVisibleDuringDrag(true);
 };
 
+const toggleCameraView = (editor: Editor) => {
+  editor.cameraController.switchCameraView();
+};
+
 const undo = async (editor: Editor) => {
   await editor.history.undo();
 };
@@ -109,6 +113,8 @@ export const buildKeymap = (): KeyBinding[] => [
     run: focusSelected },
   { code: "KeyB", label: "Open asset menu", group: "View",
     run: openAssetModal },
+  { code: "Space", label: "Toggle camera view", group: "View",
+    run: toggleCameraView, preventDefault: true },
   { code: "Escape", label: "Clear selection / exit pose", group: "Selection",
     run: onEscape },
 
