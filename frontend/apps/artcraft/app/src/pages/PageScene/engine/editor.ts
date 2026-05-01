@@ -424,6 +424,13 @@ class Editor {
             new THREE.Vector3(-99999, -99999, -99999),
           );
           this.focused = !dragging;
+          // Gizmo drag boundary → undo entry. Begin captures the
+          // pre-drag transform; end commits the diff (or drops a
+          // no-op move).
+          const target = this.sceneManager?.selected_objects?.[0];
+          if (!target) return;
+          if (dragging) this.history.beginTransform(target);
+          else this.history.endTransform(target);
         },
       },
     );
