@@ -45,17 +45,24 @@ export const useFreeCam = (
   }, [editor]);
 
   // Toggle enabled and clear motion when leaving CAMERA_VIEW so the
-  // camera doesn't drift on a stale held key.
+  // camera doesn't drift on a stale held key. On enter, focus the
+  // canvas so the WASD keydown listener (canvas-scoped) actually
+  // fires — pressing Space enters CAMERA_VIEW via the document
+  // keymap without changing focus, so the canvas wouldn't otherwise
+  // receive keydown events.
   useEffect(() => {
     const state = stateRef.current;
     state.enabled = enabled;
+    if (enabled && canvas) {
+      canvas.focus();
+    }
     if (!enabled) {
       state.moveKeys = emptyMoveKeys();
       state.rotateKeys = emptyRotateKeys();
       state.velocity.set(0, 0, 0);
       dragRef.current = null;
     }
-  }, [enabled]);
+  }, [enabled, canvas]);
 
   // Attach listeners to the canvas. Canvas-scoped means no listener
   // leaks beyond the viewport, and no need for mouseover gating.
