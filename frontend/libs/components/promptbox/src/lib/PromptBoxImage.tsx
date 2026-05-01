@@ -7,10 +7,8 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { Button, ToggleButton, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import {
-  EnqueueTextToImage,
-  EnqueueTextToImageRequest,
-  EnqueueTextToImageSize,
-  EnqueueTextToImageResolution,
+  GenerateImage,
+  GenerateImageRequest,
 } from "@storyteller/tauri-api";
 import {
   faMessageXmark,
@@ -296,15 +294,10 @@ export const PromptBoxImage = ({
     }, 10000);
 
     try {
-      const aspectRatio = getCurrentLegacyAspectRatio();
-      const resolution = getCurrentResolution();
-
-      const request: EnqueueTextToImageRequest = {
+      const request: GenerateImageRequest = {
         prompt: prompt,
         model: selectedModel,
-        aspect_ratio: aspectRatio,
-        image_resolution: resolution,
-        number_images: generationCount,
+        batch_size: generationCount,
         frontend_caller: "text_to_image",
         frontend_subscriber_id: subscriberId,
       };
@@ -314,11 +307,11 @@ export const PromptBoxImage = ({
       }
 
       if (selectedModel?.supportsNewAspectRatio()) {
-        request.common_aspect_ratio = commonAspectRatio;
+        request.aspect_ratio = commonAspectRatio;
       }
 
       if (selectedModel?.supportsNewResolution()) {
-        request.common_resolution = commonResolution;
+        request.resolution = commonResolution;
       }
 
       if (selectedModel?.supportsQuality()) {
@@ -342,7 +335,7 @@ export const PromptBoxImage = ({
         timestamp: Date.now(),
       });
 
-      const generateResponse = await EnqueueTextToImage(request);
+      const generateResponse = await GenerateImage(request);
       console.debug("PromptBoxImage - generateResponse", generateResponse);
 
       await onEnqueuePressed?.(prompt, generationCount, subscriberId);
@@ -365,33 +358,6 @@ export const PromptBoxImage = ({
         return <AspectRatioIcon ratio={[1, 1]} />;
       default:
         return <AspectRatioIcon ratio={[16, 10]} />;
-    }
-  };
-
-  const getCurrentLegacyAspectRatio = (): EnqueueTextToImageSize => {
-    const selected = aspectRatioList.find((item) => item.selected);
-    switch (selected?.label.toLowerCase()) {
-      case "wide":
-        return EnqueueTextToImageSize.Wide;
-      case "tall":
-        return EnqueueTextToImageSize.Tall;
-      case "square":
-      default:
-        return EnqueueTextToImageSize.Square;
-    }
-  };
-
-  const getCurrentResolution = (): EnqueueTextToImageResolution | undefined => {
-    const selected = resolutionList.find((item) => item.selected);
-    switch (selected?.label) {
-      case "1k":
-        return EnqueueTextToImageResolution.OneK;
-      case "2k":
-        return EnqueueTextToImageResolution.TwoK;
-      case "4k":
-        return EnqueueTextToImageResolution.FourK;
-      default:
-        return undefined;
     }
   };
 

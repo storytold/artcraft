@@ -8,8 +8,8 @@ import { Tooltip } from "@storyteller/ui-tooltip";
 import { ToggleButton, GenerateButton } from "@storyteller/ui-button";
 import { Modal } from "@storyteller/ui-modal";
 import {
-  EnqueueImageToVideo,
-  EnqueueImageToVideoRequest,
+  GenerateVideo,
+  GenerateVideoRequest,
 } from "@storyteller/tauri-api";
 import {
   faWaveformLines,
@@ -703,10 +703,10 @@ export const PromptBoxVideo = ({
       setIsEnqueueing(false);
     }, 10000);
 
-    const buildRequest = (subscriberId: string): EnqueueImageToVideoRequest => {
-      let request: EnqueueImageToVideoRequest = {
+    const buildRequest = (subscriberId: string): GenerateVideoRequest => {
+      let request: GenerateVideoRequest = {
         model: selectedModel,
-        image_media_token: imageMediaToken,
+        start_frame_image_media_token: imageMediaToken,
         prompt: prompt,
         end_frame_image_media_token: isRefMode
           ? undefined
@@ -816,7 +816,7 @@ export const PromptBoxVideo = ({
         ? crypto.randomUUID()
         : Math.random().toString(36).slice(2);
       subscriberIds.push(subscriberId);
-      enqueuePromises.push(EnqueueImageToVideo(buildRequest(subscriberId)));
+      enqueuePromises.push(GenerateVideo(buildRequest(subscriberId)));
     }
 
     try {
