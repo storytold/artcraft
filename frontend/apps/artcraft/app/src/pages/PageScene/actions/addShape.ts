@@ -16,6 +16,8 @@ export async function addShape(
   if (!obj) return undefined;
   obj.name = item.name ?? "shape";
 
+  await editor.sceneManager?.add_creation_undostack(obj);
+
   usePageSceneStore.getState().addShape({
     id: obj.uuid,
     kind: "shape",

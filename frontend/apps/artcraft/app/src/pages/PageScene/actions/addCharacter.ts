@@ -17,6 +17,8 @@ export async function addCharacter(
 
   obj.userData.isCharacter = true;
 
+  await editor.sceneManager?.add_creation_undostack(obj);
+
   usePageSceneStore.getState().addCharacter({
     id: obj.uuid,
     kind: "character",
