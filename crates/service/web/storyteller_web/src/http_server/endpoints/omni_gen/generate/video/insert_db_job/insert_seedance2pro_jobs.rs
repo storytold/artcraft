@@ -1,5 +1,6 @@
 use log::{error, warn};
 
+use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use enums::common::visibility::Visibility;
 use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token,
@@ -7,8 +8,7 @@ use mysql_queries::queries::generic_inference::seedance2pro::insert_generic_infe
 };
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
-
-use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
+use uuid_utils::uuid::generate_random_uuid;
 
 use super::shared_job_args::SharedJobArgs;
 
@@ -29,6 +29,7 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
 
   // Build a deduplicated list with primary_order_id first.
   let mut all_order_ids = vec![primary_order_id.to_string()];
+
   if let Some(additional) = maybe_additional_order_ids {
     for id in additional {
       if id != primary_order_id {
@@ -41,7 +42,11 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
 
   for (i, order_id) in all_order_ids.iter().enumerate() {
     let job_token = if i == 0 { shared.apriori_job_token.clone() } else { InferenceJobToken::generate() };
-    let idempotency_str = if i == 0 { shared.idempotency_token.to_string() } else { format!("{}-batch-{}", shared.idempotency_token, i) };
+
+    // TODO: These strings are too long for the database:
+    //let idempotency_str = if i == 0 { shared.idempotency_token.to_string() } else { format!("{}-batch-{}", shared.idempotency_token, i) };
+
+    let idempotency_str = generate_random_uuid();
 
     let db_result = insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token(
       InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs {
