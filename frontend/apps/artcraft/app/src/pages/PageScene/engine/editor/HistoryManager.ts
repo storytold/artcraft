@@ -1,38 +1,43 @@
 import * as THREE from "three";
+import {
+  ObjectSnap,
+  TransformSnap,
+  snapshotObject,
+  snapshotTransform,
+  transformsEqual,
+} from "./actions/snapshots";
+
+export type { ObjectSnap, TransformSnap };
 
 // HistoryManager owns the undo/redo stack for the 3D editor.
 //
-// Design:
-// - Pure-data HistoryEntry: { label, apply(ctx), revert(ctx) }. Entries
-//   don't hold subsystem references — they receive a narrow
-//   HistoryContext when replayed, so they survive subsystem re-creation
-//   and stay easy to test in isolation.
-// - The external API is the recordX methods on this class. Mutation
-//   sites call ONE method; entry construction + push lives here.
-//   Adding a new action = add an entry factory + a recordX method.
+// Architecture:
+// - UndoableAction is the only interface this class knows about. Each
+//   action kind is implemented as a self-contained class under
+//   engine/editor/actions/ that captures its own state and dependencies.
+// - The external API is `record(action)` + `undo()` + `redo()`. Adding
+//   a new action kind never touches this file — it's a new class file
+//   under actions/ that implements UndoableAction.
 // - undo/redo serialize through a Promise chain so concurrent calls
 //   (Ctrl+Z mash during async asset reloads) never interleave.
+// - During replay, isReplaying suppresses all record() calls so that
+//   side-effecting mutators invoked from inside apply/revert (e.g. an
+//   undo-of-create reaching editor.deleteObject) don't poison the stack.
+//
+// Legacy `recordCreate / recordDelete / ...` and the HistoryContext-based
+// HistoryEntry are kept as thin wrappers during the migration to action
+// classes. They funnel through the same record() path and respect
+// isReplaying.
 
-export interface TransformSnap {
-  position: { x: number; y: number; z: number };
-  rotation: { x: number; y: number; z: number };
-  scale: { x: number; y: number; z: number };
+export interface UndoableAction {
+  readonly label: string;
+  apply(): Promise<void> | void;   // do or redo
+  revert(): Promise<void> | void;  // undo
 }
 
-// Enough state to fully reconstruct any object: primitive shape,
-// image plane, GLB, MMD. Captured at create- and delete-time so undo
-// of either operation works the same way.
-export interface ObjectSnap {
-  uuid: string;
-  name: string;
-  media_id: string;
-  transform: TransformSnap;
-  userData: Record<string, unknown>;
-}
-
-// What HistoryEntry implementations need from the engine. Built inline
-// by Editor as a deps object (Phase 2 idiom — same shape as
-// CameraControllerDeps, GizmoControllerDeps, SelectionBridgeDeps).
+// Legacy entry interface — kept for transition. See action classes
+// under engine/editor/actions/ for the new shape; these get removed
+// once all call sites have migrated.
 export interface HistoryContext {
   recreateObject(snap: ObjectSnap): Promise<THREE.Object3D | undefined>;
   removeObject(uuid: string): Promise<void> | void;
@@ -40,8 +45,6 @@ export interface HistoryContext {
   setColor(uuid: string, color: string): void;
   setLocked(uuid: string, locked: boolean): void;
   setVisible(uuid: string, visible: boolean): void;
-  // Called by the manager after every apply/revert so the outliner +
-  // selection UI re-render. Entry impls don't have to remember.
   refreshOutliner(): void;
 }
 
@@ -57,9 +60,13 @@ export interface HistoryManagerOptions {
 }
 
 export class HistoryManager {
-  private past: HistoryEntry[] = [];
-  private future: HistoryEntry[] = [];
+  private past: UndoableAction[] = [];
+  private future: UndoableAction[] = [];
+  private isReplaying = false;
   private serializing: Promise<void> = Promise.resolve();
+
+  // Legacy: pending begin/end state for the per-kind transform recorder.
+  // Removed once the gizmo handler migrates to TransformAction.
   private pendingTransform:
     | { uuid: string; before: TransformSnap }
     | undefined;
@@ -68,6 +75,8 @@ export class HistoryManager {
   private readonly onChange?: HistoryManagerOptions["onChange"];
 
   constructor(
+    // Legacy ctx for the wrapper-based recordX methods. Removed once
+    // call sites stop using them.
     private readonly ctx: HistoryContext,
     options: HistoryManagerOptions = {},
   ) {
@@ -75,15 +84,18 @@ export class HistoryManager {
     this.onChange = options.onChange;
   }
 
-  // ── Reading state ─────────────────────────────────────────────────
+  // ── External API ──────────────────────────────────────────────────
 
-  canUndo(): boolean {
-    return this.past.length > 0;
+  record(action: UndoableAction): void {
+    if (this.isReplaying) return;
+    this.future.length = 0;
+    this.past.push(action);
+    if (this.past.length > this.capacity) this.past.shift();
+    this.notifyChange();
   }
 
-  canRedo(): boolean {
-    return this.future.length > 0;
-  }
+  canUndo(): boolean { return this.past.length > 0; }
+  canRedo(): boolean { return this.future.length > 0; }
 
   clear(): void {
     this.past.length = 0;
@@ -91,55 +103,6 @@ export class HistoryManager {
     this.pendingTransform = undefined;
     this.notifyChange();
   }
-
-  // ── Recording (the external API) ──────────────────────────────────
-  // Each mutation site calls one method here. No HistoryEntry
-  // construction at the action layer.
-
-  recordCreate(obj: THREE.Object3D): void {
-    this.push(createEntry(snapshotObject(obj)));
-  }
-
-  recordDelete(obj: THREE.Object3D): void {
-    this.push(deleteEntry(snapshotObject(obj)));
-  }
-
-  // Transform recording is paired: begin captures the before-state,
-  // end commits one entry with the after-state. No-op moves are
-  // dropped. A second begin without a matching end replaces the
-  // pending snapshot — harmless if the caller short-circuits.
-  beginTransform(obj: THREE.Object3D): void {
-    this.pendingTransform = {
-      uuid: obj.uuid,
-      before: snapshotTransform(obj),
-    };
-  }
-
-  endTransform(obj: THREE.Object3D): void {
-    const p = this.pendingTransform;
-    this.pendingTransform = undefined;
-    if (!p || p.uuid !== obj.uuid) return;
-    const after = snapshotTransform(obj);
-    if (transformsEqual(p.before, after)) return;
-    this.push(transformEntry(p.uuid, p.before, after));
-  }
-
-  recordSetColor(uuid: string, before: string, after: string): void {
-    if (before === after) return;
-    this.push(colorEntry(uuid, before, after));
-  }
-
-  recordSetLocked(uuid: string, before: boolean, after: boolean): void {
-    if (before === after) return;
-    this.push(lockedEntry(uuid, before, after));
-  }
-
-  recordSetVisible(uuid: string, before: boolean, after: boolean): void {
-    if (before === after) return;
-    this.push(visibleEntry(uuid, before, after));
-  }
-
-  // ── Replay ────────────────────────────────────────────────────────
 
   async undo(): Promise<void> {
     return (this.serializing = this.serializing.then(() =>
@@ -153,31 +116,78 @@ export class HistoryManager {
     ));
   }
 
+  // ── Legacy per-kind recorders (transitional) ──────────────────────
+  // These wrap a HistoryEntry into an UndoableAction by binding `ctx`.
+  // Action sites should migrate to building action classes directly
+  // and calling `record(new XAction(...))`. Removed once all call
+  // sites have moved off these.
+
+  recordCreate(obj: THREE.Object3D): void {
+    this.record(wrap(createEntry(snapshotObject(obj)), this.ctx));
+  }
+
+  recordDelete(obj: THREE.Object3D): void {
+    this.record(wrap(deleteEntry(snapshotObject(obj)), this.ctx));
+  }
+
+  beginTransform(obj: THREE.Object3D): void {
+    this.pendingTransform = {
+      uuid: obj.uuid,
+      before: snapshotTransform(obj),
+    };
+  }
+
+  endTransform(obj: THREE.Object3D): void {
+    const p = this.pendingTransform;
+    this.pendingTransform = undefined;
+    if (!p || p.uuid !== obj.uuid) return;
+    const after = snapshotTransform(obj);
+    if (transformsEqual(p.before, after)) return;
+    this.record(wrap(transformEntry(p.uuid, p.before, after), this.ctx));
+  }
+
+  recordSetColor(uuid: string, before: string, after: string): void {
+    if (before === after) return;
+    this.record(wrap(colorEntry(uuid, before, after), this.ctx));
+  }
+
+  recordSetLocked(uuid: string, before: boolean, after: boolean): void {
+    if (before === after) return;
+    this.record(wrap(lockedEntry(uuid, before, after), this.ctx));
+  }
+
+  recordSetVisible(uuid: string, before: boolean, after: boolean): void {
+    if (before === after) return;
+    this.record(wrap(visibleEntry(uuid, before, after), this.ctx));
+  }
+
   // ── Internal ──────────────────────────────────────────────────────
 
   private async undoInternal(): Promise<void> {
-    const entry = this.past.pop();
-    if (!entry) return;
-    await entry.revert(this.ctx);
-    this.future.push(entry);
+    const action = this.past.pop();
+    if (!action) return;
+    this.isReplaying = true;
+    try {
+      await action.revert();
+    } finally {
+      this.isReplaying = false;
+    }
+    this.future.push(action);
     this.ctx.refreshOutliner();
     this.notifyChange();
   }
 
   private async redoInternal(): Promise<void> {
-    const entry = this.future.pop();
-    if (!entry) return;
-    await entry.apply(this.ctx);
-    this.past.push(entry);
+    const action = this.future.pop();
+    if (!action) return;
+    this.isReplaying = true;
+    try {
+      await action.apply();
+    } finally {
+      this.isReplaying = false;
+    }
+    this.past.push(action);
     this.ctx.refreshOutliner();
-    this.notifyChange();
-  }
-
-  private push(entry: HistoryEntry): void {
-    // A new mutation invalidates the redo branch.
-    this.future.length = 0;
-    this.past.push(entry);
-    if (this.past.length > this.capacity) this.past.shift();
     this.notifyChange();
   }
 
@@ -186,26 +196,17 @@ export class HistoryManager {
   }
 }
 
-// ── Snapshots ───────────────────────────────────────────────────────
-
-export const snapshotTransform = (obj: THREE.Object3D): TransformSnap => ({
-  position: { x: obj.position.x, y: obj.position.y, z: obj.position.z },
-  rotation: { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z },
-  scale: { x: obj.scale.x, y: obj.scale.y, z: obj.scale.z },
+// Wrap a legacy HistoryEntry into an UndoableAction by binding ctx.
+const wrap = (entry: HistoryEntry, ctx: HistoryContext): UndoableAction => ({
+  label: entry.label,
+  apply: () => entry.apply(ctx),
+  revert: () => entry.revert(ctx),
 });
 
-export const snapshotObject = (obj: THREE.Object3D): ObjectSnap => ({
-  uuid: obj.uuid,
-  name: obj.name,
-  media_id: (obj.userData.media_id as string) ?? "Parim",
-  transform: snapshotTransform(obj),
-  userData: { ...obj.userData },
-});
-
-// ── Entry factories ─────────────────────────────────────────────────
-// Adding a new action = add a factory here + a recordX above. Factories
-// are pure data over snapshots — no closures over engine state, no
-// subsystem refs.
+// ── Legacy entry factories (transitional) ─────────────────────────
+// These mirror the new action classes under engine/editor/actions/.
+// Used by the legacy recordX methods above. Deleted once the recordX
+// methods are removed.
 
 const createEntry = (snap: ObjectSnap): HistoryEntry => ({
   label: `Create ${snap.name}`,
@@ -266,14 +267,3 @@ const visibleEntry = (
   apply: (ctx) => ctx.setVisible(uuid, after),
   revert: (ctx) => ctx.setVisible(uuid, before),
 });
-
-const transformsEqual = (a: TransformSnap, b: TransformSnap): boolean =>
-  a.position.x === b.position.x &&
-  a.position.y === b.position.y &&
-  a.position.z === b.position.z &&
-  a.rotation.x === b.rotation.x &&
-  a.rotation.y === b.rotation.y &&
-  a.rotation.z === b.rotation.z &&
-  a.scale.x === b.scale.x &&
-  a.scale.y === b.scale.y &&
-  a.scale.z === b.scale.z;
