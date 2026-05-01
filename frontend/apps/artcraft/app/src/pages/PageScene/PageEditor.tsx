@@ -293,23 +293,23 @@ export const PageEditor = () => {
     setCameraAspect(editorEngine, newRatio);
   };
 
-  // Sync the editor letterbox to the model's default aspect ratio once
-  // both the engine and the selected model are ready. The earlier
-  // PromptBox3D-side effect raced: it fired before `editorEngine` was
-  // initialized (EngineProvider is async), so `setCameraAspect` was
-  // never called. Owning it here lets us depend directly on
-  // `editorEngine` being non-null. The ref guard prevents the effect
-  // from clobbering a later user pick on the same model.
-  const lastSyncedModelIdRef = useRef<string | null>(null);
+  // Cold-load sync: align the editor letterbox with the picker's
+  // initial display (which falls back to `model.defaultAspectRatio`).
+  // Fires once when the engine and a `supportsNewAspectRatio()` model
+  // are both ready, then never again — every later change goes through
+  // user picks. We can't sync per-model-switch because almost every
+  // model declares `defaultAspectRatio: Square`, which would force the
+  // letterbox to Square on every swap and override the user's pick.
+  const didColdSyncRef = useRef(false);
   useEffect(() => {
+    if (didColdSyncRef.current) return;
     if (!editorEngine || !selectedImageModel?.supportsNewAspectRatio()) return;
-    if (lastSyncedModelIdRef.current === selectedImageModel.id) return;
     const def = selectedImageModel.defaultAspectRatio;
     if (!def) return;
     const mapped = commonToCameraAspect(def);
     if (!mapped) return;
     setCameraAspect(editorEngine, mapped);
-    lastSyncedModelIdRef.current = selectedImageModel.id;
+    didColdSyncRef.current = true;
   }, [editorEngine, selectedImageModel]);
 
   // MOVE THIS don't throw this in here
