@@ -163,6 +163,8 @@ class Editor {
       cameraName: this.cameraController.camera_name,
       version: this.version,
       toggleObjectLocked: (uuid) => this.utils.toggleObjectLocked(uuid),
+      setObjectLocked: (uuid, locked) =>
+        this.utils.setObjectLocked(uuid, locked),
       isObjectLocked: (uuid) => this.utils.isObjectLocked(uuid),
       removeTransformControls: () =>
         this.utils.removeTransformControls(false),
@@ -256,9 +258,9 @@ class Editor {
           this.activeScene.setColor(uuid, color);
         },
         setLocked: (uuid, locked) => {
-          const obj = this.activeScene.scene.getObjectByProperty("uuid", uuid);
-          if (!obj) return;
-          obj.userData.locked = locked;
+          // Routes through SelectionBridge so the gizmo attach/detach
+          // side effects fire (matches the original lock toggle path).
+          this.selection.setLockState(uuid, locked);
         },
         setVisible: (uuid, visible) => {
           const obj = this.activeScene.scene.getObjectByProperty("uuid", uuid);
