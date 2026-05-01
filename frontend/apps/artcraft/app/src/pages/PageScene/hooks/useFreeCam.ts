@@ -40,8 +40,8 @@ export const useFreeCam = (
   // Hand the state to the editor so its render loop can integrate it.
   useEffect(() => {
     if (!editor) return;
-    editor.setFreeCamState(stateRef.current);
-    return () => editor.setFreeCamState(null);
+    editor.cameraController.setFreeCamState(stateRef.current);
+    return () => editor.cameraController.setFreeCamState(null);
   }, [editor]);
 
   // Toggle enabled and clear motion when leaving CAMERA_VIEW so the
@@ -103,7 +103,8 @@ export const useFreeCam = (
 
     const onPointerMove = (e: PointerEvent) => {
       const drag = dragRef.current;
-      if (!drag || !editor.camera) return;
+      const camera = editor.cameraController.camera;
+      if (!drag || !camera) return;
       const dx = e.clientX - drag.x;
       const dy = e.clientY - drag.y;
       drag.x = e.clientX;
@@ -113,15 +114,16 @@ export const useFreeCam = (
       const pan = panFromDrag(dx, dy, state.movementSpeed);
       state.velocity.x = MathUtils.lerp(state.velocity.x, pan.x, state.smoothing);
       state.velocity.y = MathUtils.lerp(state.velocity.y, pan.y, state.smoothing);
-      editor.camera.translateX(state.velocity.x);
-      editor.camera.translateY(state.velocity.y);
+      camera.translateX(state.velocity.x);
+      camera.translateY(state.velocity.y);
     };
 
     const onWheel = (e: WheelEvent) => {
-      if (!editor.camera) return;
+      const camera = editor.cameraController.camera;
+      if (!camera) return;
       const z = zoomFromWheel(e.deltaY);
       state.velocity.z = MathUtils.lerp(state.velocity.z, z, state.smoothing);
-      editor.camera.translateZ(state.velocity.z);
+      camera.translateZ(state.velocity.z);
     };
 
     const onContextMenu = (e: Event) => e.preventDefault();

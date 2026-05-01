@@ -1,10 +1,5 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import {
-  freeCamFrameTick,
-  lookAtFromCamera,
-  type FreeCamControlState,
-} from "./cameraMath";
 import Scene from "./scene.js";
 import { APIManager } from "./api_manager.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
@@ -27,6 +22,7 @@ import { ViewportController } from "./editor/ViewportController";
 import { PostProcessingPipeline } from "./editor/PostProcessingPipeline";
 import { GizmoController } from "./editor/GizmoController";
 import { SelectionBridge } from "./editor/SelectionBridge";
+import { CameraController } from "./editor/CameraController";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -52,50 +48,29 @@ export const setIs3DSceneLoaded = (isLoaded: boolean) =>
 class Editor {
   version: number;
   activeScene: Scene;
-  camera: THREE.PerspectiveCamera | null = null;
-  render_camera: THREE.PerspectiveCamera | null = null;
-  render_camera_aspect_ratio: CameraAspectRatio =
-    CameraAspectRatio.HORIZONTAL_3_2;
   renderer: THREE.WebGLRenderer | undefined;
   sparkRenderer: SparkRenderer | null = null;
   rawRenderer: THREE.WebGLRenderer | undefined;
   clock: THREE.Clock | undefined;
 
-  last_cam_pos: THREE.Vector3;
-  last_cam_rot: THREE.Euler;
   raycaster: THREE.Raycaster | undefined;
   mouse: THREE.Vector2 | undefined;
   rendering: boolean;
   api_manager: APIManager;
-  freeCamState: FreeCamControlState | null = null;
-  setFreeCamState(state: FreeCamControlState | null) {
-    this.freeCamState = state;
-  }
   orbitControls: OrbitControls | undefined;
   locked: boolean;
 
   render_timer: number;
   fps_number: number;
   cap_fps: number;
-  lockControls: PointerLockControls | undefined;
-  cam_obj: THREE.Object3D | undefined;
-  camera_last_pos: THREE.Vector3;
   frames: number;
   lastFrameTime: number;
 
-  camera_person_mode: boolean;
   current_scene_media_token: string | null;
   current_scene_glb_media_token: string | null;
 
   can_initialize: boolean;
   switchPreviewToggle: boolean;
-
-  // dispatchAppUiState: React.Dispatch<AppUiAction>;
-  // userToken: string;
-  // signalScene: (data: any) => void;
-  // getSceneSignals: () => SceneSignal;
-  render_width: number;
-  render_height: number;
 
   positive_prompt: string;
   generating_preview: boolean = false;
@@ -110,6 +85,8 @@ class Editor {
   gizmo: GizmoController;
   // Owns the selection-and-outliner sync into the Zustand store.
   selection: SelectionBridge;
+  // Owns the camera state, FreeCam plumbing, and the per-frame camera tick.
+  cameraController: CameraController;
 
   // Forwarding getter — ControlPanelSceneObject reads `editor.selected`.
   get selected(): THREE.Object3D | undefined {
@@ -119,10 +96,6 @@ class Editor {
   selectedCanvas: boolean;
   startRenderHeight: number;
   startRenderWidth: number;
-  // Default params.
-
-  // global names of scene entities
-  camera_name: string;
 
   utils: SceneUtils;
   mouse_controls: MouseControls | undefined;
@@ -178,36 +151,31 @@ class Editor {
     // Version and name.
     this.version = 2.0;
     // Clock, scene and camera essentials.
-    // global names
-    this.camera_name = "::CAM::";
 
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
     this.gizmo = new GizmoController();
+    this.cameraController = new CameraController();
     this.selection = new SelectionBridge({
       getSceneManager: () => this.sceneManager,
-      cameraName: this.camera_name,
+      cameraName: this.cameraController.camera_name,
       version: this.version,
     });
 
     this.activeScene = new Scene(
       "" + this.version,
-      this.camera_name,
+      this.cameraController.camera_name,
       (scene: THREE.Scene) =>
         this.postProcessing.updateSurfaceIdAttributeToMesh(scene),
       this.version,
     );
     this.activeScene.initialize();
-    this.last_cam_pos = new THREE.Vector3(0, 0, 0);
-    this.last_cam_rot = new THREE.Euler(0, 0, 0);
-    this.camera_last_pos = new THREE.Vector3(0, 0, 0);
     this.startRenderWidth = 0;
     this.startRenderHeight = 0;
     this.rendering = false;
     this.switchPreviewToggle = false;
     this.api_manager = new APIManager();
-    this.camera_person_mode = false;
     this.locked = false;
     this.render_timer = 0;
     this.fps_number = 60;
@@ -218,17 +186,14 @@ class Editor {
     this.renderEventToken = -1;
     this.shouldRender = false;
 
-    this.render_camera_aspect_ratio = CameraAspectRatio.HORIZONTAL_3_2;
-    this.render_width = this.getRenderDimensions().width;
-    this.render_height = this.getRenderDimensions().height;
-
     this.utils = new SceneUtils(this, this.activeScene);
     this.save_manager = new SaveManager(this);
     this.viewport = new ViewportController({
-      getCamera: () => this.camera,
-      getRenderCamera: () => this.render_camera,
+      getCamera: () => this.cameraController.camera,
+      getRenderCamera: () => this.cameraController.render_camera,
       getRenderer: () => this.renderer,
-      getRenderAspectRatio: () => this.getRenderDimensions().aspectRatio,
+      getRenderAspectRatio: () =>
+        this.cameraController.getRenderDimensions().aspectRatio,
       resizePostProcessing: (w, h) => this.postProcessing.resize(w, h),
     });
 
@@ -249,65 +214,8 @@ class Editor {
     this.renderIndex = 0;
   }
 
-  // Add helper method to convert focal length to FOV
-  focalLengthToFov(focalLength: number, sensorHeight: number = 24): number {
-    // Using the formula: FOV = 2 * arctan(sensorHeight / (2 * focalLength))
-    return 2 * Math.atan(sensorHeight / (2 * focalLength)) * (180 / Math.PI);
-  }
-
-  getRenderDimensions() {
-    switch (this.render_camera_aspect_ratio) {
-      case CameraAspectRatio.HORIZONTAL_16_9: {
-        return {
-          width: 1280,
-          height: 720,
-          aspectRatio: 16 / 9,
-        };
-      }
-      case CameraAspectRatio.HORIZONTAL_3_2: {
-        return {
-          width: 1200,
-          height: 800,
-          aspectRatio: 3 / 2,
-        };
-      }
-      case CameraAspectRatio.VERTICAL_2_3: {
-        return {
-          width: 800,
-          height: 1200,
-          aspectRatio: 2 / 3,
-        };
-      }
-      case CameraAspectRatio.VERTICAL_9_16: {
-        return {
-          width: 720,
-          height: 1280,
-          aspectRatio: 9 / 16,
-        };
-      }
-      case CameraAspectRatio.SQUARE_1_1:
-      default: {
-        return {
-          width: 1080,
-          height: 1080,
-          aspectRatio: 1,
-        };
-      }
-    }
-  }
   isEmpty(value: string | null) {
     return value === null || value.trim().length === 0;
-  }
-
-  changeRenderCameraAspectRatio(newAspectRatio: CameraAspectRatio) {
-    this.render_camera_aspect_ratio = newAspectRatio;
-    const { width, height, aspectRatio } = this.getRenderDimensions();
-    this.render_width = width;
-    this.render_height = height;
-    if (this.render_camera) {
-      this.render_camera.aspect = aspectRatio;
-      this.render_camera.updateProjectionMatrix();
-    }
   }
 
   initialize({
@@ -344,51 +252,51 @@ class Editor {
       .getState()
       .cameras.find((cam) => cam.id === "main");
     if (mainCameraConfig) {
-      this.camera = new THREE.PerspectiveCamera(
-        this.focalLengthToFov(mainCameraConfig.focalLength),
+      const mainCamera = new THREE.PerspectiveCamera(
+        this.cameraController.focalLengthToFov(mainCameraConfig.focalLength),
         width / height,
         0.1,
         2000,
       );
-      this.camera.position.set(
+      mainCamera.position.set(
         mainCameraConfig.position.x,
         mainCameraConfig.position.y,
         mainCameraConfig.position.z,
       );
-      this.camera.lookAt(
+      mainCamera.lookAt(
         mainCameraConfig.lookAt.x,
         mainCameraConfig.lookAt.y,
         mainCameraConfig.lookAt.z,
       );
+      mainCamera.layers.enable(0);
+      mainCamera.layers.enable(1);
+      this.cameraController.camera = mainCamera;
     }
-
-    this.camera.layers.enable(0);
-    this.camera.layers.enable(1);
 
     const otherCameras = usePageSceneStore
       .getState()
       .cameras.filter((cam) => cam.id !== "main");
     if (otherCameras.length > 0) {
       const renderCameraConfig = otherCameras[0];
-      this.render_camera = new THREE.PerspectiveCamera(
-        this.focalLengthToFov(renderCameraConfig.focalLength),
+      const renderCamera = new THREE.PerspectiveCamera(
+        this.cameraController.focalLengthToFov(renderCameraConfig.focalLength),
         width / height,
         0.01,
         200,
       );
-      this.render_camera.position.set(
+      renderCamera.position.set(
         renderCameraConfig.position.x,
         renderCameraConfig.position.y,
         renderCameraConfig.position.z,
       );
-      this.render_camera.lookAt(
+      renderCamera.lookAt(
         renderCameraConfig.lookAt.x,
         renderCameraConfig.lookAt.y,
         renderCameraConfig.lookAt.z,
       );
+      renderCamera.layers.disable(1); // This camera does not see this layer
+      this.cameraController.render_camera = renderCamera;
     }
-
-    this.render_camera.layers.disable(1); // This camera does not see this layer      );
 
     // Base WebGL render and clock for delta time.
     this.renderer = new THREE.WebGLRenderer({
@@ -418,28 +326,33 @@ class Editor {
     this.postProcessing.configureMain(
       this.renderer,
       this.activeScene.scene,
-      this.camera,
+      this.cameraController.camera,
       this.viewport.canvReference?.width ?? 0,
       this.viewport.canvReference?.height ?? 0,
     );
     // Controls and movement.
 
-    this.lockControls = new PointerLockControls(
-      this.camera,
-      this.renderer.domElement,
-    );
+    if (this.cameraController.camera) {
+      this.cameraController.lockControls = new PointerLockControls(
+        this.cameraController.camera,
+        this.renderer.domElement,
+      );
+    }
     // FreeCam math + listeners now live in hooks/useFreeCam.ts; the
-    // editor reads `freeCamState` (set by that hook) on every render.
+    // editor reads `cameraController.freeCamState` (set by that hook) on
+    // every render.
 
     this.gizmo.configure(
-      this.camera,
+      this.cameraController.camera,
       this.renderer.domElement,
       this.activeScene.scene,
       {
         onChange: () => this.renderScene(),
         onDraggingChanged: (dragging) => {
           this.selection.updateSelectedUI();
-          this.camera_last_pos.copy(new THREE.Vector3(-99999, -99999, -99999));
+          this.cameraController.camera_last_pos.copy(
+            new THREE.Vector3(-99999, -99999, -99999),
+          );
           this.focused = !dragging;
         },
       },
@@ -460,14 +373,16 @@ class Editor {
     this.current_scene_media_token = null;
     this.current_scene_glb_media_token = null;
 
-    this.cam_obj = this.activeScene.get_object_by_name(this.camera_name);
+    this.cameraController.cam_obj = this.activeScene.get_object_by_name(
+      this.cameraController.camera_name,
+    );
 
     this.mouse_controls = new MouseControls(
-      this.camera,
-      this.get_camera_person_mode.bind(this),
-      this.freeCamState,
-      this.lockControls,
-      this.camera_last_pos,
+      this.cameraController.camera,
+      this.cameraController.getCameraPersonMode.bind(this.cameraController),
+      this.cameraController.freeCamState,
+      this.cameraController.lockControls,
+      this.cameraController.camera_last_pos,
       this.selectedCanvas,
       this.switchPreviewToggle,
       this.rendering,
@@ -530,7 +445,7 @@ class Editor {
     this.postProcessing.configureRaw(
       this.rawRenderer,
       this.activeScene.scene,
-      this.render_camera,
+      this.cameraController.render_camera,
       this.viewport.canvasRenderCamReference?.width ?? 0,
       this.viewport.canvasRenderCamReference?.height ?? 0,
     );
@@ -559,7 +474,9 @@ class Editor {
 
   // Captures the scene without the grid
   public snapShotOfCurrentFrame(shouldDownload: boolean = true) {
-    if (!this.renderer?.domElement || !this.camera) {
+    const camera = this.cameraController.camera;
+    const renderCamera = this.cameraController.render_camera;
+    if (!this.renderer?.domElement || !camera) {
       console.error("Error: Renderer or camera not available.");
       return null;
     }
@@ -623,22 +540,22 @@ class Editor {
     const originalWidth = sizeVector.x;
     const originalHeight = sizeVector.y;
     const originalPixelRatio = this.renderer.getPixelRatio();
-    const originalCameraAspect = this.camera.aspect;
+    const originalCameraAspect = camera.aspect;
     const originalRenderCameraAspect =
-      this.render_camera?.aspect || originalCameraAspect;
+      renderCamera?.aspect || originalCameraAspect;
 
     // Temporarily set renderer to high resolution
     this.renderer.setSize(targetWidth, targetHeight, false);
     this.renderer.setPixelRatio(1);
 
     // Update camera for the new aspect ratio
-    this.camera.aspect = aspectRatio;
-    this.camera.updateProjectionMatrix();
+    camera.aspect = aspectRatio;
+    camera.updateProjectionMatrix();
 
     // If using render camera, update it too
-    if (this.render_camera) {
-      this.render_camera.aspect = aspectRatio;
-      this.render_camera.updateProjectionMatrix();
+    if (renderCamera) {
+      renderCamera.aspect = aspectRatio;
+      renderCamera.updateProjectionMatrix();
     }
 
     // Re-render the scene at high resolution
@@ -646,7 +563,7 @@ class Editor {
       this.postProcessing.composer.setSize(targetWidth, targetHeight);
       this.postProcessing.composer.render();
     } else {
-      this.renderer.render(this.activeScene.scene, this.camera);
+      this.renderer.render(this.activeScene.scene, camera);
     }
 
     // Get the high resolution snapshot
@@ -654,13 +571,13 @@ class Editor {
     const base64Snapshot = snapshot.split(",")[1];
 
     // Restore original camera aspect
-    this.camera.aspect = originalCameraAspect;
-    this.camera.updateProjectionMatrix();
+    camera.aspect = originalCameraAspect;
+    camera.updateProjectionMatrix();
 
     // Restore render camera if it exists
-    if (this.render_camera) {
-      this.render_camera.aspect = originalRenderCameraAspect;
-      this.render_camera.updateProjectionMatrix();
+    if (renderCamera) {
+      renderCamera.aspect = originalRenderCameraAspect;
+      renderCamera.updateProjectionMatrix();
     }
 
     // Restore original renderer size and pixel ratio
@@ -672,7 +589,7 @@ class Editor {
       this.postProcessing.composer.setSize(originalWidth, originalHeight);
       this.postProcessing.composer.render();
     } else {
-      this.renderer.render(this.activeScene.scene, this.camera);
+      this.renderer.render(this.activeScene.scene, camera);
     }
 
     // Restore grid visibility
@@ -707,7 +624,9 @@ class Editor {
 
   public async newScene(sceneTitleInput: string) {
     this.activeScene.clear();
-    this.cam_obj = this.activeScene.get_object_by_name(this.camera_name);
+    this.cameraController.cam_obj = this.activeScene.get_object_by_name(
+      this.cameraController.camera_name,
+    );
     const sceneTitle =
       sceneTitleInput && sceneTitleInput !== ""
         ? sceneTitleInput
@@ -785,10 +704,6 @@ class Editor {
     });
   }
 
-  get_camera_person_mode(): boolean {
-    return this.camera_person_mode;
-  }
-
   switchCameraView() {
     this.utils.switchCameraView();
   }
@@ -830,6 +745,7 @@ class Editor {
 
   // Render the scene to the camera, this is called in the update.
   async renderScene() {
+    const { render_camera, render_width, render_height } = this.cameraController;
     if (
       this.postProcessing.composer != null &&
       !this.rendering &&
@@ -837,11 +753,11 @@ class Editor {
       this.postProcessing.render_composer
     ) {
       this.postProcessing.composer.render();
-    } else if (this.renderer && this.render_camera && !this.rendering) {
-      this.renderer.setSize(this.render_width, this.render_height);
-      this.renderer.render(this.activeScene.scene, this.render_camera);
+    } else if (this.renderer && render_camera && !this.rendering) {
+      this.renderer.setSize(render_width, render_height);
+      this.renderer.render(this.activeScene.scene, render_camera);
     } else if (this.rendering && this.renderer) {
-      this.renderer.setSize(this.render_width, this.render_height);
+      this.renderer.setSize(render_width, render_height);
     }
   }
 
@@ -867,60 +783,11 @@ class Editor {
 
     const delta_time = this.clock.getDelta();
 
-    // Update camera properties from the store before FreeCam update
-    const store = usePageSceneStore.getState();
-    if (store.selectedCameraId && this.camera) {
-      const camData = store.cameras.find((c) => c.id === store.selectedCameraId);
-      if (camData) {
-        const fov = this.focalLengthToFov(camData.focalLength);
-        if (this.camera.fov !== fov) {
-          this.camera.fov = fov;
-          this.camera.updateProjectionMatrix();
-        }
-      }
-    }
+    this.cameraController.tickPerFrame(delta_time);
 
-    if (this.freeCamState && this.camera) {
-      const moved = freeCamFrameTick(this.camera, this.freeCamState, 5 * delta_time);
-      // Mirror the active camera's transform back into the store so
-      // PromptBox3D and the camera-list UI stay in sync.
-      if (moved && store.selectedCameraId) {
-        const lookAt = lookAtFromCamera(this.camera);
-        const pos = this.camera.position;
-        const rot = this.camera.rotation;
-        store.updateCamera(store.selectedCameraId, {
-          position: { x: pos.x, y: pos.y, z: pos.z },
-          rotation: { x: rot.x, y: rot.y, z: rot.z },
-          lookAt: { x: lookAt.x, y: lookAt.y, z: lookAt.z },
-        });
-      }
-    }
     this.activeScene.shader_objects.forEach((shader) => {
       shader.material.uniforms["time"].value += 0.5 * delta_time;
     });
-
-    if (this.camera_person_mode) {
-      if (this.cam_obj && this.camera) {
-        // Without a timeline scrubber, edits in camera-person mode write
-        // back into cam_obj rather than copying out of it.
-        this.cam_obj.position.copy(this.camera.position);
-        this.cam_obj.rotation.copy(this.camera.rotation);
-
-        this.cam_obj.visible = false;
-
-        // const min = new THREE.Vector3(-12, -1, -12);
-        // const max = new THREE.Vector3(12, 24, 12);
-        // this.camera.position.copy(this.camera.position.clamp(min, max));
-      }
-    } else if (this.cam_obj) {
-      this.cam_obj.visible = true;
-    }
-
-    if (this.render_camera && this.cam_obj) {
-      this.render_camera.position.copy(this.cam_obj.position);
-      this.render_camera.rotation.copy(this.cam_obj.rotation);
-      this.cam_obj.scale.copy(new THREE.Vector3(1, 1, 1));
-    }
 
     if (this.utils.getSelectedSum() !== this.selection.last_selected_sum) {
       this.selection.updateSelectedUI();
@@ -1045,7 +912,7 @@ class Editor {
         });
       }
     } else {
-      if (!this.camera_person_mode) {
+      if (!this.cameraController.camera_person_mode) {
         this.switchCameraView();
       }
       if (this.activeScene.hot_items) {

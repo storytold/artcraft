@@ -55,8 +55,8 @@ export class SaveManager {
       scene: scene_json,
       timeline: "",
       camera_data: {
-        position: this.editor.camera?.position,
-        rotation: this.editor.camera?.rotation,
+        position: this.editor.cameraController.camera?.position,
+        rotation: this.editor.cameraController.camera?.rotation,
       },
     };
     const jsonString = JSON.stringify(check_sum_data);
@@ -94,8 +94,8 @@ export class SaveManager {
       timeline: "",
       skybox: this.editor.activeScene.skybox,
       camera_data: {
-        position: this.editor.camera?.position,
-        rotation: this.editor.camera?.rotation,
+        position: this.editor.cameraController.camera?.position,
+        rotation: this.editor.cameraController.camera?.rotation,
       },
       cameras: camerasData,
       selectedCameraId: sceneState.selectedCameraId,
@@ -134,8 +134,8 @@ export class SaveManager {
       timeline: "",
       skybox: this.editor.activeScene.skybox,
       camera_data: {
-        position: this.editor.camera?.position,
-        rotation: this.editor.camera?.rotation,
+        position: this.editor.cameraController.camera?.position,
+        rotation: this.editor.cameraController.camera?.rotation,
       },
       cameras: camerasData,
       selectedCameraId: sceneState.selectedCameraId,
@@ -203,12 +203,13 @@ export class SaveManager {
     );
 
     const camera_data = scene_json["camera_data"];
-    if (camera_data && this.editor.camera) {
+    const liveCamera = this.editor.cameraController.camera;
+    if (camera_data && liveCamera) {
       const camera_position: THREE.Vector3 = camera_data["position"];
       const camera_rotation: THREE.Euler = camera_data["rotation"];
 
-      this.editor.camera.position.copy(camera_position);
-      this.editor.camera.rotation.copy(camera_rotation);
+      liveCamera.position.copy(camera_position);
+      liveCamera.rotation.copy(camera_rotation);
     }
 
     if (scene_json.cameras) {
@@ -235,19 +236,22 @@ export class SaveManager {
       this.editor.positive_prompt = scene_json.positivePrompt;
     }
     if (scene_json.cameraAspectRatio) {
-      this.editor.changeRenderCameraAspectRatio(scene_json.cameraAspectRatio);
+      this.editor.cameraController.changeRenderCameraAspectRatio(
+        scene_json.cameraAspectRatio,
+      );
       usePageSceneStore
         .getState()
         .setCameraAspectRatio(scene_json.cameraAspectRatio);
     }
 
     this.editor.version = scene_json["version"];
-    this.editor.cam_obj = this.editor.activeScene.get_object_by_name(
-      this.editor.camera_name,
+    const camCtrl = this.editor.cameraController;
+    camCtrl.cam_obj = this.editor.activeScene.get_object_by_name(
+      camCtrl.camera_name,
     );
 
-    this.editor.cam_obj?.layers.set(1);
-    this.editor.cam_obj?.children.forEach((child) => {
+    camCtrl.cam_obj?.layers.set(1);
+    camCtrl.cam_obj?.children.forEach((child) => {
       child.layers.set(1);
     });
 
