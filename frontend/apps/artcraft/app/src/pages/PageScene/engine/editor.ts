@@ -482,10 +482,7 @@ class Editor {
       this.version,
       this.mouse_controls,
       this.activeScene,
-      true,
-      this.selection.updateOutliner.bind(this.selection),
-      this.selection.isCharacterUuid.bind(this.selection),
-    ); // Enabled dev mode.
+    );
     this.mouse_controls.sceneManager = this.sceneManager;
 
     // Add spark renderer as a child of the camera
@@ -860,14 +857,12 @@ class Editor {
 
     this.isMounted = true;
     this.startRenderLoop();
-    this.sceneManager?.attachEventListeners();
     console.log("3D Editor Engine remounted");
   }
 
   unmountEngine() {
     setIs3DSceneLoaded(false);
     this.stopRenderLoop();
-    this.sceneManager?.detachEventListeners();
 
     // Fix: dispose 3D contexts
     this.renderer?.dispose();

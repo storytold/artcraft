@@ -85,7 +85,9 @@ const copy = async (editor: Editor) => {
 
 const paste = async (editor: Editor) => {
   const obj = await editor.sceneManager?.paste();
-  if (obj) editor.history.recordCreate(obj);
+  if (!obj) return;
+  editor.history.recordCreate(obj);
+  editor.selection.refreshOutliner();
 };
 
 export const buildKeymap = (): KeyBinding[] => [
