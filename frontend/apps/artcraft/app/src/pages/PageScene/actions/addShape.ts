@@ -15,6 +15,10 @@ export async function addShape(
     position ?? new THREE.Vector3(),
   );
   if (!obj) return undefined;
+  // Stash the geometry key (Box / Sphere / PointLight / ...) so undo/redo
+  // can re-route through scene.instantiate's name switch. obj.name gets
+  // overridden below with the display label ("Cube", "Point Light").
+  obj.userData.shapeKey = item.media_id;
   obj.name = item.name ?? "shape";
 
   editor.history.record(new CreateAction(editor, obj));

@@ -71,9 +71,22 @@ export const recreateFromSnapshot = async (
     snap.transform.position.y,
     snap.transform.position.z,
   );
-  const obj = await editor.sceneManager?.create(snap.media_id, snap.name, pos);
+  // Shapes route through scene.instantiate's geometry switch, which
+  // matches on the geometry key ("Box", "Sphere", "PointLight"), not
+  // the display name ("Cube", "Point Light"). addShape stashes the
+  // original key in userData.shapeKey so we can recover it here.
+  const nameForCreate =
+    (snap.userData.shapeKey as string | undefined) ?? snap.name;
+  const obj = await editor.sceneManager?.create(
+    snap.media_id,
+    nameForCreate,
+    pos,
+  );
   if (!obj) return undefined;
   obj.uuid = snap.uuid;
+  // Restore the display name (instantiate/loadObject set obj.name to
+  // nameForCreate; for shapes that's the geometry key, not the label).
+  obj.name = snap.name;
   obj.rotation.set(
     snap.transform.rotation.x,
     snap.transform.rotation.y,
