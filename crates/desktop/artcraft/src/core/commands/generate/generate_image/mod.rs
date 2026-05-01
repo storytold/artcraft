@@ -1,3 +1,4 @@
+mod artcraft;
 pub mod generate_image_command;
 pub mod providers;
 pub mod tauri_generate_image_request;
