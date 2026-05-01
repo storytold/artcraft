@@ -1,14 +1,40 @@
-import Scene from "./scene";
-import Editor from "./editor";
 import * as THREE from "three";
+import type { OutlinePass } from "three/addons/postprocessing/OutlinePass.js";
+import type { TransformControls } from "./TransformControls.js";
+
+import Scene from "./scene";
 import { usePageSceneStore } from "../PageSceneStore";
+
+// Capabilities SceneUtils needs from outside its own state. Editor
+// wires these in inline at construction (Phase 2 idiom — same shape
+// as CameraControllerDeps, SaveManagerDeps, etc.). SceneUtils does
+// NOT import Editor — every cross-subsystem reach is a callback or
+// getter on this object.
+export type SceneUtilsDeps = {
+  // Gizmo lifecycle (used by removeTransformControls)
+  getGizmoControl: () => TransformControls | undefined;
+  detachGizmo: () => void;
+  removeGizmoFromScene: () => void;
+  // Outline pass (used by removeTransformControls)
+  getOutlinePass: () => OutlinePass | undefined;
+  // Selection sync (used by removeTransformControls + deleteObject)
+  publishSelect: () => void;
+  clearSelected: () => void;
+  // Camera identity (used by deleteObject — protects ::CAM:: from delete)
+  getCameraName: () => string;
+  // Selected object lookup (used by getSelectedSum)
+  getSelectedObject: () => THREE.Object3D | undefined;
+  // Three scene root (used by deleteObject + removeTransformControls)
+  getThreeScene: () => THREE.Scene;
+};
 
 export class SceneUtils {
   scene: Scene;
-  editor: Editor;
-  constructor(editor: Editor, scene: Scene) {
+  private deps: SceneUtilsDeps;
+
+  constructor(scene: Scene, deps: SceneUtilsDeps) {
     this.scene = scene;
-    this.editor = editor;
+    this.deps = deps;
   }
 
   // If string is empty.
@@ -52,42 +78,31 @@ export class SceneUtils {
 
   // Removes transform controls and publishes selected.
   removeTransformControls(remove_outline: boolean = true) {
-    if (this.editor.gizmo.control == undefined) {
+    if (this.deps.getGizmoControl() == undefined) {
       return;
     }
-    const outlinePass = this.editor.postProcessing.outlinePass;
+    const outlinePass = this.deps.getOutlinePass();
     if (outlinePass == undefined) {
       return;
     }
     if (remove_outline) {
       outlinePass.selectedObjects = [];
-      this.editor.selection.publishSelect();
+      this.deps.publishSelect();
     }
-    this.editor.gizmo.detach();
-    this.editor.gizmo.removeFromScene(this.editor.activeScene.scene);
+    this.deps.detachGizmo();
+    this.deps.removeGizmoFromScene();
     if (remove_outline) outlinePass.selectedObjects = [];
   }
 
-  // Returns the "check sum" of the editors selected object.
+  // Returns the "check sum" of the editor's selected object.
   getSelectedSum(): number {
-    if (this.editor.sceneManager?.selected_objects === undefined) {
-      return 0;
-    }
-    if (this.editor.sceneManager?.selected_objects.length <= 0) {
-      return 0;
-    }
+    const selected = this.deps.getSelectedObject();
+    if (selected === undefined) return 0;
     const posCombo =
-      this.editor.sceneManager?.selected_objects[0].position.x +
-      this.editor.sceneManager?.selected_objects[0].position.y +
-      this.editor.sceneManager?.selected_objects[0].position.z;
+      selected.position.x + selected.position.y + selected.position.z;
     const rotCombo =
-      this.editor.sceneManager?.selected_objects[0].rotation.x +
-      this.editor.sceneManager?.selected_objects[0].rotation.y +
-      this.editor.sceneManager?.selected_objects[0].rotation.z;
-    const sclCombo =
-      this.editor.sceneManager?.selected_objects[0].scale.x +
-      this.editor.sceneManager?.selected_objects[0].scale.y +
-      this.editor.sceneManager?.selected_objects[0].scale.z;
+      selected.rotation.x + selected.rotation.y + selected.rotation.z;
+    const sclCombo = selected.scale.x + selected.scale.y + selected.scale.z;
     return posCombo + rotCombo + sclCombo;
   }
 
@@ -123,7 +138,7 @@ function removeObject3D(object3D) {
     }
 
     this.removeTransformControls();
-    if (obj.name === this.editor.cameraController.camera_name) {
+    if (obj.name === this.deps.getCameraName()) {
       return;
     }
 
@@ -162,8 +177,8 @@ function removeObject3D(object3D) {
     }
 
     usePageSceneStore.getState().removeSceneObject(uuid);
-    this.editor.selection.selected = undefined;
-    this.editor.selection.publishSelect();
+    this.deps.clearSelected();
+    this.deps.publishSelect();
     usePageSceneStore.getState().hideObjectPanel();
   }
 }
