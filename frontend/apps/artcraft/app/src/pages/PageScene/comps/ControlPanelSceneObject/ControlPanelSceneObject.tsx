@@ -1,4 +1,11 @@
-import { ChangeEvent, useContext, useEffect, useId, useState } from "react";
+import {
+  ChangeEvent,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { Transition } from "@headlessui/react";
 import {
   faChevronDown,
@@ -18,6 +25,11 @@ import { objectMismatch } from "~/pages/PageScene/comps/ControlPanelSceneObject/
 import { XYZ } from "~/pages/PageScene/datastructures/common";
 import { pageHeight } from "~/signals";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
+import { setObjectColor } from "~/pages/PageScene/actions/setObjectColor";
+import {
+  beginTransformSession,
+  TransformSession,
+} from "~/pages/PageScene/actions/transformObject";
 
 // TODO this will be useful later to fix the bug on leading zeros
 // const formatNumber = (input: string): number => {
@@ -56,6 +68,26 @@ export const ControlPanelSceneObject = () => {
   const [locked, setLocked] = useState(false);
 
   const [color, setColor] = useState("#ffffff");
+
+  // Pending transform session — opened on first panel edit, committed
+  // on selection change / unmount. The action layer (transformObject)
+  // owns recording + Zustand sync; this view just opens and closes the
+  // session boundary.
+  const transformSessionRef = useRef<TransformSession | null>(null);
+
+  const beginPanelTransform = () => {
+    if (transformSessionRef.current) return;
+    if (!editorEngine || !currentSceneObject) return;
+    transformSessionRef.current = beginTransformSession(
+      editorEngine,
+      currentSceneObject.object_uuid,
+    );
+  };
+
+  const commitPanelTransform = () => {
+    transformSessionRef.current?.commit();
+    transformSessionRef.current = null;
+  };
 
   const colorInputId = useId();
 
@@ -105,6 +137,11 @@ export const ControlPanelSceneObject = () => {
 
     setLocked(editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""));
     setColor(editorEngine?.selected?.userData.color);
+
+    // On selection change / unmount, commit any in-flight panel
+    // transform from the previous selection. The action references
+    // its captured uuid, so commit still targets the right object.
+    return () => commitPanelTransform();
   }, [currentSceneObject, editorEngine]);
 
   if (!currentSceneObject) {
@@ -126,6 +163,7 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localPosition, cleanXyz)) {
+      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalPosition(xyz);
@@ -138,6 +176,7 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localRotation, cleanXyz)) {
+      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalRotation(xyz);
@@ -159,6 +198,7 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localScale, cleanXyz)) {
+      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalScale(xyz);
@@ -220,11 +260,15 @@ export const ControlPanelSceneObject = () => {
             className="h-0 w-0 cursor-pointer opacity-0"
             id={colorInputId}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              editorEngine?.activeScene.setColor(
-                editorEngine?.selected?.uuid || "",
-                e.target.value,
-              );
-              setColor(e.target.value);
+              // <input type="color"> fires onChange once per committed
+              // pick (when the picker closes), so the action helper
+              // gets exactly one record per user-visible color change.
+              const uuid = editorEngine?.selected?.uuid;
+              const after = e.target.value;
+              if (uuid && editorEngine) {
+                setObjectColor(editorEngine, uuid, after);
+              }
+              setColor(after);
             }}
             type="color"
             value={color}

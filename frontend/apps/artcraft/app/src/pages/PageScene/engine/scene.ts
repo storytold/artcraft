@@ -535,6 +535,7 @@ class Scene {
     mmd.userData["media_file_type"] = MediaFileType.MMD;
     mmd.layers.enable(0);
     mmd.layers.enable(1);
+    mmd.position.copy(position);
     this.scene.add(mmd);
     this.updateSurfaceIdAttributeToMesh(this.scene);
     return mmd;
@@ -585,6 +586,7 @@ class Scene {
       url.includes(".mp4")
     ) {
       const obj = await this.instantiate("Image::" + url);
+      obj.position.copy(position);
       // Preserve original token to enable copy/paste and timeline mapping
       obj.userData["media_id"] = media_id;
       if (url.includes(".mp4")) {
@@ -664,6 +666,7 @@ class Scene {
     });
 
     splat.rotation.z = Math.PI;
+    splat.position.copy(position);
     splat.userData["media_id"] = media_id;
     splat.userData["media_file_type"] = MediaFileType.SPZ;
 
@@ -788,6 +791,8 @@ class Scene {
     if (child_result == undefined) {
       throw Error("GLB Did not contain an object or children.");
     }
+
+    child_result.position.copy(position);
 
     if (auto_add) {
       this.scene.add(child_result);

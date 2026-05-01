@@ -11,18 +11,6 @@ import { ClipGroup } from "~/enums";
 import { AssetType } from "~/enums";
 import { XYZ } from "../datastructures/common";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
-import {
-  CommandInputTypes,
-  CreationSceneItem,
-  DeletionData,
-  DeletionSceneItem,
-  ICommand,
-  SceneState,
-  TransformData,
-  TransformSceneItem,
-  UserData,
-  UserDataSceneItem,
-} from "./Commands";
 
 export type SceneObject = {
   id: string;
@@ -43,105 +31,22 @@ export interface SceneManagerAPI {
     rotation: THREE.Euler,
     scale: THREE.Vector3,
   ): void;
-  undo(): void;
-  redo(): void;
   selected(): void;
   render_outliner(timeline_characters: { [key: string]: ClipGroup }): void;
-  onMouseMove(event: MouseEvent): void;
-  onMouseClick(): void;
-  onKeyDown(event: KeyboardEvent): void;
-  onMouseDown(event: MouseEvent): void;
-  onMouseUp(event: MouseEvent): void;
   select_object(id: string): void;
 }
-
-type UpdateOutliner = () => void;
 
 export class SceneManager implements SceneManagerAPI {
   scene: Scene;
   mouse_controls: MouseControls;
   version: number;
   selected_objects: THREE.Object3D[] | undefined;
-  private updateOutliner: UpdateOutliner;
-  public undoStack: ICommand<CommandInputTypes>[] = [];
-  private undoIndex: number = 0;
-  private lastSceneState: SceneState;
   private copiedObject: THREE.Object3D | undefined;
-  private is_character: Function;
-  private devMode: boolean;
 
-  constructor(
-    version: number,
-    mouse_controls: MouseControls,
-    scene: Scene,
-    devMode: boolean = false,
-    updateOutliner: UpdateOutliner,
-    is_character: Function,
-  ) {
+  constructor(version: number, mouse_controls: MouseControls, scene: Scene) {
     this.mouse_controls = mouse_controls;
     this.scene = scene;
     this.version = version;
-    this.lastSceneState = this.getSceneState();
-    this.updateOutliner = updateOutliner;
-    this.is_character = is_character;
-    this.devMode = devMode;
-
-    this.onMouseMove = this.onMouseMove.bind(this);
-    this.onMouseClick = this.onMouseClick.bind(this);
-    this.onKeyDown = this.onKeyDown.bind(this);
-    this.onMouseDown = this.onMouseDown.bind(this);
-    this.onMouseUp = this.onMouseUp.bind(this);
-  }
-
-  // Pointer + keyboard listener attachment is now handled by
-  // hooks/useViewportPointer and hooks/useViewportKeyboard, which
-  // attach to the viewport canvas instead of window. The dispatch
-  // methods (onMouseMove etc.) below remain so MouseControls can
-  // continue to drive selection and FK; they're invoked by the hook.
-  public attachEventListeners() {
-    // intentionally empty — kept for back-compat with editor lifecycle
-  }
-
-  public detachEventListeners() {
-    // intentionally empty — kept for back-compat with editor lifecycle
-  }
-
-  public async undo() {
-    if (this.undoIndex >= this.undoStack.length) {
-      return;
-    }
-    this.undoIndex += 1;
-    const undoCommand = this.undoStack.at(
-      this.undoStack.length - this.undoIndex,
-    );
-    await undoCommand?.undo();
-    this.updateOutliner(); // In the future we will address this because of its relational issues with editor and the current class.
-    this.lastSceneState = this.getSceneState();
-  }
-
-  public async redo() {
-    if (this.undoIndex <= 0) {
-      return;
-    }
-    const undoCommand = this.undoStack.at(
-      this.undoStack.length - this.undoIndex,
-    );
-    await undoCommand?.redo();
-    this.undoIndex -= 1;
-    this.updateOutliner(); // In the future we will address this because of its relational issues with editor and the current class.
-    this.lastSceneState = this.getSceneState();
-  }
-
-  // Drop any redo-future before pushing a fresh command so the new action
-  // replaces the branch of history the user had undone past.
-  private dropRedoHistory() {
-    if (this.undoIndex > 0) {
-      this.undoStack = this.undoStack.slice(
-        0,
-        this.undoStack.length - this.undoIndex,
-      );
-      this.undoIndex = 0;
-    }
   }
 
   public async create(
@@ -306,7 +211,7 @@ export class SceneManager implements SceneManagerAPI {
     }
   }
 
-  public async paste() {
+  public async paste(): Promise<THREE.Object3D | undefined> {
     if (this.copiedObject && this.copiedObject.name != "::CAM::") {
       const userdata = this.copiedObject.userData;
       const position = this.copiedObject.position.clone();
@@ -333,7 +238,6 @@ export class SceneManager implements SceneManagerAPI {
       }
 
       this.mouse_controls.selectObject(obj);
-      this.updateOutliner();
 
       const store = usePageSceneStore.getState();
       if (wasCharacter) {
@@ -353,219 +257,9 @@ export class SceneManager implements SceneManagerAPI {
       }
 
       await this.copy();
-      await this.add_creation_undostack(obj);
+      return obj;
     }
+    return undefined;
   }
 
-  public onMouseMove(event: MouseEvent) {
-    this.mouse_controls.onMouseMove(event);
-  }
-
-  public onMouseClick() {
-    this.mouse_controls.onMouseClick();
-  }
-
-  public onKeyDown(event: KeyboardEvent) {
-    this.mouse_controls.onkeydown(event);
-  }
-
-  public onMouseDown(event: MouseEvent) {
-    this.mouse_controls.onMouseDown(event);
-  }
-
-  public onMouseUp(event: MouseEvent) {
-    this.mouse_controls.onMouseUp(event);
-    this.check_scene_for_updates();
-  }
-
-  private getSceneState(): SceneState {
-    const scene_objects: string[] = [];
-    const scene_names: string[] = [];
-    const scene_positions: string[] = [];
-    const scene_userdata: string[] = [];
-    const scene_rotations: string[] = [];
-    const scene_scales: string[] = [];
-
-    this.scene.scene.children.forEach((child) => {
-      if (child.name != "") {
-        scene_objects.push(child.uuid);
-        scene_names.push(child.name);
-        scene_userdata.push(JSON.stringify(child.userData));
-        scene_positions.push(JSON.stringify(child.position.clone()));
-        scene_rotations.push(JSON.stringify(child.rotation.clone()));
-        scene_scales.push(JSON.stringify(child.scale.clone()));
-      }
-    });
-    return {
-      scene_objects: scene_objects,
-      scene_names: scene_names,
-      scene_userdata: scene_userdata,
-      scene_positions: scene_positions,
-      scene_rotations: scene_rotations,
-      scene_scales: scene_scales,
-    };
-  }
-
-  private is_creation(sceneState: SceneState): string {
-    let resp = "";
-    sceneState.scene_objects.forEach((object) => {
-      if (!this.lastSceneState.scene_objects.includes(object)) {
-        resp = object;
-        return resp;
-      }
-    });
-    return resp;
-  }
-
-  private is_deletion(sceneState: SceneState): string {
-    let resp = "";
-    this.lastSceneState.scene_objects.forEach((object) => {
-      if (sceneState.scene_objects.includes(object) == false) {
-        resp = object;
-        return resp;
-      }
-    });
-    return resp;
-  }
-
-  private is_userdata(sceneState: SceneState): string {
-    let resp = "";
-    this.lastSceneState.scene_userdata.forEach((object) => {
-      if (sceneState.scene_userdata.includes(object) == false) {
-        const respIdx = this.lastSceneState.scene_userdata.indexOf(object);
-        resp = sceneState.scene_objects[respIdx];
-        return sceneState.scene_objects[respIdx];
-      }
-    });
-    return resp;
-  }
-
-  private is_transformation(sceneState: SceneState): string {
-    let resp = "";
-    if (resp === "") {
-      sceneState.scene_positions.forEach((object) => {
-        if (this.lastSceneState.scene_positions.includes(object) == false) {
-          const respIdx = sceneState.scene_positions.indexOf(object);
-          resp = sceneState.scene_objects[respIdx];
-          return sceneState.scene_objects[respIdx];
-        }
-      });
-    }
-    if (resp === "") {
-      sceneState.scene_rotations.forEach((object) => {
-        if (this.lastSceneState.scene_rotations.includes(object) == false) {
-          const respIdx = sceneState.scene_rotations.indexOf(object);
-          resp = sceneState.scene_objects[respIdx];
-          return sceneState.scene_objects[respIdx];
-        }
-      });
-    }
-    if (resp === "") {
-      sceneState.scene_scales.forEach((object) => {
-        if (this.lastSceneState.scene_scales.includes(object) == false) {
-          const respIdx = sceneState.scene_scales.indexOf(object);
-          resp = sceneState.scene_objects[respIdx];
-          return sceneState.scene_objects[respIdx];
-        }
-      });
-    }
-    return resp;
-  }
-
-  public async add_creation_undostack(object: THREE.Object3D) {
-    this.dropRedoHistory();
-    this.undoStack.push(
-      new CreationSceneItem(this, {
-        object_uuid: object.uuid,
-        name: object.name,
-        position: object.position.clone(),
-        userdata: object.userData,
-      }),
-    );
-    this.lastSceneState = this.getSceneState();
-  }
-
-  /* Can be called Internally or Externally for undo redo stack */
-  // This function allows you to capture transform states and occurs on mouse up.
-  public async check_scene_for_updates() {
-    const sceneState = this.getSceneState();
-    if (JSON.stringify(this.lastSceneState) !== JSON.stringify(sceneState)) {
-      // Add Scene state for undo redo here.
-      const is_deleted = this.is_deletion(sceneState);
-      const is_transform = this.is_transformation(sceneState);
-      const is_userdata = this.is_userdata(sceneState);
-
-      this.dropRedoHistory();
-      this.undoStack = this.undoStack.slice(-16);
-
-      if (is_deleted != "") {
-        const objectIndex =
-          this.lastSceneState.scene_objects.indexOf(is_deleted);
-        const name = this.lastSceneState.scene_names[objectIndex];
-        const position = this.lastSceneState.scene_positions[objectIndex];
-        const userdata = JSON.parse(
-          this.lastSceneState.scene_userdata[objectIndex],
-        );
-
-        const undoPush: DeletionData = {
-          object_uuid: is_deleted,
-          name: name,
-          position: JSON.parse(position),
-          userdata: userdata,
-        };
-        this.undoStack.push(new DeletionSceneItem(this, undoPush));
-      } else if (is_userdata != "") {
-        const objectIndex = sceneState.scene_objects.indexOf(is_userdata);
-        const startUserdata = JSON.parse(
-          this.lastSceneState.scene_userdata[objectIndex],
-        );
-        const userdata = JSON.parse(sceneState.scene_userdata[objectIndex]);
-
-        const endPush: UserData = {
-          object_uuid: is_userdata,
-          color: userdata["color"],
-          locked: userdata["locked"],
-          visible: userdata["visible"],
-        };
-
-        const startPush: UserData = {
-          object_uuid: is_userdata,
-          color: startUserdata["color"],
-          locked: startUserdata["locked"],
-          visible: startUserdata["visible"],
-        };
-
-        this.undoStack.push(new UserDataSceneItem(this, startPush, endPush));
-      } else if (is_transform != "") {
-        const objectIndexStart =
-          this.lastSceneState.scene_objects.indexOf(is_transform);
-        if (
-          this.lastSceneState.scene_positions[objectIndexStart] !== undefined
-        ) {
-          const objectIndexEnd = sceneState.scene_objects.indexOf(is_transform);
-
-          const startPush: TransformData = {
-            object_uuid: is_transform,
-            position: JSON.parse(
-              this.lastSceneState.scene_positions[objectIndexStart],
-            ),
-            rotation: JSON.parse(
-              this.lastSceneState.scene_rotations[objectIndexStart],
-            ),
-            scale: JSON.parse(
-              this.lastSceneState.scene_scales[objectIndexStart],
-            ),
-          };
-          const endPush: TransformData = {
-            object_uuid: is_transform,
-            position: JSON.parse(sceneState.scene_positions[objectIndexEnd]),
-            rotation: JSON.parse(sceneState.scene_rotations[objectIndexEnd]),
-            scale: JSON.parse(sceneState.scene_scales[objectIndexEnd]),
-          };
-          this.undoStack.push(new TransformSceneItem(this, startPush, endPush));
-        }
-      }
-    }
-    this.lastSceneState = sceneState;
-  }
 }

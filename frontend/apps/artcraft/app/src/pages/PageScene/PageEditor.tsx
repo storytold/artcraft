@@ -50,7 +50,7 @@ import { AssetType, AUTH_STATUS } from "~/enums";
 import { v4 as uuidv4 } from "uuid";
 import { MediaItem } from "~/pages/PageScene/models";
 import { UploaderState } from "~/models";
-import * as THREE from "three";
+import { pickDropPosition } from "./engine/pickDropPosition";
 import {
   GalleryItem,
   onImageDrop,
@@ -186,32 +186,30 @@ export const PageEditor = () => {
       }, 1500);
 
       // Update the main camera to match the selected camera's properties
-      if (editorEngine.camera) {
-        // First update position and lookAt
-        editorEngine.camera.position.set(
+      const cam = editorEngine.cameraController.camera;
+      if (cam) {
+        cam.position.set(
           selectedCamera.position.x,
           selectedCamera.position.y,
           selectedCamera.position.z,
         );
-        editorEngine.camera.lookAt(
+        cam.lookAt(
           selectedCamera.lookAt.x,
           selectedCamera.lookAt.y,
           selectedCamera.lookAt.z,
         );
 
-        // Update FOV
-        editorEngine.camera.fov = editorEngine.focalLengthToFov(
+        cam.fov = editorEngine.cameraController.focalLengthToFov(
           selectedCamera.focalLength,
         );
-        editorEngine.camera.updateProjectionMatrix();
+        cam.updateProjectionMatrix();
 
         // Reset free-cam motion so a switch doesn't carry over a
         // half-applied drag from the previous camera.
-        if (editorEngine.freeCamState) {
-          editorEngine.freeCamState.velocity.set(0, 0, 0);
+        if (editorEngine.cameraController.freeCamState) {
+          editorEngine.cameraController.freeCamState.velocity.set(0, 0, 0);
         }
 
-        // Force a render to update the view
         editorEngine.renderScene();
       }
 
@@ -262,19 +260,19 @@ export const PageEditor = () => {
     setSelectedCameraId(newId);
 
     // Update the engine camera to match the new camera's properties
-    if (editorEngine && editorEngine.camera) {
-      editorEngine.camera.position.set(randomX, randomY, randomZ);
-      editorEngine.camera.lookAt(0, 0, 0);
-      editorEngine.camera.fov = editorEngine.focalLengthToFov(24);
-      editorEngine.camera.updateProjectionMatrix();
+    const cam = editorEngine?.cameraController.camera;
+    if (editorEngine && cam) {
+      cam.position.set(randomX, randomY, randomZ);
+      cam.lookAt(0, 0, 0);
+      cam.fov = editorEngine.cameraController.focalLengthToFov(24);
+      cam.updateProjectionMatrix();
 
       // Reset free-cam motion so the camera doesn't drift after
       // teleport.
-      if (editorEngine.freeCamState) {
-        editorEngine.freeCamState.velocity.set(0, 0, 0);
+      if (editorEngine.cameraController.freeCamState) {
+        editorEngine.cameraController.freeCamState.velocity.set(0, 0, 0);
       }
 
-      // Force a render to update the view
       editorEngine.renderScene();
     }
   };
@@ -303,33 +301,23 @@ export const PageEditor = () => {
     if (tabStore.activeTabId === "3D") {
       handler = onImageDrop(
         (item: GalleryItem, position: { x: number; y: number }) => {
-          console.log("3D Drop debug (event):", {
-            editorEngine,
-            camera: editorEngine?.camera,
-            renderer: editorEngine?.renderer,
-            position,
-          });
-
-          // Calculate world position from cursor immediately on drop
-          let worldPosition = undefined;
-          if (editorEngine?.camera && editorEngine?.renderer && position) {
-            const rect =
-              editorEngine.renderer.domElement.getBoundingClientRect();
-            // Convert client coordinates to canvas coordinates
-            const canvasX = position.x - rect.left;
-            const canvasY = position.y - rect.top;
-            const ndcX = (canvasX / rect.width) * 2 - 1;
-            const ndcY = -(canvasY / rect.height) * 2 + 1;
-            const vector = new THREE.Vector3(ndcX, ndcY, 0.5);
-            vector.unproject(editorEngine.camera);
-            worldPosition = vector;
-          }
-
           (async () => {
             if (!editorEngine) {
               console.warn("Cannot drop asset: editor engine not ready");
               return;
             }
+            const worldPosition = pickDropPosition(
+              {
+                getCamera: () => editorEngine.cameraController.camera,
+                getCanvas: () => editorEngine.renderer?.domElement,
+                getRaycastTargets: () =>
+                  editorEngine.activeScene.scene.children,
+                removeTransformControls: () =>
+                  editorEngine.utils.removeTransformControls(true),
+              },
+              position.x,
+              position.y,
+            );
             try {
               if (item.mediaClass === "dimensional") {
                 const isCharacter = item.assetType === "character";

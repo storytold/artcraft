@@ -26,6 +26,7 @@ export type SelectionBridgeDeps = {
   // and the gizmo attach/detach lives on GizmoController. The bridge
   // calls them through these callbacks instead of importing either.
   toggleObjectLocked: (uuid: string) => boolean; // returns new locked state
+  setObjectLocked: (uuid: string, locked: boolean) => void; // direct set (history replay)
   isObjectLocked: (uuid: string) => boolean;
   removeTransformControls: () => void;
   attachGizmoToCurrentSelection: () => void;
@@ -42,18 +43,35 @@ export class SelectionBridge {
 
   constructor(private readonly engine: SelectionBridgeDeps) {}
 
-  // Toggle the locked flag on an object's userData, then either yank
-  // the gizmo (lock) or re-attach it to the current selection (unlock).
-  // Returns the new locked state.
-  lockUnlockObject(object_uuid: string): boolean {
-    const locked = this.engine.toggleObjectLocked(object_uuid);
+  // Centralized side-effect chain shared by the user-toggle path and
+  // history replay. Sets userData.locked, attaches/detaches the gizmo,
+  // refreshes the inspector. No recording — the user-facing entry
+  // points decide whether to push to the undo stack.
+  private applyLockState(object_uuid: string, locked: boolean) {
+    this.engine.setObjectLocked(object_uuid, locked);
     if (locked) {
       this.engine.removeTransformControls();
     } else {
       this.engine.attachGizmoToCurrentSelection();
     }
     this.updateSelectedUI();
-    return locked;
+  }
+
+  // Toggle the locked flag on an object's userData, then either yank
+  // the gizmo (lock) or re-attach it to the current selection (unlock).
+  // Returns the new locked state. Recording a LockAction is the
+  // call site's responsibility — the bridge stays history-agnostic.
+  lockUnlockObject(object_uuid: string): boolean {
+    const before = this.engine.isObjectLocked(object_uuid);
+    const after = !before;
+    this.applyLockState(object_uuid, after);
+    return after;
+  }
+
+  // For history replay: set the locked state directly without recording.
+  // Runs the same gizmo attach/detach side effects as lockUnlockObject.
+  setLockState(object_uuid: string, locked: boolean) {
+    this.applyLockState(object_uuid, locked);
   }
 
   // True if the object is currently locked. Pure passthrough.

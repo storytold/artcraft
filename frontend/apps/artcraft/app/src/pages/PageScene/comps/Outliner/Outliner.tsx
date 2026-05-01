@@ -19,6 +19,8 @@ import { OutlinerItem, usePageSceneStore } from "../../PageSceneStore";
 import { pageHeight, pageWidth } from "~/signals";
 import { CameraAspectRatio } from "../../enums";
 import { effect } from "@preact/signals-react";
+import { toggleObjectLock } from "../../actions/toggleObjectLock";
+import { toggleObjectVisibility } from "../../actions/toggleObjectVisibility";
 
 const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
   const [hovered, setHovered] = useState(false);
@@ -47,14 +49,14 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
 
   const handleToggleLock = (e: React.MouseEvent) => {
     e.stopPropagation();
-    usePageSceneStore.getState().toggleOutlinerLock(item.id);
-    editorEngine?.selection.lockUnlockObject(item.id);
+    if (!editorEngine) return;
+    toggleObjectLock(editorEngine, item.id);
   };
 
   const handleToggleVisibility = (e: React.MouseEvent) => {
     e.stopPropagation();
-    usePageSceneStore.getState().toggleOutlinerVisibility(item.id);
-    editorEngine?.sceneManager?.hideObject(item.id);
+    if (!editorEngine) return;
+    toggleObjectVisibility(editorEngine, item.id);
   };
 
   return (

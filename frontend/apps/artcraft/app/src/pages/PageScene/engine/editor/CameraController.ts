@@ -63,6 +63,17 @@ export class CameraController {
     this.render_height = dims.height;
   }
 
+  // Re-anchor the camera-person object to the named entity in the scene
+  // and put it on layer 1 (along with its children). Used after
+  // load/restore flows when a fresh scene replaces the previous one.
+  refreshCamObj(scene: THREE.Scene): void {
+    this.cam_obj = scene.getObjectByName(this.camera_name);
+    this.cam_obj?.layers.set(1);
+    this.cam_obj?.children.forEach((child) => {
+      child.layers.set(1);
+    });
+  }
+
   // Toggles between free-camera (edit) mode and the active render
   // camera's perspective. Lifted from SceneUtils.switchCameraView so
   // the camera state stays in one place.

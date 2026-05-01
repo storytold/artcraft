@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type Editor from "../engine/editor";
 import { MediaItem } from "../models";
 import { usePageSceneStore } from "../PageSceneStore";
+import { CreateAction } from "../engine/editor/actions/CreateAction";
 
 export async function addObject(
   editor: Editor,
@@ -14,6 +15,8 @@ export async function addObject(
     position ?? new THREE.Vector3(),
   );
   if (!obj) return undefined;
+
+  editor.history.record(new CreateAction(editor, obj));
 
   usePageSceneStore.getState().addObject({
     id: obj.uuid,

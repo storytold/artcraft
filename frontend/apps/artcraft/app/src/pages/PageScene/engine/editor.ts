@@ -22,6 +22,9 @@ import { PostProcessingPipeline } from "./editor/PostProcessingPipeline";
 import { GizmoController } from "./editor/GizmoController";
 import { SelectionBridge } from "./editor/SelectionBridge";
 import { CameraController } from "./editor/CameraController";
+import { HistoryManager } from "./editor/HistoryManager";
+import { DeleteAction } from "./editor/actions/DeleteAction";
+import { TransformAction } from "./editor/actions/TransformAction";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -64,13 +67,9 @@ class Editor {
   frames: number;
   lastFrameTime: number;
 
-  current_scene_media_token: string | null;
-  current_scene_glb_media_token: string | null;
-
   can_initialize: boolean;
 
   positive_prompt: string;
-  generating_preview: boolean = false;
 
   // Owns canvas/container DOM refs and the resize cascade.
   viewport: ViewportController;
@@ -82,6 +81,14 @@ class Editor {
   selection: SelectionBridge;
   // Owns the camera state, FreeCam plumbing, and the per-frame camera tick.
   cameraController: CameraController;
+  // Owns the undo/redo stack. Mutation sites push UndoableAction
+  // instances via editor.history.record(...); each action class under
+  // engine/editor/actions/ encapsulates its own apply/revert.
+  history: HistoryManager;
+
+  // Holds the in-flight transform action between gizmo dragstart and
+  // dragend. Null whenever no drag is in progress.
+  private activeTransform: TransformAction | null = null;
 
   // Forwarding getter — ControlPanelSceneObject reads `editor.selected`.
   get selected(): THREE.Object3D | undefined {
@@ -158,6 +165,8 @@ class Editor {
       cameraName: this.cameraController.camera_name,
       version: this.version,
       toggleObjectLocked: (uuid) => this.utils.toggleObjectLocked(uuid),
+      setObjectLocked: (uuid, locked) =>
+        this.utils.setObjectLocked(uuid, locked),
       isObjectLocked: (uuid) => this.utils.isObjectLocked(uuid),
       removeTransformControls: () =>
         this.utils.removeTransformControls(false),
@@ -187,7 +196,25 @@ class Editor {
     this.shouldRender = false;
 
     this.utils = new SceneUtils(this, this.activeScene);
-    this.save_manager = new SaveManager(this);
+    this.save_manager = new SaveManager({
+      getVersion: () => this.version,
+      setVersion: (v) => {
+        this.version = v;
+      },
+      getActiveScene: () => this.activeScene,
+      getRenderer: () => this.renderer,
+      removeTransformControls: () => this.utils.removeTransformControls(),
+      getCamera: () => this.cameraController.camera,
+      refreshCamObj: () =>
+        this.cameraController.refreshCamObj(this.activeScene.scene),
+      changeRenderCameraAspectRatio: (ratio) =>
+        this.cameraController.changeRenderCameraAspectRatio(ratio),
+      setPositivePrompt: (prompt) => {
+        this.positive_prompt = prompt;
+      },
+      saveSceneState: (args) => this.api_manager.saveSceneState(args),
+      loadSceneState: (token) => this.api_manager.loadSceneState(token),
+    });
     this.viewport = new ViewportController({
       getCamera: () => this.cameraController.camera,
       getRenderCamera: () => this.cameraController.render_camera,
@@ -197,9 +224,9 @@ class Editor {
       resizePostProcessing: (w, h) => this.postProcessing.resize(w, h),
     });
 
-    // Scene State
-    this.current_scene_media_token = null;
-    this.current_scene_glb_media_token = null;
+    // Action classes under engine/editor/actions/ encapsulate their own
+    // apply/revert + dependencies. HistoryManager just stores them.
+    this.history = new HistoryManager({ capacity: 64 });
 
     this.positive_prompt =
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
@@ -348,6 +375,20 @@ class Editor {
             new THREE.Vector3(-99999, -99999, -99999),
           );
           this.focused = !dragging;
+          // Gizmo drag boundary → TransformAction. Begin captures the
+          // pre-drag transform in the constructor; end commits the diff
+          // (or drops a no-op move).
+          if (dragging) {
+            const target = this.sceneManager?.selected_objects?.[0];
+            if (target) {
+              this.activeTransform = new TransformAction(this, target.uuid);
+            }
+          } else if (this.activeTransform) {
+            if (this.activeTransform.commit()) {
+              this.history.record(this.activeTransform);
+            }
+            this.activeTransform = null;
+          }
         },
       },
     );
@@ -363,13 +404,7 @@ class Editor {
 
     this.viewport.setupResizeObserver();
 
-    // saving state of the scene
-    this.current_scene_media_token = null;
-    this.current_scene_glb_media_token = null;
-
-    this.cameraController.cam_obj = this.activeScene.get_object_by_name(
-      this.cameraController.camera_name,
-    );
+    this.cameraController.refreshCamObj(this.activeScene.scene);
 
     this.mouse_controls = new MouseControls(
       this.cameraController.camera,
@@ -399,10 +434,7 @@ class Editor {
       this.version,
       this.mouse_controls,
       this.activeScene,
-      true,
-      this.selection.updateOutliner.bind(this.selection),
-      this.selection.isCharacterUuid.bind(this.selection),
-    ); // Enabled dev mode.
+    );
     this.mouse_controls.sceneManager = this.sceneManager;
 
     // Add spark renderer as a child of the camera
@@ -658,14 +690,12 @@ class Editor {
   }
 
   deleteObject(uuid: string) {
+    const obj = this.activeScene.scene.getObjectByProperty("uuid", uuid);
+    if (obj) this.history.record(new DeleteAction(this, obj));
     this.mouse_controls?.clearFKVisuals();
     this.mouse_controls?.removeTransformControls(true);
     this.utils.deleteObject(uuid);
     this.selection.refreshOutliner();
-  }
-
-  async create_parim(name: string, pos: THREE.Vector3) {
-    return await this.activeScene.instantiate(name, pos);
   }
 
   // Render the scene to the camera, this is called in the update.
@@ -778,14 +808,12 @@ class Editor {
 
     this.isMounted = true;
     this.startRenderLoop();
-    this.sceneManager?.attachEventListeners();
     console.log("3D Editor Engine remounted");
   }
 
   unmountEngine() {
     setIs3DSceneLoaded(false);
     this.stopRenderLoop();
-    this.sceneManager?.detachEventListeners();
 
     // Fix: dispose 3D contexts
     this.renderer?.dispose();

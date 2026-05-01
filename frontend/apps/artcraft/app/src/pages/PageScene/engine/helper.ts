@@ -43,6 +43,13 @@ export class SceneUtils {
     return object.userData["locked"];
   }
 
+  // Direct setter used by history replay — sets userData.locked without
+  // toggling. Side effects (gizmo attach/detach) live on SelectionBridge.
+  setObjectLocked(object_uuid: string, locked: boolean) {
+    const object = this.scene.get_object_by_uuid(object_uuid);
+    if (object) object.userData["locked"] = locked;
+  }
+
   // Removes transform controls and publishes selected.
   removeTransformControls(remove_outline: boolean = true) {
     if (this.editor.gizmo.control == undefined) {
