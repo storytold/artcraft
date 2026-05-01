@@ -377,7 +377,6 @@ class Editor {
       this.cameraController.freeCamState,
       this.cameraController.lockControls,
       this.cameraController.camera_last_pos,
-      this.cameraController.switchCameraView.bind(this.cameraController),
       this.deleteObject.bind(this),
       this.viewport.canvReference,
       this.mouse,
