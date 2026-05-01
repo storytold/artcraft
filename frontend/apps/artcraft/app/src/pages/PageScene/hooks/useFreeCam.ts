@@ -11,19 +11,41 @@ import {
   type FreeCamControlState,
 } from "~/pages/PageScene/engine/cameraMath";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
-import { EditorStates } from "~/pages/PageScene/enums";
 import type Editor from "~/pages/PageScene/engine/editor";
 
-// Drives the 3D viewport's camera while the editor is in CAMERA_VIEW.
-// Owns:
-//   - Listener attachment to the canvas (no window/document handlers).
-//   - Drag state + held-key state in refs.
-//   - The shared FreeCamControlState handed to the editor's render
-//     loop via setFreeCamState.
+// Drives the 3D viewport's "fly" camera controls (right-click pan,
+// wheel zoom, WASD/QE forward/back/strafe/up/down, arrow-key roll/yaw)
+// for navigating the scene in EDIT mode. CAMERA_VIEW (the virtual-
+// camera POV preview) re-uses the same input pipeline.
 //
-// The editor reads this state on every frame (see editor.ts render
-// loop) and integrates it via freeCamFrameTick. There is no FreeCam
-// class instance — the math lives in cameraMath.ts.
+// Pointer + wheel listeners go on the canvas (events naturally route
+// to canvas regardless of focus). WASD/QE/arrow keys go on document
+// with an editable-element guard, so the user can fly without
+// clicking the canvas first to give it focus.
+
+const EDITABLE_INPUT_TYPES = new Set([
+  "text",
+  "search",
+  "email",
+  "password",
+  "number",
+  "url",
+  "tel",
+]);
+
+const isEventFromEditableElement = (event: KeyboardEvent): boolean => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return false;
+  if (target instanceof HTMLInputElement) {
+    if (target.disabled || target.readOnly) return false;
+    const type = target.type?.toLowerCase() ?? "";
+    return type === "" || EDITABLE_INPUT_TYPES.has(type);
+  }
+  if (target instanceof HTMLTextAreaElement) {
+    return !(target.disabled || target.readOnly);
+  }
+  return target.isContentEditable;
+};
 
 export const useFreeCam = (
   canvas: HTMLCanvasElement | null,
@@ -33,9 +55,6 @@ export const useFreeCam = (
   const dragRef = useRef<{ x: number; y: number; pointerId: number } | null>(
     null,
   );
-  const enabled = usePageSceneStore(
-    (s) => s.editorState === EditorStates.CAMERA_VIEW,
-  );
 
   // Hand the state to the editor so its render loop can integrate it.
   useEffect(() => {
@@ -44,34 +63,17 @@ export const useFreeCam = (
     return () => editor.cameraController.setFreeCamState(null);
   }, [editor]);
 
-  // Toggle enabled and clear motion when leaving CAMERA_VIEW so the
-  // camera doesn't drift on a stale held key. On enter, focus the
-  // canvas so the WASD keydown listener (canvas-scoped) actually
-  // fires — pressing Space enters CAMERA_VIEW via the document
-  // keymap without changing focus, so the canvas wouldn't otherwise
-  // receive keydown events.
+  // Attach listeners. Pointer/wheel on canvas (so they only fire
+  // inside the viewport); keys on document so the user doesn't need
+  // to click canvas first for WASD to work.
   useEffect(() => {
+    if (!canvas || !editor) return;
     const state = stateRef.current;
-    state.enabled = enabled;
-    if (enabled && canvas) {
-      canvas.focus();
-    }
-    if (!enabled) {
-      state.moveKeys = emptyMoveKeys();
-      state.rotateKeys = emptyRotateKeys();
-      state.velocity.set(0, 0, 0);
-      dragRef.current = null;
-    }
-  }, [enabled, canvas]);
-
-  // Attach listeners to the canvas. Canvas-scoped means no listener
-  // leaks beyond the viewport, and no need for mouseover gating.
-  useEffect(() => {
-    if (!canvas || !enabled || !editor) return;
-    const state = stateRef.current;
+    state.enabled = true;
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
+      if (isEventFromEditableElement(e)) return;
       const moveSlot = moveSlotForKeyCode(e.code);
       if (moveSlot) state.moveKeys[moveSlot] = 1;
       const rotateSlot = rotateSlotForKeyCode(e.code);
@@ -80,6 +82,7 @@ export const useFreeCam = (
 
     const onKeyUp = (e: KeyboardEvent) => {
       if (usePageSceneStore.getState().isPromptBoxFocused) return;
+      if (isEventFromEditableElement(e)) return;
       const moveSlot = moveSlotForKeyCode(e.code);
       if (moveSlot) state.moveKeys[moveSlot] = 0;
       const rotateSlot = rotateSlotForKeyCode(e.code);
@@ -135,22 +138,27 @@ export const useFreeCam = (
 
     const onContextMenu = (e: Event) => e.preventDefault();
 
-    canvas.addEventListener("keydown", onKeyDown);
-    canvas.addEventListener("keyup", onKeyUp);
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointermove", onPointerMove);
     canvas.addEventListener("wheel", onWheel, { passive: true });
     canvas.addEventListener("contextmenu", onContextMenu);
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keyup", onKeyUp);
 
     return () => {
-      canvas.removeEventListener("keydown", onKeyDown);
-      canvas.removeEventListener("keyup", onKeyUp);
+      state.enabled = false;
+      state.moveKeys = emptyMoveKeys();
+      state.rotateKeys = emptyRotateKeys();
+      state.velocity.set(0, 0, 0);
+      dragRef.current = null;
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("contextmenu", onContextMenu);
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keyup", onKeyUp);
     };
-  }, [canvas, editor, enabled]);
+  }, [canvas, editor]);
 };
