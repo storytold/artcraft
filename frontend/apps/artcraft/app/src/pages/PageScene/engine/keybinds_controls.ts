@@ -224,6 +224,18 @@ export class MouseControls {
       !this.isBoneDragged
     ) {
       this.isMouseClicked = true;
+      // Request pointer lock here (a real primary-gesture event)
+      // rather than from onMouseMove. Browsers reliably honor lock
+      // requests from mousedown but may reject ones from mousemove
+      // — the latter started failing intermittently after the
+      // useFreeCam listeners became always-attached.
+      if (
+        isPointerLockSupported() &&
+        this.lockControls &&
+        !this.lockControls.isLocked
+      ) {
+        this.lockControls.lock();
+      }
     }
   }
 
