@@ -9,6 +9,9 @@ use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
+use artcraft_router::client::router_client::RouterClient;
+use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -16,11 +19,11 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
+use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_fal_queue_with_apriori_job_token,
   InsertGenericInferenceForFalWithAprioriJobTokenArgs,
 };
-use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -153,12 +156,12 @@ pub async fn omni_gen_image_generate_handler(
 
   // ==================== EXECUTE GENERATION ==================== //
 
-  let fal_client = artcraft_router::client::router_fal_client::RouterFalClient::new(
+  let fal_client = RouterFalClient::new(
     server_state.fal.api_key.clone(),
     server_state.fal.webhook_url.clone(),
   );
 
-  let router_client = artcraft_router::client::router_client::RouterClient::Fal(fal_client);
+  let router_client = RouterClient::Fal(fal_client);
 
   let generation_response = distilled.plan().generate_image(&router_client)
     .await
@@ -168,10 +171,10 @@ pub async fn omni_gen_image_generate_handler(
     })?;
 
   let external_job_id = match &generation_response {
-    artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse::Artcraft(p) => {
+    GenerateImageResponse::Artcraft(p) => {
       p.inference_job_token.as_str().to_string()
     }
-    artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse::Fal(p) => {
+    GenerateImageResponse::Fal(p) => {
       p.request_id.clone().unwrap_or_default()
     }
   };
@@ -206,11 +209,11 @@ pub async fn omni_gen_image_generate_handler(
     maybe_negative_prompt: None,
     maybe_other_args: None,
     maybe_generation_mode: Some(generation_mode),
-    maybe_aspect_ratio: None,
-    maybe_resolution: None,
+    maybe_aspect_ratio: request.aspect_ratio, // TODO: should be saved from router's decision as it could have changed
+    maybe_resolution: request.resolution,// TODO: should be saved from router's decision as it could have changed
     maybe_batch_count: request.image_batch_count.map(|c| c as u8),
-    maybe_generate_audio: None,
-    maybe_duration_seconds: None,
+    maybe_generate_audio: None, // NB: Images, not video
+    maybe_duration_seconds: None, // NB: Images, not video
     creator_ip_address: &ip_address,
     mysql_executor: &mut *transaction,
     phantom: Default::default(),

@@ -29,13 +29,13 @@ use super::distill_helper::hydrate_to_router_request::hydrate_to_router_request;
 /// plan, all in one place.
 pub struct DistilledImageRequest {
   /// The fully-built router request.
-  request: GenerateImageRequest,
+  pub request: GenerateImageRequest,
 
   /// Cost estimate as computed by the Artcraft provider — this is what we bill on.
   pub cost: ImageGenerationCostEstimate,
 
   /// Execution plan as computed by the Fal provider — what we hand to the router.
-  plan: ImageGenerationPlan,
+  pub plan: ImageGenerationPlan,
 }
 
 impl DistilledImageRequest {
