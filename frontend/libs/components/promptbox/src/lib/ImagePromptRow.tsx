@@ -336,10 +336,18 @@ export const ImagePromptRow = ({
     onVisibilityChange,
   ]);
 
-  const handleRemoveReference = (id: string) => {
-    setReferenceImages(referenceImages.filter((img) => img.id !== id));
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+  // Read via the ref so a stale closure (SortableImage is redefined every
+  // ImagePromptRow render and may carry an outdated handler into dnd-kit's
+  // memoized children) can't drop the wrong array back into the store.
+  const handleRemoveReference = useCallback(
+    (id: string) => {
+      setReferenceImages(
+        referenceImagesRef.current.filter((img) => img.id !== id),
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+    [setReferenceImages],
+  );
 
   const handleUploadClick = () => fileInputRef.current?.click();
   const handleUploadClickStart = () => {
