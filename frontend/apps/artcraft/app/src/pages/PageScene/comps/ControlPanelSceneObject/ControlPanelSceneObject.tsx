@@ -1,4 +1,11 @@
-import { ChangeEvent, useContext, useEffect, useId, useState } from "react";
+import {
+  ChangeEvent,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { Transition } from "@headlessui/react";
 import {
   faChevronDown,
@@ -19,6 +26,7 @@ import { XYZ } from "~/pages/PageScene/datastructures/common";
 import { pageHeight } from "~/signals";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
 import { ColorAction } from "~/pages/PageScene/engine/editor/actions/ColorAction";
+import { TransformAction } from "~/pages/PageScene/engine/editor/actions/TransformAction";
 
 // TODO this will be useful later to fix the bug on leading zeros
 // const formatNumber = (input: string): number => {
@@ -57,6 +65,28 @@ export const ControlPanelSceneObject = () => {
   const [locked, setLocked] = useState(false);
 
   const [color, setColor] = useState("#ffffff");
+
+  // Pending transform action — opened on first panel edit to capture
+  // the before-state, committed on selection change / unmount.
+  const transformActionRef = useRef<TransformAction | null>(null);
+
+  const beginPanelTransform = () => {
+    if (transformActionRef.current) return;
+    if (!editorEngine || !currentSceneObject) return;
+    transformActionRef.current = new TransformAction(
+      editorEngine,
+      currentSceneObject.object_uuid,
+    );
+  };
+
+  const commitPanelTransform = () => {
+    const action = transformActionRef.current;
+    transformActionRef.current = null;
+    if (!action || !editorEngine) return;
+    if (action.commit()) {
+      editorEngine.history.record(action);
+    }
+  };
 
   const colorInputId = useId();
 
@@ -106,6 +136,11 @@ export const ControlPanelSceneObject = () => {
 
     setLocked(editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""));
     setColor(editorEngine?.selected?.userData.color);
+
+    // On selection change / unmount, commit any in-flight panel
+    // transform from the previous selection. The action references
+    // its captured uuid, so commit still targets the right object.
+    return () => commitPanelTransform();
   }, [currentSceneObject, editorEngine]);
 
   if (!currentSceneObject) {
@@ -127,6 +162,7 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localPosition, cleanXyz)) {
+      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalPosition(xyz);
@@ -139,6 +175,7 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localRotation, cleanXyz)) {
+      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalRotation(xyz);
@@ -160,6 +197,7 @@ export const ControlPanelSceneObject = () => {
     }
     const cleanXyz = sanitize(xyz);
     if (objectMismatch(localScale, cleanXyz)) {
+      beginPanelTransform();
       setInputsUpdated(true);
     }
     setLocalScale(xyz);
