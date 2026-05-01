@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useRef } from "react";
 import { useSignals } from "@preact/signals-react/runtime";
 import { TopBar } from "~/components";
 import { Controls3D } from "./comps/Controls3D";
@@ -30,7 +30,7 @@ import { useViewportPointer } from "./hooks/useViewportPointer";
 import { useViewportKeyboard } from "./hooks/useViewportKeyboard";
 import { Outliner } from "./comps/Outliner";
 import { CameraAspectRatio } from "./enums";
-import { PromptBox3D } from "@storyteller/ui-promptbox";
+import { PromptBox3D, commonToCameraAspect } from "@storyteller/ui-promptbox";
 import { PopoverItem } from "@storyteller/ui-popover";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { OnboardingHelper } from "./comps/OnboardingHelper";
@@ -292,6 +292,26 @@ export const PageEditor = () => {
     if (!editorEngine) return;
     setCameraAspect(editorEngine, newRatio);
   };
+
+  // Sync the editor letterbox to the model's default aspect ratio once
+  // both the engine and the selected model are ready. The earlier
+  // PromptBox3D-side effect raced: it fired before `editorEngine` was
+  // initialized (EngineProvider is async), so `setCameraAspect` was
+  // never called. Owning it here lets us depend directly on
+  // `editorEngine` being non-null. The ref guard prevents the effect
+  // from clobbering a later user pick on the same model.
+  const lastSyncedModelIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!editorEngine || !selectedImageModel?.supportsNewAspectRatio()) return;
+    if (lastSyncedModelIdRef.current === selectedImageModel.id) return;
+    const def = selectedImageModel.defaultAspectRatio;
+    if (!def) return;
+    const mapped = commonToCameraAspect(def);
+    if (!mapped) return;
+    setCameraAspect(editorEngine, mapped);
+    lastSyncedModelIdRef.current = selectedImageModel.id;
+  }, [editorEngine, selectedImageModel]);
+
   // MOVE THIS don't throw this in here
   // Image drop from gallery/library modal logic
   useEffect(() => {
