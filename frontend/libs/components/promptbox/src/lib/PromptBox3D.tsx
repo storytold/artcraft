@@ -39,14 +39,12 @@ import { Modal } from "@storyteller/ui-modal";
 import { Signal } from "@preact/signals-react";
 import {
   CommandSuccessStatus,
-  EnqueueEditImage,
-  EnqueueEditImageSize,
-  EnqueueEditImageResolution,
-  EnqueueEditImageRequest,
+  GenerateImage,
+  GenerateImageRequest,
 } from "@storyteller/tauri-api";
 import { usePrompt3DStore, useEnterToGenerateStore } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
-import { CommonAspectRatio, ImageModel } from "@storyteller/model-list";
+import { CommonAspectRatio, CommonResolution, ImageModel } from "@storyteller/model-list";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { ImagePromptRow } from "./ImagePromptRow";
 import { AspectRatioPicker } from "./common/AspectRatioPicker";
@@ -393,26 +391,24 @@ export const PromptBox3D = ({
 
         console.log("snapshotResult", snapshotResult);
 
-        const aspectRatio = getCurrentAspectRatio();
-        const resolution = getCurrentResolution();
+        const aspectRatio =
+          selectedImageModel?.supportsNewAspectRatio() && commonAspectRatio
+            ? commonAspectRatio
+            : getCurrentAspectRatio();
 
-        let request: EnqueueEditImageRequest = {
+        const request: GenerateImageRequest = {
           model: selectedImageModel,
           scene_image_media_token: snapshotResult.data!,
           image_media_tokens: referenceImages.map((image) => image.mediaToken),
-          disable_system_prompt: !useSystemPrompt,
+          enable_system_prompt: useSystemPrompt,
           prompt: prompt,
-          image_count: 1,
+          batch_size: 1,
           aspect_ratio: aspectRatio,
-          image_resolution: resolution,
+          resolution: getCurrentResolution(),
         };
 
         if (!!selectedProvider) {
           request.provider = selectedProvider;
-        }
-
-        if (selectedImageModel?.supportsNewAspectRatio()) {
-          request.common_aspect_ratio = commonAspectRatio;
         }
 
         window.__storeTaskEnqueueMeta?.({
@@ -426,7 +422,7 @@ export const PromptBox3D = ({
           timestamp: Date.now(),
         });
 
-        const generateResponse = await EnqueueEditImage(request);
+        const generateResponse = await GenerateImage(request);
 
         console.log("generateResponse", generateResponse);
 
@@ -484,28 +480,28 @@ export const PromptBox3D = ({
     }
   };
 
-  const getCurrentAspectRatio = (): EnqueueEditImageSize => {
+  const getCurrentAspectRatio = (): CommonAspectRatio => {
     switch (cameraAspectRatio.value) {
       case CameraAspectRatio.HORIZONTAL_3_2:
-        return EnqueueEditImageSize.Wide;
+        return CommonAspectRatio.Wide;
       case CameraAspectRatio.VERTICAL_2_3:
       case CameraAspectRatio.VERTICAL_9_16:
-        return EnqueueEditImageSize.Tall;
+        return CommonAspectRatio.Tall;
       case CameraAspectRatio.SQUARE_1_1:
       default:
-        return EnqueueEditImageSize.Square;
+        return CommonAspectRatio.Square;
     }
   };
 
-  const getCurrentResolution = (): EnqueueEditImageResolution | undefined => {
+  const getCurrentResolution = (): CommonResolution | undefined => {
     const selected = resolutionList.find((item) => item.selected);
     switch (selected?.label) {
       case "1k":
-        return EnqueueEditImageResolution.OneK;
+        return CommonResolution.OneK;
       case "2k":
-        return EnqueueEditImageResolution.TwoK;
+        return CommonResolution.TwoK;
       case "4k":
-        return EnqueueEditImageResolution.FourK;
+        return CommonResolution.FourK;
       default:
         return undefined;
     }
