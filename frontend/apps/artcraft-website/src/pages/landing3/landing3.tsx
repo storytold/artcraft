@@ -228,6 +228,9 @@ const Landing3 = () => {
   const knightBottomBarRef = useRef<HTMLDivElement>(null);
   const knightProgressBarRef = useRef<HTMLDivElement>(null);
   const knightTimecodeRef = useRef<HTMLSpanElement>(null);
+  // Wrapper around the video used for the shrink-to-card exit animation in
+  // phase 5. Scaled and rounded as the user scrolls past the scrub end.
+  const knightCinemaRef = useRef<HTMLDivElement>(null);
   // Pause flag for the manifesto Three.js render loop. Flipped to `true` once
   // the character has walked off frame so the GPU isn't painting a hidden
   // canvas during the video phase — significant savings on high-DPI displays.
@@ -365,9 +368,13 @@ const Landing3 = () => {
         const knightBottomBar = knightBottomBarRef.current;
         const knightProgressBar = knightProgressBarRef.current;
         const knightTimecode = knightTimecodeRef.current;
-        if (knightVideo) gsap.set(knightVideo, { opacity: 0 });
+        const knightCinema = knightCinemaRef.current;
         if (knightTopBar) gsap.set(knightTopBar, { yPercent: -100 });
         if (knightBottomBar) gsap.set(knightBottomBar, { yPercent: 100 });
+        // Cinema wrapper hidden during phases 1-2 so the manifesto text +
+        // Three.js character read clearly through. Fades in during phase 3.
+        if (knightCinema)
+          gsap.set(knightCinema, { opacity: 0, scale: 1, borderRadius: 0 });
 
         const tl = gsap.timeline({
           scrollTrigger: {
@@ -378,6 +385,9 @@ const Landing3 = () => {
             // immediately — high values cause the video to keep advancing
             // for ~1s after Lenis stops, which reads as the frame "lagging."
             scrub: 0.01,
+            // Recapture function-based tween targets (e.g. the phase 5 scale
+            // computed from window.innerWidth) when the user resizes.
+            invalidateOnRefresh: true,
             onUpdate: (self) => {
               manifestoProgressRef.current = self.progress;
             },
@@ -421,9 +431,9 @@ const Landing3 = () => {
             ">",
           );
         }
-        if (knightVideo) {
+        if (knightCinema) {
           tl.to(
-            knightVideo,
+            knightCinema,
             { opacity: 1, duration: 3, ease: "power2.out" },
             "<+=0.5",
           );
@@ -474,6 +484,46 @@ const Landing3 = () => {
           );
         }
 
+        // Phase 5 — exit. As the user keeps scrolling past the scrub end the
+        // letterbox bars retract, the cinema wrapper scales down to roughly
+        // navbar width, and corners round off. Soft `power2.inOut` ease keeps
+        // the resize buttery — the scale runs on a GPU-promoted transform
+        // layer so it doesn't trigger layout work per frame.
+        if (knightTopBar && knightBottomBar) {
+          tl.to(
+            knightTopBar,
+            { yPercent: -100, opacity: 0, duration: 2, ease: "power2.in" },
+            ">",
+          );
+          tl.to(
+            knightBottomBar,
+            { yPercent: 100, opacity: 0, duration: 2, ease: "power2.in" },
+            "<",
+          );
+        }
+        if (knightCinema) {
+          // Target navbar width — Tailwind max-w-6xl = 1152px. Compute scale
+          // dynamically from viewport so the resized card lands at exactly
+          // this width regardless of screen size. Function-based value lets
+          // GSAP recapture on refresh (resize) when paired with the
+          // invalidateOnRefresh flag on the parent ScrollTrigger.
+          const NAVBAR_WIDTH_PX = 1152;
+          tl.to(
+            knightCinema,
+            {
+              scale: () =>
+                Math.min(1, NAVBAR_WIDTH_PX / window.innerWidth),
+              // Border radius is overspecified relative to the post-scale
+              // visual size — `40` × scale ≈ pillowy 20-25px corners on
+              // typical desktops.
+              borderRadius: 40,
+              duration: 6,
+              ease: "power2.inOut",
+            },
+            "<+=0.3",
+          );
+        }
+
         // Character traversal — finishes within the first ~30% of section
         // scroll so the figure has walked off frame before the knight reveal
         // begins. Without this clamp, the longer section would slow the walk
@@ -500,7 +550,7 @@ const Landing3 = () => {
         // where the character finishes its walk (50% of section scroll).
         ScrollTrigger.create({
           trigger: manifestoSection,
-          start: () => `top+=${window.innerHeight * 2.7} top`,
+          start: () => `top+=${window.innerHeight * 3.5} top`,
           onEnter: () => {
             characterPausedRef.current = true;
           },
@@ -716,7 +766,7 @@ const Landing3 = () => {
         <section
           data-manifesto-section
           className="relative"
-          style={{ height: "600vh" }}
+          style={{ height: "750vh" }}
         >
           <div
             className="flex items-center justify-center overflow-hidden bg-[#101014]"
@@ -770,17 +820,27 @@ const Landing3 = () => {
               aria-hidden
               className="absolute inset-0 z-20 pointer-events-none"
             >
-              {/* Full-bleed video — fills the viewport edge-to-edge. The
-                  bars sit on top of the video's top/bottom edges, so the
-                  visible band is effectively a wide cinematic crop. */}
-              <video
-                ref={knightVideoRef}
-                src="/videos/knight-walk-scrub.mp4"
-                muted
-                playsInline
-                preload="auto"
-                className="absolute inset-0 w-full h-full object-cover bg-black"
-              />
+              {/* Full-bleed video, wrapped so we can scale + round-corner it
+                  during the phase 5 exit (shrink to centered card as the
+                  section unsticks). overflow-hidden + GPU-promoted transform
+                  layer = smooth resize. */}
+              <div
+                ref={knightCinemaRef}
+                className="absolute inset-0 overflow-hidden bg-black"
+                style={{
+                  transformOrigin: "center center",
+                  willChange: "transform, border-radius",
+                }}
+              >
+                <video
+                  ref={knightVideoRef}
+                  src="/videos/knight-walk-scrub.mp4"
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </div>
 
               {/* Top letterbox bar */}
               <div
@@ -822,7 +882,7 @@ const Landing3 = () => {
         </section>
       )}
 
-      <section id="features" className="relative px-4 sm:px-8 pt-12 sm:pt-32">
+      <section id="features" className="relative px-4 sm:px-8 pt-12">
         <div className="max-w-[1100px] mx-auto text-center" data-reveal>
           <span className="inline-block text-xs font-semibold uppercase tracking-[0.18em] text-primary mb-5">
             Crafting features
