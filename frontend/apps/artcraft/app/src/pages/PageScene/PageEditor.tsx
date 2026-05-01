@@ -30,6 +30,7 @@ import { useViewportPointer } from "./hooks/useViewportPointer";
 import { useViewportKeyboard } from "./hooks/useViewportKeyboard";
 import { Outliner } from "./comps/Outliner";
 import { CameraAspectRatio } from "./enums";
+import { Camera } from "@storyteller/common";
 import { PromptBox3D } from "@storyteller/ui-promptbox";
 import { PopoverItem } from "@storyteller/ui-popover";
 import { LoadingDots } from "@storyteller/ui-loading";
@@ -165,6 +166,23 @@ export const PageEditor = () => {
   useFreeCam(editorCanvas, editorEngine);
   useViewportPointer(editorCanvas, editorEngine);
   useViewportKeyboard(editorEngine);
+  // Apply a saved camera entry to the live engine camera (position, lookAt,
+  // FOV, free-cam reset, re-render). Shared between camera-switch and
+  // delete-active-camera (which falls back to main).
+  const applyCameraPose = (camera: Camera) => {
+    if (!editorEngine) return;
+    const cam = editorEngine.cameraController.camera;
+    if (!cam) return;
+    cam.position.set(camera.position.x, camera.position.y, camera.position.z);
+    cam.lookAt(camera.lookAt.x, camera.lookAt.y, camera.lookAt.z);
+    cam.fov = editorEngine.cameraController.focalLengthToFov(camera.focalLength);
+    cam.updateProjectionMatrix();
+    if (editorEngine.cameraController.freeCamState) {
+      editorEngine.cameraController.freeCamState.velocity.set(0, 0, 0);
+    }
+    editorEngine.renderScene();
+  };
+
   const handleCameraSelect = (selectedItem: PopoverItem) => {
     const selectedCamera = cameras.find(
       (cam) => cam.label === selectedItem.label,
@@ -185,33 +203,7 @@ export const PageEditor = () => {
         });
       }, 1500);
 
-      // Update the main camera to match the selected camera's properties
-      const cam = editorEngine.cameraController.camera;
-      if (cam) {
-        cam.position.set(
-          selectedCamera.position.x,
-          selectedCamera.position.y,
-          selectedCamera.position.z,
-        );
-        cam.lookAt(
-          selectedCamera.lookAt.x,
-          selectedCamera.lookAt.y,
-          selectedCamera.lookAt.z,
-        );
-
-        cam.fov = editorEngine.cameraController.focalLengthToFov(
-          selectedCamera.focalLength,
-        );
-        cam.updateProjectionMatrix();
-
-        // Reset free-cam motion so a switch doesn't carry over a
-        // half-applied drag from the previous camera.
-        if (editorEngine.cameraController.freeCamState) {
-          editorEngine.cameraController.freeCamState.velocity.set(0, 0, 0);
-        }
-
-        editorEngine.renderScene();
-      }
+      applyCameraPose(selectedCamera);
 
       // Force update camera properties in the state
       updateCamera(selectedCamera.id, {
@@ -221,6 +213,18 @@ export const PageEditor = () => {
         lookAt: selectedCamera.lookAt,
       });
     }
+  };
+
+  // Main camera can't be deleted (the store action returns early). For
+  // any other camera, if it was the active one, reset the live engine
+  // camera to main's saved pose so the viewport doesn't keep showing
+  // the deleted camera's POV.
+  const handleDeleteCamera = (id: string) => {
+    const wasActive = id === selectedCameraId;
+    deleteCamera(id);
+    if (!wasActive) return;
+    const main = cameras.find((c) => c.id === "main");
+    if (main) applyCameraPose(main);
   };
 
   const handleAddCamera = () => {
@@ -507,7 +511,7 @@ export const PageEditor = () => {
                   gridVisibility={gridVisible}
                   setGridVisibility={setGridVisible}
                   selectedCameraId={selectedCameraId}
-                  deleteCamera={deleteCamera}
+                  deleteCamera={handleDeleteCamera}
                   focalLengthDragging={focalLengthDragging}
                   setFocalLengthDragging={setFocalLengthDragging}
                   isPromptBoxFocused={isPromptBoxFocused}
