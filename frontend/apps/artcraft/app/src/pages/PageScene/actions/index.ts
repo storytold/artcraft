@@ -5,4 +5,6 @@ export * from "./deleteObject";
 export * from "./selectObject";
 export * from "./setTransformMode";
 export * from "./setCameraAspect";
+export * from "./toggleObjectLock";
+export * from "./toggleObjectVisibility";
 export * from "./transformObject";

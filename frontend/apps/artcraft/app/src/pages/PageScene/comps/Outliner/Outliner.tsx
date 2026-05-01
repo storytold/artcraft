@@ -19,8 +19,8 @@ import { OutlinerItem, usePageSceneStore } from "../../PageSceneStore";
 import { pageHeight, pageWidth } from "~/signals";
 import { CameraAspectRatio } from "../../enums";
 import { effect } from "@preact/signals-react";
-import { LockAction } from "../../engine/editor/actions/LockAction";
-import { VisibilityAction } from "../../engine/editor/actions/VisibilityAction";
+import { toggleObjectLock } from "../../actions/toggleObjectLock";
+import { toggleObjectVisibility } from "../../actions/toggleObjectVisibility";
 
 const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
   const [hovered, setHovered] = useState(false);
@@ -50,23 +50,13 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
   const handleToggleLock = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!editorEngine) return;
-    const before = editorEngine.selection.isObjectLocked(item.id);
-    usePageSceneStore.getState().toggleOutlinerLock(item.id);
-    editorEngine.selection.lockUnlockObject(item.id);
-    editorEngine.history.record(
-      new LockAction(editorEngine.selection, item.id, before, !before),
-    );
+    toggleObjectLock(editorEngine, item.id);
   };
 
   const handleToggleVisibility = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!editorEngine) return;
-    const before = item.visible;
-    usePageSceneStore.getState().toggleOutlinerVisibility(item.id);
-    editorEngine.sceneManager?.hideObject(item.id);
-    editorEngine.history.record(
-      new VisibilityAction(editorEngine, item.id, before, !before),
-    );
+    toggleObjectVisibility(editorEngine, item.id);
   };
 
   return (
