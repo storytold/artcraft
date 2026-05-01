@@ -4,6 +4,11 @@ import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ManifestoThreeBackground } from "../../components/manifesto-three-background";
+import {
+  KnightCinema,
+  setupKnightCinemaTimeline,
+  type KnightCinemaHandle,
+} from "../../components/knight-cinema";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGithub, faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { faWindows, faApple } from "@fortawesome/free-brands-svg-icons";
@@ -220,17 +225,10 @@ const Landing3 = () => {
   // Separate progress for the character — extends past the text-reveal end so
   // the character keeps walking and exits frame as the user scrolls past.
   const characterProgressRef = useRef(0);
-  // Knight cinema — full-bleed scroll-scrubbed video framed by letterbox bars
-  // that slide in from the top and bottom. Bars carry meta (brand label, scene
-  // label, scroll-driven timecode + progress line).
-  const knightVideoRef = useRef<HTMLVideoElement>(null);
-  const knightTopBarRef = useRef<HTMLDivElement>(null);
-  const knightBottomBarRef = useRef<HTMLDivElement>(null);
-  const knightProgressBarRef = useRef<HTMLDivElement>(null);
-  const knightTimecodeRef = useRef<HTMLSpanElement>(null);
-  // Wrapper around the video used for the shrink-to-card exit animation in
-  // phase 5. Scaled and rounded as the user scrolls past the scrub end.
-  const knightCinemaRef = useRef<HTMLDivElement>(null);
+  // Knight cinema — letterbox scroll-scrubbed video. Component owns its DOM
+  // structure; the imperative handle exposes the element refs so we can wire
+  // them into the master GSAP timeline below.
+  const knightRef = useRef<KnightCinemaHandle>(null);
   // Pause flag for the manifesto Three.js render loop. Flipped to `true` once
   // the character has walked off frame so the GPU isn't painting a hidden
   // canvas during the video phase — significant savings on high-DPI displays.
@@ -363,19 +361,6 @@ const Landing3 = () => {
       if (manifestoSection && manifestoWords.length > 0) {
         gsap.set(manifestoWords, { y: 6 });
 
-        const knightVideo = knightVideoRef.current;
-        const knightTopBar = knightTopBarRef.current;
-        const knightBottomBar = knightBottomBarRef.current;
-        const knightProgressBar = knightProgressBarRef.current;
-        const knightTimecode = knightTimecodeRef.current;
-        const knightCinema = knightCinemaRef.current;
-        if (knightTopBar) gsap.set(knightTopBar, { yPercent: -100 });
-        if (knightBottomBar) gsap.set(knightBottomBar, { yPercent: 100 });
-        // Cinema wrapper hidden during phases 1-2 so the manifesto text +
-        // Three.js character read clearly through. Fades in during phase 3.
-        if (knightCinema)
-          gsap.set(knightCinema, { opacity: 0, scale: 1, borderRadius: 0 });
-
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: manifestoSection,
@@ -421,107 +406,11 @@ const Landing3 = () => {
         // Brief empty beat between text exit and video entrance.
         tl.to({}, { duration: 0.3 });
 
-        // Phase 3 — letterbox bars slide in from off-screen edges, framing
-        // the cinema. Video fades in slightly after the bars start moving so
-        // the bars register as the framing element first.
-        if (knightTopBar && knightBottomBar) {
-          tl.to(
-            [knightTopBar, knightBottomBar],
-            { yPercent: 0, duration: 4, ease: "power3.out" },
-            ">",
-          );
-        }
-        if (knightCinema) {
-          tl.to(
-            knightCinema,
-            { opacity: 1, duration: 3, ease: "power2.out" },
-            "<+=0.5",
-          );
-        }
-
-        // Phase 4 — scroll-scrub the knight video. GSAP can't tween a video
-        // element directly, so we tween a proxy `t` from 0→1 and write
-        // currentTime each frame. The same onUpdate keeps the bottom-bar
-        // timecode + progress line in sync with the scrub.
-        if (knightVideo) {
-          const videoProxy = { t: 0 };
-          const formatTC = (s: number) => {
-            const safe = Number.isFinite(s) ? Math.max(0, s) : 0;
-            const m = Math.floor(safe / 60);
-            const sec = Math.floor(safe % 60);
-            return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-          };
-          // Throttle seeks to ~30fps. GSAP's onUpdate fires at the display
-          // refresh rate (60Hz, sometimes 120/144Hz on high-refresh monitors),
-          // which queues more seek requests than the decoder can keep up with
-          // on larger paint surfaces (1440p+). Halving the seek rate keeps the
-          // motion perceptually smooth (well above the 24fps human-perception
-          // floor) while cutting the decoder + GPU paint work in half.
-          const SEEK_INTERVAL_MS = 15;
-          let lastSeekAt = 0;
-          tl.to(
-            videoProxy,
-            {
-              t: 0.999,
-              duration: 22,
-              ease: "none",
-              onUpdate: () => {
-                const now = performance.now();
-                if (now - lastSeekAt < SEEK_INTERVAL_MS) return;
-                lastSeekAt = now;
-                if (!knightVideo.duration) return;
-                const time = videoProxy.t * knightVideo.duration;
-                knightVideo.currentTime = time;
-                if (knightTimecode) {
-                  knightTimecode.textContent = `${formatTC(time)} / ${formatTC(knightVideo.duration)}`;
-                }
-                if (knightProgressBar) {
-                  knightProgressBar.style.width = `${videoProxy.t * 100}%`;
-                }
-              },
-            },
-            ">",
-          );
-        }
-
-        // Phase 5 — exit. As the user keeps scrolling past the scrub end the
-        // letterbox bars retract, the cinema wrapper scales down to roughly
-        // navbar width, and corners round off. Soft `power2.inOut` ease keeps
-        // the resize buttery — the scale runs on a GPU-promoted transform
-        // layer so it doesn't trigger layout work per frame.
-        if (knightTopBar && knightBottomBar) {
-          tl.to(
-            knightTopBar,
-            { yPercent: -100, opacity: 0, duration: 2, ease: "power2.in" },
-            ">",
-          );
-          tl.to(
-            knightBottomBar,
-            { yPercent: 100, opacity: 0, duration: 2, ease: "power2.in" },
-            "<",
-          );
-        }
-        if (knightCinema) {
-          // Target navbar width — Tailwind max-w-6xl = 1152px. Compute scale
-          // dynamically from viewport so the resized card lands at exactly
-          // this width regardless of screen size. Function-based value lets
-          // GSAP recapture on refresh (resize) when paired with the
-          // invalidateOnRefresh flag on the parent ScrollTrigger.
-          const NAVBAR_WIDTH_PX = 1152;
-          tl.to(
-            knightCinema,
-            {
-              scale: () =>
-                Math.min(1, NAVBAR_WIDTH_PX / window.innerWidth),
-              // Border radius is overspecified relative to the post-scale
-              // visual size — `40` × scale ≈ pillowy 20-25px corners on
-              // typical desktops.
-              borderRadius: 40,
-              duration: 6,
-              ease: "power2.inOut",
-            },
-            "<+=0.3",
-          );
+        // Phases 3 (bars slide in + cinema fades in), 4 (video scrub with
+        // live timecode/progress), and 5 (exit shrink to navbar-width card)
+        // are all encapsulated in the KnightCinema component's helper.
+        if (knightRef.current) {
+          setupKnightCinemaTimeline(tl, knightRef.current);
         }
 
         // Character traversal — finishes within the first ~30% of section
@@ -811,73 +700,10 @@ const Landing3 = () => {
                 </span>
               ))}
             </h2>
-            {/* Knight cinema — full-bleed scroll-scrubbed video framed by
-                letterbox bars that slide in from the top and bottom. Bars
-                carry meta (brand label up top; scene label + scrub timecode
-                + progress line below). Removes the "video card on a flat bg"
-                problem by making the whole viewport the cinema screen. */}
-            <div
-              aria-hidden
-              className="absolute inset-0 z-20 pointer-events-none"
-            >
-              {/* Full-bleed video, wrapped so we can scale + round-corner it
-                  during the phase 5 exit (shrink to centered card as the
-                  section unsticks). overflow-hidden + GPU-promoted transform
-                  layer = smooth resize. */}
-              <div
-                ref={knightCinemaRef}
-                className="absolute inset-0 overflow-hidden bg-black"
-                style={{
-                  transformOrigin: "center center",
-                  willChange: "transform, border-radius",
-                }}
-              >
-                <video
-                  ref={knightVideoRef}
-                  src="/videos/knight-walk-scrub.mp4"
-                  muted
-                  playsInline
-                  preload="auto"
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Top letterbox bar */}
-              <div
-                ref={knightTopBarRef}
-                className="absolute top-0 inset-x-0 h-[12vh] bg-black flex items-end px-6 sm:px-10 pb-3 sm:pb-4 will-change-transform"
-              >
-                <span className="inline-flex items-center gap-2 text-[10px] sm:text-[11px] uppercase tracking-[0.32em] font-semibold text-white/55">
-                  <span className="inline-block h-1 w-1 rounded-full bg-primary" />
-                  SEEDANCE 2.0
-                </span>
-              </div>
-
-              {/* Bottom letterbox bar */}
-              <div
-                ref={knightBottomBarRef}
-                className="absolute bottom-0 inset-x-0 h-[12vh] bg-black flex items-start justify-between gap-4 px-6 sm:px-10 pt-3 sm:pt-4 will-change-transform"
-              >
-                <span className="hidden sm:inline-flex items-center text-[10px] sm:text-[11px] uppercase tracking-[0.32em] font-semibold text-white/55">
-                  Knight Sneaking IN THE CASTLE
-                </span>
-                <div className="ml-auto flex items-center gap-3 sm:gap-4 shrink-0">
-                  <div className="relative w-28 sm:w-48 h-px bg-white/15">
-                    <div
-                      ref={knightProgressBarRef}
-                      className="absolute inset-y-0 left-0 bg-white/70"
-                      style={{ width: "0%" }}
-                    />
-                  </div>
-                  <span
-                    ref={knightTimecodeRef}
-                    className="text-[10px] sm:text-[11px] tabular-nums text-white/65 min-w-[68px] sm:min-w-[80px] text-right"
-                  >
-                    00:00 / 00:00
-                  </span>
-                </div>
-              </div>
-            </div>
+            <KnightCinema
+              ref={knightRef}
+              src="/videos/knight-walk-scrub.mp4"
+            />
           </div>
         </section>
       )}
