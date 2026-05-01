@@ -27,6 +27,7 @@ import {
   faPaintBrush,
   faCamera,
   faRocket,
+  faVolumeXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import Seo from "../../components/seo";
 import Footer from "../../components/footer";
@@ -215,11 +216,8 @@ const Landing3 = () => {
   const [activeVideo, setActiveVideo] = useState<number | null>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // Defer the Vimeo iframe — its player JS (~500KB) is the biggest above-the-
-  // fold main-thread blocker. Mounting after the hero fade-in completes gives
-  // the user a smooth entrance animation, then the video appears on top of
-  // the existing black placeholder.
-  const [heroIframeMounted, setHeroIframeMounted] = useState(false);
+  const [heroVideoMuted, setHeroVideoMuted] = useState(true);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const manifestoProgressRef = useRef(0);
   // Separate progress for the character — extends past the text-reveal end so
@@ -244,13 +242,6 @@ const Landing3 = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  // Defer the hero iframe mount past the hero fade-in animation. Vimeo's
-  // player JS is the biggest main-thread blocker on initial load.
-  useEffect(() => {
-    const timer = window.setTimeout(() => setHeroIframeMounted(true), 1000);
-    return () => window.clearTimeout(timer);
   }, []);
 
   // Lenis smooth scrolling
@@ -621,14 +612,35 @@ const Landing3 = () => {
               className="relative w-full rounded-xl sm:rounded-[20px] overflow-hidden bg-black"
               style={{ paddingTop: "56.25%" }}
             >
-              {heroIframeMounted && (
-                <iframe
-                  src="https://player.vimeo.com/video/1179924350?h=8b9b3f0f35&autoplay=1&muted=1&loop=1&background=0&byline=0&portrait=0&title=0"
-                  className="absolute inset-0 w-full h-full"
-                  allow="autoplay; fullscreen; picture-in-picture"
-                  allowFullScreen
-                  title="ArtCraft demo"
-                />
+              <video
+                ref={heroVideoRef}
+                src="https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/website-commercial-2026.05.mp4"
+                className="absolute inset-0 w-full h-full"
+                autoPlay
+                loop
+                muted
+                playsInline
+                controls
+                preload="auto"
+                onVolumeChange={(e) =>
+                  setHeroVideoMuted(e.currentTarget.muted)
+                }
+              />
+              {heroVideoMuted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const v = heroVideoRef.current;
+                    if (!v) return;
+                    v.muted = false;
+                    setHeroVideoMuted(false);
+                    void v.play().catch(() => { });
+                  }}
+                  className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-black/65 hover:bg-black/80 backdrop-blur-md text-white text-[12px] font-semibold border border-white/15 transition-colors"
+                >
+                  <FontAwesomeIcon icon={faVolumeXmark} className="text-[12px]" />
+                  Tap to unmute
+                </button>
               )}
             </div>
           </div>
@@ -641,7 +653,7 @@ const Landing3 = () => {
         <section className="relative px-4 py-20 bg-[#101014]">
           <div className="max-w-2xl mx-auto text-center">
             <h2
-              className="text-2xl sm:text-3xl tracking-[-0.035em] font-semibold text-white"
+              className="text-2xl sm:text-3xl tracking-[-0.035em] font-semibold text-white px-4 sm:px-0"
               style={{ lineHeight: 1.4 }}
             >
               {MANIFESTO_WORDS.join(" ")}
@@ -702,7 +714,7 @@ const Landing3 = () => {
             </h2>
             <KnightCinema
               ref={knightRef}
-              src="/videos/knight-walk-scrub.mp4"
+              src="https://pub-f7441936e5804042a1ea2bdc92e4dc71.r2.dev/knight-walk-scrub.mp4"
             />
           </div>
         </section>
@@ -754,9 +766,8 @@ const Landing3 = () => {
               className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl sm:rounded-[28px] overflow-hidden bg-[#080808] transition-colors"
             >
               <div
-                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${
-                  i % 2 === 1 ? "lg:order-2" : ""
-                }`}
+                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${i % 2 === 1 ? "lg:order-2" : ""
+                  }`}
               >
                 <div className="flex items-center gap-2 mb-5">
                   <span className="inline-flex h-7 px-2.5 items-center gap-1.5 rounded-full bg-primary/15 text-primary text-[12px] font-semibold border border-primary/20">
@@ -775,9 +786,8 @@ const Landing3 = () => {
                 </p>
               </div>
               <div
-                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${
-                  i % 2 === 1 ? "lg:order-1" : ""
-                }`}
+                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${i % 2 === 1 ? "lg:order-1" : ""
+                  }`}
               >
                 <LazyAutoplayVideo
                   src={feature.src}
