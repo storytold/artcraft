@@ -137,7 +137,19 @@ class Editor {
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
     this.gizmo = new GizmoController();
-    this.cameraController = new CameraController();
+    this.cameraController = new CameraController({
+      getThreeScene: () => this.activeScene.scene,
+      getHotItems: () => this.activeScene.hot_items ?? null,
+      removeTransformControls: () => this.utils.removeTransformControls(),
+      setSelected: (obj) => {
+        this.selection.selected = obj ?? undefined;
+        this.selection.publishSelect();
+        this.selection.updateSelectedUI();
+      },
+      setEditorState: (state) =>
+        usePageSceneStore.getState().setEditorState(state),
+      hideObjectPanel: () => usePageSceneStore.getState().hideObjectPanel(),
+    });
     this.selection = new SelectionBridge({
       getSceneManager: () => this.sceneManager,
       cameraName: this.cameraController.camera_name,
@@ -353,7 +365,7 @@ class Editor {
       this.cameraController.freeCamState,
       this.cameraController.lockControls,
       this.cameraController.camera_last_pos,
-      this.switchCameraView.bind(this),
+      this.cameraController.switchCameraView.bind(this.cameraController),
       this.deleteObject.bind(this),
       this.viewport.canvReference,
       this.mouse,
@@ -669,10 +681,6 @@ class Editor {
     return this.save_manager.getSceneJson({
       sceneGenerationMetadata: sceneGenerationMetadata,
     });
-  }
-
-  switchCameraView() {
-    this.utils.switchCameraView();
   }
 
   deleteObject(uuid: string) {

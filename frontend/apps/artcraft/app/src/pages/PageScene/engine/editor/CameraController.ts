@@ -5,13 +5,25 @@ import {
   lookAtFromCamera,
   type FreeCamControlState,
 } from "../cameraMath";
-import { CameraAspectRatio } from "~/pages/PageScene/enums";
+import { CameraAspectRatio, EditorStates } from "~/pages/PageScene/enums";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 
 export type RenderDimensions = {
   width: number;
   height: number;
   aspectRatio: number;
+};
+
+// Capabilities CameraController needs from outside its own state.
+// Editor wires these in initialize() so CameraController never imports
+// sibling subsystems directly.
+export type CameraControllerDeps = {
+  getThreeScene: () => THREE.Scene;
+  getHotItems: () => THREE.Object3D[] | null;
+  removeTransformControls: () => void;
+  setSelected: (obj: THREE.Object3D | null) => void;
+  setEditorState: (state: EditorStates) => void;
+  hideObjectPanel: () => void;
 };
 
 // Owns the editor's camera-related state: the live PerspectiveCameras,
@@ -42,10 +54,80 @@ export class CameraController {
   render_width: number;
   render_height: number;
 
-  constructor() {
+  private deps: CameraControllerDeps;
+
+  constructor(deps: CameraControllerDeps) {
+    this.deps = deps;
     const dims = this.getRenderDimensions();
     this.render_width = dims.width;
     this.render_height = dims.height;
+  }
+
+  // Toggles between free-camera (edit) mode and the active render
+  // camera's perspective. Lifted from SceneUtils.switchCameraView so
+  // the camera state stays in one place.
+  switchCameraView() {
+    this.camera_person_mode = !this.camera_person_mode;
+    if (this.freeCamState) {
+      this.freeCamState.velocity.set(0, 0, 0);
+    }
+    if (!this.cam_obj) return;
+
+    if (this.camera_person_mode && this.camera) {
+      this.last_cam_pos.copy(this.camera.position);
+      this.last_cam_rot.copy(this.camera.rotation);
+
+      this.camera.position.copy(this.cam_obj.position);
+      this.camera.rotation.copy(this.cam_obj.rotation);
+
+      if (this.lockControls) {
+        this.deps.getThreeScene().add(this.lockControls.getObject());
+      }
+      // useFreeCam reads editorState from the store and enables
+      // itself when CAMERA_VIEW; nothing to do here.
+      this.cam_obj.scale.set(0, 0, 0);
+
+      this.deps.removeTransformControls();
+      this.deps.setSelected(this.cam_obj);
+      this.deps.setEditorState(EditorStates.CAMERA_VIEW);
+
+      const hot = this.deps.getHotItems();
+      if (hot) {
+        hot.forEach((element) => {
+          element.visible = false;
+        });
+      }
+
+      // Workaround: in camera mode, a right-click should pan rather
+      // than open the browser context menu. Defer the listener attach
+      // until after the letterbox swap settles.
+      setTimeout(
+        () =>
+          document
+            .getElementById("letterbox")
+            ?.addEventListener("contextmenu", function (event) {
+              event.preventDefault();
+            }),
+        250,
+      );
+    } else if (this.camera) {
+      this.camera.position.copy(this.last_cam_pos);
+      this.camera.rotation.copy(this.last_cam_rot);
+      if (this.lockControls) {
+        this.deps.getThreeScene().remove(this.lockControls.getObject());
+      }
+      this.cam_obj.scale.set(1, 1, 1);
+
+      const hot = this.deps.getHotItems();
+      if (hot) {
+        hot.forEach((element) => {
+          element.visible = true;
+        });
+      }
+
+      this.deps.hideObjectPanel();
+      this.deps.setEditorState(EditorStates.EDIT);
+    }
   }
 
   setFreeCamState(state: FreeCamControlState | null) {

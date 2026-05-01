@@ -2,7 +2,6 @@ import Scene from "./scene";
 import Editor from "./editor";
 import * as THREE from "three";
 import { XYZ } from "../datastructures/common";
-import { EditorStates } from "../enums";
 import { usePageSceneStore } from "../PageSceneStore";
 
 export class SceneUtils {
@@ -108,67 +107,6 @@ export class SceneUtils {
         object.scale.x = scale.x;
         object.scale.y = scale.y;
         object.scale.z = scale.z;
-      }
-    }
-  }
-
-  switchCameraView() {
-    const cam = this.editor.cameraController;
-    cam.camera_person_mode = !cam.camera_person_mode;
-    if (cam.freeCamState) {
-      cam.freeCamState.velocity.set(0, 0, 0);
-    }
-    if (cam.cam_obj) {
-      if (cam.camera_person_mode && cam.camera) {
-        cam.last_cam_pos.copy(cam.camera.position);
-        cam.last_cam_rot.copy(cam.camera.rotation);
-
-        cam.camera.position.copy(cam.cam_obj.position);
-        cam.camera.rotation.copy(cam.cam_obj.rotation);
-
-        if (cam.lockControls) {
-          this.editor.activeScene.scene.add(cam.lockControls.getObject());
-        }
-        // useFreeCam reads editorState from the store and enables
-        // itself when CAMERA_VIEW; nothing to do here.
-        cam.cam_obj.scale.set(0, 0, 0);
-
-        this.removeTransformControls();
-        this.editor.selection.selected = cam.cam_obj;
-        this.editor.publishSelect();
-        this.editor.updateSelectedUI();
-        usePageSceneStore.getState().setEditorState(EditorStates.CAMERA_VIEW);
-        if (this.editor.activeScene.hot_items) {
-          this.editor.activeScene.hot_items.forEach((element) => {
-            element.visible = false;
-          });
-        }
-
-        // Make a better solution later but for now this is so that in camera mode when you right click it does not bring up the context menu and allows you to pan.
-        setTimeout(
-          () =>
-            document
-              .getElementById("letterbox")
-              ?.addEventListener("contextmenu", function (event) {
-                event.preventDefault();
-              }),
-          250,
-        );
-      } else if (cam.camera) {
-        cam.camera.position.copy(cam.last_cam_pos);
-        cam.camera.rotation.copy(cam.last_cam_rot);
-        if (cam.lockControls) {
-          this.editor.activeScene.scene.remove(cam.lockControls.getObject());
-        }
-        cam.cam_obj.scale.set(1, 1, 1);
-        if (this.editor.activeScene.hot_items) {
-          this.editor.activeScene.hot_items.forEach((element) => {
-            element.visible = true;
-          });
-        }
-
-        usePageSceneStore.getState().hideObjectPanel();
-        usePageSceneStore.getState().setEditorState(EditorStates.EDIT);
       }
     }
   }
