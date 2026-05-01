@@ -172,6 +172,40 @@ export const ControlPanelSceneObject = () => {
     return () => commitPanelTransform();
   }, []);
 
+  // Document-level commit triggers for the transform session. These
+  // are the natural "end of edit gesture" signals — without them, a
+  // pending session sits open during same-uuid editing and Ctrl+Z
+  // falls through to a prior entry (often the CreateAction that
+  // added the shape, so the shape disappears on undo).
+  //
+  // - mouseup: end of an InputVector numeric-scrub drag, OR a click
+  //   that moves focus away after typing.
+  // - Enter: explicit "I'm done" without losing focus.
+  // - Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z (capture phase): flush before the
+  //   engine's keymap handler runs the undo, so the pending entry is
+  //   the one being reverted.
+  useEffect(() => {
+    const flush = () => {
+      transformSessionRef.current?.commit();
+      transformSessionRef.current = null;
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") flush();
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.code === "KeyZ" || e.code === "KeyY")
+      ) {
+        flush();
+      }
+    };
+    document.addEventListener("mouseup", flush);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("mouseup", flush);
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
+  }, []);
+
   if (!currentSceneObject) {
     return null;
   }
