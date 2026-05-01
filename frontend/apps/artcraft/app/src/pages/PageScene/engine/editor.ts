@@ -67,8 +67,6 @@ class Editor {
   frames: number;
   lastFrameTime: number;
 
-  current_scene_media_token: string | null;
-
   can_initialize: boolean;
 
   positive_prompt: string;
@@ -198,7 +196,25 @@ class Editor {
     this.shouldRender = false;
 
     this.utils = new SceneUtils(this, this.activeScene);
-    this.save_manager = new SaveManager(this);
+    this.save_manager = new SaveManager({
+      getVersion: () => this.version,
+      setVersion: (v) => {
+        this.version = v;
+      },
+      getActiveScene: () => this.activeScene,
+      getRenderer: () => this.renderer,
+      removeTransformControls: () => this.utils.removeTransformControls(),
+      getCamera: () => this.cameraController.camera,
+      refreshCamObj: () =>
+        this.cameraController.refreshCamObj(this.activeScene.scene),
+      changeRenderCameraAspectRatio: (ratio) =>
+        this.cameraController.changeRenderCameraAspectRatio(ratio),
+      setPositivePrompt: (prompt) => {
+        this.positive_prompt = prompt;
+      },
+      saveSceneState: (args) => this.api_manager.saveSceneState(args),
+      loadSceneState: (token) => this.api_manager.loadSceneState(token),
+    });
     this.viewport = new ViewportController({
       getCamera: () => this.cameraController.camera,
       getRenderCamera: () => this.cameraController.render_camera,
@@ -211,9 +227,6 @@ class Editor {
     // Action classes under engine/editor/actions/ encapsulate their own
     // apply/revert + dependencies. HistoryManager just stores them.
     this.history = new HistoryManager({ capacity: 64 });
-
-    // Scene State
-    this.current_scene_media_token = null;
 
     this.positive_prompt =
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
@@ -391,12 +404,7 @@ class Editor {
 
     this.viewport.setupResizeObserver();
 
-    // saving state of the scene
-    this.current_scene_media_token = null;
-
-    this.cameraController.cam_obj = this.activeScene.get_object_by_name(
-      this.cameraController.camera_name,
-    );
+    this.cameraController.refreshCamObj(this.activeScene.scene);
 
     this.mouse_controls = new MouseControls(
       this.cameraController.camera,

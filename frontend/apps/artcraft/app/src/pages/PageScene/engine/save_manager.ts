@@ -1,38 +1,80 @@
 import * as THREE from "three";
+import { Camera } from "@storyteller/common";
+
 import { SceneGenereationMetaData } from "../models/sceneGenerationMetadata";
 import { StoryTellerProxyScene } from "../proxy/storyteller_proxy_scene";
-
 import { usePageSceneStore } from "../PageSceneStore";
+import { CameraAspectRatio } from "../enums";
+import type Scene from "./scene";
 
 const showEditorLoader = (message?: string) =>
   usePageSceneStore.getState().showEditorLoader(message);
 const hideEditorLoader = () =>
   usePageSceneStore.getState().hideEditorLoader();
-import Editor from "./editor";
-import { Camera } from "@storyteller/common";
 
 export type EditorInitializeConfig = {
   sceneToken: string;
 };
 
-// need to move this into the
+export type SaveSceneStateArgs = {
+  saveJson: string;
+  sceneTitle: string;
+  sceneToken?: string;
+  sceneThumbnail: Blob | undefined;
+};
+
+// Narrow contract between SaveManager and the rest of the engine. The
+// manager doesn't import Editor — every cross-subsystem reach is a
+// callback or getter on this deps object (Phase 2 idiom).
+export type SaveManagerDeps = {
+  // Engine version. Read on save, written on load (older formats may
+  // upgrade themselves through this).
+  getVersion: () => number;
+  setVersion: (v: number) => void;
+
+  // Active scene reference for proxy serialization.
+  getActiveScene: () => Scene;
+
+  // Renderer canvas — only used to capture the save-thumbnail.
+  getRenderer: () => THREE.WebGLRenderer | undefined;
+
+  // Yank the transform gizmo before snapshot so it doesn't end up in
+  // the saved scene.
+  removeTransformControls: () => void;
+
+  // Camera state. getCamera reads pose for save + load-restore;
+  // refreshCamObj re-anchors the camera-person object after a load
+  // replaces the scene; changeRenderCameraAspectRatio applies a saved
+  // aspect ratio.
+  getCamera: () => THREE.PerspectiveCamera | null;
+  refreshCamObj: () => void;
+  changeRenderCameraAspectRatio: (ratio: CameraAspectRatio) => void;
+
+  // Editor field setter used during load.
+  setPositivePrompt: (prompt: string) => void;
+
+  // Backend API.
+  saveSceneState: (args: SaveSceneStateArgs) => Promise<string>;
+  loadSceneState: (token: string) => Promise<unknown>;
+};
+
 export class SaveManager {
-  editor: Editor;
-  constructor(editor: Editor) {
-    this.editor = editor;
-  }
+  // Token of the most-recently loaded scene. Internal load tracking
+  // — nothing outside SaveManager reads it.
+  private currentSceneMediaToken: string | null = null;
+
+  constructor(private readonly deps: SaveManagerDeps) {}
 
   public getSceneJson({
     sceneGenerationMetadata,
   }: {
     sceneGenerationMetadata: SceneGenereationMetaData;
   }) {
-    const proxyScene = new StoryTellerProxyScene(
-      this.editor.version,
-      this.editor.activeScene,
-    );
-    const scene_json = proxyScene.saveToScene(this.editor.version);
-    console.log(scene_json);
+    const version = this.deps.getVersion();
+    const scene = this.deps.getActiveScene();
+    const camera = this.deps.getCamera();
+    const proxyScene = new StoryTellerProxyScene(version, scene);
+    const scene_json = proxyScene.saveToScene(version);
 
     const sceneState = usePageSceneStore.getState();
     const camerasData = sceneState.cameras.map((cam: Camera) => ({
@@ -44,24 +86,21 @@ export class SaveManager {
       lookAt: cam.lookAt,
     }));
 
-    const save_data = {
-      version: this.editor.version,
+    return {
+      version,
       scene: scene_json,
       ...sceneGenerationMetadata,
       timeline: "",
-      skybox: this.editor.activeScene.skybox,
+      skybox: scene.skybox,
       camera_data: {
-        position: this.editor.cameraController.camera?.position,
-        rotation: this.editor.cameraController.camera?.rotation,
+        position: camera?.position,
+        rotation: camera?.rotation,
       },
       cameras: camerasData,
       selectedCameraId: sceneState.selectedCameraId,
     };
-
-    return save_data;
   }
 
-  // TODO Move this function into scene manager.
   public async saveScene({
     sceneTitle,
     sceneToken,
@@ -71,44 +110,55 @@ export class SaveManager {
     sceneToken?: string;
     sceneGenerationMetadata: SceneGenereationMetaData;
   }): Promise<string> {
-    // remove controls when saving scene.
-    this.editor.utils.removeTransformControls();
+    this.deps.removeTransformControls();
     showEditorLoader();
 
-    const sceneJson = this.getSceneJson({
-      sceneGenerationMetadata,
-    });
+    const sceneJson = this.getSceneJson({ sceneGenerationMetadata });
 
-    // TODO turn scene information into and object ...
-    let sceneThumbnail = undefined;
-
-    if (this.editor.renderer) {
-      const imgData = this.editor.renderer.domElement.toDataURL();
-      const response = await fetch(imgData); // Fetch the data URL
-      sceneThumbnail = await response.blob(); // Convert to Blob
+    let sceneThumbnail: Blob | undefined = undefined;
+    const renderer = this.deps.getRenderer();
+    if (renderer) {
+      const imgData = renderer.domElement.toDataURL();
+      const response = await fetch(imgData);
+      sceneThumbnail = await response.blob();
     }
 
-    const result = await this.editor.api_manager.saveSceneState({
+    const result = await this.deps.saveSceneState({
       saveJson: JSON.stringify(sceneJson),
       sceneTitle,
       sceneToken,
       sceneThumbnail,
     });
 
-    // this means error going to have to fix the plumbing on this because not using
-    // the api manager
-
     hideEditorLoader();
-
     console.debug("Save Scene Result: ", result);
-    return result; // if this is an empty string it is an error. need to migrate to api manager.
+    return result;
+  }
+
+  public async loadCache(cacheJson: string) {
+    showEditorLoader();
+    const scene_json = JSON.parse(cacheJson);
+    await this.loadFromJson(scene_json);
+    hideEditorLoader();
+  }
+
+  public async loadScene(scene_media_token: string) {
+    showEditorLoader();
+    this.currentSceneMediaToken = scene_media_token;
+    const scene_json = await this.deps
+      .loadSceneState(this.currentSceneMediaToken)
+      .catch((err) => {
+        hideEditorLoader();
+        throw err;
+      });
+    await this.loadFromJson(scene_json);
+    hideEditorLoader();
   }
 
   private async loadFromJson(scene_json: any) {
-    const proxyScene = new StoryTellerProxyScene(
-      this.editor.version,
-      this.editor.activeScene,
-    );
+    const version = this.deps.getVersion();
+    const scene = this.deps.getActiveScene();
+    const proxyScene = new StoryTellerProxyScene(version, scene);
 
     await proxyScene.loadFromSceneJson(
       scene_json["scene"],
@@ -117,11 +167,10 @@ export class SaveManager {
     );
 
     const camera_data = scene_json["camera_data"];
-    const liveCamera = this.editor.cameraController.camera;
+    const liveCamera = this.deps.getCamera();
     if (camera_data && liveCamera) {
       const camera_position: THREE.Vector3 = camera_data["position"];
       const camera_rotation: THREE.Euler = camera_data["rotation"];
-
       liveCamera.position.copy(camera_position);
       liveCamera.rotation.copy(camera_rotation);
     }
@@ -144,57 +193,17 @@ export class SaveManager {
         .setSelectedCameraId(scene_json.selectedCameraId);
     }
 
-    // Restore prompt text into the editor (PromptBox3D will pick it up
-    // through the editor's positive_prompt field).
     if (scene_json.positivePrompt) {
-      this.editor.positive_prompt = scene_json.positivePrompt;
+      this.deps.setPositivePrompt(scene_json.positivePrompt);
     }
     if (scene_json.cameraAspectRatio) {
-      this.editor.cameraController.changeRenderCameraAspectRatio(
-        scene_json.cameraAspectRatio,
-      );
+      this.deps.changeRenderCameraAspectRatio(scene_json.cameraAspectRatio);
       usePageSceneStore
         .getState()
         .setCameraAspectRatio(scene_json.cameraAspectRatio);
     }
 
-    this.editor.version = scene_json["version"];
-    const camCtrl = this.editor.cameraController;
-    camCtrl.cam_obj = this.editor.activeScene.get_object_by_name(
-      camCtrl.camera_name,
-    );
-
-    camCtrl.cam_obj?.layers.set(1);
-    camCtrl.cam_obj?.children.forEach((child) => {
-      child.layers.set(1);
-    });
-
-  }
-
-  public async loadCache(cacheJson: string) {
-    showEditorLoader();
-
-    const scene_json = JSON.parse(cacheJson);
-    await this.loadFromJson(scene_json);
-
-    hideEditorLoader();
-  }
-
-  // TODO Refactor remove editor.
-  public async loadScene(scene_media_token: string) {
-    showEditorLoader();
-
-    this.editor.current_scene_media_token = scene_media_token;
-
-    const scene_json = await this.editor.api_manager
-      .loadSceneState(this.editor.current_scene_media_token)
-      .catch((err) => {
-        hideEditorLoader();
-        throw err;
-      });
-
-    await this.loadFromJson(scene_json);
-
-    hideEditorLoader();
+    this.deps.setVersion(scene_json["version"]);
+    this.deps.refreshCamObj();
   }
 }
