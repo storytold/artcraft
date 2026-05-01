@@ -195,7 +195,20 @@ class Editor {
     this.renderEventToken = -1;
     this.shouldRender = false;
 
-    this.utils = new SceneUtils(this, this.activeScene);
+    this.utils = new SceneUtils(this.activeScene, {
+      getGizmoControl: () => this.gizmo.control,
+      detachGizmo: () => this.gizmo.detach(),
+      removeGizmoFromScene: () =>
+        this.gizmo.removeFromScene(this.activeScene.scene),
+      getOutlinePass: () => this.postProcessing.outlinePass,
+      publishSelect: () => this.selection.publishSelect(),
+      clearSelected: () => {
+        this.selection.selected = undefined;
+      },
+      getCameraName: () => this.cameraController.camera_name,
+      getSelectedObject: () => this.sceneManager?.selected_objects?.[0],
+      getThreeScene: () => this.activeScene.scene,
+    });
     this.save_manager = new SaveManager({
       getVersion: () => this.version,
       setVersion: (v) => {
