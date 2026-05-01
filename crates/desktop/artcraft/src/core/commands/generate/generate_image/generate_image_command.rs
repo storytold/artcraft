@@ -10,7 +10,7 @@ use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::{
   enqueue_text_to_image_command, EnqueueTextToImageRequest, TextToImageModel,
 };
-use crate::core::commands::generate::generate_image::artcraft::handle_artcraft_via_omni_endpoint::handle_artcraft_via_omni_endpoint;
+use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft_via_omni_endpoint::handle_artcraft_via_omni_endpoint;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
 };
