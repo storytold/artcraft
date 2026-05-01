@@ -7,10 +7,10 @@ use crate::core::commands::enqueue::image_inpaint::enqueue_image_inpaint_command
 use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::{
   enqueue_text_to_image_command, EnqueueTextToImageRequest, TextToImageModel,
 };
-use crate::core::commands::generate::generate_image::request::{
+use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
-  TauriImageModel,
 };
+use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::Response;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
