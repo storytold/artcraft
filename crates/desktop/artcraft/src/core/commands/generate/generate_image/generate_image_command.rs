@@ -1,18 +1,25 @@
+use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
+use crate::core::commands::enqueue::generate_error::GenerateError;
 use crate::core::commands::enqueue::image_edit::enqueue_edit_image_command::{
   enqueue_edit_image_command, EnqueueEditImageCommand, ImageEditModel,
 };
 use crate::core::commands::enqueue::image_inpaint::enqueue_image_inpaint_command::{
   enqueue_image_inpaint_command, EnqueueInpaintImageCommand, ImageInpaintModel,
 };
+use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::{
   enqueue_text_to_image_command, EnqueueTextToImageRequest, TextToImageModel,
 };
+use crate::core::commands::generate::generate_image::artcraft::handle_artcraft_via_omni_endpoint::handle_artcraft_via_omni_endpoint;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
 };
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::Response;
+use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
+use crate::core::events::functional_events::credits_balance_changed_event::CreditsBalanceChangedEvent;
+use crate::core::events::generation_events::generation_enqueue_success_event::GenerationEnqueueSuccessEvent;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
@@ -24,7 +31,8 @@ use crate::services::midjourney::state::midjourney_credential_manager::Midjourne
 use crate::services::sora::state::sora_credential_manager::SoraCredentialManager;
 use crate::services::sora::state::sora_task_queue::SoraTaskQueue;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
-use log::{info, warn};
+use enums::common::generation_provider::GenerationProvider;
+use log::{error, info, warn};
 use serde::Serialize;
 use tauri::{AppHandle, State};
 
@@ -47,12 +55,41 @@ pub async fn generate_image_command(
 
   info!("generate_image_command called, request: {:?}", request);
 
+  // ── Try the Artcraft omni endpoint first ──
+  //
+  // If the provider is Artcraft (or unspecified, which defaults to Artcraft),
+  // and the model is supported by the omni endpoint, send it directly.
+  // This bypasses the legacy command proxy entirely.
 
-  // Figure out which legacy command to route to...
+  let is_artcraft_provider = matches!(
+    request.provider,
+    None | Some(GenerationProvider::Artcraft)
+  );
+
+  if is_artcraft_provider {
+    let omni_result = handle_artcraft_via_omni_endpoint(
+      &request,
+      &app_env_configs,
+      &storyteller_creds_manager,
+    ).await;
+
+    match omni_result {
+      Ok(success) => return map_success_to_response(success, &app),
+      Err(GenerateError::NotYetImplemented(_)) => {
+        // Model not supported by omni endpoint — fall through to legacy commands.
+        info!("Model not supported by omni endpoint, falling back to legacy commands.");
+      }
+      Err(err) => {
+        // Real error — return it.
+        return map_error_to_response(err);
+      }
+    }
+  }
+
+  // ── Fall back to legacy command proxies ──
 
   let model = request.model;
 
-  // Determine which legacy command to proxy to based on request shape + model.
   let has_mask = request.inpainting_mask_image_media_token.is_some()
     || request.inpainting_mask_image_raw_bytes.is_some();
   let has_image_refs = request.image_media_tokens.as_ref().is_some_and(|t| !t.is_empty());
@@ -295,9 +332,39 @@ fn map_to_inpaint_model(model: TauriImageModel) -> Option<ImageInpaintModel> {
 
 // ── Result mapping ──
 
+fn map_success_to_response(
+  success: TaskEnqueueSuccess,
+  app: &AppHandle,
+) -> Response<TauriGenerateImageResponse, TauriGenerateImageErrorType, ()> {
+  let event = GenerationEnqueueSuccessEvent {
+    action: success.to_frontend_event_action(),
+    service: success.to_frontend_event_service(),
+    model: success.model,
+  };
+
+  if let Err(err) = event.send(app) {
+    error!("Failed to emit event: {:?}", err);
+  }
+
+  CreditsBalanceChangedEvent{}.send_infallible(app);
+
+  Ok(TauriGenerateImageResponse {}.into())
+}
+
+fn map_error_to_response(
+  err: GenerateError,
+) -> Response<TauriGenerateImageResponse, TauriGenerateImageErrorType, ()> {
+  error!("generate_image_command error: {:?}", err);
+
+  Err(CommandErrorResponseWrapper {
+    status: CommandErrorStatus::ServerError,
+    error_message: Some(format!("{:?}", err)),
+    error_type: Some(TauriGenerateImageErrorType::ServerError),
+    error_details: None,
+  })
+}
+
 /// Map any legacy command result to our unified response type.
-/// All three legacy commands return different error types, but we just
-/// check success/failure and map accordingly.
 fn map_legacy_result<S, E: Serialize, D: Serialize>(
   result: Result<S, CommandErrorResponseWrapper<E, D>>,
 ) -> Response<TauriGenerateImageResponse, TauriGenerateImageErrorType, ()> {
