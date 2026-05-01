@@ -29,6 +29,9 @@ export type SelectionBridgeDeps = {
   isObjectLocked: (uuid: string) => boolean;
   removeTransformControls: () => void;
   attachGizmoToCurrentSelection: () => void;
+  // Push a lock-toggle entry onto the undo stack. Optional so the bridge
+  // can be constructed before HistoryManager (and to keep tests simple).
+  recordLockChange?: (uuid: string, before: boolean, after: boolean) => void;
 };
 
 export class SelectionBridge {
@@ -46,6 +49,7 @@ export class SelectionBridge {
   // the gizmo (lock) or re-attach it to the current selection (unlock).
   // Returns the new locked state.
   lockUnlockObject(object_uuid: string): boolean {
+    const before = this.engine.isObjectLocked(object_uuid);
     const locked = this.engine.toggleObjectLocked(object_uuid);
     if (locked) {
       this.engine.removeTransformControls();
@@ -53,6 +57,7 @@ export class SelectionBridge {
       this.engine.attachGizmoToCurrentSelection();
     }
     this.updateSelectedUI();
+    this.engine.recordLockChange?.(object_uuid, before, locked);
     return locked;
   }
 

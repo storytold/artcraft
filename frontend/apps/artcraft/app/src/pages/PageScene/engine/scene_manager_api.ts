@@ -306,7 +306,7 @@ export class SceneManager implements SceneManagerAPI {
     }
   }
 
-  public async paste() {
+  public async paste(): Promise<THREE.Object3D | undefined> {
     if (this.copiedObject && this.copiedObject.name != "::CAM::") {
       const userdata = this.copiedObject.userData;
       const position = this.copiedObject.position.clone();
@@ -353,8 +353,9 @@ export class SceneManager implements SceneManagerAPI {
       }
 
       await this.copy();
-      await this.add_creation_undostack(obj);
+      return obj;
     }
+    return undefined;
   }
 
   public onMouseMove(event: MouseEvent) {

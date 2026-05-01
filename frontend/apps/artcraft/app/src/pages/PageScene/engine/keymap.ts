@@ -34,8 +34,10 @@ const setGizmoMode = (
 const deleteSelected = (editor: Editor) => {
   const mc = editor.mouse_controls;
   if (!mc?.selected) return;
+  // Route through editor.deleteObject so HistoryManager records the
+  // deletion. mc.deleteObject (the legacy direct path) bypasses history.
   mc.selected.forEach((sel) => {
-    mc.deleteObject(sel.uuid);
+    editor.deleteObject(sel.uuid);
   });
   mc.selected = [];
   mc.removeTransformControls();
@@ -70,11 +72,11 @@ const openAssetModal = () => {
 };
 
 const undo = async (editor: Editor) => {
-  await editor.sceneManager?.undo();
+  await editor.history.undo();
 };
 
 const redo = async (editor: Editor) => {
-  await editor.sceneManager?.redo();
+  await editor.history.redo();
 };
 
 const copy = async (editor: Editor) => {
@@ -82,7 +84,8 @@ const copy = async (editor: Editor) => {
 };
 
 const paste = async (editor: Editor) => {
-  await editor.sceneManager?.paste();
+  const obj = await editor.sceneManager?.paste();
+  if (obj) editor.history.recordCreate(obj);
 };
 
 export const buildKeymap = (): KeyBinding[] => [

@@ -171,6 +171,8 @@ class Editor {
         const selected = this.sceneManager?.selected_objects?.[0];
         if (selected) this.gizmo.attach(selected);
       },
+      recordLockChange: (uuid, before, after) =>
+        this.history.recordSetLocked(uuid, before, after),
     });
 
     this.activeScene = new Scene(
@@ -732,6 +734,9 @@ class Editor {
   }
 
   deleteObject(uuid: string) {
+    // Snapshot for the undo stack before the object is gone.
+    const obj = this.activeScene.scene.getObjectByProperty("uuid", uuid);
+    if (obj) this.history.recordDelete(obj);
     this.mouse_controls?.clearFKVisuals();
     this.mouse_controls?.removeTransformControls(true);
     this.utils.deleteObject(uuid);

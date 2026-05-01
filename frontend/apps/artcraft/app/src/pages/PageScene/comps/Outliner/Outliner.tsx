@@ -53,8 +53,10 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
 
   const handleToggleVisibility = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const before = item.visible;
     usePageSceneStore.getState().toggleOutlinerVisibility(item.id);
     editorEngine?.sceneManager?.hideObject(item.id);
+    editorEngine?.history.recordSetVisible(item.id, before, !before);
   };
 
   return (

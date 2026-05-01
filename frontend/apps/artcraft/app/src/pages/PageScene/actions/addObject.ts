@@ -15,7 +15,7 @@ export async function addObject(
   );
   if (!obj) return undefined;
 
-  await editor.sceneManager?.add_creation_undostack(obj);
+  editor.history.recordCreate(obj);
 
   usePageSceneStore.getState().addObject({
     id: obj.uuid,
