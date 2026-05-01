@@ -6,6 +6,6 @@ export function setCameraAspect(
   editor: Editor,
   ratio: CameraAspectRatio,
 ): void {
-  editor.changeRenderCameraAspectRatio(ratio);
+  editor.cameraController.changeRenderCameraAspectRatio(ratio);
   usePageSceneStore.getState().setCameraAspectRatio(ratio);
 }

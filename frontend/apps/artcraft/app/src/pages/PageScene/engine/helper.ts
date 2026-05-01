@@ -1,8 +1,6 @@
 import Scene from "./scene";
 import Editor from "./editor";
 import * as THREE from "three";
-import { XYZ } from "../datastructures/common";
-import { EditorStates } from "../enums";
 import { usePageSceneStore } from "../PageSceneStore";
 
 export class SceneUtils {
@@ -20,26 +18,6 @@ export class SceneUtils {
     );
   }
 
-  // For react to see if an object has lipsync capability or not.
-  isObjectLipsync(object_uuid: string) {
-    const object = this.scene.get_object_by_uuid(object_uuid);
-    let hasLipsync = false;
-    if (object) {
-      object.traverse((c: THREE.Object3D) => {
-        if (c instanceof THREE.Mesh) {
-          if (c.morphTargetInfluences && c.morphTargetDictionary) {
-            const blendShapeIndexE = c.morphTargetDictionary["E"];
-            // console.log(c.morphTargetDictionary, blendShapeIndexE)
-            if (blendShapeIndexE !== null) {
-              hasLipsync = true;
-            }
-          }
-        }
-      });
-    }
-    return hasLipsync;
-  }
-
   // Returns if the object is locked or unlocked.
   isObjectLocked(object_uuid: string): boolean {
     const object = this.scene.get_object_by_uuid(object_uuid);
@@ -49,133 +27,38 @@ export class SceneUtils {
       }
       return object.userData["locked"];
     }
-    //console.log("No object found.");
     return false;
   }
 
-  // Locks or unlocks and object and returns its new state,
-  lockUnlockObject(object_uuid: string): boolean {
+  // Pure userData mutation: flips the locked flag and returns the new
+  // value. Higher-level wiring (gizmo attach/detach, selection refresh)
+  // lives on SelectionBridge.lockUnlockObject.
+  toggleObjectLocked(object_uuid: string): boolean {
     const object = this.scene.get_object_by_uuid(object_uuid);
-    if (object) {
-      if (object.userData["locked"] == undefined) {
-        object.userData["locked"] = false;
-      }
-      object.userData["locked"] = !object.userData["locked"];
-
-      if (object.userData["locked"]) {
-        this.removeTransformControls(false);
-      } else if (this.editor.control) {
-        this.scene.scene.add(this.editor.control);
-        if (this.editor.sceneManager?.selected_objects)
-          this.editor.control.attach(
-            this.editor.sceneManager?.selected_objects[0],
-          );
-      }
-
-      return object.userData["locked"];
+    if (!object) return false;
+    if (object.userData["locked"] == undefined) {
+      object.userData["locked"] = false;
     }
-    //console.log("No object found.");
-    return false;
+    object.userData["locked"] = !object.userData["locked"];
+    return object.userData["locked"];
   }
 
   // Removes transform controls and publishes selected.
   removeTransformControls(remove_outline: boolean = true) {
-    if (this.editor.control == undefined) {
+    if (this.editor.gizmo.control == undefined) {
       return;
     }
-    if (this.editor.outlinePass == undefined) {
+    const outlinePass = this.editor.postProcessing.outlinePass;
+    if (outlinePass == undefined) {
       return;
     }
     if (remove_outline) {
-      this.editor.last_selected = this.editor.selected;
-      this.editor.outlinePass.selectedObjects = [];
-      this.editor.publishSelect();
+      outlinePass.selectedObjects = [];
+      this.editor.selection.publishSelect();
     }
-    this.editor.control.detach();
-    this.editor.activeScene.scene.remove(this.editor.control);
-    if (remove_outline) this.editor.outlinePass.selectedObjects = [];
-  }
-
-  // TO UPDATE selected objects in the scene might want to add to the scene ...
-  async setSelectedObject(position: XYZ, rotation: XYZ, scale: XYZ) {
-    if (this.editor.sceneManager?.selected_objects) {
-      const object = this.editor.sceneManager?.selected_objects[0];
-      if (object != undefined || object != null) {
-        object.position.x = position.x;
-        object.position.y = position.y;
-        object.position.z = position.z;
-        object.rotation.x = THREE.MathUtils.degToRad(rotation.x);
-        object.rotation.y = THREE.MathUtils.degToRad(rotation.y);
-        object.rotation.z = THREE.MathUtils.degToRad(rotation.z);
-        object.scale.x = scale.x;
-        object.scale.y = scale.y;
-        object.scale.z = scale.z;
-      }
-    }
-  }
-
-  switchCameraView() {
-    this.editor.camera_person_mode = !this.editor.camera_person_mode;
-    if (this.editor.freeCamState) {
-      this.editor.freeCamState.velocity.set(0, 0, 0);
-    }
-    if (this.editor.cam_obj) {
-      if (this.editor.camera_person_mode && this.editor.camera) {
-        this.editor.last_cam_pos.copy(this.editor.camera.position);
-        this.editor.last_cam_rot.copy(this.editor.camera.rotation);
-
-        this.editor.camera.position.copy(this.editor.cam_obj.position);
-        this.editor.camera.rotation.copy(this.editor.cam_obj.rotation);
-
-        if (this.editor.lockControls) {
-          this.editor.activeScene.scene.add(
-            this.editor.lockControls.getObject(),
-          );
-        }
-        // useFreeCam reads editorState from the store and enables
-        // itself when CAMERA_VIEW; nothing to do here.
-        this.editor.cam_obj.scale.set(0, 0, 0);
-
-        this.removeTransformControls();
-        this.editor.selected = this.editor.cam_obj;
-        this.editor.publishSelect();
-        this.editor.updateSelectedUI();
-        usePageSceneStore.getState().setEditorState(EditorStates.CAMERA_VIEW);
-        if (this.editor.activeScene.hot_items) {
-          this.editor.activeScene.hot_items.forEach((element) => {
-            element.visible = false;
-          });
-        }
-
-        // Make a better solution later but for now this is so that in camera mode when you right click it does not bring up the context menu and allows you to pan.
-        setTimeout(
-          () =>
-            document
-              .getElementById("letterbox")
-              ?.addEventListener("contextmenu", function (event) {
-                event.preventDefault();
-              }),
-          250,
-        );
-      } else if (this.editor.camera) {
-        this.editor.camera.position.copy(this.editor.last_cam_pos);
-        this.editor.camera.rotation.copy(this.editor.last_cam_rot);
-        if (this.editor.lockControls) {
-          this.editor.activeScene.scene.remove(
-            this.editor.lockControls.getObject(),
-          );
-        }
-        this.editor.cam_obj.scale.set(1, 1, 1);
-        if (this.editor.activeScene.hot_items) {
-          this.editor.activeScene.hot_items.forEach((element) => {
-            element.visible = true;
-          });
-        }
-
-        usePageSceneStore.getState().hideObjectPanel();
-        usePageSceneStore.getState().setEditorState(EditorStates.EDIT);
-      }
-    }
+    this.editor.gizmo.detach();
+    this.editor.gizmo.removeFromScene(this.editor.activeScene.scene);
+    if (remove_outline) outlinePass.selectedObjects = [];
   }
 
   // Returns the "check sum" of the editors selected object.
@@ -233,7 +116,7 @@ function removeObject3D(object3D) {
     }
 
     this.removeTransformControls();
-    if (obj.name === this.editor.camera_name) {
+    if (obj.name === this.editor.cameraController.camera_name) {
       return;
     }
 
@@ -272,8 +155,8 @@ function removeObject3D(object3D) {
     }
 
     usePageSceneStore.getState().removeSceneObject(uuid);
-    this.editor.selected = undefined;
-    this.editor.publishSelect();
+    this.editor.selection.selected = undefined;
+    this.editor.selection.publishSelect();
     usePageSceneStore.getState().hideObjectPanel();
   }
 }

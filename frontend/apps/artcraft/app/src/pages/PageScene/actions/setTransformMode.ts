@@ -8,7 +8,7 @@ const ENGINE_MODE: Record<TransformMode, "translate" | "rotate" | "scale"> = {
 };
 
 export function setTransformMode(editor: Editor, mode: TransformMode): void {
-  editor.change_mode(ENGINE_MODE[mode]);
+  editor.gizmo.changeMode(ENGINE_MODE[mode]);
   const store = usePageSceneStore.getState();
   store.setTransformMode(mode);
   store.setSelectedMode(mode);

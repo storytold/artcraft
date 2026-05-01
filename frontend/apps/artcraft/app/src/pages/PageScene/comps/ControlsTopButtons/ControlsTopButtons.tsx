@@ -40,7 +40,7 @@ export const ControlsTopButtons = () => {
   };
 
   const handleResetScene = () => {
-    editorEngine?.changeRenderCameraAspectRatio(
+    editorEngine?.cameraController.changeRenderCameraAspectRatio(
       CameraAspectRatio.HORIZONTAL_3_2,
     );
   };

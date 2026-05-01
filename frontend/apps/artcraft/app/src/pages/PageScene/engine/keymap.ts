@@ -26,23 +26,9 @@ const setGizmoMode = (
   gizmoMode: "translate" | "rotate" | "scale",
   storeMode: "move" | "rotate" | "scale",
 ) => {
-  editor.mouse_controls?.control?.setMode(gizmoMode);
-  const space = usePageSceneStore.getState().transformSpace;
-  if (editor.mouse_controls?.control) {
-    editor.mouse_controls.control.space = space;
-  }
+  editor.gizmo.changeMode(gizmoMode);
   usePageSceneStore.getState().setTransformMode(storeMode);
   usePageSceneStore.getState().setSelectedMode(storeMode);
-};
-
-const toggleTransformSpace = (editor: Editor) => {
-  if (editor.mouse_controls?.control?.mode === "scale") return;
-  const next =
-    usePageSceneStore.getState().transformSpace === "world" ? "local" : "world";
-  usePageSceneStore.getState().setTransformSpace(next);
-  if (editor.mouse_controls?.control) {
-    editor.mouse_controls.control.space = next;
-  }
 };
 
 const deleteSelected = (editor: Editor) => {
@@ -108,7 +94,7 @@ export const buildKeymap = (): KeyBinding[] => [
   { code: "KeyG", label: "Scale", group: "Transform",
     run: (e) => setGizmoMode(e, "scale", "scale") },
   { code: "KeyX", label: "Toggle local/world", group: "Transform",
-    run: toggleTransformSpace },
+    run: (e) => e.gizmo.toggleTransformSpace() },
   { code: "KeyK", label: "Toggle pose (FK)", group: "Transform",
     run: (e) => e.mouse_controls?.toggleFKMode() },
 

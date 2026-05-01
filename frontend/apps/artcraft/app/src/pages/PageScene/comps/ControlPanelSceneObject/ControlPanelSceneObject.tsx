@@ -84,7 +84,7 @@ export const ControlPanelSceneObject = () => {
     }
 
     setInputsUpdated(false);
-    editorEngine.setSelectedObject(
+    editorEngine.sceneManager?.updateSelectedTransform(
       localToEngine(localPosition),
       localToEngine(localRotation),
       localToEngine(localScale),
@@ -103,7 +103,7 @@ export const ControlPanelSceneObject = () => {
     setLocalRotation(engineToLocal(vectors.rotation));
     setLocalScale(engineToLocal(vectors.scale));
 
-    setLocked(editorEngine.isObjectLocked(editorEngine?.selected?.uuid || ""));
+    setLocked(editorEngine.selection.isObjectLocked(editorEngine?.selected?.uuid || ""));
     setColor(editorEngine?.selected?.userData.color);
   }, [currentSceneObject, editorEngine]);
 
@@ -220,7 +220,7 @@ export const ControlPanelSceneObject = () => {
             className="h-0 w-0 cursor-pointer opacity-0"
             id={colorInputId}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              editorEngine?.setColor(
+              editorEngine?.activeScene.setColor(
                 editorEngine?.selected?.uuid || "",
                 e.target.value,
               );

@@ -48,7 +48,7 @@ const OutlinerRow = ({ item }: { item: OutlinerItem }) => {
   const handleToggleLock = (e: React.MouseEvent) => {
     e.stopPropagation();
     usePageSceneStore.getState().toggleOutlinerLock(item.id);
-    editorEngine?.lockUnlockObject(item.id);
+    editorEngine?.selection.lockUnlockObject(item.id);
   };
 
   const handleToggleVisibility = (e: React.MouseEvent) => {
