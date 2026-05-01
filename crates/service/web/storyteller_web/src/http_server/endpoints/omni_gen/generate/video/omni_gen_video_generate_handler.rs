@@ -23,6 +23,7 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 };
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::characters::CharacterToken;
+use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
@@ -290,10 +291,10 @@ pub async fn omni_gen_video_generate_handler(
 
   // -- Inference job --
 
-  let job_token = match &pipeline_result.response {
+  let (primary_job_token, all_job_tokens) = match &pipeline_result.response {
     GenerateVideoResponse::Seedance2Pro(payload) => {
       info!("Inserting seedance2pro job(s) with token: {:?}", pipeline_result.billing.apriori_job_token);
-      insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
+      let result = insert_seedance2pro_jobs(InsertSeedance2proJobsArgs {
         primary_order_id: &payload.order_id,
         maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
         maybe_wallet_ledger_entry_token: pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
@@ -306,7 +307,8 @@ pub async fn omni_gen_video_generate_handler(
           ip_address: &ip_address,
           transaction: &mut transaction,
         },
-      }).await?
+      }).await?;
+      (result.primary_job_token, result.all_job_tokens)
     }
     GenerateVideoResponse::Fal(payload) => {
       let external_id = payload.request_id.as_deref().ok_or_else(|| {
@@ -314,7 +316,7 @@ pub async fn omni_gen_video_generate_handler(
         AdvancedCommonWebError::server_error_with_message("Fal generation response missing request_id")
       })?;
       info!("Inserting fal job with token: {:?}", pipeline_result.billing.apriori_job_token);
-      insert_fal_job(InsertFalJobArgs {
+      let token = insert_fal_job(InsertFalJobArgs {
         external_job_id: external_id,
         shared: SharedJobArgs {
           apriori_job_token: &pipeline_result.billing.apriori_job_token,
@@ -325,10 +327,18 @@ pub async fn omni_gen_video_generate_handler(
           ip_address: &ip_address,
           transaction: &mut transaction,
         },
-      }).await?
+      }).await?;
+
+      (
+        token.clone(), 
+        vec![token],
+      )
     }
     GenerateVideoResponse::Artcraft(payload) => {
-      payload.inference_job_token.clone()
+      (
+        payload.inference_job_token.clone(),
+        vec![payload.inference_job_token.clone()],
+      )
     }
     other => {
       error!("Unexpected generation response variant: {:?}", other);
@@ -343,7 +353,8 @@ pub async fn omni_gen_video_generate_handler(
 
   Ok(Json(OmniGenVideoGenerateResponse {
     success: true,
-    inference_job_token: job_token,
+    inference_job_token: primary_job_token,
+    all_job_tokens,
   }))
 }
 

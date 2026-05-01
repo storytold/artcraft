@@ -19,7 +19,12 @@ pub struct InsertSeedance2proJobsArgs<'a, 'tx> {
   pub shared: SharedJobArgs<'a, 'tx>,
 }
 
-pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) -> Result<InferenceJobToken, AdvancedCommonWebError> {
+pub struct InsertSeedance2proJobsResult {
+  pub primary_job_token: InferenceJobToken,
+  pub all_job_tokens: Vec<InferenceJobToken>,
+}
+
+pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) -> Result<InsertSeedance2proJobsResult, AdvancedCommonWebError> {
   let InsertSeedance2proJobsArgs {
     primary_order_id,
     maybe_additional_order_ids,
@@ -74,8 +79,13 @@ pub async fn insert_seedance2pro_jobs(args: InsertSeedance2proJobsArgs<'_, '_>) 
     }
   }
 
-  all_job_tokens.first().cloned().ok_or_else(|| {
+  let primary_job_token = all_job_tokens.first().cloned().ok_or_else(|| {
     error!("No inference job token was created");
     AdvancedCommonWebError::server_error_with_message("No inference job token was created")
+  })?;
+
+  Ok(InsertSeedance2proJobsResult {
+    primary_job_token,
+    all_job_tokens,
   })
 }
