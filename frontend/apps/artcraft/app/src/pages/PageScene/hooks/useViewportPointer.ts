@@ -43,7 +43,10 @@ export const useViewportPointer = (
     };
 
     const onPointerUp = (e: PointerEvent) => {
-      editor.mouse_controls?.onMouseUp(e);
+      // Route through sceneManager so check_scene_for_updates fires and
+      // transforms / deletions / userdata edits get pushed onto the undo
+      // stack. mouse_controls.onMouseUp is invoked from inside.
+      editor.sceneManager?.onMouseUp(e as unknown as MouseEvent);
     };
 
     const onClick = (_e: MouseEvent) => {
