@@ -47,6 +47,9 @@ pub async fn generate_image_command(
 
   info!("generate_image_command called, request: {:?}", request);
 
+
+  // Figure out which legacy command to route to...
+
   let model = request.model;
 
   // Determine which legacy command to proxy to based on request shape + model.
