@@ -4,9 +4,8 @@
 // on Editor), then `configure()` wires it to the camera/renderer once
 // initialize() has produced them.
 //
-// No `editor` reference, no `import type Editor`. Store access stays on
-// Editor's facades (change_mode, toggleTransformSpace); this module only
-// translates them into TransformControls calls.
+// Store access for the transform-space pref is injected via Deps so the
+// controller doesn't import the Zustand store directly.
 
 import type * as THREE from "three";
 import { TransformControls } from "../TransformControls.js";
@@ -22,8 +21,22 @@ export type GizmoCallbacks = {
   onDraggingChanged: (dragging: boolean) => void;
 };
 
+// Capabilities the gizmo needs from outside its own state.
+// Editor wires these in initialize() so GizmoController never imports
+// the store directly.
+export type GizmoControllerDeps = {
+  getTransformSpace: () => TransformSpace;
+  setTransformSpace: (space: TransformSpace) => void;
+};
+
 export class GizmoController {
   control: TransformControls | undefined;
+
+  private deps: GizmoControllerDeps;
+
+  constructor(deps: GizmoControllerDeps) {
+    this.deps = deps;
+  }
 
   configure(
     camera: THREE.PerspectiveCamera | null,
@@ -45,8 +58,11 @@ export class GizmoController {
     scene.add(this.control);
   }
 
-  changeMode(type: TransformMode, space: TransformSpace) {
+  // Apply a transform mode. Reads the desired space from the store so
+  // callers don't need to plumb it through. Scale is always local.
+  changeMode(type: TransformMode) {
     if (this.control == undefined) return;
+    const space = type === "scale" ? "local" : this.deps.getTransformSpace();
     this.control.mode = type;
     this.control.space = space;
   }
@@ -54,6 +70,17 @@ export class GizmoController {
   setSpace(space: TransformSpace) {
     if (this.control == undefined) return;
     this.control.space = space;
+  }
+
+  // Flip the store's transform-space preference and push the new value
+  // into the live gizmo. No-op when the gizmo is in scale mode (scale
+  // is always local).
+  toggleTransformSpace() {
+    if (!this.canToggleSpace()) return;
+    const next =
+      this.deps.getTransformSpace() === "world" ? "local" : "world";
+    this.deps.setTransformSpace(next);
+    this.setSpace(next);
   }
 
   // True when the gizmo exists and is in a mode where toggling between

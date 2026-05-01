@@ -318,7 +318,7 @@ export const Controls3D = () => {
               >
                 <button
                   className="h-9 rounded-[10px] px-2.5 text-[10px] font-semibold font-mono bg-white/15 hover:bg-white/25 transition-colors uppercase tracking-wide"
-                  onClick={() => editorEngine?.toggleTransformSpace()}
+                  onClick={() => editorEngine?.gizmo.toggleTransformSpace()}
                 >
                   {transformSpace === "world" ? "World" : "Local"}
                 </button>

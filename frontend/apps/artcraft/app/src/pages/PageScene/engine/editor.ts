@@ -136,7 +136,11 @@ class Editor {
     // PostProcessingPipeline must exist before Scene because Scene's
     // load paths invoke updateSurfaceIdAttributeToMesh as a callback.
     this.postProcessing = new PostProcessingPipeline();
-    this.gizmo = new GizmoController();
+    this.gizmo = new GizmoController({
+      getTransformSpace: () => usePageSceneStore.getState().transformSpace,
+      setTransformSpace: (space) =>
+        usePageSceneStore.getState().setTransformSpace(space),
+    });
     this.cameraController = new CameraController({
       getThreeScene: () => this.activeScene.scene,
       getHotItems: () => this.activeScene.hot_items ?? null,
@@ -821,24 +825,6 @@ class Editor {
     this.isMounted = false;
     setIs3DEditorInitialized(false);
     console.log("3D Editor Engine unmounted");
-  }
-
-  // Facade for actions/setTransformMode + keymap dispatch. Reads the
-  // store's current transform space and forwards to the gizmo.
-  change_mode(type: "translate" | "rotate" | "scale") {
-    const space =
-      type === "scale" ? "local" : usePageSceneStore.getState().transformSpace;
-    this.gizmo.changeMode(type, space);
-  }
-
-  // Facade for Controls3D button + keymap. Toggles the store's
-  // transform space and pushes the new value into the gizmo.
-  toggleTransformSpace() {
-    if (!this.gizmo.canToggleSpace()) return;
-    const store = usePageSceneStore.getState();
-    const next = store.transformSpace === "world" ? "local" : "world";
-    store.setTransformSpace(next);
-    this.gizmo.setSpace(next);
   }
 
   // Facades — external callers in actions/* and helper.ts target these
