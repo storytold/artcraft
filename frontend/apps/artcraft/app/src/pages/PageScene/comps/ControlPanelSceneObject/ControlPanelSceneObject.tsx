@@ -184,7 +184,13 @@ export const ControlPanelSceneObject = () => {
   // - Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z (capture phase): flush before the
   //   engine's keymap handler runs the undo, so the pending entry is
   //   the one being reverted.
+  //
+  // Scoped to `isShowing` so the listeners aren't attached when the
+  // panel is hidden (notably during CAMERA_VIEW, where stray
+  // document mouseup/keydown listeners can interact poorly with the
+  // freecam pointer-capture and canvas keydown handlers).
   useEffect(() => {
+    if (!isShowing) return;
     const flush = () => {
       transformSessionRef.current?.commit();
       transformSessionRef.current = null;
@@ -204,7 +210,7 @@ export const ControlPanelSceneObject = () => {
       document.removeEventListener("mouseup", flush);
       document.removeEventListener("keydown", onKeyDown, true);
     };
-  }, []);
+  }, [isShowing]);
 
   if (!currentSceneObject) {
     return null;
