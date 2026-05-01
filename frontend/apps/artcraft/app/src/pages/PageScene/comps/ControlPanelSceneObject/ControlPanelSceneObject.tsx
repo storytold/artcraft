@@ -18,6 +18,7 @@ import { objectMismatch } from "~/pages/PageScene/comps/ControlPanelSceneObject/
 import { XYZ } from "~/pages/PageScene/datastructures/common";
 import { pageHeight } from "~/signals";
 import { DraggablePrecisionMutator } from "./DraggablePrecisionMutator";
+import { ColorAction } from "~/pages/PageScene/engine/editor/actions/ColorAction";
 
 // TODO this will be useful later to fix the bug on leading zeros
 // const formatNumber = (input: string): number => {
@@ -227,8 +228,10 @@ export const ControlPanelSceneObject = () => {
               const before = color;
               const after = e.target.value;
               editorEngine?.activeScene.setColor(uuid || "", after);
-              if (uuid) {
-                editorEngine?.history.recordSetColor(uuid, before, after);
+              if (uuid && editorEngine) {
+                editorEngine.history.record(
+                  new ColorAction(editorEngine, uuid, before, after),
+                );
               }
               setColor(after);
             }}

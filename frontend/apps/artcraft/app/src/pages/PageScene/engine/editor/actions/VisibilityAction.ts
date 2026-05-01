@@ -18,10 +18,12 @@ export class VisibilityAction implements UndoableAction {
 
   apply(): void {
     this.write(this.after);
+    this.editor.selection.refreshOutliner();
   }
 
   revert(): void {
     this.write(this.before);
+    this.editor.selection.refreshOutliner();
   }
 
   private write(visible: boolean): void {

@@ -19,9 +19,11 @@ export class LockAction implements UndoableAction {
 
   apply(): void {
     this.selection.setLockState(this.uuid, this.after);
+    this.selection.refreshOutliner();
   }
 
   revert(): void {
     this.selection.setLockState(this.uuid, this.before);
+    this.selection.refreshOutliner();
   }
 }

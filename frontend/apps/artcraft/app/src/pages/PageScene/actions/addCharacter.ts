@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type Editor from "../engine/editor";
 import { MediaItem } from "../models";
 import { usePageSceneStore } from "../PageSceneStore";
+import { CreateAction } from "../engine/editor/actions/CreateAction";
 
 export async function addCharacter(
   editor: Editor,
@@ -17,7 +18,7 @@ export async function addCharacter(
 
   obj.userData.isCharacter = true;
 
-  editor.history.recordCreate(obj);
+  editor.history.record(new CreateAction(editor, obj));
 
   usePageSceneStore.getState().addCharacter({
     id: obj.uuid,

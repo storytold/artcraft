@@ -1,5 +1,6 @@
 import type Editor from "~/pages/PageScene/engine/editor";
 import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
+import { CreateAction } from "~/pages/PageScene/engine/editor/actions/CreateAction";
 
 // One declarative table for every viewport keyboard shortcut.
 // useViewportKeyboard dispatches against this list; a future Ctrl-hold
@@ -86,7 +87,7 @@ const copy = async (editor: Editor) => {
 const paste = async (editor: Editor) => {
   const obj = await editor.sceneManager?.paste();
   if (!obj) return;
-  editor.history.recordCreate(obj);
+  editor.history.record(new CreateAction(editor, obj));
   editor.selection.refreshOutliner();
 };
 

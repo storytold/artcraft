@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type Editor from "../engine/editor";
 import { MediaItem } from "../models";
 import { usePageSceneStore } from "../PageSceneStore";
+import { CreateAction } from "../engine/editor/actions/CreateAction";
 
 export async function addShape(
   editor: Editor,
@@ -16,7 +17,7 @@ export async function addShape(
   if (!obj) return undefined;
   obj.name = item.name ?? "shape";
 
-  editor.history.recordCreate(obj);
+  editor.history.record(new CreateAction(editor, obj));
 
   usePageSceneStore.getState().addShape({
     id: obj.uuid,
