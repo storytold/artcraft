@@ -22,6 +22,7 @@ import { PostProcessingPipeline } from "./editor/PostProcessingPipeline";
 import { GizmoController } from "./editor/GizmoController";
 import { SelectionBridge } from "./editor/SelectionBridge";
 import { CameraController } from "./editor/CameraController";
+import { HistoryManager } from "./editor/HistoryManager";
 
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import { SparkRenderer } from "@sparkjsdev/spark";
@@ -82,6 +83,10 @@ class Editor {
   selection: SelectionBridge;
   // Owns the camera state, FreeCam plumbing, and the per-frame camera tick.
   cameraController: CameraController;
+  // Owns the undo/redo stack. Mutation sites push via editor.history.recordX
+  // or begin/endTransform; the manager handles entry construction, async
+  // serialization, and capacity bounds.
+  history: HistoryManager;
 
   // Forwarding getter — ControlPanelSceneObject reads `editor.selected`.
   get selected(): THREE.Object3D | undefined {
@@ -196,6 +201,75 @@ class Editor {
         this.cameraController.getRenderDimensions().aspectRatio,
       resizePostProcessing: (w, h) => this.postProcessing.resize(w, h),
     });
+
+    // Lazy via `this`: HistoryManager is constructed before sceneManager
+    // and activeScene resolves to the live values when an entry replays.
+    this.history = new HistoryManager(
+      {
+        recreateObject: async (snap) => {
+          const pos = new THREE.Vector3(
+            snap.transform.position.x,
+            snap.transform.position.y,
+            snap.transform.position.z,
+          );
+          const obj = await this.sceneManager?.create(
+            snap.media_id,
+            snap.name,
+            pos,
+          );
+          if (!obj) return undefined;
+          // Preserve the original uuid so later history entries still
+          // resolve their target after a delete→undo round-trip.
+          obj.uuid = snap.uuid;
+          obj.rotation.set(
+            snap.transform.rotation.x,
+            snap.transform.rotation.y,
+            snap.transform.rotation.z,
+          );
+          obj.scale.set(
+            snap.transform.scale.x,
+            snap.transform.scale.y,
+            snap.transform.scale.z,
+          );
+          obj.userData = { ...snap.userData };
+          if (typeof snap.userData.color === "string") {
+            this.activeScene.setColor(obj.uuid, snap.userData.color);
+          }
+          if (typeof snap.userData.visible === "boolean") {
+            obj.visible = snap.userData.visible;
+          }
+          return obj;
+        },
+        removeObject: async (uuid) => {
+          await this.sceneManager?.delete(uuid);
+        },
+        setTransform: (uuid, t) => {
+          const obj = this.activeScene.scene.getObjectByProperty("uuid", uuid);
+          if (!obj) return;
+          obj.position.set(t.position.x, t.position.y, t.position.z);
+          obj.rotation.set(t.rotation.x, t.rotation.y, t.rotation.z);
+          obj.scale.set(t.scale.x, t.scale.y, t.scale.z);
+        },
+        setColor: (uuid, color) => {
+          this.activeScene.setColor(uuid, color);
+        },
+        setLocked: (uuid, locked) => {
+          const obj = this.activeScene.scene.getObjectByProperty("uuid", uuid);
+          if (!obj) return;
+          obj.userData.locked = locked;
+        },
+        setVisible: (uuid, visible) => {
+          const obj = this.activeScene.scene.getObjectByProperty("uuid", uuid);
+          if (!obj) return;
+          obj.visible = visible;
+          obj.userData.visible = visible;
+        },
+        refreshOutliner: () => {
+          this.selection.refreshOutliner();
+        },
+      },
+      { capacity: 64 },
+    );
 
     // Scene State
     this.current_scene_media_token = null;
