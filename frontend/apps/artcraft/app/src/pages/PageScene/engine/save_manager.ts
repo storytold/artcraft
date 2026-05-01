@@ -22,89 +22,6 @@ export class SaveManager {
     this.editor = editor;
   }
 
-  async computeHashForBrowser(data: string): Promise<string> {
-    // Encode the string data to a Uint8Array
-    const encoder = new TextEncoder();
-    const encodedData = encoder.encode(data);
-
-    // Compute the hash using the SubtleCrypto.digest method
-    const hashBuffer = await crypto.subtle.digest("SHA-256", encodedData);
-
-    // Convert the ArrayBuffer to a hexadecimal string
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-
-    return hashHex;
-  }
-
-  public async computeSceneChecksum(): Promise<string> {
-    const jsonString = await this.checkSumData();
-    return this.computeHashForBrowser(jsonString);
-  }
-
-  private async checkSumData(): Promise<string> {
-    const proxyScene = new StoryTellerProxyScene(
-      this.editor.version,
-      this.editor.activeScene,
-    );
-    const scene_json = await proxyScene.saveToScene(this.editor.version);
-
-    const check_sum_data = {
-      scene: scene_json,
-      timeline: "",
-      camera_data: {
-        position: this.editor.cameraController.camera?.position,
-        rotation: this.editor.cameraController.camera?.rotation,
-      },
-    };
-    const jsonString = JSON.stringify(check_sum_data);
-    return jsonString;
-  }
-
-  // JSON structure should and can return snapshot
-  public async saveData({
-    sceneGenerationMetadata,
-  }: {
-    sceneTitle: string;
-    sceneToken?: string;
-    sceneGenerationMetadata: SceneGenereationMetaData;
-  }): Promise<string> {
-    const proxyScene = new StoryTellerProxyScene(
-      this.editor.version,
-      this.editor.activeScene,
-    );
-    const scene_json = await proxyScene.saveToScene(this.editor.version);
-
-    const sceneState = usePageSceneStore.getState();
-    const camerasData = sceneState.cameras.map((cam: Camera) => ({
-      id: cam.id,
-      label: cam.label,
-      focalLength: cam.focalLength,
-      position: cam.position,
-      rotation: cam.rotation,
-      lookAt: cam.lookAt,
-    }));
-
-    const save_data = {
-      version: this.editor.version,
-      scene: scene_json,
-      ...sceneGenerationMetadata,
-      timeline: "",
-      skybox: this.editor.activeScene.skybox,
-      camera_data: {
-        position: this.editor.cameraController.camera?.position,
-        rotation: this.editor.cameraController.camera?.rotation,
-      },
-      cameras: camerasData,
-      selectedCameraId: sceneState.selectedCameraId,
-    };
-    // take json scene and figure out checksum
-    const jsonString = JSON.stringify(save_data);
-    return jsonString;
-  }
-
   public getSceneJson({
     sceneGenerationMetadata,
   }: {
@@ -154,7 +71,6 @@ export class SaveManager {
     sceneToken?: string;
     sceneGenerationMetadata: SceneGenereationMetaData;
   }): Promise<string> {
-    this.editor.generating_preview = true; // Set this to true to stop control panel from flipping out.
     // remove controls when saving scene.
     this.editor.utils.removeTransformControls();
     showEditorLoader();
@@ -183,8 +99,6 @@ export class SaveManager {
     // the api manager
 
     hideEditorLoader();
-
-    this.editor.generating_preview = false; // FIX THIS LATER WITH VICCCCCCCCCCCCCCCTORRRRRRRR
 
     console.debug("Save Scene Result: ", result);
     return result; // if this is an empty string it is an error. need to migrate to api manager.

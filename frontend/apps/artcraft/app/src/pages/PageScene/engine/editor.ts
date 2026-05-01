@@ -68,12 +68,10 @@ class Editor {
   lastFrameTime: number;
 
   current_scene_media_token: string | null;
-  current_scene_glb_media_token: string | null;
 
   can_initialize: boolean;
 
   positive_prompt: string;
-  generating_preview: boolean = false;
 
   // Owns canvas/container DOM refs and the resize cascade.
   viewport: ViewportController;
@@ -216,7 +214,6 @@ class Editor {
 
     // Scene State
     this.current_scene_media_token = null;
-    this.current_scene_glb_media_token = null;
 
     this.positive_prompt =
       "((masterpiece, best quality, 8K, detailed)), colorful, epic, fantasy, (fox, red fox:1.2), no humans, 1other, ((koi pond)), outdoors, pond, rocks, stones, koi fish, ((watercolor))), lilypad, fish swimming around.";
@@ -396,7 +393,6 @@ class Editor {
 
     // saving state of the scene
     this.current_scene_media_token = null;
-    this.current_scene_glb_media_token = null;
 
     this.cameraController.cam_obj = this.activeScene.get_object_by_name(
       this.cameraController.camera_name,
