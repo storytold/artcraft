@@ -3,11 +3,11 @@ use artcraft_client::endpoints::omni_gen::generate::image::omni_gen_image::omni_
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
-
+use uuid_utils::uuid::generate_random_uuid;
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_image::providers::artcraft::model_mapping::{
-  map_to_generation_model, map_to_omni_image_model,
+  map_to_generation_model, map_to_omni_aspect_ratio, map_to_omni_image_model, map_to_omni_resolution,
 };
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
@@ -18,20 +18,22 @@ pub async fn handle_artcraft_via_omni_endpoint(
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
-  let model = request.model.ok_or(GenerateError::no_model_specified())?;
+  let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
 
-  let omni_model = map_to_omni_image_model(model)
+  let omni_model = map_to_omni_image_model(tauri_model)
     .ok_or(GenerateError::NotYetImplemented(
-      format!("Model {:?} is not supported via the omni endpoint", model),
+      format!("Model {:?} is not supported via the omni endpoint", tauri_model),
     ))?;
 
-  let generation_model = map_to_generation_model(model);
+  let generation_model = map_to_generation_model(tauri_model);
 
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,
     None => return Err(GenerateError::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials)),
   };
 
+  let uuid_idempotency_token = generate_random_uuid();
+  
   // Build image_media_tokens: prepend canvas image if present.
   let mut image_media_tokens = request.image_media_tokens.clone().unwrap_or_default();
   if let Some(canvas_token) = &request.canvas_image_media_token {
@@ -40,12 +42,12 @@ pub async fn handle_artcraft_via_omni_endpoint(
   let image_media_tokens = if image_media_tokens.is_empty() { None } else { Some(image_media_tokens) };
 
   let omni_request = OmniGenImageCostAndGenerateRequest {
-    idempotency_token: None,
+    idempotency_token: Some(uuid_idempotency_token),
     model: Some(omni_model),
     prompt: request.prompt.clone(),
     image_media_tokens,
-    resolution: None,
-    aspect_ratio: None,
+    resolution: request.resolution,
+    aspect_ratio: request.aspect_ratio,
     quality: request.quality,
     image_batch_count: request.batch_size.map(|n| n as u16),
     adjust_horizontal_angle: request.adjust_horizontal_angle,
