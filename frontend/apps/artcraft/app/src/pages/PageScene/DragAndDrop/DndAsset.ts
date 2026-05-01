@@ -4,6 +4,7 @@ import { usePageSceneStore } from "~/pages/PageScene/PageSceneStore";
 import { pageHeight, pageWidth } from "~/signals";
 import { AssetType } from "~/enums";
 import type Editor from "~/pages/PageScene/engine/editor";
+import { pickDropPosition } from "~/pages/PageScene/engine/pickDropPosition";
 import {
   addCharacter,
   addObject,
@@ -88,16 +89,27 @@ class DndAsset {
       const positionX = event.pageX;
       const positionY = event.pageY;
       if (this.overCanvas(positionX, positionY)) {
+        const worldPosition = pickDropPosition(
+          {
+            getCamera: () => editor.cameraController.camera,
+            getCanvas: () => editor.renderer?.domElement,
+            getRaycastTargets: () => editor.activeScene.scene.children,
+            removeTransformControls: () =>
+              editor.utils.removeTransformControls(true),
+          },
+          positionX,
+          positionY,
+        );
         if (mediaItem.type === AssetType.CHARACTER) {
-          void addCharacter(editor, mediaItem);
+          void addCharacter(editor, mediaItem, worldPosition);
         } else if (
           mediaItem.type === AssetType.OBJECT ||
           mediaItem.type === AssetType.SPLAT ||
           mediaItem.type === AssetType.SKYBOX
         ) {
-          void addObject(editor, mediaItem);
+          void addObject(editor, mediaItem, worldPosition);
         } else if (mediaItem.type === AssetType.SHAPE) {
-          void addShape(editor, mediaItem);
+          void addShape(editor, mediaItem, worldPosition);
         }
       }
     }
