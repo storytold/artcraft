@@ -11,8 +11,10 @@ path = "src/main.rs"
 easyenv.workspace = true
 
 # Internal
+artcraft_client.workspace = true
 errors.workspace = true
 seedance2pro_client.workspace = true
+tokens.workspace = true
 
 # External
 anyhow.workspace = true
