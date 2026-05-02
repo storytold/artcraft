@@ -113,7 +113,7 @@ export function UploadImageMediaModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      <UploaderModalContent />
+      {UploaderModalContent()}
     </Modal>
   );
 }

@@ -100,7 +100,7 @@ export function UploadModalMedia({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      <UploaderModalContent />
+      {UploaderModalContent()}
     </Modal>
   );
 }

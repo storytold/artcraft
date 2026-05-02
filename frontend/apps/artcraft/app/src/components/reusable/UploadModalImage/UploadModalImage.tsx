@@ -129,7 +129,7 @@ export function UploadModalImage(props: Props) {
       className="max-w-xl"
       showClose={true}
     >
-      <UploaderModalContent />
+      {UploaderModalContent()}
     </Modal>
   );
 }

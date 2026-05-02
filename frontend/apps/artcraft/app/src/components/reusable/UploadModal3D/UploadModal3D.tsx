@@ -165,7 +165,7 @@ export function UploadModal3D(props: Props) {
       className="max-w-xl"
       showClose={true}
     >
-      <UploaderModalContent />
+      {UploaderModalContent()}
     </Modal>
   );
 }
