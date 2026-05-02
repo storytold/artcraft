@@ -100,6 +100,7 @@ export function UploadModalMedia({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
+      {/* Inline call — `<Comp />` would be a fresh component reference each render and remount the subtree. */}
       {UploaderModalContent()}
     </Modal>
   );

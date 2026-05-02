@@ -129,6 +129,7 @@ export function UploadModalImage(props: Props) {
       className="max-w-xl"
       showClose={true}
     >
+      {/* Inline call — `<Comp />` would be a fresh component reference each render and remount the subtree. */}
       {UploaderModalContent()}
     </Modal>
   );
