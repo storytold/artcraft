@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Checkbox } from "@storyteller/ui-checkbox";
 import { LoadingDots } from "@storyteller/ui-loading";
 import { Modal } from "@storyteller/ui-modal";
@@ -38,6 +38,25 @@ export function UploadModal3D(props: Props) {
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
   const [isCharacter, setIsCharacter] = useState(false);
+
+  // TEMP debug: render counter — see why this re-renders mid-click.
+  const renderRef = useRef({ count: 0, prev: null as Record<string, unknown> | null });
+  renderRef.current.count += 1;
+  const traced = { isOpen, uploaderStateStatus: uploaderState.status, isCharacter };
+  const diff: Record<string, [unknown, unknown]> = {};
+  if (renderRef.current.prev) {
+    for (const k of Object.keys(traced) as Array<keyof typeof traced>) {
+      if (renderRef.current.prev[k] !== traced[k]) {
+        diff[k] = [renderRef.current.prev[k], traced[k]];
+      }
+    }
+  }
+  // eslint-disable-next-line no-console
+  console.debug(
+    `[render-trace] UploadModal3D #${renderRef.current.count}`,
+    Object.keys(diff).length ? { diff } : { same: traced },
+  );
+  renderRef.current.prev = traced;
 
   const selectedCategory = isCharacter
     ? FilterEngineCategories.CHARACTER

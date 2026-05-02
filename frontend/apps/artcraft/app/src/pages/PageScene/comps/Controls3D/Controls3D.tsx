@@ -13,7 +13,7 @@ import { Button } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { SettingsModal } from "@storyteller/ui-settings-modal";
 import { EngineContext } from "../../contexts/EngineContext";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { usePageSceneStore } from "../../PageSceneStore";
 import { useTabStore } from "~/pages/Stores/TabState";
@@ -67,6 +67,36 @@ export const Controls3D = () => {
 
 
   const outlinerItemCount = usePageSceneStore((s) => s.outlinerItems.length);
+
+  // TEMP debug: render counter — see why this re-renders mid-click.
+  const renderRef = useRef({ count: 0, prev: null as Record<string, unknown> | null });
+  renderRef.current.count += 1;
+  const traced = {
+    assetModalVisible,
+    selectedMode,
+    transformSpace,
+    outlinerItemCount,
+    upload3DIsShowing,
+    uploadImageIsShowing,
+    uploadSplatIsShowing,
+    showEmptySceneTooltip,
+    isAddAssetPopoverOpen,
+    isSettingsModalOpen,
+  };
+  const diff: Record<string, [unknown, unknown]> = {};
+  if (renderRef.current.prev) {
+    for (const k of Object.keys(traced) as Array<keyof typeof traced>) {
+      if (renderRef.current.prev[k] !== traced[k]) {
+        diff[k] = [renderRef.current.prev[k], traced[k]];
+      }
+    }
+  }
+  // eslint-disable-next-line no-console
+  console.debug(
+    `[render-trace] Controls3D #${renderRef.current.count}`,
+    Object.keys(diff).length ? { diff } : { same: traced },
+  );
+  renderRef.current.prev = traced;
 
   useEffect(() => {
     const isSceneEmpty =
