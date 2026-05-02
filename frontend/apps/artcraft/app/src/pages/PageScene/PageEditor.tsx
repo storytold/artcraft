@@ -112,8 +112,15 @@ export const PageEditor = () => {
   const updateCamera = usePageSceneStore((s) => s.updateCamera);
   const deleteCamera = usePageSceneStore((s) => s.deleteCamera);
   const setSelectedCameraId = usePageSceneStore((s) => s.setSelectedCameraId);
+  // Only stops propagation for clicks on the overlay div itself (the
+  // transparent gaps between control buttons). Clicks that bubbled up
+  // from child controls pass through untouched, so React-tree-portal'd
+  // modals further down the JSX (the upload modals inside Controls3D)
+  // aren't silenced when the user clicks inside them.
   const handleOverlayClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    event.stopPropagation();
+    if (event.target === event.currentTarget) {
+      event.stopPropagation();
+    }
   };
 
   useEffect(() => {
