@@ -229,20 +229,19 @@ export const Modal = ({
   // Track last non-expanded position
   const lastNonExpandedPosition = useRef<{ x: number; y: number } | null>(null);
 
-  // Animation transitions
+  // Animation transitions. Transform (translate / scale) is
+  // intentionally omitted — when the React tree under the modal is
+  // busy (e.g. the 3D scene is rendering), the spring takes long
+  // enough that a quick click on a deep child (like the file
+  // uploader's "Upload a file" link) lands its mousedown on one
+  // element and its mouseup on another after the modal shifts under
+  // the cursor, breaking WebView2's strict same-target rule for
+  // synthesizing `click`. The file picker then never opens. Opacity
+  // alone gives the fade without moving any clickable surface.
   const transitions = useTransition(isOpen, {
-    from: {
-      opacity: 0,
-      transform: "scale(0.95) translateY(-10px)",
-    },
-    enter: {
-      opacity: 1,
-      transform: "scale(1) translateY(0px)",
-    },
-    leave: {
-      opacity: 0,
-      transform: "scale(0.95) translateY(10px)",
-    },
+    from: { opacity: 0 },
+    enter: { opacity: 1 },
+    leave: { opacity: 0 },
     config: {
       tension: 300,
       friction: 30,
@@ -986,9 +985,7 @@ export const Modal = ({
                       style={{
                         ...getModalStyle(),
                         opacity: styles.opacity,
-                        transform: styles.transform,
-                        transformOrigin: "center center",
-                        willChange: "transform, opacity", // Optimize for animations
+                        willChange: "opacity",
                         outline: "none",
                       }}
                     >
