@@ -154,11 +154,9 @@ export const PageEditor = () => {
       );
     };
 
-    const types: Array<"click" | "mousedown" | "pointerdown"> = [
-      "click",
-      "mousedown",
-      "pointerdown",
-    ];
+    const types: Array<
+      "click" | "mousedown" | "mouseup" | "pointerdown" | "pointerup"
+    > = ["click", "mousedown", "mouseup", "pointerdown", "pointerup"];
     const handlers = types.flatMap((type) => {
       const cap = trace("CAPTURE", type);
       const bub = trace("BUBBLE", type);
@@ -169,10 +167,27 @@ export const PageEditor = () => {
         () => document.removeEventListener(type, bub, false),
       ];
     });
+
+    // Monkey-patch setPointerCapture to see who's grabbing the pointer
+    // (a mid-click capture explains the missing click — mouseup fires
+    // on the captured element instead of the original mousedown target).
+    const proto = Element.prototype as any;
+    const originalSet = proto.setPointerCapture;
+    proto.setPointerCapture = function (id: number) {
+      // eslint-disable-next-line no-console
+      console.debug("[click-trace] setPointerCapture", {
+        on: describe(this),
+        pointerId: id,
+        stack: new Error().stack?.split("\n").slice(1, 6).join("\n"),
+      });
+      return originalSet.call(this, id);
+    };
+
     // eslint-disable-next-line no-console
     console.debug("[click-trace] installed");
     return () => {
       handlers.forEach((off) => off());
+      proto.setPointerCapture = originalSet;
       // eslint-disable-next-line no-console
       console.debug("[click-trace] removed");
     };
