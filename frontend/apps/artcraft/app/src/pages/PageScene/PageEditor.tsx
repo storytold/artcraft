@@ -183,11 +183,60 @@ export const PageEditor = () => {
       return originalSet.call(this, id);
     };
 
+    // While a click is in flight (mousedown→mouseup), watch the entire
+    // body subtree for DOM mutations. If something re-renders / removes
+    // / repositions the element under the cursor mid-click, the mouseup
+    // target won't match mousedown — that's the actual root cause.
+    let activeObserver: MutationObserver | null = null;
+    let mutationCount = 0;
+    const onTrackedDown = (e: Event) => {
+      if (e.type !== "mousedown") return;
+      mutationCount = 0;
+      activeObserver = new MutationObserver((muts) => {
+        muts.forEach((m) => {
+          mutationCount += 1;
+          if (mutationCount > 30) return;
+          // eslint-disable-next-line no-console
+          console.debug("[click-trace] DOM mutation mid-click", {
+            type: m.type,
+            target: describe(m.target as any),
+            attributeName: m.attributeName,
+            oldValue: m.oldValue,
+            addedNodes: Array.from(m.addedNodes).map((n) => describe(n as any)),
+            removedNodes: Array.from(m.removedNodes).map((n) => describe(n as any)),
+          });
+        });
+      });
+      activeObserver.observe(document.body, {
+        attributes: true,
+        attributeOldValue: true,
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    };
+    const onTrackedUp = (e: Event) => {
+      if (e.type !== "mouseup") return;
+      if (activeObserver) {
+        // eslint-disable-next-line no-console
+        console.debug(
+          `[click-trace] total mutations during click: ${mutationCount}`,
+        );
+        activeObserver.disconnect();
+        activeObserver = null;
+      }
+    };
+    document.addEventListener("mousedown", onTrackedDown, true);
+    document.addEventListener("mouseup", onTrackedUp, true);
+
     // eslint-disable-next-line no-console
     console.debug("[click-trace] installed");
     return () => {
       handlers.forEach((off) => off());
       proto.setPointerCapture = originalSet;
+      document.removeEventListener("mousedown", onTrackedDown, true);
+      document.removeEventListener("mouseup", onTrackedUp, true);
+      activeObserver?.disconnect();
       // eslint-disable-next-line no-console
       console.debug("[click-trace] removed");
     };
