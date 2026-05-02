@@ -123,6 +123,61 @@ export const PageEditor = () => {
     }
   };
 
+  // TEMP debug: trace click / mousedown / pointerdown events at every
+  // listenable phase so we can locate whatever is silencing the
+  // upload-modal file-picker click. Remove once the bug is fixed.
+  useEffect(() => {
+    const describe = (t: EventTarget | null): string => {
+      if (!(t instanceof HTMLElement)) return String(t);
+      const id = t.id ? `#${t.id}` : "";
+      const cls =
+        typeof t.className === "string" && t.className
+          ? `.${t.className.split(/\s+/).slice(0, 2).join(".")}`
+          : "";
+      const label =
+        t.closest("label")?.getAttribute("for") ??
+        (t.closest("label") ? "(unnamed)" : null);
+      return `${t.tagName.toLowerCase()}${id}${cls}${label ? ` [in label for=${label}]` : ""}`;
+    };
+
+    const trace = (phase: string, type: string) => (e: Event) => {
+      // eslint-disable-next-line no-console
+      console.debug(
+        `[click-trace] ${type} ${phase}`,
+        {
+          target: describe(e.target),
+          currentTarget: describe(e.currentTarget),
+          defaultPrevented: e.defaultPrevented,
+          bubbles: e.bubbles,
+          composedPath: (e as any).composedPath?.()?.slice(0, 6).map(describe),
+        },
+      );
+    };
+
+    const types: Array<"click" | "mousedown" | "pointerdown"> = [
+      "click",
+      "mousedown",
+      "pointerdown",
+    ];
+    const handlers = types.flatMap((type) => {
+      const cap = trace("CAPTURE", type);
+      const bub = trace("BUBBLE", type);
+      document.addEventListener(type, cap, true);
+      document.addEventListener(type, bub, false);
+      return [
+        () => document.removeEventListener(type, cap, true),
+        () => document.removeEventListener(type, bub, false),
+      ];
+    });
+    // eslint-disable-next-line no-console
+    console.debug("[click-trace] installed");
+    return () => {
+      handlers.forEach((off) => off());
+      // eslint-disable-next-line no-console
+      console.debug("[click-trace] removed");
+    };
+  }, []);
+
   useEffect(() => {
     window.onbeforeunload = () => {
       return "You may have unsaved changes.";
