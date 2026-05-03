@@ -10,6 +10,7 @@ use crate::core::commands::generate::generate_image::utils::parse_semantic_media
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
+
 /// Dispatch an image generation request to Artcraft.
 pub async fn handle_artcraft(
   request: &TauriGenerateImageRequest,
@@ -37,15 +38,15 @@ pub async fn handle_artcraft(
     handle_artcraft_via_legacy(
       request,
       &semantic_media_files,
+      &creds,
       app_env_configs,
-      storyteller_creds_manager,
     ).await
   } else {
     handle_artcraft_via_omni_endpoint(
       request,
       &semantic_media_files,
+      &creds,
       app_env_configs,
-      storyteller_creds_manager,
     ).await
   }
 }

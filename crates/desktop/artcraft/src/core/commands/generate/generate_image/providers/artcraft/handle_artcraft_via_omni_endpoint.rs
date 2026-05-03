@@ -5,20 +5,20 @@ use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
 use tokens::tokens::media_files::MediaFileToken;
 use uuid_utils::uuid::generate_random_uuid;
-use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
+use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
+use crate::core::commands::enqueue::generate_error::GenerateError;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::api_adapters::models::image::tauri_image_model_to_enums_model::tauri_image_model_to_enums_model;
 use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::commands::generate::generate_image::utils::parse_semantic_media_files::SemanticMediaFiles;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
-use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 pub async fn handle_artcraft_via_omni_endpoint(
   request: &TauriGenerateImageRequest,
   semantic_media_files: &SemanticMediaFiles,
+  creds: &StorytellerCredentialSet,
   app_env_configs: &AppEnvConfigs,
-  storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
 
@@ -26,11 +26,6 @@ pub async fn handle_artcraft_via_omni_endpoint(
     .ok_or(GenerateError::NotYetImplemented(
       format!("Model {:?} is not supported via the omni endpoint", tauri_model),
     ))?;
-
-  let creds = match storyteller_creds_manager.get_credentials()? {
-    Some(creds) => creds,
-    None => return Err(GenerateError::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials)),
-  };
 
   let uuid_idempotency_token = generate_random_uuid();
 
@@ -54,7 +49,7 @@ pub async fn handle_artcraft_via_omni_endpoint(
 
   let response = omni_gen_image_generate(
     &app_env_configs.storyteller_host,
-    Some(&creds),
+    Some(creds),
     omni_request,
   ).await.map_err(|err| {
     error!("Omni image generation failed: {:?}", err);
