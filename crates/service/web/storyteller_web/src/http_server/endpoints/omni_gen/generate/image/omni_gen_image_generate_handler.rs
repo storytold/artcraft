@@ -236,7 +236,7 @@ pub async fn omni_gen_image_generate_handler(
       for media_token in ref_tokens {
         context_items.push(PromptContextItem {
           media_token: media_token.clone(),
-          context_semantic_type: PromptContextSemanticType::Imgsrc,
+          context_semantic_type: PromptContextSemanticType::Imgref,
         });
       }
     }
