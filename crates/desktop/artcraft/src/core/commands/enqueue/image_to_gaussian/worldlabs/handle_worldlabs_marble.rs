@@ -1,7 +1,7 @@
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::image_to_gaussian::enqueue_image_to_gaussian_command::EnqueueImageToGaussianRequest;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::enqueue::text_to_image::enqueue_text_to_image_command::{EnqueueTextToImageRequest, TextToImageSize};
+use crate::core::commands::deprecated::text_to_image::enqueue_text_to_image_command::{EnqueueTextToImageRequest, TextToImageSize};
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;
 use crate::core::events::generation_events::common::GenerationModel;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
