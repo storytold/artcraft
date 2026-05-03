@@ -1,6 +1,6 @@
 use crate::core::commands::enqueue::generate_error::{BadInputReason, GenerateError};
-use crate::core::commands::enqueue::image_edit::enqueue_edit_image_command::EnqueueEditImageCommand;
-use crate::core::commands::enqueue::image_inpaint::enqueue_image_inpaint_command::EnqueueInpaintImageCommand;
+use crate::core::commands::deprecated::image_edit::enqueue_edit_image_command::EnqueueEditImageCommand;
+use crate::core::commands::deprecated::image_inpaint::enqueue_image_inpaint_command::EnqueueInpaintImageCommand;
 use crate::core::commands::generate::generate_video::request::{TauriGenerateVideoRequest, GrokAspectRatio, SoraOrientation};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::events::functional_events::show_provider_login_modal_event::ShowProviderLoginModalEvent;

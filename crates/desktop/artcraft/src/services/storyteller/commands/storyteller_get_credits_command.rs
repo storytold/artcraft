@@ -1,4 +1,4 @@
-use crate::core::commands::enqueue::image_edit::enqueue_edit_image_command::{ImageEditModel, EditImageQuality, EditImageSize};
+use crate::core::commands::deprecated::image_edit::enqueue_edit_image_command::{ImageEditModel, EditImageQuality, EditImageSize};
 use crate::core::commands::response::shorthand::ResponseOrErrorMessage;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;

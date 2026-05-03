@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use crate::core::commands::enqueue::image_edit::enqueue_edit_image_command::{ImageEditModel, EditImageQuality, EditImageSize};
+use crate::core::commands::deprecated::image_edit::enqueue_edit_image_command::{ImageEditModel, EditImageQuality, EditImageSize};
 use crate::core::commands::providers::get_provider_order_command::GetProviderOrderResponse;
 use crate::core::commands::response::shorthand::ResponseOrErrorMessage;
 use crate::core::commands::response::success_response_wrapper::SerializeMarker;
