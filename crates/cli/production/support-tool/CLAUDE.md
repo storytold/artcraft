@@ -14,6 +14,7 @@ cargo run -p support-tool -- seedance2pro generate_video --prompt "A corgi at th
 Requires a `.env-support-tool-secrets` file (or env vars) with:
 
 - `SEEDANCE2PRO_COOKIES` — session cookies for Kinovi/Seedance2Pro API auth
+- `ARTCRAFT_COOKIES` — session cookies for ArtCraft API auth (format: `session=...; visitor=...`)
 
 ## Architecture
 
@@ -31,15 +32,27 @@ Requires a `.env-support-tool-secrets` file (or env vars) with:
 4. Add a variant to `Seedance2proCommand` enum in `dispatch.rs`
 5. Add a match arm in `dispatch.rs::run()`
 
+## Utilities
+
+- `src/utils/parse_video_model.rs` — shared parser for loose video model names → `CommonVideoModel`
+- `src/utils/normalize_subcommands.rs` — underscore-insensitive arg normalizer
+
 ## Conventions
 
 - Use `log::info!()` for status output, never `println!` (except for final results)
 - Use `anyhow::anyhow!()` for ad-hoc errors
 - Get `Seedance2ProSession` from `state.cookies` via `from_cookies_string()`
-- External crates used: `artcraft_client` (media file download), `seedance2pro_client` (video gen)
+- Get `StorytellerCredentialSet` from `state.creds` (parsed from ARTCRAFT_COOKIES)
+- External crates used: `artcraft_client` (media file download, omni API), `seedance2pro_client` (Kinovi direct), `artcraft_api_defs` (request types)
 
 ## Subcommands
 
+### seedance2pro (direct Kinovi API)
+
 - `seedance2pro find_job --token <order_id>` — search for a job across all pages
 - `seedance2pro failed_job_histogram` — histogram of failure reasons
-- `seedance2pro generate_video --prompt <text_or_file> [--model seedance2p0] [--reference_media_tokens "token1,token2"] [--localhost] [--download_path /tmp/media_files]`
+- `seedance2pro generate_video --prompt <text_or_file> [--model seedance2p0] [--start_frame_media_token mf_xxx] [--localhost] [--download_path /tmp/media_files]`
+
+### artcraft (omni API)
+
+- `artcraft generate_video --prompt <text_or_file> [--model seedance2p0] [--start_frame_media_token mf_xxx] [--duration 5] [--localhost]`

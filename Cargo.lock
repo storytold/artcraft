@@ -11469,15 +11469,18 @@ name = "support-tool"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "artcraft_api_defs",
  "artcraft_client",
  "clap 4.5.60",
  "easyenv",
+ "enums",
  "errors",
  "log",
  "seedance2pro_client",
  "serde_json",
  "tokens",
  "tokio",
+ "uuid 1.22.0",
 ]
 
 [[package]]
