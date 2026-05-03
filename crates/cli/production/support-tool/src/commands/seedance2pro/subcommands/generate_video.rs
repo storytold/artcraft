@@ -38,8 +38,8 @@ const DEFAULT_DOWNLOAD_PATH: &str = "/tmp/media_files";
 EXAMPLES:
   support-tool seedance2pro generate_video --prompt \"A corgi at the lake\"
   support-tool seedance2pro generate_video --prompt prompt.txt --model happyhorse
-  support-tool seedance2pro generate_video --prompt \"Dancing\" --reference_media_tokens \"mf_abc,mf_def\"
-  support-tool seedance2pro generate_video --prompt \"Cat\" --localhost --download_path /tmp/my_cache
+  support-tool seedance2pro generate_video --prompt \"Dancing\" --start_frame_media_token mf_abc123
+  support-tool seedance2pro generate_video --prompt \"Cat\" --image_reference_tokens \"mf_abc,mf_def\"
 ",
 )]
 pub struct GenerateVideoArgs {
@@ -47,10 +47,25 @@ pub struct GenerateVideoArgs {
   #[arg(long)]
   pub prompt: String,
 
-  /// Comma or space separated media tokens to use as reference media.
-  /// Example: "mf_abc123,mf_def456" or "mf_abc123 mf_def456"
+  /// A single media token for the start frame image.
   #[arg(long)]
-  pub reference_media_tokens: Option<String>,
+  pub start_frame_media_token: Option<String>,
+
+  /// A single media token for the end frame image.
+  #[arg(long)]
+  pub end_frame_media_token: Option<String>,
+
+  /// Comma or space separated media tokens for image references.
+  #[arg(long)]
+  pub image_reference_tokens: Option<String>,
+
+  /// Comma or space separated media tokens for video references.
+  #[arg(long)]
+  pub video_reference_tokens: Option<String>,
+
+  /// Comma or space separated media tokens for audio references.
+  #[arg(long)]
+  pub audio_reference_tokens: Option<String>,
 
   /// Use localhost:12345 instead of production API for artcraft_client lookups.
   #[arg(long)]
@@ -88,6 +103,16 @@ fn parse_model(value: &str) -> anyhow::Result<VideoModel> {
   }
 }
 
+// ── Resolved media inputs ──
+
+struct ResolvedMediaInputs {
+  start_frame_url: Option<String>,
+  end_frame_url: Option<String>,
+  reference_image_urls: Option<Vec<String>>,
+  reference_video_urls: Option<Vec<String>>,
+  reference_audio_urls: Option<Vec<String>>,
+}
+
 // ── Entry point ──
 
 pub async fn run(state: &Seedance2ProState, args: GenerateVideoArgs) -> anyhow::Result<()> {
@@ -104,17 +129,56 @@ pub async fn run(state: &Seedance2ProState, args: GenerateVideoArgs) -> anyhow::
   info!("Download cache directory: {:?}", download_dir);
 
   // Parse media tokens.
-  let media_tokens = parse_media_tokens(args.reference_media_tokens.as_deref());
-  info!("Reference media tokens: {:?}", media_tokens.iter().map(|t| t.as_str()).collect::<Vec<_>>());
+  let start_frame_token = args.start_frame_media_token.as_deref()
+    .map(|s| s.trim())
+    .filter(|s| !s.is_empty())
+    .map(|s| MediaFileToken::new_from_str(s));
+
+  let end_frame_token = args.end_frame_media_token.as_deref()
+    .map(|s| s.trim())
+    .filter(|s| !s.is_empty())
+    .map(|s| MediaFileToken::new_from_str(s));
+
+  let image_ref_tokens = parse_media_tokens(args.image_reference_tokens.as_deref());
+  let video_ref_tokens = parse_media_tokens(args.video_reference_tokens.as_deref());
+  let audio_ref_tokens = parse_media_tokens(args.audio_reference_tokens.as_deref());
+
+  // Collect all tokens that need downloading.
+  let mut all_tokens: Vec<MediaFileToken> = Vec::new();
+  if let Some(t) = &start_frame_token { all_tokens.push(t.clone()); }
+  if let Some(t) = &end_frame_token { all_tokens.push(t.clone()); }
+  all_tokens.extend(image_ref_tokens.iter().cloned());
+  all_tokens.extend(video_ref_tokens.iter().cloned());
+  all_tokens.extend(audio_ref_tokens.iter().cloned());
+
+  info!("Total media tokens to process: {}", all_tokens.len());
 
   // Download media files (with caching).
-  let downloaded_files = download_media_files(&media_tokens, &api_host, &download_dir).await?;
+  let downloaded_files = download_media_files(&all_tokens, &api_host, &download_dir).await?;
 
   // Upload media files to Kinovi/Seedance2Pro.
   let uploaded_urls = upload_media_files_to_kinovi(&session, &downloaded_files).await?;
 
+  // Map uploaded URLs back to their roles.
+  let mut url_iter = uploaded_urls.into_iter();
+
+  let start_frame_url = if start_frame_token.is_some() { url_iter.next() } else { None };
+  let end_frame_url = if end_frame_token.is_some() { url_iter.next() } else { None };
+
+  let reference_image_urls: Vec<String> = url_iter.by_ref().take(image_ref_tokens.len()).collect();
+  let reference_video_urls: Vec<String> = url_iter.by_ref().take(video_ref_tokens.len()).collect();
+  let reference_audio_urls: Vec<String> = url_iter.by_ref().take(audio_ref_tokens.len()).collect();
+
+  let media_inputs = ResolvedMediaInputs {
+    start_frame_url,
+    end_frame_url,
+    reference_image_urls: if reference_image_urls.is_empty() { None } else { Some(reference_image_urls) },
+    reference_video_urls: if reference_video_urls.is_empty() { None } else { Some(reference_video_urls) },
+    reference_audio_urls: if reference_audio_urls.is_empty() { None } else { Some(reference_audio_urls) },
+  };
+
   // Generate video.
-  generate(model, &session, &prompt, &uploaded_urls).await
+  generate(model, &session, &prompt, media_inputs).await
 }
 
 // ── Prompt resolution ──
@@ -307,18 +371,24 @@ async fn generate(
   model: VideoModel,
   session: &Seedance2ProSession,
   prompt: &str,
-  uploaded_urls: &[String],
+  media: ResolvedMediaInputs,
 ) -> anyhow::Result<()> {
-  // For now, treat the first uploaded URL as the start_frame_url and the rest as references.
-  let start_frame_url = uploaded_urls.first().cloned();
-  let reference_image_urls = if uploaded_urls.len() > 1 {
-    Some(uploaded_urls[1..].to_vec())
-  } else {
-    None
-  };
-
   match model {
     VideoModel::HappyHorse => {
+      // Happy Horse only supports start_frame_url.
+      if media.end_frame_url.is_some() {
+        return Err(anyhow!("Happy Horse does not support --end_frame_media_token"));
+      }
+      if media.reference_image_urls.is_some() {
+        return Err(anyhow!("Happy Horse does not support --image_reference_tokens"));
+      }
+      if media.reference_video_urls.is_some() {
+        return Err(anyhow!("Happy Horse does not support --video_reference_tokens"));
+      }
+      if media.reference_audio_urls.is_some() {
+        return Err(anyhow!("Happy Horse does not support --audio_reference_tokens"));
+      }
+
       info!("Generating video with Happy Horse 1.0...");
       let result = generate_happy_horse_1p0(GenerateHappyHorse1p0Args {
         request: GenerateHappyHorse1p0Request {
@@ -327,7 +397,7 @@ async fn generate(
           output_resolution: None,
           batch_count: None,
           duration_seconds: 5,
-          start_frame_url,
+          start_frame_url: media.start_frame_url,
         },
         session,
         host_override: None,
@@ -350,11 +420,11 @@ async fn generate(
           output_resolution: None,
           duration_seconds: 5,
           batch_count: None,
-          start_frame_url,
-          end_frame_url: None,
-          reference_image_urls,
-          reference_video_urls: None,
-          reference_audio_urls: None,
+          start_frame_url: media.start_frame_url,
+          end_frame_url: media.end_frame_url,
+          reference_image_urls: media.reference_image_urls,
+          reference_video_urls: media.reference_video_urls,
+          reference_audio_urls: media.reference_audio_urls,
           character_ids: None,
           use_face_blur_hack: None,
         },
@@ -379,11 +449,11 @@ async fn generate(
           output_resolution: None,
           duration_seconds: 5,
           batch_count: None,
-          start_frame_url,
-          end_frame_url: None,
-          reference_image_urls,
-          reference_video_urls: None,
-          reference_audio_urls: None,
+          start_frame_url: media.start_frame_url,
+          end_frame_url: media.end_frame_url,
+          reference_image_urls: media.reference_image_urls,
+          reference_video_urls: media.reference_video_urls,
+          reference_audio_urls: media.reference_audio_urls,
           character_ids: None,
           use_face_blur_hack: None,
         },
