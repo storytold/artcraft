@@ -32,25 +32,36 @@ const DEFAULT_DOWNLOAD_PATH: &str = "/tmp/media_files";
 // ── Args ──
 
 #[derive(Args)]
+#[command(
+  override_usage = "support-tool seedance2pro generate_video [OPTIONS] --prompt <PROMPT>",
+  after_help = "\
+EXAMPLES:
+  support-tool seedance2pro generate_video --prompt \"A corgi at the lake\"
+  support-tool seedance2pro generate_video --prompt prompt.txt --model happyhorse
+  support-tool seedance2pro generate_video --prompt \"Dancing\" --reference_media_tokens \"mf_abc,mf_def\"
+  support-tool seedance2pro generate_video --prompt \"Cat\" --localhost --download_path /tmp/my_cache
+",
+)]
 pub struct GenerateVideoArgs {
   /// A prompt string or path to a file containing the prompt (.txt or .md).
   #[arg(long)]
   pub prompt: String,
 
   /// Comma or space separated media tokens to use as reference media.
+  /// Example: "mf_abc123,mf_def456" or "mf_abc123 mf_def456"
   #[arg(long)]
   pub reference_media_tokens: Option<String>,
 
   /// Use localhost:12345 instead of production API for artcraft_client lookups.
-  #[arg(long, default_value_t = false)]
+  #[arg(long)]
   pub localhost: bool,
 
-  /// Directory to cache downloaded media files. Defaults to /tmp/media_files.
+  /// Directory to cache downloaded media files. [default: /tmp/media_files]
   #[arg(long)]
   pub download_path: Option<String>,
 
-  /// Model to use: seedance2, seedance2p0, seedance_2p0, seedance2fast,
-  /// seedance2p0fast, seedance_2p0_fast, happyhorse, happy_horse.
+  /// Model: seedance2p0, seedance2p0fast, happyhorse (and underscore variants).
+  /// [default: seedance2p0]
   #[arg(long)]
   pub model: Option<String>,
 }
