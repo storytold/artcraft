@@ -6,12 +6,14 @@ use crate::core::commands::generate::generate_image::providers::artcraft::handle
 use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft_via_omni_endpoint::handle_artcraft_via_omni_endpoint;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
+use crate::core::commands::generate::generate_image::utils::parse_semantic_media_files::SemanticMediaFiles;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 /// Dispatch an image generation request to Artcraft.
 pub async fn handle_artcraft(
   request: &TauriGenerateImageRequest,
+  semantic_media_files: &SemanticMediaFiles,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
@@ -22,12 +24,14 @@ pub async fn handle_artcraft(
     info!("Model {:?} is legacy-only, routing to artcraft_router path.", request.model);
     handle_artcraft_via_legacy(
       request,
+      semantic_media_files,
       app_env_configs,
       storyteller_creds_manager,
     ).await
   } else {
     handle_artcraft_via_omni_endpoint(
       request,
+      semantic_media_files,
       app_env_configs,
       storyteller_creds_manager,
     ).await

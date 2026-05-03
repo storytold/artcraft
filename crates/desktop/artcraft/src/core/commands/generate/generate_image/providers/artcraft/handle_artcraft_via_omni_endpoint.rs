@@ -10,11 +10,13 @@ use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::api_adapters::models::image::tauri_image_model_to_enums_model::tauri_image_model_to_enums_model;
 use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
+use crate::core::commands::generate::generate_image::utils::parse_semantic_media_files::SemanticMediaFiles;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
 pub async fn handle_artcraft_via_omni_endpoint(
   request: &TauriGenerateImageRequest,
+  semantic_media_files: &SemanticMediaFiles,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
@@ -32,7 +34,7 @@ pub async fn handle_artcraft_via_omni_endpoint(
 
   let uuid_idempotency_token = generate_random_uuid();
 
-  let image_media_tokens = get_image_media_tokens(&request);
+  let image_media_tokens = get_image_media_tokens(request, semantic_media_files);
 
   let omni_request = OmniGenImageCostAndGenerateRequest {
     idempotency_token: Some(uuid_idempotency_token),
@@ -71,15 +73,22 @@ pub async fn handle_artcraft_via_omni_endpoint(
   })
 }
 
-fn get_image_media_tokens(request: &TauriGenerateImageRequest) -> Option<Vec<MediaFileToken>> {
+fn get_image_media_tokens(
+  request: &TauriGenerateImageRequest,
+  semantic_media_files: &SemanticMediaFiles,
+) -> Option<Vec<MediaFileToken>> {
   let num_images = request.image_media_tokens.as_deref()
       .map(|t| t.len())
       .unwrap_or(0);
 
-  let mut image_media_tokens = Vec::with_capacity(num_images + 1);
+  let mut image_media_tokens = Vec::with_capacity(num_images + 2);
 
-  if let Some(canvas_token) = &request.canvas_image_media_token {
+  if let Some(canvas_token) = &semantic_media_files.canvas_image_media_token {
     image_media_tokens.push(canvas_token.clone());
+  }
+
+  if let Some(scene_token) = &semantic_media_files.scene_image_media_token {
+    image_media_tokens.push(scene_token.clone());
   }
 
   if let Some(media_tokens) = &request.image_media_tokens {

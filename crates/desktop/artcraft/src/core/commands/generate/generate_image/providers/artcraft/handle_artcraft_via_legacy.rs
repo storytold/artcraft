@@ -14,6 +14,7 @@ use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
 use crate::core::api_adapters::models::image::tauri_image_model_to_router_model::tauri_image_model_to_router_model;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
+use crate::core::commands::generate::generate_image::utils::parse_semantic_media_files::SemanticMediaFiles;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
@@ -23,6 +24,7 @@ use crate::services::storyteller::state::storyteller_credential_manager::Storyte
 /// (eg. Recraft, FluxProKontextMax, edit/inpaint models).
 pub async fn handle_artcraft_via_legacy(
   request: &TauriGenerateImageRequest,
+  _semantic_media_files: &SemanticMediaFiles,
   app_env_configs: &AppEnvConfigs,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
