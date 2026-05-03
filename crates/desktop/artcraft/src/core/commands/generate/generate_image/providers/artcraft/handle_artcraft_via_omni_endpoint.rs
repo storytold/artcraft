@@ -6,9 +6,8 @@ use log::{error, info};
 use uuid_utils::uuid::generate_random_uuid;
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::generate::generate_image::providers::artcraft::model_mapping::{
-  map_to_generation_model, map_to_omni_aspect_ratio, map_to_omni_image_model, map_to_omni_resolution,
-};
+use crate::core::api_adapters::models::image::tauri_image_model_to_enums_model::tauri_image_model_to_enums_model;
+use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
@@ -20,12 +19,12 @@ pub async fn handle_artcraft_via_omni_endpoint(
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
 
-  let omni_model = map_to_omni_image_model(tauri_model)
+  let omni_model = tauri_image_model_to_enums_model(tauri_model)
     .ok_or(GenerateError::NotYetImplemented(
       format!("Model {:?} is not supported via the omni endpoint", tauri_model),
     ))?;
 
-  let generation_model = map_to_generation_model(tauri_model);
+  let generation_model = tauri_image_model_to_generation_model(tauri_model);
 
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,

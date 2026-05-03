@@ -11,9 +11,8 @@ use log::{error, info};
 
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::generate::generate_image::providers::artcraft::model_mapping::{
-  map_to_generation_model, map_to_router_image_model,
-};
+use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
+use crate::core::api_adapters::models::image::tauri_image_model_to_router_model::tauri_image_model_to_router_model;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
@@ -29,12 +28,12 @@ pub async fn handle_artcraft_via_legacy(
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
   let model = request.model.ok_or(GenerateError::no_model_specified())?;
 
-  let router_model = map_to_router_image_model(model)
+  let router_model = tauri_image_model_to_router_model(model)
     .ok_or(GenerateError::NotYetImplemented(
       format!("Model {:?} is not supported via the legacy router path", model),
     ))?;
 
-  let generation_model = map_to_generation_model(model);
+  let generation_model = tauri_image_model_to_generation_model(model);
 
   let creds = match storyteller_creds_manager.get_credentials()? {
     Some(creds) => creds,

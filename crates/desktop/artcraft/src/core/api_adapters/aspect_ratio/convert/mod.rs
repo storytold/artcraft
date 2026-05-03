@@ -1,4 +1,5 @@
 pub mod aspect_ratio_to_artcraft_flux_1_dev;
+pub mod router_aspect_ratio_to_enums_aspect_ratio;
 pub mod aspect_ratio_to_artcraft_flux_1_schnell;
 pub mod aspect_ratio_to_artcraft_flux_pro_1p1;
 pub mod aspect_ratio_to_artcraft_flux_pro_1p1_ultra;
