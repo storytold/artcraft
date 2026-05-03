@@ -4,6 +4,7 @@ use crate::core::commands::enqueue::generate_error::GenerateError;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_image::providers::artcraft::legacy::artcraft_flux_2_lora_angles::handle_flux_2_lora_angles;
 use crate::core::commands::generate::generate_image::providers::artcraft::legacy::artcraft_flux_dev_juggernaut_inpaint::handle_flux_dev_juggernaut_inpaint;
+use crate::core::commands::generate::generate_image::providers::artcraft::legacy::artcraft_flux_pro_kontext_edit::handle_flux_pro_kontext_edit;
 use crate::core::commands::generate::generate_image::providers::artcraft::legacy::artcraft_qwen_edit_2511_angles::handle_qwen_edit_2511_angles;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
@@ -24,6 +25,9 @@ pub async fn handle_artcraft_via_legacy(
   match model {
     TauriImageModel::FluxDevJuggernaut => {
       handle_flux_dev_juggernaut_inpaint(request, semantic_media_files, creds, app_env_configs).await
+    }
+    TauriImageModel::FluxProKontextMax => {
+      handle_flux_pro_kontext_edit(request, semantic_media_files, creds, app_env_configs).await
     }
     TauriImageModel::QwenEdit2511Angles => {
       handle_qwen_edit_2511_angles(request, semantic_media_files, creds, app_env_configs).await
