@@ -1,11 +1,10 @@
 use crate::core::commands::enqueue::common::notify_frontend_of_errors::notify_frontend_of_errors;
-use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
+use crate::core::commands::enqueue::generate_error::GenerateError;
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::generate_image::providers::artcraft::handle_artcraft;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::{
   TauriGenerateImageErrorType, TauriGenerateImageRequest, TauriGenerateImageResponse,
 };
-use crate::core::commands::generate::generate_image::utils::parse_semantic_media_files::parse_semantic_media_files;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::Response;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
@@ -46,30 +45,8 @@ pub async fn generate_image_command(
     });
   }
 
-  // Resolve semantic media files (upload raw bytes if provided).
-  let creds = match storyteller_creds_manager.get_credentials() {
-    Ok(Some(creds)) => creds,
-    Ok(None) => {
-      let err = GenerateError::MissingCredentials(MissingCredentialsReason::NeedsStorytellerCredentials);
-      return handle_error_behavior(&app, err).await;
-    }
-    Err(err) => {
-      return handle_error_behavior(&app, GenerateError::from(err)).await;
-    }
-  };
-
-  let semantic_media_files = match parse_semantic_media_files(
-    &request,
-    &creds,
-    &app_env_configs.storyteller_host,
-  ).await {
-    Ok(files) => files,
-    Err(err) => return handle_error_behavior(&app, err).await,
-  };
-
   let result = handle_artcraft(
     &request,
-    &semantic_media_files,
     &app_env_configs,
     &storyteller_creds_manager,
   ).await;
