@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT INTO debug_logs\nSET\n  event_token = ?,\n  debug_log_type = ?,\n  maybe_creator_user_token = ?,\n  message = ?\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "a9745ecf60b564ab096ee1dbe124221b5f288a4ae38e788e19bbd359db0b580f"
+}
