@@ -337,6 +337,7 @@ pub async fn kling_2p6_pro_multi_function_video_gen_handler(
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
+      maybe_debug_log_event_token: None,
     phantom: Default::default(),
   }).await;
 

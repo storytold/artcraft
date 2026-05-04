@@ -13,6 +13,7 @@ use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
@@ -46,6 +47,8 @@ pub struct InsertGenericInferenceForFalWithAprioriJobTokenArgs<'e, 'c, E>
   /// Override the initial job status. Defaults to `Pending` when `None`.
   /// Set to `Some(JobStatusPlus::CompleteFailure)` for mock/test failure jobs.
   pub starting_job_status_override: Option<JobStatusPlus>,
+
+  pub maybe_debug_log_event_token: Option<&'e DebugLogEventToken>,
 
   pub maybe_frontend_failure_category: Option<FrontendFailureCategory>,
   pub maybe_failure_reason: Option<&'e str>,
@@ -139,6 +142,8 @@ SET
   is_debug_request = FALSE,
   maybe_routing_tag = NULL,
 
+  maybe_debug_log_event_token = ?,
+
   frontend_failure_category = ?,
   failure_reason = ?,
 
@@ -163,6 +168,8 @@ SET
         args.maybe_avt_token.map(|t| t.to_string()),
         args.creator_ip_address,
         args.creator_set_visibility.to_str(),
+
+        args.maybe_debug_log_event_token.map(|t| t.as_str()),
 
         maybe_frontend_failure_category_str,
         maybe_truncated_failure_reason,

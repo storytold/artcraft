@@ -68,6 +68,7 @@ pub async fn insert_generic_inference_job_for_fal_queue_mock_failure<'e, 'c: 'e,
     starting_job_status_override: Some(JobStatusPlus::CompleteFailure),
     maybe_frontend_failure_category: args.maybe_frontend_failure_category,
     maybe_failure_reason: args.maybe_failure_reason,
+      maybe_debug_log_event_token: None,
     mysql_executor: args.mysql_executor,
     phantom: args.phantom,
   };

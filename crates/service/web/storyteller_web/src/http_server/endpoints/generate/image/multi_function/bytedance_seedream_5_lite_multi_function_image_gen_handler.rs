@@ -313,6 +313,7 @@ pub async fn bytedance_seedream_5_lite_multi_function_image_gen_handler(
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
+      maybe_debug_log_event_token: None,
     phantom: Default::default(),
   }).await;
 
