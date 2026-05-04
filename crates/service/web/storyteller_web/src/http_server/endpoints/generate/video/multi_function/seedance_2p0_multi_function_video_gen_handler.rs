@@ -422,6 +422,7 @@ pub async fn seedance_2p0_multi_function_video_gen_handler(
         maybe_avt_token: maybe_avt_token.as_ref(),
         creator_ip_address: &ip_address,
         creator_set_visibility: Visibility::Public,
+        maybe_debug_log_event_token: None,
         mysql_executor: &mut *transaction,
         phantom: Default::default(),
       }

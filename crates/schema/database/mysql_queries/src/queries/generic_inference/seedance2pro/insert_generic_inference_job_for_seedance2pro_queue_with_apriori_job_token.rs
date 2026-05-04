@@ -11,6 +11,7 @@ use enums::common::job_status_plus::JobStatusPlus;
 use enums::common::visibility::Visibility;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 use tokens::tokens::wallet_ledger_entries::WalletLedgerEntryToken;
@@ -39,6 +40,8 @@ pub struct InsertGenericInferenceForSeedance2ProWithAprioriJobTokenArgs<'e, 'c, 
   pub maybe_avt_token: Option<&'e AnonymousVisitorTrackingToken>,
   pub creator_ip_address: &'e str,
   pub creator_set_visibility: Visibility,
+
+  pub maybe_debug_log_event_token: Option<&'e DebugLogEventToken>,
 
   pub mysql_executor: E,
 
@@ -103,6 +106,8 @@ SET
   is_debug_request = FALSE,
   maybe_routing_tag = NULL,
 
+  maybe_debug_log_event_token = ?,
+
   status = ?
         "#,
         args.apriori_job_token.as_str(),
@@ -126,6 +131,8 @@ SET
         args.maybe_avt_token.map(|t| t.to_string()),
         args.creator_ip_address,
         args.creator_set_visibility.to_str(),
+
+        args.maybe_debug_log_event_token.map(|t| t.as_str()),
 
         STATUS.to_str(),
     );
