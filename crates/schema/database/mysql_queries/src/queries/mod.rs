@@ -8,6 +8,7 @@ pub mod billing;
 pub mod browser_session_logs;
 pub mod characters;
 pub mod comments;
+pub mod debug_logs;
 pub mod database_time;
 pub mod email_sender_jobs;
 pub mod entity_stats;
