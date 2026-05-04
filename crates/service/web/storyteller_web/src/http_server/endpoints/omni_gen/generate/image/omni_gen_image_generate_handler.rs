@@ -9,9 +9,7 @@ use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
-use mysql_queries::queries::debug_logs::bulk_insert_debug_logs::{
-  bulk_insert_debug_logs, BulkInsertDebugLogsArgs, DebugLogEvent,
-};
+use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
 use artcraft_router::client::router_client::RouterClient;
@@ -161,6 +159,19 @@ pub async fn omni_gen_image_generate_handler(
     ).await?;
   }
 
+  // ==================== DEBUG LOG: HTTP REQUEST ==================== //
+
+  if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+    apriori_debug_log_event_token: Some(&debug_log_event_token),
+    maybe_creator_user_token: Some(user_token),
+    debug_log_type: DebugLogType::HttpRequest,
+    message: &serde_json::to_string(&*request).unwrap_or_default(),
+    mysql_executor: &mut *mysql_connection,
+    phantom: Default::default(),
+  }).await {
+    warn!("Failed to insert HTTP request debug log: {:?}", err);
+  }
+
   // ==================== EXECUTE GENERATION ==================== //
 
   let fal_client = RouterFalClient::new(
@@ -176,6 +187,19 @@ pub async fn omni_gen_image_generate_handler(
       warn!("Image generation failed: {:?}", e);
       AdvancedCommonWebError::from_error(e)
     })?;
+
+  // ==================== DEBUG LOG: FAL REQUEST ==================== //
+
+  if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+    apriori_debug_log_event_token: Some(&debug_log_event_token),
+    maybe_creator_user_token: Some(user_token),
+    debug_log_type: DebugLogType::FalRequest,
+    message: &format!("{:?}", distilled.request),
+    mysql_executor: &mut *mysql_connection,
+    phantom: Default::default(),
+  }).await {
+    warn!("Failed to insert Fal request debug log: {:?}", err);
+  }
 
   let external_job_id = match &generation_response {
     GenerateImageResponse::Artcraft(p) => {
