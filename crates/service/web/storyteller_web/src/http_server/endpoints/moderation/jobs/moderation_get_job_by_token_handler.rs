@@ -25,7 +25,7 @@ use crate::state::server_state::ServerState;
 
 #[derive(serde_derive::Deserialize, ToSchema)]
 pub struct GetJobByTokenPathInfo {
-  pub token: String,
+  pub token: InferenceJobToken,
 }
 
 // ── Response ──
@@ -101,12 +101,10 @@ pub async fn moderation_get_job_by_token_handler(
     AdvancedCommonWebError::NotAuthorized
   })?;
 
-  let job_token = InferenceJobToken::new_from_str(&path.token);
-
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
   let job = get_job_by_token_for_moderation(GetJobByTokenForModerationArgs {
-    job_token: &job_token,
+    job_token: &path.token,
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
   }).await.map_err(|err| {
