@@ -10,6 +10,7 @@ use url::Url;
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_video_cost_and_generate_request::OmniGenVideoCostAndGenerateRequest;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_video_generate_response::OmniGenVideoGenerateResponse;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
+use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -17,6 +18,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation::common_video_model::CommonVideoModel;
 use enums::common::generation_provider::GenerationProvider;
 use http_server_common::request::get_request_ip::get_request_ip;
+use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::idepotency_tokens::insert_idempotency_token::insert_idempotency_token;
 use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_items::{
   insert_batch_prompt_context_items, InsertBatchArgs, PromptContextItem,
@@ -25,6 +27,7 @@ use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPrompt
 use tokens::tokens::characters::CharacterToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::http_server::endpoints::generate::common::payments_error_test::payments_error_test;
@@ -63,6 +66,8 @@ pub async fn omni_gen_video_generate_handler(
   info!("request: {:?}", request);
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
+
+  let debug_log_event_token = DebugLogEventToken::generate();
 
   let maybe_prompt_model_type: Option<CommonModelType> = request.model
     .as_ref()
@@ -206,6 +211,19 @@ pub async fn omni_gen_video_generate_handler(
       kinovi_character_id_map: &kinovi_character_id_map,
     }).await?
   };
+
+  // ==================== DEBUG LOG: HTTP REQUEST ==================== //
+
+  if let Err(err) = insert_debug_log(InsertDebugLogArgs {
+    apriori_debug_log_event_token: Some(&debug_log_event_token),
+    maybe_creator_user_token: Some(user_token),
+    debug_log_type: DebugLogType::HttpRequest,
+    message: &serde_json::to_string(&*request).unwrap_or_default(),
+    mysql_executor: &mut *mysql_connection,
+    phantom: Default::default(),
+  }).await {
+    warn!("Failed to insert HTTP request debug log: {:?}", err);
+  }
 
   // ==================== WRITE RESULT ==================== //
 
