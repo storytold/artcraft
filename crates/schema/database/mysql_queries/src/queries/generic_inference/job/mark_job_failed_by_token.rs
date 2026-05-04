@@ -26,44 +26,48 @@ pub struct MarkJobFailedByTokenFromConnectionArgs<'a> {
 /// Permanently mark an inference job as failed, looked up by its token.
 /// Uses a pool to acquire a connection.
 pub async fn mark_job_failed_by_token(args: MarkJobFailedByTokenArgs<'_>) -> AnyhowResult<()> {
-  execute_mark_failed(
-    args.pool,
-    args.job_token,
-    args.maybe_public_failure_reason,
-    args.internal_debugging_failure_reason,
-    args.maybe_frontend_failure_category,
-  ).await
+  execute_mark_failed(ExecuteMarkJobFailedByTokenArgs {
+    executor: args.pool,
+    job_token: args.job_token,
+    maybe_public_failure_reason: args.maybe_public_failure_reason,
+    internal_debugging_failure_reason: args.internal_debugging_failure_reason,
+    maybe_frontend_failure_category: args.maybe_frontend_failure_category,
+  }).await
 }
 
 /// Permanently mark an inference job as failed, looked up by its token.
 /// Uses an existing connection.
 pub async fn mark_job_failed_by_token_from_connection(args: MarkJobFailedByTokenFromConnectionArgs<'_>) -> AnyhowResult<()> {
-  execute_mark_failed(
-    &mut **args.mysql_connection,
-    args.job_token,
-    args.maybe_public_failure_reason,
-    args.internal_debugging_failure_reason,
-    args.maybe_frontend_failure_category,
-  ).await
+  execute_mark_failed(ExecuteMarkJobFailedByTokenArgs {
+    executor: &mut **args.mysql_connection,
+    job_token: args.job_token,
+    maybe_public_failure_reason: args.maybe_public_failure_reason,
+    internal_debugging_failure_reason: args.internal_debugging_failure_reason,
+    maybe_frontend_failure_category: args.maybe_frontend_failure_category,
+  }).await
+}
+
+struct ExecuteMarkJobFailedByTokenArgs<'a, E> {
+  executor: E,
+  job_token: &'a InferenceJobToken,
+  maybe_public_failure_reason: Option<&'a str>,
+  internal_debugging_failure_reason: &'a str,
+  maybe_frontend_failure_category: Option<FrontendFailureCategory>,
 }
 
 async fn execute_mark_failed<'e, E>(
-  executor: E,
-  job_token: &InferenceJobToken,
-  maybe_public_failure_reason: Option<&str>,
-  internal_debugging_failure_reason: &str,
-  maybe_frontend_failure_category: Option<FrontendFailureCategory>,
+  args: ExecuteMarkJobFailedByTokenArgs<'_, E>,
 ) -> AnyhowResult<()>
 where
   E: sqlx::Executor<'e, Database = MySql>,
 {
-  let maybe_public_failure_reason = maybe_public_failure_reason.map(|reason| {
+  let maybe_public_failure_reason = args.maybe_public_failure_reason.map(|reason| {
     let mut reason = reason.trim().to_string();
     reason.truncate(512);
     reason
   });
 
-  let mut internal_debugging_failure_reason = internal_debugging_failure_reason.trim().to_string();
+  let mut internal_debugging_failure_reason = args.internal_debugging_failure_reason.trim().to_string();
   internal_debugging_failure_reason.truncate(512);
 
   const FAILURE_STATUS: &str = JobStatusPlus::CompleteFailure.to_str();
@@ -82,10 +86,10 @@ WHERE token = ?
     FAILURE_STATUS,
     maybe_public_failure_reason.as_deref(),
     &internal_debugging_failure_reason,
-    maybe_frontend_failure_category,
-    job_token.as_str()
+    args.maybe_frontend_failure_category,
+    args.job_token.as_str()
   )
-    .execute(executor)
+    .execute(args.executor)
     .await;
 
   match query_result {
