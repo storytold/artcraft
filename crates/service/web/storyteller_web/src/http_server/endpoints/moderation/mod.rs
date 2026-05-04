@@ -1,4 +1,5 @@
 pub mod alerts;
+pub mod debug_logs;
 pub mod info;
 pub mod ip_bans;
 pub mod jobs;
