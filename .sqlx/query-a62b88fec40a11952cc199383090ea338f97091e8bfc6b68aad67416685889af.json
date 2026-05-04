@@ -1,0 +1,80 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT\n  id as `id: u64`,\n  event_token as `event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,\n  debug_log_type as `debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType`,\n  maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n  message,\n  created_at\nFROM debug_logs\nWHERE event_token = ?\nORDER BY id ASC\nLIMIT ?\n    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id: u64",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | PRIMARY_KEY | UNSIGNED | AUTO_INCREMENT",
+          "char_set": 63,
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 96
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "maybe_creator_user_token: tokens::tokens::users::UserToken",
+        "type_info": {
+          "type": "VarString",
+          "flags": "MULTIPLE_KEY | BINARY",
+          "char_set": 224,
+          "max_size": 128
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "message",
+        "type_info": {
+          "type": "Blob",
+          "flags": "NOT_NULL | BLOB | BINARY | NO_DEFAULT_VALUE",
+          "char_set": 224,
+          "max_size": 67108860
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": {
+          "type": "Datetime",
+          "flags": "NOT_NULL | MULTIPLE_KEY | BINARY",
+          "char_set": 63,
+          "max_size": 19
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "a62b88fec40a11952cc199383090ea338f97091e8bfc6b68aad67416685889af"
+}

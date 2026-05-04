@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
-use chrono::{DateTime, Utc};
-use sqlx::{Executor, FromRow, MySql, Row};
+use chrono::{DateTime, NaiveDateTime, Utc};
+use sqlx::{Executor, MySql};
 
 use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
@@ -29,6 +29,16 @@ pub struct DebugLogRow {
   pub created_at: DateTime<Utc>,
 }
 
+#[derive(Debug)]
+struct RawDebugLogRow {
+  id: u64,
+  event_token: DebugLogEventToken,
+  debug_log_type: DebugLogType,
+  maybe_creator_user_token: Option<UserToken>,
+  message: String,
+  created_at: NaiveDateTime,
+}
+
 pub async fn list_debug_logs_for_token<'e, 'c: 'e, E>(
   args: ListDebugLogsForTokenArgs<'e, 'c, E>,
 ) -> Result<Vec<DebugLogRow>, sqlx::Error>
@@ -37,33 +47,35 @@ where
 {
   let limit = args.limit.unwrap_or(DEFAULT_LIMIT).min(200) as i64;
 
-  let rows = sqlx::query(
-    "SELECT id, event_token, debug_log_type, maybe_creator_user_token, message, created_at \
-     FROM debug_logs \
-     WHERE event_token = ? \
-     ORDER BY id ASC \
-     LIMIT ?"
+  let rows = sqlx::query_as!(
+    RawDebugLogRow,
+    r#"
+SELECT
+  id as `id: u64`,
+  event_token as `event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,
+  debug_log_type as `debug_log_type: enums::by_table::debug_logs::debug_log_type::DebugLogType`,
+  maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,
+  message,
+  created_at
+FROM debug_logs
+WHERE event_token = ?
+ORDER BY id ASC
+LIMIT ?
+    "#,
+    args.event_token.as_str(),
+    limit,
   )
-    .bind(args.event_token.as_str())
-    .bind(limit)
     .fetch_all(args.mysql_executor)
     .await?;
 
-  let results = rows.iter().map(|row| {
-    let id: u64 = row.get("id");
-    let event_token_str: String = row.get("event_token");
-    let debug_log_type_str: String = row.get("debug_log_type");
-    let maybe_creator_user_token_str: Option<String> = row.get("maybe_creator_user_token");
-    let message: String = row.get("message");
-    let created_at: DateTime<Utc> = row.get("created_at");
-
+  let results = rows.into_iter().map(|row| {
     DebugLogRow {
-      id,
-      event_token: DebugLogEventToken::new_from_str(&event_token_str),
-      debug_log_type: DebugLogType::from_str(&debug_log_type_str).unwrap_or(DebugLogType::HttpRequest),
-      maybe_creator_user_token: maybe_creator_user_token_str.map(|s| UserToken::new_from_str(&s)),
-      message,
-      created_at,
+      id: row.id,
+      event_token: row.event_token,
+      debug_log_type: row.debug_log_type,
+      maybe_creator_user_token: row.maybe_creator_user_token,
+      message: row.message,
+      created_at: row.created_at.and_utc(),
     }
   }).collect();
 

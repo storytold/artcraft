@@ -24,7 +24,7 @@ use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]
 pub struct ListDebugLogsPathInfo {
-  pub token: String,
+  pub token: DebugLogEventToken,
 }
 
 // ── Query params ──
@@ -83,12 +83,10 @@ pub async fn moderation_list_debug_logs_for_token_handler(
     AdvancedCommonWebError::NotAuthorized
   })?;
 
-  let event_token = DebugLogEventToken::new_from_str(&path.token);
-
   let mut mysql_connection = server_state.mysql_pool.acquire().await?;
 
   let rows = list_debug_logs_for_token(ListDebugLogsForTokenArgs {
-    event_token: &event_token,
+    event_token: &path.token,
     limit: query.limit,
     mysql_executor: &mut *mysql_connection,
     phantom: Default::default(),
