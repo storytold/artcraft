@@ -11,7 +11,7 @@ CREATE TABLE debug_logs (
   token VARCHAR(32) NOT NULL,
 
   -- The type of debug log entry.
-  debug_log_type VARCHAR(16) NOT NULL,
+  debug_log_type VARCHAR(24) NOT NULL,
 
   -- The user who created the log entry (if any).
   maybe_creator_user_token VARCHAR(32) DEFAULT NULL,

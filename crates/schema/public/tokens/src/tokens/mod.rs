@@ -8,6 +8,7 @@ pub mod beta_keys;
 pub mod browser_session_logs;
 pub mod characters;
 pub mod comments;
+pub mod debug_logs;
 pub mod email_sender_job_token;
 pub mod firehose_entries;
 pub mod generic_download_jobs;

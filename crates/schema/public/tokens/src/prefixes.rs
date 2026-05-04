@@ -30,6 +30,7 @@ pub(crate) enum TokenPrefix {
   BrowserSessionLog,
   Character,
   Comment,
+  DebugLog,
   DownloadJob,
   EmailSenderJob,
   GoogleSignInAccount,
@@ -116,6 +117,7 @@ impl PrefixGenerator for TokenPrefix {
       Self::BrowserSessionLog => "bsl_",
       Self::Character => "character_",
       Self::Comment => "comment_",
+      Self::DebugLog => "debug_log_",
       Self::DownloadJob => "jdown_", // NB: Previously "JGUP:"
       Self::EmailSenderJob => "email_job_",
       Self::GoogleSignInAccount => "gsi_",
@@ -346,6 +348,7 @@ mod tests {
             || prefix == "pw_reset_"
             || prefix == "tts_task_"
             || prefix == "app_session_"
+            || prefix == "debug_log_"
         {
           // TODO/FIXME: I'm too tired at 5AM to replacen from the left. Make this test valid.
           //  These tokens are from the AIChatBot sidecar, so asserting their validity is less important.
