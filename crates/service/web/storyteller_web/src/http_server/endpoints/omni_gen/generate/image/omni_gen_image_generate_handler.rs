@@ -284,11 +284,11 @@ pub async fn omni_gen_image_generate_handler(
       maybe_avt_token: maybe_avt_token.as_ref(),
       creator_ip_address: &ip_address,
       creator_set_visibility: Visibility::Public,
+      maybe_debug_log_event_token: Some(&debug_log_event_token),
       mysql_executor: &mut *transaction,
       starting_job_status_override: None,
       maybe_frontend_failure_category: None,
       maybe_failure_reason: None,
-      maybe_debug_log_event_token: None,
       phantom: Default::default(),
     }
   ).await;
