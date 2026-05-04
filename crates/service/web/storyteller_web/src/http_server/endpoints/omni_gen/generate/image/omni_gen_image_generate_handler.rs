@@ -8,13 +8,11 @@ use sqlx::Acquire;
 use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
-use enums::by_table::debug_logs::debug_log_type::DebugLogType;
-use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
+use enums::by_table::debug_logs::debug_log_type::DebugLogType;
 use enums::by_table::prompt_context_items::prompt_context_semantic_type::PromptContextSemanticType;
 use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
@@ -22,6 +20,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use http_server_common::request::get_request_ip::get_request_ip;
+use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue_with_apriori_job_token::{
   insert_generic_inference_job_for_fal_queue_with_apriori_job_token,
@@ -34,6 +33,7 @@ use mysql_queries::queries::prompt_context_items::insert_batch_prompt_context_it
 use mysql_queries::queries::prompts::insert_prompt::{insert_prompt, InsertPromptArgs};
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
 use tokens::tokens::media_files::MediaFileToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 
 use crate::billing::wallets::attempt_wallet_deduction::attempt_wallet_deduction_else_common_web_error;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;

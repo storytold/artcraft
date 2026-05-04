@@ -9,6 +9,7 @@ use enums::common::job_status_plus::JobStatusPlus;
 use errors::AnyhowResult;
 use tokens::tokens::anonymous_visitor_tracking::AnonymousVisitorTrackingToken;
 use tokens::tokens::generic_inference_jobs::InferenceJobToken;
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use tokens::tokens::prompts::PromptToken;
 use tokens::tokens::users::UserToken;
 
@@ -29,6 +30,7 @@ pub struct FalJobDetails {
   pub creator_ip_address: String,
   
   pub maybe_prompt_token: Option<PromptToken>,
+  pub maybe_debug_log_event_token: Option<DebugLogEventToken>,
 
   pub created_at: DateTime<Utc>,
   pub updated_at: DateTime<Utc>,
@@ -51,6 +53,7 @@ struct RawJobRecord {
   creator_ip_address: String,
 
   maybe_prompt_token: Option<PromptToken>,
+  maybe_debug_log_event_token: Option<DebugLogEventToken>,
 
   created_at: DateTime<Utc>,
   updated_at: DateTime<Utc>,
@@ -88,6 +91,7 @@ SELECT
     jobs.creator_ip_address,
     
     jobs.maybe_prompt_token as `maybe_prompt_token: tokens::tokens::prompts::PromptToken`,
+    jobs.maybe_debug_log_event_token as `maybe_debug_log_event_token: tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken`,
 
     jobs.created_at,
     jobs.updated_at
@@ -129,6 +133,7 @@ fn raw_record_to_public_result(record: RawJobRecord) -> AnyhowResult<FalJobDetai
     maybe_creator_anonymous_visitor_token: record.maybe_creator_anonymous_visitor_token,
     creator_ip_address: record.creator_ip_address,
     maybe_prompt_token: record.maybe_prompt_token,
+    maybe_debug_log_event_token: record.maybe_debug_log_event_token,
     created_at: record.created_at,
     updated_at: record.updated_at,
   })
