@@ -4,9 +4,11 @@ use fal_client::webhook_api::hydrated::hydrated_webhook_contents::WebhookSuccess
 use http_server_common::response::response_success_helpers::SimpleGenericJsonSuccess;
 use log::{info, warn};
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
-use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id;
+use mysql_queries::queries::generic_inference::fal::get_inference_job_by_fal_id::get_inference_job_by_fal_id_from_connection;
 use mysql_queries::queries::generic_inference::fal::mark_fal_generic_inference_job_successfully_done::{mark_fal_generic_inference_job_successfully_done, MarkJobArgs};
 use pager::client::pager::Pager;
+use sqlx::pool::PoolConnection;
+use sqlx::MySql;
 use crate::http_server::common_responses::advanced_common_web_error::AdvancedCommonWebError;
 use crate::state::server_state::ServerState;
 
@@ -18,15 +20,16 @@ use super::process_video_payload::process_video_payload;
 
 pub async fn handle_successful_fal_webhook(
   server_state: &ServerState,
+  mysql_connection: &mut PoolConnection<MySql>,
   request_id: &str,
   success_data: &WebhookSuccessData,
   raw_body: &str,
   pager: &Pager,
 ) -> Result<Json<SimpleGenericJsonSuccess>, AdvancedCommonWebError> {
 
-  let db_result = get_inference_job_by_fal_id(
+  let db_result = get_inference_job_by_fal_id_from_connection(
     request_id,
-    &server_state.mysql_pool,
+    mysql_connection,
   ).await;
 
   let job = match db_result {
@@ -45,14 +48,12 @@ pub async fn handle_successful_fal_webhook(
 
   // Insert debug log for the webhook payload.
   if let Some(debug_log_event_token) = &job.maybe_debug_log_event_token {
-    let mut mysql_connection = server_state.mysql_pool.acquire().await
-      .map_err(|e| AdvancedCommonWebError::from_error(e))?;
     if let Err(err) = insert_debug_log(InsertDebugLogArgs {
       apriori_debug_log_event_token: Some(debug_log_event_token),
       maybe_creator_user_token: job.maybe_creator_user_token.as_ref(),
       debug_log_type: DebugLogType::FalWebhook,
       message: raw_body,
-      mysql_executor: &mut *mysql_connection,
+      mysql_executor: &mut **mysql_connection,
       phantom: Default::default(),
     }).await {
       warn!("Failed to insert Fal webhook debug log: {:?}", err);
@@ -111,7 +112,7 @@ pub async fn handle_successful_fal_webhook(
       job_token: &job.job_token,
       media_file_token: &media_token,
       maybe_batch_token: maybe_batch_token.as_ref(),
-      mysql_executor: &server_state.mysql_pool,
+      mysql_executor: &mut **mysql_connection,
       phantom: Default::default(),
     }).await.map_err(|err| {
       warn!("Error marking job as successfully done for request_id {}: {:?}", request_id, err);
