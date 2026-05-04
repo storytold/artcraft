@@ -8,6 +8,11 @@ use sqlx::Acquire;
 use url::Url;
 
 use artcraft_api_defs::omni_gen::cost_and_generate_requests::omni_gen_image_cost_and_generate_request::OmniGenImageCostAndGenerateRequest;
+use enums::by_table::debug_logs::debug_log_type::DebugLogType;
+use mysql_queries::queries::debug_logs::bulk_insert_debug_logs::{
+  bulk_insert_debug_logs, BulkInsertDebugLogsArgs, DebugLogEvent,
+};
+use tokens::tokens::non_unique::debug_logs_event_token::DebugLogEventToken;
 use artcraft_api_defs::omni_gen::generate_response::omni_gen_image_generate_response::OmniGenImageGenerateResponse;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
@@ -62,6 +67,8 @@ pub async fn omni_gen_image_generate_handler(
 ) -> Result<Json<OmniGenImageGenerateResponse>, AdvancedCommonWebError> {
 
   payments_error_test(&request.prompt.as_deref().unwrap_or(""))?;
+
+  let debug_log_event_token = DebugLogEventToken::generate();
 
   let maybe_prompt_model_type: Option<CommonModelType> = request.model
     .as_ref()
