@@ -204,6 +204,10 @@ CREATE TABLE generic_inference_jobs (
   -- off special workers to handle certain jobs.
   maybe_routing_tag VARCHAR(64) DEFAULT NULL,
 
+  -- Foreign key to the debug_logs table (event_token column).
+  -- Multiple debug_logs rows can share the same event token.
+  maybe_debug_log_event_token VARCHAR(32) DEFAULT NULL,
+
   -- ========== JOB SYSTEM DETAILS ==========
 
   -- Jobs begin as "pending", then transition to other states.
