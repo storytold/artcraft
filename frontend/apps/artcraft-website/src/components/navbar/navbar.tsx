@@ -28,9 +28,11 @@ import {
   faChevronDown,
   faLifeRing,
 } from "@fortawesome/pro-solid-svg-icons";
+import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { TaskQueue } from "./task-queue";
 import { CreditsModal } from "../credits-modal";
 import { SettingsModal } from "../settings-modal/SettingsModal";
+import { SOCIAL_LINKS } from "../../config/links";
 
 type NavLeaf = { name: string; href: string };
 type NavGroup = { name: string; href?: string; children: NavLeaf[] };
@@ -424,6 +426,25 @@ export default function Navbar() {
                             </MenuItem>
                             <MenuItem>
                               {({ active }) => (
+                                <a
+                                  href={SOCIAL_LINKS.DISCORD}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={twMerge(
+                                    active ? "bg-white/[0.04]" : "",
+                                    "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
+                                  )}
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faDiscord}
+                                    className="text-[11px] text-white/50"
+                                  />
+                                  Join Discord
+                                </a>
+                              )}
+                            </MenuItem>
+                            <MenuItem>
+                              {({ active }) => (
                                 <button
                                   onClick={handleLogout}
                                   className={twMerge(
@@ -599,6 +620,19 @@ export default function Navbar() {
                         >
                           <FontAwesomeIcon icon={faCog} className="text-[10px]" />
                           Settings
+                        </DisclosureButton>
+                        <DisclosureButton
+                          as="a"
+                          href={SOCIAL_LINKS.DISCORD}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
+                        >
+                          <FontAwesomeIcon
+                            icon={faDiscord}
+                            className="text-[10px]"
+                          />
+                          Discord
                         </DisclosureButton>
                         {credits !== null && (
                           <span className="flex items-center gap-1.5 ml-auto text-[12px] font-medium text-white/80">
