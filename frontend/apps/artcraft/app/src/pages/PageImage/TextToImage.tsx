@@ -159,7 +159,13 @@ const TextToImage = ({ imageMediaId, imageUrl }: TextToImageProps) => {
 
       galleryModalLightboxNavPrev.value =
         batchIndex > 0
-          ? () => openBatchInLightbox(inverseBatchRef.current[batchIndex - 1])
+          ? () => {
+              const prevBatch = inverseBatchRef.current[batchIndex - 1];
+              openBatchInLightbox(
+                prevBatch,
+                Math.max(0, prevBatch.images.length - 1),
+              );
+            }
           : null;
       galleryModalLightboxNavNext.value =
         batchIndex < inverseBatchRef.current.length - 1
