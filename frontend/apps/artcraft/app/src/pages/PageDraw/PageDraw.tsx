@@ -13,7 +13,7 @@ import {
   useCanvasBgRemovedEvent,
 } from "@storyteller/tauri-api";
 import { CommonAspectRatio, CommonResolution } from "@storyteller/model-list";
-import { useImageEditCompleteEvent } from "@storyteller/tauri-events";
+import { useTextToImageGenerationCompleteEvent } from "@storyteller/tauri-events";
 import { UploadImageMedia } from "@storyteller/api";
 import { BaseImageSelector } from "./BaseImageSelector";
 
@@ -53,11 +53,28 @@ const useTauriEventBridges = () => {
       .finishRemoveBackground(nodeId, event.media_token, event.image_cdn_url);
   });
 
-  // When an image-edit generation completes, add the result to the history
-  // stack and resolve the pending placeholder.
-  useImageEditCompleteEvent(async (event) => {
+  // The unified `generate_image` Tauri command emits
+  // `text_to_image_generation_complete_event` regardless of whether the
+  // request was a plain text-to-image, an edit, or an inpaint. We filter on
+  // `frontend_subscriber_id` so PageDraw only resolves placeholders it
+  // enqueued itself — other pages (Angles, etc.) ignore subscriber IDs they
+  // don't own. Same pattern as PageAngles/AnglesStore.
+  useTextToImageGenerationCompleteEvent(async (event) => {
+    const store = useSceneStore.getState();
+    if (store.pendingGenerations.length === 0) return;
+
+    const subscriberId = event.maybe_frontend_subscriber_id;
+    if (
+      subscriberId &&
+      !store.pendingGenerations.some((p) => p.id === subscriberId)
+    ) {
+      return;
+    }
+
+    const resolvedId = subscriberId ?? store.pendingGenerations[0]?.id;
+
     const newBundle: ImageBundle = {
-      images: event.edited_images.map(
+      images: event.generated_images.map(
         (img) =>
           ({
             url: img.cdn_url,
@@ -68,11 +85,8 @@ const useTauriEventBridges = () => {
       ),
     };
 
-    const store = useSceneStore.getState();
     store.addHistoryImageBundle(newBundle);
-    if (event.maybe_frontend_subscriber_id) {
-      store.resolvePendingGeneration(event.maybe_frontend_subscriber_id);
-    }
+    if (resolvedId) store.resolvePendingGeneration(resolvedId);
   });
 };
 
