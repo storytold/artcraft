@@ -5,7 +5,7 @@ import {
   faTrashXmark,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { BaseSelectorImage, ImageBundle } from "./types";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -21,6 +21,7 @@ interface HistoryStackProps {
   onClear: () => void;
   onImageSelect?: (image: BaseSelectorImage) => void;
   onImageRemove?: (image: BaseSelectorImage) => void;
+  onPendingRemove?: (id: string) => void;
   imageBundles: ImageBundle[];
   pendingPlaceholders?: { id: string; count: number }[];
   selectedImageToken?: string;
@@ -31,6 +32,7 @@ export const HistoryStack = ({
   onClear,
   onImageSelect = () => {},
   onImageRemove = () => {},
+  onPendingRemove = () => {},
   imageBundles,
   pendingPlaceholders = [],
   selectedImageToken,
@@ -68,6 +70,66 @@ export const HistoryStack = ({
   const handleOnImageRemove = (baseImage: BaseSelectorImage) => {
     onImageRemove(baseImage);
   };
+
+  // Tracks which pending tile (if any) currently has its remove-confirmation
+  // modal open, so we can auto-close the modal if the underlying generation
+  // finishes loading before the user confirms.
+  const [pendingRemoveTargetId, setPendingRemoveTargetId] = useState<
+    string | null
+  >(null);
+
+  const handlePendingRemoveClick = (id: string) => {
+    setPendingRemoveTargetId(id);
+    showActionReminder({
+      reminderType: "default",
+      title: "Remove pending generation",
+      primaryActionIcon: faTrashXmark,
+      primaryActionBtnClassName: "bg-red hover:bg-red/80",
+      message: (
+        <>
+          <p className="text-base-fg text-sm opacity-70">
+            Stop showing this generation in the history stack? This action
+            cannot be undone.
+          </p>
+          <p className="text-base-fg text-sm opacity-70">
+            The image may still finish in the background and will be available
+            in your library when it does.
+          </p>
+        </>
+      ),
+      primaryActionText: "Remove",
+      onPrimaryAction: () => {
+        onPendingRemove(id);
+        setPendingRemoveTargetId(null);
+        isActionReminderOpen.value = false;
+      },
+    });
+  };
+
+  // If the pending generation we opened the confirm modal for resolves
+  // before the user clicks confirm, close the modal — there's nothing left
+  // to dismiss.
+  useEffect(() => {
+    if (pendingRemoveTargetId === null) return;
+    const stillPending = pendingPlaceholders.some(
+      (p) => p.id === pendingRemoveTargetId,
+    );
+    if (!stillPending) {
+      isActionReminderOpen.value = false;
+      setPendingRemoveTargetId(null);
+    }
+  }, [pendingPlaceholders, pendingRemoveTargetId]);
+
+  // If the modal is dismissed by other means (Escape, backdrop click), clear
+  // our target so we don't try to manage a modal that's already gone.
+  // Uses the signal's subscribe API so we react to external dismissals.
+  useEffect(() => {
+    if (pendingRemoveTargetId === null) return;
+    const unsubscribe = isActionReminderOpen.subscribe((isOpen) => {
+      if (!isOpen) setPendingRemoveTargetId(null);
+    });
+    return unsubscribe;
+  }, [pendingRemoveTargetId]);
 
   // Scroll to top when new pending placeholders are added (after enqueue)
   useEffect(() => {
@@ -126,7 +188,7 @@ export const HistoryStack = ({
                   (_, i) => (
                     <div
                       key={`pending-${p.id}-${i}`}
-                      className="relative w-full"
+                      className="group relative w-full"
                     >
                       <div className="st-loading-tile relative aspect-square w-full overflow-hidden rounded-lg">
                         {blurredBackgroundUrl && (
@@ -162,6 +224,18 @@ export const HistoryStack = ({
                             pathLength="200"
                           />
                         </svg>
+                      </div>
+                      <div
+                        className="absolute -right-0 -top-0 z-10 flex h-5 w-5 cursor-pointer items-center justify-center rounded-bl-lg bg-red/50 opacity-0 transition-opacity hover:bg-red/80 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePendingRemoveClick(p.id);
+                        }}
+                      >
+                        <FontAwesomeIcon
+                          icon={faTrashAlt}
+                          className="text-base-fg h-full w-full text-[13px]"
+                        />
                       </div>
                     </div>
                   ),
