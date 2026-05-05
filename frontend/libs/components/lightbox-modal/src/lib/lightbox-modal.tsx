@@ -29,7 +29,9 @@ import {
 } from "react";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
-import type { Prompts } from "@storyteller/api";
+import type { Prompts, UserInfo } from "@storyteller/api";
+import { Gravatar } from "@storyteller/ui-gravatar";
+import { faUser } from "@fortawesome/pro-solid-svg-icons";
 import { toast } from "@storyteller/ui-toaster";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCopy, faLink, faCheck } from "@fortawesome/pro-solid-svg-icons";
@@ -51,6 +53,9 @@ import {
   getContextImageThumbnail,
   THUMBNAIL_SIZES,
   PLACEHOLDER_IMAGES,
+  formatAspectRatio,
+  formatDuration,
+  formatResolution,
 } from "@storyteller/common";
 
 interface LightboxModalProps {
@@ -145,6 +150,12 @@ export function LightboxModal({
   const generationProvider = promptData?.maybe_generation_provider ?? null;
   const modelType = promptData?.maybe_model_type ?? null;
   const contextImages = promptData?.maybe_context_images ?? null;
+  const aspectRatio = promptData?.maybe_aspect_ratio ?? null;
+  const resolution = promptData?.maybe_resolution ?? null;
+  const durationSeconds = promptData?.maybe_duration_seconds ?? null;
+  const generateAudio = promptData?.maybe_generate_audio ?? null;
+  const [mediaWidth, setMediaWidth] = useState<number | null>(null);
+  const [mediaHeight, setMediaHeight] = useState<number | null>(null);
   const [promptLoading, setPromptLoading] = useState<boolean>(false);
   const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState<boolean>(false);
@@ -154,6 +165,7 @@ export function LightboxModal({
   const promptCopiedTimeoutRef = useRef<number | null>(null);
   const [batchImages, setBatchImages] = useState<string[] | null>(null);
   const [batchTokens, setBatchTokens] = useState<string[] | null>(null);
+  const [creator, setCreator] = useState<UserInfo | null>(null);
   const [shareCopied, setShareCopied] = useState<boolean>(false);
   const shareCopiedTimeoutRef = useRef<number | null>(null);
 
@@ -166,6 +178,8 @@ export function LightboxModal({
       setRefPreviewUrl(null);
       setSelectedIndex(0);
       setMediaLoaded(false);
+      setMediaWidth(null);
+      setMediaHeight(null);
       setShareCopied(false);
       setIsPromptExpanded(false);
       if (shareCopiedTimeoutRef.current) {
@@ -191,12 +205,14 @@ export function LightboxModal({
       setPromptData(null);
       setHasPromptToken(false);
       setPromptLoading(false);
+      setCreator(null);
       return;
     }
 
     // Immediately show skeletons & clear stale data
     setPromptLoading(true);
     setPromptData(null);
+    setCreator(null);
 
     let cancelled = false;
 
@@ -206,6 +222,10 @@ export function LightboxModal({
           mediaFileToken: mediaId,
         });
         if (cancelled) return;
+
+        if (mediaResponse.success && mediaResponse.data) {
+          setCreator(mediaResponse.data.maybe_creator_user || null);
+        }
 
         if (mediaResponse.success && mediaResponse.data?.maybe_prompt_token) {
           setHasPromptToken(true);
@@ -334,7 +354,10 @@ export function LightboxModal({
   }, [batchImages, imageUrls, imageUrl]);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const carouselOptions: EmblaOptionsType = useMemo(() => ({ loop: false }), []);
+  const carouselOptions: EmblaOptionsType = useMemo(
+    () => ({ loop: false }),
+    [],
+  );
   const [emblaMainRef, emblaMainApi] = useEmblaCarousel(carouselOptions);
   const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
     containScroll: "keepSnaps",
@@ -415,10 +438,14 @@ export function LightboxModal({
   useEffect(() => {
     if (!selectedImageUrl) {
       setMediaLoaded(false);
+      setMediaWidth(null);
+      setMediaHeight(null);
       return;
     }
 
     setMediaLoaded(false);
+    setMediaWidth(null);
+    setMediaHeight(null);
     const img = new Image();
     img.src = addCorsParam(selectedImageUrl) || selectedImageUrl;
 
@@ -456,14 +483,22 @@ export function LightboxModal({
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        if (emblaMainApi && effectiveImageUrls.length > 1 && emblaMainApi.canScrollPrev()) {
+        if (
+          emblaMainApi &&
+          effectiveImageUrls.length > 1 &&
+          emblaMainApi.canScrollPrev()
+        ) {
           emblaMainApi.scrollPrev(true);
         } else {
           onNavigatePrev?.();
         }
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        if (emblaMainApi && effectiveImageUrls.length > 1 && emblaMainApi.canScrollNext()) {
+        if (
+          emblaMainApi &&
+          effectiveImageUrls.length > 1 &&
+          emblaMainApi.canScrollNext()
+        ) {
           emblaMainApi.scrollNext(true);
         } else {
           onNavigateNext?.();
@@ -478,7 +513,13 @@ export function LightboxModal({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, emblaMainApi, effectiveImageUrls.length, onNavigatePrev, onNavigateNext]);
+  }, [
+    isOpen,
+    emblaMainApi,
+    effectiveImageUrls.length,
+    onNavigatePrev,
+    onNavigateNext,
+  ]);
 
   return (
     <>
@@ -500,9 +541,7 @@ export function LightboxModal({
         </Modal.DragHandle>
 
         {/* content grid */}
-        <div
-          className="flex h-full gap-4"
-        >
+        <div className="flex h-full gap-4">
           {/* image panel - flexible width */}
           <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black/30">
             {!selectedImageUrl ? (
@@ -526,7 +565,12 @@ export function LightboxModal({
                 loop={true}
                 autoPlay={true}
                 className="h-full w-full object-contain"
-                onLoadedData={() => setMediaLoaded(true)}
+                onLoadedData={(e) => {
+                  setMediaLoaded(true);
+                  const el = e.currentTarget;
+                  setMediaWidth(el.videoWidth);
+                  setMediaHeight(el.videoHeight);
+                }}
               >
                 <source src={selectedImageUrl as string} type="video/mp4" />
                 Your browser does not support the video tag.
@@ -562,9 +606,12 @@ export function LightboxModal({
                                 ).dataset.brokenurl = url || "";
                               }
                             }}
-                            onLoad={() => {
+                            onLoad={(e) => {
                               if (idx === selectedIndex) {
                                 setMediaLoaded(true);
+                                const img = e.currentTarget;
+                                setMediaWidth(img.naturalWidth);
+                                setMediaHeight(img.naturalHeight);
                               }
                             }}
                           />
@@ -648,21 +695,42 @@ export function LightboxModal({
           {/* info + actions - fixed width */}
           <div className="flex h-full w-[280px] shrink-0 flex-col">
             <div className="flex-1 overflow-y-auto space-y-5 text-base-fg min-h-0 pb-2">
-              {/* <div className="text-xl font-medium">
-              {title || "Image Generation"}
-            </div> */}
-              {createdAt && (
-                <div className="space-y-1.5">
-                  <div className="text-sm font-medium text-base-fg/90">
-                    Created
-                  </div>
-                  <div className="text-sm text-base-fg/70">
-                    {dayjs(createdAt).format("MMM D, YYYY")} at{" "}
-                    {dayjs(createdAt).format("hh:mm A")}
+              {creator ? (
+                <div className="sticky top-0 z-10 flex items-center gap-2.5 bg-ui-modal pb-3 pr-10 border-b border-white/5">
+                  {creator.core_info ? (
+                    <Gravatar
+                      size={36}
+                      username={creator.username}
+                      email_hash={creator.email_gravatar_hash}
+                      avatarIndex={creator.core_info.default_avatar.image_index}
+                      backgroundIndex={
+                        creator.core_info.default_avatar.color_index
+                      }
+                      className="rounded-xl border-white/10"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-white/10 text-white/50 border border-white/5">
+                      <FontAwesomeIcon icon={faUser} />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className="text-base-fg text-sm font-semibold leading-none truncate">
+                      {creator.display_name}
+                    </span>
+                    <span className="text-base-fg/60 text-xs font-medium">
+                      Author
+                    </span>
                   </div>
                 </div>
-              )}
-
+              ) : promptLoading ? (
+                <div className="sticky top-0 z-10 flex items-center gap-3 bg-ui-modal pb-3 pr-10 border-b border-white/5 animate-pulse">
+                  <div className="h-9 w-9 shrink-0 rounded-xl bg-white/10" />
+                  <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                    <div className="h-3.5 w-24 rounded bg-white/10" />
+                    <div className="h-3 w-12 rounded bg-white/10" />
+                  </div>
+                </div>
+              ) : null}
               {(hasPromptToken || promptLoading) && (
                 <>
                   {/* Prompt */}
@@ -776,26 +844,24 @@ export function LightboxModal({
                           <div className="h-12 w-12 rounded-lg bg-white/10" />
                         </div>
                       </div>
-                      {/* Generation Details skeleton */}
+                      {/* Information skeleton */}
                       <div className="space-y-1.5 animate-pulse">
-                        <div className="h-3.5 w-32 rounded bg-white/10" />
+                        <div className="h-3.5 w-24 rounded bg-white/10" />
                         <div
-                          className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-ui-panel-border"
+                          className="flex flex-col rounded-lg border border-ui-panel-border overflow-hidden"
                           style={{
                             background: "rgb(var(--st-controls-rgb) / 0.20)",
                           }}
                         >
-                          <div className="h-3.5 w-12 rounded bg-white/10" />
-                          <div className="h-3.5 w-24 rounded bg-white/10" />
-                        </div>
-                        <div
-                          className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-ui-panel-border"
-                          style={{
-                            background: "rgb(var(--st-controls-rgb) / 0.20)",
-                          }}
-                        >
-                          <div className="h-3.5 w-14 rounded bg-white/10" />
-                          <div className="h-3.5 w-20 rounded bg-white/10" />
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between py-2.5 px-3 border-b border-white/5 last:border-0"
+                            >
+                              <div className="h-3.5 w-16 rounded bg-white/10" />
+                              <div className="h-3.5 w-24 rounded bg-white/10" />
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </>
@@ -874,60 +940,34 @@ export function LightboxModal({
                         </div>
                       )}
 
-                      {/* Generation Details */}
-                      {(generationProvider || modelType) && (
-                        <div className="space-y-1.5">
-                          <div className="text-sm font-medium text-base-fg/90">
-                            Generation Details
-                          </div>
-                          <div className="flex flex-col gap-1.5">
-                            {modelType && (
-                              <div
-                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
-                                style={{
-                                  background:
-                                    "rgb(var(--st-controls-rgb) / 0.20)",
-                                }}
-                              >
-                                <span className="text-sm text-base-fg/70 font-medium">
-                                  Model
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  {getModelCreatorIcon(modelType)}
-                                  <span className="text-sm text-base-fg rounded">
-                                    {getModelDisplayName(modelType)}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                            {generationProvider && (
-                              <div
-                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
-                                style={{
-                                  background:
-                                    "rgb(var(--st-controls-rgb) / 0.20)",
-                                }}
-                              >
-                                <span className="text-sm text-base-fg/70 font-medium">
-                                  Provider
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  {getProviderIconByName(
-                                    generationProvider,
-                                    "h-4 w-4 invert",
-                                  )}
-                                  <span className="text-sm text-base-fg rounded">
-                                    {getProviderDisplayName(generationProvider)}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      <InfoSection
+                        modelType={modelType}
+                        generationProvider={generationProvider}
+                        aspectRatio={aspectRatio}
+                        resolution={resolution}
+                        durationSeconds={durationSeconds}
+                        generateAudio={generateAudio}
+                        mediaWidth={mediaWidth}
+                        mediaHeight={mediaHeight}
+                        createdAt={createdAt}
+                      />
                     </>
                   )}
                 </>
+              )}
+
+              {!hasPromptToken && !promptLoading && (
+                <InfoSection
+                  modelType={null}
+                  generationProvider={null}
+                  aspectRatio={null}
+                  resolution={null}
+                  durationSeconds={null}
+                  generateAudio={null}
+                  mediaWidth={mediaWidth}
+                  mediaHeight={mediaHeight}
+                  createdAt={createdAt}
+                />
               )}
 
               {additionalInfo}
@@ -1174,6 +1214,110 @@ export function LightboxModal({
         </Modal>
       )}
     </>
+  );
+}
+
+interface InfoSectionProps {
+  modelType: string | null;
+  generationProvider: string | null;
+  aspectRatio: string | null;
+  resolution: string | null;
+  durationSeconds: number | null;
+  generateAudio: boolean | null;
+  mediaWidth: number | null;
+  mediaHeight: number | null;
+  createdAt?: string;
+}
+
+function InfoSection({
+  modelType,
+  generationProvider,
+  aspectRatio,
+  resolution,
+  durationSeconds,
+  generateAudio,
+  mediaWidth,
+  mediaHeight,
+  createdAt,
+}: InfoSectionProps) {
+  const hasAnyInfo =
+    !!modelType ||
+    !!generationProvider ||
+    !!aspectRatio ||
+    !!resolution ||
+    durationSeconds != null ||
+    generateAudio != null ||
+    (!!mediaWidth && !!mediaHeight) ||
+    !!createdAt;
+
+  if (!hasAnyInfo) return null;
+
+  return (
+    <div className="space-y-1.5">
+      <div className="text-sm font-medium text-base-fg/90">Information</div>
+      <div
+        className="flex flex-col rounded-lg border border-ui-panel-border overflow-hidden"
+        style={{ background: "rgb(var(--st-controls-rgb) / 0.20)" }}
+      >
+        {modelType && (
+          <InfoRow
+            label="Model"
+            value={
+              <>
+                {getModelCreatorIcon(modelType)}
+                <span>{getModelDisplayName(modelType)}</span>
+              </>
+            }
+          />
+        )}
+        {generationProvider && (
+          <InfoRow
+            label="Provider"
+            value={
+              <>
+                {getProviderIconByName(generationProvider, "h-4 w-4 invert")}
+                <span>{getProviderDisplayName(generationProvider)}</span>
+              </>
+            }
+          />
+        )}
+        {aspectRatio && (
+          <InfoRow
+            label="Aspect Ratio"
+            value={formatAspectRatio(aspectRatio)}
+          />
+        )}
+        {resolution && (
+          <InfoRow label="Resolution" value={formatResolution(resolution)} />
+        )}
+        {durationSeconds != null && (
+          <InfoRow label="Duration" value={formatDuration(durationSeconds)} />
+        )}
+        {generateAudio != null && (
+          <InfoRow label="Audio" value={generateAudio ? "On" : "Off"} />
+        )}
+        {mediaWidth && mediaHeight && (
+          <InfoRow label="Size" value={`${mediaWidth} × ${mediaHeight}`} />
+        )}
+        {createdAt && (
+          <InfoRow
+            label="Created"
+            value={dayjs(createdAt).format("MMM D, YYYY h:mm:ss A")}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between py-2 px-3 border-b border-white/5 last:border-0">
+      <span className="text-sm text-base-fg/70 font-medium">{label}</span>
+      <span className="text-sm text-base-fg flex items-center gap-2">
+        {value}
+      </span>
+    </div>
   );
 }
 
