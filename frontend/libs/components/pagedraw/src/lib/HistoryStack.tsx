@@ -182,69 +182,108 @@ export const HistoryStack = ({
           {/* Pending placeholders first (newest at top) */}
           {(() => {
             const reversed = [...pendingPlaceholders].slice().reverse();
-            return reversed.map((p, idx) => (
-              <Fragment key={`pending-group-${p.id}`}>
-                {Array.from({ length: Math.max(1, p.count || 1) }).map(
-                  (_, i) => (
-                    <div
-                      key={`pending-${p.id}-${i}`}
-                      className="group relative w-full"
-                    >
-                      <div className="st-loading-tile relative aspect-square w-full overflow-hidden rounded-lg">
-                        {blurredBackgroundUrl && (
-                          <img
-                            src={
-                              blurredBackgroundUrl?.startsWith("data:") ||
-                              blurredBackgroundUrl?.startsWith("blob:")
-                                ? blurredBackgroundUrl
-                                : `${blurredBackgroundUrl}?placeholderbg`
-                            }
-                            alt=""
-                            className="absolute inset-0 h-full w-full object-cover opacity-80 blur-lg"
-                            crossOrigin="anonymous"
-                          />
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--st-divider)] border-t-[var(--st-fg)]" />
-                        </div>
-                        {/* SVG running border (single solid line) */}
-                        <svg
-                          className="st-border-svg"
-                          viewBox="0 0 100 100"
-                          preserveAspectRatio="none"
+            return reversed.map((p, idx) => {
+              const tileCount = Math.max(1, p.count || 1);
+              return (
+                <Fragment key={`pending-group-${p.id}`}>
+                  {/* Outer batch group: the entire group is the click target
+                      for removal. Hovering reveals a striped overlay and a
+                      centered trash affordance. */}
+                  <div
+                    className="group relative w-full cursor-pointer"
+                    title={
+                      tileCount > 1
+                        ? `Remove batch of ${tileCount}`
+                        : "Remove"
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePendingRemoveClick(p.id);
+                    }}
+                  >
+                    <div className="flex w-full flex-col gap-1">
+                      {Array.from({ length: tileCount }).map((_, i) => (
+                        <div
+                          key={`pending-${p.id}-${i}`}
+                          className="relative w-full"
                         >
-                          <rect
-                            className="st-border-solid"
-                            x="1"
-                            y="1"
-                            width="98"
-                            height="98"
-                            rx="16"
-                            ry="16"
-                            pathLength="200"
-                          />
-                        </svg>
-                      </div>
-                      <div
-                        className="absolute -right-0 -top-0 z-10 flex h-5 w-5 cursor-pointer items-center justify-center rounded-bl-lg bg-red/50 opacity-0 transition-opacity hover:bg-red/80 group-hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePendingRemoveClick(p.id);
-                        }}
-                      >
+                          <div className="st-loading-tile relative aspect-square w-full overflow-hidden rounded-lg">
+                            {blurredBackgroundUrl && (
+                              <img
+                                src={
+                                  blurredBackgroundUrl?.startsWith("data:") ||
+                                  blurredBackgroundUrl?.startsWith("blob:")
+                                    ? blurredBackgroundUrl
+                                    : `${blurredBackgroundUrl}?placeholderbg`
+                                }
+                                alt=""
+                                className="absolute inset-0 h-full w-full object-cover opacity-80 blur-lg"
+                                crossOrigin="anonymous"
+                              />
+                            )}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[var(--st-divider)] border-t-[var(--st-fg)]" />
+                            </div>
+                            {/* SVG running border (single solid line) */}
+                            <svg
+                              className="st-border-svg"
+                              viewBox="0 0 100 100"
+                              preserveAspectRatio="none"
+                            >
+                              <rect
+                                className="st-border-solid"
+                                x="1"
+                                y="1"
+                                width="98"
+                                height="98"
+                                rx="16"
+                                ry="16"
+                                pathLength="200"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Batch-removal hover overlay: alternating dark-red and
+                        near-black diagonal stripes covering the whole batch.
+                        pointer-events-none so the click bubbles to the
+                        outer group. */}
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 z-[5] rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
+                      style={{
+                        background:
+                          "repeating-linear-gradient(45deg, rgba(220, 38, 38, 0.55) 0px, rgba(220, 38, 38, 0.55) 8px, rgba(0, 0, 0, 0.55) 8px, rgba(0, 0, 0, 0.55) 16px)",
+                      }}
+                    />
+
+                    {/* Centered remove affordance, shown on hover. Decorative
+                        only — actual click is handled on the outer group. */}
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <div className="flex items-center justify-center gap-1 rounded-lg bg-red/80 px-3 py-2 shadow-lg">
                         <FontAwesomeIcon
                           icon={faTrashAlt}
-                          className="text-base-fg h-full w-full text-[13px]"
+                          className="text-base-fg text-base"
                         />
+                        {tileCount > 1 && (
+                          <span className="text-base-fg text-xs font-semibold">
+                            ×{tileCount}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  ),
-                )}
-                {idx < reversed.length - 1 && (
-                  <hr className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-[var(--st-divider)]" />
-                )}
-              </Fragment>
-            ));
+                  </div>
+                  {idx < reversed.length - 1 && (
+                    <hr className="my-1.5 h-0.5 min-h-0.5 w-3/4 rounded-md border-none bg-[var(--st-divider)]" />
+                  )}
+                </Fragment>
+              );
+            });
           })()}
 
           {pendingPlaceholders.length > 0 && (
