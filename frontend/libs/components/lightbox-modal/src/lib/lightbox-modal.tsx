@@ -43,6 +43,9 @@ import {
   getModelDisplayName,
   getProviderDisplayName,
   getProviderIconByName,
+  formatAspectRatio,
+  formatResolution,
+  formatDuration,
 } from "@storyteller/model-list";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
@@ -145,6 +148,12 @@ export function LightboxModal({
   const generationProvider = promptData?.maybe_generation_provider ?? null;
   const modelType = promptData?.maybe_model_type ?? null;
   const contextImages = promptData?.maybe_context_images ?? null;
+  const aspectRatio = promptData?.maybe_aspect_ratio ?? null;
+  const resolution = promptData?.maybe_resolution ?? null;
+  const durationSeconds = promptData?.maybe_duration_seconds ?? null;
+  const generateAudio = promptData?.maybe_generate_audio ?? null;
+  const [mediaWidth, setMediaWidth] = useState<number | undefined>();
+  const [mediaHeight, setMediaHeight] = useState<number | undefined>();
   const [promptLoading, setPromptLoading] = useState<boolean>(false);
   const [hasPromptToken, setHasPromptToken] = useState<boolean>(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState<boolean>(false);
@@ -191,12 +200,16 @@ export function LightboxModal({
       setPromptData(null);
       setHasPromptToken(false);
       setPromptLoading(false);
+      setMediaWidth(undefined);
+      setMediaHeight(undefined);
       return;
     }
 
     // Immediately show skeletons & clear stale data
     setPromptLoading(true);
     setPromptData(null);
+    setMediaWidth(undefined);
+    setMediaHeight(undefined);
 
     let cancelled = false;
 
@@ -422,10 +435,20 @@ export function LightboxModal({
     const img = new Image();
     img.src = addCorsParam(selectedImageUrl) || selectedImageUrl;
 
-    const handleLoad = () => setMediaLoaded(true);
+    const captureDims = () => {
+      if (img.naturalWidth && img.naturalHeight) {
+        setMediaWidth(img.naturalWidth);
+        setMediaHeight(img.naturalHeight);
+      }
+    };
+    const handleLoad = () => {
+      captureDims();
+      setMediaLoaded(true);
+    };
     const handleError = () => setMediaLoaded(true);
 
     if (img.complete) {
+      captureDims();
       setMediaLoaded(true);
     } else {
       img.addEventListener("load", handleLoad);
@@ -526,6 +549,13 @@ export function LightboxModal({
                 loop={true}
                 autoPlay={true}
                 className="h-full w-full object-contain"
+                onLoadedMetadata={(e) => {
+                  const v = e.currentTarget;
+                  if (v.videoWidth && v.videoHeight) {
+                    setMediaWidth(v.videoWidth);
+                    setMediaHeight(v.videoHeight);
+                  }
+                }}
                 onLoadedData={() => setMediaLoaded(true)}
               >
                 <source src={selectedImageUrl as string} type="video/mp4" />
@@ -562,8 +592,13 @@ export function LightboxModal({
                                 ).dataset.brokenurl = url || "";
                               }
                             }}
-                            onLoad={() => {
+                            onLoad={(e) => {
                               if (idx === selectedIndex) {
+                                const im = e.currentTarget;
+                                if (im.naturalWidth && im.naturalHeight) {
+                                  setMediaWidth(im.naturalWidth);
+                                  setMediaHeight(im.naturalHeight);
+                                }
                                 setMediaLoaded(true);
                               }
                             }}
@@ -651,18 +686,6 @@ export function LightboxModal({
               {/* <div className="text-xl font-medium">
               {title || "Image Generation"}
             </div> */}
-              {createdAt && (
-                <div className="space-y-1.5">
-                  <div className="text-sm font-medium text-base-fg/90">
-                    Created
-                  </div>
-                  <div className="text-sm text-base-fg/70">
-                    {dayjs(createdAt).format("MMM D, YYYY")} at{" "}
-                    {dayjs(createdAt).format("hh:mm A")}
-                  </div>
-                </div>
-              )}
-
               {(hasPromptToken || promptLoading) && (
                 <>
                   {/* Prompt */}
@@ -875,7 +898,14 @@ export function LightboxModal({
                       )}
 
                       {/* Generation Details */}
-                      {(generationProvider || modelType) && (
+                      {(generationProvider ||
+                        modelType ||
+                        aspectRatio ||
+                        resolution ||
+                        durationSeconds != null ||
+                        generateAudio != null ||
+                        (mediaWidth && mediaHeight) ||
+                        createdAt) && (
                         <div className="space-y-1.5">
                           <div className="text-sm font-medium text-base-fg/90">
                             Generation Details
@@ -920,6 +950,104 @@ export function LightboxModal({
                                     {getProviderDisplayName(generationProvider)}
                                   </span>
                                 </div>
+                              </div>
+                            )}
+                            {aspectRatio && (
+                              <div
+                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                                style={{
+                                  background:
+                                    "rgb(var(--st-controls-rgb) / 0.20)",
+                                }}
+                              >
+                                <span className="text-sm text-base-fg/70 font-medium">
+                                  Aspect Ratio
+                                </span>
+                                <span className="text-sm text-base-fg rounded">
+                                  {formatAspectRatio(aspectRatio)}
+                                </span>
+                              </div>
+                            )}
+                            {resolution && (
+                              <div
+                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                                style={{
+                                  background:
+                                    "rgb(var(--st-controls-rgb) / 0.20)",
+                                }}
+                              >
+                                <span className="text-sm text-base-fg/70 font-medium">
+                                  Resolution
+                                </span>
+                                <span className="text-sm text-base-fg rounded">
+                                  {formatResolution(resolution)}
+                                </span>
+                              </div>
+                            )}
+                            {durationSeconds != null && (
+                              <div
+                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                                style={{
+                                  background:
+                                    "rgb(var(--st-controls-rgb) / 0.20)",
+                                }}
+                              >
+                                <span className="text-sm text-base-fg/70 font-medium">
+                                  Duration
+                                </span>
+                                <span className="text-sm text-base-fg rounded">
+                                  {formatDuration(durationSeconds)}
+                                </span>
+                              </div>
+                            )}
+                            {generateAudio != null && (
+                              <div
+                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                                style={{
+                                  background:
+                                    "rgb(var(--st-controls-rgb) / 0.20)",
+                                }}
+                              >
+                                <span className="text-sm text-base-fg/70 font-medium">
+                                  Audio
+                                </span>
+                                <span className="text-sm text-base-fg rounded">
+                                  {generateAudio ? "On" : "Off"}
+                                </span>
+                              </div>
+                            )}
+                            {mediaWidth && mediaHeight && (
+                              <div
+                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                                style={{
+                                  background:
+                                    "rgb(var(--st-controls-rgb) / 0.20)",
+                                }}
+                              >
+                                <span className="text-sm text-base-fg/70 font-medium">
+                                  Size
+                                </span>
+                                <span className="text-sm text-base-fg rounded">
+                                  {`${mediaWidth} × ${mediaHeight}`}
+                                </span>
+                              </div>
+                            )}
+                            {createdAt && (
+                              <div
+                                className="flex items-center justify-between py-2 px-3 rounded-lg border border-ui-panel-border"
+                                style={{
+                                  background:
+                                    "rgb(var(--st-controls-rgb) / 0.20)",
+                                }}
+                              >
+                                <span className="text-sm text-base-fg/70 font-medium">
+                                  Created
+                                </span>
+                                <span className="text-sm text-base-fg rounded">
+                                  {dayjs(createdAt).format(
+                                    "MMMM D, YYYY h:mm:ss A",
+                                  )}
+                                </span>
                               </div>
                             )}
                           </div>
