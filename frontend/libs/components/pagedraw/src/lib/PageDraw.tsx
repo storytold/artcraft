@@ -291,6 +291,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       addHistoryImageBundle: state.addHistoryImageBundle,
       addPendingGeneration: state.addPendingGeneration,
       resolvePendingGeneration: state.resolvePendingGeneration,
+      removePendingGeneration: state.removePendingGeneration,
       clearPendingGenerations: state.clearPendingGenerations,
       setAspectRatioType: state.setAspectRatioType,
       setActiveTool: state.setActiveTool,
@@ -344,6 +345,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     addHistoryImageBundle,
     addPendingGeneration,
     resolvePendingGeneration,
+    removePendingGeneration,
     clearPendingGenerations,
     setAspectRatioType,
     setActiveTool,
@@ -988,6 +990,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
               removeHistoryImage(baseImage);
             }
           }}
+          onPendingRemove={removePendingGeneration}
           selectedImageToken={baseImageInfo?.mediaToken}
         />
       </div>

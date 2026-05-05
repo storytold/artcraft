@@ -285,6 +285,10 @@ export interface SceneState {
   pendingGenerations: { id: string; count: number }[];
   addPendingGeneration: (id: string, count: number) => void;
   resolvePendingGeneration: (id: string) => void;
+  // User-initiated dismissal of a still-loading placeholder. Removing the
+  // entry from pendingGenerations is enough to make the Tauri completion
+  // bridge ignore the eventual result (its filter checks membership).
+  removePendingGeneration: (id: string) => void;
   clearPendingGenerations: () => void;
 
   toggleLock: (nodeIds: string[]) => void;
@@ -1498,6 +1502,12 @@ export const useSceneStore = create<SceneState>((set, get, store) => ({
   },
 
   resolvePendingGeneration: (id: string) => {
+    set((state) => ({
+      pendingGenerations: state.pendingGenerations.filter((p) => p.id !== id),
+    }));
+  },
+
+  removePendingGeneration: (id: string) => {
     set((state) => ({
       pendingGenerations: state.pendingGenerations.filter((p) => p.id !== id),
     }));
