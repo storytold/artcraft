@@ -28,8 +28,11 @@ import { CostCalculatorButton } from "@storyteller/ui-pricing-modal";
 import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack } from "./HistoryStack";
 import { type BaseSelectorImage } from "./types";
-import { normalizeCanvas } from "./utilities/canvasHelpers";
 import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
+import {
+  compositeInWorker,
+  maskInWorker,
+} from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
 import toast from "react-hot-toast";
@@ -380,6 +383,13 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   const baseImageKonvaRef = useRef<Konva.Image>({} as Konva.Image);
   const baseImageUrl = baseImageInfo?.url;
 
+  // Synchronous re-entry guard for the Generate flow. A ref (not state) is the
+  // safety belt against duplicate paid generations: it flips before the first
+  // await so a panic-clicked second click sees the in-flight value immediately,
+  // independent of React state batching. The state below is only for the UI.
+  const generateInFlightRef = useRef(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
   const selectedImageModel: ImageModel | undefined =
     useSelectedImageModel(PAGE_ID);
 
@@ -396,7 +406,10 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     onPaste: pasteItems,
   });
 
-  // Create a function to use the left layer ref and download the bitmap from it
+  // Read the inpaint mask off the Konva layer and encode it on a worker thread.
+  // The Konva readback itself runs on main (Konva is DOM-bound), but everything
+  // downstream — drawImage to an exact-size canvas, PNG encoding, byte transfer —
+  // happens off the main thread.
   const getMaskArrayBuffer = async (): Promise<Uint8Array> => {
     if (!stageRef.current || !baseImageKonvaRef.current) {
       console.error("Stage or left panel ref is not available");
@@ -416,16 +429,12 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       pixelRatio: 1 / stageRef.current.scaleX(),
     });
 
-    const fittedCanvas = normalizeCanvas(
-      layerCrop,
-      rect.width(),
-      rect.height(),
-    );
-
-    const blob = await fittedCanvas.convertToBlob({ type: "image/png" });
-    const arrayBuffer = await blob.arrayBuffer();
-
-    return new Uint8Array(arrayBuffer);
+    const markerBitmap = await createImageBitmap(layerCrop);
+    return maskInWorker({
+      markerBitmap,
+      width: rect.width(),
+      height: rect.height(),
+    });
   };
 
   // Listen for gallery drag and drop events
@@ -581,17 +590,6 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     const width = rect.width();
     const height = rect.height();
 
-    const canvas = new OffscreenCanvas(width, height);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    if (baseImageBitmap) {
-      ctx.drawImage(baseImageBitmap, 0, 0, width, height);
-    } else {
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, width, height);
-    }
-
     const markerLayerCanvas = editsLayer.toCanvas({
       x: stageRef.current.x(),
       y: stageRef.current.y(),
@@ -599,14 +597,23 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       height: rect.height() * stageRef.current.scaleY(),
       pixelRatio: 1 / stageRef.current.scaleX(),
     });
-    const fittedMarkerCanvas = normalizeCanvas(
-      markerLayerCanvas,
+
+    // Move the marker pixels and a clone of the base bitmap off the main
+    // thread. The worker handles the exact-size resize, compositing, and PNG
+    // encoding so the renderer stays responsive during a 4K generate.
+    const [markerBitmap, baseBitmap] = await Promise.all([
+      createImageBitmap(markerLayerCanvas),
+      baseImageBitmap
+        ? createImageBitmap(baseImageBitmap)
+        : Promise.resolve(undefined),
+    ]);
+
+    const blob = await compositeInWorker({
+      markerBitmap,
+      baseBitmap,
       width,
       height,
-    );
-    ctx.drawImage(fittedMarkerCanvas, 0, 0, width, height);
-
-    const blob = await canvas.convertToBlob({ type: "image/png" });
+    });
     const uuid = crypto.randomUUID();
     return new File([blob], `${uuid}.png`, { type: "image/png" });
   }, [baseImageBitmap, baseImageInfo]);
@@ -621,28 +628,37 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
         selectedProvider?: GenerationProvider;
       },
     ) => {
-      const editedImageToken = baseImageInfo?.mediaToken;
-
-      if (!editedImageToken) {
-        console.error("Base image is not available");
-        return;
-      }
-
-      const subscriberId: string =
-        crypto?.randomUUID?.() ??
-        `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-      adapter.onEnqueueMeta?.({
-        prompt,
-        refImageUrls: (options?.images || [])
-          .map((img) => img.url)
-          .filter(Boolean),
-        modelType:
-          (selectedImageModel as any)?.tauriId || String(selectedImageModel),
-        timestamp: Date.now(),
-      });
-
+      if (generateInFlightRef.current) return;
+      generateInFlightRef.current = true;
+      setIsGenerating(true);
       try {
+        // Yield once so React paints the disabled button before the heavy
+        // canvas readback / encode / upload runs and locks the main thread.
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => resolve()),
+        );
+
+        const editedImageToken = baseImageInfo?.mediaToken;
+
+        if (!editedImageToken) {
+          console.error("Base image is not available");
+          return;
+        }
+
+        const subscriberId: string =
+          crypto?.randomUUID?.() ??
+          `inpaint-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+        adapter.onEnqueueMeta?.({
+          prompt,
+          refImageUrls: (options?.images || [])
+            .map((img) => img.url)
+            .filter(Boolean),
+          modelType:
+            (selectedImageModel as any)?.tauriId || String(selectedImageModel),
+          timestamp: Date.now(),
+        });
+
         let result;
 
         if (selectedImageModel?.editingIsInpainting) {
@@ -731,8 +747,9 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
         if (result?.status === "success") {
           addPendingGeneration(subscriberId, generationCount);
         }
-      } catch (error) {
-        throw error;
+      } finally {
+        generateInFlightRef.current = false;
+        setIsGenerating(false);
       }
     },
     [
@@ -1006,6 +1023,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           onGenerateClick={handleGenerate}
           onFitPressed={onFitPressed}
           isDisabled={false}
+          isEnqueueing={isGenerating}
           generationCount={generationCount}
           onGenerationCountChange={setGenerationCount}
           selectedImageModel={selectedImageModel}
