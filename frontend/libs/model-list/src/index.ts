@@ -18,5 +18,7 @@ export * from "./lib/lists/ImageModels.js";
 export * from "./lib/lists/VideoModels.js";
 export * from "./lib/classes/SplatModel.js";
 export * from "./lib/lists/SplatModels.js";
+export * from "./lib/classes/Object3DModel.js";
+export * from "./lib/lists/Object3DModels.js";
 
 

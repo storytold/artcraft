@@ -32,6 +32,7 @@ import type { MediaItem } from "../../pages/PageEnigma/models";
 import { SPLAT_MODELS } from "@storyteller/model-list";
 import {
   ClassyModelSelector,
+  IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST,
   IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST,
   ModelPage,
   useSelectedModel,
@@ -78,12 +79,9 @@ const generateId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2, 10);
 
-const MODEL_OPTIONS = [
-  { id: EnqueueImageTo3dObjectModel.Hunyuan3d3, label: "Hunyuan 3.0" },
-  { id: EnqueueImageTo3dObjectModel.Hunyuan3d2_0, label: "Hunyuan 2.0" },
-];
-
 const WORLD_MODEL_PAGE = ModelPage.ImageTo3DWorld;
+const OBJECT_MODEL_PAGE = ModelPage.ImageTo3DObject;
+const DEFAULT_OBJECT_MODEL_ID = EnqueueImageTo3dObjectModel.Hunyuan3d3;
 
 export const ImageTo3DExperience = ({
   title,
@@ -92,17 +90,20 @@ export const ImageTo3DExperience = ({
   backgroundImage,
 }: ImageTo3DExperienceProps) => {
   const [activeMode, setActiveMode] = useState<Mode>("image");
-  const [selectedModel, setSelectedModel] =
-    useState<EnqueueImageTo3dObjectModel>(
-      EnqueueImageTo3dObjectModel.Hunyuan3d3,
-    );
   const selectedWorldModel = useSelectedModel(WORLD_MODEL_PAGE);
   const selectedWorldProvider = useSelectedProviderForModel(
     WORLD_MODEL_PAGE,
     selectedWorldModel?.id,
   );
+  const selectedObjectModel = useSelectedModel(OBJECT_MODEL_PAGE);
+  const selectedObjectModelId =
+    (selectedObjectModel?.id as EnqueueImageTo3dObjectModel | undefined) ??
+    DEFAULT_OBJECT_MODEL_ID;
   const worldCredits = useCostBreakdownModalStore(
     (s) => s.estimatedCreditsByPage[WORLD_MODEL_PAGE],
+  );
+  const objectCredits = useCostBreakdownModalStore(
+    (s) => s.estimatedCreditsByPage[OBJECT_MODEL_PAGE],
   );
   const [uploadedPreview, setUploadedPreview] = useState<string | null>(null);
   const [uploadedName, setUploadedName] = useState<string | null>(null);
@@ -140,9 +141,7 @@ export const ImageTo3DExperience = ({
   const clearPendingExternalImage = useImageTo3DWorldStore(
     (s) => s.clearPendingExternalImage,
   );
-  const pendingObjectImage = useImageTo3DStore(
-    (s) => s.pendingExternalImage,
-  );
+  const pendingObjectImage = useImageTo3DStore((s) => s.pendingExternalImage);
   const clearPendingObjectImage = useImageTo3DStore(
     (s) => s.clearPendingExternalImage,
   );
@@ -186,7 +185,13 @@ export const ImageTo3DExperience = ({
         clearPendingObjectImage();
       }
     }
-  }, [variant, pendingExternalImage, clearPendingExternalImage, pendingObjectImage, clearPendingObjectImage]);
+  }, [
+    variant,
+    pendingExternalImage,
+    clearPendingExternalImage,
+    pendingObjectImage,
+    clearPendingObjectImage,
+  ]);
 
   useEffect(() => {
     const onResize = () => setVh(window.innerHeight);
@@ -451,14 +456,13 @@ export const ImageTo3DExperience = ({
         window.__storeTaskEnqueueMeta?.({
           prompt: snapshotPrompt || undefined,
           refImageUrls: snapshotPreview ? [snapshotPreview] : undefined,
-          modelType:
-            (selectedModel as any)?.tauriId || String(selectedModel),
+          modelType: selectedObjectModel?.tauriId || selectedObjectModelId,
           timestamp: Date.now(),
         });
 
         const result = await EnqueueImageTo3dObject({
           image_media_token: uploadedMediaToken || undefined,
-          model: selectedModel,
+          model: selectedObjectModelId,
           frontend_caller: "mini_app",
           frontend_subscriber_id: subscriberId,
         });
@@ -469,10 +473,6 @@ export const ImageTo3DExperience = ({
 
         if (activeMode === "text") {
           setPrompt("");
-        } else {
-          setUploadedPreview(null);
-          setUploadedName(null);
-          setUploadedMediaToken(null);
         }
       }
     } catch (error) {
@@ -922,10 +922,6 @@ export const ImageTo3DExperience = ({
   const activeResult =
     results.find((r) => r.id === selectedResultId) || results[0];
 
-  useEffect(() => {
-    console.log("[ImageTo3D] Active result changed:", activeResult);
-  }, [activeResult]);
-
   return (
     <div className="bg-ui-panel-gradient flex h-[calc(100vh-56px)] w-full bg-ui-panel text-base-fg">
       {backgroundImage && !hasResults && (
@@ -959,13 +955,14 @@ export const ImageTo3DExperience = ({
           <div
             className={twMerge(
               "mx-auto grid h-full w-full grid-cols-[1fr_300px] gap-4 overflow-hidden pb-10",
-              variant === "world" ? "max-w-[1600px]" : "max-w-7xl",
+              variant === "world" ? "max-w-[1600px]" : "max-w-[1600px]",
             )}
             style={{ height: `calc(100vh - ${bottomOffsetPx + 80}px)` }}
           >
             {/* Left: Viewer */}
             <div className="glass relative h-full overflow-hidden rounded-xl border border-ui-panel-border">
               <Viewer3D
+                key={activeResult?.id}
                 modelUrl={activeResult?.modelUrl}
                 previewUrl={activeResult?.previewUrl}
                 isActive={true}
@@ -1018,7 +1015,7 @@ export const ImageTo3DExperience = ({
 
             {/* Right: History List */}
             <div className="glass flex h-full flex-col overflow-hidden rounded-xl border border-ui-panel-border">
-              <div className="flex items-center justify-between border-b border-ui-panel-border p-4">
+              <div className="flex items-center justify-between p-4">
                 <h3 className="font-semibold text-base-fg/80">History</h3>
                 {results.length > 0 && (
                   <button
@@ -1031,47 +1028,63 @@ export const ImageTo3DExperience = ({
               </div>
               <div className="flex-1 overflow-y-auto p-3">
                 <div className="space-y-3">
-                  {results.map((result) => (
-                    <button
-                      key={result.id}
-                      onClick={() => setSelectedResultId(result.id)}
-                      className={twMerge(
-                        "flex w-full gap-3 rounded-xl border p-2 text-left transition-all hover:bg-ui-controls/40",
-                        selectedResultId === result.id
-                          ? "border-primary/50 bg-primary/10"
-                          : "border-transparent bg-ui-controls/20",
-                      )}
-                    >
-                      <div className="aspect-square h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-black/20">
-                        {result.previewUrl ? (
-                          <img
-                            src={result.previewUrl}
-                            alt="thumb"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-base-fg/20">
-                            <FontAwesomeIcon icon={faCube} />
-                          </div>
+                  {results.map((result) => {
+                    const isPending = result.status === "pending";
+                    const isSelected = selectedResultId === result.id;
+                    return (
+                      <button
+                        key={result.id}
+                        onClick={() => setSelectedResultId(result.id)}
+                        className={twMerge(
+                          "group flex w-full items-center gap-3 rounded-xl border p-2 text-left transition-all hover:bg-ui-controls/40",
+                          isSelected
+                            ? "border-primary/50 bg-primary/10"
+                            : "border-transparent bg-ui-controls/20",
                         )}
-                      </div>
-                      <div className="min-w-0 flex-1 py-1">
-                        <div className="truncate text-sm font-medium">
-                          {result.note || "Generated Model"}
-                        </div>
-                        <div className="mt-1 flex items-center gap-2 text-xs opacity-50">
-                          {result.status === "pending" ? (
-                            <span className="flex items-center gap-1.5 text-amber-400">
-                              <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
-                              Generating...
-                            </span>
+                      >
+                        <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-black/30 ring-1 ring-white/5">
+                          {result.previewUrl ? (
+                            <img
+                              src={result.previewUrl}
+                              alt="thumb"
+                              className={twMerge(
+                                "h-full w-full object-cover transition-opacity",
+                                isPending && "opacity-40",
+                              )}
+                            />
                           ) : (
-                            <span>{formatTime(result.timestamp)}</span>
+                            <div className="flex h-full w-full items-center justify-center text-base-fg/25">
+                              <FontAwesomeIcon
+                                icon={faCube}
+                                className="text-lg"
+                              />
+                            </div>
+                          )}
+                          {isPending && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-primary" />
+                            </div>
                           )}
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                        <div className="min-w-0 flex-1 py-0.5">
+                          <div className="truncate text-sm font-medium text-base-fg/90">
+                            {result.note || "Generated Model"}
+                          </div>
+                          <div className="mt-1 flex items-center gap-1.5 text-xs">
+                            {isPending ? (
+                              <span className="text-base-fg/55">
+                                Generating…
+                              </span>
+                            ) : (
+                              <span className="text-base-fg/45">
+                                {formatTime(result.timestamp)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1107,27 +1120,13 @@ export const ImageTo3DExperience = ({
                   hasResults ? "mt-3" : "mt-3",
                 )}
               >
-                {variant === "object" && (
-                  <div className="flex justify-center">
-                    <TabSelector
-                      tabs={MODEL_OPTIONS}
-                      activeTab={selectedModel}
-                      onTabChange={(id) =>
-                        setSelectedModel(id as EnqueueImageTo3dObjectModel)
-                      }
-                      className="w-fit"
-                      indicatorClassName="bg-primary/25"
-                    />
-                  </div>
-                )}
-
                 <GenerateButton
                   variant="primary"
                   icon={undefined}
                   disabled={!canGenerate}
                   onClick={handleGenerate}
                   loading={isGenerating}
-                  credits={variant === "world" ? worldCredits : undefined}
+                  credits={variant === "world" ? worldCredits : objectCredits}
                 >
                   {`Generate ${variant === "object" ? "Object" : "World"}`}
                 </GenerateButton>
@@ -1148,25 +1147,30 @@ export const ImageTo3DExperience = ({
           </div>
         </animated.div>
 
-        {variant === "world" && (
-          <>
-            <div className="absolute bottom-6 left-6 z-20 flex items-center gap-5">
-              <ClassyModelSelector
-                items={IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST}
-                page={WORLD_MODEL_PAGE}
-                mode="hoverSelect"
-                panelTitle="Select Model"
-                panelClassName="min-w-[300px]"
-                buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
-                showIconsInList
-              />
-            </div>
-            <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
-              <CostCalculatorButton modelPage={WORLD_MODEL_PAGE} />
-              <HelpMenuButton />
-            </div>
-          </>
-        )}
+        <div className="absolute bottom-6 left-6 z-20 flex items-center gap-5">
+          <ClassyModelSelector
+            items={
+              variant === "world"
+                ? IMAGE_TO_3D_WORLD_PAGE_MODEL_LIST
+                : IMAGE_TO_3D_OBJECT_PAGE_MODEL_LIST
+            }
+            page={variant === "world" ? WORLD_MODEL_PAGE : OBJECT_MODEL_PAGE}
+            mode="hoverSelect"
+            panelTitle="Select Model"
+            panelClassName="min-w-[300px]"
+            buttonClassName="bg-transparent p-0 text-lg hover:bg-transparent text-white/80 hover:text-white"
+            showIconsInList
+          />
+        </div>
+
+        <div className="absolute bottom-6 right-6 z-20 flex items-center gap-2">
+          <CostCalculatorButton
+            modelPage={
+              variant === "world" ? WORLD_MODEL_PAGE : OBJECT_MODEL_PAGE
+            }
+          />
+          <HelpMenuButton />
+        </div>
       </div>
 
       <input
