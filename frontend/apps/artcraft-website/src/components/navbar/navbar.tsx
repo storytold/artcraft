@@ -52,6 +52,7 @@ const NAV_ITEMS: NavEntry[] = [
     ],
   },
   { name: "Download", href: "/download" },
+  { name: "Support", href: "/support" },
 ];
 
 function isGroup(entry: NavEntry): entry is NavGroup {
