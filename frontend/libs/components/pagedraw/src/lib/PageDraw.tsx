@@ -32,6 +32,7 @@ import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64
 import {
   compositeInWorker,
   maskInWorker,
+  setBaseBitmapInWorker,
 } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
@@ -598,25 +599,118 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       pixelRatio: 1 / stageRef.current.scaleX(),
     });
 
-    // Move the marker pixels and a clone of the base bitmap off the main
-    // thread. The worker handles the exact-size resize, compositing, and PNG
-    // encoding so the renderer stays responsive during a 4K generate.
-    const [markerBitmap, baseBitmap] = await Promise.all([
-      createImageBitmap(markerLayerCanvas),
-      baseImageBitmap
-        ? createImageBitmap(baseImageBitmap)
-        : Promise.resolve(undefined),
-    ]);
+    // Move the marker pixels off the main thread. The base bitmap is already
+    // cached in the worker (synced via setBaseBitmapInWorker on baseImageBitmap
+    // changes), so we only need to send the marker on each bake.
+    const markerBitmap = await createImageBitmap(markerLayerCanvas);
 
     const blob = await compositeInWorker({
       markerBitmap,
-      baseBitmap,
       width,
       height,
     });
     const uuid = crypto.randomUUID();
     return new File([blob], `${uuid}.png`, { type: "image/png" });
   }, [baseImageBitmap, baseImageInfo]);
+
+  // Push the current base bitmap into the worker's cache whenever it changes.
+  // The worker keeps it across generates so we don't pay createImageBitmap +
+  // postMessage(transfer) on every Generate click.
+  useEffect(() => {
+    if (!baseImageBitmap) {
+      setBaseBitmapInWorker(undefined).catch((err) =>
+        console.error("Failed to clear worker base bitmap:", err),
+      );
+      return;
+    }
+    let cancelled = false;
+    createImageBitmap(baseImageBitmap)
+      .then((clone) => {
+        if (cancelled) {
+          clone.close();
+          return;
+        }
+        return setBaseBitmapInWorker(clone);
+      })
+      .catch((err) =>
+        console.error("Failed to send worker base bitmap:", err),
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [baseImageBitmap]);
+
+  // Pre-bake the composite File on idle so the Generate click path is
+  // near-instant in the common case (user pauses >300ms before clicking). The
+  // bake itself still freezes the main thread for the Konva readback, but it
+  // happens between user actions instead of on click. A generation counter
+  // makes concurrent bakes correct: only the latest bake commits its result,
+  // and only if no canvas change happened mid-bake.
+  const bakedCompositeRef = useRef<File | null>(null);
+  const bakeDirtyRef = useRef(true);
+  const bakeInFlightRef = useRef<Promise<File | null> | null>(null);
+  const bakeGenRef = useRef(0);
+  const bakeTimeoutRef = useRef<number | null>(null);
+
+  const runCompositeBake = useCallback((): Promise<File | null> => {
+    const myGen = ++bakeGenRef.current;
+    bakeDirtyRef.current = false;
+    const promise = (async () => {
+      try {
+        const file = await getCompositeCanvasFile();
+        if (myGen === bakeGenRef.current && !bakeDirtyRef.current) {
+          bakedCompositeRef.current = file;
+        }
+        return file;
+      } catch (err) {
+        if (myGen === bakeGenRef.current) bakeDirtyRef.current = true;
+        console.error("Composite pre-bake failed:", err);
+        return null;
+      } finally {
+        // Only the latest bake clears the in-flight slot. Older bakes that
+        // finish after a newer one has started leave the newer one's promise
+        // in place.
+        if (myGen === bakeGenRef.current) bakeInFlightRef.current = null;
+      }
+    })();
+    bakeInFlightRef.current = promise;
+    return promise;
+  }, [getCompositeCanvasFile]);
+
+  const getCompositeFile = useCallback((): Promise<File | null> => {
+    if (!bakeDirtyRef.current) {
+      if (bakedCompositeRef.current) {
+        return Promise.resolve(bakedCompositeRef.current);
+      }
+      if (bakeInFlightRef.current) return bakeInFlightRef.current;
+    }
+    return runCompositeBake();
+  }, [runCompositeBake]);
+
+  const scheduleCompositeBake = useCallback(() => {
+    if (bakeTimeoutRef.current !== null) {
+      window.clearTimeout(bakeTimeoutRef.current);
+    }
+    bakeTimeoutRef.current = window.setTimeout(() => {
+      bakeTimeoutRef.current = null;
+      runCompositeBake().catch(() => {});
+    }, 300);
+  }, [runCompositeBake]);
+
+  useEffect(() => {
+    bakeDirtyRef.current = true;
+    bakedCompositeRef.current = null;
+    scheduleCompositeBake();
+  }, [drawNodes, baseImageBitmap, baseImageInfo, scheduleCompositeBake]);
+
+  useEffect(
+    () => () => {
+      if (bakeTimeoutRef.current !== null) {
+        window.clearTimeout(bakeTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const handleGenerate = useCallback(
     async (
@@ -676,7 +770,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           });
         } else if (selectedImageModel?.isNanoBananaModel()) {
           // CASE 2 - NANO BANANA
-          const compositeFile = await getCompositeCanvasFile();
+          const compositeFile = await getCompositeFile();
 
           if (!compositeFile) {
             console.error("Failed to create composite canvas");
@@ -710,7 +804,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           });
         } else {
           // CASE 3 - DEFAULT
-          const compositeFile = await getCompositeCanvasFile();
+          const compositeFile = await getCompositeFile();
 
           if (!compositeFile) {
             console.error("Failed to create composite canvas");
@@ -754,7 +848,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     },
     [
       generationCount,
-      getCompositeCanvasFile,
+      getCompositeFile,
       selectedImageModel,
       adapter,
       baseImageInfo,

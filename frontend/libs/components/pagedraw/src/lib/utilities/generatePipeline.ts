@@ -1,12 +1,13 @@
 import GeneratePipelineWorker from "./generatePipeline.worker.ts?worker&inline";
 
+type SetBaseOk = { id: number; ok: true; type: "setBase" };
 type CompositeOk = { id: number; ok: true; type: "composite"; blob: Blob };
 type MaskOk = { id: number; ok: true; type: "mask"; bytes: Uint8Array };
 type WorkerErr = { id: number; ok: false; error: string };
-type WorkerResponse = CompositeOk | MaskOk | WorkerErr;
+type WorkerResponse = SetBaseOk | CompositeOk | MaskOk | WorkerErr;
 
 type Pending = {
-  resolve: (value: CompositeOk | MaskOk) => void;
+  resolve: (value: SetBaseOk | CompositeOk | MaskOk) => void;
   reject: (err: Error) => void;
 };
 
@@ -39,16 +40,34 @@ const ensureWorker = (): Worker => {
   return worker;
 };
 
+export const setBaseBitmapInWorker = (
+  baseBitmap?: ImageBitmap,
+): Promise<void> => {
+  const worker = ensureWorker();
+  const id = nextId++;
+  const transfer: Transferable[] = baseBitmap ? [baseBitmap] : [];
+  return new Promise<void>((resolve, reject) => {
+    pendingRequests.set(id, {
+      resolve: (res) => {
+        if (res.type !== "setBase") {
+          reject(new Error("Unexpected response type for setBase"));
+          return;
+        }
+        resolve();
+      },
+      reject,
+    });
+    worker.postMessage({ id, type: "setBase", baseBitmap }, transfer);
+  });
+};
+
 export const compositeInWorker = (params: {
   markerBitmap: ImageBitmap;
-  baseBitmap?: ImageBitmap;
   width: number;
   height: number;
 }): Promise<Blob> => {
   const worker = ensureWorker();
   const id = nextId++;
-  const transfer: Transferable[] = [params.markerBitmap];
-  if (params.baseBitmap) transfer.push(params.baseBitmap);
   return new Promise<Blob>((resolve, reject) => {
     pendingRequests.set(id, {
       resolve: (res) => {
@@ -60,7 +79,9 @@ export const compositeInWorker = (params: {
       },
       reject,
     });
-    worker.postMessage({ id, type: "composite", ...params }, transfer);
+    worker.postMessage({ id, type: "composite", ...params }, [
+      params.markerBitmap,
+    ]);
   });
 };
 
