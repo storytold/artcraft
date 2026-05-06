@@ -32,7 +32,6 @@ import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64
 import {
   compositeInWorker,
   maskInWorker,
-  setBaseBitmapInWorker,
 } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
@@ -599,46 +598,29 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       pixelRatio: 1 / stageRef.current.scaleX(),
     });
 
-    // Move the marker pixels off the main thread. The base bitmap is already
-    // cached in the worker (synced via setBaseBitmapInWorker on baseImageBitmap
-    // changes), so we only need to send the marker on each bake.
-    const markerBitmap = await createImageBitmap(markerLayerCanvas);
+    // Move the marker pixels and a clone of the base bitmap off the main
+    // thread. The worker handles the exact-size resize, compositing, and PNG
+    // encoding. Each bake carries its own base atomically; we don't try to
+    // cache it across bakes — pre-baking on idle (see runCompositeBake) hides
+    // the per-bake clone cost on the click path, and the atomic-per-call
+    // contract avoids any race where concurrent bakes leave a stale base in a
+    // worker-side cache.
+    const [markerBitmap, baseBitmap] = await Promise.all([
+      createImageBitmap(markerLayerCanvas),
+      baseImageBitmap
+        ? createImageBitmap(baseImageBitmap)
+        : Promise.resolve(undefined),
+    ]);
 
     const blob = await compositeInWorker({
       markerBitmap,
+      baseBitmap,
       width,
       height,
     });
     const uuid = crypto.randomUUID();
     return new File([blob], `${uuid}.png`, { type: "image/png" });
   }, [baseImageBitmap, baseImageInfo]);
-
-  // Push the current base bitmap into the worker's cache whenever it changes.
-  // The worker keeps it across generates so we don't pay createImageBitmap +
-  // postMessage(transfer) on every Generate click.
-  useEffect(() => {
-    if (!baseImageBitmap) {
-      setBaseBitmapInWorker(undefined).catch((err) =>
-        console.error("Failed to clear worker base bitmap:", err),
-      );
-      return;
-    }
-    let cancelled = false;
-    createImageBitmap(baseImageBitmap)
-      .then((clone) => {
-        if (cancelled) {
-          clone.close();
-          return;
-        }
-        return setBaseBitmapInWorker(clone);
-      })
-      .catch((err) =>
-        console.error("Failed to send worker base bitmap:", err),
-      );
-    return () => {
-      cancelled = true;
-    };
-  }, [baseImageBitmap]);
 
   // Pre-bake the composite File on idle so the Generate click path is
   // near-instant in the common case (user pauses >300ms before clicking). The
