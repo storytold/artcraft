@@ -1,4 +1,11 @@
-import { Route, Routes, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import {
+  Route,
+  Routes,
+  Navigate,
+  useLocation,
+  useNavigationType,
+} from "react-router-dom";
 import Download from "../pages/download";
 import Media from "../pages/media";
 import PressKit from "../pages/press-kit";
@@ -6,7 +13,7 @@ import Navbar from "../components/navbar";
 import { ToastContainer } from "../components/toast/toast";
 import CreateImage from "../pages/create-image";
 import CreateVideo from "../pages/create-video";
-import Landing2 from "../pages/landing2";
+//import Landing2 from "../pages/landing2";
 import Landing3 from "../pages/landing3";
 import LandingSD2 from "../pages/landing-sd2";
 import TutorialsPage from "../pages/tutorials";
@@ -25,9 +32,21 @@ import Onboarding from "../pages/onboarding";
 import Library from "../pages/library";
 import { CheckoutSuccess, CheckoutCancel } from "../pages/checkout";
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  const navType = useNavigationType();
+  useEffect(() => {
+    if (navType !== "POP") {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, navType]);
+  return null;
+}
+
 export function App() {
   return (
     <div className="relative">
+      <ScrollToTop />
       <Navbar />
 
       <Routes>
