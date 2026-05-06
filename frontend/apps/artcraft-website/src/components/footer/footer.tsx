@@ -63,7 +63,7 @@ const navigation = {
 export default function Example() {
   return (
     <footer className="bg-transparent z-20">
-      <div className="mx-auto max-w-7xl overflow-hidden px-6 py-16 sm:py-16 lg:px-8 flex flex-col gap-12 items-center">
+      <div className="mx-auto max-w-7xl overflow-hidden px-4 sm:px-6 py-16 sm:py-16 lg:px-8 flex flex-col gap-12 items-center">
         {/* <Button
           icon={faArrowDownToLine}
           className="w-fit"
@@ -86,7 +86,7 @@ export default function Example() {
           ))}
         </nav> */}
         <div className="w-full flex flex-col items-center gap-10">
-          <div className="flex justify-center gap-x-10 mb-8">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 sm:gap-x-10 mb-8">
             {navigation.social.map((item) => (
               <a
                 key={item.name}
