@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo, memo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+  memo,
+} from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DRAW_LAYER_ID, INPAINT_LAYER_ID, PaintSurface } from "./PaintSurface";
 import "./pagedraw.css";
@@ -29,10 +36,7 @@ import { GenerationProvider } from "@storyteller/api-enums";
 import { HistoryStack } from "./HistoryStack";
 import { type BaseSelectorImage } from "./types";
 import { EncodeImageBitmapToBase64 } from "./utilities/EncodeImageBitmapToBase64";
-import {
-  compositeInWorker,
-  maskInWorker,
-} from "./utilities/generatePipeline";
+import { compositeInWorker, maskInWorker } from "./utilities/generatePipeline";
 import { RefImage, usePrompt2DStore } from "@storyteller/ui-promptbox";
 import { PromptsApi } from "@storyteller/api";
 import toast from "react-hot-toast";
@@ -109,13 +113,23 @@ const Edit3DButton = memo(function Edit3DButton({
     const transformers = stage.find("Transformer");
     transformers.forEach((tr) => {
       tr.on(`transformstart${ns}`, () => setInteracting(true));
-      tr.on(`transformend${ns}`, () => requestAnimationFrame(() => { setInteracting(false); bump(); }));
+      tr.on(`transformend${ns}`, () =>
+        requestAnimationFrame(() => {
+          setInteracting(false);
+          bump();
+        }),
+      );
     });
 
     const konvaNode = stage.findOne("#" + nodeId);
     if (konvaNode) {
       konvaNode.on(`dragstart${ns}`, () => setInteracting(true));
-      konvaNode.on(`dragend${ns}`, () => requestAnimationFrame(() => { setInteracting(false); bump(); }));
+      konvaNode.on(`dragend${ns}`, () =>
+        requestAnimationFrame(() => {
+          setInteracting(false);
+          bump();
+        }),
+      );
     }
 
     return () => {
@@ -390,6 +404,17 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   const generateInFlightRef = useRef(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Latest-ref mirrors of base-image state. Read from `*.current` inside any
+  // useCallback whose deps would otherwise have to list these and cascade
+  // recreation through the bake/generate chain. Updated after every render
+  // (no deps) so callbacks always see fresh values.
+  const baseImageBitmapRef = useRef(baseImageBitmap);
+  const baseImageInfoRef = useRef(baseImageInfo);
+  useEffect(() => {
+    baseImageBitmapRef.current = baseImageBitmap;
+    baseImageInfoRef.current = baseImageInfo;
+  });
+
   const selectedImageModel: ImageModel | undefined =
     useSelectedImageModel(PAGE_ID);
 
@@ -409,8 +434,9 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   // Read the inpaint mask off the Konva layer and encode it on a worker thread.
   // The Konva readback itself runs on main (Konva is DOM-bound), but everything
   // downstream — drawImage to an exact-size canvas, PNG encoding, byte transfer —
-  // happens off the main thread.
-  const getMaskArrayBuffer = async (): Promise<Uint8Array> => {
+  // happens off the main thread. Stable: only touches refs, so handleGenerate
+  // can list it as a dep without churning per render.
+  const getMaskArrayBuffer = useCallback(async (): Promise<Uint8Array> => {
     if (!stageRef.current || !baseImageKonvaRef.current) {
       console.error("Stage or left panel ref is not available");
       throw new Error("Stage or left panel or base image ref is not available");
@@ -435,7 +461,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
       width: rect.width(),
       height: rect.height(),
     });
-  };
+  }, []);
 
   // Listen for gallery drag and drop events
   useEffect(() => {
@@ -478,7 +504,11 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
               stagePoint.y - displayH / 2,
               dataUrl,
               modelUrl,
-              { ...DEFAULT_MODEL3D_PARAMS, nativeWidth: img.width, nativeHeight: img.height },
+              {
+                ...DEFAULT_MODEL3D_PARAMS,
+                nativeWidth: img.width,
+                nativeHeight: img.height,
+              },
               displayW,
               displayH,
             );
@@ -549,33 +579,41 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     [drawNodes, editing3DNodeId],
   );
 
-  const handleImageUpload = useCallback(async (files: File[]): Promise<void> => {
-    const { width: canvasW, height: canvasH } = getAspectRatioDimensions();
+  const handleImageUpload = useCallback(
+    async (files: File[]): Promise<void> => {
+      const { width: canvasW, height: canvasH } = getAspectRatioDimensions();
 
-    const maxW = canvasW * 0.85;
-    const maxH = canvasH * 0.85;
+      const maxW = canvasW * 0.85;
+      const maxH = canvasH * 0.85;
 
-    for (const file of files) {
-      const img = new Image();
-      img.onload = () => {
-        const { naturalWidth, naturalHeight } = img;
+      for (const file of files) {
+        const img = new Image();
+        img.onload = () => {
+          const { naturalWidth, naturalHeight } = img;
 
-        const scale = Math.min(maxW / naturalWidth, maxH / naturalHeight, 1);
-        const displayW = naturalWidth * scale;
-        const displayH = naturalHeight * scale;
+          const scale = Math.min(maxW / naturalWidth, maxH / naturalHeight, 1);
+          const displayW = naturalWidth * scale;
+          const displayH = naturalHeight * scale;
 
-        const x = (canvasW - displayW) / 2;
-        const y = (canvasH - displayH) / 2;
+          const x = (canvasW - displayW) / 2;
+          const y = (canvasH - displayH) / 2;
 
-        createImageFromFile(x, y, file, displayW, displayH);
-      };
-      img.src = URL.createObjectURL(file);
-    }
-  }, [getAspectRatioDimensions, createImageFromFile]);
+          createImageFromFile(x, y, file, displayW, displayH);
+        };
+        img.src = URL.createObjectURL(file);
+      }
+    },
+    [getAspectRatioDimensions, createImageFromFile],
+  );
 
+  // Stable: reads base state via latest-refs so deps stay empty and the bake
+  // chain (runCompositeBake → getCompositeFile / scheduleCompositeBake →
+  // handleGenerate) doesn't recreate on every base-image swap.
   const getCompositeCanvasFile = useCallback(async (): Promise<File | null> => {
+    const baseBitmapNow = baseImageBitmapRef.current;
+    const baseInfoNow = baseImageInfoRef.current;
     if (!stageRef.current || !baseImageKonvaRef.current) return null;
-    if (!baseImageInfo?.isBlankCanvas && !baseImageBitmap) return null;
+    if (!baseInfoNow?.isBlankCanvas && !baseBitmapNow) return null;
 
     const editsLayer = stageRef.current
       .getLayers()
@@ -607,8 +645,8 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     // worker-side cache.
     const [markerBitmap, baseBitmap] = await Promise.all([
       createImageBitmap(markerLayerCanvas),
-      baseImageBitmap
-        ? createImageBitmap(baseImageBitmap)
+      baseBitmapNow
+        ? createImageBitmap(baseBitmapNow)
         : Promise.resolve(undefined),
     ]);
 
@@ -620,7 +658,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     });
     const uuid = crypto.randomUUID();
     return new File([blob], `${uuid}.png`, { type: "image/png" });
-  }, [baseImageBitmap, baseImageInfo]);
+  }, []);
 
   // Pre-bake the composite File on idle so the Generate click path is
   // near-instant in the common case (user pauses >300ms before clicking). The
@@ -679,6 +717,10 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     }, 300);
   }, [runCompositeBake]);
 
+  // Invalidate + reschedule on any change that affects what `getCompositeCanvasFile`
+  // would render. `baseImageInfo` and `baseImageBitmap` change at different times
+  // (info syncs immediately on selection, bitmap arrives async after the image
+  // loads — see SceneState.ts setBaseImageInfo), so both must be listed.
   useEffect(() => {
     bakeDirtyRef.current = true;
     bakedCompositeRef.current = null;
@@ -831,6 +873,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     [
       generationCount,
       getCompositeFile,
+      getMaskArrayBuffer,
       selectedImageModel,
       adapter,
       baseImageInfo,
@@ -908,7 +951,10 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseImageBitmap, baseImageInfo?.isBlankCanvas]);
 
-  const handleSelectTool = useCallback(() => setActiveTool("select"), [setActiveTool]);
+  const handleSelectTool = useCallback(
+    () => setActiveTool("select"),
+    [setActiveTool],
+  );
 
   const handleActivateShapeTool = useCallback(
     (shape: "rectangle" | "circle" | "triangle") => {
@@ -931,7 +977,9 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   );
 
   const handleCanvasBackground = useCallback(
-    (hex: string) => { setFillColor(hex); },
+    (hex: string) => {
+      setFillColor(hex);
+    },
     [setFillColor],
   );
 
@@ -960,10 +1008,14 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     async (ratio: string) => {
       const ratioToType = (r: string): AspectRatioType => {
         switch (r) {
-          case "tall":   return AspectRatioType.PORTRAIT;
-          case "wide":   return AspectRatioType.LANDSCAPE;
-          case "square": return AspectRatioType.SQUARE;
-          default:       return AspectRatioType.NONE;
+          case "tall":
+            return AspectRatioType.PORTRAIT;
+          case "wide":
+            return AspectRatioType.LANDSCAPE;
+          case "square":
+            return AspectRatioType.SQUARE;
+          default:
+            return AspectRatioType.NONE;
         }
       };
       setAspectRatioType(ratioToType(ratio));
@@ -976,7 +1028,9 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
   const handleMenuAction = useCallback(
     async (action: string) => {
       switch (action) {
-        case "LOCK":              toggleLock(selectedNodeIds); break;
+        case "LOCK":
+          toggleLock(selectedNodeIds);
+          break;
         case "REMOVE_BACKGROUND": {
           const result = await beginRemoveBackground(selectedNodeIds);
           if (result) {
@@ -984,26 +1038,51 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           }
           break;
         }
-        case "BRING_TO_FRONT":    bringToFront(selectedNodeIds); break;
-        case "BRING_FORWARD":     bringForward(selectedNodeIds); break;
-        case "SEND_BACKWARD":     sendBackward(selectedNodeIds); break;
-        case "SEND_TO_BACK":      sendToBack(selectedNodeIds); break;
-        case "DUPLICATE":         copySelectedItems(); pasteItems(); break;
-        case "DELETE":            deleteSelectedItems(); break;
-        default: break;
+        case "BRING_TO_FRONT":
+          bringToFront(selectedNodeIds);
+          break;
+        case "BRING_FORWARD":
+          bringForward(selectedNodeIds);
+          break;
+        case "SEND_BACKWARD":
+          sendBackward(selectedNodeIds);
+          break;
+        case "SEND_TO_BACK":
+          sendToBack(selectedNodeIds);
+          break;
+        case "DUPLICATE":
+          copySelectedItems();
+          pasteItems();
+          break;
+        case "DELETE":
+          deleteSelectedItems();
+          break;
+        default:
+          break;
       }
     },
     [
-      selectedNodeIds, toggleLock, beginRemoveBackground, adapter, bringToFront,
-      bringForward, sendBackward, sendToBack, copySelectedItems, pasteItems,
+      selectedNodeIds,
+      toggleLock,
+      beginRemoveBackground,
+      adapter,
+      bringToFront,
+      bringForward,
+      sendBackward,
+      sendToBack,
+      copySelectedItems,
+      pasteItems,
       deleteSelectedItems,
     ],
   );
 
-  const handleCanvasSizeChange = useCallback((width: number, height: number) => {
-    canvasWidth.current = width;
-    canvasHeight.current = height;
-  }, []);
+  const handleCanvasSizeChange = useCallback(
+    (width: number, height: number) => {
+      canvasWidth.current = width;
+      canvasHeight.current = height;
+    },
+    [],
+  );
 
   const isLocked = useMemo(
     () =>
@@ -1020,14 +1099,11 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
     return n?.type !== "line" ? n : null;
   }, [selectedNodeIds, drawNodes]);
 
-  const editingNode = useMemo(
-    () => {
-      if (!editing3DNodeId) return null;
-      const n = drawNodes.find((n) => n.id === editing3DNodeId);
-      return n?.type !== "line" ? n : null;
-    },
-    [editing3DNodeId, drawNodes],
-  );
+  const editingNode = useMemo(() => {
+    if (!editing3DNodeId) return null;
+    const n = drawNodes.find((n) => n.id === editing3DNodeId);
+    return n?.type !== "line" ? n : null;
+  }, [editing3DNodeId, drawNodes]);
 
   // Display image selector on launch, otherwise hide it.
   // Also show the selector when a non-blank-canvas image is set but the bitmap is still loading.
@@ -1045,7 +1121,10 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
                 addHistoryImageBundle({ images: [image] });
                 setBaseImageInfo(image);
               },
-              showLoading: baseImageInfo !== null && baseImageBitmap === null && !baseImageInfo.isBlankCanvas,
+              showLoading:
+                baseImageInfo !== null &&
+                baseImageBitmap === null &&
+                !baseImageInfo.isBlankCanvas,
             })}
           </div>
         </div>
