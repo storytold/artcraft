@@ -97,7 +97,7 @@ const useTauriAdapter = (): PageDrawAdapter => {
       enqueueEditImage: async (req) => {
         const request: GenerateImageRequest = {
           model: req.model,
-          scene_image_media_token: req.sceneImageMediaToken,
+          canvas_image_media_token: req.canvasImageMediaToken,
           image_media_tokens: req.imageMediaTokens,
           prompt: req.prompt,
           enable_system_prompt:

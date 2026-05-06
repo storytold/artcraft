@@ -696,7 +696,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           const imgs = options?.images || [];
           result = await adapter.enqueueEditImage({
             model: selectedImageModel,
-            sceneImageMediaToken: snapshotResult.data,
+            canvasImageMediaToken: snapshotResult.data,
             imageMediaTokens: imgs
               .map((img) => img.mediaToken)
               .filter((t) => t.length > 0),
@@ -730,7 +730,7 @@ const PageDraw = ({ adapter }: PageDrawProps) => {
           const imgs = options?.images || [];
           result = await adapter.enqueueEditImage({
             model: selectedImageModel,
-            sceneImageMediaToken: snapshotResult.data,
+            canvasImageMediaToken: snapshotResult.data,
             imageMediaTokens: imgs
               .map((img) => img.mediaToken)
               .filter((t) => t.length > 0),

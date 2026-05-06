@@ -7,7 +7,7 @@ import type { BaseSelectorImage } from "./types";
 export interface PageDrawEditRequest {
   model?: ImageModel;
   provider?: GenerationProvider;
-  sceneImageMediaToken?: string;
+  canvasImageMediaToken?: string;
   imageMediaTokens?: string[];
   prompt?: string;
   disableSystemPrompt?: boolean;
