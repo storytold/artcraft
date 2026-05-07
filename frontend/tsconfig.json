@@ -188,6 +188,9 @@
     },
     {
       "path": "./libs/components/checkbox"
+    },
+    {
+      "path": "./libs/components/vfx"
     }
   ]
 }
