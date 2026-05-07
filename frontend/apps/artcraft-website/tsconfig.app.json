@@ -93,6 +93,9 @@
     },
     {
       "path": "../../libs/api/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/components/vfx/tsconfig.lib.json"
     }
   ]
 }

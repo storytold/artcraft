@@ -10,6 +10,7 @@ import {
   faWandMagicSparkles,
   faPenNib,
   faCrosshairs,
+  faSparkles,
 } from "@fortawesome/pro-solid-svg-icons";
 import { useMemo } from "react";
 import {
@@ -32,7 +33,8 @@ export type AppId =
   | "IMAGE_TO_3D_WORLD"
   | "REMOVE_BACKGROUND"
   | "ANGLES"
-  | "STORYBOARD";
+  | "STORYBOARD"
+  | "VFX";
 
 export interface AppDescriptor {
   id: AppId;
@@ -187,6 +189,16 @@ export const ALL_APPS: FullAppItem[] = [
     badge: "NEW",
   },
   {
+    id: "vfx",
+    label: "VFX",
+    description: "Relight, shift location, and swap objects in green-screen video",
+    icon: faSparkles,
+    category: "edit",
+    action: "VFX",
+    color: "bg-orange-500/40",
+    badge: "NEW",
+  },
+  {
     id: "2d-canvas",
     label: "Image Editor",
     description: "Easy edits. Great for graphic design.",
@@ -267,6 +279,7 @@ export const goToApp = (action?: string) => {
       "REMOVE_BACKGROUND",
       "ANGLES",
       "STORYBOARD",
+      "VFX",
     ].includes(action)
   ) {
     if (action === "STORYBOARD") {

@@ -74,6 +74,9 @@
       "path": "../../libs/components/promptbox"
     },
     {
+      "path": "../../libs/components/vfx"
+    },
+    {
       "path": "../../libs/components/menu-icon-selector"
     },
     {
