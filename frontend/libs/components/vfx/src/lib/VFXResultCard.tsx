@@ -40,7 +40,7 @@ export const VFXResultCard = ({
   onDismiss,
   className,
   panelGlassClassName = "bg-white/5 ring-1 ring-white/10",
-  promptTextClassName = "text-white/85 line-clamp-3",
+  promptTextClassName = "text-white/85 line-clamp-2",
   promptLabelClassName = "text-white/50",
   tryButtonClassName = "border-primary/40 bg-primary/15 text-white hover:bg-primary/25",
 }: VFXResultCardProps) => {

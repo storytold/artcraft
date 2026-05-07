@@ -6,6 +6,7 @@ import { UploadImageMedia, UploadVideoMedia } from "@storyteller/api";
 import {
   PromptBoxVFX,
   SubTabStrip,
+  TruchetPattern,
   VFXResultCard,
   VFXShowcaseView,
   newIdempotencyToken,
@@ -14,7 +15,6 @@ import {
   VFX_NOT_AVAILABLE_ERROR,
   VFX_SHOWCASE,
 } from "@storyteller/ui-vfx";
-import { TruchetPattern } from "./TruchetPattern";
 
 export const PageBackgroundChange = () => {
   const subTab = useVFXStore((s) => s.subTab);

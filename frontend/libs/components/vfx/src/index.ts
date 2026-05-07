@@ -7,3 +7,4 @@ export * from "./lib/ShowcaseCarousel";
 export * from "./lib/VFXResultCard";
 export * from "./lib/VFXShowcaseView";
 export * from "./lib/PromptBoxVFX";
+export * from "./lib/TruchetPattern";
