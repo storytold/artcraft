@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinnerThird,
   faCircleExclamation,
   faXmark,
   faWandMagicSparkles,
+  faCopy,
+  faCheck,
 } from "@fortawesome/pro-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 
@@ -37,7 +40,7 @@ export const VFXResultCard = ({
   onDismiss,
   className,
   panelGlassClassName = "bg-white/5 ring-1 ring-white/10",
-  promptTextClassName = "text-white/85",
+  promptTextClassName = "text-white/85 line-clamp-3",
   promptLabelClassName = "text-white/50",
   tryButtonClassName = "border-primary/40 bg-primary/15 text-white hover:bg-primary/25",
 }: VFXResultCardProps) => {
@@ -98,18 +101,19 @@ export const VFXResultCard = ({
         )}
         <div
           className={twMerge(
-            "max-h-44 min-h-0 overflow-y-auto rounded-lg px-3 py-2 text-xs",
+            "group relative max-h-44 min-h-0 overflow-y-auto rounded-lg px-3 py-2 text-xs",
             panelGlassClassName,
             promptTextClassName,
           )}
         >
           <div
             className={twMerge(
-              "mb-1 text-[10px] font-semibold uppercase tracking-wider",
+              "mb-1 flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-wider",
               promptLabelClassName,
             )}
           >
-            Prompt
+            <span>Prompt</span>
+            <CopyPromptButton text={data.prompt} />
           </div>
           <div className="leading-relaxed">{data.prompt}</div>
         </div>
@@ -127,6 +131,38 @@ export const VFXResultCard = ({
         )}
       </aside>
     </div>
+  );
+};
+
+interface CopyPromptButtonProps {
+  text: string;
+}
+
+const CopyPromptButton = ({ text }: CopyPromptButtonProps) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // ignore clipboard errors (permissions, insecure context, etc.)
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="flex items-center gap-1 text-[10px] font-medium normal-case tracking-normal text-white/60 transition-colors hover:text-white"
+    >
+      <FontAwesomeIcon
+        icon={copied ? faCheck : faCopy}
+        className="h-2.5 w-2.5"
+      />
+      <span>{copied ? "Copied!" : "Copy"}</span>
+    </button>
   );
 };
 

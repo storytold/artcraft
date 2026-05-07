@@ -17,10 +17,10 @@ export const TruchetPattern = ({
   className,
   intensity = 1,
 }: TruchetPatternProps) => {
-  const fillA = `rgba(120,170,255,${0.036 * intensity})`;
-  const fillB = `rgba(120,170,255,${0.0095 * intensity})`;
-  const diagStroke = `rgba(120,170,255,${0.16 * intensity})`;
-  const gridStroke = `rgba(120,170,255,${0.065 * intensity})`;
+  const fillA = `rgba(255,255,255,${0.036 * intensity})`;
+  const fillB = `rgba(255,255,255,${0.0095 * intensity})`;
+  const diagStroke = `rgba(255,255,255,${0.16 * intensity})`;
+  const gridStroke = `rgba(255,255,255,${0.065 * intensity})`;
 
   return (
     <svg

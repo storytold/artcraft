@@ -129,13 +129,13 @@ export const PageBackgroundChange = () => {
             className="pointer-events-none absolute inset-0 z-0"
             style={{
               maskImage:
-                "radial-gradient(ellipse 55% 55% at 50% 45%, black 10%, transparent 75%)",
+                "radial-gradient(ellipse 60% 60% at 50% 45%, black 30%, transparent 85%)",
               WebkitMaskImage:
-                "radial-gradient(ellipse 55% 55% at 50% 45%, black 10%, transparent 75%)",
+                "radial-gradient(ellipse 60% 60% at 50% 45%, black 30%, transparent 85%)",
             }}
           >
             <TruchetPattern
-              intensity={0.6}
+              intensity={0.8}
               className="absolute inset-0 h-full w-full"
             />
           </div>
@@ -206,7 +206,7 @@ const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
       <FontAwesomeIcon icon={faSparkles} className="text-2xl" />
     </div>
     <h3 className="text-2xl font-bold text-base-fg">{title}</h3>
-    <p className="max-w-sm text-sm text-base-fg/60">{subtitle}</p>
+    <p className="max-w-xs text-sm text-base-fg/60">{subtitle}</p>
   </div>
 );
 
