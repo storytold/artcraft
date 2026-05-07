@@ -13,6 +13,7 @@ use bucket_paths::legacy::typified_paths::public::media_files::bucket_file_path:
 use enums::common::visibility::Visibility;
 use fal_client::requests::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::enqueue_hunyuan_3d_2_1_image_to_3d_webhook;
 use fal_client::requests::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::Hunyuan3d21Args;
+use fal_client::requests::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::Hunyuan3d21Request;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use sqlx::Acquire;
@@ -130,7 +131,9 @@ pub async fn generate_hunyuan_2_1_image_to_3d_handler(
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
   
   let args = Hunyuan3d21Args {
-    image_url: media_links.cdn_url,
+    request: Hunyuan3d21Request {
+      image_url: media_links.cdn_url.to_string(),
+    },
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };

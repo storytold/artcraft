@@ -20,14 +20,17 @@ use enums::common::visibility::Visibility;
 use fal_client::requests::webhook::object::enqueue_hunyuan3d_v3_image_to_3d_webhook::{
   enqueue_hunyuan3d_v3_image_to_3d_webhook, EnqueueHunyuan3dV3ImageTo3dArgs,
   EnqueueHunyuan3dV3ImageTo3dGenerateType, EnqueueHunyuan3dV3ImageTo3dPolygonType,
+  EnqueueHunyuan3dV3ImageTo3dRequest,
 };
 use fal_client::requests::webhook::object::enqueue_hunyuan3d_v3_sketch_to_3d_webhook::{
   enqueue_hunyuan3d_v3_sketch_to_3d_webhook, EnqueueHunyuan3dV3SketchTo3dArgs,
   EnqueueHunyuan3dV3SketchTo3dGenerateType, EnqueueHunyuan3dV3SketchTo3dPolygonType,
+  EnqueueHunyuan3dV3SketchTo3dRequest,
 };
 use fal_client::requests::webhook::object::enqueue_hunyuan3d_v3_text_to_3d_webhook::{
   enqueue_hunyuan3d_v3_text_to_3d_webhook, EnqueueHunyuan3dV3TextTo3dArgs,
   EnqueueHunyuan3dV3TextTo3dGenerateType, EnqueueHunyuan3dV3TextTo3dPolygonType,
+  EnqueueHunyuan3dV3TextTo3dRequest,
 };
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -175,11 +178,13 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
       });
 
       let args = EnqueueHunyuan3dV3TextTo3dArgs {
-        prompt: request.prompt.clone().unwrap_or_default(),
-        face_count: request.face_count,
-        generate_type,
-        polygon_type,
-        enable_pbr: Some(enable_pbr),
+        request: EnqueueHunyuan3dV3TextTo3dRequest {
+          prompt: request.prompt.clone().unwrap_or_default(),
+          face_count: request.face_count,
+          generate_type,
+          polygon_type,
+          enable_pbr: Some(enable_pbr),
+        },
         webhook_url: &server_state.fal.webhook_url,
         api_key: &server_state.fal.api_key,
       };
@@ -213,12 +218,14 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
       });
 
       let args = EnqueueHunyuan3dV3SketchTo3dArgs {
-        prompt: request.prompt.clone().unwrap_or_default(),
-        image_url: image_url.unwrap(),
-        face_count: request.face_count,
-        generate_type,
-        polygon_type,
-        enable_pbr: Some(enable_pbr),
+        request: EnqueueHunyuan3dV3SketchTo3dRequest {
+          prompt: request.prompt.clone().unwrap_or_default(),
+          image_url: image_url.unwrap(),
+          face_count: request.face_count,
+          generate_type,
+          polygon_type,
+          enable_pbr: Some(enable_pbr),
+        },
         webhook_url: &server_state.fal.webhook_url,
         api_key: &server_state.fal.api_key,
       };
@@ -252,14 +259,16 @@ pub async fn generate_hunyuan3d_v3_multi_function_object_handler(
       });
 
       let args = EnqueueHunyuan3dV3ImageTo3dArgs {
-        image_url: image_url.unwrap(),
-        back_image_url,
-        left_image_url,
-        right_image_url,
-        face_count: request.face_count,
-        generate_type,
-        polygon_type,
-        enable_pbr: Some(enable_pbr),
+        request: EnqueueHunyuan3dV3ImageTo3dRequest {
+          image_url: image_url.unwrap(),
+          back_image_url,
+          left_image_url,
+          right_image_url,
+          face_count: request.face_count,
+          generate_type,
+          polygon_type,
+          enable_pbr: Some(enable_pbr),
+        },
         webhook_url: &server_state.fal.webhook_url,
         api_key: &server_state.fal.api_key,
       };

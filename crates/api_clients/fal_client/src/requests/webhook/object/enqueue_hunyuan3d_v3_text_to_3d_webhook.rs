@@ -8,18 +8,21 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueHunyuan3dV3TextTo3dArgs<'a, R: IntoUrl> {
-  // Request required
+  pub request: EnqueueHunyuan3dV3TextTo3dRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueHunyuan3dV3TextTo3dRequest {
+  // Required
   pub prompt: String,
 
-  // Optional args
+  // Optional
   pub face_count: Option<u32>,
   pub generate_type: Option<EnqueueHunyuan3dV3TextTo3dGenerateType>,
   pub polygon_type: Option<EnqueueHunyuan3dV3TextTo3dPolygonType>,
   pub enable_pbr: Option<bool>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -35,7 +38,7 @@ pub enum EnqueueHunyuan3dV3TextTo3dPolygonType {
   Quadrilateral,
 }
 
-impl <R: IntoUrl> FalRequestCostCalculator for EnqueueHunyuan3dV3TextTo3dArgs<'_, R> {
+impl FalRequestCostCalculator for EnqueueHunyuan3dV3TextTo3dRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Generation types: Normal costs $0.375,
     // LowPoly costs $0.45,
@@ -65,7 +68,9 @@ pub async fn enqueue_hunyuan3d_v3_text_to_3d_webhook<R: IntoUrl>(
   args: EnqueueHunyuan3dV3TextTo3dArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let generate_type = args.generate_type
+  let req = args.request;
+
+  let generate_type = req.generate_type
       .map(|t| match t {
         EnqueueHunyuan3dV3TextTo3dGenerateType::Normal => "Normal",
         EnqueueHunyuan3dV3TextTo3dGenerateType::LowPoly => "LowPoly",
@@ -73,7 +78,7 @@ pub async fn enqueue_hunyuan3d_v3_text_to_3d_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let polygon_type = args.polygon_type
+  let polygon_type = req.polygon_type
       .map(|t| match t {
         EnqueueHunyuan3dV3TextTo3dPolygonType::Triangle => "triangle",
         EnqueueHunyuan3dV3TextTo3dPolygonType::Quadrilateral => "quadrilateral",
@@ -81,12 +86,12 @@ pub async fn enqueue_hunyuan3d_v3_text_to_3d_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = Hunyuan3dV3TextTo3dInput {
-    prompt: args.prompt,
+    prompt: req.prompt,
     // Optionals
-    face_count: args.face_count,
+    face_count: req.face_count,
     generate_type,
     polygon_type,
-    enable_pbr: args.enable_pbr,
+    enable_pbr: req.enable_pbr,
   };
 
   let result = hunyuan3d_v3_text_to_3d(request)
@@ -100,7 +105,7 @@ pub async fn enqueue_hunyuan3d_v3_text_to_3d_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::object::enqueue_hunyuan3d_v3_text_to_3d_webhook::{enqueue_hunyuan3d_v3_text_to_3d_webhook, EnqueueHunyuan3dV3TextTo3dArgs};
+  use crate::requests::webhook::object::enqueue_hunyuan3d_v3_text_to_3d_webhook::{enqueue_hunyuan3d_v3_text_to_3d_webhook, EnqueueHunyuan3dV3TextTo3dArgs, EnqueueHunyuan3dV3TextTo3dRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -113,13 +118,15 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueHunyuan3dV3TextTo3dArgs {
-      prompt: "A velociraptor with an open mouth full of sharp teeth. Large claws, ready to strike.".to_string(),
-      face_count: None,
-      generate_type: None,
-      polygon_type: None,
+      request: EnqueueHunyuan3dV3TextTo3dRequest {
+        prompt: "A velociraptor with an open mouth full of sharp teeth. Large claws, ready to strike.".to_string(),
+        face_count: None,
+        generate_type: None,
+        polygon_type: None,
+        enable_pbr: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      enable_pbr: None,
     };
 
     let result = enqueue_hunyuan3d_v3_text_to_3d_webhook(args).await?;

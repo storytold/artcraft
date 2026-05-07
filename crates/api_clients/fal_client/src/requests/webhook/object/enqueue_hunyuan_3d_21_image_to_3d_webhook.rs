@@ -5,20 +5,24 @@ use crate::requests::http::object::http_hunyuan3d_v21_image_to_3d::{hunyuan3d_v2
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct Hunyuan3d21Args<'a, U: IntoUrl, V: IntoUrl> {
-  pub image_url: U,
-  pub webhook_url: V,
+pub struct Hunyuan3d21Args<'a, R: IntoUrl> {
+  pub request: Hunyuan3d21Request,
+  pub webhook_url: R,
   pub api_key: &'a FalApiKey,
 }
 
-pub async fn enqueue_hunyuan_3d_2_1_image_to_3d_webhook<U: IntoUrl, V: IntoUrl>(
-  args: Hunyuan3d21Args<'_, U, V>
+#[derive(Clone, Debug)]
+pub struct Hunyuan3d21Request {
+  pub image_url: String,
+}
+
+pub async fn enqueue_hunyuan_3d_2_1_image_to_3d_webhook<R: IntoUrl>(
+  args: Hunyuan3d21Args<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  
-  let image_url = args.image_url.as_str().to_string();
+  let req = args.request;
 
   let request = Hunyuan3dV21ImageTo3dInput {
-    input_image_url: image_url,
+    input_image_url: req.image_url,
     textured_mesh: Some(true),
     // TODO: Maybe expose these later
     guidance_scale: None,
@@ -38,7 +42,7 @@ pub async fn enqueue_hunyuan_3d_2_1_image_to_3d_webhook<U: IntoUrl, V: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::{enqueue_hunyuan_3d_2_1_image_to_3d_webhook, Hunyuan3d21Args};
+  use crate::requests::webhook::object::enqueue_hunyuan_3d_21_image_to_3d_webhook::{enqueue_hunyuan_3d_2_1_image_to_3d_webhook, Hunyuan3d21Args, Hunyuan3d21Request};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -53,7 +57,9 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Hunyuan3d21Args {
-      image_url: image_url,
+      request: Hunyuan3d21Request {
+        image_url: image_url.to_string(),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

@@ -18,6 +18,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::requests::webhook::object::enqueue_hunyuan_3d_2_image_to_3d_webhook::enqueue_hunyuan_3d_2_image_to_3d_webhook;
 use fal_client::requests::webhook::object::enqueue_hunyuan_3d_2_image_to_3d_webhook::Hunyuan3d2Args;
+use fal_client::requests::webhook::object::enqueue_hunyuan_3d_2_image_to_3d_webhook::Hunyuan3d2Request;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -131,7 +132,9 @@ pub async fn generate_hunyuan_2_0_image_to_3d_handler(
   info!("Fal webhook URL: {}", server_state.fal.webhook_url);
   
   let args = Hunyuan3d2Args {
-    image_url: media_links.cdn_url,
+    request: Hunyuan3d2Request {
+      image_url: media_links.cdn_url.to_string(),
+    },
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };
