@@ -23,7 +23,7 @@ export const VFXShowcaseView = ({ onTryThis }: VFXShowcaseViewProps) => {
   if (!entry) return null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center gap-4 overflow-y-auto px-3 pb-6 pt-4 sm:px-6">
+    <div className="flex h-full min-h-0 flex-col items-center gap-6 overflow-y-auto px-3 pb-6 pt-4 sm:px-6">
       <ShowcaseCarousel
         entries={VFX_SHOWCASE}
         activeId={activeId}
