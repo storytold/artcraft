@@ -6,13 +6,18 @@ use crate::requests::http::video::image::http_veo_2_image_to_video::{veo_2_image
 use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostCalculator, UsdCents};
 use reqwest::IntoUrl;
 
+pub struct Veo2Args<'a, R: IntoUrl> {
+  pub request: Veo2Request,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
 /// Args for Veo 2 image-to-video. Note: image-to-video does NOT support
 /// aspect_ratio — the output inherits the source image's aspect ratio.
-pub struct Veo2Args<'a, U: IntoUrl, V: IntoUrl> {
-  pub image_url: U,
-  pub webhook_url: V,
-  pub prompt: &'a str,
-  pub api_key: &'a FalApiKey,
+#[derive(Clone, Debug)]
+pub struct Veo2Request {
+  pub image_url: String,
+  pub prompt: String,
   pub duration: Veo2Duration,
 }
 
@@ -36,7 +41,7 @@ pub enum Veo2AspectRatio {
   TallNineSixteen, // 9:16
 }
 
-impl <U: IntoUrl, V: IntoUrl> FalRequestCostCalculator for Veo2Args<'_, U, V> {
+impl FalRequestCostCalculator for Veo2Request {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For 5s video your request will cost $2.50.
     // For every aditional second you will be charged $0.50."
@@ -53,10 +58,12 @@ impl <U: IntoUrl, V: IntoUrl> FalRequestCostCalculator for Veo2Args<'_, U, V> {
 
 /// Veo 2 Image-to-Video
 /// https://fal.ai/models/fal-ai/veo2/image-to-video
-pub async fn enqueue_veo_2_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
-  args: Veo2Args<'_, U, V>
+pub async fn enqueue_veo_2_image_to_video_webhook<R: IntoUrl>(
+  args: Veo2Args<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  let duration = match args.duration {
+  let req = args.request;
+
+  let duration = match req.duration {
     Veo2Duration::Default => None, // NB: Default is 5 seconds.
     Veo2Duration::FiveSeconds => Some("5s".to_string()),
     Veo2Duration::SixSeconds => Some("6s".to_string()),
@@ -64,11 +71,9 @@ pub async fn enqueue_veo_2_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
     Veo2Duration::EightSeconds => Some("8s".to_string()),
   };
 
-  let image_url = args.image_url.as_str().to_string();
-
   let request = Veo2ImageToVideoInput {
-    image_url,
-    prompt: args.prompt.to_string(),
+    image_url: req.image_url,
+    prompt: req.prompt,
     duration,
   };
 
@@ -84,7 +89,7 @@ pub async fn enqueue_veo_2_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{enqueue_veo_2_image_to_video_webhook, Veo2Args, Veo2Duration};
+  use crate::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::{enqueue_veo_2_image_to_video_webhook, Veo2Args, Veo2Duration, Veo2Request};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::MOUNTAIN_TREE_IMAGE_URL;
@@ -98,10 +103,12 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Veo2Args {
-      image_url: MOUNTAIN_TREE_IMAGE_URL,
-      prompt: "a shot of the mountains as the sun sets and reveals the moon and stars",
+      request: Veo2Request {
+        image_url: MOUNTAIN_TREE_IMAGE_URL.to_string(),
+        prompt: "a shot of the mountains as the sun sets and reveals the moon and stars".to_string(),
+        duration: Veo2Duration::Default,
+      },
       api_key: &api_key,
-      duration: Veo2Duration::Default,
       webhook_url: "https://example.com/webhook",
     };
 

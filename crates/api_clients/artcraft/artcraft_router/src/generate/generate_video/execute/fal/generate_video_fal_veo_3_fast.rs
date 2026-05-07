@@ -6,7 +6,7 @@ use crate::generate::generate_video::generate_video_response::{
 };
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3_fast::PlanFalVeo3Fast;
 use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{
-  enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs,
+  enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastRequest,
 };
 
 pub async fn execute_fal_veo_3_fast(
@@ -14,13 +14,15 @@ pub async fn execute_fal_veo_3_fast(
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let args = Veo3FastArgs {
-    prompt: plan.prompt.as_str(),
-    image_url: plan.start_frame_url.as_str(),
-    aspect_ratio: plan.aspect_ratio,
-    duration: plan.duration,
+    request: Veo3FastRequest {
+      prompt: plan.prompt.clone(),
+      image_url: plan.start_frame_url.clone(),
+      aspect_ratio: plan.aspect_ratio,
+      duration: plan.duration,
+      resolution: plan.resolution,
+      generate_audio: plan.generate_audio,
+    },
     api_key: &fal_client.api_key,
-    resolution: plan.resolution,
-    generate_audio: plan.generate_audio,
     webhook_url: fal_client.webhook_url.as_str(),
   };
 

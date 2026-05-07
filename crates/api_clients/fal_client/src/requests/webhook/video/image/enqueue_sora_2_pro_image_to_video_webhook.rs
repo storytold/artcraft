@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueSora2ProImageToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueSora2ProImageToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueSora2ProImageToVideoRequest {
   // Request required
   pub prompt: String,
   pub image_url: String,
@@ -15,10 +22,6 @@ pub struct EnqueueSora2ProImageToVideoArgs<'a, R: IntoUrl> {
   pub resolution: Option<EnqueueSora2ProImageToVideoResolution>,
   pub duration: Option<EnqueueSora2ProImageToVideoDurationSeconds>,
   pub aspect_ratio: Option<EnqueueSora2ProImageToVideoAspectRatio>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug, strum::EnumIter)]
@@ -42,7 +45,7 @@ pub enum EnqueueSora2ProImageToVideoAspectRatio {
   SixteenByNine,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueSora2ProImageToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueSora2ProImageToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Pricing: $0.30/s for 720p and $0.50/s for 1080p.
     let duration = self.duration.unwrap_or(EnqueueSora2ProImageToVideoDurationSeconds::Four);
@@ -68,14 +71,16 @@ pub async fn enqueue_sora_2_pro_image_to_video_webhook<R: IntoUrl>(
   args: EnqueueSora2ProImageToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let duration = args.duration
+  let req = args.request;
+
+  let duration = req.duration
       .map(|d| match d {
         EnqueueSora2ProImageToVideoDurationSeconds::Four => 4,
         EnqueueSora2ProImageToVideoDurationSeconds::Eight => 8,
         EnqueueSora2ProImageToVideoDurationSeconds::Twelve => 12,
       });
 
-  let resolution = args.resolution
+  let resolution = req.resolution
       .map(|r| match r {
         EnqueueSora2ProImageToVideoResolution::Auto => "auto",
         EnqueueSora2ProImageToVideoResolution::SevenTwentyP => "720p",
@@ -83,7 +88,7 @@ pub async fn enqueue_sora_2_pro_image_to_video_webhook<R: IntoUrl>(
       })
       .map(|r| r.to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|ar| match ar {
         EnqueueSora2ProImageToVideoAspectRatio::Auto => "auto",
         EnqueueSora2ProImageToVideoAspectRatio::NineBySixteen => "9:16",
@@ -92,8 +97,8 @@ pub async fn enqueue_sora_2_pro_image_to_video_webhook<R: IntoUrl>(
       .map(|ar| ar.to_string());
 
   let request = Sora2ProImageToVideoInput {
-    prompt: args.prompt,
-    image_url: args.image_url,
+    prompt: req.prompt,
+    image_url: req.image_url,
     duration,
     resolution,
     aspect_ratio,
@@ -124,11 +129,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueSora2ProImageToVideoArgs {
-      image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-      prompt: "the t-rex skeleton gets off the podium and begins walking to the camera. the camera orbits slightly. The t-rex gets close and then bites.".to_string(),
-      duration: Some(EnqueueSora2ProImageToVideoDurationSeconds::Twelve),
-      aspect_ratio: Some(EnqueueSora2ProImageToVideoAspectRatio::SixteenByNine),
-      resolution: Some(EnqueueSora2ProImageToVideoResolution::TenEightyP),
+      request: EnqueueSora2ProImageToVideoRequest {
+        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+        prompt: "the t-rex skeleton gets off the podium and begins walking to the camera. the camera orbits slightly. The t-rex gets close and then bites.".to_string(),
+        duration: Some(EnqueueSora2ProImageToVideoDurationSeconds::Twelve),
+        aspect_ratio: Some(EnqueueSora2ProImageToVideoAspectRatio::SixteenByNine),
+        resolution: Some(EnqueueSora2ProImageToVideoResolution::TenEightyP),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
@@ -148,11 +155,13 @@ mod tests {
     for ar in EnqueueSora2ProImageToVideoAspectRatio::iter() {
       println!("--- aspect ratio: {:?} ---", ar);
       let args = EnqueueSora2ProImageToVideoArgs {
-        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-        prompt: "the skeleton comes alive and roars at the camera".to_string(),
-        duration: Some(EnqueueSora2ProImageToVideoDurationSeconds::Four),
-        aspect_ratio: Some(ar),
-        resolution: None,
+        request: EnqueueSora2ProImageToVideoRequest {
+          image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+          prompt: "the skeleton comes alive and roars at the camera".to_string(),
+          duration: Some(EnqueueSora2ProImageToVideoDurationSeconds::Four),
+          aspect_ratio: Some(ar),
+          resolution: None,
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -172,11 +181,13 @@ mod tests {
     for dur in EnqueueSora2ProImageToVideoDurationSeconds::iter() {
       println!("--- duration: {:?} ---", dur);
       let args = EnqueueSora2ProImageToVideoArgs {
-        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-        prompt: "the skeleton slowly turns its head".to_string(),
-        duration: Some(dur),
-        aspect_ratio: Some(EnqueueSora2ProImageToVideoAspectRatio::SixteenByNine),
-        resolution: None,
+        request: EnqueueSora2ProImageToVideoRequest {
+          image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+          prompt: "the skeleton slowly turns its head".to_string(),
+          duration: Some(dur),
+          aspect_ratio: Some(EnqueueSora2ProImageToVideoAspectRatio::SixteenByNine),
+          resolution: None,
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };
@@ -196,11 +207,13 @@ mod tests {
     for res in EnqueueSora2ProImageToVideoResolution::iter() {
       println!("--- resolution: {:?} ---", res);
       let args = EnqueueSora2ProImageToVideoArgs {
-        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-        prompt: "the skeleton slowly comes alive".to_string(),
-        duration: Some(EnqueueSora2ProImageToVideoDurationSeconds::Four),
-        aspect_ratio: Some(EnqueueSora2ProImageToVideoAspectRatio::SixteenByNine),
-        resolution: Some(res),
+        request: EnqueueSora2ProImageToVideoRequest {
+          image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+          prompt: "the skeleton slowly comes alive".to_string(),
+          duration: Some(EnqueueSora2ProImageToVideoDurationSeconds::Four),
+          aspect_ratio: Some(EnqueueSora2ProImageToVideoAspectRatio::SixteenByNine),
+          resolution: Some(res),
+        },
         api_key: &api_key,
         webhook_url: "https://example.com/webhook",
       };

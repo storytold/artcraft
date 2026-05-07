@@ -11,7 +11,7 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_sora_2_p
 use fal_client::requests::webhook::video::image::enqueue_sora_2_pro_image_to_video_webhook::{
   enqueue_sora_2_pro_image_to_video_webhook, EnqueueSora2ProImageToVideoArgs,
   EnqueueSora2ProImageToVideoAspectRatio, EnqueueSora2ProImageToVideoDurationSeconds,
-  EnqueueSora2ProImageToVideoResolution,
+  EnqueueSora2ProImageToVideoRequest, EnqueueSora2ProImageToVideoResolution,
 };
 use fal_client::requests::webhook::video::text::enqueue_sora_2_pro_text_to_video_webhook::{
   enqueue_sora_2_pro_text_to_video_webhook, EnqueueSora2ProTextToVideoArgs,
@@ -38,11 +38,13 @@ pub async fn execute_fal_sora_2_pro(
     }
     FalSora2ProMode::ImageToVideo { image_url } => {
       let args = EnqueueSora2ProImageToVideoArgs {
-        prompt: plan.prompt.clone(),
-        image_url: image_url.clone(),
-        duration: plan.duration.map(to_i2v_duration),
-        resolution: plan.resolution.map(to_i2v_resolution),
-        aspect_ratio: plan.aspect_ratio.map(to_i2v_aspect_ratio),
+        request: EnqueueSora2ProImageToVideoRequest {
+          prompt: plan.prompt.clone(),
+          image_url: image_url.clone(),
+          duration: plan.duration.map(to_i2v_duration),
+          resolution: plan.resolution.map(to_i2v_resolution),
+          aspect_ratio: plan.aspect_ratio.map(to_i2v_aspect_ratio),
+        },
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };

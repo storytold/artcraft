@@ -13,12 +13,13 @@ use fal_client::requests::webhook::video::image::enqueue_veo_3p1_fast_first_last
   EnqueueVeo3p1FastFirstLastFrameImageToVideoArgs,
   EnqueueVeo3p1FastFirstLastFrameImageToVideoAspectRatio,
   EnqueueVeo3p1FastFirstLastFrameImageToVideoDurationSeconds,
+  EnqueueVeo3p1FastFirstLastFrameImageToVideoRequest,
   EnqueueVeo3p1FastFirstLastFrameImageToVideoResolution,
 };
 use fal_client::requests::webhook::video::image::enqueue_veo_3p1_fast_image_to_video_webhook::{
   enqueue_veo_3p1_fast_image_to_video_webhook, EnqueueVeo3p1FastImageToVideoArgs,
   EnqueueVeo3p1FastImageToVideoAspectRatio, EnqueueVeo3p1FastImageToVideoDurationSeconds,
-  EnqueueVeo3p1FastImageToVideoResolution,
+  EnqueueVeo3p1FastImageToVideoRequest, EnqueueVeo3p1FastImageToVideoResolution,
 };
 use fal_client::requests::webhook::video::text::enqueue_veo_3p1_fast_text_to_video_webhook::{
   enqueue_veo_3p1_fast_text_to_video_webhook, EnqueueVeo3p1FastTextToVideoArgs,
@@ -51,12 +52,14 @@ pub async fn execute_fal_veo_3p1_fast(
     }
     FalVeo3p1Mode::ImageToVideo { start_frame_url } => {
       let args = EnqueueVeo3p1FastImageToVideoArgs {
-        prompt: inner.prompt.clone(),
-        image_url: start_frame_url.clone(),
-        duration: inner.duration.map(to_i2v_duration),
-        aspect_ratio: inner.aspect_ratio.map(to_i2v_aspect_ratio),
-        resolution: inner.resolution.map(to_i2v_resolution),
-        generate_audio: inner.generate_audio,
+        request: EnqueueVeo3p1FastImageToVideoRequest {
+          prompt: inner.prompt.clone(),
+          image_url: start_frame_url.clone(),
+          duration: inner.duration.map(to_i2v_duration),
+          aspect_ratio: inner.aspect_ratio.map(to_i2v_aspect_ratio),
+          resolution: inner.resolution.map(to_i2v_resolution),
+          generate_audio: inner.generate_audio,
+        },
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
@@ -64,13 +67,15 @@ pub async fn execute_fal_veo_3p1_fast(
     }
     FalVeo3p1Mode::FirstLastFrame { first_frame_url, last_frame_url } => {
       let args = EnqueueVeo3p1FastFirstLastFrameImageToVideoArgs {
-        prompt: inner.prompt.clone(),
-        first_frame_url: first_frame_url.clone(),
-        last_frame_url: last_frame_url.clone(),
-        duration: inner.duration.map(to_flf_duration),
-        aspect_ratio: inner.aspect_ratio.map(to_flf_aspect_ratio),
-        resolution: inner.resolution.map(to_flf_resolution),
-        generate_audio: inner.generate_audio,
+        request: EnqueueVeo3p1FastFirstLastFrameImageToVideoRequest {
+          prompt: inner.prompt.clone(),
+          first_frame_url: first_frame_url.clone(),
+          last_frame_url: last_frame_url.clone(),
+          duration: inner.duration.map(to_flf_duration),
+          aspect_ratio: inner.aspect_ratio.map(to_flf_aspect_ratio),
+          resolution: inner.resolution.map(to_flf_resolution),
+          generate_audio: inner.generate_audio,
+        },
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };

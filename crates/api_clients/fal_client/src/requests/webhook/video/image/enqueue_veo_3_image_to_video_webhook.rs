@@ -6,15 +6,20 @@ use crate::requests::http::video::image::http_veo_3_image_to_video::{veo_3_image
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct Veo3Args<'a, U: IntoUrl, V: IntoUrl> {
-  pub image_url: U,
-  pub prompt: &'a str,
+pub struct Veo3Args<'a, R: IntoUrl> {
+  pub request: Veo3Request,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct Veo3Request {
+  pub image_url: String,
+  pub prompt: String,
   pub duration: Veo3I2vDuration,
   pub aspect_ratio: Veo3I2vAspectRatio,
   pub resolution: Veo3I2vResolution,
   pub generate_audio: bool,
-  pub api_key: &'a FalApiKey,
-  pub webhook_url: V,
 }
 
 /// Duration for Veo 3 image-to-video. Default is 8 seconds.
@@ -43,7 +48,7 @@ pub enum Veo3I2vResolution {
   TenEightyP,
 }
 
-impl <U: IntoUrl, V: IntoUrl> FalRequestCostCalculator for Veo3Args<'_, U, V> {
+impl FalRequestCostCalculator for Veo3Request {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For every second of video you generated, you will be charged
     //  $0.20 (audio off) or
@@ -66,37 +71,37 @@ impl <U: IntoUrl, V: IntoUrl> FalRequestCostCalculator for Veo3Args<'_, U, V> {
 
 /// Veo 3 Image-to-Video
 /// https://fal.ai/models/fal-ai/veo3/image-to-video
-pub async fn enqueue_veo_3_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
-  args: Veo3Args<'_, U, V>
+pub async fn enqueue_veo_3_image_to_video_webhook<R: IntoUrl>(
+  args: Veo3Args<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  let duration = match args.duration {
+  let req = args.request;
+
+  let duration = match req.duration {
     Veo3I2vDuration::Default => None,
     Veo3I2vDuration::FourSeconds => Some("4s".to_string()),
     Veo3I2vDuration::SixSeconds => Some("6s".to_string()),
     Veo3I2vDuration::EightSeconds => Some("8s".to_string()),
   };
 
-  let aspect_ratio = match args.aspect_ratio {
+  let aspect_ratio = match req.aspect_ratio {
     Veo3I2vAspectRatio::Auto => Some("auto".to_string()),
     Veo3I2vAspectRatio::WideSixteenNine => Some("16:9".to_string()),
     Veo3I2vAspectRatio::TallNineSixteen => Some("9:16".to_string()),
   };
 
-  let resolution = match args.resolution {
+  let resolution = match req.resolution {
     Veo3I2vResolution::Default => None,
     Veo3I2vResolution::SevenTwentyP => Some("720p".to_string()),
     Veo3I2vResolution::TenEightyP => Some("1080p".to_string()),
   };
 
-  let image_url = args.image_url.as_str().to_string();
-
   let request = Veo3ImageToVideoInput {
-    image_url,
-    prompt: args.prompt.to_string(),
+    image_url: req.image_url,
+    prompt: req.prompt,
     aspect_ratio,
     resolution,
     duration,
-    generate_audio: Some(args.generate_audio),
+    generate_audio: Some(req.generate_audio),
   };
 
   let result = veo_3_image_to_video(request)
@@ -113,7 +118,7 @@ mod tests {
   use crate::creds::fal_api_key::FalApiKey;
   use crate::requests::webhook::video::image::enqueue_veo_3_image_to_video_webhook::{
     enqueue_veo_3_image_to_video_webhook, Veo3Args, Veo3I2vAspectRatio, Veo3I2vDuration,
-    Veo3I2vResolution,
+    Veo3I2vResolution, Veo3Request,
   };
   use errors::AnyhowResult;
   use std::fs::read_to_string;
@@ -126,13 +131,15 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Veo3Args {
-      image_url: TREX_SKELETON_IMAGE_URL,
-      prompt: "the t-rex skeleton starts walking towards the camera and roars",
+      request: Veo3Request {
+        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+        prompt: "the t-rex skeleton starts walking towards the camera and roars".to_string(),
+        duration: Veo3I2vDuration::EightSeconds,
+        aspect_ratio: Veo3I2vAspectRatio::WideSixteenNine,
+        resolution: Veo3I2vResolution::TenEightyP,
+        generate_audio: true,
+      },
       api_key: &api_key,
-      duration: Veo3I2vDuration::EightSeconds,
-      aspect_ratio: Veo3I2vAspectRatio::WideSixteenNine,
-      resolution: Veo3I2vResolution::TenEightyP,
-      generate_audio: true,
       webhook_url: "https://example.com/webhook",
     };
 

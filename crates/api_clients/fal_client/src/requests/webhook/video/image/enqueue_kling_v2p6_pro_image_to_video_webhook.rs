@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueKlingV2p6ProImageToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueKlingV2p6ProImageToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueKlingV2p6ProImageToVideoRequest {
   // Request required
   pub prompt: String,
   pub image_url: String,
@@ -20,10 +27,6 @@ pub struct EnqueueKlingV2p6ProImageToVideoArgs<'a, R: IntoUrl> {
 
   /// NB: Duration defaults to 5 seconds
   pub duration: Option<EnqueueKlingV2p6ProImageToVideoDurationSeconds>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -32,7 +35,7 @@ pub enum EnqueueKlingV2p6ProImageToVideoDurationSeconds {
   Ten,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKlingV2p6ProImageToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueKlingV2p6ProImageToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For every second of video you generated, you will be
     //  charged $0.07 (audio off) or $0.14 (audio on).
@@ -56,7 +59,9 @@ pub async fn enqueue_kling_v2p6_pro_image_to_video_webhook<R: IntoUrl>(
   args: EnqueueKlingV2p6ProImageToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let duration = args.duration
+  let req = args.request;
+
+  let duration = req.duration
       .map(|resolution| match resolution {
         EnqueueKlingV2p6ProImageToVideoDurationSeconds::Five => "5",
         EnqueueKlingV2p6ProImageToVideoDurationSeconds::Ten => "10",
@@ -64,12 +69,12 @@ pub async fn enqueue_kling_v2p6_pro_image_to_video_webhook<R: IntoUrl>(
       .map(|resolution| resolution.to_string());
 
   let request = KlingV2p6ProImageToVideoInput {
-    prompt: args.prompt,
-    image_url: args.image_url,
+    prompt: req.prompt,
+    image_url: req.image_url,
     // Optionals
     duration,
-    negative_prompt: args.negative_prompt,
-    generate_audio: args.generate_audio,
+    negative_prompt: req.negative_prompt,
+    generate_audio: req.generate_audio,
   };
 
   let result = kling_v2p6_pro_image_to_video(request)
@@ -83,7 +88,7 @@ pub async fn enqueue_kling_v2p6_pro_image_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_kling_v2p6_pro_image_to_video_webhook::{enqueue_kling_v2p6_pro_image_to_video_webhook, EnqueueKlingV2p6ProImageToVideoArgs, EnqueueKlingV2p6ProImageToVideoDurationSeconds};
+  use crate::requests::webhook::video::image::enqueue_kling_v2p6_pro_image_to_video_webhook::{enqueue_kling_v2p6_pro_image_to_video_webhook, EnqueueKlingV2p6ProImageToVideoArgs, EnqueueKlingV2p6ProImageToVideoRequest, EnqueueKlingV2p6ProImageToVideoDurationSeconds};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::ERNEST_SCARED_STUPID_IMAGE_URL;
@@ -97,11 +102,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueKlingV2p6ProImageToVideoArgs {
-      image_url: ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
-      prompt: "the man says, 'these ghosts sure are scary!' and then runs. behind him, a group of ghosts appear from the trees and chase him. the camera tracks the action. finally, the man yells, 'go away ghosts'.".to_string(),
-      negative_prompt: None,
-      generate_audio: Some(true),
-      duration: Some(EnqueueKlingV2p6ProImageToVideoDurationSeconds::Ten),
+      request: EnqueueKlingV2p6ProImageToVideoRequest {
+        image_url: ERNEST_SCARED_STUPID_IMAGE_URL.to_string(),
+        prompt: "the man says, 'these ghosts sure are scary!' and then runs. behind him, a group of ghosts appear from the trees and chase him. the camera tracks the action. finally, the man yells, 'go away ghosts'.".to_string(),
+        negative_prompt: None,
+        generate_audio: Some(true),
+        duration: Some(EnqueueKlingV2p6ProImageToVideoDurationSeconds::Ten),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

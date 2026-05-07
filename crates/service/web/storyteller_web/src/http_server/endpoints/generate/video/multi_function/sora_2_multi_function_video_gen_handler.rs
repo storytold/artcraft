@@ -23,7 +23,7 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_sora_2_image_to_video_webhook::{enqueue_sora_2_image_to_video_webhook, EnqueueSora2ImageToVideoArgs, EnqueueSora2ImageToVideoAspectRatio, EnqueueSora2ImageToVideoDurationSeconds, EnqueueSora2ImageToVideoResolution};
+use fal_client::requests::webhook::video::image::enqueue_sora_2_image_to_video_webhook::{enqueue_sora_2_image_to_video_webhook, EnqueueSora2ImageToVideoArgs, EnqueueSora2ImageToVideoAspectRatio, EnqueueSora2ImageToVideoDurationSeconds, EnqueueSora2ImageToVideoRequest, EnqueueSora2ImageToVideoResolution};
 use fal_client::requests::webhook::video::text::enqueue_sora_2_text_to_video_webhook::{enqueue_sora_2_text_to_video_webhook, EnqueueSora2TextToVideoArgs, EnqueueSora2TextToVideoAspectRatio, EnqueueSora2TextToVideoDurationSeconds, EnqueueSora2TextToVideoResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -175,17 +175,15 @@ pub async fn sora_2_multi_function_video_gen_handler(
       None => EnqueueSora2ImageToVideoResolution::SevenTwentyP,
     };
 
-    let args = EnqueueSora2ImageToVideoArgs {
+    let i2v_request = EnqueueSora2ImageToVideoRequest {
       image_url,
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       duration: Some(duration),
       aspect_ratio: Some(aspect_ratio),
       resolution: Some(resolution),
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
     };
 
-    let cost = args.calculate_cost_in_cents();
+    let cost = i2v_request.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
@@ -195,6 +193,12 @@ pub async fn sora_2_multi_function_video_gen_handler(
       cost,
       &mut mysql_connection,
     ).await?;
+
+    let args = EnqueueSora2ImageToVideoArgs {
+      request: i2v_request,
+      webhook_url: &server_state.fal.webhook_url,
+      api_key: &server_state.fal.api_key,
+    };
 
     fal_result = enqueue_sora_2_image_to_video_webhook(args)
         .await

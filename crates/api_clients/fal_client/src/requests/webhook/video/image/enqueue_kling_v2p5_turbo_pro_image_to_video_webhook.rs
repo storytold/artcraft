@@ -7,6 +7,13 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueKlingV2p5TurboProImageToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueKlingV2p5TurboProImageToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueKlingV2p5TurboProImageToVideoRequest {
   // Request required
   pub prompt: String,
   pub image_url: String,
@@ -16,10 +23,6 @@ pub struct EnqueueKlingV2p5TurboProImageToVideoArgs<'a, R: IntoUrl> {
   pub negative_prompt: Option<String>,
 
   pub duration: Option<EnqueueKlingV2p5TurboProImageToVideoDurationSeconds>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -28,7 +31,7 @@ pub enum EnqueueKlingV2p5TurboProImageToVideoDurationSeconds {
   Ten,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueKlingV2p5TurboProImageToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueKlingV2p5TurboProImageToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For 5s video your request will cost $0.35.
     //  For every additional second you will be charged $0.07."
@@ -47,8 +50,10 @@ pub async fn enqueue_kling_v2p5_turbo_pro_image_to_video_webhook<R: IntoUrl>(
   args: EnqueueKlingV2p5TurboProImageToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
+  let req = args.request;
+
   // NB: Defaults to 5 seconds
-  let duration = args.duration
+  let duration = req.duration
       .map(|resolution| match resolution {
         EnqueueKlingV2p5TurboProImageToVideoDurationSeconds::Five => "5",
         EnqueueKlingV2p5TurboProImageToVideoDurationSeconds::Ten => "10",
@@ -56,12 +61,12 @@ pub async fn enqueue_kling_v2p5_turbo_pro_image_to_video_webhook<R: IntoUrl>(
       .map(|resolution| resolution.to_string());
 
   let request = KlingV2p5TurboProImageToVideoInput {
-    prompt: args.prompt,
-    image_url: args.image_url,
+    prompt: req.prompt,
+    image_url: req.image_url,
     // Optionals
     duration,
-    tail_image_url: args.tail_image_url,
-    negative_prompt: args.negative_prompt,
+    tail_image_url: req.tail_image_url,
+    negative_prompt: req.negative_prompt,
     // Constants
     cfg_scale: None,
   };
@@ -77,7 +82,7 @@ pub async fn enqueue_kling_v2p5_turbo_pro_image_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::{enqueue_kling_v2p5_turbo_pro_image_to_video_webhook, EnqueueKlingV2p5TurboProImageToVideoArgs, EnqueueKlingV2p5TurboProImageToVideoDurationSeconds};
+  use crate::requests::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::{enqueue_kling_v2p5_turbo_pro_image_to_video_webhook, EnqueueKlingV2p5TurboProImageToVideoArgs, EnqueueKlingV2p5TurboProImageToVideoRequest, EnqueueKlingV2p5TurboProImageToVideoDurationSeconds};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::TREX_SKELETON_IMAGE_URL;
@@ -91,11 +96,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueKlingV2p5TurboProImageToVideoArgs {
-      image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-      prompt: "the t-rex skeleton gets off the podium and begins walking to the camera. the camera orbits slightly. The t-rex gets close and then bites.".to_string(),
-      negative_prompt: None,
-      tail_image_url: None,
-      duration: Some(EnqueueKlingV2p5TurboProImageToVideoDurationSeconds::Five),
+      request: EnqueueKlingV2p5TurboProImageToVideoRequest {
+        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+        prompt: "the t-rex skeleton gets off the podium and begins walking to the camera. the camera orbits slightly. The t-rex gets close and then bites.".to_string(),
+        negative_prompt: None,
+        tail_image_url: None,
+        duration: Some(EnqueueKlingV2p5TurboProImageToVideoDurationSeconds::Five),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

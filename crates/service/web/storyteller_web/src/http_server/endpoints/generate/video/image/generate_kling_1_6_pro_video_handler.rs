@@ -19,7 +19,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_kling_v1p6_pro_image_to_video_webhook::{enqueue_kling_v1p6_pro_image_to_video_webhook, Kling1p6ProArgs, Kling1p6ProAspectRatio, Kling1p6ProDuration};
+use fal_client::requests::webhook::video::image::enqueue_kling_v1p6_pro_image_to_video_webhook::{enqueue_kling_v1p6_pro_image_to_video_webhook, Kling1p6ProArgs, Kling1p6ProRequest, Kling1p6ProAspectRatio, Kling1p6ProDuration};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -165,17 +165,21 @@ pub async fn generate_kling_1_6_pro_video_handler(
     None => Kling1p6ProDuration::FiveSeconds, 
   };
 
-  let args = Kling1p6ProArgs {
-    image_url: start_frame_url,
-    end_frame_image_url: maybe_end_frame_url,
-    webhook_url: &server_state.fal.webhook_url,
+  let fal_request = Kling1p6ProRequest {
+    image_url: start_frame_url.to_string(),
+    end_frame_image_url: maybe_end_frame_url.map(|u| u.to_string()),
+    prompt: prompt.to_string(),
     duration,
-    prompt,
     aspect_ratio,
+  };
+
+  let cost = fal_request.calculate_cost_in_cents();
+
+  let args = Kling1p6ProArgs {
+    request: fal_request,
+    webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };
-  
-  let cost = args.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 

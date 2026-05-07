@@ -27,6 +27,7 @@ use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_we
 use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Args;
 use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2AspectRatio;
 use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Duration;
+use fal_client::requests::webhook::video::image::enqueue_veo_2_image_to_video_webhook::Veo2Request;
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -160,15 +161,19 @@ pub async fn generate_veo_2_image_to_video_handler(
     None => Veo2Duration::FiveSeconds, 
   };
   
-  let args = Veo2Args {
-    image_url: media_links.cdn_url,
-    webhook_url: &server_state.fal.webhook_url,
+  let veo2_request = Veo2Request {
+    image_url: media_links.cdn_url.to_string(),
+    prompt: prompt.to_string(),
     duration,
-    prompt,
+  };
+
+  let cost = veo2_request.calculate_cost_in_cents();
+
+  let args = Veo2Args {
+    request: veo2_request,
+    webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };
-  
-  let cost = args.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 

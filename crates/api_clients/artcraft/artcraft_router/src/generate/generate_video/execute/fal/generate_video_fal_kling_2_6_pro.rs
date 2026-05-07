@@ -9,7 +9,7 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_
 };
 use fal_client::requests::webhook::video::image::enqueue_kling_v2p6_pro_image_to_video_webhook::{
   enqueue_kling_v2p6_pro_image_to_video_webhook, EnqueueKlingV2p6ProImageToVideoArgs,
-  EnqueueKlingV2p6ProImageToVideoDurationSeconds,
+  EnqueueKlingV2p6ProImageToVideoRequest, EnqueueKlingV2p6ProImageToVideoDurationSeconds,
 };
 use fal_client::requests::webhook::video::text::enqueue_kling_v2p6_pro_text_to_video_webhook::{
   enqueue_kling_v2p6_pro_text_to_video_webhook, EnqueueKlingV2p6ProTextToVideoArgs,
@@ -35,11 +35,13 @@ pub async fn execute_fal_kling_2_6_pro(
     }
     FalKling2p6ProMode::ImageToVideo { image_url } => {
       let args = EnqueueKlingV2p6ProImageToVideoArgs {
-        prompt: plan.prompt.clone(),
-        image_url: image_url.clone(),
-        generate_audio: plan.generate_audio,
-        negative_prompt: plan.negative_prompt.clone(),
-        duration: plan.duration.map(to_i2v_duration),
+        request: EnqueueKlingV2p6ProImageToVideoRequest {
+          prompt: plan.prompt.clone(),
+          image_url: image_url.clone(),
+          generate_audio: plan.generate_audio,
+          negative_prompt: plan.negative_prompt.clone(),
+          duration: plan.duration.map(to_i2v_duration),
+        },
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };

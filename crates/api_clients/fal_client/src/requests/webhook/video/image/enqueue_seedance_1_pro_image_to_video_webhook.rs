@@ -6,11 +6,16 @@ use crate::requests::http::video::image::http_seedance_1_pro_image_to_video::{se
 use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
-pub struct Seedance1ProArgs<'a, U: IntoUrl, V: IntoUrl> {
-  pub image_url: U,
+pub struct Seedance1ProArgs<'a, V: IntoUrl> {
+  pub request: Seedance1ProRequest,
   pub webhook_url: V,
-  pub prompt: &'a str,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct Seedance1ProRequest {
+  pub image_url: String,
+  pub prompt: String,
   pub camera_fixed: bool,
   pub duration: Seedance1ProDuration,
   pub resolution: Seedance1ProResolution,
@@ -39,7 +44,7 @@ pub enum Seedance1ProResolution {
 }
 
 
-impl <U: IntoUrl, V: IntoUrl> FalRequestCostCalculator for Seedance1ProArgs<'_, U, V> {
+impl FalRequestCostCalculator for Seedance1ProRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "Each 1080p 5 second video costs roughly $0.62.
     //  For other resolutions, 1 million video tokens costs $2.5.
@@ -88,33 +93,33 @@ impl <U: IntoUrl, V: IntoUrl> FalRequestCostCalculator for Seedance1ProArgs<'_, 
 
 /// Seedance 1.0 Pro Image-to-Video
 /// https://fal.ai/models/fal-ai/bytedance/seedance/v1/pro/image-to-video
-pub async fn enqueue_seedance_1_pro_image_to_video_webhook<U: IntoUrl, V: IntoUrl>(
-  args: Seedance1ProArgs<'_, U, V>
+pub async fn enqueue_seedance_1_pro_image_to_video_webhook<V: IntoUrl>(
+  args: Seedance1ProArgs<'_, V>
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  let duration = match args.duration {
+  let req = args.request;
+
+  let duration = match req.duration {
     Seedance1ProDuration::ThreeSeconds => Some("3".to_string()),
     Seedance1ProDuration::FourSeconds => Some("4".to_string()),
     Seedance1ProDuration::FiveSeconds => Some("5".to_string()),
     Seedance1ProDuration::SixSeconds => Some("6".to_string()),
     Seedance1ProDuration::SevenSeconds => Some("7".to_string()),
     Seedance1ProDuration::EightSeconds => Some("8".to_string()),
-    Seedance1ProDuration::NineSeconds => Some("9".to_string()), 
+    Seedance1ProDuration::NineSeconds => Some("9".to_string()),
     Seedance1ProDuration::TenSeconds => Some("10".to_string()),
     Seedance1ProDuration::ElevenSeconds => Some("11".to_string()),
     Seedance1ProDuration::TwelveSeconds => Some("12".to_string()),
   };
-  
-  let resolution = match args.resolution {
+
+  let resolution = match req.resolution {
     Seedance1ProResolution::FourEightyP => Some("480p".to_string()),
     Seedance1ProResolution::SevenTwentyP => Some("720p".to_string()),
     Seedance1ProResolution::TenEightyP => Some("1080p".to_string()),
   };
 
-  let image_url = args.image_url.as_str().to_string();
-
   let request = Seedance1ProImageToVideoInput {
-    image_url,
-    prompt: args.prompt.to_string(),
+    image_url: req.image_url,
+    prompt: req.prompt,
     duration,
     resolution,
     // TODO: Add these later
@@ -136,46 +141,42 @@ pub async fn enqueue_seedance_1_pro_image_to_video_webhook<U: IntoUrl, V: IntoUr
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
   use crate::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-  use crate::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::{enqueue_seedance_1_pro_image_to_video_webhook, Seedance1ProArgs, Seedance1ProDuration, Seedance1ProResolution};
+  use crate::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::{enqueue_seedance_1_pro_image_to_video_webhook, Seedance1ProArgs, Seedance1ProDuration, Seedance1ProRequest, Seedance1ProResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::TALL_MOCHI_WITH_GLASSES_IMAGE_URL;
 
   #[test]
   fn test_cost() {
-    let api_key = FalApiKey::from_str("");
-
-    let mut args = Seedance1ProArgs {
-      image_url: "",
-      prompt: "",
-      api_key: &api_key,
+    let mut req = Seedance1ProRequest {
+      image_url: String::new(),
+      prompt: String::new(),
       camera_fixed: false,
       duration: Seedance1ProDuration::FiveSeconds,
       resolution: Seedance1ProResolution::TenEightyP,
       seed: None,
-      webhook_url: "https://example.com/webhook",
     };
 
     // NB: Constant value specified by FAL
-    args.duration = Seedance1ProDuration::FiveSeconds;
-    args.resolution = Seedance1ProResolution::TenEightyP;
-    let cost = args.calculate_cost_in_cents();
+    req.duration = Seedance1ProDuration::FiveSeconds;
+    req.resolution = Seedance1ProResolution::TenEightyP;
+    let cost = req.calculate_cost_in_cents();
     assert_eq!(cost, 62);
 
     // NB: Calculations follow...
-    args.duration = Seedance1ProDuration::FiveSeconds;
-    args.resolution = Seedance1ProResolution::SevenTwentyP;
-    let cost = args.calculate_cost_in_cents();
+    req.duration = Seedance1ProDuration::FiveSeconds;
+    req.resolution = Seedance1ProResolution::SevenTwentyP;
+    let cost = req.calculate_cost_in_cents();
     assert_eq!(cost, 34);
 
-    args.duration = Seedance1ProDuration::TenSeconds;
-    args.resolution = Seedance1ProResolution::SevenTwentyP;
-    let cost = args.calculate_cost_in_cents();
+    req.duration = Seedance1ProDuration::TenSeconds;
+    req.resolution = Seedance1ProResolution::SevenTwentyP;
+    let cost = req.calculate_cost_in_cents();
     assert_eq!(cost, 68);
 
-    args.duration = Seedance1ProDuration::TenSeconds;
-    args.resolution = Seedance1ProResolution::TenEightyP;
-    let cost = args.calculate_cost_in_cents();
+    req.duration = Seedance1ProDuration::TenSeconds;
+    req.resolution = Seedance1ProResolution::TenEightyP;
+    let cost = req.calculate_cost_in_cents();
     assert_eq!(cost, 152);
   }
 
@@ -188,13 +189,15 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Seedance1ProArgs {
-      image_url: TALL_MOCHI_WITH_GLASSES_IMAGE_URL,
-      prompt: "shiba in glasses runs to the lake and stands by the shore",
+      request: Seedance1ProRequest {
+        image_url: TALL_MOCHI_WITH_GLASSES_IMAGE_URL.to_string(),
+        prompt: "shiba in glasses runs to the lake and stands by the shore".to_string(),
+        camera_fixed: false,
+        duration: Seedance1ProDuration::FiveSeconds,
+        resolution: Seedance1ProResolution::SevenTwentyP,
+        seed: None,
+      },
       api_key: &api_key,
-      camera_fixed: false,
-      duration: Seedance1ProDuration::FiveSeconds,
-      resolution: Seedance1ProResolution::SevenTwentyP,
-      seed: None,
       webhook_url: "https://example.com/webhook",
     };
 

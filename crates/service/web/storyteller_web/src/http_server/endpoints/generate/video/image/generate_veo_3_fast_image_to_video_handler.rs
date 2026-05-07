@@ -19,7 +19,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastAspectRatio, Veo3FastDuration, Veo3FastResolution};
+use fal_client::requests::webhook::video::image::enqueue_veo_3_fast_image_to_video_webhook::{enqueue_veo_3_fast_image_to_video_webhook, Veo3FastArgs, Veo3FastAspectRatio, Veo3FastDuration, Veo3FastRequest, Veo3FastResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -162,18 +162,22 @@ pub async fn generate_veo_3_fast_image_to_video_handler(
   let generate_audio = request.generate_audio
       .unwrap_or(false);
 
-  let args = Veo3FastArgs {
-    image_url: media_links.cdn_url,
-    prompt,
+  let veo3_fast_request = Veo3FastRequest {
+    image_url: media_links.cdn_url.to_string(),
+    prompt: prompt.to_string(),
     aspect_ratio,
     duration,
     resolution,
     generate_audio,
+  };
+
+  let cost = veo3_fast_request.calculate_cost_in_cents();
+
+  let args = Veo3FastArgs {
+    request: veo3_fast_request,
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };
-  
-  let cost = args.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 

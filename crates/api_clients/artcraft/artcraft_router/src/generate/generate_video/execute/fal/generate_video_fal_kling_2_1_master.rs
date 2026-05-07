@@ -6,7 +6,7 @@ use crate::generate::generate_video::generate_video_response::{
 };
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_2_1_master::PlanFalKling21Master;
 use fal_client::requests::webhook::video::image::enqueue_kling_v2p1_master_image_to_video_webhook::{
-  enqueue_kling_v2p1_master_image_to_video_webhook, Kling2p1MasterArgs,
+  enqueue_kling_v2p1_master_image_to_video_webhook, Kling2p1MasterArgs, Kling2p1MasterRequest,
 };
 
 pub async fn execute_fal_kling_2_1_master(
@@ -14,12 +14,14 @@ pub async fn execute_fal_kling_2_1_master(
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
   let args = Kling2p1MasterArgs {
-    image_url: plan.image_url.as_str(),
+    request: Kling2p1MasterRequest {
+      image_url: plan.image_url.clone(),
+      prompt: plan.prompt.clone(),
+      duration: plan.duration,
+      aspect_ratio: plan.aspect_ratio,
+    },
     webhook_url: fal_client.webhook_url.as_str(),
-    prompt: plan.prompt.as_str(),
     api_key: &fal_client.api_key,
-    duration: plan.duration,
-    aspect_ratio: plan.aspect_ratio,
   };
 
   let webhook_response = enqueue_kling_v2p1_master_image_to_video_webhook(args)

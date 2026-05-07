@@ -21,6 +21,7 @@ use enums::common::visibility::Visibility;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_kling_v2p1_pro_image_to_video_webhook::enqueue_kling_v2p1_pro_image_to_video_webhook;
 use fal_client::requests::webhook::video::image::enqueue_kling_v2p1_pro_image_to_video_webhook::Kling2p1ProArgs;
+use fal_client::requests::webhook::video::image::enqueue_kling_v2p1_pro_image_to_video_webhook::Kling2p1ProRequest;
 use fal_client::requests::webhook::video::image::enqueue_kling_v2p1_pro_image_to_video_webhook::Kling2p1ProAspectRatio;
 use fal_client::requests::webhook::video::image::enqueue_kling_v2p1_pro_image_to_video_webhook::Kling2p1ProDuration;
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -167,17 +168,21 @@ pub async fn generate_kling_2_1_pro_video_handler(
     None => Kling2p1ProDuration::FiveSeconds, 
   };
   
-  let args = Kling2p1ProArgs {
-    image_url: start_frame_url,
-    end_frame_image_url: maybe_end_frame_url,
-    webhook_url: &server_state.fal.webhook_url,
+  let fal_request = Kling2p1ProRequest {
+    image_url: start_frame_url.to_string(),
+    end_frame_image_url: maybe_end_frame_url.map(|u| u.to_string()),
+    prompt: prompt.to_string(),
     duration,
-    prompt,
     aspect_ratio,
+  };
+
+  let cost = fal_request.calculate_cost_in_cents();
+
+  let args = Kling2p1ProArgs {
+    request: fal_request,
+    webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };
-  
-  let cost = args.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 

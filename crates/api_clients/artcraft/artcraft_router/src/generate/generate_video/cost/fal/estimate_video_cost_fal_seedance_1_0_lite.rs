@@ -1,6 +1,5 @@
-use fal_client::creds::fal_api_key::FalApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::Seedance1LiteArgs;
+use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::Seedance1LiteRequest;
 
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_seedance_1_0_lite::PlanFalSeedance10Lite;
 use crate::generate::generate_video::video_generation_cost_estimate::VideoGenerationCostEstimate;
@@ -9,22 +8,18 @@ pub(crate) fn estimate_video_cost_fal_seedance_1_0_lite(
   plan: &PlanFalSeedance10Lite,
 ) -> VideoGenerationCostEstimate {
   // Delegate to the Fal client's cost calculator to guarantee parity with billing.
-  let api_key = FalApiKey::from_str("");
-  let end_frame: Option<&str> = plan.end_image_url.as_deref();
-  let args = Seedance1LiteArgs {
-    image_url: plan.image_url.as_str(),
-    end_frame_image_url: end_frame,
-    prompt: plan.prompt.as_str(),
+  let req = Seedance1LiteRequest {
+    image_url: plan.image_url.clone(),
+    end_frame_image_url: plan.end_image_url.clone(),
+    prompt: plan.prompt.clone(),
     duration: plan.duration,
     resolution: plan.resolution,
     aspect_ratio: plan.aspect_ratio,
     camera_fixed: false,
     seed: None,
-    api_key: &api_key,
-    webhook_url: "https://example.com",
   };
 
-  let cost_in_usd_cents = args.calculate_cost_in_cents();
+  let cost_in_usd_cents = req.calculate_cost_in_cents();
 
   VideoGenerationCostEstimate {
     cost_in_credits: Some(cost_in_usd_cents),

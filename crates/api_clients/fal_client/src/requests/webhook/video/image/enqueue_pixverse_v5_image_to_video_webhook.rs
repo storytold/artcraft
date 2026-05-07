@@ -7,13 +7,20 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueuePixverseV5ImageToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueuePixverseV5ImageToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueuePixverseV5ImageToVideoRequest {
   // Request required
   pub prompt: String,
   pub image_url: String,
 
   // Optional args
   pub negative_prompt: Option<String>,
-  
+
   // NB: eight-second videos do not work with 1080P
   // NB: Defaults to 5 seconds
   pub duration: Option<EnqueuePixverseV5ImageToVideoDurationSeconds>,
@@ -22,10 +29,6 @@ pub struct EnqueuePixverseV5ImageToVideoArgs<'a, R: IntoUrl> {
   // NB: Defaults to 720p
   pub resolution: Option<EnqueuePixverseV5ImageToVideoResolution>,
   pub style: Option<EnqueuePixverseV5ImageToVideoStyle>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -60,7 +63,7 @@ pub enum EnqueuePixverseV5ImageToVideoStyle {
   Cyberpunk,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueuePixverseV5ImageToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueuePixverseV5ImageToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // "For 5s video your request will cost
     //  $0.15 for 360p and 540p,
@@ -91,14 +94,16 @@ pub async fn enqueue_pixverse_v5_image_to_video_webhook<R: IntoUrl>(
   args: EnqueuePixverseV5ImageToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let duration = args.duration
+  let req = args.request;
+
+  let duration = req.duration
       .map(|resolution| match resolution {
         EnqueuePixverseV5ImageToVideoDurationSeconds::Five => "5",
         EnqueuePixverseV5ImageToVideoDurationSeconds::Eight=> "8",
       })
       .map(|s| s.to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|aspect_ratio| match aspect_ratio {
         EnqueuePixverseV5ImageToVideoAspectRatio::Square => "1:1",
         EnqueuePixverseV5ImageToVideoAspectRatio::SixteenByNine => "16:9",
@@ -108,7 +113,7 @@ pub async fn enqueue_pixverse_v5_image_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let resolution = args.resolution
+  let resolution = req.resolution
       .map(|resolution| match resolution {
         EnqueuePixverseV5ImageToVideoResolution::ThreeSixtyP => "360p",
         EnqueuePixverseV5ImageToVideoResolution::FiveFortyP => "540p",
@@ -117,7 +122,7 @@ pub async fn enqueue_pixverse_v5_image_to_video_webhook<R: IntoUrl>(
       })
       .map(|s| s.to_string());
 
-  let style = args.style
+  let style = req.style
       .map(|style| match style {
         EnqueuePixverseV5ImageToVideoStyle::Anime => "anime",
         EnqueuePixverseV5ImageToVideoStyle::Animation3d => "3d_animation",
@@ -128,11 +133,11 @@ pub async fn enqueue_pixverse_v5_image_to_video_webhook<R: IntoUrl>(
       .map(|s| s.to_string());
 
   let request = PixverseV5ImageToVideoInput {
-    prompt: args.prompt,
-    image_url: args.image_url,
+    prompt: req.prompt,
+    image_url: req.image_url,
     // Optionals
     duration,
-    negative_prompt: args.negative_prompt,
+    negative_prompt: req.negative_prompt,
     aspect_ratio,
     resolution,
     style,
@@ -151,7 +156,7 @@ pub async fn enqueue_pixverse_v5_image_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_pixverse_v5_image_to_video_webhook::{enqueue_pixverse_v5_image_to_video_webhook, EnqueuePixverseV5ImageToVideoArgs, EnqueuePixverseV5ImageToVideoAspectRatio, EnqueuePixverseV5ImageToVideoDurationSeconds, EnqueuePixverseV5ImageToVideoResolution, EnqueuePixverseV5ImageToVideoStyle};
+  use crate::requests::webhook::video::image::enqueue_pixverse_v5_image_to_video_webhook::{enqueue_pixverse_v5_image_to_video_webhook, EnqueuePixverseV5ImageToVideoArgs, EnqueuePixverseV5ImageToVideoAspectRatio, EnqueuePixverseV5ImageToVideoDurationSeconds, EnqueuePixverseV5ImageToVideoRequest, EnqueuePixverseV5ImageToVideoResolution, EnqueuePixverseV5ImageToVideoStyle};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::TREX_SKELETON_IMAGE_URL;
@@ -165,13 +170,15 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueuePixverseV5ImageToVideoArgs {
-      image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-      prompt: "the t-rex skeleton gets off the podium and begins walking to the camera. the camera orbits slightly. The t-rex gets close and then bites.".to_string(),
-      negative_prompt: None,
-      duration: Some(EnqueuePixverseV5ImageToVideoDurationSeconds::Five),
-      style: Some(EnqueuePixverseV5ImageToVideoStyle::Cyberpunk),
-      aspect_ratio: Some(EnqueuePixverseV5ImageToVideoAspectRatio::FourByThree),
-      resolution: Some(EnqueuePixverseV5ImageToVideoResolution::TenEightyP),
+      request: EnqueuePixverseV5ImageToVideoRequest {
+        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+        prompt: "the t-rex skeleton gets off the podium and begins walking to the camera. the camera orbits slightly. The t-rex gets close and then bites.".to_string(),
+        negative_prompt: None,
+        duration: Some(EnqueuePixverseV5ImageToVideoDurationSeconds::Five),
+        style: Some(EnqueuePixverseV5ImageToVideoStyle::Cyberpunk),
+        aspect_ratio: Some(EnqueuePixverseV5ImageToVideoAspectRatio::FourByThree),
+        resolution: Some(EnqueuePixverseV5ImageToVideoResolution::TenEightyP),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

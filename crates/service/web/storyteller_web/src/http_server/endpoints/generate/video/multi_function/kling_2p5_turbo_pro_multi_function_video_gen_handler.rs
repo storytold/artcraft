@@ -25,7 +25,7 @@ use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1p5_edit_image_webhook::{enqueue_gpt_image_1p5_image_edit_webhook, EnqueueGptImage1p5EditImageArgs, EnqueueGptImage1p5EditImageBackground, EnqueueGptImage1p5EditImageInputFidelity, EnqueueGptImage1p5EditImageNumImages, EnqueueGptImage1p5EditImageQuality, EnqueueGptImage1p5EditImageRequest, EnqueueGptImage1p5EditImageSize};
 use fal_client::requests::webhook::image::text::enqueue_gpt_image_1p5_text_to_image_webhook::{enqueue_gpt_image_1p5_text_to_image_webhook, EnqueueGptImage1p5TextToImageArgs, EnqueueGptImage1p5TextToImageBackground, EnqueueGptImage1p5TextToImageNumImages, EnqueueGptImage1p5TextToImageQuality, EnqueueGptImage1p5TextToImageSize};
-use fal_client::requests::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::{enqueue_kling_v2p5_turbo_pro_image_to_video_webhook, EnqueueKlingV2p5TurboProImageToVideoArgs, EnqueueKlingV2p5TurboProImageToVideoDurationSeconds};
+use fal_client::requests::webhook::video::image::enqueue_kling_v2p5_turbo_pro_image_to_video_webhook::{enqueue_kling_v2p5_turbo_pro_image_to_video_webhook, EnqueueKlingV2p5TurboProImageToVideoArgs, EnqueueKlingV2p5TurboProImageToVideoRequest, EnqueueKlingV2p5TurboProImageToVideoDurationSeconds};
 use fal_client::requests::webhook::video::text::enqueue_kling_v2p5_turbo_pro_text_to_video_webhook::{enqueue_kling_v2p5_turbo_pro_text_to_video_webhook, EnqueueKlingV2p5TurboProTextToVideoArgs, EnqueueKlingV2p5TurboProTextToVideoAspectRatio, EnqueueKlingV2p5TurboProTextToVideoDurationSeconds};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -164,17 +164,21 @@ pub async fn kling_2p5_turbo_pro_multi_function_video_gen_handler(
       None => EnqueueKlingV2p5TurboProImageToVideoDurationSeconds::Five,
     };
 
-    let args = EnqueueKlingV2p5TurboProImageToVideoArgs {
+    let fal_request = EnqueueKlingV2p5TurboProImageToVideoRequest {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       image_url: start_frame_url,
       tail_image_url: maybe_end_frame_image_url,
       negative_prompt: request.negative_prompt.clone(),
       duration: Some(duration),
+    };
+
+    let cost = fal_request.calculate_cost_in_cents();
+
+    let args = EnqueueKlingV2p5TurboProImageToVideoArgs {
+      request: fal_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 

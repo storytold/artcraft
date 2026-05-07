@@ -12,12 +12,13 @@ use fal_client::requests::webhook::video::image::enqueue_veo_3p1_first_last_fram
   EnqueueVeo3p1FirstLastFrameImageToVideoArgs,
   EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio,
   EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds,
+  EnqueueVeo3p1FirstLastFrameImageToVideoRequest,
   EnqueueVeo3p1FirstLastFrameImageToVideoResolution,
 };
 use fal_client::requests::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{
   enqueue_veo_3p1_image_to_video_webhook, EnqueueVeo3p1ImageToVideoArgs,
   EnqueueVeo3p1ImageToVideoAspectRatio, EnqueueVeo3p1ImageToVideoDurationSeconds,
-  EnqueueVeo3p1ImageToVideoResolution,
+  EnqueueVeo3p1ImageToVideoRequest, EnqueueVeo3p1ImageToVideoResolution,
 };
 use fal_client::requests::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::{
   enqueue_veo_3p1_text_to_video_webhook, EnqueueVeo3p1TextToVideoArgs,
@@ -48,12 +49,14 @@ pub async fn execute_fal_veo_3p1(
     }
     FalVeo3p1Mode::ImageToVideo { start_frame_url } => {
       let args = EnqueueVeo3p1ImageToVideoArgs {
-        prompt: plan.prompt.clone(),
-        image_url: start_frame_url.clone(),
-        duration: plan.duration.map(to_i2v_duration),
-        aspect_ratio: plan.aspect_ratio.map(to_i2v_aspect_ratio),
-        resolution: plan.resolution.map(to_i2v_resolution),
-        generate_audio: plan.generate_audio,
+        request: EnqueueVeo3p1ImageToVideoRequest {
+          prompt: plan.prompt.clone(),
+          image_url: start_frame_url.clone(),
+          duration: plan.duration.map(to_i2v_duration),
+          aspect_ratio: plan.aspect_ratio.map(to_i2v_aspect_ratio),
+          resolution: plan.resolution.map(to_i2v_resolution),
+          generate_audio: plan.generate_audio,
+        },
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };
@@ -61,13 +64,15 @@ pub async fn execute_fal_veo_3p1(
     }
     FalVeo3p1Mode::FirstLastFrame { first_frame_url, last_frame_url } => {
       let args = EnqueueVeo3p1FirstLastFrameImageToVideoArgs {
-        prompt: plan.prompt.clone(),
-        first_frame_url: first_frame_url.clone(),
-        last_frame_url: last_frame_url.clone(),
-        duration: plan.duration.map(to_flf_duration),
-        aspect_ratio: plan.aspect_ratio.map(to_flf_aspect_ratio),
-        resolution: plan.resolution.map(to_flf_resolution),
-        generate_audio: plan.generate_audio,
+        request: EnqueueVeo3p1FirstLastFrameImageToVideoRequest {
+          prompt: plan.prompt.clone(),
+          first_frame_url: first_frame_url.clone(),
+          last_frame_url: last_frame_url.clone(),
+          duration: plan.duration.map(to_flf_duration),
+          aspect_ratio: plan.aspect_ratio.map(to_flf_aspect_ratio),
+          resolution: plan.resolution.map(to_flf_resolution),
+          generate_audio: plan.generate_audio,
+        },
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };

@@ -25,7 +25,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::Seedance1LiteDuration;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::{enqueue_seedance_1_lite_image_to_video_webhook, Seedance1LiteAspectRatio};
-use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::{Seedance1LiteArgs, Seedance1LiteResolution};
+use fal_client::requests::webhook::video::image::enqueue_seedance_1_lite_image_to_video_webhook::{Seedance1LiteArgs, Seedance1LiteRequest, Seedance1LiteResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -179,20 +179,18 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
         GenerateSeedance10LiteAspectRatio::NineBySixteen => Seedance1LiteAspectRatio::NineBySixteen,
       });
 
-  let args = Seedance1LiteArgs {
-    image_url: start_frame_url,
-    end_frame_image_url: maybe_end_frame_url,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+  let i2v_request = Seedance1LiteRequest {
+    image_url: start_frame_url.to_string(),
+    end_frame_image_url: maybe_end_frame_url.map(|u| u.to_string()),
     duration,
     resolution,
-    prompt,
+    prompt: prompt.to_string(),
     aspect_ratio,
     camera_fixed: false, // TODO: Parameterize
     seed: None, // TODO: Parameterize
   };
-  
-  let cost = args.calculate_cost_in_cents();
+
+  let cost = i2v_request.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 
@@ -202,6 +200,12 @@ pub async fn generate_seedance_1_0_lite_image_to_video_handler(
     cost,
     &mut mysql_connection,
   ).await?;
+
+  let args = Seedance1LiteArgs {
+    request: i2v_request,
+    webhook_url: &server_state.fal.webhook_url,
+    api_key: &server_state.fal.api_key,
+  };
 
   let fal_result = enqueue_seedance_1_lite_image_to_video_webhook(args)
       .await

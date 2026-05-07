@@ -6,25 +6,23 @@ use crate::generate::generate_video::generate_video_response::{
 };
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_kling_1_6_pro::PlanFalKling16Pro;
 use fal_client::requests::webhook::video::image::enqueue_kling_v1p6_pro_image_to_video_webhook::{
-  enqueue_kling_v1p6_pro_image_to_video_webhook, Kling1p6ProArgs,
+  enqueue_kling_v1p6_pro_image_to_video_webhook, Kling1p6ProArgs, Kling1p6ProRequest,
 };
 
 pub async fn execute_fal_kling_1_6_pro(
   plan: &PlanFalKling16Pro,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateVideoResponse, ArtcraftRouterError> {
-  // The Fal arg type is generic over `Option<T: IntoUrl>` for the end frame URL —
-  // explicitly bind T to String here.
-  let end_frame_image_url: Option<String> = plan.end_image_url.clone();
-
   let args = Kling1p6ProArgs {
-    image_url: plan.image_url.as_str(),
-    end_frame_image_url,
+    request: Kling1p6ProRequest {
+      image_url: plan.image_url.clone(),
+      end_frame_image_url: plan.end_image_url.clone(),
+      prompt: plan.prompt.clone(),
+      duration: plan.duration,
+      aspect_ratio: plan.aspect_ratio,
+    },
     webhook_url: fal_client.webhook_url.as_str(),
-    prompt: plan.prompt.as_str(),
     api_key: &fal_client.api_key,
-    duration: plan.duration,
-    aspect_ratio: plan.aspect_ratio,
   };
 
   let webhook_response = enqueue_kling_v1p6_pro_image_to_video_webhook(args)

@@ -24,7 +24,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::enqueue_seedance_1_pro_image_to_video_webhook;
 use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::Seedance1ProDuration;
-use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::{Seedance1ProArgs, Seedance1ProResolution};
+use fal_client::requests::webhook::video::image::enqueue_seedance_1_pro_image_to_video_webhook::{Seedance1ProArgs, Seedance1ProRequest, Seedance1ProResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -157,18 +157,16 @@ pub async fn generate_seedance_1_0_pro_image_to_video_handler(
     None => Seedance1ProDuration::FiveSeconds,
   };
   
-  let args = Seedance1ProArgs {
-    image_url: start_frame_url,
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+  let i2v_request = Seedance1ProRequest {
+    image_url: start_frame_url.to_string(),
     duration,
     resolution,
-    prompt,
+    prompt: prompt.to_string(),
     camera_fixed: false, // TODO: Parameterize
     seed: None, // TODO: Parameterize
   };
 
-  let cost = args.calculate_cost_in_cents();
+  let cost = i2v_request.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 
@@ -178,6 +176,12 @@ pub async fn generate_seedance_1_0_pro_image_to_video_handler(
     cost,
     &mut mysql_connection,
   ).await?;
+
+  let args = Seedance1ProArgs {
+    request: i2v_request,
+    webhook_url: &server_state.fal.webhook_url,
+    api_key: &server_state.fal.api_key,
+  };
 
   let fal_result = enqueue_seedance_1_pro_image_to_video_webhook(args)
       .await

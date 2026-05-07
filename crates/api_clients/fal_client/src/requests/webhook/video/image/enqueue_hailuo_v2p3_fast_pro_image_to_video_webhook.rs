@@ -7,19 +7,22 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueHailuoV2p3FastProImageToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueHailuoV2p3FastProImageToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueHailuoV2p3FastProImageToVideoRequest {
   // Request required
   pub prompt: String,
   pub image_url: String,
 
   // Optional args
   pub prompt_optimizer: Option<bool>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueHailuoV2p3FastProImageToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueHailuoV2p3FastProImageToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     /// "Your request will cost $0.33 per video."
     33
@@ -33,11 +36,12 @@ pub async fn enqueue_hailuo_v2p3_fast_pro_image_to_video_webhook<R: IntoUrl>(
   args: EnqueueHailuoV2p3FastProImageToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let prompt_optimizer = args.prompt_optimizer.unwrap_or(true);
+  let req = args.request;
+  let prompt_optimizer = req.prompt_optimizer.unwrap_or(true);
 
   let request = HailuoV2p3FastProImageToVideoInput {
-    prompt: args.prompt,
-    image_url: args.image_url,
+    prompt: req.prompt,
+    image_url: req.image_url,
     // Optionals
     prompt_optimizer: Some(prompt_optimizer),
   };
@@ -53,7 +57,7 @@ pub async fn enqueue_hailuo_v2p3_fast_pro_image_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::image::enqueue_hailuo_v2p3_fast_pro_image_to_video_webhook::{enqueue_hailuo_v2p3_fast_pro_image_to_video_webhook, EnqueueHailuoV2p3FastProImageToVideoArgs};
+  use crate::requests::webhook::video::image::enqueue_hailuo_v2p3_fast_pro_image_to_video_webhook::{enqueue_hailuo_v2p3_fast_pro_image_to_video_webhook, EnqueueHailuoV2p3FastProImageToVideoArgs, EnqueueHailuoV2p3FastProImageToVideoRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::TREX_SKELETON_IMAGE_URL;
@@ -67,9 +71,11 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueHailuoV2p3FastProImageToVideoArgs {
-      image_url: TREX_SKELETON_IMAGE_URL.to_string(),
-      prompt: "the t-rex skeleton gets off the podium and begins walking to the camera. the camera orbits slightly. The t-rex gets close and then bites.".to_string(),
-      prompt_optimizer: Some(true),
+      request: EnqueueHailuoV2p3FastProImageToVideoRequest {
+        image_url: TREX_SKELETON_IMAGE_URL.to_string(),
+        prompt: "the t-rex skeleton gets off the podium and begins walking to the camera. the camera orbits slightly. The t-rex gets close and then bites.".to_string(),
+        prompt_optimizer: Some(true),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

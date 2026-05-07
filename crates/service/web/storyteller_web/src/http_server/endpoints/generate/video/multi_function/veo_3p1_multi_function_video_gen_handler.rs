@@ -23,8 +23,8 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::{enqueue_veo_3p1_first_last_frame_image_to_video_webhook, EnqueueVeo3p1FirstLastFrameImageToVideoArgs, EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds, EnqueueVeo3p1FirstLastFrameImageToVideoResolution};
-use fal_client::requests::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{enqueue_veo_3p1_image_to_video_webhook, EnqueueVeo3p1ImageToVideoArgs, EnqueueVeo3p1ImageToVideoAspectRatio, EnqueueVeo3p1ImageToVideoDurationSeconds, EnqueueVeo3p1ImageToVideoResolution};
+use fal_client::requests::webhook::video::image::enqueue_veo_3p1_first_last_frame_image_to_video_webhook::{enqueue_veo_3p1_first_last_frame_image_to_video_webhook, EnqueueVeo3p1FirstLastFrameImageToVideoArgs, EnqueueVeo3p1FirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FirstLastFrameImageToVideoDurationSeconds, EnqueueVeo3p1FirstLastFrameImageToVideoRequest, EnqueueVeo3p1FirstLastFrameImageToVideoResolution};
+use fal_client::requests::webhook::video::image::enqueue_veo_3p1_image_to_video_webhook::{enqueue_veo_3p1_image_to_video_webhook, EnqueueVeo3p1ImageToVideoArgs, EnqueueVeo3p1ImageToVideoAspectRatio, EnqueueVeo3p1ImageToVideoDurationSeconds, EnqueueVeo3p1ImageToVideoRequest, EnqueueVeo3p1ImageToVideoResolution};
 use fal_client::requests::webhook::video::text::enqueue_veo_3p1_text_to_video_webhook::{enqueue_veo_3p1_text_to_video_webhook, EnqueueVeo3p1TextToVideoArgs, EnqueueVeo3p1TextToVideoAspectRatio, EnqueueVeo3p1TextToVideoDurationSeconds, EnqueueVeo3p1TextToVideoResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -180,7 +180,7 @@ pub async fn veo_3p1_multi_function_video_gen_handler(
         None => EnqueueVeo3p1FirstLastFrameImageToVideoResolution::TenEightyP,
       };
 
-      let args = EnqueueVeo3p1FirstLastFrameImageToVideoArgs {
+      let flf_request = EnqueueVeo3p1FirstLastFrameImageToVideoRequest {
         last_frame_url: start_frame_url,
         first_frame_url: end_frame_url,
         prompt: request.prompt.as_deref().unwrap_or("").to_string(),
@@ -188,11 +188,15 @@ pub async fn veo_3p1_multi_function_video_gen_handler(
         aspect_ratio: Some(aspect_ratio),
         resolution: Some(resolution),
         generate_audio: Some(generate_audio),
+      };
+
+      let cost = flf_request.calculate_cost_in_cents();
+
+      let args = EnqueueVeo3p1FirstLastFrameImageToVideoArgs {
+        request: flf_request,
         webhook_url: &server_state.fal.webhook_url,
         api_key: &server_state.fal.api_key,
       };
-      
-      let cost = args.calculate_cost_in_cents();
 
       info!("Charging wallet: {}", cost);
 
@@ -234,18 +238,22 @@ pub async fn veo_3p1_multi_function_video_gen_handler(
         None => EnqueueVeo3p1ImageToVideoResolution::TenEightyP,
       };
 
-      let args = EnqueueVeo3p1ImageToVideoArgs {
+      let i2v_request = EnqueueVeo3p1ImageToVideoRequest {
         prompt: request.prompt.as_deref().unwrap_or("").to_string(),
         image_url: start_frame_url,
         duration: Some(duration),
         aspect_ratio: Some(aspect_ratio),
         resolution: Some(resolution),
         generate_audio: Some(generate_audio),
+      };
+
+      let cost = i2v_request.calculate_cost_in_cents();
+
+      let args = EnqueueVeo3p1ImageToVideoArgs {
+        request: i2v_request,
         webhook_url: &server_state.fal.webhook_url,
         api_key: &server_state.fal.api_key,
       };
-      
-      let cost = args.calculate_cost_in_cents();
 
       info!("Charging wallet: {}", cost);
 

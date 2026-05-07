@@ -23,7 +23,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::video::image::enqueue_kling_v2p6_pro_image_to_video_webhook::{enqueue_kling_v2p6_pro_image_to_video_webhook, EnqueueKlingV2p6ProImageToVideoArgs, EnqueueKlingV2p6ProImageToVideoDurationSeconds};
+use fal_client::requests::webhook::video::image::enqueue_kling_v2p6_pro_image_to_video_webhook::{enqueue_kling_v2p6_pro_image_to_video_webhook, EnqueueKlingV2p6ProImageToVideoArgs, EnqueueKlingV2p6ProImageToVideoRequest, EnqueueKlingV2p6ProImageToVideoDurationSeconds};
 use fal_client::requests::webhook::video::text::enqueue_kling_v2p6_pro_text_to_video_webhook::{enqueue_kling_v2p6_pro_text_to_video_webhook, EnqueueKlingV2p6ProTextToVideoArgs, EnqueueKlingV2p6ProTextToVideoAspectRatio, EnqueueKlingV2p6ProTextToVideoDurationSeconds};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -161,17 +161,21 @@ pub async fn kling_2p6_pro_multi_function_video_gen_handler(
       None => EnqueueKlingV2p6ProImageToVideoDurationSeconds::Five,
     };
 
-    let args = EnqueueKlingV2p6ProImageToVideoArgs {
+    let fal_request = EnqueueKlingV2p6ProImageToVideoRequest {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       image_url: start_frame_url,
       generate_audio: request.generate_audio,
       negative_prompt: request.negative_prompt.clone(),
       duration: Some(duration),
+    };
+
+    let cost = fal_request.calculate_cost_in_cents();
+
+    let args = EnqueueKlingV2p6ProImageToVideoArgs {
+      request: fal_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-    
-    let cost = args.calculate_cost_in_cents();
     
     info!("Charging wallet: {}", cost);
     
