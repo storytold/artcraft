@@ -20,40 +20,47 @@ pub async fn execute_fal_nano_banana(
   plan: &PlanFalNanoBanana,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let webhook_response = if plan.image_urls.is_empty() {
+  let (webhook_response, outbound_debug) = if plan.image_urls.is_empty() {
     // Text-to-image mode
+    let request = Gemini25FlashTextToImageRequest {
+      prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+      num_images: to_t2i_num_images(plan.num_images),
+      aspect_ratio: plan.t2i_aspect_ratio,
+    };
+    let debug = format!("{:?}", request);
     let args = Gemini25FlashTextToImageArgs {
-      request: Gemini25FlashTextToImageRequest {
-        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
-        num_images: to_t2i_num_images(plan.num_images),
-        aspect_ratio: plan.t2i_aspect_ratio,
-      },
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_gemini_25_flash_text_to_image_webhook(args)
+    let resp = enqueue_gemini_25_flash_text_to_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, debug)
   } else {
     // Image-edit mode
+    let request = Gemini25FlashEditRequest {
+      prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+      image_urls: plan.image_urls.clone(),
+      num_images: to_edit_num_images(plan.num_images),
+      aspect_ratio: plan.edit_aspect_ratio,
+    };
+    let debug = format!("{:?}", request);
     let args = Gemini25FlashEditArgs {
-      request: Gemini25FlashEditRequest {
-        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
-        image_urls: plan.image_urls.clone(),
-        num_images: to_edit_num_images(plan.num_images),
-        aspect_ratio: plan.edit_aspect_ratio,
-      },
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_gemini_25_flash_edit_webhook(args)
+    let resp = enqueue_gemini_25_flash_edit_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, debug)
   };
 
   Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request_debug: Some(outbound_debug),
   }))
 }
 

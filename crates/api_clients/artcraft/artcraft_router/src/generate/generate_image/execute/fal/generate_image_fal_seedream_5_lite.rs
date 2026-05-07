@@ -18,39 +18,46 @@ pub async fn execute_fal_seedream_5_lite(
   plan: &PlanFalSeedream5Lite,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let webhook_response = if plan.image_urls.is_empty() {
+  let (webhook_response, outbound_debug) = if plan.image_urls.is_empty() {
+    let request = EnqueueBytedanceSeedreamV5LiteTextToImageRequest {
+      prompt: plan.prompt.clone().unwrap_or_default(),
+      num_images: Some(plan.num_images.to_t2i()),
+      max_images: None,
+      image_size: plan.image_size.map(|s| s.to_t2i()),
+    };
+    let debug = format!("{:?}", request);
     let args = EnqueueBytedanceSeedreamV5LiteTextToImageArgs {
-      request: EnqueueBytedanceSeedreamV5LiteTextToImageRequest {
-        prompt: plan.prompt.clone().unwrap_or_default(),
-        num_images: Some(plan.num_images.to_t2i()),
-        max_images: None,
-        image_size: plan.image_size.map(|s| s.to_t2i()),
-      },
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_bytedance_seedream_v5_lite_text_to_image_webhook(args)
+    let resp = enqueue_bytedance_seedream_v5_lite_text_to_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, debug)
   } else {
+    let request = EnqueueBytedanceSeedreamV5LiteEditImageRequest {
+      prompt: plan.prompt.clone().unwrap_or_default(),
+      image_urls: plan.image_urls.clone(),
+      num_images: Some(plan.num_images.to_edit()),
+      max_images: None,
+      image_size: plan.image_size.map(|s| s.to_edit()),
+    };
+    let debug = format!("{:?}", request);
     let args = EnqueueBytedanceSeedreamV5LiteEditImageArgs {
-      request: EnqueueBytedanceSeedreamV5LiteEditImageRequest {
-        prompt: plan.prompt.clone().unwrap_or_default(),
-        image_urls: plan.image_urls.clone(),
-        num_images: Some(plan.num_images.to_edit()),
-        max_images: None,
-        image_size: plan.image_size.map(|s| s.to_edit()),
-      },
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_bytedance_seedream_v5_lite_edit_image_webhook(args)
+    let resp = enqueue_bytedance_seedream_v5_lite_edit_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, debug)
   };
 
   Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request_debug: Some(outbound_debug),
   }))
 }

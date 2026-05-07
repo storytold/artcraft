@@ -9,6 +9,10 @@ pub struct ArtcraftImageResponsePayload {
 pub struct FalImageResponsePayload {
   pub request_id: Option<String>,
   pub gateway_request_id: Option<String>,
+
+  /// Debug-formatted representation of the outbound request sent to Fal.
+  /// Populated from the Request struct's `Debug` impl at the call site.
+  pub maybe_outbound_request_debug: Option<String>,
 }
 
 #[derive(Clone, Debug)]

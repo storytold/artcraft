@@ -18,46 +18,53 @@ pub async fn execute_fal_gpt_image_1(
   plan: &PlanFalGptImage1,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let webhook_response = if plan.image_urls.is_empty() {
+  let (webhook_response, outbound_debug) = if plan.image_urls.is_empty() {
+    let request = EnqueueGptImage1TextToImageRequest {
+      prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+      num_images: plan.num_images.to_t2i(),
+      image_size: plan.image_size.map(|s| s.to_t2i()),
+      quality: Some(plan.quality.to_t2i()),
+      background: None,
+      output_format: None,
+    };
+    let debug = format!("{:?}", request);
     let args = EnqueueGptImage1TextToImageArgs {
-      request: EnqueueGptImage1TextToImageRequest {
-        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
-        num_images: plan.num_images.to_t2i(),
-        image_size: plan.image_size.map(|s| s.to_t2i()),
-        quality: Some(plan.quality.to_t2i()),
-        background: None,
-        output_format: None,
-      },
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_gpt_image_1_text_to_image_webhook(args)
+    let resp = enqueue_gpt_image_1_text_to_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, debug)
   } else {
+    let request = EnqueueGptImage1EditImageRequest {
+      prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+      image_urls: plan.image_urls.clone(),
+      num_images: plan.num_images.to_edit(),
+      mask_image_url: None,
+      image_size: plan.image_size.map(|s| s.to_edit()),
+      quality: Some(plan.quality.to_edit()),
+      input_fidelity: None,
+      background: None,
+      output_format: None,
+    };
+    let debug = format!("{:?}", request);
     let args = EnqueueGptImage1EditImageArgs {
-      request: EnqueueGptImage1EditImageRequest {
-        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
-        image_urls: plan.image_urls.clone(),
-        num_images: plan.num_images.to_edit(),
-        mask_image_url: None,
-        image_size: plan.image_size.map(|s| s.to_edit()),
-        quality: Some(plan.quality.to_edit()),
-        input_fidelity: None,
-        background: None,
-        output_format: None,
-      },
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_gpt_image_1_edit_image_webhook(args)
+    let resp = enqueue_gpt_image_1_edit_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, debug)
   };
 
   Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request_debug: Some(outbound_debug),
   }))
 }
 

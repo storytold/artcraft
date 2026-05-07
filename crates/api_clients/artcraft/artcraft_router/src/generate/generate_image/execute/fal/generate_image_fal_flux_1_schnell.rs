@@ -16,38 +16,45 @@ pub async fn execute_fal_flux_1_schnell(
   plan: &PlanFalFlux1Schnell,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
-  let webhook_response = if let Some(image_url) = &plan.maybe_image_url {
+  let (webhook_response, outbound_debug) = if let Some(image_url) = &plan.maybe_image_url {
     // Image-to-image (redux) mode
+    let request = Flux1SchnellEditImageRequest {
+      image_url: image_url.clone(),
+      num_images: plan.num_images.to_edit(),
+      image_size: plan.edit_image_size,
+    };
+    let debug = format!("{:?}", request);
     let args = Flux1SchnellEditImageArgs {
-      request: Flux1SchnellEditImageRequest {
-        image_url: image_url.clone(),
-        num_images: plan.num_images.to_edit(),
-        image_size: plan.edit_image_size,
-      },
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_flux_1_schnell_edit_image_webhook(args)
+    let resp = enqueue_flux_1_schnell_edit_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, debug)
   } else {
     // Text-to-image mode
+    let request = Flux1SchnellRequest {
+      prompt: plan.prompt.clone().unwrap_or_default(),
+      aspect_ratio: plan.t2i_aspect_ratio,
+      num_images: plan.num_images.to_t2i(),
+    };
+    let debug = format!("{:?}", request);
     let args = Flux1SchnellArgs {
-      request: Flux1SchnellRequest {
-        prompt: plan.prompt.clone().unwrap_or_default(),
-        aspect_ratio: plan.t2i_aspect_ratio,
-        num_images: plan.num_images.to_t2i(),
-      },
+      request,
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
-    enqueue_flux_1_schnell_text_to_image_webhook(args)
+    let resp = enqueue_flux_1_schnell_text_to_image_webhook(args)
       .await
-      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
+      .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?;
+    (resp, debug)
   };
 
   Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request_debug: Some(outbound_debug),
   }))
 }

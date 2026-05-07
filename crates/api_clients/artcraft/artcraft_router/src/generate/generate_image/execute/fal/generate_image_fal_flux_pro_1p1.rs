@@ -13,12 +13,14 @@ pub async fn execute_fal_flux_pro_1p1(
   plan: &PlanFalFluxPro11,
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
+  let request = FluxPro11Request {
+    prompt: plan.prompt.clone().unwrap_or_default(),
+    aspect_ratio: plan.aspect_ratio,
+    num_images: plan.num_images.to_fal(),
+  };
+  let outbound_debug = format!("{:?}", request);
   let args = FluxPro11Args {
-    request: FluxPro11Request {
-      prompt: plan.prompt.clone().unwrap_or_default(),
-      aspect_ratio: plan.aspect_ratio,
-      num_images: plan.num_images.to_fal(),
-    },
+    request,
     webhook_url: fal_client.webhook_url.as_str(),
     api_key: &fal_client.api_key,
   };
@@ -30,5 +32,6 @@ pub async fn execute_fal_flux_pro_1p1(
   Ok(GenerateImageResponse::Fal(FalImageResponsePayload {
     request_id: webhook_response.request_id,
     gateway_request_id: webhook_response.gateway_request_id,
+    maybe_outbound_request_debug: Some(outbound_debug),
   }))
 }
