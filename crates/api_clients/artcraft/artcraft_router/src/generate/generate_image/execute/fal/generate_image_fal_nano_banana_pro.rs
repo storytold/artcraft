@@ -9,7 +9,8 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_ban
 };
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{
   enqueue_nano_banana_pro_image_edit_webhook, EnqueueNanoBananaProEditImageArgs,
-  EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageResolution,
+  EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageRequest,
+  EnqueueNanoBananaProEditImageResolution,
 };
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::{
   enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs,
@@ -35,11 +36,13 @@ pub async fn execute_fal_nano_banana_pro(
   } else {
     // Image-edit mode
     let args = EnqueueNanoBananaProEditImageArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
-      image_urls: plan.image_urls.clone(),
-      num_images: to_edit_num_images(plan.num_images),
-      resolution: plan.resolution.map(to_edit_resolution),
-      aspect_ratio: plan.edit_aspect_ratio,
+      request: EnqueueNanoBananaProEditImageRequest {
+        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+        image_urls: plan.image_urls.clone(),
+        num_images: to_edit_num_images(plan.num_images),
+        resolution: plan.resolution.map(to_edit_resolution),
+        aspect_ratio: plan.edit_aspect_ratio,
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };

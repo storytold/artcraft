@@ -9,7 +9,7 @@ use crate::generate::generate_image::plan::fal::plan_generate_image_fal_nano_ban
 };
 use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{
   enqueue_gemini_25_flash_edit_webhook, Gemini25FlashEditArgs,
-  Gemini25FlashEditNumImages,
+  Gemini25FlashEditNumImages, Gemini25FlashEditRequest,
 };
 use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{
   enqueue_gemini_25_flash_text_to_image_webhook, Gemini25FlashTextToImageArgs,
@@ -35,10 +35,12 @@ pub async fn execute_fal_nano_banana(
   } else {
     // Image-edit mode
     let args = Gemini25FlashEditArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
-      image_urls: plan.image_urls.clone(),
-      num_images: to_edit_num_images(plan.num_images),
-      aspect_ratio: plan.edit_aspect_ratio,
+      request: Gemini25FlashEditRequest {
+        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+        image_urls: plan.image_urls.clone(),
+        num_images: to_edit_num_images(plan.num_images),
+        aspect_ratio: plan.edit_aspect_ratio,
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };

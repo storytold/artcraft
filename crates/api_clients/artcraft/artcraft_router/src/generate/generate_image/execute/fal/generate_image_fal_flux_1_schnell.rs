@@ -6,7 +6,7 @@ use crate::generate::generate_image::generate_image_response::{
 };
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_1_schnell::PlanFalFlux1Schnell;
 use fal_client::requests::webhook::image::edit::enqueue_flux_1_schnell_edit_image_webhook::{
-  enqueue_flux_1_schnell_edit_image_webhook, Flux1SchnellEditImageArgs,
+  enqueue_flux_1_schnell_edit_image_webhook, Flux1SchnellEditImageArgs, Flux1SchnellEditImageRequest,
 };
 use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::{
   enqueue_flux_1_schnell_text_to_image_webhook, Flux1SchnellArgs,
@@ -19,9 +19,11 @@ pub async fn execute_fal_flux_1_schnell(
   let webhook_response = if let Some(image_url) = &plan.maybe_image_url {
     // Image-to-image (redux) mode
     let args = Flux1SchnellEditImageArgs {
-      image_url: image_url.clone(),
-      num_images: plan.num_images.to_edit(),
-      image_size: plan.edit_image_size,
+      request: Flux1SchnellEditImageRequest {
+        image_url: image_url.clone(),
+        num_images: plan.num_images.to_edit(),
+        image_size: plan.edit_image_size,
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };

@@ -19,7 +19,7 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_qwen_image_edit_webhook::{enqueue_qwen_image_edit_webhook, QwenImageEditArgs, QwenImageEditNumImages};
+use fal_client::requests::webhook::image::edit::enqueue_qwen_image_edit_webhook::{enqueue_qwen_image_edit_webhook, QwenImageEditArgs, QwenImageEditNumImages, QwenImageEditRequest};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -154,17 +154,19 @@ pub async fn qwen_edit_image_handler(
   });
   
   let args = QwenImageEditArgs {
-    prompt: request.prompt.as_deref().unwrap_or(""),
+    request: QwenImageEditRequest {
+      prompt: request.prompt.as_deref().unwrap_or("").to_string(),
+      image_url: image_url.to_string(),
+      num_images: Some(num_images),
+      image_size: None,
+      negative_prompt: request.negative_prompt.clone(),
+      acceleration: acceleration.map(|s| s.to_string()),
+    },
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
-    image_url: image_url,
-    num_images: Some(num_images),
-    image_size: None,
-    negative_prompt: request.negative_prompt.clone(),
-    acceleration: acceleration.map(|s| s.to_string()),
   };
 
-  let cost = args.calculate_cost_in_cents();
+  let cost = args.request.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 

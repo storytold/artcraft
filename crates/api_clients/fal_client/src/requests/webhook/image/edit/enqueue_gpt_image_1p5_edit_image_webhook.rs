@@ -8,8 +8,6 @@ use reqwest::IntoUrl;
 
 pub struct EnqueueGptImage1p5EditImageArgs<'a, R: IntoUrl> {
   pub request: EnqueueGptImage1p5EditImageRequest,
-
-  // Fulfillment
   pub webhook_url: R,
   pub api_key: &'a FalApiKey,
 }

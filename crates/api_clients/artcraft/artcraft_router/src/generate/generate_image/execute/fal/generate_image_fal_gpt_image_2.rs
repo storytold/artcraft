@@ -7,6 +7,7 @@ use crate::generate::generate_image::generate_image_response::{
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_gpt_image_2::PlanFalGptImage2;
 use fal_client::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhook::{
   enqueue_gpt_image_2_edit_image_webhook, EnqueueGptImage2EditImageArgs,
+  EnqueueGptImage2EditImageRequest,
 };
 use fal_client::requests::webhook::image::text::enqueue_gpt_image_2_text_to_image_webhook::{
   enqueue_gpt_image_2_text_to_image_webhook, EnqueueGptImage2TextToImageArgs,
@@ -31,13 +32,15 @@ pub async fn execute_fal_gpt_image_2(
       .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
   } else {
     let args = EnqueueGptImage2EditImageArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
-      image_urls: plan.image_urls.clone(),
-      num_images: plan.num_images.to_edit(),
-      mask_url: None,
-      image_size: plan.image_size.map(|s| s.to_edit()),
-      quality: Some(plan.quality.to_edit()),
-      output_format: None,
+      request: EnqueueGptImage2EditImageRequest {
+        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+        image_urls: plan.image_urls.clone(),
+        num_images: plan.num_images.to_edit(),
+        mask_url: None,
+        image_size: plan.image_size.map(|s| s.to_edit()),
+        quality: Some(plan.quality.to_edit()),
+        output_format: None,
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };

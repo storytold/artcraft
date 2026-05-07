@@ -18,7 +18,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_resolution::CommonResolution;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_nano_banana_2_edit_image_webhook::{enqueue_nano_banana_2_edit_image_webhook, EnqueueNanoBanana2EditImageArgs, EnqueueNanoBanana2EditImageAspectRatio, EnqueueNanoBanana2EditImageNumImages, EnqueueNanoBanana2EditImageResolution};
+use fal_client::requests::webhook::image::edit::enqueue_nano_banana_2_edit_image_webhook::{enqueue_nano_banana_2_edit_image_webhook, EnqueueNanoBanana2EditImageArgs, EnqueueNanoBanana2EditImageAspectRatio, EnqueueNanoBanana2EditImageNumImages, EnqueueNanoBanana2EditImageRequest, EnqueueNanoBanana2EditImageResolution};
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_2_text_to_image_webhook::{enqueue_nano_banana_2_text_to_image_webhook, EnqueueNanoBanana2TextToImageArgs, EnqueueNanoBanana2TextToImageAspectRatio, EnqueueNanoBanana2TextToImageNumImages, EnqueueNanoBanana2TextToImageResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -140,17 +140,21 @@ pub async fn nano_banana_2_multi_function_image_gen_handler(
       None => Some(EnqueueNanoBanana2EditImageAspectRatio::OneByOne),
     };
 
-    let args = EnqueueNanoBanana2EditImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
+    let edit_request = EnqueueNanoBanana2EditImageRequest {
+      prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       image_urls: input_image_urls.to_owned(),
       num_images,
       resolution,
       aspect_ratio,
+    };
+
+    let cost = edit_request.calculate_cost_in_cents();
+
+    let args = EnqueueNanoBanana2EditImageArgs {
+      request: edit_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 

@@ -8,8 +8,6 @@ use reqwest::IntoUrl;
 
 pub struct Gemini25FlashEditArgs<'a, R: IntoUrl> {
   pub request: Gemini25FlashEditRequest,
-
-  // Fulfillment
   pub webhook_url: R,
   pub api_key: &'a FalApiKey,
 }

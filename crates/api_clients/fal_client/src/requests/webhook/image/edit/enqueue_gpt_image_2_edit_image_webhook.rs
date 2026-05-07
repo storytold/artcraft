@@ -10,8 +10,6 @@ use crate::requests::webhook::image::edit::enqueue_gpt_image_2_edit_image_webhoo
 
 pub struct EnqueueGptImage2EditImageArgs<'a, R: IntoUrl> {
   pub request: EnqueueGptImage2EditImageRequest,
-
-  // Fulfillment
   pub webhook_url: R,
   pub api_key: &'a FalApiKey,
 }

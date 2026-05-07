@@ -24,8 +24,8 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{enqueue_gemini_25_flash_edit_webhook, Gemini25FlashEditArgs, Gemini25FlashEditAspectRatio, Gemini25FlashEditNumImages};
-use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{enqueue_nano_banana_pro_image_edit_webhook, EnqueueNanoBananaProEditImageArgs, EnqueueNanoBananaProEditImageAspectRatio, EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageResolution};
+use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{enqueue_gemini_25_flash_edit_webhook, Gemini25FlashEditArgs, Gemini25FlashEditAspectRatio, Gemini25FlashEditNumImages, Gemini25FlashEditRequest};
+use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{enqueue_nano_banana_pro_image_edit_webhook, EnqueueNanoBananaProEditImageArgs, EnqueueNanoBananaProEditImageAspectRatio, EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageRequest, EnqueueNanoBananaProEditImageResolution};
 use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{enqueue_gemini_25_flash_text_to_image_webhook, Gemini25FlashTextToImageArgs, Gemini25FlashTextToImageAspectRatio, Gemini25FlashTextToImageNumImages};
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::{enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs, EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
@@ -148,15 +148,17 @@ pub async fn nano_banana_multi_function_image_gen_handler(
     };
 
     let args = Gemini25FlashEditArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
-      image_urls: input_image_urls.to_owned(),
-      num_images,
-      aspect_ratio: Some(aspect_ratio),
+      request: Gemini25FlashEditRequest {
+        prompt: request.prompt.as_deref().unwrap_or("").to_string(),
+        image_urls: input_image_urls.to_owned(),
+        num_images,
+        aspect_ratio: Some(aspect_ratio),
+      },
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
 
-    let cost = args.calculate_cost_in_cents();
+    let cost = args.request.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
