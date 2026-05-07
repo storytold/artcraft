@@ -23,7 +23,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4p5_edit_image_webhook::{enqueue_bytedance_seedream_v4p5_edit_image_webhook, EnqueueBytedanceSeedreamV4p5EditImageArgs, EnqueueBytedanceSeedreamV4p5EditImageNumImages, EnqueueBytedanceSeedreamV4p5EditImageSize};
+use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4p5_edit_image_webhook::{enqueue_bytedance_seedream_v4p5_edit_image_webhook, EnqueueBytedanceSeedreamV4p5EditImageArgs, EnqueueBytedanceSeedreamV4p5EditImageRequest, EnqueueBytedanceSeedreamV4p5EditImageNumImages, EnqueueBytedanceSeedreamV4p5EditImageSize};
 use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4p5_text_to_image_webhook::{enqueue_bytedance_seedream_v4p5_text_to_image_webhook, EnqueueBytedanceSeedreamV4p5TextToImageArgs, EnqueueBytedanceSeedreamV4p5TextToImageNumImages, EnqueueBytedanceSeedreamV4p5TextToImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -145,17 +145,21 @@ pub async fn bytedance_seedream_v4p5_multi_function_image_gen_handler(
       None => EnqueueBytedanceSeedreamV4p5EditImageSize::SquareHd,
     };
 
-    let args = EnqueueBytedanceSeedreamV4p5EditImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
+    let edit_request = EnqueueBytedanceSeedreamV4p5EditImageRequest {
+      prompt: request.prompt.clone().unwrap_or_default(),
       image_urls: input_image_urls.to_owned(),
       num_images: Some(num_images),
       image_size: Some(image_size),
       max_images: None,
+    };
+
+    let cost = edit_request.calculate_cost_in_cents();
+
+    let args = EnqueueBytedanceSeedreamV4p5EditImageArgs {
+      request: edit_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 

@@ -18,7 +18,7 @@ use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_resolution::CommonResolution;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v5_lite_edit_image_webhook::{enqueue_bytedance_seedream_v5_lite_edit_image_webhook, EnqueueBytedanceSeedreamV5LiteEditImageArgs, EnqueueBytedanceSeedreamV5LiteEditImageNumImages, EnqueueBytedanceSeedreamV5LiteEditImageSize};
+use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v5_lite_edit_image_webhook::{enqueue_bytedance_seedream_v5_lite_edit_image_webhook, EnqueueBytedanceSeedreamV5LiteEditImageArgs, EnqueueBytedanceSeedreamV5LiteEditImageRequest, EnqueueBytedanceSeedreamV5LiteEditImageNumImages, EnqueueBytedanceSeedreamV5LiteEditImageSize};
 use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v5_lite_text_to_image_webhook::{enqueue_bytedance_seedream_v5_lite_text_to_image_webhook, EnqueueBytedanceSeedreamV5LiteTextToImageArgs, EnqueueBytedanceSeedreamV5LiteTextToImageNumImages, EnqueueBytedanceSeedreamV5LiteTextToImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -129,17 +129,21 @@ pub async fn bytedance_seedream_5_lite_multi_function_image_gen_handler(
       None => EnqueueBytedanceSeedreamV5LiteEditImageSize::SquareHd,
     };
 
-    let args = EnqueueBytedanceSeedreamV5LiteEditImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
+    let edit_request = EnqueueBytedanceSeedreamV5LiteEditImageRequest {
+      prompt: request.prompt.clone().unwrap_or_default(),
       image_urls: input_image_urls.to_owned(),
       num_images: Some(num_images),
       max_images: None,
       image_size: Some(image_size),
+    };
+
+    let cost = edit_request.calculate_cost_in_cents();
+
+    let args = EnqueueBytedanceSeedreamV5LiteEditImageArgs {
+      request: edit_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 

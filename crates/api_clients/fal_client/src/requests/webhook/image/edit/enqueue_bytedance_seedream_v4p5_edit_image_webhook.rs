@@ -7,18 +7,18 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueBytedanceSeedreamV4p5EditImageArgs<'a, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
-  pub image_urls: Vec<String>,
+  pub request: EnqueueBytedanceSeedreamV4p5EditImageRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
 
-  // Optional args
+#[derive(Clone, Debug)]
+pub struct EnqueueBytedanceSeedreamV4p5EditImageRequest {
+  pub prompt: String,
+  pub image_urls: Vec<String>,
   pub num_images: Option<EnqueueBytedanceSeedreamV4p5EditImageNumImages>,
   pub max_images: Option<EnqueueBytedanceSeedreamV4p5EditImageMaxImages>,
   pub image_size: Option<EnqueueBytedanceSeedreamV4p5EditImageSize>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -39,22 +39,17 @@ pub enum EnqueueBytedanceSeedreamV4p5EditImageMaxImages {
 
 #[derive(Copy, Clone, Debug)]
 pub enum EnqueueBytedanceSeedreamV4p5EditImageSize {
-  // Square
   Square,
   SquareHd,
-  // Tall
   PortraitFourThree,
   PortraitSixteenNine,
-  // Wide
   LandscapeFourThree,
   LandscapeSixteenNine,
-  // Auto
   Auto2k,
   Auto4k,
 }
 
-
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueBytedanceSeedreamV4p5EditImageArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueBytedanceSeedreamV4p5EditImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Your request will cost $0.04 per image.
     let unit_cost = 4;
@@ -69,29 +64,29 @@ impl <U: IntoUrl> FalRequestCostCalculator for EnqueueBytedanceSeedreamV4p5EditI
   }
 }
 
-
 pub async fn enqueue_bytedance_seedream_v4p5_edit_image_webhook<R: IntoUrl>(
   args: EnqueueBytedanceSeedreamV4p5EditImageArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
+  let req = args.request;
 
-  let num_images = args.num_images
-      .map(|num_images| match num_images {
+  let num_images = req.num_images
+      .map(|n| match n {
         EnqueueBytedanceSeedreamV4p5EditImageNumImages::One => 1,
         EnqueueBytedanceSeedreamV4p5EditImageNumImages::Two => 2,
         EnqueueBytedanceSeedreamV4p5EditImageNumImages::Three => 3,
         EnqueueBytedanceSeedreamV4p5EditImageNumImages::Four => 4,
       });
 
-  let max_images = args.max_images
-      .map(|num_images| match num_images {
+  let max_images = req.max_images
+      .map(|n| match n {
         EnqueueBytedanceSeedreamV4p5EditImageMaxImages::One => 1,
         EnqueueBytedanceSeedreamV4p5EditImageMaxImages::Two => 2,
         EnqueueBytedanceSeedreamV4p5EditImageMaxImages::Three => 3,
         EnqueueBytedanceSeedreamV4p5EditImageMaxImages::Four => 4,
       });
 
-  let image_size = args.image_size
-      .map(|image_size| match image_size {
+  let image_size = req.image_size
+      .map(|s| match s {
         EnqueueBytedanceSeedreamV4p5EditImageSize::Square => "square",
         EnqueueBytedanceSeedreamV4p5EditImageSize::SquareHd => "square_hd",
         EnqueueBytedanceSeedreamV4p5EditImageSize::PortraitFourThree => "portrait_4_3",
@@ -101,32 +96,29 @@ pub async fn enqueue_bytedance_seedream_v4p5_edit_image_webhook<R: IntoUrl>(
         EnqueueBytedanceSeedreamV4p5EditImageSize::Auto2k => "auto_2K",
         EnqueueBytedanceSeedreamV4p5EditImageSize::Auto4k => "auto_4K",
       })
-      .map(|resolution| resolution.to_string());
+      .map(|s| s.to_string());
 
-  let request = SeedreamV4p5EditImageInput {
-    prompt: args.prompt.to_string(),
-    image_urls: args.image_urls,
-    // Optionals
+  let input = SeedreamV4p5EditImageInput {
+    prompt: req.prompt,
+    image_urls: req.image_urls,
     num_images,
     max_images,
     image_size,
-    // Constants
     enable_safety_checker: Some(false),
     seed: None,
   };
 
-  let result = seedream_4p5_edit_image(request)
+  seedream_4p5_edit_image(input)
       .with_api_key(&args.api_key.0)
       .queue_webhook(args.webhook_url)
-      .await;
-
-  result.map_err(|err| classify_fal_error(err))
+      .await
+      .map_err(|err| classify_fal_error(err))
 }
 
 #[cfg(test)]
 mod tests {
+  use super::*;
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::edit::enqueue_bytedance_seedream_v4p5_edit_image_webhook::{enqueue_bytedance_seedream_v4p5_edit_image_webhook, EnqueueBytedanceSeedreamV4p5EditImageArgs, EnqueueBytedanceSeedreamV4p5EditImageMaxImages, EnqueueBytedanceSeedreamV4p5EditImageNumImages, EnqueueBytedanceSeedreamV4p5EditImageSize};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
   use test_data::web::image_urls::{GHOST_IMAGE_URL, TREX_SKELETON_IMAGE_URL};
@@ -134,27 +126,22 @@ mod tests {
   #[tokio::test]
   #[ignore]
   async fn test() -> AnyhowResult<()> {
-    // XXX: Don't commit secrets!
     let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
-    //let secret = read_to_string("/home/bt/Artcraft/credentials/fal_api_key.txt")?;
-
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueBytedanceSeedreamV4p5EditImageArgs {
-      image_urls: vec![
-        GHOST_IMAGE_URL.to_string(),
-        TREX_SKELETON_IMAGE_URL.to_string(),
-      ],
-      prompt: "add the ghost to the image of the t-rex skeleton, make it look spooky but friendly",
-      num_images: Some(EnqueueBytedanceSeedreamV4p5EditImageNumImages::Two),
-      max_images: Some(EnqueueBytedanceSeedreamV4p5EditImageMaxImages::Two),
-      image_size: Some(EnqueueBytedanceSeedreamV4p5EditImageSize::Auto2k),
+      request: EnqueueBytedanceSeedreamV4p5EditImageRequest {
+        prompt: "add the ghost to the image of the t-rex skeleton, make it look spooky but friendly".to_string(),
+        image_urls: vec![GHOST_IMAGE_URL.to_string(), TREX_SKELETON_IMAGE_URL.to_string()],
+        num_images: Some(EnqueueBytedanceSeedreamV4p5EditImageNumImages::Two),
+        max_images: Some(EnqueueBytedanceSeedreamV4p5EditImageMaxImages::Two),
+        image_size: Some(EnqueueBytedanceSeedreamV4p5EditImageSize::Auto2k),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };
 
-    let result = enqueue_bytedance_seedream_v4p5_edit_image_webhook(args).await?;
-
+    let _result = enqueue_bytedance_seedream_v4p5_edit_image_webhook(args).await?;
     Ok(())
   }
 }

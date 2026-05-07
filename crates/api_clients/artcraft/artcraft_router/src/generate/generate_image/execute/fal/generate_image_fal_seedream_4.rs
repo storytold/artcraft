@@ -7,6 +7,7 @@ use crate::generate::generate_image::generate_image_response::{
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_seedream_4::PlanFalSeedream4;
 use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::{
   enqueue_bytedance_seedream_v4_edit_image_webhook, EnqueueBytedanceSeedreamV4EditImageArgs,
+  EnqueueBytedanceSeedreamV4EditImageRequest,
 };
 use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::{
   enqueue_bytedance_seedream_v4_text_to_image_webhook, EnqueueBytedanceSeedreamV4TextToImageArgs,
@@ -30,11 +31,13 @@ pub async fn execute_fal_seedream_4(
       .map_err(|e| ArtcraftRouterError::Provider(ProviderError::Fal(e)))?
   } else {
     let args = EnqueueBytedanceSeedreamV4EditImageArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
-      image_urls: plan.image_urls.clone(),
-      num_images: Some(plan.num_images.to_edit()),
-      max_images: None,
-      image_size: plan.image_size.map(|s| s.to_edit()),
+      request: EnqueueBytedanceSeedreamV4EditImageRequest {
+        prompt: plan.prompt.clone().unwrap_or_default(),
+        image_urls: plan.image_urls.clone(),
+        num_images: Some(plan.num_images.to_edit()),
+        max_images: None,
+        image_size: plan.image_size.map(|s| s.to_edit()),
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };
