@@ -6,7 +6,7 @@ use crate::generate::generate_image::generate_image_response::{
 };
 use crate::generate::generate_image::plan::fal::plan_generate_image_fal_flux_pro_1p1::PlanFalFluxPro11;
 use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{
-  enqueue_flux_pro_11_text_to_image_webhook, FluxPro11Args,
+  enqueue_flux_pro_11_text_to_image_webhook, FluxPro11Args, FluxPro11Request,
 };
 
 pub async fn execute_fal_flux_pro_1p1(
@@ -14,9 +14,11 @@ pub async fn execute_fal_flux_pro_1p1(
   fal_client: &RouterFalClient,
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let args = FluxPro11Args {
-    prompt: plan.prompt.as_deref().unwrap_or(""),
-    aspect_ratio: plan.aspect_ratio,
-    num_images: plan.num_images.to_fal(),
+    request: FluxPro11Request {
+      prompt: plan.prompt.clone().unwrap_or_default(),
+      aspect_ratio: plan.aspect_ratio,
+      num_images: plan.num_images.to_fal(),
+    },
     webhook_url: fal_client.webhook_url.as_str(),
     api_key: &fal_client.api_key,
   };

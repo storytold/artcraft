@@ -11,6 +11,7 @@ use fal_client::requests::webhook::image::edit::enqueue_gpt_image_1p5_edit_image
 };
 use fal_client::requests::webhook::image::text::enqueue_gpt_image_1p5_text_to_image_webhook::{
   enqueue_gpt_image_1p5_text_to_image_webhook, EnqueueGptImage1p5TextToImageArgs,
+  EnqueueGptImage1p5TextToImageRequest,
 };
 
 pub async fn execute_fal_gpt_image_1p5(
@@ -19,12 +20,14 @@ pub async fn execute_fal_gpt_image_1p5(
 ) -> Result<GenerateImageResponse, ArtcraftRouterError> {
   let webhook_response = if plan.image_urls.is_empty() {
     let args = EnqueueGptImage1p5TextToImageArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
-      num_images: plan.num_images.to_t2i(),
-      image_size: plan.image_size.map(|s| s.to_t2i()),
-      background: None,
-      quality: Some(plan.quality.to_t2i()),
-      output_format: None,
+      request: EnqueueGptImage1p5TextToImageRequest {
+        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+        num_images: plan.num_images.to_t2i(),
+        image_size: plan.image_size.map(|s| s.to_t2i()),
+        background: None,
+        quality: Some(plan.quality.to_t2i()),
+        output_format: None,
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };

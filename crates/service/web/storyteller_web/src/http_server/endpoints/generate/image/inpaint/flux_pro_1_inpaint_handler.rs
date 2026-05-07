@@ -17,7 +17,7 @@ use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
-use fal_client::requests::webhook::image::infill::enqueue_flux_pro_1_infill_webhook::{enqueue_flux_pro_1_infill_webhook, FluxPro1InfillArgs, FluxPro1InfillNumImages};
+use fal_client::requests::webhook::image::infill::enqueue_flux_pro_1_infill_webhook::{enqueue_flux_pro_1_infill_webhook, FluxPro1InfillArgs, FluxPro1InfillRequest, FluxPro1InfillNumImages};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -171,10 +171,12 @@ pub async fn flux_pro_1_inpaint_image_handler(
   };
 
   let args = FluxPro1InfillArgs {
-    prompt: request.prompt.as_deref().unwrap_or(""),
-    image_url: image_url,
-    mask_url: mask_image_url,
-    num_images,
+    request: FluxPro1InfillRequest {
+      prompt: request.prompt.as_deref().unwrap_or("").to_string(),
+      image_url,
+      mask_url: mask_image_url,
+      num_images,
+    },
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };

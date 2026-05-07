@@ -19,7 +19,7 @@ use enums::common::generation_provider::GenerationProvider;
 use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::text::enqueue_gpt_image_1_byok_text_to_image_webhook::{enqueue_gpt_image_1_byok_text_to_image_webhook, GptTextToImageByokArgs, GptTextToImageNumImages, GptTextToImageQuality, GptTextToImageSize};
+use fal_client::requests::webhook::image::text::enqueue_gpt_image_1_byok_text_to_image_webhook::{enqueue_gpt_image_1_byok_text_to_image_webhook, GptTextToImageByokArgs, GptTextToImageByokRequest, GptTextToImageNumImages, GptTextToImageQuality, GptTextToImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -122,19 +122,23 @@ pub async fn generate_gpt_image_1_text_to_image_handler(
 
   let openai_api_key = OpenAiApiKey::from_str(&server_state.openai.api_key);
 
-  let args = GptTextToImageByokArgs {
-    prompt: request.prompt.as_deref().unwrap_or(""),
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+  let byok_request = GptTextToImageByokRequest {
+    prompt: request.prompt.as_deref().unwrap_or("").to_string(),
     num_images,
     image_size,
     quality,
-    openai_api_key: &openai_api_key,
   };
 
   let apriori_job_token = InferenceJobToken::generate();
 
-  let cost = args.calculate_cost_in_cents();
+  let cost = byok_request.calculate_cost_in_cents();
+
+  let args = GptTextToImageByokArgs {
+    request: byok_request,
+    webhook_url: &server_state.fal.webhook_url,
+    api_key: &server_state.fal.api_key,
+    openai_api_key: &openai_api_key,
+  };
 
   info!("Charging wallet: {}", cost);
 

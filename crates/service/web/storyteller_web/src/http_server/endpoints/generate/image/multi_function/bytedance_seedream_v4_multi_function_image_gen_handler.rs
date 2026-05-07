@@ -24,7 +24,7 @@ use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_bytedance_seedream_v4_edit_image_webhook::{enqueue_bytedance_seedream_v4_edit_image_webhook, EnqueueBytedanceSeedreamV4EditImageArgs, EnqueueBytedanceSeedreamV4EditImageRequest, EnqueueBytedanceSeedreamV4EditImageNumImages, EnqueueBytedanceSeedreamV4EditImageSize};
-use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::{enqueue_bytedance_seedream_v4_text_to_image_webhook, EnqueueBytedanceSeedreamV4TextToImageArgs, EnqueueBytedanceSeedreamV4TextToImageNumImages, EnqueueBytedanceSeedreamV4TextToImageSize};
+use fal_client::requests::webhook::image::text::enqueue_bytedance_seedream_v4_text_to_image_webhook::{enqueue_bytedance_seedream_v4_text_to_image_webhook, EnqueueBytedanceSeedreamV4TextToImageArgs, EnqueueBytedanceSeedreamV4TextToImageNumImages, EnqueueBytedanceSeedreamV4TextToImageRequest, EnqueueBytedanceSeedreamV4TextToImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -207,16 +207,14 @@ pub async fn bytedance_seedream_v4_multi_function_image_gen_handler(
       None => EnqueueBytedanceSeedreamV4TextToImageSize::SquareHd,
     };
 
-    let args = EnqueueBytedanceSeedreamV4TextToImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
+    let t2i_request = EnqueueBytedanceSeedreamV4TextToImageRequest {
+      prompt: request.prompt.clone().unwrap_or_default(),
       num_images: Some(num_images),
       image_size: Some(image_size),
       max_images: None,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
     };
 
-    let cost = args.calculate_cost_in_cents();
+    let cost = t2i_request.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
@@ -226,6 +224,12 @@ pub async fn bytedance_seedream_v4_multi_function_image_gen_handler(
       cost,
       &mut mysql_connection,
     ).await?;
+
+    let args = EnqueueBytedanceSeedreamV4TextToImageArgs {
+      request: t2i_request,
+      webhook_url: &server_state.fal.webhook_url,
+      api_key: &server_state.fal.api_key,
+    };
 
     fal_result = enqueue_bytedance_seedream_v4_text_to_image_webhook(args)
         .await

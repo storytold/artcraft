@@ -6,9 +6,14 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct Flux1SchnellArgs<'a, U: IntoUrl> {
-  pub prompt: &'a str,
+  pub request: Flux1SchnellRequest,
   pub webhook_url: U,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct Flux1SchnellRequest {
+  pub prompt: String,
   pub aspect_ratio: Flux1SchnellAspectRatio,
   pub num_images: Flux1SchnellNumImages,
 }
@@ -36,14 +41,16 @@ pub async fn enqueue_flux_1_schnell_text_to_image_webhook<U: IntoUrl>(
   args: Flux1SchnellArgs<'_, U>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     Flux1SchnellNumImages::One => 1,
     Flux1SchnellNumImages::Two => 2,
     Flux1SchnellNumImages::Three => 3,
     Flux1SchnellNumImages::Four => 4,
   };
 
-  let image_size = match args.aspect_ratio {
+  let image_size = match req.aspect_ratio {
     Flux1SchnellAspectRatio::Square => "square",
     Flux1SchnellAspectRatio::SquareHd => "square_hd",
     Flux1SchnellAspectRatio::LandscapeFourByThree => "landscape_4_3",
@@ -53,7 +60,7 @@ pub async fn enqueue_flux_1_schnell_text_to_image_webhook<U: IntoUrl>(
   };
 
   let request = Flux1SchnellTextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     num_images: Some(num_images),
     image_size: Some(image_size.to_string()),
     // Maybe abstract
@@ -76,7 +83,7 @@ pub async fn enqueue_flux_1_schnell_text_to_image_webhook<U: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::{enqueue_flux_1_schnell_text_to_image_webhook, Flux1SchnellArgs, Flux1SchnellAspectRatio, Flux1SchnellNumImages};
+  use crate::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::{enqueue_flux_1_schnell_text_to_image_webhook, Flux1SchnellArgs, Flux1SchnellAspectRatio, Flux1SchnellNumImages, Flux1SchnellRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -89,11 +96,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Flux1SchnellArgs {
-      prompt: "a giant robot fighting a dragon in a futuristic city",
+      request: Flux1SchnellRequest {
+        prompt: "a giant robot fighting a dragon in a futuristic city".to_string(),
+        num_images: Flux1SchnellNumImages::One,
+        aspect_ratio: Flux1SchnellAspectRatio::LandscapeSixteenByNine,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      num_images: Flux1SchnellNumImages::One,
-      aspect_ratio: Flux1SchnellAspectRatio::LandscapeSixteenByNine,
     };
 
     let result = enqueue_flux_1_schnell_text_to_image_webhook(args).await?;

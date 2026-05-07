@@ -15,7 +15,7 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::enqueue_flux_1_schnell_text_to_image_webhook;
-use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::{Flux1SchnellArgs, Flux1SchnellAspectRatio, Flux1SchnellNumImages};
+use fal_client::requests::webhook::image::text::enqueue_flux_1_schnell_text_to_image_webhook::{Flux1SchnellArgs, Flux1SchnellAspectRatio, Flux1SchnellNumImages, Flux1SchnellRequest};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -136,11 +136,13 @@ pub async fn generate_flux_1_schnell_text_to_image_handler(
   };
 
   let args = Flux1SchnellArgs {
-    prompt: request.prompt.as_deref().unwrap_or(""),
+    request: Flux1SchnellRequest {
+      prompt: request.prompt.clone().unwrap_or_default(),
+      aspect_ratio,
+      num_images,
+    },
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
-    aspect_ratio,
-    num_images,
   };
 
   let fal_result = enqueue_flux_1_schnell_text_to_image_webhook(args)

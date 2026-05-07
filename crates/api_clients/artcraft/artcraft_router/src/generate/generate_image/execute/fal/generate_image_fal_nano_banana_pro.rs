@@ -14,7 +14,8 @@ use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_ima
 };
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::{
   enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs,
-  EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageResolution,
+  EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageRequest,
+  EnqueueNanoBananaProTextToImageResolution,
 };
 pub async fn execute_fal_nano_banana_pro(
   plan: &PlanFalNanaBananaPro,
@@ -23,10 +24,12 @@ pub async fn execute_fal_nano_banana_pro(
   let webhook_response = if plan.image_urls.is_empty() {
     // Text-to-image mode
     let args = EnqueueNanoBananaProTextToImageArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
-      num_images: to_t2i_num_images(plan.num_images),
-      resolution: plan.resolution.map(to_t2i_resolution),
-      aspect_ratio: plan.t2i_aspect_ratio,
+      request: EnqueueNanoBananaProTextToImageRequest {
+        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+        num_images: to_t2i_num_images(plan.num_images),
+        resolution: plan.resolution.map(to_t2i_resolution),
+        aspect_ratio: plan.t2i_aspect_ratio,
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };

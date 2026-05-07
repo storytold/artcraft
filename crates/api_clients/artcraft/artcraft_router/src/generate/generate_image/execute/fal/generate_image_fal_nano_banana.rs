@@ -13,7 +13,7 @@ use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_web
 };
 use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{
   enqueue_gemini_25_flash_text_to_image_webhook, Gemini25FlashTextToImageArgs,
-  Gemini25FlashTextToImageNumImages,
+  Gemini25FlashTextToImageNumImages, Gemini25FlashTextToImageRequest,
 };
 
 pub async fn execute_fal_nano_banana(
@@ -23,9 +23,11 @@ pub async fn execute_fal_nano_banana(
   let webhook_response = if plan.image_urls.is_empty() {
     // Text-to-image mode
     let args = Gemini25FlashTextToImageArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
-      num_images: to_t2i_num_images(plan.num_images),
-      aspect_ratio: plan.t2i_aspect_ratio,
+      request: Gemini25FlashTextToImageRequest {
+        prompt: plan.prompt.as_deref().unwrap_or("").to_string(),
+        num_images: to_t2i_num_images(plan.num_images),
+        aspect_ratio: plan.t2i_aspect_ratio,
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };

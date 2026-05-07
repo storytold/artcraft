@@ -8,17 +8,20 @@ use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostC
 use crate::requests::webhook::image::edit::enqueue_bytedance_seedream_v4p5_edit_image_webhook::{EnqueueBytedanceSeedreamV4p5EditImageArgs, EnqueueBytedanceSeedreamV4p5EditImageNumImages};
 
 pub struct EnqueueBytedanceSeedreamV4p5TextToImageArgs<'a, R: IntoUrl> {
+  pub request: EnqueueBytedanceSeedreamV4p5TextToImageRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueBytedanceSeedreamV4p5TextToImageRequest {
   // Request required
-  pub prompt: &'a str,
+  pub prompt: String,
 
   // Optional args
   pub num_images: Option<EnqueueBytedanceSeedreamV4p5TextToImageNumImages>,
   pub max_images: Option<EnqueueBytedanceSeedreamV4p5TextToImageMaxImages>,
   pub image_size: Option<EnqueueBytedanceSeedreamV4p5TextToImageSize>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -54,7 +57,7 @@ pub enum EnqueueBytedanceSeedreamV4p5TextToImageSize {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueBytedanceSeedreamV4p5TextToImageArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueBytedanceSeedreamV4p5TextToImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // NB: Copied from edit image costs
     // Your request will cost $0.04 per image.
@@ -75,7 +78,9 @@ pub async fn enqueue_bytedance_seedream_v4p5_text_to_image_webhook<R: IntoUrl>(
   args: EnqueueBytedanceSeedreamV4p5TextToImageArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = args.num_images
+  let req = args.request;
+
+  let num_images = req.num_images
       .map(|num_images| match num_images {
         EnqueueBytedanceSeedreamV4p5TextToImageNumImages::One => 1,
         EnqueueBytedanceSeedreamV4p5TextToImageNumImages::Two => 2,
@@ -83,7 +88,7 @@ pub async fn enqueue_bytedance_seedream_v4p5_text_to_image_webhook<R: IntoUrl>(
         EnqueueBytedanceSeedreamV4p5TextToImageNumImages::Four => 4,
       });
 
-  let max_images = args.max_images
+  let max_images = req.max_images
       .map(|num_images| match num_images {
         EnqueueBytedanceSeedreamV4p5TextToImageMaxImages::One => 1,
         EnqueueBytedanceSeedreamV4p5TextToImageMaxImages::Two => 2,
@@ -91,7 +96,7 @@ pub async fn enqueue_bytedance_seedream_v4p5_text_to_image_webhook<R: IntoUrl>(
         EnqueueBytedanceSeedreamV4p5TextToImageMaxImages::Four => 4,
       });
 
-  let image_size = args.image_size
+  let image_size = req.image_size
       .map(|image_size| match image_size {
         EnqueueBytedanceSeedreamV4p5TextToImageSize::Square => "square",
         EnqueueBytedanceSeedreamV4p5TextToImageSize::SquareHd => "square_hd",
@@ -105,7 +110,7 @@ pub async fn enqueue_bytedance_seedream_v4p5_text_to_image_webhook<R: IntoUrl>(
       .map(|resolution| resolution.to_string());
 
   let request = SeedreamV4p5TextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     // Optionals
     num_images,
     max_images,
@@ -126,7 +131,7 @@ pub async fn enqueue_bytedance_seedream_v4p5_text_to_image_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_bytedance_seedream_v4p5_text_to_image_webhook::{enqueue_bytedance_seedream_v4p5_text_to_image_webhook, EnqueueBytedanceSeedreamV4p5TextToImageArgs, EnqueueBytedanceSeedreamV4p5TextToImageMaxImages, EnqueueBytedanceSeedreamV4p5TextToImageNumImages, EnqueueBytedanceSeedreamV4p5TextToImageSize};
+  use crate::requests::webhook::image::text::enqueue_bytedance_seedream_v4p5_text_to_image_webhook::{enqueue_bytedance_seedream_v4p5_text_to_image_webhook, EnqueueBytedanceSeedreamV4p5TextToImageArgs, EnqueueBytedanceSeedreamV4p5TextToImageMaxImages, EnqueueBytedanceSeedreamV4p5TextToImageNumImages, EnqueueBytedanceSeedreamV4p5TextToImageRequest, EnqueueBytedanceSeedreamV4p5TextToImageSize};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -139,10 +144,12 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueBytedanceSeedreamV4p5TextToImageArgs {
-      prompt: "an anime girl is riding a t-rex in the forest",
-      num_images: Some(EnqueueBytedanceSeedreamV4p5TextToImageNumImages::Two),
-      max_images: Some(EnqueueBytedanceSeedreamV4p5TextToImageMaxImages::Two),
-      image_size: Some(EnqueueBytedanceSeedreamV4p5TextToImageSize::LandscapeSixteenNine),
+      request: EnqueueBytedanceSeedreamV4p5TextToImageRequest {
+        prompt: "an anime girl is riding a t-rex in the forest".to_string(),
+        num_images: Some(EnqueueBytedanceSeedreamV4p5TextToImageNumImages::Two),
+        max_images: Some(EnqueueBytedanceSeedreamV4p5TextToImageMaxImages::Two),
+        image_size: Some(EnqueueBytedanceSeedreamV4p5TextToImageSize::LandscapeSixteenNine),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

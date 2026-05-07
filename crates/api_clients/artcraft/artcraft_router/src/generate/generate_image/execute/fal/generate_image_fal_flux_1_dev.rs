@@ -9,7 +9,7 @@ use fal_client::requests::webhook::image::edit::enqueue_flux_1_dev_edit_image_we
   enqueue_flux_1_dev_edit_image_webhook, Flux1DevEditImageArgs, Flux1DevEditImageRequest,
 };
 use fal_client::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::{
-  enqueue_flux_1_dev_text_to_image_webhook, Flux1DevArgs,
+  enqueue_flux_1_dev_text_to_image_webhook, Flux1DevArgs, Flux1DevRequest,
 };
 
 pub async fn execute_fal_flux_1_dev(
@@ -33,9 +33,11 @@ pub async fn execute_fal_flux_1_dev(
   } else {
     // Text-to-image mode
     let args = Flux1DevArgs {
-      prompt: plan.prompt.as_deref().unwrap_or(""),
-      aspect_ratio: plan.aspect_ratio,
-      num_images: plan.num_images.to_t2i(),
+      request: Flux1DevRequest {
+        prompt: plan.prompt.clone().unwrap_or_default(),
+        aspect_ratio: plan.aspect_ratio,
+        num_images: plan.num_images.to_t2i(),
+      },
       webhook_url: fal_client.webhook_url.as_str(),
       api_key: &fal_client.api_key,
     };

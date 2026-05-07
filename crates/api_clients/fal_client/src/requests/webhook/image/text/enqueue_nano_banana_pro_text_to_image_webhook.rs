@@ -8,17 +8,20 @@ use crate::requests::traits::fal_request_cost_calculator_trait::{FalRequestCostC
 use crate::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{EnqueueNanoBananaProEditImageArgs, EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageResolution};
 
 pub struct EnqueueNanoBananaProTextToImageArgs<'a, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
-  pub num_images: EnqueueNanoBananaProTextToImageNumImages,
-
-  // Optional args
-  pub resolution: Option<EnqueueNanoBananaProTextToImageResolution>,
-  pub aspect_ratio: Option<EnqueueNanoBananaProTextToImageAspectRatio>,
-
-  // Fulfillment
+  pub request: EnqueueNanoBananaProTextToImageRequest,
   pub webhook_url: R,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueNanoBananaProTextToImageRequest {
+  // Required
+  pub prompt: String,
+  pub num_images: EnqueueNanoBananaProTextToImageNumImages,
+
+  // Optional
+  pub resolution: Option<EnqueueNanoBananaProTextToImageResolution>,
+  pub aspect_ratio: Option<EnqueueNanoBananaProTextToImageAspectRatio>,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -56,7 +59,7 @@ pub enum EnqueueNanoBananaProTextToImageAspectRatio {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueNanoBananaProTextToImageArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueNanoBananaProTextToImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Your request will cost $0.15 per image.
     // For $1.00, you can run this model 7 times.
@@ -84,14 +87,16 @@ pub async fn enqueue_nano_banana_pro_text_to_image_webhook<R: IntoUrl>(
   args: EnqueueNanoBananaProTextToImageArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     EnqueueNanoBananaProTextToImageNumImages::One => 1,
     EnqueueNanoBananaProTextToImageNumImages::Two => 2,
     EnqueueNanoBananaProTextToImageNumImages::Three => 3,
     EnqueueNanoBananaProTextToImageNumImages::Four => 4,
   };
 
-  let resolution = args.resolution
+  let resolution = req.resolution
       .map(|resolution| match resolution {
         EnqueueNanoBananaProTextToImageResolution::OneK => "1K",
         EnqueueNanoBananaProTextToImageResolution::TwoK => "2K",
@@ -99,7 +104,7 @@ pub async fn enqueue_nano_banana_pro_text_to_image_webhook<R: IntoUrl>(
       })
       .map(|resolution| resolution.to_string());
 
-  let aspect_ratio = args.aspect_ratio
+  let aspect_ratio = req.aspect_ratio
       .map(|aspect_ratio| match aspect_ratio {
         // Square
         EnqueueNanoBananaProTextToImageAspectRatio::OneByOne => "1:1",
@@ -118,7 +123,7 @@ pub async fn enqueue_nano_banana_pro_text_to_image_webhook<R: IntoUrl>(
       .map(|aspect_ratio| aspect_ratio.to_string());
 
   let request = NanoBananaProTextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     num_images: Some(num_images),
     // Optionals
     aspect_ratio,
@@ -138,7 +143,7 @@ pub async fn enqueue_nano_banana_pro_text_to_image_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::{enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs, EnqueueNanoBananaProTextToImageAspectRatio, EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageResolution};
+  use crate::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::{enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs, EnqueueNanoBananaProTextToImageAspectRatio, EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageRequest, EnqueueNanoBananaProTextToImageResolution};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -151,10 +156,12 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueNanoBananaProTextToImageArgs {
-      prompt: "an anime girl riding on the back of a t-rex",
-      num_images: EnqueueNanoBananaProTextToImageNumImages::One,
-      aspect_ratio: Some(EnqueueNanoBananaProTextToImageAspectRatio::SixteenByNine),
-      resolution: Some(EnqueueNanoBananaProTextToImageResolution::TwoK),
+      request: EnqueueNanoBananaProTextToImageRequest {
+        prompt: "an anime girl riding on the back of a t-rex".to_string(),
+        num_images: EnqueueNanoBananaProTextToImageNumImages::One,
+        aspect_ratio: Some(EnqueueNanoBananaProTextToImageAspectRatio::SixteenByNine),
+        resolution: Some(EnqueueNanoBananaProTextToImageResolution::TwoK),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

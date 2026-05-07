@@ -19,7 +19,7 @@ use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::FluxPro11Args;
-use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{enqueue_flux_pro_11_text_to_image_webhook, FluxPro11AspectRatio, FluxPro11NumImages};
+use fal_client::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{enqueue_flux_pro_11_text_to_image_webhook, FluxPro11AspectRatio, FluxPro11NumImages, FluxPro11Request};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -110,15 +110,13 @@ pub async fn generate_flux_pro_11_text_to_image_handler(
     None => FluxPro11NumImages::One, // Default
   };
 
-  let args = FluxPro11Args {
-    prompt: request.prompt.as_deref().unwrap_or(""),
-    webhook_url: &server_state.fal.webhook_url,
-    api_key: &server_state.fal.api_key,
+  let flux_request = FluxPro11Request {
+    prompt: request.prompt.clone().unwrap_or_default(),
     aspect_ratio,
     num_images,
   };
 
-  let cost = args.calculate_cost_in_cents();
+  let cost = flux_request.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 
@@ -128,6 +126,12 @@ pub async fn generate_flux_pro_11_text_to_image_handler(
     cost,
     &mut mysql_connection,
   ).await?;
+
+  let args = FluxPro11Args {
+    request: flux_request,
+    webhook_url: &server_state.fal.webhook_url,
+    api_key: &server_state.fal.api_key,
+  };
 
   let fal_result = enqueue_flux_pro_11_text_to_image_webhook(args)
       .await

@@ -17,7 +17,7 @@ use enums::common::visibility::Visibility;
 use enums::common::generation::common_aspect_ratio::CommonAspectRatio;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
-use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{enqueue_qwen_edit_2511_edit_image_angle_webhook, EnqueueQwenEdit2511EditImageAngleArgs, EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511AngleImageSize};
+use fal_client::requests::webhook::image::angle::enqueue_qwen_edit_2511_edit_image_angle_webhook::{enqueue_qwen_edit_2511_edit_image_angle_webhook, EnqueueQwenEdit2511EditImageAngleArgs, EnqueueQwenEdit2511EditImageAngleRequest, EnqueueQwenEdit2511AngleNumImages, EnqueueQwenEdit2511AngleImageSize};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -114,22 +114,26 @@ pub async fn qwen_edit_2511_edit_image_angle_handler(
     QwenEdit2511EditImageAngleImageSize::LandscapeSixteenNine => EnqueueQwenEdit2511AngleImageSize::LandscapeSixteenNine,
   });
 
-  let args = EnqueueQwenEdit2511EditImageAngleArgs {
+  let fal_request = EnqueueQwenEdit2511EditImageAngleRequest {
     image_urls,
     horizontal_angle: request.horizontal_angle,
     vertical_angle: request.vertical_angle,
     zoom: request.zoom,
-    additional_prompt: request.additional_prompt.as_deref(),
+    additional_prompt: request.additional_prompt.clone(),
     num_images,
     image_size,
     lora_scale: None,
     guidance_scale: None,
     num_inference_steps: None,
+  };
+
+  let cost = fal_request.calculate_cost_in_cents();
+
+  let args = EnqueueQwenEdit2511EditImageAngleArgs {
+    request: fal_request,
     webhook_url: &server_state.fal.webhook_url,
     api_key: &server_state.fal.api_key,
   };
-
-  let cost = args.calculate_cost_in_cents();
 
   info!("Charging wallet: {}", cost);
 

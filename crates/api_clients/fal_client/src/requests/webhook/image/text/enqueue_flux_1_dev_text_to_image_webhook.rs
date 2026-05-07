@@ -6,9 +6,14 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct Flux1DevArgs<'a, U: IntoUrl> {
-  pub prompt: &'a str,
+  pub request: Flux1DevRequest,
   pub webhook_url: U,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct Flux1DevRequest {
+  pub prompt: String,
   pub aspect_ratio: Flux1DevAspectRatio,
   pub num_images: Flux1DevNumImages,
 }
@@ -36,14 +41,16 @@ pub async fn enqueue_flux_1_dev_text_to_image_webhook<U: IntoUrl>(
   args: Flux1DevArgs<'_, U>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     Flux1DevNumImages::One => 1,
     Flux1DevNumImages::Two => 2,
     Flux1DevNumImages::Three => 3,
     Flux1DevNumImages::Four => 4,
   };
 
-  let image_size = match args.aspect_ratio {
+  let image_size = match req.aspect_ratio {
     Flux1DevAspectRatio::Square => "square",
     Flux1DevAspectRatio::SquareHd => "square_hd",
     Flux1DevAspectRatio::LandscapeFourByThree => "landscape_4_3",
@@ -53,7 +60,7 @@ pub async fn enqueue_flux_1_dev_text_to_image_webhook<U: IntoUrl>(
   };
 
   let request = Flux1DevTextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     num_images: Some(num_images),
     image_size: Some(image_size.to_string()),
     // Maybe abstract
@@ -77,7 +84,7 @@ pub async fn enqueue_flux_1_dev_text_to_image_webhook<U: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::{enqueue_flux_1_dev_text_to_image_webhook, Flux1DevArgs, Flux1DevAspectRatio, Flux1DevNumImages};
+  use crate::requests::webhook::image::text::enqueue_flux_1_dev_text_to_image_webhook::{enqueue_flux_1_dev_text_to_image_webhook, Flux1DevArgs, Flux1DevAspectRatio, Flux1DevNumImages, Flux1DevRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -90,11 +97,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Flux1DevArgs {
-      prompt: "a giant robot fighting a dragon in a futuristic city",
+      request: Flux1DevRequest {
+        prompt: "a giant robot fighting a dragon in a futuristic city".to_string(),
+        num_images: Flux1DevNumImages::One,
+        aspect_ratio: Flux1DevAspectRatio::LandscapeFourByThree,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      num_images: Flux1DevNumImages::One,
-      aspect_ratio: Flux1DevAspectRatio::LandscapeFourByThree
     };
 
     let result = enqueue_flux_1_dev_text_to_image_webhook(args).await?;

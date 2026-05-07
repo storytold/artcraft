@@ -7,9 +7,14 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct FluxPro11UltraArgs<'a, U: IntoUrl> {
-  pub prompt: &'a str,
+  pub request: FluxPro11UltraRequest,
   pub webhook_url: U,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct FluxPro11UltraRequest {
+  pub prompt: String,
   pub aspect_ratio: FluxPro11UltraAspectRatio,
   pub num_images: FluxPro11UltraNumImages,
 }
@@ -37,7 +42,7 @@ pub enum FluxPro11UltraNumImages {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for FluxPro11UltraArgs<'_, U> {
+impl FalRequestCostCalculator for FluxPro11UltraRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Your request will cost $0.06 per image.
     let base_cost = 6;
@@ -56,14 +61,16 @@ pub async fn enqueue_flux_pro_11_ultra_text_to_image_webhook<U: IntoUrl>(
   args: FluxPro11UltraArgs<'_, U>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     FluxPro11UltraNumImages::One => 1,
     FluxPro11UltraNumImages::Two => 2,
     FluxPro11UltraNumImages::Three => 3,
     FluxPro11UltraNumImages::Four => 4,
   };
 
-  let aspect_ratio = match args.aspect_ratio {
+  let aspect_ratio = match req.aspect_ratio {
     FluxPro11UltraAspectRatio::Square => "1:1",
     FluxPro11UltraAspectRatio::LandscapeThreeByTwo => "3:2",
     FluxPro11UltraAspectRatio::LandscapeFourByThree => "4:3",
@@ -76,7 +83,7 @@ pub async fn enqueue_flux_pro_11_ultra_text_to_image_webhook<U: IntoUrl>(
   };
 
   let request = FluxPro11UltraTextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     num_images: Some(num_images),
     aspect_ratio: Some(aspect_ratio.to_string()),
     // Maybe expose
@@ -96,4 +103,35 @@ pub async fn enqueue_flux_pro_11_ultra_text_to_image_webhook<U: IntoUrl>(
       .await;
 
   result.map_err(|err| classify_fal_error(err))
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::creds::fal_api_key::FalApiKey;
+  use crate::requests::webhook::image::text::enqueue_flux_pro_11_ultra_text_to_image_webhook::{enqueue_flux_pro_11_ultra_text_to_image_webhook, FluxPro11UltraArgs, FluxPro11UltraAspectRatio, FluxPro11UltraNumImages, FluxPro11UltraRequest};
+  use errors::AnyhowResult;
+  use std::fs::read_to_string;
+
+  #[tokio::test]
+  #[ignore]
+  async fn test() -> AnyhowResult<()> {
+    // XXX: Don't commit secrets!
+    let secret = read_to_string("/Users/bt/Artcraft/credentials/fal_api_key.txt")?;
+
+    let api_key = FalApiKey::from_str(&secret);
+
+    let args = FluxPro11UltraArgs {
+      request: FluxPro11UltraRequest {
+        prompt: "a giant robot fighting a dragon in a futuristic city".to_string(),
+        num_images: FluxPro11UltraNumImages::One,
+        aspect_ratio: FluxPro11UltraAspectRatio::LandscapeSixteenByNine,
+      },
+      api_key: &api_key,
+      webhook_url: "https://example.com/webhook",
+    };
+
+    let result = enqueue_flux_pro_11_ultra_text_to_image_webhook(args).await?;
+
+    Ok(())
+  }
 }

@@ -7,9 +7,14 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct FluxPro11Args<'a, U: IntoUrl> {
-  pub prompt: &'a str,
+  pub request: FluxPro11Request,
   pub webhook_url: U,
   pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct FluxPro11Request {
+  pub prompt: String,
   pub aspect_ratio: FluxPro11AspectRatio,
   pub num_images: FluxPro11NumImages,
 }
@@ -35,7 +40,7 @@ pub enum FluxPro11NumImages {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for FluxPro11Args<'_, U> {
+impl FalRequestCostCalculator for FluxPro11Request {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Your request will cost $0.04 per megapixel, billed by rounding up to the nearest
     // megapixel. Default image_size values are ~1MP, so 4 cents per image.
@@ -55,14 +60,16 @@ pub async fn enqueue_flux_pro_11_text_to_image_webhook<U: IntoUrl>(
   args: FluxPro11Args<'_, U>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let num_images = match args.num_images {
+  let req = args.request;
+
+  let num_images = match req.num_images {
     FluxPro11NumImages::One => 1,
     FluxPro11NumImages::Two => 2,
     FluxPro11NumImages::Three => 3,
     FluxPro11NumImages::Four => 4,
   };
 
-  let image_size = match args.aspect_ratio {
+  let image_size = match req.aspect_ratio {
     FluxPro11AspectRatio::Square => "square",
     FluxPro11AspectRatio::SquareHd => "square_hd",
     FluxPro11AspectRatio::LandscapeFourByThree => "landscape_4_3",
@@ -72,7 +79,7 @@ pub async fn enqueue_flux_pro_11_text_to_image_webhook<U: IntoUrl>(
   };
 
   let request = FluxPro11TextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     num_images: Some(num_images),
     image_size: Some(image_size.to_string()),
     // Maybe expose
@@ -96,7 +103,7 @@ pub async fn enqueue_flux_pro_11_text_to_image_webhook<U: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{enqueue_flux_pro_11_text_to_image_webhook, FluxPro11Args, FluxPro11AspectRatio, FluxPro11NumImages};
+  use crate::requests::webhook::image::text::enqueue_flux_pro_11_text_to_image_webhook::{enqueue_flux_pro_11_text_to_image_webhook, FluxPro11Args, FluxPro11AspectRatio, FluxPro11NumImages, FluxPro11Request};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -109,11 +116,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = FluxPro11Args {
-      prompt: "a giant red panda fighting a dragon in a futuristic city",
+      request: FluxPro11Request {
+        prompt: "a giant red panda fighting a dragon in a futuristic city".to_string(),
+        num_images: FluxPro11NumImages::One,
+        aspect_ratio: FluxPro11AspectRatio::LandscapeSixteenByNine,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      num_images: FluxPro11NumImages::One,
-      aspect_ratio: FluxPro11AspectRatio::LandscapeSixteenByNine,
     };
 
     let result = enqueue_flux_pro_11_text_to_image_webhook(args).await?;

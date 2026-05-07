@@ -26,7 +26,7 @@ use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::image::edit::enqueue_gemini_25_flash_edit_webhook::{enqueue_gemini_25_flash_edit_webhook, Gemini25FlashEditArgs, Gemini25FlashEditAspectRatio, Gemini25FlashEditNumImages, Gemini25FlashEditRequest};
 use fal_client::requests::webhook::image::edit::enqueue_nano_banana_pro_edit_image_webhook::{enqueue_nano_banana_pro_image_edit_webhook, EnqueueNanoBananaProEditImageArgs, EnqueueNanoBananaProEditImageAspectRatio, EnqueueNanoBananaProEditImageNumImages, EnqueueNanoBananaProEditImageRequest, EnqueueNanoBananaProEditImageResolution};
-use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{enqueue_gemini_25_flash_text_to_image_webhook, Gemini25FlashTextToImageArgs, Gemini25FlashTextToImageAspectRatio, Gemini25FlashTextToImageNumImages};
+use fal_client::requests::webhook::image::text::enqueue_gemini_25_flash_text_to_image_webhook::{enqueue_gemini_25_flash_text_to_image_webhook, Gemini25FlashTextToImageArgs, Gemini25FlashTextToImageAspectRatio, Gemini25FlashTextToImageNumImages, Gemini25FlashTextToImageRequest};
 use fal_client::requests::webhook::image::text::enqueue_nano_banana_pro_text_to_image_webhook::{enqueue_nano_banana_pro_text_to_image_webhook, EnqueueNanoBananaProTextToImageArgs, EnqueueNanoBananaProTextToImageNumImages, EnqueueNanoBananaProTextToImageResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
@@ -203,15 +203,19 @@ pub async fn nano_banana_multi_function_image_gen_handler(
       None => Gemini25FlashTextToImageAspectRatio::OneByOne,
     };
 
-    let args = Gemini25FlashTextToImageArgs {
-      prompt: request.prompt.as_deref().unwrap_or(""),
+    let t2i_request = Gemini25FlashTextToImageRequest {
+      prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       num_images,
       aspect_ratio: Some(aspect_ratio),
+    };
+
+    let cost = t2i_request.calculate_cost_in_cents();
+
+    let args = Gemini25FlashTextToImageArgs {
+      request: t2i_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 

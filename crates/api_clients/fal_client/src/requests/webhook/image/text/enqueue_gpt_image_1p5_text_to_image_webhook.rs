@@ -7,19 +7,22 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueGptImage1p5TextToImageArgs<'a, R: IntoUrl> {
-  // Request required
-  pub prompt: &'a str,
+  pub request: EnqueueGptImage1p5TextToImageRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueGptImage1p5TextToImageRequest {
+  // Required
+  pub prompt: String,
   pub num_images: EnqueueGptImage1p5TextToImageNumImages,
 
-  // Optional args
+  // Optional
   pub image_size: Option<EnqueueGptImage1p5TextToImageSize>,
   pub background: Option<EnqueueGptImage1p5TextToImageBackground>,
   pub quality: Option<EnqueueGptImage1p5TextToImageQuality>,
   pub output_format: Option<EnqueueGptImage1p5TextToImageOutputFormat>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
 #[derive(Copy, Clone, Debug)]
@@ -62,7 +65,7 @@ pub enum EnqueueGptImage1p5TextToImageOutputFormat {
 }
 
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueGptImage1p5TextToImageArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueGptImage1p5TextToImageRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // NB: copied from edit image case - should be correct, but not verified.
     // Your request will cost different amounts based on the number of images, quality, and size.
@@ -94,15 +97,16 @@ pub async fn enqueue_gpt_image_1p5_text_to_image_webhook<R: IntoUrl>(
   args: EnqueueGptImage1p5TextToImageArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
+  let req = args.request;
 
-  let num_images = match args.num_images {
+  let num_images = match req.num_images {
     EnqueueGptImage1p5TextToImageNumImages::One => 1,
     EnqueueGptImage1p5TextToImageNumImages::Two => 2,
     EnqueueGptImage1p5TextToImageNumImages::Three => 3,
     EnqueueGptImage1p5TextToImageNumImages::Four => 4,
   };
 
-  let image_size = args.image_size
+  let image_size = req.image_size
       .map(|s| match s {
         EnqueueGptImage1p5TextToImageSize::Square => "1024x1024",
         EnqueueGptImage1p5TextToImageSize::Wide => "1536x1024",
@@ -110,7 +114,7 @@ pub async fn enqueue_gpt_image_1p5_text_to_image_webhook<R: IntoUrl>(
       })
       .map(|resolution| resolution.to_string());
 
-  let background = args.background
+  let background = req.background
       .map(|s| match s {
         EnqueueGptImage1p5TextToImageBackground::Auto => "auto",
         EnqueueGptImage1p5TextToImageBackground::Transparent => "transparent",
@@ -118,7 +122,7 @@ pub async fn enqueue_gpt_image_1p5_text_to_image_webhook<R: IntoUrl>(
       })
       .map(|aspect_ratio| aspect_ratio.to_string());
 
-  let quality = args.quality
+  let quality = req.quality
       .map(|s| match s {
         EnqueueGptImage1p5TextToImageQuality::Low => "low",
         EnqueueGptImage1p5TextToImageQuality::Medium => "medium",
@@ -126,7 +130,7 @@ pub async fn enqueue_gpt_image_1p5_text_to_image_webhook<R: IntoUrl>(
       })
       .map(|aspect_ratio| aspect_ratio.to_string());
 
-  let output_format = args.output_format
+  let output_format = req.output_format
       .map(|s| match s {
         EnqueueGptImage1p5TextToImageOutputFormat::Jpeg => "jpeg",
         EnqueueGptImage1p5TextToImageOutputFormat::Png => "png",
@@ -135,15 +139,8 @@ pub async fn enqueue_gpt_image_1p5_text_to_image_webhook<R: IntoUrl>(
       .map(|aspect_ratio| aspect_ratio.to_string())
       .unwrap_or_else(|| "png".to_string());
 
-  let num_images = match args.num_images {
-    EnqueueGptImage1p5TextToImageNumImages::One => 1,
-    EnqueueGptImage1p5TextToImageNumImages::Two => 2,
-    EnqueueGptImage1p5TextToImageNumImages::Three => 3,
-    EnqueueGptImage1p5TextToImageNumImages::Four => 4,
-  };
-
   let request = GptImage1p5TextToImageInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     num_images: Some(num_images),
     output_format: Some(output_format),
     // Optionals
@@ -163,7 +160,7 @@ pub async fn enqueue_gpt_image_1p5_text_to_image_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::image::text::enqueue_gpt_image_1p5_text_to_image_webhook::{enqueue_gpt_image_1p5_text_to_image_webhook, EnqueueGptImage1p5TextToImageArgs, EnqueueGptImage1p5TextToImageNumImages};
+  use crate::requests::webhook::image::text::enqueue_gpt_image_1p5_text_to_image_webhook::{enqueue_gpt_image_1p5_text_to_image_webhook, EnqueueGptImage1p5TextToImageArgs, EnqueueGptImage1p5TextToImageNumImages, EnqueueGptImage1p5TextToImageRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -176,14 +173,16 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueGptImage1p5TextToImageArgs {
-      prompt: "an anime girl riding on the back of a t-rex",
-      num_images: EnqueueGptImage1p5TextToImageNumImages::Two,
-      image_size: None,
-      background: None,
-      quality: None,
+      request: EnqueueGptImage1p5TextToImageRequest {
+        prompt: "an anime girl riding on the back of a t-rex".to_string(),
+        num_images: EnqueueGptImage1p5TextToImageNumImages::Two,
+        image_size: None,
+        background: None,
+        quality: None,
+        output_format: None,
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
-      output_format: None,
     };
 
     let result = enqueue_gpt_image_1p5_text_to_image_webhook(args).await?;
