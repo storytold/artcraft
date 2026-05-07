@@ -580,8 +580,8 @@ export const TopBar = ({ pageName }: Props) => {
         return "Image to 3D World";
       case "APPS":
         return "ArtCraft Apps";
-      case "VFX":
-        return "VFX";
+      case "BACKGROUND_CHANGE":
+        return "Background Change";
       default:
         return "Artcraft";
     }

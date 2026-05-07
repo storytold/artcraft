@@ -37,7 +37,7 @@ export const ShowcaseCarousel = ({
   return (
     <div
       className={twMerge(
-        "mx-auto flex w-fit max-w-full items-center gap-2 rounded-full backdrop-blur mb-6",
+        "mx-auto flex w-fit max-w-full items-center gap-2 rounded-full backdrop-blur mb-2",
         className,
       )}
     >

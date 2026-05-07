@@ -16,7 +16,7 @@ export type TabId =
   | "REMOVE_BACKGROUND"
   | "ANGLES"
   | "STORYBOARD"
-  | "VFX";
+  | "BACKGROUND_CHANGE";
 
 const DEFAULT_TAB: TabId = "IMAGE";
 

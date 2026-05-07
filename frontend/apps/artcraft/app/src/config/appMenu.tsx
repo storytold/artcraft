@@ -34,7 +34,7 @@ export type AppId =
   | "REMOVE_BACKGROUND"
   | "ANGLES"
   | "STORYBOARD"
-  | "VFX";
+  | "BACKGROUND_CHANGE";
 
 export interface AppDescriptor {
   id: AppId;
@@ -189,12 +189,12 @@ export const ALL_APPS: FullAppItem[] = [
     badge: "NEW",
   },
   {
-    id: "vfx",
-    label: "VFX",
-    description: "Relight, shift location, and swap objects in green-screen video",
+    id: "background-change",
+    label: "Background Change",
+    description: "Swap the backdrop of a video using a reference image",
     icon: faSparkles,
     category: "edit",
-    action: "VFX",
+    action: "BACKGROUND_CHANGE",
     color: "bg-orange-500/40",
     badge: "NEW",
   },
@@ -279,7 +279,7 @@ export const goToApp = (action?: string) => {
       "REMOVE_BACKGROUND",
       "ANGLES",
       "STORYBOARD",
-      "VFX",
+      "BACKGROUND_CHANGE",
     ].includes(action)
   ) {
     if (action === "STORYBOARD") {

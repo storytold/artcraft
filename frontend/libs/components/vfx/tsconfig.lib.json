@@ -32,16 +32,19 @@
   ],
   "references": [
     {
-      "path": "../button/tsconfig.lib.json"
+      "path": "../../common/tsconfig.lib.json"
     },
     {
-      "path": "../popover/tsconfig.lib.json"
+      "path": "../gallery-modal/tsconfig.lib.json"
     },
     {
       "path": "../tooltip/tsconfig.lib.json"
     },
     {
-      "path": "../gallery-modal/tsconfig.lib.json"
+      "path": "../popover/tsconfig.lib.json"
+    },
+    {
+      "path": "../button/tsconfig.lib.json"
     }
   ]
 }

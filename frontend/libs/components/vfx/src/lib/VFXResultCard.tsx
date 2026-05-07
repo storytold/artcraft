@@ -44,11 +44,11 @@ export const VFXResultCard = ({
   return (
     <div
       className={twMerge(
-        "mx-auto grid w-[min(1232px,calc(100vw-48px))] grid-cols-[1fr_19%] items-start gap-3",
+        "mx-auto grid w-[min(1000px,calc(100vw-48px))] grid-cols-[1fr_18%] items-start gap-3",
         className,
       )}
     >
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black/40 ring-1 ring-white/10">
+      <div className="relative aspect-video max-h-[calc(100vh-500px)] w-full overflow-hidden rounded-xl bg-black/40 ring-1 ring-white/10">
         {data.status === "complete" && data.outputUrl ? (
           <video
             src={data.outputUrl}

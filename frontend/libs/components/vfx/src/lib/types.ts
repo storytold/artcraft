@@ -41,7 +41,7 @@ export interface VFXModel {
 export const VFX_MODELS: VFXModel[] = [
   {
     id: "beeble",
-    label: "Beeble VFX",
+    label: "Beeble",
     description: "Relight, change location, swap objects.",
   },
 ];

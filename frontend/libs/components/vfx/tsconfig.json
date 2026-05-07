@@ -3,16 +3,19 @@
   "include": [],
   "references": [
     {
-      "path": "../button"
+      "path": "../../common"
     },
     {
-      "path": "../popover"
+      "path": "../gallery-modal"
     },
     {
       "path": "../tooltip"
     },
     {
-      "path": "../gallery-modal"
+      "path": "../popover"
+    },
+    {
+      "path": "../button"
     },
     {
       "path": "./tsconfig.lib.json"

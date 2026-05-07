@@ -15,7 +15,7 @@ import {
   VFX_SHOWCASE,
 } from "@storyteller/ui-vfx";
 
-export const PageVFX = () => {
+export const PageBackgroundChange = () => {
   const subTab = useVFXStore((s) => s.subTab);
   const setSubTab = useVFXStore((s) => s.setSubTab);
   const history = useVFXStore((s) => s.history);
@@ -45,7 +45,7 @@ export const PageVFX = () => {
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (!source || !reference || !prompt.trim() || isSubmitting) return;
+    if (!source || !reference || isSubmitting) return;
     setIsSubmitting(true);
     const id = startResult();
     const result = await submitVFXJob({
@@ -61,8 +61,8 @@ export const PageVFX = () => {
     if (!result.success) {
       const isExpected = result.error_code_str === VFX_NOT_AVAILABLE_ERROR;
       const message = isExpected
-        ? "VFX backend coming soon. Your inputs are saved."
-        : result.error_message || "Failed to submit VFX job.";
+        ? "Background change backend coming soon. Your inputs are saved."
+        : result.error_message || "Failed to submit background change job.";
       failResult(id, message);
       if (isExpected) toast(message);
       else toast.error(message);
@@ -91,17 +91,17 @@ export const PageVFX = () => {
       },
       mask: entry.mask
         ? {
-          id: entry.mask.mediaToken,
-          url: entry.mask.url,
-          mediaToken: entry.mask.mediaToken,
-        }
+            id: entry.mask.mediaToken,
+            url: entry.mask.url,
+            mediaToken: entry.mask.mediaToken,
+          }
         : undefined,
       reference: entry.reference
         ? {
-          id: entry.reference.mediaToken,
-          url: entry.reference.url,
-          mediaToken: entry.reference.mediaToken,
-        }
+            id: entry.reference.mediaToken,
+            url: entry.reference.url,
+            mediaToken: entry.reference.mediaToken,
+          }
         : undefined,
     });
     toast("Loaded showcase. Edit and Generate.");
@@ -114,24 +114,24 @@ export const PageVFX = () => {
       {subTab === "showcase" ? (
         <div
           className="min-h-0 flex-1 overflow-hidden"
-          style={{ paddingBottom: promptBoxHeight + 36 }}
+          style={{ paddingBottom: Math.max(promptBoxHeight + 36, 240) }}
         >
           <VFXShowcaseView onTryThis={handleTryShowcase} />
         </div>
       ) : history.length === 0 ? (
         <div
           className="flex flex-1 items-center justify-center px-6"
-          style={{ paddingBottom: promptBoxHeight + 36 }}
+          style={{ paddingBottom: Math.max(promptBoxHeight + 36, 240) }}
         >
           <EmptyState
-            title="No VFX generations yet"
-            subtitle="Upload a green-screen source and a reference image, then describe your scene."
+            title="No background changes yet"
+            subtitle="Upload a source video and a reference image, then optionally add a prompt."
           />
         </div>
       ) : (
         <div
           className="flex-1 overflow-y-auto"
-          style={{ paddingBottom: promptBoxHeight + 36 }}
+          style={{ paddingBottom: Math.max(promptBoxHeight + 36, 240) }}
         >
           <div className="flex flex-col gap-10 px-6 pt-6">
             {history.map((r) => (
@@ -156,14 +156,14 @@ export const PageVFX = () => {
 
       <div
         aria-hidden
-        className="pointer-events-none fixed bottom-0 left-0 right-0 z-20 h-72 bg-gradient-to-t from-ui-background via-ui-background/85 to-transparent"
+        className="via-ui-background/85 pointer-events-none fixed bottom-0 left-0 right-0 z-20 h-72 bg-gradient-to-t from-ui-background to-transparent"
       />
 
       <div
         ref={promptBoxRef}
         className="pointer-events-none fixed bottom-4 left-1/2 z-30 -translate-x-1/2"
       >
-        <div className="pointer-events-auto w-[min(1232px,calc(100vw-48px))]">
+        <div className="pointer-events-auto">
           <PromptBoxVFX
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
@@ -185,14 +185,11 @@ interface EmptyStateProps {
 const EmptyState = ({ title, subtitle }: EmptyStateProps) => (
   <div className="flex max-w-md flex-col items-center gap-4 text-center">
     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-base-fg/5 ring-1 ring-base-fg/10">
-      <FontAwesomeIcon
-        icon={faSparkles}
-        className="text-2xl"
-      />
+      <FontAwesomeIcon icon={faSparkles} className="text-2xl" />
     </div>
     <h3 className="text-2xl font-bold text-base-fg">{title}</h3>
-    <p className="text-sm text-base-fg/60 max-w-sm">{subtitle}</p>
+    <p className="max-w-sm text-sm text-base-fg/60">{subtitle}</p>
   </div>
 );
 
-export default PageVFX;
+export default PageBackgroundChange;

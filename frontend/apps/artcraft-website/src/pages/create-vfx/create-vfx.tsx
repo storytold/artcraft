@@ -52,7 +52,7 @@ export default function CreateVFX() {
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (!source || !reference || !prompt.trim() || isSubmitting) return;
+    if (!source || !reference || isSubmitting) return;
     setIsSubmitting(true);
     const id = startResult();
     const result = await submitVFXJob({
@@ -68,8 +68,8 @@ export default function CreateVFX() {
     if (!result.success) {
       const isExpected = result.error_code_str === VFX_NOT_AVAILABLE_ERROR;
       const message = isExpected
-        ? "VFX backend coming soon. Your inputs are saved."
-        : result.error_message || "Failed to submit VFX job.";
+        ? "Background change backend coming soon. Your inputs are saved."
+        : result.error_message || "Failed to submit background change job.";
       failResult(id, message);
       if (isExpected) {
         toast.success(message);
@@ -132,8 +132,8 @@ export default function CreateVFX() {
     return (
       <div className="relative min-h-screen overflow-x-hidden bg-[#101014] text-white">
         <Seo
-          title="VFX - ArtCraft"
-          description="Relight, change location, and swap objects in green-screen video."
+          title="Background Change - ArtCraft"
+          description="Swap the backdrop of a video using a reference image."
         />
         <div className="pointer-events-none absolute inset-x-0 top-0 z-0 flex justify-center">
           <div className="h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/30 via-blue-500/20 to-teal-400/10 opacity-40 blur-[120px]" />
@@ -143,9 +143,9 @@ export default function CreateVFX() {
             icon={faSparkles}
             className="mb-6 text-5xl text-white/20"
           />
-          <h1 className="mb-3 text-4xl font-bold">VFX</h1>
+          <h1 className="mb-3 text-4xl font-bold">Background Change</h1>
           <p className="mb-8 max-w-md text-center text-lg text-white/60">
-            Sign in to relight, change location, and swap objects in green-screen video.
+            Sign in to swap the backdrop of a video using a reference image.
           </p>
           <div className="flex gap-3">
             <Link to="/login">
@@ -173,8 +173,8 @@ export default function CreateVFX() {
   return (
     <div className="flex h-screen w-full flex-col bg-[#101014] text-white">
       <Seo
-        title="VFX - ArtCraft"
-        description="Relight, change location, and swap objects in green-screen video."
+        title="Background Change - ArtCraft"
+        description="Swap the backdrop of a video using a reference image."
       />
 
       <div className="pt-[60px] sm:pt-[78px]">
@@ -184,24 +184,24 @@ export default function CreateVFX() {
       {subTab === "showcase" ? (
         <div
           className="min-h-0 flex-1 overflow-hidden"
-          style={{ paddingBottom: promptBoxHeight + 32 }}
+          style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
         >
           <VFXShowcaseView onTryThis={handleTryShowcase} />
         </div>
       ) : history.length === 0 ? (
         <div
           className="flex flex-1 items-center justify-center px-3 sm:px-6"
-          style={{ paddingBottom: promptBoxHeight + 32 }}
+          style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
         >
           <EmptyState
-            title="No VFX generations yet"
-            subtitle="Upload a green-screen source and a reference image, then describe your scene."
+            title="No background changes yet"
+            subtitle="Upload a source video and a reference image, then optionally add a prompt."
           />
         </div>
       ) : (
         <div
           className="flex-1 overflow-y-auto"
-          style={{ paddingBottom: promptBoxHeight + 32 }}
+          style={{ paddingBottom: Math.max(promptBoxHeight + 32, 240) }}
         >
           <div className="flex flex-col gap-10 px-3 pt-6 sm:px-6">
             {history.map((r) => (
@@ -234,7 +234,7 @@ export default function CreateVFX() {
         className="animate-fade-in-up pointer-events-none fixed bottom-2 left-1/2 z-30 -translate-x-1/2 sm:bottom-3"
         style={{ animationDelay: "150ms" }}
       >
-        <div className="pointer-events-auto w-[min(1232px,calc(100vw-48px))]">
+        <div className="pointer-events-auto w-[min(620px,calc(100vw-32px))]">
           <PromptBoxVFX
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}

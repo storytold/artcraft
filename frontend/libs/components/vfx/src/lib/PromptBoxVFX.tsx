@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -11,14 +11,12 @@ import {
   faSparkles,
   faPlus,
   faImages,
+  faPenToSquare,
 } from "@fortawesome/pro-solid-svg-icons";
 import { Button, GenerateButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  GalleryModal,
-  type GalleryItem,
-} from "@storyteller/ui-gallery-modal";
+import { GalleryModal, type GalleryItem } from "@storyteller/ui-gallery-modal";
 import { UploaderStates, type UploaderState } from "@storyteller/common";
 import { useVFXStore } from "./store";
 import {
@@ -72,9 +70,17 @@ export const PromptBoxVFX = ({
   const sourceInputRef = useRef<HTMLInputElement>(null);
   const maskInputRef = useRef<HTMLInputElement>(null);
   const referenceInputRef = useRef<HTMLInputElement>(null);
+  const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [sourceUploading, setSourceUploading] = useState(false);
   const [maskUploading, setMaskUploading] = useState(false);
   const [referenceUploading, setReferenceUploading] = useState(false);
+  const [showPromptPopover, setShowPromptPopover] = useState(false);
+
+  useEffect(() => {
+    if (showPromptPopover) {
+      requestAnimationFrame(() => promptTextareaRef.current?.focus());
+    }
+  }, [showPromptPopover]);
 
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryTarget, setGalleryTarget] = useState<SlotKind>("source");
@@ -235,16 +241,55 @@ export const PromptBoxVFX = ({
   const canSubmit =
     !!source &&
     !!reference &&
-    prompt.trim().length > 0 &&
     !isSubmitting &&
     !sourceUploading &&
     !maskUploading &&
     !referenceUploading;
 
+  const hasPrompt = prompt.trim().length > 0;
+
   return (
+    <div className="relative w-full">
+      {showPromptPopover && (
+        <div className="absolute bottom-full left-1/2 mb-2 w-full -translate-x-1/2">
+          <div className="glass flex flex-col gap-1.5 rounded-2xl px-3 py-2 shadow-2xl sm:px-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-base-fg/60">
+                Prompt (optional)
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowPromptPopover(false)}
+                className="flex h-5 w-5 items-center justify-center rounded text-base-fg/50 hover:bg-base-fg/10 hover:text-base-fg"
+                aria-label="Close prompt"
+              >
+                <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
+              </button>
+            </div>
+            <textarea
+              ref={promptTextareaRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Describe the new scene, lighting, or change..."
+              rows={3}
+              className="max-h-40 min-h-[3.5rem] w-full resize-none bg-transparent text-sm text-base-fg placeholder-base-fg/50 focus:outline-none"
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  setShowPromptPopover(false);
+                } else if (e.key === "Enter" && !e.shiftKey && canSubmit) {
+                  e.preventDefault();
+                  onSubmit();
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
     <div
       className={twMerge(
-        "glass flex w-full flex-col gap-2 rounded-2xl px-3 py-3 shadow-2xl sm:px-4",
+        "glass flex w-full flex-col gap-3 sm:gap-4 rounded-2xl p-3 sm:p-4 shadow-2xl",
         containerClassName,
       )}
     >
@@ -270,62 +315,46 @@ export const PromptBoxVFX = ({
         onChange={(e) => handleImageUpload(e, "reference")}
       />
 
-      {/* Top row: media tiles + textarea */}
-      <div className="flex items-stretch gap-3">
-        <div className="flex shrink-0 gap-2">
-          <UploadTile
-            label="Source"
-            sublabel={source ? "Video" : ".mp4"}
-            icon={faVideo}
-            previewUrl={source?.url}
-            isVideo
-            uploading={sourceUploading}
-            onUpload={() => triggerUpload("source")}
-            onPickFromLibrary={() => openGallery("source")}
-            onClear={() => setSource(undefined)}
-          />
-          <UploadTile
-            label="Mask"
-            sublabel={mask ? "Custom" : "Auto"}
-            icon={faMask}
-            previewUrl={mask?.url}
-            uploading={maskUploading}
-            onUpload={() => triggerUpload("mask")}
-            onPickFromLibrary={() => openGallery("mask")}
-            onClear={() => setMask(undefined)}
-            optional
-          />
-          <UploadTile
-            label="Reference"
-            sublabel={reference ? "Image" : "Required"}
-            icon={faImage}
-            previewUrl={reference?.url}
-            uploading={referenceUploading}
-            onUpload={() => triggerUpload("reference")}
-            onPickFromLibrary={() => openGallery("reference")}
-            onClear={() => setReference(undefined)}
-          />
-        </div>
-
-        <div className="flex min-w-0 flex-1 items-stretch">
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe the new scene, lighting, or change..."
-            rows={2}
-            className="max-h-40 min-h-[4.25rem] w-full resize-none bg-transparent px-2 py-2 text-sm text-base-fg placeholder-base-fg/50 focus:outline-none sm:px-3"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && canSubmit) {
-                e.preventDefault();
-                onSubmit();
-              }
-            }}
-          />
-        </div>
+      {/* Primary inputs — centered, all aspect-video. Source + Reference are required, Mask is optional */}
+      <div className="flex flex-wrap items-end justify-center gap-3">
+        <UploadTile
+          label="Source Video"
+          icon={faVideo}
+          previewUrl={source?.url}
+          isVideo
+          uploading={sourceUploading}
+          onUpload={() => triggerUpload("source")}
+          onPickFromLibrary={() => openGallery("source")}
+          onClear={() => setSource(undefined)}
+          tileClassName="h-24 aspect-video"
+          required
+        />
+        <UploadTile
+          label="Mask"
+          icon={faMask}
+          previewUrl={mask?.url}
+          uploading={maskUploading}
+          onUpload={() => triggerUpload("mask")}
+          onPickFromLibrary={() => openGallery("mask")}
+          onClear={() => setMask(undefined)}
+          tileClassName="h-24 aspect-video"
+          optional
+        />
+        <UploadTile
+          label="Reference Image"
+          icon={faImage}
+          previewUrl={reference?.url}
+          uploading={referenceUploading}
+          onUpload={() => triggerUpload("reference")}
+          onPickFromLibrary={() => openGallery("reference")}
+          onClear={() => setReference(undefined)}
+          tileClassName="h-24 aspect-video"
+          required
+        />
       </div>
 
-      {/* Bottom row: model + resolution chips on left, Generate on right */}
-      <div className="flex items-center gap-2 px-1">
+      {/* Bottom row: model + resolution chips on left, prompt toggle + Generate on right */}
+      <div className="flex items-center gap-2">
         <Tooltip content="Model" position="top" closeOnClick>
           <PopoverMenu
             items={modelItems}
@@ -346,6 +375,30 @@ export const PromptBoxVFX = ({
             panelTitle="Resolution"
             triggerLabel={resolution}
           />
+        </Tooltip>
+
+        <Tooltip
+          content={hasPrompt ? "Edit prompt" : "Add an optional prompt"}
+          position="top"
+        >
+          <button
+            type="button"
+            onClick={() => setShowPromptPopover((v) => !v)}
+            className={twMerge(
+              "flex items-center gap-2 rounded-lg border border-ui-controls-border bg-ui-controls px-3 py-1.5 text-sm font-medium text-base-fg shadow-sm outline-none transition-all duration-150 hover:bg-ui-controls/80 active:scale-95",
+              showPromptPopover && "bg-base-fg/15",
+              hasPrompt &&
+                "border-primary/30 bg-primary/15 text-primary-300 hover:bg-primary/20",
+            )}
+          >
+            <FontAwesomeIcon
+              icon={hasPrompt ? faPenToSquare : faPlus}
+              className="h-3 w-3"
+            />
+            <span className="truncate">
+              {hasPrompt ? "Prompt" : "Add prompt"}
+            </span>
+          </button>
         </Tooltip>
 
         <div className="ml-auto">
@@ -376,17 +429,19 @@ export const PromptBoxVFX = ({
         hideFilter
       />
     </div>
+    </div>
   );
 };
 
 interface UploadTileProps {
   label: string;
-  sublabel: string;
   icon: IconDefinition;
   previewUrl?: string;
   isVideo?: boolean;
   uploading?: boolean;
   optional?: boolean;
+  required?: boolean;
+  tileClassName?: string;
   onUpload: () => void;
   onPickFromLibrary: () => void;
   onClear: () => void;
@@ -394,22 +449,29 @@ interface UploadTileProps {
 
 const UploadTile = ({
   label,
-  sublabel,
   icon,
   previewUrl,
   isVideo,
   uploading,
   optional,
+  required,
+  tileClassName,
   onUpload,
   onPickFromLibrary,
   onClear,
 }: UploadTileProps) => {
   const showHoverMenu = !previewUrl && !uploading;
+  const tileSize = tileClassName ?? "h-12 w-12";
   return (
-    <div className="flex shrink-0 flex-col items-center justify-between gap-1">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-base-fg/60">
-        {label}
-        {optional && <span className="ml-1 text-base-fg/30">opt</span>}
+    <div className="flex shrink-0 flex-col items-center gap-1">
+      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider leading-none text-base-fg/70">
+        <span>{label}</span>
+        {required && <span className="text-primary-400">*</span>}
+        {optional && (
+          <span className="rounded bg-base-fg/10 px-1 py-px text-[9px] font-medium normal-case tracking-normal text-base-fg/40">
+            optional
+          </span>
+        )}
       </div>
 
       {showHoverMenu ? (
@@ -442,26 +504,30 @@ const UploadTile = ({
         >
           <Button
             variant="action"
-            className="bg-ui-controls/40 hover:bg-ui-controls/60 aspect-square h-12 w-12 overflow-hidden rounded-lg border-dashed border-2 border-black/5 dark:border-white/25 transition-all"
+            className={twMerge(
+              "bg-ui-controls/40 hover:bg-ui-controls/60 overflow-hidden rounded-lg border-dashed border-2 border-black/10 dark:border-white/25 transition-all",
+              tileSize,
+            )}
             onClick={onUpload}
           >
             <FontAwesomeIcon
               icon={icon}
-              className="text-lg opacity-80 text-base-fg"
+              className="text-2xl opacity-80 text-base-fg"
             />
           </Button>
         </Tooltip>
       ) : (
         <div
           className={twMerge(
-            "glass group relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border-2 transition-all",
+            "glass group relative flex items-center justify-center overflow-hidden rounded-lg border-2 transition-all",
             "border-white/30 hover:border-white/80",
+            tileSize,
           )}
         >
           {uploading ? (
             <FontAwesomeIcon
               icon={faSpinnerThird}
-              className="h-5 w-5 animate-spin text-base-fg"
+              className="h-6 w-6 animate-spin text-base-fg"
             />
           ) : (
             <>
@@ -470,28 +536,26 @@ const UploadTile = ({
                   src={previewUrl}
                   muted
                   preload="metadata"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                 />
               ) : (
                 <img
                   src={previewUrl}
                   alt={label}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                 />
               )}
               <button
                 type="button"
                 onClick={onClear}
-                className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
+                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
               >
-                <FontAwesomeIcon icon={faXmark} className="h-2 w-2" />
+                <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
               </button>
             </>
           )}
         </div>
       )}
-
-      <div className="text-[10px] text-base-fg/50">{sublabel}</div>
     </div>
   );
 };

@@ -19,12 +19,11 @@ export const VFXShowcaseView = ({ onTryThis }: VFXShowcaseViewProps) => {
   }, [selectedShowcaseId, setSelectedShowcaseId]);
 
   const activeId = selectedShowcaseId ?? VFX_SHOWCASE[0]?.id ?? "";
-  const entry =
-    VFX_SHOWCASE.find((e) => e.id === activeId) ?? VFX_SHOWCASE[0];
+  const entry = VFX_SHOWCASE.find((e) => e.id === activeId) ?? VFX_SHOWCASE[0];
   if (!entry) return null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col items-center gap-4 overflow-hidden px-3 pt-4 sm:px-6">
+    <div className="flex h-full min-h-0 flex-col items-center gap-4 overflow-y-auto px-3 pb-6 pt-4 sm:px-6">
       <ShowcaseCarousel
         entries={VFX_SHOWCASE}
         activeId={activeId}
@@ -48,6 +47,7 @@ export const VFXShowcaseView = ({ onTryThis }: VFXShowcaseViewProps) => {
           title: entry.title,
         }}
         onTryThis={onTryThis}
+        className="w-[min(960px,calc(100vw-32px),calc((100vh-440px)*1.7))] min-w-[min(320px,calc(100vw-32px))]"
       />
     </div>
   );

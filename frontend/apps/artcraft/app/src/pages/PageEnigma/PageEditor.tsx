@@ -19,7 +19,7 @@ import { ImageTo3DWorld } from "../PageImageTo3DWorld";
 import { RemoveBackground } from "../PageRemoveBackground";
 import { Angles } from "../PageAngles";
 import { Storyboard } from "../PageStoryboard";
-import { PageVFX } from "../PageVFX";
+import { PageBackgroundChange } from "../PageBackgroundChange";
 import { useStoryboardPageEnabled } from "@storyteller/ui-settings-modal";
 
 import {
@@ -652,9 +652,9 @@ export const PageEditor = () => {
           <Storyboard />
         </div>
       )}
-      {tabStore.activeTabId == "VFX" && (
+      {tabStore.activeTabId == "BACKGROUND_CHANGE" && (
         <div>
-          <PageVFX />
+          <PageBackgroundChange />
         </div>
       )}
     </div>
