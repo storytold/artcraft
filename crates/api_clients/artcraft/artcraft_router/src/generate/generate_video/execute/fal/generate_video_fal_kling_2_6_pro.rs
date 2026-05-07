@@ -13,7 +13,8 @@ use fal_client::requests::webhook::video::image::enqueue_kling_v2p6_pro_image_to
 };
 use fal_client::requests::webhook::video::text::enqueue_kling_v2p6_pro_text_to_video_webhook::{
   enqueue_kling_v2p6_pro_text_to_video_webhook, EnqueueKlingV2p6ProTextToVideoArgs,
-  EnqueueKlingV2p6ProTextToVideoAspectRatio, EnqueueKlingV2p6ProTextToVideoDurationSeconds,
+  EnqueueKlingV2p6ProTextToVideoRequest, EnqueueKlingV2p6ProTextToVideoAspectRatio,
+  EnqueueKlingV2p6ProTextToVideoDurationSeconds,
 };
 
 pub async fn execute_fal_kling_2_6_pro(
@@ -23,11 +24,13 @@ pub async fn execute_fal_kling_2_6_pro(
   let webhook_response = match &plan.mode {
     FalKling2p6ProMode::TextToVideo => {
       let args = EnqueueKlingV2p6ProTextToVideoArgs {
-        prompt: plan.prompt.clone(),
-        generate_audio: plan.generate_audio,
-        negative_prompt: plan.negative_prompt.clone(),
-        duration: plan.duration.map(to_t2v_duration),
-        aspect_ratio: plan.aspect_ratio.map(to_t2v_aspect_ratio),
+        request: EnqueueKlingV2p6ProTextToVideoRequest {
+          prompt: plan.prompt.clone(),
+          generate_audio: plan.generate_audio,
+          negative_prompt: plan.negative_prompt.clone(),
+          duration: plan.duration.map(to_t2v_duration),
+          aspect_ratio: plan.aspect_ratio.map(to_t2v_aspect_ratio),
+        },
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };

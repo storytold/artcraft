@@ -15,8 +15,8 @@ use fal_client::requests::webhook::video::image::enqueue_sora_2_pro_image_to_vid
 };
 use fal_client::requests::webhook::video::text::enqueue_sora_2_pro_text_to_video_webhook::{
   enqueue_sora_2_pro_text_to_video_webhook, EnqueueSora2ProTextToVideoArgs,
-  EnqueueSora2ProTextToVideoAspectRatio, EnqueueSora2ProTextToVideoDurationSeconds,
-  EnqueueSora2ProTextToVideoResolution,
+  EnqueueSora2ProTextToVideoRequest, EnqueueSora2ProTextToVideoAspectRatio,
+  EnqueueSora2ProTextToVideoDurationSeconds, EnqueueSora2ProTextToVideoResolution,
 };
 
 pub async fn execute_fal_sora_2_pro(
@@ -27,10 +27,12 @@ pub async fn execute_fal_sora_2_pro(
     FalSora2ProMode::TextToVideo => {
       // Text-to-video does not support Auto aspect ratio or Auto resolution.
       let args = EnqueueSora2ProTextToVideoArgs {
-        prompt: plan.prompt.clone(),
-        resolution: plan.resolution.and_then(to_t2v_resolution),
-        duration: plan.duration.map(to_t2v_duration),
-        aspect_ratio: plan.aspect_ratio.and_then(to_t2v_aspect_ratio),
+        request: EnqueueSora2ProTextToVideoRequest {
+          prompt: plan.prompt.clone(),
+          resolution: plan.resolution.and_then(to_t2v_resolution),
+          duration: plan.duration.map(to_t2v_duration),
+          aspect_ratio: plan.aspect_ratio.and_then(to_t2v_aspect_ratio),
+        },
         webhook_url: fal_client.webhook_url.as_str(),
         api_key: &fal_client.api_key,
       };

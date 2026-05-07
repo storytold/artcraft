@@ -1,7 +1,7 @@
 use artcraft_api_defs::generate::video::multi_function::seedance_1p5_pro_multi_function_video_gen::Seedance1p5ProMultiFunctionVideoGenDuration;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::text::enqueue_seedance_1p5_pro_text_to_video_webhook::{
-  EnqueueSeedance1p5ProTextToVideoArgs,
+  EnqueueSeedance1p5ProTextToVideoRequest,
   EnqueueSeedance1p5ProTextToVideoDuration,
   EnqueueSeedance1p5ProTextToVideoResolution,
 };
@@ -33,18 +33,15 @@ pub(crate) fn estimate_video_cost_artcraft_seedance1p5_pro(
       });
 
   // Use text-to-video cost calculator (same pricing for both modes)
-  let api_key = fal_client::creds::fal_api_key::FalApiKey::from_str("");
-  let args = EnqueueSeedance1p5ProTextToVideoArgs {
+  let req = EnqueueSeedance1p5ProTextToVideoRequest {
     prompt: String::new(),
     duration,
     resolution,
     aspect_ratio: None,
     generate_audio: plan.generate_audio,
-    webhook_url: "https://example.com",
-    api_key: &api_key,
   };
 
-  let cost_in_usd_cents = args.calculate_cost_in_cents();
+  let cost_in_usd_cents = req.calculate_cost_in_cents();
 
   VideoGenerationCostEstimate {
     cost_in_credits: Some(cost_in_usd_cents),

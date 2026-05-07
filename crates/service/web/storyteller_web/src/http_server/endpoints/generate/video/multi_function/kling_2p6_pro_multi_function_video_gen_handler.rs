@@ -24,7 +24,7 @@ use enums::common::visibility::Visibility;
 use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_kling_v2p6_pro_image_to_video_webhook::{enqueue_kling_v2p6_pro_image_to_video_webhook, EnqueueKlingV2p6ProImageToVideoArgs, EnqueueKlingV2p6ProImageToVideoRequest, EnqueueKlingV2p6ProImageToVideoDurationSeconds};
-use fal_client::requests::webhook::video::text::enqueue_kling_v2p6_pro_text_to_video_webhook::{enqueue_kling_v2p6_pro_text_to_video_webhook, EnqueueKlingV2p6ProTextToVideoArgs, EnqueueKlingV2p6ProTextToVideoAspectRatio, EnqueueKlingV2p6ProTextToVideoDurationSeconds};
+use fal_client::requests::webhook::video::text::enqueue_kling_v2p6_pro_text_to_video_webhook::{enqueue_kling_v2p6_pro_text_to_video_webhook, EnqueueKlingV2p6ProTextToVideoArgs, EnqueueKlingV2p6ProTextToVideoRequest, EnqueueKlingV2p6ProTextToVideoAspectRatio, EnqueueKlingV2p6ProTextToVideoDurationSeconds};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::FalCategory;
@@ -210,17 +210,21 @@ pub async fn kling_2p6_pro_multi_function_video_gen_handler(
       None => EnqueueKlingV2p6ProTextToVideoAspectRatio::Square,
     };
 
-    let args = EnqueueKlingV2p6ProTextToVideoArgs {
+    let t2v_request = EnqueueKlingV2p6ProTextToVideoRequest {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       negative_prompt: request.negative_prompt.clone(),
       generate_audio: request.generate_audio,
       duration: Some(duration),
       aspect_ratio: Some(aspect_ratio),
+    };
+
+    let cost = t2v_request.calculate_cost_in_cents();
+
+    let args = EnqueueKlingV2p6ProTextToVideoArgs {
+      request: t2v_request,
       webhook_url: &server_state.fal.webhook_url,
       api_key: &server_state.fal.api_key,
     };
-    
-    let cost = args.calculate_cost_in_cents();
 
     info!("Charging wallet...");
 

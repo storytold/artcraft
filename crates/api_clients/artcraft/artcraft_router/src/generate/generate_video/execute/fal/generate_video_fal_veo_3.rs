@@ -14,7 +14,7 @@ use fal_client::requests::webhook::video::image::enqueue_veo_3_image_to_video_we
 };
 use fal_client::requests::webhook::video::text::enqueue_veo_3_text_to_video_webhook::{
   enqueue_veo_3_text_to_video_webhook, Veo3T2vAspectRatio, Veo3T2vDuration, Veo3T2vResolution,
-  Veo3TextToVideoArgs,
+  Veo3TextToVideoArgs, Veo3TextToVideoRequest,
 };
 
 fn to_i2v_duration(d: FalVeo3Duration) -> Veo3I2vDuration {
@@ -74,13 +74,15 @@ pub async fn execute_fal_veo_3(
   let webhook_response = match &plan.mode {
     FalVeo3Mode::TextToVideo => {
       let args = Veo3TextToVideoArgs {
-        prompt: plan.prompt.as_str(),
-        negative_prompt: plan.negative_prompt.as_deref(),
+        request: Veo3TextToVideoRequest {
+          prompt: plan.prompt.clone(),
+          negative_prompt: plan.negative_prompt.clone(),
+          duration: to_t2v_duration(plan.duration),
+          aspect_ratio: plan.t2v_aspect_ratio.map(to_t2v_aspect_ratio).unwrap_or(Veo3T2vAspectRatio::Default),
+          resolution: to_t2v_resolution(plan.resolution),
+          generate_audio: plan.generate_audio,
+        },
         api_key: &fal_client.api_key,
-        duration: to_t2v_duration(plan.duration),
-        aspect_ratio: plan.t2v_aspect_ratio.map(to_t2v_aspect_ratio).unwrap_or(Veo3T2vAspectRatio::Default),
-        resolution: to_t2v_resolution(plan.resolution),
-        generate_audio: plan.generate_audio,
         webhook_url: fal_client.webhook_url.as_str(),
       };
       enqueue_veo_3_text_to_video_webhook(args)

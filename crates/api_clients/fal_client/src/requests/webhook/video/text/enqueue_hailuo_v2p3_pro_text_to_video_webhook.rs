@@ -7,18 +7,21 @@ use crate::requests::api::webhook_response::WebhookResponse;
 use reqwest::IntoUrl;
 
 pub struct EnqueueHailuoV2p3ProTextToVideoArgs<'a, R: IntoUrl> {
+  pub request: EnqueueHailuoV2p3ProTextToVideoRequest,
+  pub webhook_url: R,
+  pub api_key: &'a FalApiKey,
+}
+
+#[derive(Clone, Debug)]
+pub struct EnqueueHailuoV2p3ProTextToVideoRequest {
   // Request required
   pub prompt: String,
 
   // Optional args
   pub prompt_optimizer: Option<bool>,
-
-  // Fulfillment
-  pub webhook_url: R,
-  pub api_key: &'a FalApiKey,
 }
 
-impl <U: IntoUrl> FalRequestCostCalculator for EnqueueHailuoV2p3ProTextToVideoArgs<'_, U> {
+impl FalRequestCostCalculator for EnqueueHailuoV2p3ProTextToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     /// "Your request will cost $0.49 per video generation."
     49
@@ -32,10 +35,11 @@ pub async fn enqueue_hailuo_v2p3_pro_text_to_video_webhook<R: IntoUrl>(
   args: EnqueueHailuoV2p3ProTextToVideoArgs<'_, R>
 ) -> Result<WebhookResponse, FalErrorPlus> {
 
-  let prompt_optimizer = args.prompt_optimizer.unwrap_or(true);
+  let req = args.request;
+  let prompt_optimizer = req.prompt_optimizer.unwrap_or(true);
 
   let request = HailuoV2p3ProTextToVideoInput {
-    prompt: args.prompt,
+    prompt: req.prompt,
     // Optionals
     prompt_optimizer: Some(prompt_optimizer),
   };
@@ -51,7 +55,7 @@ pub async fn enqueue_hailuo_v2p3_pro_text_to_video_webhook<R: IntoUrl>(
 #[cfg(test)]
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
-  use crate::requests::webhook::video::text::enqueue_hailuo_v2p3_pro_text_to_video_webhook::{enqueue_hailuo_v2p3_pro_text_to_video_webhook, EnqueueHailuoV2p3ProTextToVideoArgs};
+  use crate::requests::webhook::video::text::enqueue_hailuo_v2p3_pro_text_to_video_webhook::{enqueue_hailuo_v2p3_pro_text_to_video_webhook, EnqueueHailuoV2p3ProTextToVideoArgs, EnqueueHailuoV2p3ProTextToVideoRequest};
   use errors::AnyhowResult;
   use std::fs::read_to_string;
 
@@ -64,8 +68,10 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = EnqueueHailuoV2p3ProTextToVideoArgs {
-      prompt: "a gray alien with big eyes dressed in an american flag tank top gives the peace symbol, it then barbecues some hot dogs on the grill".to_string(),
-      prompt_optimizer: Some(true),
+      request: EnqueueHailuoV2p3ProTextToVideoRequest {
+        prompt: "a gray alien with big eyes dressed in an american flag tank top gives the peace symbol, it then barbecues some hot dogs on the grill".to_string(),
+        prompt_optimizer: Some(true),
+      },
       api_key: &api_key,
       webhook_url: "https://example.com/webhook",
     };

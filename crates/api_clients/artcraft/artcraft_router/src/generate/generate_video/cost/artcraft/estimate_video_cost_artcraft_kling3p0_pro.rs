@@ -1,7 +1,7 @@
 use artcraft_api_defs::generate::video::multi_function::kling_3p0_pro_multi_function_video_gen::Kling3p0ProMultiFunctionVideoGenDuration;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::text::enqueue_kling_3p0_pro_text_to_video_webhook::{
-  EnqueueKling3p0ProTextToVideoArgs,
+  EnqueueKling3p0ProTextToVideoRequest,
   EnqueueKling3p0ProTextToVideoDuration,
 };
 
@@ -29,19 +29,16 @@ pub(crate) fn estimate_video_cost_artcraft_kling3p0_pro(
       });
 
   // Use text-to-video cost calculator (same pricing for both modes)
-  let api_key = fal_client::creds::fal_api_key::FalApiKey::from_str("");
-  let args = EnqueueKling3p0ProTextToVideoArgs {
+  let req = EnqueueKling3p0ProTextToVideoRequest {
     prompt: String::new(),
     generate_audio: plan.generate_audio,
     negative_prompt: None,
     duration,
     aspect_ratio: None,
     shot_type: None,
-    webhook_url: "https://example.com",
-    api_key: &api_key,
   };
 
-  let cost_in_usd_cents = args.calculate_cost_in_cents();
+  let cost_in_usd_cents = req.calculate_cost_in_cents();
 
   VideoGenerationCostEstimate {
     cost_in_credits: Some(cost_in_usd_cents),

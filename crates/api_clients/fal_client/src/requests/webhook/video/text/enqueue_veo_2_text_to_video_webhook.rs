@@ -15,15 +15,20 @@ pub use crate::requests::webhook::video::image::enqueue_veo_2_image_to_video_web
 use reqwest::IntoUrl;
 
 pub struct Veo2TextToVideoArgs<'a, V: IntoUrl> {
-  pub prompt: &'a str,
-  pub negative_prompt: Option<&'a str>,
-  pub duration: Veo2Duration,
-  pub aspect_ratio: Veo2AspectRatio,
+  pub request: Veo2TextToVideoRequest,
   pub webhook_url: V,
   pub api_key: &'a FalApiKey,
 }
 
-impl<V: IntoUrl> FalRequestCostCalculator for Veo2TextToVideoArgs<'_, V> {
+#[derive(Clone, Debug)]
+pub struct Veo2TextToVideoRequest {
+  pub prompt: String,
+  pub negative_prompt: Option<String>,
+  pub duration: Veo2Duration,
+  pub aspect_ratio: Veo2AspectRatio,
+}
+
+impl FalRequestCostCalculator for Veo2TextToVideoRequest {
   fn calculate_cost_in_cents(&self) -> UsdCents {
     // Same pricing as image-to-video:
     // "For 5s video your request will cost $2.50.
@@ -43,7 +48,9 @@ impl<V: IntoUrl> FalRequestCostCalculator for Veo2TextToVideoArgs<'_, V> {
 pub async fn enqueue_veo_2_text_to_video_webhook<V: IntoUrl>(
   args: Veo2TextToVideoArgs<'_, V>,
 ) -> Result<WebhookResponse, FalErrorPlus> {
-  let duration = match args.duration {
+  let req = args.request;
+
+  let duration = match req.duration {
     Veo2Duration::Default => None,
     Veo2Duration::FiveSeconds => Some("5s".to_string()),
     Veo2Duration::SixSeconds => Some("6s".to_string()),
@@ -51,7 +58,7 @@ pub async fn enqueue_veo_2_text_to_video_webhook<V: IntoUrl>(
     Veo2Duration::EightSeconds => Some("8s".to_string()),
   };
 
-  let aspect_ratio = match args.aspect_ratio {
+  let aspect_ratio = match req.aspect_ratio {
     Veo2AspectRatio::Auto => None, // Let the API default (16:9)
     Veo2AspectRatio::AutoPreferPortrait => Some("9:16".to_string()),
     Veo2AspectRatio::WideSixteenNine => Some("16:9".to_string()),
@@ -59,10 +66,10 @@ pub async fn enqueue_veo_2_text_to_video_webhook<V: IntoUrl>(
   };
 
   let request = Veo2TextToVideoInput {
-    prompt: args.prompt.to_string(),
+    prompt: req.prompt,
     aspect_ratio,
     duration,
-    negative_prompt: args.negative_prompt.map(|s| s.to_string()),
+    negative_prompt: req.negative_prompt,
   };
 
   let result = veo_2_text_to_video(request)
@@ -77,7 +84,8 @@ pub async fn enqueue_veo_2_text_to_video_webhook<V: IntoUrl>(
 mod tests {
   use crate::creds::fal_api_key::FalApiKey;
   use crate::requests::webhook::video::text::enqueue_veo_2_text_to_video_webhook::{
-    enqueue_veo_2_text_to_video_webhook, Veo2TextToVideoArgs, Veo2AspectRatio, Veo2Duration,
+    enqueue_veo_2_text_to_video_webhook, Veo2TextToVideoArgs, Veo2TextToVideoRequest,
+    Veo2AspectRatio, Veo2Duration,
   };
   use errors::AnyhowResult;
   use std::fs::read_to_string;
@@ -89,11 +97,13 @@ mod tests {
     let api_key = FalApiKey::from_str(&secret);
 
     let args = Veo2TextToVideoArgs {
-      prompt: "a drone shot of a coastal sunset with waves crashing on rocks",
-      negative_prompt: None,
+      request: Veo2TextToVideoRequest {
+        prompt: "a drone shot of a coastal sunset with waves crashing on rocks".to_string(),
+        negative_prompt: None,
+        duration: Veo2Duration::FiveSeconds,
+        aspect_ratio: Veo2AspectRatio::WideSixteenNine,
+      },
       api_key: &api_key,
-      duration: Veo2Duration::FiveSeconds,
-      aspect_ratio: Veo2AspectRatio::WideSixteenNine,
       webhook_url: "https://example.com/webhook",
     };
 
