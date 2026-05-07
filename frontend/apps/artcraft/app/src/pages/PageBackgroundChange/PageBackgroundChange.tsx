@@ -14,6 +14,7 @@ import {
   VFX_NOT_AVAILABLE_ERROR,
   VFX_SHOWCASE,
 } from "@storyteller/ui-vfx";
+import { TruchetPattern } from "./TruchetPattern";
 
 export const PageBackgroundChange = () => {
   const subTab = useVFXStore((s) => s.subTab);
@@ -120,13 +121,30 @@ export const PageBackgroundChange = () => {
         </div>
       ) : history.length === 0 ? (
         <div
-          className="flex flex-1 items-center justify-center px-6"
+          className="relative flex flex-1 items-center justify-center px-6"
           style={{ paddingBottom: Math.max(promptBoxHeight + 36, 240) }}
         >
-          <EmptyState
-            title="No background changes yet"
-            subtitle="Upload a source video and a reference image, then optionally add a prompt."
-          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-0"
+            style={{
+              maskImage:
+                "radial-gradient(ellipse 55% 55% at 50% 45%, black 10%, transparent 75%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 55% 55% at 50% 45%, black 10%, transparent 75%)",
+            }}
+          >
+            <TruchetPattern
+              intensity={0.6}
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
+          <div className="relative z-10">
+            <EmptyState
+              title="No background changes yet"
+              subtitle="Upload a source video and a reference image, then optionally add a prompt."
+            />
+          </div>
         </div>
       ) : (
         <div
