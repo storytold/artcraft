@@ -25,7 +25,7 @@ use fal_client::creds::open_ai_api_key::OpenAiApiKey;
 use fal_client::requests::traits::fal_request_cost_calculator_trait::FalRequestCostCalculator;
 use fal_client::requests::webhook::video::image::enqueue_veo_3p1_fast_first_last_frame_image_to_video_webhook::{enqueue_veo_3p1_fast_first_last_frame_image_to_video_webhook, EnqueueVeo3p1FastFirstLastFrameImageToVideoArgs, EnqueueVeo3p1FastFirstLastFrameImageToVideoAspectRatio, EnqueueVeo3p1FastFirstLastFrameImageToVideoDurationSeconds, EnqueueVeo3p1FastFirstLastFrameImageToVideoRequest, EnqueueVeo3p1FastFirstLastFrameImageToVideoResolution};
 use fal_client::requests::webhook::video::image::enqueue_veo_3p1_fast_image_to_video_webhook::{enqueue_veo_3p1_fast_image_to_video_webhook, EnqueueVeo3p1FastImageToVideoArgs, EnqueueVeo3p1FastImageToVideoAspectRatio, EnqueueVeo3p1FastImageToVideoDurationSeconds, EnqueueVeo3p1FastImageToVideoRequest, EnqueueVeo3p1FastImageToVideoResolution};
-use fal_client::requests::webhook::video::text::enqueue_veo_3p1_fast_text_to_video_webhook::{enqueue_veo_3p1_fast_text_to_video_webhook, EnqueueVeo3p1FastTextToVideoArgs, EnqueueVeo3p1FastTextToVideoAspectRatio, EnqueueVeo3p1FastTextToVideoDurationSeconds, EnqueueVeo3p1FastTextToVideoResolution};
+use fal_client::requests::webhook::video::text::enqueue_veo_3p1_fast_text_to_video_webhook::{enqueue_veo_3p1_fast_text_to_video_webhook, EnqueueVeo3p1FastTextToVideoArgs, EnqueueVeo3p1FastTextToVideoRequest, EnqueueVeo3p1FastTextToVideoAspectRatio, EnqueueVeo3p1FastTextToVideoDurationSeconds, EnqueueVeo3p1FastTextToVideoResolution};
 use http_server_common::request::get_request_ip::get_request_ip;
 use log::{error, info, warn};
 use mysql_queries::queries::generic_inference::fal::insert_generic_inference_job_for_fal_queue::insert_generic_inference_job_for_fal_queue;
@@ -296,7 +296,7 @@ pub async fn veo_3p1_fast_multi_function_video_gen_handler(
       None => EnqueueVeo3p1FastTextToVideoResolution::TenEightyP,
     };
 
-    let args = EnqueueVeo3p1FastTextToVideoArgs {
+    let t2v_request = EnqueueVeo3p1FastTextToVideoRequest {
       prompt: request.prompt.as_deref().unwrap_or("").to_string(),
       negative_prompt: request.negative_prompt.clone(),
       duration: Some(duration),
@@ -306,11 +306,9 @@ pub async fn veo_3p1_fast_multi_function_video_gen_handler(
       enhance_prompt: Some(true),
       auto_fix: Some(true),
       seed: None,
-      webhook_url: &server_state.fal.webhook_url,
-      api_key: &server_state.fal.api_key,
     };
-    
-    let cost = args.calculate_cost_in_cents();
+
+    let cost = t2v_request.calculate_cost_in_cents();
 
     info!("Charging wallet: {}", cost);
 
@@ -320,6 +318,12 @@ pub async fn veo_3p1_fast_multi_function_video_gen_handler(
       cost,
       &mut mysql_connection,
     ).await?;
+
+    let args = EnqueueVeo3p1FastTextToVideoArgs {
+      request: t2v_request,
+      webhook_url: &server_state.fal.webhook_url,
+      api_key: &server_state.fal.api_key,
+    };
 
     fal_result = enqueue_veo_3p1_fast_text_to_video_webhook(args)
         .await
